@@ -8,8 +8,6 @@ import {
   ListOrdered,
   Maximize2,
   MoveHorizontal,
-  PanelRightClose,
-  PanelRightOpen,
   SquarePen,
   Trash2,
   ZoomIn,
@@ -69,20 +67,11 @@ import { UploadBookDialog } from './UploadBookDialog';
  */
 
 const PANE_KEY = 'vault:panel-w:book-reader';
-const PANEL_KEY = 'vault:book-reader-panel-hidden';
 const PANE_DEFAULT_W = 520;
 /** Lower than the evidence viewers' floor: a whole tall page in a short
     pane is a quarter of its fit-to-width size, and "fit the page" must
     be able to get there. */
 const ZOOM_MIN = 0.25;
-/**
- * Below this much room beside the PDF, the moves panel goes UNDER the
- * board instead of beside it. The board page's own side column is 38% of
- * its row with a 27rem cap; beside a 320px board that is the narrowest
- * pair still worth calling two columns.
- */
-const STACK_BELOW = 720;
-
 export function BookReader({ id, page }: { id: string; page?: string }) {
   const wide = useWideLayout();
   const [book, setBook] = useState<LibraryBook | null | undefined>(undefined);
@@ -157,22 +146,13 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const [tab, setTab] = useState<'book' | 'moves' | 'engine'>('book');
   // The board-over-panel arrangement beside the PDF: one pane at a time
   // under the board, as the phone does, rather than a panel that scrolls.
-  const [sideTab, setSideTab] = useState<'moves' | 'engine'>('moves');
   const [loadOpen, setLoadOpen] = useState(false);
   const [stackedPane, stackedPaneW] = useElementWidth();
   const [wideRow, wideRowW] = useElementWidth();
+  // The editor takes the board side; where that is too narrow for its
+  // board and panel side by side, it stacks (see `force-stacked`).
   const [region, regionW] = useElementWidth();
-  const stackBoard = regionW > 0 && regionW < STACK_BELOW;
-  // The panel beside or under the board can be put away, leaving the
-  // board and its navigation with the whole region — for reading along
-  // a game rather than analysing it. Remembered on the device.
-  const [panelHidden, setPanelHidden] = useState<boolean>(
-    () => localStorage.getItem(PANEL_KEY) === '1',
-  );
-  useEffect(() => {
-    if (panelHidden) localStorage.setItem(PANEL_KEY, '1');
-    else localStorage.removeItem(PANEL_KEY);
-  }, [panelHidden]);
+  const stackEditor = regionW > 0 && regionW < 720;
 
   const overlayFor = (n: number) => (
     <DiagramHotspots
@@ -212,8 +192,12 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         actions={
           <>
             <SidelinesToggle />
-            <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
-            {/* Stacked only: at wide these two live on the board's toolbar. */}
+            {/* Stacked only: at wide these live on the board's toolbar. */}
+            <LoadPositionButton
+              open={loadOpen}
+              onOpenChange={setLoadOpen}
+              triggerClassName="wide:hidden"
+            />
             <Button
               variant="ghost"
               size="icon-sm"
@@ -249,8 +233,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // stacked for want of room, the editor is stacked too: `force-stacked`
   // makes its subtree lay out as on a narrow viewport (see index.css).
   const editor = editing !== null && (
-    <div className={cn('flex h-full min-h-0 flex-col', stackBoard && 'force-stacked')}>
-      <div className="flex h-9 shrink-0 items-center gap-2 px-3">
+    <div className="flex h-full min-h-0 flex-col">
+      {/* The same band as the toolbars over the PDF and the board — outside
+          the force-stacked box below, whose `wide:` classes are off. */}
+      <div className="flex h-9 shrink-0 items-center gap-2 px-4 wide:mt-4 wide:mb-3">
         <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
           <ChevronLeft data-icon="inline-start" />
           {t('Back to the board')}
@@ -259,7 +245,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           {t('Fix the position, then use it on the board.')}
         </span>
       </div>
-      <div className="min-h-0 flex-1">
+      <div className={cn('min-h-0 flex-1', stackEditor && 'force-stacked')}>
         <EditorView
           key={editing}
           initialFen={editing}
@@ -295,21 +281,12 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   );
 
   // The board side's toolbar at wide — the same band as the PDF's, over
-  // the board region: the panel toggle, the editor and the board page.
+  // the board: a position from elsewhere, the editor, and the board page.
   // It takes the slot the board's player strip would have had (the reader
   // never loads a game), so the board top meets the page top beside it.
   const boardBar = (
     <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 wide:mt-4 wide:mb-3">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title={panelHidden ? t('Show the moves panel') : t('Hide the moves panel')}
-        aria-pressed={panelHidden}
-        onClick={() => setPanelHidden((v) => !v)}
-      >
-        {panelHidden ? <PanelRightOpen className="size-3.5" /> : <PanelRightClose className="size-3.5" />}
-      </Button>
-      <span className="bg-border mx-1 h-4 w-px" />
+      <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
       <Button
         variant="ghost"
         size="icon-sm"
@@ -332,7 +309,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     </div>
   );
 
-  // Board and its navigation only, the panel put away.
+  // The board and its navigation: the whole of the board side at wide. The
+  // moves and the engine are the board page's, one press away; what the
+  // reader beside a book wants is the position and a way through it.
   const boardOnly = (
     <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
       <AnalysisBoard strip={false} />
@@ -361,56 +340,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             {editor || (
               <>
                 {boardBar}
-                {panelHidden ? (
-                  boardOnly
-                ) : stackBoard ? (
-                // Not enough room beside the PDF for board and panel
-                // side by side: the panel goes under the board and the
-                // column scrolls. The board column gives up its wide:flex-1
-                // here — in a column it would take the height the panel
-                // needs.
-                <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
-                  {/* The board column stays a DIRECT flex item of this
-                      definite-height column — a block wrapper around it
-                      broke the chain of definite sizes and the eval bar's
-                      h-full collapsed to its 2px border. Its wide:flex-1 is
-                      for a row, so it is flex-none here; and its block is
-                      eval slot + gap + board (20px on the left), so 20px of
-                      right padding centres the BOARD in the column, with the
-                      panel below taking the same two insets. */}
-                  <AnalysisBoard strip={false} />
-                  <div className={cn('mx-auto flex min-h-0 w-full flex-1 flex-col gap-3 wide:px-5', BOARD_MAX_W)}>
-                    {/* The nav under the board, where the board page puts it
-                        on a portrait tablet: the moves panel's copy would go
-                        with the panel whenever the Engine tab is up. */}
-                    <BoardControls keyboard={false} className="-my-1" />
-                    <PaneTabs
-                      value={sideTab}
-                      onChange={setSideTab}
-                      tabs={[
-                        { id: 'moves', label: t('Moves'), icon: ListOrdered },
-                        { id: 'engine', label: 'Engine', icon: Cpu },
-                      ]}
-                    />
-                    {movesPanel(cn('min-h-0', sideTab !== 'moves' && 'hidden'), false, false)}
-                    <Panel flush className={cn('min-h-0 flex-1', sideTab !== 'engine' && 'hidden')}>
-                      <EngineBlock standalone />
-                    </Panel>
-                  </div>
-                </div>
-              ) : (
-                // The shell's h-full becomes flex-1 under the toolbar, and its
-                // top padding goes: the toolbar band already holds the board
-                // 64px down, on the page's line.
-                <div className={cn(BOARD_HELD_SHELL, 'h-auto min-h-0 flex-1 wide:pt-0')}>
-                  <AnalysisBoard strip={false} />
-                  <div
-                    className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden ${BOARD_WIDE_SIDE}`}
-                  >
-                    {movesPanel()}
-                  </div>
-                </div>
-              )}
+                {boardOnly}
               </>
             )}
           </div>
