@@ -191,7 +191,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // The moves panel: the Board page's, with the position loader and the
   // editor in its header — the reader's two ways of putting a position on
   // the board that did not come from a diagram.
-  const movesPanel = (className?: string, engineDocked = true) => (
+  const movesPanel = (className?: string, engineDocked = true, nav = true) => (
     <Panel flush className={cn('min-h-0 flex-1', className)}>
       {engineDocked && <EngineBlock />}
       <PanelHeader
@@ -225,7 +225,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         }
       />
       <MoveTreePane />
-      <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />
+      {nav && <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />}
     </Panel>
   );
 
@@ -312,6 +312,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                       panel below taking the same two insets. */}
                   <AnalysisBoard />
                   <div className={cn('mx-auto flex min-h-0 w-full flex-1 flex-col gap-3 wide:px-5', BOARD_MAX_W)}>
+                    {/* The nav under the board, where the board page puts it
+                        on a portrait tablet: the moves panel's copy would go
+                        with the panel whenever the Engine tab is up. */}
+                    <BoardControls keyboard={false} className="-my-1" />
                     <PaneTabs
                       value={sideTab}
                       onChange={setSideTab}
@@ -320,7 +324,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                         { id: 'engine', label: 'Engine', icon: Cpu },
                       ]}
                     />
-                    {movesPanel(cn('min-h-0', sideTab !== 'moves' && 'hidden'), false)}
+                    {movesPanel(cn('min-h-0', sideTab !== 'moves' && 'hidden'), false, false)}
                     <Panel flush className={cn('min-h-0 flex-1', sideTab !== 'engine' && 'hidden')}>
                       <EngineBlock standalone />
                     </Panel>
