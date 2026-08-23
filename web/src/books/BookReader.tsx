@@ -39,7 +39,7 @@ import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX } from '@/hooks/use-pinch-zoom';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { useWideLayout } from '@/lib/media';
+import { useMediaQuery, useWideLayout } from '@/lib/media';
 import { navigate, up } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { loadPlacements, type BookSummary } from '@/puzzles/books/data';
@@ -237,7 +237,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     <div className="flex h-full min-h-0 flex-col">
       {/* The same band as the toolbars over the PDF and the board — outside
           the force-stacked box below, whose `wide:` classes are off. */}
-      <div className="flex h-9 shrink-0 items-center gap-2 px-4 wide:mt-4 wide:mb-3">
+      <div className="flex h-9 shrink-0 items-center gap-2 px-4 md:px-6 wide:mt-4 wide:mb-3">
         <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
           <ChevronLeft data-icon="inline-start" />
           {t('Back to the board')}
@@ -273,11 +273,12 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     );
   }
 
-  const header = (
+  const header = (flush: boolean) => (
     <ReaderHeader
       title={book?.title ?? ''}
       onBack={() => up('books')}
       menu={book ? <ReaderMenu book={book} onChanged={() => void load(true)} /> : null}
+      flush={flush}
     />
   );
 
@@ -286,7 +287,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // It takes the slot the board's player strip would have had (the reader
   // never loads a game), so the board top meets the page top beside it.
   const boardBar = (
-    <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 wide:mt-4 wide:mb-3">
+    <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3">
       <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
       <Button
         variant="ghost"
@@ -314,7 +315,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // moves and the engine are the board page's, one press away; what the
   // reader beside a book wants is the position and a way through it.
   const boardOnly = (
-    <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:w-full wide:[&>*:first-child]:mx-auto wide:[&>*:first-child]:pr-5">
+    <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 md:px-6 md:pb-6 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:w-full wide:[&>*:first-child]:mx-auto wide:[&>*:first-child]:pr-5">
       {/* The board column is capped (board-col-cap) to what the board can
           use, and as a flex-none item of this column it sat at the left of
           a wider region. An explicit full width (still under the cap) and
@@ -331,7 +332,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   if (wide) {
     return (
       <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] flex-col">
-        {header}
+        {header(false)}
         <div ref={wideRow} className="flex min-h-0 flex-1">
           <ResizablePane
             storageKey={PANE_KEY}
@@ -359,7 +360,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // Stacked: the board page's own shape, the book as one of the panes.
   return (
     <div className={BOARD_HELD_SHELL}>
-      {header}
+      {header(true)}
       {editor || (
         <>
           <AnalysisBoard />
@@ -396,23 +397,26 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
 }
 
 /**
- * The app's page header, in the 48px row the reader's toolbars are
- * measured from. px-4 both sides, the workbench convention (the puzzle
- * book page, the board row's wide:p-4); the PDF pane's toolbar and page
- * keep the same 16px so the left lines up too. The chevron shows on a
+ * The app's page header on PageShell's own insets — 16px, 24 from md —
+ * and the toolbars, page and board under it keep the same inset, so the
+ * chevron, the page's left edge and the bin stand on one line. The band
+ * under it (wide:mt-4) is the shell's gap-4. The chevron shows on a
  * desktop as well: the sidebar names Books, not this book.
  */
 function ReaderHeader({
   title,
   onBack,
   menu,
+  flush = false,
 }: {
   title: string;
   onBack: () => void;
   menu?: React.ReactNode;
+  /** Inside the stacked board shell, which pads the page itself. */
+  flush?: boolean;
 }) {
   return (
-    <div className="flex h-12 shrink-0 items-center px-4">
+    <div className={cn('flex shrink-0 items-center', !flush && 'px-4 pt-4 md:px-6 md:pt-6')}>
       <PageHeader
         className="min-w-0 flex-1"
         title={title}
@@ -551,8 +555,11 @@ function PdfPane({
   const viewport = useRef<HTMLDivElement>(null);
   usePinchZoom(viewport, bumpZoom);
   const slow = useSlowLoad(doc === null && error === null);
-  // The page's width at zoom 1: the pane less 16px a side, the header's inset.
-  const pageW = Math.max(0, width - 32);
+  // The page's width at zoom 1: the pane less the header's inset a side —
+  // none on a phone, where the pane is already inside the shell's padding
+  // and the page's edges should be the board's.
+  const md = useMediaQuery('(min-width: 48rem)');
+  const pageW = Math.max(0, width - (compact ? 0 : md ? 48 : 32));
   // Fit the whole page: the zoom at which the first page's height fills
   // the viewport — never past the width fit ("the whole page" means all
   // of it on screen; a tall pane would otherwise zoom IN). Read from the
@@ -622,7 +629,7 @@ function PdfPane({
           board's top edge there, and here it puts the viewport — the line
           the page is cut on when it scrolls, the top edge of a page just
           turned to — on the board's line beside it. */}
-      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 wide:mt-4 wide:mb-3">
+      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3">
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>
