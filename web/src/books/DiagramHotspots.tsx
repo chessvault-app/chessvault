@@ -166,13 +166,12 @@ export function DiagramHotspots({
   return (
     <>
       {spots.map((s) => {
-        // Centred on the diagram's top-right corner: half over the board's
-        // edge squares, half over the margin beside it, so it covers as
-        // little of either as a button can — the corner cell is where the
-        // number and the side-to-move mark are printed.
+        // Just outside the board, off its right edge, top edges aligned:
+        // nothing of the diagram is covered, and the button reads as the
+        // board's own handle rather than a sticker on it.
         const style = {
-          left: `calc(${(s.rect.x + s.rect.w) * 100}% - 0.875rem)`,
-          top: `calc(${s.rect.y * 100}% - 0.875rem)`,
+          left: `calc(${(s.rect.x + s.rect.w) * 100}% + 0.25rem)`,
+          top: `${s.rect.y * 100}%`,
         };
         const button = (
           <Button

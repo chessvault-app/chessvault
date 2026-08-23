@@ -152,6 +152,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const diagramsOn = usePageDiagrams(id, doc, shown);
 
   const [tab, setTab] = useState<'book' | 'moves' | 'engine'>('book');
+  // The board-over-panel arrangement beside the PDF: one pane at a time
+  // under the board, as the phone does, rather than a panel that scrolls.
+  const [sideTab, setSideTab] = useState<'moves' | 'engine'>('moves');
   const [goingTo, setGoingTo] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [stackedPane, stackedPaneW] = useElementWidth();
@@ -311,9 +314,20 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                 // column scrolls. The board column gives up its wide:flex-1
                 // here — in a column it would take the height the panel
                 // needs.
-                <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 wide:[&>*:first-child]:flex-none">
+                <div className="flex h-full min-h-0 flex-col gap-3 p-3 wide:[&>*:first-child]:flex-none">
                   <AnalysisBoard />
-                  {movesPanel('min-h-[18rem] shrink-0')}
+                  <PaneTabs
+                    value={sideTab}
+                    onChange={setSideTab}
+                    tabs={[
+                      { id: 'moves', label: t('Moves'), icon: ListOrdered },
+                      { id: 'engine', label: 'Engine', icon: Cpu },
+                    ]}
+                  />
+                  {movesPanel(cn('min-h-0', sideTab !== 'moves' && 'hidden'), false)}
+                  <Panel flush className={cn('min-h-0 flex-1', sideTab !== 'engine' && 'hidden')}>
+                    <EngineBlock standalone />
+                  </Panel>
                 </div>
               ) : (
                 <div className={BOARD_HELD_SHELL}>
