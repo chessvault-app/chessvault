@@ -298,7 +298,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                 // column scrolls. The board column gives up its wide:flex-1
                 // here — in a column it would take the height the panel
                 // needs.
-                <div className="flex h-full min-h-0 flex-col gap-3 p-3">
+                <div className="flex h-full min-h-0 flex-col gap-3 p-4">
                   {/* The board's block is eval slot + gap + board (w-3 +
                       gap-2 = 20px on the left). Padded by the same on the
                       right, the BOARD is centred in the column; the panel
@@ -391,10 +391,10 @@ function ReaderHeader({
   menu?: React.ReactNode;
 }) {
   return (
-    // px-3, not the px-4 other workbench headers wear: everything under this
-    // row — the PDF toolbar, the page, the board column — sits on a 12px
-    // inset, and the chevron and the bin should share their edge.
-    <div className="flex h-12 shrink-0 items-center gap-2 px-3">
+    // Each side on the inset of what sits under it: the PDF pane's 12px on
+    // the left (toolbar, page), the board row's 16px on the right (the
+    // shared shell's wide:p-4); stacked, both are the shell's 12.
+    <div className="flex h-12 shrink-0 items-center gap-2 px-3 wide:pr-4">
       <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
         <ChevronLeft className="size-3.5" />
       </Button>

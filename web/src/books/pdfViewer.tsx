@@ -353,7 +353,9 @@ export function PdfScroller({
       tabIndex={0}
       onKeyDown={onKeyDown}
       className={cn(
-        'bg-muted/40 min-h-0 flex-1 overflow-auto overscroll-contain outline-none [touch-action:pan-x_pan-y]',
+        // The scrollbar's gutter on both edges, so the centred page is centred
+        // in the pane and not in the pane less a scrollbar.
+        'bg-muted/40 min-h-0 flex-1 overflow-auto overscroll-contain outline-none [touch-action:pan-x_pan-y] [scrollbar-gutter:stable_both-edges]',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-inset',
         className,
       )}
