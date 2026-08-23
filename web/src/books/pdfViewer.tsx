@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useSlowLoad } from '@/components/skeletons';
 
@@ -114,6 +114,15 @@ export function PdfPage({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  /**
+   * The page's shape at rotation 0, learned from the first raster. It is
+   * what lets a zoom change resize the box SYNCHRONOUSLY: the old bitmap
+   * stretches to the new size for the beat until the fresh raster lands,
+   * instead of sitting at its old size inside the new layout — which read
+   * as a flicker every time a pinch was released. A rotation only flips
+   * it, so the box is right through a turn as well.
+   */
+  const [aspect0, setAspect0] = useState<number | null>(null);
   const taskRef = useRef<RenderTask | null>(null);
   // A page that is slow to arrive — the first of a book over a slow link,
   // a heavy scan — shows a spinner in its slot rather than a blank.
@@ -160,9 +169,8 @@ export function PdfPage({
       if (!canvas) return;
       canvas.width = off.width;
       canvas.height = off.height;
-      canvas.style.width = `${cssW}px`;
-      canvas.style.height = `${cssH}px`;
       canvas.getContext('2d')!.drawImage(off, 0, 0);
+      setAspect0(rotation % 180 === 0 ? cssH / cssW : cssW / cssH);
       setSize({ w: cssW, h: cssH });
       onSize?.({ w: cssW, h: cssH });
     })(), 120);
@@ -177,18 +185,27 @@ export function PdfPage({
 
   useEffect(() => () => taskRef.current?.cancel(), []);
 
+  // The box, from this render's own width and zoom — not from the raster,
+  // which is a beat behind them.
+  const cssW = Math.max(1, Math.round(width * zoom));
+  const aspect = aspect0 === null ? null : rotation % 180 === 0 ? aspect0 : 1 / aspect0;
+  const box = aspect !== null ? { w: cssW, h: Math.max(1, Math.round(cssW * aspect)) } : size;
+
   return (
     <div
-      className={cn('relative', !size && 'h-full', className)}
-      style={size ? { width: size.w, height: size.h } : undefined}
+      className={cn('relative', !box && 'h-full', className)}
+      style={box ? { width: box.w, height: box.h } : undefined}
     >
-      <canvas ref={canvasRef} className={cn('block bg-white shadow-sm', !size && 'invisible')} />
+      <canvas
+        ref={canvasRef}
+        className={cn('block h-full w-full bg-white shadow-sm', !size && 'invisible')}
+      />
       {!size && slow && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Loader2 className="text-muted-foreground size-5 animate-spin" />
         </div>
       )}
-      {size && overlay && <div className="absolute inset-0">{overlay}</div>}
+      {box && overlay && <div className="absolute inset-0">{overlay}</div>}
     </div>
   );
 }
@@ -340,7 +357,10 @@ export function PdfScroller({
     if (baseAspect !== null && reported.current !== null) target.current = reported.current;
   }, [baseAspect]);
   const lastZoom = useRef(zoom);
-  useEffect(() => {
+  // Before paint (layout effect): done after it, the browser showed one
+  // frame at the new size but the old scroll offset — half the released
+  // pinch's flicker.
+  useLayoutEffect(() => {
     if (lastZoom.current === zoom) return;
     const ratio = zoom / lastZoom.current;
     lastZoom.current = zoom;
