@@ -240,8 +240,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const editor = editing !== null && (
     <div className="flex h-full min-h-0 flex-col">
       {/* The same band as the toolbars over the PDF and the board — outside
-          the force-stacked box below, whose `wide:` classes are off. */}
-      <div className="flex h-9 shrink-0 items-center gap-2 px-4 md:px-6 wide:mt-4 wide:mb-3">
+          the force-stacked box below, whose `wide:` classes are off. Inset
+          only at wide: stacked, it sits in the board shell's own padding,
+          flush like the reader's row there. */}
+      <div className="flex h-9 shrink-0 items-center gap-2 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
         <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
           <ChevronLeft data-icon="inline-start" />
           {t('Back to the board')}
