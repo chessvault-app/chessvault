@@ -12,6 +12,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -163,9 +164,13 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     />
   );
 
+  // On a phone the PDF toolbar lives in the bottom bar, which only exists
+  // while the Book tab is up; the pane renders its toolbar into this slot.
+  const [barSlot, setBarSlot] = useState<HTMLDivElement | null>(null);
   const pdfPane = (width: number, compact: boolean) => (
     <PdfPane
       doc={doc}
+      toolbarInto={compact ? barSlot : null}
       error={error}
       retry={retry}
       pageNo={pageNo}
@@ -360,10 +365,14 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // turns the page between the book, filling the screen, and the board
   // with its moves under it — never both; the bottom bar is the board's
   // and only shows with it.
+  if (editor) {
+    // Editing is the whole screen: the editor's own band is the header.
+    return <div className={BOARD_HELD_SHELL}>{editor}</div>;
+  }
   return (
     <div className={BOARD_HELD_SHELL}>
       {header(true)}
-      {editor || (
+      {
         <>
           <PaneTabs
             value={tab}
@@ -388,12 +397,16 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             </div>
           </div>
         </>
-      )}
-      {tab === 'board' && !editor && (
-        <MobileActionBar>
+      }
+      {/* The bottom bar is the book's page controls on the Book tab, the
+          board's navigation on the Board tab. */}
+      <MobileActionBar>
+        {tab === 'board' ? (
           <BoardControls keyboard={false} className="py-1.5" />
-        </MobileActionBar>
-      )}
+        ) : (
+          <div ref={setBarSlot} className="flex flex-1 items-center justify-center" />
+        )}
+      </MobileActionBar>
     </div>
   );
 }
@@ -550,6 +563,7 @@ function PdfPane({
   zoom,
   width,
   compact,
+  toolbarInto = null,
   goTo,
   onScrolledTo,
   bumpZoom,
@@ -564,8 +578,10 @@ function PdfPane({
   pages: number;
   zoom: number;
   width: number;
-  /** Phones: a leaner row. */
+  /** Phones: the toolbar goes to the bottom bar, not over the page. */
   compact: boolean;
+  /** Where a compact toolbar is rendered (the bottom bar's slot). */
+  toolbarInto?: HTMLElement | null;
   goTo: (n: number) => void;
   /** The page the scroller arrived at on its own. */
   onScrolledTo: (n: number) => void;
@@ -642,7 +658,7 @@ function PdfPane({
   // which is the go-to every reader knows without a label.
   const [typed, setTyped] = useState<string | null>(null);
   const size = compact ? 'icon' : 'icon-sm';
-  return (
+  const toolbar = (
     <>
       {/* One group, centred: what the page is and how it is shown. The same
           h-9 band every board page opens its side column with, and the same
@@ -651,7 +667,13 @@ function PdfPane({
           board's top edge there, and here it puts the viewport — the line
           the page is cut on when it scrolls, the top edge of a page just
           turned to — on the board's line beside it. */}
-      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3">
+      <div
+        className={
+          compact
+            ? 'flex flex-1 items-center justify-center gap-0.5 py-1.5'
+            : 'flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3'
+        }
+      >
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>
@@ -710,6 +732,11 @@ function PdfPane({
           <ZoomIn className={icon} />
         </Button>
       </div>
+    </>
+  );
+  return (
+    <>
+      {compact ? toolbarInto && createPortal(toolbar, toolbarInto) : toolbar}
       {error ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <EmptyState
