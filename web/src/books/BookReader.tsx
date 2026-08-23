@@ -8,6 +8,8 @@ import {
   ListOrdered,
   Maximize2,
   MoveHorizontal,
+  PanelRightClose,
+  PanelRightOpen,
   SquarePen,
   Trash2,
   ZoomIn,
@@ -67,6 +69,7 @@ import { UploadBookDialog } from './UploadBookDialog';
  */
 
 const PANE_KEY = 'vault:panel-w:book-reader';
+const PANEL_KEY = 'vault:book-reader-panel-hidden';
 const PANE_DEFAULT_W = 520;
 /** Lower than the evidence viewers' floor: a whole tall page in a short
     pane is a quarter of its fit-to-width size, and "fit the page" must
@@ -160,6 +163,16 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const [wideRow, wideRowW] = useElementWidth();
   const [region, regionW] = useElementWidth();
   const stackBoard = regionW > 0 && regionW < STACK_BELOW;
+  // The panel beside or under the board can be put away, leaving the
+  // board and its navigation with the whole region — for reading along
+  // a game rather than analysing it. Remembered on the device.
+  const [panelHidden, setPanelHidden] = useState<boolean>(
+    () => localStorage.getItem(PANEL_KEY) === '1',
+  );
+  useEffect(() => {
+    if (panelHidden) localStorage.setItem(PANEL_KEY, '1');
+    else localStorage.removeItem(PANEL_KEY);
+  }, [panelHidden]);
 
   const overlayFor = (n: number) => (
     <DiagramHotspots
@@ -274,8 +287,37 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     <ReaderHeader
       title={book?.title ?? ''}
       onBack={() => up('books')}
-      menu={book ? <ReaderMenu book={book} onChanged={() => void load(true)} /> : null}
+      menu={
+        <>
+          {wide && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={panelHidden ? t('Show the moves panel') : t('Hide the moves panel')}
+              aria-pressed={panelHidden}
+              onClick={() => setPanelHidden((v) => !v)}
+            >
+              {panelHidden ? (
+                <PanelRightOpen className="size-3.5" />
+              ) : (
+                <PanelRightClose className="size-3.5" />
+              )}
+            </Button>
+          )}
+          {book && <ReaderMenu book={book} onChanged={() => void load(true)} />}
+        </>
+      }
     />
+  );
+
+  // Board and its navigation only, the panel put away.
+  const boardOnly = (
+    <div className="flex h-full min-h-0 flex-col gap-3 p-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
+      <AnalysisBoard />
+      <div className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W)}>
+        <BoardControls keyboard={false} className="-my-1" />
+      </div>
+    </div>
   );
 
   if (wide) {
@@ -295,7 +337,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           </ResizablePane>
           <div ref={region} className="min-h-0 min-w-0 flex-1">
             {editor ||
-              (stackBoard ? (
+              (panelHidden ? (
+                boardOnly
+              ) : stackBoard ? (
                 // Not enough room beside the PDF for board and panel
                 // side by side: the panel goes under the board and the
                 // column scrolls. The board column gives up its wide:flex-1
