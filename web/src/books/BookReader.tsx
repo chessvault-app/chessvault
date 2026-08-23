@@ -229,8 +229,11 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     </Panel>
   );
 
+  // The editor takes the board's place. Where the board and its panel are
+  // stacked for want of room, the editor is stacked too: `force-stacked`
+  // makes its subtree lay out as on a narrow viewport (see index.css).
   const editor = editing !== null && (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className={cn('flex h-full min-h-0 flex-col', stackBoard && 'force-stacked')}>
       <div className="flex h-9 shrink-0 items-center gap-2 px-3">
         <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
           <ChevronLeft data-icon="inline-start" />

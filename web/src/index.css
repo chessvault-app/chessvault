@@ -73,13 +73,24 @@
    to a monitor instead of a tablet.
    NOTE: the shorthand form cannot hold a comma-separated media list (Tailwind
    emits a broken selector for the second branch), hence the block form. */
+/* `.force-stacked` on an ancestor makes its subtree lay out as if the
+   viewport were stacked, whatever the viewport is. For a board-family page
+   rendered INSIDE a narrow region of a wide page — the editor beside the
+   book reader's PDF when there is no room for board and panels side by
+   side — where the viewport's orientation says nothing about the room the
+   page actually has. Nothing else sets it. */
 @custom-variant wide {
   @media (orientation: landscape) and (min-width: 44rem) {
-    @slot;
+    &:not(:where(.force-stacked) *) {
+      @slot;
+    }
   }
 }
 @custom-variant stacked {
   @media (orientation: portrait), (max-width: 43.9375rem) {
+    @slot;
+  }
+  :where(.force-stacked) & {
     @slot;
   }
 }
