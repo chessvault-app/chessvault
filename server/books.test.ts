@@ -15,14 +15,19 @@ const PDF = Buffer.concat([
 
 describe('books api', () => {
   let dir: string;
+  let shelfDir: string;
   let app: Hono;
   let id = '';
 
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), 'books-'));
-    app = new Hono().route('/api', booksApi(dir));
+    shelfDir = mkdtempSync(join(tmpdir(), 'books-shelf-'));
+    app = new Hono().route('/api', booksApi(dir, shelfDir));
   });
-  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+  afterAll(() => {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(shelfDir, { recursive: true, force: true });
+  });
 
   const upload = (query: string, body: Buffer | string, headers: Record<string, string> = {}) =>
     app.request(`/api/books?${query}`, {
@@ -194,8 +199,8 @@ describe('books api', () => {
     expect(existsSync(join(dir, id, 'book.pdf.part'))).toBe(false);
   });
 
-  it('links to a puzzle book only while the PDF exists', async () => {
-    const shelf = mkdtempSync(join(tmpdir(), 'puzzlebooks-link-'));
+  it('links to a puzzle book only while the PDF exists, and the list names the puzzle book', async () => {
+    const shelf = shelfDir;
     try {
       const puzzles = new Hono().route('/api', puzzleBooksApi(shelf, dir));
       const made = await puzzles.request('/api/puzzlebooks', {
@@ -220,6 +225,9 @@ describe('books api', () => {
       expect(detail.pdfBook).toBe(id);
       const list = await (await puzzles.request('/api/puzzlebooks')).json();
       expect(list.books[0].pdfBook).toBe(id);
+      // And the other way round: the library's row names the puzzle book.
+      const library = await (await app.request('/api/books')).json();
+      expect(library.books[0].puzzleBook).toEqual({ slug, title: 'Linked' });
 
       // The library book goes: the pointer dangles and is reported as none.
       expect((await app.request(`/api/books/${id}`, { method: 'DELETE' })).status).toBe(200);
@@ -227,7 +235,7 @@ describe('books api', () => {
       expect(after.pdfBook).toBeNull();
       expect((await patch({ pdfBook: null })).status).toBe(200);
     } finally {
-      rmSync(shelf, { recursive: true, force: true });
+      // The shelf dir is the suite's; nothing to remove here.
     }
   });
 

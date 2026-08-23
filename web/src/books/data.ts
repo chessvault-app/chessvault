@@ -20,6 +20,8 @@ export interface LibraryBook {
   addedAt: string | null;
   lastPage: number | null;
   cover: boolean;
+  /** The puzzle book read from this PDF, when there is one. */
+  puzzleBook?: { slug: string; title: string } | null;
 }
 
 /** Where a printed diagram sits on its page, in page fractions. */

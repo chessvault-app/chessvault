@@ -135,7 +135,10 @@ const pagesParam = (raw: string | undefined): number | null => {
   return Number.isInteger(n) && n > 0 ? n : null;
 };
 
-export function booksApi(dir: string = BOOKS_DIR): Hono {
+export function booksApi(
+  dir: string = BOOKS_DIR,
+  puzzleBooksDir: string = resolve(VAULT, 'puzzlebooks'),
+): Hono {
   const bookDir = (id: string): string => resolve(dir, id);
   const pdfPath = (id: string): string => resolve(bookDir(id), 'book.pdf');
   const metaPath = (id: string): string => resolve(bookDir(id), 'book.json');
@@ -144,6 +147,28 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
   const diagramsPath = (id: string): string => resolve(bookDir(id), 'diagrams.json');
 
   const validBook = (id: string): boolean => isLibraryBookId(id) && existsSync(metaPath(id));
+
+  /**
+   * Which puzzle book, if any, was read from each library book — the
+   * puzzle shelf's pointers (`pdfBook`), turned round for the library's
+   * list. One pass over the puzzle books' small book.json files per
+   * listing; a shelf holds a handful.
+   */
+  const puzzleBooksByPdf = (): Map<string, { slug: string; title: string }> => {
+    const map = new Map<string, { slug: string; title: string }>();
+    if (!existsSync(puzzleBooksDir)) return map;
+    for (const entry of readdirSync(puzzleBooksDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const book = readJson<{ title?: string; pdfBook?: string }>(
+        resolve(puzzleBooksDir, entry.name, 'book.json'),
+        {},
+      );
+      if (typeof book.pdfBook === 'string' && !map.has(book.pdfBook)) {
+        map.set(book.pdfBook, { slug: entry.name, title: book.title ?? entry.name });
+      }
+    }
+    return map;
+  };
 
   // Bookmarks, kept in the vault beside the books — the same store and
   // the same reasoning as the puzzle shelf's.
@@ -239,6 +264,7 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
 
   api.get('/books', (c) => {
     if (!existsSync(dir)) return c.json({ books: [] });
+    const linked = puzzleBooksByPdf();
     const books = readdirSync(dir, { withFileTypes: true })
       .filter((e) => e.isDirectory() && validBook(e.name))
       .map((e) => {
@@ -254,6 +280,8 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
           addedAt: meta.addedAt ?? null,
           lastPage: lastPage(id),
           cover: existsSync(coverPath(id)),
+          // The puzzle book read from this PDF, when there is one.
+          puzzleBook: linked.get(id) ?? null,
         };
       })
       .sort((a, b) => (b.addedAt ?? '').localeCompare(a.addedAt ?? ''));

@@ -1,6 +1,7 @@
 import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
+  BookMarked,
   BookOpen,
   BookText,
   Bookmark,
@@ -424,6 +425,17 @@ function BookCard({
             <span className="text-muted-foreground flex items-center gap-1.5 text-sm">
               <BookOpen className="size-3 shrink-0" />
               {book.lastPage ? t('Carry on reading') : t('Read')}
+              {book.puzzleBook && (
+                // Read into the puzzle shelf: the same mark that shelf wears,
+                // so the two halves of one book recognise each other.
+                <span
+                  className="text-foreground/80 ml-auto inline-flex items-center gap-1"
+                  title={t('Puzzle book: {title}', { title: book.puzzleBook.title })}
+                >
+                  <BookMarked className="size-3 shrink-0" />
+                  {t('Puzzle book')}
+                </span>
+              )}
             </span>
           </span>
         </div>
@@ -434,6 +446,15 @@ function BookCard({
           onOpenChange={setMenuOpen}
           actions={[
             { label: 'Read', icon: BookOpen, onSelect: open },
+            ...(book.puzzleBook
+              ? [
+                  {
+                    label: 'Open the puzzle book',
+                    icon: BookMarked,
+                    onSelect: () => navigate('puzzles', 'books', book.puzzleBook!.slug),
+                  },
+                ]
+              : []),
             {
               label: marked ? 'Remove bookmark' : 'Bookmark',
               icon: Bookmark,
