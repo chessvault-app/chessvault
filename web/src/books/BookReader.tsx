@@ -27,6 +27,7 @@ import { NoMatchArt } from '@/components/empty-art';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
+import { PageHeader } from '@/components/page-header';
 import { PaneTabs } from '@/components/pane-tabs';
 import { ResizablePane } from '@/components/resizable-pane';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
@@ -394,7 +395,13 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   );
 }
 
-/** The same borderless header every workbench page opens with. */
+/**
+ * The app's page header, in the 48px row the reader's toolbars are
+ * measured from. px-4 both sides, the workbench convention (the puzzle
+ * book page, the board row's wide:p-4); the PDF pane's toolbar and page
+ * keep the same 16px so the left lines up too. The chevron shows on a
+ * desktop as well: the sidebar names Books, not this book.
+ */
 function ReaderHeader({
   title,
   onBack,
@@ -405,15 +412,15 @@ function ReaderHeader({
   menu?: React.ReactNode;
 }) {
   return (
-    // px-4 both sides, the workbench convention (the puzzle corrector's
-    // header, the board row's wide:p-4); the PDF pane's toolbar and page
-    // keep the same 16px so the left lines up too.
-    <div className="flex h-12 shrink-0 items-center gap-2 px-4">
-      <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
-        <ChevronLeft className="size-3.5" />
-      </Button>
-      <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{title}</h1>
-      {menu}
+    <div className="flex h-12 shrink-0 items-center px-4">
+      <PageHeader
+        className="min-w-0 flex-1"
+        title={title}
+        back={onBack}
+        backVisible="always"
+        truncate
+        actions={menu}
+      />
     </div>
   );
 }

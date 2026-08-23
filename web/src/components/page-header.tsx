@@ -16,6 +16,8 @@ import { t } from '@/lib/i18n';
 export function PageHeader({
   title,
   back,
+  backVisible = 'phone',
+  truncate = false,
   description,
   meta,
   actions,
@@ -24,6 +26,15 @@ export function PageHeader({
   title: string;
   /** Where the phone's back chevron goes; omit on top-level pages. */
   back?: () => void;
+  /**
+   * `always` on a leaf the sidebar cannot name — one book, one document —
+   * where a desktop needs the chevron too; `phone` (the default) for the
+   * pages the sidebar reaches, where a desktop never shows it.
+   */
+  backVisible?: 'phone' | 'always';
+  /** A title that is a user's own name for something and may run long:
+      one line, cut with an ellipsis, rather than wrapping the row. */
+  truncate?: boolean;
   description?: string;
   /**
    * Quiet status that belongs BESIDE the name rather than under it —
@@ -36,19 +47,27 @@ export function PageHeader({
   className?: string;
 }) {
   const header = (
-    <header className={cn('flex flex-wrap items-center gap-x-3 gap-y-2', !description && className)}>
+    <header
+      className={cn(
+        'flex items-center gap-x-3 gap-y-2',
+        truncate ? 'flex-nowrap' : 'flex-wrap',
+        !description && className,
+      )}
+    >
       {back && (
         <Button
           variant="ghost"
           size="icon-sm"
-          className="md:hidden"
+          className={backVisible === 'phone' ? 'md:hidden' : undefined}
           title={t('Back')}
           onClick={back}
         >
           <ChevronLeft className="size-3.5" />
         </Button>
       )}
-      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+      <h1 className={cn('text-xl font-semibold tracking-tight', truncate && 'min-w-0 flex-1 truncate')}>
+        {title}
+      </h1>
       {meta}
       {actions && (
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>
