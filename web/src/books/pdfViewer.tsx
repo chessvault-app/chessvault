@@ -1,5 +1,8 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+
+import { useSlowLoad } from '@/components/skeletons';
 
 import { cn } from '@/lib/utils';
 import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
@@ -111,6 +114,9 @@ export function PdfPage({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const taskRef = useRef<RenderTask | null>(null);
+  // A page that is slow to arrive — the first of a book over a slow link,
+  // a heavy scan — shows a spinner in its slot rather than a blank.
+  const slow = useSlowLoad(size === null);
 
   useEffect(() => {
     if (width <= 0) return;
@@ -172,10 +178,15 @@ export function PdfPage({
 
   return (
     <div
-      className={cn('relative', className)}
+      className={cn('relative', !size && 'h-full', className)}
       style={size ? { width: size.w, height: size.h } : undefined}
     >
-      <canvas ref={canvasRef} className="block bg-white shadow-sm" />
+      <canvas ref={canvasRef} className={cn('block bg-white shadow-sm', !size && 'invisible')} />
+      {!size && slow && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="text-muted-foreground size-5 animate-spin" />
+        </div>
+      )}
       {size && overlay && <div className="absolute inset-0">{overlay}</div>}
     </div>
   );

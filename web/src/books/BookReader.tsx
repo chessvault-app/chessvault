@@ -859,8 +859,12 @@ function PdfPane({
       ) : (
         <div className="bg-muted/40 min-h-0 flex-1 overflow-auto">
           {slow && (
-            <div className="flex min-h-full justify-center p-3">
+            <div className="relative flex min-h-full justify-center p-3">
               <Skeleton className="aspect-[3/4] rounded-md" style={{ width: pageW || '100%' }} />
+              <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
+                <Loader2 className="size-4 animate-spin" />
+                {t('Opening the book…')}
+              </div>
             </div>
           )}
         </div>

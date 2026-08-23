@@ -1700,7 +1700,7 @@ export const ko: Record<string, string> = {
   'Book title': '책 제목',
   'Set up this position': '이 포지션을 판에 놓기',
   'White to move': '백 차례',
-  '(as in the book)': '(책대로)',
+  'Opening the book…': '책을 여는 중…',
   'Who is to move?': '누구 차례인가요?',
   'Reading diagrams — page {page} of {pages}': '다이어그램 읽는 중 — {pages}쪽 중 {page}쪽',
   'Black to move': '흑 차례',

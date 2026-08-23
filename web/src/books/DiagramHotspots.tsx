@@ -202,14 +202,13 @@ export function DiagramHotspots({
             <Grid3x3 className="size-3.5" />
           </Button>
         );
-        // Every tap asks who is to move — a diagram alone does not say, and
-        // even a position a puzzle book knows is worth a glance: its side
-        // is listed first and marked, one tap away.
+        // Every tap asks who is to move — a diagram alone does not say,
+        // and what a puzzle book worked out for the side is not sure enough
+        // to mark: White, Black, the same two choices for every diagram.
         return (
           <SideToMovePopover
             key={s.key}
             fen={s.fen}
-            suggested={s.sure ? (s.fen.split(' ')[1] === 'b' ? 'b' : 'w') : null}
             sheet={sheet}
             onSet={set}
             onEdit={onEdit}
@@ -229,16 +228,14 @@ export function DiagramHotspots({
  */
 function SideToMovePopover({
   fen,
-  suggested,
   sheet = false,
   onSet,
   onEdit,
   children,
 }: {
+  /** The position; when the side chosen is the one it carries, the whole
+      FEN is kept (a puzzle book's castling rights and the like). */
   fen: string;
-  /** The side a puzzle book gave this position, when it did: listed
-      first and marked; choosing it keeps the book's whole FEN. */
-  suggested: 'w' | 'b' | null;
   /** A phone: a bottom sheet rather than a popover off the button. */
   sheet?: boolean;
   onSet: (fen: string) => void;
@@ -249,12 +246,11 @@ function SideToMovePopover({
   const placement = fen.split(' ')[0] ?? fen;
   const choose = (side: 'w' | 'b'): void => {
     setOpen(false);
-    onSet(side === suggested ? fen : `${placement} ${side} - - 0 1`);
+    onSet(side === fen.split(' ')[1] ? fen : `${placement} ${side} - - 0 1`);
   };
-  const sides: ('w' | 'b')[] = suggested === 'b' ? ['b', 'w'] : ['w', 'b'];
   const choices = (
     <>
-      {sides.map((side) => (
+      {(['w', 'b'] as const).map((side) => (
         <Button
           key={side}
           variant="ghost"
@@ -263,9 +259,6 @@ function SideToMovePopover({
           onClick={() => choose(side)}
         >
           {side === 'w' ? t('White to move') : t('Black to move')}
-          {side === suggested && (
-            <span className="text-muted-foreground">{t('(as in the book)')}</span>
-          )}
         </Button>
       ))}
       {onEdit && (
