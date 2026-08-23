@@ -239,6 +239,7 @@ export function PdfScroller({
   pageNo,
   onPageChange,
   overlayFor,
+  onPainted,
   viewportRef,
   zoomAnchor,
   pinch = null,
@@ -257,6 +258,9 @@ export function PdfScroller({
   onPageChange: (page: number) => void;
   /** The hotspot layer for a rendered page. */
   overlayFor: (page: number) => ReactNode;
+  /** A page's raster landed — any page, every time; the caller keeps the
+      "first paint" bit itself. The opening treatment stays up until then. */
+  onPainted?: () => void;
   viewportRef: React.RefObject<HTMLDivElement | null>;
   /** Where the next zoom change should hold still, relative to the
       viewport — with the scroll offsets AS THEY WERE when the zoom was
@@ -512,6 +516,7 @@ export function PdfScroller({
               rotation={rotation}
               overlay={overlayFor(n)}
               onSize={({ w, h }) => {
+                onPainted?.();
                 const a = h / w;
                 setAspects((prev) => {
                   if (Math.abs((prev.get(n) ?? 0) - a) < 0.001) return prev;

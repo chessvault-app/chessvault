@@ -711,7 +711,14 @@ function PdfPane({
     const scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * p.scale)) / z;
     setPinch({ ...p, scale });
   });
-  const slow = useSlowLoad(doc === null && error === null);
+  // The one opening treatment: the labelled skeleton stays up — over the
+  // scroller once the document is open — until the FIRST page has
+  // rastered, so an open never shows two kinds of spinner back to back
+  // (the labelled one, then the pages' own slot spinners). The slot
+  // spinner still exists, but only for jumps deep into an open book.
+  const [painted, setPainted] = useState(false);
+  useEffect(() => setPainted(false), [doc]);
+  const slow = useSlowLoad((doc === null || !painted) && error === null);
   // The page's width at zoom 1: the pane less the header's inset a side.
   // On a phone, the viewport's own content width — measured, so the
   // scrollbar gutters it reserves on both edges (or does not, with
@@ -960,34 +967,59 @@ function PdfPane({
           />
         </div>
       ) : doc && pageNo > 0 && pageW > 0 ? (
-        <PdfScroller
-          doc={doc}
-          pages={doc.numPages}
-          width={pageW}
-          zoom={zoom}
-          rotation={rotation}
-          pageNo={pageNo}
-          onPageChange={onScrolledTo}
-          overlayFor={overlayFor}
-          viewportRef={viewport}
-          zoomAnchor={zoomAnchor}
-          pinch={pinch}
-          onKeyDown={onKey}
-        />
-      ) : (
-        <div className="bg-muted/40 min-h-0 flex-1 overflow-auto">
-          {slow && (
-            <div className="relative flex min-h-full justify-center p-3">
-              <Skeleton className="aspect-[3/4] rounded-md" style={{ width: pageW || '100%' }} />
-              <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
-                <Loader2 className="size-4 animate-spin" />
-                {t('Opening the book…')}
-              </div>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <PdfScroller
+            doc={doc}
+            pages={doc.numPages}
+            width={pageW}
+            zoom={zoom}
+            rotation={rotation}
+            pageNo={pageNo}
+            onPageChange={onScrolledTo}
+            overlayFor={overlayFor}
+            onPainted={() => setPainted(true)}
+            viewportRef={viewport}
+            zoomAnchor={zoomAnchor}
+            pinch={pinch}
+            onKeyDown={onKey}
+          />
+          {/* Opaque over the scroller while the first raster is on its
+              way: the pages underneath lay out (and start rendering) but
+              their slots' own spinners never show through an open. */}
+          {!painted && (
+            <div className="bg-background absolute inset-0 z-10 overflow-hidden">
+              <OpeningTreatment show={slow} pageW={pageW} />
             </div>
           )}
         </div>
+      ) : (
+        <div className="min-h-0 flex-1">
+          <OpeningTreatment show={slow} pageW={pageW} />
+        </div>
       )}
     </>
+  );
+}
+
+/**
+ * The one look an opening book has: the page-shaped skeleton with
+ * "Opening the book…", shown while the document loads AND until its first
+ * page has rastered — `show` gates the content behind the slow-load beat,
+ * the ground is painted either way so nothing shows through.
+ */
+function OpeningTreatment({ show, pageW }: { show: boolean; pageW: number }) {
+  return (
+    <div className="bg-muted/40 h-full overflow-hidden">
+      {show && (
+        <div className="relative flex h-full justify-center p-3">
+          <Skeleton className="aspect-[3/4] rounded-md" style={{ width: pageW || '100%' }} />
+          <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
+            <Loader2 className="size-4 animate-spin" />
+            {t('Opening the book…')}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
