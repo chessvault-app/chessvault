@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
 import { CardFooter } from '@/components/ui/card';
 
 import { Panel, PanelHeader } from '@/components/panel';
@@ -210,16 +211,30 @@ export function PuzzleEntry({
     // so up to there nothing moves — beyond it the workbench stops
     // spreading across the window while the rest of the app stays put.
     <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] flex-col">
-      {/* Same borderless header as everywhere else; image import lives in
-          the editor's own Position panel, not up here. */}
-      <div className="flex h-12 shrink-0 items-center gap-2 px-4">
-        <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
-          <ChevronLeft className="size-3.5" />
-        </Button>
-        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">
-          {t(replace ? 'Fix' : 'Add')} <span className="font-mono">#{number}</span>
-        </h1>
-      </div>
+      {/* The book reader's header, which is the workbench standard: the
+          app's PageHeader on the shell's insets at wide, chevron included;
+          the compact leaf row on a phone. Image import lives in the
+          editor's own Position panel, not up here. */}
+      {wide ? (
+        <div className="flex shrink-0 items-center px-4 pt-4 md:px-6 md:pt-6">
+          <PageHeader
+            className="min-w-0 flex-1"
+            title={`${t(replace ? 'Fix' : 'Add')} #${number}`}
+            back={onCancel}
+            backVisible="always"
+            truncate
+          />
+        </div>
+      ) : (
+        <div className="flex shrink-0 items-center gap-2 px-3 pt-3">
+          <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">
+            {t(replace ? 'Fix' : 'Add')} <span className="font-mono">#{number}</span>
+          </h1>
+        </div>
+      )}
       {wide ? (
         <div ref={wideRow} className="flex min-h-0 flex-1">
           {evidence?.page ? (

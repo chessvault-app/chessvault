@@ -86,11 +86,14 @@ const MAX_CANVAS_PIXELS = 16 * 1024 * 1024;
  * `overlay` is drawn over the page at the page's own size — the diagram
  * hotspots, positioned in page fractions.
  */
+export type Rotation = 0 | 90 | 180 | 270;
+
 export function PdfPage({
   doc,
   pageNo,
   width,
   zoom,
+  rotation = 0,
   overlay,
   onSize,
   className,
@@ -99,6 +102,7 @@ export function PdfPage({
   pageNo: number;
   width: number;
   zoom: number;
+  rotation?: Rotation;
   overlay?: ReactNode;
   /** The page's CSS size once known — the viewport centres a narrow page. */
   onSize?: (size: { w: number; h: number }) => void;
@@ -114,14 +118,14 @@ export function PdfPage({
     void (async () => {
       const page = await doc.getPage(pageNo);
       if (!live) return;
-      const base = page.getViewport({ scale: 1 });
+      const base = page.getViewport({ scale: 1, rotation });
       const cssW = Math.max(1, Math.round(width * zoom));
       const cssH = Math.max(1, Math.round((base.height / base.width) * cssW));
       let ratio = Math.min(window.devicePixelRatio || 1, 2);
       if (cssW * cssH * ratio * ratio > MAX_CANVAS_PIXELS) {
         ratio = Math.sqrt(MAX_CANVAS_PIXELS / (cssW * cssH));
       }
-      const viewport = page.getViewport({ scale: (cssW * ratio) / base.width });
+      const viewport = page.getViewport({ scale: (cssW * ratio) / base.width, rotation });
       const off = document.createElement('canvas');
       off.width = Math.round(viewport.width);
       off.height = Math.round(viewport.height);
@@ -155,7 +159,7 @@ export function PdfPage({
     // onSize is a callback identity the caller may not memoise; the size
     // is reported whenever a render lands, which is what it is for.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, pageNo, width, zoom]);
+  }, [doc, pageNo, width, zoom, rotation]);
 
   useEffect(() => () => taskRef.current?.cancel(), []);
 
@@ -193,6 +197,7 @@ export function PdfScroller({
   pages,
   width,
   zoom,
+  rotation = 0,
   pageNo,
   onPageChange,
   overlayFor,
@@ -206,6 +211,7 @@ export function PdfScroller({
   /** The page's width at zoom 1. */
   width: number;
   zoom: number;
+  rotation?: Rotation;
   /** The page the reader wants shown; a change scrolls there. */
   pageNo: number;
   /** The page under the reader's eyes changed by scrolling. */
@@ -223,15 +229,19 @@ export function PdfScroller({
   const [baseAspect, setBaseAspect] = useState<number | null>(null);
   useEffect(() => {
     let live = true;
+    // A rotation turns every page's shape: the measured ones are forgotten
+    // and the first page's is read again the new way round.
+    setAspects(new Map());
+    setBaseAspect(null);
     void doc.getPage(1).then((p) => {
       if (!live) return;
-      const v = p.getViewport({ scale: 1 });
+      const v = p.getViewport({ scale: 1, rotation });
       setBaseAspect(v.height / v.width);
     });
     return () => {
       live = false;
     };
-  }, [doc]);
+  }, [doc, rotation]);
 
   const pageW = Math.max(1, Math.round(width * zoom));
   const heightOf = (n: number): number =>
@@ -310,6 +320,15 @@ export function PdfScroller({
     lastZoom.current = zoom;
     if (reported.current !== null) target.current = reported.current;
   }, [zoom]);
+  // A rotation too: every slot changes height, and the page being read
+  // must be asked for again at its new offset before the scroll reader
+  // gets a word in.
+  const lastRotation = useRef(rotation);
+  useEffect(() => {
+    if (lastRotation.current === rotation) return;
+    lastRotation.current = rotation;
+    if (reported.current !== null) target.current = reported.current;
+  }, [rotation]);
   useEffect(() => {
     const p = target.current;
     const el = viewportRef.current;
@@ -327,9 +346,14 @@ export function PdfScroller({
   });
   useEffect(() => {
     if (view.height === 0 || target.current !== null) return;
-    if (reported.current !== null && current !== reported.current) {
-      reported.current = current;
-      onPageChange(current);
+    // From the element, not from the render's `view`: the effect above may
+    // have just scrolled this commit (a page re-asked for after a zoom or
+    // a turn), and the render's position is the one from before it.
+    const el = viewportRef.current;
+    const live = el ? slotAt(el.scrollTop + el.clientHeight * 0.35) : current;
+    if (reported.current !== null && live !== reported.current) {
+      reported.current = live;
+      onPageChange(live);
     }
     // onPageChange is a setter; the page is what matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -372,6 +396,7 @@ export function PdfScroller({
               pageNo={n}
               width={width}
               zoom={zoom}
+              rotation={rotation}
               overlay={overlayFor(n)}
               onSize={({ w, h }) => {
                 const a = h / w;

@@ -6,6 +6,8 @@ import {
   Grid3x3,
   Maximize2,
   MoveHorizontal,
+  RotateCw,
+  Search,
   SquarePen,
   Trash2,
   ZoomIn,
@@ -32,6 +34,7 @@ import { ResizablePane } from '@/components/resizable-pane';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX } from '@/hooks/use-pinch-zoom';
@@ -44,8 +47,14 @@ import { loadPlacements, type BookSummary } from '@/puzzles/books/data';
 import { useAnalysis } from '@/store/analysis';
 
 import { loadBooks, removeBook, saveReadingPage, type LibraryBook } from './data';
-import { DiagramHotspots, usePageDiagrams, type KnownDiagram } from './DiagramHotspots';
-import { PdfScroller, useBookPdf } from './pdfViewer';
+import {
+  DiagramHotspots,
+  SearchHighlights,
+  usePageDiagrams,
+  type KnownDiagram,
+} from './DiagramHotspots';
+import { usePdfSearch, type PdfSearch } from './pdfSearch';
+import { PdfScroller, useBookPdf, type Rotation } from './pdfViewer';
 import { UploadBookDialog } from './UploadBookDialog';
 
 /**
@@ -130,6 +139,12 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const [zoom, setZoom] = useState(1);
   const bumpZoom = (f: number): void =>
     setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
+  // A quarter turn at a time, for a scan that came in sideways.
+  const [rotation, setRotation] = useState<Rotation>(0);
+  const rotate = (): void => setRotation((r) => (((r + 90) % 360) as Rotation));
+
+  // Text search: hits are boxes on the pages; the current one is shown.
+  const search = usePdfSearch(doc, goTo);
 
   // The editor in the board's place, for a diagram the reader misread or
   // a position to adjust: opened from a hotspot's chooser with the read
@@ -153,16 +168,30 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const [region, regionW] = useElementWidth();
   const stackEditor = regionW > 0 && regionW < 720;
 
-  const overlayFor = (n: number) => (
-    <DiagramHotspots
-      diagrams={diagramsOn(n)}
-      known={known.get(n) ?? []}
-      onSet={() => {
-        if (!wide) setTab('board');
-      }}
-      onEdit={setEditing}
-    />
-  );
+  const overlayFor = (n: number) => {
+    const pageHits = search.onPage(n);
+    const currentOnPage = pageHits.findIndex((h) => h === search.hits[search.current]);
+    return (
+      <>
+        {pageHits.length > 0 && (
+          <SearchHighlights
+            rects={pageHits.map((h) => h.rects)}
+            currentIndex={currentOnPage}
+            rotation={rotation}
+          />
+        )}
+        <DiagramHotspots
+          diagrams={diagramsOn(n)}
+          known={known.get(n) ?? []}
+          rotation={rotation}
+          onSet={() => {
+            if (!wide) setTab('board');
+          }}
+          onEdit={setEditing}
+        />
+      </>
+    );
+  };
 
   // On a phone the PDF toolbar lives in the bottom bar, which only exists
   // while the Book tab is up; the pane renders its toolbar into this slot.
@@ -176,6 +205,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       pageNo={pageNo}
       pages={pages}
       zoom={zoom}
+      rotation={rotation}
+      onRotate={rotate}
+      search={search}
       width={width}
       compact={compact}
       goTo={goTo}
@@ -560,6 +592,9 @@ function PdfPane({
   pageNo,
   pages,
   zoom,
+  rotation,
+  onRotate,
+  search,
   width,
   compact,
   toolbarInto = null,
@@ -576,6 +611,9 @@ function PdfPane({
   pageNo: number;
   pages: number;
   zoom: number;
+  rotation: Rotation;
+  onRotate: () => void;
+  search: PdfSearch;
   width: number;
   /** Phones: the toolbar goes to the bottom bar, not over the page. */
   compact: boolean;
@@ -609,13 +647,13 @@ function PdfPane({
     let live = true;
     void doc.getPage(1).then((p) => {
       if (!live) return;
-      const v = p.getViewport({ scale: 1 });
+      const v = p.getViewport({ scale: 1, rotation });
       setAspect(v.height / v.width);
     });
     return () => {
       live = false;
     };
-  }, [doc]);
+  }, [doc, rotation]);
   const fitZoomFor = (height: number): number | null =>
     aspect && pageW > 0 && height > 0
       ? Math.min(1, Math.max(ZOOM_MIN, (height - 24) / (pageW * aspect)))
@@ -730,6 +768,11 @@ function PdfPane({
         <Button variant="ghost" size={size} disabled={zoom >= ZOOM_MAX} onClick={() => bumpZoom(1.25)} title={t('Zoom in')}>
           <ZoomIn className={icon} />
         </Button>
+        <span className="bg-border mx-1 h-4 w-px" />
+        <Button variant="ghost" size={size} onClick={onRotate} title={t('Rotate the page')}>
+          <RotateCw className={icon} />
+        </Button>
+        <SearchPopover search={search} size={size} icon={icon} />
       </div>
     </>
   );
@@ -751,6 +794,7 @@ function PdfPane({
           pages={doc.numPages}
           width={pageW}
           zoom={zoom}
+          rotation={rotation}
           pageNo={pageNo}
           onPageChange={onScrolledTo}
           overlayFor={overlayFor}
@@ -768,5 +812,93 @@ function PdfPane({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * The search box: a field, the count, and a way through the hits. Opened
+ * from the toolbar (or the phone's bottom bar) and closed by Escape or a
+ * tap outside; the hits stay on the pages until the query is cleared.
+ */
+function SearchPopover({
+  search,
+  size,
+  icon,
+}: {
+  search: PdfSearch;
+  size: 'icon' | 'icon-sm';
+  icon: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(search.query);
+  const active = search.query.trim().length > 0;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size={size}
+          title={t('Search the book')}
+          aria-pressed={active}
+          className={cn(active && 'text-primary')}
+        >
+          <Search className={icon} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-72 flex-col gap-2 p-2">
+        <form
+          className="flex items-center gap-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (draft.trim() === search.query.trim() && search.hits.length > 0) search.next();
+            else search.run(draft);
+          }}
+        >
+          <Input
+            inputSize="sm"
+            autoFocus
+            value={draft}
+            placeholder={t('Search the book…')}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setOpen(false);
+            }}
+            className="min-w-0 flex-1"
+          />
+          <Button type="submit" variant="secondary" size="icon-sm" title={t('Search')}>
+            <Search className="size-3.5" />
+          </Button>
+        </form>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon-sm" disabled={search.hits.length === 0} onClick={search.prev} title={t('Previous match')}>
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon-sm" disabled={search.hits.length === 0} onClick={search.next} title={t('Next match')}>
+            <ChevronRight className="size-3.5" />
+          </Button>
+          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm tabular-nums">
+            {search.scanning !== null
+              ? t('{n} found — reading page {page}…', { n: search.hits.length, page: search.scanning })
+              : active
+                ? search.hits.length > 0
+                  ? t('{k} of {n}', { k: search.current + 1, n: search.hits.length })
+                  : t('No matches')
+                : ''}
+          </span>
+          {active && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                search.clear();
+                setDraft('');
+              }}
+            >
+              {t('Clear')}
+            </Button>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

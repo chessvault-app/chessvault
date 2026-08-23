@@ -123,6 +123,67 @@ export function usePageDiagrams(
   return (page: number) => map?.get(page) ?? null;
 }
 
+/**
+ * A box given in fractions of the unrotated page, turned with the page.
+ * Clockwise: the page's right edge becomes its bottom, so x comes from the
+ * old y measured up from the bottom.
+ */
+export function rotateRect(
+  r: PageDiagramRecord['rect'],
+  rotation: 0 | 90 | 180 | 270,
+): PageDiagramRecord['rect'] {
+  switch (rotation) {
+    case 90:
+      return { x: 1 - r.y - r.h, y: r.x, w: r.h, h: r.w };
+    case 180:
+      return { x: 1 - r.x - r.w, y: 1 - r.y - r.h, w: r.w, h: r.h };
+    case 270:
+      return { x: r.y, y: 1 - r.x - r.w, w: r.h, h: r.w };
+    default:
+      return r;
+  }
+}
+
+/**
+ * Search hits on a page, as translucent boxes over the words. The box
+ * being shown is stronger than the rest.
+ */
+export function SearchHighlights({
+  rects,
+  currentIndex,
+  rotation = 0,
+}: {
+  rects: PageDiagramRecord['rect'][][];
+  /** Which hit (by index in `rects`) is the one being shown, or -1. */
+  currentIndex: number;
+  rotation?: 0 | 90 | 180 | 270;
+}) {
+  return (
+    <>
+      {rects.map((hit, i) =>
+        hit.map((r0, j) => {
+          const r = rotateRect(r0, rotation);
+          return (
+            <span
+              key={`${i}-${j}`}
+              className={cn(
+                'pointer-events-none absolute rounded-sm',
+                i === currentIndex ? 'bg-warn/55 ring-1 ring-warn' : 'bg-warn/25',
+              )}
+              style={{
+                left: `${r.x * 100}%`,
+                top: `${r.y * 100}%`,
+                width: `${r.w * 100}%`,
+                height: `${r.h * 100}%`,
+              }}
+            />
+          );
+        }),
+      )}
+    </>
+  );
+}
+
 /** A known position on a page: where it is, and its full FEN. */
 export interface KnownDiagram {
   rect: PageDiagramRecord['rect'];
@@ -136,6 +197,7 @@ export interface KnownDiagram {
 export function DiagramHotspots({
   diagrams,
   known = [],
+  rotation = 0,
   onSet,
   onEdit,
 }: {
@@ -143,6 +205,8 @@ export function DiagramHotspots({
   diagrams: PageDiagramRecord[] | null;
   /** Positions already known with their side to move (a puzzle book's). */
   known?: KnownDiagram[];
+  /** How the page is turned; the boxes turn with it. */
+  rotation?: 0 | 90 | 180 | 270;
   /** Called after a position lands on the board. */
   onSet?: () => void;
   /** Open the position in the editor instead — for a diagram the reader
@@ -165,7 +229,8 @@ export function DiagramHotspots({
   if (spots.length === 0) return null;
   return (
     <>
-      {spots.map((s) => {
+      {spots.map((s0) => {
+        const s = { ...s0, rect: rotateRect(s0.rect, rotation) };
         // Just outside the board, off its right edge, top edges aligned:
         // nothing of the diagram is covered, and the button reads as the
         // board's own handle rather than a sticker on it.
