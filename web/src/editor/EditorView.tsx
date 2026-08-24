@@ -296,7 +296,10 @@ export function EditorView({
       return;
     }
     if (!useAnalysis.getState().loadFen(fen)) return;
-    useAnalysis.setState({ handoff: true });
+    // The board arrives the way it was being looked at: a flipped editor
+    // hands over a black-under analysis board (games and the opening map
+    // already pass their orientation the same way).
+    useAnalysis.setState({ handoff: true, orientation });
     navigate('board');
   };
 
