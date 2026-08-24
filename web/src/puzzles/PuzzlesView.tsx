@@ -674,7 +674,7 @@ function Trainer({
    */
   const modeNote =
     mode === 'failed'
-      ? t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')
+      ? t('Reviewing — not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.')
       : mode === 'single'
         ? t('Replaying puzzle #{id} — not counted; a clean solve still retires it from the review list.', {
             id: puzzleId ?? '',

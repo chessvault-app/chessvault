@@ -3,7 +3,7 @@ import { EmptyState } from '@/components/empty-state';
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
-import { formatAgo, formatWhen } from '@/lib/dates';
+import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { ListRow } from '@/components/list-row';
 import { PageHeader } from '@/components/page-header';
@@ -54,6 +54,10 @@ type BandFilter = 'any' | (typeof BANDS)[number]['id'];
 export function DashboardPage() {
   const [user, setUser] = useState<MetaUser | null>(null);
   const [failed, setFailed] = useState(0);
+  // The review schedule's two numbers: how many puzzles are due for
+  // another look now, and when the next one lands if none is.
+  const [due, setDue] = useState(0);
+  const [nextDue, setNextDue] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
@@ -63,10 +67,14 @@ export function DashboardPage() {
     // Three loads, one rule: a failure renders an empty page under an
     // error line, never a skeleton that spins forever with nothing to say.
     setError(null);
-    void api<{ user: MetaUser; failed?: number }>('/api/puzzles/meta')
+    void api<{ user: MetaUser; failed?: number; due?: number; nextDue?: string | null }>(
+      '/api/puzzles/meta',
+    )
       .then((d) => {
         setUser(d.user);
         setFailed(d.failed ?? 0);
+        setDue(d.due ?? 0);
+        setNextDue(d.nextDue ?? null);
       })
       .catch((e: unknown) => setError(apiErrorMessage(e)));
     void api<{ attempts: HistoryEntry[] }>('/api/puzzles/history?limit=500')
@@ -155,6 +163,18 @@ export function DashboardPage() {
             the place up, which is the one case nothing can predict. */}
         {user === null ? (
           <Skeleton className="mb-4 h-9 w-full rounded-lg" />
+        ) : due > 0 ? (
+          // The schedule has something waiting: lead with the due count,
+          // which is the number that asks to be acted on today.
+          <Button
+            variant="secondary"
+            size="default"
+            className="mb-4 w-full justify-center"
+            onClick={() => navigate('puzzles', 'failed')}
+          >
+            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            {t('Review puzzles · {n} due', { n: due })}
+          </Button>
         ) : failed > 0 ? (
           <Button
             variant="secondary"
@@ -165,6 +185,12 @@ export function DashboardPage() {
             <RotateCcw className="size-3.5" data-icon="inline-start" />
             {t('Review failed puzzles')} · {failed}
           </Button>
+        ) : nextDue ? (
+          // Nothing to press, but the schedule is not empty: say when it
+          // comes back, so an empty queue reads as earned rather than gone.
+          <p className="text-muted-foreground mb-4 text-center text-sm">
+            {t('Nothing due — the next review lands {when}', { when: formatUntil(nextDue) })}
+          </p>
         ) : null}
 
         <Panel flush className="mb-4">

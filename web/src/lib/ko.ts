@@ -512,6 +512,9 @@ export const ko: Record<string, string> = {
   'Set up': '준비하기',
   'Recently read': '최근 읽은 책',
   '{n} waiting to be reviewed': '복습할 퍼즐 {n}개',
+  '{n} due for review': '복습할 때가 된 퍼즐 {n}개',
+  'Review puzzles · {n} due': '퍼즐 복습 · 복습할 때가 된 {n}개',
+  'Nothing due — the next review lands {when}': '지금은 복습할 것이 없습니다 — 다음 복습은 {when}',
   'Nothing solved yet — the puzzles you attempt turn up here.':
     '아직 푼 퍼즐이 없습니다 — 풀어 본 퍼즐이 여기에 쌓입니다.',
   'No puzzle to review': '복습할 퍼즐 없음',
@@ -917,8 +920,8 @@ export const ko: Record<string, string> = {
   'Adds a 6-digit authenticator code (Google Authenticator, 1Password, Aegis…) to the lock screen.':
     '잠금 화면에 6자리 인증 코드(Google Authenticator, 1Password, Aegis…)를 추가합니다.',
   'Verify & enable': '확인하고 켜기',
-  'Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.':
-    '전에 틀린 퍼즐을 복습하는 중입니다 — 기록에 세지 않으며, 깔끔하게 풀면 이 목록에서 빠집니다.',
+  'Reviewing — not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.':
+    '복습 중입니다 — 기록에 세지 않습니다. 깔끔하게 풀 때마다 다음 복습이 멀어지고, 연달아 충분히 풀면 목록에서 빠집니다.',
   'Replaying puzzle #{id} — not counted; a clean solve still retires it from the review list.':
     '#{id} 퍼즐을 다시 푸는 중입니다 — 기록에 세지 않으며, 깔끔하게 풀면 복습 목록에서 빠집니다.',
   "No moves yet. The first move you play is the puzzle's first move to find.":
@@ -962,6 +965,10 @@ export const ko: Record<string, string> = {
   '{n} h ago': '{n}시간 전',
   yesterday: '어제',
   '{n} days ago': '{n}일 전',
+  now: '지금',
+  'in {n} h': '{n}시간 후',
+  tomorrow: '내일',
+  'in {n} days': '{n}일 후',
   'edited {when}': '{when} 수정',
   '{n} chapters': '챕터 {n}개',
   'not parseable': '읽을 수 없음',

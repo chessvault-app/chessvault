@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
-import { formatAgo, formatWhen } from '@/lib/dates';
+import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
 import { useMediaQuery } from '@/lib/media';
 import { INITIAL_FEN } from '@shared/tree';
 import { Board } from '@/board/Board';
@@ -69,6 +69,10 @@ export function HubPage() {
 interface Meta {
   ready: boolean;
   failed?: number;
+  /** The review schedule: puzzles due for another look now, and when the
+      next one lands if none is (see reviewQueue(), server). */
+  due?: number;
+  nextDue?: string | null;
   /** The theme this vault loses most often — see weakestTheme(), server. */
   weakTheme?: WeakTheme | null;
 }
@@ -848,6 +852,13 @@ function Hub() {
   // #/puzzles shows the setup gate when there is nothing to train on.
   const ready = meta?.ready !== false;
   const failed = meta?.failed ?? 0;
+  const due = meta?.due ?? 0;
+  // What the review slot's caption says: the due count when the schedule
+  // has something waiting, the plain pool count otherwise.
+  const reviewDetail =
+    due > 0
+      ? t('{n} due for review', { n: due })
+      : t('{n} waiting to be reviewed', { n: failed });
   /**
    * How much of this page there is room for.
    *
@@ -1048,7 +1059,7 @@ function Hub() {
             side={solverColor(review)}
             title={t('Missed puzzle')}
             fill={!historyBlock}
-            detail={t('{n} waiting to be reviewed', { n: failed })}
+            detail={reviewDetail}
             go={() => {
               setPendingPuzzle('failed', review);
               navigate('puzzles', 'failed');
@@ -1058,14 +1069,22 @@ function Hub() {
           <EmptySlot
             fill={!historyBlock}
             title={t('Review failed puzzles')}
-            detail={t('{n} waiting to be reviewed', { n: failed })}
+            detail={reviewDetail}
             go={() => navigate('puzzles', 'failed')}
           />
         ) : (
           <EmptySlot
             fill={!historyBlock}
             title={t('No puzzle to review')}
-            detail={t('Puzzles you get wrong come back here.')}
+            detail={
+              // An empty queue with a schedule behind it is earned, not
+              // gone — say when it comes back.
+              meta?.nextDue
+                ? t('Nothing due — the next review lands {when}', {
+                    when: formatUntil(meta.nextDue),
+                  })
+                : t('Puzzles you get wrong come back here.')
+            }
           />
         )}
 
