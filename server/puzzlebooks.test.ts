@@ -655,3 +655,105 @@ describe('puzzle books api', () => {
     expect(list.books).toHaveLength(0);
   });
 });
+
+/**
+ * The review schedule (shared/review.ts) as a book wears it: histories on
+ * progress entries, due counts on the shelf, and ?mode=review on /next.
+ * Back-dated attempts are written into progress.json directly, because
+ * the route always stamps "now" and a schedule is only observable from a
+ * dated record.
+ */
+describe('puzzle books review schedule', () => {
+  let dir: string;
+  let app: Hono;
+  let slug = '';
+
+  const DAY_MS = 86_400_000;
+  const daysAgo = (n: number): string => new Date(Date.now() - n * DAY_MS).toISOString();
+
+  const post = (path: string, body: unknown): Promise<Response> | Response =>
+    app.request(path, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  const writeProgress = (entries: Record<string, unknown>): void => {
+    writeFileSync(join(dir, slug, 'progress.json'), JSON.stringify(entries));
+  };
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzlebooks-review-'));
+    app = new Hono().route('/api', puzzleBooksApi(dir));
+    slug = (await (await post('/api/puzzlebooks', { title: 'Review me' })).json()).slug;
+    for (const n of [1, 2]) {
+      await post(`/api/puzzlebooks/${slug}/puzzles`, {
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+        uci: ['a1a2'],
+        san: ['Ka2'],
+        number: n,
+      });
+    }
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('an attempt appends to the history the ladder reads', async () => {
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: false });
+    const { progress } = await (
+      await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: true })
+    ).json();
+    expect(progress.history).toHaveLength(2);
+    expect(progress.history.map((h: { win: boolean }) => h.win)).toEqual([false, true]);
+  });
+
+  it('a legacy loss with no history enters rotation from its counters', async () => {
+    writeProgress({ n1: { tries: 1, wins: 0, last: 'loss', at: daysAgo(2) } });
+    const list = await (await app.request('/api/puzzlebooks')).json();
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toMatchObject({
+      failed: 1,
+      due: 1,
+    });
+    const next = await (await app.request(`/api/puzzlebooks/${slug}/next?mode=review`)).json();
+    expect(next.puzzle.id).toBe('n1');
+  });
+
+  it('a solve mid-ladder is pending, not due — and comes back on its date', async () => {
+    const climb = (solvedDaysAgo: number): void =>
+      writeProgress({
+        n1: {
+          tries: 2,
+          wins: 1,
+          last: 'win',
+          at: daysAgo(solvedDaysAgo),
+          history: [
+            { win: false, at: daysAgo(10) },
+            { win: true, at: daysAgo(solvedDaysAgo) },
+          ],
+        },
+      });
+
+    climb(1); // solved yesterday: due in 3 days, so not yet
+    let list = await (await app.request('/api/puzzlebooks')).json();
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toMatchObject({ due: 0 });
+    expect((await app.request(`/api/puzzlebooks/${slug}/next?mode=review`)).status).toBe(404);
+
+    climb(4); // solved 4 days ago: the 3-day step has passed
+    list = await (await app.request('/api/puzzlebooks')).json();
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toMatchObject({ due: 1 });
+    const next = await (await app.request(`/api/puzzlebooks/${slug}/next?mode=review`)).json();
+    expect(next.puzzle.id).toBe('n1');
+  });
+
+  it('reviews come in printed order and 404 when the book has none due', async () => {
+    writeProgress({
+      n1: { tries: 1, wins: 0, last: 'loss', at: daysAgo(2) },
+      n2: { tries: 1, wins: 0, last: 'loss', at: daysAgo(5) },
+    });
+    // n2 is more overdue, but a book is worked in its own order.
+    const next = await (await app.request(`/api/puzzlebooks/${slug}/next?mode=review`)).json();
+    expect(next.puzzle.id).toBe('n1');
+
+    writeProgress({});
+    expect((await app.request(`/api/puzzlebooks/${slug}/next?mode=review`)).status).toBe(404);
+  });
+});

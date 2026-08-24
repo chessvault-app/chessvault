@@ -15,6 +15,7 @@ import { renameRetrying, writeAtomic } from './atomic.ts';
 import { isLibraryBookId, libraryBookHasPdf } from './books.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
+import { reviewDueAt } from '../shared/review.ts';
 
 /**
  * Book puzzles — positions transcribed from paper books (lanph3re's v1: manual
@@ -200,7 +201,29 @@ interface PuzzleProgress {
   wins: number;
   last: 'win' | 'loss';
   at: string;
+  /**
+   * Every attempt in order, for the review ladder and the cycle window
+   * (shared/review.ts) — the counters above cannot say how many CLEAN
+   * solves have come since the last fail, which is the ladder's whole
+   * input. Optional because vaults written before the schedule existed
+   * carry only the counters; attemptsOf backfills those from `last`/`at`.
+   */
+  history?: { win: boolean; at: string }[];
 }
+
+/** How many attempts one puzzle's history keeps. The ladder reads only
+    the tail since the last fail; past a hundred this is an archive of
+    retries nothing reads, growing a file rewritten on every attempt. */
+const HISTORY_MAX = 100;
+
+/**
+ * A progress entry's attempts as the scheduler reads them. An entry from
+ * before histories existed becomes its own last attempt: a loss enters
+ * rotation at the ladder's foot, a win stays retired — exactly what the
+ * old solved/failed reading of it said.
+ */
+const attemptsOf = (entry: PuzzleProgress | undefined): { win: boolean; at: string }[] =>
+  entry === undefined ? [] : (entry.history ?? [{ win: entry.last === 'win', at: entry.at }]);
 
 function readJson<T>(path: string, fallback: T): T {
   try {
@@ -300,6 +323,13 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     solved: number;
     failed: number;
     lastAt: string | null;
+    /**
+     * Every in-rotation puzzle's next-due date, sorted. The DATES are
+     * cached, never the count: "how many are due" changes as time passes
+     * with no file touched, so the mtime key that makes this cache exact
+     * for everything else would hold a stale count for ever.
+     */
+    dueAts: string[];
   }
   const tallyCache = new Map<
     string,
@@ -315,6 +345,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     let solved = 0;
     let failed = 0;
     let lastAt: string | null = null;
+    const dueAts: string[] = [];
     for (const p of puzzles) {
       const entry = progress[p.id];
       const last = entry?.last;
@@ -322,10 +353,24 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
       else if (last === 'loss') failed++;
       // ISO-8601 in UTC throughout, so string order is time order.
       if (entry?.at && (lastAt === null || entry.at > lastAt)) lastAt = entry.at;
+      const due = reviewDueAt(attemptsOf(entry));
+      if (due !== null) dueAts.push(due);
     }
-    const tally = { puzzles: puzzles.length, solved, failed, lastAt };
+    dueAts.sort();
+    const tally = { puzzles: puzzles.length, solved, failed, lastAt, dueAts };
     tallyCache.set(slug, { puzzlesMs, progressMs, tally });
     return tally;
+  };
+
+  /** The count the shelf shows, taken at request time — see Tally.dueAts. */
+  const dueCount = (tally: Tally): number => {
+    const now = new Date().toISOString();
+    let n = 0;
+    for (const due of tally.dueAts) {
+      if (due > now) break; // sorted, so the first future date ends it
+      n++;
+    }
+    return n;
   };
 
   /**
@@ -422,6 +467,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
           puzzles: tally.puzzles,
           solved: tally.solved,
           failed: tally.failed,
+          due: dueCount(tally),
           lastAt: tally.lastAt,
           // Cover scan (diagrams/cover.jpg), written by the book importer.
           cover: existsSync(resolve(diagramsDir(slug), 'cover.jpg')),
@@ -592,9 +638,26 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
-    const puzzle = inPrintedOrder(readJson<BookPuzzle[]>(puzzlesPath(slug), [])).find(
-      (p) => progress[p.id]?.last !== 'win',
-    );
+    const ordered = inPrintedOrder(readJson<BookPuzzle[]>(puzzlesPath(slug), []));
+    // ?mode=review: the first puzzle whose review date has come, in the
+    // book's own order — a book is worked through in printed order, and
+    // its reviews are too.
+    if (c.req.query('mode') === 'review') {
+      const now = new Date().toISOString();
+      const puzzle = ordered.find((p) => {
+        const due = reviewDueAt(attemptsOf(progress[p.id]));
+        return due !== null && due <= now;
+      });
+      if (!puzzle) return c.json({ error: 'nothing due for review in this book' }, 404);
+      return c.json({
+        puzzle: {
+          id: puzzle.id,
+          fen: puzzle.fen,
+          ...(puzzle.number === undefined ? {} : { number: puzzle.number }),
+        },
+      });
+    }
+    const puzzle = ordered.find((p) => progress[p.id]?.last !== 'win');
     if (!puzzle) return c.json({ error: 'nothing left unsolved in this book' }, 404);
     return c.json({
       puzzle: {
@@ -986,11 +1049,16 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     if (!puzzleIds(slug).has(body.id)) return c.json({ error: 'unknown puzzle' }, 404);
     const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
     const prev = progress[body.id];
+    const at = new Date().toISOString();
     progress[body.id] = {
       tries: (prev?.tries ?? 0) + 1,
       wins: (prev?.wins ?? 0) + (body.win ? 1 : 0),
       last: body.win ? 'win' : 'loss',
-      at: new Date().toISOString(),
+      at,
+      // The full record, for the ladder and the cycle window. An entry
+      // from before histories existed contributes its backfilled last
+      // attempt first, so nothing it had earned is forgotten.
+      history: [...attemptsOf(prev), { win: body.win, at }].slice(-HISTORY_MAX),
     };
     writeJson(progressPath(slug), progress);
     return c.json({ progress: progress[body.id] });
