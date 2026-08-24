@@ -15,7 +15,7 @@ import { renameRetrying, writeAtomic } from './atomic.ts';
 import { isLibraryBookId, libraryBookHasPdf } from './books.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
-import { reviewDueAt } from '../shared/review.ts';
+import { cycleAttempt, reviewDueAt, type CycleWindow } from '../shared/review.ts';
 
 /**
  * Book puzzles — positions transcribed from paper books (lanph3re's v1: manual
@@ -283,6 +283,26 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
       : null;
   const puzzlesPath = (slug: string): string => resolve(bookDir(slug), 'puzzles.json');
   const progressPath = (slug: string): string => resolve(bookDir(slug), 'progress.json');
+  /**
+   * Woodpecker passes over this book: cycles.json holds only the WINDOWS
+   * ({ startedAt, finishedAt? }), never scores — a cycle's attempts,
+   * wins and next puzzle are all derived from the progress histories
+   * inside the window (shared/review.ts), so there is nothing here to
+   * fall out of agreement with the record. At most one cycle is open:
+   * the last entry without a finishedAt.
+   */
+  const cyclesPath = (slug: string): string => resolve(bookDir(slug), 'cycles.json');
+  const readCycles = (slug: string): CycleWindow[] => {
+    const raw = readJson<{ cycles?: unknown }>(cyclesPath(slug), {});
+    if (!Array.isArray(raw.cycles)) return [];
+    return raw.cycles.filter((c): c is CycleWindow => {
+      const { startedAt, finishedAt } = (c ?? {}) as CycleWindow;
+      return (
+        typeof startedAt === 'string' &&
+        (finishedAt === undefined || typeof finishedAt === 'string')
+      );
+    });
+  };
   const ocrPath = (slug: string): string => resolve(bookDir(slug), 'ocr.json');
   const draftsPath = (slug: string): string => resolve(bookDir(slug), 'drafts.json');
   const diagramsDir = (slug: string): string => resolve(bookDir(slug), 'diagrams');
@@ -580,11 +600,44 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
   });
 
   // Wipe every attempt on this book; the puzzles themselves stay put.
+  // Cycles go with the attempts: a pass is nothing but a window over the
+  // record being wiped, and windows over nothing would score every later
+  // attempt into a cycle nobody remembers starting.
   api.delete('/puzzlebooks/:slug/progress', (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     rmSync(progressPath(slug), { force: true });
+    rmSync(cyclesPath(slug), { force: true });
     return c.json({ ok: true });
+  });
+
+  /**
+   * Start a Woodpecker pass. A cycle already open is closed where it
+   * stands — an abandoned pass is a short one, and its partial coverage
+   * stays readable in the record — and the new one opens now.
+   */
+  api.post('/puzzlebooks/:slug/cycles', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const cycles = readCycles(slug);
+    const now = new Date().toISOString();
+    const open = cycles.find((cy) => cy.finishedAt === undefined);
+    if (open) open.finishedAt = now;
+    cycles.push({ startedAt: now });
+    writeJson(cyclesPath(slug), { cycles });
+    return c.json({ cycles });
+  });
+
+  // Stop the open pass without starting another.
+  api.delete('/puzzlebooks/:slug/cycles', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const cycles = readCycles(slug);
+    const open = cycles.find((cy) => cy.finishedAt === undefined);
+    if (!open) return c.json({ error: 'no cycle running' }, 404);
+    open.finishedAt = new Date().toISOString();
+    writeJson(cyclesPath(slug), { cycles });
+    return c.json({ cycles });
   });
 
   api.get('/puzzlebooks/:slug', (c) => {
@@ -610,6 +663,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
         ...(p.provenance === undefined ? {} : { provenance: p.provenance }),
       })),
       progress: readJson<Record<string, PuzzleProgress>>(progressPath(slug), {}),
+      // The pass windows; the client derives every cycle number from
+      // these and the progress above (see dueBookPuzzles's sibling).
+      cycles: readCycles(slug),
       drafts: readJson<
         { id: string; image: string; fen: string | null; added: string }[]
       >(draftsPath(slug), []),
@@ -1061,7 +1117,29 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
       history: [...attemptsOf(prev), { win: body.win, at }].slice(-HISTORY_MAX),
     };
     writeJson(progressPath(slug), progress);
-    return c.json({ progress: progress[body.id] });
+    // A pass finishes itself: when this attempt was the last puzzle the
+    // open cycle had not reached, the window closes at this moment — the
+    // client never has to say "I think the cycle is over", and the
+    // updated windows ride back with the attempt so its cache agrees.
+    const cycles = readCycles(slug);
+    const open = cycles.find((cy) => cy.finishedAt === undefined);
+    if (open) {
+      let complete = true;
+      for (const id of puzzleIds(slug)) {
+        if (cycleAttempt(attemptsOf(progress[id]), open) === null) {
+          complete = false;
+          break;
+        }
+      }
+      if (complete) {
+        open.finishedAt = at;
+        writeJson(cyclesPath(slug), { cycles });
+      }
+    }
+    return c.json({
+      progress: progress[body.id],
+      ...(cycles.length > 0 ? { cycles } : {}),
+    });
   });
 
   return api;

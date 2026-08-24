@@ -757,3 +757,85 @@ describe('puzzle books review schedule', () => {
     expect((await app.request(`/api/puzzlebooks/${slug}/next?mode=review`)).status).toBe(404);
   });
 });
+
+/**
+ * Woodpecker cycles: windows in cycles.json, everything else derived from
+ * the progress histories inside them. The server's own duties are small —
+ * open, close, auto-finish — and these pin all three.
+ */
+describe('puzzle book cycles', () => {
+  let dir: string;
+  let app: Hono;
+  let slug = '';
+
+  const post = (path: string, body?: unknown): Promise<Response> | Response =>
+    app.request(path, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    });
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzlebooks-cycles-'));
+    app = new Hono().route('/api', puzzleBooksApi(dir));
+    slug = (await (await post('/api/puzzlebooks', { title: 'Cycle me' })).json()).slug;
+    for (const n of [1, 2]) {
+      await post(`/api/puzzlebooks/${slug}/puzzles`, {
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+        uci: ['a1a2'],
+        san: ['Ka2'],
+        number: n,
+      });
+    }
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('opens a cycle, and attempting every puzzle closes it by itself', async () => {
+    const started = await (await post(`/api/puzzlebooks/${slug}/cycles`)).json();
+    expect(started.cycles).toHaveLength(1);
+    expect(started.cycles[0].finishedAt).toBeUndefined();
+
+    // One puzzle attempted: still open, and the attempt carries the windows.
+    const first = await (
+      await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: true })
+    ).json();
+    expect(first.cycles).toHaveLength(1);
+    expect(first.cycles[0].finishedAt).toBeUndefined();
+
+    // The last unreached puzzle attempted — win or lose — finishes the pass.
+    const second = await (
+      await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n2', win: false })
+    ).json();
+    expect(second.cycles[0].finishedAt).toBeTruthy();
+
+    const detail = await (await app.request(`/api/puzzlebooks/${slug}`)).json();
+    expect(detail.cycles).toHaveLength(1);
+    expect(detail.cycles[0].finishedAt).toBeTruthy();
+  });
+
+  it('starting a new pass closes an abandoned one where it stands', async () => {
+    await post(`/api/puzzlebooks/${slug}/cycles`);
+    const again = await (await post(`/api/puzzlebooks/${slug}/cycles`)).json();
+    expect(again.cycles).toHaveLength(3);
+    expect(again.cycles[1].finishedAt).toBeTruthy();
+    expect(again.cycles[2].finishedAt).toBeUndefined();
+  });
+
+  it('stopping closes the open pass; with none open there is nothing to stop', async () => {
+    const stopped = await (
+      await app.request(`/api/puzzlebooks/${slug}/cycles`, { method: 'DELETE' })
+    ).json();
+    expect(stopped.cycles.every((c: { finishedAt?: string }) => c.finishedAt)).toBe(true);
+    expect(
+      (await app.request(`/api/puzzlebooks/${slug}/cycles`, { method: 'DELETE' })).status,
+    ).toBe(404);
+  });
+
+  it('resetting progress wipes the cycles with it', async () => {
+    await post(`/api/puzzlebooks/${slug}/cycles`);
+    await app.request(`/api/puzzlebooks/${slug}/progress`, { method: 'DELETE' });
+    const detail = await (await app.request(`/api/puzzlebooks/${slug}`)).json();
+    expect(detail.cycles).toEqual([]);
+    expect(detail.progress).toEqual({});
+  });
+});
