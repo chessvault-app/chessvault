@@ -65,6 +65,13 @@ A library of your chess books, read beside a board.
   browsed-games cache, document history, reference databases and the
   explorer and tablebase caches, with a total — an inventory, cleared
   from each area's own page.
+- **Smaller things.** Both shelves' thumbnails arrive together on every
+  path, not only the first cold load. Opening a book shows one loading
+  treatment, kept up until the first page has actually painted. The
+  reader's toolbar folds its view controls into a "…" menu where the
+  pane is too narrow for the row. The colour scheme dropdown shows each
+  scheme's dot. The gate's authenticator code is six proper slots. A
+  sideline step no longer scrolls the moves panel to the top.
 
 ## 0.4.7
 
