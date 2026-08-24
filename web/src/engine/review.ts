@@ -10,8 +10,9 @@ import { winningChances } from './uci.ts';
  * Brilliancy (!!, NAG 3) is NOT a chess.com imitation — their criteria
  * are proprietary and rating-adjusted. This one is a rule you can say
  * out loud: the played move held the evaluation (≤2% chance drop), it
- * sacrificed real material (two pawns' worth still ungained after the
- * opponent's reply), and the game wasn't already decided either way.
+ * genuinely offered real material (two pawns' worth capturable at a
+ * profit in the position it created — see engine/sacrifice.ts), and the
+ * game wasn't already decided either way.
  */
 
 export interface Score {
@@ -88,7 +89,8 @@ export interface MoveVerdict {
 export function judgeLine(
   scores: Score[],
   firstMover: 'white' | 'black',
-  /** Per-move flag: material sacrificed and not immediately recouped. */
+  /** Per-move flag: material genuinely offered by the move — capturable
+      at a profit in the position it created (see engine/sacrifice.ts). */
   sacrifices?: boolean[],
   bookPlies = 0,
 ): MoveVerdict[] {
