@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Select } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { SettingRow } from '@/components/setting-row';
 import { Switch } from '@/components/ui/switch';
@@ -756,13 +757,13 @@ function SecurityCard({ settings, onChanged }: { settings: Settings; onChanged: 
   return (
     <Card icon={ShieldCheck} title={t('Security')}>
       <PasswordBlock gate={settings.gate} />
-      <hr className="border-border" />
+      <Separator />
       <TotpBlock settings={settings} onChanged={onChanged} />
       {/* Only when a gate exists: with no password there is no session to
           end, and a Sign out that reloads into an open app is noise. */}
       {settings.gate && (
         <>
-          <hr className="border-border" />
+          <Separator />
           <SignOutBlock />
         </>
       )}
