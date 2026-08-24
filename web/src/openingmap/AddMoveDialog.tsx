@@ -252,7 +252,7 @@ export function AddMoveDialog({
             }}
           />
           <Button type="submit" variant="default" size="sm" disabled={typed.trim() === ''}>
-            <Plus className="size-3.5" /> {t('Add')}
+            <Plus className="size-3.5" data-icon="inline-start" /> {t('Add')}
           </Button>
         </form>
         {error && <p className="text-destructive px-1 text-sm">{error}</p>}

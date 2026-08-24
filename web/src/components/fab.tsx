@@ -56,7 +56,7 @@ export function CreateControl({ actions, label = 'Create' }: { actions: FabActio
       className="hidden md:inline-flex"
       onClick={single ? single.onSelect : undefined}
     >
-      <Plus className="mr-1 size-3.5" />
+      <Plus className="size-3.5" data-icon="inline-start" />
       {single ? t(single.label) : t(label)}
       {!single && <ChevronDown className="ml-1 size-3" />}
     </Button>

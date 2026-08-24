@@ -1344,7 +1344,7 @@ export function RepertoireView() {
           disabled={needsToken || (mode === 'drill' && !drillReady)}
           onClick={startGame}
         >
-          <Play className="size-3.5" />
+          <Play className="size-3.5" data-icon="inline-start" />
           {t('Start')}
         </Button>
         {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
@@ -1428,7 +1428,7 @@ export function RepertoireView() {
           size="sm"
           onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
         >
-          <BookOpen className="size-3.5" />
+          <BookOpen className="size-3.5" data-icon="inline-start" />
           {t('Go to study')}
         </Button>
       )
@@ -1441,7 +1441,7 @@ export function RepertoireView() {
           setSaveOpen(true);
         }}
       >
-        <BookmarkPlus className="size-3.5" />
+        <BookmarkPlus className="size-3.5" data-icon="inline-start" />
         {t('Save line to study')}
       </Button>
     );
@@ -1587,7 +1587,7 @@ export function RepertoireView() {
           <div className="flex flex-wrap justify-end gap-2">
             {endAction}
             <Button variant="default" size="sm" onClick={newGame} title={t('Set up a new game')}>
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-3.5" data-icon="inline-start" />
               {t('New game')}
             </Button>
           </div>

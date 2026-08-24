@@ -149,7 +149,7 @@ function StudyList() {
               size="sm"
               onClick={() => void newUntitledStudy(studies, create)}
             >
-              <Plus className="mr-1 size-3.5" />
+              <Plus className="size-3.5" data-icon="inline-start" />
               {t('New study')}
             </Button>
           }
@@ -172,7 +172,7 @@ function StudyList() {
             body="Bookmark a study from the shelf and it is kept here, one press from wherever you are."
             action={
               <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
-                <Library className="mr-1 size-3.5" />
+                <Library className="size-3.5" data-icon="inline-start" />
                 {t('Browse all studies')}
               </Button>
             }
@@ -188,7 +188,7 @@ function StudyList() {
             }
             action={
               <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
-                <X className="mr-1 size-3.5" />
+                <X className="size-3.5" data-icon="inline-start" />
                 {t('Clear search')}
               </Button>
             }
@@ -474,7 +474,7 @@ function CreateMenu() {
                 className="mt-1 self-start"
                 onClick={() => filePick.current?.click()}
               >
-                <FileUp className="mr-1 size-3.5" />
+                <FileUp className="size-3.5" data-icon="inline-start" />
                 {t('Choose file')}
               </Button>
             </Field>

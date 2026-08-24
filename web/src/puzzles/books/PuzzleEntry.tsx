@@ -562,7 +562,7 @@ function SolutionRecorder({
                 setVerdicts(null);
               }}
             >
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-3.5" data-icon="inline-start" />
               {t('Start over')}
             </Button>
             <Button
@@ -572,7 +572,7 @@ function SolutionRecorder({
               title={t('Ask Stockfish whether every solver move really wins')}
               onClick={() => void verify()}
             >
-              {verifying ? <Spinner className="size-3.5" /> : <Eye className="size-3.5" />}
+              {verifying ? <Spinner className="size-3.5" data-icon="inline-start" /> : <Eye className="size-3.5" data-icon="inline-start" />}
               {t('Verify')}
             </Button>
             {/* What the back chevron in the removed header used to do. */}
@@ -585,7 +585,7 @@ function SolutionRecorder({
               disabled={line.length === 0 || saving}
               onClick={() => void save()}
             >
-              {saving ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />}
+              {saving ? <Spinner className="size-3.5" data-icon="inline-start" /> : <Check className="size-3.5" data-icon="inline-start" />}
               {t('Save puzzle')}
             </Button>
           </CardFooter>

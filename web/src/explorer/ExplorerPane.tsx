@@ -313,7 +313,7 @@ export function ExplorerPane({
                   lookup(node.fen);
                 }}
               >
-                <RotateCw className="size-3.5" />
+                <RotateCw className="size-3.5" data-icon="inline-start" />
                 {t('Try again')}
               </Button>
             </div>
@@ -538,7 +538,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
       ) : (
         <div className="flex items-center gap-2">
           <Button variant="default" size="sm" onClick={() => void start()}>
-            <Hammer className="size-3.5" />
+            <Hammer className="size-3.5" data-icon="inline-start" />
             {t('Index positions')}
           </Button>
           {state === 'failed' && (

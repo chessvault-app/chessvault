@@ -392,7 +392,7 @@ export function BooksPage() {
           </p>
           {books.length === 0 && (
             <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
-              <Upload className="mr-1 size-3.5" />
+              <Upload className="size-3.5" data-icon="inline-start" />
               {t('Upload PDF')}
             </Button>
           )}

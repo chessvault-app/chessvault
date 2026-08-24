@@ -654,7 +654,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         {phase === 'done' ? (
           <>
             <Button variant="secondary" size="sm" onClick={retry}>
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-3.5" data-icon="inline-start" />
               {t('Retry')}
             </Button>
             {next && (
@@ -663,7 +663,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                 size="sm"
                 onClick={() => navigate('puzzles', 'books', slug, next)}
               >
-                <RotateCw className="size-3.5" />
+                <RotateCw className="size-3.5" data-icon="inline-start" />
                 {t('Next puzzle')}
               </Button>
             )}
@@ -677,7 +677,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               onClick={showSolution}
               title={t('Counts as a failed attempt')}
             >
-              <Eye className="size-3.5" />
+              <Eye className="size-3.5" data-icon="inline-start" />
               {t('Solution')}
             </Button>
             <Button
@@ -685,7 +685,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               size="sm"
               onClick={() => navigate('puzzles', 'books', slug)}
             >
-              <X className="size-3.5" />
+              <X className="size-3.5" data-icon="inline-start" />
               {t('Skip')}
             </Button>
             <Button

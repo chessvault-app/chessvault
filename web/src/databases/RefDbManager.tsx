@@ -699,7 +699,7 @@ function BuildWindow({
             {t('Cancel')}
           </Button>
           <Button variant="default" size="sm" onClick={() => onBuild(name)}>
-            <Database className="size-3.5" />
+            <Database className="size-3.5" data-icon="inline-start" />
             {t('Build')}
           </Button>
         </div>

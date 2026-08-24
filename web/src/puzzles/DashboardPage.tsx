@@ -161,7 +161,7 @@ export function DashboardPage() {
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'failed')}
           >
-            <RotateCcw className="size-3.5" />
+            <RotateCcw className="size-3.5" data-icon="inline-start" />
             {t('Review failed puzzles')} · {failed}
           </Button>
         ) : null}
@@ -236,7 +236,7 @@ export function DashboardPage() {
                   title={t('All puzzle books')}
                   onClick={() => navigate('puzzles', 'books')}
                 >
-                  <BookMarked className="size-3.5" />
+                  <BookMarked className="size-3.5" data-icon="inline-start" />
                   {t('Shelf')}
                 </Button>
               }
@@ -250,7 +250,7 @@ export function DashboardPage() {
                   )}
                 </p>
                 <Button variant="default" size="sm" onClick={() => navigate('puzzles', 'books')}>
-                  <BookMarked className="size-3.5" />
+                  <BookMarked className="size-3.5" data-icon="inline-start" />
                   {t('Import a book')}
                 </Button>
               </div>

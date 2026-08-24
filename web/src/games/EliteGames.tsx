@@ -404,7 +404,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
               </p>
               <div className="flex justify-center">
                 <Button variant="default" size="sm" onClick={() => navigate('databases')}>
-                  <Database className="size-3.5" />
+                  <Database className="size-3.5" data-icon="inline-start" />
                   {t('Go to Databases')}
                 </Button>
               </div>

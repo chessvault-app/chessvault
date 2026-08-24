@@ -663,7 +663,7 @@ export function EditorView({
                 }}
                 title={t('Position details (side to move, castling, FEN)')}
               >
-                <Settings2 className="size-3.5" />
+                <Settings2 className="size-3.5" data-icon="inline-start" />
                 <span>{t('Position')}</span>
               </Button>
               <Button

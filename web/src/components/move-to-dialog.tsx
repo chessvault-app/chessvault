@@ -88,7 +88,7 @@ export function MoveToDialog({
             disabled={!draft.trim()}
             onClick={pickNew}
           >
-            <FolderPlus className="mr-1 size-3.5" />
+            <FolderPlus className="size-3.5" data-icon="inline-start" />
             {t('Create')}
           </Button>
         </div>

@@ -82,7 +82,7 @@ export function NoteView({ id }: { id: string }) {
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted-foreground text-base">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
-            <ChevronLeft className="mr-1 size-3.5" />
+            <ChevronLeft className="size-3.5" data-icon="inline-start" />
             {t('All notes')}
           </Button>
         </div>

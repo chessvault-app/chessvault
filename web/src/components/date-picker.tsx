@@ -44,7 +44,7 @@ export function DatePicker({
           className={cn('justify-start text-left font-normal data-[empty=true]:text-muted-foreground', className)}
           {...props}
         >
-          <CalendarIcon />
+          <CalendarIcon data-icon="inline-start" />
           {selected ? selected.toLocaleDateString(lang === 'ko' ? 'ko-KR' : undefined) : t(placeholder)}
         </Button>
       </PopoverTrigger>

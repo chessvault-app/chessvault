@@ -879,7 +879,7 @@ function Trainer({
             )}
             {/* Practice, not a second attempt — see retry(). */}
             <Button variant="secondary" size="sm" onClick={retry}>
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-3.5" data-icon="inline-start" />
               {t('Retry')}
             </Button>
             <Button
@@ -889,7 +889,7 @@ function Trainer({
                 mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
               }
             >
-              <RotateCw className="size-3.5" />
+              <RotateCw className="size-3.5" data-icon="inline-start" />
               {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
             </Button>
           </>
@@ -902,7 +902,7 @@ function Trainer({
               onClick={() => setHint((h) => Math.min(h + 1, 2))}
               title={t('First press marks the piece, second the move (not counted as a fail)')}
             >
-              <Lightbulb className="size-3.5" />
+              <Lightbulb className="size-3.5" data-icon="inline-start" />
               {t('Hint')}
             </Button>
             <Button
@@ -912,7 +912,7 @@ function Trainer({
               onClick={viewSolution}
               title={t('Counts as a failed attempt')}
             >
-              <Eye className="size-3.5" />
+              <Eye className="size-3.5" data-icon="inline-start" />
               {t('Solution')}
             </Button>
             {mode !== 'single' && (
@@ -921,7 +921,7 @@ function Trainer({
                 size="sm"
                 onClick={() => void loadNext(theme, difficulty)}
               >
-                <X className="size-3.5" />
+                <X className="size-3.5" data-icon="inline-start" />
                 {t('Skip')}
               </Button>
             )}
@@ -998,7 +998,7 @@ function Trainer({
                       size="sm"
                       onClick={() => void loadNext(theme, difficulty)}
                     >
-                      <RotateCw className="size-3.5" />
+                      <RotateCw className="size-3.5" data-icon="inline-start" />
                       {t('Try again')}
                     </Button>
                   </div>

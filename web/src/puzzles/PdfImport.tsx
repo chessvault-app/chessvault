@@ -552,7 +552,7 @@ export function PdfImport({
                   is the same state a crash would have left, and the same
                   button brings it back. */}
               <Button variant="secondary" size="sm" className="shrink-0" onClick={() => job.pause()}>
-                <Pause className="size-3.5" />
+                <Pause className="size-3.5" data-icon="inline-start" />
                 {t('Pause')}
               </Button>
             </div>
@@ -570,7 +570,7 @@ export function PdfImport({
                 size="sm"
                 onClick={() => job.resume(slug, templates, { repair, engine, libraryBook: pdfBook })}
               >
-                <Play className="size-3.5" />
+                <Play className="size-3.5" data-icon="inline-start" />
                 {t('Carry on')}
               </Button>
             </div>

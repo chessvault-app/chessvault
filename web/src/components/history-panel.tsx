@@ -156,7 +156,7 @@ function HistorySheet({
             disabled={busy || preview === null}
             onClick={() => void restore(chosen)}
           >
-            <RotateCcw className="size-3.5" />
+            <RotateCcw className="size-3.5" data-icon="inline-start" />
             {t('Restore this version')}
           </Button>
 

@@ -80,7 +80,7 @@ export function ReviewStrip() {
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
         <Button variant="secondary" size="sm" onClick={() => void run()}>
-          <Microscope className="size-3.5" />
+          <Microscope className="size-3.5" data-icon="inline-start" />
           {t('Review game')}
         </Button>
         <Button

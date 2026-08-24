@@ -87,7 +87,7 @@ export function ConfirmDialog({
           setOpen(true);
         }}
       >
-        <Icon className="size-3.5" />
+        <Icon className="size-3.5" data-icon="inline-start" />
         {label && t(label)}
       </Button>
 

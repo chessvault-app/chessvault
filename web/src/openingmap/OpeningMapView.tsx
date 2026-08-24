@@ -511,10 +511,10 @@ export function OpeningMapView({ params }: { params: string[] }) {
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="default" size="sm" onClick={() => setAddTo(map.root.id)}>
-                  <Plus className="size-3.5" /> {t('Add a move')}
+                  <Plus className="size-3.5" data-icon="inline-start" /> {t('Add a move')}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => setGrowFrom(map.root.id)}>
-                  <Sparkles className="size-3.5" /> {t('Grow from my games')}
+                  <Sparkles className="size-3.5" data-icon="inline-start" /> {t('Grow from my games')}
                 </Button>
               </div>
             }
@@ -793,7 +793,7 @@ function PanelAction({
       onClick={onSelect}
       className={PANEL_ACTION}
     >
-      <Icon />
+      <Icon data-icon="inline-start" />
       <span className="min-w-0 max-w-full truncate">{t(label)}</span>
     </Button>
   );
@@ -1284,7 +1284,7 @@ function NodePanel({
                 size="sm"
                 onClick={() => apply((d) => addChild(d, map.id, node.id, san))}
               >
-                <Plus className="size-3" /> {san}
+                <Plus className="size-3" data-icon="inline-start" /> {san}
               </Button>
             ))}
           </div>

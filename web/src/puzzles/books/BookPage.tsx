@@ -414,11 +414,11 @@ export function BookPage({ slug }: { slug: string }) {
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               <Button variant="default" size="sm" onClick={() => setImporting(true)}>
-                <FileUp className="size-3.5" />
+                <FileUp className="size-3.5" data-icon="inline-start" />
                 {t('Import a book PDF')}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" data-icon="inline-start" />
                 {t('Add puzzle')}
               </Button>
             </div>

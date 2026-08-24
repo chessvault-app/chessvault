@@ -234,7 +234,7 @@ export function GrowDialog({
               onClose();
             }}
           >
-            <Sparkles className="size-3.5" /> {t('Chart them')}
+            <Sparkles className="size-3.5" data-icon="inline-start" /> {t('Chart them')}
           </Button>
         </div>
       </DialogContent>

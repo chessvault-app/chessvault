@@ -80,11 +80,11 @@ export function RecoveryDialog({
             leads with, and nothing here is a rescue from a disaster. */}
         <div className="mt-1 flex flex-col gap-2">
           <Button variant="default" size="default" className="w-full justify-center" onClick={onRecover}>
-            <History className="size-3.5" />
+            <History className="size-3.5" data-icon="inline-start" />
             {t('Restore changes')}
           </Button>
           <Button variant="destructive" size="default" className="w-full justify-center" onClick={onDismiss}>
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-3.5" data-icon="inline-start" />
             {t('Discard changes')}
           </Button>
         </div>

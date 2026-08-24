@@ -204,7 +204,7 @@ export function TagPicker({
                           title={t('Link one chapter')}
                           onClick={() => void openScoping(row.id)}
                         >
-                          <BookOpen className="size-3.5" /> {t('Chapter')}
+                          <BookOpen className="size-3.5" data-icon="inline-start" /> {t('Chapter')}
                         </Button>
                       )}
                     </div>

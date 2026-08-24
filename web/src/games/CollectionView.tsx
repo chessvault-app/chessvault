@@ -610,7 +610,7 @@ export function CollectionView() {
               body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
               action={
                 <Button variant="default" size="sm" onClick={() => setImporting(true)}>
-                  <Plus className="mr-1 size-3.5" />
+                  <Plus className="size-3.5" data-icon="inline-start" />
                   {t('Import a game')}
                 </Button>
               }
@@ -631,7 +631,7 @@ export function CollectionView() {
                 body="Bookmark a game from the list and it is kept here, one press from wherever you are."
                 action={
                   <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
-                    <BookOpen className="mr-1 size-3.5" />
+                    <BookOpen className="size-3.5" data-icon="inline-start" />
                     {t('Browse all games')}
                   </Button>
                 }
@@ -644,7 +644,7 @@ export function CollectionView() {
                 body="No game in your collection gets through the filters above. Clearing them shows the whole collection again."
                 action={
                   <Button variant="secondary" size="sm" onClick={clearFilters}>
-                    <X className="mr-1 size-3.5" />
+                    <X className="size-3.5" data-icon="inline-start" />
                     {t('Clear filters')}
                   </Button>
                 }
@@ -661,7 +661,7 @@ export function CollectionView() {
                 }
                 action={
                   <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
-                    <X className="mr-1 size-3.5" />
+                    <X className="size-3.5" data-icon="inline-start" />
                     {t('Clear search')}
                   </Button>
                 }
@@ -1068,7 +1068,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             {t('Cancel')}
           </Button>
           <Button variant="default" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
-            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+            <Plus className="size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} data-icon="inline-start" />
             {t('Add to collection')}
           </Button>
         </div>

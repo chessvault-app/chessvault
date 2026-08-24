@@ -229,7 +229,7 @@ export function LoadPositionForm({
             title={t('Paste from clipboard')}
             className="absolute bottom-3.5 right-2"
           >
-            <ClipboardPaste className="size-3.5" />
+            <ClipboardPaste className="size-3.5" data-icon="inline-start" />
             {t('Paste')}
           </Button>
         )}
