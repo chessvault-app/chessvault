@@ -99,6 +99,21 @@ function useBookSort(): {
   };
 }
 
+/** Every book's cover fetched and decoded, capped at two seconds. */
+async function decodeCovers(books: BookSummary[]): Promise<void> {
+  if (books.length === 0) return;
+  const covers = books.map(
+    (b) =>
+      new Promise<void>((done) => {
+        const img = new Image();
+        img.onload = () => done();
+        img.onerror = () => done();
+        img.src = `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`;
+      }),
+  );
+  await Promise.race([Promise.all(covers), new Promise((r) => setTimeout(r, 2000))]);
+}
+
 /**
  * Throw away saved scans whose book is gone.
  *
@@ -137,51 +152,9 @@ export function Shelf() {
   const undoable = useUndoable();
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  /**
-   * The shelf waits for its covers.
-   *
-   * The list is a kilobyte and the covers are five separate images, so
-   * the cards used to appear immediately and then fill with pictures one
-   * at a time — a page assembling itself in front of you. Decoding them
-   * first costs a moment and arrives whole.
-   *
-   * Bounded, because a cover is a nicety: if the images are slow or
-   * missing the shelf draws anyway rather than waiting on them.
-   */
-  const [coversReady, setCoversReady] = useState(shelfMemory.books !== null && shelfMemory.coversDecoded);
-  useEffect(() => {
-    if (books === null) return;
-    // An empty shelf has no covers to wait for, and waiting for none of
-    // them left it skeletal forever.
-    if (books.length === 0) {
-      setCoversReady(true);
-      return;
-    }
-    let live = true;
-    const covers = books.map(
-      (b) =>
-        new Promise<void>((done) => {
-          const img = new Image();
-          img.onload = () => done();
-          img.onerror = () => done();
-          img.src = `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`;
-        }),
-    );
-    void Promise.race([
-      Promise.all(covers),
-      new Promise((r) => setTimeout(r, 2000)),
-    ]).then(() => {
-      if (!live) return;
-      shelfMemory.coversDecoded = true;
-      setCoversReady(true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [books]);
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
-  const shelfPending = useSlowLoad(books === null || !coversReady);
+  const shelfPending = useSlowLoad(books === null);
 
   // Shown from cache immediately, refreshed underneath: a book's counts
   // change as you solve, so the list is never trusted to stay right — only
@@ -189,6 +162,18 @@ export function Shelf() {
   const load = useCallback(async () => {
     try {
       const fresh = (await api<{ books: BookSummary[] }>('/api/puzzlebooks')).books;
+      // The covers are decoded BEFORE the list swaps in, so the shelf's
+      // thumbnails arrive together on every path. The cards used to
+      // appear and then fill with pictures one at a time — a page
+      // assembling itself in front of you; the effect that fixed it
+      // gated only the COLD load behind the skeleton, and a hot reload
+      // (a book just imported, counts refreshed) still swapped at once
+      // and let a new cover pop in late. Cold, the skeleton covers this
+      // wait; hot, the cards on screen stay until the fresh set is
+      // whole. Bounded, because a cover is a nicety: if the images are
+      // slow or missing the shelf draws anyway.
+      await decodeCovers(fresh);
+      shelfMemory.coversDecoded = true;
       shelfMemory.books = fresh;
       setBooks(fresh);
       setError(null);
@@ -399,8 +384,8 @@ export function Shelf() {
 
         {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
-        {books === null || !coversReady ? (
-          shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
+        {books === null ? (
+          shelfPending ? <SkeletonBookCards cards={4} /> : null
         ) : visibleBooks.length === 0 ? (
           <div className="bg-card flex flex-col items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-6 text-center">
             <BookMarked className="text-muted-foreground size-6" />
