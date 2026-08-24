@@ -735,7 +735,7 @@ export function ArchiveBrowser({
               if (e.key === 'Enter' && username.trim()) void loadMonths();
             }}
             placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
-            className="min-w-0 flex-1 font-mono"
+            className="min-w-0 flex-1"
             inputSize="sm"
           />
           <Button
@@ -775,7 +775,7 @@ export function ArchiveBrowser({
                       setUsername(who);
                       void loadMonths(who);
                     }}
-                    className="max-w-[9rem] truncate py-1 font-mono text-sm"
+                    className="max-w-[9rem] truncate py-1 text-sm"
                   >
                     {who}
                   </button>
