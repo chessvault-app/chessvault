@@ -813,12 +813,20 @@ describe('puzzle book cycles', () => {
     expect(detail.cycles[0].finishedAt).toBeTruthy();
   });
 
-  it('starting a new pass closes an abandoned one where it stands', async () => {
+  it('an abandoned pass keeps its attempts; an untouched one never happened', async () => {
+    // A pass with one attempt in it: starting the next closes and keeps it.
     await post(`/api/puzzlebooks/${slug}/cycles`);
-    const again = await (await post(`/api/puzzlebooks/${slug}/cycles`)).json();
-    expect(again.cycles).toHaveLength(3);
-    expect(again.cycles[1].finishedAt).toBeTruthy();
-    expect(again.cycles[2].finishedAt).toBeUndefined();
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: true });
+    const second = await (await post(`/api/puzzlebooks/${slug}/cycles`)).json();
+    expect(second.cycles).toHaveLength(3);
+    expect(second.cycles[1].finishedAt).toBeTruthy();
+    expect(second.cycles[2].finishedAt).toBeUndefined();
+
+    // An untouched pass: starting again replaces it rather than archiving
+    // a finished cycle of 0/0 — six of those is what the panel showed.
+    const third = await (await post(`/api/puzzlebooks/${slug}/cycles`)).json();
+    expect(third.cycles).toHaveLength(3);
+    expect(third.cycles[2].finishedAt).toBeUndefined();
   });
 
   it('stopping closes the open pass; with none open there is nothing to stop', async () => {

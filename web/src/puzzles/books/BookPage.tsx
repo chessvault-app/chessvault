@@ -510,12 +510,20 @@ function CyclesPanel({
     }
   };
 
-  // Closed passes, newest first, numbered by their place in the record.
-  const finished = cycles
-    .map((cycle, i) => ({ cycle, n: i + 1 }))
+  // Passes with something in them, numbered in the order they were run.
+  // Untouched windows are dropped from the record on the server now, but
+  // records written before that carry them still, and six rows of "0/0 ·
+  // just now" made the panel a ledger of nothing — a pass nobody
+  // attempted is not listed and not counted.
+  const passes = cycles
+    .map((cycle) => ({ cycle, ...cyclePass(book, cycle) }))
+    .filter(({ cycle, attempted }) => cycle.finishedAt === undefined || attempted > 0)
+    .map((pass, i) => ({ ...pass, n: i + 1 }));
+  const finished = passes
     .filter(({ cycle }) => cycle.finishedAt !== undefined)
     .reverse()
     .slice(0, 5);
+  const openN = passes.find(({ cycle }) => cycle.finishedAt === undefined)?.n ?? passes.length;
 
   return (
     <Panel flush className="mb-4">
@@ -542,7 +550,7 @@ function CyclesPanel({
             return (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-foreground text-sm font-medium">
-                  {t('Cycle {n}', { n: cycles.length })}
+                  {t('Cycle {n}', { n: openN })}
                 </span>
                 <span className="text-muted-foreground text-sm tabular-nums">
                   {attempted}/{book.puzzles.length} · {t('{n} solved', { n: wins })}
@@ -565,21 +573,18 @@ function CyclesPanel({
             {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
           </p>
         ) : null}
-        {finished.map(({ cycle, n }) => {
-          const { attempted, wins } = cyclePass(book, cycle);
-          return (
-            <div key={cycle.startedAt} className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
-              <span className="text-foreground font-mono tabular-nums">
-                {wins}/{attempted}
-              </span>
-              <span className="min-w-0 flex-1" />
-              <span className="text-muted-foreground tabular-nums">
-                {formatAgo(cycle.finishedAt!)}
-              </span>
-            </div>
-          );
-        })}
+        {finished.map(({ cycle, n, attempted, wins }) => (
+          <div key={cycle.startedAt} className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
+            <span className="text-foreground font-mono tabular-nums">
+              {wins}/{attempted}
+            </span>
+            <span className="min-w-0 flex-1" />
+            <span className="text-muted-foreground tabular-nums">
+              {formatAgo(cycle.finishedAt!)}
+            </span>
+          </div>
+        ))}
       </div>
     </Panel>
   );

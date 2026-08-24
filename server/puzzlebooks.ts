@@ -611,11 +611,40 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     return c.json({ ok: true });
   });
 
+  /** Whether any attempt has landed inside this pass's window. */
+  const cycleTouched = (
+    progress: Record<string, PuzzleProgress>,
+    ids: Set<string>,
+    cycle: CycleWindow,
+  ): boolean => {
+    for (const id of ids) {
+      if (cycleAttempt(attemptsOf(progress[id]), cycle) !== null) return true;
+    }
+    return false;
+  };
+
   /**
-   * Start a Woodpecker pass. A cycle already open is closed where it
-   * stands — an abandoned pass is a short one, and its partial coverage
-   * stays readable in the record — and the new one opens now.
+   * The record with the passes that never happened taken out.
+   *
+   * Every press of Start while a pass stood open used to CLOSE that pass,
+   * so pressing it six times wrote six finished cycles of 0/0 and the
+   * panel became a ledger of nothing (lanph3re's screenshot). A pass with
+   * no attempt in it is not a short pass, it is no pass — so an untouched
+   * window is dropped rather than archived, and the filter runs on every
+   * write so records already carrying empties shed them the next time
+   * anything here is pressed. An abandoned pass WITH attempts still
+   * closes and stays: partial coverage is a real fact worth reading.
    */
+  const withoutUntouched = (slug: string, cycles: CycleWindow[]): CycleWindow[] => {
+    const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
+    const ids = puzzleIds(slug);
+    return cycles.filter(
+      (cy) => cy.finishedAt === undefined || cycleTouched(progress, ids, cy),
+    );
+  };
+
+  // Start a Woodpecker pass. A cycle already open is closed where it
+  // stands if anything was attempted in it, and discarded if not.
   api.post('/puzzlebooks/:slug/cycles', (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
@@ -623,12 +652,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     const now = new Date().toISOString();
     const open = cycles.find((cy) => cy.finishedAt === undefined);
     if (open) open.finishedAt = now;
-    cycles.push({ startedAt: now });
-    writeJson(cyclesPath(slug), { cycles });
-    return c.json({ cycles });
+    const kept = withoutUntouched(slug, cycles);
+    kept.push({ startedAt: now });
+    writeJson(cyclesPath(slug), { cycles: kept });
+    return c.json({ cycles: kept });
   });
 
-  // Stop the open pass without starting another.
+  // Stop the open pass without starting another. Stopping an untouched
+  // pass removes it: nothing was attempted, so there is nothing to keep.
   api.delete('/puzzlebooks/:slug/cycles', (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
@@ -636,8 +667,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     const open = cycles.find((cy) => cy.finishedAt === undefined);
     if (!open) return c.json({ error: 'no cycle running' }, 404);
     open.finishedAt = new Date().toISOString();
-    writeJson(cyclesPath(slug), { cycles });
-    return c.json({ cycles });
+    const kept = withoutUntouched(slug, cycles);
+    writeJson(cyclesPath(slug), { cycles: kept });
+    return c.json({ cycles: kept });
   });
 
   api.get('/puzzlebooks/:slug', (c) => {
