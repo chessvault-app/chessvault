@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, FileUp, History, ScanSearch, Plus, RotateCcw } from 'lucide-react';
+import { BookText, ChevronLeft, FileUp, History, Repeat, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -28,14 +28,21 @@ import { boardFromImage, featuresFromImage, loadImage } from '../ocr/browser';
 import { classifyBoardNet, loadCellNet } from '../ocr/cellnet';
 
 import { isUntitled, t } from '@/lib/i18n';
+import { formatAgo } from '@/lib/dates';
+import { Panel, PanelHeader } from '@/components/panel';
 import {
   type BookDetail,
   type BookDraft,
+  type CycleWindow,
   bookTemplates,
+  cyclePass,
   diagramUrl,
   dueBookPuzzles,
   forgetBook,
   loadBook,
+  nextInCycle,
+  openCycle,
+  patchCycles,
 } from './data';
 import { PuzzleList } from './PuzzleList';
 import { PuzzleEntry } from './PuzzleEntry';
@@ -361,6 +368,19 @@ export function BookPage({ slug }: { slug: string }) {
           </Button>
         )}
 
+        {book && book.puzzles.length > 0 && (
+          <CyclesPanel
+            book={book}
+            slug={slug}
+            onCycles={(cycles) => {
+              // The cache first, so the trainer opened next agrees; the
+              // state besides, so this page redraws without a refetch.
+              const next = patchCycles(slug, cycles);
+              setBook(next ?? { ...book, cycles });
+            }}
+          />
+        )}
+
         {importing && (
           <Suspense fallback={null}>
         <PdfImport
@@ -451,6 +471,117 @@ export function BookPage({ slug }: { slug: string }) {
           />
         )}
     </PageShell>
+  );
+}
+
+/**
+ * Woodpecker passes: the whole book in cycles, every puzzle once per
+ * pass, scored by first attempts.
+ *
+ * The panel is thin on purpose: a pass's numbers are all derived
+ * (data.ts, from the histories inside the window), so this only shows
+ * them and offers the three acts the server knows — start, continue,
+ * stop. A running pass completes itself on the attempt that reaches the
+ * last puzzle; there is no "finish" button because there is nothing for
+ * one to decide.
+ */
+function CyclesPanel({
+  book,
+  slug,
+  onCycles,
+}: {
+  book: BookDetail;
+  slug: string;
+  onCycles: (cycles: CycleWindow[]) => void;
+}) {
+  const open = openCycle(book);
+  const cycles = book.cycles ?? [];
+  const act = async (method: 'POST' | 'DELETE'): Promise<void> => {
+    // A refused call changes nothing on screen, which is what the server
+    // kept — the same quiet treatment every book action here gets.
+    try {
+      const body = await api<{ cycles: CycleWindow[] }>(
+        `/api/puzzlebooks/${encodeURIComponent(slug)}/cycles`,
+        { method },
+      );
+      onCycles(body.cycles);
+    } catch {
+      /* the panel keeps showing what the server still holds */
+    }
+  };
+
+  // Closed passes, newest first, numbered by their place in the record.
+  const finished = cycles
+    .map((cycle, i) => ({ cycle, n: i + 1 }))
+    .filter(({ cycle }) => cycle.finishedAt !== undefined)
+    .reverse()
+    .slice(0, 5);
+
+  return (
+    <Panel flush className="mb-4">
+      <PanelHeader
+        title={t('Cycles')}
+        actions={
+          open ? (
+            <Button variant="ghost" size="sm" onClick={() => void act('DELETE')}>
+              {t('Stop')}
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm" onClick={() => void act('POST')}>
+              <Repeat className="size-3.5" data-icon="inline-start" />
+              {t(cycles.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
+            </Button>
+          )
+        }
+      />
+      <div className="flex flex-col gap-2 p-3">
+        {open ? (
+          (() => {
+            const { attempted, wins } = cyclePass(book, open);
+            const next = nextInCycle(book, open);
+            return (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-foreground text-sm font-medium">
+                  {t('Cycle {n}', { n: cycles.length })}
+                </span>
+                <span className="text-muted-foreground text-sm tabular-nums">
+                  {attempted}/{book.puzzles.length} · {t('{n} solved', { n: wins })}
+                </span>
+                <span className="min-w-0 flex-1" />
+                {next && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => navigate('puzzles', 'books', slug, next)}
+                  >
+                    {t('Continue')}
+                  </Button>
+                )}
+              </div>
+            );
+          })()
+        ) : finished.length === 0 ? (
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
+          </p>
+        ) : null}
+        {finished.map(({ cycle, n }) => {
+          const { attempted, wins } = cyclePass(book, cycle);
+          return (
+            <div key={cycle.startedAt} className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
+              <span className="text-foreground font-mono tabular-nums">
+                {wins}/{attempted}
+              </span>
+              <span className="min-w-0 flex-1" />
+              <span className="text-muted-foreground tabular-nums">
+                {formatAgo(cycle.finishedAt!)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
 

@@ -55,12 +55,15 @@ import { AnswerPanel } from '../AnswerPanel';
 import { t } from '@/lib/i18n';
 import {
   type BookDetail,
+  type CycleWindow,
   type PuzzleProgress,
   type PuzzleSolution,
   PROVENANCE_META,
   dueBookPuzzles,
   loadBook,
   loadSolutions,
+  nextInCycle,
+  openCycle,
   patchProgress,
   usePuzzleEvidence,
 } from './data';
@@ -201,8 +204,8 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     if (reported.current || !puzzle) return;
     reported.current = true;
     // null is "the request failed"; a success with no body settles to {}.
-    const send = (): Promise<{ progress?: PuzzleProgress } | null> =>
-      api<{ progress?: PuzzleProgress } | undefined>(
+    const send = (): Promise<{ progress?: PuzzleProgress; cycles?: CycleWindow[] } | null> =>
+      api<{ progress?: PuzzleProgress; cycles?: CycleWindow[] } | undefined>(
         `/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`,
         { method: 'POST', json: { id: puzzle.id, win } },
       )
@@ -217,8 +220,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     }
     // Fold the server's own new entry into the cache, so the grid and
     // "next unsolved" are right on the next puzzle without a refetch.
+    // The cycles ride along: this attempt may have closed the open pass.
     if (body?.progress) {
-      const next = patchProgress(slug, puzzle.id, body.progress);
+      const next = patchProgress(slug, puzzle.id, body.progress, body.cycles);
       // The cache is patched either way; the STATE is only touched while
       // this trainer is still mounted — the retry means the answer can
       // arrive seconds after the solver has already moved on.
@@ -474,6 +478,11 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   const orientation: Color = flipped ? 'black' : 'white';
   const next = nextUnsolved();
   const review = nextReview();
+  // An open Woodpecker pass owns the walk: while one runs, "what now" is
+  // the first puzzle the pass has not reached — computed after the
+  // attempt lands, so the one just answered is already inside the window.
+  const cycle = openCycle(book);
+  const cycleNext = cycle ? nextInCycle(book, cycle) : null;
   const hasMoves = getNode(tree, tree.rootId).children.length > 0;
   // Bottom-band navigation over the entered line (view-only stepping).
   const tipId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
@@ -672,28 +681,44 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               <RotateCcw className="size-3.5" data-icon="inline-start" />
               {t('Retry')}
             </Button>
-            {/* The review queue, chained: solving a due puzzle leads to
-                the next one due, without a trip back to the book page. */}
-            {review && (
-              <Button
-                variant="secondary"
-                size="sm"
-                title={t('The next puzzle whose review date has come')}
-                onClick={() => navigate('puzzles', 'books', slug, review)}
-              >
-                <History className="size-3.5" data-icon="inline-start" />
-                {t('Next review')}
-              </Button>
-            )}
-            {next && (
+            {cycle && cycleNext ? (
+              // Mid-pass, the pass IS the walk: one primary action, the
+              // next puzzle the cycle has not reached. Review and "next
+              // unsolved" come back when the pass is over.
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => navigate('puzzles', 'books', slug, next)}
+                onClick={() => navigate('puzzles', 'books', slug, cycleNext)}
               >
                 <RotateCw className="size-3.5" data-icon="inline-start" />
-                {t('Next puzzle')}
+                {t('Next in cycle')}
               </Button>
+            ) : (
+              <>
+                {/* The review queue, chained: solving a due puzzle leads to
+                    the next one due, without a trip back to the book page. */}
+                {review && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    title={t('The next puzzle whose review date has come')}
+                    onClick={() => navigate('puzzles', 'books', slug, review)}
+                  >
+                    <History className="size-3.5" data-icon="inline-start" />
+                    {t('Next review')}
+                  </Button>
+                )}
+                {next && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => navigate('puzzles', 'books', slug, next)}
+                  >
+                    <RotateCw className="size-3.5" data-icon="inline-start" />
+                    {t('Next puzzle')}
+                  </Button>
+                )}
+              </>
             )}
           </>
         ) : (

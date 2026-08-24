@@ -10,7 +10,9 @@ import { useEffect, useState } from 'react';
 import { parseFen } from 'chessops/fen';
 
 import { api, ApiError } from '@/lib/api';
-import { reviewDueAt } from '@shared/review';
+import { cycleAttempt, reviewDueAt, type CycleWindow } from '@shared/review';
+
+export type { CycleWindow };
 
 import {
   isValidTemplate,
@@ -122,7 +124,41 @@ export interface BookDetail {
   pdfBook?: string | null;
   puzzles: BookPuzzle[];
   progress: Record<string, PuzzleProgress>;
+  /** Woodpecker pass windows; every cycle number derives from these and
+      the progress histories (see cyclePass). */
+  cycles?: CycleWindow[];
   drafts?: BookDraft[];
+}
+
+/** The pass still running, if one is — the last window not yet closed. */
+export function openCycle(book: BookDetail): CycleWindow | null {
+  return book.cycles?.find((c) => c.finishedAt === undefined) ?? null;
+}
+
+/** One pass's numbers, derived from the histories inside its window.
+    First attempts only: a retry after seeing the answer is practice,
+    not a better score. */
+export function cyclePass(
+  book: BookDetail,
+  cycle: CycleWindow,
+): { attempted: number; wins: number } {
+  let attempted = 0;
+  let wins = 0;
+  for (const p of book.puzzles) {
+    const first = cycleAttempt(attemptsOf(book.progress[p.id]), cycle);
+    if (first === null) continue;
+    attempted++;
+    if (first.win) wins++;
+  }
+  return { attempted, wins };
+}
+
+/** The first puzzle the open pass has not reached, in printed order. */
+export function nextInCycle(book: BookDetail, cycle: CycleWindow): string | null {
+  return (
+    book.puzzles.find((p) => cycleAttempt(attemptsOf(book.progress[p.id]), cycle) === null)?.id ??
+    null
+  );
 }
 
 export async function bookTemplates(slug: string): Promise<Template[]> {
@@ -293,11 +329,31 @@ export async function loadBook(slug: string, force = false): Promise<BookDetail 
 }
 
 /** Fold a recorded attempt into the cached book, so the grid and
-    "next unsolved" stay correct without a refetch. */
-export function patchProgress(slug: string, id: string, progress: PuzzleProgress): BookDetail | null {
+    "next unsolved" stay correct without a refetch. The attempt route
+    sends the pass windows back when the book has any — a pass can close
+    ITSELF on the attempt that completes it, and the cache must agree. */
+export function patchProgress(
+  slug: string,
+  id: string,
+  progress: PuzzleProgress,
+  cycles?: CycleWindow[],
+): BookDetail | null {
   const hit = bookCache.get(slug);
   if (!hit) return null;
-  const next = { ...hit, progress: { ...hit.progress, [id]: progress } };
+  const next = {
+    ...hit,
+    progress: { ...hit.progress, [id]: progress },
+    ...(cycles ? { cycles } : {}),
+  };
+  bookCache.set(slug, next);
+  return next;
+}
+
+/** Fold a started or stopped pass into the cached book, patchProgress-style. */
+export function patchCycles(slug: string, cycles: CycleWindow[]): BookDetail | null {
+  const hit = bookCache.get(slug);
+  if (!hit) return null;
+  const next = { ...hit, cycles };
   bookCache.set(slug, next);
   return next;
 }
