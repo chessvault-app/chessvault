@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { parseFen } from 'chessops/fen';
 
 import { api, ApiError } from '@/lib/api';
+import { reviewDueAt } from '@shared/review';
 
 import {
   isValidTemplate,
@@ -22,6 +23,8 @@ export interface BookSummary {
   puzzles: number;
   solved: number;
   failed: number;
+  /** Puzzles whose review date has come — see shared/review.ts. */
+  due?: number;
   cover?: boolean;
   /** The library book holding this book's PDF, while it still does. */
   pdfBook?: string | null;
@@ -73,6 +76,35 @@ export interface PuzzleProgress {
   wins: number;
   last: 'win' | 'loss';
   at: string;
+  /** Every attempt in order, for the review ladder; entries written
+      before histories existed carry only the counters. */
+  history?: { win: boolean; at: string }[];
+}
+
+/**
+ * A progress entry's attempts as the ladder reads them — the server's
+ * attemptsOf, mirrored: an entry with no history is its own last attempt,
+ * so a legacy loss enters rotation at the ladder's foot and a legacy
+ * solve stays retired.
+ */
+const attemptsOf = (entry: PuzzleProgress | undefined): { win: boolean; at: string }[] =>
+  entry === undefined ? [] : (entry.history ?? [{ win: entry.last === 'win', at: entry.at }]);
+
+/**
+ * The ids due for review now, in the book's printed order — the client's
+ * copy of the server's ?mode=review answer, computed locally because the
+ * book detail already carries every progress entry and the trainer wants
+ * the whole queue (its Next review button chains through it), not one
+ * puzzle at a time.
+ */
+export function dueBookPuzzles(book: BookDetail): string[] {
+  const now = new Date().toISOString();
+  return book.puzzles
+    .filter((p) => {
+      const due = reviewDueAt(attemptsOf(book.progress[p.id]));
+      return due !== null && due <= now;
+    })
+    .map((p) => p.id);
 }
 
 export interface BookDraft {

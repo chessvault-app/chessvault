@@ -1,4 +1,4 @@
-import { BarChart3, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Cpu, Eye, FlipVertical2, Info, LayoutGrid, ListOrdered, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
+import { BarChart3, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Cpu, Eye, FlipVertical2, History, Info, LayoutGrid, ListOrdered, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -58,6 +58,7 @@ import {
   type PuzzleProgress,
   type PuzzleSolution,
   PROVENANCE_META,
+  dueBookPuzzles,
   loadBook,
   loadSolutions,
   patchProgress,
@@ -400,6 +401,19 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     return after.find((p) => book.progress[p.id]?.last !== 'win')?.id ?? null;
   };
 
+  /**
+   * The next puzzle whose review date has come, if any — computed after
+   * the attempt lands (report() patches the book), so the puzzle just
+   * answered has already been rescheduled out of the queue and this
+   * chains through the rest of it. The current id is excluded anyway:
+   * if the report was lost to the network, "next" must still not mean
+   * "this one again".
+   */
+  const nextReview = (): string | null => {
+    if (!book) return null;
+    return dueBookPuzzles(book).find((id) => id !== puzzleId) ?? null;
+  };
+
   // The verdict is a coloured line in the panel; say it out loud too
   // (see lib/announce — same treatment as the Lichess trainer's verdicts).
   useEffect(() => {
@@ -459,6 +473,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
    */
   const orientation: Color = flipped ? 'black' : 'white';
   const next = nextUnsolved();
+  const review = nextReview();
   const hasMoves = getNode(tree, tree.rootId).children.length > 0;
   // Bottom-band navigation over the entered line (view-only stepping).
   const tipId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
@@ -657,6 +672,19 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               <RotateCcw className="size-3.5" data-icon="inline-start" />
               {t('Retry')}
             </Button>
+            {/* The review queue, chained: solving a due puzzle leads to
+                the next one due, without a trip back to the book page. */}
+            {review && (
+              <Button
+                variant="secondary"
+                size="sm"
+                title={t('The next puzzle whose review date has come')}
+                onClick={() => navigate('puzzles', 'books', slug, review)}
+              >
+                <History className="size-3.5" data-icon="inline-start" />
+                {t('Next review')}
+              </Button>
+            )}
             {next && (
               <Button
                 variant="default"

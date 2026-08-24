@@ -504,6 +504,11 @@ function BookCard({
               <span className="text-foreground block truncate text-base font-medium">{book.title}</span>
               <span className="text-muted-foreground block text-sm">
                 {t('{n} puzzles', { n: book.puzzles })}
+                {/* The schedule's ask, beside the size — the one number
+                    on this card that wants something done today. */}
+                {(book.due ?? 0) > 0 && (
+                  <span className="text-info"> · {t('{n} due', { n: book.due! })}</span>
+                )}
               </span>
             </span>
             {scan ? (

@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, FileUp, ScanSearch, Plus, RotateCcw } from 'lucide-react';
+import { BookText, ChevronLeft, FileUp, History, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -33,6 +33,7 @@ import {
   type BookDraft,
   bookTemplates,
   diagramUrl,
+  dueBookPuzzles,
   forgetBook,
   loadBook,
 } from './data';
@@ -218,6 +219,10 @@ export function BookPage({ slug }: { slug: string }) {
     ? book.puzzles.filter((p) => book.progress[p.id]?.last === 'win').length
     : 0;
 
+  // The review queue's head, and how long the queue is — the dashboard's
+  // own button, worn by the book it belongs to.
+  const dueIds = book ? dueBookPuzzles(book) : [];
+
   /**
    * An unfinished import of THIS book.
    *
@@ -343,6 +348,18 @@ export function BookPage({ slug }: { slug: string }) {
             onConfirm={() => void resetProgress()}
           />
         </div>
+
+        {dueIds.length > 0 && (
+          <Button
+            variant="secondary"
+            size="default"
+            className="mb-4 w-full justify-center"
+            onClick={() => navigate('puzzles', 'books', slug, dueIds[0]!)}
+          >
+            <History className="size-3.5" data-icon="inline-start" />
+            {t('Review puzzles · {n} due', { n: dueIds.length })}
+          </Button>
+        )}
 
         {importing && (
           <Suspense fallback={null}>

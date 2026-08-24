@@ -513,6 +513,9 @@ export const ko: Record<string, string> = {
   'Recently read': '최근 읽은 책',
   '{n} waiting to be reviewed': '복습할 퍼즐 {n}개',
   '{n} due for review': '복습할 때가 된 퍼즐 {n}개',
+  '{n} due': '복습 {n}개',
+  'Next review': '다음 복습',
+  'The next puzzle whose review date has come': '복습할 때가 된 다음 퍼즐',
   'Review puzzles · {n} due': '퍼즐 복습 · 복습할 때가 된 {n}개',
   'Nothing due — the next review lands {when}': '지금은 복습할 것이 없습니다 — 다음 복습은 {when}',
   'Nothing solved yet — the puzzles you attempt turn up here.':

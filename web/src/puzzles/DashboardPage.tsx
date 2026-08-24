@@ -44,6 +44,8 @@ interface BookSummary {
   puzzles: number;
   solved: number;
   failed: number;
+  /** Puzzles whose review date has come — see shared/review.ts. */
+  due?: number;
 }
 
 
@@ -291,6 +293,9 @@ export function DashboardPage() {
                     className="text-sm"
                   >
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">{b.title}</span>
+                    {(b.due ?? 0) > 0 && (
+                      <span className="text-info shrink-0 text-xs">{t('{n} due', { n: b.due! })}</span>
+                    )}
                     <span className="text-muted-foreground shrink-0 font-mono tabular-nums">
                       {b.solved}/{b.puzzles}
                     </span>
