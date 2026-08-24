@@ -1,5 +1,5 @@
 import { BookText, ChevronLeft, FileUp, History, Repeat, RotateCw, ScanSearch, Plus, RotateCcw, Square } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -535,41 +535,52 @@ function CyclesPanel({
     <Panel flush className="mb-4">
       <PanelHeader title={t('Cycles')} />
       <div className="flex flex-col gap-2 p-3">
-        {open && openPass ? (
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-foreground shrink-0 font-medium">
-              {t('Cycle {n}', { n: openN })}
-            </span>
-            <span className="text-muted-foreground shrink-0 tabular-nums">
-              {openPass.attempted}/{total} · {t('{n} solved', { n: openPass.wins })}
-            </span>
-            <Progress
-              value={total > 0 ? (100 * openPass.attempted) / total : 0}
-              className="min-w-16 flex-1"
-            />
-          </div>
-        ) : finished.length === 0 ? (
+        {!open && finished.length === 0 && (
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
           </p>
-        ) : null}
-        {finished.map(({ cycle, n, attempted, wins }) => (
-          <div key={cycle.startedAt} className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground shrink-0">{t('Cycle {n}', { n })}</span>
-            <span className="text-foreground shrink-0 font-mono tabular-nums">
-              {wins}/{attempted}
-            </span>
-            {/* How far through the book the pass got — full for a pass
-                that finished itself, partial for one abandoned mid-way. */}
-            <Progress
-              value={total > 0 ? (100 * attempted) / total : 0}
-              className="min-w-16 flex-1"
-            />
-            <span className="text-muted-foreground shrink-0 tabular-nums">
-              {formatAgo(cycle.finishedAt!)}
-            </span>
+        )}
+        {/* One grid over every row, not a flex line per pass: each row's
+            label and score are different widths, so per-row layout put
+            every bar at its own x and the panel read as a ragged pile
+            (lanph3re's screenshot). Shared columns are what align them —
+            the same treatment the dashboard's By difficulty panel uses. */}
+        {(open !== null || finished.length > 0) && (
+          <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-2 text-sm">
+            {open && openPass && (
+              <>
+                <span className="text-foreground font-medium">
+                  {t('Cycle {n}', { n: openN })}
+                </span>
+                <span className="text-muted-foreground text-right tabular-nums">
+                  {openPass.attempted}/{total} · {t('{n} solved', { n: openPass.wins })}
+                </span>
+                <Progress
+                  value={total > 0 ? (100 * openPass.attempted) / total : 0}
+                  className="min-w-16"
+                />
+                <span />
+              </>
+            )}
+            {finished.map(({ cycle, n, attempted, wins }) => (
+              <Fragment key={cycle.startedAt}>
+                <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
+                <span className="text-foreground text-right font-mono tabular-nums">
+                  {wins}/{attempted}
+                </span>
+                {/* How far through the book the pass got — full for a pass
+                    that finished itself, partial for one abandoned mid-way. */}
+                <Progress
+                  value={total > 0 ? (100 * attempted) / total : 0}
+                  className="min-w-16"
+                />
+                <span className="text-muted-foreground text-right tabular-nums">
+                  {formatAgo(cycle.finishedAt!)}
+                </span>
+              </Fragment>
+            ))}
           </div>
-        ))}
+        )}
 
         {/* The panel's actions on its own floor — the slot a card keeps
             for them, the same footer band both trainers stand theirs on:
