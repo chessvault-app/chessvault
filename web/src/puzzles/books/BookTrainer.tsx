@@ -1,22 +1,4 @@
-import {
-  BarChart3,
-  Check,
-  ChevronFirst,
-  ChevronLast,
-  ChevronLeft,
-  ChevronRight,
-  Cpu,
-  Eye,
-  FlipVertical2,
-  Info,
-  LayoutGrid,
-  ListOrdered,
-  Loader2,
-  Pencil,
-  RotateCcw,
-  RotateCw,
-  X,
-} from 'lucide-react';
+import { BarChart3, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Cpu, Eye, FlipVertical2, Info, LayoutGrid, ListOrdered, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -59,6 +41,7 @@ import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 
 import { Panel, PanelHeader } from '@/components/panel';
@@ -713,7 +696,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               onClick={() => void submit()}
             >
               {phase === 'checking' ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Spinner className="size-3.5" />
               ) : (
                 <Check className="size-3.5" />
               )}

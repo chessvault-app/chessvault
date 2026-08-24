@@ -1,4 +1,4 @@
-import { Database, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal } from 'lucide-react';
+import { Database, ExternalLink, Hammer, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { api } from '@/lib/api';
@@ -36,6 +36,7 @@ import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SideDot } from '@/components/side-dot';
 import { Switch } from '@/components/ui/switch';
+import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
 
@@ -287,7 +288,7 @@ export function ExplorerPane({
                 {node.ply === 0 ? t('Starting position') : t('Out of book')}
               </span>
             )}
-            {loading && <Loader2 className="text-muted-foreground ml-auto size-3 shrink-0 animate-spin" />}
+            {loading && <Spinner className="text-muted-foreground ml-auto size-3 shrink-0" />}
           </div>
 
 
@@ -531,7 +532,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
       </p>
       {state === 'running' ? (
         <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
-          <Loader2 className="size-3.5 shrink-0 animate-spin" />
+          <Spinner className="size-3.5 shrink-0" />
           <span className="min-w-0 truncate">{line ?? '…'}</span>
         </p>
       ) : (

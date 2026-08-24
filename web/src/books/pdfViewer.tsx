@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useSlowLoad } from '@/components/skeletons';
@@ -202,7 +202,7 @@ export function PdfPage({
       />
       {!size && slow && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="text-muted-foreground size-5 animate-spin" />
+          <Spinner className="text-muted-foreground size-5" />
         </div>
       )}
       {box && overlay && <div className="absolute inset-0">{overlay}</div>}

@@ -1,14 +1,4 @@
-import {
-  ArrowDownWideNarrow,
-  ArrowUpNarrowWide,
-  Bookmark,
-  BookMarked,
-  FileUp,
-  MoreHorizontal,
-  Loader2,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Bookmark, BookMarked, FileUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -25,6 +15,7 @@ import { PageShell } from '@/components/page-shell';
 
 import { SearchInput } from '@/components/text-fields';
 import { Select } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 
@@ -526,7 +517,7 @@ function BookCard({
               */
               <span className="flex items-center gap-1.5">
                 {scan.live ? (
-                  <Loader2 className="text-primary size-3 shrink-0 animate-spin" />
+                  <Spinner className="text-primary size-3 shrink-0" />
                 ) : (
                   <FileUp className="text-warn size-3 shrink-0" />
                 )}

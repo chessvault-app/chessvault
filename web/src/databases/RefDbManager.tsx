@@ -1,4 +1,4 @@
-import { Database, FileText, Loader2, Trash2, Upload } from 'lucide-react';
+import { Database, FileText, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
 import { Segmented } from '@/components/segmented';
@@ -345,7 +346,7 @@ export function RefDbManager({
             rather than from under whichever tab started it. */}
         {running && (
           <p className="border-border text-muted-foreground flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
-            <Loader2 className="size-3.5 shrink-0 animate-spin" />
+            <Spinner className="size-3.5 shrink-0" />
             <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
           </p>
         )}
@@ -621,7 +622,7 @@ function UploadWindow({
           />
           {uploading ? (
             <>
-              <Loader2 className="size-6 animate-spin" />
+              <Spinner className="size-6" />
               <span className="min-w-0 max-w-full truncate">
                 {t('Uploading {name}…', { name: uploading })}
               </span>

@@ -1,4 +1,4 @@
-import { ChevronLeft, Database, Eye, Loader2, Plus, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Database, Eye, Plus, SlidersHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -25,6 +25,7 @@ import {
   type StructuredFilters,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
+import { Spinner } from '@/components/ui/spinner';
 import { SideDot } from '@/components/side-dot';
 import { SkeletonGameRows, useSlowLoad } from '@/components/skeletons';
 import { Panel, PanelHeader } from '@/components/panel';
@@ -609,7 +610,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           ))}
           {rows.length < total && (
             <li ref={sentinel} className="flex items-center justify-center gap-2 p-3">
-              <Loader2 className="text-muted-foreground size-4 animate-spin" />
+              <Spinner className="text-muted-foreground size-4" />
               <span className="text-muted-foreground text-sm">{t('Loading older games…')}</span>
             </li>
           )}

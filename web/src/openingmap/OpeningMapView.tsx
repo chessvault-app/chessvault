@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Loader2, Maximize2, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Maximize2, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -31,6 +31,7 @@ import { MiniBoard } from '@/components/mini-board';
 import { Fab, type FabAction } from '@/components/fab';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { MapCanvas } from './MapCanvas';
 import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
 import {
@@ -465,7 +466,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       {loaded && map && resolved && !empty && !revealed && (
         <CanvasOverlay>
           <div className="text-muted-foreground flex items-center gap-2 text-base">
-            <Loader2 className="size-4 animate-spin" />
+            <Spinner />
             {t('Preparing the map…')}
           </div>
         </CanvasOverlay>

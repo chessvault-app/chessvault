@@ -1,10 +1,4 @@
-import {
-  ChevronLeft,
-  Check,
-  Eye,
-  Loader2,
-  RotateCcw,
-} from 'lucide-react';
+import { ChevronLeft, Check, Eye, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
@@ -29,6 +23,7 @@ import { navigate } from '@/lib/router';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { CardFooter } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 
 import { Panel, PanelHeader } from '@/components/panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
@@ -577,7 +572,7 @@ function SolutionRecorder({
               title={t('Ask Stockfish whether every solver move really wins')}
               onClick={() => void verify()}
             >
-              {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
+              {verifying ? <Spinner className="size-3.5" /> : <Eye className="size-3.5" />}
               {t('Verify')}
             </Button>
             {/* What the back chevron in the removed header used to do. */}
@@ -590,7 +585,7 @@ function SolutionRecorder({
               disabled={line.length === 0 || saving}
               onClick={() => void save()}
             >
-              {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+              {saving ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />}
               {t('Save puzzle')}
             </Button>
           </CardFooter>

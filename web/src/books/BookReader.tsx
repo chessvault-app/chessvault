@@ -1,22 +1,4 @@
-import {
-  BookText,
-  ChevronLeft,
-  ChevronRight,
-  FileUp,
-  Grid3x3,
-  Loader2,
-  Maximize2,
-  MoreHorizontal,
-  MoveHorizontal,
-  Percent,
-  RotateCcw,
-  RotateCw,
-  Search,
-  SquarePen,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react';
+import { BookText, ChevronLeft, ChevronRight, FileUp, Grid3x3, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -41,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX, type PinchLive, type PinchPoint } from '@/hooks/use-pinch-zoom';
@@ -953,7 +936,7 @@ function PdfPane({
       {compact ? toolbarInto && createPortal(toolbar, toolbarInto) : toolbar}
       {reading && (
         <div className="text-muted-foreground flex h-7 shrink-0 items-center justify-center gap-1.5 text-xs">
-          <Loader2 className="size-3 shrink-0 animate-spin" />
+          <Spinner className="size-3 shrink-0" />
           {t('Reading diagrams — page {page} of {pages}', { page: reading.page, pages: reading.pages })}
         </div>
       )}
@@ -1014,7 +997,7 @@ function OpeningTreatment({ show, pageW }: { show: boolean; pageW: number }) {
         <div className="relative flex h-full justify-center p-3">
           <Skeleton className="aspect-[3/4] rounded-md" style={{ width: pageW || '100%' }} />
           <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
-            <Loader2 className="size-4 animate-spin" />
+            <Spinner />
             {t('Opening the book…')}
           </div>
         </div>

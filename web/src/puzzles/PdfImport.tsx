@@ -1,4 +1,4 @@
-import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
+import { Eye, FileUp, Pause, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Spinner } from '@/components/ui/spinner';
 import { Skeleton } from '@/components/skeletons';
 import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
@@ -529,7 +530,7 @@ export function PdfImport({
 
           {preparing && (
             <p className="text-muted-foreground flex items-center gap-2 text-base">
-              <Loader2 className="size-4 animate-spin" />
+              <Spinner />
               {/* Covers both halves of the preparation: the readability
                   probe every path runs, and the clear a rebuild adds. */}
               {t('checking the PDF')}
@@ -538,7 +539,7 @@ export function PdfImport({
           {scanning && (
             <div className="flex items-center gap-2">
               <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-base">
-                <Loader2 className="size-4 shrink-0 animate-spin" />
+                <Spinner className="size-4 shrink-0" />
                 <span className="truncate">
                   {t('page {page}/{pages} — {n} diagrams so far', {
                     page: job.page,
@@ -576,7 +577,7 @@ export function PdfImport({
           )}
           {reading && (
             <p className="text-muted-foreground flex items-center gap-2 text-base">
-              <Loader2 className="size-4 animate-spin" />
+              <Spinner />
               {job.engineAt
                 ? t('checking positions the book’s answers did not fit ({done} of {total})', {
                     done: job.engineAt.done,
@@ -828,7 +829,7 @@ export function PdfImport({
                 disabled={saving || scanning || selectedCount === 0}
                 onClick={() => void save()}
               >
-                {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
+                {saving && <Spinner className="mr-1 size-3.5" />}
                 {t('Add {n} as drafts', { n: selectedCount })}
               </Button>
             )}

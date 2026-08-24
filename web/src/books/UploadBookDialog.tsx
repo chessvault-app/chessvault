@@ -1,4 +1,4 @@
-import { BookText, Loader2, Upload } from 'lucide-react';
+import { BookText, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
@@ -158,7 +159,7 @@ export function UploadBookDialog({
                 {looked ? (
                   <BookText className="text-muted-foreground size-6" />
                 ) : (
-                  <Loader2 className="text-muted-foreground size-5 animate-spin" />
+                  <Spinner className="text-muted-foreground size-5" />
                 )}
               </span>
             )}
@@ -203,7 +204,7 @@ export function UploadBookDialog({
               </p>
               {progress !== null && (
                 <p className="text-primary flex items-center gap-2 text-sm">
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Spinner className="size-3.5" />
                   {t('Uploading… {pct}%', { pct: progress })}
                 </p>
               )}

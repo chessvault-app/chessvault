@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Loader2, Save, Trash2, X } from 'lucide-react';
+import { Save, Trash2, X } from 'lucide-react';
 import {
   cancelLeave,
   currentLeaveGuard,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/leaveGuard';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
 
 /**
@@ -107,7 +108,7 @@ export function LeaveDialog() {
             className="w-full justify-center"
             onClick={() => void saveAndLeave()}
           >
-            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+            {busy ? <Spinner className="size-3.5" /> : <Save className="size-3.5" />}
             {t(busy ? 'Saving…' : 'Save')}
           </Button>
           <Button

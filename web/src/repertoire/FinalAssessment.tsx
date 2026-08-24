@@ -1,5 +1,5 @@
-import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { EvalBar } from '@/engine/EvalBar';
 import { terminalScore } from '@/engine/terminal';
 import { formatScore, toWhitePov } from '@/engine/uci';
@@ -125,7 +125,7 @@ export function FinalAssessment({
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2">
           <span className="text-foreground flex min-w-[3.75rem] items-center font-mono text-xl font-semibold tabular-nums">
-            {score ? formatScore(score) : <Loader2 className="text-muted-foreground size-4 animate-spin" />}
+            {score ? formatScore(score) : <Spinner className="text-muted-foreground size-4" />}
           </span>
           <EvalBar score={score} orientation="horizontal" className="flex-1" />
         </div>

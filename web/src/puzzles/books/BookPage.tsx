@@ -1,12 +1,4 @@
-import {
-  BookText,
-  ChevronLeft,
-  FileUp,
-  ScanSearch,
-  Loader2,
-  Plus,
-  RotateCcw,
-} from 'lucide-react';
+import { BookText, ChevronLeft, FileUp, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -17,6 +9,7 @@ import { SkeletonTiles, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { PageShell } from '@/components/page-shell';
 
 import { ClearableInput } from '@/components/text-fields';
@@ -316,7 +309,7 @@ export function BookPage({ slug }: { slug: string }) {
               title={t('Re-run recognition on every draft with the learned font')}
               onClick={() => void rereadDrafts()}
             >
-              {rereading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
+              {rereading ? <Spinner className="size-3.5" /> : <ScanSearch className="size-3.5" />}
               <span className="hidden wide:inline">{t('Read diagrams')}</span>
             </Button>
           )}
@@ -490,7 +483,7 @@ function ScanPanel({
         )}
       >
         {live ? (
-          <Loader2 className="size-4 shrink-0 animate-spin" />
+          <Spinner className="size-4 shrink-0" />
         ) : (
           <FileUp className="size-4 shrink-0" />
         )}

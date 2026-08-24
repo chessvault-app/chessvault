@@ -1,16 +1,4 @@
-import {
-  Bookmark,
-  CloudDownload,
-  FileText,
-  FileUp,
-  Folder as FolderIcon,
-  FolderInput,
-  Library,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Bookmark, CloudDownload, FileText, FileUp, Folder as FolderIcon, FolderInput, Library, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -25,8 +13,9 @@ import { Select } from '@/components/ui/select';
 import { ClearableInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
 import { Field } from '@/components/ui/field';
-import { Globe, Loader2 } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
@@ -617,7 +606,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
             onClick={() => void load()}
             title={t('List this account’s studies')}
           >
-            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Globe className="size-3.5" />}
+            {busy ? <Spinner className="size-3.5" /> : <Globe className="size-3.5" />}
           </Button>
         </div>
       </Field>

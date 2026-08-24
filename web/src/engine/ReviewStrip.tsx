@@ -1,9 +1,10 @@
-import { BookOpen, ChevronDown, Loader2, Microscope, X } from 'lucide-react';
+import { BookOpen, ChevronDown, Microscope, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { useReview, type GraphPoint } from '@/store/review';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { SideDot } from '@/components/side-dot';
 import type { SideSummary } from './review';
 import { t } from '@/lib/i18n';
@@ -28,7 +29,7 @@ export function ReviewButton() {
       onClick={() => void run()}
     >
       {status === 'running' ? (
-        <Loader2 className="size-3.5 animate-spin" />
+        <Spinner className="size-3.5" />
       ) : (
         <Microscope className="size-3.5" />
       )}

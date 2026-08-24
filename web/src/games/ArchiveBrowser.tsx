@@ -1,11 +1,4 @@
-import {
-  Globe,
-  Info,
-  Loader2,
-  Plus,
-  SlidersHorizontal,
-  X,
-} from 'lucide-react';
+import { Globe, Info, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
@@ -23,6 +16,7 @@ import { CloudBoardArt } from '@/components/cloud-board-art';
 import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/text-fields';
 import { Field } from '@/components/ui/field';
+import { Spinner } from '@/components/ui/spinner';
 
 import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
@@ -752,7 +746,7 @@ export function ArchiveBrowser({
             onClick={() => void loadMonths()}
           >
             {loading === 'months' ? (
-              <Loader2 className="size-3.5 animate-spin" />
+              <Spinner className="size-3.5" />
             ) : (
               <Globe className="size-3.5" />
             )}
@@ -1080,7 +1074,7 @@ export function ArchiveBrowser({
               that used to be a minute of waiting before anything showed. */}
           {month === ALL_MONTHS && cursor < months.length && (
             <li ref={moreSentinel} className="flex items-center justify-center gap-2 p-3">
-              <Loader2 className="text-muted-foreground size-4 animate-spin" />
+              <Spinner className="text-muted-foreground size-4" />
               <span className="text-muted-foreground text-sm">
                 {t('Loading older games…')}
               </span>

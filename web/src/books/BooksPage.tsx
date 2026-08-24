@@ -1,20 +1,4 @@
-import {
-  ArrowDownWideNarrow,
-  ArrowUpNarrowWide,
-  BookMarked,
-  Loader2,
-  ScanSearch,
-  BookOpen,
-  BookText,
-  Bookmark,
-  FileUp,
-  Folder as FolderIcon,
-  FolderInput,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Upload,
-} from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, MoreHorizontal, Pencil, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ActionMenu } from '@/components/action-menu';
@@ -29,6 +13,7 @@ import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { SearchInput } from '@/components/text-fields';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { useUndoable } from '@/hooks/use-undoable';
 import { api, apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -545,7 +530,7 @@ function BookCard({
             </span>
             <span className={cn('flex items-center gap-1.5 text-sm', reading ? 'text-primary' : 'text-muted-foreground')}>
               {reading ? (
-                <Loader2 className="size-3 shrink-0 animate-spin" />
+                <Spinner className="size-3 shrink-0" />
               ) : (
                 <BookOpen className="size-3 shrink-0" />
               )}

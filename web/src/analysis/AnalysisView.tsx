@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -17,6 +17,7 @@ import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
@@ -242,7 +243,7 @@ function CollectGameButton() {
       onClick={() => void collect()}
     >
       {state === 'busy' ? (
-        <Loader2 className="size-3.5 animate-spin" />
+        <Spinner className="size-3.5" />
       ) : state === 'done' ? (
         <Check className="size-3.5" />
       ) : (

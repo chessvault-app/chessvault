@@ -1,7 +1,8 @@
-import { Check, Loader2, Save } from 'lucide-react';
+import { Check, Save } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
 
 /**
@@ -85,7 +86,7 @@ export function SaveControl({
   if (state === 'saving' || (state === 'dirty' && autoSaves)) {
     return (
       <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-sm">
-        <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}
+        <Spinner className="size-3.5" /> {t('Saving…')}
       </span>
     );
   }

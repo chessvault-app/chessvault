@@ -1,9 +1,10 @@
-import { Download, Loader2, TriangleAlert } from 'lucide-react';
+import { Download, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Getting the puzzle database, from inside the app.
@@ -142,7 +143,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
             <div className="flex justify-center">
               <Button variant="default" onClick={() => void start()} disabled={starting}>
                 {starting ? (
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Spinner className="size-3.5" />
                 ) : (
                   <Download className="size-3.5" />
                 )}
