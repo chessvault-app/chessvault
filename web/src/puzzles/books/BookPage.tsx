@@ -297,13 +297,16 @@ export function BookPage({ slug }: { slug: string }) {
             <>
               <h1
                 onDoubleClick={() => {
-                  setTitleDraft(book?.title ?? slug);
+                  setTitleDraft(book?.title ?? '');
                   setRenaming(true);
                 }}
                 title={t('Double-click to rename')}
                 className="text-foreground min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
               >
-                {book?.title ?? slug}
+                {/* The slug is an id, not a name: while the title is in
+                    flight the header holds its place instead of flashing
+                    the folder name. */}
+                {book?.title ?? ' '}
               </h1>
             </>
           )}
