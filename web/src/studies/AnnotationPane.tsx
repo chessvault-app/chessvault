@@ -1,3 +1,4 @@
+import { INPUT_BASE } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -185,7 +186,10 @@ export function AnnotationPane({
           <button
             type="button"
             onClick={() => setSheet(true)}
-            className="border-input bg-transparent dark:bg-input/30 min-h-9 min-w-0 flex-1 rounded-md border px-2.5 py-2 text-left text-sm leading-relaxed"
+            // The Input face from the source, not a hand copy of it: this
+            // stands where the Textarea stands on a desktop, and the two
+            // must weather a face change together.
+            className={cn(INPUT_BASE, 'min-h-9 min-w-0 flex-1 px-2.5 py-2 text-left leading-relaxed')}
           >
             {draft ? (
               <span className="text-foreground line-clamp-2 whitespace-pre-wrap">{draft}</span>

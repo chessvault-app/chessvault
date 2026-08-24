@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { INPUT_BASE } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { SearchInput } from '@/components/text-fields';
@@ -144,8 +145,10 @@ export function OpeningPicker({
       type="button"
       onClick={wide ? undefined : () => setOpenFresh(!open)}
       className={cn(
-        'border-input bg-transparent dark:bg-input/30 text-foreground flex h-9 min-w-0 items-center rounded-md border',
-        'px-2.5 text-left text-sm transition-colors duration-100',
+        // The Input face from the source, not a hand copy of it — the
+        // trigger reads as the field it opens into.
+        INPUT_BASE,
+        'text-foreground flex h-9 min-w-0 items-center px-2.5 text-left duration-100',
         'hover:border-primary/40',
       )}
     >
