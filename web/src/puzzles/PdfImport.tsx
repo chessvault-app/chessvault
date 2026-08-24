@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Skeleton } from '@/components/skeletons';
 import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
@@ -425,35 +427,30 @@ export function PdfImport({
                   n: existing,
                 })}
               </p>
-              {(
-                [
-                  ['update', 'Update in place', 'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.'],
-                  ['rebuild', 'Clear and rebuild', 'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.'],
-                ] as const
-              ).map(([value, label, blurb]) => (
-                <label key={value} className="flex cursor-pointer items-start gap-2">
-                  <input
-                    type="radio"
-                    name="reimport-mode"
-                    checked={mode === value}
-                    onChange={() => setMode(value)}
-                    className="mt-0.5"
-                  />
-                  <span className="text-base">
-                    {t(label)}
-                    <span className="text-muted-foreground block text-sm">{t(blurb)}</span>
-                  </span>
-                </label>
-              ))}
+              <RadioGroup value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
+                {(
+                  [
+                    ['update', 'Update in place', 'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.'],
+                    ['rebuild', 'Clear and rebuild', 'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.'],
+                  ] as const
+                ).map(([value, label, blurb]) => (
+                  <label key={value} className="flex cursor-pointer items-start gap-2">
+                    <RadioGroupItem value={value} className="mt-0.5" />
+                    <span className="text-base">
+                      {t(label)}
+                      <span className="text-muted-foreground block text-sm">{t(blurb)}</span>
+                    </span>
+                  </label>
+                ))}
+              </RadioGroup>
             </div>
           )}
 
           {!mine && (
             <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={engine}
-                onChange={(e) => setEngine(e.target.checked)}
+                onCheckedChange={(on) => setEngine(on === true)}
                 className="mt-0.5"
               />
               <span>
@@ -469,10 +466,9 @@ export function PdfImport({
 
           {!mine && (
             <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={repair}
-                onChange={(e) => setRepair(e.target.checked)}
+                onCheckedChange={(on) => setRepair(on === true)}
                 className="mt-0.5"
               />
               <span>
@@ -729,12 +725,10 @@ export function PdfImport({
                           peek?.i === i && 'bg-muted',
                         )}
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={f.selected}
-                          onChange={() => job.toggle(i)}
+                          onCheckedChange={() => job.toggle(i)}
                           aria-label={t('Keep this diagram')}
-                          className="accent-primary shrink-0"
                         />
                         <span className="w-24 shrink-0 font-mono text-xs">
                           <span className="text-foreground">

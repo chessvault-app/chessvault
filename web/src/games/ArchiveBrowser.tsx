@@ -15,6 +15,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { KnightIcon } from '@/components/knight-icon';
 import { Segmented } from '@/components/segmented';
 import { CloudBoardArt } from '@/components/cloud-board-art';
@@ -199,13 +200,12 @@ const ArchiveRow = memo(function ArchiveRow({
       standing={
         <>
           {selecting && (
-            <input
-              type="checkbox"
-              className="accent-primary mr-1 shrink-0"
+            <Checkbox
+              className="mr-1"
               aria-label={t('Select this game')}
               checked={picked}
               onClick={(e) => e.stopPropagation()}
-              onChange={(e) => onToggle(gameKey(game), e.target.checked)}
+              onCheckedChange={(on) => onToggle(gameKey(game), on === true)}
             />
           )}
           <Button
@@ -969,18 +969,19 @@ export function ArchiveBrowser({
                happened to end. */
             <>
               <label className="flex min-w-0 cursor-pointer items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  className="accent-primary shrink-0"
-                  checked={uncollected.length > 0 && picked.size === uncollected.length}
+                <Checkbox
                   // Indeterminate is the honest state for a partial
                   // selection: an unchecked box next to eight ticked rows
                   // reads as a bug.
-                  ref={(el) => {
-                    if (el) el.indeterminate = picked.size > 0 && picked.size < uncollected.length;
-                  }}
-                  onChange={(e) =>
-                    setPicked(e.target.checked ? new Set(uncollected.map(gameKey)) : new Set())
+                  checked={
+                    uncollected.length > 0 && picked.size === uncollected.length
+                      ? true
+                      : picked.size > 0
+                        ? 'indeterminate'
+                        : false
+                  }
+                  onCheckedChange={(on) =>
+                    setPicked(on === true ? new Set(uncollected.map(gameKey)) : new Set())
                   }
                 />
                 <span className="text-muted-foreground truncate">{t('Select all new')}</span>

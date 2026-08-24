@@ -2,6 +2,7 @@ import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   boardFeatures,
@@ -362,11 +363,10 @@ export function PhotoImport({
                 it stays by the board it describes; the verbs are together
                 in the corner. */}
             <label className="text-muted-foreground flex items-center gap-1.5 text-sm">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={blackAtBottom}
-                onChange={(e) => {
-                  setBlackAtBottom(e.target.checked);
+                onCheckedChange={(on) => {
+                  setBlackAtBottom(on === true);
                   setReading(null);
                 }}
               />

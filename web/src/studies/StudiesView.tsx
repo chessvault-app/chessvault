@@ -20,6 +20,7 @@ import { formatAgo, formatWhen } from '@/lib/dates';
 import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select } from '@/components/ui/select';
 import { ClearableInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
@@ -641,12 +642,11 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
                   key={id}
                   className="hover:bg-accent flex cursor-pointer items-center gap-2 px-2 py-1.5 text-base"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={checked.has(id)}
-                    onChange={(e) => {
+                    onCheckedChange={(on) => {
                       const next = new Set(checked);
-                      if (e.target.checked) next.add(id);
+                      if (on === true) next.add(id);
                       else next.delete(id);
                       setChecked(next);
                     }}

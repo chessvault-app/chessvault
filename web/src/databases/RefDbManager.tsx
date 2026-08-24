@@ -7,6 +7,7 @@ import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -532,11 +533,9 @@ function SourceList({
               nothing else: a button inside it would toggle the tick on
               its way to being pressed. */}
           <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              className="accent-primary shrink-0"
+            <Checkbox
               checked={picked?.has(s.name) ?? false}
-              onChange={(e) => onToggle(s.name, e.target.checked)}
+              onCheckedChange={(on) => onToggle(s.name, on === true)}
             />
             <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
             <span className="text-muted-foreground shrink-0">{mb(s.bytes)}</span>
