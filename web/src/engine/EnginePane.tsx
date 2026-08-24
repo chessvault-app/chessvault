@@ -8,6 +8,7 @@ import { useExplain } from '@/store/explain';
 import { Button } from '@/components/ui/button';
 import { PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Slider as UiSlider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
@@ -561,7 +562,7 @@ function Slider({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className={cn('grid gap-1', disabled && 'opacity-50')}>
+    <div className={cn('grid gap-1', disabled && 'opacity-50')}>
       <span className="flex items-baseline justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
         <span className="text-foreground font-mono tabular-nums">
@@ -569,16 +570,15 @@ function Slider({
           {hint ? <span className="text-muted-foreground ml-1 font-sans">{hint}</span> : null}
         </span>
       </span>
-      <input
-        type="range"
+      <UiSlider
         min={min}
         max={max}
         step={step}
-        value={value}
+        value={[value]}
         disabled={disabled}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="accent-primary h-1 w-full cursor-pointer"
+        aria-label={label}
+        onValueChange={([v]) => onChange(v!)}
       />
-    </label>
+    </div>
   );
 }

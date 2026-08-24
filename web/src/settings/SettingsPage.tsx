@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Select } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { SettingRow } from '@/components/setting-row';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
@@ -682,27 +683,24 @@ function SoundCard() {
         </SettingRow>
       )}
 
-      <label className={cn('grid gap-1', !sound && 'opacity-50')}>
+      <div className={cn('grid gap-1', !sound && 'opacity-50')}>
         <span className="flex items-baseline justify-between text-sm">
           <span className="text-muted-foreground">{t('Volume')}</span>
           <span className="text-foreground font-mono tabular-nums">{Math.round(soundVolume * 100)}%</span>
         </span>
-        <input
-          type="range"
+        <Slider
           min={0}
           max={100}
           step={5}
-          value={Math.round(soundVolume * 100)}
+          value={[Math.round(soundVolume * 100)]}
           disabled={!sound}
+          onValueChange={([v]) => setSoundVolume(v! / 100)}
           // Preview on release rather than on every step: dragging fires
           // dozens of times and would machine-gun the sample.
-          onChange={(e) => setSoundVolume(Number(e.target.value) / 100)}
-          onPointerUp={() => previewSound('move', moveSound)}
-          onKeyUp={() => previewSound('move', moveSound)}
-          className="accent-primary h-1 w-full cursor-pointer"
+          onValueCommit={() => previewSound('move', moveSound)}
           aria-label={t('Volume')}
         />
-      </label>
+      </div>
 
       <Field label="Move sound">
         <Select
