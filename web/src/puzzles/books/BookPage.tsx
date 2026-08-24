@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, FileUp, History, Repeat, ScanSearch, Plus, RotateCcw } from 'lucide-react';
+import { BookText, ChevronLeft, FileUp, History, Repeat, RotateCw, ScanSearch, Plus, RotateCcw, Square } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -30,6 +30,8 @@ import { classifyBoardNet, loadCellNet } from '../ocr/cellnet';
 import { isUntitled, t } from '@/lib/i18n';
 import { formatAgo } from '@/lib/dates';
 import { Panel, PanelHeader } from '@/components/panel';
+import { CardFooter } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import {
   type BookDetail,
   type BookDraft,
@@ -524,50 +526,28 @@ function CyclesPanel({
     .reverse()
     .slice(0, 5);
   const openN = passes.find(({ cycle }) => cycle.finishedAt === undefined)?.n ?? passes.length;
+  // The open pass's numbers, hoisted: the status row and the footer's
+  // Continue both read them.
+  const openPass = open ? { ...cyclePass(book, open), next: nextInCycle(book, open) } : null;
+  const total = book.puzzles.length;
 
   return (
     <Panel flush className="mb-4">
-      <PanelHeader
-        title={t('Cycles')}
-        actions={
-          open ? (
-            <Button variant="ghost" size="sm" onClick={() => void act('DELETE')}>
-              {t('Stop')}
-            </Button>
-          ) : (
-            <Button variant="secondary" size="sm" onClick={() => void act('POST')}>
-              <Repeat className="size-3.5" data-icon="inline-start" />
-              {t(cycles.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
-            </Button>
-          )
-        }
-      />
+      <PanelHeader title={t('Cycles')} />
       <div className="flex flex-col gap-2 p-3">
-        {open ? (
-          (() => {
-            const { attempted, wins } = cyclePass(book, open);
-            const next = nextInCycle(book, open);
-            return (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-foreground text-sm font-medium">
-                  {t('Cycle {n}', { n: openN })}
-                </span>
-                <span className="text-muted-foreground text-sm tabular-nums">
-                  {attempted}/{book.puzzles.length} · {t('{n} solved', { n: wins })}
-                </span>
-                <span className="min-w-0 flex-1" />
-                {next && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => navigate('puzzles', 'books', slug, next)}
-                  >
-                    {t('Continue')}
-                  </Button>
-                )}
-              </div>
-            );
-          })()
+        {open && openPass ? (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-foreground shrink-0 font-medium">
+              {t('Cycle {n}', { n: openN })}
+            </span>
+            <span className="text-muted-foreground shrink-0 tabular-nums">
+              {openPass.attempted}/{total} · {t('{n} solved', { n: openPass.wins })}
+            </span>
+            <Progress
+              value={total > 0 ? (100 * openPass.attempted) / total : 0}
+              className="min-w-16 flex-1"
+            />
+          </div>
         ) : finished.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
@@ -575,16 +555,51 @@ function CyclesPanel({
         ) : null}
         {finished.map(({ cycle, n, attempted, wins }) => (
           <div key={cycle.startedAt} className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
-            <span className="text-foreground font-mono tabular-nums">
+            <span className="text-muted-foreground shrink-0">{t('Cycle {n}', { n })}</span>
+            <span className="text-foreground shrink-0 font-mono tabular-nums">
               {wins}/{attempted}
             </span>
-            <span className="min-w-0 flex-1" />
-            <span className="text-muted-foreground tabular-nums">
+            {/* How far through the book the pass got — full for a pass
+                that finished itself, partial for one abandoned mid-way. */}
+            <Progress
+              value={total > 0 ? (100 * attempted) / total : 0}
+              className="min-w-16 flex-1"
+            />
+            <span className="text-muted-foreground shrink-0 tabular-nums">
               {formatAgo(cycle.finishedAt!)}
             </span>
           </div>
         ))}
+
+        {/* The panel's actions on its own floor — the slot a card keeps
+            for them, the same footer band both trainers stand theirs on:
+            justify-end, gap-2, the primary one last. The negative margins
+            take back the body's p-3 so the band spans edge to edge. */}
+        <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+          {open ? (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => void act('DELETE')}>
+                <Square className="size-3.5" data-icon="inline-start" />
+                {t('Stop')}
+              </Button>
+              {openPass?.next && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate('puzzles', 'books', slug, openPass.next!)}
+                >
+                  <RotateCw className="size-3.5" data-icon="inline-start" />
+                  {t('Continue')}
+                </Button>
+              )}
+            </>
+          ) : (
+            <Button variant="secondary" size="sm" onClick={() => void act('POST')}>
+              <Repeat className="size-3.5" data-icon="inline-start" />
+              {t(passes.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
+            </Button>
+          )}
+        </CardFooter>
       </div>
     </Panel>
   );
