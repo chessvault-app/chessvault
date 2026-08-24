@@ -1,4 +1,4 @@
-import { Bookmark, CloudDownload, FileText, FileUp, Folder as FolderIcon, FolderInput, Library, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Bookmark, CloudDownload, SearchX, FileText, FileUp, Folder as FolderIcon, FolderInput, Library, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,6 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
-import { BookmarkArt, CollectionArt, NoMatchArt } from '@/components/empty-art';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { StudyView } from './StudyView';
 import { autoFocusField } from '@/lib/media';
@@ -140,7 +139,7 @@ function StudyList() {
              and GroupedStudies below shows it. */
       studies.length === 0 && folders.length === 0 ? (
         <EmptyState
-          art={<CollectionArt />}
+          icon={Library}
           title="No studies yet"
           body="A study is a set of annotated chapters — lines, comments, arrows — kept as plain PGN. Start an empty one, or import a PGN you already have."
           action={
@@ -167,7 +166,7 @@ function StudyList() {
       filtering && visible.length === 0 ? (
         markedOnly && !needle ? (
           <EmptyState
-            art={<BookmarkArt />}
+            icon={Bookmark}
             title="No bookmarked studies yet"
             body="Bookmark a study from the shelf and it is kept here, one press from wherever you are."
             action={
@@ -179,7 +178,7 @@ function StudyList() {
           />
         ) : (
           <EmptyState
-            art={<NoMatchArt />}
+            icon={SearchX}
             title="Nothing matches that search"
             body={
               markedOnly

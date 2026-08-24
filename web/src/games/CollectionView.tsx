@@ -1,6 +1,7 @@
 import {
   Bookmark,
   ChevronRight,
+  SearchX,
   SlidersHorizontal,
   ExternalLink,
   Globe,
@@ -27,7 +28,6 @@ import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 
 import { EmptyState } from '@/components/empty-state';
-import { BookmarkArt, CollectionArt, NoMatchArt } from '@/components/empty-art';
 
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
@@ -605,7 +605,7 @@ export function CollectionView() {
               // state pinned to the top of a full-height box is the thing
               // that leaves a reader looking at dead space below it.
               className="min-h-0 flex-1"
-              art={<CollectionArt />}
+              icon={BookOpen}
               title="Your collection is empty"
               body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
               action={
@@ -626,7 +626,7 @@ export function CollectionView() {
             markedOnly && !needle && !filtersOn ? (
               <EmptyState
                 className="min-h-0 flex-1"
-                art={<BookmarkArt />}
+                icon={Bookmark}
                 title="No bookmarked games yet"
                 body="Bookmark a game from the list and it is kept here, one press from wherever you are."
                 action={
@@ -639,7 +639,7 @@ export function CollectionView() {
             ) : filtersOn && !needle ? (
               <EmptyState
                 className="min-h-0 flex-1"
-                art={<NoMatchArt />}
+                icon={SearchX}
                 title="Nothing matches those filters"
                 body="No game in your collection gets through the filters above. Clearing them shows the whole collection again."
                 action={
@@ -652,7 +652,7 @@ export function CollectionView() {
             ) : (
               <EmptyState
                 className="min-h-0 flex-1"
-                art={<NoMatchArt />}
+                icon={SearchX}
                 title="Nothing matches that search"
                 body={
                   markedOnly

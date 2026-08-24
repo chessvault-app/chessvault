@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, ChevronRight, FileUp, Grid3x3, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -11,7 +11,6 @@ import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
-import { NoMatchArt } from '@/components/empty-art';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
@@ -312,7 +311,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       <div className="mx-auto flex h-full w-full max-w-[96rem] flex-col">
         <ReaderHeader title={t('Books')} onBack={() => up('books')} />
         <EmptyState
-          art={<NoMatchArt />}
+          icon={BookX}
           title={t('That book is not in the library')}
           body={t('It may have been removed. The shelf has what is there.')}
           action={<Button onClick={() => navigate('books')}>{t('Back to Books')}</Button>}
@@ -943,7 +942,7 @@ function PdfPane({
       {error ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <EmptyState
-            art={<NoMatchArt />}
+            icon={FileX}
             title={t('The PDF could not be opened')}
             body={error}
             action={<Button onClick={retry}>{t('Try again')}</Button>}

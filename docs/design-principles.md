@@ -436,7 +436,7 @@ size by `scripts/render-icons.mjs`, and drawn in the app by
   piece says "chess", not which app, and this app's distinction is where
   your material lives, not the game. The pieces stay on the board
   (cburnett); `KnightIcon` is what the app uses where it means *chess*
-  — the notes palette, an archive row, an empty state — never the brand.
+  — the notes palette, an archive row — never the brand.
 - **Black and white** because the theme at rest is neutral and the board
   is the only colour the app insists on. The tile takes no side, sits
   beside any other icon, and is the same two inks as the splash, so

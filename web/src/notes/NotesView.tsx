@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  SearchX,
   Folder as FolderIcon,
   FolderInput,
   NotebookPen,
@@ -23,7 +24,6 @@ import { CreateControl, FabSpacer } from '@/components/fab';
 import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
-import { BookmarkArt, CollectionArt, NoMatchArt } from '@/components/empty-art';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
@@ -222,7 +222,7 @@ function NoteList() {
              and GroupedNotes below shows it. */
       notes.length === 0 && folders.length === 0 ? (
         <EmptyState
-          art={<CollectionArt />}
+          icon={NotebookPen}
           title="No notes yet"
           body="A note is plain markdown with interactive boards embedded anywhere in the text — an idea, a plan, a game to come back to."
           action={
@@ -244,7 +244,7 @@ function NoteList() {
       filtering && visible.length === 0 ? (
         markedOnly && !needle ? (
           <EmptyState
-            art={<BookmarkArt />}
+            icon={Bookmark}
             title="No bookmarked notes yet"
             body="Bookmark a note from the shelf and it is kept here, one press from wherever you are."
             action={
@@ -256,7 +256,7 @@ function NoteList() {
           />
         ) : (
           <EmptyState
-            art={<NoMatchArt />}
+            icon={SearchX}
             title="Nothing matches that search"
             body={
               markedOnly

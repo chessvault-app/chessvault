@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Maximize2, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { CanvasOverlay, CanvasShell } from '@/components/canvas-shell';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
-import { CollectionArt } from '@/components/empty-art';
 import { Field } from '@/components/ui/field';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -505,7 +504,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       {loaded && map && empty && (
         <CanvasOverlay>
           <EmptyState
-            art={<CollectionArt />}
+            icon={Network}
             title="No moves yet"
             body="Start with your first move for this colour — the rest of the tree grows from it."
             action={
