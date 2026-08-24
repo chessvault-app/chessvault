@@ -73,13 +73,17 @@ is one connected body of work, and the links are what make it that.
   every printed diagram that sets that position up. The file stays in
   your vault and is served with byte ranges; your page is kept per book.
 
-- **Puzzles** — a lichess-themed trainer with difficulty bands and a
-  progress dashboard, plus **book puzzles**: hand a scanned tactics
+- **Puzzles** — a lichess-themed trainer with difficulty bands, a
+  progress dashboard, and a review schedule: what you miss comes back on
+  a spaced ladder (a day, then 3, 7 and 21) and retires after a clean
+  solve at every step. Plus **book puzzles**: hand a scanned tactics
   book PDF to the importer (in the app: Puzzles → Puzzle books → Import a
   book) and an ML pipeline reads the diagrams,
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
-  original page scan. No book is bundled: you supply the PDF of a book
+  original page scan. A book reviews on the same ladder, and can also be
+  worked in Woodpecker-style cycles — the whole book in passes, every
+  puzzle once per pass, scored by first attempts. No book is bundled: you supply the PDF of a book
   you own, and the puzzles it yields stay in your vault — see [book
   imports and copyright](#book-imports-and-copyright).
 
