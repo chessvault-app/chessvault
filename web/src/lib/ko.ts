@@ -476,10 +476,11 @@ export const ko: Record<string, string> = {
   'Counts as a failed attempt': '실패한 시도로 기록됩니다',
   'Puzzle not found.': '퍼즐을 찾을 수 없습니다.',
   'That book does not exist.': '그런 책이 없습니다.',
-  "No puzzle books yet. Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.":
-    '아직 퍼즐 책이 없습니다. 종이 책 한 권마다 하나씩 만들고, 보드에서 퍼즐을 직접 입력하거나 책의 PDF를 가져오세요 — 정답과 진행 상황은 책 뒤가 아니라 여기에 남습니다.',
-  'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.':
-    '아직 퍼즐 책이 없습니다. 스캔한 전술 책을 가져오면 다이어그램이 풀 수 있는 문제가 되고, 진행 상황도 함께 기록됩니다.',
+  'No puzzle books yet': '아직 퍼즐 책이 없습니다',
+  "Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.":
+    '종이 책 한 권마다 하나씩 만들고, 보드에서 퍼즐을 직접 입력하거나 책의 PDF를 가져오세요 — 정답과 진행 상황은 책 뒤가 아니라 여기에 남습니다.',
+  'Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.':
+    '스캔한 전술 책을 가져오면 다이어그램이 풀 수 있는 문제가 되고, 진행 상황도 함께 기록됩니다.',
   'Nothing matches these filters.': '이 조건에 맞는 것이 없습니다.',
   'Play the solution — every move, both sides.': '정답을 두세요 — 양쪽 모두, 모든 수를.',
   'Record the solution — every move, both sides.': '정답을 기록하세요 — 양쪽 모두, 모든 수를.',
@@ -1656,9 +1657,13 @@ export const ko: Record<string, string> = {
   'Uploading {name} — {pct}%': '{name} 올리는 중 — {pct}%',
   'Uploading…': '올리는 중…',
   'Uploading… {pct}%': '올리는 중… {pct}%',
-  'No book matches that search.': '검색과 일치하는 책이 없습니다.',
-  'No books yet. Upload a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too.':
-    '아직 책이 없습니다. 체스 책을 PDF로 올리면 여기서 체스판 옆에 두고 읽을 수 있고, 인쇄된 다이어그램은 한 번의 탭으로 판에 놓입니다. 퍼즐 서가에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
+  'No book matches it. Clearing the search shows the whole shelf again.':
+    '검색어와 맞는 책이 없습니다. 검색을 지우면 전체 목록이 다시 보입니다.',
+  'No bookmarked book matches it. Clearing the search shows every bookmark again.':
+    '검색어와 맞는 즐겨찾기 책이 없습니다. 검색을 지우면 즐겨찾기 전체가 다시 보입니다.',
+  'No books yet': '아직 책이 없습니다',
+  'Upload a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too.':
+    '체스 책을 PDF로 올리면 여기서 체스판 옆에 두고 읽을 수 있고, 인쇄된 다이어그램은 한 번의 탭으로 판에 놓입니다. 퍼즐 서가에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
   '{n} pages': '{n}쪽',
   'Page {page} of {pages}': '{pages}쪽 중 {page}쪽',
   'of {n}': '/ {n}',

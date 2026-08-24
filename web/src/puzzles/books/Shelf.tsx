@@ -1,4 +1,5 @@
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Bookmark, BookMarked, FileUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -378,20 +379,19 @@ export function Shelf() {
         {books === null ? (
           shelfPending ? <SkeletonBookCards cards={4} /> : null
         ) : visibleBooks.length === 0 ? (
-          <div className="bg-card flex flex-col items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-6 text-center">
-            <BookMarked className="text-muted-foreground size-6" />
-            <p className="text-muted-foreground text-base">
-              {t(
-                "No puzzle books yet. Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.",
-              )}
-            </p>
-            {/* The empty state ends on the press that fills it, like every
-                other shelf's. */}
-            <Button variant="default" size="sm" onClick={() => void create()}>
-              <BookMarked className="size-3.5" data-icon="inline-start" />
-              {t('New book')}
-            </Button>
-          </div>
+          <EmptyState
+            icon={BookMarked}
+            title="No puzzle books yet"
+            body="Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book."
+            action={
+              /* The empty state ends on the press that fills it, like every
+                 other shelf's. */
+              <Button variant="default" size="sm" onClick={() => void create()}>
+                <BookMarked className="size-3.5" data-icon="inline-start" />
+                {t('New book')}
+              </Button>
+            }
+          />
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {visibleBooks.map((b) => (

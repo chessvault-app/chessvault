@@ -1,4 +1,5 @@
 import { BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
@@ -242,18 +243,18 @@ export function DashboardPage() {
               }
             />
             {books.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
-                <BookMarked className="text-muted-foreground size-6" strokeWidth={1.5} />
-                <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-                  {t(
-                    'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.',
-                  )}
-                </p>
-                <Button variant="default" size="sm" onClick={() => navigate('puzzles', 'books')}>
-                  <BookMarked className="size-3.5" data-icon="inline-start" />
-                  {t('Import a book')}
-                </Button>
-              </div>
+              <EmptyState
+                className="py-8"
+                icon={BookMarked}
+                title="No puzzle books yet"
+                body="Import a scanned tactics book and its diagrams become a solvable, progress-tracked set."
+                action={
+                  <Button variant="default" size="sm" onClick={() => navigate('puzzles', 'books')}>
+                    <BookMarked className="size-3.5" data-icon="inline-start" />
+                    {t('Import a book')}
+                  </Button>
+                }
+              />
             ) : (
             <ul>
               {books.map((b) => (

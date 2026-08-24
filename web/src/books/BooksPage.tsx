@@ -1,7 +1,8 @@
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, MoreHorizontal, Pencil, Trash2, Upload } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, MoreHorizontal, Pencil, SearchX, Trash2, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ActionMenu } from '@/components/action-menu';
+import { EmptyState } from '@/components/empty-state';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PageHeader } from '@/components/page-header';
@@ -376,27 +377,39 @@ export function BooksPage() {
       {books === null ? (
         pending ? <SkeletonBookCards cards={4} /> : null
       ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
-        <div
-          className={cn(
-            'bg-card flex flex-col items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-6 text-center',
-            drop.dragging && 'ring-primary ring-2',
-          )}
-        >
-          <BookText className="text-muted-foreground size-6" />
-          <p className="text-muted-foreground text-base">
-            {books.length === 0
-              ? t(
-                  'No books yet. Upload a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too.',
-                )
-              : t('No book matches that search.')}
-          </p>
-          {books.length === 0 && (
-            <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
-              <Upload className="size-3.5" data-icon="inline-start" />
-              {t('Upload PDF')}
-            </Button>
-          )}
-        </div>
+        books.length === 0 ? (
+          <EmptyState
+            className={cn(drop.dragging && 'ring-primary ring-2')}
+            icon={BookText}
+            title="No books yet"
+            body="Upload a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too."
+            action={
+              <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
+                <Upload className="size-3.5" data-icon="inline-start" />
+                {t('Upload PDF')}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            className={cn(drop.dragging && 'ring-primary ring-2')}
+            icon={SearchX}
+            title="Nothing matches that search"
+            body={
+              markedOnly
+                ? 'No bookmarked book matches it. Clearing the search shows every bookmark again.'
+                : 'No book matches it. Clearing the search shows the whole shelf again.'
+            }
+            action={
+              needle ? (
+                <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
+                  <X className="size-3.5" data-icon="inline-start" />
+                  {t('Clear search')}
+                </Button>
+              ) : undefined
+            }
+          />
+        )
       ) : (
         <div
           className={cn(
