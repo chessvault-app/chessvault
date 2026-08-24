@@ -121,6 +121,23 @@ function useLibrarySort(): {
   };
 }
 
+/** Every cover of `books` fetched and decoded, capped at two seconds. */
+async function decodeCovers(books: LibraryBook[]): Promise<void> {
+  const covers = books
+    .filter((b) => b.cover)
+    .map(
+      (b) =>
+        new Promise<void>((done) => {
+          const img = new Image();
+          img.onload = () => done();
+          img.onerror = () => done();
+          img.src = coverUrl(b.id, b.bytes);
+        }),
+    );
+  if (covers.length === 0) return;
+  await Promise.race([Promise.all(covers), new Promise((r) => setTimeout(r, 2000))]);
+}
+
 /** Bytes as a shelf would say them. */
 export function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -135,46 +152,9 @@ export function BooksPage() {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const undoable = useUndoable();
-  /**
-   * The shelf waits for its covers, as the puzzle shelf does: the list is
-   * a kilobyte and the covers are separate images, so the cards would
-   * appear and then fill with pictures one at a time. Decoding them first
-   * costs a moment and arrives whole — bounded, because a cover is a
-   * nicety: if the images are slow or missing the shelf draws anyway.
-   */
-  const [coversReady, setCoversReady] = useState(
-    libraryMemory.books !== null && libraryMemory.coversDecoded,
-  );
-  useEffect(() => {
-    if (books === null) return;
-    if (books.length === 0) {
-      setCoversReady(true);
-      return;
-    }
-    let live = true;
-    const covers = books
-      .filter((b) => b.cover)
-      .map(
-        (b) =>
-          new Promise<void>((done) => {
-            const img = new Image();
-            img.onload = () => done();
-            img.onerror = () => done();
-            img.src = coverUrl(b.id, b.bytes);
-          }),
-      );
-    void Promise.race([Promise.all(covers), new Promise((r) => setTimeout(r, 2000))]).then(() => {
-      if (!live) return;
-      libraryMemory.coversDecoded = true;
-      setCoversReady(true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [books]);
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
-  const pending = useSlowLoad(books === null || !coversReady);
+  const pending = useSlowLoad(books === null);
   const view = useLibrarySort();
 
   // Bookmarks, kept in the vault beside the books — the same store and the
@@ -214,7 +194,18 @@ export function BooksPage() {
 
   const load = useCallback(async (force = true): Promise<void> => {
     try {
-      setBooks(await loadBooks(force));
+      const next = await loadBooks(force);
+      // The covers are decoded BEFORE the list swaps in, so the shelf's
+      // thumbnails always arrive together — as the puzzle shelf's do.
+      // Cold, that is what the skeleton covers; hot, the cards on screen
+      // simply stay until the fresh set is whole, which is what used to
+      // break: a reload after an upload or a replaced PDF swapped the
+      // list at once and the new or re-versioned cover popped in later.
+      // Bounded, because a cover is a nicety: if the images are slow or
+      // missing the shelf draws anyway.
+      await decodeCovers(next);
+      libraryMemory.coversDecoded = true;
+      setBooks(next);
       setFolders(libraryMemory.folders);
       setError(null);
     } catch (e) {
@@ -397,8 +388,8 @@ export function BooksPage() {
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
-      {books === null || !coversReady ? (
-        pending ? <SkeletonBookCards cards={books?.length || 4} /> : null
+      {books === null ? (
+        pending ? <SkeletonBookCards cards={4} /> : null
       ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
         <div
           className={cn(
