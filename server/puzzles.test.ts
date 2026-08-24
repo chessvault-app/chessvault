@@ -183,6 +183,122 @@ describe('puzzles api', () => {
 });
 
 /**
+ * The review schedule (shared/review.ts) as the API wears it: meta's due
+ * counts and review mode's due-first serving. Attempts are written into
+ * history.jsonl directly because the route always stamps "now" and a
+ * schedule is only observable from a back-dated log.
+ */
+describe('puzzles review schedule', () => {
+  let dir: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+
+  const DAY_MS = 86_400_000;
+  const daysAgo = (n: number): string => new Date(Date.now() - n * DAY_MS).toISOString();
+  const writeHistory = (
+    lines: { id: string; win: boolean; at: string; counted?: boolean }[],
+  ): void => {
+    mkdirSync(join(dir, 'state'), { recursive: true });
+    writeFileSync(
+      join(dir, 'state', 'history.jsonl'),
+      lines
+        .map((l) => JSON.stringify({ counted: true, puzzleRating: 1500, ...l }))
+        .join('\n') + '\n',
+    );
+  };
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzles-review-'));
+    const dbPath = join(dir, 'puzzles.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE puzzles (
+        id TEXT PRIMARY KEY, fen TEXT NOT NULL, moves TEXT NOT NULL,
+        rating INTEGER NOT NULL, rd INTEGER NOT NULL, popularity INTEGER NOT NULL,
+        plays INTEGER NOT NULL, themes TEXT NOT NULL, game_url TEXT, opening_tags TEXT
+      );
+      CREATE TABLE themes (theme TEXT NOT NULL, rating INTEGER NOT NULL, id TEXT NOT NULL);
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('puzzles', '2');
+      INSERT INTO puzzles VALUES
+        ('aaa', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1500, 80, 90, 10, 'endgame short', NULL, NULL),
+        ('bbb', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1520, 80, 90, 10, 'fork short', NULL, NULL);
+      INSERT INTO themes VALUES
+        ('endgame', 1500, 'aaa'), ('fork', 1520, 'bbb');
+    `);
+    db.close();
+    puzzles = puzzlesApi(dbPath, join(dir, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterAll(() => {
+    puzzles.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('a day-old fail is due; a fresh fail is only in the pool', async () => {
+    writeHistory([
+      { id: 'aaa', win: false, at: daysAgo(2) },
+      { id: 'bbb', win: false, at: daysAgo(0) },
+    ]);
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.failed).toBe(2);
+    expect(meta.due).toBe(1); // aaa's day has come; bbb's is tomorrow
+    expect(meta.nextDue).not.toBeNull();
+
+    // Review serves the due puzzle ahead of the merely failed one.
+    const next = await (await app.request('/api/puzzles/next?mode=failed')).json();
+    expect(next.puzzle.id).toBe('aaa');
+  });
+
+  it('a clean solve mid-ladder leaves rotation pending, not due', async () => {
+    writeHistory([
+      { id: 'aaa', win: false, at: daysAgo(10) },
+      { id: 'aaa', win: true, at: daysAgo(1), counted: false },
+    ]);
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.failed).toBe(0); // latest attempt won — out of the pool
+    expect(meta.due).toBe(0); // …but back in 3 days
+    expect(meta.nextDue).not.toBeNull();
+    // Nothing due and nothing failed: review has nothing to serve yet.
+    expect((await app.request('/api/puzzles/next?mode=failed')).status).toBe(404);
+  });
+
+  it('the ladder brings a solved review back when its date comes', async () => {
+    writeHistory([
+      { id: 'aaa', win: false, at: daysAgo(10) },
+      { id: 'aaa', win: true, at: daysAgo(4), counted: false },
+    ]);
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.failed).toBe(0);
+    expect(meta.due).toBe(1); // 3 days after the solve have passed
+    const next = await (await app.request('/api/puzzles/next?mode=failed')).json();
+    expect(next.puzzle.id).toBe('aaa');
+  });
+
+  it('a clean solve at every step graduates the puzzle for good', async () => {
+    writeHistory([
+      { id: 'aaa', win: false, at: daysAgo(40) },
+      { id: 'aaa', win: true, at: daysAgo(38), counted: false },
+      { id: 'aaa', win: true, at: daysAgo(30), counted: false },
+      { id: 'aaa', win: true, at: daysAgo(20), counted: false },
+      { id: 'aaa', win: true, at: daysAgo(2), counted: false },
+    ]);
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.due).toBe(0);
+    expect(meta.nextDue).toBeNull();
+    expect((await app.request('/api/puzzles/next?mode=failed')).status).toBe(404);
+  });
+
+  it('uncounted attempts alone never put a puzzle into rotation', async () => {
+    writeHistory([{ id: 'aaa', win: false, at: daysAgo(5), counted: false }]);
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.due).toBe(0);
+    expect(meta.nextDue).toBeNull();
+  });
+});
+
+/**
  * The fast draw path. Databases built since the rating_counts tables exist
  * resolve a random offset through them instead of walking the index; this
  * must be indistinguishable from the walk — same rows in, same rows out,

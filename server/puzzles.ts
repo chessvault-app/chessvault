@@ -5,6 +5,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync
 import { dirname, resolve } from 'node:path';
 import { writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
+import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
 
 /**
  * Puzzle trainer backed by the local Lichess dump (data/puzzles.sqlite,
@@ -477,6 +478,35 @@ export function puzzlesApi(
   };
 
   /**
+   * The review rotation, scheduled: every puzzle with a fail on record
+   * that has not yet climbed off the ladder (shared/review.ts), with the
+   * date it is next due, most overdue first. Eligibility is the failed
+   * pool's own rule — at least one COUNTED attempt — so an uncounted
+   * replay can advance or reset a trained puzzle's ladder but never put a
+   * new puzzle into rotation. The whole thing is derived from the history
+   * log, like the pool: nothing new is stored, and wiping the history
+   * wipes the schedule with it.
+   */
+  const reviewQueue = (entries = historyEntries()): { id: string; due: string }[] => {
+    const byId = new Map<string, ReviewAttempt[]>();
+    const trained = new Set<string>();
+    for (const entry of entries) {
+      const attempts = byId.get(entry.id) ?? [];
+      const at = (entry as { at?: unknown }).at;
+      attempts.push({ win: entry.win, ...(typeof at === 'string' ? { at } : {}) });
+      byId.set(entry.id, attempts);
+      if (entry.counted !== false) trained.add(entry.id);
+    }
+    const queue: { id: string; due: string }[] = [];
+    for (const [id, attempts] of byId) {
+      if (!trained.has(id)) continue;
+      const due = reviewDueAt(attempts);
+      if (due !== null) queue.push({ id, due });
+    }
+    return queue.sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0));
+  };
+
+  /**
    * The state with a live skill estimate, seeding it on first need by
    * replaying every counted attempt in the history — each line carries
    * the puzzle's rating, so the whole record folds in without touching
@@ -675,11 +705,19 @@ export function puzzlesApi(
         (r) => [r.key, r.value],
       ),
     );
+    // One read of the log serves the pool and the schedule both.
+    const entries = historyEntries();
+    const queue = reviewQueue(entries);
+    const now = new Date().toISOString();
     return c.json({
       ready: true as const,
       puzzles: Number(meta.puzzles ?? 0),
       themes: themeCounts(db),
-      failed: failedPool().length,
+      failed: failedPool(entries).length,
+      // What the ladder says: how many are due now, and when the next
+      // one lands if nothing is. Both derived, like the pool.
+      due: queue.filter((q) => q.due <= now).length,
+      nextDue: queue.find((q) => q.due > now)?.due ?? null,
       weakTheme: weakestTheme(db),
       user: publicState(user),
     });
@@ -694,17 +732,30 @@ export function puzzlesApi(
       );
     }
 
-    // Practice mode: re-serve puzzles whose latest attempt failed.
+    // Review mode: due puzzles first, then the plain failed pool.
     if (c.req.query('mode') === 'failed') {
-      // One read of the history log serves both the pool and the last id.
+      // One read of the history log serves the queue, the pool and the last id.
       const entries = historyEntries();
-      const pool = failedPool(entries);
       const lastId = entries.at(-1)?.id ?? null;
-      const candidates = pool.length > 1 ? pool.filter((id) => id !== lastId) : pool;
-      if (candidates.length === 0) {
-        return c.json({ error: 'No failed puzzles to review — nothing to fix.' }, 404);
+      const now = new Date().toISOString();
+      // The ladder decides what a session should look at again: everything
+      // whose date has come, most overdue first. The failed pool is the
+      // fallback — a puzzle failed five minutes ago is not DUE until
+      // tomorrow, but someone who wants to fix it now must still be able
+      // to, which is also exactly what this mode always served.
+      const due = reviewQueue(entries)
+        .filter((q) => q.due <= now)
+        .map((q) => q.id);
+      const dueCandidates = due.length > 1 ? due.filter((id) => id !== lastId) : due;
+      let id = dueCandidates[0];
+      if (id === undefined) {
+        const pool = failedPool(entries);
+        const candidates = pool.length > 1 ? pool.filter((p) => p !== lastId) : pool;
+        if (candidates.length === 0) {
+          return c.json({ error: 'No failed puzzles to review — nothing to fix.' }, 404);
+        }
+        id = candidates[Math.floor(Math.random() * candidates.length)]!;
       }
-      const id = candidates[Math.floor(Math.random() * candidates.length)]!;
       const puzzle = db
         .prepare(
           'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
