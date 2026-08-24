@@ -684,11 +684,15 @@ function SoundCard() {
         </SettingRow>
       )}
 
-      <div className={cn('grid gap-1', !sound && 'opacity-50')}>
-        <span className="flex items-baseline justify-between text-sm">
-          <span className="text-muted-foreground">{t('Volume')}</span>
-          <span className="text-foreground font-mono tabular-nums">{Math.round(soundVolume * 100)}%</span>
-        </span>
+      <Field
+        label="Volume"
+        hint={
+          <span className="text-foreground font-mono text-sm tabular-nums">
+            {Math.round(soundVolume * 100)}%
+          </span>
+        }
+        className={cn(!sound && 'opacity-50')}
+      >
         <Slider
           min={0}
           max={100}
@@ -701,7 +705,7 @@ function SoundCard() {
           onValueCommit={() => previewSound('move', moveSound)}
           aria-label={t('Volume')}
         />
-      </div>
+      </Field>
 
       <Field label="Move sound">
         <Select

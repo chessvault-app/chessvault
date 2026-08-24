@@ -2,6 +2,7 @@ import { ChevronLeft, Lock, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
@@ -131,60 +132,58 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         >
           {stage === 'password' ? (
             <>
-              <label
-                htmlFor="gate-password"
-                className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-sm font-medium"
-              >
-                <Lock className="size-3" />
-                {t('Password')}
-              </label>
-              <Input
-                id="gate-password"
-                autoFocus
-                inputSize="lg"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                autoComplete="current-password"
-                className="mb-3 w-full"
-              />
+              <Field className="mb-3">
+                <FieldLabel htmlFor="gate-password" className="gap-1.5">
+                  <Lock className="size-3" />
+                  {t('Password')}
+                </FieldLabel>
+                <Input
+                  id="gate-password"
+                  autoFocus
+                  inputSize="lg"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  autoComplete="current-password"
+                  className="w-full"
+                />
+              </Field>
             </>
           ) : (
             <>
-              <label
-                htmlFor="gate-code"
-                className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-sm font-medium"
-              >
-                <ShieldCheck className="size-3" />
-                {t('Authenticator code')}
-              </label>
-              {/* shadcn's InputOTP (lanph3re's call): six slots in one run —
-                  no separator, lanph3re's call too — and the sixth digit
-                  submits — a code is never longer, so
-                  there is nothing to press after it. Digits only, and
-                  one-time-code lets iOS offer the code from Messages. */}
-              <InputOTP
-                id="gate-code"
-                autoFocus
-                maxLength={6}
-                pattern={REGEXP_ONLY_DIGITS}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={setCode}
-                onComplete={(value) => void submit(value)}
-                containerClassName="mb-3 justify-center"
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
+              <Field className="mb-3">
+                <FieldLabel htmlFor="gate-code" className="gap-1.5">
+                  <ShieldCheck className="size-3" />
+                  {t('Authenticator code')}
+                </FieldLabel>
+                {/* shadcn's InputOTP (lanph3re's call): six slots in one run —
+                    no separator, lanph3re's call too — and the sixth digit
+                    submits — a code is never longer, so
+                    there is nothing to press after it. Digits only, and
+                    one-time-code lets iOS offer the code from Messages. */}
+                <InputOTP
+                  id="gate-code"
+                  autoFocus
+                  maxLength={6}
+                  pattern={REGEXP_ONLY_DIGITS}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={setCode}
+                  onComplete={(value) => void submit(value)}
+                  containerClassName="justify-center"
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </Field>
             </>
           )}
           {error && (

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { apiErrorMessage } from '@/lib/api';
@@ -165,8 +166,7 @@ export function UploadBookDialog({
               {replace ? (
                 <p className="text-foreground truncate text-base font-medium">{replace.title}</p>
               ) : (
-                <label className="flex flex-col gap-1">
-                  <span className="text-muted-foreground text-sm">{t('Book title')}</span>
+                <Field label="Book title">
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -174,11 +174,10 @@ export function UploadBookDialog({
                       if (e.key === 'Enter' && looked && progress === null) void upload();
                     }}
                   />
-                </label>
+                </Field>
               )}
               {!replace && folders && folders.length > 0 && (
-                <label className="flex flex-col gap-1">
-                  <span className="text-muted-foreground text-sm">{t('Target collection')}</span>
+                <Field label="Target collection">
                   <Select
                     value={collection}
                     onValueChange={setCollection}
@@ -192,7 +191,7 @@ export function UploadBookDialog({
                       },
                     ]}
                   />
-                </label>
+                </Field>
               )}
               <p className="text-muted-foreground truncate text-sm" title={file.name}>
                 {file.name}

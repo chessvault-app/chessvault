@@ -8,6 +8,7 @@ import { useExplain } from '@/store/explain';
 import { Button } from '@/components/ui/button';
 import { PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Field } from '@/components/ui/field';
 import { Slider as UiSlider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -492,7 +493,7 @@ function EngineSettings() {
   return (
     <div className="border-border bg-muted/50 grid gap-3 border-b px-3 py-3">
       <Slider
-        label={t('Threads')}
+        label="Threads"
         value={threads}
         min={1}
         max={maxThreads}
@@ -501,14 +502,14 @@ function EngineSettings() {
         onChange={(v) => setOption({ threads: v })}
       />
       <Slider
-        label={t('Lines')}
+        label="Lines"
         value={multiPv}
         min={1}
         max={6}
         onChange={(v) => setOption({ multiPv: v })}
       />
       <Slider
-        label={t('Depth')}
+        label="Depth"
         value={depth}
         min={10}
         max={40}
@@ -518,7 +519,7 @@ function EngineSettings() {
           setting of its own: whichever comes first stops the search. Shown
           as "off" at 0 rather than "0 s", which would read as "no time". */}
       <Slider
-        label={t('Time limit')}
+        label="Time limit"
         value={moveSeconds}
         min={0}
         max={60}
@@ -527,7 +528,7 @@ function EngineSettings() {
         onChange={(v) => setOption({ moveSeconds: v })}
       />
       <Slider
-        label={t('Hash')}
+        label="Hash"
         value={hashMb}
         min={16}
         max={1024}
@@ -562,23 +563,25 @@ function Slider({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className={cn('grid gap-1', disabled && 'opacity-50')}>
-      <span className="flex items-baseline justify-between text-sm">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="text-foreground font-mono tabular-nums">
+    <Field
+      label={label}
+      hint={
+        <span className="text-foreground font-mono text-sm tabular-nums">
           {format ? format(value) : value}
           {hint ? <span className="text-muted-foreground ml-1 font-sans">{hint}</span> : null}
         </span>
-      </span>
+      }
+      className={cn(disabled && 'opacity-50')}
+    >
       <UiSlider
         min={min}
         max={max}
         step={step}
         value={[value]}
         disabled={disabled}
-        aria-label={label}
+        aria-label={t(label)}
         onValueChange={([v]) => onChange(v!)}
       />
-    </div>
+    </Field>
   );
 }
