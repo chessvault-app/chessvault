@@ -1,24 +1,23 @@
-import * as React from 'react';
-import { Switch as SwitchPrimitive } from 'radix-ui';
+import { Switch as SwitchPrimitive } from '@base-ui/react/switch';
 
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
- * shadcn's Switch (nova), owned: the registry's pill and knob, Radix's
+ * shadcn's Switch (nova), owned: the registry's pill and knob, Base UI's
  * switch role. `after:-inset-x-3 after:-inset-y-2` is the registry's own
  * bigger hit box. `title` is a tooltip, as on Button.
  *
- * Styled off aria-checked, not data-state: a TooltipTrigger around this
- * writes its own data-state onto the same element and Radix's switch
- * state loses. aria-checked is the switch's alone.
+ * Styled off aria-checked, the one signal the switch role guarantees —
+ * it survived a data-attribute collision already (a Radix TooltipTrigger
+ * used to overwrite data-state).
  */
 function Switch({
   className,
   size = 'default',
   title,
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & { size?: 'sm' | 'default' }) {
+}: SwitchPrimitive.Root.Props & { size?: 'sm' | 'default'; title?: string }) {
   const control = (
     <SwitchPrimitive.Root
       data-slot="switch"

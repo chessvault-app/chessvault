@@ -1,6 +1,5 @@
-import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Toggle as TogglePrimitive } from 'radix-ui';
+import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 
 import { cn } from '@/lib/utils';
 import { hasTextContent } from '@/components/ui/button';
@@ -12,10 +11,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * pill a filter row is made of, and `plain`, a bare item for a composite
  * that styles its own (Segmented).
  */
-// The lit state is read from aria-pressed (a toggle, an item of a "multiple"
-// group) and aria-checked (an item of a "single" group, which is a radio),
-// not from data-state alone: a Tooltip trigger wrapped around the control
-// writes its own data-state over Radix's.
+// The lit state is read from aria-pressed, the one signal the button's
+// pressed state guarantees whatever library renders it — it survived a
+// data-attribute collision already (a Radix Tooltip trigger used to
+// overwrite data-state). aria-checked and data-[state=on] stay for any
+// composite that still renders radio semantics.
 const toggleVariants = cva(
   "group/toggle inline-flex items-center justify-center gap-1 rounded-lg text-sm font-medium whitespace-nowrap transition-all outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-checked:bg-accent aria-checked:text-accent-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -52,9 +52,9 @@ function Toggle({
   size = 'default',
   title,
   ...props
-}: React.ComponentProps<typeof TogglePrimitive.Root> & VariantProps<typeof toggleVariants>) {
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants> & { title?: string }) {
   const toggle = (
-    <TogglePrimitive.Root
+    <TogglePrimitive
       data-slot="toggle"
       data-variant={variant}
       aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
