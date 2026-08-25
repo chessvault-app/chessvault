@@ -57,15 +57,28 @@ export function forgetMyGames(): void {
   }
 }
 
-/** The cache key: source, band, which side's games, and the position. */
+/**
+ * THE cache key: source, band, which side's games, the own-games
+ * filters, and the position. One function for every reader and writer —
+ * the sweep, the chase, cacheField and fieldMovesFor — because they
+ * split once: fieldMovesFor grew a filters slot the others lacked, so
+ * against the online source (whose answers all come through
+ * fieldMovesFor rather than the batch route) the chase read a cache its
+ * own answers never landed in. It asked for the same position forever;
+ * once the answer WAS cached under the other key, the await resolved
+ * synchronously and the worker became a hot loop of renders — the lit
+ * mainline never drew, and the page froze.
+ */
 const keyFor = (
   source: string,
   ratings: string,
   fen: string,
   side: 'white' | 'black' | undefined,
+  filters?: string,
 ): string => `${source}
 ${ratings}
 ${side ?? ''}
+${filters ?? ''}
 ${fenKey(fen)}`;
 
 /**
@@ -97,7 +110,7 @@ export async function fieldMovesFor(
       different set of games is a different answer, not a cache hit. */
   filters?: string,
 ): Promise<FieldMove[]> {
-  const key = `${source}\n${ratings}\n${side ?? ''}\n${filters ?? ''}\n${fenKey(fen)}`;
+  const key = keyFor(source, ratings, fen, side, filters);
   const hit = cache.get(key);
   if (hit) return hit;
   if (Date.now() - (failedAt.get(key) ?? 0) < RETRY_MS) return [];
@@ -156,7 +169,7 @@ export function useGaps(
   // Own-games rows depend on whose games count; every other source
   // ignores it, and a constant key part is harmless there.
   const side = map?.color;
-  const keyOf = (fen: string): string => `${source}\n${ratings}\n${side ?? ''}\n${fenKey(fen)}`;
+  const keyOf = (fen: string): string => keyFor(source, ratings, fen, side);
 
   // Through a ref, because a selection must not restart the sweep: the
   // effect below is keyed on what is still unanswered, and re-running it
