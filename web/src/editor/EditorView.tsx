@@ -438,7 +438,11 @@ export function EditorView({
               {validity.reason}
             </p>
           )}
-          <div className="border-border flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
+          {/* -mb: the row is the card's floor, so it claims the card's own
+              bottom padding — left in place, those 16px sat under the row
+              and the FEN line read top-heavy in a band taller than it
+              needed. py-1.5 is symmetric, so the line centres itself. */}
+          <div className="border-border -mb-(--card-spacing) flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
             {validity.legal && (
               <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
             )}
