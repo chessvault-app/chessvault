@@ -64,7 +64,7 @@ const TREE_LEVEL = 132;
  */
 const TREE_GAP = { lateral: 34, vertical: 104 };
 /** The breathing room a layout leaves around its content. */
-const PAD = 40;
+export const PAD = 40;
 
 /**
  * The same map as a tidy tree: depth along one axis, siblings along the
