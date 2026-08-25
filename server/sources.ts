@@ -86,16 +86,18 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
     // Write beside the target, then rename: a dropped connection leaves a
     // .part behind rather than a truncated PGN that looks importable.
     const part = `${target}.part`;
+    // Imported here rather than at the top because the static demo runs
+    // these same route modules in the browser with node:fs aliased to an
+    // in-memory shim, and a top-level `createWriteStream` import fails its
+    // build outright. The demo never reaches these lines — it has no server
+    // to upload to — so a lazy import costs nothing and keeps the shim
+    // from having to fake a write stream. Above the try, not inside it,
+    // because the catch needs `finished` too.
+    const { createWriteStream } = await import('node:fs');
+    const { Readable } = await import('node:stream');
+    const { finished, pipeline } = await import('node:stream/promises');
+    const sink = createWriteStream(part);
     try {
-      // Imported here rather than at the top because the static demo runs
-      // these same route modules in the browser with node:fs aliased to an
-      // in-memory shim, and a top-level `createWriteStream` import fails its
-      // build outright. The demo never reaches this line — it has no server
-      // to upload to — so a lazy import costs nothing and keeps the shim
-      // from having to fake a write stream.
-      const { createWriteStream } = await import('node:fs');
-      const { Readable } = await import('node:stream');
-      const { pipeline } = await import('node:stream/promises');
       // Chunked uploads declare no length up front, so the cap is enforced
       // on the bytes as they stream past.
       let seen = 0;
@@ -108,10 +110,17 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
             yield chunk;
           }
         },
-        createWriteStream(part),
+        sink,
       );
       renameSync(part, target);
     } catch (error) {
+      // Wait for the sink to close before removing the .part.
+      // createWriteStream opens the file asynchronously and pipeline
+      // rejects without waiting for that open, so a stream that fails
+      // early — a connection dropped on the first chunk — can reach the
+      // rmSync first and have the open recreate the file behind it. The
+      // books route left a stray .part exactly this way.
+      await finished(sink).catch(() => {});
       rmSync(part, { force: true });
       if ((error as Error).message === 'source file too large') {
         return c.json({ error: 'source file too large (2 GB cap)' }, 413);
