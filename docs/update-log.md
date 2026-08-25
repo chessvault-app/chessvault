@@ -18,6 +18,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the old build came back 42/48 byte-identical with the rest explained
   (anti-aliasing noise, and the puzzle pages drawing a random puzzle by
   design).
+- **The sheet's swipe physics are Base UI's Drawer now.** On a phone
+  every window rides `Drawer` instead of `Dialog`, and the app's own
+  235-line drag hook is retired: the swipe-from-anywhere gesture, the
+  "your drag is a scroll until the scroller under your finger is at its
+  top" arbitration and Android's Back all come from the primitive. What
+  stayed app-owned, because no primitive has it: the page/layer parking
+  and the chevron, the keyboard band, the sole-field focus, the rule
+  that a touch on a text field or a canvas never becomes a drag, and
+  the no-animation-on-phones rule (only the swipe's 180ms snap-back
+  animates). Proved with real trusted input: swipe moves, short swipes
+  snap back, long swipes dismiss, scrim taps and Escape still close.
 
 ## 0.4.8
 

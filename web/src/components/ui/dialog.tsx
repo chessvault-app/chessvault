@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
+import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import { ChevronLeft, XIcon, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -10,19 +11,22 @@ import { suppressNextClick } from '@/lib/suppressNextClick';
 import { CoverParent } from '@/hooks/cover-parent';
 import { registerOpenDialog, soleTextField } from '@/hooks/dialog-focus';
 import { useSheetCover } from '@/hooks/use-sheet-cover';
-import { useSheetDrag } from '@/hooks/use-sheet-drag';
 
 export { CoverParent };
 
 /**
  * shadcn's Dialog (nova), owned — the registry's face, and underneath it
- * Base UI's focus trap, scroll lock, Escape and outside-press dismissal,
- * layer stacking and aria wiring. What this file adds is the app's window
- * physics, each learned on a device:
+ * TWO of Base UI's primitives wearing one API: the Dialog on a desktop
+ * (the centred card), the Drawer on a phone (the bottom sheet). Both
+ * bring the focus trap, scroll lock, Escape and outside-press dismissal,
+ * layer stacking and aria wiring; the Drawer also brings the sheet's
+ * swipe physics — drag-to-dismiss from anywhere on the sheet, with the
+ * drag belonging to a scroller until that scroller is at its top — which
+ * used to be this app's own 235 lines (use-sheet-drag, retired).
  *
- *   - EVERY window is a bottom sheet on a phone and the registry's centred
- *     card on a desktop; the sheet is pushed away by dragging it from
- *     anywhere on itself (use-sheet-drag).
+ * What this file still adds is the app's window physics, each learned on
+ * a device:
+ *
  *   - A page and a layer (see CoverParent): a default-sized window opened
  *     from inside another parks it and grows the back chevron; a small one
  *     floats over it, capped to its height, and grows the chevron only
@@ -33,29 +37,48 @@ export { CoverParent };
  *     opens — synchronously, in the ref, because iOS raises the keyboard
  *     only for a focus it can trace to the tap (soleTextField).
  *   - Android's Back gesture is a close request, via CloseWatcher where the
- *     platform has it; Escape still goes through Base UI where it has not.
- *   - Nothing is transitioned on a phone: animating against iOS's own
- *     keyboard animation is what made earlier attempts jump about.
+ *     platform has it (the app's own watcher, plus the Drawer's Android
+ *     one — whichever the platform's watcher stack answers, the guard
+ *     routes it through the one door); Escape still goes through the
+ *     primitive where it has not.
+ *   - A touch on a text field is a caret and a touch on a canvas is that
+ *     canvas's own business — neither may become a drag (the guard on the
+ *     sheet below; the Drawer's engine only excuses buttons and links).
+ *   - Open and close are not transitioned on a phone: animating against
+ *     iOS's own keyboard animation is what made earlier attempts jump
+ *     about. Only the swipe's snap-back animates (180ms), matching the
+ *     retired hook's release.
  *
- * One structural departure from the stock file: DialogContent renders its
- * Popup INSIDE the Backdrop rather than beside it. The overlay is the
- * layout box — it centres the card, packs it to the bottom edge on a
- * phone, and is what the keyboard band pins.
+ * The desktop keeps one structural departure from the stock file: the
+ * Popup renders INSIDE the Backdrop, which is the layout box. On a phone
+ * the Drawer's Viewport plays that role — scrim, layout and the keyboard
+ * band in one element.
  *
  * Dismissal is routed through the Root's onOpenChange, Base UI's way: the
  * eventDetails name the reason and cancel() tells Base to stand down, so
- * Escape and the scrim press can be rerouted (to "back", to CloseWatcher,
- * past another layer) without ever losing the primitive's own close paths.
- * DialogContent registers its routing in DialogGuardContext below.
+ * Escape, Android's Back and the scrim press can be rerouted (to "back",
+ * to CloseWatcher, past another layer) without ever losing the
+ * primitive's own close paths. DialogContent registers its routing in
+ * DialogGuardContext below.
  */
+
+/** The phone breakpoint every window turns into a sheet under. */
+const PHONE = '(max-width: 39.9375rem)';
+
+/** Which primitive this Root is: true = the Drawer (a phone sheet). */
+const SheetContext = React.createContext(false);
 
 /** How a DialogContent closes itself; the wrapper hands onOpenChange down. */
 const DialogCloseContext = React.createContext<() => void>(() => {});
 
 /** DialogContent's dismissal routing, consulted by the Root's onOpenChange. */
 interface DialogGuards {
-  /** Escape pressed (Base stands down): route it through the window's one door. */
+  /** A close request from the platform (Escape, Android's Back): route it
+      through the window's one door. `escape` stands down where a
+      CloseWatcher will answer the same press; `closeRequest` IS that
+      answer. */
   escape: () => void;
+  closeRequest: () => void;
   /** A press outside the card: true when it landed on another layer — or on
       a parked window's business — and must not close THIS one. */
   ignoreOutside: (target: EventTarget | null) => boolean;
@@ -65,63 +88,83 @@ interface DialogGuards {
 }
 const DialogGuardContext = React.createContext<React.RefObject<DialogGuards | null> | null>(null);
 
-export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange'> {
+// `handle` and `render` are omitted where the two primitives brand them
+// differently; nothing in the app uses either.
+export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 'handle'> {
   /** Kept to Radix's one-argument shape: every caller in the app reads only the boolean. */
   onOpenChange?: (open: boolean) => void;
 }
 
 function Dialog({ onOpenChange, ...props }: DialogProps) {
+  const phone = useMediaQuery(PHONE);
   const guards = React.useRef<DialogGuards | null>(null);
   const close = React.useCallback(() => onOpenChange?.(false), [onOpenChange]);
+  const handleOpenChange = (
+    open: boolean,
+    details: DialogPrimitive.Root.ChangeEventDetails | DrawerPrimitive.Root.ChangeEventDetails,
+  ): void => {
+    if (!open && guards.current) {
+      // Escape: cancel keeps Base from closing AND from preventDefaulting
+      // the keydown, so where CloseWatcher exists it still hears the same
+      // press — the one door (see useCloseWatcher). Everywhere else the
+      // guard walks through that door itself.
+      if (details.reason === 'escape-key') {
+        details.cancel();
+        guards.current.escape();
+        return;
+      }
+      // The Drawer's own Android CloseWatcher (the platform hands Back to
+      // its newest watcher, which is this one where it exists): same door.
+      if (details.reason === 'close-watcher') {
+        details.cancel();
+        guards.current.closeRequest();
+        return;
+      }
+      if (details.reason === 'outside-press') {
+        if (guards.current.ignoreOutside(details.event.target)) {
+          details.cancel();
+          return;
+        }
+        guards.current.outsideWillClose();
+      }
+      // 'swipe' — the sheet pushed away — falls through: a drag past the
+      // threshold closes the window outright, as the retired hook did.
+    }
+    onOpenChange?.(open);
+  };
+  const Root = phone ? DrawerPrimitive.Root : DialogPrimitive.Root;
   return (
-    <DialogCloseContext.Provider value={close}>
-      <DialogGuardContext.Provider value={guards}>
-        <DialogPrimitive.Root
-          onOpenChange={(open, details) => {
-            if (!open && guards.current) {
-              // Escape: cancel keeps Base from closing AND from
-              // preventDefaulting the keydown, so where CloseWatcher exists
-              // it still hears the same press — the one door (see
-              // useCloseWatcher). Everywhere else the guard walks through
-              // that door itself.
-              if (details.reason === 'escape-key') {
-                details.cancel();
-                guards.current.escape();
-                return;
-              }
-              if (details.reason === 'outside-press') {
-                if (guards.current.ignoreOutside(details.event.target)) {
-                  details.cancel();
-                  return;
-                }
-                guards.current.outsideWillClose();
-              }
-            }
-            onOpenChange?.(open);
-          }}
-          {...props}
-        />
-      </DialogGuardContext.Provider>
-    </DialogCloseContext.Provider>
+    <SheetContext.Provider value={phone}>
+      <DialogCloseContext.Provider value={close}>
+        <DialogGuardContext.Provider value={guards}>
+          <Root onOpenChange={handleOpenChange} {...props} />
+        </DialogGuardContext.Provider>
+      </DialogCloseContext.Provider>
+    </SheetContext.Provider>
   );
 }
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+function DialogTrigger({ ...props }: Omit<DialogPrimitive.Trigger.Props, 'handle'>) {
+  const Trigger: React.FC<Omit<DialogPrimitive.Trigger.Props, 'handle'>> = React.useContext(SheetContext)
+    ? (DrawerPrimitive.Trigger as React.FC<Omit<DialogPrimitive.Trigger.Props, 'handle'>>)
+    : DialogPrimitive.Trigger;
+  return <Trigger data-slot="dialog-trigger" {...props} />;
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal {...props} />;
+  const Portal = React.useContext(SheetContext) ? DrawerPrimitive.Portal : DialogPrimitive.Portal;
+  return <Portal {...props} />;
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
+  const Close = React.useContext(SheetContext) ? DrawerPrimitive.Close : DialogPrimitive.Close;
+  return <Close data-slot="dialog-close" {...props} />;
 }
 
 /**
- * The scrim — the registry's — and the layout box (see the note at the
- * top). `vv-band`: while the keyboard is up this is pinned to the band that
- * can be seen rather than to the layout viewport iOS has just shifted.
+ * The scrim — the registry's — and, on a desktop, the layout box (see the
+ * note at the top). The phone branch styles the Drawer's Viewport with
+ * the same classes instead; this element is the Dialog's.
  */
 function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
@@ -148,14 +191,14 @@ function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdro
   );
 }
 
-/** The phone breakpoint every window turns into a sheet under. */
-const PHONE = '(max-width: 39.9375rem)';
-
 /**
  * Close on the platform's close request — Android's Back gesture, and in an
  * installed PWA that gesture is the only chrome an Android phone has.
  * CloseWatcher also answers Escape, so where it exists Base UI's own Escape
  * handling stands down (see the guard in Dialog) and this is the one door.
+ * On a phone the Drawer arms its own watcher too (Android only); the
+ * platform answers Back with whichever watcher is newest, and both roads
+ * lead to the same `request` through the guard.
  */
 function useCloseWatcher(onClose: () => void, active: boolean): void {
   const close = React.useRef(onClose);
@@ -168,7 +211,19 @@ function useCloseWatcher(onClose: () => void, active: boolean): void {
   }, [active]);
 }
 
-export interface DialogContentProps extends DialogPrimitive.Popup.Props {
+/**
+ * The touches the sheet must never turn into a drag, taken verbatim from
+ * the retired use-sheet-drag: a finger on a text field is a caret (the
+ * sheet must not move because somebody reached for the thing they came to
+ * type in — and focusing it opens the keyboard, whose viewport shift
+ * arrives as a long downward drag); a canvas draws its own handles and
+ * reads its own pointers, and the picture window's corner handles are
+ * dragged DOWNWARDS as often as any other way. The Drawer's own engine
+ * excuses only buttons and links.
+ */
+const NOT_A_DRAG = 'input, textarea, select, [contenteditable="true"], canvas';
+
+export interface DialogContentProps extends Omit<DialogPrimitive.Popup.Props, 'render'> {
   /**
    * The window's name, drawn in the title row every window shares — one
    * closing idiom per app, so no window has to be read before it can be
@@ -218,7 +273,7 @@ function DialogContent({
 }: DialogContentProps) {
   const close = React.useContext(DialogCloseContext);
   const guards = React.useContext(DialogGuardContext);
-  const phone = useMediaQuery(PHONE);
+  const phone = React.useContext(SheetContext);
   const small = size === 'sm';
 
   // The second-page bookkeeping. `covered` counts child windows currently
@@ -269,11 +324,17 @@ function DialogContent({
       escape: () => {
         if (!shut && !window.CloseWatcher) request();
       },
+      // The Drawer's Android watcher already IS the platform's answer.
+      closeRequest: () => {
+        if (!shut) request();
+      },
       // Base's outside-press listener is document-wide, so a press on a
       // LATER layer — a menu, a picker window over this one, that window's
       // own scrim — is "outside" this card too. Only a press on this
       // window's OWN scrim may close it; anything on another overlay or
-      // floating layer is that layer's business.
+      // floating layer is that layer's business. (On a phone the Drawer's
+      // Viewport carries the overlay slot and contains the card, so the
+      // same closest() answers for both shapes.)
       ignoreOutside: (target) => {
         if (shut) return true;
         const node = target instanceof Element ? target : null;
@@ -297,8 +358,6 @@ function DialogContent({
     return registerOpenDialog();
   }, [shut]);
 
-  const drag = useSheetDrag(close);
-
   // Whatever had the focus when this window opened — read on the FIRST
   // RENDER, before anything inside has mounted, and not left to the
   // primitive: it reads document.activeElement in its mount effect, by
@@ -319,31 +378,201 @@ function DialogContent({
     if (typeof ref === 'function') ref(node);
     else if (ref) ref.current = node;
     coverRef(node);
-    if (phone) drag.ref(node);
     if (node && node !== armed.current) {
       armed.current = node;
       if (!node.contains(document.activeElement)) soleTextField(node)?.focus();
     }
   };
 
+  // Take focus only if nothing inside already has it; otherwise the
+  // sole field, else the window itself — a container, which never
+  // pops a phone keyboard.
+  const initialFocus = (): HTMLElement | false => {
+    const node = card.current;
+    if (!node || node.contains(document.activeElement)) return false;
+    return soleTextField(node) ?? node;
+  };
+  // Hand focus back to the opener (see `opener`) — unless something
+  // moved it deliberately, in which case that choice stands.
+  const finalFocus = (): HTMLElement | false => {
+    const active = document.activeElement;
+    const backTo = opener.current;
+    if (backTo && backTo.isConnected && (active === null || active === document.body)) {
+      return backTo;
+    }
+    return false;
+  };
+
+  const inner = (
+    <>
+      {title === undefined && phone && (
+        // No title row, but still a sheet on a phone: the grabber — a SIGN
+        // that the sheet can be pushed away (the Drawer answers a drag
+        // from anywhere on it), kept as markup so composed-by-hand windows
+        // (AlertDialog) put their own header under it.
+        <div className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-3 pb-0 max-sm:touch-none max-sm:select-none">
+          <div className="bg-border mx-auto h-1 w-9 cursor-grab rounded-full" aria-hidden />
+        </div>
+      )}
+      {title !== undefined && (
+        // The title row. Pinned to the top of the card, which scrolls:
+        // a ten-row list is taller than the sheet holding it, and a way
+        // back you have to scroll up to find is not one.
+        <div className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-4 pb-0 max-sm:touch-none max-sm:select-none">
+          {/* The grabber, phones only. */}
+          <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
+          <div className="flex items-center gap-2">
+            {/* The chevron: a page's way back, or a layer's once it has
+                hidden the window it was opened from. */}
+            {(back || coversParent) && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Back')}
+                aria-label={t('Back')}
+                className="-my-1 -ml-1.5 shrink-0"
+                onClick={back ?? close}
+              >
+                <ChevronLeft />
+              </Button>
+            )}
+            {Icon && <Icon className="text-muted-foreground size-4 shrink-0" />}
+            <DialogTitle className="min-w-0 flex-1 truncate">{t(title)}</DialogTitle>
+            {actions}
+            {/* A way out for the mouse, and only for the mouse: a phone
+                has three already — drag the sheet down, tap the scrim,
+                press Back. */}
+            <DialogClose
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Close')}
+                  aria-label={t('Close')}
+                  className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
+                />
+              }
+            >
+              <XIcon />
+            </DialogClose>
+          </div>
+        </div>
+      )}
+      <CoverParent.Provider value={asParent}>{children}</CoverParent.Provider>
+    </>
+  );
+
+  // The registry's card. overscroll-contain: a scroll this window cannot
+  // use is its own business. [&>*]:shrink-0: children keep their size and
+  // the WINDOW scrolls (which is also what hands the Drawer its swipe
+  // arbitration: the drag is the sheet's only once this scroller is at
+  // its top).
+  const cardClass = cn(
+    'bg-popover text-popover-foreground ring-foreground/10 flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
+    title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
+    className,
+  );
+  const cardStyle: React.CSSProperties = {
+    ...style,
+    // The parent's height as a VARIABLE, read into the min() below,
+    // so the parent's number and the band's own are both ceilings.
+    ...(phone && small && cap ? ({ '--sheet-cap': `${cap}px` } as React.CSSProperties) : undefined),
+    // The page floor, phones only, capped by the same 88% the
+    // max-height uses.
+    ...(phone && !small && pageMinH ? { minHeight: `min(${pageMinH}px, 88%)` } : undefined),
+  };
+
+  if (phone) {
+    return (
+      <DialogPortal>
+        {/* display:contents, events only: React bubbles through portals,
+            and a press inside this layer must not reach what the layer was
+            written inside — a card or a row that opens on click would open
+            under a sheet's button. The stop lives HERE, past the Viewport,
+            because the Viewport's own pointerdown is where the Drawer's
+            swipe begins. */}
+        <div
+          className="contents"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {/* The Viewport is the old overlay in one element: the scrim,
+              the layout box that packs the sheet to the bottom edge, and
+              the band the keyboard pins (`vv-band`). It carries the
+              overlay slot so the outside-press guard reads the same
+              closest() on both shapes. */}
+          <DrawerPrimitive.Viewport
+            data-slot="dialog-overlay"
+            className={cn(
+              'vv-band fixed inset-0 isolate z-50 flex items-end justify-center bg-black/10 supports-backdrop-filter:backdrop-blur-xs',
+              // Parked under a page: out of sight, but still laid out, so
+              // the page over it can read the height it is matching.
+              covered > 0 && 'invisible',
+            )}
+            // Inline, because `hidden` has to beat `flex` whatever order
+            // the stylesheet emitted them in.
+            style={hidden ? { display: 'none' } : undefined}
+          >
+            <DrawerPrimitive.Popup
+              data-slot="dialog-content"
+              data-size={size}
+              // Only when it is one: an explicit `role={undefined}` would
+              // override the `dialog` the primitive sets, not leave it alone.
+              {...(alert ? { role: 'alertdialog' } : {})}
+              ref={setNode}
+              onClick={onClick}
+              // A touch that must stay a caret or a canvas's own gesture is
+              // stopped before the Viewport can begin a swipe with it.
+              onPointerDown={(e) => {
+                onPointerDown?.(e);
+                if ((e.target as Element | null)?.closest?.(NOT_A_DRAG)) e.stopPropagation();
+              }}
+              initialFocus={initialFocus}
+              finalFocus={finalFocus}
+              style={cardStyle}
+              className={cn(
+                cardClass,
+                // A BOTTOM SHEET, rising from the thumb's own edge,
+                // stopping short of the top, with the same 1.25rem floor
+                // under its last row.
+                'rounded-t-lg pb-[calc(1.25rem+var(--safe-b))]',
+                small
+                  ? cn(
+                      // The lower of two ceilings: the sheet this one was
+                      // opened over, and the room the screen has for one;
+                      // `fill` makes that ceiling the floor as well.
+                      'max-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
+                      fill && 'min-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
+                    )
+                  : // 88% of THIS LAYER, not 88dvh: while a keyboard is up
+                    // the layer IS the band above it.
+                    (fill ? 'h-[var(--sheet-band)]' : 'max-h-[88%]'),
+                // The Drawer's swipe, consumed: the engine publishes the
+                // drag as a CSS variable and the release as data states.
+                // Open and close do not animate (see the note at the top);
+                // the snap-back keeps the retired hook's 180ms.
+                'transform-[translate3d(0,var(--drawer-swipe-movement-y,0px),0)] transition-transform duration-[180ms] ease-in-out will-change-transform',
+                'data-swiping:duration-0 data-swiping:select-none data-starting-style:duration-0 data-ending-style:duration-0',
+              )}
+              {...props}
+            >
+              {inner}
+            </DrawerPrimitive.Popup>
+          </DrawerPrimitive.Viewport>
+        </div>
+      </DialogPortal>
+    );
+  }
+
   return (
     <DialogPortal>
       <DialogOverlay
-        className={cn(
-          'max-sm:items-end max-sm:p-0 sm:items-center sm:p-4',
-          // Parked under a page: out of sight, but still laid out, so the
-          // page over it can read the height it is matching.
-          covered > 0 && 'invisible',
-        )}
-        // Inline, because `hidden` has to beat the phone's `flex` whatever
-        // order the stylesheet emitted them in.
-        style={hidden ? { display: 'none' } : undefined}
+        className="items-center p-4"
+        style={hidden ? { display: 'none' } : covered > 0 ? { visibility: 'hidden' } : undefined}
       >
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           data-size={size}
-          // Only when it is one: an explicit `role={undefined}` would
-          // override the `dialog` the primitive sets, not leave it alone.
           {...(alert ? { role: 'alertdialog' } : {})}
           ref={setNode}
           // A press inside this layer must not reach what the layer was written
@@ -357,129 +586,19 @@ function DialogContent({
             onPointerDown?.(e);
             e.stopPropagation();
           }}
-          // Take focus only if nothing inside already has it; otherwise the
-          // sole field, else the window itself — a container, which never
-          // pops a phone keyboard.
-          initialFocus={() => {
-            const node = card.current;
-            if (!node || node.contains(document.activeElement)) return false;
-            return soleTextField(node) ?? node;
-          }}
-          // Hand focus back to the opener (see `opener`) — unless something
-          // moved it deliberately, in which case that choice stands.
-          finalFocus={() => {
-            const active = document.activeElement;
-            const backTo = opener.current;
-            if (backTo && backTo.isConnected && (active === null || active === document.body)) {
-              return backTo;
-            }
-            return false;
-          }}
-          style={{
-            ...style,
-            ...(phone ? drag.style : undefined),
-            // The parent's height as a VARIABLE, read into the min() below,
-            // so the parent's number and the band's own are both ceilings.
-            ...(phone && small && cap ? ({ '--sheet-cap': `${cap}px` } as React.CSSProperties) : undefined),
-            // The page floor, phones only, capped by the same 88% the
-            // max-height uses.
-            ...(phone && !small && pageMinH ? { minHeight: `min(${pageMinH}px, 88%)` } : undefined),
-          }}
+          initialFocus={initialFocus}
+          finalFocus={finalFocus}
+          style={cardStyle}
           className={cn(
-            // The registry's card. overscroll-contain: a scroll this window
-            // cannot use is its own business. [&>*]:shrink-0: children keep
-            // their size and the WINDOW scrolls.
-            'bg-popover text-popover-foreground ring-foreground/10 flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
-            title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
-            // A BOTTOM SHEET on a phone, whatever the window is: rising from
-            // the thumb's own edge, stopping short of the top, with the
-            // same 1.25rem floor under its last row.
-            'max-sm:rounded-t-lg max-sm:pb-[calc(1.25rem+var(--safe-b))]',
-            small
-              ? cn(
-                  // The lower of two ceilings: the sheet this one was opened
-                  // over, and the room the screen has for one; `fill` makes
-                  // that ceiling the floor as well.
-                  'max-h-full max-sm:max-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
-                  fill && 'max-sm:min-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
-                  'sm:max-w-sm sm:rounded-xl',
-                )
-              : cn(
-                  // 88% of THIS LAYER, not 88dvh: while a keyboard is up the
-                  // layer IS the band above it.
-                  fill ? 'max-sm:h-[var(--sheet-band)]' : 'max-sm:max-h-[88%]',
-                  'sm:h-auto sm:max-h-full sm:rounded-xl',
-                  size === 'full' ? 'sm:max-w-4xl' : 'sm:max-w-lg',
-                ),
-            // The desktop card arrives the stock way; a phone sheet does not
-            // animate at all (see the note at the top).
-            'sm:data-open:animate-in sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:duration-100',
-            className,
+            cardClass,
+            'h-auto max-h-full rounded-xl',
+            small ? 'max-w-sm' : size === 'full' ? 'max-w-4xl' : 'max-w-lg',
+            // The desktop card arrives the stock way.
+            'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 duration-100',
           )}
           {...props}
         >
-          {title === undefined && phone && (
-            // No title row, but still a sheet on a phone: the grabber and
-            // the drag handle it stands for. Composed-by-hand windows
-            // (AlertDialog) put their own header under it.
-            <div
-              className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-3 pb-0 max-sm:touch-none max-sm:select-none"
-              {...drag.handlers}
-            >
-              <div className="bg-border mx-auto h-1 w-9 cursor-grab rounded-full" aria-hidden />
-            </div>
-          )}
-          {title !== undefined && (
-            // The title row. Pinned to the top of the card, which scrolls:
-            // a ten-row list is taller than the sheet holding it, and a way
-            // back you have to scroll up to find is not one. On a phone the
-            // grabber sits above the title, and the whole row is the
-            // mouse's drag handle — a finger may start anywhere.
-            <div
-              className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-4 pb-0 max-sm:touch-none max-sm:select-none"
-              {...(phone ? drag.handlers : {})}
-            >
-              {/* The grabber, phones only: a SIGN that the sheet can be
-                  pushed away, not the only place that answers. */}
-              <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
-              <div className="flex items-center gap-2">
-                {/* The chevron: a page's way back, or a layer's once it has
-                    hidden the window it was opened from. */}
-                {(back || coversParent) && (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t('Back')}
-                    aria-label={t('Back')}
-                    className="-my-1 -ml-1.5 shrink-0"
-                    onClick={back ?? close}
-                  >
-                    <ChevronLeft />
-                  </Button>
-                )}
-                {Icon && <Icon className="text-muted-foreground size-4 shrink-0" />}
-                <DialogTitle className="min-w-0 flex-1 truncate">{t(title)}</DialogTitle>
-                {actions}
-                {/* A way out for the mouse, and only for the mouse: a phone
-                    has three already — drag the sheet down, tap the scrim,
-                    press Back. */}
-                <DialogPrimitive.Close
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title={t('Close')}
-                      aria-label={t('Close')}
-                      className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
-                    />
-                  }
-                >
-                  <XIcon />
-                </DialogPrimitive.Close>
-              </div>
-            </div>
-          )}
-          <CoverParent.Provider value={asParent}>{children}</CoverParent.Provider>
+          {inner}
         </DialogPrimitive.Popup>
       </DialogOverlay>
     </DialogPortal>
@@ -509,16 +628,15 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>{t('Close')}</DialogPrimitive.Close>
-      )}
+      {showCloseButton && <DialogClose render={<Button variant="outline" />}>{t('Close')}</DialogClose>}
     </div>
   );
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  const Title = React.useContext(SheetContext) ? DrawerPrimitive.Title : DialogPrimitive.Title;
   return (
-    <DialogPrimitive.Title
+    <Title
       data-slot="dialog-title"
       className={cn('font-heading text-base leading-none font-medium', className)}
       {...props}
@@ -527,8 +645,11 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
 }
 
 function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
+  const Description = React.useContext(SheetContext)
+    ? DrawerPrimitive.Description
+    : DialogPrimitive.Description;
   return (
-    <DialogPrimitive.Description
+    <Description
       data-slot="dialog-description"
       className={cn('text-muted-foreground text-sm *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground', className)}
       {...props}
