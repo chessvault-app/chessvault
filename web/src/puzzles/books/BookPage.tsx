@@ -555,7 +555,10 @@ function CyclesPanel({
               )}
             </>
           ) : (
-            <Button variant="secondary" size="sm" onClick={() => void act('POST')}>
+            // The filled default, not secondary: with no pass open this
+            // is the panel's ONE act, and the invitation to keep the
+            // rotation going should look like one.
+            <Button variant="default" size="sm" onClick={() => void act('POST')}>
               <Repeat className="size-3.5" data-icon="inline-start" />
               {t(passes.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
             </Button>
@@ -566,6 +569,12 @@ function CyclesPanel({
         {!open && finished.length === 0 && (
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
+            {/* The nudge for someone already solving outside any pass:
+                their attempts are real but no pass is scoring them, and
+                nothing else on the page says so. */}
+            {Object.keys(book.progress).length > 0 && (
+              <> {t('You are solving already — a cycle gives each pass its own score.')}</>
+            )}
           </p>
         )}
         {/* One grammar for every pass, open or done: attempts against
@@ -600,7 +609,9 @@ function CyclesPanel({
               {t('{n} past cycles', { n: finished.length })}
             </button>
             {showPast && (
-              <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 gap-y-1.5 text-sm">
+              // The hairline marks where the live pass ends and the
+              // record begins (lanph3re's ask).
+              <div className="border-border grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 gap-y-1.5 border-t pt-2 text-sm">
                 {finished.map(({ cycle, n, attempted, wins }) => (
                   <Fragment key={cycle.startedAt}>
                     <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
