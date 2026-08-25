@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { writeAtomic } from './atomic.ts';
+import { renameRetrying, writeAtomic } from './atomic.ts';
 import {
   closeSync,
   existsSync,
@@ -8,7 +8,6 @@ import {
   readFileSync,
   readSync,
   readdirSync,
-  renameSync,
   rmdirSync,
   rmSync,
   statSync,
@@ -465,13 +464,22 @@ export function studiesApi(
     if (!existsSync(pathOf(from))) return c.json({ error: 'no such study' }, 404);
     if (existsSync(pathOf(to))) return c.json({ error: 'a study with that name exists' }, 409);
     mkdirSync(resolve(pathOf(to), '..'), { recursive: true });
-    renameSync(pathOf(from), pathOf(to));
+    // renameRetrying: a study being moved is one somebody just had open,
+    // and on Windows a reader still holding it makes the rename throw a
+    // transient EPERM (atomic.ts). Uncaught here, so that would 500 a
+    // rename that was about to succeed.
+    renameRetrying(pathOf(from), pathOf(to));
     // The parked copy follows the document. Renaming while changes are
     // pending is ordinary — the title is the first thing people fix — and
     // a swap left at the old name would be orphaned there, unreachable and
     // unrecoverable.
     try {
-      renameSync(swapOf(from), swapOf(to));
+      // renameRetrying inside the swallow, not despite it: the catch is
+      // here to absorb "nothing parked" (ENOENT, which is not transient
+      // and still throws at once), and it would absorb a transient EPERM
+      // just as quietly — leaving the parked copy orphaned at the old
+      // name, which is exactly what this block exists to prevent.
+      renameRetrying(swapOf(from), swapOf(to));
     } catch {
       /* nothing parked — the common case */
     }
@@ -494,7 +502,9 @@ export function studiesApi(
     const toPath = resolve(dir, to);
     if (existsSync(toPath)) return c.json({ error: 'a collection with that name exists' }, 409);
     mkdirSync(resolve(toPath, '..'), { recursive: true });
-    renameSync(fromPath, toPath);
+    // A directory, which atomic.ts singles out as MORE exposed than a
+    // file: anything holding one study inside it open holds the folder.
+    renameRetrying(fromPath, toPath);
     // The documents inside went with the directory, so their marks must too.
     const ids = readMarks();
     const moved = ids.map((id) => (id.startsWith(`${from}/`) ? `${to}${id.slice(from.length)}` : id));

@@ -1,9 +1,9 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { writeAtomic } from './atomic.ts';
+import { renameRetrying, writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
 
@@ -82,7 +82,7 @@ export function sweepUnfinishedPuzzleBuild(dbPath: string = DATA_PUZZLES): void 
   if (!existsSync(building)) return;
   if (isFinishedPuzzleBuild(building)) {
     try {
-      renameSync(building, dbPath);
+      renameRetrying(building, dbPath);
       console.log('puzzles: swapped in the database an interrupted build had finished');
     } catch (error) {
       // Leave it: it is a whole database, and the next start tries again.
@@ -644,7 +644,7 @@ export function puzzlesApi(
         // wants it, which is what the line after this always claimed.
         closeDb();
         try {
-          renameSync(building, dbPath);
+          renameRetrying(building, dbPath);
         } catch (error) {
           current.error = `the database was built but could not be swapped in (${(error as Error).message})`;
           return;

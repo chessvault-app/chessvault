@@ -1,12 +1,13 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import { makeSan, parseSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
+import { renameRetrying } from './atomic.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { positionIndexInfo } from './refgamesIndex.ts';
@@ -73,7 +74,7 @@ export function migrateLegacyRefgames(dataDir: string = DATA): void {
     console.warn(`refgames: could not migrate ${basename(legacy)} — ${basename(target)} already exists`);
     return;
   }
-  renameSync(legacy, target);
+  renameRetrying(legacy, target);
   console.log(`refgames: migrated the single database to refgames/${basename(target)}`);
 }
 
@@ -140,7 +141,7 @@ export function sweepUnfinishedBuilds(dataDir: string = DATA): void {
     const target = resolve(dir, file.slice(0, -'.building'.length));
     if (isFinishedBuild(path)) {
       try {
-        renameSync(path, target);
+        renameRetrying(path, target);
         console.log(`refgames: swapped in ${basename(target)}, built by an interrupted run`);
       } catch (error) {
         // Leave it: it is a whole database, and the next start tries again.
@@ -215,7 +216,7 @@ export function seedBundledRefgames(
   try {
     rmSync(part, { force: true });
     copyFileSync(bundled, part);
-    renameSync(part, target);
+    renameRetrying(part, target);
   } catch (error) {
     rmSync(part, { force: true });
     // No marker: a recoverable failure should be retried on the next
@@ -519,7 +520,7 @@ export function refGamesApi(
         const building = `${fileFor(name)}.building`;
         if (code === 0 && existsSync(building)) {
           try {
-            renameSync(building, fileFor(name));
+            renameRetrying(building, fileFor(name));
           } catch {
             current.log.push('could not swap in the new database — rebuild after a restart');
           }
