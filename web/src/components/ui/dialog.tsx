@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Dialog as DialogPrimitive } from 'radix-ui';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { ChevronLeft, XIcon, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ export { CoverParent };
 
 /**
  * shadcn's Dialog (nova), owned — the registry's face, and underneath it
- * Radix's focus trap, scroll lock, Escape and outside-press dismissal,
+ * Base UI's focus trap, scroll lock, Escape and outside-press dismissal,
  * layer stacking and aria wiring. What this file adds is the app's window
  * physics, each learned on a device:
  *
@@ -33,37 +33,88 @@ export { CoverParent };
  *     opens — synchronously, in the ref, because iOS raises the keyboard
  *     only for a focus it can trace to the tap (soleTextField).
  *   - Android's Back gesture is a close request, via CloseWatcher where the
- *     platform has it; Escape still goes through Radix where it has not.
+ *     platform has it; Escape still goes through Base UI where it has not.
  *   - Nothing is transitioned on a phone: animating against iOS's own
  *     keyboard animation is what made earlier attempts jump about.
  *
  * One structural departure from the stock file: DialogContent renders its
- * Content INSIDE the Overlay rather than beside it. The overlay is the
+ * Popup INSIDE the Backdrop rather than beside it. The overlay is the
  * layout box — it centres the card, packs it to the bottom edge on a
  * phone, and is what the keyboard band pins.
+ *
+ * Dismissal is routed through the Root's onOpenChange, Base UI's way: the
+ * eventDetails name the reason and cancel() tells Base to stand down, so
+ * Escape and the scrim press can be rerouted (to "back", to CloseWatcher,
+ * past another layer) without ever losing the primitive's own close paths.
+ * DialogContent registers its routing in DialogGuardContext below.
  */
 
 /** How a DialogContent closes itself; the wrapper hands onOpenChange down. */
 const DialogCloseContext = React.createContext<() => void>(() => {});
 
-function Dialog({ onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+/** DialogContent's dismissal routing, consulted by the Root's onOpenChange. */
+interface DialogGuards {
+  /** Escape pressed (Base stands down): route it through the window's one door. */
+  escape: () => void;
+  /** A press outside the card: true when it landed on another layer — or on
+      a parked window's business — and must not close THIS one. */
+  ignoreOutside: (target: EventTarget | null) => boolean;
+  /** A scrim press that will close: its synthesized click must not land on
+      whatever was under the scrim once it is gone. */
+  outsideWillClose: () => void;
+}
+const DialogGuardContext = React.createContext<React.RefObject<DialogGuards | null> | null>(null);
+
+export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange'> {
+  /** Kept to Radix's one-argument shape: every caller in the app reads only the boolean. */
+  onOpenChange?: (open: boolean) => void;
+}
+
+function Dialog({ onOpenChange, ...props }: DialogProps) {
+  const guards = React.useRef<DialogGuards | null>(null);
   const close = React.useCallback(() => onOpenChange?.(false), [onOpenChange]);
   return (
     <DialogCloseContext.Provider value={close}>
-      <DialogPrimitive.Root data-slot="dialog" onOpenChange={onOpenChange} {...props} />
+      <DialogGuardContext.Provider value={guards}>
+        <DialogPrimitive.Root
+          onOpenChange={(open, details) => {
+            if (!open && guards.current) {
+              // Escape: cancel keeps Base from closing AND from
+              // preventDefaulting the keydown, so where CloseWatcher exists
+              // it still hears the same press — the one door (see
+              // useCloseWatcher). Everywhere else the guard walks through
+              // that door itself.
+              if (details.reason === 'escape-key') {
+                details.cancel();
+                guards.current.escape();
+                return;
+              }
+              if (details.reason === 'outside-press') {
+                if (guards.current.ignoreOutside(details.event.target)) {
+                  details.cancel();
+                  return;
+                }
+                guards.current.outsideWillClose();
+              }
+            }
+            onOpenChange?.(open);
+          }}
+          {...props}
+        />
+      </DialogGuardContext.Provider>
     </DialogCloseContext.Provider>
   );
 }
 
-function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
-function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
+  return <DialogPrimitive.Portal {...props} />;
 }
 
-function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
+function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
@@ -72,22 +123,17 @@ function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.C
  * top). `vv-band`: while the keyboard is up this is pinned to the band that
  * can be seen rather than to the layout viewport iOS has just shifted.
  */
-function DialogOverlay({
-  className,
-  onClick,
-  onPointerDown,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
-    <DialogPrimitive.Overlay
+    <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
-      // A press on the scrim closes the window (Radix, from a pointerdown
-      // listener on the document — which is why the pointerdown itself is
-      // NOT stopped here: React would stop the native event at the portal's
-      // root and Radix would never hear it). The CLICK must go no further:
-      // React bubbles through portals, and a window written inside a shelf
-      // card would hand the click to the card, which opens — a rename
-      // dismissed by a tap beside it opened the study it was renaming.
+      // A press on the scrim closes the window (Base UI, from its document
+      // listeners — which is why the pointerdown itself is NOT stopped
+      // here: React would stop the native event at the portal's root and
+      // Base would never hear it). The CLICK must go no further: React
+      // bubbles through portals, and a window written inside a shelf card
+      // would hand the click to the card, which opens — a rename dismissed
+      // by a tap beside it opened the study it was renaming.
       onClick={(e) => {
         onClick?.(e);
         e.stopPropagation();
@@ -108,8 +154,8 @@ const PHONE = '(max-width: 39.9375rem)';
 /**
  * Close on the platform's close request — Android's Back gesture, and in an
  * installed PWA that gesture is the only chrome an Android phone has.
- * CloseWatcher also answers Escape, so where it exists Radix's own Escape
- * handling stands down (see DialogContent) and this is the one door.
+ * CloseWatcher also answers Escape, so where it exists Base UI's own Escape
+ * handling stands down (see the guard in Dialog) and this is the one door.
  */
 function useCloseWatcher(onClose: () => void, active: boolean): void {
   const close = React.useRef(onClose);
@@ -122,7 +168,7 @@ function useCloseWatcher(onClose: () => void, active: boolean): void {
   }, [active]);
 }
 
-export interface DialogContentProps extends React.ComponentProps<typeof DialogPrimitive.Content> {
+export interface DialogContentProps extends DialogPrimitive.Popup.Props {
   /**
    * The window's name, drawn in the title row every window shares — one
    * closing idiom per app, so no window has to be read before it can be
@@ -164,10 +210,6 @@ function DialogContent({
   size = 'default',
   fill = false,
   alert = false,
-  onEscapeKeyDown,
-  onPointerDownOutside,
-  onOpenAutoFocus,
-  onCloseAutoFocus,
   onClick,
   onPointerDown,
   ref,
@@ -175,6 +217,7 @@ function DialogContent({
   ...props
 }: DialogContentProps) {
   const close = React.useContext(DialogCloseContext);
+  const guards = React.useContext(DialogGuardContext);
   const phone = useMediaQuery(PHONE);
   const small = size === 'sm';
 
@@ -217,6 +260,36 @@ function DialogContent({
   const request = small ? (onBack ?? close) : close;
   useCloseWatcher(request, !shut);
 
+  // The dismissal routing the Root's onOpenChange consults (see the top).
+  React.useEffect(() => {
+    if (!guards) return;
+    guards.current = {
+      // A shut window ignores Escape outright; CloseWatcher, where it
+      // exists, hears the same un-defaulted keydown and answers instead.
+      escape: () => {
+        if (!shut && !window.CloseWatcher) request();
+      },
+      // Base's outside-press listener is document-wide, so a press on a
+      // LATER layer — a menu, a picker window over this one, that window's
+      // own scrim — is "outside" this card too. Only a press on this
+      // window's OWN scrim may close it; anything on another overlay or
+      // floating layer is that layer's business.
+      ignoreOutside: (target) => {
+        if (shut) return true;
+        const node = target instanceof Element ? target : null;
+        const layer = node?.closest(
+          '[data-slot=dialog-overlay],[role=listbox],[role=menu],[role=tooltip],[role=dialog],[role=alertdialog]',
+        );
+        if (!layer) return false;
+        return layer !== card.current?.closest('[data-slot=dialog-overlay]');
+      },
+      outsideWillClose: () => suppressNextClick(),
+    };
+    return () => {
+      guards.current = null;
+    };
+  });
+
   // The board's arrow keys listen on the window and must not step the game
   // behind an open window's scrim; this is how they ask (dialogOpen()).
   React.useEffect(() => {
@@ -227,19 +300,19 @@ function DialogContent({
   const drag = useSheetDrag(close);
 
   // Whatever had the focus when this window opened — read on the FIRST
-  // RENDER, before anything inside has mounted, and not left to Radix: its
-  // FocusScope reads document.activeElement in its mount effect, by which
-  // time a field's own autoFocus (or the ref below) has put the caret
-  // inside the window — so it would remember the field and drop focus on
-  // the body when the window closes.
+  // RENDER, before anything inside has mounted, and not left to the
+  // primitive: it reads document.activeElement in its mount effect, by
+  // which time a field's own autoFocus (or the ref below) has put the
+  // caret inside the window — so it would remember the field and drop
+  // focus on the body when the window closes.
   const opener = React.useRef<HTMLElement | null | undefined>(undefined);
   if (opener.current === undefined) {
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   }
   // The sole-text-field focus happens HERE, in the ref callback, not in
-  // Radix's mount autofocus: a ref attaches synchronously inside the tap
-  // that opened the dialog, and iOS only raises the keyboard for a focus it
-  // can trace to a user gesture. Guarded per node.
+  // the primitive's mount autofocus: a ref attaches synchronously inside
+  // the tap that opened the dialog, and iOS only raises the keyboard for a
+  // focus it can trace to a user gesture. Guarded per node.
   const armed = React.useRef<HTMLElement | null>(null);
   const setNode = (node: HTMLDivElement | null): void => {
     card.current = node;
@@ -266,16 +339,12 @@ function DialogContent({
         // order the stylesheet emitted them in.
         style={hidden ? { display: 'none' } : undefined}
       >
-        <DialogPrimitive.Content
+        <DialogPrimitive.Popup
           data-slot="dialog-content"
           data-size={size}
           // Only when it is one: an explicit `role={undefined}` would
-          // override the `dialog` Radix sets, not leave it alone.
+          // override the `dialog` the primitive sets, not leave it alone.
           {...(alert ? { role: 'alertdialog' } : {})}
-          // The title row names the window (aria-labelledby, via
-          // DialogTitle); there is no description, and saying so is what
-          // keeps Radix from asking for one.
-          aria-describedby={undefined}
           ref={setNode}
           // A press inside this layer must not reach what the layer was written
           // inside: React bubbles through portals, and a card or a row that
@@ -288,51 +357,23 @@ function DialogContent({
             onPointerDown?.(e);
             e.stopPropagation();
           }}
-          // Escape: preventDefault keeps Radix from closing on its own,
-          // and the request goes through the one door — CloseWatcher where
-          // it exists (it hears Escape too), else straight from here.
-          onEscapeKeyDown={(e) => {
-            onEscapeKeyDown?.(e);
-            if (e.defaultPrevented) return;
-            e.preventDefault();
-            if (!window.CloseWatcher) request();
-          }}
-          // A press on the scrim closes; the tap's synthesized click must
-          // not land on whatever was under the scrim once it is gone.
-          onPointerDownOutside={(e) => {
-            onPointerDownOutside?.(e);
-            if (e.defaultPrevented) return;
-            const target = e.target as HTMLElement | null;
-            if (target?.closest?.('[role=listbox],[role=menu],[role=tooltip],[role=dialog],[role=alertdialog]')) {
-              e.preventDefault();
-              return;
-            }
-            suppressNextClick();
-          }}
           // Take focus only if nothing inside already has it; otherwise the
           // sole field, else the window itself — a container, which never
           // pops a phone keyboard.
-          onOpenAutoFocus={(e) => {
-            onOpenAutoFocus?.(e);
-            if (e.defaultPrevented) return;
-            e.preventDefault();
+          initialFocus={() => {
             const node = card.current;
-            if (!node || node.contains(document.activeElement)) return;
-            const field = soleTextField(node);
-            if (field) field.focus();
-            else node.focus({ preventScroll: true });
+            if (!node || node.contains(document.activeElement)) return false;
+            return soleTextField(node) ?? node;
           }}
           // Hand focus back to the opener (see `opener`) — unless something
           // moved it deliberately, in which case that choice stands.
-          onCloseAutoFocus={(e) => {
-            onCloseAutoFocus?.(e);
-            if (e.defaultPrevented) return;
-            e.preventDefault();
+          finalFocus={() => {
             const active = document.activeElement;
-            const back = opener.current;
-            if (back && back.isConnected && (active === null || active === document.body)) {
-              back.focus({ preventScroll: true });
+            const backTo = opener.current;
+            if (backTo && backTo.isConnected && (active === null || active === document.body)) {
+              return backTo;
             }
+            return false;
           }}
           style={{
             ...style,
@@ -422,22 +463,24 @@ function DialogContent({
                 {/* A way out for the mouse, and only for the mouse: a phone
                     has three already — drag the sheet down, tap the scrim,
                     press Back. */}
-                <DialogPrimitive.Close asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t('Close')}
-                    aria-label={t('Close')}
-                    className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
-                  >
-                    <XIcon />
-                  </Button>
+                <DialogPrimitive.Close
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title={t('Close')}
+                      aria-label={t('Close')}
+                      className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
+                    />
+                  }
+                >
+                  <XIcon />
                 </DialogPrimitive.Close>
               </div>
             </div>
           )}
           <CoverParent.Provider value={asParent}>{children}</CoverParent.Provider>
-        </DialogPrimitive.Content>
+        </DialogPrimitive.Popup>
       </DialogOverlay>
     </DialogPortal>
   );
@@ -467,15 +510,13 @@ function DialogFooter({
     >
       {children}
       {showCloseButton && (
-        <DialogPrimitive.Close asChild>
-          <Button variant="outline">{t('Close')}</Button>
-        </DialogPrimitive.Close>
+        <DialogPrimitive.Close render={<Button variant="outline" />}>{t('Close')}</DialogPrimitive.Close>
       )}
     </div>
   );
 }
 
-function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -485,10 +526,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   );
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

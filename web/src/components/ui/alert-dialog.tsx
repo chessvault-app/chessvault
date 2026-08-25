@@ -120,9 +120,11 @@ function AlertDialogAction({
   ...props
 }: React.ComponentProps<typeof Button>) {
   return (
-    <DialogClose asChild>
-      <Button data-slot="alert-dialog-action" variant={variant} size={size} className={cn(className)} {...props} />
-    </DialogClose>
+    <DialogClose
+      render={
+        <Button data-slot="alert-dialog-action" variant={variant} size={size} className={cn(className)} {...props} />
+      }
+    />
   );
 }
 
@@ -138,16 +140,18 @@ function AlertDialogCancel({
   ...props
 }: React.ComponentProps<typeof Button>) {
   return (
-    <DialogClose asChild>
-      <Button
-        data-slot="alert-dialog-cancel"
-        variant={variant}
-        size={size}
-        autoFocus={autoFocus}
-        className={cn(className)}
-        {...props}
-      />
-    </DialogClose>
+    <DialogClose
+      render={
+        <Button
+          data-slot="alert-dialog-cancel"
+          variant={variant}
+          size={size}
+          autoFocus={autoFocus}
+          className={cn(className)}
+          {...props}
+        />
+      }
+    />
   );
 }
 
