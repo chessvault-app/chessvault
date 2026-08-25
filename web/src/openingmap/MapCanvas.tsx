@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n';
 import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
-import { createLiveSim, layoutGraph, layoutTree, type LiveSim } from './graph';
+import { createLiveSim, layoutGraph, layoutTree, PAD, type LiveSim } from './graph';
 import { favouriteChild } from './mainline';
 import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
 
@@ -269,9 +269,16 @@ export function MapCanvas({
   liveRef.current = live;
   const sim = useRef<LiveSim | null>(null);
   useEffect(() => {
+    // The ref too, synchronously: the fit effect below runs in this same
+    // commit and reads liveRef — left to the setLive re-render, a switch
+    // of arrangement would fit the OLD desk instead of the new layout.
+    liveRef.current = null;
     setLive(null);
     sim.current = null;
-  }, [map.id]);
+    // An arrangement is a different desk. The tree cannot honour dragged
+    // positions (drags are off there), and drawing it at them was the
+    // switcher visibly doing nothing after any drag had committed.
+  }, [map.id, arrangement]);
   /** The BASE position — what React renders the scene at. */
   const posOf = (id: string): { x: number; y: number } => live?.get(id) ?? at.get(id)!;
   /** The DRAWN position — base plus whatever the loop has done this
@@ -512,12 +519,39 @@ export function MapCanvas({
   useEffect(() => {
     const box = host.current?.getBoundingClientRect();
     if (!box || box.width === 0) return;
-    const w = graph.maxX - graph.minX;
-    const h = graph.maxY - graph.minY;
+    /**
+     * Fit the picture that is actually on screen, not the layout's idea
+     * of it. After a drag the dots stand where the reader put them —
+     * still coasting in the sim, or committed into `live` — and fitting
+     * the deterministic bounds framed where they USED to be: Align
+     * centred the middle of nowhere. The idle drift is a few units and
+     * the overture's scatter never coexists with a same-graph refit, so
+     * the two drag sources are the only ones worth reading.
+     */
+    const desk = sim.current?.positions() ?? liveRef.current;
+    let minX = graph.minX;
+    let minY = graph.minY;
+    let maxX = graph.maxX;
+    let maxY = graph.maxY;
+    if (desk) {
+      minX = Infinity;
+      minY = Infinity;
+      maxX = -Infinity;
+      maxY = -Infinity;
+      for (const n of graph.nodes) {
+        const p = desk.get(n.id) ?? n;
+        minX = Math.min(minX, p.x - n.r - PAD);
+        minY = Math.min(minY, p.y - n.r - PAD);
+        maxX = Math.max(maxX, p.x + n.r + PAD);
+        maxY = Math.max(maxY, p.y + n.r + PAD);
+      }
+    }
+    const w = maxX - minX;
+    const h = maxY - minY;
     const k = Math.min(2, 0.92 * Math.min(box.width / w, box.height / h));
     commitView({
-      x: box.width / 2 - ((graph.minX + graph.maxX) / 2) * k,
-      y: box.height / 2 - ((graph.minY + graph.maxY) / 2) * k,
+      x: box.width / 2 - ((minX + maxX) / 2) * k,
+      y: box.height / 2 - ((minY + maxY) / 2) * k,
       k,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
