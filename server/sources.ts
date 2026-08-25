@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { renameRetrying } from './atomic.ts';
 import { VAULT_SOURCES } from './paths.ts';
 
 /**
@@ -112,7 +113,12 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
         },
         sink,
       );
-      renameSync(part, target);
+      // renameRetrying, not renameSync: the .part was written a moment
+      // ago, and on Windows whatever is still looking at those bytes —
+      // Defender, the indexer — makes the rename throw a transient EPERM
+      // that is not an error (see atomic.ts). A 300 MB upload is the worst
+      // thing here to have to do twice.
+      renameRetrying(part, target);
     } catch (error) {
       // Wait for the sink to close before removing the .part.
       // createWriteStream opens the file asynchronously and pipeline
