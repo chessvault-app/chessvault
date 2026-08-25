@@ -115,7 +115,28 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
       //
       // `overflow-hidden` likewise comes from the root; `fit` still has to
       // beat it, and does, because the call site's classes are merged last.
-      className={cn(fit ? 'min-h-max overflow-visible' : 'min-h-0', className)}
+      //
+      // A panel is a stack of full-bleed bands — a header, an engine
+      // block, a tab bar, a scrolling body, a controls row — and every
+      // one of them brings its own height and its own rule. The card's
+      // top padding had nothing to space and only pushed the first band
+      // down; its gap pushed the bands apart and left the rules floating.
+      // So `pt-0 gap-0`: bands sit flush, against the card's top edge and
+      // against each other, which is where they were before the registry
+      // adoption and what the borders were drawn for.
+      //
+      // The one slot that keeps the card's spacing is the footer, because
+      // a footer standing on the panel's floor is a different thing from
+      // a band in the stack, and the space above it is what this whole
+      // change set out to fix. Stated once here rather than at each call
+      // site — that was the mistake being undone. The `>` matters: the
+      // two trainers keep their footer INSIDE the scrolling body, where
+      // it is spaced by that body's own gap and must not be touched.
+      className={cn(
+        fit ? 'min-h-max overflow-visible' : 'min-h-0',
+        'gap-0 pt-0 [&>[data-slot=card-footer]]:mt-(--card-spacing)',
+        className,
+      )}
     >
       {children}
       {resizeKey !== undefined && (
@@ -183,30 +204,20 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // the title and its rule jumped 4px when the phone's pane tabs
     // switched between them.
     //
-    // That floor is ALSO this header's padding, which is why the two
-    // negative margins are here. The registry's card pads itself
-    // vertically and gaps its slots, on the assumption that a header is
-    // text needing air put around it; this one is a 44/52px band that
-    // already carries its own. Left alone the two stack — measured 16px
-    // of card padding above a 52px band and 16px of gap below it, 84px
-    // before a word of body where the old header took 52 — so the header
-    // takes both back and sits where it always did (lanph3re's call).
+    // That floor is ALSO this header's padding — which is why it needs no
+    // margin of its own to sit where it always did. Panel turns the card's
+    // gap off for its bands (see above), so this is simply one of them.
     //
-    // Deliberately here and not in components/ui/card: the registry file
-    // states the model, and a panel header is the app's own composite
-    // departing from it. Same reasoning the doc gives for Card — owned
-    // means behaviour on top, not geometry underneath.
-    //
-    // `-mt` cancels the card's top padding when this leads the card, and
-    // the gap above it when something else does (AnalysisMovesPanel puts
-    // an engine block first); either way the header ends up against what
-    // precedes it, as before. `-mb` cancels the gap to the body. What is
-    // NOT cancelled is the card's floor and the footer's own gap, which
-    // is the half of the registry's model that was worth having.
+    // It briefly did carry negative margins to claw the spacing back, and
+    // they were wrong in a way worth recording: a `:not(:first-child)`
+    // guard is not a guard here, because a `display:none` sibling still
+    // counts for `:first-child` while contributing no flex gap. On the
+    // board page the engine block is hidden, so the guard passed and the
+    // header was dragged 16px above the card's own box — measured at -16,
+    // and under `overflow-hidden` that is out of sight, not merely tight.
     <CardHeader
       className={cn(
         'flex min-h-11 pointer-coarse:min-h-13 shrink-0 flex-row items-center justify-between gap-2',
-        '-mt-(--card-spacing) -mb-(--card-spacing)',
         className,
       )}
     >
