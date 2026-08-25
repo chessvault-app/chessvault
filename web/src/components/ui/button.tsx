@@ -15,7 +15,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  *   - `active`, the lit state of a toggle-like toolbar button — the
  *     registry's expanded look, set as `data-active` too;
  *   - bigger hit areas on coarse pointers (`pointer-coarse:`): 28px icon
- *     buttons are fine under a mouse and hostile under a thumb;
+ *     buttons are fine under a mouse and hostile under a thumb. Where
+ *     that widens a size's padding it widens the icon side too, or the
+ *     registry's trim below would grow with it — `sm` at `px-3` against
+ *     an untouched `pl-1.5` was a 6px lean where the registry draws 4;
  *   - `title` as a Tooltip, and as the accessible name of an icon-only
  *     button; `type="button"` unless told otherwise;
  *   - `not-[.w-full]` on the registry's icon-side padding trim. That trim
@@ -23,8 +26,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  *     button gets narrower, nothing inside it moves. A button told to
  *     fill its box instead centres its contents in what the padding
  *     leaves, so the same trim pushes them off-centre by half of it —
- *     measured 2px on the repertoire Start button under a mouse and 3px
- *     under a thumb, where `sm` widens to `px-3` but the trim does not.
+ *     measured 2px on the repertoire Start button, and 1px on the nine
+ *     `default`-size ones in the dialogs and the review rows.
  */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
