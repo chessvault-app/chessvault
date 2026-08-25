@@ -410,7 +410,12 @@ function DialogContent({
         // that the sheet can be pushed away (the Drawer answers a drag
         // from anywhere on it), kept as markup so composed-by-hand windows
         // (AlertDialog) put their own header under it.
-        <div className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-3 pb-0 max-sm:touch-none max-sm:select-none">
+        //
+        // pb-4 -mb-4: the strip's background reaches through the card's
+        // gap-4 below it, so content scrolling under stops being visible
+        // at its own resting edge — with pb-0 it slid through the
+        // transparent gap and was clipped flush against the strip.
+        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-4 px-4 pt-3 pb-4 max-sm:touch-none max-sm:select-none">
           <div className="bg-border mx-auto h-1 w-9 cursor-grab rounded-full" aria-hidden />
         </div>
       )}
@@ -418,7 +423,12 @@ function DialogContent({
         // The title row. Pinned to the top of the card, which scrolls:
         // a ten-row list is taller than the sheet holding it, and a way
         // back you have to scroll up to find is not one.
-        <div className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-4 pb-0 max-sm:touch-none max-sm:select-none">
+        //
+        // pb-4 -mb-4: same reach-through as the grabber strip above —
+        // scrolled content used to stay visible in the transparent gap-4
+        // and get clipped flush against the title's baseline, which read
+        // as the title stamped over the content.
+        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-4 px-4 pt-4 pb-4 max-sm:touch-none max-sm:select-none">
           {/* The grabber, phones only. */}
           <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
           <div className="flex items-center gap-2">
