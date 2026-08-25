@@ -148,7 +148,11 @@ export function OpeningPicker({
         // The Input face from the source, not a hand copy of it — the
         // trigger reads as the field it opens into.
         INPUT_BASE,
-        'text-foreground flex h-9 min-w-0 items-center px-2.5 text-left duration-100',
+        // h-8 with the coarse step, the Select trigger's own ladder: this
+        // stands in a column of Selects and Segmenteds that are all 32px
+        // under a mouse and 36 under a thumb, and its fixed h-9 was the
+        // one row 4px taller — and the only one that did not grow on touch.
+        'text-foreground flex h-8 min-w-0 items-center px-2.5 text-left duration-100 pointer-coarse:h-9',
         'hover:border-primary/40',
       )}
     >

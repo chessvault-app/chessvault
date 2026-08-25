@@ -1339,7 +1339,10 @@ export function RepertoireView() {
       <div className="flex flex-col gap-2">
         <Button
           variant="default"
-          size="sm"
+          // `default`, not `sm`: Start ends the column of h-8 fields —
+          // Segmenteds, Selects, the opening trigger — and at h-7 it was
+          // the one control 4px shorter than the form it starts.
+          size="default"
           className="w-full"
           disabled={needsToken || (mode === 'drill' && !drillReady)}
           onClick={startGame}
@@ -1348,7 +1351,7 @@ export function RepertoireView() {
           {t('Start')}
         </Button>
         {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
-          <Button variant="secondary" size="sm" className="w-full" disabled={!drillReady} onClick={startFromMiss}>
+          <Button variant="secondary" size="default" className="w-full" disabled={!drillReady} onClick={startFromMiss}>
             {t('Drill a missed position')}
           </Button>
         )}
@@ -1404,12 +1407,11 @@ export function RepertoireView() {
   const setupRow = (
     /* The registry's Button, not a hand-rolled one. It used to be its own
        `<button>` sized by padding and line-height — 42px — while Start
-       above it is a Button sized by its variant: h-7, 28px, stepping to
-       h-9 on a coarse pointer. Two rows in one column disagreeing by 14px
-       under a mouse and 6px under a thumb, because one was height-driven
-       and the other content-driven. As a Button it is on the same ladder
-       as Start by construction, and it gets the coarse-pointer step it
-       never had.
+       above it is a Button sized by its variant: h-8, 32px, stepping to
+       h-9 on a coarse pointer. Two rows in one column disagreeing,
+       because one was height-driven and the other content-driven. As a
+       Button at Start's own size it is on the same ladder by
+       construction, and it gets the coarse-pointer step it never had.
 
        `secondary`, which is the face the puzzle trainer's two rows of
        this same shape already wear (DifficultyChip and the theme row):
@@ -1419,7 +1421,7 @@ export function RepertoireView() {
        is a row to read along and not a label in a box. */
     <Button
       variant="secondary"
-      size="sm"
+      size="default"
       className="w-full min-w-0 justify-start"
       onClick={openSetup}
       title={setupTerms}
