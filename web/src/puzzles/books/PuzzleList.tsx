@@ -12,7 +12,9 @@ import { t } from '@/lib/i18n';
 import {
   type BookDraft,
   type BookPuzzle,
+  type CycleWindow,
   type PuzzleProgress,
+  cycleFirstAttempt,
   PROVENANCE_META,
 } from './data';
 
@@ -214,14 +216,19 @@ export function PuzzleList({
   puzzles,
   drafts,
   progress,
-  solvedCount,
+  cycle,
   onDraft,
 }: {
   slug: string;
   puzzles: BookPuzzle[];
   drafts: BookDraft[];
   progress: Record<string, PuzzleProgress>;
-  solvedCount: number;
+  /** The pass still running, if one is. While it runs, the grid — tiles,
+      bar and filter counts alike — reads state through its window, so
+      starting a cycle visibly clears the board and stopping one hands
+      the all-time record back. One lens at a time; the panel above
+      already tells the pass's own story in numbers. */
+  cycle: CycleWindow | null;
   onDraft: (d: BookDraft) => void;
 }) {
   const [stateFilter, setStateFilter] = useState<'all' | 'new' | 'failed' | 'solved'>('all');
@@ -233,6 +240,10 @@ export function PuzzleList({
   // pseudo-puzzles so one grid/filter machinery serves both. A click on a
   // draft routes to the editor (see onClick), not the solver.
   const stateOf = (p: BookPuzzle): 'new' | 'failed' | 'solved' => {
+    if (cycle) {
+      const first = cycleFirstAttempt(progress[p.id], cycle);
+      return first === null ? 'new' : first.win ? 'solved' : 'failed';
+    }
     const last = progress[p.id]?.last;
     return last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new';
   };
@@ -280,7 +291,7 @@ export function PuzzleList({
     }
     return { items: merged, tiers: ordered, stateCounts: states };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puzzles, drafts, progress]);
+  }, [puzzles, drafts, progress, cycle]);
   // Unnumbered entries fall back to their list ordinal; a Map beats an
   // indexOf per rendered tile.
   const ordinalOf = useMemo(() => new Map(items.map((p, i) => [p.id, i + 1])), [items]);
@@ -296,9 +307,12 @@ export function PuzzleList({
 
   return (
     <>
+      {/* The same lens as the tiles below — the counts stateOf tallied,
+          not an all-time figure handed in beside them, so bar, tiles and
+          filter counts can never disagree about what a colour means. */}
       <ProgressBar
         total={puzzles.length}
-        solved={solvedCount}
+        solved={stateCounts.solved}
         failed={stateCounts.failed}
         className="mb-3"
       />

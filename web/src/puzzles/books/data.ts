@@ -130,6 +130,17 @@ export interface BookDetail {
   drafts?: BookDraft[];
 }
 
+/** One puzzle through one pass's window: its FIRST attempt inside the
+    window, or null where the pass has not met it yet. The grid reads
+    tile state through this while a cycle is open, so starting a pass
+    visibly clears the board. */
+export function cycleFirstAttempt(
+  entry: PuzzleProgress | undefined,
+  cycle: CycleWindow,
+): { win: boolean } | null {
+  return cycleAttempt(attemptsOf(entry), cycle);
+}
+
 /** The pass still running, if one is — the last window not yet closed. */
 export function openCycle(book: BookDetail): CycleWindow | null {
   return book.cycles?.find((c) => c.finishedAt === undefined) ?? null;

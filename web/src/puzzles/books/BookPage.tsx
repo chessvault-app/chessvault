@@ -30,7 +30,6 @@ import { classifyBoardNet, loadCellNet } from '../ocr/cellnet';
 import { isUntitled, t } from '@/lib/i18n';
 import { formatAgo } from '@/lib/dates';
 import { Panel, PanelHeader } from '@/components/panel';
-import { ProgressBar } from '@/components/progress-bar';
 import {
   type BookDetail,
   type BookDraft,
@@ -222,10 +221,6 @@ export function BookPage({ slug }: { slug: string }) {
       />
     );
   }
-
-  const solvedCount = book
-    ? book.puzzles.filter((p) => book.progress[p.id]?.last === 'win').length
-    : 0;
 
   // The review queue's head, and how long the queue is — the dashboard's
   // own button, worn by the book it belongs to.
@@ -433,7 +428,7 @@ export function BookPage({ slug }: { slug: string }) {
                 puzzles={book.puzzles}
                 drafts={book.drafts ?? []}
                 progress={book.progress}
-                solvedCount={solvedCount}
+                cycle={openCycle(book)}
                 onDraft={(d) => setDraft(d)}
               />
             )}
@@ -470,7 +465,7 @@ export function BookPage({ slug }: { slug: string }) {
             puzzles={book.puzzles}
             drafts={book.drafts ?? []}
             progress={book.progress}
-            solvedCount={solvedCount}
+            cycle={openCycle(book)}
             onDraft={(d) => setDraft(d)}
           />
         )}
@@ -579,22 +574,16 @@ function CyclesPanel({
             same-shaped fractions. */}
         {open && openPass && (
           <>
+            {/* Numbers only — the bar for these numbers is the grid's
+                own, directly below, which reads through the open pass's
+                window while one runs. Two bars a rem apart showing the
+                same fraction was the redundancy lanph3re flagged. */}
             <p className="flex items-baseline gap-3 text-sm">
               <span className="text-foreground font-medium">{t('Cycle {n}', { n: openN })}</span>
               <span className="text-muted-foreground tabular-nums">
                 {openPass.attempted}/{total} · {t('{n} solved', { n: openPass.wins })}
               </span>
             </p>
-            {/* THE solved/failed bar, not a plain fill: a pass's quality
-                is what Woodpecker is about, and the plain bar at 0% was
-                indistinguishable from a full one — the track alone reads
-                as a complete thin line. */}
-            <ProgressBar
-              total={total}
-              solved={openPass.wins}
-              failed={openPass.attempted - openPass.wins}
-              showEmpty
-            />
           </>
         )}
         {finished.length > 0 && (
