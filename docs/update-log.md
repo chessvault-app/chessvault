@@ -5,6 +5,20 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The component layer stands on Base UI.** Every primitive under the
+  shadcn/ui components — dialogs, menus, selects, tooltips, tabs,
+  toggles, switches, sliders and the rest — is `@base-ui/react` now,
+  from the maintainers Radix's own team moved on to become; `radix-ui`
+  is gone from the tree. Nothing the app had learned on a device was
+  thrown away: every window is still a bottom sheet on a phone, the back
+  chevron, the keyboard band, the sole-field focus and Android's Back
+  through CloseWatcher all survive, and a 48-shot screenshot grid against
+  the old build came back 42/48 byte-identical with the rest explained
+  (anti-aliasing noise, and the puzzle pages drawing a random puzzle by
+  design).
+
 ## 0.4.8
 
 A library of your chess books, read beside a board.

@@ -66,7 +66,7 @@ matters.
   everything the user touches. Chess logic via `chessops`, boards via
   chessground, notes via TipTap, engine via stockfish.js (WASM, threads).
   The component layer is shadcn's: the registry's files, owned and given
-  the app's face, under `web/src/components/ui` (Radix underneath), the
+  the app's face, under `web/src/components/ui` (Base UI underneath), the
   app's composites under `web/src/components`, the theme in shadcn's
   token vocabulary derived from the app's OKLCH ladder (see
   `docs/design-principles.md`, "The component layer"). Talks to the

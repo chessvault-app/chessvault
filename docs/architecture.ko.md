@@ -65,7 +65,7 @@ PGN이며, 퍼즐 진행 상황은 JSON 라인입니다. 이 앱은 Obsidian에�
   사용자가 만지는 모든 것. 체스 로직은 `chessops`, 보드는 chessground, 노트는
   TipTap, 엔진은 stockfish.js(WASM, 스레드)를 씁니다. 컴포넌트 층은 shadcn의
   것입니다. 레지스트리의 파일을 가져와 이 앱의 얼굴을 입힌 것이
-  `web/src/components/ui`(밑은 Radix)에, 앱의 합성 컴포넌트가
+  `web/src/components/ui`(밑은 Base UI)에, 앱의 합성 컴포넌트가
   `web/src/components`에 있고, 테마는 앱의 OKLCH 사다리에서 파생한 shadcn
   토큰 어휘로 적혀 있습니다(`docs/design-principles.ko.md`의 "컴포넌트 층"
   참고). 서버와는 **오직** HTTP로만 주고받습니다 — 데스크톱, PWA, 휴대폰 등

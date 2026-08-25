@@ -378,7 +378,7 @@ iPhone에서 틀렸습니다.
 
 ## 컴포넌트 층
 
-이 앱은 shadcn/ui 프로젝트입니다(`components.json`: radix-nova 스타일,
+이 앱은 shadcn/ui 프로젝트입니다(`components.json`: base-nova 스타일,
 Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 것:
 
 - **`web/src/components/ui/`에는 레지스트리의 파일이 들어 있고, 우리가
@@ -386,7 +386,7 @@ Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 
   AlertDialog, DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs,
   ToggleGroup, Toggle, Switch, Progress, Skeleton, Card, Separator, Calendar,
   Sonner — 각각
-  `npx shadcn add`가 써 주는 모양 그대로(밑은 Radix, `cva` 변형,
+  `npx shadcn add`가 써 주는 모양 그대로(밑은 Base UI, `cva` 변형,
   `data-slot`), 각각 레지스트리 자신의 얼굴(nova 스타일: 그 크기, 둥근
   정도의 사다리, 포커스 링, 반전된 툴팁, 실선 링 카드)을 하고, 그 위에 이
   앱의 물리를 얹습니다. 휴대폰에서는 모든 창이 아래에서 올라오는 시트이고
