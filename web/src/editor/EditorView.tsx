@@ -330,8 +330,10 @@ export function EditorView({
           )}
           {/* The sheet has no PanelHeader, whose height is what normally
               holds the first field off the card's top border — so it pads
-              itself; the column would double-space. */}
-          <div className={cn('grid gap-3 px-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
+              itself; the column would double-space. The bottom pad is for
+              both: Panel zeroes the card's gap, so without it the last
+              inputs sit flush against the FEN footer's rule. */}
+          <div className={cn('grid gap-3 px-(--card-spacing) pb-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
             {/* One of these, so it wears the control that says so. It was a
                 pair of buttons lit primary/secondary — the same question the
                 repertoire's New game panel asks, asked in a different shape,
