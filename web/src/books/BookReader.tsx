@@ -236,7 +236,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // editor in its header — the reader's two ways of putting a position on
   // the board that did not come from a diagram.
   const movesPanel = (className?: string, nav = true) => (
-    <Panel flush className={cn('min-h-0 flex-1', className)}>
+    <Panel className={cn('min-h-0 flex-1', className)}>
       <PanelHeader
         title={t('Moves')}
         actions={

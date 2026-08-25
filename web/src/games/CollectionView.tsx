@@ -511,7 +511,7 @@ export function CollectionView() {
       {
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
-        <Panel flush className="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch">
+        <Panel className="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch">
           {/* No Elite games button here any more: it is one of the ways to
               ADD a game, and every one of those is behind the header's
               Add games now. A panel header should say what the panel
@@ -717,7 +717,7 @@ export function CollectionView() {
           Beside the collection where there is width for it, and nowhere at
           all below lg, where both open from Add games as windows. */}
       <div className="hidden min-h-0 lg:flex lg:flex-col">
-        <Panel flush className="min-h-0 flex-1">
+        <Panel className="min-h-0 flex-1">
           {/* The panel's TITLE is the switch. A pill track here would be
               the second one in this panel — the provider tabs are eight
               pixels below it — and two stacked tracks read as one

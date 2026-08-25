@@ -7,8 +7,6 @@ import { useMediaQuery } from '@/lib/media';
 interface PanelProps {
   children: ReactNode;
   className?: string;
-  /** Removes internal padding, for panels that own their own scroll area. */
-  flush?: boolean;
   /**
    * Makes the panel height-resizable on desktop: a grip appears along the
    * bottom edge, and the chosen height persists in localStorage under this
@@ -46,14 +44,7 @@ function useLgViewport(enabled: boolean): boolean {
 }
 
 /** The standard raised surface: every pane in the app sits in one of these. */
-export function Panel({
-  children,
-  className,
-  flush = false,
-  resizeKey,
-  defaultHeight,
-  fit = false,
-}: PanelProps) {
+export function Panel({ children, className, resizeKey, defaultHeight, fit = false }: PanelProps) {
   const ref = useRef<HTMLElement>(null);
   const drag = useRef<{ y: number; h: number } | null>(null);
   const [height, setHeight] = useState<number | null>(() => {
@@ -116,11 +107,15 @@ export function Panel({
     <Card
       ref={ref}
       style={style}
-      className={cn(
-        fit ? 'min-h-max overflow-visible' : 'min-h-0 overflow-hidden',
-        !flush && 'p-3',
-        className,
-      )}
+      // The padding is the Card's now, not this component's: the registry
+      // root pads itself vertically and its slots pad themselves across,
+      // which is why there is no longer a `flush` prop to turn off. Every
+      // panel in the app passed it, so the padding it switched off was
+      // never once switched on.
+      //
+      // `overflow-hidden` likewise comes from the root; `fit` still has to
+      // beat it, and does, because the call site's classes are merged last.
+      className={cn(fit ? 'min-h-max overflow-visible' : 'min-h-0', className)}
     >
       {children}
       {resizeKey !== undefined && (
@@ -149,8 +144,13 @@ export function Panel({
           className={cn(
             // mt-auto pins the grip to the panel's bottom edge even when a
             // dragged height leaves the panel taller than its content —
-            // otherwise it floats mid-panel right under the last row.
-            'border-border/60 hover:bg-accent mt-auto hidden h-2.5 shrink-0 touch-none',
+            // otherwise it floats mid-panel right under the last row. The
+            // negative bottom margin takes back the card's own floor, the
+            // way CardFooter's `has-` rule does for a footer: the grip is
+            // the panel's edge, so it has to reach it. (No resizable panel
+            // carries a footer as well; one that did would zero the card's
+            // pb and this would then overshoot by --card-spacing.)
+            'border-border/60 hover:bg-accent mt-auto -mb-(--card-spacing) hidden h-2.5 shrink-0 touch-none',
             'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
           )}
         >
@@ -177,12 +177,14 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // neither does its dialog title row, so panels and windows agree (the
     // old look's rule went with the old look).
     // min-h-11 (13 on touch): the height an icon button gives it — 28 on
-    // a desktop, 36 on a coarse pointer — plus the padding, so
+    // a desktop, 36 on a coarse pointer — plus the room around it, so
     // a header holding only a switch, or nothing, is as tall as its
     // neighbours. Measured before: Chapters 44, Engine 44, Explorer 36 —
     // the title and its rule jumped 4px when the phone's pane tabs
-    // switched between them.
-    <CardHeader className={cn('flex min-h-11 pointer-coarse:min-h-13 shrink-0 flex-row items-center justify-between gap-2 px-3 py-2', className)}>
+    // switched between them. The 44px is now a floor the row is centred
+    // in rather than 28px plus its own py-2: the registry's header pads
+    // across only, and the space above it is the card's own py.
+    <CardHeader className={cn('flex min-h-11 pointer-coarse:min-h-13 shrink-0 flex-row items-center justify-between gap-2', className)}>
       {/* Translated HERE, not at every call site. A panel title is always
           user-facing, so a caller that forgets t() is a bug that renders
           fine in English and ships. Doing it once means it cannot be

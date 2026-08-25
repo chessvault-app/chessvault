@@ -261,7 +261,7 @@ export function RefDbManager({
 
   return (
     <>
-      <Panel flush className="min-h-0">
+      <Panel className="min-h-0">
         {/* The switch gets the header to itself. Sharing it with the
             search meant the two segments were squeezed to whatever the
             field left over.
@@ -429,7 +429,7 @@ export function RefDbManager({
  */
 export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <Panel flush className="min-h-0">
+    <Panel className="min-h-0">
       {/* Announced once, like every other skeleton here; components/skeletons' own
           wrapper is private to it. */}
       <div

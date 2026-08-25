@@ -195,9 +195,9 @@ export function DashboardPage() {
           </p>
         ) : null}
 
-        <Panel flush className="mb-4">
+        <Panel className="mb-4">
           <PanelHeader title={t('By difficulty')} />
-          <div className="grid gap-2.5 p-3">
+          <div className="grid gap-2.5 px-(--card-spacing)">
             {BANDS.map((band) => {
               const inBand = counted.filter(
                 (h) => h.puzzleRating >= band.min && h.puzzleRating <= band.max,
@@ -229,7 +229,7 @@ export function DashboardPage() {
             page around it, which renders at once. */}
         {books === null
           ? (
-              <Panel flush className="mb-4">
+              <Panel className="mb-4">
                 {/* The title is known before the answer is; only the
                     shelf button and the rows are waited for. */}
                 <PanelHeader
@@ -255,7 +255,7 @@ export function DashboardPage() {
               </Panel>
             )
           : (
-          <Panel flush className="mb-4">
+          <Panel className="mb-4">
             <PanelHeader
               title={t('Books')}
               actions={
@@ -314,7 +314,7 @@ export function DashboardPage() {
           </Panel>
         )}
 
-        <Panel flush>
+        <Panel>
           <PanelHeader
             title={history === null ? t('Puzzles') : `${t('Puzzles')} · ${puzzles.length}`}
           />

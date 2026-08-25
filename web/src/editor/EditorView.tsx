@@ -317,7 +317,7 @@ export function EditorView({
    */
   const positionPanels = (place: 'column' | 'sheet') => (
     <>
-        <Panel flush>
+        <Panel>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
@@ -328,7 +328,7 @@ export function EditorView({
               actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
             />
           )}
-          <div className="grid gap-3 p-3">
+          <div className="grid gap-3 px-(--card-spacing)">
             {/* One of these, so it wears the control that says so. It was a
                 pair of buttons lit primary/secondary — the same question the
                 repertoire's New game panel asks, asked in a different shape,

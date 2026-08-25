@@ -1390,24 +1390,52 @@ export function RepertoireView() {
    *
    * Under Start, not over it. Both are things to press and only one of
    * them is what the page is for — with the row first, the eye met the
-   * smaller question on the way to the bigger one on every visit. Not
-   * truncated: the source and the band are the half that would be cut,
-   * and the half that changes.
+   * smaller question on the way to the bigger one on every visit.
+   *
+   * One line, truncated (lanph3re's call). The row's job is to say what
+   * Start would play and to open the place that changes it, and it does
+   * both while cut; a row that grew to two or three lines to keep a long
+   * database's name whole was spending the panel's height on the half of
+   * the sentence that reads the same every time. What is lost is the tail
+   * — the source and the band, which is the half that changes — so the
+   * `title` carries the whole string, and the dialog this opens shows it
+   * in full. Screen readers are unaffected: the cut is visual only.
    */
   const setupRow = (
-    <button
-      type="button"
+    /* The registry's Button, not a hand-rolled one. It used to be its own
+       `<button>` sized by padding and line-height — 42px — while Start
+       above it is a Button sized by its variant: h-7, 28px, stepping to
+       h-9 on a coarse pointer. Two rows in one column disagreeing by 14px
+       under a mouse and 6px under a thumb, because one was height-driven
+       and the other content-driven. As a Button it is on the same ladder
+       as Start by construction, and it gets the coarse-pointer step it
+       never had.
+
+       `secondary`, which is the face the puzzle trainer's two rows of
+       this same shape already wear (DifficultyChip and the theme row):
+       one pattern — a full-width row stating a value and opening what
+       changes it — should not wear two faces across three places.
+       `justify-start` and `w-full` undo the base's centring, since this
+       is a row to read along and not a label in a box. */
+    <Button
+      variant="secondary"
+      size="sm"
+      className="w-full min-w-0 justify-start"
       onClick={openSetup}
-      title={t('Set up a new game')}
-      className={cn(
-        'bg-muted hover:bg-accent group flex w-full items-center gap-2 rounded-md',
-        'border-border border px-3 py-2.5 text-left transition-colors duration-100',
-      )}
+      title={setupTerms}
     >
-      <Settings2 className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-      <span className="text-foreground min-w-0 flex-1 text-sm">{setupTerms}</span>
-      <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-    </button>
+      <Settings2
+        className="text-muted-foreground group-hover/button:text-primary size-3.5 transition-colors"
+        data-icon="inline-start"
+      />
+      {/* One line, cut with an ellipsis. `min-w-0` is what lets it cut at
+          all: a flex item's floor is its content, so without it the row
+          grows to fit the text instead of the text shortening to fit the
+          row. The full text is one press away in the dialog this opens,
+          and `title` carries it for a pointer. */}
+      <span className="text-foreground min-w-0 flex-1 truncate text-left">{setupTerms}</span>
+      <ChevronRight className="text-muted-foreground size-3.5" data-icon="inline-end" />
+    </Button>
   );
 
   /**
@@ -1457,7 +1485,7 @@ export function RepertoireView() {
   //
   // The body still scrolls (see below), so the panel is capped rather than
   // clipped wherever the column has a floor to cap it against.
-  <Panel flush className="shrink-0">
+  <Panel className="shrink-0">
     <PanelHeader
       title={t('Game')}
       actions={
@@ -1486,14 +1514,11 @@ export function RepertoireView() {
         its content without it. What can run long lives here — the status
         line, a gap note, the database error, the final score — and what
         there is to press lives on the floor below. */}
-    <div
-      className={cn(
-        'flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3',
-        // The floor carries its own p-3; without this the two would read
-        // as 24px of gap between the text and the buttons.
-        (phase === 'idle' || phase === 'ended') && 'pb-0',
-      )}
-    >
+    {/* Horizontal padding only. The card owns the vertical: its own py at
+        the top and bottom, its gap between this body and the floor below
+        — and it drops that bottom py by itself when a footer is present,
+        which is what the hand-rolled `pb-0` here used to stand in for. */}
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
       {/* Idle, the panel is what the page opens on: what the next game
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
@@ -1580,7 +1605,7 @@ export function RepertoireView() {
         keeps for its actions, a muted band under a rule, the same one the
         two trainers' rows stand on. */}
     {(phase === 'idle' || phase === 'ended') && (
-      <CardFooter className="flex-col items-stretch gap-3 px-3 py-3">
+      <CardFooter className="flex-col items-stretch gap-3">
         {phase === 'idle' && startBlock}
         {phase === 'idle' && setupRow}
         {phase === 'ended' && (
@@ -1713,9 +1738,9 @@ export function RepertoireView() {
              phone the same fields are the sheet the Game panel opens, and
              the Game panel is what the page shows on arrival. */
           wide ? (
-            <Panel flush fit className="shrink-0">
+            <Panel fit className="shrink-0">
               <PanelHeader title={t('New game')} />
-              <div className="flex flex-col gap-3 p-3">
+              <div className="flex flex-col gap-3 px-(--card-spacing)">
                 {setupFields}
                 {startNotes}
                 {startBlock}
@@ -1743,7 +1768,7 @@ export function RepertoireView() {
             )}
             {(wide || shownPane === 'moves') && movesPanel}
             {!wide && analysing && shownPane === 'engine' && (
-              <Panel flush className="min-h-0 flex-1">
+              <Panel className="min-h-0 flex-1">
                 <EngineBlock standalone />
               </Panel>
             )}

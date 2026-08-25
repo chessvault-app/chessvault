@@ -134,7 +134,6 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             its bottom rows. min() keeps the old number wherever there is
             room for it. */}
         <Panel
-          flush
           className={cn(
             'flex-1 max-lg:min-h-0',
             engineOn ? 'lg:min-h-[min(28rem,55%)]' : 'lg:min-h-[min(22rem,45%)]',
@@ -176,7 +175,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
-        <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
+        <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
           <EngineBlock standalone />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of

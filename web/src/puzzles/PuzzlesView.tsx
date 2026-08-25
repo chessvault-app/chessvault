@@ -656,7 +656,7 @@ function Trainer({
       onFlip={() => setFlipped((f) => !f)}
     />
   ) : (
-    <Panel flush className="shrink-0">
+    <Panel className="shrink-0">
       <PanelHeader title={t('Moves')} />
       <p className="text-muted-foreground px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
     </Panel>
@@ -695,7 +695,7 @@ function Trainer({
   // column's edge with its actions cut in half. So it grows with its
   // content up to the column's floor — the bottom bar — and there it
   // stops and its BODY scrolls instead.
-  <Panel flush>
+  <Panel>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -729,23 +729,26 @@ function Trainer({
           <DifficultyRow active={difficulty} onPick={pickDifficulty} />
           {/* Theme picker folded in beside difficulty — both answer
               "which puzzles", so they share the one window. */}
-          <button
-            type="button"
+          {/* The registry's Button, and the same one DifficultyChip is —
+              which is the row this pairs with, and whose comment already
+              said the two matched. They did not: this was a hand-rolled
+              `<button>` sized by padding and a line box, 42px on every
+              pointer, standing beside a DifficultyRow of size="sm"
+              Buttons that are 28px under a mouse and 36 under a thumb. A
+              settings row that states a value and opens the thing that
+              changes it is a Button in this app; there is no reason for
+              this one to have been the exception. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full min-w-0 justify-start"
             onClick={() => navigate('puzzles', 'themes')}
-            className={cn(
-              'bg-muted hover:bg-accent group flex w-full items-center gap-2 rounded-md',
-              'border-border border px-3 py-2.5 text-left transition-colors duration-100',
-            )}
           >
-            <LayoutGrid className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-            <span className="text-muted-foreground shrink-0 text-sm font-medium">
-              {t('Theme')}
-            </span>
-            <span className="text-foreground ml-auto truncate text-sm font-medium">
-              {theme ? themeLabel(theme) : t('All themes')}
-            </span>
-            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-          </button>
+            <LayoutGrid className="size-3.5" data-icon="inline-start" />
+            <span className="text-muted-foreground shrink-0">{t('Theme')}</span>
+            <span className="ml-auto truncate">{theme ? themeLabel(theme) : t('All themes')}</span>
+            <ChevronRight className="text-muted-foreground size-3.5" data-icon="inline-end" />
+          </Button>
         </DialogContent>
       </Dialog>
     )}
@@ -757,7 +760,7 @@ function Trainer({
         whatever hung off the end. `min-h-0` because a flex item will not
         shrink below its content without it, which is exactly the overflow
         being fixed. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3">
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
       {phase === 'done' && puzzle ? (
         <>
           <p
@@ -858,7 +861,7 @@ function Trainer({
           the phase made it read as two different rows swapping places on
           the panel's floor. Hint, Solution and Skip end on Skip, which is
           the one that leaves this puzzle. */}
-      <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+      <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
         {phase === 'done' ? (
           <>
             {/* An anchor, not a button that navigates: it goes out of the
@@ -1076,7 +1079,7 @@ function Trainer({
         )}
         {(wide || shownPane === 'moves') && movesPanel}
         {!wide && analysing && shownPane === 'engine' && (
-          <Panel flush className="min-h-0 flex-1">
+          <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
           </Panel>
         )}

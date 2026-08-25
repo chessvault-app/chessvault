@@ -550,7 +550,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // the height of what it says; it grows with its content to the column's
   // floor and then its BODY scrolls, and the space it does not need is
   // left to the page rather than drawn as empty panel.
-  <Panel flush>
+  <Panel>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -623,7 +623,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         hung off the end. `min-h-0` because a flex item will not shrink
         below its content without it, which is exactly the overflow being
         fixed. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3">
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
       <div className="flex flex-col gap-0.5">
         {phase === 'done' ? (
           <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-destructive')}>
@@ -674,7 +674,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           is short and lets it scroll with the text when it is not; the
           negative margins take back the body's p-3 so the band spans the
           panel edge to edge. */}
-      <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+      <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
         {phase === 'done' ? (
           <>
             <Button variant="secondary" size="sm" onClick={retry}>
@@ -866,7 +866,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         )}
         {(wide || shownPane === 'moves') && movesPanel}
         {!wide && analysing && shownPane === 'engine' && (
-          <Panel flush className="min-h-0 flex-1">
+          <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
           </Panel>
         )}

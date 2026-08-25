@@ -1161,7 +1161,7 @@ export function ArchiveBrowser({
   if (place !== 'framed') return body;
 
   return (
-    <Panel flush className="shrink-0 sm:min-h-0 sm:flex-1">
+    <Panel className="shrink-0 sm:min-h-0 sm:flex-1">
       {/* A plain title, the same h-10 the collection's header is: the two
           panels sit side by side, and a header that grew to fit its
           controls started this one's contents 35px below the other's. The

@@ -162,11 +162,31 @@ against the editor's own font size, not in the px it resolved to once.
   this shape because they take turns in one column. (The small-caps
   `label-caps` voice is gone with the old look.)
 - A panel's header is the registry's card header as a row (`PanelHeader`:
-  title, actions, `px-3 py-2`). It has one floor — 44px, 52px on a coarse
-  pointer, the height an icon button gives it — so a header holding only
-  a switch, or nothing, is as tall as its neighbours and the title does
-  not jump when a phone's pane tabs switch; nothing else is sized against
-  it.
+  title, actions). It pads itself across only, from the card's own
+  `--card-spacing`; the space above it is the card's padding, not the
+  header's. It has one floor — 44px, 52px on a coarse pointer, the height
+  an icon button gives it — so a header holding only a switch, or nothing,
+  is as tall as its neighbours and the title does not jump when a phone's
+  pane tabs switch; nothing else is sized against it.
+- **A panel's spacing is the card's, not the call site's.** `Panel` is a
+  `Card`, and the registry's Card owns the vertical: `py-(--card-spacing)`
+  on the root, `gap-(--card-spacing)` between its slots, and
+  `has-data-[slot=card-footer]:pb-0` so a footer's muted band reaches the
+  bottom edge on its own. A panel body therefore sets **horizontal padding
+  only** — `px-(--card-spacing)`, or a tighter `px-` where rows are meant
+  to sit near the edge — and never its own `p-`, `mt-auto` spacer or
+  negative margin to fake what the root already does.
+
+  This is worth stating because the app spent a release doing the
+  opposite. The root had been stripped of its padding and gap on the
+  grounds that panels own their scroll area, so every call site
+  re-implemented the two rules by hand — `-mx-3 -mb-3` in the trainers, a
+  conditional `pb-0` in the repertoire — and the one that implemented only
+  half of them had its footer sitting flush against the text above it.
+  There is no `flush` prop any more: all 30 panels passed it, so the
+  padding it switched off was never once switched on. If a panel needs
+  different spacing, it sets `size="sm"` (12px) or overrides one class —
+  it does not go back to owning the model.
 - `wide` / `stacked` are orientation-based custom variants: side-by-side
   when the viewport is wide, single column otherwise. Stacked layouts
   lead with a page header (convention: header at top), wide layouts put
@@ -378,6 +398,17 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   `title` as a tooltip. The look is shadcn's; what is added is
   behaviour, and each file says at the top what it adds and why. Adding
   a component is `npx shadcn add <name>`; it needs no restyling.
+- **"Owned" means behaviour on top, not geometry underneath.** Card is the
+  worked example of getting this wrong: its root had been rewritten to
+  drop the registry's padding and gap, which reads like a small local
+  decision and is in fact a rule every call site then has to re-derive —
+  see the panel spacing note under Layout rules. The departures that
+  survive in that file are the ones that cost nothing structurally: the
+  slots are semantic elements (`section`/`header`/`h2`) rather than four
+  `div`s, and the title uses this app's `font-heading` token because the
+  registry's `cn-font-heading` class does not exist outside its own
+  stylesheet. Before changing a registry file's layout classes, check
+  which of its rules the call sites are relying on it to provide.
 - **`web/src/components/` holds the app's composites** (Panel, PageShell,
   ShelfCard, ActionMenu, PromptDialog, the skeletons …), built from the
   primitives; **`web/src/hooks/`** the window physics they share.
