@@ -1,5 +1,5 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { Slot } from 'radix-ui';
+import { useRender } from '@base-ui/react/use-render';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -42,6 +42,15 @@ export interface MenuAction {
 const WIDE = '(min-width: 40rem)';
 
 /**
+ * The child rendered as itself with these props merged on — Base UI's
+ * render machinery, standing where Radix's Slot used to: the phone
+ * branches have no Trigger part to hand the child to.
+ */
+function RenderChild({ children, ...props }: { children: ReactElement } & Record<string, unknown>) {
+  return useRender({ render: children, props });
+}
+
+/**
  * A row's actions: a list of verbs, each with a name and a whole row to be
  * pressed in.
  *
@@ -52,15 +61,15 @@ const WIDE = '(min-width: 40rem)';
  * One ⋯ opens this instead.
  *
  * On a desktop it is shadcn's DropdownMenu under the control it came from
- * (Radix: menu role, arrow keys and typeahead, first verb focused, placed
- * inside the window) — a bar sliding up from the bottom of a 1400px
+ * (Base UI: menu role, arrow keys and typeahead, first verb focused,
+ * placed inside the window) — a bar sliding up from the bottom of a 1400px
  * window is a long way from a button in the middle of it, and a mouse
  * has no reach problem to solve. On a phone it is the app's bottom sheet
  * (components/ui/dialog, with the scrim, the drag and Back every other
  * phone window has), rising where the thumb already is.
  *
- * The child is the trigger and is rendered as itself (`asChild`): a
- * Button, with its own title and size.
+ * The child is the trigger and is rendered as itself (the `render` prop):
+ * a Button, with its own title and size.
  */
 export function ActionMenu({
   title,
@@ -94,7 +103,7 @@ export function ActionMenu({
   if (wide) {
     return (
       <DropdownMenu open={isOpen} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        <DropdownMenuTrigger render={children} />
         <DropdownMenuContent align={align} className="w-56">
           <DropdownMenuLabel>{t(title)}</DropdownMenuLabel>
           {detail}
@@ -108,7 +117,7 @@ export function ActionMenu({
 
   return (
     <>
-      <Slot.Root
+      <RenderChild
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={(e: React.MouseEvent) => {
@@ -119,7 +128,7 @@ export function ActionMenu({
         }}
       >
         {children}
-      </Slot.Root>
+      </RenderChild>
       {isOpen && (
         <ActionSheetBody title={title} actions={actions} detail={detail} onClose={() => setOpen(false)} />
       )}
@@ -151,7 +160,7 @@ export function ActionContextMenu({
   if (wide) {
     return (
       <ContextMenu>
-        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+        <ContextMenuTrigger render={children} />
         <ContextMenuContent className="w-56">
           <ContextMenuLabel>{t(title)}</ContextMenuLabel>
           {actions.map((action) => (
@@ -164,14 +173,14 @@ export function ActionContextMenu({
 
   return (
     <>
-      <Slot.Root
+      <RenderChild
         onContextMenu={(e: React.MouseEvent) => {
           e.preventDefault();
           setOpen(true);
         }}
       >
         {children}
-      </Slot.Root>
+      </RenderChild>
       {open && <ActionSheetBody title={title} actions={actions} onClose={() => setOpen(false)} />}
     </>
   );
@@ -181,7 +190,7 @@ function MenuRow({ action, kind }: { action: MenuAction; kind: 'dropdown' | 'con
   const { label, icon: Icon, danger, className, onSelect } = action;
   const Item = kind === 'dropdown' ? DropdownMenuItem : ContextMenuItem;
   return (
-    <Item variant={danger ? 'destructive' : 'default'} className={className} onSelect={onSelect}>
+    <Item variant={danger ? 'destructive' : 'default'} className={className} onClick={() => onSelect()}>
       <Icon />
       {t(label)}
     </Item>
