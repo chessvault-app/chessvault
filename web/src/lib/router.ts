@@ -54,6 +54,8 @@ export function useRoute(): Route {
       if (next === current) return;
       if (!leaveIsBlocked()) {
         current = next;
+        arrivedByNavigate = pendingNavigate;
+        pendingNavigate = false;
         setRoute(parse(next));
         return;
       }
@@ -81,6 +83,23 @@ export function useRoute(): Route {
 }
 
 /**
+ * How the current route was arrived at: an in-app navigate, or the
+ * browser's own history (Back, Forward, the back chevron's history.back).
+ *
+ * The two carry different intent — Back means "return me to what I was
+ * doing", a tab or a More tile means "open this page" — and the editor
+ * restores its session snapshot only for the first kind. There is no
+ * event that says which one a hashchange was, so navigateNow marks its
+ * own writes and anything unmarked is the browser's. A plain load counts
+ * as navigate, so a bookmark opens fresh.
+ */
+export function returnedThroughHistory(): boolean {
+  return !arrivedByNavigate;
+}
+let arrivedByNavigate = true;
+let pendingNavigate = false;
+
+/**
  * Go, without asking anyone.
  *
  * For navigations that are not leaving anything: a rename moves the open
@@ -88,7 +107,11 @@ export function useRoute(): Route {
  * whether to save it first would be a question about nothing.
  */
 export function navigateNow(section: Section, ...params: string[]): void {
-  window.location.hash = `/${[section, ...params].join('/')}`;
+  const target = `#/${[section, ...params].join('/')}`;
+  // Same hash fires no hashchange, so the mark would sit unconsumed and
+  // mislabel the next Back as a navigate.
+  if (window.location.hash !== target) pendingNavigate = true;
+  window.location.hash = target;
 }
 
 /**
