@@ -4,7 +4,6 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
-  BookText,
   Database,
   Compass,
   Ellipsis,
@@ -71,13 +70,13 @@ const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((
 // 360px phone gives every tab about 50px to hold the longest label in
 // the app. So the phone keeps reaching it through More.
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
-  { section: 'games', label: 'Games', icon: BookOpen },
+  { section: 'games', label: 'Games', icon: Swords },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
   // Books is a collection like the three above it, so it is a sidebar
   // row; like the opening map it also appears in More, which is what
   // keeps it OFF the phone's bottom bar (see the filter note above).
-  { section: 'books', label: 'Books', icon: BookText },
+  { section: 'books', label: 'Books', icon: BookOpen },
   { section: 'puzzles', label: 'Puzzles', icon: Puzzle },
   { section: 'openingmap', label: 'Opening map', icon: Network },
 ];
@@ -504,7 +503,7 @@ const MORE_GROUPS: {
     items: [
       // Books is a sidebar row on a desktop; here it sits with the app's
       // other pages rather than under a heading of its own.
-      { section: 'books', label: 'Books', icon: BookText, blurb: 'Read your chess books beside a board' },
+      { section: 'books', label: 'Books', icon: BookOpen, blurb: 'Read your chess books beside a board' },
       { section: 'databases', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
     ],

@@ -7,7 +7,7 @@ import {
   Globe,
   Pencil,
   Plus,
-  BookOpen,
+  Swords,
   Trash2,
   Trophy,
   X,
@@ -621,7 +621,7 @@ export function CollectionView() {
               // state pinned to the top of a full-height box is the thing
               // that leaves a reader looking at dead space below it.
               className="min-h-0 flex-1"
-              icon={BookOpen}
+              icon={Swords}
               title="Your collection is empty"
               body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
               action={
@@ -647,7 +647,7 @@ export function CollectionView() {
                 body="Bookmark a game from the list and it is kept here, one press from wherever you are."
                 action={
                   <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
-                    <BookOpen className="size-3.5" data-icon="inline-start" />
+                    <Swords className="size-3.5" data-icon="inline-start" />
                     {t('Browse all games')}
                   </Button>
                 }

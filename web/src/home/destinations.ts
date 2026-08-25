@@ -1,7 +1,6 @@
 import {
   BookMarked,
   BookOpen,
-  BookText,
   Compass,
   Database,
   Grid3x3,
@@ -12,6 +11,7 @@ import {
   Settings,
   SquarePen,
   SwatchBook,
+  Swords,
 } from 'lucide-react';
 import type { Section } from '@/lib/router';
 import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
@@ -85,7 +85,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'games',
     label: 'Games',
     blurb: 'Your collection, annotated',
-    icon: BookOpen,
+    icon: Swords,
     nav: ['games'],
     count: 'games',
   },
@@ -132,7 +132,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'books',
     label: 'Books',
     blurb: 'Read your chess books beside a board',
-    icon: BookText,
+    icon: BookOpen,
     nav: ['books'],
     count: 'books',
   },
