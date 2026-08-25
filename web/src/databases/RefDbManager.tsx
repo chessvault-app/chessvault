@@ -12,7 +12,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { Panel, PanelHeader } from '@/components/panel';
+import { Panel } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
 import { Segmented } from '@/components/segmented';
 
@@ -262,35 +262,26 @@ export function RefDbManager({
   return (
     <>
       <Panel className="min-h-0">
-        {/* The switch gets the header to itself. Sharing it with the
-            search meant the two segments were squeezed to whatever the
-            field left over.
+        {/* The switch gets its row to itself. Sharing it with the search
+            meant the two segments were squeezed to whatever the field
+            left over.
 
-            `w-fit` is the only thing said here, and it is a layout
-            constraint rather than a restyle: PanelHeader's title slot is
-            flex-1, so left alone the control spanned the whole panel.
-            fit-content over flex-1 children resolves to twice the wider
-            label, which is a segmented control's natural size — the same
-            kind of instruction the archive's `w-full` and the shelf's
-            `hidden sm:flex` are.
-
-            The padding and the segments' flex used to be overridden here
-            too, to stop the shorter label sitting in slack. That bought
-            one panel's pixels at the price of this being the only
-            segmented control in the app that is not the segmented
-            control — every other call site passes layout and nothing
-            else, and a shared component that each page tunes is a
-            component in name only. If the equal widths are wrong they
-            are wrong in Segmented, for everyone (lanph3re's call). */}
-        <PanelHeader
-          className="h-auto py-2"
-          title={
+            A band, not a PanelHeader. The header's title slot is an h2
+            with the card's own 16px gutter, and both halves were wrong
+            for a tab strip: a tablist is not a name, and the gutter sat
+            the strip 4px right of the search field's border (px-3, like
+            every band below), while the header's missing rule left a
+            16px gap of open air over the search row — even to the pixel
+            with every other band boundary here, but reading as slack,
+            and turning everything under the first rule into what looked
+            like a footer band (lanph3re's report). Same shape as the
+            skeleton, which drew the rule all along. */}
+        <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
             <Segmented
               value={tab}
               onChange={setTab}
               ariaLabel="What to manage"
               kind="tabs"
-              className="w-fit"
               segments={[
                 {
                   value: 'databases',
@@ -312,8 +303,7 @@ export function RefDbManager({
                 },
               ]}
             />
-          }
-        />
+        </div>
 
         {/* Its own row, under the switch: the field wants the width, and
             on a phone there was never room for both on one line. */}
@@ -440,7 +430,7 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
       >
         {/* The switch: one box the size the segmented control settles at. */}
         <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
-          <Skeleton className="h-[1.9rem] w-52 rounded-xl" />
+          <Skeleton className="h-8 w-52 rounded-xl" />
         </div>
         {/* The search row, and the upload icon beside it. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
@@ -449,7 +439,7 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
         </div>
         <ul className="divide-border min-h-0 flex-1 divide-y overflow-hidden">
           {Array.from({ length: rows }, (_, i) => (
-            <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5">
+            <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-3">
               <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
               <Skeleton className="ml-auto h-2.5 w-24 shrink-0" />
               <Skeleton className="size-7 shrink-0" />
@@ -483,7 +473,10 @@ function DbList({
         // scale's neighbours are 16 and 20, and lanph3re asked for this
         // one, so it is written as itself rather than rounded to look
         // principled.
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5 text-sm">
+        // pr-3, the search row's own: the delete button and the upload
+        // button above are the same 28px box, and at pr-1.5 the trash
+        // column stood 6px right of the upload icon.
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-3 text-sm">
           <span className="text-foreground min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
@@ -529,7 +522,7 @@ function SourceList({
   return (
     <ul className="divide-border divide-y">
       {sources.map((s) => (
-        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-sm">
+        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-3 text-sm">
           {/* The label covers the tick, the name and the size, and
               nothing else: a button inside it would toggle the tick on
               its way to being pressed. */}
