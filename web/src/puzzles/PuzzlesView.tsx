@@ -729,23 +729,26 @@ function Trainer({
           <DifficultyRow active={difficulty} onPick={pickDifficulty} />
           {/* Theme picker folded in beside difficulty — both answer
               "which puzzles", so they share the one window. */}
-          <button
-            type="button"
+          {/* The registry's Button, and the same one DifficultyChip is —
+              which is the row this pairs with, and whose comment already
+              said the two matched. They did not: this was a hand-rolled
+              `<button>` sized by padding and a line box, 42px on every
+              pointer, standing beside a DifficultyRow of size="sm"
+              Buttons that are 28px under a mouse and 36 under a thumb. A
+              settings row that states a value and opens the thing that
+              changes it is a Button in this app; there is no reason for
+              this one to have been the exception. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full min-w-0 justify-start"
             onClick={() => navigate('puzzles', 'themes')}
-            className={cn(
-              'bg-muted hover:bg-accent group flex w-full items-center gap-2 rounded-md',
-              'border-border border px-3 py-2.5 text-left transition-colors duration-100',
-            )}
           >
-            <LayoutGrid className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-            <span className="text-muted-foreground shrink-0 text-sm font-medium">
-              {t('Theme')}
-            </span>
-            <span className="text-foreground ml-auto truncate text-sm font-medium">
-              {theme ? themeLabel(theme) : t('All themes')}
-            </span>
-            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-          </button>
+            <LayoutGrid className="size-3.5" data-icon="inline-start" />
+            <span className="text-muted-foreground shrink-0">{t('Theme')}</span>
+            <span className="ml-auto truncate">{theme ? themeLabel(theme) : t('All themes')}</span>
+            <ChevronRight className="text-muted-foreground size-3.5" data-icon="inline-end" />
+          </Button>
         </DialogContent>
       </Dialog>
     )}

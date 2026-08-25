@@ -1411,14 +1411,16 @@ export function RepertoireView() {
        as Start by construction, and it gets the coarse-pointer step it
        never had.
 
-       `outline` is the registry's bordered face and the nearest to what
-       this wore (a fill and a hairline); `justify-start` and `w-full`
-       undo the base's centring, since this is a row to read along and not
-       a label in a box. */
+       `secondary`, which is the face the puzzle trainer's two rows of
+       this same shape already wear (DifficultyChip and the theme row):
+       one pattern — a full-width row stating a value and opening what
+       changes it — should not wear two faces across three places.
+       `justify-start` and `w-full` undo the base's centring, since this
+       is a row to read along and not a label in a box. */
     <Button
-      variant="outline"
+      variant="secondary"
       size="sm"
-      className="w-full justify-start"
+      className="w-full min-w-0 justify-start"
       onClick={openSetup}
       title={setupTerms}
     >
