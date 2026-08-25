@@ -181,10 +181,35 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // a header holding only a switch, or nothing, is as tall as its
     // neighbours. Measured before: Chapters 44, Engine 44, Explorer 36 —
     // the title and its rule jumped 4px when the phone's pane tabs
-    // switched between them. The 44px is now a floor the row is centred
-    // in rather than 28px plus its own py-2: the registry's header pads
-    // across only, and the space above it is the card's own py.
-    <CardHeader className={cn('flex min-h-11 pointer-coarse:min-h-13 shrink-0 flex-row items-center justify-between gap-2', className)}>
+    // switched between them.
+    //
+    // That floor is ALSO this header's padding, which is why the two
+    // negative margins are here. The registry's card pads itself
+    // vertically and gaps its slots, on the assumption that a header is
+    // text needing air put around it; this one is a 44/52px band that
+    // already carries its own. Left alone the two stack — measured 16px
+    // of card padding above a 52px band and 16px of gap below it, 84px
+    // before a word of body where the old header took 52 — so the header
+    // takes both back and sits where it always did (lanph3re's call).
+    //
+    // Deliberately here and not in components/ui/card: the registry file
+    // states the model, and a panel header is the app's own composite
+    // departing from it. Same reasoning the doc gives for Card — owned
+    // means behaviour on top, not geometry underneath.
+    //
+    // `-mt` cancels the card's top padding when this leads the card, and
+    // the gap above it when something else does (AnalysisMovesPanel puts
+    // an engine block first); either way the header ends up against what
+    // precedes it, as before. `-mb` cancels the gap to the body. What is
+    // NOT cancelled is the card's floor and the footer's own gap, which
+    // is the half of the registry's model that was worth having.
+    <CardHeader
+      className={cn(
+        'flex min-h-11 pointer-coarse:min-h-13 shrink-0 flex-row items-center justify-between gap-2',
+        '-mt-(--card-spacing) -mb-(--card-spacing)',
+        className,
+      )}
+    >
       {/* Translated HERE, not at every call site. A panel title is always
           user-facing, so a caller that forgets t() is a bug that renders
           fine in English and ships. Doing it once means it cannot be
