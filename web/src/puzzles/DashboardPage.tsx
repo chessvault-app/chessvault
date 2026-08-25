@@ -164,7 +164,10 @@ export function DashboardPage() {
             Its place is held instead. A vault with nothing failed gives
             the place up, which is the one case nothing can predict. */}
         {user === null ? (
-          <Skeleton className="mb-4 h-9 w-full rounded-lg" />
+          // The default button's own h-8 — h-9 only under a coarse
+          // pointer, where the real button grows too. It held 36px
+          // against a 32px button, so the page rose 4px as it landed.
+          <Skeleton className="mb-4 h-8 w-full rounded-lg pointer-coarse:h-9" />
         ) : due > 0 ? (
           // The schedule has something waiting: lead with the due count,
           // which is the number that asks to be acted on today.
@@ -234,7 +237,7 @@ export function DashboardPage() {
                     shelf button and the rows are waited for. */}
                 <PanelHeader
                   title={t('Books')}
-                  actions={<Skeleton className="h-6 w-16 rounded-md" />}
+                  actions={<Skeleton className="h-7 w-16 rounded-md pointer-coarse:h-9" />}
                 />
                 {Array.from({ length: 3 }, (_, i) => (
                   <div

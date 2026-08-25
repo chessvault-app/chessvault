@@ -189,14 +189,16 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
  * real one, so nothing moves when the puzzles arrive.
  */
 export function SkeletonTiles({ tiles = 48, className }: { tiles?: number; className?: string }) {
-  const chips = ['w-12', 'w-14', 'w-16', 'w-16', 'w-24'];
   return (
     <Loading className={className}>
-      <Skeleton className="mb-3 h-1.5 w-full rounded-full" />
-      <div className="mb-2 flex flex-wrap gap-1.5">
-        {chips.map((w, i) => (
-          <Skeleton key={i} className={cn('h-6 rounded-full', w)} />
-        ))}
+      {/* The Progress track's own h-1, not the h-1.5 it used to guess. */}
+      <Skeleton className="mb-3 h-1 w-full rounded-full" />
+      {/* Two Select triggers, not the five filter chips the page stopped
+          drawing: Status and Fidelity, at the sm trigger's h-7 (h-9 under
+          a coarse pointer), wide enough for their steady prefixed faces. */}
+      <div className="mb-2 flex items-center gap-2">
+        <Skeleton className="h-7 w-28 rounded-md pointer-coarse:h-9" />
+        <Skeleton className="h-7 w-36 rounded-md pointer-coarse:h-9" />
       </div>
       <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {Array.from({ length: tiles }, (_, i) => (
