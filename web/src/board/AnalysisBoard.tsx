@@ -81,7 +81,16 @@ export function AnalysisBoard({
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
   const dests = useMemo(() => legalDests(tree, cursorId), [tree, cursorId]);
   const isCheck = pos.isCheck();
-  const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
+  const headers = useAnalysis((s) => s.gameHeaders);
+  const hasGame = headers !== null;
+  // Whether the bars would actually SAY anything: a loaded game can carry
+  // headers with no names ("?" is PGN's own unknown), and the Board tab's
+  // editable fields are empty until someone types. On a phone those are
+  // two rows of placeholder either side of the board, and the panels
+  // below have better uses for them — so stacked shows the bars only for
+  // real names, while wide keeps its fixed strip and the editable fields.
+  const named = (v: string | undefined): boolean => !!v && v !== '?';
+  const hasNames = named(headers?.White) || named(headers?.Black);
 
   // Board props are memoized on their VALUES: this component re-renders on
   // every engine info line, and a fresh array/Map each time made chessground
@@ -187,7 +196,7 @@ export function AnalysisBoard({
           <div
             className={cn(
               'w-full items-end wide:flex wide:h-10',
-              hasGame || editablePlayers ? 'flex' : 'hidden wide:flex',
+              hasNames ? 'flex' : 'hidden wide:flex',
               engineOn && 'stacked:hidden',
             )}
           >
@@ -239,7 +248,7 @@ export function AnalysisBoard({
         <PlayerBar
           side={orientation}
           editable={editablePlayers}
-          className={engineOn ? 'stacked:hidden' : undefined}
+          className={engineOn || !hasNames ? 'stacked:hidden' : undefined}
         />
       </div>
       {/* Navigation under the board — but on phones it moves to the
