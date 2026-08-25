@@ -1390,22 +1390,34 @@ export function RepertoireView() {
    *
    * Under Start, not over it. Both are things to press and only one of
    * them is what the page is for — with the row first, the eye met the
-   * smaller question on the way to the bigger one on every visit. Not
-   * truncated: the source and the band are the half that would be cut,
-   * and the half that changes.
+   * smaller question on the way to the bigger one on every visit.
+   *
+   * One line, truncated (lanph3re's call). The row's job is to say what
+   * Start would play and to open the place that changes it, and it does
+   * both while cut; a row that grew to two or three lines to keep a long
+   * database's name whole was spending the panel's height on the half of
+   * the sentence that reads the same every time. What is lost is the tail
+   * — the source and the band, which is the half that changes — so the
+   * `title` carries the whole string, and the dialog this opens shows it
+   * in full. Screen readers are unaffected: the cut is visual only.
    */
   const setupRow = (
     <button
       type="button"
       onClick={openSetup}
-      title={t('Set up a new game')}
+      title={setupTerms}
       className={cn(
         'bg-muted hover:bg-accent group flex w-full items-center gap-2 rounded-md',
         'border-border border px-3 py-2.5 text-left transition-colors duration-100',
       )}
     >
       <Settings2 className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-      <span className="text-foreground min-w-0 flex-1 text-sm">{setupTerms}</span>
+      {/* One line, cut with an ellipsis. `min-w-0` is what lets it cut at
+          all: a flex item's floor is its content, so without it the row
+          grows to fit the text instead of the text shortening to fit the
+          row. The full text is one press away in the dialog this opens,
+          and `title` carries it for a pointer. */}
+      <span className="text-foreground min-w-0 flex-1 truncate text-sm">{setupTerms}</span>
       <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
     </button>
   );
