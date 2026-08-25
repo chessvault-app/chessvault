@@ -16,6 +16,7 @@ import {
   isRefDb,
   isRemoteDb,
   MY_GAMES,
+  PLAYERS_DB,
   REF_DB,
   refDbName,
   REMOTE_DBS,
@@ -39,6 +40,7 @@ import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
+import { RATING_BANDS } from '@/repertoire/field';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -75,6 +77,7 @@ export function ExplorerPane({
   const refDbs = useExplorer((s) => s.refDbs);
   const refFilters = useExplorer((s) => s.refFilters);
   const refIndexed = useExplorer((s) => s.refIndexed);
+  const lichessRatings = useExplorer((s) => s.lichessRatings);
 
   // The My-games filters, as a window rather than two rows of the pane.
   const [showFilters, setShowFilters] = useState(false);
@@ -83,9 +86,12 @@ export function ExplorerPane({
   // back what was there rather than merely stop editing.
   const filtersOnOpen = useRef<MyGamesFilters>({});
   const refFiltersOnOpen = useRef<RefDbFilters>({});
+  const lichessRatingsOnOpen = useRef<string | undefined>(undefined);
   const closeFilters = (revert: boolean): void => {
     if (revert) {
-      if (mine) {
+      if (players) {
+        useExplorer.getState().setLichessRatings(lichessRatingsOnOpen.current);
+      } else if (mine) {
         const was = filtersOnOpen.current;
         useExplorer.getState().setMyFilters({
           side: was.side,
@@ -115,7 +121,12 @@ export function ExplorerPane({
   const book = activeBook({ book: selectedBook, refDbs });
   const mine = isMyGames(book);
   const refdb = isRefDb(book);
-  const filtered = mine ? hasMyFilters(myFilters) : refdb && hasRefFilters(refFilters);
+  const players = book === PLAYERS_DB;
+  const filtered = mine
+    ? hasMyFilters(myFilters)
+    : refdb
+      ? hasRefFilters(refFilters)
+      : players && lichessRatings !== undefined;
 
   useEffect(() => {
     void refreshDbs();
@@ -209,7 +220,7 @@ export function ExplorerPane({
                 ]}
               />
             )}
-            {enabled && (mine || refdb) && (
+            {enabled && (mine || refdb || players) && (
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -217,6 +228,7 @@ export function ExplorerPane({
                 onClick={() => {
                   filtersOnOpen.current = useExplorer.getState().myFilters;
                   refFiltersOnOpen.current = useExplorer.getState().refFilters;
+                  lichessRatingsOnOpen.current = useExplorer.getState().lichessRatings;
                   setShowFilters(true);
                 }}
                 title={t('Filters')}
@@ -260,6 +272,8 @@ export function ExplorerPane({
                 belongs on the same line as Clear rather than below it. */}
             {mine ? (
               <MyGamesFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
+            ) : players ? (
+              <LichessFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
             ) : (
               <RefDbFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
             )}
@@ -458,6 +472,60 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
               setFilters({ result: undefined, minElo: undefined, from: undefined, to: undefined })
             }
           >
+            {t('Clear filters')}
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t('Cancel')}
+        </Button>
+        <Button variant="default" size="sm" onClick={onDone}>
+          {t('Done')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The one filter the online players database has: whose games count.
+ *
+ * Lichess aggregates its explorer per rating group rather than filtering
+ * per game (see repertoire/field.ts, where the bands and their labels
+ * live), so this is a pick of one group, not a range — and "All" is the
+ * absence of the parameter, the mix the pane always showed before the
+ * filter existed. Masters gets no filter window at all: its population
+ * is who qualifies, not a group.
+ */
+function LichessFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
+  const ratings = useExplorer((s) => s.lichessRatings);
+  const setRatings = useExplorer((s) => s.setLichessRatings);
+
+  const BANDS: { id: string | undefined; label: string }[] = [
+    { id: undefined, label: 'All' },
+    // The combined every-group row exists for pickers that need a value;
+    // here "All" already says it.
+    ...RATING_BANDS.filter((b) => !b.ratings.includes(',')).map((b) => ({
+      id: b.ratings,
+      label: b.label,
+    })),
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <FilterGroup label="Opponent strength">
+        {BANDS.map(({ id, label }) => (
+          <FilterChip
+            key={label}
+            label={label}
+            active={ratings === id}
+            onClick={() => setRatings(id)}
+          />
+        ))}
+      </FilterGroup>
+
+      <div className="mt-1 flex items-center justify-end gap-2 text-sm">
+        {ratings !== undefined && (
+          <Button variant="ghost" size="sm" className="mr-auto" onClick={() => setRatings(undefined)}>
             {t('Clear filters')}
           </Button>
         )}

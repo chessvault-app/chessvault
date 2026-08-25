@@ -63,6 +63,14 @@ interface ExplorerState {
   dbsLoaded: boolean;
   /** Filters, applied only while MY_GAMES is the source. */
   myFilters: MyGamesFilters;
+  /**
+   * The rating group counted while PLAYERS_DB is the source (persisted).
+   * A group id from RATING_BANDS — Lichess aggregates per group, so this
+   * is a pick, not a range. Undefined asks for the database's default
+   * mix, which is what the pane always asked for before the filter
+   * existed.
+   */
+  lichessRatings?: string;
   /** The reference databases that can also answer (see REF_DB). */
   refDbs: RefDbSummary[];
   /** Filters, applied only while a reference database is the source. */
@@ -90,6 +98,7 @@ interface ExplorerState {
   selectBook: (name: string) => void;
   setMyFilters: (patch: Partial<MyGamesFilters>) => void;
   setRefFilters: (patch: Partial<RefDbFilters>) => void;
+  setLichessRatings: (ratings: string | undefined) => void;
   refreshMyStats: () => Promise<void>;
   /** Fetch the reference databases the switcher can offer. */
   refreshDbs: () => Promise<void>;
@@ -109,6 +118,10 @@ export const REMOTE_DBS = [
 
 export const isRemoteDb = (name: string | null): boolean =>
   name !== null && name.startsWith('lichess:');
+
+/** The players database — the one remote source with a rating dimension.
+    Masters has none: its population is who qualifies, not a group. */
+export const PLAYERS_DB = 'lichess:lichess';
 
 /**
  * The vault's own games, as a source the switcher can select.
@@ -235,7 +248,11 @@ export const useExplorer = create<ExplorerState>()(
           ? `/api/mygames?${myGamesQuery(fen, get().myFilters)}`
           : isRefDb(book)
             ? `/api/refgames/explore?db=${encodeURIComponent(refDbName(book!))}&fen=${encodeURIComponent(fen)}&${refFilterQuery(get().refFilters)}`
-            : `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`;
+            : `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}` +
+              // The proxy honours ?ratings= on the players db alone
+              // (server/lichess.ts); absent, Lichess answers its default
+              // mix, which is what "All" means here.
+              (book === PLAYERS_DB && get().lichessRatings ? `&ratings=${get().lichessRatings}` : '');
         try {
           const body = await api<{
             opening?: Opening | null;
@@ -304,6 +321,11 @@ export const useExplorer = create<ExplorerState>()(
             if (next[key] === undefined) delete next[key];
           }
           set({ refFilters: next });
+          if (latestFen) get().lookup(latestFen);
+        },
+
+        setLichessRatings: (ratings) => {
+          set({ lichessRatings: ratings });
           if (latestFen) get().lookup(latestFen);
         },
 
@@ -376,7 +398,12 @@ export const useExplorer = create<ExplorerState>()(
       // The source and its filters persist — visibility is session state,
       // and the app aims to be stateless apart from data (lanph3re's call).
       // A filter is a question the user asked, so it outlives the tab.
-      partialize: (s) => ({ book: s.book, myFilters: s.myFilters, refFilters: s.refFilters }),
+      partialize: (s) => ({
+        book: s.book,
+        myFilters: s.myFilters,
+        refFilters: s.refFilters,
+        lichessRatings: s.lichessRatings,
+      }),
     },
   ),
 );
