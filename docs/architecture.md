@@ -19,7 +19,7 @@ vault/
     chesscom/<user>/  YYYY-MM.pgn  (archive cache)
     lichess/<user>/   YYYY-MM.pgn
   puzzlebooks/<id>/                  (b + 16 hex; the title lives in book.json)
-    book.json  puzzles.json  drafts.json  progress.json  ocr.json
+    book.json  puzzles.json  drafts.json  progress.json  ocr.json  cycles.json
     diagrams/  *.jpg          (evidence scans, cover)
   books/.collections.json            (the library's collections, by name)
   books/<id>/                        (the library: a PDF you read beside a board)
@@ -88,11 +88,12 @@ matters.
   the analysis board — the landing page must not pay for the engine, the
   explorer and the PGN parsers to draw a launcher — which is also why the
   home page's customise dialog is the one thing on it that is lazy. It
-  currently loads 513 kB of JS in Korean — 416 kB of shell across 39
-  chunks (the 220 kB entry, 90 kB of the component layer, 33 kB of
-  dialog) and 97 kB of dictionary — and 425 kB in English; measured on
-  the 0.4.7 build. The shell was 217 kB before the component layer came
-  in.
+  currently loads 595 kB of JS in Korean — 503 kB of shell across 41
+  chunks (the 227 kB entry, 129 kB of the component layer, 61 kB of
+  dialog) and 92 kB of dictionary — and 503 kB in English; measured on
+  the 0.4.9 build. The shell was 217 kB before the component layer came
+  in, and the Base UI port grew the layer's and the dialog's chunks
+  again.
 
 ## Deployment model
 

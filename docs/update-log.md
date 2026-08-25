@@ -5,8 +5,71 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.4.9
 
+The Woodpecker method for the books, a schedule for the tactics, and
+Base UI under every control.
+
+- **Woodpecker cycles for puzzle books.** A tactics book is a finite,
+  curated set, and the method it is written for cycles that set rather
+  than drip-feeding it. The book page grows a Cycles panel: start a
+  pass, continue into the first puzzle it has not reached, stop it, and
+  read the finished passes as rows with their solved/failed bars. While
+  a pass runs the whole grid — tiles, bar, filter counts — reads
+  through the pass's window, so starting a cycle visibly clears the
+  board and stopping one hands the all-time record back; the trainer's
+  done row offers exactly one way forward, Next in cycle; and the shelf
+  card says where each book's rotation stands ("Cycle 2 — 412/959"). A
+  pass closes itself on the attempt that completes it, and a pass
+  nobody attempted never happened. Only the pass windows are stored:
+  attempts, wins and the next puzzle all derive from the progress
+  record, so there is no score to fall out of agreement with it.
+- **Tactics learn a review schedule.** Both trainers remembered what
+  was missed but never *when* to ask again — a failed puzzle sat
+  reviewable for ever, and one scraped through once was done for good.
+  A shared ladder (1, 3, 7, 21 days, keyed to clean solves since the
+  last fail) now schedules every puzzle: review mode serves due puzzles
+  first, most overdue first; a book's due count sits on its shelf card
+  and its trainer chains Next review through the queue; the dashboard
+  and hub lead with what is due, and when nothing is they say when the
+  next review lands, so an empty queue reads as earned, not gone. A
+  fixed ladder rather than SM-2, deliberately: tactics grade
+  themselves, and ease buttons would hand the solver a verdict to
+  self-assign.
+- **A sacrifice is read from the position, not the opponent's reply.**
+  The game review used to flag one by counting material two plies after
+  a move, which answers "did the opponent take something": a quiet move
+  followed by the opponent grabbing a defended piece earned a
+  brilliancy, and a genuine offer the opponent declined went unmarked.
+  Sacrifices are now settled with a material-only quiescence search on
+  the position the move created. On Kasparov–Topalov 1999 the flags are
+  exactly the immortal combination.
+- **The explorer's players database takes a rating band.** The filters
+  window the pane already has opens for the players source too, with
+  the band chips the coverage dialog offers; the choice persists like
+  every other filter. Masters keeps no window: its population is who
+  qualifies, not a group.
+- **The editor keeps its bearings.** Analyse now hands the board your
+  flip along with the position; the browser's Back returns you to the
+  position, tool and orientation you left; and opening the editor
+  fresh — a tab, the More tile, a bookmark — starts clean. The online
+  archive window learned the same lesson: opening a game navigates to
+  the Board, and coming back now lands beside the window still open.
+- **The last hand-rolled controls compose the registry.** Native
+  checkboxes, radios and range inputs, raw `<hr>`s, hand-spun spinners,
+  hand-labelled fields and hand-drawn empty states became the
+  registry's Checkbox, RadioGroup, Slider, Separator, Spinner, Field
+  and Empty; panels take the registry's own spacing model back off
+  their call sites; icons beside button text declare themselves the
+  registry's way. The knight plates retire — each empty shelf wears its
+  own section's icon instead of a mascot.
+- Smaller: the opening map's arrangement switch no longer redraws every
+  dot where a drag had left it, and a cache-key mismatch that could
+  freeze the page during the online mainline chase is fixed; the
+  deviations list lines up as the table it is, with a draw as one ½
+  glyph on the same chip the explorer uses; a refused upload no longer
+  leaves a stray `.part` behind, and every rename in the vault retries
+  the transient Windows error that once cost an upload.
 - **The component layer stands on Base UI.** Every primitive under the
   shadcn/ui components — dialogs, menus, selects, tooltips, tabs,
   toggles, switches, sliders and the rest — is `@base-ui/react` now,

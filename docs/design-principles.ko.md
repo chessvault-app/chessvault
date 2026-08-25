@@ -382,9 +382,10 @@ iPhone에서 틀렸습니다.
 Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 것:
 
 - **`web/src/components/ui/`에는 레지스트리의 파일이 들어 있고, 우리가
-  소유합니다.** Button, Input, Textarea, Label, Field, InputGroup, Dialog,
-  AlertDialog, DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs,
-  ToggleGroup, Toggle, Switch, Progress, Skeleton, Card, Separator, Calendar,
+  소유합니다.** Button, Input, InputOTP, Textarea, Label, Field, InputGroup,
+  Checkbox, RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu,
+  ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch,
+  Progress, Spinner, Skeleton, Empty, Card, Separator, Calendar,
   Sonner — 각각
   `npx shadcn add`가 써 주는 모양 그대로(밑은 Base UI, `cva` 변형,
   `data-slot`), 각각 레지스트리 자신의 얼굴(nova 스타일: 그 크기, 둥근

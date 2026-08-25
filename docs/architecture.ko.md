@@ -19,7 +19,7 @@ vault/
     chesscom/<user>/  YYYY-MM.pgn  (기보 캐시)
     lichess/<user>/   YYYY-MM.pgn
   puzzlebooks/<id>/                  (b + 16진수 16자리, 제목은 book.json에)
-    book.json  puzzles.json  drafts.json  progress.json  ocr.json
+    book.json  puzzles.json  drafts.json  progress.json  ocr.json  cycles.json
     diagrams/  *.jpg          (근거 스캔, 표지)
   books/.collections.json            (서재의 모음, 이름으로)
   books/<id>/                        (서재: 체스판 옆에서 읽는 PDF)
@@ -86,9 +86,10 @@ PGN이며, 퍼즐 진행 상황은 JSON 라인입니다. 이 앱은 Obsidian에�
   로딩됩니다. 런처 하나를 그리자고 시작 페이지가 엔진과 탐색기와 PGN
   파서까지 불러오는 비용을 치러서는 안 되기 때문입니다 — 홈 화면에서 구성
   창만 지연 로딩되는 것도 같은 이유입니다. 지금 시작 페이지가 받는 JS는
-  한국어로 513 kB입니다 — 셸 416 kB(39개 조각: 220 kB의 진입 조각, 90 kB의
-  컴포넌트 층, 33 kB의 다이얼로그)에 사전 97 kB — 영어로는 425 kB이고,
-  0.4.7 빌드에서 쟀습니다. 컴포넌트 층이 들어오기 전의 셸은 217 kB였습니다.
+  한국어로 595 kB입니다 — 셸 503 kB(41개 조각: 227 kB의 진입 조각, 129 kB의
+  컴포넌트 층, 61 kB의 다이얼로그)에 사전 92 kB — 영어로는 503 kB이고,
+  0.4.9 빌드에서 쟀습니다. 컴포넌트 층이 들어오기 전의 셸은 217 kB였고,
+  Base UI 이식이 컴포넌트 층과 다이얼로그 조각을 다시 키웠습니다.
 
 ## 배포 모델
 

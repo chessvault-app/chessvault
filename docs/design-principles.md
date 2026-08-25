@@ -408,9 +408,10 @@ The app is a shadcn/ui project (`components.json`: the base-nova style,
 Tailwind v4, CSS variables). What that means here, and what it does not:
 
 - **`web/src/components/ui/` holds the registry's files, owned.** Button,
-  Input, Textarea, Label, Field, InputGroup, Dialog, AlertDialog,
-  DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup,
-  Toggle, Switch, Progress, Skeleton, Card, Separator, Calendar, Sonner —
+  Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
+  RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
+  Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
+  Spinner, Skeleton, Empty, Card, Separator, Calendar, Sonner —
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius

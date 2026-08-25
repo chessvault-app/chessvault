@@ -132,10 +132,13 @@ while a field source is on, by how often the move actually gets played
 at its parent, so the fat dots are the crowd and the small ones the
 sidelines.
 
-The accent colour is spent on the mainline and nothing else, and the
-mainline answers what you are looking at. Select a dot and the line the
-field walks on from there — its most-played continuation, all the way
-down — lights up in the accent, thicker as well as brighter, while its
+One colour is spent on the mainline and nothing else — the grammar's
+info blue, which every theme keeps, rather than the theme's accent: the
+neutral theme's dark accent is near-white, and the lit line vanished
+against the lineage's foreground. The mainline answers what you are
+looking at. Select a dot and the line the field walks on from there —
+its most-played continuation, all the way
+down — lights up in that blue, thicker as well as brighter, while its
 own lineage back to the root answers in bright foreground: where you
 came from, and where the crowd goes next. (Highlighting every node's
 most-played child sounds like the same idea and is not: an only child
@@ -149,9 +152,9 @@ a hit: searching "Ruy" over six Ruy variations matches 18 nodes,
 because the catalogue says "Ruy Lopez" on nearly every square of that
 subtree, and all but eight of those stand on another hit's line and
 draw nothing of their own. Past twelve lines the wheel stops telling
-colours apart and they all fall back to the accent; the fading is doing
-the work by then. Focus on nothing and the map is calm — no selection,
-no search, no accent, just the neutral constellation.
+colours apart and they all fall back to the mainline's blue; the fading
+is doing the work by then. Focus on nothing and the map is calm — no
+selection, no search, no lit line, just the neutral constellation.
 
 The page holds the canvas behind a brief spinner until its colours are
 known — coverage, names and the field all answered — then shows the
