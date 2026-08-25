@@ -1218,14 +1218,21 @@ function NodePanel({
                       {t('Kept')}
                     </span>
                   )}
-                  <span className="text-muted-foreground shrink-0 text-sm">{d.result}</span>
+                  {/* Fixed columns, so four rows read as a table: results
+                      right-aligned in one width, moves left-aligned in
+                      another. Sized to content, "1-0 Nd4" and "0-1 Nge7"
+                      gave every row its own edges. */}
+                  <span className="text-muted-foreground w-8 shrink-0 text-right text-sm tabular-nums">{d.result}</span>
                   <span
-                    className={d.userDeviated ? 'text-warn shrink-0 text-sm font-medium' : 'text-muted-foreground shrink-0 text-sm font-medium'}
+                    className={cn(
+                      'min-w-11 shrink-0 text-sm font-medium',
+                      d.userDeviated ? 'text-warn' : 'text-muted-foreground',
+                    )}
                     title={d.userDeviated ? t('You left the book with this move') : t('They left the book with this move')}
                   >
                     {san}
                   </span>
-                  {!charted && (
+                  {!charted ? (
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -1234,6 +1241,10 @@ function NodePanel({
                     >
                       <Plus className="size-3.5" />
                     </Button>
+                  ) : (
+                    // A charted move loses the button but keeps its slot,
+                    // or the analyse icons zigzag between rows.
+                    <span className="size-7 shrink-0 pointer-coarse:size-9" aria-hidden />
                   )}
                   <Button
                     variant="ghost"
