@@ -577,10 +577,10 @@ function Slider({
         min={min}
         max={max}
         step={step}
-        value={[value]}
+        value={value}
         disabled={disabled}
         aria-label={t(label)}
-        onValueChange={([v]) => onChange(v!)}
+        onValueChange={(v) => onChange(v as number)}
       />
     </Field>
   );

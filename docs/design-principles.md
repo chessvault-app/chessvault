@@ -404,7 +404,7 @@ palette looked correct on an iPad and was wrong on an iPhone.
 
 ## The component layer
 
-The app is a shadcn/ui project (`components.json`: the radix-nova style,
+The app is a shadcn/ui project (`components.json`: the base-nova style,
 Tailwind v4, CSS variables). What that means here, and what it does not:
 
 - **`web/src/components/ui/` holds the registry's files, owned.** Button,
@@ -412,7 +412,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup,
   Toggle, Switch, Progress, Skeleton, Card, Separator, Calendar, Sonner —
   each the shape
-  `npx shadcn add` writes (Radix underneath, `cva` variants, `data-slot`),
+  `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius
   ladder, focus rings, the inverted tooltip, the ring-hairline card) and
   carrying this app's physics on top: every window a bottom sheet on a

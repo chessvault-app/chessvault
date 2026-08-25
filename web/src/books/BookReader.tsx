@@ -1115,7 +1115,7 @@ function SearchPopover({
   }
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverTrigger render={trigger} />
       <PopoverContent align="end" className="flex w-72 flex-col gap-2 p-2">
         {body}
       </PopoverContent>

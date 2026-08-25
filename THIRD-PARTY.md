@@ -22,7 +22,7 @@ Anything here travels with the app to whoever installs or visits it.
 | fzstd (reads the zstd puzzle dump) | npm, bundled into the puzzle builder | MIT |
 | lucide icons | npm, bundled | ISC |
 | shadcn/ui component sources (what `npx shadcn add` writes into `web/src/components/ui/`, owned and reshaped here) | `web/src/components/ui/`, bundled into `dist/` | MIT |
-| Radix UI primitives (`radix-ui`), tw-animate-css — what the shadcn/ui component layer is built on; the `shadcn` CLI itself is a dev dependency | npm, bundled into `dist/` | MIT |
+| Base UI primitives (`@base-ui/react`), tw-animate-css — what the shadcn/ui component layer is built on; the `shadcn` CLI itself is a dev dependency | npm, bundled into `dist/` | MIT |
 | class-variance-authority (the component layer's variant sheet) | npm, bundled into `dist/` | Apache-2.0 |
 | Pretendard, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | CC0-1.0 |

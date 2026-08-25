@@ -29,7 +29,8 @@ export interface Segment<T extends string> {
  * joined outlined peers with the chosen one filled (lanph3re's call, from
  * a mock of the two side by side). The ROLES follow the shape, which is
  * the half a screen reader hears: a tablist announces panes, and a value
- * that is not a pane is a radiogroup. Both are driven by the same arrows.
+ * that is not a pane is a group of toggles with one pressed. Both are
+ * driven by the same arrows.
  */
 export function Segmented<T extends string>({
   value,
@@ -93,12 +94,13 @@ export function Segmented<T extends string>({
 
   return (
     <ToggleGroup
-      type="single"
-      value={value}
+      value={[value]}
       // A press on the chosen segment must not un-choose it: a choice here
-      // always has an answer.
-      onValueChange={(v) => {
-        if (v) onChange(v as T);
+      // always has an answer. (Base UI's group value is an array; one
+      // entry long here, and empty when the chosen segment was re-pressed
+      // — which is the press that must change nothing.)
+      onValueChange={(v: string[]) => {
+        if (v[0]) onChange(v[0] as T);
       }}
       aria-label={t(ariaLabel)}
       variant={track ? 'default' : 'outline'}
@@ -118,7 +120,7 @@ export function Segmented<T extends string>({
           className={cn(
             item,
             track &&
-              'h-[calc(100%-1px)] rounded-md aria-checked:bg-background aria-checked:text-foreground aria-checked:shadow-sm data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm',
+              'h-[calc(100%-1px)] rounded-md aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm',
             id === value && accent && 'font-semibold',
           )}
         >

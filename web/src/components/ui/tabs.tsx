@@ -1,23 +1,23 @@
-import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Tabs as TabsPrimitive } from 'radix-ui';
+import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 
 import { cn } from '@/lib/utils';
 import { hasTextContent } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
- * shadcn's Tabs (nova), owned. Radix brings the tablist/tab roles, the
+ * shadcn's Tabs (nova), owned. Base UI brings the tablist/tab roles, the
  * roving tab stop, Left/Right with wrap, Home/End and automatic
  * activation; the face is the registry's — the muted track with the
  * raised pill (`default`), or the underlined `line` variant.
  */
 
-function Tabs({ className, orientation = 'horizontal', ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+function Tabs({ className, orientation = 'horizontal', ...props }: TabsPrimitive.Root.Props) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
+      orientation={orientation}
       className={cn('group/tabs flex gap-2 data-horizontal:flex-col', className)}
       {...props}
     />
@@ -41,7 +41,7 @@ function TabsList({
   className,
   variant = 'default',
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>) {
+}: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -53,17 +53,17 @@ function TabsList({
 }
 
 /**
- * `title` is a tooltip, the shadcn way (see Button): Radix's Tooltip on
+ * `title` is a tooltip, the shadcn way (see Button): the Tooltip on
  * hover and keyboard focus, never the browser's bubble, and an icon-only
  * control's title doubles as its accessible name.
  */
-// The chosen tab is read from aria-selected, not from data-state (the
-// registry's `data-active:`): a Tooltip trigger wrapped around the tab
-// writes its own data-state over Radix's, and the pane switcher's icon
-// tabs each carry a title.
-function TabsTrigger({ className, title, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+// The chosen tab is read from aria-selected, not from the registry's
+// `data-active:` — it survived one library's data-attribute collisions
+// already (a Radix Tooltip trigger used to overwrite data-state), and
+// aria-selected is the one signal the tab role guarantees.
+function TabsTrigger({ className, title, ...props }: TabsPrimitive.Tab.Props & { title?: string }) {
   const trigger = (
-    <TabsPrimitive.Trigger
+    <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
       className={cn(
@@ -79,14 +79,14 @@ function TabsTrigger({ className, title, ...props }: React.ComponentProps<typeof
   if (title === undefined) return trigger;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+      <TooltipTrigger render={trigger} />
       <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );
 }
 
-function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
-  return <TabsPrimitive.Content data-slot="tabs-content" className={cn('flex-1 text-sm outline-none', className)} {...props} />;
+function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
+  return <TabsPrimitive.Panel data-slot="tabs-content" className={cn('flex-1 text-sm outline-none', className)} {...props} />;
 }
 
 export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };

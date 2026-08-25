@@ -868,16 +868,21 @@ function Trainer({
                 app, to lichess, and middle click and the context menu are
                 how a link is used. */}
             {puzzle?.game_url && (
-              <Button asChild variant="ghost" size="sm">
-                <a
-                  href={puzzle.game_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={t('Opens lichess (needs internet)')}
-                >
-                  <ExternalLink className="size-3.5" />
-                  {t('From this game')}
-                </a>
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <a
+                    href={puzzle.game_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={t('Opens lichess (needs internet)')}
+                  />
+                }
+              >
+                <ExternalLink className="size-3.5" />
+                {t('From this game')}
               </Button>
             )}
             {/* Practice, not a second attempt — see retry(). */}

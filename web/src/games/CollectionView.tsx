@@ -1028,8 +1028,9 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             </div>
 
             {/* Segmented, not a dropdown: four states, all visible at once,
-                and the chosen one filled. '' (Auto) is not a value Radix's
-                ToggleGroup can hold, so it travels as 'auto'. */}
+                and the chosen one filled. '' (Auto) travels as 'auto' — an
+                empty value has been a segment id trap once (Radix refused
+                it), and a named one costs nothing. */}
             <Segmented
               value={result === '' ? 'auto' : result}
               onChange={(v) => setResult(v === 'auto' ? '' : v)}

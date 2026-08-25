@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Slot } from 'radix-ui';
+import { Button as ButtonPrimitive } from '@base-ui/react/button';
 
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -68,21 +68,17 @@ const buttonVariants = cva(
   },
 );
 
-export interface ButtonProps
-  extends React.ComponentProps<'button'>,
-    VariantProps<typeof buttonVariants> {
-  /**
-   * Render the child element instead of a <button>, with the button's
-   * classes and props merged onto it — how a link is given the button's
-   * look: `<Button asChild variant="ghost"><a href=…>…</a></Button>`. A
-   * control that goes OUT of the app is an anchor and nothing else.
-   */
-  asChild?: boolean;
+export interface ButtonProps extends ButtonPrimitive.Props, VariantProps<typeof buttonVariants> {
   /**
    * The lit state of a toggle-like button in a toolbar — the tool that is
    * selected, the panel that is open.
+   *
+   * (A link wearing the button's look renders the anchor itself, Base UI's
+   * way: `<Button render={<a href=…/>} nativeButton={false}>…</Button>`. A
+   * control that goes OUT of the app is an anchor and nothing else.)
    */
   active?: boolean;
+  title?: string;
 }
 
 // Does the button say anything in text? A visible label is already the
@@ -98,38 +94,34 @@ function Button({
   className,
   variant = 'default',
   size = 'default',
-  asChild = false,
   active = false,
-  type = 'button',
   title,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot.Root : 'button';
   const button = (
-    <Comp
+    <ButtonPrimitive
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      // `type="button"` unless told otherwise: a bare <button> inside a
-      // form submits it, and almost nothing here is a submit.
-      {...(asChild ? {} : { type })}
       // An icon-only button's title doubles as its accessible name unless
       // one was given: the tooltip below is what a pointer sees, and the
-      // name is what a screen reader and voice control get.
+      // name is what a screen reader and voice control get. (Base UI's
+      // Button already defaults `type="button"`, so a bare one inside a
+      // form does not submit it.)
       aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
       data-active={active || undefined}
       className={cn(buttonVariants({ variant, size }), active && 'bg-accent text-accent-foreground', className)}
       {...props}
     />
   );
-  // `title` is a tooltip, the shadcn way: Radix's Tooltip on hover and on
+  // `title` is a tooltip, the shadcn way: the Tooltip on hover and on
   // keyboard focus, never on touch — instead of the browser's bubble. The
   // attribute itself is not set: two tips for one control would be the
   // worst of both.
   if (title === undefined) return button;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger render={button} />
       <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );

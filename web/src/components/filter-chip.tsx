@@ -4,7 +4,7 @@ import { t } from '@/lib/i18n';
 
 /**
  * A filter that is on or off: shadcn's Toggle in the app's chip face
- * (aria-pressed from Radix; the outlined pill that fills with the accent
+ * (aria-pressed from Base UI; the outlined pill that fills with the accent
  * when it is on). `title` is a tooltip, as on Button.
  */
 export function FilterChip({
@@ -29,7 +29,7 @@ export function FilterChip({
   if (!title) return chip;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{chip}</TooltipTrigger>
+      <TooltipTrigger render={chip} />
       <TooltipContent>{t(title)}</TooltipContent>
     </Tooltip>
   );

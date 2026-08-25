@@ -357,13 +357,13 @@ export function EditorView({
 
             <Field label="Castling rights">
               {/* The registry's toggle group, four independent toggles
-                  (type="multiple"): outlined when off, the accent fill when
-                  on, aria-pressed from Radix. Not the filled primary: these
-                  four are a state, and primary is the colour of the thing to
-                  PRESS on a screen — a board full of pieces and one Save
-                  (lanph3re). */}
+                  (`multiple`): outlined when off, the accent fill when on,
+                  aria-pressed from the primitive. Not the filled primary:
+                  these four are a state, and primary is the colour of the
+                  thing to PRESS on a screen — a board full of pieces and
+                  one Save (lanph3re). */}
               <ToggleGroup
-                type="multiple"
+                multiple
                 variant="outline"
                 size="sm"
                 spacing={1}

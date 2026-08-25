@@ -16,7 +16,7 @@ export interface PaneTab<T extends string> {
  * panel under the board (see the lichess app), so exactly one shows at a
  * time. Desktop layouts never render this.
  *
- * shadcn's Tabs, whose list is the strip: Radix gives it the tablist role,
+ * shadcn's Tabs, whose list is the strip: Base UI gives it the tablist role,
  * the roving tab stop and the arrow keys. The root is `contents` so the
  * strip itself is the box the caller lays out.
  */
