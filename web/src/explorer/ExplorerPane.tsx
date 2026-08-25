@@ -171,7 +171,10 @@ export function ExplorerPane({
       // (components/panel) — before, the inline `min-height: 0` that came with the
       // default height cancelled this line outright. A share as well as a
       // size, so that the floor itself always fits in the column.
-      className={cn(className, enabled ? 'lg:min-h-[min(12rem,20%)]' : 'lg:min-h-0')}
+      // Folded, the card is nothing but the header band, which carries its
+      // own height (min-h-11) — the card's 16px floor under it is air, so
+      // pb-0 while off.
+      className={cn(className, enabled ? 'lg:min-h-[min(12rem,20%)]' : 'pb-0 lg:min-h-0')}
       resizeKey={enabled ? resizeKey : undefined}
       defaultHeight={enabled ? 300 : undefined}
     >
