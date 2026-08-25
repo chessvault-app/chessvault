@@ -15,9 +15,19 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  *   - `active`, the lit state of a toggle-like toolbar button — the
  *     registry's expanded look, set as `data-active` too;
  *   - bigger hit areas on coarse pointers (`pointer-coarse:`): 28px icon
- *     buttons are fine under a mouse and hostile under a thumb;
+ *     buttons are fine under a mouse and hostile under a thumb. Where
+ *     that widens a size's padding it widens the icon side too, or the
+ *     registry's trim below would grow with it — `sm` at `px-3` against
+ *     an untouched `pl-1.5` was a 6px lean where the registry draws 4;
  *   - `title` as a Tooltip, and as the accessible name of an icon-only
- *     button; `type="button"` unless told otherwise.
+ *     button; `type="button"` unless told otherwise;
+ *   - `not-[.w-full]` on the registry's icon-side padding trim. That trim
+ *     is optical balance for a button that shrinks to its contents: the
+ *     button gets narrower, nothing inside it moves. A button told to
+ *     fill its box instead centres its contents in what the padding
+ *     leaves, so the same trim pushes them off-centre by half of it —
+ *     measured 2px on the repertoire Start button, and 1px on the nine
+ *     `default`-size ones in the dialogs and the review rows.
  */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -39,10 +49,10 @@ const buttonVariants = cva(
       },
       size: {
         default:
-          'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 pointer-coarse:h-9',
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5 pointer-coarse:h-9 pointer-coarse:px-3",
-        lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+          'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:not-[.w-full]:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pl-2 pointer-coarse:h-9',
+        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:not-[.w-full]:pr-1.5 has-data-[icon=inline-start]:not-[.w-full]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:not-[.w-full]:pr-1.5 has-data-[icon=inline-start]:not-[.w-full]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5 pointer-coarse:h-9 pointer-coarse:px-3 has-data-[icon=inline-end]:not-[.w-full]:pointer-coarse:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pointer-coarse:pl-2",
+        lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:not-[.w-full]:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pl-2',
         icon: 'size-8 pointer-coarse:size-11',
         'icon-xs':
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
