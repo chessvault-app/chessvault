@@ -211,10 +211,10 @@ function releaseLock(): void {
 
 /**
  * Count a dialog that manages its own focus and scroll (components/ui/dialog,
- * on Radix) as open, so `dialogOpen()` keeps answering for every window in
+ * on Base UI) as open, so `dialogOpen()` keeps answering for every window in
  * the app. Returns the release. The body lock it also takes is harmless
- * beside Radix's own — both set overflow hidden, and the last one out
- * restores what it found.
+ * beside the primitive's own — both set overflow hidden, and the last one
+ * out restores what it found.
  */
 export function registerOpenDialog(): () => void {
   acquireLock();

@@ -17,7 +17,7 @@ import {
 /**
  * shadcn's AlertDialog (nova) — a question that must be answered before
  * anything else happens — owned, and built on this app's Dialog rather
- * than on Radix's AlertDialog primitive. One deliberate difference: Radix's
+ * than on Base UI's AlertDialog primitive. One deliberate difference: that
  * alert dialog refuses to close on a press outside, and every small window
  * in this app closes on the scrim (never the advertised way out, always a
  * way out). What a confirmation owes a screen reader it keeps:

@@ -83,7 +83,7 @@ function loadCatalogue(): Promise<OpeningTemplate[]> {
  * rising from the bottom with the drag, the scrim and the Escape every
  * other window has. On a desktop it is shadcn's Popover: the list drops
  * anchored under the field itself (portalled past the Panel's clipping,
- * placed inside the window by Radix, flipping above only when below has
+ * placed inside the window by Base UI, flipping above only when below has
  * no room), capped in height with the search pinned above the scroll —
  * so the board stays on screen while an opening is being chosen, instead
  * of disappearing behind a centred card. lanph3re's report: the modal
@@ -243,7 +243,8 @@ export function OpeningPicker({
 
   // As wide as the field, and never so narrow that a name is unreadable;
   // 384 is as tall as this wants to be, less where the room is less, and
-  // the catalogue scrolls inside it. Radix's popper publishes both numbers.
+  // the catalogue scrolls inside it. Base UI's positioner publishes both
+  // numbers (--anchor-width, --available-height).
   return (
     <Popover open={open} onOpenChange={setOpenFresh}>
       <PopoverTrigger render={trigger} />

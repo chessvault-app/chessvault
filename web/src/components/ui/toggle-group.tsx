@@ -50,7 +50,7 @@ function ToggleGroup({
 }
 
 /**
- * `title` is a tooltip, the shadcn way (see Button): Radix's Tooltip on
+ * `title` is a tooltip, the shadcn way (see Button): the Tooltip on
  * hover and keyboard focus, never the browser's bubble, and an icon-only
  * control's title doubles as its accessible name.
  */

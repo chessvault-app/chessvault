@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import {
   ContextMenu,
   ContextMenuContent,
+  ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuTrigger,
@@ -14,6 +15,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -105,11 +107,16 @@ export function ActionMenu({
       <DropdownMenu open={isOpen} onOpenChange={setOpen}>
         <DropdownMenuTrigger render={children} />
         <DropdownMenuContent align={align} className="w-56">
-          <DropdownMenuLabel>{t(title)}</DropdownMenuLabel>
-          {detail}
-          {actions.map((action) => (
-            <MenuRow key={action.label} action={action} kind="dropdown" />
-          ))}
+          {/* One group holding the label and its verbs: Base UI's
+              GroupLabel only exists inside a Group (the registry's own
+              composition rule too). */}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{t(title)}</DropdownMenuLabel>
+            {detail}
+            {actions.map((action) => (
+              <MenuRow key={action.label} action={action} kind="dropdown" />
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -162,10 +169,12 @@ export function ActionContextMenu({
       <ContextMenu>
         <ContextMenuTrigger render={children} />
         <ContextMenuContent className="w-56">
-          <ContextMenuLabel>{t(title)}</ContextMenuLabel>
-          {actions.map((action) => (
-            <MenuRow key={action.label} action={action} kind="context" />
-          ))}
+          <ContextMenuGroup>
+            <ContextMenuLabel>{t(title)}</ContextMenuLabel>
+            {actions.map((action) => (
+              <MenuRow key={action.label} action={action} kind="context" />
+            ))}
+          </ContextMenuGroup>
         </ContextMenuContent>
       </ContextMenu>
     );

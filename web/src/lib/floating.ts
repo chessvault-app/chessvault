@@ -6,8 +6,8 @@ import { useLayoutEffect, useState, type CSSProperties } from 'react';
  * The hover peek cards — the final-position preview beside a game row,
  * the engine line's board, a book puzzle's source crop — are placed by
  * this. Every CONTROL that floats (Select's list, the row menus, the
- * opening picker, the tips) is a Radix primitive now and placed by its
- * popper; what is left here is the pure arithmetic for a card that is
+ * opening picker, the tips) is a Base UI primitive now and placed by its
+ * positioner; what is left here is the pure arithmetic for a card that is
  * anchored to a measured rectangle and nothing else. Eight places once
  * worked out their own coordinates and disagreed — three copies of the
  * same arithmetic across two files, one with no horizontal clamp at all.

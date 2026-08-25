@@ -3,7 +3,7 @@ import { t } from '@/lib/i18n';
 
 /**
  * THE progress bar — every solved/failed fraction in the app uses this one
- * treatment: shadcn's Progress (Radix's progressbar role, the bordered
+ * treatment: shadcn's Progress (Base UI's progressbar role, the bordered
  * track that stays visible when empty) with two fills, green solved and
  * striped red failed, and the counts in the name rather than as UI text.
  */

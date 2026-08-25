@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Select as SelectPrimitive } from 'radix-ui';
+import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
@@ -10,30 +10,34 @@ import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 
 /**
- * shadcn's Select (nova), owned — Radix underneath: combobox and listbox
+ * shadcn's Select (nova), owned — Base UI underneath: combobox and listbox
  * roles, arrow keys, Home/End, typeahead, collision-aware placement. The
  * registry's faces, with two additions of this app's:
  *
- *   - `position="popper"` by default: a dropdown belongs UNDER its
- *     trigger; Radix's item-aligned mode opens the list over it.
+ *   - the list opens UNDER its trigger (`alignItemWithTrigger={false}`):
+ *     a dropdown belongs below the control; the item-aligned mode opens
+ *     the list over it.
  *   - The data-driven form every Select in the app is written in:
  *     `<Select value onValueChange groups ariaLabel …>` renders the whole
  *     control (SelectField below), and on a PHONE its open list is the
  *     app's bottom sheet rather than a popover — a sheet rises where the
  *     thumb already is and gives every option a full-width row. Without
  *     `groups` it is the registry's Root.
+ *
  */
 
 const PHONE = '(max-width: 39.9375rem)';
 
 /**
- * Radix refuses an empty string as an item value (it is how a Select says
- * "nothing chosen"), and four of this app's lists use '' for their none
- * row. Mapped on the way in and out; nobody outside this file sees it.
+ * Base UI treats a value that serializes to '' as "nothing chosen" and
+ * marks the trigger data-placeholder (Radix refused '' outright), and
+ * four of this app's lists use '' for their none row — which would draw
+ * muted, as a prompt rather than an answer. Mapped on the way in and
+ * out; nobody outside this file sees it.
  */
 const NONE = '__none__';
-const toRadix = (v: string): string => (v === '' ? NONE : v);
-const fromRadix = (v: string): string => (v === NONE ? '' : v);
+const toBase = (v: string): string => (v === '' ? NONE : v);
+const fromBase = (v: string): string => (v === NONE ? '' : v);
 
 export interface SelectOption {
   value: string;
@@ -83,11 +87,11 @@ const selectTriggerVariants = cva(
   },
 );
 
-function SelectGroup({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Group>) {
+function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return <SelectPrimitive.Group data-slot="select-group" className={cn('scroll-my-1 p-1', className)} {...props} />;
 }
 
-function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
+function SelectValue({ ...props }: SelectPrimitive.Value.Props) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
@@ -96,7 +100,7 @@ function SelectTrigger({
   size = 'default',
   children,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Trigger> & VariantProps<typeof selectTriggerVariants>) {
+}: SelectPrimitive.Trigger.Props & VariantProps<typeof selectTriggerVariants>) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -105,9 +109,7 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4" />
-      </SelectPrimitive.Icon>
+      <SelectPrimitive.Icon render={<ChevronDownIcon className="text-muted-foreground pointer-events-none size-4" />} />
     </SelectPrimitive.Trigger>
   );
 }
@@ -117,59 +119,68 @@ function SelectContent({
   onClick,
   onPointerDown,
   children,
-  position = 'popper',
   align = 'start',
+  alignOffset = 0,
+  side = 'bottom',
+  sideOffset = 0,
+  alignItemWithTrigger = false,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: SelectPrimitive.Popup.Props &
+  Pick<
+    SelectPrimitive.Positioner.Props,
+    'align' | 'alignOffset' | 'side' | 'sideOffset' | 'alignItemWithTrigger'
+  >) {
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Content
-        data-slot="select-content"
-        // A press inside this layer must not reach what the layer was written
-        // inside: React bubbles through portals, and a card or a row that
-        // opens on click would open under a menu item or a dialog's button.
-        onClick={(e) => {
-          onClick?.(e);
-          e.stopPropagation();
-        }}
-        onPointerDown={(e) => {
-          onPointerDown?.(e);
-          e.stopPropagation();
-        }}
-        data-align-trigger={position === 'item-aligned'}
-        className={cn(
-          'bg-popover text-popover-foreground ring-foreground/10 relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg shadow-md ring-1 duration-100',
-          'data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          position === 'popper' &&
-            'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
-          className,
-        )}
-        position={position}
+      <SelectPrimitive.Positioner
         align={align}
-        // An open listbox owns its keys outright. The board's arrow
-        // shortcuts listen on the window, and preventDefault does not stop
-        // a bubble: stepping through options was also stepping through
-        // the game. Radix's own handler still runs — it is composed after
-        // this one and reads defaultPrevented, not propagation.
-        onKeyDown={(e) => e.stopPropagation()}
-        {...props}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        alignItemWithTrigger={alignItemWithTrigger}
+        className="isolate z-50"
       >
-        <SelectScrollUpButton />
-        <SelectPrimitive.Viewport
-          data-position={position}
-          className="data-[position=popper]:h-(--radix-select-trigger-height) data-[position=popper]:w-full data-[position=popper]:min-w-(--radix-select-trigger-width)"
+        <SelectPrimitive.Popup
+          data-slot="select-content"
+          // A press inside this layer must not reach what the layer was written
+          // inside: React bubbles through portals, and a card or a row that
+          // opens on click would open under a menu item or a dialog's button.
+          onClick={(e) => {
+            onClick?.(e);
+            e.stopPropagation();
+          }}
+          onPointerDown={(e) => {
+            onPointerDown?.(e);
+            e.stopPropagation();
+          }}
+          data-align-trigger={alignItemWithTrigger}
+          className={cn(
+            'bg-popover text-popover-foreground ring-foreground/10 relative z-50 max-h-(--available-height) w-full min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg shadow-md ring-1 duration-100',
+            'data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+            !alignItemWithTrigger &&
+              'min-w-(--anchor-width) data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+            className,
+          )}
+          // An open listbox owns its keys outright. The board's arrow
+          // shortcuts listen on the window, and preventDefault does not stop
+          // a bubble: stepping through options was also stepping through
+          // the game. Base's own handler still runs — it is composed before
+          // this one and does not read propagation.
+          onKeyDown={(e) => e.stopPropagation()}
+          {...props}
         >
-          {children}
-        </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
-      </SelectPrimitive.Content>
+          <SelectScrollUpButton />
+          <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          <SelectScrollDownButton />
+        </SelectPrimitive.Popup>
+      </SelectPrimitive.Positioner>
     </SelectPrimitive.Portal>
   );
 }
 
-function SelectLabel({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Label>) {
+function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) {
   return (
-    <SelectPrimitive.Label
+    <SelectPrimitive.GroupLabel
       data-slot="select-label"
       className={cn('text-muted-foreground px-1.5 py-1 text-xs', className)}
       {...props}
@@ -177,7 +188,7 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
   );
 }
 
-function SelectItem({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -194,17 +205,14 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
           <CheckIcon className="pointer-events-none" />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText asChild>
-        <span className="min-w-0 flex-1 truncate">{children}</span>
+      <SelectPrimitive.ItemText className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+        {children}
       </SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
+function SelectSeparator({ className, ...props }: SelectPrimitive.Separator.Props) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
@@ -217,37 +225,50 @@ function SelectSeparator({
 function SelectScrollUpButton({
   className,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
+}: React.ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
   return (
-    <SelectPrimitive.ScrollUpButton
+    <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
-      className={cn("bg-popover z-10 flex cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4", className)}
+      className={cn(
+        "bg-popover top-0 z-10 flex w-full cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
+        className,
+      )}
       {...props}
     >
       <ChevronUpIcon />
-    </SelectPrimitive.ScrollUpButton>
+    </SelectPrimitive.ScrollUpArrow>
   );
 }
 
 function SelectScrollDownButton({
   className,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
+}: React.ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
   return (
-    <SelectPrimitive.ScrollDownButton
+    <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
-      className={cn("bg-popover z-10 flex cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4", className)}
+      className={cn(
+        "bg-popover bottom-0 z-10 flex w-full cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
+        className,
+      )}
       {...props}
     >
       <ChevronDownIcon />
-    </SelectPrimitive.ScrollDownButton>
+    </SelectPrimitive.ScrollDownArrow>
   );
 }
 
-type RootProps = React.ComponentProps<typeof SelectPrimitive.Root>;
+type RootProps = SelectPrimitive.Root.Props<string>;
 
-export interface SelectProps extends Omit<RootProps, 'children'> {
+export interface SelectProps
+  extends Omit<RootProps, 'children' | 'onOpenChange' | 'value' | 'defaultValue' | 'onValueChange'> {
   children?: React.ReactNode;
+  /** Kept to the app's one-argument shapes: no caller reads Base's eventDetails,
+      and none has a use for its `null` (nothing in the app unselects). */
+  onOpenChange?: (open: boolean) => void;
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
   /** The options, grouped; given, the control renders itself (below). */
   groups?: SelectGroup[];
   /** The trigger's accessible name; it renders no label of its own. */
@@ -284,9 +305,17 @@ function Select({ groups, ...props }: SelectProps) {
     prefix: _p,
     fill: _f,
     className: _c,
+    onOpenChange,
+    onValueChange,
     ...root
   } = props;
-  return <SelectPrimitive.Root data-slot="select" {...root} />;
+  return (
+    <SelectPrimitive.Root
+      onOpenChange={onOpenChange ? (open) => onOpenChange(open) : undefined}
+      onValueChange={onValueChange ? (v) => onValueChange((v ?? '') as string) : undefined}
+      {...root}
+    />
+  );
 }
 
 function SelectField({
@@ -405,11 +434,10 @@ function SelectField({
 
   return (
     <SelectPrimitive.Root
-      data-slot="select"
-      value={value === undefined ? undefined : toRadix(value)}
-      onValueChange={(v) => onValueChange?.(fromRadix(v))}
+      value={value === undefined ? undefined : toBase(value)}
+      onValueChange={(v) => onValueChange?.(fromBase(v as string))}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => setOpen(next)}
       {...root}
     >
       <SelectTrigger
@@ -417,19 +445,20 @@ function SelectField({
         size={size === 'sm' ? 'sm' : 'default'}
         className={cn('w-auto min-w-0 shrink', mono && 'font-mono', className)}
       >
-        {/* asChild, because Radix's Value drops className and style on
-            purpose (it is meant to be unstyled); as the flex item it has
-            to carry the truncation and the steady stack itself. */}
-        <SelectValue asChild>
-          <span className={labelClass}>{labelInner}</span>
-        </SelectValue>
+        {/* Not Select.Value: that part exists to echo an item's own label,
+            and this trigger draws its own face — the prefix, the dot, the
+            steady stack. No data-slot="select-value" either: the trigger
+            variants force `flex` onto that slot, and the steady stack is a
+            grid of overlapped spans — flex lays the measuring spans out in
+            a row and the trigger grows to the sum of every option. */}
+        <span className={labelClass}>{labelInner}</span>
       </SelectTrigger>
       <SelectContent align={align} className={cn(mono && 'font-mono')}>
         {groups.map((group, gi) => (
           <SelectGroup key={gi}>
             {group.label && <SelectLabel>{t(group.label)}</SelectLabel>}
             {group.options.map((option) => (
-              <SelectItem key={option.value} value={toRadix(option.value)}>
+              <SelectItem key={option.value} value={toBase(option.value)}>
                 {option.dot && <OptionDot dot={option.dot} />}
                 {t(option.label)}
               </SelectItem>
