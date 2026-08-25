@@ -246,12 +246,12 @@ export function OpeningPicker({
   // the catalogue scrolls inside it. Radix's popper publishes both numbers.
   return (
     <Popover open={open} onOpenChange={setOpenFresh}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverTrigger render={trigger} />
       <PopoverContent
         align="start"
         collisionPadding={12}
         aria-label={t('Opening')}
-        className="flex w-[max(var(--radix-popover-trigger-width),18rem)] max-h-[min(24rem,var(--radix-popover-content-available-height))] flex-col gap-0 overflow-hidden p-0"
+        className="flex w-[max(var(--anchor-width),18rem)] max-h-[min(24rem,var(--available-height))] flex-col gap-0 overflow-hidden p-0"
       >
         {/* Above the scroll, not inside it: the search stays put while the
             catalogue scrolls under it. */}

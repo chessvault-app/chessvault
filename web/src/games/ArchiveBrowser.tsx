@@ -967,12 +967,9 @@ export function ArchiveBrowser({
                   // Indeterminate is the honest state for a partial
                   // selection: an unchecked box next to eight ticked rows
                   // reads as a bug.
-                  checked={
-                    uncollected.length > 0 && picked.size === uncollected.length
-                      ? true
-                      : picked.size > 0
-                        ? 'indeterminate'
-                        : false
+                  checked={uncollected.length > 0 && picked.size === uncollected.length}
+                  indeterminate={
+                    picked.size > 0 && picked.size !== uncollected.length
                   }
                   onCheckedChange={(on) =>
                     setPicked(on === true ? new Set(uncollected.map(gameKey)) : new Set())

@@ -299,7 +299,7 @@ function SideToMovePopover({
   }
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverTrigger render={children} />
       <PopoverContent align="end" className="flex w-auto flex-col gap-1 p-1.5">
         {choices}
       </PopoverContent>

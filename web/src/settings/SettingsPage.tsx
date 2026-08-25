@@ -697,12 +697,12 @@ function SoundCard() {
           min={0}
           max={100}
           step={5}
-          value={[Math.round(soundVolume * 100)]}
+          value={Math.round(soundVolume * 100)}
           disabled={!sound}
-          onValueChange={([v]) => setSoundVolume(v! / 100)}
+          onValueChange={(v) => setSoundVolume((v as number) / 100)}
           // Preview on release rather than on every step: dragging fires
           // dozens of times and would machine-gun the sample.
-          onValueCommit={() => previewSound('move', moveSound)}
+          onValueCommitted={() => previewSound('move', moveSound)}
           aria-label={t('Volume')}
         />
       </Field>
