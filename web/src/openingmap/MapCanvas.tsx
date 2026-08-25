@@ -1066,7 +1066,10 @@ export function MapCanvas({
                       : isRoot
                         ? 'var(--color-foreground)'
                         : planned
-                          ? 'var(--color-surface-3)'
+                          // The RUNG, not a --color-* utility: the ladder's
+                          // extra rungs are variables only (index.css), and
+                          // an undefined var in an SVG fill paints black.
+                          ? 'var(--surface-3)'
                           : (onMain ?? 'var(--color-border)')
                   }
                   fillOpacity={planned ? 0.6 : onMain ? 1 : 0.92}
