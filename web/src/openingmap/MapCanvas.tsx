@@ -41,8 +41,15 @@ const HOLD_SLOP = 10;
  */
 const HELD_RING = 26;
 
-/** One focused line wears the app's accent, as any other emphasis does. */
-const ACCENT = 'var(--color-primary)';
+/**
+ * One focused line wears the grammar's blue, NOT --color-primary: the
+ * lineage back to the root is drawn in the foreground colour, and in any
+ * theme whose primary is near-white — the neutral default's dark mode is
+ * one — the two lines came out identical. Info is the one blue every
+ * theme keeps (the tint multiplier skips it), and "where the field goes
+ * next" is the informational statement that blue exists to make.
+ */
+const ACCENT = 'var(--color-info)';
 /**
  * Above this many highlighted LINES, separate hues stop separating
  * anything and every line goes back to the accent. Counted in lines
