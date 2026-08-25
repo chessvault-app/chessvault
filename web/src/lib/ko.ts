@@ -522,6 +522,7 @@ export const ko: Record<string, string> = {
   'Start the next cycle': '다음 사이클 시작',
   'Next in cycle': '사이클의 다음 퍼즐',
   '{n} solved': '{n}개 해결',
+  '{n} past cycles': '지난 사이클 {n}개',
   'Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.':
     '책 전체를 회차로 반복합니다 — 사이클마다 모든 퍼즐을 한 번씩 풀고, 첫 시도로 점수를 매깁니다. 회차를 거듭할수록 더 빠르고 깔끔해지는 것이 목표입니다.',
   'Review puzzles · {n} due': '퍼즐 복습 · 복습할 때가 된 {n}개',

@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, FileUp, History, Repeat, RotateCw, ScanSearch, Plus, RotateCcw, Square } from 'lucide-react';
+import { BookText, ChevronLeft, ChevronRight, CircleStop, FileUp, History, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -30,8 +30,7 @@ import { classifyBoardNet, loadCellNet } from '../ocr/cellnet';
 import { isUntitled, t } from '@/lib/i18n';
 import { formatAgo } from '@/lib/dates';
 import { Panel, PanelHeader } from '@/components/panel';
-import { CardFooter } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { ProgressBar } from '@/components/progress-bar';
 import {
   type BookDetail,
   type BookDraft,
@@ -524,76 +523,29 @@ function CyclesPanel({
     .map((cycle) => ({ cycle, ...cyclePass(book, cycle) }))
     .filter(({ cycle, attempted }) => cycle.finishedAt === undefined || attempted > 0)
     .map((pass, i) => ({ ...pass, n: i + 1 }));
-  const finished = passes
-    .filter(({ cycle }) => cycle.finishedAt !== undefined)
-    .reverse()
-    .slice(0, 5);
+  const finished = passes.filter(({ cycle }) => cycle.finishedAt !== undefined).reverse();
   const openN = passes.find(({ cycle }) => cycle.finishedAt === undefined)?.n ?? passes.length;
-  // The open pass's numbers, hoisted: the status row and the footer's
-  // Continue both read them.
   const openPass = open ? { ...cyclePass(book, open), next: nextInCycle(book, open) } : null;
   const total = book.puzzles.length;
+  // Past passes fold away: the open pass is the only live information,
+  // and on a phone the history rows plus a footer band pushed the puzzle
+  // grid — the thing the page is FOR — below the fold.
+  const [showPast, setShowPast] = useState(false);
 
   return (
     <Panel className="mb-4">
-      <PanelHeader title={t('Cycles')} />
-      <div className="flex flex-col gap-2 px-(--card-spacing)">
-        {!open && finished.length === 0 && (
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
-          </p>
-        )}
-        {/* One grid over every row, not a flex line per pass: each row's
-            label and score are different widths, so per-row layout put
-            every bar at its own x and the panel read as a ragged pile
-            (lanph3re's screenshot). Shared columns are what align them —
-            the same treatment the dashboard's By difficulty panel uses. */}
-        {(open !== null || finished.length > 0) && (
-          <div className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-2 text-sm">
-            {open && openPass && (
-              <>
-                <span className="text-foreground font-medium">
-                  {t('Cycle {n}', { n: openN })}
-                </span>
-                <span className="text-muted-foreground text-right tabular-nums">
-                  {openPass.attempted}/{total} · {t('{n} solved', { n: openPass.wins })}
-                </span>
-                <Progress
-                  value={total > 0 ? (100 * openPass.attempted) / total : 0}
-                  className="min-w-16"
-                />
-                <span />
-              </>
-            )}
-            {finished.map(({ cycle, n, attempted, wins }) => (
-              <Fragment key={cycle.startedAt}>
-                <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
-                <span className="text-foreground text-right font-mono tabular-nums">
-                  {wins}/{attempted}
-                </span>
-                {/* How far through the book the pass got — full for a pass
-                    that finished itself, partial for one abandoned mid-way. */}
-                <Progress
-                  value={total > 0 ? (100 * attempted) / total : 0}
-                  className="min-w-16"
-                />
-                <span className="text-muted-foreground text-right tabular-nums">
-                  {formatAgo(cycle.finishedAt!)}
-                </span>
-              </Fragment>
-            ))}
-          </div>
-        )}
-
-        {/* The panel's actions on its own floor — the slot a card keeps
-            for them, the same footer band both trainers stand theirs on:
-            justify-end, gap-2, the primary one last. The negative margins
-            take back the body's p-3 so the band spans edge to edge. */}
-        <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
-          {open ? (
+      {/* The acts live on the header row, the way the editor's column
+          keeps Load beside its name: one or two small buttons do not
+          earn a whole footer band, and the band was a third of a phone
+          screen spent before the grid began. Stop wears CircleStop — the
+          bare Square at ghost weight read as an unchecked checkbox. */}
+      <PanelHeader
+        title={t('Cycles')}
+        actions={
+          open ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => void act('DELETE')}>
-                <Square className="size-3.5" data-icon="inline-start" />
+                <CircleStop className="size-3.5" data-icon="inline-start" />
                 {t('Stop')}
               </Button>
               {openPass?.next && (
@@ -612,8 +564,69 @@ function CyclesPanel({
               <Repeat className="size-3.5" data-icon="inline-start" />
               {t(passes.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
             </Button>
-          )}
-        </CardFooter>
+          )
+        }
+      />
+      <div className="flex flex-col gap-2 px-(--card-spacing)">
+        {!open && finished.length === 0 && (
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
+          </p>
+        )}
+        {/* One grammar for every pass, open or done: attempts against
+            the book, wins named beside them. The old rows mixed
+            attempted/total with wins/attempted in one column of
+            same-shaped fractions. */}
+        {open && openPass && (
+          <>
+            <p className="flex items-baseline gap-3 text-sm">
+              <span className="text-foreground font-medium">{t('Cycle {n}', { n: openN })}</span>
+              <span className="text-muted-foreground tabular-nums">
+                {openPass.attempted}/{total} · {t('{n} solved', { n: openPass.wins })}
+              </span>
+            </p>
+            {/* THE solved/failed bar, not a plain fill: a pass's quality
+                is what Woodpecker is about, and the plain bar at 0% was
+                indistinguishable from a full one — the track alone reads
+                as a complete thin line. */}
+            <ProgressBar
+              total={total}
+              solved={openPass.wins}
+              failed={openPass.attempted - openPass.wins}
+              showEmpty
+            />
+          </>
+        )}
+        {finished.length > 0 && (
+          <>
+            <button
+              type="button"
+              aria-expanded={showPast}
+              onClick={() => setShowPast((v) => !v)}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 self-start text-sm"
+            >
+              <ChevronRight
+                className={cn('size-3.5 transition-transform', showPast && 'rotate-90')}
+              />
+              {t('{n} past cycles', { n: finished.length })}
+            </button>
+            {showPast && (
+              <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 gap-y-1.5 text-sm">
+                {finished.map(({ cycle, n, attempted, wins }) => (
+                  <Fragment key={cycle.startedAt}>
+                    <span className="text-muted-foreground">{t('Cycle {n}', { n })}</span>
+                    <span className="text-foreground tabular-nums">
+                      {attempted}/{total} · {t('{n} solved', { n: wins })}
+                    </span>
+                    <span className="text-muted-foreground text-right tabular-nums">
+                      {formatAgo(cycle.finishedAt!)}
+                    </span>
+                  </Fragment>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </Panel>
   );
