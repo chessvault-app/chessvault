@@ -29,7 +29,7 @@ export function FilterChip({
   if (!title) return chip;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{chip}</TooltipTrigger>
+      <TooltipTrigger render={chip} />
       <TooltipContent>{t(title)}</TooltipContent>
     </Tooltip>
   );

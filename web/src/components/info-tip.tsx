@@ -20,8 +20,8 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
   return (
     <span className="inline-flex">
       <Tooltip>
-        <TooltipTrigger asChild>
-          <button
+        <TooltipTrigger
+          render={<button
             type="button"
             aria-label={t(label)}
             // 20px of ? beside a title, and on a touch screen that ? is the
@@ -38,8 +38,8 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
             }}
           >
             <HelpCircle className="size-3.5" />
-          </button>
-        </TooltipTrigger>
+          </button>}
+        />
         {/* A sentence, not a label: wider and set as prose. */}
         <TooltipContent
           align="start"

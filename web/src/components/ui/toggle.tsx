@@ -65,7 +65,7 @@ function Toggle({
   if (title === undefined) return toggle;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{toggle}</TooltipTrigger>
+      <TooltipTrigger render={toggle} />
       <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );

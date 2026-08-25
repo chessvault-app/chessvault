@@ -79,7 +79,7 @@ function TabsTrigger({ className, title, ...props }: React.ComponentProps<typeof
   if (title === undefined) return trigger;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+      <TooltipTrigger render={trigger} />
       <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );

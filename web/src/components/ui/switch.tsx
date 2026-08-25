@@ -39,7 +39,7 @@ function Switch({
   if (title === undefined) return control;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{control}</TooltipTrigger>
+      <TooltipTrigger render={control} />
       <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );

@@ -80,7 +80,7 @@ function ToggleGroupItem({
   if (title === undefined) return item;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{item}</TooltipTrigger>
+      <TooltipTrigger render={item} />
       <TooltipContent>{title}</TooltipContent>
     </Tooltip>
   );
