@@ -509,6 +509,15 @@ function BookCard({
                 {(book.due ?? 0) > 0 && (
                   <span className="text-info"> · {t('{n} due', { n: book.due! })}</span>
                 )}
+                {/* Where the rotation stands, for a book mid-pass — the
+                    ordinal and the pass's own count, not the all-time
+                    figures the bar below already draws. */}
+                {book.cycle && (
+                  <span>
+                    {' · '}
+                    {t('Cycle {n}', { n: book.cycle.n })} · {book.cycle.attempted}/{book.puzzles}
+                  </span>
+                )}
               </span>
             </span>
             {scan ? (

@@ -27,6 +27,9 @@ export interface BookSummary {
   failed: number;
   /** Puzzles whose review date has come — see shared/review.ts. */
   due?: number;
+  /** The pass still running, when one is: its ordinal and first-attempt
+      numbers, so the shelf can say where each book's rotation stands. */
+  cycle?: { n: number; attempted: number; wins: number } | null;
   cover?: boolean;
   /** The library book holding this book's PDF, while it still does. */
   pdfBook?: string | null;

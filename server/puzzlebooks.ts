@@ -350,20 +350,32 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
      * for everything else would hold a stale count for ever.
      */
     dueAts: string[];
+    /** The pass still running, if one is: its ordinal and first-attempt
+        numbers, so the shelf can say where each book's rotation stands.
+        The ordinal counts finished windows before it — untouched ones
+        are pruned on every cycle write, so the count matches the page's
+        own numbering for any record written since. */
+    cycle: { n: number; attempted: number; wins: number } | null;
   }
   const tallyCache = new Map<
     string,
-    { puzzlesMs: number; progressMs: number; tally: Tally }
+    { puzzlesMs: number; progressMs: number; cyclesMs: number; tally: Tally }
   >();
   const bookTally = (slug: string): Tally => {
     const puzzlesMs = mtimeOf(puzzlesPath(slug));
     const progressMs = mtimeOf(progressPath(slug));
+    const cyclesMs = mtimeOf(cyclesPath(slug));
     const hit = tallyCache.get(slug);
-    if (hit && hit.puzzlesMs === puzzlesMs && hit.progressMs === progressMs) return hit.tally;
+    if (hit && hit.puzzlesMs === puzzlesMs && hit.progressMs === progressMs && hit.cyclesMs === cyclesMs)
+      return hit.tally;
     const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
     const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
+    const cycles = readCycles(slug);
+    const open = cycles.find((cy) => cy.finishedAt === undefined) ?? null;
     let solved = 0;
     let failed = 0;
+    let attempted = 0;
+    let wins = 0;
     let lastAt: string | null = null;
     const dueAts: string[] = [];
     for (const p of puzzles) {
@@ -375,10 +387,20 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
       if (entry?.at && (lastAt === null || entry.at > lastAt)) lastAt = entry.at;
       const due = reviewDueAt(attemptsOf(entry));
       if (due !== null) dueAts.push(due);
+      if (open) {
+        const first = cycleAttempt(attemptsOf(entry), open);
+        if (first !== null) {
+          attempted++;
+          if (first.win) wins++;
+        }
+      }
     }
     dueAts.sort();
-    const tally = { puzzles: puzzles.length, solved, failed, lastAt, dueAts };
-    tallyCache.set(slug, { puzzlesMs, progressMs, tally });
+    const cycle = open
+      ? { n: cycles.filter((cy) => cy.finishedAt !== undefined).length + 1, attempted, wins }
+      : null;
+    const tally = { puzzles: puzzles.length, solved, failed, lastAt, dueAts, cycle };
+    tallyCache.set(slug, { puzzlesMs, progressMs, cyclesMs, tally });
     return tally;
   };
 
@@ -488,6 +510,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
           solved: tally.solved,
           failed: tally.failed,
           due: dueCount(tally),
+          cycle: tally.cycle,
           lastAt: tally.lastAt,
           // Cover scan (diagrams/cover.jpg), written by the book importer.
           cover: existsSync(resolve(diagramsDir(slug), 'cover.jpg')),
