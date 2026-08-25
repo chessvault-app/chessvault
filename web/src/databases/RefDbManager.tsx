@@ -127,6 +127,7 @@ export function RefDbManager({
   const upload = async (files: FileList | File[] | null): Promise<void> => {
     if (!files?.length) return;
     setError(null);
+    let uploaded = 0;
     for (const file of Array.from(files)) {
       if (!file.name.toLowerCase().endsWith('.pgn')) {
         setError(t('{name} is not a .pgn', { name: file.name }));
@@ -139,15 +140,24 @@ export function RefDbManager({
           body: file,
         });
         setPicked((p) => new Set(p ?? []).add(file.name));
+        uploaded += 1;
       } catch (error) {
         setError(`${file.name}: ${t(apiErrorMessage(error))}`);
       }
     }
     setUploading(null);
-    await refreshSources();
+    // The chooser's job is done, so it goes — before the re-listing's
+    // round trip, not after: a window left standing after the upload it
+    // existed for made the finish look like a stall (lanph3re's report).
     // Land on what was just uploaded rather than on whatever tab the
-    // window was opened from: the file is the thing that changed.
-    setTab('sources');
+    // window was opened from — the file is the thing that changed. A
+    // rejected or failed upload keeps the window, and the panel's error
+    // line under it says why there is another try.
+    if (uploaded > 0) {
+      setShowUpload(false);
+      setTab('sources');
+    }
+    await refreshSources();
   };
 
   const build = async (name: string): Promise<void> => {
@@ -192,6 +202,13 @@ export function RefDbManager({
     setError(null);
     try {
       await api(`/api/sources/${encodeURIComponent(sourceName)}`, { method: 'DELETE' });
+      // The server has said the file is gone, so the row goes NOW. It
+      // used to wait for the re-listing below as well — two round trips
+      // in a row between the press and the row leaving, which over a slow
+      // link read as the delete lagging. The rule stands: the row leaves
+      // because the file did, not because it was pressed — the DELETE's
+      // own answer is the server saying so.
+      setSources((prev) => prev && prev.filter((s) => s.name !== sourceName));
       setPicked((p) => {
         if (!p?.has(sourceName)) return p;
         const next = new Set(p);
@@ -201,8 +218,8 @@ export function RefDbManager({
     } catch (error) {
       setError(`${sourceName}: ${t(apiErrorMessage(error))}`);
     }
-    // Either way the server's listing is the one to believe: a row leaves
-    // because the file did, not because it was pressed.
+    // Either way the listing reconciles with the server's — behind the
+    // row's departure on success, and to bring back the truth on refusal.
     await refreshSources();
   };
 
