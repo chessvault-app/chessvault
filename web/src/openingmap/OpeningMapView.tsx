@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { MiniBoard } from '@/components/mini-board';
 import { Fab, type FabAction } from '@/components/fab';
+import { ResultBadge } from '@/components/result-badge';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -1229,8 +1230,13 @@ function NodePanel({
                   {/* Fixed columns, so four rows read as a table: results
                       right-aligned in one width, moves left-aligned in
                       another. Sized to content, "1-0 Nd4" and "0-1 Nge7"
-                      gave every row its own edges. */}
-                  <span className="text-muted-foreground w-8 shrink-0 text-right text-sm tabular-nums">{d.result}</span>
+                      gave every row its own edges. The chip is the
+                      explorer's ResultBadge, so a draw is one ½ glyph —
+                      "1/2-1/2" spelled out wrapped to two lines in this
+                      column. */}
+                  <span className="flex w-8 shrink-0 justify-end">
+                    <ResultBadge result={d.result} />
+                  </span>
                   <span
                     className={cn(
                       'min-w-11 shrink-0 text-sm font-medium',

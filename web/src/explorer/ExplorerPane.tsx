@@ -29,6 +29,7 @@ import {
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/components/ui/button';
+import { ResultBadge } from '@/components/result-badge';
 import { ResultBar } from '@/components/result-bar';
 import { Select } from '@/components/ui/select';
 import { DatePicker } from '@/components/date-picker';
@@ -972,21 +973,5 @@ function TopGamesList({
         </button>
       )}
     </div>
-  );
-}
-
-function ResultBadge({ result }: { result: string }) {
-  const label = result === '1-0' ? '1-0' : result === '0-1' ? '0-1' : '½';
-  return (
-    <span
-      className={cn(
-        'shrink-0 rounded-sm px-1 py-px font-mono text-xs font-semibold',
-        result === '1-0' && 'bg-eval-white text-on-eval-white',
-        result === '0-1' && 'bg-eval-black text-on-eval-black',
-        result !== '1-0' && result !== '0-1' && 'bg-accent text-muted-foreground',
-      )}
-    >
-      {label}
-    </span>
   );
 }
