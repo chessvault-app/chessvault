@@ -94,22 +94,33 @@ type Tool =
   | { kind: 'piece'; role: Role; color: Color };
 
 /**
- * The position the standalone editor was last showing.
+ * What the standalone editor was last showing.
  *
- * Analyse navigates to the board, and coming back goes through history,
- * which REMOUNTS this component — so the position just built was replaced
- * by the starting one, and the way back to it was to build it again.
+ * Analyse navigates to the board, the phone's More page sits between the
+ * tab bar and everything on it — and coming back from either REMOUNTS
+ * this component, so the position just built was replaced by the starting
+ * one, and the way back to it was to build it again.
+ *
+ * The whole state object, not its FEN: a FEN round-trip drops what a FEN
+ * cannot say (a castling flag whose rook has wandered), and it says
+ * nothing about the armed tool or which way the board faces — all of it
+ * state the user set and expects to find again. The object is safe to
+ * keep because every update replaces it rather than mutating it.
  *
  * Session-scoped rather than persisted, deliberately: a position abandoned
  * an hour ago is not what the editor should offer on a fresh visit. This
- * only has to survive stepping out to the board and straight back.
+ * only has to survive stepping out and straight back.
  *
  * Embedded editors (the puzzle entry's) neither read nor write it. Their
  * position belongs to the thing embedding them, and letting a puzzle's
  * diagram leak into the standalone editor would be a bug in the other
  * direction.
  */
-let lastStandaloneFen: string | null = null;
+let standaloneSnapshot: {
+  state: EditorState;
+  tool: Tool;
+  orientation: Color;
+} | null = null;
 
 export function EditorView({
   onUse,
@@ -125,11 +136,15 @@ export function EditorView({
   /** Embedded: someone else owns the position, by prop or by callback. */
   const embedded = onUse !== undefined || initialFen !== undefined;
   const [state, setState] = useState<EditorState>(() => {
-    const restore = initialFen ?? (embedded ? null : lastStandaloneFen);
-    return (restore ? fromFen(restore) : undefined) ?? defaultEditorState();
+    if (initialFen) return fromFen(initialFen) ?? defaultEditorState();
+    return (embedded ? null : standaloneSnapshot)?.state ?? defaultEditorState();
   });
-  const [tool, setTool] = useState<Tool>({ kind: 'move' });
-  const [orientation, setOrientation] = useState<Color>('white');
+  const [tool, setTool] = useState<Tool>(
+    () => (embedded ? null : standaloneSnapshot)?.tool ?? { kind: 'move' },
+  );
+  const [orientation, setOrientation] = useState<Color>(
+    () => (embedded ? null : standaloneSnapshot)?.orientation ?? 'white',
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   /**
    * The position as it stood when the Position sheet was opened.
@@ -209,9 +224,13 @@ export function EditorView({
   const fen = useMemo(() => toFen(state), [state]);
   // Remembered as it changes rather than on the way out: Analyse is not
   // the only way to leave, and any of them can be followed by a Back.
+  // While the Position sheet is open the live state is a draft, and every
+  // exit but Apply discards a draft — so the snapshot keeps the state the
+  // sheet opened on; `sheetOpen` in the deps re-records on Apply.
   useEffect(() => {
-    if (!embedded) lastStandaloneFen = fen;
-  }, [embedded, fen]);
+    if (embedded) return;
+    standaloneSnapshot = { state: sheetSnapshot.current ?? state, tool, orientation };
+  }, [embedded, state, tool, orientation, sheetOpen]);
   // Reuses the fen memo above — validate would otherwise serialize again.
   const validity = useMemo(() => validate(state, fen), [state, fen]);
   const epOptions = useMemo(() => epCandidates(state), [state]);
