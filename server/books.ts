@@ -13,7 +13,7 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { finished, pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
@@ -246,6 +246,7 @@ export function booksApi(
     mkdirSync(bookDir(id), { recursive: true });
     const target = pdfPath(id);
     const part = `${target}.part`;
+    const sink = createWriteStream(part);
     try {
       let seen = 0;
       let head = Buffer.alloc(0);
@@ -266,10 +267,19 @@ export function booksApi(
           }
           if (head.length < 5) throw new Error('not a pdf');
         },
-        createWriteStream(part),
+        sink,
       );
       renameRetrying(part, target);
     } catch (error) {
+      // Wait for the sink to be closed before removing the .part.
+      // createWriteStream opens the file asynchronously, and pipeline
+      // rejects as soon as the source throws without waiting for that open
+      // to settle — so on a body refused at the first chunk ('not a pdf',
+      // 'too big') the rmSync can run BEFORE the open lands, and the open
+      // then recreates the file we just removed. That left a stray .part
+      // behind for the next upload to trip over, and made the books test
+      // fail about one run in five.
+      await finished(sink).catch(() => {});
       rmSync(part, { force: true });
       const why = (error as Error).message;
       if (why === 'too big') return c.json({ error: 'that PDF is too big (300 MB cap)' }, 413);
