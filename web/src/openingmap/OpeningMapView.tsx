@@ -689,7 +689,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                     value={pickedDatabase}
                     onValueChange={(name) => pickField({ ...field, source: name })}
                     ariaLabel={t('Reference database')}
-                    className="w-full"
+                    className={ROW_SELECT}
                     fill
                     groups={[
                       {
@@ -716,7 +716,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                   value={field.ratings}
                   onValueChange={(ratings) => pickField({ ...field, ratings })}
                   ariaLabel={t('Opponent strength')}
-                  className="w-full"
+                  className={ROW_SELECT}
                   fill
                   groups={[
                     { options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) },
@@ -738,6 +738,14 @@ export function OpeningMapView({ params }: { params: string[] }) {
  * the empty slot at the end of a list, which IS the add button (see the
  * linked-studies field for why a ghost button was not).
  */
+/**
+ * A Select standing in the coverage dialog's list of PickRows. The
+ * registry trigger is toolbar-sized (h-8, text-sm); a row among 42px
+ * rows at 36px read as a different kind of control, so the trigger
+ * takes the row's own metrics instead.
+ */
+const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-2 text-base';
+
 const ADD_ROW =
   'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground flex items-center gap-2 ' +
   'rounded-lg border border-dashed px-2 py-1.5 text-left text-sm transition-colors duration-100 ' +
