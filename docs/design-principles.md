@@ -163,11 +163,22 @@ against the editor's own font size, not in the px it resolved to once.
   `label-caps` voice is gone with the old look.)
 - A panel's header is the registry's card header as a row (`PanelHeader`:
   title, actions). It pads itself across only, from the card's own
-  `--card-spacing`; the space above it is the card's padding, not the
-  header's. It has one floor — 44px, 52px on a coarse pointer, the height
-  an icon button gives it — so a header holding only a switch, or nothing,
-  is as tall as its neighbours and the title does not jump when a phone's
-  pane tabs switch; nothing else is sized against it.
+  `--card-spacing`. It has one floor — 44px, 52px on a coarse pointer, the
+  height an icon button gives it — so a header holding only a switch, or
+  nothing, is as tall as its neighbours and the title does not jump when a
+  phone's pane tabs switch; nothing else is sized against it.
+- **That floor is the header's padding, so the header takes back the
+  card's.** It is the one slot that opts out of the card's vertical
+  spacing, with `-mt-(--card-spacing) -mb-(--card-spacing)`: flush to the
+  card's top edge, and its body directly beneath. The registry's model
+  assumes a header is text that needs air put around it; this one is a
+  band that already carries its own, and the two stacked — 16px of card
+  padding above a 52px band and 16px of gap below it, 84px before a word
+  of body where the old header took 52. The negative margins live in
+  `PanelHeader`, NOT in `components/ui/card`: the registry file states the
+  model and the app's composite is what departs from it. Nothing else
+  opts out — the card's floor and the footer's gap stay, which is the
+  half of the model that was worth having.
 - **A panel's spacing is the card's, not the call site's.** `Panel` is a
   `Card`, and the registry's Card owns the vertical: `py-(--card-spacing)`
   on the root, `gap-(--card-spacing)` between its slots, and
@@ -175,7 +186,9 @@ against the editor's own font size, not in the px it resolved to once.
   bottom edge on its own. A panel body therefore sets **horizontal padding
   only** — `px-(--card-spacing)`, or a tighter `px-` where rows are meant
   to sit near the edge — and never its own `p-`, `mt-auto` spacer or
-  negative margin to fake what the root already does.
+  negative margin to fake what the root already does. The one exception is
+  `PanelHeader`, which cancels its share because its hit-area floor is
+  already the padding the card would add — see the header bullet above.
 
   This is worth stating because the app spent a release doing the
   opposite. The root had been stripped of its padding and gap on the
