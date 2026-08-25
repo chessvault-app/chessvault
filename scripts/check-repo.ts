@@ -1,12 +1,12 @@
 /**
- * The two CLAUDE.md rules a machine can actually check.
+ * The CLAUDE.md rules a machine can actually check.
  *
- * Both are on the release checklist, which means both were being done by
- * reading — and a checklist item that depends on remembering is the kind
- * that catches drift at publishing time instead of while it is one line.
- * These are tripwires, not proofs: they catch the shapes the mistakes
- * actually take, and they are deliberately quiet about everything else,
- * because a hygiene check that cries wolf gets skipped.
+ * All of these are on the release checklist, which means they were being
+ * done by reading — and a checklist item that depends on remembering is
+ * the kind that catches drift at publishing time instead of while it is
+ * one line. These are tripwires, not proofs: they catch the shapes the
+ * mistakes actually take, and they are deliberately quiet about
+ * everything else, because a hygiene check that cries wolf gets skipped.
  *
  * 1. Nothing personal in a tracked file. No absolute home paths, no
  *    credentials. Deployment targets belong in scripts/deploy.env, which
@@ -17,6 +17,12 @@
  *    puzzle, not a verdict to hand back to whoever solved it. Ratings
  *    that describe a game's players, or a database's population, are a
  *    different thing and are left alone.
+ *
+ * 3. The lockfile agrees with package.json about the version. A hand
+ *    bump of package.json leaves package-lock.json's two version fields
+ *    behind, and the next `npm install` then dirties the tree with that
+ *    exact diff — which is how 0.4.9 shipped with a lockfile still
+ *    saying 0.4.8.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -91,6 +97,25 @@ for (const file of tracked) {
           why: 'a rating rendered without bandOf() — difficulty is a word, see puzzles/bands.ts',
         });
       }
+    });
+  }
+}
+
+// The lockfile's version fields against package.json's. npm keeps the
+// version in two places in the lock (the root field and the "" package
+// entry), and `npm version`/a hand edit updates neither.
+const pkgVersion = JSON.parse(readFileSync('package.json', 'utf-8')).version as string;
+const lock = JSON.parse(readFileSync('package-lock.json', 'utf-8'));
+for (const [where, got] of [
+  ['version', lock.version],
+  ['packages[""].version', lock.packages?.['']?.version],
+] as const) {
+  if (got !== pkgVersion) {
+    findings.push({
+      file: 'package-lock.json',
+      line: 1,
+      text: `${where} = ${got}`,
+      why: `lockfile version disagrees with package.json (${pkgVersion}) — run npm install and commit the lockfile`,
     });
   }
 }
