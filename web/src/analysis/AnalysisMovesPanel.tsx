@@ -29,7 +29,7 @@ export function AnalysisMovesPanel({
   className?: string;
 }) {
   return (
-    <Panel flush className={cn('min-h-min flex-1', className)}>
+    <Panel className={cn('min-h-min flex-1', className)}>
       {engine && <EngineBlock />}
       <PanelHeader
         title={t('Moves')}

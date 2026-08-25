@@ -535,9 +535,9 @@ function CyclesPanel({
   const total = book.puzzles.length;
 
   return (
-    <Panel flush className="mb-4">
+    <Panel className="mb-4">
       <PanelHeader title={t('Cycles')} />
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-2 px-(--card-spacing)">
         {!open && finished.length === 0 && (
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
@@ -589,7 +589,7 @@ function CyclesPanel({
             for them, the same footer band both trainers stand theirs on:
             justify-end, gap-2, the primary one last. The negative margins
             take back the body's p-3 so the band spans edge to edge. */}
-        <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+        <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
           {open ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => void act('DELETE')}>

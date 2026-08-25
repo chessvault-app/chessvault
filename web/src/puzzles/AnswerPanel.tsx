@@ -64,7 +64,7 @@ export function AnswerPanel({
   const lineEnd = mainlineFrom(tree, cursorId).at(-1);
 
   return (
-    <Panel flush className={cn('min-h-[10rem] shrink-0', className)}>
+    <Panel className={cn('min-h-[10rem] shrink-0', className)}>
       <PanelHeader title={title} />
       {isEmpty ? (
         // Shrinkable and scrollable, exactly like the move table it stands

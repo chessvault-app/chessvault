@@ -665,7 +665,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           is in it, up to a cap — so the panel takes its natural size below
           sm and the window scrolls instead. Exactly what the archive
           browser does in the same window. */}
-      <Panel flush className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
+      <Panel className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
         <PanelHeader title={count} actions={dbControls} />
         {filterRow('border-b')}
         {list}

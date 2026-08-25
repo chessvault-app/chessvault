@@ -1457,7 +1457,7 @@ export function RepertoireView() {
   //
   // The body still scrolls (see below), so the panel is capped rather than
   // clipped wherever the column has a floor to cap it against.
-  <Panel flush className="shrink-0">
+  <Panel className="shrink-0">
     <PanelHeader
       title={t('Game')}
       actions={
@@ -1486,14 +1486,11 @@ export function RepertoireView() {
         its content without it. What can run long lives here — the status
         line, a gap note, the database error, the final score — and what
         there is to press lives on the floor below. */}
-    <div
-      className={cn(
-        'flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3',
-        // The floor carries its own p-3; without this the two would read
-        // as 24px of gap between the text and the buttons.
-        (phase === 'idle' || phase === 'ended') && 'pb-0',
-      )}
-    >
+    {/* Horizontal padding only. The card owns the vertical: its own py at
+        the top and bottom, its gap between this body and the floor below
+        — and it drops that bottom py by itself when a footer is present,
+        which is what the hand-rolled `pb-0` here used to stand in for. */}
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
       {/* Idle, the panel is what the page opens on: what the next game
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
@@ -1580,7 +1577,7 @@ export function RepertoireView() {
         keeps for its actions, a muted band under a rule, the same one the
         two trainers' rows stand on. */}
     {(phase === 'idle' || phase === 'ended') && (
-      <CardFooter className="flex-col items-stretch gap-3 px-3 py-3">
+      <CardFooter className="flex-col items-stretch gap-3">
         {phase === 'idle' && startBlock}
         {phase === 'idle' && setupRow}
         {phase === 'ended' && (
@@ -1713,9 +1710,9 @@ export function RepertoireView() {
              phone the same fields are the sheet the Game panel opens, and
              the Game panel is what the page shows on arrival. */
           wide ? (
-            <Panel flush fit className="shrink-0">
+            <Panel fit className="shrink-0">
               <PanelHeader title={t('New game')} />
-              <div className="flex flex-col gap-3 p-3">
+              <div className="flex flex-col gap-3 px-(--card-spacing)">
                 {setupFields}
                 {startNotes}
                 {startBlock}
@@ -1743,7 +1740,7 @@ export function RepertoireView() {
             )}
             {(wide || shownPane === 'moves') && movesPanel}
             {!wide && analysing && shownPane === 'engine' && (
-              <Panel flush className="min-h-0 flex-1">
+              <Panel className="min-h-0 flex-1">
                 <EngineBlock standalone />
               </Panel>
             )}

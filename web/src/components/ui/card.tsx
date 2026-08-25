@@ -3,11 +3,21 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * shadcn's Card (nova), owned: the registry's face — the card fill, a
- * hairline ring, rounded-xl, no shadow — and its spacing variable. One
- * departure: the root sets no padding or gap of its own, because Panel
- * (every pane in the app) owns its scroll and its padding; CardHeader,
- * CardContent and CardFooter still pad themselves from `--card-spacing`.
+ * shadcn's Card (nova), owned: the registry's file, with the registry's own
+ * spacing model intact. The root owns the vertical padding and the gap
+ * between slots; CardHeader, CardContent and CardFooter pad themselves
+ * horizontally from the same `--card-spacing`. Two rules do the work that
+ * every call site here used to hand-roll — `gap-(--card-spacing)` is what
+ * puts air between a body and the footer below it, and
+ * `has-data-[slot=card-footer]:pb-0` drops the root's own floor when a
+ * footer is present so the muted band reaches the card's bottom edge
+ * without negative margins.
+ *
+ * Two departures from the registry text, neither of them about spacing:
+ * the slots are semantic elements (`section`/`header`/`h2`) rather than
+ * four `div`s, and the title uses this app's `font-heading` token — the
+ * registry's `cn-font-heading` class does not exist outside its own
+ * stylesheet, so copying it verbatim would silently drop the heading font.
  */
 function Card({
   className,
@@ -19,7 +29,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        'group/card bg-card text-card-foreground ring-foreground/10 flex flex-col rounded-xl text-sm ring-1 [--card-spacing:--spacing(4)] data-[size=sm]:[--card-spacing:--spacing(3)]',
+        'group/card bg-card text-card-foreground ring-foreground/10 flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl py-(--card-spacing) text-sm ring-1 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl',
         className,
       )}
       {...props}

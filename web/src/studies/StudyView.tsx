@@ -271,7 +271,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             editor below it is never squeezed out of the panel; the column
             scrolls (above) if even that is not enough. */}
         <Panel
-          flush
           className={cn(
             // The floor is a share of the column as well as a size — see
             // AnalysisView, same panel, same reason: on a short window a
@@ -342,7 +341,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
           />
         </Panel>
-        <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
+        <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
           <EngineBlock standalone />
         </Panel>
         <ExplorerPane
@@ -505,7 +504,6 @@ function ChaptersPanel() {
     // spend 12rem of it on the list and clip whatever the explorer had
     // below. The list scrolls inside either way.
     <Panel
-      flush
       className="lg:max-h-48 lg:min-h-[min(6rem,15%)] max-lg:flex-1 max-lg:min-h-0"
       resizeKey="study-chapters"
     >
@@ -517,7 +515,7 @@ function ChaptersPanel() {
           </Button>
         }
       />
-      <ul className="min-h-0 overflow-y-auto p-1">
+      <ul className="min-h-0 overflow-y-auto px-1">
         {rows.map((row) => (
           <ChapterRow
             key={chapters[row.index]!.id}

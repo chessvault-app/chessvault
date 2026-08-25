@@ -468,7 +468,7 @@ function SolutionRecorder({
             row used to occupy this space, and taking it away dropped the
             board 48px below the panel beside it. */}
         <div className="hidden h-9 shrink-0 wide:block" />
-        <Panel flush className="min-h-[10rem] shrink-0">
+        <Panel className="min-h-[10rem] shrink-0">
           {/* No undo in the header (lanph3re's call): one icon up there,
               for a thing Start over on the footer already does, was a
               second control for the line outside the row that holds the
@@ -481,7 +481,7 @@ function SolutionRecorder({
           <p className="text-muted-foreground px-3 pt-2.5 text-sm">
             {t('Record the solution — every move, both sides.')}
           </p>
-          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-base">
+          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 px-(--card-spacing) text-base">
             {line.length === 0 ? (
               <p className="text-muted-foreground text-sm">
                 {t("No moves yet. The first move you play is the puzzle's first move to find.")}
@@ -551,7 +551,7 @@ function SolutionRecorder({
               the same order every button row in the app uses (PromptDialog
               is the reference). Start over and Verify come first because
               they act on the line; the last two are the ways out of it. */}
-          <CardFooter className="mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+          <CardFooter className="mt-auto flex-wrap justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"

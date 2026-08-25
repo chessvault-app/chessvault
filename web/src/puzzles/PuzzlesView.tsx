@@ -656,7 +656,7 @@ function Trainer({
       onFlip={() => setFlipped((f) => !f)}
     />
   ) : (
-    <Panel flush className="shrink-0">
+    <Panel className="shrink-0">
       <PanelHeader title={t('Moves')} />
       <p className="text-muted-foreground px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
     </Panel>
@@ -695,7 +695,7 @@ function Trainer({
   // column's edge with its actions cut in half. So it grows with its
   // content up to the column's floor — the bottom bar — and there it
   // stops and its BODY scrolls instead.
-  <Panel flush>
+  <Panel>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -757,7 +757,7 @@ function Trainer({
         whatever hung off the end. `min-h-0` because a flex item will not
         shrink below its content without it, which is exactly the overflow
         being fixed. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3">
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
       {phase === 'done' && puzzle ? (
         <>
           <p
@@ -858,7 +858,7 @@ function Trainer({
           the phase made it read as two different rows swapping places on
           the panel's floor. Hint, Solution and Skip end on Skip, which is
           the one that leaves this puzzle. */}
-      <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+      <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
         {phase === 'done' ? (
           <>
             {/* An anchor, not a button that navigates: it goes out of the
@@ -1076,7 +1076,7 @@ function Trainer({
         )}
         {(wide || shownPane === 'moves') && movesPanel}
         {!wide && analysing && shownPane === 'engine' && (
-          <Panel flush className="min-h-0 flex-1">
+          <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
           </Panel>
         )}

@@ -147,7 +147,6 @@ export function ExplorerPane({
     // no default height — the panel collapses to its header. The compact
     // default (when on) shows the top handful of moves; drag for more.
     <Panel
-      flush
       // Exactly one min-height, chosen here because only this component
       // knows whether there is anything to be tall FOR. Open, it keeps a
       // floor so the column capping itself to the board cannot squeeze the
