@@ -519,12 +519,15 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
  * It exists because that row is drawn only once there are games to
  * filter, so a list that is still loading has nothing there and every row
  * below moves down by its 45px the moment the games arrive.
+ *
+ * The border side comes from the caller, like FilterRow's own: a baked-in
+ * border-b under an archive strip that passes border-t drew both.
  */
 export function SkeletonFilterRow({ className }: { className?: string }) {
   return (
     <Loading
       className={cn(
-        'border-border flex flex-wrap items-center gap-1.5 border-b px-3 py-2',
+        'border-border flex flex-wrap items-center gap-1.5 px-3 py-2',
         className,
       )}
     >

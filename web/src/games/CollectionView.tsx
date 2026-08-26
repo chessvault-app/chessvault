@@ -603,7 +603,7 @@ export function CollectionView() {
             // are the panel's height, so held back they left a header
             // over nothing that grew a fifth of a second later.
             <>
-              <SkeletonFilterRow />
+              <SkeletonFilterRow className="border-b" />
               <SkeletonGameRows rows={6} />
             </>
           ) : /* Nothing to show and nothing narrowing the list. Two ways to get
