@@ -5,6 +5,57 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+The Games menu unified, the reference layer built for millions of
+games, and databases that grow instead of being rebuilt.
+
+- **One shell under every game list.** The collection, the online
+  archive and the reference browser assembled the same bands — toolbar,
+  filter row, count band, list, empty state — by hand, and had drifted
+  apart on border sides, count-band heights, skeleton placement and the
+  phone sheets. `GameListShell` now owns the stack with one border rule
+  and one shape vocabulary (framed / panel / sheet); reference rows are
+  the shared `GameRow` (ratings no longer clip behind long names, the
+  touch preview lives in the ⋯ sheet everywhere), every list wears the
+  zebra stripe, the sheets bleed to their card's real edges, both
+  sheets survive a trip to the Board, and search-comes-back-empty
+  finally says so with a way out. The orphaned `#/games/elite` page is
+  gone.
+- **"Elite games" is called what it is: Databases.** The browser shows
+  whichever databases you built — elite or otherwise — and the tab, the
+  Add-games pill and the sheet now say so, matching the page that
+  manages them.
+- **The database search scales.** Player and opening text search runs
+  over small derived lookup tables instead of every row's text (a
+  keystroke stopped costing a scan that grows with the corpus), pages
+  seek by keyset instead of OFFSET (70 ms → 0.1 ms at depth 224k,
+  measured), and filtered counts stop at "10,000+" instead of walking
+  two million rows to finish the digit.
+- **Databases grow in place.** Building under an existing name offers
+  "Add to it": only the games it does not already hold are indexed (an
+  index-seeked dedup on players, result, date and movetext), and the
+  position index extends from its high-water mark instead of
+  rebuilding. An interrupted append leaves the database served but
+  marked "index behind", and the new per-database Optimize heals it —
+  and sweeps exact duplicates, re-derives everything, and compacts.
+- **The explorer answers at your level.** The per-move sums carry a
+  200-point rating-bucket dimension, so a "Level" band (1200–1599 …
+  2400+) in the reference filters reads precomputed rows — statistics
+  from players at your strength rather than the corpus's strongest.
+  The index pass itself dropped from 105 s to 78 s on an Elite month
+  (the sums no longer join), and stores 92% fewer rows by answering
+  thin positions live.
+- **Any position, hunted through every game.** When the explorer runs
+  out — the index stops at ply 30 — it offers to search every game's
+  movetext for the current position, streaming progress and hits (9–13 s
+  across 280k games unfiltered, seconds with filters, measured).
+- **Your games, diffed against a database.** `/api/mygames/compare`
+  flags the positions where your move is rare among what a reference
+  corpus answers — at your level, when a band is given — aggregated
+  across your recent games, strongest habit first. The first sync of a
+  big vault also stopped stalling the request that triggered it.
+
 ## 0.4.9
 
 The Woodpecker method for the books, a schedule for the tactics, and

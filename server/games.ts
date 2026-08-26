@@ -117,6 +117,28 @@ function replaySummary(game: Game<PgnNodeData>): {
   return { opening, finalFen: makeFen(pos.toSetup()), annotated };
 }
 
+/**
+ * Both parse caches hold whole parsed months and never used to evict:
+ * every archive month ever browsed stayed in server memory for the
+ * process's life. Bounded now, least-recently-USED out first (a Map
+ * iterates in insertion order, and a hit re-inserts) — the collection's
+ * own files plus a browsing session's months fit comfortably under
+ * these, and an evicted month costs one re-parse.
+ */
+const LIST_CACHE_MAX = 256;
+const GAMES_CACHE_MAX = 64;
+function touchLru<K, V>(cache: Map<K, V>, key: K, max: number, value?: V): V | undefined {
+  const hit = value === undefined ? cache.get(key) : value;
+  if (hit === undefined) return undefined;
+  cache.delete(key);
+  cache.set(key, hit);
+  for (const oldest of cache.keys()) {
+    if (cache.size <= max) break;
+    cache.delete(oldest);
+  }
+  return hit;
+}
+
 // Summaries parsed per file and cached by mtime — plain files stay fast
 // without a database.
 const listCache = new Map<string, { mtimeMs: number; games: GameSummary[] }>();
@@ -124,7 +146,7 @@ const listCache = new Map<string, { mtimeMs: number; games: GameSummary[] }>();
 function parseFileSummaries(dir: string, path: string): GameSummary[] {
   const stat = statSync(path);
   const rel = relative(dir, path).split(sep).join('/');
-  const cached = listCache.get(rel);
+  const cached = touchLru(listCache, rel, LIST_CACHE_MAX);
   if (cached && cached.mtimeMs === stat.mtimeMs) return cached.games;
 
   // Archive files live at chesscom/<user>/<month>.pgn — the path names the
@@ -155,7 +177,7 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
     });
   });
   parser.parse(readFileSync(path, 'utf-8'));
-  listCache.set(rel, { mtimeMs: stat.mtimeMs, games });
+  touchLru(listCache, rel, LIST_CACHE_MAX, { mtimeMs: stat.mtimeMs, games });
   return games;
 }
 
@@ -168,14 +190,14 @@ const gamesCache = new Map<string, { mtimeMs: number; games: Game<PgnNodeData>[]
 
 function parseGames(path: string): Game<PgnNodeData>[] {
   const mtimeMs = statSync(path).mtimeMs;
-  const cached = gamesCache.get(path);
+  const cached = touchLru(gamesCache, path, GAMES_CACHE_MAX);
   if (cached && cached.mtimeMs === mtimeMs) return cached.games;
   const games: Game<PgnNodeData>[] = [];
   const parser = new PgnParser((game, err) => {
     if (!err) games.push(game);
   });
   parser.parse(readFileSync(path, 'utf-8'));
-  gamesCache.set(path, { mtimeMs, games });
+  touchLru(gamesCache, path, GAMES_CACHE_MAX, { mtimeMs, games });
   return games;
 }
 

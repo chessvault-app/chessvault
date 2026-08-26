@@ -8,7 +8,7 @@ than growing with your vault the way everything else does:
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
-| `data/refgames/*.sqlite` | the elite-games browser, the local explorer, the repertoire trainer and the opening map | ~160 MB per month indexed | the app, on the Databases page (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
+| `data/refgames/*.sqlite` | the Databases browser on the Games page, the local explorer, the repertoire trainer and the opening map | ~160 MB per month indexed | the app, on the Databases page (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
 inside the app, and `data/mygames.sqlite` is not even that: the explorer's
@@ -47,7 +47,7 @@ survives a rebuild.
 
 **More reference games.** They are plural:
 `data/refgames/<name>.sqlite`, each an independent database, listed and
-switched in the elite browser. The Databases page uploads PGN collections
+switched in the games-page Databases browser. The Databases page uploads PGN collections
 (the same `vault/sources/` uploads), indexes any selection of them under a
 name, and deletes either kind — the built database or the upload it was
 built from. So unlike puzzles there is no
@@ -95,7 +95,7 @@ the commit, not the release artefacts.
 
 ## The manager
 
-Managing lives on the **Databases page** and nowhere else. The elite
+Managing lives on the **Databases page** and nowhere else. The games-page Databases
 browser and the explorer each have a database icon; both navigate here.
 They used to open the manager in a window of their own, which put uploads
 and deletes one press from a search or a position you were in the middle
