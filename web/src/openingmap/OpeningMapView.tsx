@@ -1231,10 +1231,12 @@ function NodePanel({
                       right-aligned in one width, moves left-aligned in
                       another. Sized to content, "1-0 Nd4" and "0-1 Nge7"
                       gave every row its own edges. The chip is the
-                      explorer's ResultBadge, so a draw is one ½ glyph —
-                      "1/2-1/2" spelled out wrapped to two lines in this
-                      column. */}
-                  <span className="flex w-8 shrink-0 justify-end">
+                      explorer's ResultBadge, so a draw is ½-½ in the
+                      notation's own glyphs — "1/2-1/2" spelled out
+                      wrapped to two lines in this column. Sized to the
+                      draw chip, the widest of the three (see the badge's
+                      own note), not to the digit pairs. */}
+                  <span className="flex w-11 shrink-0 justify-end">
                     <ResultBadge result={d.result} />
                   </span>
                   <span
