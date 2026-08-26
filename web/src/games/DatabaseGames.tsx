@@ -60,7 +60,7 @@ interface RefGame {
  * phone, like the archive. (There was a `page` shape on its own route
  * once; nothing ever navigated to it.)
  */
-export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }) {
+export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }) {
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
   // mount (the static demo), which has none of that.

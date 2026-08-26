@@ -56,7 +56,7 @@ import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell } from './GameListShell';
 import { ArchiveBrowser } from './ArchiveBrowser';
-import { EliteGames } from './EliteGames';
+import { DatabaseGames } from './DatabaseGames';
 
 /** The two places a game can be found, and the column's two tabs. */
 type SourceId = 'archive' | 'elite';
@@ -755,7 +755,7 @@ export function CollectionView() {
               onPreview={setPreview}
             />
           ) : (
-            <EliteGames shape="panel" />
+            <DatabaseGames shape="panel" />
           )}
         </Panel>
       </div>
@@ -806,7 +806,7 @@ export function CollectionView() {
           }}
         >
           <DialogContent title="Databases" className="max-sm:h-[88%]" size="full">
-            <EliteGames />
+            <DatabaseGames />
           </DialogContent>
         </Dialog>
       )}

@@ -1,7 +1,7 @@
 /**
  * The Games tab. This file is only the route switch; the pages live
  * beside it — CollectionView (the collection plus the source column),
- * ArchiveBrowser (chess.com/lichess months), EliteGames (the reference
+ * ArchiveBrowser (chess.com/lichess months), DatabaseGames (the reference
  * databases and their manager), and shared.tsx (the model plus the row,
  * preview and badge pieces every list draws with).
  */
