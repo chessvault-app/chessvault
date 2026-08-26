@@ -17,7 +17,6 @@ import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/text-fields';
 import {
   EMPTY_STRUCTURED_FILTERS,
-  FilterRow,
   ResultSelect,
   StrengthSelect,
   StructuredFiltersWindow,
@@ -25,10 +24,9 @@ import {
   type StructuredFilters,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
 import { SideDot } from '@/components/side-dot';
-import { SkeletonGameRows, useSlowLoad } from '@/components/skeletons';
-import { Panel, PanelHeader } from '@/components/panel';
+import { useSlowLoad } from '@/components/skeletons';
+import { GameListShell } from './GameListShell';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -52,23 +50,23 @@ interface RefGame {
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
  *
- * Three shapes, one component, because it is one thing:
+ * Three shapes, one component, because it is one thing — GameListShell's
+ * vocabulary, exactly as the archive browser uses it:
  *
- * `column` — the second half of the column that finds games, behind the
+ * `panel` — the second half of the column that finds games, behind the
  * tab beside Online archives. Where it belongs on a desktop: the archive
  * and the reference database answer the same question, so they take turns
  * in one panel rather than each taking a box.
  *
- * `window` — below lg, where there is no column. A bottom sheet on a
+ * `sheet` — below lg, where there is no column. A bottom sheet on a
  * phone, like the archive. It used to navigate to a page of its own,
  * which loses the collection you were about to add to.
  *
- * `page` — its own route, still reachable and still where a 2M-row
- * browser has the most room. The only shape that draws its own frame, its
- * own title and a way back.
+ * `page` — its own route: the shell's framed shape inside a PageShell,
+ * with a way back.
  */
-export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'column' }) {
-  const page = variant === 'page';
+export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'page' }) {
+  const page = shape === 'page';
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
   // mount (the static demo), which has none of that.
@@ -460,8 +458,8 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
    * WHERE lives in the search endpoint. No side select — these are
    * nobody-you-know's games. The strength floor is on BOTH players.
    */
-  const filterRow = (className: string): React.ReactNode => (
-    <FilterRow className={className}>
+  const filters = (
+    <>
       <ResultSelect value={resultFilter} onChange={setResultFilter} />
       <StrengthSelect value={minElo} onChange={setMinElo} />
       {/* The rest of the constraints — who, which side, which outcome,
@@ -507,19 +505,13 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           onClose={() => setEditingFilters(false)}
         />
       )}
-    </FilterRow>
+    </>
   );
 
-  const list = (
-    <>
-      {searching && <SkeletonGameRows rows={8} />}
-      {/* The same stripe the collection list has: at three lines a row is
-          tall enough that a hairline between rows disappears. */}
-      <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022]">
-          {/* gap-3/pr-3 on each row: the shared GameRow's rhythm — these
-              rows sat a third as far apart as the archive's, and the two
-              lists take turns in the same column. */}
-          {rows.map((g) => (
+  /* gap-3/pr-3 on each row: the shared GameRow's rhythm — these rows sat
+     a third as far apart as the archive's, and the two lists take turns
+     in the same column. */
+  const rowItems = rows.map((g) => (
             <li key={g.id} className="group hover:bg-accent flex items-center gap-3 pr-3 transition-colors duration-100">
               {/* Mirrors the collection's GameRow — same bold names, same
                   ECO badge, same result tag — so the two lists read as one
@@ -607,77 +599,66 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 )}
               </Button>
             </li>
-          ))}
-          {rows.length < total && (
-            <li ref={sentinel} className="flex items-center justify-center gap-2 p-3">
-              <Spinner className="text-muted-foreground size-4" />
-              <span className="text-muted-foreground text-sm">{t('Loading older games…')}</span>
-            </li>
-          )}
-      </ul>
+          ));
+
+  // The count leads the band in the archive's own voice; the picker and
+  // the manager sit with it. In the framed page shape the panel header
+  // carries them instead, so the band would say it twice.
+  const countBand = page ? undefined : (
+    <>
+      <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+        {count}
+      </span>
+      {dbControls}
     </>
   );
 
-  // In the column the panel and the tab that named it are already drawn:
-  // this is only the field and the list, laid out like the archive's own
-  // body so the two read as one panel that changed its mind.
-  if (variant === 'column') {
+  const shell = (
+    <GameListShell
+      shape={page ? 'framed' : shape}
+      title={page ? count : undefined}
+      headerActions={page ? dbControls : undefined}
+      panelClassName={page ? 'mt-1 min-h-0 flex-1' : undefined}
+      toolbar={
+        <SearchInput
+          inputSize="sm"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder={t('Search players, openings, or ECO')}
+          spellCheck={false}
+          className="w-full"
+        />
+      }
+      filters={filters}
+      countBand={countBand}
+      list={rowItems}
+      // Nothing for the first moment — a search that answers in 40 ms
+      // should not flash a skeleton on the way past (useSlowLoad above);
+      // when it does draw, it REPLACES the rows instead of stacking a
+      // second list above them.
+      listLoading={searching}
+      // The same stripe the collection list has: at three lines a row is
+      // tall enough that a hairline between rows disappears. In a sheet
+      // the card scrolls below sm and the list scrolls from sm up,
+      // exactly like the archive in the same window.
+      listClassName={
+        shape === 'sheet'
+          ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022]'
+          : 'flex-1 overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022]'
+      }
+      more={
+        rows.length < total ? { ref: sentinel, label: t('Loading older games…') } : null
+      }
+    />
+  );
+
+  if (!page)
     return (
       <>
-        <div className="flex flex-col gap-2 px-3 pb-3 pt-3">
-          <SearchInput
-            inputSize="sm"
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder={t('Search players, openings, or ECO')}
-            spellCheck={false}
-            className="w-full"
-          />
-        </div>
-        {filterRow('border-t')}
-        <div className="border-border shrink-0 border-t px-3 py-1 pr-1.5">
-          <div className="flex min-h-6 items-center gap-2">
-            <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium">
-              {count}
-            </span>
-            {dbControls}
-          </div>
-        </div>
-        {list}
+        {shell}
         <GamePreview preview={preview} onClose={hidePreview} />
       </>
     );
-  }
-
-  const body = (
-    <>
-      <SearchInput
-        inputSize="lg"
-        value={query}
-        onChange={(e) => onQuery(e.target.value)}
-        placeholder={t('Search players, openings, or ECO (e.g. Najdorf, B90)…')}
-        spellCheck={false}
-        className="w-full shrink-0"
-      />
-
-      {/* A page gives this the height it has left and the list scrolls
-          inside it. A window has no height to give — it is as tall as what
-          is in it, up to a cap — so the panel takes its natural size below
-          sm and the window scrolls instead. Exactly what the archive
-          browser does in the same window. */}
-      <Panel className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
-        <PanelHeader title={count} actions={dbControls} />
-        {filterRow('border-b')}
-        {list}
-      </Panel>
-      <GamePreview preview={preview} onClose={hidePreview} />
-    </>
-  );
-
-  // In a window the frame and the title belong to the window; only a page
-  // has to draw its own, and a page is also the only one of the three that
-  // needs a way back to where it came from.
-  if (!page) return body;
 
   return (
     <PageShell
@@ -702,7 +683,8 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           })()}
         </h1>
       </div>
-      {body}
+      {shell}
+      <GamePreview preview={preview} onClose={hidePreview} />
     </PageShell>
   );
 }

@@ -13,7 +13,7 @@ import { EliteGames } from './EliteGames';
 export function GamesView({ params }: { params: string[] }) {
   // 'elite' is reserved for the reference-games browser; everything else
   // is a collection document id.
-  if (params[0] === 'elite') return <EliteGames variant="page" />;
+  if (params[0] === 'elite') return <EliteGames shape="page" />;
   const id = params[0] ? decodeURIComponent(params[0]) : null;
   return id ? <StudyView id={id} kind="game" /> : <CollectionView />;
 }

@@ -755,7 +755,7 @@ export function CollectionView() {
               onPreview={setPreview}
             />
           ) : (
-            <EliteGames variant="column" />
+            <EliteGames shape="panel" />
           )}
         </Panel>
       </div>
