@@ -155,6 +155,7 @@ export function GameRow({
   game,
   onOpen,
   onPreview,
+  loadPreview,
   actions,
   customName,
   renaming = false,
@@ -170,6 +171,14 @@ export function GameRow({
   game: GameSummary;
   onOpen: () => void;
   onPreview: (preview: Preview | null) => void;
+  /**
+   * Fetch the preview position on demand, for rows whose summary carries
+   * no `finalFen` (a reference game is a database row until someone looks
+   * at it). The eye renders as if the position were at hand; the fetched
+   * board is shown only if the row is still on the page and still the one
+   * being asked about by the time it arrives.
+   */
+  loadPreview?: () => Promise<{ fen: string; orientation: 'white' | 'black' } | null>;
   /**
    * The row's secondary actions, folded into one ⋯.
    *
@@ -220,23 +229,35 @@ export function GameRow({
   const coarse = isCoarsePointer;
   const row = useRef<HTMLLIElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const showPreviewAt = (rect: DOMRect, viaTap: boolean): void => {
-    if (!game.finalFen) return;
+  const canPreview = Boolean(game.finalFen || loadPreview);
+  // Each show bumps the sequence; a hide bumps it too. A lazily loaded
+  // position that resolves after the pointer has already left (or after
+  // another row took over) compares stale and is dropped instead of
+  // popping a board over nothing.
+  const previewSeq = useRef(0);
+  const showPreviewAt = async (rect: DOMRect, viaTap: boolean): Promise<void> => {
+    const seq = ++previewSeq.current;
+    let fen = game.finalFen;
+    let orientation: 'white' | 'black' = game.userSide ?? 'white';
+    if (!fen && loadPreview) {
+      const loaded = await loadPreview().catch(() => null);
+      if (!loaded || previewSeq.current !== seq || !row.current?.isConnected) return;
+      fen = loaded.fen;
+      orientation = loaded.orientation;
+    }
+    if (!fen) return;
     const { top, left } = placeNear(rect, PEEK_CARD, { side: 'left', align: 'center', gap: 16 });
-    onPreview({
-      fen: game.finalFen,
-      orientation: game.userSide ?? 'white',
-      top,
-      left,
-      pinned: viaTap,
-    });
+    onPreview({ fen, orientation, top, left, pinned: viaTap });
   };
   const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
     if (!viaTap && coarse()) return;
-    showPreviewAt(e.currentTarget.getBoundingClientRect(), viaTap);
+    void showPreviewAt(e.currentTarget.getBoundingClientRect(), viaTap);
   };
 
-  const hidePreview = (): void => onPreview(null);
+  const hidePreview = (): void => {
+    previewSeq.current++;
+    onPreview(null);
+  };
 
   const openingLabel = game.opening
     ? `${game.opening.eco} ${game.opening.name}`
@@ -256,7 +277,7 @@ export function GameRow({
     // is a menu nobody reads. Anchored to the row rather than to the ⋯,
     // because by the time it opens the sheet is gone and the row is what
     // was being looked at.
-    ...(game.finalFen
+    ...(canPreview
       ? [
           {
             label: 'Preview the board',
@@ -264,13 +285,18 @@ export function GameRow({
             className: 'pointer-fine:hidden',
             onSelect: () => {
               const rect = row.current?.getBoundingClientRect();
-              if (rect) showPreviewAt(rect, true);
+              if (rect) void showPreviewAt(rect, true);
             },
           },
         ]
       : []),
     ...(menu ?? []),
   ];
+  // A ⋯ whose every verb is hidden on a fine pointer (the touch-only
+  // preview, alone) hides itself the same way, instead of opening empty.
+  const menuTouchOnly =
+    menuActions.length > 0 &&
+    menuActions.every((a) => a.className?.includes('pointer-fine:hidden'));
 
   const item = (
     <li
@@ -401,7 +427,7 @@ export function GameRow({
       >
         {/* Hidden on touch, where it lives in the ⋯ sheet instead: it is a
             HOVER affordance, and a phone cannot hover. */}
-        {game.finalFen && (
+        {canPreview && (
           <Button
             variant="ghost"
             size="icon-sm"
@@ -436,14 +462,14 @@ export function GameRow({
           </Button>
         )}
         {actions}
-        {menu && menu.length > 0 && (
+        {menuActions.length > 0 && (
           <ActionMenu title={title} actions={menuActions} open={menuOpen} onOpenChange={setMenuOpen}>
             <Button
               variant="ghost"
               size="icon-sm"
               title={t('Game actions')}
               active={menuOpen}
-              className="shrink-0"
+              className={cn('shrink-0', menuTouchOnly && 'pointer-fine:hidden')}
               // A press on the ⋯ is the menu's, not the row's.
               onClick={(e) => e.stopPropagation()}
             >
