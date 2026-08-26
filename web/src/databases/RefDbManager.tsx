@@ -588,6 +588,9 @@ function DbList({
             icon={Sparkles}
             triggerClassName="shrink-0"
             disabled={optimizeDisabled}
+            // Heavy, not destructive: the question is about the minutes,
+            // and a red dialog said this deletes your database.
+            tone="default"
             triggerTitle={
               optimizeDisabled ? 'Wait for the running job to finish' : 'Optimize this database'
             }

@@ -16,8 +16,11 @@ import {
 import { t } from '@/lib/i18n';
 
 /**
- * Destructive-action confirmation: a stable icon trigger, and the
- * question in the app's own window.
+ * Consequential-action confirmation: a stable icon trigger, and the
+ * question in the app's own window. Red by default — most questions
+ * here guard deletes — with a `tone` for the ones that guard something
+ * heavy rather than something destructive (a minutes-long maintenance
+ * pass is worth a question, not an alarm).
  *
  * It used to be an anchored popover — position-fixed off the trigger's
  * measured rect, portalled to the body, dismissed by an outside
@@ -44,6 +47,7 @@ export function ConfirmDialog({
   triggerTitle,
   triggerClassName,
   triggerTone = 'quiet',
+  tone = 'danger',
   question,
   confirmLabel,
   disabled = false,
@@ -64,6 +68,13 @@ export function ConfirmDialog({
    * colour is the warning and there is nothing for it to shout over.
    */
   triggerTone?: 'quiet' | 'danger';
+  /**
+   * What the QUESTION is about. `danger` (the default) draws the red
+   * tile and the destructive action — deletes, resets. `default` keeps
+   * the same stop-and-ask shape in the app's ordinary colours, for
+   * actions that are heavy but not destructive (Optimize).
+   */
+  tone?: 'danger' | 'default';
   question: string;
   confirmLabel: string;
   disabled?: boolean;
@@ -104,7 +115,13 @@ export function ConfirmDialog({
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <AlertDialogMedia
+                className={
+                  tone === 'danger'
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'bg-primary/10 text-primary'
+                }
+              >
                 <Icon />
               </AlertDialogMedia>
               <AlertDialogTitle>{t(confirmLabel)}</AlertDialogTitle>
@@ -115,7 +132,10 @@ export function ConfirmDialog({
                   confirmation opens under the keyboard on the answer that
                   loses nothing. */}
               <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={onConfirm}>
+              <AlertDialogAction
+                variant={tone === 'danger' ? 'destructive' : 'default'}
+                onClick={onConfirm}
+              >
                 {t(confirmLabel)}
               </AlertDialogAction>
             </AlertDialogFooter>
