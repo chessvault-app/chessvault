@@ -392,6 +392,15 @@ pgnGames.push(
   ),
 );
 
+// parity-extra.pgn — a second corpus for append parity: build parity.pgn,
+// append this, and the result must diff clean against the same sequence
+// run by the other pipeline (and against a fresh build of both files).
+// Generated after parity.pgn so adding it changed no earlier bytes.
+const extraGames: string[] = [];
+for (const golden of games.slice(30, 42)) {
+  extraGames.push(pgnGame(parityHeaders(golden.result, parityIndex), golden.moves, golden.result));
+}
+
 // ---------------------------------------------------------------------------
 
 const goldens = {
@@ -407,6 +416,7 @@ const goldens = {
 
 writeFileSync(resolve(OUT_DIR, 'goldens.json'), `${JSON.stringify(goldens, null, 1)}\n`);
 writeFileSync(resolve(OUT_DIR, 'parity.pgn'), `${pgnGames.join('\n')}`);
+writeFileSync(resolve(OUT_DIR, 'parity-extra.pgn'), `${extraGames.join('\n')}`);
 
 const totalPlies = games.reduce((n, g) => n + g.plies.length, 0);
 console.log(
@@ -414,3 +424,4 @@ console.log(
     `${menCases.length} finalMen cases → native/tests/goldens.json`,
 );
 console.log(`parity corpus: ${pgnGames.length} PGN games → native/tests/parity.pgn`);
+console.log(`append corpus: ${extraGames.length} PGN games → native/tests/parity-extra.pgn`);
