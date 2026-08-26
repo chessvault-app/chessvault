@@ -25,7 +25,24 @@
 export function startPixelGridTracking(): void {
   const publish = (): void => {
     const dpr = window.devicePixelRatio || 1;
-    document.documentElement.style.setProperty('--cg-quantum', `${8 / dpr}px`);
+    /**
+     * Ceiled to the layout engine's own 1/64 px grid, not published raw.
+     *
+     * Chromium snaps used lengths to 1/64 px, DOWNWARD — so a box of
+     * k x (8/dpr) came out a hair under it wherever 8/dpr is not exact in
+     * 64ths (every fractional zoom), chessground's floor(w * dpr / 8)
+     * dropped to k-1, and the "no remainder to leave" promise above broke
+     * by a WHOLE square: at 110% zoom, 83 of 91 board widths left a
+     * 7.27px remainder, and the side column started 3.65px above the
+     * board's visible edge (lanph3re's report — per-origin zoom is why
+     * one origin showed it and another did not). Ceiling to 1/64 makes
+     * k x quantum exactly representable, so the snap cannot round it
+     * below k squares; what chessground now leaves is the ceiling's own
+     * excess, at most 1.25 CSS px across dprs 1-3 (simulated over k
+     * 30-120) and exactly 0 at 1x and 2x, where 8/dpr was already exact.
+     */
+    const quantum = Math.ceil((8 / dpr) * 64) / 64;
+    document.documentElement.style.setProperty('--cg-quantum', `${quantum}px`);
     window
       .matchMedia(`(resolution: ${dpr}dppx)`)
       .addEventListener('change', publish, { once: true });
