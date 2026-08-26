@@ -558,10 +558,12 @@ function DialogContent({
                 // the same way (lanph3re's call). A sheet that ends in a
                 // FOOTER keeps the old floor: the muted band is already
                 // the finish, and its reclaim margins (DialogFooter,
-                // AlertDialogFooter) are written against that number.
+                // AlertDialogFooter, and any sticky bar marked
+                // sheet-footer) are written against that number.
                 'rounded-t-lg pb-[calc(3.25rem+var(--safe-b))]',
                 'has-data-[slot=dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 'has-data-[slot=alert-dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
+                'has-data-[slot=sheet-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 small
                   ? cn(
                       // The lower of two ceilings: the sheet this one was

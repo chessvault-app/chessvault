@@ -215,6 +215,7 @@ export function AddMoveDialog({
             it, because a one-field form that needs a press of a button to
             be a form is a form that argues with the keyboard it opened. */}
         <form
+          data-slot="sheet-footer"
           className={cn(
             'border-border bg-card sticky z-10 mt-auto flex items-center gap-2 border-t',
             '-mx-3 px-3 pt-2',

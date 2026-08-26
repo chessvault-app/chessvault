@@ -1345,8 +1345,14 @@ function NodePanel({
           you can do. The shape is the app's own; the phone's tab bar is
           exactly this. The captions are the verb alone, with the full
           sentence on the tooltip, because a column is 4rem wide and
-          "Add a move" under a plus says nothing the plus did not. */}
+          "Add a move" under a plus says nothing the plus did not.
+
+          `data-slot="sheet-footer"` tells the sheet this row IS its
+          finish, so the sheet keeps the 1.25rem floor these reclaim
+          margins are written against instead of the 3.25rem hand
+          spacer a content-ending sheet gets. */}
       <div
+        data-slot="sheet-footer"
         className={cn(
           'border-border bg-card sticky z-10 mt-auto flex items-stretch gap-1 border-t',
           '-mx-3 px-3 pt-2',
