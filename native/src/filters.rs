@@ -6,6 +6,8 @@
 
 use rusqlite::types::Value;
 
+use crate::util::js_number;
+
 pub struct GamesWhere {
     pub clauses: Vec<String>,
     pub binds: Vec<Value>,
@@ -70,14 +72,19 @@ pub fn games_where(
         }
     }
 
-    let min_elo = get("minElo")
-        .and_then(|v| v.trim().parse::<i64>().ok())
-        .unwrap_or(0)
-        .max(0);
-    if min_elo > 0 {
+    // JS-number semantics, not integer parse: `Number(...) || 0` lets a
+    // fractional minElo through as a REAL, and the two paths must build
+    // the same clause for the same query string.
+    let min_elo = js_number(get("minElo").as_deref().unwrap_or(""));
+    let positive = match &min_elo {
+        Value::Integer(v) => *v > 0,
+        Value::Real(v) => *v > 0.0,
+        _ => false,
+    };
+    if positive {
         clauses.push(format!("{alias}white_elo >= ? AND {alias}black_elo >= ?"));
-        binds.push(Value::Integer(min_elo));
-        binds.push(Value::Integer(min_elo));
+        binds.push(min_elo.clone());
+        binds.push(min_elo);
     }
 
     if let Some((lo, hi)) = parse_band(get("band").as_deref()) {
