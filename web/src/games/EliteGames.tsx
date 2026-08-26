@@ -1,4 +1,4 @@
-import { ChevronLeft, Database, Plus, SearchX, SlidersHorizontal, X } from 'lucide-react';
+import { Database, Plus, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -6,12 +6,10 @@ import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
 import { Button } from '@/components/ui/button';
-import { PageShell } from '@/components/page-shell';
 
 import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/text-fields';
@@ -50,7 +48,7 @@ interface RefGame {
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
  *
- * Three shapes, one component, because it is one thing — GameListShell's
+ * Two shapes, one component, because it is one thing — GameListShell's
  * vocabulary, exactly as the archive browser uses it:
  *
  * `panel` — the second half of the column that finds games, behind the
@@ -59,14 +57,10 @@ interface RefGame {
  * in one panel rather than each taking a box.
  *
  * `sheet` — below lg, where there is no column. A bottom sheet on a
- * phone, like the archive. It used to navigate to a page of its own,
- * which loses the collection you were about to add to.
- *
- * `page` — its own route: the shell's framed shape inside a PageShell,
- * with a way back.
+ * phone, like the archive. (There was a `page` shape on its own route
+ * once; nothing ever navigated to it.)
  */
-export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'page' }) {
-  const page = shape === 'page';
+export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }) {
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
   // mount (the static demo), which has none of that.
@@ -382,7 +376,7 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
     // with their own typography.
     return (
       <EmptyState
-        className={cn('min-h-0 flex-1 p-6', page && 'h-full')}
+        className="min-h-0 flex-1 p-6"
         icon={Database}
         title="Could not load reference games"
         body={metaError}
@@ -402,7 +396,7 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
     // (the demo) has no page to offer, so it only says what is missing.
     return (
       <EmptyState
-        className={cn('min-h-0 flex-1 p-6', page && 'h-full')}
+        className="min-h-0 flex-1 p-6"
         icon={Database}
         title="No reference games yet"
         body={
@@ -561,9 +555,8 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
   ));
 
   // The count leads the band in the archive's own voice; the picker and
-  // the manager sit with it. In the framed page shape the panel header
-  // carries them instead, so the band would say it twice.
-  const countBand = page ? undefined : (
+  // the manager sit with it.
+  const countBand = (
     <>
       <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
         {count}
@@ -572,12 +565,10 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
     </>
   );
 
-  const shell = (
+  return (
+    <>
     <GameListShell
-      shape={page ? 'framed' : shape}
-      title={page ? count : undefined}
-      headerActions={page ? dbControls : undefined}
-      panelClassName={page ? 'mt-1 min-h-0 flex-1' : undefined}
+      shape={shape}
       toolbar={
         <SearchInput
           inputSize="sm"
@@ -641,41 +632,7 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
         ) : undefined
       }
     />
-  );
-
-  if (!page)
-    return (
-      <>
-        {shell}
-        <GamePreview preview={preview} onClose={hidePreview} />
-      </>
-    );
-
-  return (
-    <PageShell
-      width="wide"
-      scroll={false}
-      // The list panel scrolls itself, so the column pins to the viewport.
-      className="h-full min-h-0 pb-4 md:pb-6"
-    >
-      <div className="flex shrink-0 items-center gap-2">
-        <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
-          <ChevronLeft className="size-3.5" />
-        </Button>
-        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">
-          {(() => {
-            // Dir mounts count across every database; a single mount says
-            // its own meta. Either way the title is the whole shelf, while
-            // the panel's count below is the database being searched.
-            const all = dbs ? dbs.reduce((sum, d) => sum + d.games, 0) : (meta?.games ?? 0);
-            return all
-              ? `${t('Elite games')} (${t('{n} games', { n: all.toLocaleString() })})`
-              : t('Elite games');
-          })()}
-        </h1>
-      </div>
-      {shell}
-      <GamePreview preview={preview} onClose={hidePreview} />
-    </PageShell>
+    <GamePreview preview={preview} onClose={hidePreview} />
+    </>
   );
 }

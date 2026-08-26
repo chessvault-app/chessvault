@@ -7,13 +7,15 @@
  */
 import { StudyView } from '@/studies/StudyView';
 import { CollectionView } from './CollectionView';
-import { EliteGames } from './EliteGames';
 
 /** Router shell: the collection list, or one collected game open for study. */
 export function GamesView({ params }: { params: string[] }) {
-  // 'elite' is reserved for the reference-games browser; everything else
-  // is a collection document id.
-  if (params[0] === 'elite') return <EliteGames shape="page" />;
+  // '#/games/elite' was the reference browser's own page; nothing ever
+  // navigated to it (the browser lives in the source column and the Add
+  // games sheet), so the page shape is gone. The hash still lands
+  // somewhere rather than 404ing: the collection, where the browser is
+  // one tab or one press away.
+  if (params[0] === 'elite') return <CollectionView />;
   const id = params[0] ? decodeURIComponent(params[0]) : null;
   return id ? <StudyView id={id} kind="game" /> : <CollectionView />;
 }
