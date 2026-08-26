@@ -10,7 +10,8 @@ import { parseUci } from 'chessops/util';
 import { indexGame, pathUser, type Speed } from '../shared/gameIndex.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { openingForKey } from './openings.ts';
-import { DATA_MYGAMES, VAULT_GAMES } from './paths.ts';
+import { resolve } from 'node:path';
+import { DATA, DATA_MYGAMES, VAULT_GAMES } from './paths.ts';
 
 /**
  * Your own games, explorable at any position, under any filter.
@@ -509,6 +510,160 @@ class MyGamesIndex {
   }
 
   /**
+   * Where your recent games diverge from what a reference database's
+   * players play — the improver's diff: for every position YOUR move
+   * reached in the window, was that move rare among the reference
+   * corpus's answers (at your level, when a band is given)?
+   *
+   * A position only speaks when the corpus has a real sample there
+   * (MIN_SAMPLE at the band); your move is flagged when the sample plays
+   * it under 10% of the time — including never. Flags aggregate across
+   * the window by position, so an opening you repeat surfaces once with
+   * its count, strongest first. Answers come from the reference file's
+   * precomputed sums, so the whole walk is hash lookups.
+   */
+  compareAgainst(
+    refFile: string,
+    side: 'white' | 'black',
+    gamesWindow: number,
+    band: { lo: number; hi: number | null } | null,
+  ): {
+    key: string;
+    sans: string[];
+    games: number;
+    myMove: { san: string; total: number };
+    refTotal: number;
+    top: { san: string; w: number; d: number; b: number; total: number };
+  }[] {
+    const db = this.open();
+    if (!db) return [];
+    let ref: InstanceType<typeof Database> | null = null;
+    try {
+      ref = new Database(refFile, { readonly: true, fileMustExist: true });
+    } catch {
+      return []; // no such database (or a mount that cannot read it)
+    }
+    try {
+      const has = (name: string): boolean =>
+        ref!
+          .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+          .get(name) !== undefined;
+      if (!has('move_counts')) return [];
+      const bucketed =
+        ref.prepare("SELECT 1 FROM pragma_table_info('move_counts') WHERE name = 'eb'").get() !==
+        undefined;
+      // Bands ride the precomputed buckets; the route only admits
+      // bucket-aligned ones (parseCompareBand).
+      const bandSql =
+        band && bucketed
+          ? band.hi === null
+            ? ' AND eb >= ?'
+            : ' AND eb BETWEEN ? AND ?'
+          : '';
+      const bandBinds =
+        band && bucketed
+          ? band.hi === null
+            ? [band.lo / 200]
+            : [band.lo / 200, (band.hi + 1) / 200 - 1]
+          : [];
+      const atPos = ref.prepare(
+        `SELECT uci, SUM(w) AS w, SUM(d) AS d, SUM(b) AS b FROM move_counts
+         WHERE pos = ?${bandSql} GROUP BY uci`,
+      );
+
+      const MIN_SAMPLE = 20;
+      const RARE_SHARE = 0.1;
+      const games = db
+        .prepare(
+          `SELECT id FROM games g
+           WHERE g.user_side = ? AND g.shadowed = 0
+           ORDER BY g.date DESC, g.id DESC LIMIT ?`,
+        )
+        .all(side, gamesWindow) as { id: number }[];
+      const pliesOf = db.prepare(
+        'SELECT CAST(pos AS TEXT) AS pos, uci FROM plies WHERE game_id = ? ORDER BY ply',
+      );
+      const refCache = new Map<string, { uci: string; w: number; d: number; b: number }[]>();
+      const flags = new Map<
+        string,
+        { count: number; gameId: number; at: number; myUci: string }
+      >();
+      const ownOffset = side === 'white' ? 0 : 1;
+      for (const game of games) {
+        const plies = pliesOf.all(game.id) as { pos: string; uci: string }[];
+        for (let k = ownOffset; k < plies.length; k += 2) {
+          const posKey = plies[k]!.pos;
+          let rows = refCache.get(posKey);
+          if (!rows) {
+            rows = atPos.all(BigInt(posKey), ...bandBinds) as typeof rows & {};
+            refCache.set(posKey, rows!);
+          }
+          const total = rows!.reduce((sum, r) => sum + r.w + r.d + r.b, 0);
+          if (total < MIN_SAMPLE) continue;
+          const mine = rows!.find((r) => r.uci === plies[k]!.uci);
+          const myTotal = mine ? mine.w + mine.d + mine.b : 0;
+          if (myTotal / total >= RARE_SHARE) continue;
+          const flag = flags.get(posKey);
+          if (flag) flag.count += 1;
+          else flags.set(posKey, { count: 1, gameId: game.id, at: k, myUci: plies[k]!.uci });
+        }
+      }
+
+      // The strongest repeats first, each replayed once for its SAN path
+      // — an index row that fails to replay proves a hash collision and
+      // drops the flag rather than reporting nonsense.
+      const out: ReturnType<MyGamesIndex['compareAgainst']> = [];
+      const sorted = [...flags.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 50);
+      for (const [posKey, flag] of sorted) {
+        const plies = pliesOf.all(flag.gameId) as { pos: string; uci: string }[];
+        const pos = Chess.default();
+        const sans: string[] = [];
+        let ok = true;
+        for (let k = 0; k < flag.at; k += 1) {
+          const move = parseUci(plies[k]!.uci);
+          if (!move || !pos.isLegal(move)) {
+            ok = false;
+            break;
+          }
+          sans.push(makeSan(pos, move));
+          pos.play(move);
+        }
+        if (!ok) continue;
+        const myMove = parseUci(flag.myUci);
+        if (!myMove || !pos.isLegal(myMove)) continue;
+        const rows = refCache.get(posKey)!;
+        const refTotal = rows.reduce((sum, r) => sum + r.w + r.d + r.b, 0);
+        const mine = rows.find((r) => r.uci === flag.myUci);
+        const top = rows.reduce((best, r) =>
+          r.w + r.d + r.b > best.w + best.d + best.b ? r : best,
+        );
+        const topMove = parseUci(top.uci);
+        if (!topMove || !pos.isLegal(topMove)) continue;
+        out.push({
+          key: posKey,
+          sans,
+          games: flag.count,
+          myMove: {
+            san: makeSan(pos, myMove),
+            total: mine ? mine.w + mine.d + mine.b : 0,
+          },
+          refTotal,
+          top: {
+            san: makeSan(pos, topMove),
+            w: top.w,
+            d: top.d,
+            b: top.b,
+            total: top.w + top.d + top.b,
+          },
+        });
+      }
+      return out;
+    } finally {
+      ref.close();
+    }
+  }
+
+  /**
    * Where each recent game left a prepared set of positions.
    *
    * The set arrives from the client because only the client can build it:
@@ -693,6 +848,8 @@ function parseFilters(query: (key: string) => string | undefined): MyGamesFilter
 export function myGamesApi(
   gamesDir: string = VAULT_GAMES,
   dbPath: string = DATA_MYGAMES,
+  /** Where /mygames/compare finds reference databases (tests override). */
+  refgamesDir: string = resolve(DATA, 'refgames'),
 ): Hono {
   const index = new MyGamesIndex(gamesDir, dbPath);
   const api = new Hono();
@@ -791,6 +948,38 @@ export function myGamesApi(
       deviations: index
         .deviations(keys, side, limit)
         .map((d) => ({ ...d, result: RESULT_TEXT[d.result] ?? '*' })),
+    });
+  });
+
+  /**
+   * Your games against a reference database: where your own moves are
+   * rare among what its players answer — at your level when band= names
+   * a bucket-aligned range ("1600-1999", "2400-"). See compareAgainst().
+   */
+  api.get('/mygames/compare', (c) => {
+    const side = c.req.query('side');
+    if (side !== 'white' && side !== 'black') {
+      return c.json({ error: 'expected side=white|black' }, 400);
+    }
+    const dbName = c.req.query('db');
+    if (!dbName || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(dbName)) {
+      return c.json({ error: 'expected db=<database>' }, 400);
+    }
+    const rawBand = c.req.query('band');
+    let band: { lo: number; hi: number | null } | null = null;
+    if (rawBand) {
+      const m = /^(\d{3,4})-(\d{3,4})?$/.exec(rawBand);
+      const lo = m ? Number(m[1]) : NaN;
+      const hi = m?.[2] !== undefined ? Number(m[2]) : null;
+      if (!m || lo % 200 !== 0 || (hi !== null && (hi + 1) % 200 !== 0)) {
+        return c.json({ error: 'band must sit on the 200-point buckets' }, 400);
+      }
+      band = { lo, hi };
+    }
+    const limit = Math.min(500, Math.max(1, Number(c.req.query('limit')) || 200));
+    index.sync();
+    return c.json({
+      rows: index.compareAgainst(resolve(refgamesDir, `${dbName}.sqlite`), side, limit, band),
     });
   });
 

@@ -369,6 +369,60 @@ describe('my games index', () => {
     expect((await held()).games).toBe(5);
   });
 
+  it('compares my games against a reference database, flagging rare moves', async () => {
+    // A reference corpus of 25 games all answering 1.e4 with e5: my one
+    // 1.d4 game is a 0-of-25 move at the start position; my 1.e4 games
+    // are mainstream and stay unflagged.
+    const refDir = join(dir, 'refgames');
+    mkdirSync(refDir, { recursive: true });
+    const ref = new Database(join(refDir, 'elite.sqlite'));
+    ref.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL, black TEXT NOT NULL,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    `);
+    const put = ref.prepare(
+      "INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, 2500, 2500, '1-0', '2026.01.01', 'T', 'C20', 'Open', 'e4 e5')",
+    );
+    for (let i = 0; i < 25; i += 1) put.run(`W${i}`, `B${i}`);
+    ref.close();
+    const { indexPositions } = await import('./refgamesIndex.ts');
+    indexPositions(join(refDir, 'elite.sqlite'));
+
+    const compareApp = new Hono().route(
+      '/api',
+      myGamesApi(games, join(dir, 'compare-index.sqlite'), refDir),
+    );
+    const res = await compareApp.request('/api/mygames/compare?side=white&db=elite');
+    expect(res.status).toBe(200);
+    const { rows } = (await res.json()) as {
+      rows: { sans: string[]; games: number; myMove: { san: string; total: number }; top: { san: string } }[];
+    };
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      sans: [],
+      games: 1,
+      myMove: { san: 'd4', total: 0 },
+      top: { san: 'e4' },
+    });
+
+    // A band the corpus sits outside empties the sample — no flags, not
+    // false ones.
+    const banded = await compareApp.request(
+      '/api/mygames/compare?side=white&db=elite&band=1200-1599',
+    );
+    expect(((await banded.json()) as { rows: unknown[] }).rows).toEqual([]);
+    // Off-bucket bands are refused, not silently approximated.
+    expect(
+      (await compareApp.request('/api/mygames/compare?side=white&db=elite&band=1250-1599')).status,
+    ).toBe(400);
+  });
+
   it('keeps both seats of a game browsed from both archives', async () => {
     // The archive browser caches ANY player's months, so browsing your
     // opponent as well as yourself files one game twice — under opposite
