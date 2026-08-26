@@ -11,7 +11,7 @@ import { t } from '@/lib/i18n';
  * One page for everything built from uploaded PGN collections.
  *
  * Opening books had a page; reference game databases could only be
- * managed from a sheet inside the Elite games browser — a management job
+ * managed from a sheet inside the games-page Databases browser — a management job
  * hidden behind the thing it manages (lanph3re's report). The two are the
  * same shape over the same uploads (an opening book indexes positions, a
  * reference database indexes whole games), so they share one page. It
@@ -60,7 +60,7 @@ export function DatabasesPage() {
         title={t('Databases')}
         back={() => navigate('more')}
         description={t(
-          'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.',
+          'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Databases browser on the Games page, and a position index the explorer and the repertoire trainer draw from — with filters.',
         )}
       />
 

@@ -9,7 +9,7 @@ import {
   Plus,
   Swords,
   Trash2,
-  Trophy,
+  Database as DatabaseIcon,
   X,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -62,7 +62,7 @@ import { EliteGames } from './EliteGames';
 type SourceId = 'archive' | 'elite';
 const SOURCES: { id: SourceId; label: string }[] = [
   { id: 'archive', label: 'Online archives' },
-  { id: 'elite', label: 'Elite games' },
+  { id: 'elite', label: 'Databases' },
 ];
 
 /**
@@ -460,7 +460,7 @@ export function CollectionView() {
                   ? []
                   : [
                       { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
-                      { label: 'Elite games', icon: Trophy, onSelect: () => setElite(true) },
+                      { label: 'Databases', icon: DatabaseIcon, onSelect: () => setElite(true) },
                     ]),
               ]}
             />
@@ -805,7 +805,7 @@ export function CollectionView() {
             if (!open) setElite(false);
           }}
         >
-          <DialogContent title="Elite games" className="max-sm:h-[88%]" size="full">
+          <DialogContent title="Databases" className="max-sm:h-[88%]" size="full">
             <EliteGames />
           </DialogContent>
         </Dialog>

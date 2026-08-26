@@ -1053,7 +1053,7 @@ export function ArchiveBrowser({
   return (
     <GameListShell
       shape={shape}
-      // In the column it shares a panel with Elite games and the tab has
+      // In the column it shares a panel with the Databases browser and the tab has
       // already said which one this is; framed it brings its own title.
       title={t('Online archives')}
       panelClassName="shrink-0 sm:min-h-0 sm:flex-1"

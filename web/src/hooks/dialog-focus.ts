@@ -139,7 +139,7 @@ const TEXT_TYPES = new Set(['text', 'search', 'url', 'tel', 'email', 'password',
  * Input is type="search" for autofill reasons (see components/ui/input) — but by
  * SearchInput's own marker. A search field filters the content below
  * it: a window whose only field is one (the online archive's username
- * box, the elite games' player search) was opened to browse that
+ * box, the databases browser's player search) was opened to browse that
  * content, and opening it under a keyboard hides the very thing it is
  * for. The box is one tap away for whoever wants it.
  */

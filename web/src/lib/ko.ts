@@ -165,8 +165,6 @@ export const ko: Record<string, string> = {
 
   // --- games ---------------------------------------------------------------
   'Back to games': '게임 목록으로',
-  'Search players, openings, or ECO (e.g. Najdorf, B90)…':
-    '선수, 오프닝 또는 ECO 검색 (예: Najdorf, B90)…',
   'Open on the analysis board': '분석 보드에서 열기',
   'Preview the final position': '최종 포지션 미리 보기',
   'Search collection…': '모음 검색…',
@@ -194,7 +192,6 @@ export const ko: Record<string, string> = {
     '이 데이터베이스에서 위의 검색과 필터를 통과하는 게임이 없습니다.',
   'Clear search and filters': '검색과 필터 지우기',
   'Loading more games…': '게임 더 불러오는 중…',
-  'Elite games': '엘리트 게임',
   'Where to find a game': '게임을 찾을 곳',
   'Search players, openings, or ECO': '선수, 오프닝 또는 ECO 검색',
   'offline — cached months only': '오프라인 — 저장된 달만',
@@ -1007,8 +1004,8 @@ export const ko: Record<string, string> = {
   'Reference game databases, built from uploaded PGNs': '올린 PGN으로 만드는 참고 게임 데이터베이스',
   'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.':
     '아직 올린 파일이 없습니다. 모음은 게임이 담긴 아무 .pgn이면 됩니다 — Lichess Elite 월간, Lumbra 내보내기.',
-  'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.':
-    '참고 데이터베이스는 올린 PGN 모음으로 만들며 모든 것을 한꺼번에 답합니다: 엘리트 게임 브라우저용 전체 기보와, 탐색기·레퍼토리 훈련이 참조하는 포지션 색인 — 필터와 함께.',
+  'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Databases browser on the Games page, and a position index the explorer and the repertoire trainer draw from — with filters.':
+    '참고 데이터베이스는 올린 PGN 모음으로 만들며 모든 것을 한꺼번에 답합니다: 게임 페이지의 데이터베이스 브라우저용 전체 기보와, 탐색기·레퍼토리 훈련이 참조하는 포지션 색인 — 필터와 함께.',
   'Could not read the reference database.': '참고 데이터베이스를 읽지 못했습니다.',
   'The demo database holds a curated slice of games.': '데모 데이터베이스에는 엄선한 일부 게임만 담겨 있습니다.',
   'no position index': '포지션 색인 없음',
