@@ -909,15 +909,34 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<{ scanned: number; total: number } | null>(null);
   const [hits, setHits] = useState<DeepHit[] | null>(null);
+  // A capped scan found the 200 it was asked for and stopped counting —
+  // its total is a floor, not a count, and the line must say so.
+  const [exhaustive, setExhaustive] = useState(true);
+  // A stream that ended without its `done` frame (or never opened) is a
+  // FAILED search, not an empty one — the server ends frameless when
+  // the scan child cannot run. Without this flag the pane showed an
+  // empty nothing, with even the button gone in auto mode.
+  const [failed, setFailed] = useState(false);
   // The position moved on: whatever the stream still says is about a
   // board nobody is looking at.
   const seq = useRef(0);
+  // Unmounting must take an in-flight scan with it too — the bump makes
+  // the read loop cancel the reader, which is what aborts the server's
+  // scan. Leaving the page used to let it drain to the end for nobody.
+  useEffect(
+    () => () => {
+      seq.current += 1;
+    },
+    [],
+  );
   const filterQuery = refFilterQuery(refFilters);
   useEffect(() => {
     seq.current += 1;
     setRunning(false);
     setProgress(null);
     setHits(null);
+    setExhaustive(true);
+    setFailed(false);
     if (!auto || exploreLoading) return;
     // Debounced: arrow-keying through a game must not launch a scan per
     // ply. The seq bump above cancels an in-flight scan the moment the
@@ -933,6 +952,9 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     setRunning(true);
     setHits([]);
     setProgress(null);
+    setExhaustive(true);
+    setFailed(false);
+    let sawDone = false;
     try {
       const query = new URLSearchParams({ fen, db });
       const filterQuery = refFilterQuery(refFilters);
@@ -956,20 +978,27 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
           if (!line.trim()) continue;
           const frame = JSON.parse(line) as
             | ({ type: 'game' } & DeepHit)
-            | { type: 'progress' | 'done'; scanned: number; total: number };
+            | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
           if (frame.type === 'game') {
             const { type: _type, ...hit } = frame;
             setHits((prev) => [...(prev ?? []), hit]);
           } else {
             setProgress({ scanned: frame.scanned, total: frame.total });
+            if (frame.type === 'done') {
+              sawDone = true;
+              setExhaustive(frame.exhaustive !== false);
+            }
           }
         }
         if (done) break;
       }
     } catch {
-      // offline hiccup — what arrived stays on screen
+      // offline, or the route refused — failed, not empty
     }
-    if (seq.current === mine) setRunning(false);
+    if (seq.current === mine) {
+      setRunning(false);
+      if (!sawDone) setFailed(true);
+    }
   };
 
   const open = async (hit: DeepHit): Promise<void> => {
@@ -1003,6 +1032,16 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
             {t('Search every game for this position')}
           </Button>
         )
+      ) : failed && hits.length === 0 ? (
+        // Failed and empty-handed: say so, offer to go again — an empty
+        // div read as "no games", and auto mode had hidden the button.
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-destructive text-sm">{t('The search failed.')}</p>
+          <Button variant="secondary" size="sm" onClick={() => void run()}>
+            <RotateCw className="size-3.5" data-icon="inline-start" />
+            {t('Try again')}
+          </Button>
+        </div>
       ) : (
         <>
           {progress && (
@@ -1012,7 +1051,9 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
                     scanned: progress.scanned.toLocaleString(),
                     total: progress.total.toLocaleString(),
                   })
-                : t('{n} games reach this position', { n: hits.length })}
+                : exhaustive
+                  ? t('{n} games reach this position', { n: hits.length })
+                  : t('{n}+ games reach this position — the list stops here', { n: hits.length })}
             </p>
           )}
           <ul className="flex flex-col gap-px">

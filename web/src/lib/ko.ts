@@ -292,6 +292,8 @@ export const ko: Record<string, string> = {
   'Search every game for this position': '모든 게임에서 이 포지션 찾기',
   'Searching… {scanned} of {total} games': '검색 중… {total}개 중 {scanned}개',
   '{n} games reach this position': '이 포지션에 도달한 게임 {n}개',
+  '{n}+ games reach this position — the list stops here': '이 포지션에 도달한 게임 {n}개 이상 — 목록은 여기까지입니다',
+  'The search failed.': '검색이 실패했습니다.',
   'Any rating': '모든 레이팅',
   'More filters': '필터 더 보기',
   'Filter games': '게임 거르기',
