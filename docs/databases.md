@@ -15,6 +15,37 @@ inside the app, and `data/mygames.sqlite` is not even that: the explorer's
 My games index builds and maintains itself from the vault's PGN files, so
 there is no step for it at all.
 
+## The My games index
+
+The self-maintaining one, in more detail — it is the other half of every
+"my games against the reference" question:
+
+- **What it covers.** Every PGN under `vault/games`: the collection and
+  every cached archive month. Each query first runs a cheap sync
+  (throttled to once per two seconds) that notices changed files by
+  stat and re-indexes those alone — new games count the moment the
+  archive browser caches the month, with no build step. A first sync of
+  a big vault indexes briefly inline and finishes in the background
+  while lookups answer from what is already in.
+- **What it knows.** Whose game each one is (the archive path, the
+  `VaultSide` header and your profile decide), speed, dates, whether it
+  is a kept collection game — and every position through **ply 60**,
+  twice a reference database's depth, because "have I been here" stays
+  worth asking at move 25 in a way "has anyone" does not.
+- **One game, counted once.** Keeping a game copies it into the
+  collection while the cached month still holds it; the index shadows
+  the duplicate by the game's own URL, and the surviving copy is the
+  annotatable one.
+- **Who reads it.** The explorer's My games source (your moves with
+  your results, recent games newest-first), the opening map's field
+  statistics, the Grow sheet's deviations, and
+  `/api/mygames/compare`.
+- **It is derived data.** Deleting `data/mygames.sqlite` costs one
+  re-scan and nothing else — the PGN files are the truth.
+
+The full design record, including the measured costs behind these
+choices, is the header comment of `server/myGames.ts`.
+
 **The puzzle database is no longer one of the exceptions.** Open Puzzles
 without one and the app offers to fetch it: the server downloads the CC0
 Lichess dump and builds the database in a child process, reporting
