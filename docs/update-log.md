@@ -64,10 +64,14 @@ games, and databases that grow instead of being rebuilt.
   progress lines, same ndjson frames; `CHESS_NATIVE=0` forces the JS
   path): measured on 280k games, a full build drops from ~180 s to
   71.8 s and the whole-database position search from 12.7 s to 1.3 s,
-  at a quarter of the memory. Without the binary — a fresh checkout,
-  the demo, the tests — everything runs exactly as before. It is not
-  shipped in releases yet; that (and the licence inventory for its
-  crates) is the distribution step still ahead.
+  at a quarter of the memory. At that speed the explorer stops asking:
+  past the index's thirty plies it starts the scan itself, debounced so
+  arrow-keying through a game never launches one per ply, and cancelled
+  the moment the position moves on — the button remains the face of the
+  slower JS scan. Without the binary — a fresh checkout, the demo, the
+  tests — everything runs exactly as before. It is not shipped in
+  releases yet; that (and the licence inventory for its crates) is the
+  distribution step still ahead.
 
 ## 0.4.9
 

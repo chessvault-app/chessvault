@@ -828,7 +828,14 @@ export function refGamesApi(
         },
       ];
     });
-    return c.json({ ready: databases.length > 0, databases });
+    // `native`: the deep scan runs through the native binary here, fast
+    // enough (~1 s per 280k games, measured) that the explorer may start
+    // it by itself instead of asking for a button press.
+    return c.json({
+      ready: databases.length > 0,
+      native: dir === REFGAMES_DIR && nativeBinary() !== null,
+      databases,
+    });
   });
 
   /**

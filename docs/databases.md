@@ -120,7 +120,9 @@ What a built database answers, and from where:
 - Past those 30 plies, the explorer offers **Search every game for
   this position**: a streamed scan of the whole database's movetext,
   any depth, progress and hits arriving live, the reference filters
-  applying to it exactly as to the move table.
+  applying to it exactly as to the move table. When the native
+  pipeline binary is present (see `native/`) the scan is fast enough
+  that the explorer runs it by itself instead of offering the button.
 - `/api/mygames/compare` diffs **your own games** against a database:
   every position where your move is rare among what its players answer
   (at your level, when a band is given), aggregated across your recent

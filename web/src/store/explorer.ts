@@ -73,6 +73,12 @@ interface ExplorerState {
   lichessRatings?: string;
   /** The reference databases that can also answer (see REF_DB). */
   refDbs: RefDbSummary[];
+  /**
+   * True when the server's deep scan runs through the native binary —
+   * fast enough that the explorer starts it itself past the index's
+   * depth instead of offering a button (see DeepSearch).
+   */
+  nativeScan: boolean;
   /** Filters, applied only while a reference database is the source. */
   refFilters: RefDbFilters;
   /** False when the chosen reference database has no position index yet. */
@@ -301,6 +307,7 @@ export const useExplorer = create<ExplorerState>()(
         dbsLoaded: false,
         myFilters: {},
         refDbs: [],
+        nativeScan: false,
         refFilters: {},
         refIndexed: true,
         myStats: null,
@@ -373,6 +380,7 @@ export const useExplorer = create<ExplorerState>()(
           try {
             const body = await api<{
               databases?: { name: string; games: number; indexed?: boolean; positions?: number }[];
+              native?: boolean;
             }>('/api/refgames');
             set({
               refDbs: (body.databases ?? []).map((d) => ({
@@ -381,6 +389,7 @@ export const useExplorer = create<ExplorerState>()(
                 indexed: d.indexed === true,
                 positions: d.positions ?? 0,
               })),
+              nativeScan: body.native === true,
               dbsLoaded: true,
               error: null,
             });

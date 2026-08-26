@@ -367,8 +367,10 @@ export function ExplorerPane({
                   </p>
                   {/* The index stops at ply 30; deeper positions can
                       still be hunted through every game's movetext. An
-                      explicit press, never automatic — the worst case is
-                      a scan of the whole database. */}
+                      explicit press when the JS scan would do the work
+                      (its worst case is ~10 s across the database);
+                      automatic behind the native binary, whose scan is
+                      about a second (see DeepSearch's auto). */}
                   {refdb && !isDemo() && (
                     <DeepSearch db={refDbName(book!)} fen={node.fen} />
                   )}
@@ -895,18 +897,36 @@ interface DeepHit {
  */
 function DeepSearch({ db, fen }: { db: string; fen: string }) {
   const refFilters = useExplorer((s) => s.refFilters);
+  // With the native binary behind the route the scan answers in about a
+  // second, so the explorer starts it itself instead of asking for a
+  // press; the JS scan (~10 s per 280k games) stays behind the button.
+  const auto = useExplorer((s) => s.nativeScan);
+  // Never auto-scan under an in-flight explore: an emptied move list
+  // whose answer has not landed yet is not "no games here", and a scan
+  // launched from it hunts the whole database for a position the pane
+  // was about to answer normally.
+  const exploreLoading = useExplorer((s) => s.loading);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<{ scanned: number; total: number } | null>(null);
   const [hits, setHits] = useState<DeepHit[] | null>(null);
   // The position moved on: whatever the stream still says is about a
   // board nobody is looking at.
   const seq = useRef(0);
+  const filterQuery = refFilterQuery(refFilters);
   useEffect(() => {
     seq.current += 1;
     setRunning(false);
     setProgress(null);
     setHits(null);
-  }, [fen, db]);
+    if (!auto || exploreLoading) return;
+    // Debounced: arrow-keying through a game must not launch a scan per
+    // ply. The seq bump above cancels an in-flight scan the moment the
+    // position (or a filter chip) changes.
+    const timer = setTimeout(() => void run(), 500);
+    return () => clearTimeout(timer);
+    // run reads only state that is itself keyed by these deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fen, db, auto, exploreLoading, filterQuery]);
 
   const run = async (): Promise<void> => {
     const mine = ++seq.current;
@@ -974,10 +994,15 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
   return (
     <div className="flex flex-col gap-1 px-3 pb-3">
       {hits === null ? (
-        <Button variant="secondary" size="sm" className="self-start" onClick={() => void run()}>
-          <SearchCheck className="size-3.5" data-icon="inline-start" />
-          {t('Search every game for this position')}
-        </Button>
+        // Auto mode shows nothing here: the debounce above is already
+        // counting down, and a button that vanishes on its own reads as
+        // a misfire.
+        auto ? null : (
+          <Button variant="secondary" size="sm" className="self-start" onClick={() => void run()}>
+            <SearchCheck className="size-3.5" data-icon="inline-start" />
+            {t('Search every game for this position')}
+          </Button>
+        )
       ) : (
         <>
           {progress && (
