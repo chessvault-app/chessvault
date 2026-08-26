@@ -6,7 +6,7 @@
  * to repeat and reversible with a DROP.
  */
 import type Database from 'better-sqlite3';
-import { REFGAMES_MOVE_COUNTS } from '../../server/refgamesIndex.ts';
+import { REFGAMES_MOVE_COUNTS, REFGAMES_MOVE_COUNTS_LEGACY } from '../../server/refgamesIndex.ts';
 
 type Db = InstanceType<typeof Database>;
 
@@ -90,9 +90,12 @@ export function tune(db: Db): string[] {
   // The per-move sums the unfiltered explore answers from — derived from
   // the position index, so only a database that carries one can have them.
   // The SQL lives with that index (server/refgamesIndex.ts), which also
-  // builds this on a fresh pass and drops it on a rebuild.
+  // builds this on a fresh pass and drops it on a rebuild. A plies table
+  // from before the result column gets the joined variant.
   if (has(db, 'games') && has(db, 'plies') && !has(db, 'move_counts')) {
-    db.exec(REFGAMES_MOVE_COUNTS);
+    const hasResult =
+      db.prepare("SELECT 1 FROM pragma_table_info('plies') WHERE name = 'r'").get() !== undefined;
+    db.exec(hasResult ? REFGAMES_MOVE_COUNTS : REFGAMES_MOVE_COUNTS_LEGACY);
     applied.push('move_counts');
   }
   return applied;

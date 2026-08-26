@@ -39,10 +39,16 @@ const SCHEMA = `
     pos INTEGER NOT NULL,
     uci TEXT NOT NULL,
     game_id INTEGER NOT NULL,
-    ply INTEGER NOT NULL
+    ply INTEGER NOT NULL,
+    r INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);
 `;
+
+/** The game's result as one small integer carried on every ply row, so
+    the per-move sums need no join: 0 white won, 1 drawn, 2 black won. */
+export const resultCode = (result: string): number =>
+  result === '1-0' ? 0 : result === '0-1' ? 2 : 1;
 
 /**
  * Per-(position, move) result sums, precomputed from the index above.
@@ -58,20 +64,51 @@ const SCHEMA = `
  * between index builds. Filtered questions still aggregate live — that
  * they can is the whole point of keeping the game dimension.
  *
- * Derived purely from plies + games, so it belongs to this index: built
- * here after the plies pass, dropped here when plies is rebuilt, and
- * added to older files by scripts/tune-dbs.ts through the same SQL.
+ * Two shapes of the same derivation:
+ *
+ * - No join. Summing through `games` cost 63.8 s of the Elite month's
+ *   80 s index pass — 8.3 M rowid lookups — where summing the result
+ *   code the plies rows now carry costs 5.7 s (both measured).
+ *
+ * - Thin positions are NOT stored. Positions reached by fewer than five
+ *   games were 92% of the table's rows (3.76 M of 4.07 M; 101 MB down
+ *   to 8 MB, measured on the same month) and are exactly the positions
+ *   whose live aggregation is instant (0.06 ms measured) — so the
+ *   explorer answers them live, through the same fallback older
+ *   databases use for everything.
+ *
+ * Derived purely from plies, so it belongs to this index: built here
+ * after the plies pass, dropped here when plies is rebuilt, and added to
+ * older files by scripts/tune-dbs.ts (which falls back to a joined
+ * variant when the plies table predates the result column).
  */
+export const MOVE_COUNT_MIN_GAMES = 5;
 export const REFGAMES_MOVE_COUNTS = `
   CREATE TABLE IF NOT EXISTS move_counts AS
-    SELECT p.pos AS pos, p.uci AS uci,
+    SELECT pos, uci,
+           SUM(r = 0) AS w,
+           SUM(r = 1) AS d,
+           SUM(r = 2) AS b
+    FROM plies
+    GROUP BY pos, uci;
+  CREATE TEMP TABLE mc_thin AS
+    SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < ${MOVE_COUNT_MIN_GAMES};
+  DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);
+  DROP TABLE mc_thin;
+  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
+`;
+
+/** The same table for a database whose plies predate the result column —
+    scripts/tune-dbs.ts only; fresh index passes always take the fast one. */
+export const REFGAMES_MOVE_COUNTS_LEGACY = REFGAMES_MOVE_COUNTS.replace(
+  /SELECT pos, uci,[\s\S]*?GROUP BY pos, uci;/,
+  `SELECT p.pos AS pos, p.uci AS uci,
            SUM(g.result = '1-0') AS w,
            SUM(g.result = '1/2-1/2') AS d,
            SUM(g.result = '0-1') AS b
     FROM plies p JOIN games g ON g.id = p.game_id
-    GROUP BY p.pos, p.uci;
-  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
-`;
+    GROUP BY p.pos, p.uci;`,
+);
 
 /** Whether a database already carries the index (and how many rows). */
 export function positionIndexInfo(db: InstanceType<typeof Database>): { indexed: boolean; plies: number } {
@@ -121,7 +158,9 @@ export function indexPositions(
     );
     db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
 
-    const insert = db.prepare('INSERT INTO plies (pos, uci, game_id, ply) VALUES (?, ?, ?, ?)');
+    const insert = db.prepare(
+      'INSERT INTO plies (pos, uci, game_id, ply, r) VALUES (?, ?, ?, ?, ?)',
+    );
     const total = (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
     let games = 0;
     let plies = 0;
@@ -130,20 +169,23 @@ export function indexPositions(
     // refuses writes while a cursor is open on the same connection, and
     // .all()-ing every movetext at once would hold a whole Elite month's
     // moves (~140 MB) in memory for no reason.
-    const page = db.prepare('SELECT id, moves FROM games WHERE id > ? ORDER BY id LIMIT 5000');
+    const page = db.prepare(
+      'SELECT id, moves, result FROM games WHERE id > ? ORDER BY id LIMIT 5000',
+    );
     let lastId = 0;
     for (;;) {
-      const batch = page.all(lastId) as { id: number; moves: string }[];
+      const batch = page.all(lastId) as { id: number; moves: string; result: string }[];
       if (batch.length === 0) break;
       db.exec('BEGIN');
       for (const row of batch) {
         const pos = Chess.default();
+        const r = resultCode(row.result);
         let ply = 0;
         for (const san of row.moves.split(' ')) {
           if (ply >= maxPly) break;
           const move = parseSan(pos, san);
           if (!move) break;
-          insert.run(toDbKey(hashSetup(pos.toSetup())), makeUci(move), row.id, ply);
+          insert.run(toDbKey(hashSetup(pos.toSetup())), makeUci(move), row.id, ply, r);
           pos.play(move);
           ply += 1;
           plies += 1;

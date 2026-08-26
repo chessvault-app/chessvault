@@ -648,6 +648,22 @@ export function refGamesApi(
       return c.json({ started: true, name });
     });
 
+    /** The newest "N of M games" line the indexer printed, as numbers —
+        the fraction a progress bar wants, without scraping log text. */
+    const PROGRESS_RE = /([\d,]+) of ([\d,]+) games/;
+    const progressOf = (log: string[]): { done: number; total: number } | null => {
+      for (let i = log.length - 1; i >= 0; i -= 1) {
+        const m = PROGRESS_RE.exec(log[i]!);
+        if (m) {
+          return {
+            done: Number(m[1]!.replaceAll(',', '')),
+            total: Number(m[2]!.replaceAll(',', '')),
+          };
+        }
+      }
+      return null;
+    };
+
     api.get('/refgames/build/status', (c) =>
       c.json(
         job
@@ -656,6 +672,7 @@ export function refGamesApi(
               name: job.name,
               exitCode: job.exitCode,
               seconds: (Date.now() - job.startedAt) / 1000,
+              progress: progressOf(job.log),
               log: job.log.slice(-15),
             }
           : { running: false },
@@ -859,16 +876,8 @@ export function refGamesApi(
     const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db));
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
 
-    const rows = (
-      clauses.length === 0 && hasMoveCounts(db)
-        ? db
-            .prepare(
-              'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
-            )
-            .all(key)
-        : db
-            .prepare(
-              `SELECT p.uci AS uci,
+    const live = db.prepare(
+      `SELECT p.uci AS uci,
                 SUM(g.result = '1-0') AS w,
                 SUM(g.result = '1/2-1/2') AS d,
                 SUM(g.result = '0-1') AS b
@@ -876,9 +885,23 @@ export function refGamesApi(
          WHERE p.pos = ?${sql}
          GROUP BY p.uci
          ORDER BY w + d + b DESC, p.uci`,
+    );
+    // Precomputed sums first; a position they answer nothing for may
+    // still be a THIN one (under MOVE_COUNT_MIN_GAMES the build stores
+    // no rows), so an empty answer falls back to the live aggregation,
+    // which is instant on a row set that small.
+    let rows = (
+      clauses.length === 0 && hasMoveCounts(db)
+        ? db
+            .prepare(
+              'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
             )
-            .all(key, ...binds)
+            .all(key)
+        : live.all(key, ...binds)
     ) as { uci: string; w: number; d: number; b: number }[];
+    if (rows.length === 0 && clauses.length === 0 && hasMoveCounts(db)) {
+      rows = live.all(key) as typeof rows;
+    }
 
     const moves = rows.flatMap((row) => {
       const move = parseUci(row.uci);
@@ -955,13 +978,8 @@ export function refGamesApi(
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     // The map's sweep never filters, and the live aggregation is what made
     // its first batch cost seconds — see REFGAMES_MOVE_COUNTS.
-    const stmt =
-      clauses.length === 0 && hasMoveCounts(db)
-        ? db.prepare(
-            'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
-          )
-        : db.prepare(
-            `SELECT p.uci AS uci,
+    const live = db.prepare(
+      `SELECT p.uci AS uci,
               SUM(g.result = '1-0') AS w,
               SUM(g.result = '1/2-1/2') AS d,
               SUM(g.result = '0-1') AS b
@@ -969,7 +987,13 @@ export function refGamesApi(
        WHERE p.pos = ?${sql}
        GROUP BY p.uci
        ORDER BY w + d + b DESC, p.uci`,
-          );
+    );
+    const summed = clauses.length === 0 && hasMoveCounts(db);
+    const stmt = summed
+      ? db.prepare(
+          'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
+        )
+      : live;
 
     const positions = fens.map((fen) => {
       const setup = parseFen(fen.trim());
@@ -977,12 +1001,16 @@ export function refGamesApi(
       const position = Chess.fromSetup(setup.unwrap());
       if (position.isErr) return { fen, moves: [] };
       const pos = position.unwrap();
-      const rows = stmt.all(toDbKey(hashSetup(pos.toSetup())), ...binds) as {
+      const key = toDbKey(hashSetup(pos.toSetup()));
+      let rows = stmt.all(key, ...(summed ? [] : binds)) as {
         uci: string;
         w: number;
         d: number;
         b: number;
       }[];
+      // Thin positions store no precomputed rows — see
+      // MOVE_COUNT_MIN_GAMES; their live sum is instant.
+      if (rows.length === 0 && summed) rows = live.all(key) as typeof rows;
       const moves = rows.flatMap((row) => {
         const move = parseUci(row.uci);
         if (!move || !pos.isLegal(move)) return [];

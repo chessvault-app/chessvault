@@ -545,26 +545,89 @@ describe('position index and explore', () => {
     expect(body.positions[2]!.moves).toEqual([]);
   });
 
-  it('precomputes the unfiltered sums, and answers the same without them', async () => {
-    // indexPositions built move_counts: one row per (position, move), so
-    // the two start-position e4 games collapse into one of the 8 rows.
+  it('stores no sums for thin positions, and answers them live all the same', async () => {
+    // Every position in this three-game fixture is reached by fewer than
+    // MOVE_COUNT_MIN_GAMES games, so indexPositions stored nothing — the
+    // table exists, empty, and the explorer answers through the live
+    // fallback, identically by construction.
     const before = await explore(`fen=${encodeURIComponent(START)}`);
+    expect(before.moves.length).toBeGreaterThan(0);
     const db = new Database(dbPath);
-    expect((db.prepare('SELECT COUNT(*) AS n FROM move_counts').get() as { n: number }).n).toBe(8);
-    // An older file has no sums until its next tune — the live aggregation
-    // must answer identically in the meantime.
+    expect((db.prepare('SELECT COUNT(*) AS n FROM move_counts').get() as { n: number }).n).toBe(0);
+    // An older file has no sums table at all until its next tune — same
+    // fallback, same answers.
     db.exec('DROP INDEX idx_move_counts_pos; DROP TABLE move_counts;');
     db.close();
     refgames.closeDb();
     const without = await explore(`fen=${encodeURIComponent(START)}`);
     expect(without).toEqual(before);
-    // And the deploy-time tune is what puts them back.
+    // And the deploy-time tune is what puts the table back.
     const restore = new Database(dbPath);
     expect(tune(restore)).toContain('move_counts');
     restore.close();
     refgames.closeDb();
     const restored = await explore(`fen=${encodeURIComponent(START)}`);
     expect(restored).toEqual(before);
+  });
+
+  it('precomputes the sums where enough games pay for them', async () => {
+    // Six games through the start position crosses MOVE_COUNT_MIN_GAMES:
+    // the start rows are stored, deeper thin positions still are not,
+    // and both kinds answer alike.
+    const wideDir = mkdtempSync(join(tmpdir(), 'refgames-wide-'));
+    const widePath = join(wideDir, 'games.sqlite');
+    const db = new Database(widePath);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '6'), ('sources', 'wide.pgn');
+    `);
+    const insert = db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    for (let i = 0; i < 5; i += 1) {
+      insert.run(`W${i}`, `B${i}`, 2500, 2500, '1-0', '2026.01.01', 'T', 'C20', 'Open', 'e4 e5');
+    }
+    insert.run('W5', 'B5', 2500, 2500, '0-1', '2026.01.01', 'T', 'A40', 'Queen', 'd4 d5');
+    db.close();
+    indexPositions(widePath);
+
+    const wide = refGamesApi(widePath);
+    const wideApp = new Hono().route('/api', wide);
+    try {
+      const stored = new Database(widePath, { readonly: true });
+      // The start position (6 games) and the one after e4 (5) are
+      // stored; the position after d4 has one game and is not.
+      const perPos = stored
+        .prepare('SELECT pos, SUM(w + d + b) AS n FROM move_counts GROUP BY pos ORDER BY n DESC')
+        .all() as { n: number }[];
+      stored.close();
+      expect(perPos.map((p) => p.n)).toEqual([6, 5]);
+
+      const start = (await (
+        await wideApp.request(`/api/refgames/explore?fen=${encodeURIComponent(START)}`)
+      ).json()) as { games: number; moves: { san: string; total: number }[] };
+      expect(start.games).toBe(6);
+      expect(start.moves.map((m) => [m.san, m.total])).toEqual([
+        ['e4', 5],
+        ['d4', 1],
+      ]);
+      // A thin position (one game reaches it) answers through the fallback.
+      const AFTER_D4 = 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1';
+      const deep = (await (
+        await wideApp.request(`/api/refgames/explore?fen=${encodeURIComponent(AFTER_D4)}`)
+      ).json()) as { moves: { san: string; total: number }[] };
+      expect(deep.moves.map((m) => [m.san, m.total])).toEqual([['d5', 1]]);
+    } finally {
+      wide.closeDb();
+      rmSync(wideDir, { recursive: true, force: true });
+    }
   });
 
   it('refuses a batch big enough to be a denial of service', async () => {
