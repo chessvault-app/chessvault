@@ -33,6 +33,27 @@ const REFGAMES_DIR = resolve(DATA, 'refgames');
 const LEGACY_DB = resolve(DATA, 'refgames.sqlite');
 const PAGE = 50;
 
+/**
+ * The native pipeline binary, when one is present — the heavy jobs and
+ * the deep-search scan prefer it (measured on an Elite month: build
+ * 71.8 s vs ~180 s, deep search 1.3 s vs 12.7 s, both answering
+ * byte-identically; see native/). Nothing requires it: a fresh checkout,
+ * the demo and the tests all run the JS children exactly as before, and
+ * CHESS_NATIVE=0 forces that path when comparing the two is the point.
+ * Looked up per spawn so a binary built mid-session is picked up.
+ */
+function nativeBinary(): string | null {
+  if (process.env.CHESS_NATIVE === '0') return null;
+  const exe = process.platform === 'win32' ? 'chessvault-core.exe' : 'chessvault-core';
+  for (const candidate of [
+    resolve(REPO_ROOT, 'server', exe), // packaged beside the bundled .mjs children
+    resolve(REPO_ROOT, 'native', 'target', 'release', exe), // a repo cargo build
+  ]) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
 /** Same shape as book names: file names, no slashes, no dot-only names. */
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
@@ -563,22 +584,32 @@ export function refGamesApi(
 
     /**
      * Spawn one job child (a build, or the position-index pass), feeding
-     * its output into the shared job log — the packaged server runs the
-     * bundled .mjs beside it, the repo runs the source through tsx.
+     * its output into the shared job log — the native binary when one is
+     * present (same argv shape plus `--data`, same progress lines), else
+     * the bundled .mjs beside a packaged server, else the source through
+     * tsx. The three print the same lines, so /build/status and its
+     * PROGRESS_RE never know which one ran.
      */
     const spawnJob = (
       current: BuildJob,
       bundledName: string,
       scriptPath: string,
       scriptArgs: string[],
+      binaryArgs: string[],
       onClose: (code: number | null) => void,
     ): void => {
       job = current;
+      const native = nativeBinary();
       const bundled = resolve(REPO_ROOT, 'server', bundledName);
-      const args = existsSync(bundled)
-        ? [bundled, ...scriptArgs]
-        : ['--import', 'tsx', scriptPath, ...scriptArgs];
-      const child = spawn(process.execPath, args, {
+      const [file, args] = native
+        ? [native, binaryArgs]
+        : [
+            process.execPath,
+            existsSync(bundled)
+              ? [bundled, ...scriptArgs]
+              : ['--import', 'tsx', scriptPath, ...scriptArgs],
+          ];
+      const child = spawn(file, args, {
         cwd: REPO_ROOT,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
@@ -608,6 +639,7 @@ export function refGamesApi(
         'build-refgames.mjs',
         'scripts/build-refgames.ts',
         [...sources, '--name', name, ...(append ? ['--append'] : [])],
+        ['build', ...sources, '--name', name, ...(append ? ['--append'] : []), '--data', DATA],
         (code) => {
           close(name); // reopen the fresh file on next query
           // Windows: our own read handle blocks the script's rename-over, so
@@ -682,8 +714,13 @@ export function refGamesApi(
       }
       const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
       close(name); // the job rewrites the live file
-      spawnJob(current, 'optimize-refgames.mjs', 'scripts/optimize-refgames.ts', [name], () =>
-        close(name),
+      spawnJob(
+        current,
+        'optimize-refgames.mjs',
+        'scripts/optimize-refgames.ts',
+        [name],
+        ['optimize', name, '--data', DATA],
+        () => close(name),
       );
       return c.json({ started: true, name });
     });
@@ -708,6 +745,7 @@ export function refGamesApi(
         'index-refgames-positions.mjs',
         'scripts/index-refgames-positions.ts',
         [name],
+        ['index', name, '--data', DATA],
         () => close(name), // reopen so the fresh plies table and meta show
       );
       return c.json({ started: true, name });
@@ -1167,6 +1205,43 @@ export function refGamesApi(
     const targetB = target.board.black.size();
     const missing = 32 - targetW - targetB;
     const wantBlackToMove = target.turn === 'black';
+
+    // The native scan, when the binary is here and this mount is the
+    // real data directory (its --data layout): same prefilters, same
+    // filters, same frames — measured 1.3 s where the loop below takes
+    // 12.7 s on an Elite month — spawned per request and piped straight
+    // through. A client that goes away takes the child with it, which
+    // is the cleanest cancel this scan can have.
+    const native = dir === REFGAMES_DIR ? nativeBinary() : null;
+    if (native) {
+      const filters: Record<string, string> = {};
+      for (const key of ['result', 'minElo', 'band', 'player', 'side', 'outcome', 'opening', 'event', 'from', 'to']) {
+        const value = c.req.query(key);
+        if (value !== undefined) filters[key] = value;
+      }
+      c.header('Content-Type', 'application/x-ndjson');
+      return stream(c, (out) =>
+        new Promise<void>((done) => {
+          const child = spawn(
+            native,
+            ['deep-search', found.name, '--fen', fen, '--filters', JSON.stringify(filters), '--data', DATA],
+            { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
+          );
+          const kill = (): void => {
+            child.kill();
+          };
+          c.req.raw.signal?.addEventListener('abort', kill);
+          out.onAbort(kill);
+          child.stdout.on('data', (chunk: Buffer) => {
+            void out.write(chunk).catch(kill);
+          });
+          child.on('close', () => {
+            c.req.raw.signal?.removeEventListener('abort', kill);
+            done();
+          });
+        }),
+      );
+    }
 
     const { clauses, binds } = gamesWhere((k) => c.req.query(k), '', hasLookups(db));
     const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';

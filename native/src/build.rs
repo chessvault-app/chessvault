@@ -268,8 +268,13 @@ pub fn run_build(
     if !append {
         if let Err(error) = std::fs::rename(&tmp, &out) {
             // Windows: a server holding the old database open blocks the
-            // rename — leave the .building file for the server to swap in.
-            if error.kind() != std::io::ErrorKind::PermissionDenied {
+            // rename (ERROR_ACCESS_DENIED or ERROR_SHARING_VIOLATION —
+            // Node reports both as EPERM, which is what the TS script
+            // tolerates). Leave the .building file for the server to
+            // swap in, and exit 0 so it knows the build itself is good.
+            let busy = error.kind() == std::io::ErrorKind::PermissionDenied
+                || matches!(error.raw_os_error(), Some(5) | Some(32));
+            if !busy {
                 return Err(error.into());
             }
             println!("rename deferred (target busy) — server will swap the file in");

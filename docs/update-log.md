@@ -55,6 +55,19 @@ games, and databases that grow instead of being rebuilt.
   corpus answers — at your level, when a band is given — aggregated
   across your recent games, strongest habit first. The first sync of a
   big vault also stopped stalling the request that triggered it.
+- **A native fast path for the heavy jobs, optional by construction.**
+  `native/` holds `chessvault-core`, a Rust binary mirroring the build,
+  index, optimize and deep-search jobs byte-for-byte — golden-tested
+  against the JS pipeline's own fixtures, and proven by rebuilding an
+  Elite month to zero differing rows. When a build of it is present the
+  server spawns it instead of the JS children (same argv shape, same
+  progress lines, same ndjson frames; `CHESS_NATIVE=0` forces the JS
+  path): measured on 280k games, a full build drops from ~180 s to
+  71.8 s and the whole-database position search from 12.7 s to 1.3 s,
+  at a quarter of the memory. Without the binary — a fresh checkout,
+  the demo, the tests — everything runs exactly as before. It is not
+  shipped in releases yet; that (and the licence inventory for its
+  crates) is the distribution step still ahead.
 
 ## 0.4.9
 
