@@ -1,4 +1,4 @@
-import { Database, ExternalLink, Hammer, RotateCw, SlidersHorizontal } from 'lucide-react';
+import { Database, ExternalLink, Hammer, RotateCw, SearchCheck, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { api } from '@/lib/api';
@@ -19,6 +19,7 @@ import {
   PLAYERS_DB,
   REF_DB,
   refDbName,
+  refFilterQuery,
   REMOTE_DBS,
   useExplorer,
   type ExplorerMove,
@@ -345,24 +346,33 @@ export function ExplorerPane({
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
               {moves.length === 0 && fresh ? (
-                <p className="text-muted-foreground px-3 py-3 text-sm">
-                  {mine
-                    ? filtered
-                      ? t('None of your games reached this position under these filters.')
-                      : t('None of your games reached this position.')
-                    : t('No games from this position in “{book}”.', {
-                      book: refdb ? bookLabel(refDbName(book!)) : bookLabel(book ?? ''),
-                    })}
-                  {/* In the demo, running out is the expected edge of a
-                      curated slice rather than a gap in the data — say
-                      which, or it reads as the app failing to answer. */}
-                  {isDemo() && !mine && (
-                    <>
-                      {' '}
-                      {t('The demo database holds a curated slice of games.')}
-                    </>
+                <>
+                  <p className="text-muted-foreground px-3 py-3 text-sm">
+                    {mine
+                      ? filtered
+                        ? t('None of your games reached this position under these filters.')
+                        : t('None of your games reached this position.')
+                      : t('No games from this position in “{book}”.', {
+                        book: refdb ? bookLabel(refDbName(book!)) : bookLabel(book ?? ''),
+                      })}
+                    {/* In the demo, running out is the expected edge of a
+                        curated slice rather than a gap in the data — say
+                        which, or it reads as the app failing to answer. */}
+                    {isDemo() && !mine && (
+                      <>
+                        {' '}
+                        {t('The demo database holds a curated slice of games.')}
+                      </>
+                    )}
+                  </p>
+                  {/* The index stops at ply 30; deeper positions can
+                      still be hunted through every game's movetext. An
+                      explicit press, never automatic — the worst case is
+                      a scan of the whole database. */}
+                  {refdb && !isDemo() && (
+                    <DeepSearch db={refDbName(book!)} fen={node.fen} />
                   )}
-                </p>
+                </>
               ) : (
                 <>
                   <table className="w-full text-sm">
@@ -862,6 +872,145 @@ function MoveRow({
         <ResultBar w={move.w} d={move.d} b={move.b} />
       </td>
     </tr>
+  );
+}
+
+interface DeepHit {
+  id: number;
+  white: string;
+  black: string;
+  white_elo: number;
+  black_elo: number;
+  result: string;
+  date: string | null;
+  ply: number;
+}
+
+/**
+ * Hunt the WHOLE database for the current position — any depth, where
+ * the position index stops at ply 30. An explicit press with a progress
+ * line: the server streams ndjson while it scans (measured on an Elite
+ * month: ~9-13 s unfiltered, seconds with the reference filters on, and
+ * they apply here exactly as they do to the move table).
+ */
+function DeepSearch({ db, fen }: { db: string; fen: string }) {
+  const refFilters = useExplorer((s) => s.refFilters);
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<{ scanned: number; total: number } | null>(null);
+  const [hits, setHits] = useState<DeepHit[] | null>(null);
+  // The position moved on: whatever the stream still says is about a
+  // board nobody is looking at.
+  const seq = useRef(0);
+  useEffect(() => {
+    seq.current += 1;
+    setRunning(false);
+    setProgress(null);
+    setHits(null);
+  }, [fen, db]);
+
+  const run = async (): Promise<void> => {
+    const mine = ++seq.current;
+    setRunning(true);
+    setHits([]);
+    setProgress(null);
+    try {
+      const query = new URLSearchParams({ fen, db });
+      const filterQuery = refFilterQuery(refFilters);
+      const res = await fetch(
+        `/api/refgames/deep-search?${query}${filterQuery ? `&${filterQuery}` : ''}`,
+      );
+      if (!res.ok || !res.body) throw new Error('deep search failed');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (seq.current !== mine) {
+          void reader.cancel();
+          return;
+        }
+        buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+        const lines = buffer.split('\n');
+        buffer = done ? '' : (lines.pop() ?? '');
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const frame = JSON.parse(line) as
+            | ({ type: 'game' } & DeepHit)
+            | { type: 'progress' | 'done'; scanned: number; total: number };
+          if (frame.type === 'game') {
+            const { type: _type, ...hit } = frame;
+            setHits((prev) => [...(prev ?? []), hit]);
+          } else {
+            setProgress({ scanned: frame.scanned, total: frame.total });
+          }
+        }
+        if (done) break;
+      }
+    } catch {
+      // offline hiccup — what arrived stays on screen
+    }
+    if (seq.current === mine) setRunning(false);
+  };
+
+  const open = async (hit: DeepHit): Promise<void> => {
+    try {
+      const { pgn } = await api<{ pgn: string }>(
+        `/api/refgames/${hit.id}/pgn?db=${encodeURIComponent(db)}`,
+      );
+      // The same leave-guard dance as opening a top game (see
+      // TopGamesList.loadPgn): detach any open document first.
+      if (useStudy.getState().openId) {
+        if (!(await confirmLeave())) return;
+        await useStudy.getState().close();
+      }
+      if (!useAnalysis.getState().loadPgn(pgn)) return;
+      useAnalysis.setState({ handoff: true });
+      navigateNow('board');
+    } catch {
+      // a game the server cannot hand over — the list stays
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 px-3 pb-3">
+      {hits === null ? (
+        <Button variant="secondary" size="sm" className="self-start" onClick={() => void run()}>
+          <SearchCheck className="size-3.5" data-icon="inline-start" />
+          {t('Search every game for this position')}
+        </Button>
+      ) : (
+        <>
+          {progress && (
+            <p className="text-muted-foreground text-sm tabular-nums">
+              {running
+                ? t('Searching… {scanned} of {total} games', {
+                    scanned: progress.scanned.toLocaleString(),
+                    total: progress.total.toLocaleString(),
+                  })
+                : t('{n} games reach this position', { n: hits.length })}
+            </p>
+          )}
+          <ul className="flex flex-col gap-px">
+            {hits.map((g) => (
+              <li key={g.id}>
+                <button
+                  type="button"
+                  onClick={() => void open(g)}
+                  title={t('Open on the analysis board')}
+                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-left text-sm"
+                >
+                  <span className="text-foreground min-w-0 flex-1 truncate">
+                    {g.white} – {g.black}
+                  </span>
+                  <ResultBadge result={g.result} />
+                  {g.date && <span className="text-muted-foreground shrink-0 text-xs">{g.date}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }
 

@@ -1170,22 +1170,26 @@ export function refGamesApi(
 
     const { clauses, binds } = gamesWhere((k) => c.req.query(k), '', hasLookups(db));
     const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
+    // A database indexed before the reachability columns scans without
+    // the prefilter — slower, never wrong; the next index pass adds them.
+    const hasMen =
+      db.prepare("SELECT 1 FROM pragma_table_info('games') WHERE name = 'final_wmen'").get() !==
+      undefined;
+    const menWhere = hasMen
+      ? ` AND (final_wmen IS NULL OR final_wmen <= ?)
+          AND (final_bmen IS NULL OR final_bmen <= ?)
+          AND (ply_count IS NULL OR ply_count >= ?)`
+      : '';
+    const menBinds = hasMen ? [targetW, targetB, missing] : [];
     const total = (
       db
-        .prepare(
-          `SELECT COUNT(*) AS n FROM games
-           WHERE (final_wmen IS NULL OR final_wmen <= ?)
-             AND (final_bmen IS NULL OR final_bmen <= ?)
-             AND (ply_count IS NULL OR ply_count >= ?)${sqlAnd}`,
-        )
-        .get(targetW, targetB, missing, ...binds) as { n: number }
+        .prepare(`SELECT COUNT(*) AS n FROM games WHERE 1${menWhere}${sqlAnd}`)
+        .get(...menBinds, ...binds) as { n: number }
     ).n;
     const page = db.prepare(
       `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
        FROM games
-       WHERE id > ? AND (final_wmen IS NULL OR final_wmen <= ?)
-         AND (final_bmen IS NULL OR final_bmen <= ?)
-         AND (ply_count IS NULL OR ply_count >= ?)${sqlAnd}
+       WHERE id > ?${menWhere}${sqlAnd}
        ORDER BY id LIMIT 1000`,
     );
 
@@ -1195,7 +1199,7 @@ export function refGamesApi(
       let scanned = 0;
       let matched = 0;
       for (;;) {
-        const batch = page.all(lastId, targetW, targetB, missing, ...binds) as (RefGameRow & {
+        const batch = page.all(lastId, ...menBinds, ...binds) as (RefGameRow & {
           moves: string;
         })[];
         if (batch.length === 0) break;

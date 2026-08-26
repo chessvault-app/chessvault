@@ -428,6 +428,19 @@ describe('directory mount', () => {
     expect(await q('q=&player=alphaplay&outcome=won')).toHaveLength(1);
   });
 
+  it('deep-searches a database that predates the reachability columns', async () => {
+    // These hand-made files never ran the index pass, so games carries
+    // no final_wmen/ply_count — the scan must run unprefiltered rather
+    // than erroring at prepare time (found live on a pre-upgrade file).
+    const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const res = await app.request(
+      `/api/refgames/deep-search?db=alpha&fen=${encodeURIComponent(START_FEN)}`,
+    );
+    expect(res.status).toBe(200);
+    const frames = (await res.text()).split('\n').filter(Boolean).map((l) => JSON.parse(l));
+    expect(frames.at(-1)).toMatchObject({ type: 'done', matched: 1 });
+  });
+
   it('finds a game in whichever database holds it, and says which', async () => {
     const found = await (
       await app.request('/api/refgames/find?white=BetaPlayer&black=Opponent')

@@ -176,7 +176,7 @@ export function hasRefFilters(f: RefDbFilters): boolean {
   return Boolean(f.result || f.minElo || f.band || f.from || f.to);
 }
 
-function refFilterQuery(f: RefDbFilters): string {
+export function refFilterQuery(f: RefDbFilters): string {
   const query = new URLSearchParams();
   if (f.result) query.set('result', f.result);
   if (f.minElo) query.set('minElo', String(f.minElo));
