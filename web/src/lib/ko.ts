@@ -648,6 +648,8 @@ export const ko: Record<string, string> = {
     '표시할 것이 없습니다: 이 데이터베이스에 충분한 표본이 있는 곳에서는 최근의 내 수가 그들의 흔한 응수 안에 있습니다.',
   'The comparison could not be read — is the server reachable?':
     '비교를 읽을 수 없습니다 — 서버에 연결되어 있나요?',
+  'This database’s sums are not split by level — showing all of its games.':
+    '이 데이터베이스의 합계는 레벨로 나뉘어 있지 않습니다 — 전체 게임을 보여 줍니다.',
   'Nothing — hide gaps': '없음 — 갭 숨기기',
   'Where opponent replies come from': '상대 응수의 출처',
   'Against the field': '필드와 비교',

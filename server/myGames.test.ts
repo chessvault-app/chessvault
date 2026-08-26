@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { INITIAL_FEN, makeFen } from 'chessops/fen';
@@ -400,9 +400,11 @@ describe('my games index', () => {
     );
     const res = await compareApp.request('/api/mygames/compare?side=white&db=elite');
     expect(res.status).toBe(200);
-    const { rows } = (await res.json()) as {
+    const { rows, banded: unbandedAsk } = (await res.json()) as {
       rows: { sans: string[]; games: number; myMove: { san: string; total: number }; top: { san: string } }[];
+      banded: boolean;
     };
+    expect(unbandedAsk).toBe(true);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       sans: [],
@@ -412,15 +414,34 @@ describe('my games index', () => {
     });
 
     // A band the corpus sits outside empties the sample — no flags, not
-    // false ones.
+    // false ones — and the band WAS applied, so the answer says so.
     const banded = await compareApp.request(
       '/api/mygames/compare?side=white&db=elite&band=1200-1599',
     );
-    expect(((await banded.json()) as { rows: unknown[] }).rows).toEqual([]);
+    expect((await banded.json()) as object).toMatchObject({ banded: true, rows: [] });
     // Off-bucket bands are refused, not silently approximated.
     expect(
       (await compareApp.request('/api/mygames/compare?side=white&db=elite&band=1250-1599')).status,
     ).toBe(400);
+
+    // Sums from before the bucket column cannot slice by level: the
+    // rows come back corpus-wide and `banded: false` says so, rather
+    // than letting a UI label them "at your level".
+    copyFileSync(join(refDir, 'elite.sqlite'), join(refDir, 'legacy.sqlite'));
+    const legacy = new Database(join(refDir, 'legacy.sqlite'));
+    legacy.exec(`
+      CREATE TABLE mc AS SELECT pos, uci, SUM(w) AS w, SUM(d) AS d, SUM(b) AS b
+        FROM move_counts GROUP BY pos, uci;
+      DROP TABLE move_counts;
+      ALTER TABLE mc RENAME TO move_counts;
+    `);
+    legacy.close();
+    const unbucketed = (await (
+      await compareApp.request('/api/mygames/compare?side=white&db=legacy&band=1200-1599')
+    ).json()) as { banded: boolean; rows: { myMove: { san: string } }[] };
+    expect(unbucketed.banded).toBe(false);
+    expect(unbucketed.rows).toHaveLength(1); // the corpus-wide answer, flagged honestly
+    expect(unbucketed.rows[0]!.myMove.san).toBe('d4');
   });
 
   it('keeps both seats of a game browsed from both archives', async () => {

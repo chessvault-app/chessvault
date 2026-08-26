@@ -528,30 +528,39 @@ class MyGamesIndex {
     gamesWindow: number,
     band: { lo: number; hi: number | null } | null,
   ): {
-    key: string;
-    sans: string[];
-    games: number;
-    myMove: { san: string; total: number };
-    refTotal: number;
-    top: { san: string; w: number; d: number; b: number; total: number };
-  }[] {
+    /** Whether the level band was actually applied. False when one was
+        asked for but the file's sums predate the bucket column — the
+        rows then speak for the whole corpus, and the UI must not label
+        them "at your level". */
+    banded: boolean;
+    rows: {
+      key: string;
+      sans: string[];
+      games: number;
+      myMove: { san: string; total: number };
+      refTotal: number;
+      top: { san: string; w: number; d: number; b: number; total: number };
+    }[];
+  } {
+    const empty = { banded: band === null, rows: [] };
     const db = this.open();
-    if (!db) return [];
+    if (!db) return empty;
     let ref: InstanceType<typeof Database> | null = null;
     try {
       ref = new Database(refFile, { readonly: true, fileMustExist: true });
     } catch {
-      return []; // no such database (or a mount that cannot read it)
+      return empty; // no such database (or a mount that cannot read it)
     }
     try {
       const has = (name: string): boolean =>
         ref!
           .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
           .get(name) !== undefined;
-      if (!has('move_counts')) return [];
+      if (!has('move_counts')) return empty;
       const bucketed =
         ref.prepare("SELECT 1 FROM pragma_table_info('move_counts') WHERE name = 'eb'").get() !==
         undefined;
+      const banded = band === null || bucketed;
       // Bands ride the precomputed buckets; the route only admits
       // bucket-aligned ones (parseCompareBand).
       const bandSql =
@@ -612,7 +621,7 @@ class MyGamesIndex {
       // The strongest repeats first, each replayed once for its SAN path
       // — an index row that fails to replay proves a hash collision and
       // drops the flag rather than reporting nonsense.
-      const out: ReturnType<MyGamesIndex['compareAgainst']> = [];
+      const out: ReturnType<MyGamesIndex['compareAgainst']>['rows'] = [];
       const sorted = [...flags.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 50);
       for (const [posKey, flag] of sorted) {
         const plies = pliesOf.all(flag.gameId) as { pos: string; uci: string }[];
@@ -657,7 +666,7 @@ class MyGamesIndex {
           },
         });
       }
-      return out;
+      return { banded, rows: out };
     } finally {
       ref.close();
     }
@@ -978,9 +987,13 @@ export function myGamesApi(
     }
     const limit = Math.min(500, Math.max(1, Number(c.req.query('limit')) || 200));
     index.sync();
-    return c.json({
-      rows: index.compareAgainst(resolve(refgamesDir, `${dbName}.sqlite`), side, limit, band),
-    });
+    const { banded, rows } = index.compareAgainst(
+      resolve(refgamesDir, `${dbName}.sqlite`),
+      side,
+      limit,
+      band,
+    );
+    return c.json({ banded, rows });
   });
 
   /** What the index holds — and a way to make it catch up on demand. */

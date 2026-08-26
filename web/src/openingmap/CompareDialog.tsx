@@ -80,6 +80,10 @@ export function CompareDialog({
 
   const [rows, setRows] = useState<CompareRow[] | null>(null);
   const [failed, setFailed] = useState(false);
+  // False when a band was asked for but the database's sums predate the
+  // level buckets: the server answers corpus-wide, and calling that
+  // "at your level" would be a lie the chip tells.
+  const [banded, setBanded] = useState(true);
   // Only asked when the report comes back empty, to tell "your moves
   // pass" apart from "there is nothing to read" — see the empty copy.
   const [indexedGames, setIndexedGames] = useState<number | null>(null);
@@ -88,10 +92,11 @@ export function CompareDialog({
     setRows(null);
     setFailed(false);
     const query = `side=${color}&db=${encodeURIComponent(db)}${band ? `&band=${band}` : ''}`;
-    void api<{ rows: CompareRow[] }>(`/api/mygames/compare?${query}`)
+    void api<{ rows: CompareRow[]; banded?: boolean }>(`/api/mygames/compare?${query}`)
       .then((body) => {
         if (!live) return;
         setRows(body.rows);
+        setBanded(body.banded !== false);
         if (body.rows.length === 0) {
           void api<{ games: number }>('/api/mygames/status')
             .then((s) => {
@@ -164,6 +169,11 @@ export function CompareDialog({
               />
             ))}
           </div>
+          {band !== undefined && rows !== null && !banded && (
+            <p className="text-warn text-sm">
+              {t('This database’s sums are not split by level — showing all of its games.')}
+            </p>
+          )}
         </div>
         {rows === null ? (
           <div className="flex flex-col gap-2">
