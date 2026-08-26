@@ -266,7 +266,14 @@ export function indexPositions(
     const setMen = db.prepare(
       'UPDATE games SET ply_count = ?, final_wmen = ?, final_bmen = ? WHERE id = ?',
     );
-    const total = (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+    // What THIS pass will replay — for an append, the games above the
+    // high-water id, not the whole table. Counted against the table's
+    // total, a small append never hit the every-25k line or the
+    // games === total one, so it logged no progress at all and the
+    // status endpoint's bar had nothing to read.
+    const total = (
+      db.prepare('SELECT COUNT(*) AS n FROM games WHERE id > ?').get(sinceId) as { n: number }
+    ).n;
     let games = 0;
     let plies = 0;
 

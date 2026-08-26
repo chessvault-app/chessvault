@@ -165,9 +165,14 @@ pub fn index_positions(
         let _ = conn.execute_batch(&format!("ALTER TABLE games ADD COLUMN {column} INTEGER"));
     }
 
-    let total = conn.query_row("SELECT COUNT(*) AS n FROM games", [], |r| {
-        r.get::<_, i64>(0)
-    })? as u64;
+    // What THIS pass will replay — for an append, the games above the
+    // high-water id (see the TS twin: counted against the whole table,
+    // a small append logged no progress at all).
+    let total = conn.query_row(
+        "SELECT COUNT(*) AS n FROM games WHERE id > ?",
+        [since_id],
+        |r| r.get::<_, i64>(0),
+    )? as u64;
     let mut games: u64 = 0;
     let mut plies: u64 = 0;
 
