@@ -236,7 +236,22 @@ export function Board({
     };
     api.current = Chessground(host.current, config);
     if (apiRef) apiRef.current = api.current;
+    // chessground caches the board's rect and drops the cache only on
+    // document scroll and window resize — a layout shift that MOVES the
+    // board without either (the eval bar row appearing above it when the
+    // engine goes on) left the cache stale, and every touch after it was
+    // translated through the old rect: taps landed a rank off and read as
+    // the board ignoring the finger. Cleared at the start of each gesture
+    // instead — capture phase on the wrap, so it beats chessground's own
+    // handlers on the same events; the memo refills on first read, one
+    // getBoundingClientRect per gesture.
+    const el = host.current;
+    const refreshBounds = (): void => api.current?.state.dom.bounds.clear();
+    for (const ev of ['touchstart', 'mousedown'] as const)
+      el.addEventListener(ev, refreshBounds, { capture: true, passive: true });
     return () => {
+      for (const ev of ['touchstart', 'mousedown'] as const)
+        el.removeEventListener(ev, refreshBounds, { capture: true });
       api.current?.destroy();
       api.current = null;
       if (apiRef) apiRef.current = null;
