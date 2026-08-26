@@ -54,6 +54,32 @@ rm -rf dist && tar xzf /tmp/deploy-dist.tar.gz && rm /tmp/deploy-dist.tar.gz
 # milliseconds once applied, so it is cheaper to run every deploy than to
 # remember which databases predate which optimisation.
 npx tsx scripts/tune-dbs.ts
+
+# The native fast path, rebuilt against the commit that was just deployed.
+#
+# This is not an optimisation step, it is a correctness one. The binary
+# lives under native/target/, which is gitignored — so the `git reset
+# --hard` above does NOT touch it, and without this a binary compiled from
+# an older commit would go on answering beside this commit's JavaScript.
+# The golden fixtures prove the two agree AT THE SAME COMMIT and say
+# nothing about that pairing; a zobrist or schema change between them is
+# silent wrong answers, which is the one failure this whole pipeline was
+# built to make impossible.
+#
+# A no-op in about a second when nothing changed, and skipped entirely on
+# a box with no Rust toolchain — the server then spawns the JavaScript
+# children exactly as it always has. A FAILED build deletes the old
+# binary rather than leaving it: falling back to JavaScript is slower and
+# right, where a stale binary is fast and wrong.
+if [ -x "$HOME/.cargo/bin/cargo" ] || command -v cargo >/dev/null 2>&1; then
+  if ! PATH="$HOME/.cargo/bin:$PATH" nice -n 19 \
+      cargo build --release --manifest-path native/Cargo.toml; then
+    echo "deploy: native build FAILED — dropping the old binary so the" >&2
+    echo "        server falls back to the JavaScript jobs (slower, correct)" >&2
+    rm -f native/target/release/chessvault-core
+  fi
+fi
+
 sudo systemctl restart "$SERVICE"
 sleep 3
 systemctl is-active "$SERVICE"

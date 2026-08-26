@@ -46,16 +46,23 @@ not a layer over what you were doing (see "The manager" in
 [databases.md](databases.md)) — so collapsing it is a UX decision to
 make on purpose, not a cleanup to fold into other work.
 
-**A native binary for servers.** Shipping it to the *desktop* is done
-(0.5.0: each platform's packaging job builds the crate on its own
-runner and `build-server.mjs` drops it beside the bundled JS children).
-A server install still compiles its own — `cargo build --release` in
-`native/`, which needs a Rust toolchain on the box. Publishing loose
-per-platform binaries as release assets, the way the engine is fetched
-at setup, would remove that; it is not obviously worth a second
-distribution channel while `deploy.sh` targets machines their operators
-already control. Worth doing if servers without a toolchain become a
-real case.
+**A prebuilt native binary for servers.** Shipping it to the *desktop*
+is done (0.5.0: each platform's packaging job builds the crate on its
+own runner and `build-server.mjs` drops it beside the bundled JS
+children). A server *compiles* its own instead: `deploy.sh` runs
+`cargo build --release` on every deploy when it finds a toolchain, so
+the binary can never drift from the commit it sits beside — and skips
+it silently when it does not, leaving the JavaScript jobs in charge.
+
+What is still deferred is removing the toolchain requirement, by
+publishing per-platform binaries as release assets and fetching the one
+matching the version, the way the engine is fetched at setup. The
+Linux packaging job already produces exactly that artefact, so it is
+mostly plumbing. It buys little while `deploy.sh` targets machines
+their operators already control and where installing rustup is a
+one-off (measured: a 2 GB Lightsail box builds the whole crate
+graph — peak well under its RAM, with swap never touched). Worth doing
+if toolchain-free servers become a real case.
 
 ## Kept for a real use case
 

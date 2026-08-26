@@ -452,10 +452,15 @@ that platform, so an installed app is fast without you doing anything:
 a 280 k-game build drops from ~180 s to ~72 s and a whole-database
 position search from ~13 s to ~1 s, at a quarter of the memory.
 A server or a source checkout gets it with `cargo build --release` in
-that directory — the server picks up the binary by itself. Without it,
-everything runs exactly as before, in JavaScript; `CHESS_NATIVE=0`
-forces that path even when the binary is there, which is how the two
-are compared.
+that directory — the server picks the binary up by itself, no restart
+needed, because the lookup happens per job. `scripts/deploy.sh` runs
+that build on every deploy when the box has a toolchain, which is not
+housekeeping but correctness: `native/target/` is gitignored, so
+without it a binary from an older commit would keep answering beside
+newer JavaScript, and the golden fixtures only prove the two agree at
+the *same* commit. Without any of it, everything runs as before, in
+JavaScript; `CHESS_NATIVE=0` forces that path even when the binary is
+there, which is how the two are compared.
 
 ## Developing
 
