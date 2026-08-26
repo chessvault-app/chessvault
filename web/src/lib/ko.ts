@@ -1048,6 +1048,7 @@ export const ko: Record<string, string> = {
     '아직 없는 게임만 색인됩니다.',
   'No PGN collections are ticked — pick them on the PGN collections tab first.':
     '선택된 PGN 모음이 없습니다 — 먼저 PGN 모음 탭에서 선택하세요.',
+  Optimize: '최적화',
   'Optimize this database': '이 데이터베이스 최적화',
   'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.':
     '“{name}”을(를) 최적화할까요? 완전히 같은 게임을 제거하고, 파생 테이블을 새로 만들고, 파일을 압축합니다. 시간이 걸릴 수 있습니다.',
@@ -1465,6 +1466,7 @@ export const ko: Record<string, string> = {
   "Study": "스터디",
   "(no collection)": "(모음 없음)",
   "{n} games": "{n}개 게임",
+  "{n}+ games": "{n}개 이상 게임",
   "depth": "깊이",
   "…or read the position from a picture": "…또는 사진에서 포지션을 읽어 옵니다",
   "Advanced pawn": "전진한 폰",
