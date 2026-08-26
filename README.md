@@ -362,7 +362,7 @@ in ~100 s and its position index (8.3 M rows to move 15) in a further
 curl -O https://database.nikonoel.fr/lichess_elite_2025-11.zip
 unzip lichess_elite_2025-11.zip -d vault/sources/
 
-# the full database, position index included: ~540 MB, ~3 min
+# the full database, position index included: ~600 MB, ~3 min
 npm run build:refgames -- lichess_elite_2025-11.pgn
 ```
 
