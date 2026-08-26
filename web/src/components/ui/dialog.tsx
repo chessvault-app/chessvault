@@ -659,7 +659,15 @@ function DialogFooter({
         '-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end',
         // On a phone the card's own floor (the safe area) is below this
         // band; the band keeps its corners square there.
-        'max-sm:-mb-[calc(1.25rem+var(--safe-b))] max-sm:rounded-b-none max-sm:pb-[calc(1.25rem+var(--safe-b))]',
+        //
+        // The margin reclaims the sheet's whole footer floor
+        // (1.25rem + the safe area); the padding puts back only
+        // 0.5rem + the safe area, which is what every sticky
+        // `sheet-footer` row rests on. Putting the full 1.25rem back left
+        // this band 12px deeper under its buttons than every other sheet
+        // footer in the app -- measured 20px + safe here against 8px +
+        // safe there, which is the gap lanph3re spotted on a phone.
+        'max-sm:-mb-[calc(1.25rem+var(--safe-b))] max-sm:rounded-b-none max-sm:pb-[calc(0.5rem+var(--safe-b))]',
         className,
       )}
       {...props}

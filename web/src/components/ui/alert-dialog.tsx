@@ -67,12 +67,19 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof 
  * The registry's footer: the muted band with the buttons, stacked with
  * the action on top on a phone (col-reverse) — the press that cannot be
  * undone is not a thumb's width from the way out — and a row on a desktop.
+ *
+ * The small size's two-column grid is a DESKTOP shape (`sm:`). It used to
+ * apply at every width, which is what put Cancel and the destructive verb
+ * side by side, each half a screen wide, at the bottom edge of a phone
+ * sheet — the one place the stack was written for. Below the breakpoint
+ * DialogFooter's own col-reverse stands: one button per row, full width,
+ * the action on top.
  */
 function AlertDialogFooter({ className, ...props }: React.ComponentProps<typeof DialogFooter>) {
   return (
     <DialogFooter
       data-slot="alert-dialog-footer"
-      className={cn('group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2', className)}
+      className={cn('sm:group-data-[size=sm]/alert-dialog-content:grid sm:group-data-[size=sm]/alert-dialog-content:grid-cols-2', className)}
       {...props}
     />
   );
