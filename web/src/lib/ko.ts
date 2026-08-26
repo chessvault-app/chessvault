@@ -188,6 +188,12 @@ export const ko: Record<string, string> = {
   'Event (optional)': '대회 (선택)',
   Result: '결과',
   'No reference games yet': '아직 참고 게임이 없습니다',
+  'Could not load reference games': '참고 게임을 불러오지 못했습니다',
+  'No games match': '일치하는 게임이 없습니다',
+  'No game in this database gets through the search and filters above.':
+    '이 데이터베이스에서 위의 검색과 필터를 통과하는 게임이 없습니다.',
+  'Clear search and filters': '검색과 필터 지우기',
+  'Loading more games…': '게임 더 불러오는 중…',
   'Elite games': '엘리트 게임',
   'Where to find a game': '게임을 찾을 곳',
   'Search players, openings, or ECO': '선수, 오프닝 또는 ECO 검색',

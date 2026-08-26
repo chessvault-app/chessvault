@@ -1,4 +1,4 @@
-import { ChevronLeft, Database, Plus, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Database, Plus, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -25,6 +25,7 @@ import {
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
 import { useSlowLoad } from '@/components/skeletons';
+import { EmptyState } from '@/components/empty-state';
 import { GameListShell } from './GameListShell';
 
 import type { RefDb } from '@/databases/RefDbManager';
@@ -376,16 +377,21 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
   if (!meta && metaError) {
     // The pane never learned what it holds, so there is nothing truthful
     // to draw below — say why, and offer the retry (a mount-only load has
-    // no other way back short of reloading the app).
+    // no other way back short of reloading the app). The shared EmptyState,
+    // like the collection's own states — these were hand-rolled paragraphs
+    // with their own typography.
     return (
-      <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-destructive text-center text-sm">{metaError}</p>
+      <EmptyState
+        className={cn('min-h-0 flex-1 p-6', page && 'h-full')}
+        icon={Database}
+        title="Could not load reference games"
+        body={metaError}
+        action={
           <Button variant="secondary" size="sm" onClick={loadMeta}>
             {t('Try again')}
           </Button>
-        </div>
-      </div>
+        }
+      />
     );
   }
 
@@ -395,30 +401,24 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
     // and points at the one place that fixes it. A single-database mount
     // (the demo) has no page to offer, so it only says what is missing.
     return (
-      <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
-        <div className="w-full max-w-md">
-          <p className="text-foreground mb-1 text-center text-base font-semibold">
-            {t('No reference games yet')}
-          </p>
-          {meta.databases ? (
-            <>
-              <p className="text-muted-foreground mb-3 text-center text-sm leading-relaxed">
-                {t('Upload PGN collections and index them into searchable databases of whole games.')}
-              </p>
-              <div className="flex justify-center">
-                <Button variant="default" size="sm" onClick={() => navigate('databases')}>
-                  <Database className="size-3.5" data-icon="inline-start" />
-                  {t('Go to Databases')}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground text-center text-sm leading-relaxed">
-              {t('This server has no reference games database.')}
-            </p>
-          )}
-        </div>
-      </div>
+      <EmptyState
+        className={cn('min-h-0 flex-1 p-6', page && 'h-full')}
+        icon={Database}
+        title="No reference games yet"
+        body={
+          meta.databases
+            ? 'Upload PGN collections and index them into searchable databases of whole games.'
+            : 'This server has no reference games database.'
+        }
+        action={
+          meta.databases ? (
+            <Button variant="default" size="sm" onClick={() => navigate('databases')}>
+              <Database className="size-3.5" data-icon="inline-start" />
+              {t('Go to Databases')}
+            </Button>
+          ) : undefined
+        }
+      />
     );
   }
 
@@ -590,7 +590,9 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
       }
       filters={filters}
       countBand={countBand}
-      list={rowItems}
+      // undefined when empty, or the bare bordered ul doubles the empty
+      // state's own top rule.
+      list={rows.length > 0 ? rowItems : undefined}
       // Nothing for the first moment — a search that answers in 40 ms
       // should not flash a skeleton on the way past (useSlowLoad above);
       // when it does draw, it REPLACES the rows instead of stacking a
@@ -606,7 +608,39 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
           : 'flex-1 overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022]'
       }
       more={
-        rows.length < total ? { ref: sentinel, label: t('Loading older games…') } : null
+        // "more", not "older": this list is in insertion order (id DESC),
+        // which is no promise about dates.
+        rows.length < total ? { ref: sentinel, label: t('Loading more games…') } : null
+      }
+      tail={
+        // A search that comes back empty says so, with the way out — an
+        // empty bordered box under a count of 0 read as a broken pane.
+        !loading && rows.length === 0 ? (
+          <EmptyState
+            className="border-border min-h-0 flex-1 border-t"
+            icon={SearchX}
+            title="No games match"
+            body="No game in this database gets through the search and filters above."
+            action={
+              query || resultFilter !== 'any' || minElo > 0 || structuredOn ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setQuery('');
+                    setResultFilter('any');
+                    setMinElo(0);
+                    setStructured(EMPTY_STRUCTURED_FILTERS);
+                    void search('', 0, curDb);
+                  }}
+                >
+                  <X className="size-3.5" data-icon="inline-start" />
+                  {t('Clear search and filters')}
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : undefined
       }
     />
   );
