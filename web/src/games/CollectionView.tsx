@@ -758,7 +758,7 @@ export function CollectionView() {
 
           {source === 'archive' ? (
             <ArchiveBrowser
-              place="panel"
+              shape="panel"
               collectionKeys={collectionKeys}
               onCollected={() => void load()}
               onPreview={setPreview}
@@ -794,7 +794,7 @@ export function CollectionView() {
                 it. A window that names itself twice is a window with a
                 wasted line and a reader wondering what the difference is. */}
             <ArchiveBrowser
-              place="window"
+              shape="sheet"
               collectionKeys={collectionKeys}
               onCollected={() => void load()}
               onPreview={setPreview}

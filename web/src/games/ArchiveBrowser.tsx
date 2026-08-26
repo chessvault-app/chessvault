@@ -18,15 +18,14 @@ import { SearchInput } from '@/components/text-fields';
 import { Field } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 
-import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
+import { SkeletonGameRows } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
-import { Panel, PanelHeader } from '@/components/panel';
 
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
+import { GameListShell, type GameListShape } from './GameListShell';
 import {
   EMPTY_STRUCTURED_FILTERS,
-  FilterRow,
   hasStructuredFilters,
   matchesStructured,
   ResultSelect,
@@ -231,29 +230,18 @@ export function ArchiveBrowser({
   collectionKeys,
   onCollected,
   onPreview,
-  place = 'framed',
+  shape = 'framed',
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
   /**
-   * Where this is being shown, which is what decides its padding.
-   *
-   * This used to be a `framed` boolean doing two jobs — whether to bring
-   * its own Panel, and whether to pad — and the two only agree in two of
-   * the three cases. Unframed was tuned for the WINDOW, where the
-   * Modal's card already pads on every side; the Games column is
-   * unframed too and its Panel pads nothing, so the same branch left the
-   * controls flush against both edges and jammed under the tab bar's
-   * indicator. Naming the three places instead of implying them from one
-   * flag is what stops that happening again.
-   *
-   * - `framed` — its own card, padded on every side
-   * - `panel`  — the Games column's Panel: pads nothing, and has a tab
-   *              bar above whose live-tab rule needs clearing
-   * - `window` — a Modal, whose card is already padding by 3
+   * Where this is being shown — GameListShell's vocabulary, which owns
+   * the paddings and rules each place needs. (This used to be a local
+   * `framed | panel | window` enum; the shell's shapes are the same
+   * three places under the one name every list of games now uses.)
    */
-  place?: 'framed' | 'panel' | 'window';
+  shape?: GameListShape;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -664,28 +652,9 @@ export function ArchiveBrowser({
   }, []);
 
 
-  const head = (
+  // The shell owns this band's box and padding; these are its contents.
+  const toolbar = (
     <>
-      {/* pt-3, not flush under the header's rule: the tab bar is a raised
-          control and sitting it straight against the line made the two
-          read as one stuck-together thing.
-
-          Unframed — in a window — the card is already padding by 3 on
-          every side, so this padded a second time: the archive's controls
-          sat 24px from the edges while every other window's sat 12, and
-          twice as far below the title rule. Unframed it adds nothing
-          horizontally and only the gap under the rule. */}
-      <div
-        className={cn(
-          'flex flex-col gap-2',
-          place === 'window' && 'pb-2 pt-1',
-          place === 'framed' && 'px-3 pb-3 pt-3',
-          // pt-4, not pt-3: the tab bar above thickens and lights its rule
-          // under the live tab, and a raised control sitting at the same
-          // remove as everywhere else read as stuck to it.
-          place === 'panel' && 'px-3 pb-3 pt-4',
-        )}
-      >
         {/* One track, one lit segment. As two chips it was impossible to
             tell by looking whether they were a choice or two independent
             toggles — and both being unlit is not a state this has. */}
@@ -793,31 +762,18 @@ export function ArchiveBrowser({
             </div>
           </div>
         )}
-      </div>
     </>
   );
 
-  /**
-   * Everything under the search field. These rows separate themselves with
-   * RULES, not with space — the shape a Panel gives them.
-   */
-  const rows = (
+  /* Three selects, not eight chips on a rail.
+     Seven chips and a select never fit the 30% column this panel
+     lives in, so the row scrolled sideways behind a pair of arrows
+     — which hides filters behind a gesture and gives no clue what
+     is currently set without scrolling to look. A select states
+     its own value, takes one line whatever the options are, and
+     wraps onto a second when the column is narrow. */
+  const filters = months.length > 0 ? (
     <>
-      {/* While the months are coming, the row they will fill. It is drawn
-          only once they are known, so without this the rows below it
-          dropped a whole filter strip when the archive answered. */}
-      {months.length === 0 && loading === 'months' && <SkeletonFilterRow className="border-t" />}
-      {/* Second row, only once an archive is loaded: month + quick filters. */}
-      {months.length > 0 && (
-        <div ref={archiveTop}>
-        {/* Three selects, not eight chips on a rail.
-            Seven chips and a select never fit the 30% column this panel
-            lives in, so the row scrolled sideways behind a pair of arrows
-            — which hides filters behind a gesture and gives no clue what
-            is currently set without scrolling to look. A select states
-            its own value, takes one line whatever the options are, and
-            wraps onto a second when the column is narrow. */}
-        <FilterRow className="border-t">
           <Select
             value={month}
             onValueChange={(m) => void loadMonth(m)}
@@ -909,25 +865,25 @@ export function ArchiveBrowser({
               onClose={() => setEditingFilters(false)}
             />
           )}
-        </FilterRow>
-        </div>
-      )}
-      {((offline && months.length > 0) || error) && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
-          {offline && months.length > 0 && (
-            <span className="text-warn text-sm">{t('offline — cached months only')}</span>
-          )}
-          {error && <span className="text-destructive text-sm">{error}</span>}
-        </div>
-      )}
+    </>
+  ) : undefined;
 
-      {month && visibleMonthGames.length > 0 && (
-        // The elite panel's count row, exactly: the tally leads in the
-        // small-caps label voice, the mode switch sits with the controls
-        // on the right — the two lists take turns in one column and
-        // their furniture should read as one design (lanph3re's call).
-        <div className="border-border flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-sm">
-          {!selecting ? (
+  const notice =
+    (offline && months.length > 0) || error ? (
+      <>
+        {offline && months.length > 0 && (
+          <span className="text-warn text-sm">{t('offline — cached months only')}</span>
+        )}
+        {error && <span className="text-destructive text-sm">{error}</span>}
+      </>
+    ) : undefined;
+
+  // The shell draws the count band's box, so the two lists that take
+  // turns in the games column share it by construction (lanph3re's call,
+  // kept from when this row copied the elite panel's by hand).
+  const countBand =
+    month && visibleMonthGames.length > 0 ? (
+      !selecting ? (
             <>
               {/* How much of the archive is in hand. It used to be all of
                   it, so there was nothing to say; now the list grows as it
@@ -1012,75 +968,30 @@ export function ArchiveBrowser({
                 </Button>
               </div>
             </>
-          )}
-        </div>
-      )}
+          )
+    ) : undefined;
 
-      {/* The list is a container, so its rows can answer to the width they
-          actually have rather than to the window's. Named, so the rules
-          only fire here — the collection's rows are the same component in
-          a column with twice the room. */}
-      {month && (
-        <ul
-          className={cn(
-            '@container/arc divide-border min-h-0 divide-y border-t border-border',
-            // Who scrolls, the list or the thing holding it.
-            //
-            // In a panel it is the list: it sits in a column beside the
-            // collection and 24rem is the share of that column it may
-            // take. In a WINDOW on a phone the window is already a
-            // fixed-height sheet with its own scroller, and the same cap
-            // stopped the list 24rem down a sheet more than twice that
-            // tall — measured at 440x956: an 841px sheet, a 384px list,
-            // 190px of empty surface under it and the last row cut
-            // through the middle. So there the rows simply flow and the
-            // sheet scrolls them, which is what the sheet is for.
-            place === 'window'
-              ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto'
-              : 'max-h-96 overflow-y-auto sm:max-h-none sm:flex-1',
-          )}
-        >
-          {loading === 'games' && visibleMonthGames.length === 0 ? (
-            // Rows, not a spinner on an empty box. Fetching a month used to
-            // take the games away and leave one line of text where the list
-            // had been, so the panel appeared to close and reopen.
-            <li>
-              <SkeletonGameRows rows={6} />
-            </li>
-          ) : (
-            visibleMonthGames.slice(0, MAX_ROWS).map((game) => (
-              <ArchiveRow
-                key={gameKey(game)}
-                game={game}
-                selecting={selecting}
-                picked={picked.has(gameKey(game))}
-                inCollection={
-                  added.has(gameKey(game)) ||
-                  collectionKeys.has(`${game.white}|${game.black}|${game.date}`)
-                }
-                onOpen={rowOpen}
-                onPreview={onPreview}
-                onToggle={rowToggle}
-                onCollect={rowCollect}
-              />
-            ))
-          )}
+  const rows = month
+    ? visibleMonthGames.slice(0, MAX_ROWS).map((game) => (
+        <ArchiveRow
+          key={gameKey(game)}
+          game={game}
+          selecting={selecting}
+          picked={picked.has(gameKey(game))}
+          inCollection={
+            added.has(gameKey(game)) ||
+            collectionKeys.has(`${game.white}|${game.black}|${game.date}`)
+          }
+          onOpen={rowOpen}
+          onPreview={onPreview}
+          onToggle={rowToggle}
+          onCollect={rowCollect}
+        />
+      ))
+    : undefined;
 
-          {/* The end of the list asks for the next months. Older play is
-              reached by scrolling towards it, which is the same gesture
-              that used to be a minute of waiting before anything showed. */}
-          {month === ALL_MONTHS && cursor < months.length && (
-            <li ref={moreSentinel} className="flex items-center justify-center gap-2 p-3">
-              <Spinner className="text-muted-foreground size-4" />
-              <span className="text-muted-foreground text-sm">
-                {t('Loading older games…')}
-              </span>
-            </li>
-          )}
-        </ul>
-      )}
-
-      {month && visibleMonthGames.length > MAX_ROWS && (
+  const footnote =
+    month && visibleMonthGames.length > MAX_ROWS ? (
         // The short version on the line, the whole sentence on hover. It
         // was two clauses of body text across the foot of the panel, which
         // reads as an error rather than as a footnote about a list that is
@@ -1098,8 +1009,10 @@ export function ArchiveBrowser({
             {t('First {shown} of {total}', { shown: MAX_ROWS, total: visibleMonthGames.length })}
           </span>
         </p>
-      )}
+    ) : undefined;
 
+  const tail = (
+    <>
       {/* Looking one up is a wait, and the wait used to EMPTY the panel:
           the prompt vanished, the panel collapsed to its bar, and the
           results arrived somewhere below the fold. Rows in the same box
@@ -1137,35 +1050,49 @@ export function ArchiveBrowser({
     </>
   );
 
-  const body = (
-    <>
-      {head}
-      {/* A window is a flex column with a 12px gap and 12px of padding, and
-          it applied both to every one of these rows: each rule floated a
-          gap below the row it was meant to divide, and was inset from
-          both edges besides — three seams down a list that shows none in
-          a panel. So in a window they go in ONE child, bled back out to
-          the card's edges; the rows' own px-3 puts their content exactly
-          where the card's padding had it, and the rules meet the sides.
-          A panel already stacks them flush and takes them as they are. */}
-      {place === 'window' ? <div className="-mx-3 flex flex-col">{rows}</div> : rows}
-    </>
-  );
-
-  // In the column it shares a panel with Elite games, and the tab that
-  // switched to it has already said which one this is. Everywhere else it
-  // brings its own box and its own title.
-  if (place !== 'framed') return body;
-
   return (
-    <Panel className="shrink-0 sm:min-h-0 sm:flex-1">
-      {/* A plain title, the same h-10 the collection's header is: the two
-          panels sit side by side, and a header that grew to fit its
-          controls started this one's contents 35px below the other's. The
-          controls live in the body instead, stacked, which is also what
-          a 30%-wide column wants. */}
-      <PanelHeader title={t('Online archives')} />
-      {body}
-    </Panel>
+    <GameListShell
+      shape={shape}
+      // In the column it shares a panel with Elite games and the tab has
+      // already said which one this is; framed it brings its own title.
+      title={t('Online archives')}
+      panelClassName="shrink-0 sm:min-h-0 sm:flex-1"
+      toolbar={toolbar}
+      filtersLoading={months.length === 0 && loading === 'months'}
+      filters={filters}
+      filtersRef={archiveTop}
+      notice={notice}
+      countBand={countBand}
+      list={rows}
+      // Rows, not a spinner on an empty box: fetching a month used to
+      // take the games away and leave one line of text where the list
+      // had been, so the panel appeared to close and reopen.
+      listLoading={Boolean(month) && loading === 'games' && visibleMonthGames.length === 0}
+      // Who scrolls, the list or the thing holding it.
+      //
+      // In a panel it is the list: it sits in a column beside the
+      // collection and 24rem is the share of that column it may take. In
+      // a SHEET on a phone the window is already a fixed-height card
+      // with its own scroller, and the same cap stopped the list 24rem
+      // down a sheet more than twice that tall — measured at 440x956: an
+      // 841px sheet, a 384px list, 190px of empty surface under it and
+      // the last row cut through the middle. So there the rows simply
+      // flow and the sheet scrolls them, which is what the sheet is for.
+      listClassName={
+        shape === 'sheet'
+          ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto'
+          : 'max-h-96 overflow-y-auto sm:max-h-none sm:flex-1'
+      }
+      // The end of the list asks for the next months. Older play is
+      // reached by scrolling towards it, which is the same gesture that
+      // used to be a minute of waiting before anything showed.
+      more={
+        month === ALL_MONTHS && cursor < months.length
+          ? { ref: moreSentinel, label: t('Loading older games…') }
+          : null
+      }
+      footnote={footnote}
+      tail={tail}
+    />
   );
 }
