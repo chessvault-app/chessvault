@@ -50,18 +50,17 @@ survives a rebuild.
 switched in the games-page Databases browser. The Databases page uploads PGN collections
 (the same `vault/sources/` uploads), indexes any selection of them under a
 name, and deletes either kind — the built database or the upload it was
-built from. Building under a name that already exists asks which of two
-things you mean:
-
-- **Replace** — build the database again from the picked collections,
-  as before.
-- **Add to it** — grow the database in place: only the games it does
-  not already hold are indexed (same players, result, date and
-  movetext is the same game), and the position index extends from
-  where it left off instead of rebuilding. Feeding the same file twice
-  adds nothing. An append interrupted between its insert and its index
-  pass leaves the database served but marked **index behind** in the
-  manager; Optimize (below) heals it.
+built from. A database **grows from its own row**: the + on it opens
+one window that lists the uploaded collections with their own ticks
+(and an Upload button, for games not on the server yet) — press Add
+games and only the games the database does not already hold are indexed
+(same players, result, date and movetext is the same game), with the
+position index extending from where it left off instead of rebuilding.
+Feeding the same file twice adds nothing. An append interrupted between
+its insert and its index pass leaves the database served but marked
+**index behind** in the manager; Optimize (below) heals it. Building
+under an already-taken name from the build bar asks the same
+Replace-or-Add-to question before touching anything.
 
 Each database row in the manager also offers **Optimize**: remove
 exact duplicate games (for databases built before the append dedup

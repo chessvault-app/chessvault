@@ -77,10 +77,10 @@ export function RefDbManager({
   const [uploading, setUploading] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
-  /** A database row's own "Add games" opened the window: its name is
-      the target and the append mode is preselected — growing a database
-      should not require re-typing its name into a build form. */
-  const [buildPreset, setBuildPreset] = useState<string | null>(null);
+  /** A database row's own "Add games": the window carries its OWN
+      source picker, so growing a database is one press and some ticks —
+      not a trip to the other tab and back (lanph3re's report, twice). */
+  const [addTo, setAddTo] = useState<string | null>(null);
   const [status, setStatus] = useState<{
     running: boolean;
     exitCode?: number | null;
@@ -173,12 +173,16 @@ export function RefDbManager({
     await refreshSources();
   };
 
-  const build = async (name: string, mode: 'replace' | 'append'): Promise<void> => {
+  const build = async (
+    name: string,
+    mode: 'replace' | 'append',
+    sourceIds?: string[],
+  ): Promise<void> => {
     setError(null);
     try {
       await api('/api/refgames/build', {
         method: 'POST',
-        json: { name: name.trim() || undefined, sources: [...(picked ?? [])], mode },
+        json: { name: name.trim() || undefined, sources: sourceIds ?? [...(picked ?? [])], mode },
       });
     } catch (error) {
       setError(t(apiErrorMessage(error)));
@@ -273,10 +277,7 @@ export function RefDbManager({
         databases={shownDbs}
         onDelete={(n) => void del(n)}
         onOptimize={(n) => void optimize(n)}
-        onAddTo={(n) => {
-          setBuildPreset(n);
-          setShowBuild(true);
-        }}
+        onAddTo={(n) => setAddTo(n)}
         optimizeDisabled={running}
       />
     ) : (
@@ -453,12 +454,23 @@ export function RefDbManager({
           count={pickedCount}
           only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
           existing={databases.map((d) => d.name)}
-          preset={buildPreset}
           onBuild={(name, mode) => void build(name, mode)}
-          onClose={() => {
-            setShowBuild(false);
-            setBuildPreset(null);
+          onClose={() => setShowBuild(false)}
+        />
+      )}
+      {addTo !== null && (
+        <AddToWindow
+          db={addTo}
+          sources={sources}
+          onAdd={(sourceIds) => {
+            setAddTo(null);
+            void build(addTo, 'append', sourceIds);
           }}
+          onUploadInstead={() => {
+            setAddTo(null);
+            setShowUpload(true);
+          }}
+          onClose={() => setAddTo(null)}
         />
       )}
     </>
@@ -659,6 +671,93 @@ function SourceList({
 }
 
 /**
+ * Growing one database, whole flow in one window: press + on its row,
+ * tick the uploads to feed it, press Add games. The picker is the
+ * window's own — the first version reused the build tab's ticks, which
+ * sent the user to the other tab and back before the press meant
+ * anything (lanph3re's report). Only the games the database does not
+ * already hold are indexed, so re-feeding a file is safe.
+ */
+function AddToWindow({
+  db,
+  sources,
+  onAdd,
+  onUploadInstead,
+  onClose,
+}: {
+  db: string;
+  sources: Source[] | null;
+  onAdd: (sourceIds: string[]) => void;
+  onUploadInstead: () => void;
+  onClose: () => void;
+}) {
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const list = sources ?? [];
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title={t('Add games to “{name}”', { name: db })} icon={Plus}>
+        {list.length === 0 ? (
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {t('No PGN collections uploaded yet — upload the games to add first.')}
+          </p>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              {t('Only the games it does not already hold are indexed.')}
+            </p>
+            <ul className="divide-border max-h-64 divide-y overflow-y-auto rounded-md border">
+              {list.map((s) => (
+                <li key={s.name} className="flex items-center px-3 py-1.5 text-sm">
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                    <Checkbox
+                      checked={ticked.has(s.name)}
+                      onCheckedChange={(on) =>
+                        setTicked((prev) => {
+                          const next = new Set(prev);
+                          if (on === true) next.add(s.name);
+                          else next.delete(s.name);
+                          return next;
+                        })
+                      }
+                    />
+                    <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
+                    <span className="text-muted-foreground shrink-0">{mb(s.bytes)}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <div className="mt-1 flex items-center justify-end gap-2">
+          <Button variant="secondary" size="sm" className="mr-auto" onClick={onUploadInstead}>
+            <Upload className="size-3.5" data-icon="inline-start" />
+            {t('Upload')}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            disabled={ticked.size === 0}
+            onClick={() => onAdd([...ticked])}
+          >
+            <Plus className="size-3.5" data-icon="inline-start" />
+            {t('Add games')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
  * The drop target, in a window of its own.
  *
  * It is the whole window rather than a box inside one: a target you have
@@ -752,7 +851,6 @@ function BuildWindow({
   count,
   only,
   existing,
-  preset,
   onBuild,
   onClose,
 }: {
@@ -761,14 +859,11 @@ function BuildWindow({
   only?: string;
   /** Databases already on the shelf, for the taken-name choice below. */
   existing: string[];
-  /** Opened from a database row's own Add games: that name, append
-      preselected. */
-  preset?: string | null;
   onBuild: (name: string, mode: 'replace' | 'append') => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState(preset ?? '');
-  const [mode, setMode] = useState<'replace' | 'append'>(preset ? 'append' : 'replace');
+  const [name, setName] = useState('');
+  const [mode, setMode] = useState<'replace' | 'append'>('replace');
   const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
   // The question is asked only when it exists — the same shape as the
   // book importer's update-or-rebuild choice.

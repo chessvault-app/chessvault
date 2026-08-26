@@ -1024,6 +1024,11 @@ export const ko: Record<string, string> = {
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
   'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
   'Add games to this database': '이 데이터베이스에 게임 추가',
+  'Add games to “{name}”': '“{name}”에 게임 추가',
+  'No PGN collections uploaded yet — upload the games to add first.':
+    '아직 올린 PGN 모음이 없습니다 — 추가할 게임을 먼저 올리세요.',
+  'Only the games it does not already hold are indexed.':
+    '아직 없는 게임만 색인됩니다.',
   'No PGN collections are ticked — pick them on the PGN collections tab first.':
     '선택된 PGN 모음이 없습니다 — 먼저 PGN 모음 탭에서 선택하세요.',
   'Optimize this database': '이 데이터베이스 최적화',
