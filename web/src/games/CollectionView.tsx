@@ -611,12 +611,7 @@ export function CollectionView() {
               ))
             : undefined
         }
-        // Faint stripe on every other row, on top of the shell's dividers:
-        // at two lines a row is tall enough that a hairline alone left the
-        // list reading as one block of text. The stripe is 2% of the
-        // foreground — enough to group the two lines that belong together,
-        // not enough to read as a highlight.
-        listClassName="flex-1 overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022] sm:max-h-[38dvh] lg:max-h-none"
+        listClassName="flex-1 overflow-y-auto sm:max-h-[38dvh] lg:max-h-none"
         tail={
           !loaded ? undefined : /* Nothing to show and nothing narrowing the list. Two ways to get
               here: the collection really is empty, or its last rows were just

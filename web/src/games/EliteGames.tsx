@@ -598,14 +598,12 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
       // when it does draw, it REPLACES the rows instead of stacking a
       // second list above them.
       listLoading={searching}
-      // The same stripe the collection list has: at three lines a row is
-      // tall enough that a hairline between rows disappears. In a sheet
-      // the card scrolls below sm and the list scrolls from sm up,
-      // exactly like the archive in the same window.
+      // In a sheet the card scrolls below sm and the list scrolls from sm
+      // up, exactly like the archive in the same window.
       listClassName={
         shape === 'sheet'
-          ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022]'
-          : 'flex-1 overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022]'
+          ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto'
+          : 'flex-1 overflow-y-auto'
       }
       more={
         // "more", not "older": this list is in insertion order (id DESC),

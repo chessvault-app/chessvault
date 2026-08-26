@@ -128,6 +128,13 @@ export function GameListShell({
             // Named container: GameRow's narrow-row rules answer to the
             // list's own width, not the window's.
             '@container/arc divide-border border-border min-h-0 divide-y border-t',
+            // Dividers AND a faint stripe on every other row: at two
+            // lines a row is tall enough that a hairline alone leaves the
+            // list reading as one block of text. 2% of the foreground —
+            // enough to group the lines that belong together, not enough
+            // to read as a highlight. The archive list was the one of the
+            // three without it, for no reason anyone could name.
+            '[&>li:nth-child(even)]:bg-foreground/[0.022]',
             listClassName,
           )}
         >
