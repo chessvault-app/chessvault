@@ -1023,6 +1023,9 @@ export const ko: Record<string, string> = {
     '“{name}”을(를) 지울까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
   'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
+  'Add games to this database': '이 데이터베이스에 게임 추가',
+  'No PGN collections are ticked — pick them on the PGN collections tab first.':
+    '선택된 PGN 모음이 없습니다 — 먼저 PGN 모음 탭에서 선택하세요.',
   'Optimize this database': '이 데이터베이스 최적화',
   'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.':
     '“{name}”을(를) 최적화할까요? 완전히 같은 게임을 제거하고, 파생 테이블을 새로 만들고, 파일을 압축합니다. 시간이 걸릴 수 있습니다.',

@@ -1,4 +1,4 @@
-import { Database, FileText, Sparkles, Trash2, Upload } from 'lucide-react';
+import { Database, FileText, Plus, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -77,6 +77,10 @@ export function RefDbManager({
   const [uploading, setUploading] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
+  /** A database row's own "Add games" opened the window: its name is
+      the target and the append mode is preselected — growing a database
+      should not require re-typing its name into a build form. */
+  const [buildPreset, setBuildPreset] = useState<string | null>(null);
   const [status, setStatus] = useState<{
     running: boolean;
     exitCode?: number | null;
@@ -269,6 +273,10 @@ export function RefDbManager({
         databases={shownDbs}
         onDelete={(n) => void del(n)}
         onOptimize={(n) => void optimize(n)}
+        onAddTo={(n) => {
+          setBuildPreset(n);
+          setShowBuild(true);
+        }}
         optimizeDisabled={running}
       />
     ) : (
@@ -445,8 +453,12 @@ export function RefDbManager({
           count={pickedCount}
           only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
           existing={databases.map((d) => d.name)}
+          preset={buildPreset}
           onBuild={(name, mode) => void build(name, mode)}
-          onClose={() => setShowBuild(false)}
+          onClose={() => {
+            setShowBuild(false);
+            setBuildPreset(null);
+          }}
         />
       )}
     </>
@@ -505,11 +517,13 @@ function DbList({
   databases,
   onDelete,
   onOptimize,
+  onAddTo,
   optimizeDisabled,
 }: {
   databases: RefDb[];
   onDelete: (name: string) => void;
   onOptimize: (name: string) => void;
+  onAddTo: (name: string) => void;
   optimizeDisabled: boolean;
 }) {
   return (
@@ -538,6 +552,23 @@ function DbList({
           {/* Games above the index's high-water mark — an interrupted
               append. Optimize brings the index up to them. */}
           {d.stale === true && <span className="text-warn shrink-0">{t('index behind')}</span>}
+          {/* Growing THIS database, from its own row — burying append
+              behind typing a matching name into the build form was not
+              a flow anyone would find (lanph3re said so). */}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={optimizeDisabled}
+            title={
+              optimizeDisabled
+                ? t('Wait for the running job to finish')
+                : t('Add games to this database')
+            }
+            className="shrink-0"
+            onClick={() => onAddTo(d.name)}
+          >
+            <Plus className="size-3.5" />
+          </Button>
           {/* Housekeeping in the build slot: duplicates out, derived
               tables re-derived, space returned. Asked first — it can run
               for minutes on a big database. */}
@@ -721,6 +752,7 @@ function BuildWindow({
   count,
   only,
   existing,
+  preset,
   onBuild,
   onClose,
 }: {
@@ -729,16 +761,21 @@ function BuildWindow({
   only?: string;
   /** Databases already on the shelf, for the taken-name choice below. */
   existing: string[];
+  /** Opened from a database row's own Add games: that name, append
+      preselected. */
+  preset?: string | null;
   onBuild: (name: string, mode: 'replace' | 'append') => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [mode, setMode] = useState<'replace' | 'append'>('replace');
+  const [name, setName] = useState(preset ?? '');
+  const [mode, setMode] = useState<'replace' | 'append'>(preset ? 'append' : 'replace');
   const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
   // The question is asked only when it exists — the same shape as the
   // book importer's update-or-rebuild choice.
   const taken = existing.includes(name.trim() || derived);
-  const go = (): void => onBuild(name, taken ? mode : 'replace');
+  const go = (): void => {
+    if (count > 0) onBuild(name, taken ? mode : 'replace');
+  };
 
   return (
     <Dialog
@@ -749,7 +786,11 @@ function BuildWindow({
     >
       <DialogContent title="Build a database" icon={Database}>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
+          {count > 0
+            ? t('Indexing {n} collections into one searchable database of whole games.', {
+                n: count,
+              })
+            : t('No PGN collections are ticked — pick them on the PGN collections tab first.')}
         </p>
         <ClearableInput
           inputSize="sm"
@@ -783,7 +824,7 @@ function BuildWindow({
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button variant="default" size="sm" onClick={go}>
+          <Button variant="default" size="sm" disabled={count === 0} onClick={go}>
             <Database className="size-3.5" data-icon="inline-start" />
             {taken && mode === 'append' ? t('Add games') : t('Build')}
           </Button>
