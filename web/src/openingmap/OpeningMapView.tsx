@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -32,6 +32,7 @@ import { ResultBadge } from '@/components/result-badge';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { CompareDialog } from './CompareDialog';
 import { MapCanvas } from './MapCanvas';
 import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
 import {
@@ -239,6 +240,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [addTo, setAddTo] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [growFrom, setGrowFrom] = useState<string | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   // The page's own controls, written once. The Fab fans them out as
   // labelled pills on a phone; the top-right corner draws them as icons
@@ -308,6 +310,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
       icon: Target,
       onSelect: () => setOptionsOpen(true),
     },
+    // The improver's diff needs a reference corpus on the server and
+    // your indexed games behind it — neither exists in the demo.
+    ...(databases.length > 0 && !isDemo()
+      ? [
+          {
+            label: 'Compare my moves with a database',
+            icon: ArrowLeftRight,
+            onSelect: () => setCompareOpen(true),
+          },
+        ]
+      : []),
   ];
 
   /**
@@ -608,6 +621,15 @@ export function OpeningMapView({ params }: { params: string[] }) {
           a touch meant for the map. */}
       {loaded && map && (
         <Fab label={t('Map menu')} icon={Compass} className="md:hidden" actions={mapActions} />
+      )}
+
+      {compareOpen && map && (
+        <CompareDialog
+          color={map.color}
+          databases={databases}
+          defaultDb={pickedDatabase || databases[0]?.name || ''}
+          onClose={() => setCompareOpen(false)}
+        />
       )}
 
       {optionsOpen && (

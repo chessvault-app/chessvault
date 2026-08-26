@@ -633,6 +633,19 @@ export const ko: Record<string, string> = {
   'The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.':
     '맵이 자신을 비교하는 필드입니다: 갭 배지, 점 크기, 통계표가 모두 여기서 읽습니다.',
   'Check coverage against': '커버리지 비교 대상',
+  'Compare my moves with a database': '내 수를 데이터베이스와 비교',
+  'Compare with a database': '데이터베이스와 비교',
+  'Your recent games as White, checked against what this database’s players answer — positions where your move is one they rarely choose, strongest habit first.':
+    '백으로 둔 최근 게임을 이 데이터베이스 선수들의 응수와 대조합니다 — 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
+  'Your recent games as Black, checked against what this database’s players answer — positions where your move is one they rarely choose, strongest habit first.':
+    '흑으로 둔 최근 게임을 이 데이터베이스 선수들의 응수와 대조합니다 — 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
+  'At level': '레벨',
+  'You play {mine} ({mineShare}) — they answer {top} ({topShare} of {total})':
+    '나는 {mine} ({mineShare}) — 그들은 {top} ({topShare}, {total}판 중)',
+  'Nothing to flag: where this database has a real sample, your recent moves are among its usual answers.':
+    '표시할 것이 없습니다: 이 데이터베이스에 충분한 표본이 있는 곳에서는 최근의 내 수가 그들의 흔한 응수 안에 있습니다.',
+  'The comparison could not be read — is the server reachable?':
+    '비교를 읽을 수 없습니다 — 서버에 연결되어 있나요?',
   'Nothing — hide gaps': '없음 — 갭 숨기기',
   'Where opponent replies come from': '상대 응수의 출처',
   'Against the field': '필드와 비교',

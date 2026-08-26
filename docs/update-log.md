@@ -54,7 +54,10 @@ games, and databases that grow instead of being rebuilt.
   flags the positions where your move is rare among what a reference
   corpus answers — at your level, when a band is given — aggregated
   across your recent games, strongest habit first. The first sync of a
-  big vault also stopped stalling the request that triggered it.
+  big vault also stopped stalling the request that triggered it. The
+  opening map carries the report: **Compare my moves with a database**
+  picks the corpus and the level, reads your habits strongest-first,
+  and opens any flagged line on the board at the decision point.
 - **A native fast path for the heavy jobs, optional by construction.**
   `native/` holds `chessvault-core`, a Rust binary mirroring the build,
   index, optimize and deep-search jobs byte-for-byte — golden-tested
