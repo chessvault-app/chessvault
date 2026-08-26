@@ -1232,7 +1232,11 @@ export function MapCanvas({
                     fontSize={8 * inv}
                     textAnchor="middle"
                     opacity={matches?.has(id) ? 1 : labelOpacity}
-                    fill="var(--color-subtle)"
+                    // The registry's word for secondary text — the retired
+                    // `--color-subtle` this carried was undefined since the
+                    // theme migration, and an undefined var in an SVG fill
+                    // paints black: invisible captions on a dark map.
+                    fill="var(--color-muted-foreground)"
                   >
                     {clip(caption, 26)}
                   </text>

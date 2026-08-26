@@ -60,6 +60,24 @@ const LEAKS: { pattern: RegExp; why: string }[] = [
  */
 const RATING_IN_JSX = /\{[^{}]*\.rating\b[^{}]*\}/g;
 
+/**
+ * The retired colour vocabulary (CLAUDE.md: "Old names … are gone and
+ * must not return"), in the two shapes it actually returns in: a class
+ * token, and a CSS variable reference — the latter is how one survived
+ * the class greps and painted the opening map's captions black, because
+ * an undefined var() in an SVG fill is black, not an error.
+ */
+const RETIRED_COLORS: { pattern: RegExp; why: string }[] = [
+  {
+    pattern: /(?:^|[\s'"`])(?:text-fg|text-subtle|text-bad|bg-surface(?:-\d)?|border-line)(?=$|[\s'"`])/,
+    why: 'a retired colour class — speak the registry\'s vocabulary (see CLAUDE.md "Class names")',
+  },
+  {
+    pattern: /var\(--color-(?:fg|subtle|surface(?:-\d)?|line|bad)\)/,
+    why: 'a retired colour token behind var() — undefined, so SVG fills paint black',
+  },
+];
+
 const tracked = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf-8' })
   .split('\0')
   .filter(Boolean);
@@ -96,6 +114,16 @@ for (const file of tracked) {
           text: hit.slice(0, 120),
           why: 'a rating rendered without bandOf() — difficulty is a word, see puzzles/bands.ts',
         });
+      }
+    });
+  }
+
+  if (/^web\/src\/.*\.tsx?$/.test(file)) {
+    lines.forEach((line, i) => {
+      for (const { pattern, why } of RETIRED_COLORS) {
+        if (pattern.test(line)) {
+          findings.push({ file, line: i + 1, text: line.trim().slice(0, 120), why });
+        }
       }
     });
   }
