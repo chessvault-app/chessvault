@@ -64,15 +64,26 @@ export function forgetMyGames(): void {
  * append or an optimize can change them under a session, and the manager
  * calls this when such a job finishes. All refdb sources at once —
  * the job's database is one of them and the others cost only a refetch.
+ *
+ * A key's source is its first line (see keyFor), and a reference
+ * database's source is its bare name — whatever the user called it. So
+ * membership is decided by what the source is NOT: my games, the online
+ * database, or off. (This used to match a 'refdb:' prefix from the
+ * explorer's book-id namespace, which no key here ever carried — the
+ * forget was a no-op and stale field statistics outlived the append
+ * they were supposed to die with.)
  */
+const isRefDbKey = (key: string): boolean => {
+  const source = key.slice(0, key.indexOf('\n'));
+  return source !== '' && source !== MY_GAMES_SOURCE && source !== ONLINE_SOURCE;
+};
+
 export function forgetRefDbs(): void {
   for (const key of [...cache.keys()]) {
-    if (key.startsWith('refdb:') || key.startsWith(`refgames
-`)) cache.delete(key);
+    if (isRefDbKey(key)) cache.delete(key);
   }
   for (const key of [...failedAt.keys()]) {
-    if (key.startsWith('refdb:') || key.startsWith(`refgames
-`)) failedAt.delete(key);
+    if (isRefDbKey(key)) failedAt.delete(key);
   }
 }
 
