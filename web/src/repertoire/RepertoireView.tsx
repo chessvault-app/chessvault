@@ -1595,32 +1595,44 @@ export function RepertoireView() {
     {/* The panel's floor: outside the scrolling body and `shrink-0`, so a
         thumb finds it in the same place and the squeeze is always taken
         by the text above it. What stands on it is what there is to do
-        NEXT, which is a different set before a game and after one — and
-        nothing at all during, because a game in progress has no next step
-        that is not a move on the board.
+        NEXT, which differs by phase.
 
         Idle: Start, and under it the row that says what Start would play
         and opens the settings (lanph3re's call — they belong on the floor
-        rather than trailing the description). Ended: what the mode offers
-        for the line just played, then New game, primary and last, the way
-        every row in this app ends. shadcn's CardFooter: the slot a card
-        keeps for its actions, a muted band under a rule, the same one the
-        two trainers' rows stand on. */}
-    {(phase === 'idle' || phase === 'ended') && (
-      <CardFooter className="flex-col items-stretch gap-3">
-        {phase === 'idle' && startBlock}
-        {phase === 'idle' && setupRow}
-        {phase === 'ended' && (
-          <div className="flex flex-wrap justify-end gap-2">
-            {endAction}
-            <Button variant="default" size="sm" onClick={newGame} title={t('Set up a new game')}>
-              <RotateCcw className="size-3.5" data-icon="inline-start" />
-              {t('New game')}
-            </Button>
-          </div>
-        )}
-      </CardFooter>
-    )}
+        rather than trailing the description). Playing: the way back —
+        this used to be the one phase with no floor at all, on the theory
+        that a game in progress has no next step that is not a move, but
+        that left no way OUT of a line short of finishing it (lanph3re's
+        ask). Ended: what the mode offers for the line just played, then
+        New game, primary and last, the way every row in this app ends.
+        shadcn's CardFooter: the slot a card keeps for its actions, a
+        muted band under a rule, the same one the two trainers' rows
+        stand on. */}
+    <CardFooter className="flex-col items-stretch gap-3">
+      {phase === 'idle' && startBlock}
+      {phase === 'idle' && setupRow}
+      {phase !== 'idle' && phase !== 'ended' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          onClick={newGame}
+          title={t('Leave this line and set up a new game')}
+        >
+          <ChevronLeft className="size-3.5" data-icon="inline-start" />
+          {t('Back')}
+        </Button>
+      )}
+      {phase === 'ended' && (
+        <div className="flex flex-wrap justify-end gap-2">
+          {endAction}
+          <Button variant="default" size="sm" onClick={newGame} title={t('Set up a new game')}>
+            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            {t('New game')}
+          </Button>
+        </div>
+      )}
+    </CardFooter>
   </Panel>
   );
   const movesPanel = analysing ? (
@@ -1725,11 +1737,14 @@ export function RepertoireView() {
           panel off with a scrollbar a touch device never shows. That is the
           Safari clipping. `overflow: visible` cannot clip, whatever the
           height resolves to, so the bug has nowhere left to live. */}
-      {/* wide:pb-4 — the column scrolls at wide, and its last panel ended
-          flush against the column's own bottom edge; padding inside the
-          scroll area gives it somewhere to finish, as stacked:pb-8 does
-          for the page column on a phone. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      {/* No wide:pb-4 any more. It was breathing room for the scrolled-to-
+          the-end idle form — but the column's bottom edge IS the board's
+          (board-side-cap reads --board-col-h), so those same 16px held the
+          Game panel off the board's bottom edge on every window that does
+          not scroll, which is most of them (lanph3re's report). Flush at
+          the end of a scroll is how every other board page's column ends,
+          and the panels end in a footer band now, which is a finish. */}
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {phase === 'idle' ? (
@@ -1745,8 +1760,11 @@ export function RepertoireView() {
               <div className="flex flex-col gap-3 px-(--card-spacing)">
                 {setupFields}
                 {startNotes}
-                {startBlock}
               </div>
+              {/* The same floor the Game panel keeps: the thing to press
+                  stands on CardFooter's band, under the fields it starts,
+                  instead of trailing them as one more row of form. */}
+              <CardFooter className="flex-col items-stretch gap-3">{startBlock}</CardFooter>
             </Panel>
           ) : (
             gamePanel
