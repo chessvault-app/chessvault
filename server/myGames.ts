@@ -184,7 +184,20 @@ class MyGamesIndex {
     }
   }
 
-  /** Reindex whatever changed. Cheap when nothing did. */
+  /**
+   * How long a request-path sync may spend indexing before handing the
+   * remainder to the background walk. The first sync of a 20k-game vault
+   * measured ~6 s; inside a request that was six seconds of stalled
+   * server. Everything indexed so far answers meanwhile — the index has
+   * always been allowed to be behind the vault by a scan interval.
+   */
+  private static readonly INLINE_BUDGET_MS = 100;
+  /** Files the background walk still owes, relative paths. */
+  private pending: { rel: string; mtimeMs: number; bytes: number }[] = [];
+  private walking = false;
+
+  /** Reindex whatever changed. Cheap when nothing did. `force` (the
+      explicit reindex route) takes as long as it takes, inline. */
   sync(force = false): void {
     const db = this.open();
     if (!db) return;
@@ -200,10 +213,13 @@ class MyGamesIndex {
       }[]).map((r) => [r.path, r]),
     );
 
+    const started = Date.now();
     const seen = new Set<string>();
     let changed = false;
+    const queued = new Set(this.pending.map((p) => p.rel));
     for (const rel of pgnsUnder(this.gamesDir)) {
       seen.add(rel);
+      if (queued.has(rel)) continue; // the walk already owns it
       let stat;
       try {
         stat = statSync(`${this.gamesDir}/${rel}`);
@@ -212,6 +228,11 @@ class MyGamesIndex {
       }
       const before = known.get(rel);
       if (before && before.mtime_ms === stat.mtimeMs && before.bytes === stat.size) continue;
+      if (!force && Date.now() - started > MyGamesIndex.INLINE_BUDGET_MS) {
+        this.pending.push({ rel, mtimeMs: stat.mtimeMs, bytes: stat.size });
+        changed = true;
+        continue;
+      }
       this.indexFile(db, rel, stat.mtimeMs, stat.size);
       changed = true;
     }
@@ -228,7 +249,43 @@ class MyGamesIndex {
     // the copy that was standing behind it. Keeping the game you kept and
     // then deleting the cached month must leave the game answering, not
     // silently drop it out of every count.
-    if (changed) this.stamp(db);
+    //
+    // With files still queued the stamp waits for the walk's end — it is
+    // a table scan, and running it per tick would cost more than the
+    // indexing.
+    if (changed && this.pending.length === 0) this.stamp(db);
+    if (this.pending.length > 0 && !this.walking) {
+      this.walking = true;
+      setImmediate(() => this.walkPending());
+    }
+  }
+
+  /** The background walk: a few files per tick, lookups answering from
+      what is in between ticks, one stamp at the end. */
+  private walkPending(): void {
+    const db = this.db;
+    if (!db) {
+      // Closed under us (tests, shutdown) — the files table remembers
+      // what was finished, so the next sync resumes the remainder.
+      this.pending = [];
+      this.walking = false;
+      return;
+    }
+    const started = Date.now();
+    while (this.pending.length > 0 && Date.now() - started < 50) {
+      const next = this.pending.shift()!;
+      try {
+        this.indexFile(db, next.rel, next.mtimeMs, next.bytes);
+      } catch {
+        // One unreadable file must not end the walk.
+      }
+    }
+    if (this.pending.length > 0) {
+      setImmediate(() => this.walkPending());
+      return;
+    }
+    this.stamp(db);
+    this.walking = false;
   }
 
   /**
