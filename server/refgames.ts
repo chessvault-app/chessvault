@@ -1199,6 +1199,10 @@ export function refGamesApi(
       let scanned = 0;
       let matched = 0;
       for (;;) {
+        // A reader that has gone (navigated away, cancelled the stream)
+        // must take the scan with it — the loop used to run the whole
+        // database for nobody.
+        if (out.aborted || c.req.raw.signal?.aborted) return;
         const batch = page.all(lastId, ...menBinds, ...binds) as (RefGameRow & {
           moves: string;
         })[];

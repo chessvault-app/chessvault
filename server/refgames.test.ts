@@ -693,6 +693,19 @@ describe('position index and explore', () => {
     expect(hits[0]).toMatchObject({ white: 'Carlsen' });
   });
 
+  it('abandons a deep search whose reader has gone', async () => {
+    // A cancelled request must not scan the database for nobody: the
+    // loop checks the abort signal per batch, so an aborted reader gets
+    // no frames instead of a completed scan.
+    const ac = new AbortController();
+    ac.abort();
+    const res = await app.request(
+      `/api/refgames/deep-search?fen=${encodeURIComponent(START)}`,
+      { signal: ac.signal },
+    );
+    expect((await res.text()).trim()).toBe('');
+  });
+
   it('refuses a batch big enough to be a denial of service', async () => {
     const res = await app.request('/api/refgames/explore-batch', {
       method: 'POST',
