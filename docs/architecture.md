@@ -85,7 +85,7 @@ matters.
   golden fixtures (`native/tests/goldens.json`, exported from the JS
   side) and a whole-file diff; `CHESS_NATIVE=0` pins the JS path for
   comparing them. Nothing requires the binary — it is a speed, not a
-  dependency.
+  dependency. `native/README.md` has the build, the test and the rule.
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,

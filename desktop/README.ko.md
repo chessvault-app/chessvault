@@ -31,15 +31,18 @@ AppImage와 deb를 만듭니다. 과정은 이렇습니다:
 1. `desktop/build-server.mjs`: 서버를 esbuild로 묶어
    `release/server/index.mjs`로, 데이터베이스 빌더들을
    (`build-refgames.mjs`, `build-puzzles.mjs`,
-   `index-refgames-positions.mjs`) 그 옆에 만들고, better-sqlite3를
-   복사하며(v13은 Node-API 프리빌드를 제공합니다 — Electron 아래에서 ABI가
-   안정적이라 다시 빌드할 필요가 없습니다), `icon.ico`를 렌더링하고,
-   네이티브 코어(`native/target/release/chessvault-core`)를 **빌드해 둔
+   `index-refgames-positions.mjs`, `optimize-refgames.mjs`) 그 옆에 만들고,
+   better-sqlite3를 복사하며(v13은 Node-API 프리빌드를 제공합니다 —
+   Electron 아래에서 ABI가 안정적이라 다시 빌드할 필요가 없습니다),
+   `icon.ico`를 렌더링합니다.
+
+   네이티브 코어(`native/target/release/chessvault-core`)도 **빌드해 둔
    경우** 그 자식들 옆에 복사합니다. 서버가 거기를 가장 먼저 보므로 그
    복사가 배포의 전부입니다. Rust 툴체인 없이 패키징해도 되고, 그럴 때는
    그렇다고 알려 줍니다. 설치 프로그램은 0.5.0 이전의 모든 릴리스가 그랬듯
    JavaScript 작업으로 돌아갑니다. CI는 러너마다 크레이트를 먼저 빌드하고,
    무엇을 올리기 전에 바이너리가 있는지 확인합니다.
+
 2. `npm run build`: SPA를 (엔진과 모델 자산과 함께) `dist/`로.
 3. `electron-builder`: `desktop/`을 asar에 담고, 서버 번들과 `dist/`는
    extraResources로 실어 서버의 `./dist` 정적 루트와 `REPO_ROOT`가 모두
@@ -52,8 +55,10 @@ Node로(`ELECTRON_RUN_AS_NODE`) 돌리며,
 보관함이 생깁니다.
 
 패키징된 앱 안에서 퍼즐 풀과 참고 데이터베이스를 전부 만들 수 있습니다.
-`build-puzzles.mjs`, `build-refgames.mjs`, `index-refgames-positions.mjs`가
-서버 번들 옆에 실려 있고 서버가 저장소 스크립트보다 그것들을 먼저 씁니다.
+`build-puzzles.mjs`, `build-refgames.mjs`, `index-refgames-positions.mjs`,
+`optimize-refgames.mjs`가 서버 번들 옆에 실려 있고, 서버는 저장소
+스크립트보다 그것들을 먼저 쓰며, 네이티브 바이너리가 실려 있으면 그것을
+둘보다 먼저 씁니다.
 설치 프로그램은 여기에 더해 첫 실행 때 시작용 참고 데이터베이스(포지션 색인
 포함)를 심어 줍니다.
 

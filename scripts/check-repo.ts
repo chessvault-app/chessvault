@@ -29,6 +29,13 @@
  *    with it; unlike the npm walk this file is generated ahead of time
  *    and committed, so it is the one part of the inventory that CAN go
  *    stale. One `cargo add` would do it.
+ *
+ * 5. No retired colour name is back. The old vocabulary (text-subtle,
+ *    bg-surface, border-line…) is gone from the app, and CLAUDE.md says
+ *    it must not return — but the class greps could not see it hiding
+ *    in a var(), which is how --color-subtle survived a theme migration
+ *    and painted the opening map's captions black. An undefined var in
+ *    an SVG fill is black, not an error.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';

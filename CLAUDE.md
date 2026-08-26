@@ -130,15 +130,22 @@ eval colours). Old names (`text-fg`, `text-subtle`, `bg-surface-3`,
 
 All three of these, every time, before the version is bumped:
 
-**Audit the repo against this file.** `npm run verify` now does the two
-mechanical halves on every push and pull request — `check:repo` greps every
-tracked file for absolute paths and credentials, and fails on a rating
-rendered without `bandOf()`. Both are tripwires for the shapes those
-mistakes actually take, not proofs, so the reading still matters: check
-that nothing new is per-book code, one-machine tooling, or a user action
-that needs a shell, and that no UI has started showing a rating by a route
-the grep cannot see. The point is to catch drift while it is one line, not
-at the moment of publishing.
+**Audit the repo against this file.** `npm run verify` now does the
+mechanical parts on every push and pull request. `check:repo` documents
+its own list at the top of `scripts/check-repo.ts` — currently absolute
+paths and credentials, a rating rendered without `bandOf()`, the lockfile
+agreeing with package.json, the Rust crate notice matching Cargo.lock, and
+the retired colour names in either the class or the `var()` form. Add to
+that list whenever a mistake turns out to have a shape a grep can catch;
+keep the header in step with what the file does, or this paragraph starts
+lying about it.
+
+They are tripwires, not proofs, so the reading still matters: check that
+nothing new is per-book code, one-machine tooling, or a user action that
+needs a shell, that no UI has started showing a rating by a route the grep
+cannot see, and that the native core and its TypeScript twin still agree.
+The point is to catch drift while it is one line, not at the moment of
+publishing.
 
 **Read the docs and fix what has gone stale.** `README.md`, everything in
 `docs/`, `scripts/ml/README.md`, `desktop/README.md`. Docs rot silently —

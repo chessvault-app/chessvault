@@ -58,15 +58,18 @@ and delete the ad-hoc hook.
 1. `desktop/build-server.mjs`: esbuild-bundles the server to
    `release/server/index.mjs` and the database builders beside it
    (`build-refgames.mjs`, `build-puzzles.mjs`,
-   `index-refgames-positions.mjs`), copies better-sqlite3 next to them
-   (v13 ships Node-API prebuilds — ABI-stable under Electron, no
-   rebuild), renders `icon.ico`, and copies the native core
+   `index-refgames-positions.mjs`, `optimize-refgames.mjs`), copies
+   better-sqlite3 next to them (v13 ships Node-API prebuilds — ABI-stable
+   under Electron, no rebuild), and renders `icon.ico`.
+
+   It also copies the native core
    (`native/target/release/chessvault-core`) beside those children **if it
    has been built** — the server looks there first, so that copy is the
    whole of shipping it. Packaging without a Rust toolchain is supported
-   and says so as it goes: the installer then runs the JavaScript jobs,
-   as every release before 0.5.0 did. CI builds the crate on each runner
-   first and asserts the binary is there before uploading anything.
+   and says so as it goes: the installer then runs the JavaScript jobs, as
+   every release before 0.5.0 did. CI builds the crate on each runner
+   first, and asserts the binary is there before uploading anything.
+
 2. `npm run build`: the SPA (with engine/model assets) into `dist/`.
 3. `electron-builder`: ships `desktop/` in the asar; the server bundle
    and `dist/` ride as extraResources, so the server's `./dist` static
@@ -89,11 +92,12 @@ pointed at `%APPDATA%/Chess Vault/{vault,data}` — a fresh vault per
 machine profile.
 
 The puzzle pool and the reference databases all build in the
-packaged app: `build-puzzles.mjs`, `build-refgames.mjs` and
-`index-refgames-positions.mjs` ship beside the server bundle and the
-server prefers them over the repo scripts. The installer seeds a
-starter reference database (position index included) on first run
-besides.
+packaged app: `build-puzzles.mjs`, `build-refgames.mjs`,
+`index-refgames-positions.mjs` and `optimize-refgames.mjs` ship beside
+the server bundle and the server prefers them over the repo scripts —
+and prefers the native binary over both, where one shipped. The
+installer seeds a starter reference database (position index included)
+on first run besides.
 
 ## Auto-update
 
