@@ -179,6 +179,38 @@ jobs:
           name: bundled-dbs
           path: assets
 
+      # The native fast path (native/, see docs/architecture.md). Built on
+      # each runner FOR THAT RUNNER rather than cross-compiled: an installer
+      # carries one architecture anyway — electron-builder defaults to the
+      # host's, so windows-latest and ubuntu-latest give x64 and macos-latest
+      # arm64 — and cargo's default target is the same host every time. A
+      # binary for the wrong arch would be dead weight the server then tried
+      # to spawn.
+      #
+      # No toolchain action: GitHub's runner images ship rustup and stable
+      # Rust already, and a release pipeline is a poor place to take on a
+      # third-party action it does not need.
+      #
+      # Not `continue-on-error`. Shipping an installer that silently lost its
+      # fast path is exactly the failure the 0.4.9 empty-draft taught us to
+      # make loud: if this breaks, the release should stop.
+      #
+      # Cached by the lockfile, restored BEFORE the build: a release that
+      # changed no crate reuses the whole 48-crate compile.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: native-${{ runner.os }}-${{ hashFiles('native/Cargo.lock') }}
+          restore-keys: native-${{ runner.os }}-
+
+      - name: Build the native core
+        run: |
+          rustc --version && cargo --version
+          cargo build --release --manifest-path native/Cargo.toml
+
       # On a tag: build and upload to the draft release for that tag.
       # By hand: build only. `--publish never` is explicit rather than
       # implied, so a dispatch run can never surprise anyone by publishing.
@@ -188,6 +220,24 @@ jobs:
         run: >-
           npm run ${{ matrix.script }} --
           --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
+
+      # The copy in build-server.mjs is deliberately conditional — a
+      # contributor without a Rust toolchain still gets an installer — so a
+      # green package step is not proof the fast path went in. On a release
+      # runner it MUST have: assert rather than assume, the same lesson as
+      # the assets check in scripts/release.sh.
+      - name: Assert the native core shipped
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=$(ls release/server/chessvault-core release/server/chessvault-core.exe 2>/dev/null || true)
+          if [ -z "$found" ]; then
+            echo "native core is missing from release/server — this installer would" >&2
+            echo "run the JavaScript jobs, which is not what a release ships." >&2
+            ls -la release/server >&2
+            exit 1
+          fi
+          ls -l $found
 
       - uses: actions/upload-artifact@v7
         with:

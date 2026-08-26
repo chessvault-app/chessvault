@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,7 @@ import pngToIco from 'png-to-ico';
  *   release/server/build-refgames.mjs        the reference-games builder, likewise
  *   release/server/index-refgames-positions.mjs   the position indexer, likewise
  *   release/server/optimize-refgames.mjs     the housekeeping pass, likewise
+ *   release/server/chessvault-core[.exe]     the native fast path, if built
  *   release/server/node_modules/better-sqlite3   rebuilt for Electron's ABI
  *   desktop/icon.ico                         NSIS/installer icon
  *
@@ -127,6 +128,33 @@ await build({
   },
 });
 console.log('refgames optimizer bundled');
+
+/**
+ * The native fast path, when this machine has built one.
+ *
+ * `nativeBinary()` in server/refgames.ts looks beside the bundled .mjs
+ * children first, which is exactly here — so dropping the binary in is
+ * the whole of shipping it. Built for the HOST architecture by cargo,
+ * which is why each platform's packaging job builds its own rather than
+ * cross-compiling: an installer carries one arch anyway (electron-builder
+ * defaults to the host's), and a binary for the wrong one would be dead
+ * weight the server would then try to spawn.
+ *
+ * Absent is normal and silent-ish: a contributor packaging without a Rust
+ * toolchain gets an installer that runs the JavaScript children, which is
+ * what every release before 0.5.0 shipped. Only the speed is missing.
+ */
+const exe = process.platform === 'win32' ? 'chessvault-core.exe' : 'chessvault-core';
+const nativeBuilt = join(repo, 'native', 'target', 'release', exe);
+if (existsSync(nativeBuilt)) {
+  copyFileSync(nativeBuilt, join(out, exe));
+  const mb = (statSync(nativeBuilt).size / 1e6).toFixed(1);
+  console.log(`native core copied (${exe}, ${mb} MB, ${process.arch})`);
+} else {
+  console.log(`native core NOT bundled — no ${nativeBuilt}`);
+  console.log('  (the installer will run the JavaScript jobs; build it with');
+  console.log('   `cargo build --release` in native/ to ship the fast path)');
+}
 
 // better-sqlite3 v13 ships Node-API prebuilds (prebuilds/<platform>.node),
 // ABI-stable across Node and Electron — a plain copy is the whole story.

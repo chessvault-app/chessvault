@@ -46,16 +46,16 @@ not a layer over what you were doing (see "The manager" in
 [databases.md](databases.md)) — so collapsing it is a UX decision to
 make on purpose, not a cleanup to fold into other work.
 
-**Shipping the native pipeline binary.** `native/` builds
-`chessvault-core`, and a server that finds the binary uses it for
-builds, indexing, optimizing and the deep scan (the update log has the
-measured speedups). Nothing ships it yet: distribution means
-per-platform CI builds attached to releases through the same channel the
-engine binaries use, a fetch-or-bundle step, and the licence inventory
-for the crate set — shakmaty is GPL-3.0, compatible with the app's
-licence but exactly the kind of compiled-in dependency the npm walk
-never sees. Until then the fast path is one `cargo build --release`
-away for anyone with a Rust toolchain, and everything works without it.
+**A native binary for servers.** Shipping it to the *desktop* is done
+(0.5.0: each platform's packaging job builds the crate on its own
+runner and `build-server.mjs` drops it beside the bundled JS children).
+A server install still compiles its own — `cargo build --release` in
+`native/`, which needs a Rust toolchain on the box. Publishing loose
+per-platform binaries as release assets, the way the engine is fetched
+at setup, would remove that; it is not obviously worth a second
+distribution channel while `deploy.sh` targets machines their operators
+already control. Worth doing if servers without a toolchain become a
+real case.
 
 ## Kept for a real use case
 

@@ -23,9 +23,16 @@
  *    behind, and the next `npm install` then dirties the tree with that
  *    exact diff — which is how 0.4.9 shipped with a lockfile still
  *    saying 0.4.8.
+ *
+ * 4. The Rust crates' licence notice matches native/Cargo.lock. The
+ *    installer conveys the native core, so its crates' notices travel
+ *    with it; unlike the npm walk this file is generated ahead of time
+ *    and committed, so it is the one part of the inventory that CAN go
+ *    stale. One `cargo add` would do it.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { lockCrates } from './collect-crate-licenses.ts';
 
 interface Finding {
   file: string;
@@ -145,6 +152,37 @@ for (const [where, got] of [
       text: `${where} = ${got}`,
       why: `lockfile version disagrees with package.json (${pkgVersion}) — run npm install and commit the lockfile`,
     });
+  }
+}
+
+// The crate notice against the lockfile it is generated from. Names and
+// versions only, read out of the notice's own "Crates covered:" manifest,
+// so this needs neither cargo nor the registry — it runs anywhere.
+const CRATE_LOCK = 'native/Cargo.lock';
+const CRATE_NOTICE = 'licenses/rust-crates.txt';
+if (existsSync(CRATE_LOCK) && existsSync(CRATE_NOTICE)) {
+  const wanted = lockCrates(readFileSync(CRATE_LOCK, 'utf-8')).map((c) => `${c.name} ${c.version}`);
+  const notice = readFileSync(CRATE_NOTICE, 'utf-8');
+  const listed = notice
+    .split('Crates covered:')[1]
+    ?.split('\n\n')[0]
+    ?.split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean) ?? [];
+  const missing = wanted.filter((c) => !listed.includes(c));
+  const extra = listed.filter((c) => !wanted.includes(c));
+  for (const [crates, why] of [
+    [missing, 'in native/Cargo.lock but not in the licence notice'],
+    [extra, 'in the licence notice but no longer in native/Cargo.lock'],
+  ] as const) {
+    if (crates.length > 0) {
+      findings.push({
+        file: CRATE_NOTICE,
+        line: 1,
+        text: crates.slice(0, 4).join(', ') + (crates.length > 4 ? `, +${crates.length - 4} more` : ''),
+        why: `${crates.length} crate(s) ${why} — run npx tsx scripts/collect-crate-licenses.ts`,
+      });
+    }
   }
 }
 

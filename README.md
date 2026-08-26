@@ -447,13 +447,15 @@ deleted and rebuilt. Backing up or migrating is copying a folder.
 **`native/` is optional.** It is a Rust crate — `chessvault-core` —
 that mirrors the four heavy database jobs (build, index, optimize,
 search every game) byte for byte, golden-tested against the JavaScript
-pipeline's own answers. Build it with `cargo build --release` in that
-directory and the server prefers it: a 280 k-game build drops from
-~180 s to ~72 s and a whole-database position search from ~13 s to
-~1 s, at a quarter of the memory. Without it — a fresh clone, the
-demo, the tests — everything runs exactly as before, in JavaScript.
-`CHESS_NATIVE=0` forces that path. Releases do not ship the binary
-yet.
+pipeline's own answers. The desktop installer carries it, built for
+that platform, so an installed app is fast without you doing anything:
+a 280 k-game build drops from ~180 s to ~72 s and a whole-database
+position search from ~13 s to ~1 s, at a quarter of the memory.
+A server or a source checkout gets it with `cargo build --release` in
+that directory — the server picks up the binary by itself. Without it,
+everything runs exactly as before, in JavaScript; `CHESS_NATIVE=0`
+forces that path even when the binary is there, which is how the two
+are compared.
 
 ## Developing
 

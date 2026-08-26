@@ -71,10 +71,16 @@ games, and databases that grow instead of being rebuilt.
   past the index's thirty plies it starts the scan itself, debounced so
   arrow-keying through a game never launches one per ply, and cancelled
   the moment the position moves on — the button remains the face of the
-  slower JS scan. Without the binary — a fresh checkout, the demo, the
-  tests — everything runs exactly as before. It is not shipped in
-  releases yet; that (and the licence inventory for its crates) is the
-  distribution step still ahead.
+  slower JS scan. **The desktop installer carries it**, built for each
+  platform on that platform's own runner, so an installed app is fast
+  without anyone typing `cargo`; a server or a checkout gets the same
+  speed from one `cargo build --release`. Without it — the demo, the
+  tests, an install that lost it — everything runs exactly as before,
+  and `CHESS_NATIVE=0` forces that path on purpose, which is how the
+  two are compared. Its 47 crates join the licence inventory the way
+  everything else does, except that no npm walk can see cargo: the
+  notice is generated from the lockfile and `check:repo` fails if the
+  two ever disagree.
 - **Two things that were invisible are visible again.** A window opened
   from inside another window rendered nothing on a desktop — pasting an
   image into the position loader looked like the loader simply closing,

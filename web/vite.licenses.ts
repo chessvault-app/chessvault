@@ -73,7 +73,15 @@ export const COPYRIGHT_YEAR = '2026';
  * databases, and the sounds. Each names the licence text shipped beside it
  * in this directory.
  */
-const ASSETS: { name: string; version: string; license: string; url: string; file: string | null }[] = [
+const ASSETS: {
+  name: string;
+  version: string;
+  license: string;
+  url: string;
+  file: string | null;
+  /** Only the desktop installer conveys this, like Chromium below. */
+  desktopOnly?: boolean;
+}[] = [
   // The default pieces, and the knight and king glyphs the UI draws
   // (components/knight-icon, king-icon). Not the app icon, favicon or landing
   // mark any more: those are the hex, ours, since a015079.
@@ -111,6 +119,15 @@ const ASSETS: { name: string; version: string; license: string; url: string; fil
     url: 'https://github.com/chessvault-app/chess-sounds-gen', file: null },
   { name: 'CellNet board-recognition weights', version: 'v1', license: 'GPL-3.0-only (ours)',
     url: REPO_URL, file: null },
+  // The native core's crates. No dependency walk here can see them — they
+  // are cargo's, not npm's — and since 0.5.0 the installer carries the
+  // compiled binary, so 47 crates are conveyed with it. The text is
+  // generated from native/Cargo.lock by scripts/collect-crate-licenses.ts
+  // and committed, because the builds that must ship the notice (and the
+  // ones that must not) have no cargo to ask.
+  { name: 'chessvault-core Rust crates (native core, desktop app)', version: '—',
+    license: 'MIT / Apache-2.0 / GPL-3.0-or-later / Zlib',
+    url: 'https://crates.io', file: 'rust-crates.txt', desktopOnly: true },
 ];
 
 /**
@@ -402,9 +419,16 @@ function rowHtml(r: Row, index: number, lazy: boolean): string {
       </details>`;
 }
 
-function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): string {
+function indexPage(
+  _files: string[],
+  deps: Dep[],
+  chrome: Chromium | null,
+  desktop: boolean,
+): string {
   const rows: Row[] = [
-    ...ASSETS.map((a) => ({
+    // A desktop-only row on the web page would claim the visitor received
+    // something they did not — the same reason Chromium is not listed there.
+    ...ASSETS.filter((a) => desktop || !a.desktopOnly).map((a) => ({
       name: a.name,
       version: a.version,
       license: a.license,
@@ -664,11 +688,13 @@ ${list}
 `;
 }
 /**
- * @param withChromium list Electron's Chromium components too. False for the
- * web and demo builds, which contain no Chromium — claiming otherwise would
- * describe something the visitor never received.
+ * @param desktop this build is the desktop app's, so it conveys two things
+ * the web and demo builds do not: Electron's Chromium components, and the
+ * native core's Rust crates. Claiming either on the web page would describe
+ * something the visitor never received.
  */
-export function licenses(withChromium = true): Plugin {
+export function licenses(desktop = true): Plugin {
+  const withChromium = desktop;
   let outDir = '';
   return {
     name: 'chess-vault:licenses',
@@ -688,7 +714,7 @@ export function licenses(withChromium = true): Plugin {
         const name = basename(decodeURIComponent((req.url ?? '/').split('?')[0] ?? '/'));
         if (!name || name === 'index.html') {
           res.setHeader('content-type', 'text/html; charset=utf-8');
-          res.end(indexPage(texts(), collect(), withChromium ? chromium() : null));
+          res.end(indexPage(texts(), collect(), withChromium ? chromium() : null, desktop));
           return;
         }
         if (name === 'dependencies.txt') {
@@ -726,9 +752,10 @@ export function licenses(withChromium = true): Plugin {
       if (chrome) {
         writeFileSync(resolve(target, 'chromium.json'), JSON.stringify(chrome.texts));
       }
-      writeFileSync(resolve(target, 'index.html'), indexPage(files, deps, chrome));
+      writeFileSync(resolve(target, 'index.html'), indexPage(files, deps, chrome, desktop));
+      const assets = ASSETS.filter((a) => desktop || !a.desktopOnly).length;
       console.log(
-        `licenses: ${ASSETS.length} assets + ${deps.length} packages` +
+        `licenses: ${assets} assets + ${deps.length} packages` +
           (chrome ? ` + ${chrome.names.length} Chromium components` : ''),
       );
     },

@@ -31,12 +31,22 @@ Anything here travels with the app to whoever installs or visits it.
 | Reference games | `data/refgames/`, demo subset | CC0-1.0, derived from the Lichess database |
 | ~150 other npm packages (the build regenerates the exact list) | bundled or shipped beside the server | MIT, ISC, BSD-2-Clause, Apache-2.0, Python-2.0, BlueOak-1.0.0 |
 | Electron, and with it Chromium and Node | desktop installer only | MIT, plus 773 components listed in `LICENSES.chromium.html` |
+| The native core's 47 Rust crates (`chessvault-core`, built from `native/`) | desktop installer only, beside the server bundle | mostly MIT/Apache-2.0; `shakmaty` and `pgn-reader` are GPL-3.0-or-later, plus one Zlib and one Unicode-3.0 component |
 
 The npm list is generated from `node_modules` at build time, so it cannot go
 stale. Electron is a devDependency — nothing imports it — but the desktop
 installer is Electron, so it is listed too. electron-builder places
 `LICENSE.electron.txt` and `LICENSES.chromium.html` at the root of the
 installed app.
+
+The Rust crates are cargo's, and no npm walk can see them — the blind spot
+that left the shadcn/ui sources unlisted for a release. Their notices are
+generated from `native/Cargo.lock` into `licenses/rust-crates.txt` by
+`scripts/collect-crate-licenses.ts` and committed, since the builds that
+must carry the notice have no cargo to ask; `npm run check:repo` fails if
+that file and the lockfile disagree, so it cannot quietly fall behind. Only
+the desktop installer conveys them: a server, a source checkout and the web
+app contain no binary and are offered no such row.
 
 ## Piece sets and sounds
 
@@ -79,19 +89,9 @@ synthetic training boards (Chess Merida, Chess Alpha, Chess Berlin — fetched
 by URL, not redistributed), and the scanned book PDFs. None are in the
 repository or in any build.
 
-**The native pipeline's Rust crates** (`native/`, 0.5.0). `cargo` fetches
-48 crates to build `chessvault-core`: mostly MIT/Apache-2.0 dual, one
-Zlib, one carrying a Unicode-3.0 component, and two under
-**GPL-3.0-or-later** — `shakmaty` (move generation) and `pgn-reader`.
-GPL-3.0-or-later is compatible with this app's GPL-3.0-only licence.
-Nothing is vendored: only our own sources are in the repository, and no
-release currently ships the compiled binary, so none of these crates is
-distributed today. **When the binary does ship** (the distribution step
-in [`docs/deferred.md`](docs/deferred.md)), that changes: the crate set
-needs rows here and its licence texts under `licenses/`, because the
-npm walk that generates the rest of this inventory cannot see a
-`cargo` dependency — the same blind spot that let the shadcn/ui
-sources go unlisted for one release.
+Nothing is vendored from cargo either: only our own sources live under
+`native/`, and the crates above are fetched at build time. GPL-3.0-or-later
+(shakmaty, pgn-reader) is compatible with this app's GPL-3.0-only licence.
 
 ## Book puzzles
 

@@ -45,7 +45,7 @@ export default defineConfig({
   root,
   base: './',
   publicDir: `${root}public`,
-  plugins: [react(), tailwindcss(), licenses(false), demoAssets()],
+  plugins: [react(), tailwindcss(), licenses(/* desktop */ false), demoAssets()],
   define: {
     // server/paths.ts reads process.env for its overrides; in the demo there
     // are none, and an undefined `process` would throw at import.
