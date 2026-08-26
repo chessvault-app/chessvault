@@ -33,7 +33,6 @@ import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
 import {
   EMPTY_STRUCTURED_FILTERS,
-  FilterRow,
   hasStructuredFilters,
   matchesOwnership,
   matchesStructured,
@@ -48,14 +47,14 @@ import {
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
 
-import { Panel, PanelHeader } from '@/components/panel';
+import { Panel } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { useUndoable } from '@/hooks/use-undoable';
-import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
 
 import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
+import { GameListShell } from './GameListShell';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { EliteGames } from './EliteGames';
 
@@ -508,33 +507,35 @@ export function CollectionView() {
           notes. From sm up the panels scroll themselves and the share is
           what makes that work, so it stays. */}
       <div className="flex min-h-0 max-sm:shrink-0 sm:flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)] lg:items-stretch">
-      {
+      <GameListShell
+        shape="framed"
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
-        <Panel className="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch">
-          {/* No Elite games button here any more: it is one of the ways to
-              ADD a game, and every one of those is behind the header's
-              Add games now. A panel header should say what the panel
-              holds, not offer a way somewhere else. */}
-          {/* At lg the pair lives here, with the list it filters, and the
-              row under the page title is not rendered. The field grows
-              into whatever the header has spare — on a wide panel a
-              48-wide box sat beside dead space — while the title's own
-              flex share keeps the panel's name in place. */}
-          <PanelHeader
-            title={`${t('Collection')} · ${visible.length}`}
-            actionsClassName="min-w-0 grow"
-            actions={
-              <span className="hidden min-w-0 grow items-center justify-end gap-2 lg:flex">
-                {finders('w-48 grow')}
-              </span>
-            }
-          />
-          {/* The shared filter row (GameFilters): side is YOUR side, so
-              it matches only the games you played; reference games (no
-              side of yours) answer to the other two. */}
-          {games.length > 0 && (
-            <FilterRow className="border-b">
+        panelClassName="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch"
+        title={`${t('Collection')} · ${visible.length}`}
+        // At lg the finders pair lives here, with the list it filters, and
+        // the row under the page title is not rendered. The field grows
+        // into whatever the header has spare — on a wide panel a 48-wide
+        // box sat beside dead space — while the title's own flex share
+        // keeps the panel's name in place.
+        headerActionsClassName="min-w-0 grow"
+        headerActions={
+          <span className="hidden min-w-0 grow items-center justify-end gap-2 lg:flex">
+            {finders('w-48 grow')}
+          </span>
+        }
+        // The wait, in the shape of the strip and rows that are coming —
+        // drawn at once rather than behind useSlowLoad: these rows are the
+        // panel's height, so held back they left a header over nothing
+        // that grew a fifth of a second later.
+        filtersLoading={!loaded}
+        listLoading={!loaded}
+        // The shared filter row (GameFilters): side is YOUR side, so it
+        // matches only the games you played; reference games (no side of
+        // yours) answer to the other two.
+        filters={
+          games.length > 0 ? (
+            <>
               <OwnershipSelect value={ownFilter} onChange={setOwnFilter} />
               <ResultSelect value={resultFilter} onChange={setResultFilter} />
               <NotesSelect value={notesFilter} onChange={setNotesFilter} />
@@ -588,39 +589,52 @@ export function CollectionView() {
                   onClose={() => setEditingFilters(false)}
                 />
               )}
-            </FilterRow>
-          )}
-          {/* The wait, in the shape of the rows that are coming — the same
-              SkeletonGameRows the archive and the elite list on this very
-              page already use. This panel was the one that showed a header
-              with nothing under it, which is what an emptied collection
-              looks like. */}
-          {!loaded ? (
-            // The filter row above is drawn only once there are games to
-            // filter, so the wait had rows but no strip and everything
-            // dropped 45px when the collection landed.
-            // Drawn at once rather than behind useSlowLoad: these rows
-            // are the panel's height, so held back they left a header
-            // over nothing that grew a fifth of a second later.
-            <>
-              <SkeletonFilterRow className="border-b" />
-              <SkeletonGameRows rows={6} />
             </>
-          ) : /* Nothing to show and nothing narrowing the list. Two ways to get
+          ) : undefined
+        }
+        list={
+          loaded && visible.length > 0
+            ? visible.map((game) => (
+                <CollectionRow
+                  key={gameKey(game)}
+                  game={game}
+                  bookmarked={bookmarks.has(gameKey(game))}
+                  customName={customName(game)}
+                  renaming={renamingKey === gameKey(game)}
+                  onOpen={rowOpen}
+                  onPreview={setPreview}
+                  onDrop={rowDrop}
+                  onToggleBookmark={rowBookmark}
+                  onRename={rowRename}
+                  onStartRename={setRenamingKey}
+                />
+              ))
+            : undefined
+        }
+        // Faint stripe on every other row, on top of the shell's dividers:
+        // at two lines a row is tall enough that a hairline alone left the
+        // list reading as one block of text. The stripe is 2% of the
+        // foreground — enough to group the two lines that belong together,
+        // not enough to read as a highlight.
+        listClassName="flex-1 overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022] sm:max-h-[38dvh] lg:max-h-none"
+        tail={
+          !loaded ? undefined : /* Nothing to show and nothing narrowing the list. Two ways to get
               here: the collection really is empty, or its last rows were just
               removed and the undo is still running — `hidden` is inside
               `visible` but not inside `games`, so the raw count alone said
               the collection was full while the list was bare, and the filter
               states below took it and blamed a search nobody had typed. What
               the reader sees is an empty collection either way, and Undo puts
-              the rows back. Both halves drop their `loaded &&` — the branch
-              above has already taken every render before the list is in. */
+              the rows back. */
           games.length === 0 || (!filtering && visible.length === 0) ? (
             <EmptyState
               // Centred in the PANEL, not parked under its header: an empty
               // state pinned to the top of a full-height box is the thing
-              // that leaves a reader looking at dead space below it.
-              className="min-h-0 flex-1"
+              // that leaves a reader looking at dead space below it. The
+              // border-t stands in for the filter row's old bottom rule
+              // when that row is above; with no filters there is no line,
+              // as before.
+              className={cn('min-h-0 flex-1', games.length > 0 && 'border-border border-t')}
               icon={Swords}
               title="Your collection is empty"
               body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
@@ -641,7 +655,7 @@ export function CollectionView() {
                something else" leaves the reader looking at dead space. */
             markedOnly && !needle && !filtersOn ? (
               <EmptyState
-                className="min-h-0 flex-1"
+                className="border-border min-h-0 flex-1 border-t"
                 icon={Bookmark}
                 title="No bookmarked games yet"
                 body="Bookmark a game from the list and it is kept here, one press from wherever you are."
@@ -654,7 +668,7 @@ export function CollectionView() {
               />
             ) : filtersOn && !needle ? (
               <EmptyState
-                className="min-h-0 flex-1"
+                className="border-border min-h-0 flex-1 border-t"
                 icon={SearchX}
                 title="Nothing matches those filters"
                 body="No game in your collection gets through the filters above. Clearing them shows the whole collection again."
@@ -667,7 +681,7 @@ export function CollectionView() {
               />
             ) : (
               <EmptyState
-                className="min-h-0 flex-1"
+                className="border-border min-h-0 flex-1 border-t"
                 icon={SearchX}
                 title="Nothing matches that search"
                 body={
@@ -683,32 +697,9 @@ export function CollectionView() {
                 }
               />
             )
-          ) : (
-          // Dividers AND a faint stripe on every other row: at two lines a
-          // row is tall enough that a hairline alone left the list reading
-          // as one block of text. The stripe is 2% of the foreground —
-          // enough to group the two lines that belong together, not enough
-          // to read as a highlight.
-          <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022] sm:max-h-[38dvh] lg:max-h-none">
-            {visible.map((game) => (
-              <CollectionRow
-                key={gameKey(game)}
-                game={game}
-                bookmarked={bookmarks.has(gameKey(game))}
-                customName={customName(game)}
-                renaming={renamingKey === gameKey(game)}
-                onOpen={rowOpen}
-                onPreview={setPreview}
-                onDrop={rowDrop}
-                onToggleBookmark={rowBookmark}
-                onRename={rowRename}
-                onStartRename={setRenamingKey}
-              />
-            ))}
-          </ul>
-          )}
-        </Panel>
-      }
+          ) : undefined
+        }
+      />
 
       {/* Where a game comes from, as ONE panel with two answers: the games
           you have played, and the games masters have. They are the same
