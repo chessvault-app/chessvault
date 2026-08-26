@@ -421,6 +421,19 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
     { id: 2500, label: '2500+' },
     { id: 2700, label: '2700+' },
   ];
+  // The game's LOWER rating inside the band — "what do people at my
+  // level play here", which is different guidance from what the corpus's
+  // strongest play. 400-wide, on the precomputed 200-point bucket edges,
+  // so a banded sweep costs the same as an unfiltered one. Broad rated
+  // corpora light these up; an elite-only dump has nothing below 2200
+  // and simply answers empty there.
+  const BANDS: { id: string | undefined; label: string }[] = [
+    { id: undefined, label: 'Any' },
+    { id: '1200-1599', label: '1200–1599' },
+    { id: '1600-1999', label: '1600–1999' },
+    { id: '2000-2399', label: '2000–2399' },
+    { id: '2400-', label: '2400+' },
+  ];
 
   return (
     <div className="flex flex-col gap-3">
@@ -444,6 +457,17 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
             label={label}
             active={filters.minElo === id}
             onClick={() => setFilters({ minElo: id })}
+          />
+        ))}
+      </FilterGroup>
+
+      <FilterGroup label="Level">
+        {BANDS.map(({ id, label }) => (
+          <FilterChip
+            key={label}
+            label={label}
+            active={filters.band === id}
+            onClick={() => setFilters({ band: id })}
           />
         ))}
       </FilterGroup>
@@ -473,7 +497,13 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
             size="sm"
             className="mr-auto"
             onClick={() =>
-              setFilters({ result: undefined, minElo: undefined, from: undefined, to: undefined })
+              setFilters({
+                result: undefined,
+                minElo: undefined,
+                band: undefined,
+                from: undefined,
+                to: undefined,
+              })
             }
           >
             {t('Clear filters')}

@@ -308,6 +308,16 @@ function upgradeInPlace(file: string): void {
   }
 }
 
+/** "1600-1999" or "2400-" (open top). Anything else is no band. */
+function parseBand(raw: string | undefined): { lo: number; hi: number | null } | null {
+  const m = raw ? /^(\d{3,4})-(\d{3,4})?$/.exec(raw) : null;
+  if (!m) return null;
+  const lo = Number(m[1]);
+  const hi = m[2] !== undefined ? Number(m[2]) : null;
+  if (hi !== null && hi < lo) return null;
+  return { lo, hi };
+}
+
 function gamesWhere(
   get: (key: string) => string | undefined,
   alias = '',
@@ -341,6 +351,20 @@ function gamesWhere(
   if (minElo > 0) {
     clauses.push(`${alias}white_elo >= ? AND ${alias}black_elo >= ?`);
     binds.push(minElo, minElo);
+  }
+
+  // The level band: the game's LOWER rating inside [lo, hi] (hi open when
+  // omitted — "2400-"), the same floor logic as minElo. Aligned bands are
+  // answered from the precomputed bucket sums by the explore routes; here
+  // it is the live clause every route composes with.
+  const band = parseBand(get('band'));
+  if (band) {
+    clauses.push(`MIN(${alias}white_elo, ${alias}black_elo) >= ?`);
+    binds.push(band.lo);
+    if (band.hi !== null) {
+      clauses.push(`MIN(${alias}white_elo, ${alias}black_elo) <= ?`);
+      binds.push(band.hi);
+    }
   }
 
   const player = get('player')?.trim();
@@ -769,6 +793,51 @@ export function refGamesApi(
   });
 
   /**
+   * The precomputed answer to an explore request, if the sums can give
+   * one: no filters beyond (optionally) a level band whose edges sit on
+   * the 200-point buckets. Returns the statement (taking `pos` first)
+   * and its extra binds, or null when only the live join can answer.
+   * Old unbucketed tables answer only the bandless question.
+   */
+  const summedPath = (
+    db: InstanceType<typeof Database>,
+    get: (key: string) => string | undefined,
+  ): ((pos: unknown) => unknown[]) | null => {
+    if (!hasMoveCounts(db)) return null;
+    const others = gamesWhere((k) => (k === 'band' ? undefined : get(k)), 'g.');
+    if (others.clauses.length > 0) return null;
+    const band = parseBand(get('band'));
+    const bucketed =
+      db.prepare("SELECT 1 FROM pragma_table_info('move_counts') WHERE name = 'eb'").get() !==
+      undefined;
+    const grouped = (extra: string) =>
+      db.prepare(
+        `SELECT uci, SUM(w) AS w, SUM(d) AS d, SUM(b) AS b FROM move_counts
+         WHERE pos = ?${extra} GROUP BY uci
+         ORDER BY SUM(w) + SUM(d) + SUM(b) DESC, uci`,
+      );
+    if (!band) {
+      const stmt = bucketed
+        ? grouped('')
+        : db.prepare(
+            'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
+          );
+      return (pos) => stmt.all(pos);
+    }
+    if (!bucketed) return null;
+    if (band.lo % 200 !== 0 || (band.hi !== null && (band.hi + 1) % 200 !== 0)) return null;
+    if (band.hi === null) {
+      const stmt = grouped(' AND eb >= ?');
+      const lo = band.lo / 200;
+      return (pos) => stmt.all(pos, lo);
+    }
+    const stmt = grouped(' AND eb BETWEEN ? AND ?');
+    const lo = band.lo / 200;
+    const hi = (band.hi + 1) / 200 - 1;
+    return (pos) => stmt.all(pos, lo, hi);
+  };
+
+  /**
    * The deepest catalogued opening along a game's first plies.
    *
    * A database only knows the name its source PGN carried, and the big
@@ -933,17 +1002,15 @@ export function refGamesApi(
     // still be a THIN one (under MOVE_COUNT_MIN_GAMES the build stores
     // no rows), so an empty answer falls back to the live aggregation,
     // which is instant on a row set that small.
-    let rows = (
-      clauses.length === 0 && hasMoveCounts(db)
-        ? db
-            .prepare(
-              'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
-            )
-            .all(key)
-        : live.all(key, ...binds)
-    ) as { uci: string; w: number; d: number; b: number }[];
-    if (rows.length === 0 && clauses.length === 0 && hasMoveCounts(db)) {
-      rows = live.all(key) as typeof rows;
+    const summed = summedPath(db, (k) => c.req.query(k));
+    let rows = (summed ? summed(key) : live.all(key, ...binds)) as {
+      uci: string;
+      w: number;
+      d: number;
+      b: number;
+    }[];
+    if (rows.length === 0 && summed) {
+      rows = live.all(key, ...binds) as typeof rows;
     }
 
     const moves = rows.flatMap((row) => {
@@ -1031,12 +1098,7 @@ export function refGamesApi(
        GROUP BY p.uci
        ORDER BY w + d + b DESC, p.uci`,
     );
-    const summed = clauses.length === 0 && hasMoveCounts(db);
-    const stmt = summed
-      ? db.prepare(
-          'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
-        )
-      : live;
+    const summed = summedPath(db, (k) => c.req.query(k));
 
     const positions = fens.map((fen) => {
       const setup = parseFen(fen.trim());
@@ -1045,7 +1107,7 @@ export function refGamesApi(
       if (position.isErr) return { fen, moves: [] };
       const pos = position.unwrap();
       const key = toDbKey(hashSetup(pos.toSetup()));
-      let rows = stmt.all(key, ...(summed ? [] : binds)) as {
+      let rows = (summed ? summed(key) : live.all(key, ...binds)) as {
         uci: string;
         w: number;
         d: number;
@@ -1053,7 +1115,7 @@ export function refGamesApi(
       }[];
       // Thin positions store no precomputed rows — see
       // MOVE_COUNT_MIN_GAMES; their live sum is instant.
-      if (rows.length === 0 && summed) rows = live.all(key) as typeof rows;
+      if (rows.length === 0 && summed) rows = live.all(key, ...binds) as typeof rows;
       const moves = rows.flatMap((row) => {
         const move = parseUci(row.uci);
         if (!move || !pos.isLegal(move)) return [];

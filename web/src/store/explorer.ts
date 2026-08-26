@@ -162,19 +162,25 @@ export interface RefDbFilters {
   result?: '1-0' | '0-1' | '1/2-1/2';
   /** A floor under BOTH players' ratings. */
   minElo?: number;
+  /** A level band on the game's LOWER rating — "1600-1999", or "2400-"
+      for an open top. Bands on the 200-point bucket edges are answered
+      from the precomputed sums; statistics at your own level rather than
+      the corpus's strongest. */
+  band?: string;
   /** Inclusive `YYYY-MM-DD` bounds. */
   from?: string;
   to?: string;
 }
 
 export function hasRefFilters(f: RefDbFilters): boolean {
-  return Boolean(f.result || f.minElo || f.from || f.to);
+  return Boolean(f.result || f.minElo || f.band || f.from || f.to);
 }
 
 function refFilterQuery(f: RefDbFilters): string {
   const query = new URLSearchParams();
   if (f.result) query.set('result', f.result);
   if (f.minElo) query.set('minElo', String(f.minElo));
+  if (f.band) query.set('band', f.band);
   if (f.from) query.set('from', f.from);
   if (f.to) query.set('to', f.to);
   return query.toString();

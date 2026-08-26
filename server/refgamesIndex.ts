@@ -40,7 +40,8 @@ const SCHEMA = `
     uci TEXT NOT NULL,
     game_id INTEGER NOT NULL,
     ply INTEGER NOT NULL,
-    r INTEGER NOT NULL
+    r INTEGER NOT NULL,
+    eb INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);
 `;
@@ -49,6 +50,18 @@ const SCHEMA = `
     the per-move sums need no join: 0 white won, 1 drawn, 2 black won. */
 export const resultCode = (result: string): number =>
   result === '1-0' ? 0 : result === '0-1' ? 2 : 1;
+
+/**
+ * The game's level as a 200-point bucket of its LOWER rating — a 2700
+ * flagged against a 2200 is not a 2700-level game, the same floor logic
+ * the strength filter uses. Carried on every ply row so the per-move
+ * sums can be sliced by band without a join: "what do people at MY
+ * level play here" is the statistics an improving player should be
+ * reading, and corpus-wide sums from much stronger players answer a
+ * different question.
+ */
+export const eloBucket = (whiteElo: number, blackElo: number): number =>
+  Math.max(0, Math.floor(Math.min(whiteElo, blackElo) / 200));
 
 /**
  * Per-(position, move) result sums, precomputed from the index above.
@@ -85,12 +98,12 @@ export const resultCode = (result: string): number =>
 export const MOVE_COUNT_MIN_GAMES = 5;
 export const REFGAMES_MOVE_COUNTS = `
   CREATE TABLE IF NOT EXISTS move_counts AS
-    SELECT pos, uci,
+    SELECT pos, uci, eb,
            SUM(r = 0) AS w,
            SUM(r = 1) AS d,
            SUM(r = 2) AS b
     FROM plies
-    GROUP BY pos, uci;
+    GROUP BY pos, uci, eb;
   CREATE TEMP TABLE mc_thin AS
     SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < ${MOVE_COUNT_MIN_GAMES};
   DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);
@@ -98,10 +111,12 @@ export const REFGAMES_MOVE_COUNTS = `
   CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
 `;
 
-/** The same table for a database whose plies predate the result column —
-    scripts/tune-dbs.ts only; fresh index passes always take the fast one. */
+/** The same table for a database whose plies predate the result and
+    bucket columns — scripts/tune-dbs.ts only; fresh index passes always
+    take the fast one. Unbucketed: the explorer sums it corpus-wide and
+    answers band questions live. */
 export const REFGAMES_MOVE_COUNTS_LEGACY = REFGAMES_MOVE_COUNTS.replace(
-  /SELECT pos, uci,[\s\S]*?GROUP BY pos, uci;/,
+  /SELECT pos, uci, eb,[\s\S]*?GROUP BY pos, uci, eb;/,
   `SELECT p.pos AS pos, p.uci AS uci,
            SUM(g.result = '1-0') AS w,
            SUM(g.result = '1/2-1/2') AS d,
@@ -182,7 +197,7 @@ export function indexPositions(
     let sinceId = 0;
     if (append) {
       const hasR =
-        db.prepare("SELECT 1 FROM pragma_table_info('plies') WHERE name = 'r'").get() !==
+        db.prepare("SELECT 1 FROM pragma_table_info('plies') WHERE name = 'eb'").get() !==
         undefined;
       if (hasR) {
         maxPly = Number(readMeta('index_max_ply')) || maxPly;
@@ -213,7 +228,7 @@ export function indexPositions(
     }
 
     const insert = db.prepare(
-      'INSERT INTO plies (pos, uci, game_id, ply, r) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO plies (pos, uci, game_id, ply, r, eb) VALUES (?, ?, ?, ?, ?, ?)',
     );
     const total = (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
     let games = 0;
@@ -224,22 +239,29 @@ export function indexPositions(
     // .all()-ing every movetext at once would hold a whole Elite month's
     // moves (~140 MB) in memory for no reason.
     const page = db.prepare(
-      'SELECT id, moves, result FROM games WHERE id > ? ORDER BY id LIMIT 5000',
+      'SELECT id, moves, result, white_elo, black_elo FROM games WHERE id > ? ORDER BY id LIMIT 5000',
     );
     let lastId = sinceId;
     for (;;) {
-      const batch = page.all(lastId) as { id: number; moves: string; result: string }[];
+      const batch = page.all(lastId) as {
+        id: number;
+        moves: string;
+        result: string;
+        white_elo: number;
+        black_elo: number;
+      }[];
       if (batch.length === 0) break;
       db.exec('BEGIN');
       for (const row of batch) {
         const pos = Chess.default();
         const r = resultCode(row.result);
+        const eb = eloBucket(row.white_elo, row.black_elo);
         let ply = 0;
         for (const san of row.moves.split(' ')) {
           if (ply >= maxPly) break;
           const move = parseSan(pos, san);
           if (!move) break;
-          insert.run(toDbKey(hashSetup(pos.toSetup())), makeUci(move), row.id, ply, r);
+          insert.run(toDbKey(hashSetup(pos.toSetup())), makeUci(move), row.id, ply, r, eb);
           pos.play(move);
           ply += 1;
           plies += 1;

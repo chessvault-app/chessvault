@@ -591,8 +591,13 @@ describe('position index and explore', () => {
     const insert = db.prepare(
       'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     );
-    for (let i = 0; i < 5; i += 1) {
-      insert.run(`W${i}`, `B${i}`, 2500, 2500, '1-0', '2026.01.01', 'T', 'C20', 'Open', 'e4 e5');
+    // Three e4 games at 2500-level, two at 1600-level: the level bands
+    // below have something to disagree about.
+    for (let i = 0; i < 3; i += 1) {
+      insert.run(`W${i}`, `B${i}`, 2500, 2560, '1-0', '2026.01.01', 'T', 'C20', 'Open', 'e4 e5');
+    }
+    for (let i = 3; i < 5; i += 1) {
+      insert.run(`W${i}`, `B${i}`, 1650, 1600, '1-0', '2026.01.01', 'T', 'C20', 'Open', 'e4 e5');
     }
     insert.run('W5', 'B5', 2500, 2500, '0-1', '2026.01.01', 'T', 'A40', 'Queen', 'd4 d5');
     db.close();
@@ -624,6 +629,21 @@ describe('position index and explore', () => {
         await wideApp.request(`/api/refgames/explore?fen=${encodeURIComponent(AFTER_D4)}`)
       ).json()) as { moves: { san: string; total: number }[] };
       expect(deep.moves.map((m) => [m.san, m.total])).toEqual([['d5', 1]]);
+
+      // Level bands: the game's LOWER rating inside the band. Aligned
+      // bands read the precomputed buckets; a band off the 200-point
+      // edges takes the live join — same semantics either way.
+      const band = async (q: string): Promise<{ moves: { san: string; total: number }[] }> =>
+        (await (
+          await wideApp.request(`/api/refgames/explore?fen=${encodeURIComponent(START)}&band=${q}`)
+        ).json()) as { moves: { san: string; total: number }[] };
+      expect((await band('1600-1999')).moves.map((m) => [m.san, m.total])).toEqual([['e4', 2]]);
+      expect((await band('2400-')).moves.map((m) => [m.san, m.total])).toEqual([
+        ['e4', 3],
+        ['d4', 1],
+      ]);
+      // Off the bucket edges: 1700 excludes the 1600-floor games.
+      expect((await band('1700-1999')).moves).toEqual([]);
     } finally {
       wide.closeDb();
       rmSync(wideDir, { recursive: true, force: true });
