@@ -50,14 +50,51 @@ survives a rebuild.
 switched in the games-page Databases browser. The Databases page uploads PGN collections
 (the same `vault/sources/` uploads), indexes any selection of them under a
 name, and deletes either kind — the built database or the upload it was
-built from. So unlike puzzles there is no
-replace-wrinkle here: build the same name again to replace it, or a new
-name beside it. The same indexer runs from a terminal:
+built from. Building under a name that already exists asks which of two
+things you mean:
+
+- **Replace** — build the database again from the picked collections,
+  as before.
+- **Add to it** — grow the database in place: only the games it does
+  not already hold are indexed (same players, result, date and
+  movetext is the same game), and the position index extends from
+  where it left off instead of rebuilding. Feeding the same file twice
+  adds nothing. An append interrupted between its insert and its index
+  pass leaves the database served but marked **index behind** in the
+  manager; Optimize (below) heals it.
+
+Each database row in the manager also offers **Optimize**: remove
+exact duplicate games (for databases built before the append dedup
+existed, or from overlapping sources), re-derive every derived table,
+and compact the file. Real deletions — SQLite wants no flag-and-sweep
+model — with the space returned by the final vacuum.
+
+The same indexer runs from a terminal:
 
 ```
 npm run build:refgames                    # every PGN in vault/sources/
 npm run build:refgames -- elite-2025-11.pgn --name elite
+npm run build:refgames -- dec.pgn --name elite --append
 ```
+
+What a built database answers, and from where:
+
+- The **Databases browser** on the Games page searches whole games —
+  players and openings seek through small derived lookup tables, pages
+  seek by id, and a filtered count stops at "10,000+" rather than
+  scanning millions of rows to finish the digit.
+- The **explorer** answers any position in the first 30 plies from
+  precomputed per-move sums — including sliced by the **Level** band
+  (200-point buckets of the game's lower rating), so "what do players
+  at my level play here" reads as fast as the corpus-wide answer.
+- Past those 30 plies, the explorer offers **Search every game for
+  this position**: a streamed scan of the whole database's movetext,
+  any depth, progress and hits arriving live, the reference filters
+  applying to it exactly as to the move table.
+- `/api/mygames/compare` diffs **your own games** against a database:
+  every position where your move is rare among what its players answer
+  (at your level, when a band is given), aggregated across your recent
+  games. API-only for now; a UI surface is planned.
 
 A machine still carrying the single-file era's `data/refgames.sqlite`
 migrates on the server's next start: the file is renamed into the
