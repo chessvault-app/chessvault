@@ -309,7 +309,7 @@ terminal alternative, not the requirement.
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames/*.sqlite` | the elite browser, the local explorer, the repertoire trainer and the opening map | a starter set comes with the app; more in the app, or `npm run build:refgames` |
+| `data/refgames/*.sqlite` | the Databases browser, the local explorer, the repertoire trainer and the opening map | a starter set comes with the app; more in the app, or `npm run build:refgames` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
 `data/mygames.sqlite` is not in the table because you never build it: the
@@ -377,13 +377,16 @@ same thing from a terminal if you prefer one.
 
 **Reference games build in the app too, and they are plural.** The
 desktop starts seeded — the installer's starter set is one
-database, in place before the app first opens — and the elite browser's
-manager uploads PGN collections and indexes any selection of them into a
+database, in place before the app first opens — and the Databases page
+uploads PGN collections and indexes any selection of them into a
 named database beside the others: an Elite month, an OTB collection,
 your club's games, each searchable on its own and switchable in the
-browser. Replacing one is therefore not a special case — build the same
-name again, or a new name, and delete what you no longer want. The same
-indexer runs from a terminal, if you prefer one:
+Games page's Databases browser. Replacing one is therefore not a special
+case — build the same name again, or a new name, and delete what you no
+longer want. A database also **grows**: the + on its row indexes only
+the games it does not already hold, extending its position index rather
+than rebuilding it. The same indexer runs from a terminal, if you prefer
+one:
 
 ```bash
 npm run build:refgames                       # everything in vault/sources
@@ -433,12 +436,24 @@ server/     Hono server: vault I/O, auth gate + 2FA, settings, proxies
 web/        Vite + React UI
 desktop/    Electron shell (remote-client or self-hosted)
 scripts/    builders: engine setup, refgames index, ML pipeline
+native/     optional Rust core for the heavy database jobs (see below)
 data/       DERIVED — rebuildable, gitignored
 vault/      YOUR DATA — plain files, git-friendly
 ```
 
 **`vault/` is the irreplaceable part.** Everything in `data/` can be
 deleted and rebuilt. Backing up or migrating is copying a folder.
+
+**`native/` is optional.** It is a Rust crate — `chessvault-core` —
+that mirrors the four heavy database jobs (build, index, optimize,
+search every game) byte for byte, golden-tested against the JavaScript
+pipeline's own answers. Build it with `cargo build --release` in that
+directory and the server prefers it: a 280 k-game build drops from
+~180 s to ~72 s and a whole-database position search from ~13 s to
+~1 s, at a quarter of the memory. Without it — a fresh clone, the
+demo, the tests — everything runs exactly as before, in JavaScript.
+`CHESS_NATIVE=0` forces that path. Releases do not ship the binary
+yet.
 
 ## Developing
 

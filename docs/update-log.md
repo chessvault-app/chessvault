@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.5.0
 
 The Games menu unified, the reference layer built for millions of
 games, and databases that grow instead of being rebuilt.
@@ -75,6 +75,15 @@ games, and databases that grow instead of being rebuilt.
   tests — everything runs exactly as before. It is not shipped in
   releases yet; that (and the licence inventory for its crates) is the
   distribution step still ahead.
+- **Two things that were invisible are visible again.** A window opened
+  from inside another window rendered nothing on a desktop — pasting an
+  image into the position loader looked like the loader simply closing,
+  and every other window-inside-a-window was equally blank. And the
+  opening map's catalogue names were painted in a colour that no longer
+  exists, which resolves to black: unreadable on the dark theme,
+  off-palette on the light one. Both had been shipped for a release or
+  more; both are one line, and the repo check now greps for the retired
+  colour names in the `var()` form that hid this one.
 
 ## 0.4.9
 

@@ -158,7 +158,7 @@ against the editor's own font size, not in the px it resolved to once.
 - A list's **count row** leads with the tally in the section-label
   voice — the registry's `text-sm font-medium text-muted-foreground`, the
   same voice a panel's title and a group of settings are named in — and
-  keeps its controls on the right; the elite and archive panels share
+  keeps its controls on the right; the databases and archive panels share
   this shape because they take turns in one column. (The small-caps
   `label-caps` voice is gone with the old look.)
 - A panel's header is the registry's card header as a row (`PanelHeader`:

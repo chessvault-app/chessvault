@@ -79,6 +79,20 @@ synthetic training boards (Chess Merida, Chess Alpha, Chess Berlin — fetched
 by URL, not redistributed), and the scanned book PDFs. None are in the
 repository or in any build.
 
+**The native pipeline's Rust crates** (`native/`, 0.5.0). `cargo` fetches
+48 crates to build `chessvault-core`: mostly MIT/Apache-2.0 dual, one
+Zlib, one carrying a Unicode-3.0 component, and two under
+**GPL-3.0-or-later** — `shakmaty` (move generation) and `pgn-reader`.
+GPL-3.0-or-later is compatible with this app's GPL-3.0-only licence.
+Nothing is vendored: only our own sources are in the repository, and no
+release currently ships the compiled binary, so none of these crates is
+distributed today. **When the binary does ship** (the distribution step
+in [`docs/deferred.md`](docs/deferred.md)), that changes: the crate set
+needs rows here and its licence texts under `licenses/`, because the
+npm walk that generates the rest of this inventory cannot see a
+`cargo` dependency — the same blind spot that let the shadcn/ui
+sources go unlisted for one release.
+
 ## Book puzzles
 
 Puzzles imported from commercial books stay in the vault and are never

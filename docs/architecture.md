@@ -74,6 +74,18 @@ matters.
   frontier (desktop, PWA, phone) a thin client. On phones a contextual
   bottom bar (`web/src/components/mobile-action-bar.tsx`) hands the open
   page its own controls in place of the global tabs.
+- **Job children** (spawned by the server, never in-process): the heavy
+  database work — building a reference database, indexing its positions,
+  optimizing it, scanning every game for a position — runs as a child so
+  the API stays answerable, with one job slot and the child's stdout as
+  the progress log. Each has two implementations that must agree: the
+  TypeScript one (`scripts/*.ts`, or the bundled `.mjs` beside a packaged
+  server) and, when a build of it exists, the Rust binary from `native/`,
+  which the server prefers. They are held to byte-identical output by
+  golden fixtures (`native/tests/goldens.json`, exported from the JS
+  side) and a whole-file diff; `CHESS_NATIVE=0` pins the JS path for
+  comparing them. Nothing requires the binary — it is a speed, not a
+  dependency.
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,
@@ -88,12 +100,15 @@ matters.
   the analysis board — the landing page must not pay for the engine, the
   explorer and the PGN parsers to draw a launcher — which is also why the
   home page's customise dialog is the one thing on it that is lazy. It
-  currently loads 595 kB of JS in Korean — 503 kB of shell across 41
-  chunks (the 227 kB entry, 129 kB of the component layer, 61 kB of
-  dialog) and 92 kB of dictionary — and 503 kB in English; measured on
-  the 0.4.9 build. The shell was 217 kB before the component layer came
+  currently loads 599 kB of JS in Korean — 503 kB of shell across 41
+  chunks (the 228 kB entry, 129 kB of the component layer, 61 kB of
+  dialog) and 96 kB of dictionary — and 503 kB in English; measured on
+  the 0.5.0 build. The shell was 217 kB before the component layer came
   in, and the Base UI port grew the layer's and the dialog's chunks
-  again.
+  again. A release's worth of new UI strings costs the dictionary and
+  nothing else: 0.5.0 added the Databases vocabulary, the level bands,
+  the deep search and the comparison report, and the shell did not move
+  a kilobyte.
 
 ## Deployment model
 
