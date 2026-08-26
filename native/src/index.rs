@@ -165,8 +165,9 @@ pub fn index_positions(
         let _ = conn.execute_batch(&format!("ALTER TABLE games ADD COLUMN {column} INTEGER"));
     }
 
-    let total = conn.query_row("SELECT COUNT(*) AS n FROM games", [], |r| r.get::<_, i64>(0))?
-        as u64;
+    let total = conn.query_row("SELECT COUNT(*) AS n FROM games", [], |r| {
+        r.get::<_, i64>(0)
+    })? as u64;
     let mut games: u64 = 0;
     let mut plies: u64 = 0;
 
@@ -221,7 +222,14 @@ pub fn index_positions(
                 let r = result_code(&row.result);
                 let eb = elo_bucket_of(row.white_elo, row.black_elo);
                 for ply_row in replay_plies(&row.moves, max_ply) {
-                    insert.execute(params![ply_row.pos, ply_row.uci, row.id, ply_row.ply, r, eb])?;
+                    insert.execute(params![
+                        ply_row.pos,
+                        ply_row.uci,
+                        row.id,
+                        ply_row.ply,
+                        r,
+                        eb
+                    ])?;
                     plies += 1;
                 }
                 games += 1;
@@ -244,7 +252,9 @@ pub fn index_positions(
     conn.execute_batch(sql::MOVE_COUNTS)?;
 
     let prev_plies: u64 = if append {
-        read_meta(&conn, "plies").and_then(|v| v.parse().ok()).unwrap_or(0)
+        read_meta(&conn, "plies")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
     } else {
         0
     };
@@ -253,8 +263,7 @@ pub fn index_positions(
         .optional()?
         .flatten()
         .unwrap_or(0);
-    let mut set_meta =
-        conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)")?;
+    let mut set_meta = conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)")?;
     set_meta.execute(params!["plies", (prev_plies + plies).to_string()])?;
     set_meta.execute(params!["index_max_ply", max_ply.to_string()])?;
     set_meta.execute(params!["indexed_at", iso_now()])?;

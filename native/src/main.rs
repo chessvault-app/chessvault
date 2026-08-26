@@ -7,12 +7,16 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use chessvault_core::build::run_build;
+use chessvault_core::deep::run_deep_search;
 use chessvault_core::index::index_positions;
+use chessvault_core::optimize::run_optimize;
 use chessvault_core::util::commas;
 
 const USAGE: &str = "usage:
   chessvault-core build <sources...> --name <name> [--append] --data <dir>
-  chessvault-core index <name> [--append] --data <dir>";
+  chessvault-core index <name> [--append] --data <dir>
+  chessvault-core optimize <name> --data <dir>
+  chessvault-core deep-search <name> --fen <fen> [--filters <json>] --data <dir>";
 
 fn valid_name(name: &str) -> bool {
     let mut chars = name.chars();
@@ -28,6 +32,8 @@ struct Args {
     name: Option<String>,
     data: Option<PathBuf>,
     append: bool,
+    fen: Option<String>,
+    filters: Option<String>,
 }
 
 fn parse(args: &[String]) -> Result<Args, String> {
@@ -36,6 +42,8 @@ fn parse(args: &[String]) -> Result<Args, String> {
         name: None,
         data: None,
         append: false,
+        fen: None,
+        filters: None,
     };
     let mut i = 0;
     while i < args.len() {
@@ -48,6 +56,14 @@ fn parse(args: &[String]) -> Result<Args, String> {
             "--data" => {
                 i += 1;
                 out.data = Some(PathBuf::from(args.get(i).ok_or("--data needs a value")?));
+            }
+            "--fen" => {
+                i += 1;
+                out.fen = Some(args.get(i).ok_or("--fen needs a value")?.clone());
+            }
+            "--filters" => {
+                i += 1;
+                out.filters = Some(args.get(i).ok_or("--filters needs a value")?.clone());
             }
             flag if flag.starts_with("--") => return Err(format!("unknown flag: {flag}")),
             positional => out.positional.push(positional.to_owned()),
@@ -129,6 +145,68 @@ fn main() -> ExitCode {
                     );
                     ExitCode::SUCCESS
                 }
+                Err(error) => {
+                    eprintln!("{error}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        "optimize" => {
+            let Some(name) = args.positional.first() else {
+                eprintln!("usage: chessvault-core optimize <name> --data <dir>");
+                return ExitCode::from(2);
+            };
+            if !valid_name(name) {
+                eprintln!("invalid database name: {name}");
+                return ExitCode::FAILURE;
+            }
+            let path = data.join("refgames").join(format!("{name}.sqlite"));
+            if !path.exists() {
+                eprintln!("no such database: {name}");
+                return ExitCode::FAILURE;
+            }
+            match run_optimize(&path) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => {
+                    eprintln!("{error}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        "deep-search" => {
+            let Some(name) = args.positional.first() else {
+                eprintln!(
+                    "usage: chessvault-core deep-search <name> --fen <fen> [--filters <json>] --data <dir>"
+                );
+                return ExitCode::from(2);
+            };
+            if !valid_name(name) {
+                eprintln!("invalid database name: {name}");
+                return ExitCode::FAILURE;
+            }
+            let Some(fen) = args.fen.clone() else {
+                eprintln!("--fen <fen> is required");
+                return ExitCode::from(2);
+            };
+            let path = data.join("refgames").join(format!("{name}.sqlite"));
+            if !path.exists() {
+                eprintln!("no such database: {name}");
+                return ExitCode::FAILURE;
+            }
+            let filters: std::collections::HashMap<String, String> = match args
+                .filters
+                .as_deref()
+                .map(serde_json::from_str)
+                .transpose()
+            {
+                Ok(map) => map.unwrap_or_default(),
+                Err(error) => {
+                    eprintln!("bad --filters json: {error}");
+                    return ExitCode::from(2);
+                }
+            };
+            match run_deep_search(&path, &fen, &|key| filters.get(key).cloned()) {
+                Ok(()) => ExitCode::SUCCESS,
                 Err(error) => {
                     eprintln!("{error}");
                     ExitCode::FAILURE

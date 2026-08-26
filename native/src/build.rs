@@ -159,11 +159,7 @@ pub fn run_build(
             println!("indexing {base}…");
             let mut reader = Reader::new(BufReader::new(File::open(source)?));
             while let Some(game) = reader.read_game(&mut visitor)? {
-                let variant = game
-                    .variant
-                    .as_deref()
-                    .unwrap_or("standard")
-                    .to_lowercase();
+                let variant = game.variant.as_deref().unwrap_or("standard").to_lowercase();
                 let result = game.result.as_deref().unwrap_or("*");
                 if !ACCEPTED_VARIANTS.contains(&variant.as_str())
                     || game.has_fen
