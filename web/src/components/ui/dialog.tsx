@@ -170,6 +170,15 @@ function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdro
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
+      // Base UI does not render a NESTED dialog's backdrop by default —
+      // and in this file the Backdrop is the layout box the Popup lives
+      // inside (the structural departure noted at the top), so without
+      // this a window opened from inside another window rendered
+      // nothing at all: the parent parked itself for a page that never
+      // appeared, which read as the whole dialog just closing. Each
+      // window owning its overlay is also what the outside-press guard
+      // assumes (ignoreOutside compares overlay ancestry).
+      forceRender
       // A press on the scrim closes the window (Base UI, from its document
       // listeners — which is why the pointerdown itself is NOT stopped
       // here: React would stop the native event at the portal's root and
