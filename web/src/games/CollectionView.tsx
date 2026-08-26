@@ -1049,12 +1049,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             Full-bleed and bordered, because a sticky bar that is merely
             bg-card reads as a mistake the moment content passes UNDER
             it: half a field showing to the left of the buttons, the rest
-            hidden, no line to say which is which. -mx-3 px-3 takes it to
-            both edges of the window's own padding, the rule says where it
-            starts, and z-10 keeps it over anything that scrolls beneath. */}
+            hidden, no line to say which is which. -mx-4 px-4 takes it to
+            both edges of the window's own padding (DialogContent pads by
+            4; the old -mx-3 stopped 4px short of each edge), the rule
+            says where it starts, and z-10 keeps it over anything that
+            scrolls beneath. */}
         <div
           className={cn(
-            'bg-card border-border sticky z-10 -mx-3 flex justify-end gap-2 border-t px-3 pt-2',
+            'bg-card border-border sticky z-10 -mx-4 flex justify-end gap-2 border-t px-4 pt-2',
             // The bar reaches the window's own bottom edge and carries the
             // home-indicator clearance itself. Left to the window, that
             // clearance was a strip of empty surface UNDER the bar — about
@@ -1062,14 +1064,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             // screen. Sticking it that much lower and padding itself by the
             // same amount puts the background where the padding was and the
             // buttons where they always were.
-            'bottom-[calc(-0.75rem-var(--safe-b))]',
+            'bottom-[calc(-1rem-var(--safe-b))]',
             'pb-[calc(1rem+var(--safe-b))]',
             // And it eats the window's bottom padding in flow as well as
             // when stuck. Sticky only sticks while there is something to
             // scroll; with a form short enough to fit, the bar sat in the
             // ordinary flow and its clearance was ADDED to the window's own
             // — two indicators' worth of nothing under the buttons.
-            '-mb-[calc(0.75rem+var(--safe-b))]',
+            '-mb-[calc(1rem+var(--safe-b))]',
           )}
         >
           <Button variant="ghost" size="sm" onClick={onCancel}>

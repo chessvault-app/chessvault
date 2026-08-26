@@ -169,9 +169,10 @@ export function GameListShell({
         </div>
       )}
       {/* A sheet's bands bleed back out to the card's edges so their
-          rules meet the sides; their own px-3 puts the content where the
-          card's padding had it. */}
-      {shape === 'sheet' ? <div className="-mx-3 flex flex-col">{bands}</div> : bands}
+          rules meet the sides. -mx-4, matching DialogContent's px-4: the
+          old -mx-3 assumed a 12px card padding the dialog no longer has,
+          so every rule stopped 4px short of the sheet's edges. */}
+      {shape === 'sheet' ? <div className="-mx-4 flex flex-col">{bands}</div> : bands}
     </>
   );
 
