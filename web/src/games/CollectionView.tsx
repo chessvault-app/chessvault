@@ -159,15 +159,16 @@ const CollectionRow = memo(function CollectionRow({
 });
 
 /**
- * Whether the archive window is open, held OUTSIDE the component for the
- * same reason the archive's browse state is (see useArchiveBrowse):
- * opening a game navigates to the Board and unmounts this view, and a
- * useState here reset to closed on the way back. On a phone the window is
- * the only way to browse an archive, so returning from a game dropped you
- * beside the sheet you were working in. Closing it is still the only
- * thing that closes it.
+ * Which sheet is open, held OUTSIDE the component for the same reason
+ * the archive's browse state is (see useArchiveBrowse): opening a game
+ * navigates to the Board and unmounts this view, and a useState here
+ * reset to closed on the way back. On a phone a sheet is the only way to
+ * browse either source, so returning from a game dropped you beside the
+ * sheet you were working in — the archive held; the elite sheet, with a
+ * comment claiming the same reason, did not. One slot, since only one of
+ * the two can be open. Closing it is still the only thing that closes it.
  */
-let browsingHeld = false;
+let heldSheet: 'archive' | 'elite' | null = null;
 
 /**
  * The collection: games deliberately kept for reference, each annotatable.
@@ -199,14 +200,18 @@ export function CollectionView() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column.
-      Mirrors browsingHeld so the sheet survives a trip to the Board. */
-  const [browsing, setBrowsingState] = useState(browsingHeld);
+      Mirrors heldSheet so the sheet survives a trip to the Board. */
+  const [browsing, setBrowsingState] = useState(heldSheet === 'archive');
   const setBrowsing = (open: boolean): void => {
-    browsingHeld = open;
+    heldSheet = open ? 'archive' : null;
     setBrowsingState(open);
   };
   /** The reference browser as a window, for the same reason. */
-  const [elite, setElite] = useState(false);
+  const [elite, setEliteState] = useState(heldSheet === 'elite');
+  const setElite = (open: boolean): void => {
+    heldSheet = open ? 'elite' : null;
+    setEliteState(open);
+  };
   /** Which of the two the column is showing. */
   const [source, setSource] = useState<SourceId>('archive');
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
