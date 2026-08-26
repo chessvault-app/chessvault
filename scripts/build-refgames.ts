@@ -5,10 +5,19 @@
  *   npm run build:refgames                     all vault/sources/*.pgn
  *   npm run build:refgames -- elite-2025-11.pgn
  *   npm run build:refgames -- a.pgn b.pgn --name otb
+ *   npm run build:refgames -- dec.pgn --name elite --append
  *
  * Databases are plural: output is data/refgames/<name>.sqlite via temp +
  * rename, ~200 MB for a Lichess Elite month. Without --name, the file's
  * name when one source is given, and `refgames` otherwise.
+ *
+ * `--append` grows an existing database in place instead of building a
+ * fresh file: games already present (same players, result, date and
+ * movetext — an index-seeked existence check per incoming game) are
+ * skipped, only the new games are replayed into the position index, and
+ * the derived tables are refreshed. The write runs in WAL so the server
+ * can keep answering from the same file, exactly as the in-place index
+ * pass does.
  *
  * The movetext is stored alongside the position index, so any game the
  * explorer lists can be opened on the board.
@@ -24,9 +33,12 @@ import { REFGAMES_INDEXES, REFGAMES_LOOKUPS } from './lib/db-tuning.ts';
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
 const rawArgs = process.argv.slice(2);
-const nameAt = rawArgs.indexOf('--name');
-const namedAs = nameAt >= 0 ? rawArgs[nameAt + 1] : undefined;
-const args = nameAt >= 0 ? [...rawArgs.slice(0, nameAt), ...rawArgs.slice(nameAt + 2)] : rawArgs;
+const appendMode = rawArgs.includes('--append');
+const argsNoAppend = rawArgs.filter((a) => a !== '--append');
+const nameAt = argsNoAppend.indexOf('--name');
+const namedAs = nameAt >= 0 ? argsNoAppend[nameAt + 1] : undefined;
+const args =
+  nameAt >= 0 ? [...argsNoAppend.slice(0, nameAt), ...argsNoAppend.slice(nameAt + 2)] : argsNoAppend;
 
 const sources =
   args.length > 0
@@ -58,14 +70,24 @@ if (!NAME_RE.test(name)) {
 const OUT = resolve(DATA, 'refgames', `${name}.sqlite`);
 mkdirSync(resolve(DATA, 'refgames'), { recursive: true });
 
+if (appendMode && !existsSync(OUT)) {
+  console.error(`--append: no database called ${name} to append to`);
+  process.exit(1);
+}
+
+// A fresh build writes a temp file as fast as the disk allows and renames
+// it into place; an append works ON the live file, in WAL, so a server
+// reading it mid-append sees a consistent snapshot (the pattern the
+// in-place index pass established).
 const tmp = `${OUT}.building`;
-rmSync(tmp, { force: true });
-const db = new Database(tmp);
-db.pragma('journal_mode = OFF');
-db.pragma('synchronous = OFF');
+if (!appendMode) rmSync(tmp, { force: true });
+const db = new Database(appendMode ? OUT : tmp);
+db.pragma('journal_mode = ' + (appendMode ? 'WAL' : 'OFF'));
+db.pragma('synchronous = ' + (appendMode ? 'NORMAL' : 'OFF'));
+if (appendMode) db.pragma('busy_timeout = 30000');
 
 db.exec(`
-  CREATE TABLE games (
+  CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY,
     white TEXT NOT NULL COLLATE NOCASE,
     black TEXT NOT NULL COLLATE NOCASE,
@@ -78,15 +100,26 @@ db.exec(`
     opening TEXT,
     moves TEXT NOT NULL
   );
-  CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 `);
+// Appends dedup against what is already there, seeking through the
+// player index — make sure it exists before the first probe.
+if (appendMode) db.exec(REFGAMES_INDEXES);
 
 const insert = db.prepare(
   'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 );
+/** The same game, byte for byte: players, result, date and movetext.
+    `date IS ?` rather than `=` so two missing dates also match. */
+const exists = appendMode
+  ? db.prepare(
+      'SELECT 1 FROM games WHERE white = ? AND black = ? AND result = ? AND date IS ? AND moves = ? LIMIT 1',
+    )
+  : null;
 
 let games = 0;
 let skipped = 0;
+let duplicates = 0;
 const started = Date.now();
 
 const handleGame = (game: Game<PgnNodeData>, err: Error | undefined): void => {
@@ -113,17 +146,25 @@ const handleGame = (game: Game<PgnNodeData>, err: Error | undefined): void => {
     return;
   }
 
+  const white = headers.get('White') ?? '?';
+  const black = headers.get('Black') ?? '?';
+  const date = headers.get('UTCDate') ?? headers.get('Date') ?? null;
+  const moves = sans.join(' ');
+  if (exists && exists.get(white, black, result, date, moves)) {
+    duplicates += 1;
+    return;
+  }
   insert.run(
-    headers.get('White') ?? '?',
-    headers.get('Black') ?? '?',
+    white,
+    black,
     Number(headers.get('WhiteElo')) || 0,
     Number(headers.get('BlackElo')) || 0,
     result,
-    headers.get('UTCDate') ?? headers.get('Date') ?? null,
+    date,
     headers.get('Event') ?? null,
     headers.get('ECO') ?? null,
     headers.get('Opening') ?? null,
-    sans.join(' '),
+    moves,
   );
   games += 1;
   if (games % 50_000 === 0) {
@@ -144,11 +185,25 @@ db.exec('COMMIT');
 
 console.log('indexing…');
 db.exec(REFGAMES_INDEXES);
+// The lookup tables summarise the whole games table, so an append
+// re-derives them (0.8 s measured on an Elite month) rather than merging.
+if (appendMode) db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings;');
 db.exec(REFGAMES_LOOKUPS);
 
-const setMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
-setMeta.run('games', String(games));
-setMeta.run('sources', sources.map((s) => basename(s)).join(', '));
+const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+const readMeta = (key: string): string | undefined =>
+  (db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined)
+    ?.value;
+// The tally and the source list are maintained, not written once: an
+// append adds to both (sources deduped by name, so re-feeding a file
+// does not list it twice).
+const prevGames = appendMode ? Number(readMeta('games')) || 0 : 0;
+const prevSources = appendMode ? (readMeta('sources') ?? '').split(', ').filter(Boolean) : [];
+setMeta.run('games', String(prevGames + games));
+setMeta.run(
+  'sources',
+  [...new Set([...prevSources, ...sources.map((s) => basename(s))])].join(', '),
+);
 setMeta.run('built_at', new Date().toISOString());
 
 db.close();
@@ -156,18 +211,21 @@ db.close();
 // The position index, in the same pass: one row per (position, move,
 // game) for the opening plies, which is what lets the explorer answer —
 // and answer FILTERED — from this database. Built into the .building file
-// before the rename, so a database is never live without its index.
+// before the rename, so a database is never live without its index; an
+// append extends the live file's index from its high-water id instead.
 console.log('position index…');
-indexPositions(tmp, { log: console.log });
-try {
-  renameSync(tmp, OUT);
-} catch (error) {
-  // Windows: a server holding the old database open blocks the rename
-  // (EPERM). Leave the .building file — the server that spawned this build
-  // closes its handle and finishes the swap itself, as with books.
-  if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error;
-  console.log('rename deferred (target busy) — server will swap the file in');
+indexPositions(appendMode ? OUT : tmp, { log: console.log, append: appendMode });
+if (!appendMode) {
+  try {
+    renameSync(tmp, OUT);
+  } catch (error) {
+    // Windows: a server holding the old database open blocks the rename
+    // (EPERM). Leave the .building file — the server that spawned this build
+    // closes its handle and finishes the swap itself, as with books.
+    if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error;
+    console.log('rename deferred (target busy) — server will swap the file in');
+  }
 }
 console.log(
-  `done: ${games.toLocaleString()} games, ${skipped.toLocaleString()} skipped, ${((Date.now() - started) / 1000).toFixed(1)}s → ${OUT}`,
+  `done: ${games.toLocaleString()} games${appendMode ? ` added (${duplicates.toLocaleString()} already present)` : ''}, ${skipped.toLocaleString()} skipped, ${((Date.now() - started) / 1000).toFixed(1)}s → ${OUT}`,
 );

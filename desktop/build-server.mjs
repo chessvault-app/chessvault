@@ -13,6 +13,7 @@ import pngToIco from 'png-to-ico';
  *   release/server/build-puzzles.mjs         the puzzle builder the server spawns
  *   release/server/build-refgames.mjs        the reference-games builder, likewise
  *   release/server/index-refgames-positions.mjs   the position indexer, likewise
+ *   release/server/optimize-refgames.mjs     the housekeeping pass, likewise
  *   release/server/node_modules/better-sqlite3   rebuilt for Electron's ABI
  *   desktop/icon.ico                         NSIS/installer icon
  *
@@ -110,6 +111,22 @@ await build({
   },
 });
 console.log('refgames builder bundled');
+
+// The per-database housekeeping pass (dedupe, re-derive, vacuum),
+// spawned from the Databases manager — same contract as the three above.
+await build({
+  entryPoints: [join(repo, 'scripts', 'optimize-refgames.ts')],
+  outfile: join(out, 'optimize-refgames.mjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['better-sqlite3'],
+  banner: {
+    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+  },
+});
+console.log('refgames optimizer bundled');
 
 // better-sqlite3 v13 ships Node-API prebuilds (prebuilds/<platform>.node),
 // ABI-stable across Node and Electron — a plain copy is the whole story.

@@ -110,18 +110,35 @@ export const REFGAMES_MOVE_COUNTS_LEGACY = REFGAMES_MOVE_COUNTS.replace(
     GROUP BY p.pos, p.uci;`,
 );
 
-/** Whether a database already carries the index (and how many rows). */
-export function positionIndexInfo(db: InstanceType<typeof Database>): { indexed: boolean; plies: number } {
+/** Whether a database already carries the index (and how many rows).
+    `stale` — games exist above the index's high-water id, so an append
+    died between its insert and its index pass; re-running the index (or
+    the next append) heals it. Old files without the mark are not stale:
+    the mark arrived with appendability, and their builds were atomic. */
+export function positionIndexInfo(db: InstanceType<typeof Database>): {
+  indexed: boolean;
+  plies: number;
+  stale: boolean;
+} {
   const has = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'plies'")
     .get();
-  if (!has) return { indexed: false, plies: 0 };
+  if (!has) return { indexed: false, plies: 0, stale: false };
   const meta = db.prepare("SELECT value FROM meta WHERE key = 'plies'").get() as
     | { value: string }
     | undefined;
+  const through = Number(
+    (db.prepare("SELECT value FROM meta WHERE key = 'indexed_through'").get() as
+      | { value: string }
+      | undefined)?.value,
+  );
+  const maxId = through
+    ? Number((db.prepare('SELECT MAX(id) AS n FROM games').get() as { n: number }).n) || 0
+    : 0;
   return {
     indexed: true,
     plies: Number(meta?.value) || (db.prepare('SELECT COUNT(*) AS n FROM plies').get() as { n: number }).n,
+    stale: through > 0 && maxId > through,
   };
 }
 
@@ -137,7 +154,11 @@ export function positionIndexInfo(db: InstanceType<typeof Database>): { indexed:
  */
 export function indexPositions(
   dbPath: string,
-  { maxPly = REF_MAX_PLY, log = () => {} }: { maxPly?: number; log?: (line: string) => void } = {},
+  {
+    maxPly = REF_MAX_PLY,
+    log = () => {},
+    append = false,
+  }: { maxPly?: number; log?: (line: string) => void; append?: boolean } = {},
 ): { games: number; plies: number } {
   const db = new Database(dbPath, { fileMustExist: true });
   try {
@@ -150,13 +171,46 @@ export function indexPositions(
     db.pragma('busy_timeout = 30000');
     db.pragma('journal_mode = WAL');
     db.pragma('synchronous = NORMAL');
-    // move_counts is derived from plies, so it falls with it — a rebuilt
-    // index summed against a stale table would answer with the old corpus.
-    db.exec(
-      'DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; ' +
-        'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;',
-    );
-    db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
+    const readMeta = (key: string): string | undefined =>
+      (db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined)
+        ?.value;
+    // Appending replays only the games above the index's high-water id,
+    // at the DEPTH THE FILE WAS INDEXED AT — a corpus indexed to two
+    // depths would answer differently above and below the seam, with
+    // nothing to say so. The plies table itself must predate the result
+    // column's arrival to be un-appendable; that shape forces a full pass.
+    let sinceId = 0;
+    if (append) {
+      const hasR =
+        db.prepare("SELECT 1 FROM pragma_table_info('plies') WHERE name = 'r'").get() !==
+        undefined;
+      if (hasR) {
+        maxPly = Number(readMeta('index_max_ply')) || maxPly;
+        sinceId =
+          Number(readMeta('indexed_through')) ||
+          Number((db.prepare('SELECT MAX(game_id) AS n FROM plies').get() as { n: number }).n) ||
+          0;
+      } else {
+        append = false; // old shape: rebuild whole, gaining the r column
+      }
+    }
+    if (!append) {
+      // move_counts is derived from plies, so it falls with it — a rebuilt
+      // index summed against a stale table would answer with the old
+      // corpus.
+      db.exec(
+        'DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; ' +
+          'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;',
+      );
+      db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
+    } else {
+      // The sums are re-derived whole either way — since they carry no
+      // join and skip thin positions they cost seconds (measured 78 s →
+      // of which the sums are ~10), where merging them under the thin
+      // threshold would need re-aggregating every touched position
+      // anyway.
+      db.exec('DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;');
+    }
 
     const insert = db.prepare(
       'INSERT INTO plies (pos, uci, game_id, ply, r) VALUES (?, ?, ?, ?, ?)',
@@ -172,7 +226,7 @@ export function indexPositions(
     const page = db.prepare(
       'SELECT id, moves, result FROM games WHERE id > ? ORDER BY id LIMIT 5000',
     );
-    let lastId = 0;
+    let lastId = sinceId;
     for (;;) {
       const batch = page.all(lastId) as { id: number; moves: string; result: string }[];
       if (batch.length === 0) break;
@@ -205,9 +259,18 @@ export function indexPositions(
     db.exec(REFGAMES_MOVE_COUNTS);
 
     const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
-    setMeta.run('plies', String(plies));
+    setMeta.run('plies', String(append ? (Number(readMeta('plies')) || 0) + plies : plies));
     setMeta.run('index_max_ply', String(maxPly));
     setMeta.run('indexed_at', new Date().toISOString());
+    // The index's high-water mark: every game at or below this id has its
+    // plies in. A database whose games run past it (an append that died
+    // between the insert and this pass) is served as stale, and the
+    // listing says so — the honest version of the stale-search-booster
+    // failure every desktop database app ships with.
+    setMeta.run(
+      'indexed_through',
+      String((db.prepare('SELECT MAX(id) AS n FROM games').get() as { n: number }).n ?? 0),
+    );
     db.pragma('journal_mode = DELETE');
     return { games, plies };
   } finally {

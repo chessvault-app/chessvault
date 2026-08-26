@@ -572,29 +572,41 @@ export function refGamesApi(
       });
     };
 
-    const startBuild = (name: string, sources: string[]): void => {
+    const startBuild = (name: string, sources: string[], append: boolean): void => {
       const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
-      spawnJob(current, 'build-refgames.mjs', 'scripts/build-refgames.ts', [...sources, '--name', name], (code) => {
-        close(name); // reopen the freshly renamed file on next query
-        // Windows: our own read handle blocks the script's rename-over, so
-        // it leaves the fresh file beside the target and we swap it in
-        // here — synchronously after close, before any request can reopen
-        // the old file.
-        const building = `${fileFor(name)}.building`;
-        if (code === 0 && existsSync(building)) {
-          try {
-            renameRetrying(building, fileFor(name));
-          } catch {
-            current.log.push('could not swap in the new database — rebuild after a restart');
+      // An append works on the live file: closing our readonly handle
+      // first keeps Windows happy about the WAL sidecars, and there is no
+      // rename to finish afterwards.
+      if (append) close(name);
+      spawnJob(
+        current,
+        'build-refgames.mjs',
+        'scripts/build-refgames.ts',
+        [...sources, '--name', name, ...(append ? ['--append'] : [])],
+        (code) => {
+          close(name); // reopen the fresh file on next query
+          // Windows: our own read handle blocks the script's rename-over, so
+          // it leaves the fresh file beside the target and we swap it in
+          // here — synchronously after close, before any request can reopen
+          // the old file.
+          const building = `${fileFor(name)}.building`;
+          if (!append && code === 0 && existsSync(building)) {
+            try {
+              renameRetrying(building, fileFor(name));
+            } catch {
+              current.log.push('could not swap in the new database — rebuild after a restart');
+            }
           }
-        }
-      });
+        },
+      );
     };
 
     api.post('/refgames/build', async (c) => {
       if (job?.running) return c.json({ error: 'a build is already running' }, 409);
 
-      const body = await c.req.json<{ name?: string; sources?: string[] }>().catch(() => null);
+      const body = await c.req
+        .json<{ name?: string; sources?: string[]; mode?: 'replace' | 'append' }>()
+        .catch(() => null);
       const ids =
         body?.sources ??
         (() => {
@@ -617,9 +629,37 @@ export function refGamesApi(
       const derived = ids.length === 1 ? ids[0]!.replace(/\.pgn$/i, '') : 'refgames';
       const name = body?.name ?? (NAME_RE.test(derived) ? derived : 'refgames');
       if (!NAME_RE.test(name)) return c.json({ error: 'invalid database name' }, 400);
+      const append = body?.mode === 'append';
+      if (append && !existsSync(fileFor(name))) {
+        return c.json({ error: 'no such database to add to' }, 400);
+      }
 
       mkdirSync(dir!, { recursive: true });
-      startBuild(name, sources);
+      startBuild(name, sources, append);
+      return c.json({ started: true, name, mode: append ? 'append' : 'replace' });
+    });
+
+    /**
+     * Housekeeping for one database, as a job in the build slot: drop
+     * exact duplicates (players, result, date and movetext all equal —
+     * the append path's own key, for files built before it or from
+     * overlapping sources), re-derive the lookup tables, rebuild the
+     * position index if the sweep removed anything, and VACUUM. SQLite
+     * needs no flag-and-compact model: the deletes are real and the
+     * VACUUM returns the space.
+     */
+    api.post('/refgames/optimize', async (c) => {
+      if (job?.running) return c.json({ error: 'a build is already running' }, 409);
+      const body = await c.req.json<{ db?: string }>().catch(() => null);
+      const name = body?.db ?? names()[0];
+      if (!name || !NAME_RE.test(name) || !names().includes(name)) {
+        return c.json({ error: 'no such database' }, 400);
+      }
+      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      close(name); // the job rewrites the live file
+      spawnJob(current, 'optimize-refgames.mjs', 'scripts/optimize-refgames.ts', [name], () =>
+        close(name),
+      );
       return c.json({ started: true, name });
     });
 
@@ -716,8 +756,11 @@ export function refGamesApi(
           sources: meta.sources ?? '',
           bytes: statSync(fileFor(name)).size,
           builtAt: meta.built_at ?? null,
-          // Whether the explorer can answer from this database yet.
+          // Whether the explorer can answer from this database yet — and
+          // whether an interrupted append left games above the index's
+          // high-water mark (re-indexing heals it).
           indexed: index.indexed,
+          stale: index.stale,
           positions: index.plies,
         },
       ];

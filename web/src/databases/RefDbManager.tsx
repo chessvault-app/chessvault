@@ -1,16 +1,19 @@
-import { Database, FileText, Trash2, Upload } from 'lucide-react';
+import { Database, FileText, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
+import { forgetRefDbs } from '@/openingmap/useGaps';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Panel } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
@@ -43,6 +46,9 @@ export interface RefDb {
   bytes: number;
   /** Whether the explorer's position index has been built into it. */
   indexed?: boolean;
+  /** Games sit above the index's high-water mark (an append was
+      interrupted between insert and index) — Optimize heals it. */
+  stale?: boolean;
   positions?: number;
 }
 
@@ -107,6 +113,9 @@ export function RefDbManager({
           wasRunning.current = true;
         } else if (wasRunning.current) {
           wasRunning.current = false;
+          // A finished job may have grown or compacted a database the
+          // explorer and the map have session answers for.
+          forgetRefDbs();
           onChanged();
         }
       } catch {
@@ -160,12 +169,12 @@ export function RefDbManager({
     await refreshSources();
   };
 
-  const build = async (name: string): Promise<void> => {
+  const build = async (name: string, mode: 'replace' | 'append'): Promise<void> => {
     setError(null);
     try {
       await api('/api/refgames/build', {
         method: 'POST',
-        json: { name: name.trim() || undefined, sources: [...(picked ?? [])] },
+        json: { name: name.trim() || undefined, sources: [...(picked ?? [])], mode },
       });
     } catch (error) {
       setError(t(apiErrorMessage(error)));
@@ -186,6 +195,19 @@ export function RefDbManager({
     try {
       await api(`/api/refgames/${encodeURIComponent(dbName)}`, { method: 'DELETE' });
       onChanged();
+    } catch (error) {
+      setError(t(apiErrorMessage(error)));
+    }
+  };
+
+  /** Housekeeping as a job in the build slot: duplicates out, derived
+      tables re-derived, space returned. */
+  const optimize = async (dbName: string): Promise<void> => {
+    setError(null);
+    try {
+      await api('/api/refgames/optimize', { method: 'POST', json: { db: dbName } });
+      setStatus({ running: true, log: [] });
+      wasRunning.current = true;
     } catch (error) {
       setError(t(apiErrorMessage(error)));
     }
@@ -243,7 +265,12 @@ export function RefDbManager({
 
   const list =
     tab === 'databases' ? (
-      <DbList databases={shownDbs} onDelete={(n) => void del(n)} />
+      <DbList
+        databases={shownDbs}
+        onDelete={(n) => void del(n)}
+        onOptimize={(n) => void optimize(n)}
+        optimizeDisabled={running}
+      />
     ) : (
       <SourceList
         sources={shownSources}
@@ -417,7 +444,8 @@ export function RefDbManager({
         <BuildWindow
           count={pickedCount}
           only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
-          onBuild={(name) => void build(name)}
+          existing={databases.map((d) => d.name)}
+          onBuild={(name, mode) => void build(name, mode)}
           onClose={() => setShowBuild(false)}
         />
       )}
@@ -476,9 +504,13 @@ const NAME_WIDTHS = ['w-40', 'w-32', 'w-44', 'w-36', 'w-28', 'w-40'];
 function DbList({
   databases,
   onDelete,
+  onOptimize,
+  optimizeDisabled,
 }: {
   databases: RefDb[];
   onDelete: (name: string) => void;
+  onOptimize: (name: string) => void;
+  optimizeDisabled: boolean;
 }) {
   return (
     <ul className="divide-border divide-y">
@@ -503,6 +535,26 @@ function DbList({
           {/* Built before the position index existed: the explorer
               offers to add it when this database is its source. */}
           {d.indexed === false && <span className="text-warn shrink-0">{t('no position index')}</span>}
+          {/* Games above the index's high-water mark — an interrupted
+              append. Optimize brings the index up to them. */}
+          {d.stale === true && <span className="text-warn shrink-0">{t('index behind')}</span>}
+          {/* Housekeeping in the build slot: duplicates out, derived
+              tables re-derived, space returned. Asked first — it can run
+              for minutes on a big database. */}
+          <ConfirmDialog
+            icon={Sparkles}
+            triggerClassName="shrink-0"
+            disabled={optimizeDisabled}
+            triggerTitle={
+              optimizeDisabled ? 'Wait for the running job to finish' : 'Optimize this database'
+            }
+            question={t(
+              'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.',
+              { name: d.name },
+            )}
+            confirmLabel="Optimize"
+            onConfirm={() => onOptimize(d.name)}
+          />
           {/* Asked in a window rather than warned about in a tooltip: a
               title nobody reads was all that stood between a press and
               however many minutes of indexing. */}
@@ -668,17 +720,25 @@ function UploadWindow({
 function BuildWindow({
   count,
   only,
+  existing,
   onBuild,
   onClose,
 }: {
   count: number;
   /** The single picked file, whose name the build takes when left blank. */
   only?: string;
-  onBuild: (name: string) => void;
+  /** Databases already on the shelf, for the taken-name choice below. */
+  existing: string[];
+  onBuild: (name: string, mode: 'replace' | 'append') => void;
   onClose: () => void;
 }) {
   const [name, setName] = useState('');
+  const [mode, setMode] = useState<'replace' | 'append'>('replace');
   const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
+  // The question is asked only when it exists — the same shape as the
+  // book importer's update-or-rebuild choice.
+  const taken = existing.includes(name.trim() || derived);
+  const go = (): void => onBuild(name, taken ? mode : 'replace');
 
   return (
     <Dialog
@@ -696,21 +756,36 @@ function BuildWindow({
           value={name}
           autoFocus
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onBuild(name)}
+          onKeyDown={(e) => e.key === 'Enter' && go()}
           placeholder={t('Name — “{name}” if blank', { name: derived })}
         />
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {t(
-            'Building keeps going if you leave the page. A build under an existing name replaces that database.',
-          )}
-        </p>
+        {taken ? (
+          <RadioGroup value={mode} onValueChange={(v) => setMode(v as 'replace' | 'append')}>
+            <Field orientation="horizontal">
+              <RadioGroupItem value="replace" id="build-replace" />
+              <FieldLabel htmlFor="build-replace" className="font-normal">
+                {t('Replace — build this database again from the picked collections.')}
+              </FieldLabel>
+            </Field>
+            <Field orientation="horizontal">
+              <RadioGroupItem value="append" id="build-append" />
+              <FieldLabel htmlFor="build-append" className="font-normal">
+                {t('Add to it — index only the games it does not already hold.')}
+              </FieldLabel>
+            </Field>
+          </RadioGroup>
+        ) : (
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {t('Building keeps going if you leave the page.')}
+          </p>
+        )}
         <div className="mt-1 flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button variant="default" size="sm" onClick={() => onBuild(name)}>
+          <Button variant="default" size="sm" onClick={go}>
             <Database className="size-3.5" data-icon="inline-start" />
-            {t('Build')}
+            {taken && mode === 'append' ? t('Add games') : t('Build')}
           </Button>
         </div>
       </DialogContent>

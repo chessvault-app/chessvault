@@ -58,6 +58,25 @@ export function forgetMyGames(): void {
 }
 
 /**
+ * Forget what the reference databases said.
+ *
+ * Reference statistics used to be immutable between builds; now an
+ * append or an optimize can change them under a session, and the manager
+ * calls this when such a job finishes. All refdb sources at once —
+ * the job's database is one of them and the others cost only a refetch.
+ */
+export function forgetRefDbs(): void {
+  for (const key of [...cache.keys()]) {
+    if (key.startsWith('refdb:') || key.startsWith(`refgames
+`)) cache.delete(key);
+  }
+  for (const key of [...failedAt.keys()]) {
+    if (key.startsWith('refdb:') || key.startsWith(`refgames
+`)) failedAt.delete(key);
+  }
+}
+
+/**
  * THE cache key: source, band, which side's games, the own-games
  * filters, and the position. One function for every reader and writer —
  * the sweep, the chase, cacheField and fieldMovesFor — because they

@@ -1018,6 +1018,16 @@ export const ko: Record<string, string> = {
   'Delete “{name}”? Databases already built from it are not affected.':
     '“{name}”을(를) 지울까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
+  'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
+  'Optimize this database': '이 데이터베이스 최적화',
+  'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.':
+    '“{name}”을(를) 최적화할까요? 완전히 같은 게임을 제거하고, 파생 테이블을 새로 만들고, 파일을 압축합니다. 시간이 걸릴 수 있습니다.',
+  'index behind': '색인이 뒤처짐',
+  'Replace — build this database again from the picked collections.':
+    '교체 — 선택한 모음으로 이 데이터베이스를 다시 만듭니다.',
+  'Add to it — index only the games it does not already hold.':
+    '추가 — 아직 없는 게임만 색인합니다.',
+  'Building keeps going if you leave the page.': '페이지를 떠나도 만들기는 계속됩니다.',
   'PGN collections': 'PGN 모음',
   'Upload PGN collections': 'PGN 모음 올리기',
   'What to manage': '무엇을 관리할지',
