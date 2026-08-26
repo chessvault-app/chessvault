@@ -60,7 +60,13 @@ and delete the ad-hoc hook.
    (`build-refgames.mjs`, `build-puzzles.mjs`,
    `index-refgames-positions.mjs`), copies better-sqlite3 next to them
    (v13 ships Node-API prebuilds — ABI-stable under Electron, no
-   rebuild), renders `icon.ico`.
+   rebuild), renders `icon.ico`, and copies the native core
+   (`native/target/release/chessvault-core`) beside those children **if it
+   has been built** — the server looks there first, so that copy is the
+   whole of shipping it. Packaging without a Rust toolchain is supported
+   and says so as it goes: the installer then runs the JavaScript jobs,
+   as every release before 0.5.0 did. CI builds the crate on each runner
+   first and asserts the binary is there before uploading anything.
 2. `npm run build`: the SPA (with engine/model assets) into `dist/`.
 3. `electron-builder`: ships `desktop/` in the asar; the server bundle
    and `dist/` ride as extraResources, so the server's `./dist` static

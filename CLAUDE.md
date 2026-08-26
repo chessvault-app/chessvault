@@ -36,6 +36,23 @@ code the browser can run (`shared/`, `web/src/puzzles/ocr/`), so the two
 never drift. Growing the offline pipeline instead of the app is going the
 wrong way.
 
+**The native core is a second implementation, and second implementations
+drift.** `native/` mirrors four jobs that also exist in TypeScript, and the
+app runs whichever is present — so the two must answer identically or the
+explorer quietly reports on positions nobody asked about. There is no
+error for that: a Zobrist key wrong by one bit simply returns the wrong
+rows. Both sides are therefore pinned to fixtures exported from the JS
+implementation (`native/tests/goldens.json`). Change anything either side
+computes — the hash scheme, the schema, the per-game codes, the replay
+loop's stopping rules — and you regenerate them AND re-run the whole-file
+diff: `npm run build:native-goldens && npm run test:native`. Regenerating
+alone proves nothing, since it records the new behaviour on both sides.
+Never migrate the key scheme at all (`shared/zobrist.ts` says why). And
+never let a binary be older than the code beside it: `native/target/` is
+gitignored, so nothing in git will stop you, which is why `deploy.sh`
+rebuilds it every deploy. `CHESS_NATIVE=0` runs the JS path, which is how
+the two are compared. See `native/README.md`.
+
 ## Book imports
 
 **Every book-specific fact is data, never code.** Page ranges, notation

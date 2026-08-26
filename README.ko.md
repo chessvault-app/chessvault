@@ -430,9 +430,9 @@ vault/      당신의 데이터 — 평범한 파일, git 친화적
 데스크톱 설치 프로그램이 해당 플랫폼용으로 빌드해 함께 담고 나가므로,
 설치한 앱은 아무것도 하지 않아도 빠릅니다. 28만 판 빌드가 약 180초에서 약
 72초로, 데이터베이스 전체 포지션 검색이 약 13초에서 약 1초로 줄고, 메모리는
-4분의 1입니다. 서버나 소스 체크아웃에서는 그 디렉터리에서
-`cargo build --release`를 하면 서버가 알아서 집어 씁니다. 조회가 작업마다
-일어나므로 재시작도 필요 없습니다. `scripts/deploy.sh`는 상자에 툴체인이
+4분의 1입니다. 서버나 소스 체크아웃에서는 `npm run build:native`를 하면 서버가 알아서
+집어 씁니다. 조회가 작업마다 일어나므로 재시작도 필요 없습니다
+([`native/README.md`](native/README.md) 참고). `scripts/deploy.sh`는 상자에 툴체인이
 있으면 배포마다 그 빌드를 돌립니다. 정리가 아니라 정확성 문제입니다.
 `native/target/`은 git에서 제외되므로, 그러지 않으면 예전 커밋에서 만든
 바이너리가 더 새로운 JavaScript 옆에서 계속 답하게 되고, 고정 답안은 둘이
@@ -450,6 +450,20 @@ npm run dev          # 서버 + 웹, 핫 리로드, http://localhost:5173
 처음 실행하면 Stockfish 엔진 자산을 `node_modules`에서 복사해
 옵니다(7 MB 라이트 빌드. `npm run setup:engine -- --full`은 그 옆에 full
 빌드를 더해 줍니다).
+
+`native/`의 Rust 코어는 선택 사항이고 위 명령 중 어느 것도 그것을 빌드하지
+않습니다. 원한다면 — 소스 체크아웃은 없어도 JavaScript 작업으로 돌아갑니다 —
+[rustup.rs](https://rustup.rs)에서 툴체인을 설치하고 이렇게 합니다:
+
+```bash
+npm run build:native         # cargo build --release
+npm run test:native          # JS 쪽과 대조하는 고정 답안 검증
+npm run build:native-goldens # 계약이 바뀌었을 때 그 고정 답안을 다시 내보내기
+```
+
+서버는 다음 작업에서 바이너리를 집어 씁니다. 재시작은 필요 없습니다.
+두 구현을 왜 바이트 단위로 묶어 두는지, 둘 중 하나가 계산하는 것을 바꿨을 때
+무엇을 해야 하는지는 [`native/README.md`](native/README.md)에 있습니다.
 
 ## Lichess 토큰 (선택 사항)
 

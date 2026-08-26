@@ -451,9 +451,9 @@ pipeline's own answers. The desktop installer carries it, built for
 that platform, so an installed app is fast without you doing anything:
 a 280 k-game build drops from ~180 s to ~72 s and a whole-database
 position search from ~13 s to ~1 s, at a quarter of the memory.
-A server or a source checkout gets it with `cargo build --release` in
-that directory — the server picks the binary up by itself, no restart
-needed, because the lookup happens per job. `scripts/deploy.sh` runs
+A server or a source checkout gets it with `npm run build:native` —
+the server picks the binary up by itself, no restart needed, because
+the lookup happens per job (see [`native/README.md`](native/README.md)). `scripts/deploy.sh` runs
 that build on every deploy when the box has a toolchain, which is not
 housekeeping but correctness: `native/target/` is gitignored, so
 without it a binary from an older commit would keep answering beside
@@ -472,6 +472,21 @@ npm run dev          # server + web with hot reload, http://localhost:5173
 First run copies the Stockfish engine assets out of `node_modules`
 (the 7 MB lite build; `npm run setup:engine -- --full` adds the
 full-strength one beside it).
+
+The Rust core under `native/` is optional and not built by any of the
+above. To have it — a source checkout runs the JavaScript jobs without
+it — install a toolchain from [rustup.rs](https://rustup.rs) and:
+
+```bash
+npm run build:native         # cargo build --release
+npm run test:native          # the parity fixtures against the JS side
+npm run build:native-goldens # re-export those fixtures after a contract change
+```
+
+The server picks the binary up on its next job, no restart.
+[`native/README.md`](native/README.md) explains why the two
+implementations are held byte-identical, and what to do when you change
+something either of them computes.
 
 ## Lichess token (optional)
 
