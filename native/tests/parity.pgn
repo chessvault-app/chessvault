@@ -1,0 +1,445 @@
+[Event "Parity Cup 1"]
+[White "Müller, K 1"]
+[Black "Black1"]
+[Result "1-0"]
+[UTCDate "2025.02.11"]
+[ECO "C50"]
+[Opening "Italian Game"]
+[Variant "Standard"]
+
+1. e4 c5 2. e5 d5 3. exd6 1-0
+
+[Event "Casual game"]
+[White "White2"]
+[Black "Black2"]
+[Result "1/2-1/2"]
+[WhiteElo "1074"]
+[BlackElo "1302"]
+[Date "2024.10.03"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. O-O Nf6 5. Qe2 O-O 1/2-1/2
+
+[Event "Casual game"]
+[White "White3"]
+[Black "Black3"]
+[Result "0-1"]
+[WhiteElo "1211"]
+[BlackElo "1553"]
+[ECO "A40"]
+[Opening "Queen Pawn Game"]
+
+1. d4 d5 2. Nc3 Nc6 3. Bf4 Bf5 4. Qd2 Qd7 5. O-O-O O-O-O 0-1
+
+[Event "Parity Cup 4"]
+[White "White4"]
+[Black "Black4"]
+[Result "1-0"]
+[WhiteElo "1348"]
+[BlackElo "1804"]
+[UTCDate "2025.05.14"]
+
+1. e4 d5 2. exd5 c6 3. dxc6 Nf6 4. cxb7 Nbd7 5. bxa8=Q 1-0
+
+[Event "Casual game"]
+[White "Müller, K 5"]
+[Black "Black5"]
+[Result "1-0"]
+[WhiteElo "1485"]
+[BlackElo "2055"]
+[Date "2024.11.06"]
+[ECO "B20"]
+[Opening "Sicilian Defense"]
+
+1. e4 d5 2. exd5 c6 3. dxc6 Nf6 4. cxb7 Nbd7 5. bxa8=N 1-0
+
+[Event "Casual game"]
+[White "White6"]
+[Black "Black6"]
+[Result "1-0"]
+[BlackElo "2306"]
+
+1. e4 e5 2. Zz9 d4 3. d5 1-0
+
+[Event "Parity Cup 7"]
+[White "White7"]
+[Black "Black7"]
+[Result "0-1"]
+[WhiteElo "1759"]
+[BlackElo "2557"]
+[UTCDate "2025.08.17"]
+[ECO "D02"]
+[Opening "London System"]
+[Variant "Standard"]
+
+1. Nh3 Nf6 2. a4 e5 3. f3 Ne4 4. b3 c5 5. e3 Qc7 6. Nc3 h5 7. g3 g6 8. b4 Nxg3
+9. Rg1 Qa5 10. Rh1 d5 11. Qe2 Bd7 12. Qc4 Rh6 13. Ra3 Bc8 14. Qd3 0-1
+
+[Event "Casual game"]
+[White "White8"]
+[Black "Black8"]
+[Result "1-0"]
+[WhiteElo "1896"]
+[Date "2024.10.09"]
+
+1. b3 d6 2. c4 g6 3. d4 b6 4. Qd2 c6 1-0
+
+[Event "Casual game"]
+[White "Müller, K 9"]
+[Black "Black9"]
+[Result "0-1"]
+[WhiteElo "2033"]
+[BlackElo "859"]
+[ECO "E60"]
+[Opening "King Indian"]
+
+1. f4 e5 2. Na3 Bb4 3. Nf3 Be7 4. h3 Na6 5. Rh2 Bb4 6. Ng5 Ne7 7. Kf2 Ng6 8. Ke3
+Bxa3 9. d4 Rb8 10. Qd3 Bf8 11. Qd2 Qxg5 12. Qd3 Qh5 13. b4 Rg8 14. Ke4 f6 15. a4
+Nc5+ 16. bxc5 Kf7 17. c6 Qh6 18. f5 exd4 19. Qc4+ d5+ 20. Qxd5+ Be6 21. c4 Re8
+22. Bxh6 Ba3 23. Qc5 Nh8 24. g3 Bc1 25. fxe6+ Kg6 26. Qb5 Bf4 27. Qb2 Be3 28.
+Rd1 Bg1 29. Qa3 bxc6 30. a5 Nf7 31. Bg5 Nd8 32. Re1 Rh8 33. Qc5 f5+ 34. Kf4 Nb7
+35. Qf8 Rb8 36. Rf2 Kh5 37. Qxb8 d3 38. Be7 Kg6 39. Qg8 Bh2 0-1
+
+[Event "Parity Cup 10"]
+[White "White10"]
+[Black "Black10"]
+[Result "1-0"]
+[WhiteElo "2170"]
+[BlackElo "1110"]
+[UTCDate "2025.02.10"]
+
+1. e3 Na6 2. c3 Nc5 3. g3 Rb8 4. h3 e5 5. b3 Qe7 6. g4 e4 7. d4 Nd3+ 8. Bxd3 Qb4
+9. Ba3 Nf6 10. Bf1 c6 11. Ne2 Bc5 12. Qd3 h6 13. Qd1 Qxc3+ 14. Qd2 Nxg4 15. Ng1
+Rf8 16. Bc4 Bb4 17. Ke2 Qxc4+ 18. Ke1 Qd3 19. Bxb4 a5 20. Nf3 Nh2 21. Bc5 f5 22.
+Qxd3 b5 1-0
+
+[Event "Casual game"]
+[White "White11"]
+[Black "Black11"]
+[Result "0-1"]
+[BlackElo "1361"]
+[Date "2024.11.03"]
+[ECO "C50"]
+[Opening "Italian Game"]
+
+1. b3 Na6 2. g3 Nb4 3. d4 Nf6 4. Na3 Rb8 5. d5 c5 6. Nc4 h5 7. Ba3 Nxc2+ 8. Qxc2
+b5 9. Qd2 Qa5 10. Bxc5 Rb6 11. Bxe7 d6 12. e4 Qa4 13. Nf3 Qa6 14. Bd8 Qa4 15.
+Nh4 Bh3 16. bxa4 Nd7 17. Qd4 Nc5 18. Nd2 Rb8 19. Qc3 Nb3 20. Qd3 Kd7 21. Qe2 a6
+22. g4 Bxg4 23. f4 Bh3 24. Qf2 Ra8 25. Rd1 Rh7 26. Qb6 Nd4 27. Qxd6+ Kxd6 28.
+Be2 Nc2+ 29. Kf2 Bd7 30. Kf3 g6 31. Kg3 Rh6 32. Bf3 Rxd8 33. Ng2 bxa4 34. Ne1
+Nb4 35. Kg2 Bc8 36. Kf2 h4 37. Nb3 Kd7 38. Nc2 Kc7 39. Rb1 Re8 40. Ra1 Bb7 41.
+Kf1 Nxd5 42. Ncd4 Be7 43. Bh5 gxh5 44. e5 Kb8 45. Na5 Rf8 46. Ne2 Ka8 47. e6
+Rxe6 48. Nxb7 f5 49. Ke1 Rb8 50. Nc5 Nb6 51. Rg1 Re4 52. Rg4 Rb4 53. Ne6 Rb7 0-1
+
+[Event "Casual game"]
+[White "White12"]
+[Black "Black12"]
+[Result "0-1"]
+[WhiteElo "2444"]
+[BlackElo "1612"]
+
+1. a4 g5 2. h3 b6 3. a5 b5 4. g4 Bg7 5. Nc3 f6 6. e4 Bh6 7. Qe2 e6 8. Nb1 e5 0-1
+
+[Event "Parity Cup 13"]
+[White "Müller, K 13"]
+[Black "Black13"]
+[Result "1/2-1/2"]
+[WhiteElo "2581"]
+[BlackElo "1863"]
+[UTCDate "2025.05.13"]
+[ECO "A40"]
+[Opening "Queen Pawn Game"]
+[Variant "Standard"]
+
+1. h3 Na6 2. Rh2 e5 3. f4 Bd6 4. c4 b6 5. c5 Bf8 6. fxe5 d5 7. Qb3 Nb4 8. c6 Na6
+9. Qb4 g5 10. Qc5 Be6 11. Qa3 Bxh3 12. e6 d4 13. e3 Bg4 14. Bd3 f5 15. Qa4 Nc5
+16. Qa5 Be2 17. exd4 Bg7 18. e7 Nd7 19. Nc3 1/2-1/2
+
+[Event "Casual game"]
+[White "White14"]
+[Black "Black14"]
+[Result "1-0"]
+[WhiteElo "2718"]
+[BlackElo "2114"]
+[Date "2024.10.06"]
+
+1. b4 c5 2. e3 e6 3. a3 Ne7 4. Ne2 f5 5. bxc5 Na6 6. Nec3 Qa5 7. f3 g5 8. Qe2 h6
+9. Qxa6 Qxa6 10. Nb5 Rb8 11. c6 Qa5 12. cxd7+ Bxd7 13. Bc4 Ra8 14. h4 Bc6 15.
+Rh2 Bd5 16. Kf2 Qxa3 17. Nd6+ Qxd6 18. Bb5+ Bc6 19. g4 Qd8 20. Kg1 Ng8 21. Bc4
+Kd7 22. Bd3 Bb5 1-0
+
+[Event "Casual game"]
+[White "White15"]
+[Black "Black15"]
+[Result "1-0"]
+[WhiteElo "2855"]
+[ECO "B20"]
+[Opening "Sicilian Defense"]
+
+1. c3 h5 2. Nf3 Nh6 3. b4 e5 4. b5 Ba3 5. Nxa3 e4 6. d4 exd3 7. Bb2 Rf8 8. Bc1
+d6 9. Nc2 c5 10. a4 Nd7 11. h3 Qb6 12. Bxh6 Ke7 13. Qc1 f5 14. Qb1 h4 15. exd3
+Qxb5 16. Ncd4 Qxd3 17. Ra3 Qxb1+ 18. Ke2 gxh6 19. g4 Nb8 20. c4 Qe4+ 21. Kd1 Rg8
+22. Nh2 Qxg4+ 23. Ne2 f4 24. Bg2 Na6 25. Rf3 Rg5 26. Rf1 Qe6 27. Nc3 Bd7 28. Kc1
+Rg6 29. Rd3 Qe3+ 30. Kd1 Rf8 31. Nf3 Re6 32. a5 Ra8 33. Rd5 Qd2+ 34. Nxd2 Rf6
+35. f3 Nb4 36. Ndb1 Bb5 37. Ke1 a6 38. Rf5 d5 39. Rg1 Bxc4 40. Ne4 Nc6 41. Ng3
+Rc8 42. Kf2 Bb5 43. Rf1 c4 44. Rc1 Nd8 45. Nd2 Kf8 46. Ngf1 Ba4 47. Rxd5 1-0
+
+[Event "Parity Cup 16"]
+[White "White16"]
+[Black "Black16"]
+[Result "1/2-1/2"]
+[BlackElo "2616"]
+[UTCDate "2025.08.16"]
+
+1. d4 e6 2. f3 Qe7 3. Nd2 Na6 4. b4 Rb8 5. a3 Qxb4 6. g4 f5 7. a4 Qb6 8. Nc4 Qb5
+9. Na5 Qb2 10. Kd2 Ra8 11. Nc4 Be7 12. e3 Ba3 13. Rxa3 Qb1 14. a5 f4 15. e4 Rb8
+16. Ra1 g5 17. c3 Kf7 18. Na3 Qb3 19. Bg2 Ra8 20. Qe2 b6 21. Qxa6 Qxa3 22. Ke2
+Qb3 23. Ra3 Qa2+ 24. Kd3 bxa5 25. Ne2 Kf8 26. Re1 Qxe2+ 27. Kxe2 Rb8 28. c4 Kf7
+29. Rh1 Kf8 30. Bd2 Ne7 31. Bc3 c5 32. e5 Rb1 33. Re1 Bb7 34. Bb2 Rg8 35. Kd2 h5
+36. Rxb1 Rg6 37. Qc6 Ba8 38. Ra2 Nxc6 39. Rg1 Nb4 40. Rh1 Ke8 41. Rha1 Bxf3 42.
+Ra3 d6 43. Re1 Kd7 44. Re4 Kd8 45. Rxf4 Ke7 46. Ra1 h4 47. Ra2 Rh6 48. Ba1 Rf6
+49. Rf5 cxd4 50. Bf1 Rh6 51. Bxd4 Bc6 52. Bf2 a4 53. Be3 Nxa2 1/2-1/2
+
+[Event "Casual game"]
+[White "Müller, K 17"]
+[Black "Black17"]
+[Result "1-0"]
+[WhiteElo "929"]
+[BlackElo "2867"]
+[Date "2024.11.09"]
+[ECO "D02"]
+[Opening "London System"]
+
+1. a3 e6 2. c4 a6 3. b4 Be7 4. d4 Bxb4+ 5. Nd2 d6 6. Nf3 Nc6 7. h3 Qe7 8. Rb1 b5
+9. e3 e5 10. Bd3 Na7 11. c5 Qd8 12. g4 Kd7 13. Bf5+ Ke7 14. Bb2 Nc6 15. d5 Nh6
+16. g5 Qg8 17. Bc1 e4 18. Rb3 dxc5 19. Rb2 Bd7 20. Bxh7 Nd8 21. Bxg8 Ng4 22. a4
+Rh7 23. d6+ Kf8 24. Kf1 Nc6 25. dxc7 Ba3 26. g6 Ke8 27. Rh2 Rh8 28. Qe2 Rxh3 29.
+a5 Nh6 1-0
+
+[Event "Casual game"]
+[White "White18"]
+[Black "Black18"]
+[Result "1-0"]
+[WhiteElo "1066"]
+[BlackElo "918"]
+
+1. f4 c6 2. d4 g5 3. a3 c5 4. h4 d6 5. dxc5 Qc7 6. Qd5 Be6 7. hxg5 Bf5 8. Rh6 a5
+9. c6 Nxc6 10. Rh5 Bg6 11. Nh3 Qb8 12. c3 b6 13. Ra2 Qc7 14. Qd2 O-O-O 15. Qc2
+Nf6 16. Ra1 Bxh5 17. g3 Bg7 18. Qd3 Bf8 19. Qxh7 a4 20. f5 Nd5 21. Ng1 Nf4 22.
+e3 Kb8 23. Nh3 Ka7 24. exf4 Kb7 25. Bd3 Bg4 26. Qg7 e6 27. Ra2 Be7 28. Qf8 Rhxf8
+29. Nd2 Bh5 30. Be4 Rh8 31. Kf2 Ka6 32. Bc2 e5 33. Bd3+ Ka5 34. Nb1 Qd7 35. Bc2
+Bf8 36. Be3 Na7 37. b4+ axb3 38. f6 exf4 39. Bd3 d5 40. Bg6 Qxh3 41. Rd2 fxg3+
+42. Ke1 Rh7 43. Rxd5+ Nb5 44. Rc5 Be2 45. Bf4 Bf3 46. Re5 Rd4 47. Bc2 Rd1+ 48.
+Bxd1 Qh5 49. c4 Bxa3 50. Nc3 Bb4 1-0
+
+[Event "Parity Cup 19"]
+[White "White19"]
+[Black "Black19"]
+[Result "1-0"]
+[WhiteElo "1203"]
+[BlackElo "1169"]
+[UTCDate "2025.02.19"]
+[ECO "E60"]
+[Opening "King Indian"]
+[Variant "Standard"]
+
+1. g4 e6 2. Nf3 Nh6 3. Nh4 a5 4. b4 Nc6 5. Ng2 b6 6. b5 Be7 7. d3 Ng8 8. Rg1 g6
+9. Bg5 Kf8 10. Nc3 Bb4 11. Be7+ Bxe7 12. d4 f6 1-0
+
+[Event "Casual game"]
+[White "White20"]
+[Black "Black20"]
+[Result "1-0"]
+[WhiteElo "1340"]
+[BlackElo "1420"]
+[Date "2024.10.03"]
+
+1. e3 g5 2. a4 c6 3. c4 Nf6 4. Ra3 Nh5 5. g3 Na6 6. Nh3 Rg8 7. Qxh5 g4 8. Ng5
+Qa5 9. Rb3 Qb4 10. Ke2 Nc5 11. d4 h6 12. Nc3 Nxa4 13. Bh3 Qc5 14. Nf3 d5 15. Ne5
+Bg7 16. Rb4 Bxe5 17. Qf5 Nb6 18. Nd1 Qa5 19. f4 Qxb4 20. Qd7+ Kf8 21. Bxg4 Rg6
+22. Kd3 Kg8 23. Kc2 Qa5 24. Bh3 f5 25. Bxf5 Kg7 26. h3 1-0
+
+[Event "Casual game"]
+[White "Müller, K 21"]
+[Black "Black21"]
+[Result "1/2-1/2"]
+[BlackElo "1671"]
+[ECO "C50"]
+[Opening "Italian Game"]
+
+1. a4 e5 2. a5 Bc5 3. f4 Kf8 4. b4 Na6 5. g3 b6 6. c3 h6 7. Qa4 Be3 8. Bb2 Bxd2+
+9. Kd1 Ke7 10. Nh3 c5 11. axb6 Qxb6 12. Bc1 cxb4 13. f5 Qd4 14. Qa5 Kf6 15. Kc2
+Qg4 16. Kd3 Rb8 17. Na3 Qxh3 18. Qxe5+ Kxe5 19. Ra2 g6 20. Nc2 Qxh2 21. Kc4 d6
+22. Ra4 Be1 23. cxb4 Qxh1 24. Na1 Bd2 25. Kb3 Rb6 26. e3 Ne7 27. Kc4 Nc5 28. Bg2
+Qh2 29. Nb3 Nxb3 30. Kd3 Bd7 31. Bh3 a5 32. Ra2 Kf6 33. Bg4 Kg7 34. Ra3 Rbb8 35.
+Bb2+ Kg8 36. bxa5 gxf5 1/2-1/2
+
+[Event "Parity Cup 22"]
+[White "White22"]
+[Black "Black22"]
+[Result "0-1"]
+[WhiteElo "1614"]
+[UTCDate "2025.05.12"]
+
+1. a4 h5 2. d3 Rh7 3. a5 c6 4. c4 Rh6 5. g3 d6 6. d4 Bd7 7. f3 Qb6 8. d5 f6 9.
+Na3 Rh7 10. Rb1 Bh3 11. b4 e6 12. dxe6 Bg4 13. Bg5 Na6 14. Bg2 Nh6 15. e7 Nxb4
+16. Bd2 Nc2+ 17. Nxc2 Qe3 18. h4 Qxg1+ 19. Rxg1 Rh8 20. Bc3 Kd7 21. Qd3 Rb8 22.
+Qxd6+ Ke8 23. Kf1 f5 24. Qa3 c5 25. Bh1 f4 0-1
+
+[Event "Casual game"]
+[White "White23"]
+[Black "Black23"]
+[Result "1/2-1/2"]
+[WhiteElo "1751"]
+[BlackElo "2173"]
+[Date "2024.11.06"]
+[ECO "A40"]
+[Opening "Queen Pawn Game"]
+
+1. f4 d6 2. b4 Bh3 3. g3 c6 4. g4 c5 5. bxc5 Nc6 6. Kf2 Nh6 7. f5 Bxf1 8. e4 Na5
+9. Bb2 f6 10. Ba3 Nxf5 11. Ne2 Qb8 12. Nec3 Nc6 13. Qf3 Nd8 14. Rg1 a5 15. Kxf1
+Nh4 16. e5 h5 1/2-1/2
+
+[Event "Casual game"]
+[White "White24"]
+[Black "Black24"]
+[Result "0-1"]
+[WhiteElo "1888"]
+[BlackElo "2424"]
+
+1. Nf3 Nh6 2. e4 g6 3. Ba6 e5 4. Nxe5 d5 5. b4 Qh4 6. Be2 Ke7 7. Ng4 Nxg4 8. Bb5
+g5 9. e5 h5 10. Bf1 Be6 11. c4 b5 12. Nc3 Bc8 13. d4 Nxf2 14. Ne2 Ke8 15. Qa4
+Rg8 16. c5 Bh6 17. Qd1 Nxd1+ 18. g3 Bb7 19. Rb1 f6 20. c6 Qxd4 21. Rb2 Qxb4+ 22.
+Rxb4 Rg6 23. Re4 Nb2 24. Rh4 d4 0-1
+
+[Event "Parity Cup 25"]
+[White "Müller, K 25"]
+[Black "Black25"]
+[Result "1/2-1/2"]
+[WhiteElo "2025"]
+[BlackElo "2675"]
+[UTCDate "2025.08.15"]
+[ECO "B20"]
+[Opening "Sicilian Defense"]
+[Variant "Standard"]
+
+1. d3 Nc6 2. f4 a5 3. Be3 h6 4. d4 Nxd4 5. Kd2 Nc6 6. a4 g6 7. Bb6 e6 8. Ke3 Nb4
+9. Ra2 Be7 10. Na3 Na6 11. Qc1 c6 12. b4 c5 13. Qb2 d5 14. f5 Rb8 15. bxc5 Bf8
+16. Qg7 Qxb6 17. Qxg6 exf5 18. Ra1 Qxg6 19. Nc4 Ne7 20. h4 Qd6 21. h5 Qc7 22.
+Nd2 Ng6 23. Nb3 Rh7 24. Ra2 b5 25. Rh4 Nh8 26. Nd2 Qd7 27. Nh3 Qa7 28. c4 Be7
+1/2-1/2
+
+[Event "Casual game"]
+[White "White26"]
+[Black "Black26"]
+[Result "1-0"]
+[BlackElo "2926"]
+[Date "2024.10.09"]
+
+1. c3 a5 2. a4 Nc6 3. b3 Rb8 4. Na3 g5 5. Nh3 Bg7 6. Qc2 Bf8 7. Qg6 h5 8. Qxg5
+Bg7 9. Qxa5 Kf8 10. Qc5 Nd4 11. Qb6 Bf6 12. Qc6 b6 13. Ra2 Ne6 14. Qc4 Rb7 15.
+d4 Ng5 16. Ng1 c5 17. Nc2 d5 18. Ra3 b5 19. Qd3 h4 20. Qe4 c4 21. Be3 cxb3 22.
+f4 Ne6 23. Nf3 Ng7 24. Nd2 Qd7 25. Qxd5 Ne8 26. Bg1 Qc7 27. Nxb3 Rb8 28. g4 Bg5
+29. Nc5 Qd6 30. Kd2 Be6 31. Bg2 Rb7 32. Be3 Bc8 33. Rb1 Qb6 34. Qe5 Qc6 35. Nxb7
+Qg6 36. f5 Nc7 37. c4 b4 38. Qxc7 Qc6 39. Rab3 Bxe3+ 40. Kxe3 Qh6+ 41. Kf2 Kg7
+42. Kf1 Qf4+ 43. Qxf4 h3 44. Nc5 Kh7 45. Qh6+ 1-0
+
+[Event "Casual game"]
+[White "White27"]
+[Black "Black27"]
+[Result "1/2-1/2"]
+[WhiteElo "2299"]
+[BlackElo "977"]
+[ECO "D02"]
+[Opening "London System"]
+
+1. Nf3 a5 2. d4 c5 3. Ne5 b5 4. h3 h6 5. h4 cxd4 6. Kd2 f5 7. Rh2 Qb6 8. Nf3 g6
+9. Kd3 Bb7 10. Rh3 Bg7 11. Nfd2 Qd8 12. a3 Qc7 13. c4 Qb6 14. cxb5 d6 15. Qe1 f4
+16. g3 Bc6 17. Nb3 Na6 18. Qd1 Qc5 19. Be3 h5 20. Nxc5 Bd7 21. Kc4 Bg4 1/2-1/2
+
+[Event "Parity Cup 28"]
+[White "White28"]
+[Black "Black28"]
+[Result "1-0"]
+[WhiteElo "2436"]
+[BlackElo "1228"]
+[UTCDate "2025.02.18"]
+
+1. b3 b5 2. c4 bxc4 3. d3 a5 4. Bh6 d5 5. f4 Bg4 6. Kd2 Bd7 7. a3 Na6 8. Bg5 Nb8
+9. Ke1 f5 10. Nc3 Ba4 11. Qc2 Qd6 12. bxa4 Qc6 13. Qb3 Nd7 14. Qb4 Kf7 15. Qb6
+Nc5 16. Nxd5 Na6 17. Qxc7 h6 18. Qb8 Ra7 19. Qd6 c3 20. Nc7 h5 21. Nxa6 Rxa6 22.
+Bf6 Rh6 23. Kf2 Qa8 24. Nh3 exd6 25. Ke1 1-0
+
+[Event "Casual game"]
+[White "Müller, K 29"]
+[Black "Black29"]
+[Result "1-0"]
+[WhiteElo "2573"]
+[Date "2024.11.03"]
+[ECO "E60"]
+[Opening "King Indian"]
+
+1. Nh3 Nf6 2. Na3 Nh5 3. b3 h6 4. Nb5 e5 5. Rb1 Rg8 6. c3 Bb4 7. a3 c6 8. e3 Ke7
+9. Ng5 Qe8 10. Qe2 d5 11. Nh7 Nd7 12. d4 cxb5 13. h3 Nb6 14. g4 Kd8 15. h4 Kd7
+16. Kd1 Qe7 17. c4 Be1 18. Rh2 a5 19. Rh3 f5 20. Qa2 Qxa3 21. gxh5 Qc5 22. cxb5
+Bd2 23. Nf8+ Qxf8 24. f3 Rb8 25. Qc2 Qc5 26. Qc3 Be1 27. Rg3 Na8 28. Qxc5 Bc3
+29. Bb2 b6 30. Ra1 bxc5 31. b4 axb4 32. Kc2 Nc7 33. Bh3 Kd8 34. Bf1 Bxd4 35. Rh3
+g6 36. Rb1 Bb7 37. hxg6 Re8 38. exd4 Rc8 39. Kd2 Rh8 40. Rc1 c4 41. f4 h5 42. g7
+e4 43. gxh8=Q+ Ke7 44. Qg7+ Kd6 45. Re3 Ba6 46. Qg8 Bxb5 1-0
+
+[Event "Casual game"]
+[White "White30"]
+[Black "Black30"]
+[Result "0-1"]
+[WhiteElo "2710"]
+[BlackElo "1730"]
+
+1. e3 h5 2. d4 Rh7 3. Qd2 e5 4. f3 Ba3 5. Qa5 h4 6. Qb6 exd4 7. Qb4 h3 8. b3 c5
+9. Bb5 g5 10. Kd1 f6 11. Qa4 Ne7 12. Ne2 c4 13. Qxc4 hxg2 14. Ba4 Rh6 15. h4
+g1=N 16. Kd2 Qc7 17. Qg8+ Nxg8 18. c4 Nxe2 19. Rh2 dxe3+ 20. Kd3 a5 21. Nd2
+Qxc4+ 22. Kxe3 Nf4 23. Ne4 Nd3 24. Rb1 Qd5 25. Bd2 Qf5 26. Rf2 Bd6 27. Kxd3
+Qxf3+ 28. Kd4 Rg6 29. Rg1 Ba3 30. Rc1 Nh6 31. Nc5 Qd5+ 32. Ke3 Ng8 33. Nd3 b6
+34. h5 Bd6 35. Re2 b5 36. Rxc8+ Ke7 37. Ne5 Qc5+ 38. Ke4 Qg1 39. Rc7 Qh2 40.
+Rxh2 Kf8 41. Rf2 Bc5 42. Rh2 Be3 43. Bc3 Bc5 44. Nf3 Ke7 45. Rxc5 Nh6 46. Be1 g4
+47. Kd4 d6 48. Nh4 Kd8 49. Nf5 Na6 50. Bb4 Rg7 51. Kc3 Nc7 0-1
+
+[Event "Parity Cup 1"]
+[White "Müller, K 1"]
+[Black "Black1"]
+[Result "1-0"]
+[UTCDate "2025.02.11"]
+[ECO "C50"]
+[Opening "Italian Game"]
+[Variant "Standard"]
+
+1. e4 c5 2. e5 d5 3. exd6 1-0
+
+[Event "Atomic arena"]
+[White "VariantW"]
+[Black "VariantB"]
+[Result "1-0"]
+[Variant "Atomic"]
+
+1. e4 e5 1-0
+
+[Event "From a position"]
+[White "FenW"]
+[Black "FenB"]
+[Result "0-1"]
+[FEN "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1"]
+[SetUp "1"]
+
+1. g4 Kd6 0-1
+
+[Event "Abandoned"]
+[White "StarW"]
+[Black "StarB"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 *
+
+[Event "One ply"]
+[White "ShortW"]
+[Black "ShortB"]
+[Result "1-0"]
+
+1. e4 1-0

@@ -34,6 +34,9 @@ web/public/pdfjs-wasm/
 __pycache__/
 release/
 
+# Cargo build output for the native pipeline crate.
+native/target/
+
 # Personal deploy target (host, key) — never committed.
 scripts/deploy.env
 
