@@ -650,6 +650,36 @@ describe('position index and explore', () => {
     }
   });
 
+  it('deep-searches the whole database for a position, any depth', async () => {
+    // The start position: every game passes through it at ply 0.
+    const run = async (query: string): Promise<Record<string, unknown>[]> => {
+      const res = await app.request(`/api/refgames/deep-search?${query}`);
+      expect(res.status).toBe(200);
+      return (await res.text())
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+    };
+    const all = await run(`fen=${encodeURIComponent(START)}`);
+    const games = all.filter((f) => f.type === 'game');
+    expect(games).toHaveLength(3);
+    expect(games.every((g) => g.ply === 0)).toBe(true);
+    const done = all.at(-1)!;
+    expect(done).toMatchObject({ type: 'done', matched: 3, exhaustive: true });
+
+    // A FINAL position matches too — the position after 1.e4 e5 is the
+    // end of the Carlsen game's stored line... none here run that deep,
+    // so take the position after 1.e4 (ply 1, black to move): two games.
+    const afterE4 = await run(`fen=${encodeURIComponent(AFTER_E4)}`);
+    expect(afterE4.filter((f) => f.type === 'game')).toHaveLength(2);
+
+    // Composes with the game filters: only Carlsen's e4 game as White.
+    const filtered = await run(`fen=${encodeURIComponent(AFTER_E4)}&player=carlsen&side=white`);
+    const hits = filtered.filter((f) => f.type === 'game');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ white: 'Carlsen' });
+  });
+
   it('refuses a batch big enough to be a denial of service', async () => {
     const res = await app.request('/api/refgames/explore-batch', {
       method: 'POST',

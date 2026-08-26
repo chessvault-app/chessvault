@@ -64,6 +64,29 @@ export const eloBucket = (whiteElo: number, blackElo: number): number =>
   Math.max(0, Math.floor(Math.min(whiteElo, blackElo) / 200));
 
 /**
+ * How many men each side still has when the game ends, from the SAN
+ * alone: every capture is an 'x' and removes exactly one man from the
+ * side NOT moving, and ply parity says who moved. No move generation —
+ * a string scan — which is what lets deep search's reachability
+ * prefilter come from columns that cost the index pass nothing. Men
+ * only leave the board, so a game whose final counts exceed a target
+ * position's cannot contain it.
+ */
+export const finalMen = (moves: string): { w: number; b: number } => {
+  let w = 16;
+  let b = 16;
+  let ply = 0;
+  for (const san of moves.split(' ')) {
+    if (san.includes('x')) {
+      if (ply % 2 === 0) b -= 1;
+      else w -= 1;
+    }
+    ply += 1;
+  }
+  return { w, b };
+};
+
+/**
  * Per-(position, move) result sums, precomputed from the index above.
  *
  * The explorer's UNFILTERED question — what was played here, over the
@@ -230,6 +253,19 @@ export function indexPositions(
     const insert = db.prepare(
       'INSERT INTO plies (pos, uci, game_id, ply, r, eb) VALUES (?, ?, ?, ?, ?, ?)',
     );
+    // Deep search's reachability columns, backfilled for databases built
+    // before them — the page loop below already carries every movetext,
+    // and the counts are a string scan (see finalMen).
+    for (const column of ['ply_count', 'final_wmen', 'final_bmen']) {
+      try {
+        db.exec(`ALTER TABLE games ADD COLUMN ${column} INTEGER`);
+      } catch {
+        /* already there */
+      }
+    }
+    const setMen = db.prepare(
+      'UPDATE games SET ply_count = ?, final_wmen = ?, final_bmen = ? WHERE id = ?',
+    );
     const total = (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
     let games = 0;
     let plies = 0;
@@ -239,7 +275,7 @@ export function indexPositions(
     // .all()-ing every movetext at once would hold a whole Elite month's
     // moves (~140 MB) in memory for no reason.
     const page = db.prepare(
-      'SELECT id, moves, result, white_elo, black_elo FROM games WHERE id > ? ORDER BY id LIMIT 5000',
+      'SELECT id, moves, result, white_elo, black_elo, ply_count FROM games WHERE id > ? ORDER BY id LIMIT 5000',
     );
     let lastId = sinceId;
     for (;;) {
@@ -249,10 +285,15 @@ export function indexPositions(
         result: string;
         white_elo: number;
         black_elo: number;
+        ply_count: number | null;
       }[];
       if (batch.length === 0) break;
       db.exec('BEGIN');
       for (const row of batch) {
+        if (row.ply_count === null) {
+          const men = finalMen(row.moves);
+          setMen.run(row.moves.split(' ').length, men.w, men.b, row.id);
+        }
         const pos = Chess.default();
         const r = resultCode(row.result);
         const eb = eloBucket(row.white_elo, row.black_elo);

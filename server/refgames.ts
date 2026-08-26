@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
+import { stream } from 'hono/streaming';
 import { spawn } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
@@ -1127,6 +1128,131 @@ export function refGamesApi(
     });
 
     return c.json({ indexed: true, positions });
+  });
+
+  /**
+   * Search the WHOLE database for a position — any depth, not just the
+   * position index's first thirty plies. An explicit action with a
+   * progress stream, not a per-keystroke query: the worst case is a
+   * replay-scan of every game.
+   *
+   * Three prefilters reject most games with integer comparisons before
+   * any replay: men only leave the board, so a game whose final per-side
+   * counts (a SAN scan stored at index time) exceed the target's cannot
+   * contain it, nor can one with fewer plies than the target is missing
+   * men. gamesWhere's filters cut the candidates first — a player or
+   * date filter turns the scan into seconds. Survivors are replayed with
+   * the same chessops+zobrist pipeline as the index, stopping early the
+   * moment a side's men dip below the target's.
+   *
+   * ndjson: {type:'progress'} frames as it scans, {type:'game'} per hit
+   * (capped), {type:'done', scanned, matched, exhaustive} at the end.
+   * The scan yields to the event loop between batches, so the server
+   * keeps answering while it runs.
+   */
+  const DEEP_SEARCH_CAP = 200;
+  api.get('/refgames/deep-search', (c) => {
+    const found = fromQuery(c);
+    if (!found) return c.json({ error: 'no reference games database' }, 503);
+    const { db } = found;
+    const fen = c.req.query('fen')?.trim();
+    if (!fen) return c.json({ error: 'expected fen' }, 400);
+    const setup = parseFen(fen);
+    if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
+    const position = Chess.fromSetup(setup.unwrap());
+    if (position.isErr) return c.json({ error: 'bad position' }, 400);
+    const target = position.unwrap();
+    const targetKey = toDbKey(hashSetup(target.toSetup()));
+    const targetW = target.board.white.size();
+    const targetB = target.board.black.size();
+    const missing = 32 - targetW - targetB;
+    const wantBlackToMove = target.turn === 'black';
+
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), '', hasLookups(db));
+    const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
+    const total = (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM games
+           WHERE (final_wmen IS NULL OR final_wmen <= ?)
+             AND (final_bmen IS NULL OR final_bmen <= ?)
+             AND (ply_count IS NULL OR ply_count >= ?)${sqlAnd}`,
+        )
+        .get(targetW, targetB, missing, ...binds) as { n: number }
+    ).n;
+    const page = db.prepare(
+      `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+       FROM games
+       WHERE id > ? AND (final_wmen IS NULL OR final_wmen <= ?)
+         AND (final_bmen IS NULL OR final_bmen <= ?)
+         AND (ply_count IS NULL OR ply_count >= ?)${sqlAnd}
+       ORDER BY id LIMIT 1000`,
+    );
+
+    c.header('Content-Type', 'application/x-ndjson');
+    return stream(c, async (out) => {
+      let lastId = 0;
+      let scanned = 0;
+      let matched = 0;
+      for (;;) {
+        const batch = page.all(lastId, targetW, targetB, missing, ...binds) as (RefGameRow & {
+          moves: string;
+        })[];
+        if (batch.length === 0) break;
+        for (const row of batch) {
+          scanned += 1;
+          const pos = Chess.default();
+          let w = 16;
+          let b = 16;
+          let ply = 0;
+          // Cheap gates before the hash: the side to move and the men
+          // counts must already agree — most plies fail one of the two.
+          const atTarget = (): boolean =>
+            (ply % 2 === 1) === wantBlackToMove &&
+            w === targetW &&
+            b === targetB &&
+            toDbKey(hashSetup(pos.toSetup())) === targetKey;
+          let hitPly: number | null = null;
+          for (const san of row.moves.split(' ')) {
+            if (atTarget()) {
+              hitPly = ply;
+              break;
+            }
+            const move = parseSan(pos, san);
+            if (!move) break;
+            // The SAN's own capture mark, exactly as finalMen counted it
+            // — a board check would miss en passant.
+            if (san.includes('x')) {
+              if (ply % 2 === 0) b -= 1;
+              else w -= 1;
+              // Men only leave: past the target's counts, this game can
+              // no longer contain it.
+              if (w < targetW || b < targetB) break;
+            }
+            pos.play(move);
+            ply += 1;
+          }
+          // The final position is a position too — an endgame search is
+          // often exactly about how games ended.
+          if (hitPly === null && atTarget()) hitPly = ply;
+          if (hitPly !== null) {
+            matched += 1;
+            const { moves: _moves, ...headers } = row;
+            await out.writeln(JSON.stringify({ type: 'game', ply: hitPly, ...headers }));
+          }
+          if (matched >= DEEP_SEARCH_CAP) break;
+        }
+        lastId = batch.at(-1)!.id;
+        await out.writeln(JSON.stringify({ type: 'progress', scanned, total, matched }));
+        if (matched >= DEEP_SEARCH_CAP) break;
+        // The scan is CPU work on the request path — let other requests
+        // in between batches.
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      await out.writeln(
+        JSON.stringify({ type: 'done', scanned, total, matched, exhaustive: matched < DEEP_SEARCH_CAP }),
+      );
+    });
   });
 
   // Match a book's top-game reference (metadata only) to a full game in

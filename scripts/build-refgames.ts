@@ -27,7 +27,7 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, renameSync, rmSyn
 import { basename, isAbsolute, resolve } from 'node:path';
 import { PgnParser, type Game, type PgnNodeData } from 'chessops/pgn';
 import { DATA, VAULT_SOURCES } from '../server/paths.ts';
-import { indexPositions } from '../server/refgamesIndex.ts';
+import { finalMen, indexPositions } from '../server/refgamesIndex.ts';
 import { REFGAMES_INDEXES, REFGAMES_LOOKUPS } from './lib/db-tuning.ts';
 
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
@@ -98,16 +98,30 @@ db.exec(`
     event TEXT,
     eco TEXT,
     opening TEXT,
-    moves TEXT NOT NULL
+    moves TEXT NOT NULL,
+    ply_count INTEGER,
+    final_wmen INTEGER,
+    final_bmen INTEGER
   );
   CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 `);
+// An append into a database built before deep search's reachability
+// columns: add them, empty — the index pass backfills.
+if (appendMode) {
+  for (const column of ['ply_count', 'final_wmen', 'final_bmen']) {
+    try {
+      db.exec(`ALTER TABLE games ADD COLUMN ${column} INTEGER`);
+    } catch {
+      /* already there */
+    }
+  }
+}
 // Appends dedup against what is already there, seeking through the
 // player index — make sure it exists before the first probe.
 if (appendMode) db.exec(REFGAMES_INDEXES);
 
 const insert = db.prepare(
-  'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves, ply_count, final_wmen, final_bmen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 );
 /** The same game, byte for byte: players, result, date and movetext.
     `date IS ?` rather than `=` so two missing dates also match. */
@@ -154,6 +168,7 @@ const handleGame = (game: Game<PgnNodeData>, err: Error | undefined): void => {
     duplicates += 1;
     return;
   }
+  const men = finalMen(moves);
   insert.run(
     white,
     black,
@@ -165,6 +180,9 @@ const handleGame = (game: Game<PgnNodeData>, err: Error | undefined): void => {
     headers.get('ECO') ?? null,
     headers.get('Opening') ?? null,
     moves,
+    sans.length,
+    men.w,
+    men.b,
   );
   games += 1;
   if (games % 50_000 === 0) {
