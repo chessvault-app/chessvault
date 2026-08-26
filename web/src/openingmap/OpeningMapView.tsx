@@ -725,11 +725,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 />
               </div>
             )}
-            {/* Phones only: this list ends in the controls being aimed at,
-                and the sheet's own 1.25rem floor still left the last
-                select in the home-gesture band at the screen's very edge.
-                The rest under it lifts that row into thumb country. */}
-            <div aria-hidden className="h-8 sm:hidden" />
           </DialogContent>
         </Dialog>
       )}

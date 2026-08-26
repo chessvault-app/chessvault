@@ -547,9 +547,21 @@ function DialogContent({
               className={cn(
                 cardClass,
                 // A BOTTOM SHEET, rising from the thumb's own edge,
-                // stopping short of the top, with the same 1.25rem floor
-                // under its last row.
-                'rounded-t-lg pb-[calc(1.25rem+var(--safe-b))]',
+                // stopping short of the top.
+                //
+                // The floor under the last row is 3.25rem plus the safe
+                // area, not the 1.25rem it used to be: a sheet that ends
+                // in the controls being aimed at left the last one flush
+                // in the home-gesture band at the screen's very edge —
+                // first patched as a hand spacer in the opening map's
+                // coverage sheet, then promoted here so every sheet rests
+                // the same way (lanph3re's call). A sheet that ends in a
+                // FOOTER keeps the old floor: the muted band is already
+                // the finish, and its reclaim margins (DialogFooter,
+                // AlertDialogFooter) are written against that number.
+                'rounded-t-lg pb-[calc(3.25rem+var(--safe-b))]',
+                'has-data-[slot=dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
+                'has-data-[slot=alert-dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 small
                   ? cn(
                       // The lower of two ceilings: the sheet this one was
