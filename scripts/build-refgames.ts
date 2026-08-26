@@ -19,7 +19,7 @@ import { basename, isAbsolute, resolve } from 'node:path';
 import { PgnParser, type Game, type PgnNodeData } from 'chessops/pgn';
 import { DATA, VAULT_SOURCES } from '../server/paths.ts';
 import { indexPositions } from '../server/refgamesIndex.ts';
-import { REFGAMES_INDEXES } from './lib/db-tuning.ts';
+import { REFGAMES_INDEXES, REFGAMES_LOOKUPS } from './lib/db-tuning.ts';
 
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
@@ -144,6 +144,7 @@ db.exec('COMMIT');
 
 console.log('indexing…');
 db.exec(REFGAMES_INDEXES);
+db.exec(REFGAMES_LOOKUPS);
 
 const setMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
 setMeta.run('games', String(games));

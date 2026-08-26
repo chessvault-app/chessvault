@@ -39,6 +39,34 @@ export const REFGAMES_INDEXES = `
   CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);
 `;
 
+/**
+ * Small lookup tables the search seeks through instead of scanning.
+ *
+ * The search box's `white LIKE '%q%' OR black LIKE '%q%' OR …` cannot use
+ * an index for seeking — a leading wildcard never can — so every
+ * keystroke was a covering scan of the whole index, which grows with the
+ * database (~30 MB at 280 k games). Distinct players and openings number
+ * in the tens of thousands whatever the game count, so the LIKE runs over
+ * these instead, and the games table is probed with hash-set IN
+ * (semantically identical: `white IN (names LIKE ?)` ≡ `white LIKE ?`).
+ * Derived purely from `games`, so an existing database upgrades in place.
+ */
+export const REFGAMES_LOOKUPS = `
+  CREATE TABLE IF NOT EXISTS players AS
+    SELECT name, COUNT(*) AS games, SUM(w) AS as_white, SUM(b) AS as_black, MAX(elo) AS max_elo
+    FROM (
+      SELECT white AS name, 1 AS w, 0 AS b, white_elo AS elo FROM games
+      UNION ALL
+      SELECT black AS name, 0 AS w, 1 AS b, black_elo AS elo FROM games
+    )
+    GROUP BY name;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_players_name ON players (name);
+  CREATE TABLE IF NOT EXISTS openings AS
+    SELECT opening, eco, COUNT(*) AS games FROM games
+    WHERE opening IS NOT NULL OR eco IS NOT NULL
+    GROUP BY opening, eco;
+`;
+
 /** True when the table exists (a database may predate part of the schema). */
 const has = (db: Db, table: string): boolean =>
   db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table) !==
@@ -54,6 +82,10 @@ export function tune(db: Db): string[] {
   if (has(db, 'games')) {
     db.exec(REFGAMES_INDEXES);
     applied.push('idx_games_players');
+    if (!has(db, 'players')) {
+      db.exec(REFGAMES_LOOKUPS);
+      applied.push('players', 'openings');
+    }
   }
   // The per-move sums the unfiltered explore answers from — derived from
   // the position index, so only a database that carries one can have them.

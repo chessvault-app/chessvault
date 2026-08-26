@@ -102,8 +102,15 @@ describe('reference games api', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  const search = async (q: string, offset = 0): Promise<{ total: number | null; rows: { id: number; white: string }[] }> =>
-    (await (await app.request(`/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}`)).json());
+  const search = async (
+    q: string,
+    cursor: number | null = null,
+  ): Promise<{ total: number | null; nextCursor: number | null; rows: { id: number; white: string }[] }> =>
+    (await (
+      await app.request(
+        `/api/refgames/search?q=${encodeURIComponent(q)}${cursor !== null ? `&cursor=${cursor}` : ''}`,
+      )
+    ).json());
 
   it('reports readiness from meta', async () => {
     const body = await (await app.request('/api/refgames')).json();
@@ -120,11 +127,21 @@ describe('reference games api', () => {
   it('counts only where counting is cheap', async () => {
     // Whole table: the build already tallied it, no scan needed.
     expect((await search('')).total).toBe(3);
-    expect((await search('', 50)).total).toBe(3);
-    // A real query scans, so only the first page pays for it — later pages
-    // send null and the client keeps the total it was given.
+    // A real query scans, so only the first page pays for it — a page
+    // asked for with a cursor sends null and the client keeps the total
+    // it was given.
     expect((await search('carlsen')).total).toBe(2);
-    expect((await search('carlsen', 50)).total).toBeNull();
+    expect((await search('carlsen', 1)).total).toBeNull();
+  });
+
+  it('pages by keyset cursor, newest id first', async () => {
+    // Three games, page size 50: one short page, so no next cursor.
+    const first = await search('');
+    expect(first.rows.map((r) => r.id)).toEqual([3, 2, 1]);
+    expect(first.nextCursor).toBeNull();
+    // A cursor seeks strictly below the id it names.
+    const after = await search('', 2);
+    expect(after.rows.map((r) => r.id)).toEqual([1]);
   });
 
   it('finds a game by its players', async () => {
@@ -393,6 +410,22 @@ describe('directory mount', () => {
     expect(first.rows[0].white).toBe('AlphaPlayer');
     const second = await (await app.request('/api/refgames/search?q=&db=beta')).json();
     expect(second.rows[0].white).toBe('BetaPlayer');
+  });
+
+  it('seeks the search through the derived lookup tables', async () => {
+    // tune() derived players/openings into these files, so the q box and
+    // the player filter run through hash-set INs — and must answer
+    // exactly what the plain LIKEs answer, case-insensitivity included
+    // (the IN takes the games column's NOCASE collation).
+    const q = async (params: string): Promise<{ white: string }[]> =>
+      (await (await app.request(`/api/refgames/search?${params}`)).json()).rows;
+    expect((await q('q=alphaplay')).map((r) => r.white)).toEqual(['AlphaPlayer']);
+    expect(await q('q=sicil')).toHaveLength(1);
+    expect(await q('q=B9')).toHaveLength(1);
+    expect(await q('q=nobody')).toEqual([]);
+    expect(await q('q=&player=alphaplay&side=white')).toHaveLength(1);
+    expect(await q('q=&player=alphaplay&side=black')).toEqual([]);
+    expect(await q('q=&player=alphaplay&outcome=won')).toHaveLength(1);
   });
 
   it('finds a game in whichever database holds it, and says which', async () => {

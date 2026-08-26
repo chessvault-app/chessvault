@@ -11,6 +11,7 @@ import { renameRetrying } from './atomic.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { positionIndexInfo } from './refgamesIndex.ts';
+import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
 import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
 /**
@@ -265,13 +266,70 @@ function hasMoveCounts(db: InstanceType<typeof Database>): boolean {
   );
 }
 
+/** Whether the file carries the derived player/opening lookup tables the
+    search seeks through — see REFGAMES_LOOKUPS. */
+function hasLookups(db: InstanceType<typeof Database>): boolean {
+  return (
+    db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'players'").get() !==
+    undefined
+  );
+}
+
+/**
+ * Derive the lookup tables into a database that predates them, in place.
+ *
+ * The bundled seeded database has no PGN source in the vault, so "rebuild
+ * with the new schema" is not an option there — every schema addition
+ * must be derivable from the games table itself. WAL for the write, as
+ * the position indexer does when it writes under the server's open
+ * readonly handle; a failure (a locked file, a read-only disk) is not an
+ * error, because the plain-LIKE fallback still answers every query.
+ */
+function upgradeInPlace(file: string): void {
+  let probe: InstanceType<typeof Database> | null = null;
+  try {
+    probe = new Database(file, { readonly: true, fileMustExist: true });
+    const done = hasLookups(probe);
+    probe.close();
+    if (done) return;
+  } catch {
+    probe?.close();
+    return;
+  }
+  try {
+    const rw = new Database(file);
+    rw.pragma('journal_mode = WAL');
+    rw.exec(REFGAMES_LOOKUPS);
+    rw.pragma('wal_checkpoint(TRUNCATE)');
+    rw.pragma('journal_mode = DELETE');
+    rw.close();
+  } catch {
+    /* the fallback path still answers */
+  }
+}
+
 function gamesWhere(
   get: (key: string) => string | undefined,
   alias = '',
+  /**
+   * The database carries the derived `players` lookup, so a player name
+   * matches through it: the LIKE runs over tens of thousands of distinct
+   * names instead of every game row, and the games are probed with a
+   * hash-set IN — semantically identical (`white IN (names LIKE ?)` is
+   * `white LIKE ?`), scale-proof, and off for mounts that predate the
+   * table, where the plain LIKE still answers.
+   */
+  seekPlayers = false,
 ): { clauses: string[]; binds: unknown[] } {
   const clauses: string[] = [];
   const binds: unknown[] = [];
   const like = (value: string): string => `%${value}%`;
+  const whiteMatch = seekPlayers
+    ? `${alias}white IN (SELECT name FROM players WHERE name LIKE ?)`
+    : `${alias}white LIKE ?`;
+  const blackMatch = seekPlayers
+    ? `${alias}black IN (SELECT name FROM players WHERE name LIKE ?)`
+    : `${alias}black LIKE ?`;
 
   const result = get('result');
   if (result === '1-0' || result === '0-1' || result === '1/2-1/2') {
@@ -289,13 +347,13 @@ function gamesWhere(
   const side = get('side');
   if (player) {
     if (side === 'white') {
-      clauses.push(`${alias}white LIKE ?`);
+      clauses.push(whiteMatch);
       binds.push(like(player));
     } else if (side === 'black') {
-      clauses.push(`${alias}black LIKE ?`);
+      clauses.push(blackMatch);
       binds.push(like(player));
     } else {
-      clauses.push(`(${alias}white LIKE ? OR ${alias}black LIKE ?)`);
+      clauses.push(`(${whiteMatch} OR ${blackMatch})`);
       binds.push(like(player), like(player));
     }
     // Outcome is the PLAYER'S, so without a side it splits by which seat
@@ -311,7 +369,7 @@ function gamesWhere(
         binds.push(side === 'white' ? asWhite : asBlack);
       } else {
         clauses.push(
-          `((${alias}white LIKE ? AND ${alias}result = ?) OR (${alias}black LIKE ? AND ${alias}result = ?))`,
+          `((${whiteMatch} AND ${alias}result = ?) OR (${blackMatch} AND ${alias}result = ?))`,
         );
         binds.push(like(player), asWhite, like(player), asBlack);
       }
@@ -408,6 +466,11 @@ export function refGamesApi(
     if (cached) return cached;
     const file = fileFor(name);
     if (!existsSync(file)) return null;
+    // Directory mounts self-upgrade before the readonly handle opens; the
+    // single-file mounts (the demo's read-only sql.js shim, the tests'
+    // fixtures) are served as they are and fall back where a lookup table
+    // is missing.
+    if (!single) upgradeInPlace(file);
     const db = new Database(file, { readonly: true, fileMustExist: true });
     handles.set(name, db);
     return db;
@@ -670,49 +733,89 @@ export function refGamesApi(
     return found;
   };
 
+  /**
+   * A filtered count is a scan, and at reference-database sizes an
+   * unbounded one costs seconds per new filter combination. Counting
+   * stops at this many: the browser shows "10,000+", which answers the
+   * question a count answers ("roughly how much is there") without
+   * walking two million rows to finish the digit.
+   */
+  const COUNT_CAP = 10_000;
+
   api.get('/refgames/search', (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { name, db } = found;
     const q = (c.req.query('q') ?? '').trim();
-    const offset = Math.max(0, Number(c.req.query('offset')) || 0);
+    // Keyset, not OFFSET: the page after id X is `id < X`, a seek —
+    // OFFSET walks and discards everything above it, so page forty of a
+    // deep scroll cost more than page one. The cursor is the last row id
+    // the client has.
+    const cursor = Number(c.req.query('cursor')) || null;
+    const seek = hasLookups(db);
 
     // One box searches everything a game is findable by: players, the
     // opening name, and the ECO code (prefix match, so "B9" finds B90-B99).
     // Beside it, the structured filters — player/side/outcome, opening,
     // event, dates, result, strength — every combination composable (see
     // gamesWhere).
-    const structured = gamesWhere((k) => c.req.query(k));
+    const structured = gamesWhere((k) => c.req.query(k), '', seek);
     const clauses = [...structured.clauses];
     const args = [...structured.binds];
     if (q) {
-      clauses.unshift('(white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?)');
+      if (seek) {
+        // Through the small lookup tables (see REFGAMES_LOOKUPS): the
+        // LIKE runs over distinct names and openings, and each IN is
+        // materialised once into a hash set the id-order walk probes —
+        // instead of four LIKEs against every row's text.
+        clauses.unshift(
+          `(white IN (SELECT name FROM players WHERE name LIKE ?)
+            OR black IN (SELECT name FROM players WHERE name LIKE ?)
+            OR opening IN (SELECT opening FROM openings WHERE opening LIKE ?)
+            OR eco IN (SELECT DISTINCT eco FROM openings WHERE eco LIKE ?))`,
+        );
+      } else {
+        clauses.unshift('(white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?)');
+      }
       args.unshift(`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`);
     }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
-    // COUNT(*) here scans; the leading-wildcard LIKEs are not seekable, so
-    // no index can turn that into a lookup. Infinite scroll asks for the
-    // same query over and over, so pay it once on the first page and send
-    // null afterwards — the client keeps the total it already has. The
-    // empty query is free: it is the whole table, which meta already knows.
-    const total =
-      where === ''
-        ? tableCount(name, db)
-        : offset === 0
-          ? (db.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }).n
-          : null;
-    // moves ride along only to name the openings the source PGN left
-    // nameless; the page is 50 rows, so the replay cost is nothing.
-    const rows = db
+    // Infinite scroll asks for the same query over and over, so the count
+    // is paid once on the first page and null afterwards — the client
+    // keeps the total it already has. The empty query is free (meta knows
+    // the table); a filtered count stops at the cap.
+    let total: number | null = null;
+    let capped = false;
+    if (cursor === null) {
+      if (where === '') {
+        total = tableCount(name, db);
+      } else {
+        const n = (
+          db
+            .prepare(`SELECT COUNT(*) AS n FROM (SELECT 1 FROM games ${where} LIMIT ?)`)
+            .get(...args, COUNT_CAP + 1) as { n: number }
+        ).n;
+        capped = n > COUNT_CAP;
+        total = capped ? COUNT_CAP : n;
+      }
+    }
+    const page = db
       .prepare(
         `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
-         FROM games ${where} ORDER BY id DESC LIMIT ${PAGE} OFFSET ?`,
+         FROM games ${where}${where ? ' AND' : ' WHERE'} id < ?
+         ORDER BY id DESC LIMIT ${PAGE}`,
       )
-      .all(...args, offset) as (RefGameRow & { moves: string })[];
+      .all(...args, cursor ?? Number.MAX_SAFE_INTEGER) as (RefGameRow & { moves: string })[];
     return c.json({
       total,
-      rows: rows.map(({ moves, ...row }) => {
+      capped: cursor === null ? capped : undefined,
+      // The page after this one starts below the last id sent; a short
+      // page is the end of the results.
+      nextCursor: page.length === PAGE ? page[page.length - 1]!.id : null,
+      // moves ride along only to name the openings the source PGN left
+      // nameless; the page is 50 rows, so the replay cost is nothing.
+      rows: page.map(({ moves, ...row }) => {
         if (row.opening) return row;
         const derived = deriveOpening(moves);
         return derived ? { ...row, eco: row.eco ?? derived.eco, opening: derived.name } : row;
@@ -753,7 +856,7 @@ export function refGamesApi(
     }
 
     const key = toDbKey(hashSetup(pos.toSetup()));
-    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.');
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db));
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
 
     const rows = (
@@ -848,7 +951,7 @@ export function refGamesApi(
       return c.json({ indexed: false, positions: [] });
     }
 
-    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.');
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db));
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     // The map's sweep never filters, and the live aggregation is what made
     // its first batch cost seconds — see REFGAMES_MOVE_COUNTS.

@@ -74,6 +74,10 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<RefGame[]>([]);
   const [total, setTotal] = useState(0);
+  /** The count stopped at the server's cap — shown as "10,000+". */
+  const [capped, setCapped] = useState(false);
+  /** Where the next page starts; null when every match is in hand. */
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   // Nothing for the first moment — a search that answers in 40 ms should
   // not flash a skeleton on the way past.
@@ -113,12 +117,15 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   filterRef.current = { resultFilter, minElo, structured };
 
   const searchSeq = useRef(0);
-  const search = useCallback(async (q: string, offset: number, db: string | null) => {
+  // Keyset paging: the cursor is the last row id in hand, null for a fresh
+  // search. The server seeks below it instead of walking an OFFSET.
+  const search = useCallback(async (q: string, cursor: number | null, db: string | null) => {
     const seq = ++searchSeq.current;
     setLoading(true);
     try {
       const f = filterRef.current;
-      const params = new URLSearchParams({ q, offset: String(offset) });
+      const params = new URLSearchParams({ q });
+      if (cursor !== null) params.set('cursor', String(cursor));
       if (db) params.set('db', db);
       if (f.resultFilter !== 'any') params.set('result', f.resultFilter);
       if (f.minElo > 0) params.set('minElo', String(f.minElo));
@@ -130,14 +137,21 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       if (st.event) params.set('event', st.event);
       if (st.from) params.set('from', st.from);
       if (st.to) params.set('to', st.to);
-      const data = await api<{ total: number | null; rows: RefGame[] }>(
-        `/api/refgames/search?${params.toString()}`,
-      );
+      const data = await api<{
+        total: number | null;
+        capped?: boolean;
+        nextCursor: number | null;
+        rows: RefGame[];
+      }>(`/api/refgames/search?${params.toString()}`);
       if (seq !== searchSeq.current) return;
       // Only the first page of a search carries a total — counting matches
       // means scanning, and every later page would count the same thing.
-      if (data.total !== null) setTotal(data.total);
-      setRows((prev) => (offset === 0 ? data.rows : [...prev, ...data.rows]));
+      if (data.total !== null) {
+        setTotal(data.total);
+        setCapped(data.capped === true);
+      }
+      setNextCursor(data.nextCursor);
+      setRows((prev) => (cursor === null ? data.rows : [...prev, ...data.rows]));
     } catch {
       /* the rows keep their last answer; the spinner below stops */
     } finally {
@@ -186,7 +200,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
    */
   useEffect(() => {
     rowsFor.current = null;
-    void search('', 0, null);
+    void search('', null, null);
   }, [search]);
 
   // Reconcile the picked database against the list (a delete may have
@@ -217,13 +231,13 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     rowsFor.current = next;
     setRows([]);
     setQuery('');
-    void search('', 0, next);
+    void search('', null, next);
   }, [meta, curDb, search]);
 
   const onQuery = (q: string): void => {
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => void search(q, 0, curDb), 250);
+    debounce.current = setTimeout(() => void search(q, null, curDb), 250);
   };
 
   // A filter press re-asks from the top, with the query still in the box.
@@ -233,7 +247,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       filtersLive.current = true;
       return;
     }
-    void search(query, 0, curDb);
+    void search(query, null, curDb);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultFilter, minElo, structured]);
 
@@ -242,16 +256,16 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   const sentinel = useRef<HTMLLIElement>(null);
   useEffect(() => {
     const el = sentinel.current;
-    if (!el || loading || rows.length === 0 || rows.length >= total) return;
+    if (!el || loading || rows.length === 0 || nextCursor === null) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) void search(query, rows.length, curDb);
+        if (entries[0]?.isIntersecting) void search(query, nextCursor, curDb);
       },
       { rootMargin: '200px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [rows.length, total, loading, query, search, curDb]);
+  }, [rows.length, nextCursor, loading, query, search, curDb]);
 
   // Which database a game row means — every per-game fetch carries it,
   // and every per-game cache key does too: row ids restart at 1 in each
@@ -419,7 +433,9 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   const count =
     loading && rows.length === 0
       ? t('Searching…')
-      : t('{n} games', { n: total.toLocaleString() });
+      : capped
+        ? t('{n}+ games', { n: total.toLocaleString() })
+        : t('{n} games', { n: total.toLocaleString() });
 
   // The database picker (only when there is a choice) and the manager,
   // shown wherever the count is — absent entirely on a single-database
@@ -599,7 +615,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       more={
         // "more", not "older": this list is in insertion order (id DESC),
         // which is no promise about dates.
-        rows.length < total ? { ref: sentinel, label: t('Loading more games…') } : null
+        nextCursor !== null ? { ref: sentinel, label: t('Loading more games…') } : null
       }
       tail={
         // A search that comes back empty says so, with the way out — an
@@ -620,7 +636,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
                     setResultFilter('any');
                     setMinElo(0);
                     setStructured(EMPTY_STRUCTURED_FILTERS);
-                    void search('', 0, curDb);
+                    void search('', null, curDb);
                   }}
                 >
                   <X className="size-3.5" data-icon="inline-start" />
