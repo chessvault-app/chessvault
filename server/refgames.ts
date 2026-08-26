@@ -609,23 +609,45 @@ export function refGamesApi(
               ? [bundled, ...scriptArgs]
               : ['--import', 'tsx', scriptPath, ...scriptArgs],
           ];
-      const child = spawn(file, args, {
-        cwd: REPO_ROOT,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      // A child that cannot start must settle the job like any other
+      // failure — the slot frees, the log says why — never crash the
+      // server or leave `running` stuck blocking every later build.
+      // Windows throws synchronously from spawn() for an unrunnable
+      // file (measured: errno UNKNOWN on a corrupt binary); POSIX
+      // surfaces the same cases asynchronously as 'error' (ETXTBSY
+      // while cargo rewrites the binary, a lost exec bit). Handle both.
+      let settled = false;
+      const finish = (code: number | null): void => {
+        if (settled) return;
+        settled = true;
+        current.running = false;
+        current.exitCode = code;
+        onClose(code);
+      };
+      let child: ReturnType<typeof spawn>;
+      try {
+        child = spawn(file, args, {
+          cwd: REPO_ROOT,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+      } catch (error) {
+        current.log.push(`could not start the job: ${(error as Error).message}`);
+        finish(-1);
+        return;
+      }
       const append = (chunk: Buffer): void => {
         for (const line of chunk.toString().split('\n')) {
           if (line.trim()) current.log.push(line);
         }
         if (current.log.length > 100) current.log.splice(0, current.log.length - 100);
       };
-      child.stdout.on('data', append);
-      child.stderr.on('data', append);
-      child.on('close', (code) => {
-        current.running = false;
-        current.exitCode = code;
-        onClose(code);
+      child.stdout!.on('data', append);
+      child.stderr!.on('data', append);
+      child.on('error', (error) => {
+        current.log.push(`could not start the job: ${error.message}`);
+        finish(-1);
       });
+      child.on('close', finish);
     };
 
     const startBuild = (name: string, sources: string[], append: boolean): void => {
@@ -1229,23 +1251,50 @@ export function refGamesApi(
       c.header('Content-Type', 'application/x-ndjson');
       return stream(c, (out) =>
         new Promise<void>((done) => {
-          const child = spawn(
-            native,
-            ['deep-search', found.name, '--fen', fen, '--filters', JSON.stringify(filters), '--data', DATA],
-            { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
-          );
+          // Windows throws synchronously for an unrunnable binary;
+          // POSIX emits 'error' instead (see spawnJob). Either way the
+          // stream ends without a `done` frame, which is the client's
+          // signal that the search failed rather than found nothing.
+          let child: ReturnType<typeof spawn>;
+          try {
+            child = spawn(
+              native,
+              ['deep-search', found.name, '--fen', fen, '--filters', JSON.stringify(filters), '--data', DATA],
+              { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
+            );
+          } catch (error) {
+            console.error(`deep-search (${found.name}): could not start ${native}: ${(error as Error).message}`);
+            done();
+            return;
+          }
           const kill = (): void => {
             child.kill();
           };
           c.req.raw.signal?.addEventListener('abort', kill);
           out.onAbort(kill);
-          child.stdout.on('data', (chunk: Buffer) => {
+          child.stdout!.on('data', (chunk: Buffer) => {
             void out.write(chunk).catch(kill);
           });
-          child.on('close', () => {
-            c.req.raw.signal?.removeEventListener('abort', kill);
-            done();
+          // The binary's own diagnostic would otherwise be discarded.
+          child.stderr!.on('data', (chunk: Buffer) => {
+            const line = chunk.toString().trim();
+            if (line) console.error(`deep-search (${found.name}): ${line}`);
           });
+          let settled = false;
+          const finish = (code: number | null): void => {
+            if (settled) return;
+            settled = true;
+            c.req.raw.signal?.removeEventListener('abort', kill);
+            if (code !== 0 && code !== null && !out.aborted) {
+              console.error(`deep-search (${found.name}): exited with code ${code}`);
+            }
+            done();
+          };
+          child.on('error', (error) => {
+            console.error(`deep-search (${found.name}): could not start ${native}: ${error.message}`);
+            finish(-1);
+          });
+          child.on('close', finish);
         }),
       );
     }
