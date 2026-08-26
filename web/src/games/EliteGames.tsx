@@ -1,4 +1,4 @@
-import { ChevronLeft, Database, Eye, Plus, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Database, Plus, SlidersHorizontal } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -24,13 +24,12 @@ import {
   type StructuredFilters,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
-import { SideDot } from '@/components/side-dot';
 import { useSlowLoad } from '@/components/skeletons';
 import { GameListShell } from './GameListShell';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
-import { GamePreview, OpeningTag, ResultScore, isCoarsePointer, type Preview } from './shared';
+import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
 
 interface RefGame {
   id: number;
@@ -313,60 +312,66 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
 
   // Preview eye, matching the collection rows: the DB stores movetext,
   // not positions, so the final fen is derived lazily from the game's
-  // PGN (cached per id). Coarse pointers tap it open, fine ones hover.
+  // PGN (cached per id) and handed to GameRow's loadPreview — the row
+  // owns the placement, the hover races and the is-it-still-mounted
+  // guard, exactly as it does for the other two lists.
   const [preview, setPreview] = useState<Preview | null>(null);
   const fenCache = useRef<Map<string, string>>(new Map());
-  const previewSeq = useRef(0);
-  const previewFor = useRef<number | null>(null);
-  const showPreview = async (game: RefGame, anchor: Element, viaTap = false): Promise<void> => {
-    const seq = ++previewSeq.current;
-    let fen = fenCache.current.get(refGameKey(game.id));
+  const loadFinalFen = async (
+    game: RefGame,
+  ): Promise<{ fen: string; orientation: 'white' | 'black' } | null> => {
+    const key = refGameKey(game.id);
+    let fen = fenCache.current.get(key);
     if (!fen) {
       let pgn: string;
       try {
         ({ pgn } = await api<{ pgn: string }>(pgnUrl(game.id)));
       } catch {
-        return; // a preview is a glance — nothing to report if it cannot load
+        return null; // a preview is a glance — nothing to report if it cannot load
       }
       try {
         const first = pgnToChapters(pgn)[0];
-        if (!first) return;
+        if (!first) return null;
         const lastId = mainlineFrom(first.tree, first.tree.rootId).at(-1) ?? first.tree.rootId;
         fen = getNode(first.tree, lastId).fen;
       } catch {
-        return;
+        return null;
       }
-      fenCache.current.set(refGameKey(game.id), fen);
+      fenCache.current.set(key, fen);
     }
-    if (seq !== previewSeq.current) return;
-    // The anchor can be unmounted while the fetch was out (switching
-    // databases replaces every row, and removal fires no mouseleave) —
-    // a dead node measures 0,0 and the preview drew in the corner.
-    if (!anchor.isConnected) return;
-    const rect = anchor.getBoundingClientRect();
-    setPreview({
-      fen,
-      orientation: 'white',
-      top: Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200),
-      left: Math.max(rect.left - 192, 8),
-      // Touch opens the centred overlay (its scrim dismisses it), exactly
-      // like the collection rows — a beside-row popover on a phone is
-      // pointer-events-none AND covers the row it describes.
-      ...(viaTap ? { pinned: true } : {}),
-    });
+    return { fen, orientation: 'white' };
   };
-  const hidePreview = (): void => {
-    previewSeq.current += 1;
-    previewFor.current = null;
-    setPreview(null);
-  };
+  const hidePreview = (): void => setPreview(null);
   // A pinned preview must not outlive its game list: the rows it
   // described are gone once the database changes.
   useEffect(() => {
     hidePreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curDb]);
-  const coarse = isCoarsePointer;
+
+  /**
+   * A reference row in the shared row's shape. No link, no side of yours,
+   * no annotations, no final position in hand (loadPreview fetches it) —
+   * and an opening only when the ECO is known, which is what the shared
+   * detail line keys on.
+   */
+  const toSummary = (g: RefGame): GameSummary => ({
+    file: `ref/${curDb ?? ''}`,
+    index: g.id,
+    white: g.white,
+    black: g.black,
+    whiteElo: g.white_elo,
+    blackElo: g.black_elo,
+    result: g.result,
+    date: g.date ?? '',
+    timeControl: null,
+    eco: g.eco,
+    link: null,
+    opening: g.eco && g.opening ? { eco: g.eco, name: g.opening } : null,
+    finalFen: null,
+    userSide: null,
+    annotated: false,
+  });
 
   if (!meta && metaError) {
     // The pane never learned what it holds, so there is nothing truthful
@@ -511,95 +516,49 @@ export function EliteGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' | 'p
   /* gap-3/pr-3 on each row: the shared GameRow's rhythm — these rows sat
      a third as far apart as the archive's, and the two lists take turns
      in the same column. */
+  // The shared row, via the summary adapter: bold names that never clip
+  // their ratings, the ECO badge, the result tag, the coarse-pointer eye
+  // policy and placeNear previews — everything the hand-rolled copy had
+  // re-implemented and half of which it had drifted on. Deliberately no
+  // swipe, bookmark, rename or context menu: a reference row is
+  // immutable, and Add is its keep verb.
   const rowItems = rows.map((g) => (
-            <li key={g.id} className="group hover:bg-accent flex items-center gap-3 pr-3 transition-colors duration-100">
-              {/* Mirrors the collection's GameRow — same bold names, same
-                  ECO badge, same result tag — so the two lists read as one
-                  family rather than as two takes on a game list. */}
-              <button
-                type="button"
-                onClick={() => void openGame(g)}
-                title={t('Open on the analysis board')}
-                className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-3 text-left"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="text-foreground block truncate text-base">
-                    <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-                    <span className="font-semibold">{g.white}</span>{' '}
-                    <span className="text-muted-foreground text-sm">{g.white_elo}</span>
-                  </span>
-                  <span className="text-foreground block truncate text-base">
-                    <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-                    <span className="font-semibold">{g.black}</span>{' '}
-                    <span className="text-muted-foreground text-sm">{g.black_elo}</span>
-                  </span>
-                  <span className="text-muted-foreground block truncate text-sm">
-                    {g.eco ? <OpeningTag eco={g.eco} name={g.opening} /> : g.opening}
-                    {(g.eco || g.opening) && g.date ? ' · ' : ''}
-                    {g.date ?? ''}
-                  </span>
-                </span>
-                <ResultScore result={g.result} userSide={null} />
-              </button>
-
-              {/* The eye lives outside the row's own button — a button
-                  inside a button is not markup a browser will keep — and
-                  in the same hover tray the collection rows use. Add stays
-                  put: it is the point of this page, not a quick action. */}
-              <span
-                className={cn(
-                  'flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
-                  'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
-                  'group-hover:bg-accent/70 pointer-coarse:opacity-100',
-                )}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('Preview the final position')}
-                  onMouseEnter={(e) => {
-                    if (!coarse()) void showPreview(g, e.currentTarget);
-                  }}
-                  onMouseLeave={() => {
-                    if (!coarse()) hidePreview();
-                  }}
-                  onClick={(e) => {
-                    if (!coarse()) return;
-                    e.stopPropagation();
-                    if (previewFor.current === g.id) {
-                      hidePreview();
-                    } else {
-                      previewFor.current = g.id;
-                      void showPreview(g, e.currentTarget, true);
-                    }
-                  }}
-                >
-                  <Eye className="size-3.5" />
-                </Button>
-              </span>
-
-              {/* w-16 and a bare word when it is done, exactly like the
-                  archive's rows: the two lists now take turns in one 210px
-                  column, and 20 characters of player name is worth more
-                  than a tick beside a word that is already past tense. */}
-              <Button
-                variant={inCollection(g) ? 'ghost' : 'secondary'}
-                size="sm"
-                className="w-16 shrink-0"
-                disabled={inCollection(g)}
-                onClick={() => void collect(g)}
-              >
-                {inCollection(g) ? (
-                  t('Added')
-                ) : (
-                  <>
-                    <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-                    {t('Add')}
-                  </>
-                )}
-              </Button>
-            </li>
-          ));
+    <GameRow
+      key={g.id}
+      game={toSummary(g)}
+      onOpen={() => void openGame(g)}
+      onPreview={setPreview}
+      loadPreview={() => loadFinalFen(g)}
+      actions={null}
+      menu={[]}
+      showLink={false}
+      standing={
+        /* w-16 and a bare word when it is done, exactly like the
+           archive's rows: the two lists take turns in one 210px column,
+           and 20 characters of player name is worth more than a tick
+           beside a word that is already past tense. */
+        <Button
+          variant={inCollection(g) ? 'ghost' : 'secondary'}
+          size="sm"
+          className="w-16 shrink-0"
+          disabled={inCollection(g)}
+          onClick={(e) => {
+            e.stopPropagation();
+            void collect(g);
+          }}
+        >
+          {inCollection(g) ? (
+            t('Added')
+          ) : (
+            <>
+              <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+              {t('Add')}
+            </>
+          )}
+        </Button>
+      }
+    />
+  ));
 
   // The count leads the band in the archive's own voice; the picker and
   // the manager sit with it. In the framed page shape the panel header
