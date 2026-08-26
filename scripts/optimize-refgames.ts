@@ -86,6 +86,11 @@ if (hadIndex && (swept > 0 || stale)) {
 
 console.log('vacuum…');
 const compact = new Database(file);
+// Fold back to a single plain file, like every in-place pass: without
+// this, a sweep that removed nothing left the database in WAL — the
+// index pass folds back itself, but it only runs when something
+// changed, and the artifact convention is one .sqlite with no sidecars.
+compact.pragma('journal_mode = DELETE');
 compact.exec('VACUUM');
 compact.close();
 console.log(`done in ${((Date.now() - started) / 1000).toFixed(1)}s`);

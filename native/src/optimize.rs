@@ -77,6 +77,9 @@ pub fn run_optimize(db_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
     println!("vacuum…");
     let compact = Connection::open(db_path)?;
+    // Fold back to a single plain file (see the TS twin): a sweep that
+    // removed nothing would otherwise leave the database in WAL.
+    compact.pragma_update(None, "journal_mode", "DELETE")?;
     compact.execute_batch("VACUUM")?;
     drop(compact);
     println!("done in {:.1}s", started.elapsed().as_secs_f64());
