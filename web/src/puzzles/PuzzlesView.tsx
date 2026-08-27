@@ -1054,11 +1054,18 @@ function Trainer({
             <h1 className="text-foreground text-base font-semibold">{title}
           </h1>
           <span className="min-w-0 flex-1" />
-          {/* How the session is going — words and counts, never a rating. */}
+          {/* How much has been done, and nothing about how well.
+              A "Run: n" of consecutive correct answers stood here too, and
+              it was a score of the same family as the dashboard's old win
+              rate — worse in one way, because a count that only survives
+              while you do not fail is a reason to pick puzzles you will
+              get right, and the useful session is the one you fail in. It
+              was persisted rather than per-session besides, so a long run
+              was something to protect rather than spend. The server still
+              keeps the number; nothing shows it. */}
           {mode === 'fresh' && solvedToday !== null && (
             <span className="text-muted-foreground shrink-0 text-sm tabular-nums">
               {t('Solved today: {n}', { n: solvedToday })}
-              {(meta?.user.streak ?? 0) > 1 && ` · ${t('Run: {n}', { n: meta!.user.streak })}`}
             </span>
           )}
         </div>
