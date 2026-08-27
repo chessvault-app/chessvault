@@ -7,7 +7,6 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ListRow } from '@/components/list-row';
 import { Skeleton } from '@/components/skeletons';
-import { BrandMark } from '@/components/brand-mark';
 import { useDifficultyWord } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
@@ -362,15 +361,20 @@ export function HomePage() {
     // as the box.
     <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6">
       <div className="w-full max-w-lg">
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="bg-primary text-primary-foreground grid size-14 place-items-center rounded-2xl">
-            <BrandMark className="size-9" />
-          </div>
-          <div>
-            <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
-            <p className="text-muted-foreground text-base">{t('Your chess, in plain files.')}</p>
-          </div>
-        </div>
+        {/* The page's heading, for the document and for a screen reader
+            walking the landmarks — not for the eye.
+
+            What stood here was a masthead: the mark on a primary tile at
+            size-14, the app's name at text-2xl, and the tagline off the
+            landing page. It told a returning user their own app's name, on
+            the screen they see every launch, above the one row they came
+            for. A window's chrome already names the app, and the sidebar
+            carries the mark; a tool opens into work. Removing it lifts
+            Continue to the top of the fold on a phone.
+
+            The h1 stays because deleting it would leave the only route in
+            the app with no heading at all. */}
+        <h1 className="sr-only">{t('Chess Vault')}</h1>
 
         {/* Continue — the best retention surface on the page. A returning
             user lands one tap from where they left off. Before the data
@@ -444,14 +448,22 @@ export function HomePage() {
                 disabled={step.done}
                 className="text-sm"
               >
+                {/* A done step is marked and quietened, not struck through
+                    and lit green. The ring-and-tick pair over a strikethrough
+                    is the onboarding-reward idiom, and green is spoken for
+                    here: the colour grammar gives it to outcomes — solved,
+                    won — so a green tick on a settings shortcut reads as a
+                    result somebody earned. A pending step carries no marker
+                    at all; the row's own chevron already says it is a way in,
+                    and the spacer keeps the labels in one column. */}
                 {step.done ? (
-                  <Check className="text-good size-3.5 shrink-0" />
+                  <Check className="text-muted-foreground size-3.5 shrink-0" />
                 ) : (
-                  <span className="border-border size-3.5 shrink-0 rounded-full border" />
+                  <span aria-hidden className="size-3.5 shrink-0" />
                 )}
                 <span
                   className={
-                    step.done ? 'text-muted-foreground min-w-0 flex-1 line-through' : 'text-foreground min-w-0 flex-1'
+                    step.done ? 'text-muted-foreground min-w-0 flex-1' : 'text-foreground min-w-0 flex-1'
                   }
                 >
                   {step.label}
