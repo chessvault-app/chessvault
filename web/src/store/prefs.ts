@@ -32,9 +32,9 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: 'default', label: 'Walnut (adaptive)' },
   { id: 'green', label: 'Tournament green' },
   { id: 'brown', label: 'Classic brown' },
-  { id: 'blue', label: 'Ocean' },
+  { id: 'blue', label: 'Blue' },
   { id: 'slate', label: 'Slate' },
-  { id: 'lavender', label: 'Lavender' },
+  { id: 'lavender', label: 'Purple' },
   { id: 'rosewood', label: 'Rosewood' },
   { id: 'charcoal', label: 'Charcoal' },
 ];
@@ -78,6 +78,16 @@ export interface Scheme {
   contrast?: number;
 }
 
+/**
+ * Labels name the COLOUR, not a mood. Forest and Midnight were the two
+ * that did not: a scheme called Midnight is a scheme chosen for how it
+ * sounds, and the register the rest of this list already speaks — shadcn's
+ * Stone, Zinc, Slate, and Tailwind's own Rose — is materials and hues.
+ * Green and Violet are what those two are (hue 150 and hue 265).
+ *
+ * Paper stays: it names the surface, exactly as Stone and Slate do. The
+ * ids never move — they are what a device has already stored.
+ */
 export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   // shadcn's five base colours first, as schemes: each is the registry's
   // theme of that name — its neutral hue and how far from grey, with the
@@ -91,9 +101,9 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   // The app's own schemes: the same ladder with a coloured accent.
   { id: 'slate', label: 'Blue', scheme: { hue: 264, tint: 1, accent: 240 } },
   { id: 'paper', label: 'Paper', scheme: { hue: 75, tint: 1.8, accent: 45 } },
-  { id: 'forest', label: 'Forest', scheme: { hue: 150, tint: 1.6, accent: 155 } },
+  { id: 'forest', label: 'Green', scheme: { hue: 150, tint: 1.6, accent: 155 } },
   { id: 'rose', label: 'Rose', scheme: { hue: 350, tint: 1.5, accent: 350 } },
-  { id: 'midnight', label: 'Midnight', scheme: { hue: 265, tint: 2.4, accent: 275 } },
+  { id: 'midnight', label: 'Violet', scheme: { hue: 265, tint: 2.4, accent: 275 } },
   // Neutral's surfaces with a coloured button: Mono leans violet, Graphite
   // is the blue the app used to be drawn in.
   { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
