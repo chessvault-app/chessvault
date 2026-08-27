@@ -1,13 +1,13 @@
 import {
   ChevronLeft,
   ChevronDown,
-  Compass,
   Cpu,
   Files,
   ListOrdered,
   ListTree,
   Pencil,
   Plus,
+  Table2,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -257,7 +257,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             { id: 'moves', label: 'Moves', icon: ListOrdered },
             { id: 'engine', label: 'Engine', icon: Cpu },
             ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters', icon: Files }] : []),
-            { id: 'explorer', label: 'Explorer', icon: Compass },
+            { id: 'explorer', label: 'Explorer', icon: Table2 },
           ]}
         />
         {kind === 'study' && (
