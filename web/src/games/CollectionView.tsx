@@ -515,6 +515,9 @@ export function CollectionView() {
                 wasted line and a reader wondering what the difference is. */}
             <ArchiveBrowser
               shape="sheet"
+              // The wide window has table room; the phone sheet stays
+              // cards (`wide` is the same 64rem gate as the layout's).
+              table={wide}
               collectionKeys={collectionKeys}
               onCollected={() => void load()}
               onPreview={setPreview}

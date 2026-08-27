@@ -24,6 +24,7 @@ import { forgetMyGames } from '@/openingmap/useGaps';
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
+import { GameTableHeader, GameTableRow } from './GameTable';
 import {
   EMPTY_STRUCTURED_FILTERS,
   hasStructuredFilters,
@@ -164,6 +165,7 @@ const MAX_ROWS = 1000;
  */
 const ArchiveRow = memo(function ArchiveRow({
   game,
+  table,
   selecting,
   picked,
   inCollection,
@@ -173,6 +175,7 @@ const ArchiveRow = memo(function ArchiveRow({
   onCollect,
 }: {
   game: GameSummary;
+  table: boolean;
   selecting: boolean;
   picked: boolean;
   inCollection: boolean;
@@ -181,47 +184,61 @@ const ArchiveRow = memo(function ArchiveRow({
   onToggle: (key: string, on: boolean) => void;
   onCollect: (game: GameSummary) => void;
 }) {
+  // Outside the hover tray in either presentation: Add is what this
+  // list is FOR, and a selection checkbox that only appears under the
+  // pointer is one you cannot tick with your eyes.
+  const standing = (
+    <>
+      {selecting && (
+        <Checkbox
+          className="mr-1"
+          aria-label={t('Select this game')}
+          checked={picked}
+          onClick={(e) => e.stopPropagation()}
+          onCheckedChange={(on) => onToggle(gameKey(game), on === true)}
+        />
+      )}
+      <Button
+        variant={inCollection ? 'ghost' : 'secondary'}
+        size="sm"
+        disabled={inCollection}
+        className="w-16 shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          onCollect(game);
+        }}
+      >
+        {inCollection ? (
+          t('Added')
+        ) : (
+          <>
+            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+            {t('Add')}
+          </>
+        )}
+      </Button>
+    </>
+  );
+  if (table) {
+    // The wide window's dense presentation. No details panel stands
+    // beside this list, so a click opens — the card rows' own verb.
+    return (
+      <GameTableRow
+        game={game}
+        selected={false}
+        onSelect={() => onOpen(game)}
+        onOpen={() => onOpen(game)}
+        standing={standing}
+      />
+    );
+  }
   return (
     <GameRow
       game={game}
       onOpen={() => onOpen(game)}
       onPreview={onPreview}
-      // Outside the hover tray: Add is what this list is FOR, and a
-      // selection checkbox that only appears under the pointer is one
-      // you cannot tick with your eyes.
       actions={null}
-      standing={
-        <>
-          {selecting && (
-            <Checkbox
-              className="mr-1"
-              aria-label={t('Select this game')}
-              checked={picked}
-              onClick={(e) => e.stopPropagation()}
-              onCheckedChange={(on) => onToggle(gameKey(game), on === true)}
-            />
-          )}
-          <Button
-            variant={inCollection ? 'ghost' : 'secondary'}
-            size="sm"
-            disabled={inCollection}
-            className="w-16 shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCollect(game);
-            }}
-          >
-            {inCollection ? (
-              t('Added')
-            ) : (
-              <>
-                <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-                {t('Add')}
-              </>
-            )}
-          </Button>
-        </>
-      }
+      standing={standing}
     />
   );
 });
@@ -231,10 +248,15 @@ export function ArchiveBrowser({
   onCollected,
   onPreview,
   shape = 'framed',
+  table = false,
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
+  /** Dense table rows instead of cards — the wide window's
+      presentation. Explicit, never inferred: the phone sheet stays
+      cards whatever the window says. */
+  table?: boolean;
   /**
    * Where this is being shown — GameListShell's vocabulary, which owns
    * the paddings and rules each place needs. (This used to be a local
@@ -976,6 +998,7 @@ export function ArchiveBrowser({
         <ArchiveRow
           key={gameKey(game)}
           game={game}
+          table={table}
           selecting={selecting}
           picked={picked.has(gameKey(game))}
           inCollection={
@@ -1063,6 +1086,8 @@ export function ArchiveBrowser({
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}
+      listHeader={table && rows ? <GameTableHeader withStanding /> : undefined}
+      dense={table}
       list={rows}
       // Rows, not a spinner on an empty box: fetching a month used to
       // take the games away and leave one line of text where the list

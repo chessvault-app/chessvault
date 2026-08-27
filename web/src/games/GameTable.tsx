@@ -1,4 +1,5 @@
 import { NotebookPen } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
@@ -43,6 +44,21 @@ const COLS_HEADER =
   '@max-[44rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
   '@max-[38rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
 
+// The archive's variant: a leading standing column (the select
+// checkbox and the Add button — what that list is FOR), ahead of the
+// same columns. 5.5rem seats the w-16 button with the checkbox beside
+// it in selection mode.
+const COLS_ROW_STANDING =
+  '[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)] ' +
+  '@max-[56rem]/arc:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem] ' +
+  '@max-[44rem]/arc:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
+  '@max-[38rem]/arc:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
+const COLS_HEADER_STANDING =
+  '[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)] ' +
+  '@max-[56rem]/arch:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem] ' +
+  '@max-[44rem]/arch:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
+  '@max-[38rem]/arch:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
+
 const HIDE_NOTATION_ROW = '@max-[56rem]/arc:hidden';
 const HIDE_EVENT_ROW = '@max-[44rem]/arc:hidden';
 const HIDE_ELO_ROW = '@max-[38rem]/arc:hidden';
@@ -72,7 +88,7 @@ export const moveCount = (plyCount: number): number => Math.ceil(plyCount / 2);
     shows it verbatim). */
 const isNoiseEvent = (event: string | null): boolean => event === 'Live Chess';
 
-export function GameTableHeader() {
+export function GameTableHeader({ withStanding = false }: { withStanding?: boolean }) {
   const head = (label: string, className?: string) => (
     <span className={cn('truncate', className)}>{t(label)}</span>
   );
@@ -81,10 +97,11 @@ export function GameTableHeader() {
       <div
         className={cn(
           GRID,
-          COLS_HEADER,
+          withStanding ? COLS_HEADER_STANDING : COLS_HEADER,
           'text-muted-foreground min-h-7 py-1 text-xs font-medium',
         )}
       >
+        {withStanding && <span aria-hidden />}
         {head('White')}
         {head('Elo', cn('text-right', HIDE_ELO_HEADER))}
         {head('Black')}
@@ -107,16 +124,20 @@ export function GameTableRow({
   onOpen,
   menu,
   bookmarked = false,
+  standing,
 }: {
   game: GameSummary;
   selected: boolean;
-  /** Single click: the row becomes the details panel's subject. */
+  /** Single click: the row becomes the details panel's subject — or,
+      in a list with no details panel (the archive window), the open. */
   onSelect: () => void;
   /** Double click (the panel's Open button and Enter say the same). */
   onOpen: () => void;
   /** The row's verbs, at the pointer — the table has no room for trays. */
   menu?: MenuAction[];
   bookmarked?: boolean;
+  /** The archive's leading column: the select checkbox and Add. */
+  standing?: ReactNode;
 }) {
   const name = (player: string, side: 'white' | 'black') => (
     <span
@@ -140,7 +161,7 @@ export function GameTableRow({
       title={`${game.white} vs ${game.black}`}
       className={cn(
         GRID,
-        COLS_ROW,
+        standing !== undefined ? COLS_ROW_STANDING : COLS_ROW,
         'hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
         // Selection over zebra: aria-selected because the row IS a
         // selection, and the accent wash because the details panel is
@@ -152,6 +173,9 @@ export function GameTableRow({
         bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
       )}
     >
+      {standing !== undefined && (
+        <span className="flex items-center gap-1">{standing}</span>
+      )}
       {name(game.white, 'white')}
       <span className={cn(quiet, 'text-right tabular-nums', HIDE_ELO_ROW)}>
         {game.whiteElo || ''}
