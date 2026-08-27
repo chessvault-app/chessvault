@@ -123,6 +123,13 @@ export function PdfPage({
    * it, so the box is right through a turn as well.
    */
   const [aspect0, setAspect0] = useState<number | null>(null);
+  /** The rotation the bitmap on the canvas was rastered AT. The box turns
+      with the `rotation` prop synchronously; until the fresh raster
+      lands, the old bitmap is presented turned by the difference (below)
+      rather than stretched — a portrait page smeared into a landscape
+      box read as the page crumpling for a beat (lanph3re, on the phone).
+      Turned, it is the finished result at the old raster's sharpness. */
+  const [rasterRot, setRasterRot] = useState<Rotation>(rotation);
   const taskRef = useRef<RenderTask | null>(null);
   // A page that is slow to arrive — the first of a book over a slow link,
   // a heavy scan — shows a spinner in its slot rather than a blank.
@@ -171,6 +178,7 @@ export function PdfPage({
       canvas.height = off.height;
       canvas.getContext('2d')!.drawImage(off, 0, 0);
       setAspect0(rotation % 180 === 0 ? cssH / cssW : cssW / cssH);
+      setRasterRot(rotation);
       setSize({ w: cssW, h: cssH });
       onSize?.({ w: cssW, h: cssH });
     })(), 120);
@@ -205,13 +213,42 @@ export function PdfPage({
           WebKit's blank white: the release flash lanph3re saw on the
           phone, invisible in Chromium, which reuses canvas textures
           across relayout on its own. */}
-      <canvas
-        ref={canvasRef}
-        className={cn(
-          'block h-full w-full bg-white shadow-sm [transform:translateZ(0)]',
-          !size && 'invisible',
-        )}
-      />
+      {/* While the bitmap's rotation lags the box's (rasterRot above),
+          the canvas is TURNED into the box instead of filling it. A
+          quarter turn swaps the box's sides, so the canvas takes the
+          swapped size, centred, and rotates about its centre — the
+          arithmetic is exact, because a rotation flips the aspect
+          exactly, so the bitmap scales uniformly. A half turn keeps the
+          shape and only spins. The inline transform replaces the
+          translateZ, and a rotate is its own compositor layer anyway. */}
+      {(() => {
+        const delta = (((rotation - rasterRot) % 360) + 360) % 360;
+        const turned = delta % 180 !== 0 && box !== null;
+        return (
+          <canvas
+            ref={canvasRef}
+            className={cn(
+              'bg-white shadow-sm',
+              turned ? 'absolute' : 'block h-full w-full',
+              delta === 0 && '[transform:translateZ(0)]',
+              !size && 'invisible',
+            )}
+            style={
+              turned
+                ? {
+                    left: '50%',
+                    top: '50%',
+                    width: box.h,
+                    height: box.w,
+                    transform: `translate(-50%, -50%) rotate(${delta}deg)`,
+                  }
+                : delta !== 0
+                  ? { transform: `rotate(${delta}deg)` }
+                  : undefined
+            }
+          />
+        );
+      })()}
       {!size && slow && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Spinner className="text-muted-foreground size-5" />
