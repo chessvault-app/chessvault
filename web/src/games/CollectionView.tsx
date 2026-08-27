@@ -1,6 +1,7 @@
 import {
   Bookmark,
   Globe,
+  Play,
   Plus,
   Database as DatabaseIcon,
 } from 'lucide-react';
@@ -30,15 +31,24 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { t } from '@/lib/i18n';
 import { GamePreview, docId, gameKey, type GameSummary, type Preview } from './shared';
 import { CollectionList, customName } from './CollectionList';
+import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
 
-/** The two places a game can be found, and the column's two tabs. */
-type SourceId = 'archive' | 'elite';
-const SOURCES: { id: SourceId; label: string }[] = [
-  { id: 'archive', label: 'Online archives' },
-  { id: 'elite', label: 'Databases' },
+/** The wide page's two tabs: the reference databases lead — since the
+    search work they are the strongest surface on this page — and the
+    collection is one press away. The online archive is an import task,
+    so it lives in the Add games menu's window at every width. */
+type MainTab = 'databases' | 'collection';
+const TABS: { id: MainTab; label: string }[] = [
+  { id: 'databases', label: 'Databases' },
+  { id: 'collection', label: 'Collection' },
 ];
+
+/** Which tab is showing, held OUTSIDE the component for heldSheet's
+    reason: opening a game navigates to the Board and unmounts this
+    view, and coming back must land on the tab that was left. */
+let heldTab: MainTab | null = null;
 
 /**
  * Which sheet is open, held OUTSIDE the component for the same reason
@@ -84,11 +94,23 @@ export function CollectionView() {
     heldSheet = open ? 'elite' : null;
     setEliteState(open);
   };
-  /** Which of the two the column is showing. A handed-over position
-      lands on the Databases tab, since that is what it is for. */
-  const [source, setSource] = useState<SourceId>(() =>
-    positionHuntPending() ? 'elite' : 'archive',
+  /** Which tab the wide pane is showing. A handed-over position lands
+      on Databases whatever was held — that is what it is for. */
+  const [tab, setTabState] = useState<MainTab>(() =>
+    positionHuntPending() ? 'databases' : (heldTab ?? 'databases'),
   );
+  /** The details panel's subject, per tab: the collection remembers a
+      KEY and re-resolves it against the live array (load() replaces
+      the objects after a rename or a reload); the database pane hands
+      a packaged selection of its own. Switching tabs clears both. */
+  const [colSelKey, setColSelKey] = useState<string | null>(null);
+  const [dbSel, setDbSel] = useState<DetailsSelection | null>(null);
+  const setTab = (next: MainTab): void => {
+    heldTab = next;
+    setTabState(next);
+    setColSelKey(null);
+    setDbSel(null);
+  };
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
   // many items, so at lg the Add games button drew a chevron and a popover
   // to offer a single row. The list has to know the width, not just the
@@ -248,9 +270,64 @@ export function CollectionView() {
     </>
   );
 
+  // The collection's selection, re-resolved against the live array on
+  // every render: load() replaces the objects after a rename or remove,
+  // so the KEY is what survives — a key that no longer resolves (the
+  // game was renamed or removed) empties the panel, which is the truth.
+  const colSelGame =
+    tab === 'collection' && colSelKey
+      ? (games.find((g) => gameKey(g) === colSelKey) ?? null)
+      : null;
+  const selection: DetailsSelection | null =
+    tab === 'collection'
+      ? colSelGame
+        ? {
+            key: gameKey(colSelGame),
+            summary: colSelGame,
+            loadPgn: async () => {
+              try {
+                return (
+                  await api<{ pgn: string }>(
+                    `/api/games/pgn?file=${encodeURIComponent(colSelGame.file)}&index=${colSelGame.index}`,
+                  )
+                ).pgn;
+              } catch {
+                return null;
+              }
+            },
+            actions: (
+              <>
+                <Button variant="default" size="sm" onClick={() => openGame(colSelGame)}>
+                  <Play className="size-3.5" data-icon="inline-start" />
+                  {t('Open the game')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void toggleBookmark(colSelGame)}
+                >
+                  <Bookmark
+                    className={cn(
+                      'size-3.5',
+                      bookmarks.has(gameKey(colSelGame)) && 'fill-warn text-warn',
+                    )}
+                    data-icon="inline-start"
+                  />
+                  {bookmarks.has(gameKey(colSelGame)) ? t('Bookmarked') : t('Bookmark')}
+                </Button>
+              </>
+            ),
+          }
+        : null
+      : dbSel;
+
   return (
     <PageShell
-      width="wide"
+      // xwide, not wide: at lg this page is a data table beside a
+      // details column, and every extra pixel is another table column
+      // shown instead of shed. Below lg no viewport reaches either cap,
+      // so the phone and tablet layouts are untouched.
+      width="xwide"
       scroll={false}
       // Below sm the whole page scrolls; from sm up the two panels scroll
       // themselves, so the column pins to the viewport instead.
@@ -273,20 +350,21 @@ export function CollectionView() {
         <PageHeader
           title={t('Games')}
           actions={
-            /* Every way to get a game, in one place — but only while there
-               is nowhere better for them. At lg the two browsers live in
-               the column to the right, where they are on screen rather
-               than behind a press, and offering a window over a panel you
-               can already see is worse than not offering it. So at lg this
-               is what it says on it: import a game. */
+            /* Every way to get a game, in one place. The archive is an
+               import task and lives here at every width — browsing a
+               month and promoting games is the same shape of work as
+               pasting a PGN, and its window is the same window the
+               phone opens. Databases stays width-gated: at lg it is a
+               tab on the pane itself, and a sheet over a visible pane
+               is worse than no menu item. */
             <CreateControl
               label="Add games"
               actions={[
                 { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
+                { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
                 ...(wide
                   ? []
                   : [
-                      { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
                       { label: 'Databases', icon: DatabaseIcon, onSelect: () => setElite(true) },
                     ]),
               ]}
@@ -309,119 +387,108 @@ export function CollectionView() {
 
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      {/* Two columns on a desktop: the collection is the page and takes the
-          full height (it showed four rows when the archive browser sat
-          under it), and the browser is a tool beside it. One under the
-          other below lg, where there is no width to split. */}
-      {/* minmax(0,…), not a bare fr split: an fr track is min-content wide
-          at its narrowest, so the column silently widened to fit the
-          longest opening name in whichever list it was showing — the two
-          panels changed width when the tab was switched.
+      {/* Below lg: the collection is the page, exactly as it has been —
+          one framed card, both browsers behind Add games as windows.
+          max-sm:shrink-0 and the sm flex share carry the phone/tablet
+          scroll behaviour recorded on the old two-column wrapper. */}
+      {!wide && (
+        <div className="flex min-h-0 max-sm:shrink-0 sm:flex-1 flex-col gap-4">
+          <CollectionList
+            games={games}
+            loaded={loaded}
+            bookmarks={bookmarks}
+            hidden={hidden}
+            query={query}
+            markedOnly={markedOnly}
+            renamingKey={renamingKey}
+            onStartRename={setRenamingKey}
+            onOpen={rowOpen}
+            onPreview={setPreview}
+            onDrop={rowDrop}
+            onToggleBookmark={rowBookmark}
+            onRename={rowRename}
+            onImport={() => setImporting(true)}
+            onClearSearch={() => setQuery('')}
+            onShowAll={() => setMarkedOnly(false)}
+          />
+        </div>
+      )}
 
-          And a FLOOR under the right one. minmax(0,3fr) let it shrink to
-          226px at a 1024 window, which is less than this row's own
-          furniture: the text box reached ZERO width, and the ratings and
-          the result badge — both shrink-0 — spilled out of it and painted
-          over each other. 20rem is the narrowest the list is legible at;
-          the collection gives up the difference, having the easier job. */}
-      {/* max-sm:shrink-0, and the flex share only from sm.
-          Below sm this box was `flex-1` inside a column pinned to the
-          viewport, so it took the ~480px left over and the collection
-          panel — `shrink-0`, as tall as its list — hung out of it. The
-          spill still scrolled (the column scrolls), which is why it
-          looked fine, but the FLEX layout ended at 480px: the Fab spacer
-          and the column's bottom padding were laid out THERE, a thousand
-          pixels above the list's real end, doing nothing. Scrolled to the
-          bottom, the list finished flush against the phone's tab bar with
-          no room for the Fab — the one place you are certain to be when
-          you reach for it. Sized to its content, the box ends where the
-          list ends and the spacer is under it again, as on studies and
-          notes. From sm up the panels scroll themselves and the share is
-          what makes that work, so it stays. */}
-      <div className="flex min-h-0 max-sm:shrink-0 sm:flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)] lg:items-stretch">
-      <CollectionList
-        games={games}
-        loaded={loaded}
-        bookmarks={bookmarks}
-        hidden={hidden}
-        query={query}
-        markedOnly={markedOnly}
-        renamingKey={renamingKey}
-        onStartRename={setRenamingKey}
-        onOpen={rowOpen}
-        onPreview={setPreview}
-        onDrop={rowDrop}
-        onToggleBookmark={rowBookmark}
-        onRename={rowRename}
-        onImport={() => setImporting(true)}
-        onClearSearch={() => setQuery('')}
-        onShowAll={() => setMarkedOnly(false)}
-        headerActions={
-          <span className="hidden min-w-0 grow items-center justify-end gap-2 lg:flex">
-            {finders('w-48 grow')}
-          </span>
-        }
-      />
-
-      {/* Where a game comes from, as ONE panel with two answers: the games
-          you have played, and the games masters have. They are the same
-          question — find a game worth keeping — so they take turns in one
-          box rather than each taking a box and halving the other's height.
-          Beside the collection where there is width for it, and nowhere at
-          all below lg, where both open from Add games as windows. */}
-      <div className="hidden min-h-0 lg:flex lg:flex-col">
-        <Panel className="min-h-0 flex-1">
-          {/* The panel's TITLE is the switch. A pill track here would be
-              the second one in this panel — the provider tabs are eight
-              pixels below it — and two stacked tracks read as one
-              two-storey control. Naming the panel is what a header does,
-              so the live tab is the header's own rule, thickened and lit
-              under the name that is showing. */}
-          {/* shadcn's Tabs in its `line` shape: the strip is the panel
-              header, with the live tab's name underlined. The live tab is
-              read from aria-selected — the owned TabsTrigger's hook; the
-              `data-active:` classes that used to be here are no variant
-              in this project, so they never applied and the registry's
-              raised pill sat inside an underline strip. */}
-          <Tabs value={source} onValueChange={(v) => setSource(v as SourceId)} className="contents">
-            <TabsList
-              variant="line"
-              aria-label={t('Where to find a game')}
-              className="border-border flex h-10 w-auto shrink-0 items-center justify-start gap-1 rounded-none border-b p-0 px-2"
-            >
-              {SOURCES.map(({ id, label }) => (
-                <TabsTrigger
-                  key={id}
-                  value={id}
-                  // No icon, and not the header's uppercase micro-caps:
-                  // measured, the pair came to 256px that way and this
-                  // column is 210px wide at the narrowest lg. Plain text
-                  // at text-sm is 178. min-w-0 so a longer translation
-                  // truncates rather than pushing the second tab out.
-                  // The trigger is the strip's full height, so the
-                  // underline lands on the strip's rule, not 5px under a
-                  // padded pill.
-                  className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:-bottom-px"
-                >
-                  <span className="truncate">{t(label)}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          {source === 'archive' ? (
-            <ArchiveBrowser
-              shape="panel"
-              collectionKeys={collectionKeys}
-              onCollected={() => void load()}
-              onPreview={setPreview}
-            />
-          ) : (
-            <DatabaseGames shape="panel" />
-          )}
-        </Panel>
-      </div>
-      </div>
+      {/* At lg the page leads with what the search work made strongest:
+          one wide tabbed pane — Databases first, the Collection beside
+          it — drawn as a dense table, and the selected game's details
+          in a column to the right. Rendered by the width FLAG, not a
+          hidden class: a display-none DatabaseGames would still mount,
+          fetch its first page, and consume a handed-off position hunt
+          meant for the phone's sheet. */}
+      {/* minmax(0,1fr), not a bare fr: an fr track is min-content wide
+          at its narrowest, so the table would silently refuse to shed
+          columns. The details column keeps a floor a board is legible
+          at and never grows past a reading width. */}
+      {wide && (
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(20rem,23rem)] items-stretch gap-4">
+          <Panel className="min-h-0">
+            {/* The pane's TITLE is the switch — the same line-Tabs strip
+                the old source column used, for the same reason: naming
+                the pane is what a header does, and the live tab is the
+                header's own rule, thickened under the name showing. */}
+            <Tabs value={tab} onValueChange={(v) => setTab(v as MainTab)} className="contents">
+              <TabsList
+                variant="line"
+                aria-label={t('What the pane is showing')}
+                className="border-border flex h-10 w-auto shrink-0 items-center justify-start gap-1 rounded-none border-b p-0 px-2"
+              >
+                {TABS.map(({ id, label }) => (
+                  <TabsTrigger
+                    key={id}
+                    value={id}
+                    className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:-bottom-px"
+                  >
+                    <span className="truncate">{t(label)}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            {tab === 'databases' ? (
+              <DatabaseGames
+                shape="panel"
+                table
+                onSelect={setDbSel}
+                selectedKey={dbSel?.key ?? null}
+              />
+            ) : (
+              <CollectionList
+                shape="panel"
+                table
+                games={games}
+                loaded={loaded}
+                bookmarks={bookmarks}
+                hidden={hidden}
+                query={query}
+                markedOnly={markedOnly}
+                renamingKey={renamingKey}
+                onStartRename={setRenamingKey}
+                onOpen={rowOpen}
+                onPreview={setPreview}
+                onDrop={rowDrop}
+                onToggleBookmark={rowBookmark}
+                onRename={rowRename}
+                onImport={() => setImporting(true)}
+                onClearSearch={() => setQuery('')}
+                onShowAll={() => setMarkedOnly(false)}
+                toolbar={
+                  <div className="flex w-full items-center gap-1.5">
+                    {finders('min-w-0 flex-1')}
+                  </div>
+                }
+                onSelect={(g) => setColSelKey(gameKey(g))}
+                selectedKey={colSelKey}
+              />
+            )}
+          </Panel>
+          <GameDetailsPanel selection={selection} />
+        </div>
+      )}
 
       {/* No lg:hidden on the window itself: that would hide the CARD and
           leave its scrim behind, dimming the page with nothing on it and

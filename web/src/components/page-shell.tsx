@@ -10,18 +10,22 @@ import { cn } from '@/lib/utils';
  * family, one of the three in `components/layout.ts`, varies inside itself. Board
  * and canvas pages have no width to choose.
  *
+ * - `xwide`: a data table beside a details column — the one layout that
+ *   earns more than `wide`, because every extra pixel is another table
+ *   column shown instead of shed (the games page).
  * - `wide`: layouts that split into columns or card grids and would
- *   waste the split on anything narrower (games, studies, notes).
+ *   waste the split on anything narrower (studies, notes).
  * - `medium`: one column read top to bottom — dashboards, shelves,
  *   reference pages. Wider only stretches the lines.
  * - `narrow`: forms and settings, where the eye travels label→control
  *   and the shortest line wins.
  */
-export type PageWidth = 'wide' | 'medium' | 'narrow';
+export type PageWidth = 'xwide' | 'wide' | 'medium' | 'narrow';
 
 // Complete literals — the Tailwind scanner reads class names from this
 // file, and names assembled from fragments would never be emitted.
 const WIDTHS: Record<PageWidth, string> = {
+  xwide: 'max-w-[96rem]',
   wide: 'max-w-6xl',
   medium: 'max-w-3xl',
   narrow: 'max-w-2xl',

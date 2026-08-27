@@ -1,4 +1,4 @@
-import { Database, Grid3x3, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+import { Database, Grid3x3, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -40,6 +40,53 @@ const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
 import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
+import { GameTableHeader, GameTableRow } from './GameTable';
+import type { DetailsSelection } from './GameDetails';
+
+/**
+ * The details panel's action pair for a reference row, with its own
+ * added-state: the node lives in the page's selection state, so it
+ * cannot read the pane's `added` set after the fact — what it CAN do is
+ * remember its own success.
+ */
+function RefRowActions({
+  inCollection,
+  onOpen,
+  onCollect,
+}: {
+  inCollection: boolean;
+  onOpen: () => void;
+  onCollect: () => Promise<boolean>;
+}) {
+  const [added, setAdded] = useState(inCollection);
+  return (
+    <>
+      <Button variant="default" size="sm" onClick={onOpen}>
+        <Play className="size-3.5" data-icon="inline-start" />
+        {t('Open on the board')}
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={added}
+        onClick={() => {
+          void onCollect().then((ok) => {
+            if (ok) setAdded(true);
+          });
+        }}
+      >
+        {added ? (
+          t('Added')
+        ) : (
+          <>
+            <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+            {t('Add to collection')}
+          </>
+        )}
+      </Button>
+    </>
+  );
+}
 
 interface RefGame {
   id: number;
@@ -239,7 +286,22 @@ function CustomMaterialWindow({
  * phone, like the archive. (There was a `page` shape on its own route
  * once; nothing ever navigated to it.)
  */
-export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }) {
+export function DatabaseGames({
+  shape = 'sheet',
+  table = false,
+  onSelect,
+  selectedKey,
+}: {
+  shape?: 'panel' | 'sheet';
+  /** Dense table rows instead of cards — the wide pane's presentation.
+      Explicit, never inferred: the phone sheet stays cards whatever the
+      window says. */
+  table?: boolean;
+  /** Table mode: a click packages the row — summary, PGN loader, verbs
+      — for the details panel; null when the rows it described reset. */
+  onSelect?: (sel: DetailsSelection | null) => void;
+  selectedKey?: string | null;
+}) {
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
   // mount (the static demo), which has none of that.
@@ -294,6 +356,11 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     structured.outcome !== 'any';
   const filterRef = useRef({ resultFilter, minElo, structured });
   filterRef.current = { resultFilter, minElo, structured };
+
+  // Read through a ref where reset points live inside stable callbacks —
+  // the selection must clear when the rows it described go away.
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
 
   const searchSeq = useRef(0);
   /** The committed filters as query params — the /search and the deep
@@ -421,6 +488,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     if (huntKind === 'material' && !material) return;
     const mine = ++huntSeq.current;
     setHunting(true);
+    onSelectRef.current?.(null);
     setHuntRows([]);
     setHuntProgress(null);
     setHuntExhaustive(true);
@@ -558,6 +626,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     rowsFor.current = next;
     setRows([]);
     setQuery('');
+    onSelectRef.current?.(null);
     // A hunt's rows answered a database that is no longer the one on
     // screen; the controls keep their draft, the results do not.
     huntSeq.current += 1;
@@ -587,6 +656,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     // Typing a text search is leaving the hunt: the rows must answer
     // the box the user is typing into, not a board they searched before.
     if (huntRows !== null) clearHunt();
+    onSelectRef.current?.(null);
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(() => void search(q, null, curDb), 250);
@@ -656,21 +726,22 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   }, []);
   const inCollection = (g: RefGame): boolean =>
     added.has(refGameKey(g.id)) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
-  const collect = async (game: RefGame): Promise<void> => {
+  const collect = async (game: RefGame): Promise<boolean> => {
     let pgn: string;
     try {
       ({ pgn } = await api<{ pgn: string }>(pgnUrl(game.id)));
     } catch {
-      return;
+      return false;
     }
     try {
       await api('/api/games/collect-pgn', { method: 'POST', json: { pgn } });
       forgetCollection();
     } catch (failure) {
       // 409 = already there; either way this game is now in the collection.
-      if (!(failure instanceof ApiError && failure.status === 409)) return;
+      if (!(failure instanceof ApiError && failure.status === 409)) return false;
     }
     setAdded((prev) => new Set(prev).add(refGameKey(game.id)));
+    return true;
   };
 
   // Preview eye, matching the collection rows: the DB stores movetext,
@@ -739,6 +810,29 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     userSide: null,
     annotated: false,
   });
+
+  /** The row, packaged for the details panel: everything it needs to
+      show and act on this game without knowing what a database is. */
+  const selectRow = (g: RefGame): void => {
+    onSelect?.({
+      key: refGameKey(g.id),
+      summary: toSummary(g),
+      loadPgn: async () => {
+        try {
+          return (await api<{ pgn: string }>(pgnUrl(g.id))).pgn;
+        } catch {
+          return null;
+        }
+      },
+      actions: (
+        <RefRowActions
+          inCollection={inCollection(g)}
+          onOpen={() => void openGame(g)}
+          onCollect={() => collect(g)}
+        />
+      ),
+    });
+  };
 
   if (!meta && metaError) {
     // The pane never learned what it holds, so there is nothing truthful
@@ -905,7 +999,20 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   // re-implemented and half of which it had drifted on. Deliberately no
   // swipe, bookmark, rename or context menu: a reference row is
   // immutable, and Add is its keep verb.
-  const rowItems = (inHunt ? (huntRows ?? []) : rows).map((g) => (
+  const rowItems = (inHunt ? (huntRows ?? []) : rows).map((g) =>
+    table ? (
+      <GameTableRow
+        key={g.id}
+        game={toSummary(g)}
+        selected={selectedKey === refGameKey(g.id)}
+        onSelect={() => selectRow(g)}
+        onOpen={() => void openGame(g)}
+        menu={[
+          { label: 'Open on the board', icon: Play, onSelect: () => void openGame(g) },
+          { label: 'Add to collection', icon: Plus, onSelect: () => void collect(g) },
+        ]}
+      />
+    ) : (
     <GameRow
       key={g.id}
       game={toSummary(g)}
@@ -941,7 +1048,8 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
         </Button>
       }
     />
-  ));
+    ),
+  );
 
   // The count leads the band in the archive's own voice; the picker and
   // the manager sit with it.
@@ -1100,6 +1208,8 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       }
       filters={filters}
       countBand={countBand}
+      listHeader={table ? <GameTableHeader /> : undefined}
+      dense={table}
       // undefined when empty, or the bare bordered ul doubles the empty
       // state's own top rule.
       list={rowItems.length > 0 ? rowItems : undefined}

@@ -34,7 +34,9 @@ import {
   type StructuredFilters,
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
-import { GameListShell } from './GameListShell';
+import { GameListShell, type GameListShape } from './GameListShell';
+import { GameTableHeader, GameTableRow } from './GameTable';
+import { PromptDialog } from '@/components/prompt-dialog';
 
 /**
  * One collection row, memoised on primitives so a bookmark toggle or a
@@ -154,6 +156,8 @@ export const customName = (g: GameSummary): string | null => {
  * narrows and shows the list it was given.
  */
 export function CollectionList({
+  shape = 'framed',
+  table = false,
   games,
   loaded,
   bookmarks,
@@ -171,7 +175,18 @@ export function CollectionList({
   onClearSearch,
   onShowAll,
   headerActions,
+  toolbar,
+  onSelect,
+  selectedKey,
 }: {
+  /** framed — its own card on the page; panel — hosted behind the Games
+      pane's tabs, where the toolbar carries the finders instead of a
+      panel header. */
+  shape?: GameListShape;
+  /** Dense table rows instead of cards — the wide pane's presentation.
+      Explicit, never inferred: the same list renders as cards in the
+      phone sheet whatever the window says. */
+  table?: boolean;
   games: GameSummary[];
   loaded: boolean;
   bookmarks: Set<string>;
@@ -189,6 +204,11 @@ export function CollectionList({
   onClearSearch: () => void;
   onShowAll: () => void;
   headerActions?: ReactNode;
+  /** panel shape: the finders pair, in the shell's toolbar band. */
+  toolbar?: ReactNode;
+  /** Table mode: a click makes this row the details panel's subject. */
+  onSelect?: (game: GameSummary) => void;
+  selectedKey?: string | null;
 }) {
   // The quick filters, session-only like the archive's: what you want to
   // see is a question of the moment, not a preference.
@@ -239,20 +259,64 @@ export function CollectionList({
     setStructured(EMPTY_STRUCTURED_FILTERS);
   };
 
+  /** The card menu's verbs, re-spoken for the table's right-click — the
+      table row has no tray and no ⋯, so the pointer menu is the row's
+      whole verb surface (the details panel repeats the big ones). */
+  const rowMenu = (game: GameSummary) => {
+    const link = safeLink(game.link);
+    return [
+      {
+        label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
+        icon: Bookmark,
+        onSelect: () => onToggleBookmark(game),
+      },
+      { label: 'Rename', icon: Pencil, onSelect: () => onStartRename(gameKey(game)) },
+      ...(link
+        ? [
+            {
+              label: 'View online',
+              icon: ExternalLink,
+              onSelect: () => window.open(link, '_blank', 'noreferrer'),
+            },
+          ]
+        : []),
+      { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onDrop(game) },
+    ];
+  };
+  // In table mode GameRow is not there to host the rename sheet, so the
+  // list renders the one being renamed itself.
+  const renamingGame =
+    table && renamingKey ? (games.find((g) => gameKey(g) === renamingKey) ?? null) : null;
+
   return (
+    <>
     <GameListShell
-      shape="framed"
+      shape={shape}
       // shrink-0 below lg: loading an archive month must not squeeze this
       // panel — the page column scrolls instead.
-      panelClassName="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch"
-      title={`${t('Collection')} · ${visible.length}`}
+      panelClassName={
+        shape === 'framed' ? 'shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch' : undefined
+      }
+      title={shape === 'framed' ? `${t('Collection')} · ${visible.length}` : undefined}
       // At lg the finders pair lives here, with the list it filters, and
       // the row under the page title is not rendered. The field grows
       // into whatever the header has spare — on a wide panel a 48-wide
       // box sat beside dead space — while the title's own flex share
       // keeps the panel's name in place.
       headerActionsClassName="min-w-0 grow"
-      headerActions={headerActions}
+      headerActions={shape === 'framed' ? headerActions : undefined}
+      toolbar={toolbar}
+      // The panel shape has no framed title to carry the tally, so the
+      // count band says it.
+      countBand={
+        shape === 'panel' ? (
+          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+            {t('{n} games', { n: visible.length.toLocaleString() })}
+          </span>
+        ) : undefined
+      }
+      listHeader={table ? <GameTableHeader /> : undefined}
+      dense={table}
       // The wait, in the shape of the strip and rows that are coming —
       // drawn at once rather than behind useSlowLoad: these rows are the
       // panel's height, so held back they left a header over nothing
@@ -323,24 +387,40 @@ export function CollectionList({
       }
       list={
         loaded && visible.length > 0
-          ? visible.map((game) => (
-              <CollectionRow
-                key={gameKey(game)}
-                game={game}
-                bookmarked={bookmarks.has(gameKey(game))}
-                customName={customName(game)}
-                renaming={renamingKey === gameKey(game)}
-                onOpen={onOpen}
-                onPreview={onPreview}
-                onDrop={onDrop}
-                onToggleBookmark={onToggleBookmark}
-                onRename={onRename}
-                onStartRename={onStartRename}
-              />
-            ))
+          ? visible.map((game) =>
+              table ? (
+                <GameTableRow
+                  key={gameKey(game)}
+                  game={game}
+                  selected={selectedKey === gameKey(game)}
+                  onSelect={() => onSelect?.(game)}
+                  onOpen={() => onOpen(game)}
+                  menu={rowMenu(game)}
+                  bookmarked={bookmarks.has(gameKey(game))}
+                />
+              ) : (
+                <CollectionRow
+                  key={gameKey(game)}
+                  game={game}
+                  bookmarked={bookmarks.has(gameKey(game))}
+                  customName={customName(game)}
+                  renaming={renamingKey === gameKey(game)}
+                  onOpen={onOpen}
+                  onPreview={onPreview}
+                  onDrop={onDrop}
+                  onToggleBookmark={onToggleBookmark}
+                  onRename={onRename}
+                  onStartRename={onStartRename}
+                />
+              ),
+            )
           : undefined
       }
-      listClassName="flex-1 overflow-y-auto sm:max-h-[38dvh] lg:max-h-none"
+      listClassName={
+        shape === 'framed'
+          ? 'flex-1 overflow-y-auto sm:max-h-[38dvh] lg:max-h-none'
+          : 'flex-1 overflow-y-auto'
+      }
       tail={
         !loaded ? undefined : /* Nothing to show and nothing narrowing the list. Two ways to get
             here: the collection really is empty, or its last rows were just
@@ -424,5 +504,14 @@ export function CollectionList({
         ) : undefined
       }
     />
+    {renamingGame && (
+      <PromptDialog
+        label={t('Rename this game')}
+        initial={customName(renamingGame) ?? docId(renamingGame)}
+        onSubmit={(value) => onRename(renamingGame, value)}
+        onClose={() => onRename(renamingGame, '')}
+      />
+    )}
+    </>
   );
 }
