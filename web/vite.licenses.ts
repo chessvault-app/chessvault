@@ -85,7 +85,12 @@ const ASSETS: {
   // The default pieces, and the knight and king glyphs the UI draws
   // (components/knight-icon, king-icon). Not the app icon, favicon or landing
   // mark any more: those are the hex, ours, since a015079.
-  { name: 'cburnett (piece set; the knight and king glyphs in the UI)', version: '—', license: 'GPL-2.0-or-later',
+  //
+  // Also the diagrams printed in the demo's sample book: the pieces are drawn
+  // into that PDF from this same set (scripts/build-demo-book.mjs), so the
+  // artwork is conveyed there too, and GPL-2.0-or-later wants its notice with
+  // every copy.
+  { name: 'cburnett (piece set; the UI glyphs, and the diagrams in the demo book)', version: '—', license: 'GPL-2.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/cburnett', file: 'GPL-2.0.txt' },
   { name: 'merida (piece set)', version: '—', license: 'GPL-2.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/merida', file: 'GPL-2.0.txt' },

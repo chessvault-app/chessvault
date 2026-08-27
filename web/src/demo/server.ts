@@ -30,6 +30,20 @@ const REFGAMES_DB = '/demo/refgames.sqlite';
 /** Built in the page rather than fetched — see the sqlite shim's write path. */
 const MYGAMES_DB = '/demo/mygames.sqlite';
 
+/**
+ * The sample book: its bytes, and the two things a reader changes about it.
+ *
+ * Held here rather than in the in-memory filesystem because that shim
+ * stores strings — it was built for the vault, which is PGN, markdown and
+ * JSON — and a PDF put through it would not come back out the same file.
+ * Everything here lasts exactly as long as the tab, like every other edit
+ * the demo accepts.
+ */
+const DEMO_BOOK_PAGES = 8;
+let demoBook: Uint8Array | null = null;
+let demoBookPage: number | null = null;
+const demoBookDiagrams = new Map<string, unknown>();
+
 function buildApp(): Hono {
   // Before the routes run: they reference Buffer free, to size a document
   // in bytes rather than characters.
@@ -140,7 +154,109 @@ function buildApp(): Hono {
   // is the truth here. A 404 would be equally true and would crash the
   // page, which is the difference between honest and useful.
   app.get('/api/puzzlebooks', (c) => c.json({ books: [] }));
-  app.get('/api/books', (c) => c.json({ books: [], folders: [] }));
+
+  /**
+   * The library, holding the one book the demo draws for itself.
+   *
+   * WRITTEN OUT HERE rather than mounted, which is the exception this file
+   * otherwise exists to avoid — the same exception, and the same reason, as
+   * settings above: `server/books.ts` reaches for `node:crypto` (ids),
+   * `node:stream` and `node:stream/promises` (the upload and the Range
+   * response), and the demo config shims none of the three. Mounting the
+   * real module would mean shimming streams, which is a great deal of
+   * machinery for a shelf that is read-only anyway.
+   *
+   * So this is a SECOND implementation, and it is kept to the shape of the
+   * routes the reader actually calls. What it does not do — upload,
+   * replace, rename, delete, folders, covers — falls through to the 404
+   * below, and the shelf's buttons for those already handle a refusal.
+   *
+   * scripts/build-demo-book.mjs says why there is a book at all, and why it
+   * is drawn rather than borrowed.
+   */
+  const BOOK_ID = 'b5a3e1c07f2d49b8';
+  app.get('/api/books/bookmarks', (c) => c.json({ ids: [] }));
+  app.post('/api/books/bookmarks/toggle', (c) => c.json({ ids: [] }));
+  app.get('/api/books', (c) =>
+    c.json({
+      // No book if the file did not arrive: an empty shelf is what the real
+      // route returns for an empty vault, and the page draws it properly.
+      books: demoBook
+        ? [
+            {
+              id: BOOK_ID,
+              title: 'A sample book',
+              name: 'sample.pdf',
+              bytes: demoBook.byteLength,
+              pages: DEMO_BOOK_PAGES,
+              addedAt: new Date(Date.now() - 86_400_000).toISOString(),
+              lastPage: demoBookPage,
+              cover: false,
+              collection: null,
+              puzzleBook: null,
+            },
+          ]
+        : [],
+      folders: [],
+    }),
+  );
+  /**
+   * The file, with Range honoured — pdf.js asks for one page's bytes at a
+   * time and will not accept a 200 where it asked for a 206. Served from
+   * memory: 59 KB, fetched once at boot, which is cheaper than teaching the
+   * shim about streams and exact about the byte ranges either way.
+   */
+  app.get('/api/books/:id/pdf', (c) => {
+    if (c.req.param('id') !== BOOK_ID || !demoBook) return c.json({ error: 'unknown book' }, 404);
+    const size = demoBook.byteLength;
+    const headers = {
+      'content-type': 'application/pdf',
+      'accept-ranges': 'bytes',
+      'cache-control': 'private, no-cache',
+      etag: `"${size}-demo"`,
+    };
+    const match = /^bytes=(\d*)-(\d*)$/.exec(c.req.header('range') ?? '');
+    if (match && (match[1] || match[2])) {
+      const start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+      const end = match[1] && match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+      if (start > end || start >= size) {
+        return c.body(null, 416, { 'content-range': `bytes */${size}` });
+      }
+      return c.body(demoBook.slice(start, end + 1) as unknown as ArrayBuffer, 206, {
+        ...headers,
+        'content-range': `bytes ${start}-${end}/${size}`,
+        'content-length': String(end - start + 1),
+      });
+    }
+    return c.body(demoBook as unknown as ArrayBuffer, 200, {
+      ...headers,
+      'content-length': String(size),
+    });
+  });
+  // Where the reader left off, and the diagrams it has already read off a
+  // page — both for the life of the tab, the promise the banner makes about
+  // every other edit here.
+  app.put('/api/books/:id/reading', async (c) => {
+    if (c.req.param('id') !== BOOK_ID) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as { page?: unknown };
+    const page = Number(body.page);
+    if (!Number.isInteger(page) || page < 1 || page > DEMO_BOOK_PAGES) {
+      return c.json({ error: 'bad page' }, 400);
+    }
+    demoBookPage = page;
+    return c.json({ ok: true });
+  });
+  app.get('/api/books/:id/diagrams', (c) =>
+    c.req.param('id') === BOOK_ID
+      ? c.json({ pages: Object.fromEntries(demoBookDiagrams) })
+      : c.json({ error: 'unknown book' }, 404),
+  );
+  app.put('/api/books/:id/diagrams/:page', async (c) => {
+    if (c.req.param('id') !== BOOK_ID) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as { diagrams?: unknown };
+    demoBookDiagrams.set(c.req.param('page'), Array.isArray(body.diagrams) ? body.diagrams : []);
+    return c.json({ ok: true });
+  });
 
   // Anything the demo has no answer for says so, rather than falling
   // through to the page's own HTML and failing as a JSON parse error.
@@ -182,6 +298,19 @@ export async function installDemoBackend(): Promise<void> {
     );
   } catch {
     // Names are a nicety; the boards still work without them.
+  }
+
+  // The sample book. Small enough to hold whole, and not fatal when absent:
+  // the shelf simply comes up empty, which is the state the real route
+  // returns for a vault with no books.
+  try {
+    const pdf = await fetch(new URL('demo/books/sample.pdf', document.baseURI), {
+      cache: 'no-cache',
+    });
+    if (pdf.ok) demoBook = new Uint8Array(await pdf.arrayBuffer());
+    else console.warn(`demo: no sample book (${pdf.status})`);
+  } catch (error) {
+    console.warn('demo: sample book unavailable —', error);
   }
 
   try {
