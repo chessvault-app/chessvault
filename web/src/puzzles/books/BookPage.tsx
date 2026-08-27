@@ -197,7 +197,7 @@ export function BookPage({ slug }: { slug: string }) {
 
   if (missing) {
     return (
-      <div className="grid h-full place-items-center">
+      <div className="optical-center h-full">
         <p className="text-muted-foreground text-base">{t('That book does not exist.')}</p>
       </div>
     );

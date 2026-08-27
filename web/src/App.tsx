@@ -648,7 +648,7 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
   override render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div className="grid h-full place-items-center p-8">
+      <div className="optical-center h-full p-8">
         <div className="flex max-w-sm flex-col items-center gap-3 text-center">
           <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
             <Wrench className="size-6" strokeWidth={1.75} />
@@ -674,7 +674,7 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
     future section without a handler degrades gracefully instead of blanking. */
 function Placeholder({ section }: { section: Section }) {
   return (
-    <div className="grid h-full place-items-center p-8">
+    <div className="optical-center h-full p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
           <Folder className="size-6" strokeWidth={1.75} />

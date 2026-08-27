@@ -69,7 +69,7 @@ export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: st
     return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
   if (!puzzle) {
-    return <div className="text-muted-foreground grid h-full place-items-center text-base">{t('Puzzle not found.')}</div>;
+    return <div className="text-muted-foreground optical-center h-full text-base">{t('Puzzle not found.')}</div>;
   }
   return (
     <PuzzleEntry

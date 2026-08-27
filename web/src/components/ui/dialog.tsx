@@ -610,7 +610,13 @@ function DialogContent({
   return (
     <DialogPortal>
       <DialogOverlay
-        className="items-center p-4"
+        // `optical-center`, not `items-center`: the card sits a little
+        // above the geometric middle (see the utility in index.css) — the
+        // classic dialog placement, and the same rule the board pages and
+        // the empty states follow. `grid` is passed alongside so the merge
+        // retires the overlay's own `flex`; its `justify-center` is a
+        // no-op on the utility's single full-width column.
+        className="grid optical-center p-4"
         style={hidden ? { display: 'none' } : covered > 0 ? { visibility: 'hidden' } : undefined}
       >
         <DialogPrimitive.Popup

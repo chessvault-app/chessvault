@@ -78,7 +78,7 @@ export function NoteView({ id }: { id: string }) {
 
   if (failed) {
     return (
-      <div className="grid h-full place-items-center p-8">
+      <div className="optical-center h-full p-8">
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted-foreground text-base">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>

@@ -86,7 +86,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
       : null;
 
   return (
-    <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
+    <div className="optical-center h-full overflow-y-auto p-6">
       <div className="flex w-full max-w-md flex-col gap-3 text-center">
         <p className="text-foreground text-base font-semibold">{t('No puzzle database yet')}</p>
 

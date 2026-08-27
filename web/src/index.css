@@ -748,6 +748,35 @@
   }
 }
 
+/* Optical centring, for content that sits alone in a frame-scale box —
+   empty states, the desktop dialog. The perceived middle of a frame is
+   ABOVE its geometric middle (the vertical-bisection illusion; "optical
+   centre" in typography and framing, roughly 3–7% of the frame height up),
+   so truly centred content reads as sagging. The board pages already sit
+   above centre for the same reason — see BOARD_WIDE_COLUMN in
+   components/layout.ts.
+
+   Mechanism: a three-row grid whose pseudo-element spacers split the free
+   space 10:13, which raises the content by 6.5% of that free space — about
+   6% of the frame for a near-empty page, proportionally less as the
+   content grows, and `minmax(0, …)` lets both spacers collapse before tall
+   content is squeezed. One utility rather than a per-site ratio, so every
+   frame in the app is raised by the same rule.
+
+   `grid-template-columns: 100%` and not an auto column: the row's width
+   must be the frame's, so a `w-full` child (the dialog card) has something
+   to be 100% OF and `justify-items` centres the narrower ones. */
+@utility optical-center {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: minmax(0, 10fr) auto minmax(0, 13fr);
+  justify-items: center;
+  &::before,
+  &::after {
+    content: '';
+  }
+}
+
 
 /* ---------------------------------------------------------------------------
    Board theme.
