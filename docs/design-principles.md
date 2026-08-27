@@ -17,6 +17,19 @@ them. When in doubt, these win over novelty.
   data; the UI shows bands (Easy/Medium/Hard/Expert) as text labels.
   Difficulty is ordinal, so if it ever needs more visual weight it gets
   a strength meter, not colors.
+- **No scores either.** The same rule, one step out: a rating is not the
+  only number that hands back a verdict. The dashboard carried a "Win
+  rate" percentage in 24px bold and the trainer a "Run" of consecutive
+  correct answers, and both were the app grading you. A run is the worse
+  of the two — a count that survives only while you do not fail is a
+  reason to pick puzzles you will get right, and the useful session is
+  the one you fail in. Counts of work done ("Solved today", "Attempts",
+  "Solved") are facts and stay; anything that reads as a score does not.
+- **Report the result, do not celebrate it.** "Solved", "Solved with
+  help", "Solved after a wrong try", "Not solved" — labels, not a tutor.
+  The trainers said "Solved!" and "Not this time." and "Not quite —",
+  which is a game's voice, and the app had already decided everywhere
+  else that a solve is a fact to state.
 
 ## The color grammar
 
@@ -47,6 +60,37 @@ before anyone measured the third and fourth. Small text needs 4.5:1 on
 all of them. When a tier darkens to reach it, the tier above darkens
 too — two quiet greys that meet at the same lightness are one grey.
 
+## Icons
+
+A glyph names the thing, not what it evokes. Games wore crossed swords,
+the explorer a compass, the repertoire a swatch book and "index this
+database" a hammer — a games console, an expedition, a paint shop and a
+building site, for a folder of recorded games, a table of continuations,
+a drill and a scan of games already on disk. They are a scoresheet, a
+table, a repeat sign and `ScanSearch` now. An icon that has to be decoded
+is worse than no icon, and crossed swords in particular is the glyph a
+chess app reaches for when it wants to be a game.
+
+Nothing is magic, so nothing wears sparkles. `Sparkles` sat on the
+opening map's "Grow from my games" and on a reference database's
+Optimize; it is the magic-wand glyph, and it advertises a result the
+reader is not expected to inspect. Both are the opposite — growing reads
+the games already in the vault, and optimizing states its three steps in
+the confirmation before it runs. `GitBranch` and `Hammer` say what they
+do.
+
+Where a glyph has a meaning in chess, use that one. The puzzle trainer
+marked the move you played with ✓ or ✗ — marks a player meets on a
+worksheet and nowhere on a board — while the analysis board two files
+over was already drawing the same disc, in the same two colours, with `!`
+and `??` on it. The book trainer settles it: it marks a wrong move with
+`nags: [4]`, which is `??`. Two trainers were saying the same thing in
+two alphabets and one of them was not chess. The ✓/✗ on the puzzle-book
+tiles stay: those record past outcomes in a grid and are deliberately
+redundant with the tint, because a state carried by colour alone is
+unreadable to one reader in twelve — a different job from telling
+somebody what they just played.
+
 ## The type scale
 
 Tailwind supplies the rungs. Which rung carries body text is this app's
@@ -68,6 +112,16 @@ usage moved up a rung instead:
 | page titles (`PageHeader`) | `text-xl` | 20px |
 | the one display figure | `text-2xl` | 24px |
 
+"The ONE display figure" is load-bearing and was not true for a while:
+the puzzle dashboard spent that rung four times in a single row, on four
+raised tiles of Solved / Attempts / Win rate / Failed. Four numbers at
+the top size is not emphasis, it is a scoreboard — and one of them was a
+percentage, which the tone rules above have their own objection to. They
+are a figure list now, labels and values in columns at `text-sm`, in the
+`dl` idiom the trainer's finished-puzzle panel already used. If a rung
+this loud appears more than once on a page, the page has stopped ranking
+its own content.
+
 A magic `text-[…]` literal means a tier exists that nobody named: 81 of
 the 89 in the app were the same value, retyped at every call site. Five
 remain in app code — two tile-corner glyphs sized to a board square, the
@@ -81,6 +135,60 @@ an explicit `leading-` pins one where the token would have moved it. Re-
 derive each box from the component it stands in; never shift them along
 with the text. Rhythm copied out of the note editor belongs in `em`
 against the editor's own font size, not in the px it resolved to once.
+
+## Density
+
+How much of a vault fits on the screen is a setting, not a constant. It
+is the knob a tool has and this app did not: it could recolour itself
+thirteen ways and round its corners four, and had nothing to say about a
+page that is four hundred games.
+
+Five numbers in `index.css`, one per kind of repeating row, and
+`Settings → Appearance → Density` moves all of them by putting
+`data-density="compact"` on the root. Comfortable carries no attribute —
+it is what `:root` already says, so nobody's app moves until they ask.
+Per-device like the rest of `store/prefs.ts`, because the same vault
+wants compact on a monitor and comfortable under a thumb.
+
+| Token | Rung | Comfortable → compact | Read by |
+| --- | --- | --- | --- |
+| `--row-py` | cards, list rows | 8px → 5px | `games/shared.tsx`, `components/list-row.tsx` |
+| `--row-py-dense` | one-line rows | 6px → 3px | `list-row` (`dense`), move-list comments |
+| `--row-py-tight` | tabular rows | 4px → 2px | `MoveTreePane`, `ExplorerPane` |
+| `--row-h` | rows sized, not padded | 32px → 28px | the studies chapter list |
+| `--card-pad` | the panel around them | 16px → 12px | `components/ui/card.tsx` |
+
+Three things this shape is deliberately not:
+
+- **Not Tailwind's `--spacing`.** That is one line and the wrong one: 401
+  rules in the built stylesheet derive from it, every `size-*` included,
+  so squeezing it shrinks the icons along with the padding. A density
+  control is about whitespace; a glyph is not whitespace, and 14px icons
+  measured right for their row do not become 12px ones because a list got
+  tighter.
+- **Not one rung.** The tabular rows were already the tightest rhythm in
+  the app before a density existed — a move, a continuation, a game under
+  either, read in columns rather than scanned as cards. Folding them into
+  the dense rung would have made them taller at comfortable in order to
+  make them shorter at compact.
+- **Not the book reader.** It is the one surface worth naming as absent,
+  because "why is the reader not here" is the question this table invites.
+  It has no list — no `<ul>`, no `<li>`, no `<tr>` — it is a PDF canvas
+  beside an analysis board, and its `h-9` and `h-7` are toolbar bands.
+  Shrinking a control strip is not what this knob promises, and it would
+  fight the coarse-pointer hit areas besides.
+
+Anything derived from a rung must be derived, not restated. The move
+tree's branch elbow has to end on the middle of the first line of the row
+it points at, which is that row's top padding plus half a `text-sm` line;
+it was written `h-3.5`, exactly that sum at the comfortable rung. A
+density that moved the padding and left the elbow behind would have put
+every branch guide in the app slightly off its own move, silently. It is
+`--move-elbow-h: calc(var(--row-py-tight) + 0.625rem)` now, so there is
+still one number per rung.
+
+Where a density lands is measured, never guessed: 44 dashboard rows go
+1575px → 1307px, an explorer row 28px → 24px, a chapter row 32px → 28px.
 
 ## Layout rules
 
@@ -435,8 +543,25 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   stylesheet. Before changing a registry file's layout classes, check
   which of its rules the call sites are relying on it to provide.
 - **`web/src/components/` holds the app's composites** (Panel, PageShell,
-  ShelfCard, ActionMenu, PromptDialog, the skeletons …), built from the
-  primitives; **`web/src/hooks/`** the window physics they share.
+  ShelfCard, ActionMenu, PromptDialog, Disclosure, the skeletons …), built
+  from the primitives; **`web/src/hooks/`** the window physics they share.
+- **The no-hand-rolling rule is about OVERLAYS.** A second popover, menu,
+  dialog or tooltip beside a Base UI one is two focus stacks on one page,
+  which is the whole objection. A disclosure is not that: it opens nothing
+  over anything, reveals siblings in the flow, and leaves focus where it
+  was. `components/disclosure.tsx` is therefore hand-rolled on purpose —
+  the game form's "Advanced details" markup, lifted verbatim when Settings
+  needed a second one, rather than a registry primitive pulled in to do
+  less. Its button and its content are siblings, not a wrapper around a
+  box, so both call sites keep taking their spacing from the flex column
+  they sit in.
+- **Duplicated geometry is a bug waiting for a flipped board.** Three
+  overlays each derived a square's place on the board as drawn, and the
+  heat map spelled the rank `Number(sq[1]) - 1` where the two badges used
+  `charCodeAt(1) - 49`. Nothing would have reported a disagreement — a
+  badge on the wrong square is still a badge. `board/square-overlay.tsx`
+  holds `squareToGrid` and the `SquareBadge` disc above it; the caller
+  passes the fill and the glyph and nothing else.
 - **The theme is the registry's vocabulary and, at rest, its values** —
   `bg-card`, `text-muted-foreground`, `border-input`, `bg-destructive` — so
   a component added tomorrow is themed the moment it lands. The default
