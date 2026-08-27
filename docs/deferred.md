@@ -67,8 +67,9 @@ if toolchain-free servers become a real case.
 ## Kept for a real use case
 
 From the Games-menu research (SCID vs PC, ChessBase, En Croissant,
-Lichess): features every serious database tool grows eventually, kept
-off until a use case actually asks for them —
+Lichess) and the search-capability survey (ChessBase 17/18, Scid vs PC,
+ChessTempo, Lichess, chess.com): features every serious database tool
+grows eventually, kept off until a use case actually asks for them —
 
 - **Opponent dossiers / player reports** — once OTB or league play
   makes preparing against a named person a recurring need.
@@ -89,6 +90,22 @@ off until a use case actually asks for them —
 - **Canned motif filters** — a few curated pattern searches (isolated
   queen's pawn, opposite-side castling), never a CQL-style query
   language.
+- **Move-sequence / manoeuvre search** — Scid's `Rh8 ? R1h7`, ChessBase's
+  wildcard manoeuvre patterns. The most complex search gap left, for a
+  niche ask; a specific manoeuvre (Greek gift, rook lift) ships as a
+  canned motif first, and the general syntax waits until someone asks
+  for a manoeuvre no motif covers.
+- **Fragment-position search boards** — ChessBase's partial-position
+  boards with OR, exclude and mirroring. Kept off in favour of fixed
+  relaxation levels on the deep scan (exact / pawns / pawns per file /
+  material — Scid's ladder), which answer most of the same questions at
+  a fraction of the UI; revisit only when the ladder plus motifs fail a
+  question someone actually asked.
+- **Similarity and strategic-theme search** — ChessBase's similar
+  endgames/structures/moves and CB18's theme search. Like novelty
+  detection they only mean anything over a big canonical corpus, and
+  the theme search needs engine-adjacent analysis infrastructure
+  besides.
 
 ## Not planned
 
