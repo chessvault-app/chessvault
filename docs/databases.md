@@ -164,6 +164,55 @@ on, one name among however many are built beside it, and deleting it
 works like deleting any other. A server install gets no seed; it takes
 the commit, not the release artefacts.
 
+## Scale and hardware
+
+What building, indexing, and searching cost at three real sizes — a
+club collection, a Lichess Elite month, and Lumbra's Gigabase OTB,
+which is Mega Database scale. All measured 2026-08-28 on one machine
+(Ryzen 5 7500F, 6 cores, 32 GB, NVMe), current pipeline: the index
+pass writes the position index, the packed scan-index with its count
+envelopes, and the inverted key index in one run. Anything not
+directly measured is marked *est.*
+
+| | 3,436 games | 280,059 games | 10,355,488 games |
+| --- | --- | --- | --- |
+| Index pass, native binary | 0.55 s | 64 s | 55 min |
+| Index pass, JavaScript | 2.2 s | 178 s | ~110 min *est.* |
+| Full build from PGN, native | ~1 s *est.* | ~2 min *est.* | 48 min build + the index pass |
+| Database file, all indexes | 10 MB | ~1.0 GB | 32 GB |
+| RAM during the index pass | negligible | ~0.3 GB | ~7 GB |
+| Fast-search resident size | 1.7 MB | ~125 MB *est.* | 4.7 GB, 16 s load |
+
+Search speed, measured at the ten-million row — smaller databases
+scale down roughly linearly:
+
+- **Exact position, any depth, filtered or not: 1–6 ms.** The inverted
+  key index answers by lookup; it needs no opt-in, no residency, and
+  no extra RAM at query time.
+- **Relaxed rungs and material hunts: 0.1–0.8 s** with fast search on
+  (the resident scan). Without it, the same hunts stream through the
+  native binary in ~30 s or plain JavaScript in minutes — slower,
+  never unavailable.
+- **Text search: 28–110 ms**, including the no-match case and rare
+  players, via the lookup tables and the union-seek.
+
+Rules of thumb for sizing a machine:
+
+- **Indexing** briefly holds about 8 bytes per position — roughly
+  0.7 KB per game — while inverting the keys, so a 2 GB server indexes
+  up to ~2 M games comfortably and a Gigabase-class corpus wants ~8 GB
+  free. The pass streams everything else.
+- **Fast search** holds the packs in memory: ~0.5 KB per game for as
+  long as the database stays opted in (idle-evicted after 30 minutes).
+  Exact search does not need it; opt in per database, where the RAM
+  exists.
+- **Disk** runs ~3 KB per game with every index in place — roughly 4×
+  the source PGN.
+- **Re-indexing a mounted database** commits its work under WAL, but
+  folding the journal back at the end needs the server's handles
+  closed; if the pass ends with "database is locked", stop the server
+  and re-run — the data is already in.
+
 ## The manager
 
 Managing lives on the **Databases page** and nowhere else. The games-page Databases

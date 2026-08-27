@@ -358,9 +358,14 @@ collections, tick the ones to merge and press Build. Good free sources:
 [Lichess Elite Database](https://database.nikonoel.fr/) — the second is
 CC0, the first CC BY-NC-SA 4.0, which is fine for a database you build
 for yourself and not for one you pass on. Positions are keyed by a
-64-bit Zobrist hash — one month of Lichess Elite (280,059 games) builds
-in ~100 s and its position index (8.3 M rows to move 15) in a further
-~80 s.
+64-bit Zobrist hash, and the index pass also writes the packed
+scan-index and the inverted key index that make deep and exact search
+fast — an Elite month (280,059 games) indexes in 64 s through the
+native binary, 178 s in plain JavaScript, into a ~1 GB file; Mega-scale
+corpora (10 M+ games) take about an hour and ~32 GB, and exact position
+search answers in milliseconds at that size. The full table of
+measured costs per size class, and what RAM each job wants, is in
+["Scale and hardware"](docs/databases.md#scale-and-hardware).
 
 **From a terminal, if you prefer one.**
 
@@ -369,7 +374,7 @@ in ~100 s and its position index (8.3 M rows to move 15) in a further
 curl -O https://database.nikonoel.fr/lichess_elite_2025-11.zip
 unzip lichess_elite_2025-11.zip -d vault/sources/
 
-# the full database, position index included: ~600 MB, ~3 min
+# the full database, every index included: ~1 GB, ~5 min in JS
 npm run build:refgames -- lichess_elite_2025-11.pgn
 ```
 
