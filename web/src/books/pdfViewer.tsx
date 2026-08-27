@@ -343,31 +343,42 @@ export function PdfScroller({
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   className?: string;
 }) {
+  // Page shapes, stored the way PdfPage stores its own: at ROTATION ZERO,
+  // flipped at render time. They used to be stored at the current
+  // rotation and thrown away on every turn — but a quarter turn flips a
+  // shape exactly, so the forgetting bought nothing and cost a settle: a
+  // rotated column laid itself out on the √2 guess, then twitched as the
+  // first page's re-read and each landing raster corrected it — the
+  // slight after-rotation shake in lanph3re's third clip (~0.2 s after
+  // each landing). Normalised, a rotation's heights are exact in the
+  // same render, and the late reports confirm rather than correct.
   const [aspects, setAspects] = useState<Map<number, number>>(() => new Map());
   const [baseAspect, setBaseAspect] = useState<number | null>(null);
   useEffect(() => {
     let live = true;
-    // A rotation turns every page's shape: the measured ones are forgotten
-    // and the first page's is read again the new way round.
     setAspects(new Map());
     setBaseAspect(null);
     void doc.getPage(1).then((p) => {
       if (!live) return;
-      const v = p.getViewport({ scale: 1, rotation });
+      const v = p.getViewport({ scale: 1, rotation: 0 });
       setBaseAspect(v.height / v.width);
     });
     return () => {
       live = false;
     };
-  }, [doc, rotation]);
+  }, [doc]);
 
   const pageW = Math.max(1, Math.round(width * zoom));
   // The column's geometry at a given page width — the current one for the
   // render, an old one for the zoom anchor below, which needs to know
   // where a point WAS to keep it still. O(pages) per call; a
   // thousand-page book is a thousand additions.
+  const flipped = rotation % 180 !== 0;
   const layoutFor = (w: number): { tops: number[]; heightOf: (n: number) => number } => {
-    const heightOf = (n: number): number => Math.round(w * (aspects.get(n) ?? baseAspect ?? 1.4142));
+    const heightOf = (n: number): number => {
+      const a0 = aspects.get(n) ?? baseAspect ?? 1.4142;
+      return Math.round(w * (flipped ? 1 / a0 : a0));
+    };
     const tops: number[] = [];
     let acc = PAGE_GAP;
     for (let n = 1; n <= pages; n++) {
@@ -602,7 +613,8 @@ export function PdfScroller({
               overlay={overlayFor(n)}
               onSize={({ w, h }) => {
                 onPainted?.();
-                const a = h / w;
+                // Normalised to rotation zero, like everything in the map.
+                const a = rotation % 180 === 0 ? h / w : w / h;
                 setAspects((prev) => {
                   if (Math.abs((prev.get(n) ?? 0) - a) < 0.001) return prev;
                   const next = new Map(prev);
