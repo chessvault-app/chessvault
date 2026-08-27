@@ -1,4 +1,4 @@
-import { Database, ExternalLink, Hammer, RotateCw, SearchCheck, SlidersHorizontal } from 'lucide-react';
+import { Database, ExternalLink, RotateCw, ScanSearch, SearchCheck, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { api } from '@/lib/api';
@@ -651,7 +651,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
       ) : (
         <div className="flex items-center gap-2">
           <Button variant="default" size="sm" onClick={() => void start()}>
-            <Hammer className="size-3.5" data-icon="inline-start" />
+            <ScanSearch className="size-3.5" data-icon="inline-start" />
             {t('Index positions')}
           </Button>
           {state === 'failed' && (

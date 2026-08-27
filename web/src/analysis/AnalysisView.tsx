@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Table2, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -122,7 +122,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           tabs={[
             { id: 'moves', label: t('Moves'), icon: ListOrdered },
             { id: 'engine', label: 'Engine', icon: Cpu },
-            { id: 'explorer', label: 'Explorer', icon: Compass },
+            { id: 'explorer', label: 'Explorer', icon: Table2 },
           ]}
         />
         {/* Desktop keeps an explicit floor; phones drop it so the panel

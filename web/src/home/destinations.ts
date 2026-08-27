@@ -1,17 +1,17 @@
 import {
   BookMarked,
   BookOpen,
-  Compass,
   Database,
   Grid3x3,
   Library,
   Network,
   NotebookPen,
   Puzzle,
+  Repeat,
+  ScrollText,
   Settings,
   SquarePen,
-  SwatchBook,
-  Swords,
+  Table2,
 } from 'lucide-react';
 import type { Section } from '@/lib/router';
 import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
@@ -26,6 +26,13 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
  * Every entry carries a blurb even though the launcher row shows only
  * labels: the row is where a demoted entry lands, and any entry can be
  * promoted back to a tile, where the blurb is what it says.
+ *
+ * The glyphs are LITERAL, not evocative. Games wore crossed swords, the
+ * explorer a compass and the repertoire a swatch book — a games console,
+ * an expedition and a paint shop, for a folder of recorded games, a table
+ * of continuations and a drill. A scoresheet, a table and a repeat sign
+ * say what each one is, and an icon that has to be decoded is worse than
+ * none.
  *
  * `App.tsx` still keeps its own NAV / TOOLS_SUBNAV / MORE_GROUPS lists.
  * Folding those in is a bigger change — they carry grouping and
@@ -85,7 +92,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'games',
     label: 'Games',
     blurb: 'Your collection, annotated',
-    icon: Swords,
+    icon: ScrollText,
     nav: ['games'],
     count: 'games',
   },
@@ -110,7 +117,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'repertoire',
     label: 'Repertoire',
     blurb: 'Practise an opening against real games',
-    icon: SwatchBook,
+    icon: Repeat,
     nav: ['repertoire'],
   },
   // Not a page of its own: the board opened straight to its explorer pane.
@@ -118,7 +125,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'explorer',
     label: 'Explorer',
     blurb: 'Browse opening statistics move by move',
-    icon: Compass,
+    icon: Table2,
     nav: ['board', 'explorer'],
   },
   databases: {

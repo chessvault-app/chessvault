@@ -1,4 +1,4 @@
-import { Check, ChevronRight, Grid3x3, Library, Puzzle, SlidersHorizontal, Swords, X } from 'lucide-react';
+import { Check, ChevronRight, Grid3x3, Library, Puzzle, ScrollText, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { cn } from '@/lib/utils';
@@ -288,7 +288,7 @@ export function HomePage() {
           ...(data.lastGame
             ? [
                 {
-                  icon: Swords,
+                  icon: ScrollText,
                   label: baseName(data.lastGame.id),
                   detail: t('Last game'),
                   go: () => navigate('games', encodeURIComponent(data.lastGame!.id)),

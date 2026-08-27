@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Plus, Repeat, Scissors, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Play, Plus, Repeat, Scissors, ScrollText, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -1120,7 +1120,7 @@ function NodePanel({
               : tag.kind === 'note'
                 ? NotebookPen
                 : tag.kind === 'game'
-                  ? Swords
+                  ? ScrollText
                   : Library;
             return (
               <div
@@ -1408,7 +1408,7 @@ function NodePanel({
           onSelect={onGrow}
         />
         <PanelAction
-          icon={Swords}
+          icon={Play}
           label="Drill"
           title={
             coverage?.covered

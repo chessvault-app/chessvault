@@ -5,7 +5,6 @@ import {
   BookMarked,
   BookOpen,
   Database,
-  Compass,
   Ellipsis,
   House,
   LayoutGrid,
@@ -13,9 +12,10 @@ import {
   Network,
   NotebookPen,
   Puzzle,
+  Repeat,
+  ScrollText,
   Settings,
-  Swords,
-  SwatchBook,
+  Table2,
   Wrench,
 } from 'lucide-react';
 import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
@@ -69,8 +69,8 @@ const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((
 // but the bar already carries Home + four + More, and a seventh tab on a
 // 360px phone gives every tab about 50px to hold the longest label in
 // the app. So the phone keeps reaching it through More.
-const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
-  { section: 'games', label: 'Games', icon: Swords },
+const NAV: { section: Section; label: string; icon: typeof ScrollText }[] = [
+  { section: 'games', label: 'Games', icon: ScrollText },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
   // Books is a collection like the three above it, so it is a sidebar
@@ -87,14 +87,14 @@ const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
 const TOOLS_SUBNAV: {
   key: string;
   label: string;
-  icon: typeof Swords;
+  icon: typeof ScrollText;
   nav: [Section, ...string[]];
   active: (section: Section, params: string[]) => boolean;
 }[] = [
   { key: 'board', label: 'Board', icon: Grid3x3, nav: ['board'], active: (s, p) => s === 'board' && p[0] !== 'explorer' },
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
-  { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['board', 'explorer'], active: (s, p) => s === 'board' && p[0] === 'explorer' },
-  { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
+  { key: 'explorer', label: 'Explorer', icon: Table2, nav: ['board', 'explorer'], active: (s, p) => s === 'board' && p[0] === 'explorer' },
+  { key: 'repertoire', label: 'Repertoire', icon: Repeat, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
 // Databases is deliberately NOT in Tools: the entries there are boards
 // you play on, and it is where their data is looked after — so it stands
@@ -317,7 +317,7 @@ function SubNavItem({
   onClick,
 }: {
   label: string;
-  icon: typeof Swords;
+  icon: typeof ScrollText;
   active: boolean;
   onClick: () => void;
 }) {
@@ -486,15 +486,15 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
     a phone (the chess.com/Lichess pattern), so they live here. */
 const MORE_GROUPS: {
   heading: string;
-  items: { section: Section; param?: string; label: string; icon: typeof Swords; blurb: string }[];
+  items: { section: Section; param?: string; label: string; icon: typeof ScrollText; blurb: string }[];
 }[] = [
   {
     heading: 'Tools',
     items: [
       { section: 'board', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
-      { section: 'board', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
-      { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
+      { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
+      { section: 'repertoire', label: 'Repertoire', icon: Repeat, blurb: 'Practise an opening against real games' },
       { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
     ],
   },
@@ -662,7 +662,7 @@ function Placeholder({ section }: { section: Section }) {
     <div className="grid h-full place-items-center p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
-          <Swords className="size-6" strokeWidth={1.75} />
+          <ScrollText className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight capitalize">{section}</h1>
         <p className="text-muted-foreground text-base leading-relaxed">{t("This page isn't available.")}</p>
