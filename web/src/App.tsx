@@ -9,11 +9,11 @@ import {
   Folder,
   House,
   LayoutGrid,
+  Layers,
   Library,
   Network,
   NotebookPen,
   Puzzle,
-  Repeat,
   Settings,
   SquareMousePointer,
   Table2,
@@ -95,7 +95,7 @@ const TOOLS_SUBNAV: {
   { key: 'board', label: 'Board', icon: Grid3x3, nav: ['board'], active: (s, p) => s === 'board' && p[0] !== 'explorer' },
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Table2, nav: ['board', 'explorer'], active: (s, p) => s === 'board' && p[0] === 'explorer' },
-  { key: 'repertoire', label: 'Repertoire', icon: Repeat, nav: ['repertoire'], active: (s) => s === 'repertoire' },
+  { key: 'repertoire', label: 'Repertoire', icon: Layers, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
 // Databases is deliberately NOT in Tools: the entries there are boards
 // you play on, and it is where their data is looked after — so it stands
@@ -509,7 +509,7 @@ const MORE_GROUPS: {
       { section: 'board', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
-      { section: 'repertoire', label: 'Repertoire', icon: Repeat, blurb: 'Practise an opening against real games' },
+      { section: 'repertoire', label: 'Repertoire', icon: Layers, blurb: 'Practise an opening against real games' },
       { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
     ],
   },

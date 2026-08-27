@@ -67,9 +67,9 @@ the explorer a compass, the repertoire a swatch book and "index this
 database" a hammer — a games console, an expedition, a paint shop and a
 building site, for a folder of recorded games, a table of continuations,
 a drill and a scan of games already on disk. They are a folder, a table,
-a repeat sign and `ScanSearch` now. An icon that has to be decoded is
-worse than no icon, and crossed swords in particular is the glyph a
-chess app reaches for when it wants to be a game.
+a stack and `ScanSearch` now. An icon that has to be decoded is worse
+than no icon, and crossed swords in particular is the glyph a chess app
+reaches for when it wants to be a game.
 
 Naming the thing is half of it; the glyph also has to separate its item
 from the ones beside it. Games was `ScrollText` for two days, which a
@@ -78,7 +78,20 @@ Books and Puzzle books are paper too, so the sidebar carried five sheets
 of stationery distinguished by their line spacing. `Folder` is the one
 container of files in that list, which is what the collection is, and
 what `FolderInput` and `FolderPlus` already call it on the analysis
-board. This is also why nothing in the nav is a chess piece, quite apart
+board. The repertoire's repeat sign went for a third fault again — one
+glyph meaning three things: the section, "switch to the black map" in the
+map menu, and "start the next cycle" on a puzzle book, of which only the
+last is repetition. It is `Layers` now, a stack of prepared lines.
+
+A glyph is also chosen at the size it is used, not in the source. Both of
+the last two changes were picked on a rendered sheet of candidates drawn
+at 18.4px in the sidebar's own colours, and both times the reading
+changed: `Shapes` was withdrawn on sight for clustering under Network's
+three dots, and half the repertoire candidates — a handshake, two theatre
+masks, a metronome — turned to porridge at the size they would be used.
+Draw them before choosing.
+
+This is also why nothing in the nav is a chess piece, quite apart
 from the mark's own reason below: in a list where every entry is chess,
 a pawn names the application, not the entry. Pieces keep the two jobs
 they hold elsewhere — `KnightIcon` for *this is chess*, `KingIcon` for

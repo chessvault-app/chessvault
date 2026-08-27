@@ -4,11 +4,11 @@ import {
   Database,
   Folder,
   Grid3x3,
+  Layers,
   Library,
   Network,
   NotebookPen,
   Puzzle,
-  Repeat,
   Settings,
   SquarePen,
   Table2,
@@ -30,8 +30,8 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
  * The glyphs are LITERAL, not evocative. Games wore crossed swords, the
  * explorer a compass and the repertoire a swatch book — a games console,
  * an expedition and a paint shop, for a folder of recorded games, a table
- * of continuations and a drill. A table and a repeat sign say what those
- * two are, and an icon that has to be decoded is worse than none.
+ * of continuations and a drill. A table says what the explorer is, and
+ * an icon that has to be decoded is worse than none.
  *
  * Literal is not enough on its own, though: the glyph has to separate
  * this entry from the ones beside it, and everything in this list is
@@ -42,6 +42,16 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
  * that is a CONTAINER of files, which is what the collection is and what
  * `FolderInput` and `FolderPlus` already call it on the analysis board.
  * A chess piece fails the same test harder: it names the whole app.
+ *
+ * The repertoire was a repeat sign on the same reasoning — a drill is
+ * repetition — and lost it for a different fault: `Repeat` was saying
+ * three things at once. This entry, "switch to the black map" in the map
+ * menu, and "start the next cycle" on a puzzle book, of which only the
+ * last is repetition. `Layers` is a stack of prepared lines, which is
+ * what a repertoire is when it is not being drilled, and it survives
+ * 18px — half the candidates weighed against it did not, and a glyph
+ * that turns to porridge at the size it is used has not been chosen, it
+ * has been guessed at.
  *
  * `App.tsx` still keeps its own NAV / TOOLS_SUBNAV / MORE_GROUPS lists.
  * Folding those in is a bigger change — they carry grouping and
@@ -126,7 +136,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'repertoire',
     label: 'Repertoire',
     blurb: 'Practise an opening against real games',
-    icon: Repeat,
+    icon: Layers,
     nav: ['repertoire'],
   },
   // Not a page of its own: the board opened straight to its explorer pane.
