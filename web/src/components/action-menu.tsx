@@ -112,7 +112,10 @@ export function ActionMenu({
               composition rule too). */}
           <DropdownMenuGroup>
             <DropdownMenuLabel>{t(title)}</DropdownMenuLabel>
-            {detail}
+            {/* The dropdown's own indent for a detail line — px-3 was on
+                the detail itself before, where it doubled as a sheet
+                indent bug; see the sheet branch. */}
+            {detail && <div className="px-3">{detail}</div>}
             {actions.map((action) => (
               <MenuRow key={action.label} action={action} kind="dropdown" />
             ))}
