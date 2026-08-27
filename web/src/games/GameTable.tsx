@@ -1,5 +1,5 @@
 import { NotebookPen } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type MutableRefObject, type ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
@@ -87,6 +87,56 @@ export const moveCount = (plyCount: number): number => Math.ceil(plyCount / 2);
     column it is noise repeated down the page (the details panel still
     shows it verbatim). */
 const isNoiseEvent = (event: string | null): boolean => event === 'Live Chess';
+
+/** What the keyboard does to a table: step the selection, open it,
+    clear it. The pane fills the ref fresh each render, so the handler
+    always speaks about the rows currently on screen. */
+export interface TableNav {
+  move: (delta: 1 | -1) => void;
+  open: () => void;
+  clear: () => void;
+}
+
+/**
+ * ↑/↓ move the table's selection, Enter opens it, Escape clears it —
+ * page-level keys, because the rows are not focusable (a thousand tab
+ * stops is not navigation). Keys aimed at a field, a control, or an
+ * open window pass by untouched; ←/→ stay with the details panel's
+ * board (GameDetails).
+ */
+export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null> {
+  const nav = useRef<TableNav | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e: KeyboardEvent): void => {
+      const n = nav.current;
+      if (!n) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest(
+          'input, textarea, select, button, a, [contenteditable="true"], [role="menuitem"], [role="tab"], [role="option"]',
+        )
+      )
+        return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        n.move(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        n.move(-1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        n.open();
+      } else if (e.key === 'Escape') {
+        n.clear();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [enabled]);
+  return nav;
+}
 
 export function GameTableHeader({ withStanding = false }: { withStanding?: boolean }) {
   const head = (label: string, className?: string) => (

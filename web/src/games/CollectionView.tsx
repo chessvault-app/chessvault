@@ -481,7 +481,7 @@ export function CollectionView() {
                     {finders('min-w-0 flex-1')}
                   </div>
                 }
-                onSelect={(g) => setColSelKey(gameKey(g))}
+                onSelect={(g) => setColSelKey(g ? gameKey(g) : null)}
                 selectedKey={colSelKey}
               />
             )}

@@ -40,7 +40,7 @@ const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
 import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
-import { GameTableHeader, GameTableRow } from './GameTable';
+import { GameTableHeader, GameTableRow, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
 /**
@@ -361,6 +361,9 @@ export function DatabaseGames({
   // the selection must clear when the rows it described go away.
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  // ↑/↓/Enter/Escape drive the table selection; the ref is filled below
+  // the early returns, once the rows on screen are known.
+  const tableNav = useTableNav(table);
 
   const searchSeq = useRef(0);
   /** The committed filters as query params — the /search and the deep
@@ -1002,7 +1005,28 @@ export function DatabaseGames({
   // re-implemented and half of which it had drifted on. Deliberately no
   // swipe, bookmark, rename or context menu: a reference row is
   // immutable, and Add is its keep verb.
-  const rowItems = (inHunt ? (huntRows ?? []) : rows).map((g) =>
+  const navRows = inHunt ? (huntRows ?? []) : rows;
+  tableNav.current = {
+    move: (delta) => {
+      const at = navRows.findIndex((g) => refGameKey(g.id) === selectedKey);
+      const next =
+        navRows[
+          at < 0
+            ? delta > 0
+              ? 0
+              : navRows.length - 1
+            : Math.min(navRows.length - 1, Math.max(0, at + delta))
+        ];
+      if (next) selectRow(next);
+    },
+    open: () => {
+      const g = navRows.find((g) => refGameKey(g.id) === selectedKey);
+      if (g) void openGame(g);
+    },
+    clear: () => onSelect?.(null),
+  };
+
+  const rowItems = navRows.map((g) =>
     table ? (
       <GameTableRow
         key={g.id}

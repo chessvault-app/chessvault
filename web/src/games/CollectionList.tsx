@@ -37,7 +37,7 @@ import {
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow } from './GameTable';
+import { GameTableHeader, GameTableRow, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
 
@@ -229,8 +229,9 @@ export function CollectionList({
   headerActions?: ReactNode;
   /** panel shape: the finders pair, in the shell's toolbar band. */
   toolbar?: ReactNode;
-  /** Table mode: a click makes this row the details panel's subject. */
-  onSelect?: (game: GameSummary) => void;
+  /** Table mode: a click makes this row the details panel's subject;
+      null (Escape) clears it. */
+  onSelect?: (game: GameSummary | null) => void;
   selectedKey?: string | null;
 }) {
   // The quick filters, session-only like the archive's: what you want to
@@ -310,6 +311,28 @@ export function CollectionList({
   // list renders the one being renamed itself.
   const renamingGame =
     table && renamingKey ? (games.find((g) => gameKey(g) === renamingKey) ?? null) : null;
+
+  // ↑/↓/Enter/Escape drive the table selection over the filtered rows.
+  const tableNav = useTableNav(table && onSelect !== undefined);
+  tableNav.current = {
+    move: (delta) => {
+      const at = visible.findIndex((g) => gameKey(g) === selectedKey);
+      const next =
+        visible[
+          at < 0
+            ? delta > 0
+              ? 0
+              : visible.length - 1
+            : Math.min(visible.length - 1, Math.max(0, at + delta))
+        ];
+      if (next) onSelect?.(next);
+    },
+    open: () => {
+      const g = visible.find((g) => gameKey(g) === selectedKey);
+      if (g) onOpen(g);
+    },
+    clear: () => onSelect?.(null),
+  };
 
   // The ⋯ → Game details sheet: the details panel's content where
   // there is no panel.
