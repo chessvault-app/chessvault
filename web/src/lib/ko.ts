@@ -342,6 +342,10 @@ export const ko: Record<string, string> = {
     '적어도 하나는 골라야 합니다 — 아니면 모든 게임이 일치합니다.',
   'Set the position up on a board': '보드에서 포지션 만들기',
   'Set up a position': '포지션 만들기',
+  'Fast search is on — the scan index is held in server memory':
+    '빠른 검색 켜짐 — 스캔 색인이 서버 메모리에 올라가 있습니다',
+  'Fast search: hold the scan index in server memory':
+    '빠른 검색: 스캔 색인을 서버 메모리에 올려 둡니다',
   'Any rating': '모든 레이팅',
   'More filters': '필터 더 보기',
   'Filter games': '게임 거르기',

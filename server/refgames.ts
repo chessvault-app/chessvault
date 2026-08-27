@@ -23,6 +23,14 @@ import {
   replayPositionHit,
   type PositionTarget,
 } from './refgamesScan.ts';
+import { SCAN_PACK_META, SCAN_PACK_VERSION } from '../shared/scanPack.ts';
+import {
+  ensureResident,
+  evictAllResidents,
+  evictResident,
+  residentScan,
+  residentStatus,
+} from './refgamesResident.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { positionIndexInfo } from './refgamesIndex.ts';
 import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
@@ -972,10 +980,60 @@ export function refGamesApi(
       }
       if (!existsSync(fileFor(name))) return c.json({ error: 'no such database' }, 404);
       close(name);
+      // A resident index outliving its file would keep answering for a
+      // database that no longer exists — and holding its memory.
+      evictResident(fileFor(name));
       rmSync(fileFor(name));
       return c.json({ deleted: name });
     });
   }
+
+  /**
+   * The fast-search opt-in: hold this database's packed index in
+   * memory (a worker thread, ~0.5 KB per game — an Elite month is
+   * ~130 MB) so deep hunts scan bytes instead of replaying movetext.
+   * The choice is a meta key IN the database file, so it survives
+   * restarts and travels with the file; turning it on loads the index
+   * now, so the answer says what it cost.
+   */
+  api.post('/refgames/fast-scan', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as { db?: string; on?: boolean } | null;
+    if (!body || typeof body.on !== 'boolean') return c.json({ error: 'expected db & on' }, 400);
+    const name = single ? '' : (body.db ?? '');
+    if (!single && (!NAME_RE.test(name) || !names().includes(name))) {
+      return c.json({ error: 'no such database' }, 404);
+    }
+    const path = fileFor(name);
+    const db = open(name);
+    if (!db) return c.json({ error: 'no such database' }, 503);
+    const meta = readMeta(db);
+    if (body.on && meta[SCAN_PACK_META] !== String(SCAN_PACK_VERSION)) {
+      // No packs, no fast search: the fix is one index pass away, and
+      // saying so beats loading nothing.
+      return c.json({ error: 'this database has no scan index yet — re-run Index positions' }, 409);
+    }
+    const writer = new Database(path);
+    try {
+      writer.pragma('busy_timeout = 30000');
+      if (body.on) {
+        writer.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('fast_scan', '1')").run();
+      } else {
+        writer.prepare("DELETE FROM meta WHERE key = 'fast_scan'").run();
+      }
+    } finally {
+      writer.close();
+    }
+    if (body.on) {
+      try {
+        const { games, bytes } = await ensureResident(path);
+        return c.json({ on: true, resident: { games, bytes } });
+      } catch (error) {
+        return c.json({ error: `could not load the index: ${(error as Error).message}` }, 500);
+      }
+    }
+    evictResident(path);
+    return c.json({ on: false });
+  });
 
   api.get('/refgames', async (c) => {
     if (single) {
@@ -1007,6 +1065,13 @@ export function refGamesApi(
           indexed: index.indexed,
           stale: index.stale,
           positions: index.plies,
+          // The packed scan-index and the fast-search opt-in riding it:
+          // packed says a full pass has written the blobs, fastScan is
+          // the owner's choice, resident is whether the worker holds it
+          // in memory right now (lazily loaded, evicted when idle).
+          packed: meta[SCAN_PACK_META] === String(SCAN_PACK_VERSION),
+          fastScan: meta.fast_scan === '1',
+          resident: residentStatus(fileFor(name)) !== null,
         },
       ];
     });
@@ -1431,6 +1496,143 @@ export function refGamesApi(
       minPly = 32 - target.w - target.b;
     }
 
+    // The filter SQL, computed once for every path below: the resident
+    // scan narrows its id list with it, the JS loop pages with it.
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), '', hasLookups(db));
+    const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
+    // A database indexed before the reachability columns scans without
+    // the prefilter — slower, never wrong; the next index pass adds them.
+    const hasMen =
+      db.prepare("SELECT 1 FROM pragma_table_info('games') WHERE name = 'final_wmen'").get() !==
+      undefined;
+    const menWhere = hasMen
+      ? ` AND (final_wmen IS NULL OR final_wmen <= ?)
+          AND (final_bmen IS NULL OR final_bmen <= ?)
+          AND (ply_count IS NULL OR ply_count >= ?)`
+      : '';
+    const menBinds = hasMen ? [menCeilW, menCeilB, minPly] : [];
+
+    /**
+     * The resident scan: a database whose owner opted in (fast search
+     * on the Databases page) holds its packed index in a worker
+     * thread's memory and answers by scanning bytes instead of parsing
+     * SAN (refgamesScan.ts / scanWorker.ts). It outranks the native
+     * spawn — memory beats a child re-reading the file — and anything
+     * that goes wrong here falls through to the paths below, which
+     * answer identically, only slower. Loaded lazily, so the first
+     * hunt after a restart pays the load once; evicted when idle.
+     */
+    const metaValue = (key: string): string | undefined =>
+      (db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined)
+        ?.value;
+    const filePath = fileFor(found.name);
+    let resident = false;
+    if (
+      metaValue('fast_scan') === '1' &&
+      metaValue(SCAN_PACK_META) === String(SCAN_PACK_VERSION)
+    ) {
+      try {
+        await ensureResident(filePath);
+        resident = residentStatus(filePath) !== null;
+      } catch (error) {
+        console.error(
+          `deep-search (${found.name}): resident index unavailable: ${(error as Error).message}`,
+        );
+      }
+    }
+    if (resident) {
+      // With filters, the worker scans only the ids the SQL lets
+      // through; without, the pack's own gates do the cutting.
+      const ids = clauses.length
+        ? new Float64Array(
+            (
+              db
+                .prepare(`SELECT id FROM games WHERE 1${menWhere}${sqlAnd} ORDER BY id`)
+                .all(...menBinds, ...binds) as { id: number }[]
+            ).map((r) => r.id),
+          )
+        : null;
+      const total = ids
+        ? ids.length
+        : (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+      const headerStmt = db.prepare(
+        `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+         FROM games WHERE id = ?`,
+      );
+      c.header('Content-Type', 'application/x-ndjson');
+      return stream(c, async (out) => {
+        // Worker messages land between awaits; the queue keeps id
+        // order, and the loop drains it into frames — verifying what
+        // the pack could only gate (exact/pawns/files candidates),
+        // deciding by replay what it could not read at all (bad packs).
+        const queue: { id: number; ply: number | null }[] = [];
+        let progress = 0;
+        let finished = false;
+        let failed = false;
+        const run = residentScan(filePath, spec ? { spec } : { target: target! }, ids, {
+          onHits: (pairs) => {
+            for (let at = 0; at < pairs.length; at += 2) {
+              queue.push({ id: pairs[at]!, ply: pairs[at + 1]! });
+            }
+          },
+          onBad: (badIds) => {
+            for (const id of badIds) queue.push({ id, ply: null });
+          },
+          onProgress: (scanned) => {
+            progress = scanned;
+          },
+        });
+        run.done
+          .then((result) => {
+            progress = result.scanned;
+            finished = true;
+          })
+          .catch(() => {
+            failed = true;
+            finished = true;
+          });
+        let matched = 0;
+        let lastProgress = -1;
+        for (;;) {
+          if (out.aborted || c.req.raw.signal?.aborted) {
+            run.cancel();
+            return;
+          }
+          while (queue.length > 0 && matched < DEEP_SEARCH_CAP) {
+            const item = queue.shift()!;
+            const row = headerStmt.get(item.id) as (RefGameRow & { moves: string }) | undefined;
+            if (!row) continue;
+            let hitPly = item.ply;
+            if (item.ply === null) {
+              hitPly = spec ? replayMaterialHit(row.moves, spec) : replayPositionHit(row.moves, target!);
+            } else if (!spec && target!.mode !== 'material') {
+              hitPly = replayPositionHit(row.moves, target!);
+            }
+            if (hitPly === null) continue;
+            matched += 1;
+            const { moves: _moves, ...headers } = row;
+            await out.writeln(JSON.stringify({ type: 'game', ply: hitPly, ...headers }));
+          }
+          if (matched >= DEEP_SEARCH_CAP) {
+            run.cancel();
+            queue.length = 0;
+          }
+          if (finished && queue.length === 0) break;
+          if (progress !== lastProgress) {
+            lastProgress = progress;
+            await out.writeln(JSON.stringify({ type: 'progress', scanned: progress, total, matched }));
+          }
+          await new Promise((tick) => setTimeout(tick, 15));
+        }
+        // A worker failure ends the stream without its done frame — the
+        // client's failed-not-empty signal, exactly as a dead child.
+        if (failed) return;
+        await out.writeln(
+          JSON.stringify({ type: 'done', scanned: progress, total, matched, exhaustive: matched < DEEP_SEARCH_CAP }),
+        );
+      });
+    }
+
     // The native scan, when the binary is here and this mount is the
     // real data directory (its --data layout): same prefilters, same
     // filters, same frames — measured 1.3 s where the loop below takes
@@ -1510,19 +1712,6 @@ export function refGamesApi(
       );
     }
 
-    const { clauses, binds } = gamesWhere((k) => c.req.query(k), '', hasLookups(db));
-    const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
-    // A database indexed before the reachability columns scans without
-    // the prefilter — slower, never wrong; the next index pass adds them.
-    const hasMen =
-      db.prepare("SELECT 1 FROM pragma_table_info('games') WHERE name = 'final_wmen'").get() !==
-      undefined;
-    const menWhere = hasMen
-      ? ` AND (final_wmen IS NULL OR final_wmen <= ?)
-          AND (final_bmen IS NULL OR final_bmen <= ?)
-          AND (ply_count IS NULL OR ply_count >= ?)`
-      : '';
-    const menBinds = hasMen ? [menCeilW, menCeilB, minPly] : [];
     const total = (
       db
         .prepare(`SELECT COUNT(*) AS n FROM games WHERE 1${menWhere}${sqlAnd}`)
@@ -1625,7 +1814,15 @@ export function refGamesApi(
     return c.json({ pgn });
   });
 
-  return Object.assign(api, { closeDb: () => close() });
+  // Closing the api takes its resident workers with it — otherwise a
+  // test suite (or a re-mounted server) leaves threads holding indexes
+  // for handles that no longer answer.
+  return Object.assign(api, {
+    closeDb: () => {
+      close();
+      evictAllResidents();
+    },
+  });
 }
 
 // Referenced by scripts that need the same resolution (tune-dbs, the

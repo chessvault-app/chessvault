@@ -1,4 +1,4 @@
-import { Database, FileText, Hammer, Plus, Trash2, Upload } from 'lucide-react';
+import { Database, FileText, Hammer, Plus, Trash2, Upload, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -50,6 +50,12 @@ export interface RefDb {
       interrupted between insert and index) — Optimize heals it. */
   stale?: boolean;
   positions?: number;
+  /** A full index pass has written the packed scan-index. */
+  packed?: boolean;
+  /** The owner opted into fast search (the packs held in memory). */
+  fastScan?: boolean;
+  /** The index is resident in a worker right now. */
+  resident?: boolean;
 }
 
 interface Source {
@@ -208,6 +214,18 @@ export function RefDbManager({
     }
   };
 
+  /** Fast search on or off: the server loads (or evicts) the packed
+      index in a worker's memory, and the choice rides in the file. */
+  const fastScan = async (dbName: string, on: boolean): Promise<void> => {
+    setError(null);
+    try {
+      await api('/api/refgames/fast-scan', { method: 'POST', json: { db: dbName, on } });
+      onChanged();
+    } catch (error) {
+      setError(`${dbName}: ${t(apiErrorMessage(error))}`);
+    }
+  };
+
   /** Housekeeping as a job in the build slot: duplicates out, derived
       tables re-derived, space returned. */
   const optimize = async (dbName: string): Promise<void> => {
@@ -278,6 +296,7 @@ export function RefDbManager({
         onDelete={(n) => void del(n)}
         onOptimize={(n) => void optimize(n)}
         onAddTo={(n) => setAddTo(n)}
+        onFastScan={(n, on) => void fastScan(n, on)}
         optimizeDisabled={running}
       />
     ) : (
@@ -530,12 +549,14 @@ function DbList({
   onDelete,
   onOptimize,
   onAddTo,
+  onFastScan,
   optimizeDisabled,
 }: {
   databases: RefDb[];
   onDelete: (name: string) => void;
   onOptimize: (name: string) => void;
   onAddTo: (name: string) => void;
+  onFastScan: (name: string, on: boolean) => void;
   optimizeDisabled: boolean;
 }) {
   return (
@@ -564,6 +585,26 @@ function DbList({
           {/* Games above the index's high-water mark — an interrupted
               append. Optimize brings the index up to them. */}
           {d.stale === true && <span className="text-warn shrink-0">{t('index behind')}</span>}
+          {/* Fast search: hold the packed scan-index in server memory
+              (~0.5 KB per game), so position and material hunts scan
+              bytes instead of replaying movetext. Only offered where a
+              full index pass has written the packs. */}
+          {d.packed === true && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={d.fastScan === true}
+              className="shrink-0"
+              title={
+                d.fastScan === true
+                  ? t('Fast search is on — the scan index is held in server memory')
+                  : t('Fast search: hold the scan index in server memory')
+              }
+              onClick={() => onFastScan(d.name, d.fastScan !== true)}
+            >
+              <Zap className="size-3.5" />
+            </Button>
+          )}
           {/* Growing THIS database, from its own row — burying append
               behind typing a matching name into the build form was not
               a flow anyone would find (lanph3re said so). */}

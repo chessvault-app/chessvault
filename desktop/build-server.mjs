@@ -127,7 +127,24 @@ await build({
     js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
   },
 });
-console.log('refgames optimizer bundled');
+console.log('optimizer bundled');
+
+// The resident scan worker — a worker_thread, not a child process, but
+// the same story: refgamesResident.ts looks for this file beside the
+// bundle before falling back to the TS source an installed app lacks.
+await build({
+  entryPoints: [join(repo, 'server', 'scanWorker.ts')],
+  outfile: join(out, 'scan-worker.mjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['better-sqlite3'],
+  banner: {
+    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+  },
+});
+console.log('scan worker bundled');
 
 /**
  * The native fast path, when this machine has built one.
