@@ -1,6 +1,5 @@
 import {
   Bookmark,
-  ChevronRight,
   SearchX,
   SlidersHorizontal,
   ExternalLink,
@@ -18,6 +17,7 @@ import { cachedCollection, forgetCollection, loadCollection } from './collection
 import { sanitizeSegment } from '@shared/vaultNames';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Disclosure } from '@/components/disclosure';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
@@ -957,19 +957,11 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         {/* Everything a pasted PGN already knows lives behind one line. It
             opens itself when a paste fills something in, so what was read
             off the text is seen rather than taken on trust. */}
-        <button
-          type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
-          aria-expanded={detailsOpen}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
+        <Disclosure
+          label="Advanced details"
+          open={detailsOpen}
+          onToggle={() => setDetailsOpen((v) => !v)}
         >
-          <ChevronRight
-            className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}
-          />
-          {t('Advanced details')}
-        </button>
-
-        {detailsOpen && (
           <div className="flex flex-col gap-2">
             {/* Paired left to right on every screen, not just a desktop: a
                 name and a rating are short, and a column of six full-width
@@ -1037,7 +1029,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
               ]}
             />
           </div>
-        )}
+        </Disclosure>
 
         {failure && <p className="text-destructive text-sm">{failure}</p>}
 
