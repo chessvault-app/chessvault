@@ -35,6 +35,12 @@ export interface GameSummary {
   timeControl: string | null;
   eco: string | null;
   link: string | null;
+  event: string | null;
+  round: string | null;
+  /** Mainline length in plies. */
+  plyCount: number;
+  /** First plies of the mainline as bare SAN tokens, space-separated. */
+  sanPrefix: string | null;
   opening: { eco: string; name: string } | null;
   finalFen: string | null;
   userSide: 'white' | 'black' | null;

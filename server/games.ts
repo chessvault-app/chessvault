@@ -60,6 +60,9 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** How many plies of SAN ride along on a list row; full movetext stays a per-game fetch. */
+const SAN_PREFIX_PLIES = 24;
+
 interface GameSummary {
   file: string;
   index: number;
@@ -72,6 +75,12 @@ interface GameSummary {
   timeControl: string | null;
   eco: string | null;
   link: string | null;
+  event: string | null;
+  round: string | null;
+  /** Mainline length in plies, counted before legality checking. */
+  plyCount: number;
+  /** First plies of the mainline as bare SAN tokens, space-separated. */
+  sanPrefix: string | null;
   opening: Opening | null;
   finalFen: string | null;
   /** Which side the vault's owner played, when it can be determined. */
@@ -160,6 +169,16 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
     const white = h('White') ?? '?';
     const black = h('Black') ?? '?';
     const userSide = userSideOf(white, black, h('VaultSide'), user);
+    const event = h('Event');
+    const round = h('Round');
+    // Counted here rather than in replaySummary: the mainline's node count
+    // is right even for the variant/FEN games replaySummary refuses to walk.
+    let plyCount = 0;
+    const sans: string[] = [];
+    for (const data of game.moves.mainline()) {
+      plyCount += 1;
+      if (sans.length < SAN_PREFIX_PLIES) sans.push(data.san);
+    }
     games.push({
       file: rel,
       index: games.length,
@@ -172,6 +191,10 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
       timeControl: h('TimeControl') ?? null,
       eco: h('ECO') ?? null,
       link: h('Link') ?? (h('Site')?.startsWith('http') ? h('Site')! : null),
+      event: event && event !== '?' ? event : null,
+      round: round && round !== '?' && round !== '-' ? round : null,
+      plyCount,
+      sanPrefix: sans.length ? sans.join(' ') : null,
       userSide,
       ...replaySummary(game),
     });
