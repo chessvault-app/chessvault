@@ -539,7 +539,13 @@ export function HomePage() {
     // top-alignment bought for that was a tall window with all its slack
     // piled below the content. Centring splits the slack instead, which
     // reads as a home rather than a form abandoned mid-page.
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 max-md:grid-rows-[auto_1fr]">
+    // max-md:p-4 is not taste, it is alignment: PageShell insets a phone
+    // by 16px (`px-4 pt-4`), so at p-6 this page's header sat 8px lower
+    // and further right than the header of every page reachable from it
+    // (lanph3re, comparing on the phone). From md the 24px stays — the
+    // desktop has no header row to line up and the dashboard breathes
+    // better for it.
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 max-md:grid-rows-[auto_1fr] max-md:p-4">
       {/* The page's heading — VISIBLE on a phone, a landmark everywhere.
 
           Its history matters, because it has now moved in both directions.
