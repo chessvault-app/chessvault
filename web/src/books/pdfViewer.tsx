@@ -374,10 +374,13 @@ export function PdfScroller({
   // where a point WAS to keep it still. O(pages) per call; a
   // thousand-page book is a thousand additions.
   const flipped = rotation % 180 !== 0;
-  const layoutFor = (w: number): { tops: number[]; heightOf: (n: number) => number } => {
+  const layoutFor = (
+    w: number,
+    flip = flipped,
+  ): { tops: number[]; heightOf: (n: number) => number } => {
     const heightOf = (n: number): number => {
       const a0 = aspects.get(n) ?? baseAspect ?? 1.4142;
-      return Math.round(w * (flipped ? 1 / a0 : a0));
+      return Math.round(w * (flip ? 1 / a0 : a0));
     };
     const tops: number[] = [];
     let acc = PAGE_GAP;
@@ -427,23 +430,33 @@ export function PdfScroller({
     return lo + 1;
   };
   // `view` is the scroll reader's last word — which, on the render that
-  // IS the zoom commit, is from before the relayout, while the tops it is
-  // about to be compared against are the new layout's. Deep in a book
-  // that maps to the WRONG pages: the slot under the eyes fell out of the
-  // rendered range for one commit, its PdfPage unmounted with its bitmap,
-  // and the layout effect's corrected offsets then remounted it as a
-  // fresh component that sat dark for the 120 ms raster delay plus the
-  // raster — the released pinch's page-long flicker (lanph3re's clip;
-  // reproduced at 40% of a 126-page book, where the canvas after release
-  // was a new node). Scaling the stale offset by the layout's own growth
-  // keeps the range on the same pages through the commit — approximately,
-  // since the page gaps do not scale, which RENDER_MARGIN absorbs. After
-  // the commit's layout effects run, lastPageW is current and this is
-  // exactly view.top again.
-  // (Declared here rather than beside lastZoom below: this render reads it.)
+  // IS a zoom or rotation commit, is from before the relayout, while the
+  // tops it is about to be compared against are the new layout's. Deep in
+  // a book that maps to the WRONG pages: the slot under the eyes fell out
+  // of the rendered range for one commit, its PdfPage unmounted with its
+  // bitmap, and the corrected offsets then remounted it as a fresh
+  // component that sat dark for the 120 ms raster delay plus the raster —
+  // the released pinch's page-long flicker (lanph3re's clip; reproduced
+  // at 40% of the 126-page book). The stale offset is mapped through the
+  // OLD layout's slots into the new one — the same walk the zoom anchor
+  // does — because a scalar cannot say it: a zoom scales widths, a
+  // rotation flips every height at constant width (the first fix scaled
+  // by width alone, and a mid-book rotation still remounted every visible
+  // page — measured, canvases all fresh). After the commit's layout
+  // effects run, the remembered layout is current and this is exactly
+  // view.top again.
+  // (Declared here rather than beside lastZoom below: this render reads them.)
   const lastPageW = useRef(pageW);
-  const staleness = pageW / lastPageW.current;
-  const viewTop = view.top * staleness;
+  const lastFlipped = useRef(flipped);
+  let viewTop = view.top;
+  if (lastPageW.current !== pageW || lastFlipped.current !== flipped) {
+    const old = layoutFor(lastPageW.current, lastFlipped.current);
+    let n = 1;
+    while (n < pages && (old.tops[n] ?? Infinity) <= view.top) n++;
+    const into = view.top - (old.tops[n - 1] ?? 0);
+    const frac = Math.min(1, into / Math.max(1, old.heightOf(n)));
+    viewTop = (tops[n - 1] ?? 0) + frac * heightOf(n);
+  }
   const first = pages > 0 ? slotAt(viewTop) : 1;
   const last = pages > 0 ? slotAt(viewTop + view.height) : 1;
   const current = pages > 0 ? slotAt(viewTop + view.height * 0.35) : 1;
@@ -472,7 +485,17 @@ export function PdfScroller({
   // frame at the new size but the old scroll offset — half the released
   // pinch's flicker.
   useLayoutEffect(() => {
-    if (lastZoom.current === zoom) return;
+    // A ROTATION corrects here too, not only a zoom. Its own re-anchor
+    // (the page-top re-ask below) is a PASSIVE effect, and that is too
+    // late: after this commit's paint, the ResizeObserver's setView
+    // re-renders the range from the raw stale offset against the flipped
+    // tops before the re-ask has scrolled — deep in a book that mapped to
+    // the wrong pages and remounted every visible canvas (measured on
+    // the new-build check: survived 0 of 4, both directions). Correcting
+    // scrollTop before paint keeps every intermediate render on the same
+    // pages; the re-ask then snaps to the page top as it always has.
+    const turned = lastFlipped.current !== flipped;
+    if (lastZoom.current === zoom && !turned) return;
     const ratio = zoom / lastZoom.current;
     lastZoom.current = zoom;
     const el = viewportRef.current;
@@ -496,7 +519,7 @@ export function PdfScroller({
     // slot's height above the anchor — ~1.4 px a page, a triple-digit
     // jump deep in a book, and exactly the zoom-out flicker that survived
     // the first fix (zoom-in tended to land on the same rounding).
-    const old = layoutFor(lastPageW.current);
+    const old = layoutFor(lastPageW.current, lastFlipped.current);
     const oldY = oldTop + a.y;
     // The slot the point was in, and how far through. The page scales,
     // the 12 px gap under it does not — mapped as one span the gap's
@@ -515,10 +538,11 @@ export function PdfScroller({
     // paint, so they mount in this same commit.
     setView({ top: el.scrollTop, height: el.clientHeight });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom]);
+  }, [zoom, flipped]);
   // After the anchor has used it: what this render laid out with.
   useLayoutEffect(() => {
     lastPageW.current = pageW;
+    lastFlipped.current = flipped;
   });
   // A rotation too: every slot changes height, and the page being read
   // must be asked for again at its new offset before the scroll reader
