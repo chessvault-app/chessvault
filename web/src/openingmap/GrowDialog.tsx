@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
 import { MY_GAMES_SOURCE } from '@/repertoire/field';
@@ -225,6 +225,9 @@ export function GrowDialog({
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>
+          {/* GitBranch, not Sparkles: growing adds branches to the map,
+              read off games the user already played. Nothing here is
+              conjured, and the icon should not say it is. */}
           <Button
             variant="default"
             size="sm"
@@ -234,7 +237,7 @@ export function GrowDialog({
               onClose();
             }}
           >
-            <Sparkles className="size-3.5" data-icon="inline-start" /> {t('Chart them')}
+            <GitBranch className="size-3.5" data-icon="inline-start" /> {t('Chart them')}
           </Button>
         </div>
       </DialogContent>

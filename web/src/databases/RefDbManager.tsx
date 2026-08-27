@@ -1,4 +1,4 @@
-import { Database, FileText, Plus, Sparkles, Trash2, Upload } from 'lucide-react';
+import { Database, FileText, Hammer, Plus, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -583,9 +583,14 @@ function DbList({
           </Button>
           {/* Housekeeping in the build slot: duplicates out, derived
               tables re-derived, space returned. Asked first — it can run
-              for minutes on a big database. */}
+              for minutes on a big database.
+              The hammer says rebuild, which is what this is. It was
+              Sparkles, and sparkles promise a result you are not meant to
+              look at — the wrong thing to put on a job that rewrites the
+              user's database and states in the same breath exactly which
+              three things it does. */}
           <ConfirmDialog
-            icon={Sparkles}
+            icon={Hammer}
             triggerClassName="shrink-0"
             disabled={optimizeDisabled}
             // Heavy, not destructive: the question is about the minutes,

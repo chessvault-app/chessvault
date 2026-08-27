@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Plus, Repeat, Scissors, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -527,7 +527,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                   <Plus className="size-3.5" data-icon="inline-start" /> {t('Add a move')}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => setGrowFrom(map.root.id)}>
-                  <Sparkles className="size-3.5" data-icon="inline-start" /> {t('Grow from my games')}
+                  <GitBranch className="size-3.5" data-icon="inline-start" /> {t('Grow from my games')}
                 </Button>
               </div>
             }
@@ -1401,7 +1401,7 @@ function NodePanel({
           onSelect={onAddMove}
         />
         <PanelAction
-          icon={Sparkles}
+          icon={GitBranch}
           label="Grow"
           title="Chart what your games already play from here"
           disabled={facts.fen === null}
