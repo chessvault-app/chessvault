@@ -556,18 +556,19 @@ export function HomePage() {
           those grounds are DESKTOP grounds: a phone has no sidebar and no
           window chrome, so below md the launcher opened under a strip of
           nothing where every other page shows its header (lanph3re, on
-          the phone). So the heading is drawn there again — the sidebar's
-          own brand row at the header type size, top-left in the first
+          the phone). So the heading is drawn there again — the bare mark
+          beside the name at the header type size, top-left in the first
           grid row while the launcher keeps the second row's centring —
-          and from md it returns to sr-only, because there the sidebar IS
-          this row, one flex-line to the left.
+          and from md it returns to sr-only, because there the sidebar
+          carries the same pair, one flex-line to the left.
 
           One h1 in both states: deleting it outright would leave the only
           route in the app with no heading at all. */}
       <h1 className="flex items-center gap-2.5 justify-self-start max-md:mb-2 md:sr-only">
-        <span className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-lg">
-          <BrandMark className="size-5" />
-        </span>
+        {/* The mark bare, not on the sidebar's primary tile (lanph3re):
+            a page header is type, and a filled tile beside it read as a
+            button. currentColor keeps it in the heading's own ink. */}
+        <BrandMark className="size-6 shrink-0" />
         <span className="text-xl font-semibold tracking-tight">{t('Chess Vault')}</span>
       </h1>
       <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl">
