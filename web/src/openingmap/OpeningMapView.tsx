@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Play, Plus, Repeat, Scissors, ScrollText, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Check, ChevronUp, Compass, Crosshair, Folder, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Play, Plus, Repeat, Scissors, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -1123,7 +1123,7 @@ function NodePanel({
               : tag.kind === 'note'
                 ? NotebookPen
                 : tag.kind === 'game'
-                  ? ScrollText
+                  ? Folder
                   : Library;
             return (
               <div

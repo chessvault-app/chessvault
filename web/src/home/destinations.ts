@@ -2,13 +2,13 @@ import {
   BookMarked,
   BookOpen,
   Database,
+  Folder,
   Grid3x3,
   Library,
   Network,
   NotebookPen,
   Puzzle,
   Repeat,
-  ScrollText,
   Settings,
   SquarePen,
   Table2,
@@ -30,9 +30,18 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
  * The glyphs are LITERAL, not evocative. Games wore crossed swords, the
  * explorer a compass and the repertoire a swatch book — a games console,
  * an expedition and a paint shop, for a folder of recorded games, a table
- * of continuations and a drill. A scoresheet, a table and a repeat sign
- * say what each one is, and an icon that has to be decoded is worse than
- * none.
+ * of continuations and a drill. A table and a repeat sign say what those
+ * two are, and an icon that has to be decoded is worse than none.
+ *
+ * Literal is not enough on its own, though: the glyph has to separate
+ * this entry from the ones beside it, and everything in this list is
+ * chess. Games was a scoresheet for two days, which is what a game score
+ * is — but a scoresheet is paper, and so are Studies, Notes, Books and
+ * Puzzle books, so the sidebar held five sheets of stationery telling
+ * each other apart by their line spacing. A folder is the one thing here
+ * that is a CONTAINER of files, which is what the collection is and what
+ * `FolderInput` and `FolderPlus` already call it on the analysis board.
+ * A chess piece fails the same test harder: it names the whole app.
  *
  * `App.tsx` still keeps its own NAV / TOOLS_SUBNAV / MORE_GROUPS lists.
  * Folding those in is a bigger change — they carry grouping and
@@ -92,7 +101,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     id: 'games',
     label: 'Games',
     blurb: 'Your collection, annotated',
-    icon: ScrollText,
+    icon: Folder,
     nav: ['games'],
     count: 'games',
   },

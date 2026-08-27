@@ -66,10 +66,24 @@ A glyph names the thing, not what it evokes. Games wore crossed swords,
 the explorer a compass, the repertoire a swatch book and "index this
 database" a hammer — a games console, an expedition, a paint shop and a
 building site, for a folder of recorded games, a table of continuations,
-a drill and a scan of games already on disk. They are a scoresheet, a
-table, a repeat sign and `ScanSearch` now. An icon that has to be decoded
-is worse than no icon, and crossed swords in particular is the glyph a
+a drill and a scan of games already on disk. They are a folder, a table,
+a repeat sign and `ScanSearch` now. An icon that has to be decoded is
+worse than no icon, and crossed swords in particular is the glyph a
 chess app reaches for when it wants to be a game.
+
+Naming the thing is half of it; the glyph also has to separate its item
+from the ones beside it. Games was `ScrollText` for two days, which a
+game score literally is — but a scoresheet is paper, and Studies, Notes,
+Books and Puzzle books are paper too, so the sidebar carried five sheets
+of stationery distinguished by their line spacing. `Folder` is the one
+container of files in that list, which is what the collection is, and
+what `FolderInput` and `FolderPlus` already call it on the analysis
+board. This is also why nothing in the nav is a chess piece, quite apart
+from the mark's own reason below: in a list where every entry is chess,
+a pawn names the application, not the entry. Pieces keep the two jobs
+they hold elsewhere — `KnightIcon` for *this is chess*, `KingIcon` for
+*this side* — and a third job would make a piece mean nothing until you
+noticed where it was sitting.
 
 Nothing is magic, so nothing wears sparkles. `Sparkles` sat on the
 opening map's "Grow from my games" and on a reference database's

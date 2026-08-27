@@ -3,10 +3,10 @@ import {
   SearchX,
   SlidersHorizontal,
   ExternalLink,
+  Folder,
   Globe,
   Pencil,
   Plus,
-  ScrollText,
   Trash2,
   Database as DatabaseIcon,
   X,
@@ -635,7 +635,7 @@ export function CollectionView() {
               // when that row is above; with no filters there is no line,
               // as before.
               className={cn('min-h-0 flex-1', games.length > 0 && 'border-border border-t')}
-              icon={ScrollText}
+              icon={Folder}
               title="Your collection is empty"
               body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
               action={
@@ -661,7 +661,7 @@ export function CollectionView() {
                 body="Bookmark a game from the list and it is kept here, one press from wherever you are."
                 action={
                   <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
-                    <ScrollText className="size-3.5" data-icon="inline-start" />
+                    <Folder className="size-3.5" data-icon="inline-start" />
                     {t('Browse all games')}
                   </Button>
                 }

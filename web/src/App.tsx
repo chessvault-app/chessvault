@@ -6,6 +6,7 @@ import {
   BookOpen,
   Database,
   Ellipsis,
+  Folder,
   House,
   LayoutGrid,
   Library,
@@ -13,7 +14,6 @@ import {
   NotebookPen,
   Puzzle,
   Repeat,
-  ScrollText,
   Settings,
   Table2,
   Wrench,
@@ -69,8 +69,8 @@ const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((
 // but the bar already carries Home + four + More, and a seventh tab on a
 // 360px phone gives every tab about 50px to hold the longest label in
 // the app. So the phone keeps reaching it through More.
-const NAV: { section: Section; label: string; icon: typeof ScrollText }[] = [
-  { section: 'games', label: 'Games', icon: ScrollText },
+const NAV: { section: Section; label: string; icon: typeof Folder }[] = [
+  { section: 'games', label: 'Games', icon: Folder },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
   // Books is a collection like the three above it, so it is a sidebar
@@ -87,7 +87,7 @@ const NAV: { section: Section; label: string; icon: typeof ScrollText }[] = [
 const TOOLS_SUBNAV: {
   key: string;
   label: string;
-  icon: typeof ScrollText;
+  icon: typeof Folder;
   nav: [Section, ...string[]];
   active: (section: Section, params: string[]) => boolean;
 }[] = [
@@ -317,7 +317,7 @@ function SubNavItem({
   onClick,
 }: {
   label: string;
-  icon: typeof ScrollText;
+  icon: typeof Folder;
   active: boolean;
   onClick: () => void;
 }) {
@@ -486,7 +486,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
     a phone (the chess.com/Lichess pattern), so they live here. */
 const MORE_GROUPS: {
   heading: string;
-  items: { section: Section; param?: string; label: string; icon: typeof ScrollText; blurb: string }[];
+  items: { section: Section; param?: string; label: string; icon: typeof Folder; blurb: string }[];
 }[] = [
   {
     heading: 'Tools',
@@ -662,7 +662,7 @@ function Placeholder({ section }: { section: Section }) {
     <div className="grid h-full place-items-center p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
-          <ScrollText className="size-6" strokeWidth={1.75} />
+          <Folder className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight capitalize">{section}</h1>
         <p className="text-muted-foreground text-base leading-relaxed">{t("This page isn't available.")}</p>
