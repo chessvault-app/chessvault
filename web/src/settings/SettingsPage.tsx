@@ -574,12 +574,28 @@ function AppearanceCard() {
         />
       </Field>
 
+      {/* Above the fold with the board it labels, not behind More options.
+          It went in with Corners and Annotation size on the grounds that
+          all three are decoration, and it is not: file and rank letters
+          are how a position is READ, and whether they are there is a
+          legibility choice somebody makes once and wants to find. */}
+      <SettingRow
+        title={t('Board coordinates')}
+        blurb={t('File and rank labels on the board edge.')}
+      >
+        <Switch
+          checked={coordinates}
+          onCheckedChange={() => setCoordinates(!coordinates)}
+          aria-label={t('Board coordinates')}
+        />
+      </SettingRow>
+
       {/* The card was nine controls in one flat column, and a flat column
-          says every row is worth the same glance. These three are not: two
-          are how the app is DRAWN rather than what it draws, and the third
-          is a label toggle. What stays above the fold is what a vault is
-          set up with once — the language every other label on this page is
-          in, the theme, the colours, the board and its pieces, and how a
+          says every row is worth the same glance. These two are not: they
+          are how the app is DRAWN rather than what it draws. What stays
+          above the fold is what a vault is set up with once — the language
+          every other label on this page is in, the theme, the density, the
+          colours, the board with its pieces and coordinates, and how a
           castle is entered.
 
           Nothing is removed and nothing is more than one press away. The
@@ -613,17 +629,6 @@ function AppearanceCard() {
               groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
             />
           </Field>
-
-          <SettingRow
-            title={t('Board coordinates')}
-            blurb={t('File and rank labels on the board edge.')}
-          >
-            <Switch
-              checked={coordinates}
-              onCheckedChange={() => setCoordinates(!coordinates)}
-              aria-label={t('Board coordinates')}
-            />
-          </SettingRow>
         </div>
       </Disclosure>
     </Card>
