@@ -24,6 +24,7 @@ import {
   type StructuredFilters,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell } from './GameListShell';
@@ -82,6 +83,134 @@ const HELD: { plies: number; label: string }[] = [
   { plies: 8, label: 'Held 4+ moves' },
   { plies: 16, label: 'Held 8+ moves' },
 ];
+
+/**
+ * The custom material editor's vocabulary: per piece, per side, one of
+ * a curated set of count ranges rather than two bare number fields —
+ * every real question ("no queens", "exactly one rook", "a pair of
+ * knights at most") is one pick, and an impossible range (min above
+ * max) cannot be built at all. '2+' is open-ended: the spec's ceiling
+ * is 10, past any promotion spree worth searching for.
+ */
+const RANGE_CHOICES: { id: string; label: string; range: [number, number] | null }[] = [
+  { id: 'any', label: 'Any', range: null },
+  { id: '0', label: '0', range: [0, 0] },
+  { id: '1', label: '1', range: [1, 1] },
+  { id: '2', label: '2', range: [2, 2] },
+  { id: '0-1', label: '0–1', range: [0, 1] },
+  { id: '1-2', label: '1–2', range: [1, 2] },
+  { id: '2+', label: '2+', range: [2, 10] },
+];
+
+const PIECES: { letter: 'p' | 'n' | 'b' | 'r' | 'q'; label: string }[] = [
+  { letter: 'p', label: 'Pawns' },
+  { letter: 'n', label: 'Knights' },
+  { letter: 'b', label: 'Bishops' },
+  { letter: 'r', label: 'Rooks' },
+  { letter: 'q', label: 'Queens' },
+];
+
+type CustomDraft = Record<'white' | 'black', Record<string, string>>;
+type CustomSpec = Record<'white' | 'black', Record<string, [number, number]>>;
+
+const EMPTY_CUSTOM: CustomDraft = { white: {}, black: {} };
+
+/** The draft's non-Any picks as the spec the server takes; null when
+    nothing is constrained (the server refuses a spec that would match
+    every game, and so does the Apply button). */
+function draftToSpec(draft: CustomDraft): CustomSpec | null {
+  const side = (from: Record<string, string>): Record<string, [number, number]> => {
+    const out: Record<string, [number, number]> = {};
+    for (const { letter } of PIECES) {
+      const range = RANGE_CHOICES.find((c) => c.id === (from[letter] ?? 'any'))?.range;
+      if (range) out[letter] = range;
+    }
+    return out;
+  };
+  const spec = { white: side(draft.white), black: side(draft.black) };
+  return Object.keys(spec.white).length + Object.keys(spec.black).length > 0 ? spec : null;
+}
+
+/**
+ * The custom material spec, drafted in a window and applied on Done —
+ * the StructuredFiltersWindow pattern: ten picks are a form to be READ,
+ * not chips to tap live, and a hunt re-run per pick would be noise.
+ */
+function CustomMaterialWindow({
+  initial,
+  onApply,
+  onClose,
+}: {
+  initial: CustomDraft;
+  onApply: (draft: CustomDraft, spec: CustomSpec) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<CustomDraft>(initial);
+  const spec = draftToSpec(draft);
+  const sideGrid = (side: 'white' | 'black', label: string) => (
+    <Field label={label}>
+      <div className="grid w-full grid-cols-5 gap-1.5">
+        {PIECES.map(({ letter, label: piece }) => (
+          <div key={letter} className="flex min-w-0 flex-col gap-1">
+            <span className="text-muted-foreground truncate text-xs">{t(piece)}</span>
+            <Select
+              value={draft[side][letter] ?? 'any'}
+              onValueChange={(v) =>
+                setDraft((d) => ({ ...d, [side]: { ...d[side], [letter]: v } }))
+              }
+              ariaLabel={`${t(label)} — ${t(piece)}`}
+              size="sm"
+              className="w-full"
+              groups={[
+                { options: RANGE_CHOICES.map((c) => ({ value: c.id, label: t(c.label) })) },
+              ]}
+            />
+          </div>
+        ))}
+      </div>
+    </Field>
+  );
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Custom material" icon={ScanSearch}>
+        {sideGrid('white', 'White has')}
+        {sideGrid('black', 'Black has')}
+        {/* The refusal the server would give, said before the press. */}
+        {!spec && (
+          <p className="text-muted-foreground text-sm">
+            {t('Pick at least one count, or every game matches.')}
+          </p>
+        )}
+        <div className="mt-1 flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-auto"
+            onClick={() => setDraft(EMPTY_CUSTOM)}
+          >
+            {t('Clear')}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            disabled={!spec}
+            onClick={() => spec && onApply(draft, spec)}
+          >
+            {t('Apply')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /**
  * Browse the reference database (data/refgames.sqlite — Lichess Elite or
@@ -219,6 +348,12 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   const [rung, setRung] = useState<MatchMode>('exact');
   const [presetId, setPresetId] = useState<string>(ENDGAMES[0]!.id);
   const [heldPlies, setHeldPlies] = useState(1);
+  // The custom spec: the draft survives the window closing so a reopen
+  // edits what was applied, and presetId only becomes 'custom' WITH a
+  // spec in hand — a cancelled first visit leaves the preset standing.
+  const [customDraft, setCustomDraft] = useState<CustomDraft>(EMPTY_CUSTOM);
+  const [customSpec, setCustomSpec] = useState<CustomSpec | null>(null);
+  const [editingCustom, setEditingCustom] = useState(false);
   const [huntRows, setHuntRows] = useState<RefGame[] | null>(null);
   const [hunting, setHunting] = useState(false);
   const [huntProgress, setHuntProgress] = useState<{ scanned: number; total: number } | null>(null);
@@ -258,6 +393,15 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   }, []);
 
   const runHunt = useCallback(async (): Promise<void> => {
+    // Resolved before any state moves: a custom pick with no spec has
+    // nothing to run (the Search button is disabled then too).
+    const material =
+      huntKind === 'material'
+        ? presetId === 'custom'
+          ? customSpec
+          : (ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!).spec
+        : null;
+    if (huntKind === 'material' && !material) return;
     const mine = ++huntSeq.current;
     setHunting(true);
     setHuntRows([]);
@@ -273,8 +417,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
         params.set('fen', huntFen.trim());
         if (rung !== 'exact') params.set('match', rung);
       } else {
-        const preset = ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!;
-        params.set('material', JSON.stringify({ ...preset.spec, stable: heldPlies }));
+        params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
       }
       const res = await fetch(`/api/refgames/deep-search?${params.toString()}`);
       if (res.status === 400) {
@@ -324,7 +467,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       setHunting(false);
       if (!sawDone && huntSeq.current === mine) setHuntFailed((f) => f ?? 'failed');
     }
-  }, [applyFilters, curDb, huntKind, huntFen, rung, presetId, heldPlies]);
+  }, [applyFilters, curDb, huntKind, huntFen, rung, presetId, heldPlies, customSpec]);
 
   // Meta can fail like any other request — a raw fetch here used to leave
   // the pane wedged on nothing at all, with the rejection unhandled. The
@@ -835,12 +978,34 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
         <>
           <Select
             value={presetId}
-            onValueChange={setPresetId}
+            onValueChange={(v) => {
+              // Picking Custom… opens the editor; the pick only lands
+              // when Apply builds a spec (see CustomMaterialWindow).
+              if (v === 'custom') setEditingCustom(true);
+              else setPresetId(v);
+            }}
             ariaLabel={t('Material')}
             size="sm"
             className="min-w-0 flex-1"
-            groups={[{ options: ENDGAMES.map((p) => ({ value: p.id, label: t(p.label) })) }]}
+            groups={[
+              {
+                options: [
+                  ...ENDGAMES.map((p) => ({ value: p.id, label: t(p.label) })),
+                  { value: 'custom', label: t('Custom…') },
+                ],
+              },
+            ]}
           />
+          {presetId === 'custom' && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Edit the custom material')}
+              onClick={() => setEditingCustom(true)}
+            >
+              <SlidersHorizontal className="size-3.5" />
+            </Button>
+          )}
           <Select
             value={String(heldPlies)}
             onValueChange={(v) => setHeldPlies(Number(v))}
@@ -855,7 +1020,11 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       <Button
         variant="default"
         size="sm"
-        disabled={hunting || (huntKind === 'position' && huntFen.trim() === '')}
+        disabled={
+          hunting ||
+          (huntKind === 'position' && huntFen.trim() === '') ||
+          (huntKind === 'material' && presetId === 'custom' && customSpec === null)
+        }
         onClick={() => void runHunt()}
       >
         <ScanSearch className="size-3.5" data-icon="inline-start" />
@@ -973,6 +1142,18 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
         ) : undefined
       }
     />
+    {editingCustom && (
+      <CustomMaterialWindow
+        initial={customDraft}
+        onApply={(draft, spec) => {
+          setCustomDraft(draft);
+          setCustomSpec(spec);
+          setPresetId('custom');
+          setEditingCustom(false);
+        }}
+        onClose={() => setEditingCustom(false)}
+      />
+    )}
     <GamePreview preview={preview} onClose={hidePreview} />
     </>
   );
