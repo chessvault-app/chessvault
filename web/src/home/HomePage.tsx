@@ -9,7 +9,7 @@ import { ListRow } from '@/components/list-row';
 import { Skeleton } from '@/components/skeletons';
 import { useDifficultyWord } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
-import { HOME_DESTINATIONS, type HomeCount } from './destinations';
+import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
 
 // Lazy, alone among this page's imports, and for the same reason the page
@@ -93,8 +93,72 @@ function latest(v: unknown): DocMeta | null {
   return [...list].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null;
 }
 
+/** Module scope so the row's buttons can reach it too — and because a
+    formatter with fixed options has no reason to be rebuilt per render. */
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
 /** A study id is a path; the card shows its name. */
 const baseName = (id: string): string => id.split('/').at(-1) ?? id;
+
+/**
+ * One destination as a row button: the shape the demoted entries have
+ * always had, and from md the shape the tiles take too.
+ *
+ * Below sm it is the phone's launcher cell — icon over a label free to
+ * break ("Puzzle books") inside its column. From sm it is an ordinary
+ * ghost button in a wrapping, centred row.
+ *
+ * The COUNT only appears from md, which is exactly where this button
+ * starts standing in for a tile. It is what the tile carried and the row
+ * never did, and it must not arrive on the phone's cells, where the label
+ * already wraps to two lines in a fifth of the width. Its place is held
+ * while the vault is still answering: the row wraps and centres, so a
+ * number landing late does not merely widen one button, it can re-flow
+ * the line under it.
+ */
+function LauncherButton({
+  entry,
+  counts,
+  className,
+}: {
+  entry: Destination;
+  /** Null until the vault has answered — which is not the same as a zero. */
+  counts: Partial<Record<HomeCount, number>> | null;
+  className?: string;
+}) {
+  const { label, icon: Icon, nav, count } = entry;
+  const value = count !== undefined ? counts?.[count] : undefined;
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => navigate(...nav)}
+      className={cn(
+        'max-sm:h-auto max-sm:flex-col max-sm:gap-1.5 max-sm:whitespace-normal',
+        'max-sm:rounded-lg max-sm:px-1 max-sm:py-2',
+        'max-sm:text-center max-sm:text-xs max-sm:leading-tight',
+        // The size's own coarse-pointer overrides would win the
+        // cascade back without coarse-specific counters.
+        'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',
+        className,
+      )}
+    >
+      <Icon className="size-3.5 shrink-0 max-sm:size-4" />
+      {t(label)}
+      {/* Board and Editor are tools and carry no number, so they reserve
+          no room for one either. */}
+      {count !== undefined && (
+        <span className="text-muted-foreground max-md:hidden font-mono text-xs font-normal">
+          {value !== undefined ? (
+            compact.format(value)
+          ) : counts === null ? (
+            <Skeleton className="inline-block h-2 w-4 align-middle" />
+          ) : null}
+        </span>
+      )}
+    </Button>
+  );
+}
 
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
@@ -253,7 +317,6 @@ export function HomePage() {
     })();
   };
 
-  const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
   // The grid, the row underneath it, and what has been asked off the page
   // altogether. Everything in the catalogue is in exactly one of the
@@ -495,7 +558,13 @@ export function HomePage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {/* Tiles are the PHONE's navigation, and only the phone's. From md
+            the sidebar is on screen carrying the same destinations, so a
+            grid of cards beside it was the same list twice — once with
+            blurbs. Hiding it outright would have left a desktop with one
+            Continue card floating in the middle of the window, so what
+            happens instead is below: the row takes the tiles in. */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:hidden">
           {tiles.map(({ id, label, blurb, icon: Icon, nav, count }) => (
             <button
               key={id}
@@ -540,29 +609,27 @@ export function HomePage() {
             the one number that varies is set as a style. Up to five share
             the row; beyond that they wrap in fours or fives, never leaving
             a single orphan on the last line. */}
-        {launchers.length > 0 && (
+        {tiles.length + launchers.length > 0 && (
         <div
-          className="mt-4 grid gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5"
+          className={cn(
+            'mt-4 grid gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5',
+            // Below md the row is the demoted entries alone; with none of
+            // them it is an empty box, and its mt-4 would still be there.
+            launchers.length === 0 && 'max-md:hidden',
+          )}
+          // Only the launchers are on screen below sm (the tiles carry
+          // max-md:hidden), so the column count is still theirs. A
+          // display:none child takes no grid cell.
           style={{ gridTemplateColumns: `repeat(${launcherColumns(launchers.length)}, minmax(0, 1fr))` }}
         >
-          {launchers.map(({ id, label, icon: Icon, nav }) => (
-            <Button
-              key={id}
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(...nav)}
-              className={cn(
-                'max-sm:h-auto max-sm:flex-col max-sm:gap-1.5 max-sm:whitespace-normal',
-                'max-sm:rounded-lg max-sm:px-1 max-sm:py-2',
-                'max-sm:text-center max-sm:text-xs max-sm:leading-tight',
-                // The size's own coarse-pointer overrides would win the
-                // cascade back without coarse-specific counters.
-                'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',
-              )}
-            >
-              <Icon className="size-3.5 shrink-0 max-sm:size-4" />
-              {t(label)}
-            </Button>
+          {/* The tiles, as row buttons, from md — where the grid above has
+              gone. Same entries, same order the user put them in, without
+              the card treatment the sidebar already duplicates. */}
+          {tiles.map((entry) => (
+            <LauncherButton key={entry.id} entry={entry} counts={data?.counts ?? null} className="max-md:hidden" />
+          ))}
+          {launchers.map((entry) => (
+            <LauncherButton key={entry.id} entry={entry} counts={data?.counts ?? null} />
           ))}
         </div>
         )}
