@@ -460,7 +460,13 @@ function DialogContent({
               </Button>
             )}
             {Icon && <Icon className="text-muted-foreground size-4 shrink-0" />}
-            <DialogTitle className="min-w-0 flex-1 truncate">{t(title)}</DialogTitle>
+            {/* py-1 -my-1: truncate's overflow-hidden clips at the PADDING
+                edge, and DialogTitle's leading-none makes the line box
+                exactly one em — so a descender ('g' in "Opening") was
+                sheared flat on every titled window. The padding gives the
+                glyphs room inside the clip box; the negative margin gives
+                the row its height back, so nothing else moves. */}
+            <DialogTitle className="-my-1 min-w-0 flex-1 truncate py-1">{t(title)}</DialogTitle>
             {actions}
             {/* A way out for the mouse, and only for the mouse: a phone
                 has three already — drag the sheet down, tap the scrim,
