@@ -230,7 +230,14 @@ function ActionSheetBody({
       }}
     >
       <DialogContent size="sm" title={title} className="gap-0">
-        {detail}
+        {/* pt-3.5 gives back what the title strip's -mb-3.5 takes: that
+            reach-through is written against the card's default gap-4, and
+            this sheet sets gap-0, so an unpadded first child is pulled
+            14px up UNDER the opaque sticky strip — seen on the studies
+            shelf, where the collection note's first line rose clipped
+            flush at the strip's edge. The rows below survive the same
+            pull only because their py-3 absorbs it. */}
+        {detail && <div className="pt-3.5">{detail}</div>}
         {/* -mx-2: a row's icon starts where the title does, the way a
             dropdown's label text sits over its items' icons. With the
             rows inside the sheet's padding, the title, the icons and the
