@@ -4,9 +4,12 @@
 //! answered". A failure is a silent-wrong-answers bug, never a nit.
 
 use serde::Deserialize;
-use shakmaty::{fen::Fen, CastlingMode, Chess};
+use shakmaty::{fen::Fen, CastlingMode, Chess, Position};
 
 use chessvault_core::index::{elo_bucket, final_men, replay_plies, result_code};
+use chessvault_core::scan_match::{
+    material_men_bounds, material_satisfied, match_signature, MaterialSpec, Rung,
+};
 use chessvault_core::zobrist::{hash_position, to_db_key};
 
 #[derive(Deserialize)]
@@ -20,6 +23,44 @@ struct Goldens {
     #[serde(rename = "finalMen")]
     final_men: Vec<MenGolden>,
     games: Vec<GameGolden>,
+    signatures: Vec<SignatureGolden>,
+    #[serde(rename = "materialSpecs")]
+    material_specs: Vec<MaterialSpecGolden>,
+}
+
+#[derive(Deserialize)]
+struct SignatureGolden {
+    fen: String,
+    why: String,
+    pawns: String,
+    files: String,
+    material: String,
+}
+
+#[derive(Deserialize)]
+struct MaterialSpecGolden {
+    why: String,
+    canonical: String,
+    bounds: BoundsGolden,
+    cases: Vec<MaterialCaseGolden>,
+}
+
+#[derive(Deserialize)]
+struct BoundsGolden {
+    #[serde(rename = "loW")]
+    lo_w: i64,
+    #[serde(rename = "hiW")]
+    hi_w: i64,
+    #[serde(rename = "loB")]
+    lo_b: i64,
+    #[serde(rename = "hiB")]
+    hi_b: i64,
+}
+
+#[derive(Deserialize)]
+struct MaterialCaseGolden {
+    fen: String,
+    satisfied: bool,
 }
 
 #[derive(Deserialize)]
@@ -151,6 +192,64 @@ fn final_men_matches() {
             "finalMen of {:?}",
             golden.moves
         );
+    }
+}
+
+#[test]
+fn ladder_signatures_match() {
+    for golden in &load().signatures {
+        let fen: Fen = golden.fen.parse().expect("golden fen parses");
+        let pos: Chess = fen
+            .into_position(CastlingMode::Chess960)
+            .expect("golden fen is a position");
+        for (rung, wanted) in [
+            (Rung::Pawns, &golden.pawns),
+            (Rung::Files, &golden.files),
+            (Rung::Material, &golden.material),
+        ] {
+            assert_eq!(
+                &match_signature(pos.board(), rung),
+                wanted,
+                "signature of {} ({})",
+                golden.fen,
+                golden.why
+            );
+        }
+    }
+}
+
+#[test]
+fn material_specs_match() {
+    // The canonical string is the exact argv the server sends: parsing
+    // it, the bounds and every per-position verdict must agree with the
+    // JS side that wrote the fixture.
+    for golden in &load().material_specs {
+        let spec: MaterialSpec = serde_json::from_str(&golden.canonical)
+            .unwrap_or_else(|e| panic!("{} did not parse: {e}", golden.why));
+        assert_eq!(
+            material_men_bounds(&spec),
+            (
+                golden.bounds.lo_w,
+                golden.bounds.hi_w,
+                golden.bounds.lo_b,
+                golden.bounds.hi_b
+            ),
+            "bounds of {}",
+            golden.why
+        );
+        for case in &golden.cases {
+            let fen: Fen = case.fen.parse().expect("golden fen parses");
+            let pos: Chess = fen
+                .into_position(CastlingMode::Chess960)
+                .expect("golden fen is a position");
+            assert_eq!(
+                material_satisfied(pos.board(), &spec),
+                case.satisfied,
+                "{} on {}",
+                golden.why,
+                case.fen
+            );
+        }
     }
 }
 

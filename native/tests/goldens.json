@@ -7975,5 +7975,339 @@
     }
    ]
   }
+ ],
+ "signatures": [
+  {
+   "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+   "why": "startpos",
+   "pawns": "p:8,2,2,2,1-8,2,2,2,1:8.9.10.11.12.13.14.15/48.49.50.51.52.53.54.55",
+   "files": "f:8,2,2,2,1-8,2,2,2,1:11111111/11111111",
+   "material": "m:8,2,2,2,1-8,2,2,2,1"
+  },
+  {
+   "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+   "why": "ep square written but no capturer — normalisation must drop it",
+   "pawns": "p:8,2,2,2,1-8,2,2,2,1:8.9.10.11.13.14.15.28/36.48.49.50.51.53.54.55",
+   "files": "f:8,2,2,2,1-8,2,2,2,1:11111111/11111111",
+   "material": "m:8,2,2,2,1-8,2,2,2,1"
+  },
+  {
+   "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+   "why": "the same position without the ep field — must hash equal to the row above",
+   "pawns": "p:8,2,2,2,1-8,2,2,2,1:8.9.10.11.13.14.15.28/36.48.49.50.51.53.54.55",
+   "files": "f:8,2,2,2,1-8,2,2,2,1:11111111/11111111",
+   "material": "m:8,2,2,2,1-8,2,2,2,1"
+  },
+  {
+   "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+   "why": "legal en passant (exd6) — ep file IS hashed",
+   "pawns": "p:8,2,2,2,1-8,2,2,2,1:8.9.10.11.13.14.15.36/34.35.48.49.52.53.54.55",
+   "files": "f:8,2,2,2,1-8,2,2,2,1:11111111/11111111",
+   "material": "m:8,2,2,2,1-8,2,2,2,1"
+  },
+  {
+   "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+   "why": "ep capture would expose the king along the rank — illegal, ep dropped",
+   "pawns": "p:1,0,0,0,1-1,0,0,0,0:27/28",
+   "files": "f:1,0,0,0,1-1,0,0,0,0:00010000/00001000",
+   "material": "m:1,0,0,0,1-1,0,0,0,0"
+  },
+  {
+   "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+   "why": "all four castling rights",
+   "pawns": "p:0,0,0,2,0-0,0,0,2,0:/",
+   "files": "f:0,0,0,2,0-0,0,0,2,0:00000000/00000000",
+   "material": "m:0,0,0,2,0-0,0,0,2,0"
+  },
+  {
+   "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+   "why": "partial castling rights",
+   "pawns": "p:0,0,0,2,0-0,0,0,2,0:/",
+   "files": "f:0,0,0,2,0-0,0,0,2,0:00000000/00000000",
+   "material": "m:0,0,0,2,0-0,0,0,2,0"
+  },
+  {
+   "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+   "why": "no rights, black to move",
+   "pawns": "p:0,0,0,2,0-0,0,0,2,0:/",
+   "files": "f:0,0,0,2,0-0,0,0,2,0:00000000/00000000",
+   "material": "m:0,0,0,2,0-0,0,0,2,0"
+  },
+  {
+   "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+   "why": "sparse endgame",
+   "pawns": "p:1,0,0,0,0-0,0,0,0,0:14/",
+   "files": "f:1,0,0,0,0-0,0,0,0,0:00000010/00000000",
+   "material": "m:1,0,0,0,0-0,0,0,0,0"
+  },
+  {
+   "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+   "why": "castled middlegame, black to move",
+   "pawns": "p:8,2,2,2,1-8,2,2,2,1:8.9.10.11.13.14.15.28/36.48.49.50.51.53.54.55",
+   "files": "f:8,2,2,2,1-8,2,2,2,1:11111111/11111111",
+   "material": "m:8,2,2,2,1-8,2,2,2,1"
+  }
+ ],
+ "materialSpecs": [
+  {
+   "why": "pure rook ending",
+   "canonical": "{\"white\":{\"n\":[0,0],\"b\":[0,0],\"r\":[1,1],\"q\":[0,0]},\"black\":{\"n\":[0,0],\"b\":[0,0],\"r\":[1,1],\"q\":[0,0]},\"diff\":{},\"stable\":1}",
+   "bounds": {
+    "loW": 2,
+    "hiW": 10,
+    "loB": 2,
+    "hiB": 10
+   },
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    }
+   ]
+  },
+  {
+   "why": "queens still on, equal",
+   "canonical": "{\"white\":{\"q\":[1,9]},\"black\":{},\"diff\":{\"q\":[0,0]},\"stable\":1}",
+   "bounds": {
+    "loW": 2,
+    "hiW": 16,
+    "loB": 1,
+    "hiB": 16
+   },
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": true
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": true
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": true
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": true
+    }
+   ]
+  },
+  {
+   "why": "minor-for-rook imbalance",
+   "canonical": "{\"white\":{},\"black\":{},\"diff\":{\"minor\":[1,10],\"major\":[-10,-1]},\"stable\":4}",
+   "bounds": {
+    "loW": 1,
+    "hiW": 16,
+    "loB": 1,
+    "hiB": 16
+   },
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    }
+   ]
+  },
+  {
+   "why": "every field constrained at once",
+   "canonical": "{\"white\":{\"p\":[0,8],\"n\":[0,2],\"b\":[1,2],\"r\":[0,2],\"q\":[0,1]},\"black\":{\"p\":[2,8],\"n\":[0,2],\"b\":[0,2],\"r\":[1,2],\"q\":[0,1]},\"diff\":{\"p\":[-3,3],\"n\":[-1,1],\"b\":[-1,1],\"r\":[0,0],\"q\":[0,0],\"minor\":[-2,2],\"major\":[-1,1]},\"stable\":2}",
+   "bounds": {
+    "loW": 2,
+    "hiW": 16,
+    "loB": 4,
+    "hiB": 16
+   },
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": true
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": true
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": true
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": true
+    }
+   ]
+  },
+  {
+   "why": "sparse endgame pawn floor",
+   "canonical": "{\"white\":{\"p\":[1,1],\"n\":[0,0],\"b\":[0,0],\"r\":[0,0],\"q\":[0,0]},\"black\":{},\"diff\":{},\"stable\":1}",
+   "bounds": {
+    "loW": 2,
+    "hiW": 2,
+    "loB": 1,
+    "hiB": 16
+   },
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    }
+   ]
+  }
  ]
 }

@@ -61,16 +61,19 @@ machine and the same data.
 
 ## Filters are negotiated, not assumed
 
-The deep-search filters are the one place the two sides are allowed to
-differ — by declaration, never silently. `chessvault-core capabilities`
-prints the filter keys this build's `games_where` understands (one JSON
-line, `{"filters":[...]}`), and the server asks once per build of the
-binary (cached by path and mtime, so a rebuild is re-asked). A request
-using any filter the binary did not declare runs on the server's JS scan
-instead — slower, never wrong — which is how the TypeScript side ships a
-new filter before this crate learns it. A binary that cannot answer
-`capabilities` at all is not used for deep search, full stop: too old to
-negotiate must not mean trusted anyway.
+The deep-search request keys are the one place the two sides are
+allowed to differ — by declaration, never silently. `chessvault-core
+capabilities` prints what this build understands (one JSON line,
+`{"filters":[...],"scan":[...]}`): the `games_where` filter keys, and
+the scan modes — `match` (the relaxation rung) and `material` (the
+material-spec hunt), both in `src/scan_match.rs`. The server asks once
+per build of the binary (cached by path and mtime, so a rebuild is
+re-asked). A request using any key the binary did not declare runs on
+the server's JS scan instead — slower, never wrong — which is how the
+TypeScript side ships a new filter or scan mode before this crate
+learns it. A binary that cannot answer `capabilities` at all is not
+used for deep search, full stop: too old to negotiate must not mean
+trusted anyway.
 
 Both sides pin the declaration to the code rather than to memory: a test
 here records which keys `games_where` actually consults and fails if
@@ -108,6 +111,7 @@ src/build.rs     PGN → database (scripts/build-refgames.ts)
 src/deep.rs      search every game for a position (the /deep-search route)
 src/optimize.rs  the housekeeping pass (scripts/optimize-refgames.ts)
 src/filters.rs   the reference filters as SQL (gamesWhere in server/refgames.ts)
+src/scan_match.rs  the relaxation ladder and material search (shared/scanMatch.ts)
 src/sql.rs       SQL mirrored from the TS side, each constant naming its source
 ```
 

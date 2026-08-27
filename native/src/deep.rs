@@ -14,18 +14,29 @@ use serde_json::json;
 use shakmaty::{fen::Fen, san::SanPlus, CastlingMode, Chess, Color, Position};
 
 use crate::filters::games_where;
+use crate::scan_match::{
+    material_men_bounds, material_satisfied, match_signature, MaterialSpec, Rung,
+};
 use crate::zobrist::{hash_position, to_db_key};
 
 pub const DEEP_SEARCH_CAP: u64 = 200;
 
-/// The ply at which the game reaches the target, or None. The exact
-/// gates of the JS loop: turn parity and men counts before the hash,
-/// SAN's own capture mark for the men (a board check would miss en
-/// passant), early exit once a side dips below the target, and the
-/// final position checked too.
-fn find_hit(
+/// What one position must equal for the game to count: the exact rung
+/// compares the Zobrist key, a relaxed rung its signature (see
+/// scan_match). Both sit behind the same cheap gates.
+enum Target {
+    Exact(i64),
+    Relaxed(Rung, String),
+}
+
+/// The ply at which the game reaches the target position, or None. The
+/// exact gates of the JS loop (`findPositionHit`): turn parity and men
+/// counts before the expensive test, SAN's own capture mark for the men
+/// (a board check would miss en passant), early exit once a side dips
+/// below the target, and the final position checked too.
+fn find_position_hit(
     moves: &str,
-    target_key: i64,
+    target: &Target,
     target_w: i64,
     target_b: i64,
     want_black_to_move: bool,
@@ -38,7 +49,10 @@ fn find_hit(
         ((ply % 2 == 1) == want_black_to_move)
             && w == target_w
             && b == target_b
-            && to_db_key(hash_position(pos)) == target_key
+            && match target {
+                Target::Exact(key) => to_db_key(hash_position(pos)) == *key,
+                Target::Relaxed(rung, sig) => match_signature(pos.board(), *rung) == *sig,
+            }
     };
     for token in moves.split(' ') {
         if at_target(&pos, w, b, ply) {
@@ -69,20 +83,99 @@ fn find_hit(
     None
 }
 
+/// The FIRST ply of the earliest streak satisfying the material spec
+/// for its stability length, or None — the exact shape of the JS
+/// `findMaterialHit`: no parity gate, the spec's own floor as the early
+/// exit, and breaks return None directly rather than falling through
+/// to a final test, because the streak is stateful and re-testing a
+/// counted position would count it twice.
+fn find_material_hit(moves: &str, spec: &MaterialSpec, lo_w: i64, lo_b: i64) -> Option<u32> {
+    let mut pos = Chess::default();
+    let mut w = 16i64;
+    let mut b = 16i64;
+    let mut ply: u32 = 0;
+    let mut streak: u32 = 0;
+    let step = |pos: &Chess, ply: u32, streak: &mut u32| -> Option<u32> {
+        if material_satisfied(pos.board(), spec) {
+            *streak += 1;
+            if *streak >= spec.stable {
+                // ply + 1 first: u32, and ply - stable alone underflows
+                // on the very first ply of a stable-1 spec.
+                return Some(ply + 1 - spec.stable);
+            }
+        } else {
+            *streak = 0;
+        }
+        None
+    };
+    for token in moves.split(' ') {
+        if let Some(hit) = step(&pos, ply, &mut streak) {
+            return Some(hit);
+        }
+        let Ok(san) = token.parse::<SanPlus>() else {
+            return None;
+        };
+        let Ok(m) = san.san.to_move(&pos) else {
+            return None;
+        };
+        if token.contains('x') {
+            if ply % 2 == 0 {
+                b -= 1;
+            } else {
+                w -= 1;
+            }
+            if w < lo_w || b < lo_b {
+                return None;
+            }
+        }
+        pos.play_unchecked(m);
+        ply += 1;
+    }
+    step(&pos, ply, &mut streak)
+}
+
+/// One hunt per invocation: a position (fen, optionally relaxed by
+/// `rung`) or a material situation (`material`, the server's canonical
+/// spec JSON). The server enforces exclusivity; both here is a usage
+/// error.
 pub fn run_deep_search(
     db_path: &Path,
-    fen: &str,
+    fen: Option<&str>,
+    rung: Option<&str>,
+    material: Option<&str>,
     filters: &dyn Fn(&str) -> Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let parsed: Fen = fen.trim().parse().map_err(|_| "bad fen")?;
-    let target: Chess = parsed
-        .into_position(CastlingMode::Chess960)
-        .map_err(|_| "bad position")?;
-    let target_key = to_db_key(hash_position(&target));
-    let target_w = i64::from(target.board().white().count() as u32);
-    let target_b = i64::from(target.board().black().count() as u32);
-    let missing = 32 - target_w - target_b;
-    let want_black_to_move = target.turn() == Color::Black;
+    // The men-column prefilter, one shape for every hunt — see the JS
+    // route for why final counts against a ceiling are sufficient.
+    let spec: Option<MaterialSpec> = material
+        .map(serde_json::from_str)
+        .transpose()
+        .map_err(|_| "bad material spec")?;
+    let mut target = Target::Exact(0);
+    let mut target_w = 0i64;
+    let mut target_b = 0i64;
+    let mut want_black_to_move = false;
+    let (men_ceil_w, men_ceil_b, min_ply, material_floor) = if let Some(spec) = &spec {
+        let (lo_w, hi_w, lo_b, hi_b) = material_men_bounds(spec);
+        (hi_w, hi_b, i64::from(spec.stable) - 1, Some((lo_w, lo_b)))
+    } else {
+        let fen = fen.ok_or("--fen or --material is required")?;
+        let parsed: Fen = fen.trim().parse().map_err(|_| "bad fen")?;
+        let pos: Chess = parsed
+            .into_position(CastlingMode::Chess960)
+            .map_err(|_| "bad position")?;
+        target = match rung {
+            None => Target::Exact(to_db_key(hash_position(&pos))),
+            Some(raw) => {
+                let rung = Rung::parse(raw).ok_or("bad match mode")?;
+                Target::Relaxed(rung, match_signature(pos.board(), rung))
+            }
+        };
+        target_w = i64::from(pos.board().white().count() as u32);
+        target_b = i64::from(pos.board().black().count() as u32);
+        want_black_to_move = pos.turn() == Color::Black;
+        (target_w, target_b, 32 - target_w - target_b, None)
+    };
 
     let conn = Connection::open_with_flags(
         db_path,
@@ -125,9 +218,9 @@ pub fn run_deep_search(
     };
     let men_binds: Vec<Value> = if has_men {
         vec![
-            Value::Integer(target_w),
-            Value::Integer(target_b),
-            Value::Integer(missing),
+            Value::Integer(men_ceil_w),
+            Value::Integer(men_ceil_b),
+            Value::Integer(min_ply),
         ]
     } else {
         Vec::new()
@@ -209,13 +302,13 @@ pub fn run_deep_search(
         }
         for row in &batch {
             scanned += 1;
-            if let Some(hit_ply) = find_hit(
-                &row.moves,
-                target_key,
-                target_w,
-                target_b,
-                want_black_to_move,
-            ) {
+            let hit = match (&spec, material_floor) {
+                (Some(spec), Some((lo_w, lo_b))) => {
+                    find_material_hit(&row.moves, spec, lo_w, lo_b)
+                }
+                _ => find_position_hit(&row.moves, &target, target_w, target_b, want_black_to_move),
+            };
+            if let Some(hit_ply) = hit {
                 matched += 1;
                 let elo = |v: f64| {
                     if v.fract() == 0.0 {

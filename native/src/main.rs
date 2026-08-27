@@ -16,7 +16,7 @@ const USAGE: &str = "usage:
   chessvault-core build <sources...> --name <name> [--append] --data <dir>
   chessvault-core index <name> [--append] --data <dir>
   chessvault-core optimize <name> --data <dir>
-  chessvault-core deep-search <name> --fen <fen> [--filters <json>] --data <dir>
+  chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec>) [--filters <json>] --data <dir>
   chessvault-core capabilities";
 
 fn valid_name(name: &str) -> bool {
@@ -35,6 +35,8 @@ struct Args {
     append: bool,
     fen: Option<String>,
     filters: Option<String>,
+    match_mode: Option<String>,
+    material: Option<String>,
 }
 
 fn parse(args: &[String]) -> Result<Args, String> {
@@ -45,6 +47,8 @@ fn parse(args: &[String]) -> Result<Args, String> {
         append: false,
         fen: None,
         filters: None,
+        match_mode: None,
+        material: None,
     };
     let mut i = 0;
     while i < args.len() {
@@ -65,6 +69,14 @@ fn parse(args: &[String]) -> Result<Args, String> {
             "--filters" => {
                 i += 1;
                 out.filters = Some(args.get(i).ok_or("--filters needs a value")?.clone());
+            }
+            "--match" => {
+                i += 1;
+                out.match_mode = Some(args.get(i).ok_or("--match needs a value")?.clone());
+            }
+            "--material" => {
+                i += 1;
+                out.material = Some(args.get(i).ok_or("--material needs a value")?.clone());
             }
             flag if flag.starts_with("--") => return Err(format!("unknown flag: {flag}")),
             positional => out.positional.push(positional.to_owned()),
@@ -89,13 +101,17 @@ fn main() -> ExitCode {
     };
 
     // What the server asks before trusting this binary with a filtered
-    // deep search: which gamesWhere filters this build understands. One
-    // JSON line, no --data, no side effects — a request using anything
-    // not declared here runs on the server's JS path instead.
+    // deep search: which gamesWhere filters and scan modes this build
+    // understands. One JSON line, no --data, no side effects — a
+    // request using anything not declared here runs on the server's JS
+    // path instead.
     if command == "capabilities" {
         println!(
             "{}",
-            serde_json::json!({ "filters": chessvault_core::filters::SUPPORTED_FILTERS })
+            serde_json::json!({
+                "filters": chessvault_core::filters::SUPPORTED_FILTERS,
+                "scan": chessvault_core::scan_match::SUPPORTED_SCAN,
+            })
         );
         return ExitCode::SUCCESS;
     }
@@ -190,7 +206,7 @@ fn main() -> ExitCode {
         "deep-search" => {
             let Some(name) = args.positional.first() else {
                 eprintln!(
-                    "usage: chessvault-core deep-search <name> --fen <fen> [--filters <json>] --data <dir>"
+                    "usage: chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec>) [--filters <json>] --data <dir>"
                 );
                 return ExitCode::from(2);
             };
@@ -198,10 +214,16 @@ fn main() -> ExitCode {
                 eprintln!("invalid database name: {name}");
                 return ExitCode::FAILURE;
             }
-            let Some(fen) = args.fen.clone() else {
-                eprintln!("--fen <fen> is required");
+            // One hunt per invocation, exactly as the server enforces:
+            // a position (with an optional rung) or a material spec.
+            if args.fen.is_none() && args.material.is_none() {
+                eprintln!("--fen <fen> or --material <spec> is required");
                 return ExitCode::from(2);
-            };
+            }
+            if args.material.is_some() && (args.fen.is_some() || args.match_mode.is_some()) {
+                eprintln!("--material excludes --fen and --match");
+                return ExitCode::from(2);
+            }
             let path = data.join("refgames").join(format!("{name}.sqlite"));
             if !path.exists() {
                 eprintln!("no such database: {name}");
@@ -219,7 +241,13 @@ fn main() -> ExitCode {
                     return ExitCode::from(2);
                 }
             };
-            match run_deep_search(&path, &fen, &|key| filters.get(key).cloned()) {
+            match run_deep_search(
+                &path,
+                args.fen.as_deref(),
+                args.match_mode.as_deref(),
+                args.material.as_deref(),
+                &|key| filters.get(key).cloned(),
+            ) {
                 Ok(()) => ExitCode::SUCCESS,
                 Err(error) => {
                     eprintln!("{error}");

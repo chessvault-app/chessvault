@@ -23,6 +23,13 @@ import { makeSanAndPlay, parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 import type { NormalMove, Role } from 'chessops/types';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
+import {
+  canonicalMaterial,
+  matchSignature,
+  materialMenBounds,
+  materialSatisfied,
+  parseMaterialSpec,
+} from '../shared/scanMatch.ts';
 import { REF_MAX_PLY, eloBucket, finalMen, resultCode } from '../server/refgamesIndex.ts';
 
 const OUT_DIR = resolve(import.meta.dirname, '..', 'native', 'tests');
@@ -402,6 +409,55 @@ for (const golden of games.slice(30, 42)) {
 }
 
 // ---------------------------------------------------------------------------
+// Relaxation-ladder signatures and material predicates — pins for
+// native/src/scan_match.rs against shared/scanMatch.ts, over the same
+// FEN spread the key goldens use. The canonical strings below are ALSO
+// the exact argv the server hands the binary, so the Rust parse is
+// proven against real input, not a re-derivation.
+
+const boardOf = (fen: string) => parseFen(fen).unwrap().board;
+
+const signatures = FENS.map(({ fen, why }) => ({
+  fen,
+  why,
+  pawns: matchSignature(boardOf(fen), 'pawns'),
+  files: matchSignature(boardOf(fen), 'files'),
+  material: matchSignature(boardOf(fen), 'material'),
+}));
+
+const MATERIAL_SPECS: { why: string; raw: string }[] = [
+  {
+    why: 'pure rook ending',
+    raw: '{"white":{"r":[1,1],"n":[0,0],"b":[0,0],"q":[0,0]},"black":{"r":[1,1],"n":[0,0],"b":[0,0],"q":[0,0]}}',
+  },
+  { why: 'queens still on, equal', raw: '{"white":{"q":[1,9]},"diff":{"q":[0,0]}}' },
+  {
+    why: 'minor-for-rook imbalance',
+    raw: '{"diff":{"minor":[1,10],"major":[-10,-1]},"stable":4}',
+  },
+  {
+    why: 'every field constrained at once',
+    raw: '{"white":{"p":[0,8],"n":[0,2],"b":[1,2],"r":[0,2],"q":[0,1]},"black":{"p":[2,8],"n":[0,2],"b":[0,2],"r":[1,2],"q":[0,1]},"diff":{"p":[-3,3],"n":[-1,1],"b":[-1,1],"r":[0,0],"q":[0,0],"minor":[-2,2],"major":[-1,1]},"stable":2}',
+  },
+  { why: 'sparse endgame pawn floor', raw: '{"white":{"p":[1,1],"q":[0,0],"r":[0,0],"n":[0,0],"b":[0,0]}}' },
+];
+
+const materialSpecs = MATERIAL_SPECS.map(({ why, raw }) => {
+  const spec = parseMaterialSpec(raw);
+  if (!spec) throw new Error(`golden material spec did not parse: ${raw}`);
+  return {
+    why,
+    canonical: canonicalMaterial(spec),
+    bounds: materialMenBounds(spec),
+    cases: FENS.map(({ fen }) => ({ fen, satisfied: materialSatisfied(boardOf(fen), spec) })),
+  };
+});
+// Fixtures that never both answer are fixtures testing nothing.
+if (!materialSpecs.some((s) => s.cases.some((c) => c.satisfied) && s.cases.some((c) => !c.satisfied))) {
+  throw new Error('no material spec splits the FEN set — the predicate goldens are inert');
+}
+
+// ---------------------------------------------------------------------------
 
 const goldens = {
   schema: 1,
@@ -412,6 +468,8 @@ const goldens = {
   elos,
   finalMen: menCases,
   games,
+  signatures,
+  materialSpecs,
 };
 
 writeFileSync(resolve(OUT_DIR, 'goldens.json'), `${JSON.stringify(goldens, null, 1)}\n`);
