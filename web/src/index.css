@@ -104,6 +104,39 @@
    re-theming happens here and nowhere else.
    --------------------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------------------
+   Density.
+
+   Three numbers, read by the three surfaces every list in this app is made
+   of: a game row (games/shared.tsx), a panel row (components/list-row.tsx),
+   and the card those sit in (components/ui/card.tsx). Written here rather
+   than at the call sites so that a density is three declarations and not a
+   sweep, and so the next rung is three more.
+
+   Deliberately NOT Tailwind's own `--spacing`. That would be one line and
+   the wrong one: 401 rules in the built stylesheet derive from it, `size-*`
+   included, so squeezing it takes the icons down with the padding. A
+   density control is about whitespace; a glyph is not whitespace.
+
+   `--card-pad` is what components/ui/card.tsx now initialises
+   `--card-spacing` from. The registry's own `data-size=sm` override still
+   sets `--card-spacing` directly and still wins, because a card asked to be
+   small is small at either density.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --row-py: calc(var(--spacing) * 2);
+  --row-py-dense: calc(var(--spacing) * 1.5);
+  --card-pad: calc(var(--spacing) * 4);
+}
+
+/* Comfortable carries no attribute — it is what :root says above. */
+:root[data-density='compact'] {
+  --row-py: calc(var(--spacing) * 1.25);
+  --row-py-dense: calc(var(--spacing) * 0.75);
+  --card-pad: calc(var(--spacing) * 3);
+}
+
 :root {
   color-scheme: light;
 

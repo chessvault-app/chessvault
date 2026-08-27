@@ -118,6 +118,37 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
 ];
 
 /**
+ * How much air a list row and a panel are given.
+ *
+ * The knob a tool has and this app did not. Corners and annotation size
+ * decide how the app LOOKS; this one decides how much of your vault fits
+ * on the screen at once, which on a page that is a list of four hundred
+ * games is the difference between reading and scrolling.
+ *
+ * Three custom properties, applied to the root and read by the three
+ * surfaces that carry every list in the app — the game rows, the panel
+ * rows, and the cards those sit in. One number per surface, so a density
+ * is three declarations in index.css rather than a sweep of call sites,
+ * and adding a rung later is a fourth line in this list.
+ *
+ * NOT Tailwind's own `--spacing`, which would have been one line and is
+ * the wrong line: 401 rules in the built stylesheet derive from it,
+ * including every `size-*`, so squeezing it shrinks the icons along with
+ * the padding. Whitespace is what a density control is about; a glyph is
+ * not whitespace, and 14px icons measured right for their row do not
+ * become 12px ones because a list got tighter.
+ *
+ * Per-device like the rest of this store, which is the point: the same
+ * vault wants compact on a monitor and comfortable under a thumb.
+ */
+export type Density = 'comfortable' | 'compact';
+
+export const DENSITIES: { id: Density; label: string }[] = [
+  { id: 'comfortable', label: 'Comfortable' },
+  { id: 'compact', label: 'Compact' },
+];
+
+/**
  * The corner radius every rung of the ladder derives from (index.css:
  * sm/md/lg/xl/2xl are multiples of it). shadcn's own knob, offered as the
  * registry offers it: square, small, the default 0.625rem, large.
@@ -307,6 +338,7 @@ interface PrefsState {
   schemeId: string;
   scheme: Scheme;
   radius: RadiusId;
+  density: Density;
   setBoardTheme: (t: BoardTheme) => void;
   setPieces: (p: PieceSet) => void;
   setSound: (on: boolean) => void;
@@ -315,6 +347,7 @@ interface PrefsState {
   setCaptureSound: (id: string) => void;
   setSchemeId: (id: string) => void;
   setRadius: (id: RadiusId) => void;
+  setDensity: (id: Density) => void;
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
   setAnnotationSize: (size: AnnotationSize) => void;
@@ -347,6 +380,13 @@ const applyRadius = (id: RadiusId): void => {
   else el.style.setProperty('--radius', `${rem}rem`);
 };
 
+/** Comfortable is what :root already says, so it carries no attribute. */
+const applyDensity = (id: Density): void => {
+  const el = document.documentElement;
+  if (id === 'compact') el.dataset.density = 'compact';
+  else delete el.dataset.density;
+};
+
 /** Five custom properties; every token in index.css reads from them. */
 const applyScheme = ({ hue, tint, accent, accentTint = 1, contrast = 0 }: Scheme): void => {
   const el = document.documentElement;
@@ -377,6 +417,7 @@ export const usePrefs = create<PrefsState>()(
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
       radius: 'default',
+      density: 'comfortable',
       setBoardTheme: (boardTheme) => {
         apply(boardTheme, get().pieces);
         set({ boardTheme });
@@ -404,6 +445,10 @@ export const usePrefs = create<PrefsState>()(
         applyRadius(radius);
         set({ radius });
       },
+      setDensity: (density) => {
+        applyDensity(density);
+        set({ density });
+      },
     }),
     {
       name: 'chess-vault:prefs',
@@ -422,6 +467,7 @@ export const usePrefs = create<PrefsState>()(
         if (preset) state.scheme = scheme;
         applyScheme(scheme);
         applyRadius(state.radius ?? 'default');
+        applyDensity(state.density ?? 'comfortable');
       },
     },
   ),
@@ -429,8 +475,9 @@ export const usePrefs = create<PrefsState>()(
 
 /** Applied before React mounts so the board never flashes the default skin. */
 export function initPrefs(): void {
-  const { boardTheme, pieces, scheme, radius } = usePrefs.getState();
+  const { boardTheme, pieces, scheme, radius, density } = usePrefs.getState();
   apply(boardTheme, pieces);
   applyScheme(scheme);
   applyRadius(radius);
+  applyDensity(density);
 }

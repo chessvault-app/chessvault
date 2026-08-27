@@ -20,7 +20,11 @@ import { cn } from '@/lib/utils';
  *
  * Two props, because two are what the call sites actually differed on.
  * `divided` draws the hairline between rows, for a list whose panel
- * gives it no other separation. `dense` is the tighter rhythm of the
+ * gives it no other separation. Both rhythms are read from the density
+ * tokens in index.css rather than written here, so the Appearance card's
+ * Density knob reaches every one of these rows.
+ *
+ * `dense` is the tighter rhythm of the
  * single-line history rows, against the two-line default. Type size
  * deliberately stays with the caller: the rows that carry their own
  * sized spans set it on those instead, and folding a text-sm in here
@@ -34,7 +38,7 @@ import { cn } from '@/lib/utils';
 export interface ListRowProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Hairline under every row but the last. */
   divided?: boolean;
-  /** The one-line rhythm: py-1.5 rather than py-2. */
+  /** The one-line rhythm, a rung tighter than the default at either density. */
   dense?: boolean;
 }
 
@@ -52,7 +56,7 @@ export function ListRow({
         'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100',
         'enabled:hover:bg-accent disabled:opacity-60',
         divided && 'border-border border-b last:border-b-0',
-        dense ? 'py-1.5' : 'py-2',
+        dense ? 'py-(--row-py-dense)' : 'py-(--row-py)',
         className,
       )}
       {...props}

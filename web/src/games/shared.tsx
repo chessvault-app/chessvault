@@ -312,7 +312,9 @@ export function GameRow({
       // numbers printed on top of each other at widths it did.
       className={cn(
         'group hover:bg-accent relative flex cursor-pointer flex-wrap items-center gap-3',
-        'overflow-hidden px-3 py-2 transition-colors duration-100',
+        // py from the density token, not a literal: this row is every
+        // game list in the app, which is the list a density knob is for.
+        'overflow-hidden px-3 py-(--row-py) transition-colors duration-100',
         // The whole indicator that a game is kept: a warm edge down the
         // left, which costs no width. The lit star that used to stand at
         // the end of the row cost about 36px of two player names on every

@@ -29,7 +29,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { formatWhen } from '@/lib/dates';
 import { navigate, up, type Section } from '@/lib/router';
-import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
+import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, DENSITIES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -484,7 +484,7 @@ function AppearanceCard() {
   const [moreOpen, setMoreOpen] = useState(false);
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, radius, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setCastleStyle, setCoordinates, setAnnotationSize } =
+  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setAnnotationSize } =
     usePrefs();
 
   return (
@@ -510,6 +510,21 @@ function AppearanceCard() {
             { value: 'light', label: 'Light' },
             { value: 'dark', label: 'Dark' },
           ] }]}
+        />
+      </Field>
+
+      {/* Above the fold, and not with Corners: this is not how the app
+          looks, it is how much of your vault is on the screen at once. On
+          a page that is four hundred games it decides whether you read or
+          scroll, which is a working setting and not a decorative one.
+          Per-device, so the same vault is compact on a monitor and
+          comfortable under a thumb. */}
+      <Field label="Density">
+        <Select
+          value={density}
+          onValueChange={(v) => setDensity(v as Density)}
+          ariaLabel={t('Density')}
+          groups={[{ options: DENSITIES.map(({ id, label }) => ({ value: id, label })) }]}
         />
       </Field>
 
