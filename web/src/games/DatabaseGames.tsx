@@ -1,4 +1,4 @@
-import { Database, Grid3x3, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+import { Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -41,7 +41,7 @@ const EditorView = lazy(() =>
 );
 import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
 import { GameTableHeader, GameTableRow } from './GameTable';
-import type { DetailsSelection } from './GameDetails';
+import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
 /**
  * The details panel's action pair for a reference row, with its own
@@ -811,28 +811,31 @@ export function DatabaseGames({
     annotated: false,
   });
 
-  /** The row, packaged for the details panel: everything it needs to
+  /** The row, packaged for the details view: everything it needs to
       show and act on this game without knowing what a database is. */
-  const selectRow = (g: RefGame): void => {
-    onSelect?.({
-      key: refGameKey(g.id),
-      summary: toSummary(g),
-      loadPgn: async () => {
-        try {
-          return (await api<{ pgn: string }>(pgnUrl(g.id))).pgn;
-        } catch {
-          return null;
-        }
-      },
-      actions: (
-        <RefRowActions
-          inCollection={inCollection(g)}
-          onOpen={() => void openGame(g)}
-          onCollect={() => collect(g)}
-        />
-      ),
-    });
-  };
+  const packageRow = (g: RefGame): DetailsSelection => ({
+    key: refGameKey(g.id),
+    summary: toSummary(g),
+    loadPgn: async () => {
+      try {
+        return (await api<{ pgn: string }>(pgnUrl(g.id))).pgn;
+      } catch {
+        return null;
+      }
+    },
+    actions: (
+      <RefRowActions
+        inCollection={inCollection(g)}
+        onOpen={() => void openGame(g)}
+        onCollect={() => collect(g)}
+      />
+    ),
+  });
+  const selectRow = (g: RefGame): void => onSelect?.(packageRow(g));
+
+  // The ⋯ → Game details sheet: the details panel's content where the
+  // rows are cards and no panel stands beside them.
+  const [details, setDetails] = useState<RefGame | null>(null);
 
   if (!meta && metaError) {
     // The pane never learned what it holds, so there is nothing truthful
@@ -1020,7 +1023,7 @@ export function DatabaseGames({
       onPreview={setPreview}
       loadPreview={() => loadFinalFen(g)}
       actions={null}
-      menu={[]}
+      menu={[{ label: 'Game details', icon: Info, onSelect: () => setDetails(g) }]}
       showLink={false}
       standing={
         /* w-16 and a bare word when it is done, exactly like the
@@ -1322,6 +1325,9 @@ export function DatabaseGames({
         }}
         onClose={() => setEditingCustom(false)}
       />
+    )}
+    {details && (
+      <GameDetailsSheet selection={packageRow(details)} onClose={() => setDetails(null)} />
     )}
     <GamePreview preview={preview} onClose={hidePreview} />
     </>

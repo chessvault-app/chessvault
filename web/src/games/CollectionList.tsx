@@ -2,6 +2,7 @@ import {
   Bookmark,
   ExternalLink,
   Folder,
+  Info,
   Pencil,
   Plus,
   SearchX,
@@ -12,6 +13,7 @@ import {
 import { memo, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -36,7 +38,22 @@ import {
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow } from './GameTable';
+import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
+
+/** The per-game PGN fetch every list row can offer the details view. */
+export const loadGamePgn =
+  (game: Pick<GameSummary, 'file' | 'index'>) => async (): Promise<string | null> => {
+    try {
+      return (
+        await api<{ pgn: string }>(
+          `/api/games/pgn?file=${encodeURIComponent(game.file)}&index=${game.index}`,
+        )
+      ).pgn;
+    } catch {
+      return null;
+    }
+  };
 
 /**
  * One collection row, memoised on primitives so a bookmark toggle or a
@@ -56,6 +73,7 @@ const CollectionRow = memo(function CollectionRow({
   onToggleBookmark,
   onRename,
   onStartRename,
+  onDetails,
 }: {
   game: GameSummary;
   bookmarked: boolean;
@@ -67,6 +85,7 @@ const CollectionRow = memo(function CollectionRow({
   onToggleBookmark: (game: GameSummary) => void;
   onRename: (game: GameSummary, to: string) => void;
   onStartRename: (key: string) => void;
+  onDetails: (game: GameSummary) => void;
 }) {
   // Through the scheme guard (see shared.tsx): a stored link that is not
   // http(s) offers no View online at all rather than a live window.open.
@@ -114,6 +133,10 @@ const CollectionRow = memo(function CollectionRow({
           className: 'pointer-fine:hidden',
           onSelect: () => onToggleBookmark(game),
         },
+        // The whole game in a sheet — the card row shows two lines of
+        // what the wide layout's details panel shows, and this is the
+        // rest of it.
+        { label: 'Game details', icon: Info, onSelect: () => onDetails(game) },
         { label: 'Rename', icon: Pencil, onSelect: () => onStartRename(gameKey(game)) },
         ...(link
           ? [
@@ -288,6 +311,13 @@ export function CollectionList({
   const renamingGame =
     table && renamingKey ? (games.find((g) => gameKey(g) === renamingKey) ?? null) : null;
 
+  // The ⋯ → Game details sheet: the details panel's content where
+  // there is no panel.
+  const [details, setDetails] = useState<GameSummary | null>(null);
+  const detailsSelection: DetailsSelection | null = details
+    ? { key: gameKey(details), summary: details, loadPgn: loadGamePgn(details) }
+    : null;
+
   return (
     <>
     <GameListShell
@@ -411,6 +441,7 @@ export function CollectionList({
                   onToggleBookmark={onToggleBookmark}
                   onRename={onRename}
                   onStartRename={onStartRename}
+                  onDetails={setDetails}
                 />
               ),
             )
@@ -504,6 +535,9 @@ export function CollectionList({
         ) : undefined
       }
     />
+    {detailsSelection && (
+      <GameDetailsSheet selection={detailsSelection} onClose={() => setDetails(null)} />
+    )}
     {renamingGame && (
       <PromptDialog
         label={t('Rename this game')}

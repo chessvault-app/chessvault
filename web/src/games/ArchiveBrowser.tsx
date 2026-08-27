@@ -25,6 +25,8 @@ import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow } from './GameTable';
+import { GameDetailsSheet } from './GameDetails';
+import { loadGamePgn } from './CollectionList';
 import {
   EMPTY_STRUCTURED_FILTERS,
   hasStructuredFilters,
@@ -173,6 +175,7 @@ const ArchiveRow = memo(function ArchiveRow({
   onPreview,
   onToggle,
   onCollect,
+  onDetails,
 }: {
   game: GameSummary;
   table: boolean;
@@ -183,6 +186,7 @@ const ArchiveRow = memo(function ArchiveRow({
   onPreview: (p: Preview | null) => void;
   onToggle: (key: string, on: boolean) => void;
   onCollect: (game: GameSummary) => void;
+  onDetails: (game: GameSummary) => void;
 }) {
   // Outside the hover tray in either presentation: Add is what this
   // list is FOR, and a selection checkbox that only appears under the
@@ -238,6 +242,9 @@ const ArchiveRow = memo(function ArchiveRow({
       onOpen={() => onOpen(game)}
       onPreview={onPreview}
       actions={null}
+      // The whole game in a sheet — what the wide layouts show in the
+      // details panel, for the rows that are cards.
+      menu={[{ label: 'Game details', icon: Info, onSelect: () => onDetails(game) }]}
       standing={standing}
     />
   );
@@ -664,6 +671,8 @@ export function ArchiveBrowser({
   rowHandlers.current = { openInAnalysis, collect };
   const rowOpen = useCallback((g: GameSummary) => void rowHandlers.current.openInAnalysis(g), []);
   const rowCollect = useCallback((g: GameSummary) => void rowHandlers.current.collect(g), []);
+  // The ⋯ → Game details sheet, for the card rows.
+  const [details, setDetails] = useState<GameSummary | null>(null);
   const rowToggle = useCallback((key: string, on: boolean) => {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -1009,6 +1018,7 @@ export function ArchiveBrowser({
           onPreview={onPreview}
           onToggle={rowToggle}
           onCollect={rowCollect}
+          onDetails={setDetails}
         />
       ))
     : undefined;
@@ -1074,6 +1084,13 @@ export function ArchiveBrowser({
   );
 
   return (
+    <>
+    {details && (
+      <GameDetailsSheet
+        selection={{ key: gameKey(details), summary: details, loadPgn: loadGamePgn(details) }}
+        onClose={() => setDetails(null)}
+      />
+    )}
     <GameListShell
       shape={shape}
       // In the column it shares a panel with the Databases browser and the tab has
@@ -1119,5 +1136,6 @@ export function ArchiveBrowser({
       footnote={footnote}
       tail={tail}
     />
+    </>
   );
 }
