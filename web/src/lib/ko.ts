@@ -1246,24 +1246,22 @@ export const ko: Record<string, string> = {
 
   // --- puzzles: trainer feedback ------------------------------------------
   'Play a move on the board.': '보드에서 수를 두세요.',
-  'Solved!': '정답입니다!',
-  'Solved with help.': '힌트를 보고 맞혔습니다.',
-  'Solved after a wrong try.': '틀린 뒤에 맞혔습니다.',
-  'Solution shown.': '정답을 확인했습니다.',
-  'Not this time.': '이번엔 아닙니다.',
+  'Solved with help': '힌트를 보고 해결',
+  'Solved after a wrong try': '틀린 뒤에 해결',
+  'Solution shown': '정답 확인',
+  'Not solved': '해결하지 못함',
   'Checking your answer…': '답을 확인하는 중…',
-  'That is not it — it rolls back, try again.': '아닙니다 — 되돌립니다, 다시 해 보세요.',
+  'Wrong move — the board rolls back.': '틀린 수 — 보드를 되돌립니다.',
   'Opponent is moving…': '상대가 두는 중…',
-  'Keep looking — find the best move.': '계속 찾아보세요 — 최선의 수를 찾는 겁니다.',
   'Back to dashboard': '대시보드로',
   Review: '복습',
-  'That is the book line. Retry it clean later.':
-    '책의 변화가 맞습니다. 나중에 힌트 없이 다시 해 보세요.',
-  'Off the book at the end — but the engine approves. Solved.':
-    '끝에서 책과 갈라졌지만 엔진이 인정합니다. 정답입니다.',
+  'That is the book line. Retry it without hints to count it.':
+    '책의 변화가 맞습니다. 힌트 없이 다시 풀어야 인정됩니다.',
+  'Off the book at the end, but the engine approves.':
+    '끝에서 책과 갈라졌지만 엔진이 인정합니다.',
   'Exactly as the book has it.': '책과 정확히 같습니다.',
-  'Not quite — the marked move is where it goes wrong.':
-    '아쉽습니다 — 표시된 수에서 어긋납니다.',
+  'The marked move is where the line goes wrong.':
+    '표시된 수에서 변화가 어긋납니다.',
   'Correct so far, but the book line goes further.':
     '여기까진 맞지만, 책의 변화는 더 이어집니다.',
   'Explore freely — only the mainline is judged on submit.':

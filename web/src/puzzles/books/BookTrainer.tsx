@@ -422,7 +422,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // (see lib/announce — same treatment as the Lichess trainer's verdicts).
   useEffect(() => {
     if (phase === 'done') {
-      announce(won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.'));
+      announce(won ? t('Solved') : helped ? t('Solved with help') : t('Not solved'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -627,7 +627,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       <div className="flex flex-col gap-0.5">
         {phase === 'done' ? (
           <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-destructive')}>
-            {won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.')}
+            {won ? t('Solved') : helped ? t('Solved with help') : t('Not solved')}
           </p>
         ) : (
           <p className="text-foreground text-2xl font-bold tracking-tight">
@@ -639,13 +639,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             ? t('Checking your answer…')
             : phase === 'done'
               ? helped
-                ? t('That is the book line. Retry it clean later.')
+                ? t('That is the book line. Retry it without hints to count it.')
                 : won
                   ? engineApproved
-                    ? t('Off the book at the end — but the engine approves. Solved.')
+                    ? t('Off the book at the end, but the engine approves.')
                     : t('Exactly as the book has it.')
                   : wrong
-                    ? t('Not quite — the marked move is where it goes wrong.')
+                    ? t('The marked move is where the line goes wrong.')
                     : t('Correct so far, but the book line goes further.')
               : t('Explore freely — only the mainline is judged on submit.')}
         </p>

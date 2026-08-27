@@ -378,9 +378,9 @@ function Trainer({
   // The verdicts are drawn over the board and printed in the panel; a
   // screen reader saw neither. Announced at the two moments that matter.
   useEffect(() => {
-    if (phase === 'wrong') announce(t('That is not it — it rolls back, try again.'));
+    if (phase === 'wrong') announce(t('Wrong move — the board rolls back.'));
     else if (phase === 'done') {
-      announce(revealed ? t('Solution shown.') : failed ? t('Solved after a wrong try.') : t('Solved!'));
+      announce(revealed ? t('Solution shown') : failed ? t('Solved after a wrong try') : t('Solved'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -773,10 +773,10 @@ function Trainer({
             )}
           >
             {revealed
-              ? t('Solution shown.')
+              ? t('Solution shown')
               : failed
-                ? t('Solved after a wrong try.')
-                : t('Solved!')}
+                ? t('Solved after a wrong try')
+                : t('Solved')}
           </p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
             {/* The band, not the number: a rating is how the trainer
@@ -809,13 +809,13 @@ function Trainer({
           )}
           <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-destructive' : 'text-muted-foreground')}>
             {phase === 'wrong'
-              ? t('That is not it — it rolls back, try again.')
+              ? t('Wrong move — the board rolls back.')
               : phase === 'setup' || phase === 'opponent'
               ? t('Opponent is moving…')
               : phase === 'loading'
               ? t('Finding a puzzle…')
               : failed
-                ? t('Keep looking — find the best move.')
+                ? t('Find the best move.')
                 : (modeNote ??
                   t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme))))}
           </p>
