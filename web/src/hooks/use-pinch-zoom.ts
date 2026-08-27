@@ -16,6 +16,24 @@ export interface PinchLive extends PinchPoint {
 }
 
 /**
+ * Safari's proprietary pinch events, the only reliable pinch signal on
+ * iOS: once a native pan has begun there — one finger moving before the
+ * second lands is enough — every later touchmove arrives NON-cancelable,
+ * preventDefault is ignored, and the touch arithmetic below never runs;
+ * on the phone a pinch simply scrolled (lanph3re's report). Gesture
+ * events carry the recognised pinch regardless of what the scroller is
+ * doing, and preventDefault on them is honoured. WebKit-only, so where
+ * they exist they are the implementation and the touch listeners are
+ * demoted to holding the page still; everywhere else the touch path is
+ * exactly what it was.
+ */
+interface SafariGestureEvent extends Event {
+  scale: number;
+  clientX: number;
+  clientY: number;
+}
+
+/**
  * Two-finger pinch on `ref` multiplies the zoom. A NATIVE non-passive
  * touchmove listener: React's own is passive, so preventDefault would be
  * ignored and the page would scroll/zoom underneath the gesture.
@@ -42,6 +60,10 @@ export function usePinchZoom(
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Read at bind time, not module load: the listeners bind when the
+    // document arrives, which is also what lets a test stand the global
+    // up first.
+    const gestures = 'GestureEvent' in window;
     let last: number | null = null;
     let start: number | null = null;
     let at: PinchPoint = { x: 0, y: 0 };
@@ -63,7 +85,13 @@ export function usePinchZoom(
     };
     const onMove = (e: TouchEvent): void => {
       if (e.touches.length !== 2 || last === null || start === null) return;
-      e.preventDefault();
+      // Non-cancelable when a native pan already owns the touches (iOS);
+      // calling preventDefault there is a console warning, not a stop.
+      if (e.cancelable) e.preventDefault();
+      // Where gesture events exist they carry the zoom (below); the touch
+      // listener's remaining job is the preventDefault above, which holds
+      // the page still under the fingers whenever it is allowed to.
+      if (gestures) return;
       const d = dist(e.touches);
       if (d > 0 && last > 0) {
         if (liveRef.current) liveRef.current({ scale: d / start, ...at });
@@ -72,22 +100,65 @@ export function usePinchZoom(
       last = d;
     };
     const onEnd = (): void => {
-      if (liveRef.current && last !== null && start !== null && start > 0) {
+      if (!gestures && liveRef.current && last !== null && start !== null && start > 0) {
         liveRef.current(null);
         applyRef.current(last / start, at);
       }
       last = null;
       start = null;
     };
+
+    // The WebKit pinch. The centre is the gesture's own centroid, taken
+    // once at the start the way the touch path takes it; `gLast` is what
+    // makes the live-less path incremental, since e.scale is cumulative.
+    let gLive = false;
+    let gLast = 1;
+    let gAt: PinchPoint = { x: 0, y: 0 };
+    const onGStart = (e: SafariGestureEvent): void => {
+      e.preventDefault();
+      gLive = true;
+      gLast = 1;
+      const r = el.getBoundingClientRect();
+      gAt = { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+    const onGChange = (e: SafariGestureEvent): void => {
+      if (!gLive) return;
+      e.preventDefault();
+      if (e.scale <= 0) return;
+      if (liveRef.current) liveRef.current({ scale: e.scale, ...gAt });
+      else {
+        applyRef.current(e.scale / gLast);
+        gLast = e.scale;
+      }
+    };
+    const onGEnd = (e: SafariGestureEvent): void => {
+      if (!gLive) return;
+      gLive = false;
+      if (liveRef.current) {
+        liveRef.current(null);
+        if (e.scale > 0) applyRef.current(e.scale, gAt);
+      }
+    };
+
     el.addEventListener('touchstart', onStart, { passive: true });
     el.addEventListener('touchmove', onMove, { passive: false });
     el.addEventListener('touchend', onEnd);
     el.addEventListener('touchcancel', onEnd);
+    if (gestures) {
+      el.addEventListener('gesturestart', onGStart as EventListener, { passive: false });
+      el.addEventListener('gesturechange', onGChange as EventListener, { passive: false });
+      el.addEventListener('gestureend', onGEnd as EventListener);
+    }
     return () => {
       el.removeEventListener('touchstart', onStart);
       el.removeEventListener('touchmove', onMove);
       el.removeEventListener('touchend', onEnd);
       el.removeEventListener('touchcancel', onEnd);
+      if (gestures) {
+        el.removeEventListener('gesturestart', onGStart as EventListener);
+        el.removeEventListener('gesturechange', onGChange as EventListener);
+        el.removeEventListener('gestureend', onGEnd as EventListener);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, rebind]);
