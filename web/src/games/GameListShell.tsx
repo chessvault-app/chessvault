@@ -55,9 +55,11 @@ export function GameListShell({
   filtersRef,
   notice,
   countBand,
+  listHeader,
   list,
   listClassName,
   listLoading = false,
+  dense = false,
   more,
   footnote,
   tail,
@@ -84,6 +86,11 @@ export function GameListShell({
   notice?: ReactNode;
   /** Contents of the count band: the tally, selection controls. */
   countBand?: ReactNode;
+  /** A band pinned directly above the list — the table mode's column
+      header. Outside the ul on purpose: the ul's nth-child stripe and
+      sentinel arithmetic count rows, and a header standing among them
+      would shift both by one. */
+  listHeader?: ReactNode;
   /** The rows. null/undefined with listLoading false means no list band
       at all (nothing looked up yet — see `tail`). */
   list?: ReactNode;
@@ -93,6 +100,9 @@ export function GameListShell({
   /** Rows are on their way: skeleton rows REPLACE the list's contents
       (never stack above them). */
   listLoading?: boolean;
+  /** One-line table rows: the virtualization's intrinsic size drops to
+      match, so offscreen rows reserve a row's height, not a card's. */
+  dense?: boolean;
   /** The infinite-scroll sentinel row at the list's foot. */
   more?: { ref: Ref<HTMLLIElement>; label: string } | null;
   /** The one-line note under the list (the archive's row cap). */
@@ -122,6 +132,7 @@ export function GameListShell({
           {countBand}
         </div>
       )}
+      {listHeader != null && (list != null || listLoading) && listHeader}
       {(list != null || listLoading) && (
         <ul
           className={cn(
@@ -146,7 +157,9 @@ export function GameListShell({
             // intrinsic size matches a two-line row; `auto` remembers
             // the real height once a row has rendered.
             '[&>li]:[content-visibility:auto]',
-            '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
+            dense
+              ? '[&>li]:[contain-intrinsic-size:auto_2.125rem]'
+              : '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
             listClassName,
           )}
         >
