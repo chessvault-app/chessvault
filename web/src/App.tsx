@@ -15,6 +15,7 @@ import {
   Puzzle,
   Repeat,
   Settings,
+  SquareMousePointer,
   Table2,
   Wrench,
 } from 'lucide-react';
@@ -413,7 +414,21 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           );
         })}
 
-        {/* Tools: a top-level group whose row points at its first entry. */}
+        {/* Tools: a top-level group whose row points at its first entry.
+
+            Not a wrench: a wrench means REPAIR, which is what it says
+            two screens away on the crash card below — one glyph for
+            "this broke" and for the Board. Nothing under this row is
+            being fixed, and Settings already holds the gear beside it.
+
+            What these four have in common is not an object — Board,
+            Editor, Explorer and Repertoire share none — but a stance:
+            they are the pages you ACT on, against the collections you
+            keep. A pointer on a surface says that, and says it in a
+            silhouette nothing else here has. `Shapes` was tried first
+            and withdrawn on sight: three small blobs directly under
+            Network's three, which is the clustering this whole sweep is
+            against. */}
         <button
           type="button"
           onClick={() => navigate('board')}
@@ -426,7 +441,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           )}
         >
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
-          <Wrench className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
+          <SquareMousePointer className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
           <span className="hidden lg:block">{t('Tools')}</span>
         </button>
         {TOOLS_SUBNAV.map(({ key, label, icon: Icon, nav, active: isActive }) => (
