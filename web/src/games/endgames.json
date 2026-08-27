@@ -1,0 +1,75 @@
+[
+  {
+    "id": "pawn",
+    "label": "Pawn endings",
+    "spec": {
+      "white": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [0, 0] },
+      "black": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [0, 0] }
+    }
+  },
+  {
+    "id": "knight",
+    "label": "Knight endings",
+    "spec": {
+      "white": { "n": [1, 2], "b": [0, 0], "r": [0, 0], "q": [0, 0] },
+      "black": { "n": [1, 2], "b": [0, 0], "r": [0, 0], "q": [0, 0] }
+    }
+  },
+  {
+    "id": "bishop",
+    "label": "Bishop endings",
+    "spec": {
+      "white": { "n": [0, 0], "b": [1, 2], "r": [0, 0], "q": [0, 0] },
+      "black": { "n": [0, 0], "b": [1, 2], "r": [0, 0], "q": [0, 0] }
+    }
+  },
+  {
+    "id": "bishop-vs-knight",
+    "label": "Bishop v knight",
+    "spec": {
+      "white": { "n": [0, 1], "b": [0, 1], "r": [0, 0], "q": [0, 0] },
+      "black": { "n": [0, 1], "b": [0, 1], "r": [0, 0], "q": [0, 0] },
+      "diff": { "n": [-1, 1], "b": [-1, 1], "minor": [0, 0] }
+    }
+  },
+  {
+    "id": "rook",
+    "label": "Rook endings",
+    "spec": {
+      "white": { "n": [0, 0], "b": [0, 0], "r": [1, 2], "q": [0, 0] },
+      "black": { "n": [0, 0], "b": [0, 0], "r": [1, 2], "q": [0, 0] }
+    }
+  },
+  {
+    "id": "queen",
+    "label": "Queen endings",
+    "spec": {
+      "white": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [1, 1] },
+      "black": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [1, 1] }
+    }
+  },
+  {
+    "id": "queenless-middlegame",
+    "label": "Queenless middlegame",
+    "spec": {
+      "white": { "q": [0, 0] },
+      "black": { "q": [0, 0] },
+      "diff": { "minor": [-1, 1], "major": [-1, 1] }
+    }
+  },
+  {
+    "id": "exchange-up",
+    "label": "Exchange up",
+    "spec": { "diff": { "major": [1, 10], "minor": [-10, -1] } }
+  },
+  {
+    "id": "two-minors-vs-rook",
+    "label": "Two minors v rook",
+    "spec": { "diff": { "minor": [2, 2], "major": [-1, -1] } }
+  },
+  {
+    "id": "queen-up",
+    "label": "A queen up",
+    "spec": { "diff": { "q": [1, 9] } }
+  }
+]

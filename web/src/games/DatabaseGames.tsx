@@ -1,9 +1,10 @@
-import { Database, Plus, SearchX, SlidersHorizontal, X } from 'lucide-react';
+import { Database, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
+import type { MatchMode } from '@shared/scanMatch';
 
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { navigate } from '@/lib/router';
@@ -12,7 +13,8 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/components/ui/button';
 
 import { Select } from '@/components/ui/select';
-import { SearchInput } from '@/components/text-fields';
+import { ClearableInput, SearchInput } from '@/components/text-fields';
+import ENDGAMES from './endgames.json';
 import {
   EMPTY_STRUCTURED_FILTERS,
   ResultSelect,
@@ -42,6 +44,21 @@ interface RefGame {
   eco: string | null;
   opening: string | null;
 }
+
+/** The relaxation rungs, in the ladder's own order (shared/scanMatch). */
+const RUNGS: { id: MatchMode; label: string }[] = [
+  { id: 'exact', label: 'Exact position' },
+  { id: 'pawns', label: 'Same pawns' },
+  { id: 'files', label: 'Same pawn files' },
+  { id: 'material', label: 'Same material' },
+];
+
+/** Stability, offered in moves (a spec's `stable` counts plies). */
+const HELD: { plies: number; label: string }[] = [
+  { plies: 1, label: 'At any moment' },
+  { plies: 8, label: 'Held 4+ moves' },
+  { plies: 16, label: 'Held 8+ moves' },
+];
 
 /**
  * Browse the reference database (data/refgames.sqlite — Lichess Elite or
@@ -117,26 +134,32 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   filterRef.current = { resultFilter, minElo, structured };
 
   const searchSeq = useRef(0);
+  /** The committed filters as query params — the /search and the deep
+      hunt speak the same gamesWhere, so one builder serves both. Reads
+      through filterRef so its identity never moves. */
+  const applyFilters = useCallback((params: URLSearchParams): void => {
+    const f = filterRef.current;
+    if (f.resultFilter !== 'any') params.set('result', f.resultFilter);
+    if (f.minElo > 0) params.set('minElo', String(f.minElo));
+    const st = f.structured;
+    if (st.player) params.set('player', st.player);
+    if (st.player && st.side !== 'any') params.set('side', st.side);
+    if (st.player && st.outcome !== 'any') params.set('outcome', st.outcome);
+    if (st.opening) params.set('opening', st.opening);
+    if (st.event) params.set('event', st.event);
+    if (st.from) params.set('from', st.from);
+    if (st.to) params.set('to', st.to);
+  }, []);
   // Keyset paging: the cursor is the last row id in hand, null for a fresh
   // search. The server seeks below it instead of walking an OFFSET.
   const search = useCallback(async (q: string, cursor: number | null, db: string | null) => {
     const seq = ++searchSeq.current;
     setLoading(true);
     try {
-      const f = filterRef.current;
       const params = new URLSearchParams({ q });
       if (cursor !== null) params.set('cursor', String(cursor));
       if (db) params.set('db', db);
-      if (f.resultFilter !== 'any') params.set('result', f.resultFilter);
-      if (f.minElo > 0) params.set('minElo', String(f.minElo));
-      const st = f.structured;
-      if (st.player) params.set('player', st.player);
-      if (st.player && st.side !== 'any') params.set('side', st.side);
-      if (st.player && st.outcome !== 'any') params.set('outcome', st.outcome);
-      if (st.opening) params.set('opening', st.opening);
-      if (st.event) params.set('event', st.event);
-      if (st.from) params.set('from', st.from);
-      if (st.to) params.set('to', st.to);
+      applyFilters(params);
       const data = await api<{
         total: number | null;
         capped?: boolean;
@@ -157,7 +180,112 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     } finally {
       if (seq === searchSeq.current) setLoading(false);
     }
-  }, []);
+  }, [applyFilters]);
+
+  /**
+   * The deep hunt: a position (optionally relaxed a rung) or a material
+   * situation, streamed from /deep-search into rows of its own beside
+   * the text search's — closing the section brings the text rows back
+   * untouched. Same reading loop as the explorer's DeepSearch: a stream
+   * that ends without its `done` frame FAILED rather than found
+   * nothing, and a stale sequence number abandons frames mid-read.
+   */
+  const [huntOpen, setHuntOpen] = useState(false);
+  const [huntKind, setHuntKind] = useState<'position' | 'material'>('position');
+  const [huntFen, setHuntFen] = useState('');
+  const [rung, setRung] = useState<MatchMode>('exact');
+  const [presetId, setPresetId] = useState<string>(ENDGAMES[0]!.id);
+  const [heldPlies, setHeldPlies] = useState(1);
+  const [huntRows, setHuntRows] = useState<RefGame[] | null>(null);
+  const [hunting, setHunting] = useState(false);
+  const [huntProgress, setHuntProgress] = useState<{ scanned: number; total: number } | null>(null);
+  const [huntExhaustive, setHuntExhaustive] = useState(true);
+  const [huntFailed, setHuntFailed] = useState<'failed' | 'bad-fen' | null>(null);
+  const huntSeq = useRef(0);
+  // Unmounting must take an in-flight hunt with it: the bump makes the
+  // read loop cancel its reader, which aborts the server's scan.
+  useEffect(
+    () => () => {
+      huntSeq.current += 1;
+    },
+    [],
+  );
+  const clearHunt = (): void => {
+    huntSeq.current += 1;
+    setHuntRows(null);
+    setHunting(false);
+    setHuntProgress(null);
+    setHuntFailed(null);
+  };
+
+  const runHunt = useCallback(async (): Promise<void> => {
+    const mine = ++huntSeq.current;
+    setHunting(true);
+    setHuntRows([]);
+    setHuntProgress(null);
+    setHuntExhaustive(true);
+    setHuntFailed(null);
+    let sawDone = false;
+    try {
+      const params = new URLSearchParams();
+      if (curDb) params.set('db', curDb);
+      applyFilters(params);
+      if (huntKind === 'position') {
+        params.set('fen', huntFen.trim());
+        if (rung !== 'exact') params.set('match', rung);
+      } else {
+        const preset = ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!;
+        params.set('material', JSON.stringify({ ...preset.spec, stable: heldPlies }));
+      }
+      const res = await fetch(`/api/refgames/deep-search?${params.toString()}`);
+      if (res.status === 400) {
+        // The one refusal a user can cause from here is a FEN that is
+        // not a position; say that instead of a generic failure.
+        if (huntSeq.current === mine) {
+          setHunting(false);
+          setHuntFailed(huntKind === 'position' ? 'bad-fen' : 'failed');
+        }
+        return;
+      }
+      if (!res.ok || !res.body) throw new Error('deep search failed');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (huntSeq.current !== mine) {
+          void reader.cancel();
+          return;
+        }
+        buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+        const lines = buffer.split('\n');
+        buffer = done ? '' : (lines.pop() ?? '');
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const frame = JSON.parse(line) as
+            | ({ type: 'game'; ply: number } & RefGame)
+            | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+          if (frame.type === 'game') {
+            const { type: _type, ply: _ply, ...game } = frame;
+            setHuntRows((prev) => [...(prev ?? []), game]);
+          } else {
+            setHuntProgress({ scanned: frame.scanned, total: frame.total });
+            if (frame.type === 'done') {
+              sawDone = true;
+              setHuntExhaustive(frame.exhaustive !== false);
+            }
+          }
+        }
+        if (done) break;
+      }
+    } catch {
+      // offline, or the route refused — failed, not empty
+    }
+    if (huntSeq.current === mine) {
+      setHunting(false);
+      if (!sawDone && huntSeq.current === mine) setHuntFailed((f) => f ?? 'failed');
+    }
+  }, [applyFilters, curDb, huntKind, huntFen, rung, presetId, heldPlies]);
 
   // Meta can fail like any other request — a raw fetch here used to leave
   // the pane wedged on nothing at all, with the rejection unhandled. The
@@ -231,23 +359,35 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     rowsFor.current = next;
     setRows([]);
     setQuery('');
+    // A hunt's rows answered a database that is no longer the one on
+    // screen; the controls keep their draft, the results do not.
+    huntSeq.current += 1;
+    setHuntRows(null);
+    setHunting(false);
+    setHuntProgress(null);
+    setHuntFailed(null);
     void search('', null, next);
   }, [meta, curDb, search]);
 
   const onQuery = (q: string): void => {
+    // Typing a text search is leaving the hunt: the rows must answer
+    // the box the user is typing into, not a board they searched before.
+    if (huntRows !== null) clearHunt();
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(() => void search(q, null, curDb), 250);
   };
 
-  // A filter press re-asks from the top, with the query still in the box.
+  // A filter press re-asks from the top, with the query still in the box
+  // — or re-runs the hunt, whose results the filters narrow identically.
   const filtersLive = useRef(false);
   useEffect(() => {
     if (!filtersLive.current) {
       filtersLive.current = true;
       return;
     }
-    void search(query, null, curDb);
+    if (huntRows !== null) void runHunt();
+    else void search(query, null, curDb);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resultFilter, minElo, structured]);
 
@@ -430,8 +570,23 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     );
   }
 
-  const count =
-    loading && rows.length === 0
+  const inHunt = huntRows !== null;
+  const count = inHunt
+    ? hunting
+      ? huntProgress
+        ? t('Searching… {scanned} of {total} games', {
+            scanned: huntProgress.scanned.toLocaleString(),
+            total: huntProgress.total.toLocaleString(),
+          })
+        : t('Searching…')
+      : huntFailed
+        ? t('The search failed.')
+        : huntExhaustive
+          ? t('{n} games found', { n: (huntRows?.length ?? 0).toLocaleString() })
+          : t('{n}+ games found — the list stops here', {
+              n: (huntRows?.length ?? 0).toLocaleString(),
+            })
+    : loading && rows.length === 0
       ? t('Searching…')
       : capped
         ? t('{n}+ games', { n: total.toLocaleString() })
@@ -532,7 +687,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   // re-implemented and half of which it had drifted on. Deliberately no
   // swipe, bookmark, rename or context menu: a reference row is
   // immutable, and Add is its keep verb.
-  const rowItems = rows.map((g) => (
+  const rowItems = (inHunt ? (huntRows ?? []) : rows).map((g) => (
     <GameRow
       key={g.id}
       game={toSummary(g)}
@@ -581,30 +736,127 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     </>
   );
 
+  /**
+   * The hunt controls, folded behind the toggle beside the search box:
+   * a position (FEN, with the relaxation rung) or a material situation
+   * (a preset from endgames.json — data, never per-preset code — and
+   * how long it must hold). One press runs it; the filter row above
+   * narrows a hunt exactly as it narrows the text search.
+   */
+  const huntControls = huntOpen && (
+    <div className="flex w-full flex-wrap items-center gap-1.5">
+      <Select
+        value={huntKind}
+        onValueChange={(v) => setHuntKind(v as 'position' | 'material')}
+        ariaLabel={t('Search by')}
+        size="sm"
+        groups={[
+          {
+            options: [
+              { value: 'position', label: t('Position') },
+              { value: 'material', label: t('Material') },
+            ],
+          },
+        ]}
+      />
+      {huntKind === 'position' ? (
+        <>
+          <ClearableInput
+            inputSize="sm"
+            value={huntFen}
+            onChange={(e) => setHuntFen(e.target.value)}
+            placeholder={t('Paste a FEN')}
+            spellCheck={false}
+            className="min-w-0 flex-1 basis-40"
+          />
+          <Select
+            value={rung}
+            onValueChange={(v) => setRung(v as MatchMode)}
+            ariaLabel={t('How closely to match')}
+            size="sm"
+            groups={[{ options: RUNGS.map((r) => ({ value: r.id, label: t(r.label) })) }]}
+          />
+        </>
+      ) : (
+        <>
+          <Select
+            value={presetId}
+            onValueChange={setPresetId}
+            ariaLabel={t('Material')}
+            size="sm"
+            className="min-w-0 flex-1"
+            groups={[{ options: ENDGAMES.map((p) => ({ value: p.id, label: t(p.label) })) }]}
+          />
+          <Select
+            value={String(heldPlies)}
+            onValueChange={(v) => setHeldPlies(Number(v))}
+            ariaLabel={t('How long it must hold')}
+            size="sm"
+            groups={[
+              { options: HELD.map((h) => ({ value: String(h.plies), label: t(h.label) })) },
+            ]}
+          />
+        </>
+      )}
+      <Button
+        variant="default"
+        size="sm"
+        disabled={hunting || (huntKind === 'position' && huntFen.trim() === '')}
+        onClick={() => void runHunt()}
+      >
+        <ScanSearch className="size-3.5" data-icon="inline-start" />
+        {t('Search')}
+      </Button>
+    </div>
+  );
+
   return (
     <>
     <GameListShell
       shape={shape}
       toolbar={
-        <SearchInput
-          inputSize="sm"
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder={t('Search players, openings, or ECO')}
-          spellCheck={false}
-          className="w-full"
-        />
+        <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full items-center gap-1.5">
+            <SearchInput
+              inputSize="sm"
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              placeholder={t('Search players, openings, or ECO')}
+              spellCheck={false}
+              className="min-w-0 flex-1"
+            />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={huntOpen}
+              title={t('Search by position or material')}
+              className="shrink-0"
+              onClick={() => {
+                if (huntOpen) {
+                  setHuntOpen(false);
+                  if (huntRows !== null) clearHunt();
+                } else {
+                  setHuntOpen(true);
+                }
+              }}
+            >
+              <ScanSearch className="size-3.5" />
+            </Button>
+          </div>
+          {huntControls}
+        </div>
       }
       filters={filters}
       countBand={countBand}
       // undefined when empty, or the bare bordered ul doubles the empty
       // state's own top rule.
-      list={rows.length > 0 ? rowItems : undefined}
+      list={rowItems.length > 0 ? rowItems : undefined}
       // Nothing for the first moment — a search that answers in 40 ms
       // should not flash a skeleton on the way past (useSlowLoad above);
       // when it does draw, it REPLACES the rows instead of stacking a
-      // second list above them.
-      listLoading={searching}
+      // second list above them. A hunt streams rows in as it scans, so
+      // it never shows the skeleton at all.
+      listLoading={!inHunt && searching}
       // In a sheet the card scrolls below sm and the list scrolls from sm
       // up, exactly like the archive in the same window.
       listClassName={
@@ -614,13 +866,32 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       }
       more={
         // "more", not "older": this list is in insertion order (id DESC),
-        // which is no promise about dates.
-        nextCursor !== null ? { ref: sentinel, label: t('Loading more games…') } : null
+        // which is no promise about dates. A hunt has no pages: the scan
+        // streams everything it finds up to the server's cap.
+        !inHunt && nextCursor !== null ? { ref: sentinel, label: t('Loading more games…') } : null
       }
       tail={
         // A search that comes back empty says so, with the way out — an
         // empty bordered box under a count of 0 read as a broken pane.
-        !loading && rows.length === 0 ? (
+        inHunt && !hunting && (huntRows?.length ?? 0) === 0 ? (
+          <EmptyState
+            className="border-border min-h-0 flex-1 border-t"
+            icon={SearchX}
+            title={huntFailed ? 'The search failed' : 'No games found'}
+            body={
+              huntFailed === 'bad-fen'
+                ? 'That is not a position — paste a FEN, like the one Copy FEN puts on the clipboard.'
+                : huntFailed
+                  ? 'The server could not finish the search.'
+                  : 'No game in this database contains what you searched for, under the filters above.'
+            }
+            action={
+              <Button variant="secondary" size="sm" onClick={() => void runHunt()}>
+                {t('Try again')}
+              </Button>
+            }
+          />
+        ) : !inHunt && !loading && rows.length === 0 ? (
           <EmptyState
             className="border-border min-h-0 flex-1 border-t"
             icon={SearchX}
