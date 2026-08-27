@@ -81,9 +81,10 @@ retried after a pause rather than remembered as empty. The whole map is
 asked in a handful of batched requests, not one per dot: a reference
 database or your own games answer every charted position at once, and
 the Lichess source answers whatever the server's explorer cache already
-holds the same way — so only positions it has never seen (or not seen
-within a day) cost a request each, and a map you have visited before
-colours in about one round trip. Those one-at-a-time requests are taken
+holds the same way — a stale entry is served as it stands and refreshed
+in the background — so only positions the server has never seen cost a
+request each, and a map you have visited before colours in about one
+round trip. Those one-at-a-time requests are taken
 in the order the picture needs them rather than top to bottom: select a
 dot and the line lit down from it is asked for first, an edge a round
 trip, while the rest of the map colours in behind it.

@@ -18,7 +18,8 @@ import { DATA_EXPLORER_CACHE, VAULT_CONFIG, VAULT_STUDIES } from './paths.ts';
  * Every successful response is cached on disk keyed by EPD+params, so any
  * position visited once keeps working offline forever. Order of preference:
  * fresh cache → network → stale cache → explicit error (the web client then
- * falls back to the local book).
+ * falls back to the local book). The batch route inverts that for stale
+ * entries — stale cache now, network afterwards — see its comment.
  */
 
 const EXPLORER_HOST = 'https://explorer.lichess.org';
@@ -123,8 +124,95 @@ function readCache(path: string): { body: string; ageMs: number } | null {
   }
 }
 
-export function lichessExplorerApi(cacheDir: string = DATA_EXPLORER_CACHE): Hono {
+export function lichessExplorerApi(
+  cacheDir: string = DATA_EXPLORER_CACHE,
+  /** Injectable for the tests, exactly as lichessStudiesApi takes one. */
+  fetcher: typeof fetch = fetch,
+  tokenSource: () => string | null = readToken,
+): Hono {
   const api = new Hono();
+
+  /**
+   * Fetch one position from Lichess and cache it. Shared by the
+   * single-position route (where the caller is waiting on the answer)
+   * and the batch route's background refresh (where nobody is). Returns
+   * the response body on success, or the status for the caller to map;
+   * throws on network failure like fetch does.
+   */
+  const fetchUpstream = async (
+    db: ExplorerDb,
+    epd: string,
+    ratings: string | null,
+    token: string,
+  ): Promise<{ body: string } | { status: number }> => {
+    const url =
+      `${EXPLORER_HOST}/${db}?fen=${encodeURIComponent(epd)}&topGames=4` +
+      (ratings ? `&ratings=${ratings}` : '');
+    const res = await fetcher(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return { status: res.status };
+    const body = JSON.stringify(
+      normalizeLichess((await res.json()) as LichessExplorerResponse, db),
+    );
+    mkdirSync(resolve(cacheDir, db), { recursive: true });
+    writeFileSync(cachePath(cacheDir, db, epd, ratings), body);
+    return { body };
+  };
+
+  /**
+   * The stale entries a batch answered from, queued to be refreshed
+   * BEHIND the response rather than in front of it.
+   *
+   * Lichess answers one position per request, so a stale map costs one
+   * upstream round trip per position however it is asked — the only
+   * choice is who waits on them. It used to be the user: the batch route
+   * dropped stale entries, the client re-fetched them through its two
+   * polite lanes, and the first visit of every day (the lichess db's TTL
+   * is 24h) watched the map colour in a second at a time for statistics
+   * that were on disk all along, one day old. Aggregate opening counts
+   * do not move meaningfully in a day, so the batch now answers stale
+   * and this queue re-earns freshness afterwards. The upstream traffic
+   * is the same requests it always was, minus anybody waiting.
+   *
+   * One lane, politer than the client's two since nobody is waiting on
+   * it, and the whole pass abandons on the first failure — a missing
+   * token, a 429, a network that is down — rather than retrying: the
+   * next batch that meets the same stale entries queues them again.
+   * Entries are re-checked against the TTL when their turn comes, so an
+   * entry the single route refreshed meanwhile costs nothing.
+   */
+  const stale: { db: ExplorerDb; epd: string; ratings: string | null; path: string }[] = [];
+  const staleQueued = new Set<string>();
+  let refreshing = false;
+  const refresh = async (): Promise<void> => {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      while (stale.length > 0) {
+        const item = stale.shift()!;
+        staleQueued.delete(item.path);
+        const cached = readCache(item.path);
+        if (cached && cached.ageMs < TTL_MS[item.db]) continue;
+        const token = tokenSource();
+        let ok = false;
+        if (token) {
+          try {
+            ok = 'body' in (await fetchUpstream(item.db, item.epd, item.ratings, token));
+          } catch {
+            // Network down — give up with the rest of the queue.
+          }
+        }
+        if (!ok) {
+          for (const left of stale) staleQueued.delete(left.path);
+          stale.length = 0;
+        }
+      }
+    } finally {
+      refreshing = false;
+    }
+  };
 
   api.get('/explorer/:db', async (c) => {
     const db = c.req.param('db') as ExplorerDb;
@@ -150,25 +238,14 @@ export function lichessExplorerApi(cacheDir: string = DATA_EXPLORER_CACHE): Hono
       return c.body(cached.body, 200, { 'content-type': 'application/json' });
     }
 
-    const token = readToken();
+    const token = tokenSource();
     if (token) {
       try {
-        const url =
-          `${EXPLORER_HOST}/${db}?fen=${encodeURIComponent(epd)}&topGames=4` +
-          (ratings ? `&ratings=${ratings}` : '');
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: AbortSignal.timeout(12_000),
-        });
-        if (res.ok) {
-          const body = JSON.stringify(
-            normalizeLichess((await res.json()) as LichessExplorerResponse, db),
-          );
-          mkdirSync(resolve(cacheDir, db), { recursive: true });
-          writeFileSync(path, body);
-          return c.body(body, 200, { 'content-type': 'application/json' });
+        const answer = await fetchUpstream(db, epd, ratings, token);
+        if ('body' in answer) {
+          return c.body(answer.body, 200, { 'content-type': 'application/json' });
         }
-        if (res.status === 401) {
+        if (answer.status === 401) {
           return c.json(
             { error: 'Lichess rejected the token in vault/config.json — create a new one (no scopes needed) at lichess.org/account/oauth/token/create' },
             502,
@@ -202,8 +279,12 @@ export function lichessExplorerApi(cacheDir: string = DATA_EXPLORER_CACHE): Hono
    * answers one per request — that cannot be batched away. But every
    * answer is cached above, so from the second sweep on the map was
    * paying hundreds of round trips for files already on disk. This route
-   * answers only what is cached and fresh; the caller sends anything left
-   * out through the single-position route, which is what fills the cache.
+   * answers whatever the cache holds, stale included — a stale entry is
+   * served as it stands and queued for the background refresh above, so
+   * the map paints whole now from yesterday's counts and is fresh again
+   * for tomorrow. Only a position with no cache file at all is left out;
+   * the caller sends those through the single-position route, which is
+   * what fills the cache.
    */
   api.post('/explorer/:db/batch', async (c) => {
     const db = c.req.param('db') as ExplorerDb;
@@ -225,16 +306,24 @@ export function lichessExplorerApi(cacheDir: string = DATA_EXPLORER_CACHE): Hono
       } catch {
         continue; // a bad FEN is left out, exactly like an uncached one
       }
-      const cached = readCache(cachePath(cacheDir, db, epd, ratings));
-      if (!cached || cached.ageMs >= TTL_MS[db]) continue;
+      const path = cachePath(cacheDir, db, epd, ratings);
+      const cached = readCache(path);
+      if (!cached) continue;
       try {
         const parsed = JSON.parse(cached.body) as { moves?: unknown[] };
         positions.push({ fen, moves: parsed.moves ?? [] });
       } catch {
         // An unreadable cache file answers nothing; the single route will
         // overwrite it.
+        continue;
+      }
+      if (cached.ageMs >= TTL_MS[db] && !staleQueued.has(path)) {
+        staleQueued.add(path);
+        stale.push({ db, epd, ratings, path });
       }
     }
+    // Deliberately not awaited: the refresh is the part nobody waits on.
+    if (stale.length > 0) void refresh();
     return c.json({ positions });
   });
 
