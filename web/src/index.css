@@ -107,13 +107,20 @@
 /* ---------------------------------------------------------------------------
    Density.
 
-   Four numbers, read by every surface in this app that repeats a row: a
+   Five numbers, read by every surface in this app that repeats a row: a
    game row (games/shared.tsx), a panel row (components/list-row.tsx), the
    card those sit in (components/ui/card.tsx), the move tree
-   (analysis/MoveTreePane.tsx) and the explorer's tables
-   (explorer/ExplorerPane.tsx). Written here rather than at the call sites
-   so that a density is four declarations and not a sweep, and so the next
-   rung is four more.
+   (analysis/MoveTreePane.tsx), the explorer's tables
+   (explorer/ExplorerPane.tsx) and the studies chapter list
+   (studies/StudyView.tsx). Written here rather than at the call sites so
+   that a density is five declarations and not a sweep, and so the next
+   rung is five more.
+
+   The book reader is deliberately absent, and it is the one place worth
+   naming: it has no list. It is a PDF canvas beside an analysis board,
+   and its h-9 and h-7 are toolbar bands, not rows. Shrinking a control
+   strip is not what this knob promises, and it would fight the
+   coarse-pointer hit areas besides.
 
    Deliberately NOT Tailwind's own `--spacing`. That would be one line and
    the wrong one: 401 rules in the built stylesheet derive from it, `size-*`
@@ -134,6 +141,11 @@
      rather than scanned as cards, and they were already the tightest
      rhythm in the app before a density existed. */
   --row-py-tight: calc(var(--spacing) * 1);
+  /* The fixed rung, for a row whose height is SET rather than left to come
+     out of its padding — the studies chapter list, whose rows carry an
+     inline rename input and a hover tray and so cannot be sized by their
+     text. A height, not a padding, because that is what the row states. */
+  --row-h: calc(var(--spacing) * 8);
   --card-pad: calc(var(--spacing) * 4);
 
   /* The move tree's branch elbow, which is NOT free to be chosen: it has
@@ -152,6 +164,7 @@
   --row-py: calc(var(--spacing) * 1.25);
   --row-py-dense: calc(var(--spacing) * 0.75);
   --row-py-tight: calc(var(--spacing) * 0.5);
+  --row-h: calc(var(--spacing) * 7);
   --card-pad: calc(var(--spacing) * 3);
 }
 
