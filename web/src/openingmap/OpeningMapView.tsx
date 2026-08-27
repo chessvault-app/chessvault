@@ -233,6 +233,34 @@ export function OpeningMapView({ params }: { params: string[] }) {
     return () => clearTimeout(deadline);
   }, [ready, revealed, mapId]);
 
+  /**
+   * The field overlay — gap badges and share-scaled dots — lands whole,
+   * never dot by dot.
+   *
+   * The deadline above reveals a slow map before the field sweep is done,
+   * and the sweep publishes as batches arrive, so the canvas used to grow
+   * a few more amber badges every second for several seconds: the map
+   * read as still loading long after it was up. The canvas now takes the
+   * field's answer only once the sweep has answered everything, in one
+   * paint.
+   *
+   * A latch rather than `fieldReady` itself, because readiness is
+   * recomputed against the failure backoff clock: a position the field
+   * answered empty re-ages out of "answered" after RETRY_MS, and reading
+   * the flag live would blank every badge whenever that recomputation
+   * lands. Once settled, later answers (a selection's chased line, a
+   * re-asked empty) refine the overlay in place — those are responses to
+   * the user's own act, not the map colouring itself in. The latch
+   * re-arms when the question changes: another map, another source,
+   * another band.
+   */
+  const [fieldSettled, setFieldSettled] = useState(false);
+  useEffect(() => setFieldSettled(false), [mapId, field.source, field.ratings]);
+  useEffect(() => {
+    if (fieldReady) setFieldSettled(true);
+  }, [fieldReady]);
+  const fieldShown = Boolean(field.source) && fieldSettled;
+
   // One way in, with two halves: the explorer-like list, and the field
   // at the foot of it for the move nobody has played yet — the whole
   // point of preparing it. Typing used to close this sheet and open a
@@ -489,8 +517,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
           map={map}
           resolved={resolved}
           coverage={coverage}
-          gaps={field.source ? gaps : undefined}
-          shares={field.source ? shares : undefined}
+          gaps={fieldShown ? gaps : undefined}
+          shares={fieldShown ? shares : undefined}
           labels={labels}
           matches={matches}
           selectedId={selected}
