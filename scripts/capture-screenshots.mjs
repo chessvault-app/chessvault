@@ -79,7 +79,36 @@ const THEMES = [
  */
 const TARGETS = [
   // README + the landing hero: the full desktop layout.
-  { hash: '#/board', out: 'board.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
+  // The README hero and the landing page's. NOT the app at rest: `#/board`
+  // opens on the starting position with both panels switched off, and the
+  // picture that made was a board nobody had touched beside a panel reading
+  // "Play a move on the board, or load a FEN or PGN" — an advertisement for
+  // an empty app, in the one image most people see before any other.
+  //
+  // So the shot plays an opening first and turns the two panels on. What it
+  // costs is that this shot now depends on the engine actually running,
+  // which on the demo means the single-threaded build (no COOP/COEP on a
+  // static host, so supportsThreads() is false and defaultFlavor() falls
+  // back to `lite-single`) — hence `think`, which is time for a search to
+  // have something to show rather than an empty panel with the switch on.
+  {
+    hash: '#/board',
+    out: 'board.png',
+    win: [1904, 996],
+    css: 1100,
+    wait: 'cg-board',
+    moves: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6', 'b5a4', 'g8f6', 'e1g1', 'f8e7'],
+    // The ENGINE only, and the explorer deliberately left shut. The explorer
+    // picks its source with activeBook(), which falls back to the vault's own
+    // games whenever `refDbs` is empty — and in the demo it always is, because
+    // the list comes from GET /api/refgames and demo/server.ts does not answer
+    // that route. So the panel can only ever say "None of your games reached
+    // this position", which is the empty vault advertising itself one panel
+    // further down. A shot cannot fix that; the demo answering /api/refgames
+    // would, and until it does this shot shows the half that works.
+    clicks: ['[aria-label="Engine on/off"]'],
+    think: 5000,
+  },
   { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-border' },
   { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
   // The whole repertoire at once — README and the landing page's map section.
@@ -169,6 +198,56 @@ const SELECT_NODE = (label) => `
   })()
 `;
 
+/**
+ * Where the board is, in the page's CSS pixels, and which way up.
+ *
+ * Orientation is read rather than assumed: every square below is derived
+ * from it, so a flipped board would not fail — it would quietly play a
+ * different opening from the one named in the target.
+ */
+const BOARD_BOX = `
+  (() => {
+    const el = document.querySelector('cg-board');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      x: r.x,
+      y: r.y,
+      size: r.width / 8,
+      flipped: !!el.closest('.orientation-black'),
+    };
+  })()
+`;
+
+/** Two squares of `.last-move` is chessground saying a move was accepted. */
+const MOVE_LANDED = `document.querySelectorAll('cg-board square.last-move').length`;
+
+/** The centre of a square like `e4`, in the same CSS pixels as BOARD_BOX. */
+const centreOf = (square, board) => {
+  const file = square.charCodeAt(0) - 97; // a..h -> 0..7
+  const rank = Number(square[1]) - 1; // 1..8 -> 0..7
+  const col = board.flipped ? 7 - file : file;
+  const row = board.flipped ? rank : 7 - rank;
+  return { x: board.x + (col + 0.5) * board.size, y: board.y + (row + 0.5) * board.size };
+};
+
+/**
+ * A real click, not one dispatched into the DOM.
+ *
+ * chessground binds its own pointer handling, and a MouseEvent built in JS
+ * arrives without the state that handling keeps between press and release —
+ * the same reason SELECT_NODE can get away with a synthetic event on a plain
+ * SVG group and this cannot. sendInputEvent goes in where the OS's would.
+ *
+ * The window's pixels are zoomed and getBoundingClientRect's are not, so
+ * these scale by the factor that decoupled them, exactly as the crop box does.
+ */
+const clickAt = (win, { x, y }, z) => {
+  const at = { x: Math.round(x * z), y: Math.round(y * z), button: 'left', clickCount: 1 };
+  win.webContents.sendInputEvent({ type: 'mouseDown', ...at });
+  win.webContents.sendInputEvent({ type: 'mouseUp', ...at });
+};
+
 const BOX_OF = (selector) => `
   (() => {
     const el = document.querySelector(${JSON.stringify(selector)});
@@ -218,7 +297,10 @@ app.whenReady().then(async () => {
       prefs: { ...theme.prefs, ...(target.prefs ?? {}) },
     })),
   );
-  for (const { hash, out, win: [w, h], css, wait, settle = 0, select, crop, prefs } of shots) {
+  for (const {
+    hash, out, win: [w, h], css, wait, settle = 0, select, crop, prefs,
+    moves, clicks, think = 0,
+  } of shots) {
     const win = new BrowserWindow({
       width: w,
       height: h,
@@ -274,6 +356,9 @@ app.whenReady().then(async () => {
     await win.webContents.executeJavaScript(HIDE_DEMO_BANNER);
     // After the load, not before: a navigation resets it.
     win.webContents.setZoomFactor(w / css);
+    // The window's pixels over the page's. Everything that crosses between
+    // the two — a click going in, a crop box coming out — goes through this.
+    const z = w / css;
     await sleep(1800);
     const banners = await win.webContents.executeJavaScript(
       `document.querySelectorAll('[data-demo-banner]').length`,
@@ -289,6 +374,37 @@ app.whenReady().then(async () => {
       ? await win.webContents.executeJavaScript(SELECT_NODE(select))
       : null;
     if (select) await sleep(600);
+
+    // Play the opening, then switch the panels on — in that order, because
+    // an engine told to search the starting position and then handed ten
+    // moves spends the shot catching up with the board.
+    let played = null;
+    if (moves) {
+      const board = await win.webContents.executeJavaScript(BOARD_BOX);
+      if (board) {
+        for (const move of moves) {
+          clickAt(win, centreOf(move.slice(0, 2), board), z);
+          await sleep(140);
+          clickAt(win, centreOf(move.slice(2, 4), board), z);
+          await sleep(280);
+        }
+        // Chessground marks the move it accepted. No mark after ten of them
+        // means the clicks landed somewhere that was not a legal move, and
+        // the shot is of the starting position with the panels on — which
+        // looks deliberate, so it has to say so out loud.
+        played = await win.webContents.executeJavaScript(MOVE_LANDED);
+      } else {
+        played = 0;
+      }
+    }
+    for (const selector of clicks ?? []) {
+      await win.webContents.executeJavaScript(
+        `document.querySelector(${JSON.stringify(selector)})?.click(); true`,
+      );
+      await sleep(400);
+    }
+    // The engine has to have found something to say before the shutter.
+    await sleep(think);
 
     // Checked at the shutter, not when the rule was added: the notice
     // getting into the docs is exactly the failure nobody notices until
@@ -307,7 +423,6 @@ app.whenReady().then(async () => {
     // placed, and empty. One full capture first is what makes it paint.
     // The cost is a discarded frame on the one shot that crops.
     if (box) await win.webContents.capturePage();
-    const z = w / css;
     const image = await win.webContents.capturePage(
       box
         ? {
@@ -332,6 +447,7 @@ app.whenReady().then(async () => {
         // A missed click or a missed crop is a plausible-looking picture of
         // the wrong thing, which is the failure worth shouting about.
         (selected === 0 ? `  (WARNING: no dot labelled "${select}" — nothing selected)` : '') +
+        (played === 0 ? `  (WARNING: no move landed — is this the starting position?)` : '') +
         (crop && !box ? `  (WARNING: no "${crop}" to crop to — captured the window)` : ''),
     );
     win.destroy();
