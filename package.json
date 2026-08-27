@@ -45,6 +45,7 @@
     "build:bundled-refgames": "tsx scripts/build-bundled-refgames.ts",
     "build:site": "npm run build:demo && tsx scripts/build-landing.ts",
     "shots": "electron scripts/capture-screenshots.mjs",
+    "shots:gif": "node scripts/record-demo-gif.mjs",
     "desktop:package:linux": "node desktop/build-server.mjs && npm run build && electron-builder --linux AppImage deb"
   },
   "dependencies": {
@@ -94,6 +95,7 @@
     "concurrently": "^10.0.4",
     "electron": "^43.3.0",
     "electron-builder": "^26.15.3",
+    "gifenc": "^1.0.3",
     "oxlint": "^1.78.0",
     "playwright": "^1.62.1",
     "png-to-ico": "^3.0.2",
