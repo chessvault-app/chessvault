@@ -7,6 +7,11 @@
 종이책에서 읽어 온 퍼즐 트레이너까지 — 모든 것이 PGN, 마크다운, JSON으로
 당신이 소유한 폴더 하나에 저장됩니다.
 
+**먼저 써 보세요:** [라이브 데모](https://chessvault-app.github.io/app/)는
+앱 전체를 브라우저에서, 미리 채워 둔 보관함 위에서 그대로 돌립니다. 설치도
+가입도 필요 없습니다. 둘러보기는
+[소개 페이지](https://chessvault-app.github.io/)에 있습니다.
+
 **빠른 시작:**
 [릴리스](https://github.com/chessvault-app/chessvault/releases/latest)에서
 Windows·macOS·Linux용 설치 프로그램을 받아 실행하고, 보관함이 어디 있는지

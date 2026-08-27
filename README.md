@@ -7,6 +7,11 @@ engine analysis, opening explorer, studies, notes, a curated game
 collection, and a puzzle trainer fed by real paper books — everything
 stored as PGN, markdown and JSON in one folder you own.
 
+**Try it first:** the [live demo](https://chessvault-app.github.io/app/)
+runs the whole app in a browser, on a seeded vault — no install, no
+account. The [landing page](https://chessvault-app.github.io/) has the
+tour.
+
 **Quick start:** grab the installer for Windows, macOS or Linux from
 [Releases](https://github.com/chessvault-app/chessvault/releases/latest),
 run it, and answer **local** when it asks where your vault lives. That is
