@@ -8,6 +8,7 @@ import {
   type MatchMode,
   type MaterialSpec,
 } from '../shared/scanMatch.ts';
+import { pawnFilesHash } from '../shared/scanPack.ts';
 
 /**
  * The deep scan's per-game answers, in both speeds.
@@ -37,6 +38,10 @@ export interface PositionTarget {
   key32: number;
   /** The relaxed rung's signature (modes other than 'exact'). */
   sig: string;
+  /** The pawn-files hash — the pack's structure gate for the pawns and
+      files rungs, without which their candidates were every game whose
+      piece counts matched (measured 112 s of verification at 5M). */
+  pawns8: number;
   /** Per-piece counts in p,n,b,r,q order — the pack-side gates. */
   wCounts: number[];
   bCounts: number[];
@@ -62,6 +67,7 @@ export function positionTarget(target: Chess, mode: MatchMode): PositionTarget {
     key: toDbKey(hash),
     key32: Number(hash & MASK32),
     sig: mode === 'exact' ? '' : matchSignature(target.board, mode),
+    pawns8: pawnFilesHash(target.board),
     wCounts: sets.map((s) => s.intersect(target.board.white).size()),
     bCounts: sets.map((s) => s.intersect(target.board.black).size()),
     w: target.board.white.size(),
@@ -185,7 +191,7 @@ const header = (pack: Uint8Array): { npos: number; view: DataView } => {
   if (pack.length < 2) throw new BadPack('truncated header');
   const view = new DataView(pack.buffer, pack.byteOffset, pack.byteLength);
   const npos = view.getUint16(0, true);
-  if (npos < 1 || pack.length !== 2 + 4 * npos + (npos - 1)) throw new BadPack('bad length');
+  if (npos < 1 || pack.length !== 2 + 5 * npos + (npos - 1)) throw new BadPack('bad length');
   return { npos, view };
 };
 
@@ -210,13 +216,19 @@ export function packPositionCandidate(pack: Uint8Array, target: PositionTarget):
       counts.wTotal === target.w &&
       counts.bTotal === target.b &&
       counts.equals(target.wCounts, target.bCounts) &&
-      (target.mode !== 'exact' || view.getUint32(2 + 4 * ply, true) === target.key32)
+      // The structure gates, each rung's own: the exact rung has the
+      // key prefix, the pawns and files rungs the pawn-files hash
+      // (same placement implies same file counts, so it is sound for
+      // pawns too), the material rung needs nothing past the counts.
+      (target.mode === 'exact'
+        ? view.getUint32(2 + 4 * ply, true) === target.key32
+        : target.mode === 'material' || pack[2 + 4 * npos + ply] === target.pawns8)
     ) {
       return ply;
     }
     // Men only leave: below the target's totals, this game is done.
     if (counts.wTotal < target.w || counts.bTotal < target.b) return null;
-    if (ply < npos - 1) counts.apply(pack[2 + 4 * npos + ply]!, ply);
+    if (ply < npos - 1) counts.apply(pack[2 + 5 * npos + ply]!, ply);
   }
   return null;
 }
@@ -255,7 +267,7 @@ export function packMaterialHit(pack: Uint8Array, spec: MaterialSpec): number | 
       streak = 0;
     }
     if (counts.wTotal < loW || counts.bTotal < loB) return null;
-    if (ply < npos - 1) counts.apply(pack[2 + 4 * npos + ply]!, ply);
+    if (ply < npos - 1) counts.apply(pack[2 + 5 * npos + ply]!, ply);
   }
   return null;
 }

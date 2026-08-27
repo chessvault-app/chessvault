@@ -1,3 +1,4 @@
+import type { Board } from 'chessops/board';
 import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';
 import { squareFile } from 'chessops/util';
@@ -23,6 +24,7 @@ import { hashSetup } from './zobrist.ts';
  * npos × u32   key32  — per position, the low 32 bits of the UNSIGNED
  *                       zobrist hash (shared/zobrist.ts, before the
  *                       signed db-key conversion), position 0 first
+ * npos × u8    pawns8 — per position, the pawn-files hash below
  * (npos−1) × u8 event — per ply, what the move did to the material
  * ```
  *
@@ -32,6 +34,19 @@ import { hashSetup } from './zobrist.ts';
  * for the depths the plies table stops short of. A 32-bit key is a
  * prefilter, not an answer: a scanner that matches one must verify the
  * hit by replaying that one game, which is cheap because hits are few.
+ *
+ * ## The pawn-files hash
+ *
+ * One byte discriminating pawn STRUCTURE, for the ladder's pawns and
+ * files rungs: without it their candidates were every game whose piece
+ * counts matched, and verification dominated (measured 112 s over five
+ * million games; the whole point of the pack is not replaying). The
+ * hash digests the files-rung projection — per file, per side, how
+ * many pawns — so it is exact for the files rung up to its 8 bits, and
+ * a sound prefilter for the pawns rung (same placement implies same
+ * file counts). Defined arithmetic, not a library: h starts at 5, and
+ * for each of the 16 counts v (white files a…h, then black a…h),
+ * h = (h * 33 + v) mod 256.
  *
  * ## The event byte
  *
@@ -68,11 +83,27 @@ const ROLE_CODE: Record<Role, number> = {
 
 const MASK32 = 0xffffffffn;
 
+/** The pawn-files hash of a board — see the header for the exact
+    arithmetic, which the Rust twin repeats digit for digit. */
+export function pawnFilesHash(board: Board): number {
+  const files = new Array<number>(16).fill(0);
+  for (const square of board.pawn.intersect(board.white)) {
+    files[squareFile(square)] = (files[squareFile(square)] ?? 0) + 1;
+  }
+  for (const square of board.pawn.intersect(board.black)) {
+    files[8 + squareFile(square)] = (files[8 + squareFile(square)] ?? 0) + 1;
+  }
+  let h = 5;
+  for (const value of files) h = (h * 33 + value) & 0xff;
+  return h;
+}
+
 /** Encode one game's movetext into its pack. Replays with the same
     chessops pipeline as every other consumer, full depth. */
 export function encodeScanPack(moves: string): Uint8Array {
   const pos = Chess.default();
   const keys: number[] = [Number(hashSetup(pos.toSetup()) & MASK32)];
+  const pawns: number[] = [pawnFilesHash(pos.board)];
   const events: number[] = [];
   for (const san of moves.split(' ')) {
     const move = parseSan(pos, san);
@@ -95,14 +126,18 @@ export function encodeScanPack(moves: string): Uint8Array {
     pos.play(move);
     events.push(event);
     keys.push(Number(hashSetup(pos.toSetup()) & MASK32));
+    pawns.push(pawnFilesHash(pos.board));
   }
   const npos = keys.length;
-  const pack = new Uint8Array(2 + 4 * npos + events.length);
+  const pack = new Uint8Array(2 + 5 * npos + events.length);
   const view = new DataView(pack.buffer);
   view.setUint16(0, npos, true);
   keys.forEach((key, at) => view.setUint32(2 + 4 * at, key, true));
+  pawns.forEach((hash, at) => {
+    pack[2 + 4 * npos + at] = hash;
+  });
   events.forEach((event, at) => {
-    pack[2 + 4 * npos + at] = event;
+    pack[2 + 5 * npos + at] = event;
   });
   return pack;
 }
@@ -110,6 +145,7 @@ export function encodeScanPack(moves: string): Uint8Array {
 /** A decoded pack, for tests and the scanner to come. */
 export interface ScanPack {
   keys: number[];
+  pawns: number[];
   events: number[];
 }
 
@@ -119,10 +155,12 @@ export function decodeScanPack(pack: Uint8Array): ScanPack | null {
   if (pack.length < 2) return null;
   const view = new DataView(pack.buffer, pack.byteOffset, pack.byteLength);
   const npos = view.getUint16(0, true);
-  if (npos < 1 || pack.length !== 2 + 4 * npos + (npos - 1)) return null;
+  if (npos < 1 || pack.length !== 2 + 5 * npos + (npos - 1)) return null;
   const keys: number[] = [];
   for (let at = 0; at < npos; at += 1) keys.push(view.getUint32(2 + 4 * at, true));
+  const pawns: number[] = [];
+  for (let at = 0; at < npos; at += 1) pawns.push(pack[2 + 4 * npos + at]!);
   const events: number[] = [];
-  for (let at = 0; at < npos - 1; at += 1) events.push(pack[2 + 4 * npos + at]!);
-  return { keys, events };
+  for (let at = 0; at < npos - 1; at += 1) events.push(pack[2 + 5 * npos + at]!);
+  return { keys, pawns, events };
 }

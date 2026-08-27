@@ -7,10 +7,11 @@ import { decodeScanPack, encodeScanPack } from './scanPack.ts';
 const START_KEY32 = Number(hashSetup(Chess.default().toSetup()) & 0xffffffffn);
 
 describe('encodeScanPack', () => {
-  it('pins the layout: header, keys, events, byte for byte', () => {
-    // Two plies, no captures: npos 3, three keys, two zero events.
+  it('pins the layout: header, keys, pawn hashes, events, byte for byte', () => {
+    // Two plies, no captures: npos 3, three keys, three pawn hashes,
+    // two zero events.
     const pack = encodeScanPack('e4 e5');
-    expect(pack.length).toBe(2 + 4 * 3 + 2);
+    expect(pack.length).toBe(2 + 5 * 3 + 2);
     const view = new DataView(pack.buffer);
     expect(view.getUint16(0, true)).toBe(3);
     expect(view.getUint32(2, true)).toBe(START_KEY32);
@@ -19,6 +20,17 @@ describe('encodeScanPack', () => {
     const pos = Chess.default();
     pos.play(parseSan(pos, 'e4')!);
     expect(view.getUint32(6, true)).toBe(Number(hashSetup(pos.toSetup()) & 0xffffffffn));
+    // The pawn-files hash stream: the start position's, pinned to the
+    // spec's arithmetic by hand — 16 files each holding 1,1,…,1.
+    let h = 5;
+    for (let at = 0; at < 16; at += 1) h = (h * 33 + 1) & 0xff;
+    expect(pack[2 + 4 * 3]).toBe(h);
+    // e4 keeps every pawn on its file, so all three hashes agree.
+    expect(pack[2 + 4 * 3 + 1]).toBe(h);
+    expect(pack[2 + 4 * 3 + 2]).toBe(h);
+    // A capture changes the structure and the hash with it.
+    const captured = decodeScanPack(encodeScanPack('e4 d5 exd5'))!;
+    expect(captured.pawns.at(-1)).not.toBe(h);
   });
 
   it('writes capture, en passant, promotion and castling events', () => {
