@@ -179,7 +179,9 @@ export function AnalysisBoard({
 
   return (
     // Top-anchored, not centred: the board must sit at the same y in every
-    // view regardless of what each stacks below it.
+    // view regardless of what each stacks below it. The above-centre
+    // placement this produces is also deliberate in itself — see the
+    // optical-centre note on BOARD_WIDE_COLUMN in components/layout.ts.
     <div
       ref={boardColumn}
       className={BOARD_WIDE_COLUMN}

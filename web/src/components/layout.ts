@@ -91,6 +91,18 @@ export const BOARD_WIDE_SHELL =
  * One literal, and not seven: this string was pasted into every board page
  * and the skeleton, which is how the trainers and the analysis board would
  * come to disagree about it.
+ *
+ * The above-centre placement `justify-start` produces is deliberate, not a
+ * by-product to be corrected to true centring. The perceived middle of a
+ * frame sits ABOVE its geometric middle (the vertical-bisection illusion;
+ * "optical centre" in typography and framing, roughly 3–7% of the frame
+ * height up), so a truly centred board would read as sagging. Measured on
+ * the board page at 1600x900: the board block spans y 16–816, its centre
+ * 3.8% of the viewport above geometric centre — inside that band. Tall
+ * windows overshoot it (8.3% at 1600x1200, where the 64rem board cap bites
+ * and the slack accrues below), and that is the accepted cost: proportional
+ * centring would fix the rare tall window by breaking the same-y invariant
+ * everywhere else.
  */
 export const BOARD_WIDE_COLUMN =
   'flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start board-col-cap';
