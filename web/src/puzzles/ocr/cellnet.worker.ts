@@ -10,7 +10,11 @@ let net: CellNet | null = null;
 let loading: Promise<void> | null = null;
 
 async function ensureNet(): Promise<void> {
-  loading ??= fetch('/models/cellnet-v1.bin')
+  // Against this module's own URL — a worker has no document to resolve
+  // from. It is emitted beside the other assets, so one level up is the
+  // app's root whether that root is a host's or /app/. Same reason as
+  // loadCellNet(): absolute meant the demo never had a classifier.
+  loading ??= fetch(new URL('../models/cellnet-v1.bin', import.meta.url))
     .then(async (res) => {
       if (!res.ok) throw new Error(`model fetch ${res.status}`);
       net = parseCellNet(await res.arrayBuffer());

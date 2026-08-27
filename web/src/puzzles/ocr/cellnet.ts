@@ -69,7 +69,13 @@ let cached: Promise<CellNet | null> | null = null;
 
 /** Fetch-and-cache the bundled model; null when unavailable (fallback path). */
 export function loadCellNet(): Promise<CellNet | null> {
-  cached ??= fetch('/models/cellnet-v1.bin')
+  // Resolved against the document, not the origin. '/models/...' is only
+  // the right URL when the app is served from the root of a host: under
+  // the demo it lives at /app/, so the fetch went to the site root, 404'd,
+  // and — because the failure falls back to null exactly as a missing model
+  // should — every diagram in the demo was silently unreadable. The app at
+  // root resolves to the same path it always did.
+  cached ??= fetch(new URL('models/cellnet-v1.bin', document.baseURI))
     .then(async (res) => {
       if (!res.ok) throw new Error(`model fetch ${res.status}`);
       return parseCellNet(await res.arrayBuffer());
