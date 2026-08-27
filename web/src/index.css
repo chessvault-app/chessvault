@@ -107,11 +107,13 @@
 /* ---------------------------------------------------------------------------
    Density.
 
-   Three numbers, read by the three surfaces every list in this app is made
-   of: a game row (games/shared.tsx), a panel row (components/list-row.tsx),
-   and the card those sit in (components/ui/card.tsx). Written here rather
-   than at the call sites so that a density is three declarations and not a
-   sweep, and so the next rung is three more.
+   Four numbers, read by every surface in this app that repeats a row: a
+   game row (games/shared.tsx), a panel row (components/list-row.tsx), the
+   card those sit in (components/ui/card.tsx), the move tree
+   (analysis/MoveTreePane.tsx) and the explorer's tables
+   (explorer/ExplorerPane.tsx). Written here rather than at the call sites
+   so that a density is four declarations and not a sweep, and so the next
+   rung is four more.
 
    Deliberately NOT Tailwind's own `--spacing`. That would be one line and
    the wrong one: 401 rules in the built stylesheet derive from it, `size-*`
@@ -127,13 +129,29 @@
 :root {
   --row-py: calc(var(--spacing) * 2);
   --row-py-dense: calc(var(--spacing) * 1.5);
+  /* The tabular rung: a move in the move list, a continuation in the
+     explorer's table, a game under either. These are read in columns
+     rather than scanned as cards, and they were already the tightest
+     rhythm in the app before a density existed. */
+  --row-py-tight: calc(var(--spacing) * 1);
   --card-pad: calc(var(--spacing) * 4);
+
+  /* The move tree's branch elbow, which is NOT free to be chosen: it has
+     to end on the middle of the first line of the row it points at, so it
+     is the row's top padding plus half a text-sm line (1.25rem/2). Derived
+     rather than declared, so it follows the tight rung at every density
+     instead of being a second number to remember. It was h-3.5 — exactly
+     this sum at the comfortable rung — and a density that moved the
+     padding without it would have left every branch guide pointing above
+     or below its own move. */
+  --move-elbow-h: calc(var(--row-py-tight) + 0.625rem);
 }
 
 /* Comfortable carries no attribute — it is what :root says above. */
 :root[data-density='compact'] {
   --row-py: calc(var(--spacing) * 1.25);
   --row-py-dense: calc(var(--spacing) * 0.75);
+  --row-py-tight: calc(var(--spacing) * 0.5);
   --card-pad: calc(var(--spacing) * 3);
 }
 

@@ -39,7 +39,7 @@ const NAG_CLASS: Record<number, string> = {
  */
 const commentRow = (size: string): string =>
   cn(
-    'border-border/60 bg-muted/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-1.5',
+    'border-border/60 bg-muted/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-(--row-py-dense)',
     size,
     'leading-relaxed',
   );
@@ -303,14 +303,16 @@ export function MainlineTable({
             // The branch guide (BRANCH_ELBOW): indent alone said "not the
             // mainline"; the elbow says "a branch off it", and where a
             // sideline has its own sidelines the two levels read as one
-            // tree. The elbow sits at left-3; py-1 plus half a text-sm
-            // line puts the first line's middle at 14px, hence h-3.5. The
-            // continuing vertical runs to the row's bottom, which is the
-            // next sibling's top.
+            // tree. The elbow sits at left-3, and its height is the row's
+            // top padding plus half a text-sm line, so that it ends on the
+            // middle of the move it points at — derived in index.css as
+            // --move-elbow-h, so it follows the density rather than being a
+            // second number to keep in step. The continuing vertical runs
+            // to the row's bottom, which is the next sibling's top.
             className={cn(
-              'border-border/60 relative border-b py-1 pr-2 pl-7',
+              'border-border/60 relative border-b py-(--row-py-tight) pr-2 pl-7',
               BRANCH_ELBOW,
-              'before:left-3 before:h-3.5',
+              'before:left-3 before:h-(--move-elbow-h)',
               !last && BRANCH_CONTINUES,
               !last && 'after:left-3 after:bottom-0',
             )}
@@ -353,7 +355,7 @@ function MoveCell({
 }) {
   if (entry === null) return <span />;
   if (entry === 'ellipsis') {
-    return <span className="text-muted-foreground flex items-center px-3 py-1">…</span>;
+    return <span className="text-muted-foreground flex items-center px-3 py-(--row-py-tight)">…</span>;
   }
   const { id, node } = entry;
   const active = id === cursorId;
@@ -363,7 +365,7 @@ function MoveCell({
       onClick={() => onSelect(id)}
       data-active={active}
       className={cn(
-        'flex items-baseline gap-1 px-3 py-1 text-left font-medium transition-colors duration-100',
+        'flex items-baseline gap-1 px-3 py-(--row-py-tight) text-left font-medium transition-colors duration-100',
         active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
       )}
     >

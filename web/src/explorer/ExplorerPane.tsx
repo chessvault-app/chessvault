@@ -393,7 +393,7 @@ export function ExplorerPane({
                     <button
                       type="button"
                       onClick={() => setAllMoves((v) => !v)}
-                      className="text-muted-foreground hover:text-foreground w-full px-3 py-1 text-left text-xs transition-colors duration-100"
+                      className="text-muted-foreground hover:text-foreground w-full px-3 py-(--row-py-tight) text-left text-xs transition-colors duration-100"
                     >
                       {allMoves ? 'Show fewer moves' : `Show all ${moves.length} moves`}
                     </button>
@@ -863,14 +863,14 @@ function MoveRow({
         alt && 'bg-muted/50',
       )}
     >
-      <td className="text-foreground font-moves w-14 py-1 pl-3 pr-1 font-semibold">{move.san}</td>
+      <td className="text-foreground font-moves w-14 py-(--row-py-tight) pl-3 pr-1 font-semibold">{move.san}</td>
       <td
-        className="text-muted-foreground w-14 py-1 pr-2 text-right font-mono tabular-nums"
+        className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums"
         title={`${exact.format(move.total)} games`}
       >
         {compact.format(move.total)}
       </td>
-      <td className="py-1 pr-3">
+      <td className="py-(--row-py-tight) pr-3">
         <ResultBar w={move.w} d={move.d} b={move.b} />
       </td>
     </tr>
@@ -1063,7 +1063,7 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
                   type="button"
                   onClick={() => void open(g)}
                   title={t('Open on the analysis board')}
-                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-left text-sm"
+                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-(--row-py-tight) text-left text-sm"
                 >
                   <span className="text-foreground min-w-0 flex-1 truncate">
                     {g.white} – {g.black}
@@ -1181,7 +1181,7 @@ function TopGamesList({
                 onClick={() => void open(g)}
                 title={t('Open this game')}
                 className={cn(
-                  'hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1',
+                  'hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-(--row-py-tight)',
                   'text-left text-sm transition-colors duration-100',
                 )}
               >
