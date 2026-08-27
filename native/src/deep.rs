@@ -238,7 +238,7 @@ pub fn run_deep_search(
     )?;
 
     let mut page = conn.prepare(&format!(
-        "SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+        "SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
          FROM games
          WHERE id > ?{men_where}{sql_and}
          ORDER BY id LIMIT 1000"
@@ -252,9 +252,22 @@ pub fn run_deep_search(
         black_elo: f64,
         result: String,
         date: Option<String>,
+        event: Option<String>,
         eco: Option<String>,
         opening: Option<String>,
         moves: String,
+    }
+
+    // Mirrors movesPreview in server/refgames.ts — the JS scan emits the
+    // same two fields, and the two implementations must answer identically.
+    const SAN_PREFIX_PLIES: usize = 24;
+    fn moves_preview(moves: &str) -> (u64, Option<String>) {
+        if moves.is_empty() {
+            return (0, None);
+        }
+        let sans: Vec<&str> = moves.split(' ').collect();
+        let prefix = sans[..sans.len().min(SAN_PREFIX_PLIES)].join(" ");
+        (sans.len() as u64, Some(prefix))
     }
 
     let stdout = std::io::stdout();
@@ -290,9 +303,10 @@ pub fn run_deep_search(
                     black_elo: r.get(4)?,
                     result: r.get(5)?,
                     date: r.get(6)?,
-                    eco: r.get(7)?,
-                    opening: r.get(8)?,
-                    moves: r.get(9)?,
+                    event: r.get(7)?,
+                    eco: r.get(8)?,
+                    opening: r.get(9)?,
+                    moves: r.get(10)?,
                 })
             })?;
             rows.collect::<Result<_, _>>()?
@@ -317,6 +331,7 @@ pub fn run_deep_search(
                         json!(v)
                     }
                 };
+                let (ply_count, san_prefix) = moves_preview(&row.moves);
                 emit!(json!({
                     "type": "game",
                     "ply": hit_ply,
@@ -327,8 +342,11 @@ pub fn run_deep_search(
                     "black_elo": elo(row.black_elo),
                     "result": row.result,
                     "date": row.date,
+                    "event": row.event,
                     "eco": row.eco,
                     "opening": row.opening,
+                    "plyCount": ply_count,
+                    "sanPrefix": san_prefix,
                 }));
             }
             if matched >= DEEP_SEARCH_CAP {

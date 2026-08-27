@@ -52,6 +52,8 @@ interface RefGame {
   event: string | null;
   eco: string | null;
   opening: string | null;
+  plyCount: number;
+  sanPrefix: string | null;
 }
 
 /**
@@ -730,8 +732,8 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     link: null,
     event: g.event,
     round: null,
-    plyCount: 0,
-    sanPrefix: null,
+    plyCount: g.plyCount,
+    sanPrefix: g.sanPrefix,
     opening: g.eco && g.opening ? { eco: g.eco, name: g.opening } : null,
     finalFen: null,
     userSide: null,

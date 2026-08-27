@@ -1157,6 +1157,17 @@ export function refGamesApi(
    * database already built.
    */
   const OPENING_PLIES = 24;
+  /**
+   * What a list row carries of the moves themselves: the mainline's length
+   * and its first plies as bare SAN — enough for a notation column and a
+   * details fallback, while the full game stays a /refgames/:id/pgn fetch.
+   */
+  const SAN_PREFIX_PLIES = 24;
+  const movesPreview = (moves: string): { plyCount: number; sanPrefix: string | null } => {
+    if (!moves) return { plyCount: 0, sanPrefix: null };
+    const sans = moves.split(' ');
+    return { plyCount: sans.length, sanPrefix: sans.slice(0, SAN_PREFIX_PLIES).join(' ') };
+  };
   const deriveOpening = (moves: string): Opening | null => {
     const pos = Chess.default();
     let found: Opening | null = null;
@@ -1313,9 +1324,11 @@ export function refGamesApi(
       // The page after this one starts below the last id sent; a short
       // page is the end of the results.
       nextCursor: page.length === PAGE ? page[page.length - 1]!.id : null,
-      // moves ride along only to name the openings the source PGN left
-      // nameless; the page is 50 rows, so the replay cost is nothing.
-      rows: page.map(({ moves, ...row }) => {
+      // moves ride along to name the openings the source PGN left
+      // nameless and to fill the notation preview; the page is 50 rows,
+      // so the replay cost is nothing.
+      rows: page.map(({ moves, ...bare }) => {
+        const row = { ...bare, ...movesPreview(moves) };
         if (row.opening) return row;
         const derived = deriveOpening(moves);
         return derived ? { ...row, eco: row.eco ?? derived.eco, opening: derived.name } : row;
@@ -1657,7 +1670,7 @@ export function refGamesApi(
       }
       const eligible = allowed ? candidates.filter((id) => allowed.has(id)) : candidates;
       const headerStmt = db.prepare(
-        `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+        `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
          FROM games WHERE id = ?`,
       );
       c.header('Content-Type', 'application/x-ndjson');
@@ -1674,8 +1687,10 @@ export function refGamesApi(
           const hitPly = replayPositionHit(row.moves, target!);
           if (hitPly === null) continue;
           matched += 1;
-          const { moves: _moves, ...headers } = row;
-          await out.writeln(JSON.stringify({ type: 'game', ply: hitPly, ...headers }));
+          const { moves, ...headers } = row;
+          await out.writeln(
+            JSON.stringify({ type: 'game', ply: hitPly, ...headers, ...movesPreview(moves) }),
+          );
           if (matched >= DEEP_SEARCH_CAP) break;
         }
         await out.writeln(
@@ -1749,7 +1764,7 @@ export function refGamesApi(
         ? ids.length
         : (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
       const headerStmt = db.prepare(
-        `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+        `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
          FROM games WHERE id = ?`,
       );
       c.header('Content-Type', 'application/x-ndjson');
@@ -1804,8 +1819,10 @@ export function refGamesApi(
             }
             if (hitPly === null) continue;
             matched += 1;
-            const { moves: _moves, ...headers } = row;
-            await out.writeln(JSON.stringify({ type: 'game', ply: hitPly, ...headers }));
+            const { moves, ...headers } = row;
+            await out.writeln(
+              JSON.stringify({ type: 'game', ply: hitPly, ...headers, ...movesPreview(moves) }),
+            );
           }
           if (matched >= DEEP_SEARCH_CAP) {
             run.cancel();
@@ -1912,7 +1929,7 @@ export function refGamesApi(
         .get(...menBinds, ...binds) as { n: number }
     ).n;
     const page = db.prepare(
-      `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+      `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
        FROM games
        WHERE id > ?${menWhere}${sqlAnd}
        ORDER BY id LIMIT 1000`,
@@ -1941,8 +1958,10 @@ export function refGamesApi(
             : replayPositionHit(row.moves, target!);
           if (hitPly !== null) {
             matched += 1;
-            const { moves: _moves, ...headers } = row;
-            await out.writeln(JSON.stringify({ type: 'game', ply: hitPly, ...headers }));
+            const { moves, ...headers } = row;
+            await out.writeln(
+              JSON.stringify({ type: 'game', ply: hitPly, ...headers, ...movesPreview(moves) }),
+            );
           }
           if (matched >= DEEP_SEARCH_CAP) break;
         }
