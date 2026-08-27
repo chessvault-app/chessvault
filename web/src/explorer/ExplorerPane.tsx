@@ -108,6 +108,7 @@ export function ExplorerPane({
         useExplorer.getState().setRefFilters({
           result: was.result,
           minElo: was.minElo,
+          band: was.band,
           from: was.from,
           to: was.to,
         });
