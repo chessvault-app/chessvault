@@ -7,11 +7,6 @@ engine analysis, opening explorer, studies, notes, a curated game
 collection, and a puzzle trainer fed by real paper books — everything
 stored as PGN, markdown and JSON in one folder you own.
 
-![A printed diagram in a book, becoming the position on the board beside it](docs/screenshots/book-to-board.gif)
-
-*A book page, its printed diagram, and the board it sets up — the demo's
-own sample book.*
-
 **Try it first:** the [live demo](https://chessvault-app.github.io/app/)
 runs the whole app in a browser, on a seeded vault — no install, no
 account. The [landing page](https://chessvault-app.github.io/) has the
@@ -82,6 +77,8 @@ is one connected body of work, and the links are what make it that.
   in the app, in a pane beside the analysis board, with a board button on
   every printed diagram that sets that position up. The file stays in
   your vault and is served with byte ranges; your page is kept per book.
+
+  <img alt="A printed diagram in a book, becoming the position on the board beside it" src="docs/screenshots/book-to-board.gif">
 
 - **Puzzles** — a lichess-themed trainer with difficulty bands, a
   progress dashboard, and a review schedule: what you miss comes back on
