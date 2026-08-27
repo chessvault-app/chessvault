@@ -45,6 +45,29 @@ interface RefGame {
   opening: string | null;
 }
 
+/**
+ * A position handed over from another surface — the board's explorer
+ * pane, whose "find in the browser" button is the small in-context view
+ * pointing at the full search surface. A module-level mailbox, the same
+ * shape as CollectionView's heldSheet: navigation is a hash change, so
+ * the FEN cannot ride the route without escaping its slashes into it.
+ * Consumed once on mount; the hunt opens prefilled and runs itself.
+ */
+let pendingHunt: { fen: string; db: string } | null = null;
+export function handOffPositionHunt(fen: string, db: string): void {
+  pendingHunt = { fen, db };
+}
+/** True while a handed-off hunt waits for the browser to mount — how
+    CollectionView knows to open on the Databases tab (or sheet). */
+export function positionHuntPending(): boolean {
+  return pendingHunt !== null;
+}
+const consumePendingHunt = (): { fen: string; db: string } | null => {
+  const handed = pendingHunt;
+  pendingHunt = null;
+  return handed;
+};
+
 /** The relaxation rungs, in the ladder's own order (shared/scanMatch). */
 const RUNGS: { id: MatchMode; label: string }[] = [
   { id: 'exact', label: 'Exact position' },
@@ -218,6 +241,22 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     setHuntFailed(null);
   };
 
+  // The handed-off position, consumed once (StrictMode's double effect
+  // gets null the second time and does nothing): the controls open
+  // prefilled and the database moves to the explorer's own, and the
+  // effect AFTER the reconcile below fires the hunt itself.
+  const autoHunt = useRef<{ fen: string; db: string } | null>(null);
+  useEffect(() => {
+    const handed = consumePendingHunt();
+    if (!handed) return;
+    autoHunt.current = handed;
+    setHuntOpen(true);
+    setHuntKind('position');
+    setHuntFen(handed.fen);
+    setCurDb(handed.db);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const runHunt = useCallback(async (): Promise<void> => {
     const mine = ++huntSeq.current;
     setHunting(true);
@@ -368,6 +407,21 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     setHuntFailed(null);
     void search('', null, next);
   }, [meta, curDb, search]);
+
+  // The handed-off hunt runs only after the reconcile above has claimed
+  // the rows for the explorer's database — defined after it on purpose:
+  // that effect cancels in-flight hunts when the database settles, and
+  // firing first would be firing into that cancellation. A database the
+  // list no longer has leaves the controls prefilled and lets the user
+  // press Search themselves.
+  useEffect(() => {
+    const handed = autoHunt.current;
+    // meta.ready + a matching pick means the reconcile above is done
+    // with this database — whether it searched or kept the eager rows.
+    if (!handed || !meta?.ready || curDb !== handed.db) return;
+    autoHunt.current = null;
+    void runHunt();
+  }, [meta, curDb, runHunt]);
 
   const onQuery = (q: string): void => {
     // Typing a text search is leaving the hunt: the rows must answer

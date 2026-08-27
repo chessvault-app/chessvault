@@ -56,7 +56,7 @@ import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell } from './GameListShell';
 import { ArchiveBrowser } from './ArchiveBrowser';
-import { DatabaseGames } from './DatabaseGames';
+import { DatabaseGames, positionHuntPending } from './DatabaseGames';
 
 /** The two places a game can be found, and the column's two tabs. */
 type SourceId = 'archive' | 'elite';
@@ -206,14 +206,23 @@ export function CollectionView() {
     heldSheet = open ? 'archive' : null;
     setBrowsingState(open);
   };
-  /** The reference browser as a window, for the same reason. */
-  const [elite, setEliteState] = useState(heldSheet === 'elite');
+  /** The reference browser as a window, for the same reason — and for a
+      position the board's explorer handed over, where there is no
+      column to show it in (the browser consumes the handoff itself). */
+  const [elite, setEliteState] = useState(
+    () =>
+      heldSheet === 'elite' ||
+      (positionHuntPending() && !window.matchMedia('(min-width: 64rem)').matches),
+  );
   const setElite = (open: boolean): void => {
     heldSheet = open ? 'elite' : null;
     setEliteState(open);
   };
-  /** Which of the two the column is showing. */
-  const [source, setSource] = useState<SourceId>('archive');
+  /** Which of the two the column is showing. A handed-over position
+      lands on the Databases tab, since that is what it is for. */
+  const [source, setSource] = useState<SourceId>(() =>
+    positionHuntPending() ? 'elite' : 'archive',
+  );
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
   // many items, so at lg the Add games button drew a chevron and a popover
   // to offer a single row. The list has to know the width, not just the

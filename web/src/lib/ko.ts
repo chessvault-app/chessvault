@@ -296,6 +296,7 @@ export const ko: Record<string, string> = {
   'The search failed.': '검색이 실패했습니다.',
   // --- the databases browser's position/material hunt ----------------------
   'Search by position or material': '포지션·기물 구성으로 검색',
+  'Find this position in the databases browser': '데이터베이스 브라우저에서 이 포지션 찾기',
   'Search by': '검색 기준',
   Material: '기물 구성',
   'Paste a FEN': 'FEN 붙여넣기',

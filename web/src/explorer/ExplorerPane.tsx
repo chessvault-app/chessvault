@@ -30,6 +30,7 @@ import {
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/components/ui/button';
+import { handOffPositionHunt } from '@/games/DatabaseGames';
 import { ResultBadge } from '@/components/result-badge';
 import { ResultBar } from '@/components/result-bar';
 import { Select } from '@/components/ui/select';
@@ -314,7 +315,26 @@ export function ExplorerPane({
                 {node.ply === 0 ? t('Starting position') : t('Out of book')}
               </span>
             )}
-            {loading && <Spinner className="text-muted-foreground ml-auto size-3 shrink-0" />}
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              {loading && <Spinner className="text-muted-foreground size-3 shrink-0" />}
+              {/* The handoff to the full search surface: this pane stays
+                  the small "what happened from here" view, and the
+                  browser answers the bigger question with the same
+                  position — relaxed rungs, filters, the works. */}
+              {refdb && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Find this position in the databases browser')}
+                  onClick={() => {
+                    handOffPositionHunt(node.fen, refDbName(book!));
+                    navigate('games');
+                  }}
+                >
+                  <ScanSearch className="size-3.5" />
+                </Button>
+              )}
+            </span>
           </div>
 
 
