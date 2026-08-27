@@ -116,4 +116,7 @@ engine analysis farms, memory-mapped sidecar formats or a storage-engine
 swap, worker pools on the request path, and extending the position index
 past ply 30 — the precomputed sums answer the shallow question and the
 deep scan answers the rest, each cheaper than one index trying to do
-both.
+both. The fast-search worker (`server/scanWorker.ts`) is not the
+rejected pool: it is one long-lived thread owning one opted-in
+database's packed index, a resident data structure with a thread
+around it — requests queue into it, it does not scale with them.
