@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
+import { BrandMark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -538,23 +539,32 @@ export function HomePage() {
     // top-alignment bought for that was a tall window with all its slack
     // piled below the content. Centring splits the slack instead, which
     // reads as a home rather than a form abandoned mid-page.
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6">
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 max-md:grid-rows-[auto_1fr]">
+      {/* The page's heading — VISIBLE on a phone, a landmark everywhere.
+
+          Its history matters, because it has now moved in both directions.
+          What first stood here was a masthead: the mark on a primary tile
+          at size-14, the app's name at text-2xl, and the tagline off the
+          landing page — removed on the grounds that a window's chrome
+          already names the app and the sidebar carries the mark. Both of
+          those grounds are DESKTOP grounds: a phone has no sidebar and no
+          window chrome, so below md the launcher opened under a strip of
+          nothing where every other page shows its header (lanph3re, on
+          the phone). So the heading is drawn there again — the sidebar's
+          own brand row at the header type size, top-left in the first
+          grid row while the launcher keeps the second row's centring —
+          and from md it returns to sr-only, because there the sidebar IS
+          this row, one flex-line to the left.
+
+          One h1 in both states: deleting it outright would leave the only
+          route in the app with no heading at all. */}
+      <h1 className="flex items-center gap-2.5 justify-self-start max-md:mb-2 md:sr-only">
+        <span className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-lg">
+          <BrandMark className="size-5" />
+        </span>
+        <span className="text-xl font-semibold tracking-tight">{t('Chess Vault')}</span>
+      </h1>
       <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl">
-        {/* The page's heading, for the document and for a screen reader
-            walking the landmarks — not for the eye.
-
-            What stood here was a masthead: the mark on a primary tile at
-            size-14, the app's name at text-2xl, and the tagline off the
-            landing page. It told a returning user their own app's name, on
-            the screen they see every launch, above the one row they came
-            for. A window's chrome already names the app, and the sidebar
-            carries the mark; a tool opens into work. Removing it lifts
-            Continue to the top of the fold on a phone.
-
-            The h1 stays because deleting it would leave the only route in
-            the app with no heading at all. */}
-        <h1 className="sr-only">{t('Chess Vault')}</h1>
-
         {/* Continue — the best retention surface on the page. A returning
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
