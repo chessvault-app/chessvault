@@ -8,7 +8,7 @@ import {
   type MatchMode,
   type MaterialSpec,
 } from '../shared/scanMatch.ts';
-import { pawnFilesHash } from '../shared/scanPack.ts';
+import { PACK_KEYS_AT, packEventsAt, packLength, packPawnsAt, pawnFilesHash } from '../shared/scanPack.ts';
 
 /**
  * The deep scan's per-game answers, in both speeds.
@@ -181,6 +181,8 @@ export interface CompiledMaterialHunt {
   stable: number;
   loW: number;
   loB: number;
+  hiW: number;
+  hiB: number;
   /** Bounds, min/max interleaved: white p..q (0..9), black p..q
       (10..19), diff p..q (20..29), minor (30..31), major (32..33).
       Unconstrained slots hold sentinels wide enough to always pass. */
@@ -208,7 +210,7 @@ export function compilePositionHunt(target: PositionTarget): CompiledPositionHun
 }
 
 export function compileMaterialHunt(spec: MaterialSpec): CompiledMaterialHunt {
-  const { loW, loB } = materialMenBounds(spec);
+  const { loW, loB, hiW, hiB } = materialMenBounds(spec);
   const b = new Int32Array(34);
   const LETTERS = ['p', 'n', 'b', 'r', 'q'] as const;
   const put = (at: number, entry: [number, number] | undefined, lo: number, hi: number): void => {
@@ -223,13 +225,13 @@ export function compileMaterialHunt(spec: MaterialSpec): CompiledMaterialHunt {
   }
   put(30, spec.diff.minor, -99, 99);
   put(32, spec.diff.major, -99, 99);
-  return { kind: 'material', stable: spec.stable, loW, loB, b };
+  return { kind: 'material', stable: spec.stable, loW, loB, hiW, hiB, b };
 }
 
 const badLength = (pack: Uint8Array): number => {
   if (pack.length < 2) throw new BadPack('truncated header');
   const npos = pack[0]! | (pack[1]! << 8);
-  if (npos < 1 || pack.length !== 2 + 5 * npos + (npos - 1)) throw new BadPack('bad length');
+  if (npos < 1 || pack.length !== packLength(npos)) throw new BadPack('bad length');
   return npos;
 };
 
@@ -249,8 +251,17 @@ export function scanPackPosition(pack: Uint8Array, hunt: CompiledPositionHunt): 
   const { gate, parity, key32, pawns8, tw, tb, c } = hunt;
   const twp = c[0]!, twn = c[1]!, twb = c[2]!, twr = c[3]!, twq = c[4]!;
   const tbp = c[5]!, tbn = c[6]!, tbb = c[7]!, tbr = c[8]!, tbq = c[9]!;
-  const pawnsAt = 2 + 4 * npos;
-  const eventsAt = 2 + 5 * npos;
+  // The envelope: reject the whole game when the target's counts fall
+  // outside what it ever held — a necessary condition, so a skipped
+  // game never could have matched.
+  if (pack[2]! > tw || pack[3]! > tb) return null;
+  for (let at = 0; at < 10; at += 1) {
+    const env = pack[4 + at]!;
+    const want = c[at]!;
+    if (want < env >> 4 || want > (env & 15)) return null;
+  }
+  const pawnsAt = packPawnsAt(npos);
+  const eventsAt = packEventsAt(npos);
   let wp = 8, wn = 2, wb = 2, wr = 2, wq = 1, wTot = 16;
   let bp = 8, bn = 2, bb = 2, br = 2, bq = 1, bTot = 16;
   for (let ply = 0; ply < npos; ply += 1) {
@@ -262,10 +273,10 @@ export function scanPackPosition(pack: Uint8Array, hunt: CompiledPositionHunt): 
       (gate === 2 ||
         (gate === 1
           ? pack[pawnsAt + ply] === pawns8
-          : ((pack[2 + 4 * ply]! |
-              (pack[3 + 4 * ply]! << 8) |
-              (pack[4 + 4 * ply]! << 16) |
-              (pack[5 + 4 * ply]! << 24)) >>>
+          : ((pack[PACK_KEYS_AT + 4 * ply]! |
+              (pack[PACK_KEYS_AT + 1 + 4 * ply]! << 8) |
+              (pack[PACK_KEYS_AT + 2 + 4 * ply]! << 16) |
+              (pack[PACK_KEYS_AT + 3 + 4 * ply]! << 24)) >>>
               0) ===
             key32))
     ) {
@@ -315,8 +326,33 @@ export function scanPackPosition(pack: Uint8Array, hunt: CompiledPositionHunt): 
  */
 export function scanPackMaterial(pack: Uint8Array, hunt: CompiledMaterialHunt): number | null {
   const npos = badLength(pack);
-  const { stable, loW, loB, b } = hunt;
-  const eventsAt = 2 + 5 * npos;
+  const { stable, loW, loB, hiW, hiB, b } = hunt;
+  // The envelope: the game's count ranges must OVERLAP everything the
+  // spec demands — per piece, per side, per difference, and in totals
+  // (the game must dip to the spec's ceiling to ever be in range).
+  // Necessary conditions all: extremes need not co-occur, so surviving
+  // proves nothing, but a skip is final.
+  if (pack[2]! > hiW || pack[3]! > hiB) return null;
+  for (let at = 0; at < 5; at += 1) {
+    const wEnv = pack[4 + at]!;
+    const bEnv = pack[9 + at]!;
+    const wMin = wEnv >> 4, wMax = wEnv & 15;
+    const bMin = bEnv >> 4, bMax = bEnv & 15;
+    if (wMin > b[at * 2 + 1]! || wMax < b[at * 2]!) return null;
+    if (bMin > b[10 + at * 2 + 1]! || bMax < b[10 + at * 2]!) return null;
+    if (wMin - bMax > b[20 + at * 2 + 1]! || wMax - bMin < b[20 + at * 2]!) return null;
+  }
+  {
+    const wnEnv = pack[5]!, wbEnv = pack[6]!, bnEnv = pack[10]!, bbEnv = pack[11]!;
+    const wrEnv = pack[7]!, wqEnv = pack[8]!, brEnv = pack[12]!, bqEnv = pack[13]!;
+    const minorLo = (wnEnv >> 4) + (wbEnv >> 4) - (bnEnv & 15) - (bbEnv & 15);
+    const minorHi = (wnEnv & 15) + (wbEnv & 15) - (bnEnv >> 4) - (bbEnv >> 4);
+    if (minorLo > b[31]! || minorHi < b[30]!) return null;
+    const majorLo = (wrEnv >> 4) + (wqEnv >> 4) - (brEnv & 15) - (bqEnv & 15);
+    const majorHi = (wrEnv & 15) + (wqEnv & 15) - (brEnv >> 4) - (bqEnv >> 4);
+    if (majorLo > b[33]! || majorHi < b[32]!) return null;
+  }
+  const eventsAt = packEventsAt(npos);
   let wp = 8, wn = 2, wb = 2, wr = 2, wq = 1, wTot = 16;
   let bp = 8, bn = 2, bb = 2, br = 2, bq = 1, bTot = 16;
   let streak = 0;

@@ -217,7 +217,7 @@ describe('resident scan through the route', () => {
 
   afterAll(() => {
     refgames.closeDb();
-    rmSync(dir, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   const run = async (query: string): Promise<{ games: unknown[]; done: Record<string, unknown> }> => {
@@ -310,4 +310,94 @@ describe('resident scan through the route', () => {
       bareApi.closeDb();
     }
   });
+});
+
+/**
+ * The key index answers exact hunts as a lookup; stripping it must
+ * change nothing but the speed. Runs against the same corpus database
+ * the resident tests built — indexPositions gave it packs AND keys.
+ */
+describe('key index through the route', () => {
+  let dir: string;
+  let dbPath: string;
+  let app: import('hono').Hono;
+  let refgames: ReturnType<typeof refGamesApi>;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refgames-keyindex-'));
+    dbPath = join(dir, 'refgames.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '0'), ('sources', 'corpus.pgn');
+    `);
+    const insert = db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    CORPUS.forEach((moves, at) => {
+      insert.run(`W${at}`, `B${at}`, 2200 + at, 2300 - at, '1-0', '2026.02.02', null, null, null, moves);
+    });
+    tune(db);
+    db.close();
+    indexPositions(dbPath);
+    refgames = refGamesApi(dbPath);
+    app = new Hono().route('/api', refgames);
+  }, 30_000);
+
+  afterAll(() => {
+    refgames.closeDb();
+    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  });
+
+  const run = async (query: string): Promise<{ games: unknown[]; matched: unknown }> => {
+    const res = await app.request(`/api/refgames/deep-search?${query}`);
+    expect(res.status).toBe(200);
+    const frames = (await res.text())
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    const done = frames.at(-1)!;
+    expect(done.type).toBe('done');
+    return { games: frames.filter((f) => f.type === 'game'), matched: done.matched };
+  };
+
+  it('answers like the replay scan, filters included, deep past the plies cap', async () => {
+    // A position deep in a long self-play game — beyond REF_MAX_PLY, so
+    // only packs and keys know it. Also a shallow one every game holds.
+    const long = CORPUS.reduce((a, b) => (b.split(' ').length > a.split(' ').length ? b : a));
+    const pos = Chess.default();
+    let ply = 0;
+    for (const san of long.split(' ')) {
+      if (ply === 41) break;
+      pos.play(parseSan(pos, san)!);
+      ply += 1;
+    }
+    const deepFen = makeFen(pos.toSetup());
+    const hunts = [
+      `fen=${encodeURIComponent(deepFen)}`,
+      `fen=${encodeURIComponent('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')}`,
+      `fen=${encodeURIComponent(deepFen)}&minElo=2210`,
+    ];
+    const viaKey = [];
+    for (const hunt of hunts) viaKey.push(await run(hunt));
+    expect((viaKey[0]!.games.length as number) >= 1).toBe(true);
+
+    // Strip the index: the same hunts fall to the replay scan.
+    const strip = new Database(dbPath);
+    strip.exec('DROP TABLE key_index');
+    strip.prepare("DELETE FROM meta WHERE key = 'key_index'").run();
+    strip.close();
+    for (let at = 0; at < hunts.length; at += 1) {
+      const replay = await run(hunts[at]!);
+      expect(replay.games, hunts[at]).toEqual(viaKey[at]!.games);
+      expect(replay.matched).toBe(viaKey[at]!.matched);
+    }
+  }, 30_000);
 });

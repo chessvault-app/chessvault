@@ -3,7 +3,9 @@ import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
-import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack } from '../shared/scanPack.ts';
+import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack, PACK_KEYS_AT } from '../shared/scanPack.ts';
+import { KEY_INDEX_META, KEY_INDEX_VERSION, keyEntry } from '../shared/keyIndex.ts';
+import { endianness } from 'node:os';
 
 /**
  * The position index inside a reference-games database.
@@ -56,6 +58,82 @@ const SCAN_PACK_SCHEMA = `
     pack BLOB NOT NULL
   );
 `;
+
+/** The inverted key index (shared/keyIndex.ts), derived from the packs. */
+const KEY_INDEX_SCHEMA = `
+  CREATE TABLE IF NOT EXISTS key_index (
+    bucket INTEGER PRIMARY KEY,
+    entries BLOB NOT NULL
+  );
+`;
+
+/**
+ * Invert the packs into the key index — a pure derivation, rebuilt
+ * whole whenever the packs change (appends included: merging sorted
+ * runs was not worth a second code path). Two passes over scan_pack:
+ * one to size the buckets, one to fill them; then each bucket sorts as
+ * plain integers, which IS the spec's byte order on the little-endian
+ * hosts everything runs on (the big-endian fallback writes explicitly).
+ * Memory is eight bytes per position — an Elite month is ~180 MB, a
+ * Gigabase ~6.5 GB — held only for the duration of this pass.
+ */
+function buildKeyIndex(db: InstanceType<typeof Database>, log: (line: string) => void): void {
+  db.exec('DROP TABLE IF EXISTS key_index;');
+  db.exec(KEY_INDEX_SCHEMA);
+  const counts = new Uint32Array(65536);
+  let total = 0;
+  for (const row of db.prepare('SELECT pack FROM scan_pack').iterate() as IterableIterator<{
+    pack: Buffer;
+  }>) {
+    const pack = row.pack;
+    const npos = pack[0]! | (pack[1]! << 8);
+    for (let at = 0; at < npos; at += 1) {
+      const o = PACK_KEYS_AT + 4 * at;
+      counts[pack[o + 2]! | (pack[o + 3]! << 8)]! += 1;
+    }
+    total += npos;
+  }
+  const starts = new Float64Array(65537);
+  for (let bucket = 0; bucket < 65536; bucket += 1) {
+    starts[bucket + 1] = starts[bucket]! + counts[bucket]!;
+  }
+  const entries = new BigUint64Array(total);
+  const cursor = starts.slice(0, 65536);
+  for (const row of db
+    .prepare('SELECT game_id, pack FROM scan_pack')
+    .iterate() as IterableIterator<{ game_id: number; pack: Buffer }>) {
+    const pack = row.pack;
+    const npos = pack[0]! | (pack[1]! << 8);
+    for (let at = 0; at < npos; at += 1) {
+      const o = PACK_KEYS_AT + 4 * at;
+      const key32 =
+        (pack[o]! | (pack[o + 1]! << 8) | (pack[o + 2]! << 16) | (pack[o + 3]! << 24)) >>> 0;
+      const bucket = key32 >>> 16;
+      entries[cursor[bucket]!] = keyEntry(key32, row.game_id, at);
+      cursor[bucket] = cursor[bucket]! + 1;
+    }
+  }
+  const insert = db.prepare('INSERT INTO key_index (bucket, entries) VALUES (?, ?)');
+  const littleEndian = endianness() === 'LE';
+  db.exec('BEGIN');
+  for (let bucket = 0; bucket < 65536; bucket += 1) {
+    const from = starts[bucket]!;
+    const count = counts[bucket]!;
+    if (count === 0) continue;
+    const slice = entries.subarray(from, from + count);
+    slice.sort();
+    let blob: Buffer;
+    if (littleEndian) {
+      blob = Buffer.from(entries.buffer, from * 8, count * 8);
+    } else {
+      blob = Buffer.allocUnsafe(count * 8);
+      for (let at = 0; at < count; at += 1) blob.writeBigUInt64LE(slice[at]!, at * 8);
+    }
+    insert.run(bucket, blob);
+  }
+  db.exec('COMMIT');
+  log(`  positions: ${total.toLocaleString()} keys inverted`);
+}
 
 /** The game's result as one small integer carried on every ply row, so
     the per-move sums need no join: 0 white won, 1 drawn, 2 black won. */
@@ -262,7 +340,7 @@ export function indexPositions(
       db.exec(
         'DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; ' +
           'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; ' +
-          'DROP TABLE IF EXISTS scan_pack;',
+          'DROP TABLE IF EXISTS scan_pack; DROP TABLE IF EXISTS key_index;',
       );
       db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
       db.exec(SCAN_PACK_SCHEMA);
@@ -362,9 +440,16 @@ export function indexPositions(
     db.exec(SCHEMA); // now the index, over the finished table
     log('  positions: summing per move…');
     db.exec(REFGAMES_MOVE_COUNTS);
+    if (packing) {
+      log('  positions: inverting keys…');
+      buildKeyIndex(db, log);
+    }
 
     const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
-    if (packing) setMeta.run(SCAN_PACK_META, String(SCAN_PACK_VERSION));
+    if (packing) {
+      setMeta.run(SCAN_PACK_META, String(SCAN_PACK_VERSION));
+      setMeta.run(KEY_INDEX_META, String(KEY_INDEX_VERSION));
+    }
     setMeta.run('plies', String(append ? (Number(readMeta('plies')) || 0) + plies : plies));
     setMeta.run('index_max_ply', String(maxPly));
     setMeta.run('indexed_at', new Date().toISOString());

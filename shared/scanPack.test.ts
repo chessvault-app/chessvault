@@ -7,30 +7,45 @@ import { decodeScanPack, encodeScanPack } from './scanPack.ts';
 const START_KEY32 = Number(hashSetup(Chess.default().toSetup()) & 0xffffffffn);
 
 describe('encodeScanPack', () => {
-  it('pins the layout: header, keys, pawn hashes, events, byte for byte', () => {
-    // Two plies, no captures: npos 3, three keys, three pawn hashes,
-    // two zero events.
+  it('pins the layout: header, envelope, keys, pawn hashes, events', () => {
+    // Two plies, no captures: npos 3, a 12-byte envelope, three keys,
+    // three pawn hashes, two zero events.
     const pack = encodeScanPack('e4 e5');
-    expect(pack.length).toBe(2 + 5 * 3 + 2);
+    expect(pack.length).toBe(13 + 6 * 3);
     const view = new DataView(pack.buffer);
     expect(view.getUint16(0, true)).toBe(3);
-    expect(view.getUint32(2, true)).toBe(START_KEY32);
+    // No capture, no promotion: the envelope is the starting material,
+    // min equal to max — totals 16, and (count << 4) | count per piece.
+    expect([...pack.slice(2, 14)]).toEqual([
+      16, 16, 0x88, 0x22, 0x22, 0x22, 0x11, 0x88, 0x22, 0x22, 0x22, 0x11,
+    ]);
+    expect(view.getUint32(14, true)).toBe(START_KEY32);
     expect([...pack.slice(-2)]).toEqual([0, 0]);
     // The keys are the replay's own, truncated — recompute one.
     const pos = Chess.default();
     pos.play(parseSan(pos, 'e4')!);
-    expect(view.getUint32(6, true)).toBe(Number(hashSetup(pos.toSetup()) & 0xffffffffn));
+    expect(view.getUint32(18, true)).toBe(Number(hashSetup(pos.toSetup()) & 0xffffffffn));
     // The pawn-files hash stream: the start position's, pinned to the
     // spec's arithmetic by hand — 16 files each holding 1,1,…,1.
     let h = 5;
     for (let at = 0; at < 16; at += 1) h = (h * 33 + 1) & 0xff;
-    expect(pack[2 + 4 * 3]).toBe(h);
+    expect(pack[14 + 4 * 3]).toBe(h);
     // e4 keeps every pawn on its file, so all three hashes agree.
-    expect(pack[2 + 4 * 3 + 1]).toBe(h);
-    expect(pack[2 + 4 * 3 + 2]).toBe(h);
-    // A capture changes the structure and the hash with it.
+    expect(pack[14 + 4 * 3 + 1]).toBe(h);
+    expect(pack[14 + 4 * 3 + 2]).toBe(h);
+    // A capture changes the structure and the hash with it — and dents
+    // the envelope: black ends a pawn down, so its pawn min drops and
+    // its total does too.
     const captured = decodeScanPack(encodeScanPack('e4 d5 exd5'))!;
     expect(captured.pawns.at(-1)).not.toBe(h);
+    expect(captured.envelope[1]).toBe(15); // black's smallest total
+    expect(captured.envelope[7]).toBe((7 << 4) | 8); // black pawns 7..8
+    // A promotion raises a ceiling: the capture-promotion line ends
+    // with two white queens on the board at its final position.
+    const promoted = decodeScanPack(encodeScanPack('e4 d5 exd5 c6 dxc6 Nf6 cxb7 Nbd7 bxa8=Q'))!;
+    expect(promoted.envelope[6]! & 15).toBe(2); // white queens max 2
+    // White loses no pawn to capture — one leaves by BECOMING a queen.
+    expect(promoted.envelope[2]! >> 4).toBe(7);
   });
 
   it('writes capture, en passant, promotion and castling events', () => {

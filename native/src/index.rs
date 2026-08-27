@@ -10,6 +10,7 @@ use std::path::Path;
 use rusqlite::{params, Connection, OptionalExtension};
 use shakmaty::{san::SanPlus, CastlingMode, Chess, Position};
 
+use crate::key_index::{build_key_index, KEY_INDEX_META, KEY_INDEX_VERSION};
 use crate::scan_pack::{encode_scan_pack, SCAN_PACK_META, SCAN_PACK_VERSION};
 use crate::sql;
 use crate::util::{commas, iso_now};
@@ -165,7 +166,7 @@ pub fn index_positions(
         conn.execute_batch(
             "DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; \
              DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; \
-             DROP TABLE IF EXISTS scan_pack;",
+             DROP TABLE IF EXISTS scan_pack; DROP TABLE IF EXISTS key_index;",
         )?;
         conn.execute_batch(sql::PLIES_TABLE)?;
         conn.execute_batch(sql::SCAN_PACK_TABLE)?;
@@ -288,6 +289,10 @@ pub fn index_positions(
     conn.execute_batch(sql::PLIES_INDEX)?;
     log("  positions: summing per move…");
     conn.execute_batch(sql::MOVE_COUNTS)?;
+    if packing {
+        log("  positions: inverting keys…");
+        build_key_index(&conn, log)?;
+    }
 
     let prev_plies: u64 = if append {
         read_meta(&conn, "plies")
@@ -304,6 +309,7 @@ pub fn index_positions(
     let mut set_meta = conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)")?;
     if packing {
         set_meta.execute(params![SCAN_PACK_META, SCAN_PACK_VERSION.to_string()])?;
+        set_meta.execute(params![KEY_INDEX_META, KEY_INDEX_VERSION.to_string()])?;
     }
     set_meta.execute(params!["plies", (prev_plies + plies).to_string()])?;
     set_meta.execute(params!["index_max_ply", max_ply.to_string()])?;

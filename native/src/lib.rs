@@ -2,6 +2,7 @@ pub mod build;
 pub mod deep;
 pub mod filters;
 pub mod index;
+pub mod key_index;
 pub mod optimize;
 pub mod scan_match;
 pub mod scan_pack;

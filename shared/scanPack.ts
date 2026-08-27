@@ -21,6 +21,7 @@ import { hashSetup } from './zobrist.ts';
  *
  * ```
  * u16          npos   — positions encoded: replayed plies + 1
+ * 12 × u8      env    — the count envelope below
  * npos × u32   key32  — per position, the low 32 bits of the UNSIGNED
  *                       zobrist hash (shared/zobrist.ts, before the
  *                       signed db-key conversion), position 0 first
@@ -34,6 +35,29 @@ import { hashSetup } from './zobrist.ts';
  * for the depths the plies table stops short of. A 32-bit key is a
  * prefilter, not an answer: a scanner that matches one must verify the
  * hit by replaying that one game, which is cheap because hits are few.
+ *
+ * ## The count envelope
+ *
+ * Twelve bytes letting a scanner reject a WHOLE game in constant time
+ * — the same sharpen-the-index move that took the pawns rung from
+ * 112 s to 3 s, applied to the games themselves:
+ *
+ * ```
+ * env[0]     the smallest white total-men count over every position
+ * env[1]     the same for black
+ * env[2..7)  white p,n,b,r,q — per piece, (min << 4) | max over every
+ *            position (counts fit a nibble: promotions cap a piece at
+ *            10, pawns at 8)
+ * env[7..12) black, likewise
+ * ```
+ *
+ * A position hunt whose target counts fall outside any [min, max], or
+ * whose totals are below what the game ever reaches, cannot hit; a
+ * material spec whose per-piece or difference ranges cannot overlap
+ * the envelope's cannot either. Every skip rule is a NECESSARY
+ * condition — the envelope's extremes need not co-occur, so a game
+ * that survives the skip may still not match, but a skipped game
+ * never could.
  *
  * ## The pawn-files hash
  *
@@ -98,6 +122,13 @@ export function pawnFilesHash(board: Board): number {
   return h;
 }
 
+/** Where the streams sit for a pack of `npos` positions. */
+export const PACK_ENV_AT = 2;
+export const PACK_KEYS_AT = 14;
+export const packPawnsAt = (npos: number): number => 14 + 4 * npos;
+export const packEventsAt = (npos: number): number => 14 + 5 * npos;
+export const packLength = (npos: number): number => 13 + 6 * npos;
+
 /** Encode one game's movetext into its pack. Replays with the same
     chessops pipeline as every other consumer, full depth. */
 export function encodeScanPack(moves: string): Uint8Array {
@@ -105,6 +136,30 @@ export function encodeScanPack(moves: string): Uint8Array {
   const keys: number[] = [Number(hashSetup(pos.toSetup()) & MASK32)];
   const pawns: number[] = [pawnFilesHash(pos.board)];
   const events: number[] = [];
+  // The envelope's extremes, per piece per side plus the totals — read
+  // from the board itself each position, the same source every other
+  // stream reads.
+  const min = [8, 2, 2, 2, 1, 8, 2, 2, 2, 1];
+  const max = [8, 2, 2, 2, 1, 8, 2, 2, 2, 1];
+  let minWTot = 16;
+  let minBTot = 16;
+  const envelope = (board: Board): void => {
+    const sets = [board.pawn, board.knight, board.bishop, board.rook, board.queen];
+    let wTot = 1;
+    let bTot = 1;
+    for (let at = 0; at < 5; at += 1) {
+      const w = sets[at]!.intersect(board.white).size();
+      const b = sets[at]!.intersect(board.black).size();
+      wTot += w;
+      bTot += b;
+      if (w < min[at]!) min[at] = w;
+      if (w > max[at]!) max[at] = w;
+      if (b < min[5 + at]!) min[5 + at] = b;
+      if (b > max[5 + at]!) max[5 + at] = b;
+    }
+    if (wTot < minWTot) minWTot = wTot;
+    if (bTot < minBTot) minBTot = bTot;
+  };
   for (const san of moves.split(' ')) {
     const move = parseSan(pos, san);
     if (!move) break;
@@ -127,23 +182,30 @@ export function encodeScanPack(moves: string): Uint8Array {
     events.push(event);
     keys.push(Number(hashSetup(pos.toSetup()) & MASK32));
     pawns.push(pawnFilesHash(pos.board));
+    envelope(pos.board);
   }
   const npos = keys.length;
-  const pack = new Uint8Array(2 + 5 * npos + events.length);
+  const pack = new Uint8Array(packLength(npos));
   const view = new DataView(pack.buffer);
   view.setUint16(0, npos, true);
-  keys.forEach((key, at) => view.setUint32(2 + 4 * at, key, true));
+  pack[2] = minWTot;
+  pack[3] = minBTot;
+  for (let at = 0; at < 10; at += 1) pack[4 + at] = (min[at]! << 4) | max[at]!;
+  keys.forEach((key, at) => view.setUint32(PACK_KEYS_AT + 4 * at, key, true));
+  const pawnsAt = packPawnsAt(npos);
   pawns.forEach((hash, at) => {
-    pack[2 + 4 * npos + at] = hash;
+    pack[pawnsAt + at] = hash;
   });
+  const eventsAt = packEventsAt(npos);
   events.forEach((event, at) => {
-    pack[2 + 5 * npos + at] = event;
+    pack[eventsAt + at] = event;
   });
   return pack;
 }
 
 /** A decoded pack, for tests and the scanner to come. */
 export interface ScanPack {
+  envelope: number[];
   keys: number[];
   pawns: number[];
   events: number[];
@@ -155,12 +217,16 @@ export function decodeScanPack(pack: Uint8Array): ScanPack | null {
   if (pack.length < 2) return null;
   const view = new DataView(pack.buffer, pack.byteOffset, pack.byteLength);
   const npos = view.getUint16(0, true);
-  if (npos < 1 || pack.length !== 2 + 5 * npos + (npos - 1)) return null;
+  if (npos < 1 || pack.length !== packLength(npos)) return null;
+  const envelope: number[] = [];
+  for (let at = 0; at < 12; at += 1) envelope.push(pack[PACK_ENV_AT + at]!);
   const keys: number[] = [];
-  for (let at = 0; at < npos; at += 1) keys.push(view.getUint32(2 + 4 * at, true));
+  for (let at = 0; at < npos; at += 1) keys.push(view.getUint32(PACK_KEYS_AT + 4 * at, true));
   const pawns: number[] = [];
-  for (let at = 0; at < npos; at += 1) pawns.push(pack[2 + 4 * npos + at]!);
+  const pawnsAt = packPawnsAt(npos);
+  for (let at = 0; at < npos; at += 1) pawns.push(pack[pawnsAt + at]!);
   const events: number[] = [];
-  for (let at = 0; at < npos - 1; at += 1) events.push(pack[2 + 5 * npos + at]!);
-  return { keys, pawns, events };
+  const eventsAt = packEventsAt(npos);
+  for (let at = 0; at < npos - 1; at += 1) events.push(pack[eventsAt + at]!);
+  return { envelope, keys, pawns, events };
 }

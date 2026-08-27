@@ -44,11 +44,38 @@ fn role_code(role: Role) -> u8 {
 
 /// Encode one game's movetext, full depth, the plies replay's stopping
 /// rules (first unparseable or illegal SAN ends the stream).
+/** Per-piece counts in p,n,b,r,q order per side, plus totals with the
+    kings — the envelope's raw material. */
+fn board_counts(board: &Board) -> ([u8; 5], [u8; 5], u8, u8) {
+    let sets = [
+        board.pawns(),
+        board.knights(),
+        board.bishops(),
+        board.rooks(),
+        board.queens(),
+    ];
+    let mut w = [0u8; 5];
+    let mut b = [0u8; 5];
+    let mut w_tot = 1u8;
+    let mut b_tot = 1u8;
+    for (at, set) in sets.iter().enumerate() {
+        w[at] = (*set & board.white()).count() as u8;
+        b[at] = (*set & board.black()).count() as u8;
+        w_tot += w[at];
+        b_tot += b[at];
+    }
+    (w, b, w_tot, b_tot)
+}
+
 pub fn encode_scan_pack(moves: &str) -> Vec<u8> {
     let mut pos = Chess::default();
     let mut keys: Vec<u32> = vec![hash_position(&pos) as u32];
     let mut pawns: Vec<u8> = vec![pawn_files_hash(pos.board())];
     let mut events: Vec<u8> = Vec::new();
+    let mut min = [8u8, 2, 2, 2, 1, 8, 2, 2, 2, 1];
+    let mut max = [8u8, 2, 2, 2, 1, 8, 2, 2, 2, 1];
+    let mut min_w_tot = 16u8;
+    let mut min_b_tot = 16u8;
     for token in moves.split(' ') {
         let Ok(san) = token.parse::<SanPlus>() else {
             break;
@@ -71,10 +98,24 @@ pub fn encode_scan_pack(moves: &str) -> Vec<u8> {
         events.push(event);
         keys.push(hash_position(&pos) as u32);
         pawns.push(pawn_files_hash(pos.board()));
+        let (w, b, w_tot, b_tot) = board_counts(pos.board());
+        for at in 0..5 {
+            min[at] = min[at].min(w[at]);
+            max[at] = max[at].max(w[at]);
+            min[5 + at] = min[5 + at].min(b[at]);
+            max[5 + at] = max[5 + at].max(b[at]);
+        }
+        min_w_tot = min_w_tot.min(w_tot);
+        min_b_tot = min_b_tot.min(b_tot);
     }
     let npos = keys.len();
-    let mut pack = Vec::with_capacity(2 + 5 * npos + events.len());
+    let mut pack = Vec::with_capacity(13 + 6 * npos);
     pack.extend_from_slice(&(npos as u16).to_le_bytes());
+    pack.push(min_w_tot);
+    pack.push(min_b_tot);
+    for at in 0..10 {
+        pack.push((min[at] << 4) | max[at]);
+    }
     for key in keys {
         pack.extend_from_slice(&key.to_le_bytes());
     }

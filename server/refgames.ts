@@ -25,6 +25,13 @@ import {
 } from './refgamesScan.ts';
 import { SCAN_PACK_META, SCAN_PACK_VERSION } from '../shared/scanPack.ts';
 import {
+  KEY_INDEX_META,
+  KEY_INDEX_VERSION,
+  entryGameId,
+  keyBucket,
+  low16Bounds,
+} from '../shared/keyIndex.ts';
+import {
   ensureResident,
   evictAllResidents,
   evictResident,
@@ -1517,6 +1524,110 @@ export function refGamesApi(
       : '';
     const menBinds = hasMen ? [menCeilW, menCeilB, minPly] : [];
 
+    const metaValue = (key: string): string | undefined =>
+      (db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined)
+        ?.value;
+    const filePath = fileFor(found.name);
+    // Freshness: the fast paths answer only for games the index pass
+    // has seen. An append that died between its insert and its index
+    // pass leaves a tail with no packs and no keys — those games must
+    // fall to the paths that read the games table itself, or they
+    // silently vanish from every fast answer.
+    const fresh =
+      Number(metaValue('indexed_through') ?? 0) >=
+      (((db.prepare('SELECT MAX(id) AS n FROM games').get() as { n: number | null }).n) ?? 0);
+
+    /**
+     * The key index: an exact-rung hunt against a packed database is a
+     * LOOKUP (shared/keyIndex.ts) — one bucket read, a binary search,
+     * and a handful of candidate games verified by replay — needing no
+     * residency, no worker and no opt-in. Everything else scans.
+     */
+    if (
+      !spec &&
+      mode === 'exact' &&
+      fresh &&
+      metaValue(KEY_INDEX_META) === String(KEY_INDEX_VERSION)
+    ) {
+      const bucket = db
+        .prepare('SELECT entries FROM key_index WHERE bucket = ?')
+        .get(keyBucket(target!.key32)) as { entries: Buffer } | undefined;
+      const candidates: number[] = [];
+      if (bucket) {
+        const blob = bucket.entries;
+        const n = blob.length / 8;
+        const { lo, hi } = low16Bounds(target!.key32);
+        // First entry >= lo, then walk the low16 run — one candidate
+        // per game, the sort's first (earliest ply) standing for it.
+        let a = 0;
+        let z = n;
+        while (a < z) {
+          const mid = (a + z) >> 1;
+          if (blob.readBigUInt64LE(mid * 8) < lo) a = mid + 1;
+          else z = mid;
+        }
+        let last = -1;
+        for (; a < n; a += 1) {
+          const entry = blob.readBigUInt64LE(a * 8);
+          if (entry >= hi) break;
+          const id = entryGameId(entry);
+          if (id !== last) {
+            candidates.push(id);
+            last = id;
+          }
+        }
+      }
+      // The game filters, over the candidates instead of the corpus:
+      // a hundred ids probe an index in microseconds where the scan
+      // paths pre-filter ten million rows.
+      let allowed: Set<number> | null = null;
+      if (clauses.length > 0) {
+        allowed = new Set();
+        for (let at = 0; at < candidates.length; at += 500) {
+          const chunk = candidates.slice(at, at + 500);
+          const rows = db
+            .prepare(
+              `SELECT id FROM games WHERE id IN (${chunk.map(() => '?').join(',')})${sqlAnd}`,
+            )
+            .all(...chunk, ...binds) as { id: number }[];
+          for (const row of rows) allowed.add(row.id);
+        }
+      }
+      const eligible = allowed ? candidates.filter((id) => allowed.has(id)) : candidates;
+      const headerStmt = db.prepare(
+        `SELECT id, white, black, white_elo, black_elo, result, date, eco, opening, moves
+         FROM games WHERE id = ?`,
+      );
+      c.header('Content-Type', 'application/x-ndjson');
+      return stream(c, async (out) => {
+        let matched = 0;
+        let scanned = 0;
+        for (const id of eligible) {
+          if (out.aborted || c.req.raw.signal?.aborted) return;
+          scanned += 1;
+          const row = headerStmt.get(id) as (RefGameRow & { moves: string }) | undefined;
+          if (!row) continue;
+          // A 32-bit prefix match is a candidate, not an answer: the
+          // reference replay decides, as everywhere else.
+          const hitPly = replayPositionHit(row.moves, target!);
+          if (hitPly === null) continue;
+          matched += 1;
+          const { moves: _moves, ...headers } = row;
+          await out.writeln(JSON.stringify({ type: 'game', ply: hitPly, ...headers }));
+          if (matched >= DEEP_SEARCH_CAP) break;
+        }
+        await out.writeln(
+          JSON.stringify({
+            type: 'done',
+            scanned,
+            total: eligible.length,
+            matched,
+            exhaustive: matched < DEEP_SEARCH_CAP,
+          }),
+        );
+      });
+    }
+
     /**
      * The resident scan: a database whose owner opted in (fast search
      * on the Databases page) holds its packed index in a worker
@@ -1527,12 +1638,9 @@ export function refGamesApi(
      * answer identically, only slower. Loaded lazily, so the first
      * hunt after a restart pays the load once; evicted when idle.
      */
-    const metaValue = (key: string): string | undefined =>
-      (db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined)
-        ?.value;
-    const filePath = fileFor(found.name);
     let resident = false;
     if (
+      fresh &&
       metaValue('fast_scan') === '1' &&
       metaValue(SCAN_PACK_META) === String(SCAN_PACK_VERSION)
     ) {
