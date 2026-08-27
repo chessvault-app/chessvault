@@ -359,9 +359,27 @@ export function PdfScroller({
     }
     return lo + 1;
   };
-  const first = pages > 0 ? slotAt(view.top) : 1;
-  const last = pages > 0 ? slotAt(view.top + view.height) : 1;
-  const current = pages > 0 ? slotAt(view.top + view.height * 0.35) : 1;
+  // `view` is the scroll reader's last word — which, on the render that
+  // IS the zoom commit, is from before the relayout, while the tops it is
+  // about to be compared against are the new layout's. Deep in a book
+  // that maps to the WRONG pages: the slot under the eyes fell out of the
+  // rendered range for one commit, its PdfPage unmounted with its bitmap,
+  // and the layout effect's corrected offsets then remounted it as a
+  // fresh component that sat dark for the 120 ms raster delay plus the
+  // raster — the released pinch's page-long flicker (lanph3re's clip;
+  // reproduced at 40% of a 126-page book, where the canvas after release
+  // was a new node). Scaling the stale offset by the layout's own growth
+  // keeps the range on the same pages through the commit — approximately,
+  // since the page gaps do not scale, which RENDER_MARGIN absorbs. After
+  // the commit's layout effects run, lastPageW is current and this is
+  // exactly view.top again.
+  // (Declared here rather than beside lastZoom below: this render reads it.)
+  const lastPageW = useRef(pageW);
+  const staleness = pageW / lastPageW.current;
+  const viewTop = view.top * staleness;
+  const first = pages > 0 ? slotAt(viewTop) : 1;
+  const last = pages > 0 ? slotAt(viewTop + view.height) : 1;
+  const current = pages > 0 ? slotAt(viewTop + view.height * 0.35) : 1;
 
   // Tell the reader where it is — once per change, and never for a page
   // the reader itself just asked for.
@@ -383,7 +401,6 @@ export function PdfScroller({
     if (baseAspect !== null && reported.current !== null) target.current = reported.current;
   }, [baseAspect]);
   const lastZoom = useRef(zoom);
-  const lastPageW = useRef(pageW);
   // Before paint (layout effect): done after it, the browser showed one
   // frame at the new size but the old scroll offset — half the released
   // pinch's flicker.
