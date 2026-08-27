@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { squareToGrid } from '@/board/square-overlay';
 import { cn } from '@/lib/utils';
 import { useExplain } from '@/store/explain';
 
@@ -8,7 +9,8 @@ import { useExplain } from '@/store/explain';
  * "why is this +2 with equal material" — the whole eval is usually two
  * or three of these numbers.
  *
- * Same percent-positioning as NagBadge; renders nothing unless the
+ * Positioned by squareToGrid, the same helper the badges use; renders
+ * nothing unless the
  * toggle is on AND the trace matches the position on screen, so a stale
  * overlay can never label the wrong board.
  */
@@ -46,10 +48,7 @@ export function HeatMapOverlay({
     // and a wide piece (the queen) swallowed its own value chip at z-20.
     <div aria-hidden className="pointer-events-none absolute inset-0 z-30">
       {Object.entries(heat.pieces).map(([sq, info]) => {
-        const file = sq.charCodeAt(0) - 97;
-        const rank = Number(sq[1]) - 1;
-        const column = orientation === 'white' ? file : 7 - file;
-        const rowFromTop = orientation === 'white' ? 7 - rank : rank;
+        const { column, rowFromTop } = squareToGrid(sq, orientation);
         return (
           <div
             key={sq}

@@ -34,6 +34,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
+import { SquareBadge } from '@/board/square-overlay';
 import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { navigate } from '@/lib/router';
@@ -1220,24 +1221,13 @@ function MoveBadge({
 }) {
   const dest = view?.lastMove?.[1];
   if (!dest) return null;
-  const file = dest.charCodeAt(0) - 97;
-  const rank = dest.charCodeAt(1) - 49;
-  const column = orientation === 'white' ? file : 7 - file;
-  const rowFromTop = orientation === 'white' ? 7 - rank : rank;
   return (
-    <span
-      aria-hidden
-      style={{
-        left: `calc(${(column + 1) * 12.5}% - 0.85rem)`,
-        top: `calc(${rowFromTop * 12.5}% - 0.4rem)`,
-      }}
-      className={cn(
-        'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-foreground text-base font-bold shadow-sm',
-        kind === 'good' ? 'bg-nag-good' : 'bg-nag-blunder',
-      )}
+    <SquareBadge
+      square={dest}
+      orientation={orientation}
+      className={kind === 'good' ? 'bg-nag-good' : 'bg-nag-blunder'}
     >
       {kind === 'good' ? '✓' : '✗'}
-    </span>
+    </SquareBadge>
   );
 }

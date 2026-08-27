@@ -14,6 +14,7 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { BOARD_WIDE_COLUMN } from '@/components/layout';
 import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
+import { SquareBadge } from '@/board/square-overlay';
 import { cn } from '@/lib/utils';
 import { ClearButton } from '@/components/clear-button';
 import { noAutofill, noAutofillClass } from '@/components/ui/input';
@@ -289,26 +290,11 @@ function NagBadge({
   const dest = moveSquares(node)?.[1];
   if ((!nag && !book) || !dest) return null;
   const badge = nag ? BOARD_NAGS[nag]! : { glyph: null, className: 'bg-nag-book' };
-  const file = dest.charCodeAt(0) - 97;
-  const rank = dest.charCodeAt(1) - 49;
-  const column = orientation === 'white' ? file : 7 - file;
-  const rowFromTop = orientation === 'white' ? 7 - rank : rank;
 
   return (
-    <span
-      aria-hidden
-      style={{
-        left: `calc(${(column + 1) * 12.5}% - 0.85rem)`,
-        top: `calc(${rowFromTop * 12.5}% - 0.4rem)`,
-      }}
-      className={cn(
-        'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-foreground text-base font-bold shadow-sm',
-        badge.className,
-      )}
-    >
+    <SquareBadge square={dest} orientation={orientation} className={badge.className}>
       {badge.glyph ?? <BookOpen className="size-3.5" />}
-    </span>
+    </SquareBadge>
   );
 }
 
