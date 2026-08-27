@@ -529,12 +529,16 @@ export function HomePage() {
     // unbreakable study name in Continue, the content is exactly as wide
     // as the box.
     //
-    // From md the centring goes: `md:items-start` pins the dashboard to
-    // the top like every other page. A centred page re-centres every time
-    // content lands — the panels arrive a beat after first paint, and from
-    // the top nothing above them can move. (Below md the launcher stays
-    // centred, and its Continue card reserves its own space instead.)
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 md:items-start">
+    // Centred on BOTH axes at every width, and the vertical half of that
+    // was un-done once and asked back (lanph3re, on the deployed box): the
+    // dashboard briefly shipped `md:items-start`, reasoning that a centred
+    // page re-centres when the panels land a beat after first paint. It
+    // does — the stack shifts up by half the panels' height, once, on the
+    // same round trip the phone already absorbs for Continue — and what
+    // top-alignment bought for that was a tall window with all its slack
+    // piled below the content. Centring splits the slack instead, which
+    // reads as a home rather than a form abandoned mid-page.
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6">
       <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl">
         {/* The page's heading, for the document and for a screen reader
             walking the landmarks — not for the eye.
@@ -713,12 +717,12 @@ export function HomePage() {
         {/* The dashboard — what is happening in the vault, drawn only
             where the sidebar already does the navigating. It waits for
             both answer batches so the grid lands once instead of
-            reflowing panel by panel, and no skeleton holds its place: the
-            page is top-aligned from md, so a late grid moves nothing
-            above it, and against a warm vault the wait is one round trip.
-            A panel with nothing to say is not drawn — an empty box is a
-            question, not a fact — and a vault with nothing at all says so
-            once, in one card. */}
+            reflowing panel by panel, and no skeleton holds its place:
+            against a warm vault the wait is one round trip, and the one
+            re-centre it costs when the grid lands is the same beat the
+            phone already absorbs for Continue. A panel with nothing to
+            say is not drawn — an empty box is a question, not a fact —
+            and a vault with nothing at all says so once, in one card. */}
         {data !== null && dash !== null && (
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
             {showTraining && (
