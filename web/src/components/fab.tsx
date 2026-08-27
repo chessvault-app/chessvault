@@ -182,10 +182,16 @@ export function Fab({
         // carrying the whole job. Drawn in the button's own foreground at
         // low alpha, so it darkens the rim in dark mode and lightens it
         // in light, instead of dropping a grey ring on a blue disc.
+        //
+        // Pressed is a dimming, not a squash. active:scale-95 was the only
+        // press-scale in the app, and a control that shrinks under the
+        // thumb is a toy's idea of feedback — the pills above already
+        // answer a press with opacity, so the file had both idioms in it
+        // and only one of them anywhere else.
         className={cn(
           'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
           'border border-primary-foreground/30',
-          'shadow-lg transition-transform duration-100 active:scale-95',
+          'shadow-lg transition-opacity duration-100 active:opacity-80',
         )}
       >
         {open ? <X className="size-6" /> : <Icon className="size-6" strokeWidth={2.5} />}
