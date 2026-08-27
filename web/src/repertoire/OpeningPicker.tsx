@@ -236,7 +236,13 @@ export function OpeningPicker({
             }}
           >
             <DialogContent size="sm" title={t('Opening')} className="gap-2">
-              {body.searchBox}
+              {/* pt-1.5 settles the title strip's -mb-3.5, which is
+                  written against the card's default gap-4: at this
+                  sheet's gap-2 the first child rises 6px under the
+                  opaque strip — measured here as the search box losing
+                  its top border and corners. Same mechanism, same fix,
+                  as the action sheet's detail line (action-menu.tsx). */}
+              <div className="pt-1.5">{body.searchBox}</div>
               {body.list}
             </DialogContent>
           </Dialog>
