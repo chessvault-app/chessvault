@@ -340,6 +340,8 @@ export const ko: Record<string, string> = {
   Queens: '퀸',
   'Pick at least one count, or every game matches.':
     '적어도 하나는 골라야 합니다 — 아니면 모든 게임이 일치합니다.',
+  'Set the position up on a board': '보드에서 포지션 만들기',
+  'Set up a position': '포지션 만들기',
   'Any rating': '모든 레이팅',
   'More filters': '필터 더 보기',
   'Filter games': '게임 거르기',

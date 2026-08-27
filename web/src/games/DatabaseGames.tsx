@@ -1,5 +1,5 @@
-import { Database, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Database, Grid3x3, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -30,7 +30,15 @@ import { EmptyState } from '@/components/empty-state';
 import { GameListShell } from './GameListShell';
 
 import type { RefDb } from '@/databases/RefDbManager';
+import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
+
+// The setup board is the whole editor, embedded — and the editor is a
+// board plus its tools, none of which belongs in this bundle until the
+// button that wants it is pressed.
+const EditorView = lazy(() =>
+  import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
+);
 import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
 
 interface RefGame {
@@ -354,6 +362,10 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
   const [customDraft, setCustomDraft] = useState<CustomDraft>(EMPTY_CUSTOM);
   const [customSpec, setCustomSpec] = useState<CustomSpec | null>(null);
   const [editingCustom, setEditingCustom] = useState(false);
+  /** The setup board: the embedded editor in a window, for a position
+      nobody has a FEN of — the editor validates, so only a legal
+      position ever comes back through onUse. */
+  const [settingUp, setSettingUp] = useState(false);
   const [huntRows, setHuntRows] = useState<RefGame[] | null>(null);
   const [hunting, setHunting] = useState(false);
   const [huntProgress, setHuntProgress] = useState<{ scanned: number; total: number } | null>(null);
@@ -392,7 +404,10 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const runHunt = useCallback(async (): Promise<void> => {
+  // fenOverride: the setup board hands its position and runs in one
+  // press — the setState it also does has not landed by the time this
+  // closure reads huntFen.
+  const runHunt = useCallback(async (fenOverride?: string): Promise<void> => {
     // Resolved before any state moves: a custom pick with no spec has
     // nothing to run (the Search button is disabled then too).
     const material =
@@ -414,7 +429,7 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
       if (curDb) params.set('db', curDb);
       applyFilters(params);
       if (huntKind === 'position') {
-        params.set('fen', huntFen.trim());
+        params.set('fen', (fenOverride ?? huntFen).trim());
         if (rung !== 'exact') params.set('match', rung);
       } else {
         params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
@@ -966,6 +981,14 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
             spellCheck={false}
             className="min-w-0 flex-1 basis-40"
           />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Set the position up on a board')}
+            onClick={() => setSettingUp(true)}
+          >
+            <Grid3x3 className="size-3.5" />
+          </Button>
           <Select
             value={rung}
             onValueChange={(v) => setRung(v as MatchMode)}
@@ -1142,6 +1165,36 @@ export function DatabaseGames({ shape = 'sheet' }: { shape?: 'panel' | 'sheet' }
         ) : undefined
       }
     />
+    {settingUp && (
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) setSettingUp(false);
+        }}
+      >
+        {/* The same full window the reference sheet uses: the editor is
+            a board and its tools, and a content-sized card would grow
+            under the hand placing pieces on it. */}
+        <DialogContent title="Set up a position" className="max-sm:h-[88%]" size="full">
+          <div className="force-stacked min-h-0 flex-1 overflow-y-auto">
+            <Suspense
+              fallback={<Spinner className="text-muted-foreground m-auto size-5" />}
+            >
+              <EditorView
+                key={huntFen.trim() || 'blank'}
+                initialFen={huntFen.trim() || undefined}
+                useLabel={t('Search')}
+                onUse={(fen) => {
+                  setHuntFen(fen);
+                  setSettingUp(false);
+                  void runHunt(fen);
+                }}
+              />
+            </Suspense>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
     {editingCustom && (
       <CustomMaterialWindow
         initial={customDraft}
