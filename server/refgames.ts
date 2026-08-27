@@ -10,6 +10,16 @@ import { makeSan, parseSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import { renameRetrying } from './atomic.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
+import {
+  MATCH_MODES,
+  canonicalMaterial,
+  matchSignature,
+  materialMenBounds,
+  materialSatisfied,
+  parseMaterialSpec,
+  type MatchMode,
+  type MaterialSpec,
+} from '../shared/scanMatch.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { positionIndexInfo } from './refgamesIndex.ts';
 import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
@@ -55,33 +65,59 @@ function nativeBinary(): string | null {
 }
 
 /**
- * The binary's capabilities output, parsed: the gamesWhere filter keys
- * that build of the crate understands. Null for anything that is not a
- * declaration — garbage, a non-array, non-strings — because a binary
- * that cannot state its contract must not be trusted with any of it.
+ * The deep-scan request keys that are NOT gamesWhere filters: the
+ * relaxation rung and the material spec (shared/scanMatch.ts). They
+ * ride the same negotiation as the filters, in their own field of the
+ * declaration — a binary from before the ladder declares no `scan` at
+ * all, and every match/material request runs on the JS path until the
+ * crate catches up.
  */
-export function parseNativeCapabilities(stdout: string): ReadonlySet<string> | null {
+export const SCAN_KEYS = ['match', 'material'] as const;
+
+export interface NativeCapabilities {
+  filters: ReadonlySet<string>;
+  scan: ReadonlySet<string>;
+}
+
+/**
+ * The binary's capabilities output, parsed: the gamesWhere filter keys
+ * and scan keys that build of the crate understands. A missing `scan`
+ * field is an older declaration, not a broken one — it means none.
+ * Null for anything that is not a declaration — garbage, a non-array,
+ * non-strings — because a binary that cannot state its contract must
+ * not be trusted with any of it.
+ */
+export function parseNativeCapabilities(stdout: string): NativeCapabilities | null {
   try {
-    const body = JSON.parse(stdout) as { filters?: unknown };
-    if (!Array.isArray(body.filters) || !body.filters.every((f) => typeof f === 'string')) {
-      return null;
-    }
-    return new Set(body.filters as string[]);
+    const body = JSON.parse(stdout) as { filters?: unknown; scan?: unknown };
+    const strings = (value: unknown): string[] | null =>
+      Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+        ? (value as string[])
+        : null;
+    const filters = strings(body.filters);
+    if (!filters) return null;
+    const scan = body.scan === undefined ? [] : strings(body.scan);
+    if (!scan) return null;
+    return { filters: new Set(filters), scan: new Set(scan) };
   } catch {
     return null;
   }
 }
 
 /**
- * The gamesWhere keys this request uses that the binary did not
- * declare — non-empty means the JS path answers. Keys outside
- * GAMES_WHERE_KEYS never count: they are not filters on either side.
+ * The request keys this search uses that the binary did not declare —
+ * non-empty means the JS path answers. Keys outside GAMES_WHERE_KEYS
+ * and SCAN_KEYS never count: they are not part of the vocabulary on
+ * either side.
  */
 export function undeclaredFilters(
-  declared: ReadonlySet<string>,
+  declared: NativeCapabilities,
   get: (key: string) => string | undefined,
 ): string[] {
-  return GAMES_WHERE_KEYS.filter((key) => get(key) !== undefined && !declared.has(key));
+  return [
+    ...GAMES_WHERE_KEYS.filter((key) => get(key) !== undefined && !declared.filters.has(key)),
+    ...SCAN_KEYS.filter((key) => get(key) !== undefined && !declared.scan.has(key)),
+  ];
 }
 
 /**
@@ -92,8 +128,8 @@ export function undeclaredFilters(
  * gave no usable declaration; deep search then ignores it entirely,
  * which keeps "too old to negotiate" from meaning "trusted anyway".
  */
-const capabilitiesCache = new Map<string, Promise<ReadonlySet<string> | null>>();
-function nativeFilters(binary: string): Promise<ReadonlySet<string> | null> {
+const capabilitiesCache = new Map<string, Promise<NativeCapabilities | null>>();
+function nativeFilters(binary: string): Promise<NativeCapabilities | null> {
   let mtime: number;
   try {
     mtime = statSync(binary).mtimeMs;
@@ -109,7 +145,7 @@ function nativeFilters(binary: string): Promise<ReadonlySet<string> | null> {
   return pending;
 }
 
-function askCapabilities(binary: string): Promise<ReadonlySet<string> | null> {
+function askCapabilities(binary: string): Promise<NativeCapabilities | null> {
   return new Promise((done) => {
     let child: ReturnType<typeof spawn>;
     try {
@@ -126,7 +162,7 @@ function askCapabilities(binary: string): Promise<ReadonlySet<string> | null> {
       stdout += chunk.toString();
     });
     let settled = false;
-    const finish = (declared: ReadonlySet<string> | null, why?: string): void => {
+    const finish = (declared: NativeCapabilities | null, why?: string): void => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -1347,18 +1383,59 @@ export function refGamesApi(
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { db } = found;
+    // Two hunts share this route: a position (fen, optionally relaxed a
+    // rung by match=) or a material situation (material=, no position at
+    // all — see shared/scanMatch.ts for both models). One or the other,
+    // never a mixture: a fen beside a material spec has no meaning.
     const fen = c.req.query('fen')?.trim();
-    if (!fen) return c.json({ error: 'expected fen' }, 400);
-    const setup = parseFen(fen);
-    if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
-    const position = Chess.fromSetup(setup.unwrap());
-    if (position.isErr) return c.json({ error: 'bad position' }, 400);
-    const target = position.unwrap();
-    const targetKey = toDbKey(hashSetup(target.toSetup()));
-    const targetW = target.board.white.size();
-    const targetB = target.board.black.size();
-    const missing = 32 - targetW - targetB;
-    const wantBlackToMove = target.turn === 'black';
+    const matchRaw = c.req.query('match');
+    const materialRaw = c.req.query('material');
+    if (materialRaw !== undefined && (fen !== undefined || matchRaw !== undefined)) {
+      return c.json({ error: 'material search takes no fen or match' }, 400);
+    }
+    if (matchRaw !== undefined && !(MATCH_MODES as readonly string[]).includes(matchRaw)) {
+      return c.json({ error: 'bad match mode' }, 400);
+    }
+    const mode = (matchRaw as MatchMode | undefined) ?? 'exact';
+    const spec = materialRaw !== undefined ? parseMaterialSpec(materialRaw) : null;
+    if (materialRaw !== undefined && spec === null) {
+      return c.json({ error: 'bad material spec' }, 400);
+    }
+
+    let targetKey = 0n;
+    let targetSig = '';
+    let targetW = 0;
+    let targetB = 0;
+    let wantBlackToMove = false;
+    // The men-column prefilter, one shape for every hunt: a game only
+    // ever loses men, so it contains a qualifying position only if its
+    // final counts dip to the ceiling or below, and only if it is long
+    // enough — `missing` captures for a position hunt, `stable - 1`
+    // plies of standing still for a material one.
+    let menCeilW: number;
+    let menCeilB: number;
+    let minPly: number;
+    if (spec) {
+      const bounds = materialMenBounds(spec);
+      menCeilW = bounds.hiW;
+      menCeilB = bounds.hiB;
+      minPly = spec.stable - 1;
+    } else {
+      if (!fen) return c.json({ error: 'expected fen' }, 400);
+      const setup = parseFen(fen);
+      if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
+      const position = Chess.fromSetup(setup.unwrap());
+      if (position.isErr) return c.json({ error: 'bad position' }, 400);
+      const target = position.unwrap();
+      if (mode === 'exact') targetKey = toDbKey(hashSetup(target.toSetup()));
+      else targetSig = matchSignature(target.board, mode);
+      targetW = target.board.white.size();
+      targetB = target.board.black.size();
+      menCeilW = targetW;
+      menCeilB = targetB;
+      minPly = 32 - targetW - targetB;
+      wantBlackToMove = target.turn === 'black';
+    }
 
     // The native scan, when the binary is here and this mount is the
     // real data directory (its --data layout): same prefilters, same
@@ -1384,6 +1461,14 @@ export function refGamesApi(
         const value = c.req.query(key);
         if (value !== undefined) filters[key] = value;
       }
+      const argv = ['deep-search', found.name, '--filters', JSON.stringify(filters), '--data', DATA];
+      // The binary receives the CANONICAL spec, never the request's own
+      // JSON: this route validated above, for both implementations.
+      if (spec) argv.push('--material', canonicalMaterial(spec));
+      else {
+        argv.push('--fen', fen!);
+        if (mode !== 'exact') argv.push('--match', mode);
+      }
       c.header('Content-Type', 'application/x-ndjson');
       return stream(c, (out) =>
         new Promise<void>((done) => {
@@ -1393,11 +1478,7 @@ export function refGamesApi(
           // signal that the search failed rather than found nothing.
           let child: ReturnType<typeof spawn>;
           try {
-            child = spawn(
-              native,
-              ['deep-search', found.name, '--fen', fen, '--filters', JSON.stringify(filters), '--data', DATA],
-              { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
-            );
+            child = spawn(native, argv, { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
           } catch (error) {
             console.error(`deep-search (${found.name}): could not start ${native}: ${(error as Error).message}`);
             done();
@@ -1447,7 +1528,7 @@ export function refGamesApi(
           AND (final_bmen IS NULL OR final_bmen <= ?)
           AND (ply_count IS NULL OR ply_count >= ?)`
       : '';
-    const menBinds = hasMen ? [targetW, targetB, missing] : [];
+    const menBinds = hasMen ? [menCeilW, menCeilB, minPly] : [];
     const total = (
       db
         .prepare(`SELECT COUNT(*) AS n FROM games WHERE 1${menWhere}${sqlAnd}`)
@@ -1459,6 +1540,85 @@ export function refGamesApi(
        WHERE id > ?${menWhere}${sqlAnd}
        ORDER BY id LIMIT 1000`,
     );
+
+    /**
+     * The ply at which the game reaches the target position, or null.
+     * Cheap gates before the expensive test: the side to move and the
+     * men counts must already agree — most plies fail one of the two.
+     * The exact rung then compares the Zobrist key; a relaxed rung
+     * compares its signature. The SAN's own capture mark tracks the men
+     * (a board check would miss en passant), and once a side dips below
+     * the target's counts the game can no longer contain it — men only
+     * leave. The final position is a position too: an endgame search is
+     * often exactly about how games ended.
+     */
+    const findPositionHit = (moves: string): number | null => {
+      const pos = Chess.default();
+      let w = 16;
+      let b = 16;
+      let ply = 0;
+      const atTarget = (): boolean =>
+        (ply % 2 === 1) === wantBlackToMove &&
+        w === targetW &&
+        b === targetB &&
+        (mode === 'exact'
+          ? toDbKey(hashSetup(pos.toSetup())) === targetKey
+          : matchSignature(pos.board, mode) === targetSig);
+      for (const san of moves.split(' ')) {
+        if (atTarget()) return ply;
+        const move = parseSan(pos, san);
+        if (!move) break;
+        if (san.includes('x')) {
+          if (ply % 2 === 0) b -= 1;
+          else w -= 1;
+          if (w < targetW || b < targetB) break;
+        }
+        pos.play(move);
+        ply += 1;
+      }
+      return atTarget() ? ply : null;
+    };
+
+    /**
+     * The FIRST ply of the earliest streak of positions satisfying the
+     * material spec for its stability length, or null. No parity gate —
+     * a material situation has no side to move — and the early exit is
+     * the spec's own floor: below it, men only leave, never again.
+     * Breaks return null directly rather than falling through to a
+     * final test: the streak is stateful, and re-testing a position the
+     * loop already counted would count it twice.
+     */
+    const findMaterialHit = (moves: string, wanted: MaterialSpec): number | null => {
+      const { loW, loB } = materialMenBounds(wanted);
+      const pos = Chess.default();
+      let w = 16;
+      let b = 16;
+      let ply = 0;
+      let streak = 0;
+      const step = (): number | null => {
+        if (materialSatisfied(pos.board, wanted)) {
+          streak += 1;
+          if (streak >= wanted.stable) return ply - wanted.stable + 1;
+        } else {
+          streak = 0;
+        }
+        return null;
+      };
+      for (const san of moves.split(' ')) {
+        const hit = step();
+        if (hit !== null) return hit;
+        const move = parseSan(pos, san);
+        if (!move) return null;
+        if (san.includes('x')) {
+          if (ply % 2 === 0) b -= 1;
+          else w -= 1;
+          if (w < loW || b < loB) return null;
+        }
+        pos.play(move);
+        ply += 1;
+      }
+      return step();
+    };
 
     c.header('Content-Type', 'application/x-ndjson');
     return stream(c, async (out) => {
@@ -1476,40 +1636,7 @@ export function refGamesApi(
         if (batch.length === 0) break;
         for (const row of batch) {
           scanned += 1;
-          const pos = Chess.default();
-          let w = 16;
-          let b = 16;
-          let ply = 0;
-          // Cheap gates before the hash: the side to move and the men
-          // counts must already agree — most plies fail one of the two.
-          const atTarget = (): boolean =>
-            (ply % 2 === 1) === wantBlackToMove &&
-            w === targetW &&
-            b === targetB &&
-            toDbKey(hashSetup(pos.toSetup())) === targetKey;
-          let hitPly: number | null = null;
-          for (const san of row.moves.split(' ')) {
-            if (atTarget()) {
-              hitPly = ply;
-              break;
-            }
-            const move = parseSan(pos, san);
-            if (!move) break;
-            // The SAN's own capture mark, exactly as finalMen counted it
-            // — a board check would miss en passant.
-            if (san.includes('x')) {
-              if (ply % 2 === 0) b -= 1;
-              else w -= 1;
-              // Men only leave: past the target's counts, this game can
-              // no longer contain it.
-              if (w < targetW || b < targetB) break;
-            }
-            pos.play(move);
-            ply += 1;
-          }
-          // The final position is a position too — an endgame search is
-          // often exactly about how games ended.
-          if (hitPly === null && atTarget()) hitPly = ply;
+          const hitPly = spec ? findMaterialHit(row.moves, spec) : findPositionHit(row.moves);
           if (hitPly !== null) {
             matched += 1;
             const { moves: _moves, ...headers } = row;

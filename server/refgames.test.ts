@@ -697,6 +697,73 @@ describe('position index and explore', () => {
     expect(hits[0]).toMatchObject({ white: 'Carlsen' });
   });
 
+  it('climbs the relaxation ladder', async () => {
+    const run = async (query: string): Promise<Record<string, unknown>[]> => {
+      const res = await app.request(`/api/refgames/deep-search?${query}`);
+      expect(res.status).toBe(200);
+      return (await res.text())
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+    };
+    const games = async (query: string) =>
+      (await run(query)).filter((f) => f.type === 'game');
+
+    // Exact and pawns agree on the position after 1.e4 — both e4 games
+    // have that exact pawn structure at ply 1; the d4 game does not.
+    const pawns = await games(`fen=${encodeURIComponent(AFTER_E4)}&match=pawns`);
+    expect(pawns.map((g) => [g.white, g.ply])).toEqual([
+      ['Carlsen', 1],
+      ['Nepo', 1],
+    ]);
+    // The material rung no longer sees the pawns at all: every game
+    // still has full material with black to move after its first move.
+    const material = await games(`fen=${encodeURIComponent(AFTER_E4)}&match=material`);
+    expect(material.map((g) => [g.white, g.ply])).toEqual([
+      ['Carlsen', 1],
+      ['Nepo', 1],
+      ['Ding', 1],
+    ]);
+    // The rung still composes with the game filters.
+    const filtered = await games(
+      `fen=${encodeURIComponent(AFTER_E4)}&match=material&player=ding`,
+    );
+    expect(filtered.map((g) => g.white)).toEqual(['Ding']);
+
+    expect((await app.request(`/api/refgames/deep-search?fen=x&match=fuzzy`)).status).toBe(400);
+  });
+
+  it('hunts a material situation with stability', async () => {
+    const run = async (query: string): Promise<Record<string, unknown>[]> => {
+      const res = await app.request(`/api/refgames/deep-search?${query}`);
+      expect(res.status).toBe(200);
+      return (await res.text())
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+    };
+    // Both knights on the board for two consecutive plies: true from
+    // the very start of every game, so the hit is the streak's FIRST
+    // ply, not the ply that completed it.
+    const spec = encodeURIComponent('{"white":{"n":[2,2]},"stable":2}');
+    const hits = (await run(`material=${spec}`)).filter((f) => f.type === 'game');
+    expect(hits).toHaveLength(3);
+    expect(hits.every((g) => g.ply === 0)).toBe(true);
+
+    // A material situation no game contains.
+    const none = await run(`material=${encodeURIComponent('{"white":{"q":[2,3]}}')}`);
+    expect(none.filter((f) => f.type === 'game')).toEqual([]);
+    expect(none.at(-1)).toMatchObject({ type: 'done', matched: 0 });
+
+    // Strict refusals: a bad spec, and a fen or rung beside a spec.
+    const bad = async (query: string) =>
+      (await app.request(`/api/refgames/deep-search?${query}`)).status;
+    expect(await bad('material=%7B%7D')).toBe(400); // {} constrains nothing
+    expect(await bad('material=nonsense')).toBe(400);
+    expect(await bad(`material=${spec}&fen=${encodeURIComponent(START)}`)).toBe(400);
+    expect(await bad(`material=${spec}&match=material`)).toBe(400);
+  });
+
   it('abandons a deep search whose reader has gone', async () => {
     // A cancelled request must not scan the database for nobody: the
     // loop checks the abort signal per batch, so an aborted reader gets
@@ -810,33 +877,49 @@ describe('native filter negotiation', () => {
   });
 
   it('parses a declaration and rejects everything else', () => {
-    expect(parseNativeCapabilities('{"filters":["result","player"]}\n')).toEqual(
-      new Set(['result', 'player']),
-    );
-    expect(parseNativeCapabilities('{"filters":[]}')).toEqual(new Set());
+    expect(parseNativeCapabilities('{"filters":["result","player"]}\n')).toEqual({
+      filters: new Set(['result', 'player']),
+      scan: new Set(),
+    });
+    expect(parseNativeCapabilities('{"filters":[],"scan":["match","material"]}')).toEqual({
+      filters: new Set(),
+      scan: new Set(['match', 'material']),
+    });
     expect(parseNativeCapabilities('')).toBeNull();
     expect(parseNativeCapabilities('not json')).toBeNull();
     expect(parseNativeCapabilities('{"filters":"result"}')).toBeNull();
     expect(parseNativeCapabilities('{"filters":[1,2]}')).toBeNull();
+    expect(parseNativeCapabilities('{"filters":[],"scan":"match"}')).toBeNull();
     expect(parseNativeCapabilities('{}')).toBeNull();
   });
 
   it('routes a request using an undeclared filter down the JS path', () => {
-    const declared = new Set(GAMES_WHERE_KEYS.filter((k) => k !== 'opening'));
+    const declared = {
+      filters: new Set(GAMES_WHERE_KEYS.filter((k) => k !== 'opening')),
+      scan: new Set(['match']),
+    };
     const query = (q: Record<string, string>) => (k: string) => q[k];
     // Nothing asked, nothing undeclared — the unfiltered scan is native.
     expect(undeclaredFilters(declared, query({}))).toEqual([]);
-    // Declared filters ride the binary.
+    // Declared filters ride the binary, scan keys included.
     expect(undeclaredFilters(declared, query({ player: 'Carlsen', side: 'white' }))).toEqual([]);
+    expect(undeclaredFilters(declared, query({ match: 'pawns', minElo: '2500' }))).toEqual([]);
     // One undeclared filter poisons the whole request, even beside
     // declared ones: half-filtered fast is wrong, filtered slow is not.
     expect(undeclaredFilters(declared, query({ player: 'Carlsen', opening: 'B90' }))).toEqual([
       'opening',
     ]);
+    // Scan keys negotiate in their own field: a binary from before the
+    // ladder declared no scan at all, so match/material stay JS.
+    const preLadder = { filters: declared.filters, scan: new Set<string>() };
+    expect(undeclaredFilters(preLadder, query({ match: 'pawns' }))).toEqual(['match']);
+    expect(undeclaredFilters(preLadder, query({ material: '{}' }))).toEqual(['material']);
     // Present-but-empty still counts: both sides may ignore it today,
     // but "present means asked" is the one rule that needs no smarts.
     expect(undeclaredFilters(declared, query({ opening: '' }))).toEqual(['opening']);
-    // A key that is not a filter never counts, whatever the binary says.
-    expect(undeclaredFilters(new Set(), query({ fen: 'x', db: 'y' }))).toEqual([]);
+    // A key that is not in the vocabulary never counts.
+    expect(
+      undeclaredFilters({ filters: new Set(), scan: new Set() }, query({ fen: 'x', db: 'y' })),
+    ).toEqual([]);
   });
 });
