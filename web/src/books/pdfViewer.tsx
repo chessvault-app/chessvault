@@ -131,6 +131,18 @@ export function PdfPage({
       Turned, it is the finished result at the old raster's sharpness. */
   const [rasterRot, setRasterRot] = useState<Rotation>(rotation);
   const taskRef = useRef<RenderTask | null>(null);
+  /** A finished raster waiting for its blit — see the note at the render
+      completion. The newest landing wins; the blit clears it. */
+  const pending = useRef<HTMLCanvasElement | null>(null);
+  useLayoutEffect(() => {
+    const off = pending.current;
+    const canvas = canvasRef.current;
+    if (!off || !canvas) return;
+    pending.current = null;
+    canvas.width = off.width;
+    canvas.height = off.height;
+    canvas.getContext('2d')!.drawImage(off, 0, 0);
+  });
   // A page that is slow to arrive — the first of a book over a slow link,
   // a heavy scan — shows a spinner in its slot rather than a blank.
   const slow = useSlowLoad(size === null);
@@ -172,11 +184,18 @@ export function PdfPage({
         return;
       }
       if (!live) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = off.width;
-      canvas.height = off.height;
-      canvas.getContext('2d')!.drawImage(off, 0, 0);
+      // The blit is PARKED for the layout effect below, not written here:
+      // writing the bitmap now mutates the canvas synchronously while the
+      // state that presents it — the size, and above all rasterRot, which
+      // is what takes the stale-bitmap turn OFF — lands a React render
+      // later, and a paint can slip between the two. On the phone that
+      // was one or two frames of the fresh bitmap wearing the old
+      // bitmap's turn: rotated 90° too far, then snapping right —
+      // lanph3re's earthquake, frame-stepped in the clip at 2.10–2.13 s.
+      // A layout effect runs after the state's render and before its
+      // paint, so the bitmap and the styles that present it arrive in
+      // the same frame.
+      pending.current = off;
       setAspect0(rotation % 180 === 0 ? cssH / cssW : cssW / cssH);
       setRasterRot(rotation);
       setSize({ w: cssW, h: cssH });
