@@ -59,6 +59,24 @@ version has to stay readable.
 JavaScript children. That is how the two are compared on the same
 machine and the same data.
 
+## Filters are negotiated, not assumed
+
+The deep-search filters are the one place the two sides are allowed to
+differ — by declaration, never silently. `chessvault-core capabilities`
+prints the filter keys this build's `games_where` understands (one JSON
+line, `{"filters":[...]}`), and the server asks once per build of the
+binary (cached by path and mtime, so a rebuild is re-asked). A request
+using any filter the binary did not declare runs on the server's JS scan
+instead — slower, never wrong — which is how the TypeScript side ships a
+new filter before this crate learns it. A binary that cannot answer
+`capabilities` at all is not used for deep search, full stop: too old to
+negotiate must not mean trusted anyway.
+
+Both sides pin the declaration to the code rather than to memory: a test
+here records which keys `games_where` actually consults and fails if
+`SUPPORTED_FILTERS` says anything else, and `server/refgames.test.ts`
+does the same for `gamesWhere` against `GAMES_WHERE_KEYS`.
+
 ## What ships, and what does not
 
 The desktop installer carries a binary built for its own platform: each

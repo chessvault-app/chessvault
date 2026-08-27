@@ -8,6 +8,17 @@ use rusqlite::types::Value;
 
 use crate::util::js_number;
 
+/// The filter keys `games_where` consults — the contract the
+/// `capabilities` subcommand declares to the server. The server routes a
+/// deep search using any filter NOT listed here down its JS path, which
+/// is what lets the TypeScript side grow a filter before this crate
+/// learns it: an undeclared filter is a slower answer, never a wrong
+/// one. Grow this list only in the same change that teaches
+/// `games_where` the key — the test below holds the two together.
+pub const SUPPORTED_FILTERS: &[&str] = &[
+    "result", "minElo", "band", "player", "side", "outcome", "opening", "event", "from", "to",
+];
+
 pub struct GamesWhere {
     pub clauses: Vec<String>,
     pub binds: Vec<Value>,
@@ -176,4 +187,52 @@ pub fn games_where(
     }
 
     GamesWhere { clauses, binds }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::RefCell;
+    use std::collections::BTreeSet;
+
+    use super::*;
+
+    /// A value each filter accepts, so that with every key answered the
+    /// whole of `games_where` runs and consults everything it knows —
+    /// including the keys it only reads behind another (outcome behind
+    /// player). Panics on an unknown key, which IS the failure being
+    /// tested for: a filter `games_where` consults but never declared.
+    fn sample(key: &str) -> String {
+        match key {
+            "result" => "1-0",
+            "minElo" => "2500",
+            "band" => "1600-1999",
+            "player" => "Carlsen",
+            "side" => "white",
+            "outcome" => "won",
+            "opening" => "B90",
+            "event" => "Tata Steel",
+            "from" | "to" => "2020-01-01",
+            other => panic!("games_where consults a key SUPPORTED_FILTERS does not declare: {other}"),
+        }
+        .to_owned()
+    }
+
+    /// SUPPORTED_FILTERS must be exactly the keys `games_where` reads —
+    /// recorded from the getter itself, not asserted from memory. An
+    /// extra declared key would promise the server a filter this side
+    /// ignores (wrong rows); an undeclared consulted key would keep the
+    /// fast path off a filter it actually supports.
+    #[test]
+    fn declares_exactly_what_it_consults() {
+        let asked = RefCell::new(BTreeSet::new());
+        let get = |key: &str| {
+            asked.borrow_mut().insert(key.to_owned());
+            Some(sample(key))
+        };
+        games_where(&get, "", false);
+        let asked: Vec<String> = asked.into_inner().into_iter().collect();
+        let mut declared: Vec<String> = SUPPORTED_FILTERS.iter().map(|s| (*s).to_owned()).collect();
+        declared.sort();
+        assert_eq!(asked, declared);
+    }
 }

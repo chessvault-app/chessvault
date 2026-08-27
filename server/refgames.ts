@@ -54,6 +54,101 @@ function nativeBinary(): string | null {
   return null;
 }
 
+/**
+ * The binary's capabilities output, parsed: the gamesWhere filter keys
+ * that build of the crate understands. Null for anything that is not a
+ * declaration — garbage, a non-array, non-strings — because a binary
+ * that cannot state its contract must not be trusted with any of it.
+ */
+export function parseNativeCapabilities(stdout: string): ReadonlySet<string> | null {
+  try {
+    const body = JSON.parse(stdout) as { filters?: unknown };
+    if (!Array.isArray(body.filters) || !body.filters.every((f) => typeof f === 'string')) {
+      return null;
+    }
+    return new Set(body.filters as string[]);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The gamesWhere keys this request uses that the binary did not
+ * declare — non-empty means the JS path answers. Keys outside
+ * GAMES_WHERE_KEYS never count: they are not filters on either side.
+ */
+export function undeclaredFilters(
+  declared: ReadonlySet<string>,
+  get: (key: string) => string | undefined,
+): string[] {
+  return GAMES_WHERE_KEYS.filter((key) => get(key) !== undefined && !declared.has(key));
+}
+
+/**
+ * Ask the binary which filters it supports, once per build: the answer
+ * is cached by path + mtime, so the per-request cost is a stat — and a
+ * binary rebuilt mid-session is re-asked, the same staleness immunity
+ * the per-spawn lookup above buys. Null (also cached) means the binary
+ * gave no usable declaration; deep search then ignores it entirely,
+ * which keeps "too old to negotiate" from meaning "trusted anyway".
+ */
+const capabilitiesCache = new Map<string, Promise<ReadonlySet<string> | null>>();
+function nativeFilters(binary: string): Promise<ReadonlySet<string> | null> {
+  let mtime: number;
+  try {
+    mtime = statSync(binary).mtimeMs;
+  } catch {
+    return Promise.resolve(null);
+  }
+  const key = `${binary}|${mtime}`;
+  let pending = capabilitiesCache.get(key);
+  if (!pending) {
+    pending = askCapabilities(binary);
+    capabilitiesCache.set(key, pending);
+  }
+  return pending;
+}
+
+function askCapabilities(binary: string): Promise<ReadonlySet<string> | null> {
+  return new Promise((done) => {
+    let child: ReturnType<typeof spawn>;
+    try {
+      // Windows throws synchronously for an unrunnable binary; POSIX
+      // emits 'error' instead (see spawnJob). Both mean no declaration.
+      child = spawn(binary, ['capabilities'], { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      console.error(`refgames: ${binary} gave no capabilities: ${(error as Error).message}`);
+      done(null);
+      return;
+    }
+    let stdout = '';
+    child.stdout!.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
+    });
+    let settled = false;
+    const finish = (declared: ReadonlySet<string> | null, why?: string): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (declared === null) {
+        console.error(`refgames: ${binary} gave no capabilities${why ? `: ${why}` : ''} — deep search stays on the JS path`);
+      }
+      done(declared);
+    };
+    // A binary that hangs on a one-line question must not hang the
+    // request that asked; the answer is immediate or it is no answer.
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(null, 'timed out');
+    }, 5000);
+    child.on('error', (error) => finish(null, error.message));
+    child.on('close', (code) => {
+      if (code !== 0) finish(null, `exit code ${code}`);
+      else finish(parseNativeCapabilities(stdout), 'unparseable output');
+    });
+  });
+}
+
 /** Same shape as book names: file names, no slashes, no dot-only names. */
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
@@ -340,7 +435,33 @@ function parseBand(raw: string | undefined): { lo: number; hi: number | null } |
   return { lo, hi };
 }
 
-function gamesWhere(
+/**
+ * The filter keys gamesWhere consults — the negotiation vocabulary.
+ *
+ * This list is what the deep-search route forwards to the native binary
+ * and compares against what that binary declares (see nativeFilters): a
+ * request using a key the binary did not declare runs on the JS path
+ * below instead. That routing is what lets THIS side grow a filter
+ * before the Rust twin learns it — the cost of the gap is a slower
+ * answer, never a wrong one. Grow the list only in the same change that
+ * teaches gamesWhere the key; the refgames test records the consulted
+ * set and fails on either kind of drift. Exported, with gamesWhere, for
+ * that test.
+ */
+export const GAMES_WHERE_KEYS = [
+  'result',
+  'minElo',
+  'band',
+  'player',
+  'side',
+  'outcome',
+  'opening',
+  'event',
+  'from',
+  'to',
+] as const;
+
+export function gamesWhere(
   get: (key: string) => string | undefined,
   alias = '',
   /**
@@ -817,7 +938,7 @@ export function refGamesApi(
     });
   }
 
-  api.get('/refgames', (c) => {
+  api.get('/refgames', async (c) => {
     if (single) {
       // The original single-database shape, kept for the demo's mount.
       const found = fromQuery(c);
@@ -852,10 +973,14 @@ export function refGamesApi(
     });
     // `native`: the deep scan runs through the native binary here, fast
     // enough (~1 s per 280k games, measured) that the explorer may start
-    // it by itself instead of asking for a button press.
+    // it by itself instead of asking for a button press. Present is not
+    // enough: a binary that cannot declare its filters is one deep
+    // search will not use (see nativeFilters), and telling the client
+    // "fast" while answering slow would auto-launch ~10 s JS scans.
+    const binary = dir === REFGAMES_DIR ? nativeBinary() : null;
     return c.json({
       ready: databases.length > 0,
-      native: dir === REFGAMES_DIR && nativeBinary() !== null,
+      native: binary !== null && (await nativeFilters(binary)) !== null,
       databases,
     });
   });
@@ -1218,7 +1343,7 @@ export function refGamesApi(
    * keeps answering while it runs.
    */
   const DEEP_SEARCH_CAP = 200;
-  api.get('/refgames/deep-search', (c) => {
+  api.get('/refgames/deep-search', async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { db } = found;
@@ -1241,10 +1366,21 @@ export function refGamesApi(
     // 12.7 s on an Elite month — spawned per request and piped straight
     // through. A client that goes away takes the child with it, which
     // is the cleanest cancel this scan can have.
-    const native = dir === REFGAMES_DIR ? nativeBinary() : null;
+    //
+    // "Same filters" is negotiated, not assumed: the binary is used
+    // only for requests whose every filter it declared (cached per
+    // build, see nativeFilters). A request using a filter the binary
+    // does not know falls through to the JS scan below, which is the
+    // whole arrangement that lets gamesWhere grow ahead of the crate.
+    const binary = dir === REFGAMES_DIR ? nativeBinary() : null;
+    const declared = binary ? await nativeFilters(binary) : null;
+    const native =
+      binary && declared && undeclaredFilters(declared, (k) => c.req.query(k)).length === 0
+        ? binary
+        : null;
     if (native) {
       const filters: Record<string, string> = {};
-      for (const key of ['result', 'minElo', 'band', 'player', 'side', 'outcome', 'opening', 'event', 'from', 'to']) {
+      for (const key of GAMES_WHERE_KEYS) {
         const value = c.req.query(key);
         if (value !== undefined) filters[key] = value;
       }

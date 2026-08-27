@@ -16,7 +16,8 @@ const USAGE: &str = "usage:
   chessvault-core build <sources...> --name <name> [--append] --data <dir>
   chessvault-core index <name> [--append] --data <dir>
   chessvault-core optimize <name> --data <dir>
-  chessvault-core deep-search <name> --fen <fen> [--filters <json>] --data <dir>";
+  chessvault-core deep-search <name> --fen <fen> [--filters <json>] --data <dir>
+  chessvault-core capabilities";
 
 fn valid_name(name: &str) -> bool {
     let mut chars = name.chars();
@@ -86,6 +87,19 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+
+    // What the server asks before trusting this binary with a filtered
+    // deep search: which gamesWhere filters this build understands. One
+    // JSON line, no --data, no side effects — a request using anything
+    // not declared here runs on the server's JS path instead.
+    if command == "capabilities" {
+        println!(
+            "{}",
+            serde_json::json!({ "filters": chessvault_core::filters::SUPPORTED_FILTERS })
+        );
+        return ExitCode::SUCCESS;
+    }
+
     let Some(data) = args.data.clone() else {
         eprintln!("--data <dir> is required");
         return ExitCode::from(2);

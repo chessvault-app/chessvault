@@ -5,10 +5,14 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  GAMES_WHERE_KEYS,
+  gamesWhere,
   migrateLegacyRefgames,
+  parseNativeCapabilities,
   refGamesApi,
   seedBundledRefgames,
   sweepUnfinishedBuilds,
+  undeclaredFilters,
 } from './refgames.ts';
 import { indexPositions } from './refgamesIndex.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
@@ -754,5 +758,85 @@ describe('position index and explore', () => {
     expect(
       await rows('player=nepo&side=white&opening=sicilian&from=2021-12-01&to=2021-12-31&event=WCh&outcome=drawn'),
     ).toMatchObject([{ white: 'Nepo', black: 'Carlsen' }]);
+  });
+});
+
+/**
+ * The filter-capability negotiation: the native binary declares which
+ * gamesWhere filters it supports, and deep search uses it only for
+ * requests inside that declaration. These are the pure pieces; the
+ * spawn wrapper around them is exercised against the real binary
+ * (npm run build:native, then a filtered deep search with and without
+ * CHESS_NATIVE=0 must answer identically).
+ */
+describe('native filter negotiation', () => {
+  /** A value each filter accepts — with every key answered, the whole
+      of gamesWhere runs, including the keys it only reads behind
+      another (outcome behind player). Throwing on an unknown key IS the
+      failure being tested for. The Rust twin (native/src/filters.rs)
+      records its consulted set the same way. */
+  const sample = (key: string): string => {
+    const values: Record<string, string> = {
+      result: '1-0',
+      minElo: '2500',
+      band: '1600-1999',
+      player: 'Carlsen',
+      side: 'white',
+      outcome: 'won',
+      opening: 'B90',
+      event: 'Tata Steel',
+      from: '2020-01-01',
+      to: '2020-01-01',
+    };
+    const value = values[key];
+    if (value === undefined) {
+      throw new Error(`gamesWhere consults a key GAMES_WHERE_KEYS does not list: ${key}`);
+    }
+    return value;
+  };
+
+  it('GAMES_WHERE_KEYS is exactly what gamesWhere consults', () => {
+    // Recorded from the getter itself, not asserted from memory: a key
+    // gamesWhere reads but the list lacks would never be forwarded to
+    // the binary NOR counted in negotiation — the native path would run
+    // unfiltered where the JS path filters, which is the silent-drift
+    // class this whole arrangement exists to prevent.
+    const asked = new Set<string>();
+    gamesWhere((key) => {
+      asked.add(key);
+      return sample(key);
+    });
+    expect([...asked].sort()).toEqual([...GAMES_WHERE_KEYS].sort());
+  });
+
+  it('parses a declaration and rejects everything else', () => {
+    expect(parseNativeCapabilities('{"filters":["result","player"]}\n')).toEqual(
+      new Set(['result', 'player']),
+    );
+    expect(parseNativeCapabilities('{"filters":[]}')).toEqual(new Set());
+    expect(parseNativeCapabilities('')).toBeNull();
+    expect(parseNativeCapabilities('not json')).toBeNull();
+    expect(parseNativeCapabilities('{"filters":"result"}')).toBeNull();
+    expect(parseNativeCapabilities('{"filters":[1,2]}')).toBeNull();
+    expect(parseNativeCapabilities('{}')).toBeNull();
+  });
+
+  it('routes a request using an undeclared filter down the JS path', () => {
+    const declared = new Set(GAMES_WHERE_KEYS.filter((k) => k !== 'opening'));
+    const query = (q: Record<string, string>) => (k: string) => q[k];
+    // Nothing asked, nothing undeclared — the unfiltered scan is native.
+    expect(undeclaredFilters(declared, query({}))).toEqual([]);
+    // Declared filters ride the binary.
+    expect(undeclaredFilters(declared, query({ player: 'Carlsen', side: 'white' }))).toEqual([]);
+    // One undeclared filter poisons the whole request, even beside
+    // declared ones: half-filtered fast is wrong, filtered slow is not.
+    expect(undeclaredFilters(declared, query({ player: 'Carlsen', opening: 'B90' }))).toEqual([
+      'opening',
+    ]);
+    // Present-but-empty still counts: both sides may ignore it today,
+    // but "present means asked" is the one rule that needs no smarts.
+    expect(undeclaredFilters(declared, query({ opening: '' }))).toEqual(['opening']);
+    // A key that is not a filter never counts, whatever the binary says.
+    expect(undeclaredFilters(new Set(), query({ fen: 'x', db: 'y' }))).toEqual([]);
   });
 });
