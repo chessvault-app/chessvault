@@ -1202,20 +1202,82 @@ export function refGamesApi(
     const args = [...structured.binds];
     if (q) {
       if (seek) {
-        // Through the small lookup tables (see REFGAMES_LOOKUPS): the
-        // LIKE runs over distinct names and openings, and each IN is
-        // materialised once into a hash set the id-order walk probes —
-        // instead of four LIKEs against every row's text.
-        clauses.unshift(
-          `(white IN (SELECT name FROM players WHERE name LIKE ?)
-            OR black IN (SELECT name FROM players WHERE name LIKE ?)
-            OR opening IN (SELECT opening FROM openings WHERE opening LIKE ?)
-            OR eco IN (SELECT DISTINCT eco FROM openings WHERE eco LIKE ?))`,
-        );
+        // Resolve the query against the SMALL lookup tables first —
+        // distinct players and openings number in the tens of
+        // thousands whatever the game count — so the expensive part of
+        // a search is decided before the games table is touched.
+        //
+        // Three regimes fall out of what resolves:
+        // - nothing: the answer is empty, and it costs a lookup-table
+        //   LIKE instead of the one full walk this route had left (the
+        //   deferred no-match worst case — measured ~124 ms per 280k
+        //   games, linear).
+        // - a rare something: the resolved names' own game counts say
+        //   so, and the union-seek below SEEKS those games through the
+        //   per-column indexes instead of walking everything to find a
+        //   handful of rows near the bottom.
+        // - a common something: the walk was always fine here — it
+        //   fills its page near the top ids and stops — and a
+        //   materialised union of half the corpus would not be. The
+        //   hash-set probe stays.
+        const CAP = 200;
+        const like = `%${q}%`;
+        const names = db
+          .prepare('SELECT name, games FROM players WHERE name LIKE ? LIMIT ?')
+          .all(like, CAP + 1) as { name: string; games: number }[];
+        const opens = db
+          .prepare(
+            'SELECT DISTINCT opening, games FROM openings WHERE opening IS NOT NULL AND opening LIKE ? LIMIT ?',
+          )
+          .all(like, CAP + 1) as { opening: string; games: number }[];
+        const ecos = db
+          .prepare(
+            'SELECT eco, SUM(games) AS games FROM openings WHERE eco IS NOT NULL AND eco LIKE ? GROUP BY eco LIMIT ?',
+          )
+          .all(`${q}%`, CAP + 1) as { eco: string; games: number }[];
+        if (names.length === 0 && opens.length === 0 && ecos.length === 0) {
+          return c.json({
+            total: cursor === null ? 0 : null,
+            capped: cursor === null ? false : undefined,
+            nextCursor: null,
+            rows: [],
+          });
+        }
+        const expected = [...names, ...opens, ...ecos].reduce((sum, r) => sum + r.games, 0);
+        const small =
+          names.length <= CAP && opens.length <= CAP && ecos.length <= CAP && expected <= 50_000;
+        if (small) {
+          const arms: string[] = [];
+          const armBinds: string[] = [];
+          const arm = (column: string, values: string[]): void => {
+            if (values.length === 0) return;
+            arms.push(
+              `SELECT id FROM games WHERE ${column} IN (${values.map(() => '?').join(',')})`,
+            );
+            armBinds.push(...values);
+          };
+          arm('white', names.map((r) => r.name));
+          arm('black', names.map((r) => r.name));
+          arm('opening', opens.map((r) => r.opening));
+          arm('eco', ecos.map((r) => r.eco));
+          clauses.unshift(`id IN (${arms.join(' UNION ')})`);
+          args.unshift(...armBinds);
+        } else {
+          // The walk: each IN is materialised once into a hash set the
+          // id-order scan probes — four LIKEs against tiny tables, not
+          // against every row's text.
+          clauses.unshift(
+            `(white IN (SELECT name FROM players WHERE name LIKE ?)
+              OR black IN (SELECT name FROM players WHERE name LIKE ?)
+              OR opening IN (SELECT opening FROM openings WHERE opening LIKE ?)
+              OR eco IN (SELECT DISTINCT eco FROM openings WHERE eco LIKE ?))`,
+          );
+          args.unshift(like, like, like, `${q}%`);
+        }
       } else {
         clauses.unshift('(white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?)');
+        args.unshift(`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`);
       }
-      args.unshift(`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`);
     }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 

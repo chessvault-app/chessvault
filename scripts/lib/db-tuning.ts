@@ -34,9 +34,18 @@ export const PUZZLE_COUNT_TABLES = `
  * the search box's four-way LIKE a covering index scan, so it reads ~30 MB
  * of index instead of the whole 146 MB table. `id` is the rowid and is
  * therefore already part of every index.
+ *
+ * The three single-column indexes are the union-seek's arms (the search
+ * route): a rare query resolves its names against the lookup tables and
+ * then SEEKS the games that carry them — white through the composite's
+ * leading column, the rest through these — instead of walking ten
+ * million rows to find nothing.
  */
 export const REFGAMES_INDEXES = `
   CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);
+  CREATE INDEX IF NOT EXISTS idx_games_black ON games (black);
+  CREATE INDEX IF NOT EXISTS idx_games_opening ON games (opening);
+  CREATE INDEX IF NOT EXISTS idx_games_eco ON games (eco);
 `;
 
 /**

@@ -135,6 +135,18 @@ export function GameListShell({
             // to read as a highlight. The archive list was the one of the
             // three without it, for no reason anyone could name.
             '[&>li:nth-child(even)]:bg-foreground/[0.022]',
+            // The virtualization the shell bought, in its cheapest form:
+            // offscreen rows skip render and layout entirely, onscreen
+            // ones pay as before. A deep scroll through a big database
+            // accumulates thousands of rows (50 per page, uncapped), and
+            // this keeps them from all laying out on every frame — while
+            // the DOM stays intact, so the nth-child stripe, the scroll
+            // sentinel and find-in-page all keep working, which is what
+            // a windowed renderer would have had to rebuild. The
+            // intrinsic size matches a two-line row; `auto` remembers
+            // the real height once a row has rendered.
+            '[&>li]:[content-visibility:auto]',
+            '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
             listClassName,
           )}
         >

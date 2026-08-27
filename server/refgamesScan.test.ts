@@ -401,3 +401,84 @@ describe('key index through the route', () => {
     }
   }, 30_000);
 });
+
+/**
+ * Metamorphic invariants over an ADVERSARIAL corpus: self-play biased
+ * hard toward captures and promotions, so the event-byte machinery and
+ * the envelope see the extremes random play under-samples. These
+ * complement the differential tests above with truths that need no
+ * second implementation to check against:
+ *  - a position sampled from game G at ply k IS in G, at or before k,
+ *    on every path that claims to find positions;
+ *  - a spec written from a position's own counts is satisfied by the
+ *    game that produced it.
+ */
+describe('metamorphic invariants over adversarial games', () => {
+  const biasedSelfPlay = (targetPlies: number): string => {
+    const pos = Chess.default();
+    const sans: string[] = [];
+    for (let ply = 0; ply < targetPlies; ply += 1) {
+      const moves = legalMoves(pos);
+      if (moves.length === 0) break;
+      // Prefer captures and promotions 4:1 when any exist — the games
+      // this produces shed material fast and promote often.
+      const hungry = moves.filter(
+        (m) => m.promotion !== undefined || pos.board.get(m.to) !== undefined,
+      );
+      const pool = hungry.length > 0 && randInt(5) !== 0 ? hungry : moves;
+      sans.push(makeSanAndPlay(pos, normalizeMove(pos, pool[randInt(pool.length)]!)));
+    }
+    return sans.join(' ');
+  };
+  const ADVERSARIAL = Array.from({ length: 24 }, () => biasedSelfPlay(30 + randInt(120)));
+
+  it('a sampled position is found in its own game, every path', () => {
+    let checked = 0;
+    for (const moves of ADVERSARIAL) {
+      const pack = encodeScanPack(moves);
+      const plyCount = moves.split(' ').length;
+      for (const at of [0, 7, 19, 37, Math.max(0, plyCount - 1)]) {
+        const target = positionAt(moves, at);
+        if (!target) continue;
+        for (const mode of MATCH_MODES) {
+          const built = positionTarget(target, mode);
+          const replay = replayPositionHit(moves, built);
+          expect(replay, `replay missed its own ply ${at} (${mode})`).not.toBeNull();
+          expect(replay!).toBeLessThanOrEqual(at);
+          const candidate = packPositionCandidate(pack, built);
+          expect(candidate, `pack missed its own ply ${at} (${mode})`).not.toBeNull();
+          expect(candidate!).toBeLessThanOrEqual(replay!);
+          checked += 1;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(300);
+  });
+
+  it('a spec written from a position satisfies its own game', () => {
+    for (const moves of ADVERSARIAL) {
+      const pack = encodeScanPack(moves);
+      const plyCount = moves.split(' ').length;
+      const target = positionAt(moves, Math.max(0, plyCount - 1));
+      if (!target) continue;
+      const sets = [
+        target.board.pawn,
+        target.board.knight,
+        target.board.bishop,
+        target.board.rook,
+        target.board.queen,
+      ];
+      const letters = ['p', 'n', 'b', 'r', 'q'] as const;
+      const side = (color: 'white' | 'black') =>
+        Object.fromEntries(
+          sets.map((s, i) => [letters[i], [0, s.intersect(target.board[color]).size()]]),
+        );
+      const spec = parseMaterialSpec(
+        JSON.stringify({ white: side('white'), black: side('black') }),
+      );
+      if (!spec) continue; // an all-zero endgame constrains nothing
+      expect(replayMaterialHit(moves, spec), moves.slice(0, 40)).not.toBeNull();
+      expect(packMaterialHit(pack, spec), moves.slice(0, 40)).not.toBeNull();
+    }
+  });
+});

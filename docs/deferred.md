@@ -12,33 +12,6 @@ the work.
 
 ## Waiting on a trigger
 
-**Union-seek for the search's no-match worst case.** The Databases
-browser's search box seeks through the small `players`/`openings` lookup
-tables, so a query that matches something answers in microseconds
-regardless of database size. A query that matches *nothing* still walks
-the whole probe — the one linear scan left on the request path, measured
-at ~124 ms per 280k games and scaling to roughly 1.3 s at 3M. The fix is
-known: resolve the matching player names first (LIMIT ~200) and drive
-the games probes through an indexed UNION when the set is small, falling
-back to the walk otherwise. Worth doing when databases get big enough
-that an empty search visibly lags; below that it is complexity spent on
-a fast path nobody waits on.
-
-**Virtualized game lists.** Every game list renders one `<li>` per
-loaded game and keeps it: the archive caps at 1,000 rows, the collection
-is only kept games, but the Databases browser's 50-row pages accumulate
-— scroll far enough and thousands of rows are live in the DOM.
-`GameListShell` owns the single list band, so a windowed renderer
-(render only the visible rows plus overscan inside a height spacer)
-would be a one-slot swap inherited by all three lists at once — that is
-what the shell bought. It still is not free: the zebra stripe is
-`nth-child` CSS and would have to move to per-row parity, the
-infinite-scroll sentinel would be replaced by fetching from the
-virtualizer's visible range, and browser find-in-page only sees rendered
-rows. Worth doing when the archive's row cap starts to pinch, deep
-scrolling through big databases becomes a habit, or list scrolling janks
-on a phone; until then the caps contain the problem.
-
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
 the current split is an argued position — managing is a place you go,
