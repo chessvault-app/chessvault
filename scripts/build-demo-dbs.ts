@@ -18,7 +18,7 @@ import { indexPositions } from '../server/refgamesIndex.ts';
 import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DATA_PUZZLES, REPO_ROOT } from '../server/paths.ts';
-import { biggestRefgames } from './lib/refgamesFiles.ts';
+import { demoSourceRefgames } from './lib/refgamesFiles.ts';
 
 const arg = (flag: string, fallback: number): number => {
   const at = process.argv.indexOf(flag);
@@ -127,7 +127,7 @@ source.close();
 
 // --- reference games ----------------------------------------------------------
 
-const gamesSource = biggestRefgames();
+const gamesSource = demoSourceRefgames();
 const gamesOut = resolve(OUT_DIR, 'refgames.sqlite');
 rmSync(gamesOut, { force: true });
 let gameCount = 0;

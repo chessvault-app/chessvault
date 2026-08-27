@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import { DATA, DATA_PUZZLES, REPO_ROOT } from './paths.ts';
-import { biggestRefgames } from '../scripts/lib/refgamesFiles.ts';
+import { demoSourceRefgames } from '../scripts/lib/refgamesFiles.ts';
 
 /**
  * Does the static demo still cover the app?
@@ -139,9 +139,10 @@ describe('curated databases match the real ones', () => {
     { demo: 'web/demo-assets/puzzles.sqlite', real: DATA_PUZZLES, tables: ['puzzles', 'themes', 'meta'] },
     {
       demo: 'web/demo-assets/refgames.sqlite',
-      // Reference databases are plural now; the biggest is the one the
-      // demo subset would have been curated from.
-      real: biggestRefgames() ?? resolve(DATA, 'refgames.sqlite'),
+      // Reference databases are plural now; the demo subset is curated
+      // from the biggest LICHESS-sourced one (see demoSourceRefgames —
+      // other corpora must not leak into repository content by size).
+      real: demoSourceRefgames() ?? resolve(DATA, 'refgames.sqlite'),
       // `plies` too: the demo's explorer and repertoire answer from the
       // position index, exactly like a real reference database.
       tables: ['games', 'meta', 'plies'],
