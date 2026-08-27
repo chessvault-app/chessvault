@@ -203,13 +203,11 @@ export function OpeningPicker({
                           : 'text-foreground',
                       )}
                     >
-                      {/* The gutter is a COLUMN, so it is held even when
-                          empty: "Start position" is the one entry with no
-                          ECO code, and skipping the span put its label 36px
-                          left of every name under it. */}
-                      <span className="text-muted-foreground w-7 shrink-0 font-mono text-xs">
-                        {o.eco}
-                      </span>
+                      {o.eco && (
+                        <span className="text-muted-foreground w-7 shrink-0 font-mono text-xs">
+                          {o.eco}
+                        </span>
+                      )}
                       <span className="min-w-0 flex-1 truncate">{t(o.name)}</span>
                     </button>
                   </li>
