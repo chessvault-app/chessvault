@@ -140,6 +140,11 @@ export function undeclaredFilters(
  * which keeps "too old to negotiate" from meaning "trusted anyway".
  */
 const capabilitiesCache = new Map<string, Promise<NativeCapabilities | null>>();
+
+/** The resident path's filtered id lists, keyed by file + filter SQL
+    and revalidated against the index pass's marks — see the deep-search
+    route for why the list is a function of the filters alone. */
+const residentIdCache = new Map<string, { ids: Float64Array; stamp: string }>();
 function nativeFilters(binary: string): Promise<NativeCapabilities | null> {
   let mtime: number;
   try {
@@ -1542,16 +1547,34 @@ export function refGamesApi(
     }
     if (resident) {
       // With filters, the worker scans only the ids the SQL lets
-      // through; without, the pack's own gates do the cutting.
-      const ids = clauses.length
-        ? new Float64Array(
+      // through; without, the pack's own gates do the cutting. The men
+      // prefilter is deliberately NOT in this query: the pack scan
+      // gates men per game anyway, and leaving it out makes the list a
+      // function of the filters alone — cacheable across positions and
+      // hunts, which is where the 4-second SELECT over ten million
+      // rows actually went. Revalidated by the index pass's own marks,
+      // so an append or rebuild drops the stale list.
+      let ids: Float64Array | null = null;
+      if (clauses.length > 0) {
+        const stamp = `${metaValue('indexed_through') ?? ''}|${metaValue('indexed_at') ?? ''}`;
+        const key = `${filePath}|${sqlAnd}|${JSON.stringify(binds)}`;
+        const cached = residentIdCache.get(key);
+        if (cached && cached.stamp === stamp) {
+          ids = cached.ids;
+        } else {
+          ids = new Float64Array(
             (
-              db
-                .prepare(`SELECT id FROM games WHERE 1${menWhere}${sqlAnd} ORDER BY id`)
-                .all(...menBinds, ...binds) as { id: number }[]
+              db.prepare(`SELECT id FROM games WHERE 1${sqlAnd} ORDER BY id`).all(...binds) as {
+                id: number;
+              }[]
             ).map((r) => r.id),
-          )
-        : null;
+          );
+          residentIdCache.set(key, { ids, stamp });
+          if (residentIdCache.size > 8) {
+            residentIdCache.delete(residentIdCache.keys().next().value!);
+          }
+        }
+      }
       const total = ids
         ? ids.length
         : (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
@@ -1562,9 +1585,12 @@ export function refGamesApi(
       c.header('Content-Type', 'application/x-ndjson');
       return stream(c, async (out) => {
         // Worker messages land between awaits; the queue keeps id
-        // order, and the loop drains it into frames — verifying what
-        // the pack could only gate (exact/pawns/files candidates),
-        // deciding by replay what it could not read at all (bad packs).
+        // order, and the loop drains it into frames. Hits arrive
+        // VERIFIED — the shards replay every candidate the pack could
+        // only gate, through the same reference functions this route
+        // would use — so a hit here just needs its header row. Only a
+        // game nothing in the worker could settle (null ply) is
+        // decided here by replay.
         const queue: { id: number; ply: number | null }[] = [];
         let progress = 0;
         let finished = false;
@@ -1605,8 +1631,6 @@ export function refGamesApi(
             let hitPly = item.ply;
             if (item.ply === null) {
               hitPly = spec ? replayMaterialHit(row.moves, spec) : replayPositionHit(row.moves, target!);
-            } else if (!spec && target!.mode !== 'material') {
-              hitPly = replayPositionHit(row.moves, target!);
             }
             if (hitPly === null) continue;
             matched += 1;

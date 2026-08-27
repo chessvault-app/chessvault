@@ -6,6 +6,8 @@ import {
   BadPack,
   compileMaterialHunt,
   compilePositionHunt,
+  replayMaterialHit,
+  replayPositionHit,
   scanPackMaterial,
   scanPackPosition,
   type CompiledHunt,
@@ -22,26 +24,34 @@ import type { MaterialSpec } from '../shared/scanMatch.ts';
  *
  * Inside, the owner shards: the index lives in SharedArrayBuffers, and
  * a FIXED set of shard threads (spawned once at load, from this same
- * file with workerData.role = 'shard') scans contiguous slot ranges
- * concurrently. That is an implementation detail of the one worker,
- * not a departure from the shape: the shard count is set by the
- * machine at load time and never by request volume — requests still
- * queue into one structure. Hits still stream to the parent in global
- * id order: the owner forwards shard k's results only after shards
- * 0..k-1 finished, which costs buffering only on hunts so abundant the
- * cap cancels them early anyway.
+ * file with workerData.role = 'shard') divides the work. That is an
+ * implementation detail of the one worker, not a departure from the
+ * shape: the shard count is set by the machine at load time and never
+ * by request volume — requests still queue into one structure.
  *
- * Protocol with the parent, all messages carrying the request's `seq`
- * (unchanged by the sharding):
+ * The shards do three jobs:
+ *  - FILL at load: the owner reads ids and lengths in one cheap pass,
+ *    then every shard copies its contiguous slice of pack blobs from
+ *    its own read-only connection — the 4.6 GB read parallelises.
+ *  - SCAN: contiguous slot ranges of the shared structure.
+ *  - VERIFY, in place: a pack candidate the pack could only gate
+ *    (exact / pawns / files) is settled right in the shard — moves
+ *    fetched from the shard's own connection, replayed through the
+ *    same reference functions the route would have used. The runtime
+ *    tether ("candidates verified by the reference on every request")
+ *    holds; it just runs on all cores now. Hits leaving this worker
+ *    are FINAL: (id, true ply), in global id order — the owner
+ *    forwards shard k only after shards 0..k−1 finish.
+ *
+ * Protocol with the parent, all messages carrying the request's `seq`:
  *   {seq, op:'load', path}          → {seq, type:'loaded', games, bytes}
  *                                     or {seq, type:'error', message}
  *   {seq, op:'scan', target?, spec?, ids?} → a stream of
- *     {seq, type:'hits', pairs}     — [id, ply, …] in id order;
- *                                     candidates for the prefilter
- *                                     rungs, final answers otherwise
- *     {seq, type:'bad', ids}        — games whose pack was malformed:
- *                                     the caller answers them by
- *                                     replay, never drops them
+ *     {seq, type:'hits', pairs}     — [id, ply, …], id order, verified
+ *     {seq, type:'bad', ids}        — games this worker could not
+ *                                     settle (pack unreadable AND the
+ *                                     replay row unfetchable): the
+ *                                     route decides them, never drops
  *     {seq, type:'progress', scanned}
  *     {seq, type:'done', scanned}
  *   {op:'cancel', of}               → an atomic flag every shard reads
@@ -52,6 +62,7 @@ const CHUNK = 8192;
 
 interface ShardInit {
   role: 'shard';
+  path: string;
   blob: SharedArrayBuffer;
   ids: SharedArrayBuffer;
   offsets: SharedArrayBuffer;
@@ -67,7 +78,15 @@ interface ScanRequest {
   ids?: Float64Array;
 }
 
-interface ShardScan {
+interface ShardFill {
+  kind: 'fill';
+  seq: number;
+  fromSlot: number;
+  toSlot: number;
+}
+
+interface ShardScanJob {
+  kind: 'scan';
   seq: number;
   from: number;
   to: number;
@@ -96,19 +115,57 @@ function slotOf(ids: Float64Array, id: number): number {
 const port = parentPort!;
 
 /* ------------------------------------------------------------------ */
-/* Shard role: scan assigned ranges of the shared structure.           */
+/* Shard role: fill, scan, and verify against the shared structure.    */
 
 if ((workerData as ShardInit | null)?.role === 'shard') {
   const init = workerData as ShardInit;
   const blob = Buffer.from(init.blob);
   const ids = new Float64Array(init.ids);
   const offsets = new Float64Array(init.offsets);
+  let db: InstanceType<typeof Database> | null = null;
+  let movesStmt: ReturnType<InstanceType<typeof Database>['prepare']> | null = null;
+  const movesOf = (id: number): string | null => {
+    if (!db) {
+      db = new Database(init.path, { readonly: true, fileMustExist: true });
+      db.pragma('busy_timeout = 30000');
+      movesStmt = db.prepare('SELECT moves FROM games WHERE id = ?');
+    }
+    const row = movesStmt!.get(id) as { moves: string } | undefined;
+    return row?.moves ?? null;
+  };
 
-  port.on('message', (job: ShardScan) => {
+  const fill = (job: ShardFill): void => {
+    try {
+      const conn = new Database(init.path, { readonly: true, fileMustExist: true });
+      try {
+        if (job.fromSlot < job.toSlot) {
+          const lo = ids[job.fromSlot]!;
+          const hi = ids[job.toSlot - 1]!;
+          let slot = job.fromSlot;
+          for (const row of conn
+            .prepare('SELECT pack FROM scan_pack WHERE game_id BETWEEN ? AND ? ORDER BY game_id')
+            .iterate(lo, hi) as IterableIterator<{ pack: Buffer }>) {
+            row.pack.copy(blob, Number(offsets[slot]));
+            slot += 1;
+          }
+        }
+        port.postMessage({ seq: job.seq, type: 'fillDone' });
+      } finally {
+        conn.close();
+      }
+    } catch (error) {
+      port.postMessage({ seq: job.seq, type: 'fillError', message: (error as Error).message });
+    }
+  };
+
+  const scan = (job: ShardScanJob): void => {
     const cancel = new Int32Array(job.cancel);
     const hunt: CompiledHunt = job.spec
       ? compileMaterialHunt(job.spec)
       : compilePositionHunt(job.target!);
+    // What a pack answer MEANS for this hunt: final for material hunts
+    // and the material rung, a candidate to verify otherwise.
+    const needsVerify = !job.spec && job.target!.mode !== 'material';
     const wanted = job.wanted ?? null;
     let at = job.from;
     let scanned = 0;
@@ -129,14 +186,33 @@ if ((workerData as ShardInit | null)?.role === 'shard') {
           bad.push(wanted![at - job.from]!);
           continue;
         }
+        const id = ids[slot]!;
         const pack = blob.subarray(Number(offsets[slot]), Number(offsets[slot + 1]));
         try {
-          const hit =
+          let hit =
             hunt.kind === 'material' ? scanPackMaterial(pack, hunt) : scanPackPosition(pack, hunt);
-          if (hit !== null) pairs.push(ids[slot]!, hit);
+          if (hit !== null && needsVerify) {
+            const moves = movesOf(id);
+            if (moves === null) {
+              bad.push(id);
+              continue;
+            }
+            hit = replayPositionHit(moves, job.target!);
+          }
+          if (hit !== null) pairs.push(id, hit);
         } catch (error) {
           if (!(error instanceof BadPack)) throw error;
-          bad.push(ids[slot]!);
+          // An unreadable pack: settle it by replay, here — the route
+          // only hears about games nothing could decide.
+          const moves = movesOf(id);
+          if (moves === null) {
+            bad.push(id);
+            continue;
+          }
+          const hit = job.spec
+            ? replayMaterialHit(moves, job.spec)
+            : replayPositionHit(moves, job.target!);
+          if (hit !== null) pairs.push(id, hit);
         }
       }
       if (pairs.length > 0) port.postMessage({ seq: job.seq, type: 'shardHits', pairs });
@@ -146,10 +222,15 @@ if ((workerData as ShardInit | null)?.role === 'shard') {
         return;
       }
       port.postMessage({ seq: job.seq, type: 'shardProgress', scanned });
-      scanned = 0; // progress is reported as a delta, summed by the owner
+      scanned = 0; // progress is a delta, summed by the owner
       setImmediate(step);
     };
     step();
+  };
+
+  port.on('message', (job: ShardFill | ShardScanJob) => {
+    if (job.kind === 'fill') fill(job);
+    else scan(job);
   });
 }
 
@@ -183,47 +264,71 @@ const scans = new Map<number, ScanState>();
 function load(seq: number, path: string): void {
   try {
     const db = new Database(path, { readonly: true, fileMustExist: true });
-    try {
-      const count = (db.prepare('SELECT COUNT(*) AS n FROM scan_pack').get() as { n: number }).n;
-      const total = (
-        db.prepare('SELECT COALESCE(SUM(LENGTH(pack)), 0) AS n FROM scan_pack').get() as {
-          n: number;
+    let count = 0;
+    let total = 0;
+    const idsSabRef: { ids: Float64Array; offsets: Float64Array; blobSab: SharedArrayBuffer } = (() => {
+      try {
+        // One cheap pass for the shape — ids and lengths — so the heavy
+        // blob copy can be divided among the shards' own connections.
+        count = (db.prepare('SELECT COUNT(*) AS n FROM scan_pack').get() as { n: number }).n;
+        const idsSab = new SharedArrayBuffer(count * 8);
+        const offsetsSab = new SharedArrayBuffer((count + 1) * 8);
+        const ids = new Float64Array(idsSab);
+        const offsets = new Float64Array(offsetsSab);
+        let at = 0;
+        let offset = 0;
+        for (const row of db
+          .prepare('SELECT game_id, LENGTH(pack) AS len FROM scan_pack ORDER BY game_id')
+          .iterate() as IterableIterator<{ game_id: number; len: number }>) {
+          ids[at] = row.game_id;
+          offsets[at] = offset;
+          offset += row.len;
+          at += 1;
         }
-      ).n;
-      const blobSab = new SharedArrayBuffer(total);
-      const idsSab = new SharedArrayBuffer(count * 8);
-      const offsetsSab = new SharedArrayBuffer((count + 1) * 8);
-      const blob = Buffer.from(blobSab);
-      const ids = new Float64Array(idsSab);
-      const offsets = new Float64Array(offsetsSab);
-      let at = 0;
-      let offset = 0;
-      for (const row of db
-        .prepare('SELECT game_id, pack FROM scan_pack ORDER BY game_id')
-        .iterate() as IterableIterator<{ game_id: number; pack: Buffer }>) {
-        ids[at] = row.game_id;
-        offsets[at] = offset;
-        row.pack.copy(blob, offset);
-        offset += row.pack.length;
-        at += 1;
+        offsets[count] = offset;
+        total = offset;
+        const blobSab = new SharedArrayBuffer(total);
+        return { ids, offsets, blobSab };
+      } finally {
+        db.close();
       }
-      offsets[count] = offset;
-      // The fixed shard set — sized by the machine once, never by load:
-      // leave two cores for the server and the world.
-      const width = Math.max(1, Math.min(8, availableParallelism() - 2));
-      const init: Omit<ShardInit, 'role'> & { role: 'shard' } = {
-        role: 'shard',
-        blob: blobSab,
-        ids: idsSab,
-        offsets: offsetsSab,
+    })();
+    const { ids, offsets, blobSab } = idsSabRef;
+    // The fixed shard set — sized by the machine once, never by load:
+    // leave two cores for the server and the world.
+    const width = Math.max(1, Math.min(8, availableParallelism() - 2));
+    const init: ShardInit = {
+      role: 'shard',
+      path,
+      blob: blobSab,
+      ids: ids.buffer as SharedArrayBuffer,
+      offsets: offsets.buffer as SharedArrayBuffer,
+    };
+    const here = fileURLToPath(import.meta.url);
+    const shards = Array.from({ length: width }, () => new Worker(here, { workerData: init }));
+    const per = Math.ceil(count / width) || 1;
+    let filled = 0;
+    let failed = false;
+    shards.forEach((shard, k) => {
+      const onFill = (m: { seq: number; type: string; message?: string }): void => {
+        if (m.seq !== seq || (m.type !== 'fillDone' && m.type !== 'fillError')) return;
+        shard.off('message', onFill);
+        if (m.type === 'fillError' && !failed) {
+          failed = true;
+          port.postMessage({ seq, type: 'error', message: m.message ?? 'fill failed' });
+          return;
+        }
+        filled += 1;
+        if (filled === width && !failed) {
+          loaded = { ids, offsets, games: count, shards };
+          port.postMessage({ seq, type: 'loaded', games: count, bytes: total });
+        }
       };
-      const here = fileURLToPath(import.meta.url);
-      const shards = Array.from({ length: width }, () => new Worker(here, { workerData: init }));
-      loaded = { ids, offsets, games: count, shards };
-      port.postMessage({ seq, type: 'loaded', games: count, bytes: total });
-    } finally {
-      db.close();
-    }
+      shard.on('message', onFill);
+      const fromSlot = Math.min(k * per, count);
+      const toSlot = Math.min(fromSlot + per, count);
+      shard.postMessage({ kind: 'fill', seq, fromSlot, toSlot } satisfies ShardFill);
+    });
   } catch (error) {
     port.postMessage({ seq, type: 'error', message: (error as Error).message });
   }
@@ -285,7 +390,8 @@ function scan(request: ScanRequest): void {
       state.shards[k]!.done = true;
       return;
     }
-    const job: ShardScan = {
+    const job: ShardScanJob = {
+      kind: 'scan',
       seq,
       from,
       to,
