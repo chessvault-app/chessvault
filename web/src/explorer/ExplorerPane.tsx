@@ -33,6 +33,8 @@ import { Button } from '@/components/ui/button';
 import { ResultBadge } from '@/components/result-badge';
 import { ResultBar } from '@/components/result-bar';
 import { Select } from '@/components/ui/select';
+import { Field } from '@/components/ui/field';
+import { ClearableInput } from '@/components/text-fields';
 import { DatePicker } from '@/components/date-picker';
 import { FilterChip } from '@/components/filter-chip';
 import { Panel, PanelHeader } from '@/components/panel';
@@ -109,6 +111,11 @@ export function ExplorerPane({
           result: was.result,
           minElo: was.minElo,
           band: was.band,
+          player: was.player,
+          side: was.side,
+          outcome: was.outcome,
+          opening: was.opening,
+          event: was.event,
           from: was.from,
           to: was.to,
         });
@@ -414,13 +421,44 @@ export function ExplorerPane({
 
 /**
  * The filters over a reference database — the question a book could
- * never answer, and the reason the position index exists: result, a
- * floor under both players' ratings, and dates. Same chips-in-a-window
- * shape as My games' filters, applied live like them.
+ * never answer, and the reason the position index exists. The server's
+ * explore route honours every gamesWhere filter, and this window is the
+ * whole set: result, strength, level, the structured sentence the games
+ * browser asks (player/side/outcome, opening, tournament), and dates.
+ *
+ * Two application models in one window, each for the reason the other
+ * would be wrong: chips apply live, like My games' — one tap is one
+ * question. The text fields draft locally and land on Done, because a
+ * position query re-run against a million games per keystroke is noise
+ * (StructuredFiltersWindow's rule, applied here).
  */
 function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
   const filters = useExplorer((s) => s.refFilters);
   const setFilters = useExplorer((s) => s.setRefFilters);
+
+  const [player, setPlayer] = useState(filters.player ?? '');
+  const [side, setSide] = useState<'any' | 'white' | 'black'>(filters.side ?? 'any');
+  const [outcome, setOutcome] = useState<'any' | 'won' | 'lost' | 'drawn'>(
+    filters.outcome ?? 'any',
+  );
+  const [opening, setOpening] = useState(filters.opening ?? '');
+  const [event, setEvent] = useState(filters.event ?? '');
+  const commitText = (): void =>
+    setFilters({
+      player: player.trim() || undefined,
+      side: side === 'any' ? undefined : side,
+      outcome: outcome === 'any' ? undefined : outcome,
+      opening: opening.trim() || undefined,
+      event: event.trim() || undefined,
+    });
+  // Cancel's revert reads the pane's snapshot, so uncommitted drafts die
+  // with the window on their own; only Done needs the commit.
+  const textDrafted =
+    player.trim() !== '' ||
+    opening.trim() !== '' ||
+    event.trim() !== '' ||
+    side !== 'any' ||
+    outcome !== 'any';
 
   const RESULTS: { id: RefDbFilters['result']; label: string }[] = [
     { id: undefined, label: 'All' },
@@ -485,6 +523,77 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
         ))}
       </FilterGroup>
 
+      {/* The structured sentence, in the games browser's own words and
+          field order — one vocabulary for one question. */}
+      <Field label="Player">
+        <div className="flex gap-2">
+          <ClearableInput
+            inputSize="sm"
+            value={player}
+            onChange={(e) => setPlayer(e.target.value)}
+            placeholder={t('Any player')}
+            className="min-w-0 flex-1"
+          />
+          <Select
+            value={side}
+            onValueChange={(v) => setSide(v as typeof side)}
+            ariaLabel={t('Side')}
+            size="sm"
+            groups={[
+              {
+                options: [
+                  { value: 'any', label: t('Either side') },
+                  { value: 'white', label: t('As White') },
+                  { value: 'black', label: t('As Black') },
+                ],
+              },
+            ]}
+          />
+          <Select
+            value={outcome}
+            onValueChange={(v) => setOutcome(v as typeof outcome)}
+            ariaLabel={t('Outcome')}
+            size="sm"
+            groups={[
+              {
+                options: [
+                  { value: 'any', label: t('Any outcome') },
+                  { value: 'won', label: t('Won') },
+                  { value: 'lost', label: t('Lost') },
+                  { value: 'drawn', label: t('Drew') },
+                ],
+              },
+            ]}
+          />
+        </div>
+        {/* The outcome is the player's, so it needs one. */}
+        {outcome !== 'any' && !player.trim() && (
+          <p className="text-muted-foreground mt-1 text-sm">
+            {t('Won or lost by whom? Name a player above.')}
+          </p>
+        )}
+      </Field>
+
+      <Field label="Opening or ECO">
+        <ClearableInput
+          inputSize="sm"
+          value={opening}
+          onChange={(e) => setOpening(e.target.value)}
+          placeholder={t('Najdorf, B90…')}
+          className="w-full"
+        />
+      </Field>
+
+      <Field label="Tournament">
+        <ClearableInput
+          inputSize="sm"
+          value={event}
+          onChange={(e) => setEvent(e.target.value)}
+          placeholder={t('Any event')}
+          className="w-full"
+        />
+      </Field>
+
       <FilterGroup label="Played between">
         <DatePicker
           value={filters.from ?? ''}
@@ -504,20 +613,30 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
       </FilterGroup>
 
       <div className="mt-1 flex items-center justify-end gap-2 text-sm">
-        {hasRefFilters(filters) && (
+        {(hasRefFilters(filters) || textDrafted) && (
           <Button
             variant="ghost"
             size="sm"
             className="mr-auto"
-            onClick={() =>
+            onClick={() => {
+              setPlayer('');
+              setSide('any');
+              setOutcome('any');
+              setOpening('');
+              setEvent('');
               setFilters({
                 result: undefined,
                 minElo: undefined,
                 band: undefined,
+                player: undefined,
+                side: undefined,
+                outcome: undefined,
+                opening: undefined,
+                event: undefined,
                 from: undefined,
                 to: undefined,
-              })
-            }
+              });
+            }}
           >
             {t('Clear filters')}
           </Button>
@@ -525,7 +644,14 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}
         </Button>
-        <Button variant="default" size="sm" onClick={onDone}>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            commitText();
+            onDone();
+          }}
+        >
           {t('Done')}
         </Button>
       </div>

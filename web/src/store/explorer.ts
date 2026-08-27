@@ -163,7 +163,12 @@ export interface RefDbSummary {
   positions: number;
 }
 
-/** What to count when exploring a reference database. */
+/** What to count when exploring a reference database.
+
+    The same names, values and meanings as the server's gamesWhere —
+    every field here rides the query string of /refgames/explore and
+    deep-search verbatim, so this interface may only grow filters that
+    route already answers. */
 export interface RefDbFilters {
   result?: '1-0' | '0-1' | '1/2-1/2';
   /** A floor under BOTH players' ratings. */
@@ -173,13 +178,34 @@ export interface RefDbFilters {
       from the precomputed sums; statistics at your own level rather than
       the corpus's strongest. */
   band?: string;
+  /** A name substring; side and outcome qualify it and do nothing alone
+      (the server ignores both without a player, same as /search). */
+  player?: string;
+  side?: 'white' | 'black';
+  /** The named PLAYER'S outcome — distinct from result, which is the
+      board's. */
+  outcome?: 'won' | 'lost' | 'drawn';
+  /** An opening-name substring or an ECO prefix. */
+  opening?: string;
+  event?: string;
   /** Inclusive `YYYY-MM-DD` bounds. */
   from?: string;
   to?: string;
 }
 
 export function hasRefFilters(f: RefDbFilters): boolean {
-  return Boolean(f.result || f.minElo || f.band || f.from || f.to);
+  return Boolean(
+    f.result ||
+      f.minElo ||
+      f.band ||
+      f.player ||
+      f.side ||
+      f.outcome ||
+      f.opening ||
+      f.event ||
+      f.from ||
+      f.to,
+  );
 }
 
 export function refFilterQuery(f: RefDbFilters): string {
@@ -187,6 +213,11 @@ export function refFilterQuery(f: RefDbFilters): string {
   if (f.result) query.set('result', f.result);
   if (f.minElo) query.set('minElo', String(f.minElo));
   if (f.band) query.set('band', f.band);
+  if (f.player) query.set('player', f.player);
+  if (f.side) query.set('side', f.side);
+  if (f.outcome) query.set('outcome', f.outcome);
+  if (f.opening) query.set('opening', f.opening);
+  if (f.event) query.set('event', f.event);
   if (f.from) query.set('from', f.from);
   if (f.to) query.set('to', f.to);
   return query.toString();
