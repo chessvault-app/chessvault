@@ -106,18 +106,49 @@ export function usePinchZoom(
       }
       last = null;
       start = null;
+      // The freeze's backstop: every touch sequence ends in touchend or
+      // touchcancel, so a gestureend WebKit swallowed cannot leave the
+      // scroller locked.
+      if (!gLive) unfreeze();
     };
 
     // The WebKit pinch. The centre is the gesture's own centroid, taken
     // once at the start the way the touch path takes it; `gLast` is what
     // makes the live-less path incremental, since e.scale is cumulative.
+    //
+    // The scroller is FROZEN for the gesture's lifetime. iOS lets its
+    // native pan keep running under the pinch — the touchmoves are the
+    // non-cancelable ones that forced this path to exist — which broke
+    // two things the preview and the commit rely on: the transform's
+    // origin is computed against a scrollTop that must hold still, and
+    // the pan's leftover momentum kept scrolling AFTER the commit had
+    // anchored the pinched point, which is the release flicker. Setting
+    // overflow hidden is the preventDefault those moves refuse: user
+    // scrolling stops, momentum is stranded, and the commit's own
+    // programmatic anchoring is untouched by it. Undone when the gesture
+    // ends — a finger still down pans normally again — and from the
+    // touch-end side as well, in case WebKit ever drops a gestureend.
     let gLive = false;
     let gLast = 1;
     let gAt: PinchPoint = { x: 0, y: 0 };
+    let frozen: string | null = null;
+    const freeze = (): void => {
+      if (frozen === null) {
+        frozen = el.style.overflow;
+        el.style.overflow = 'hidden';
+      }
+    };
+    const unfreeze = (): void => {
+      if (frozen !== null) {
+        el.style.overflow = frozen;
+        frozen = null;
+      }
+    };
     const onGStart = (e: SafariGestureEvent): void => {
       e.preventDefault();
       gLive = true;
       gLast = 1;
+      freeze();
       const r = el.getBoundingClientRect();
       gAt = { x: e.clientX - r.left, y: e.clientY - r.top };
     };
@@ -138,6 +169,7 @@ export function usePinchZoom(
         liveRef.current(null);
         if (e.scale > 0) applyRef.current(e.scale, gAt);
       }
+      unfreeze();
     };
 
     el.addEventListener('touchstart', onStart, { passive: true });
@@ -159,6 +191,9 @@ export function usePinchZoom(
         el.removeEventListener('gesturechange', onGChange as EventListener);
         el.removeEventListener('gestureend', onGEnd as EventListener);
       }
+      // Unbound mid-gesture (the crop/full toggle swaps the node): the
+      // outgoing element gets its scrolling back.
+      unfreeze();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, rebind]);
