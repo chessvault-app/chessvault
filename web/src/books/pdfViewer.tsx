@@ -196,9 +196,21 @@ export function PdfPage({
       className={cn('relative', !box && 'h-full', className)}
       style={box ? { width: box.w, height: box.h } : undefined}
     >
+      {/* translateZ(0): the canvas keeps its OWN compositor layer, and a
+          released pinch becomes layer geometry — the existing GPU texture
+          moved and stretched — instead of a re-raster of the column's
+          tiles. Without it, iOS destroyed the pinch preview's layer and
+          re-tiled every visible page in the same frame the layout
+          changed, and any tile not ready by the next frame painted as
+          WebKit's blank white: the release flash lanph3re saw on the
+          phone, invisible in Chromium, which reuses canvas textures
+          across relayout on its own. */}
       <canvas
         ref={canvasRef}
-        className={cn('block h-full w-full bg-white shadow-sm', !size && 'invisible')}
+        className={cn(
+          'block h-full w-full bg-white shadow-sm [transform:translateZ(0)]',
+          !size && 'invisible',
+        )}
       />
       {!size && slow && (
         <div className="absolute inset-0 flex items-center justify-center">
