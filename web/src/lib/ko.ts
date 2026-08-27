@@ -1132,6 +1132,14 @@ export const ko: Record<string, string> = {
   'Import a scanned tactics book — its diagrams become solvable puzzles':
     '스캔한 전술 책을 가져오세요 — 다이어그램이 풀 수 있는 퍼즐이 됩니다',
 
+  // --- the desktop dashboard -----------------------------------------------
+  Overview: '개요',
+  // 'Recent games' already has an entry (the explorer's my-games panel).
+  'Recent work': '최근 작업',
+  'Nothing to show yet': '아직 보여줄 것이 없습니다',
+  'Recent games, training and studies appear here as you use the vault.':
+    '보관함을 사용하면 최근 게임과 훈련, 스터디가 여기에 표시됩니다.',
+
   // --- customising home ----------------------------------------------------
   Shortcuts: '바로가기',
   'Customise home': '홈 화면 구성',

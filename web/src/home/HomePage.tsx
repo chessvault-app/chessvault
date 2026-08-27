@@ -1,13 +1,31 @@
-import { Check, ChevronRight, Folder, Grid3x3, Library, Puzzle, SlidersHorizontal, X } from 'lucide-react';
+import {
+  BookMarked,
+  Check,
+  ChevronRight,
+  Folder,
+  Grid3x3,
+  Library,
+  NotebookPen,
+  Puzzle,
+  RotateCcw,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { api, apiErrorMessage } from '@/lib/api';
+import { formatAgo, formatUntil } from '@/lib/dates';
+import { useMediaQuery } from '@/lib/media';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
+import { ProgressBar } from '@/components/progress-bar';
+import { ResultBadge } from '@/components/result-badge';
 import { Skeleton } from '@/components/skeletons';
 import { useDifficultyWord } from '@/puzzles/bands';
+import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
@@ -21,23 +39,60 @@ const CustomiseDialog = lazy(() =>
 );
 
 /**
- * The landing page. It used to be six static tiles — four duplicating the
- * sidebar, five destinations unreachable, nothing for a returning user to
- * resume and nothing for a new one to start with. It is still a launcher,
- * but it leads with what you were doing (Continue), tells a fresh vault
- * what to set up first (each step ends in a feature lighting up), reaches
- * everything, and the counts it shows are all yours — the puzzle tile
- * used to show the 6.1M Lichess pool in the slot every other tile used
- * for personal counts, which read as a lie until decoded.
+ * The landing page — two pages sharing one file, split at md.
  *
- * The two rows of destinations are no longer written here: they come from
- * the catalogue in `destinations.ts`, arranged by `layout.ts`. Which of
- * them are tiles is a property of the vault, not of this file.
+ * Below md it is the phone's launcher: Continue, the checklist, the tile
+ * grid and the row of demoted entries, because there is no sidebar and
+ * this screen IS the navigation. The two rows of destinations are not
+ * written here: they come from the catalogue in `destinations.ts`,
+ * arranged by `layout.ts`, and which of them are tiles is a property of
+ * the vault, not of this file.
+ *
+ * From md the sidebar is on screen carrying every destination, so home
+ * stopped offering navigation there at all (it drew the same list twice,
+ * then the same list once, smaller — still the sidebar's job done again).
+ * What a sidebar structurally cannot carry is what is HAPPENING in the
+ * vault, so that is what the desktop gets: training so far today and what
+ * the review schedule says, the latest games with their results, progress
+ * through the puzzle books, and the studies and notes last touched. The
+ * counts it shows are all yours — the puzzle tile used to show the 6.1M
+ * Lichess pool in the slot every other tile used for personal counts,
+ * which read as a lie until decoded.
  */
 
 interface DocMeta {
   id: string;
   updatedAt: string;
+}
+
+/** What the dashboard needs of a collection game — a slice of the games
+    page's GameSummary, redeclared rather than imported because
+    `games/shared.tsx` brings the Board (and with it chessground) into
+    whatever chunk imports it, and this page is the eager landing chunk. */
+interface RecentGame {
+  file: string;
+  index: number;
+  white: string;
+  black: string;
+  result: string;
+  date: string;
+}
+
+/** One row of /api/puzzlebooks — the same shape the puzzles hub reads. */
+interface PuzzleBookSummary {
+  slug: string;
+  title: string;
+  puzzles: number;
+  solved: number;
+  failed: number;
+  due?: number;
+  lastAt?: string | null;
+  cover?: boolean;
+}
+
+/** A study or note, for the desktop's recent-work list. */
+interface RecentDoc extends DocMeta {
+  kind: 'study' | 'note';
 }
 
 interface HomeData {
@@ -49,6 +104,13 @@ interface HomeData {
   puzzleDbReady: boolean;
   hasProfile: boolean;
   hasPuzzleBook: boolean;
+  /** The review schedule, straight off /api/puzzles/meta. */
+  due: number;
+  nextDue: string | null;
+  /** The most recently trained puzzle books, at most three. */
+  books: PuzzleBookSummary[];
+  /** Studies and notes by last touch, newest first, at most five. */
+  recentDocs: RecentDoc[];
 }
 
 /**
@@ -87,10 +149,17 @@ const writeEcho = (layout: HomeLayout | null): void => {
   else localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
 };
 
-function latest(v: unknown): DocMeta | null {
+/** The list inside a studies-API answer (the notes and games endpoints
+    speak the same document API), or nothing. */
+function docsOf(v: unknown): DocMeta[] {
   const list = (v as { studies?: DocMeta[] })?.studies;
-  if (!Array.isArray(list) || list.length === 0) return null;
-  return [...list].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null;
+  return Array.isArray(list) ? list : [];
+}
+
+function latest(v: unknown): DocMeta | null {
+  return (
+    [...docsOf(v)].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null
+  );
 }
 
 /** Module scope so the row's buttons can reach it too — and because a
@@ -100,34 +169,21 @@ const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFracti
 /** A study id is a path; the card shows its name. */
 const baseName = (id: string): string => id.split('/').at(-1) ?? id;
 
+/** Collection file → the document id the games route opens. The same rule
+    as games/shared.tsx's docId, restated because importing that module
+    would bring the Board (and chessground) into the landing chunk. */
+const collectionDocId = (g: Pick<RecentGame, 'file'>): string =>
+  g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+
 /**
- * One destination as a row button: the shape the demoted entries have
- * always had, and from md the shape the tiles take too.
- *
- * Below sm it is the phone's launcher cell — icon over a label free to
- * break ("Puzzle books") inside its column. From sm it is an ordinary
- * ghost button in a wrapping, centred row.
- *
- * The COUNT only appears from md, which is exactly where this button
- * starts standing in for a tile. It is what the tile carried and the row
- * never did, and it must not arrive on the phone's cells, where the label
- * already wraps to two lines in a fifth of the width. Its place is held
- * while the vault is still answering: the row wraps and centres, so a
- * number landing late does not merely widen one button, it can re-flow
- * the line under it.
+ * One demoted destination as a row button. Below sm it is the phone's
+ * launcher cell — icon over a label free to break ("Puzzle books") inside
+ * its column. From sm it is an ordinary ghost button in a wrapping,
+ * centred row. It never renders from md: the desktop's navigation is the
+ * sidebar, and its home is the dashboard below.
  */
-function LauncherButton({
-  entry,
-  counts,
-  className,
-}: {
-  entry: Destination;
-  /** Null until the vault has answered — which is not the same as a zero. */
-  counts: Partial<Record<HomeCount, number>> | null;
-  className?: string;
-}) {
-  const { label, icon: Icon, nav, count } = entry;
-  const value = count !== undefined ? counts?.[count] : undefined;
+function LauncherButton({ entry }: { entry: Destination }) {
+  const { label, icon: Icon, nav } = entry;
   return (
     <Button
       variant="ghost"
@@ -140,22 +196,10 @@ function LauncherButton({
         // The size's own coarse-pointer overrides would win the
         // cascade back without coarse-specific counters.
         'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',
-        className,
       )}
     >
       <Icon className="size-3.5 shrink-0 max-sm:size-4" />
       {t(label)}
-      {/* Board and Editor are tools and carry no number, so they reserve
-          no room for one either. */}
-      {count !== undefined && (
-        <span className="text-muted-foreground max-md:hidden font-mono text-xs font-normal">
-          {value !== undefined ? (
-            compact.format(value)
-          ) : counts === null ? (
-            <Skeleton className="inline-block h-2 w-4 align-middle" />
-          ) : null}
-        </span>
-      )}
     </Button>
   );
 }
@@ -184,6 +228,37 @@ export function HomePage() {
   // Hoisted out of the Continue row it labels: that row is built inside a
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
+
+  // The dashboard's own two answers, asked for only where the dashboard
+  // exists. /api/games parses the whole collection (mtime-cached, but the
+  // reply is every game as JSON) and the history read is a second request
+  // — a phone renders neither, so below md neither is fetched. Asked once,
+  // on the first render at md or the first resize into it.
+  const md = useMediaQuery('(min-width: 48rem)');
+  const [dash, setDash] = useState<{
+    gamesTotal: number;
+    recentGames: RecentGame[];
+    /** Null when the history endpoint did not answer — not a zero. */
+    solvedToday: number | null;
+  } | null>(null);
+  const dashAsked = useRef(false);
+  useEffect(() => {
+    if (!md || dashAsked.current) return;
+    dashAsked.current = true;
+    void (async () => {
+      const [games, solvedToday] = await Promise.all([
+        api<{ total?: number; games?: RecentGame[] }>('/api/games').catch(() => null),
+        fetchSolvedToday(),
+      ]);
+      // A set after navigating away is a no-op (React 18) and nothing else
+      // here outlives the page, so no liveness flag.
+      setDash({
+        gamesTotal: games?.total ?? 0,
+        recentGames: Array.isArray(games?.games) ? games.games.slice(0, 5) : [],
+        solvedToday,
+      });
+    })();
+  }, [md]);
 
   useEffect(() => {
     // Navigating away mid-flight: React 18 makes the setStates no-ops, but
@@ -220,7 +295,12 @@ export function HomePage() {
         Array.isArray((v as { studies?: unknown[] })?.studies)
           ? (v as { studies: unknown[] }).studies.length
           : undefined;
-      const meta = puzzles as { ready?: boolean; user?: { attempts?: number; wins?: number } } | null;
+      const meta = puzzles as {
+        ready?: boolean;
+        due?: number;
+        nextDue?: string | null;
+        user?: { attempts?: number; wins?: number };
+      } | null;
       const profile = (settings as { profile?: { chesscom?: string; lichess?: string } })?.profile;
 
       // The arrangement, from the same answer the profile came in. The
@@ -271,6 +351,22 @@ export function HomePage() {
       // no number rather than a nought.
       const charted = chartedMoves(map);
       if (charted > 0) counts.openingmap = charted;
+      // The desktop dashboard's slices, cut from answers already in hand.
+      // Books by last training, not title: the shelf orders itself by
+      // title, and this panel's question is "what am I in the middle of".
+      const puzzleBooks = Array.isArray((books as { books?: PuzzleBookSummary[] })?.books)
+        ? (books as { books: PuzzleBookSummary[] }).books
+        : [];
+      const topBooks = [...puzzleBooks]
+        .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''))
+        .slice(0, 3);
+      const recentDocs = [
+        ...docsOf(studies).map((d) => ({ kind: 'study' as const, ...d })),
+        ...docsOf(notes).map((d) => ({ kind: 'note' as const, ...d })),
+      ]
+        .filter((d) => d.updatedAt)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, 5);
       setData({
         counts,
         lastStudy: latest(studies),
@@ -278,9 +374,11 @@ export function HomePage() {
         attempts: meta?.user?.attempts ?? 0,
         puzzleDbReady: meta?.ready === true,
         hasProfile: Boolean(profile?.chesscom || profile?.lichess),
-        hasPuzzleBook: Array.isArray((books as { books?: unknown[] })?.books)
-          ? ((books as { books: unknown[] }).books.length > 0)
-          : false,
+        hasPuzzleBook: puzzleBooks.length > 0,
+        due: meta?.due ?? 0,
+        nextDue: meta?.nextDue ?? null,
+        books: topBooks,
+        recentDocs,
       });
     })();
     return () => {
@@ -401,6 +499,14 @@ export function HomePage() {
   const showChecklist =
     effective.checklist && data !== null && checklist.some((step) => !step.done);
 
+  // Whether the Training panel has a single row to offer. Stated once,
+  // because the dashboard's "nothing at all" card is the negation of every
+  // panel's condition, and a duplicated condition is how the two drift.
+  const showTraining =
+    data !== null &&
+    data.puzzleDbReady &&
+    ((dash !== null && dash.solvedToday !== null) || data.due > 0 || data.nextDue !== null);
+
   return (
     // grid-cols-[minmax(0,1fr)] is load-bearing, not tidiness: a grid's
     // single automatic column is sized to its content's MAX-content width,
@@ -422,8 +528,14 @@ export function HomePage() {
     // 320–430px, with every destination in the launcher row and an
     // unbreakable study name in Continue, the content is exactly as wide
     // as the box.
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6">
-      <div className="w-full max-w-lg">
+    //
+    // From md the centring goes: `md:items-start` pins the dashboard to
+    // the top like every other page. A centred page re-centres every time
+    // content lands — the panels arrive a beat after first paint, and from
+    // the top nothing above them can move. (Below md the launcher stays
+    // centred, and its Continue card reserves its own space instead.)
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 md:items-start">
+      <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl">
         {/* The page's heading, for the document and for a screen reader
             walking the landmarks — not for the eye.
 
@@ -541,8 +653,12 @@ export function HomePage() {
             the sheet. Outside the grid deliberately: with every tile
             switched off there would otherwise be nothing left to press. */}
         <div className="mb-2 flex items-center px-1">
+          {/* One caption, two rooms: below md it heads the launcher grid,
+              from md the dashboard panels. The customise button is the
+              same on both — the sheet's card switches apply everywhere. */}
           <p className="text-muted-foreground flex-1 text-sm font-medium">
-            {t('Shortcuts')}
+            <span className="md:hidden">{t('Shortcuts')}</span>
+            <span className="max-md:hidden">{t('Overview')}</span>
           </p>
           <Button
             variant="ghost"
@@ -561,9 +677,7 @@ export function HomePage() {
         {/* Tiles are the PHONE's navigation, and only the phone's. From md
             the sidebar is on screen carrying the same destinations, so a
             grid of cards beside it was the same list twice — once with
-            blurbs. Hiding it outright would have left a desktop with one
-            Continue card floating in the middle of the window, so what
-            happens instead is below: the row takes the tiles in. */}
+            blurbs. What the desktop gets instead is the dashboard below. */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:hidden">
           {tiles.map(({ id, label, blurb, icon: Icon, nav, count }) => (
             <button
@@ -596,9 +710,178 @@ export function HomePage() {
           ))}
         </div>
 
-        {/* Everything not on the grid, reachable. Below sm this is a
-            launcher row: equal columns, icon over label, with labels free
-            to break ("Puzzle books") inside their cell.
+        {/* The dashboard — what is happening in the vault, drawn only
+            where the sidebar already does the navigating. It waits for
+            both answer batches so the grid lands once instead of
+            reflowing panel by panel, and no skeleton holds its place: the
+            page is top-aligned from md, so a late grid moves nothing
+            above it, and against a warm vault the wait is one round trip.
+            A panel with nothing to say is not drawn — an empty box is a
+            question, not a fact — and a vault with nothing at all says so
+            once, in one card. */}
+        {data !== null && dash !== null && (
+          <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
+            {showTraining && (
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+                <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+                  {t('Training')}
+                </p>
+                {/* Today's count is skipped when the history endpoint did
+                    not answer: a nought that is really an error would say
+                    you have not trained when you may well have. */}
+                {dash.solvedToday !== null && (
+                  <ListRow divided onClick={() => navigate('puzzles')} className="text-sm">
+                    <Puzzle className="text-muted-foreground size-3.5 shrink-0" />
+                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+                      {t('Solved today: {n}', { n: dash.solvedToday })}
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  </ListRow>
+                )}
+                {(data.due > 0 || data.nextDue !== null) && (
+                  <ListRow divided onClick={() => navigate('puzzles')} className="text-sm">
+                    <RotateCcw className="text-muted-foreground size-3.5 shrink-0" />
+                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+                      {data.due > 0
+                        ? t('{n} due for review', { n: data.due })
+                        : t('Nothing due — the next review lands {when}', {
+                            when: formatUntil(data.nextDue!),
+                          })}
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  </ListRow>
+                )}
+              </div>
+            )}
+
+            {dash.recentGames.length > 0 && (
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+                <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
+                  <p className="text-muted-foreground flex-1 text-sm font-medium">
+                    {t('Recent games')}
+                  </p>
+                  {/* The collection's size, where a tile used to carry it. */}
+                  <span className="text-muted-foreground font-mono text-xs">
+                    {compact.format(dash.gamesTotal)}
+                  </span>
+                </div>
+                {dash.recentGames.map((g) => (
+                  <ListRow
+                    key={`${g.file}#${g.index}`}
+                    divided
+                    onClick={() => navigate('games', encodeURIComponent(collectionDocId(g)))}
+                    className="text-sm"
+                  >
+                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+                      {g.white} – {g.black}
+                    </span>
+                    {/* An unfinished game ("*") wears no badge — ResultBadge
+                        renders anything unrecognised as a draw. */}
+                    {(g.result === '1-0' || g.result === '0-1' || g.result.includes('1/2')) && (
+                      <ResultBadge result={g.result} />
+                    )}
+                    <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+                      {g.date}
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  </ListRow>
+                ))}
+              </div>
+            )}
+
+            {data.books.length > 0 && (
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+                <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+                  {t('Puzzle books')}
+                </p>
+                {/* The puzzles hub's book row, so a book reads the same on
+                    both pages: cover, title, the solved-against-failed bar
+                    (no rate, no rating), and the tally. */}
+                {data.books.map((b) => (
+                  <ListRow
+                    key={b.slug}
+                    divided
+                    onClick={() => navigate('puzzles', 'books', b.slug)}
+                    className="text-sm"
+                  >
+                    {b.cover ? (
+                      <img
+                        src={`/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`}
+                        alt=""
+                        className="border-border h-10 w-7 shrink-0 rounded-sm border object-cover"
+                      />
+                    ) : (
+                      <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+                        <BookMarked className="size-3.5" />
+                      </span>
+                    )}
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
+                      <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty />
+                    </span>
+                    <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+                      {b.solved}/{b.puzzles}
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  </ListRow>
+                ))}
+              </div>
+            )}
+
+            {data.recentDocs.length > 0 && (
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+                <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+                  {t('Recent work')}
+                </p>
+                {data.recentDocs.map((d) => (
+                  <ListRow
+                    key={d.kind + d.id}
+                    divided
+                    onClick={() =>
+                      navigate(d.kind === 'study' ? 'studies' : 'notes', encodeURIComponent(d.id))
+                    }
+                    className="text-sm"
+                  >
+                    {d.kind === 'study' ? (
+                      <Library className="text-muted-foreground size-3.5 shrink-0" />
+                    ) : (
+                      <NotebookPen className="text-muted-foreground size-3.5 shrink-0" />
+                    )}
+                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+                      {baseName(d.id)}
+                    </span>
+                    <span className="text-muted-foreground shrink-0 text-xs">
+                      {formatAgo(d.updatedAt)}
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  </ListRow>
+                ))}
+              </div>
+            )}
+
+            {!showTraining &&
+              dash.recentGames.length === 0 &&
+              data.books.length === 0 &&
+              data.recentDocs.length === 0 && (
+                <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10 lg:col-span-2">
+                  <EmptyState
+                    icon={Folder}
+                    title="Nothing to show yet"
+                    body="Recent games, training and studies appear here as you use the vault."
+                  />
+                </div>
+              )}
+          </div>
+        )}
+
+        {/* Everything not on the grid, reachable — below md only, where
+            home is the navigation. From md the sidebar reaches every one
+            of these, which is the customise sheet's own argument for
+            hiding: home is not the only way anywhere.
+
+            Below sm this is a launcher row: equal columns, icon over
+            label, with labels free to break ("Puzzle books") inside their
+            cell.
 
             The column count is inline because it is data now. It was
             `grid-cols-5`, written when this row was exactly five buttons;
@@ -609,35 +892,22 @@ export function HomePage() {
             the one number that varies is set as a style. Up to five share
             the row; beyond that they wrap in fours or fives, never leaving
             a single orphan on the last line. */}
-        {tiles.length + launchers.length > 0 && (
+        {launchers.length > 0 && (
         <div
-          className={cn(
-            'mt-4 grid gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5',
-            // Below md the row is the demoted entries alone; with none of
-            // them it is an empty box, and its mt-4 would still be there.
-            launchers.length === 0 && 'max-md:hidden',
-          )}
-          // Only the launchers are on screen below sm (the tiles carry
-          // max-md:hidden), so the column count is still theirs. A
-          // display:none child takes no grid cell.
+          className="mt-4 grid gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5 md:hidden"
           style={{ gridTemplateColumns: `repeat(${launcherColumns(launchers.length)}, minmax(0, 1fr))` }}
         >
-          {/* The tiles, as row buttons, from md — where the grid above has
-              gone. Same entries, same order the user put them in, without
-              the card treatment the sidebar already duplicates. */}
-          {tiles.map((entry) => (
-            <LauncherButton key={entry.id} entry={entry} counts={data?.counts ?? null} className="max-md:hidden" />
-          ))}
           {launchers.map((entry) => (
-            <LauncherButton key={entry.id} entry={entry} counts={data?.counts ?? null} />
+            <LauncherButton key={entry.id} entry={entry} />
           ))}
         </div>
         )}
 
-        {/* The sheet is a layer over this page, so the arrangement being
-            edited is the one on screen behind it — on a desktop, at least;
-            a phone's sheet covers it, which is why the sheet itself shows
-            both groups rather than describing them. */}
+        {/* The sheet edits the PHONE's arrangement (its grid and row are
+            drawn nowhere from md), which is why it shows both groups
+            rather than describing them — on a desktop they are not on
+            screen behind it at all. The two card switches still apply at
+            every width. */}
         {editing && (
           <Suspense fallback={null}>
             <CustomiseDialog
