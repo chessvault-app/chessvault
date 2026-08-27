@@ -13,13 +13,16 @@ import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import {
   MATCH_MODES,
   canonicalMaterial,
-  matchSignature,
   materialMenBounds,
-  materialSatisfied,
   parseMaterialSpec,
   type MatchMode,
-  type MaterialSpec,
 } from '../shared/scanMatch.ts';
+import {
+  positionTarget,
+  replayMaterialHit,
+  replayPositionHit,
+  type PositionTarget,
+} from './refgamesScan.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { positionIndexInfo } from './refgamesIndex.ts';
 import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
@@ -1402,11 +1405,7 @@ export function refGamesApi(
       return c.json({ error: 'bad material spec' }, 400);
     }
 
-    let targetKey = 0n;
-    let targetSig = '';
-    let targetW = 0;
-    let targetB = 0;
-    let wantBlackToMove = false;
+    let target: PositionTarget | null = null;
     // The men-column prefilter, one shape for every hunt: a game only
     // ever loses men, so it contains a qualifying position only if its
     // final counts dip to the ceiling or below, and only if it is long
@@ -1426,15 +1425,10 @@ export function refGamesApi(
       if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
       const position = Chess.fromSetup(setup.unwrap());
       if (position.isErr) return c.json({ error: 'bad position' }, 400);
-      const target = position.unwrap();
-      if (mode === 'exact') targetKey = toDbKey(hashSetup(target.toSetup()));
-      else targetSig = matchSignature(target.board, mode);
-      targetW = target.board.white.size();
-      targetB = target.board.black.size();
-      menCeilW = targetW;
-      menCeilB = targetB;
-      minPly = 32 - targetW - targetB;
-      wantBlackToMove = target.turn === 'black';
+      target = positionTarget(position.unwrap(), mode);
+      menCeilW = target.w;
+      menCeilB = target.b;
+      minPly = 32 - target.w - target.b;
     }
 
     // The native scan, when the binary is here and this mount is the
@@ -1541,85 +1535,6 @@ export function refGamesApi(
        ORDER BY id LIMIT 1000`,
     );
 
-    /**
-     * The ply at which the game reaches the target position, or null.
-     * Cheap gates before the expensive test: the side to move and the
-     * men counts must already agree — most plies fail one of the two.
-     * The exact rung then compares the Zobrist key; a relaxed rung
-     * compares its signature. The SAN's own capture mark tracks the men
-     * (a board check would miss en passant), and once a side dips below
-     * the target's counts the game can no longer contain it — men only
-     * leave. The final position is a position too: an endgame search is
-     * often exactly about how games ended.
-     */
-    const findPositionHit = (moves: string): number | null => {
-      const pos = Chess.default();
-      let w = 16;
-      let b = 16;
-      let ply = 0;
-      const atTarget = (): boolean =>
-        (ply % 2 === 1) === wantBlackToMove &&
-        w === targetW &&
-        b === targetB &&
-        (mode === 'exact'
-          ? toDbKey(hashSetup(pos.toSetup())) === targetKey
-          : matchSignature(pos.board, mode) === targetSig);
-      for (const san of moves.split(' ')) {
-        if (atTarget()) return ply;
-        const move = parseSan(pos, san);
-        if (!move) break;
-        if (san.includes('x')) {
-          if (ply % 2 === 0) b -= 1;
-          else w -= 1;
-          if (w < targetW || b < targetB) break;
-        }
-        pos.play(move);
-        ply += 1;
-      }
-      return atTarget() ? ply : null;
-    };
-
-    /**
-     * The FIRST ply of the earliest streak of positions satisfying the
-     * material spec for its stability length, or null. No parity gate —
-     * a material situation has no side to move — and the early exit is
-     * the spec's own floor: below it, men only leave, never again.
-     * Breaks return null directly rather than falling through to a
-     * final test: the streak is stateful, and re-testing a position the
-     * loop already counted would count it twice.
-     */
-    const findMaterialHit = (moves: string, wanted: MaterialSpec): number | null => {
-      const { loW, loB } = materialMenBounds(wanted);
-      const pos = Chess.default();
-      let w = 16;
-      let b = 16;
-      let ply = 0;
-      let streak = 0;
-      const step = (): number | null => {
-        if (materialSatisfied(pos.board, wanted)) {
-          streak += 1;
-          if (streak >= wanted.stable) return ply - wanted.stable + 1;
-        } else {
-          streak = 0;
-        }
-        return null;
-      };
-      for (const san of moves.split(' ')) {
-        const hit = step();
-        if (hit !== null) return hit;
-        const move = parseSan(pos, san);
-        if (!move) return null;
-        if (san.includes('x')) {
-          if (ply % 2 === 0) b -= 1;
-          else w -= 1;
-          if (w < loW || b < loB) return null;
-        }
-        pos.play(move);
-        ply += 1;
-      }
-      return step();
-    };
-
     c.header('Content-Type', 'application/x-ndjson');
     return stream(c, async (out) => {
       let lastId = 0;
@@ -1636,7 +1551,11 @@ export function refGamesApi(
         if (batch.length === 0) break;
         for (const row of batch) {
           scanned += 1;
-          const hitPly = spec ? findMaterialHit(row.moves, spec) : findPositionHit(row.moves);
+          // The replay functions are the reference the pack scanner is
+          // held to — see server/refgamesScan.ts.
+          const hitPly = spec
+            ? replayMaterialHit(row.moves, spec)
+            : replayPositionHit(row.moves, target!);
           if (hitPly !== null) {
             matched += 1;
             const { moves: _moves, ...headers } = row;
