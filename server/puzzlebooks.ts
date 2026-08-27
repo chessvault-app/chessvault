@@ -666,6 +666,48 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     );
   };
 
+  /**
+   * When a pass opens: now, or a millisecond past everything already
+   * written down, whichever is later.
+   *
+   * Membership is decided by comparing ISO timestamps (cycleAttempt in
+   * shared/review.ts), and those carry milliseconds — so a Start press
+   * recorded in the SAME millisecond as the attempt before it opens a
+   * window that appears to already contain that attempt. The new pass is
+   * then not untouched, so it is archived instead of discarded, and the
+   * panel grows a pass nobody played: the very ledger-of-nothing that
+   * withoutUntouched exists to prevent.
+   *
+   * Nobody presses Start in the same millisecond they answered a puzzle,
+   * which is why this stood for months. A test runner on a fast box does
+   * it every run — CI went red on 2026-08-27 while Windows stayed green,
+   * because the two POSTs there land a millisecond or two apart.
+   *
+   * So a window opens strictly after every instant already recorded: the
+   * attempts, and the passes including the one just closed. Real presses
+   * are untouched — `now` is already later than all of it — and the bump
+   * is at most a millisecond.
+   */
+  const opensAfter = (slug: string, cycles: CycleWindow[], now: string): string => {
+    const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
+    let newest = '';
+    const seen = (at: string | undefined): void => {
+      if (at !== undefined && at > newest) newest = at;
+    };
+    for (const cy of cycles) {
+      seen(cy.startedAt);
+      seen(cy.finishedAt);
+    }
+    for (const entry of Object.values(progress)) {
+      for (const attempt of attemptsOf(entry)) seen(attempt.at);
+    }
+    if (newest < now) return now;
+    const ms = Date.parse(newest);
+    // Unparseable is not worth guarding past this: a record we cannot read
+    // cannot be ordered against, and `now` is the honest answer.
+    return Number.isNaN(ms) ? now : new Date(ms + 1).toISOString();
+  };
+
   // Start a Woodpecker pass. A cycle already open is closed where it
   // stands if anything was attempted in it, and discarded if not.
   api.post('/puzzlebooks/:slug/cycles', (c) => {
@@ -675,8 +717,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     const now = new Date().toISOString();
     const open = cycles.find((cy) => cy.finishedAt === undefined);
     if (open) open.finishedAt = now;
+    const startedAt = opensAfter(slug, cycles, now);
     const kept = withoutUntouched(slug, cycles);
-    kept.push({ startedAt: now });
+    kept.push({ startedAt });
     writeJson(cyclesPath(slug), { cycles: kept });
     return c.json({ cycles: kept });
   });

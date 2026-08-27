@@ -65,6 +65,12 @@ export function reviewDueAt(attempts: readonly ReviewAttempt[]): string | null {
  * the cycle, and the FIRST of them is the one the pass is scored by —
  * a retry after seeing the answer is practice, not a better score.
  * `finishedAt` unset means the cycle is still open.
+ *
+ * Both ends are INCLUSIVE, which only works because the writer never
+ * opens a window on an instant it has already recorded — see opensAfter
+ * in server/puzzlebooks.ts. Two events in one millisecond are one
+ * instant to a comparison like this, and a pass opened in the same
+ * millisecond as the attempt before it would swallow that attempt.
  */
 export interface CycleWindow {
   startedAt: string;

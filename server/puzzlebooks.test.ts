@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Hono } from 'hono';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -827,6 +827,61 @@ describe('puzzle book cycles', () => {
     const third = await (await post(`/api/puzzlebooks/${slug}/cycles`)).json();
     expect(third.cycles).toHaveLength(3);
     expect(third.cycles[2].finishedAt).toBeUndefined();
+  });
+
+  /**
+   * The same pair of presses with the clock held still.
+   *
+   * This is what CI failed on while Windows passed: the runner put the
+   * attempt and the Start after it in one millisecond, the new window
+   * opened on that same instant, and — both ends being inclusive — it
+   * looked like it already held the attempt. So the pass was archived
+   * rather than discarded and the panel grew a pass nobody played.
+   * Freezing the clock makes the collision certain instead of leaving it
+   * to how fast the box is.
+   *
+   * Its own book, because the passes above leave one OPEN: closing that
+   * on a frozen clock records a finish at the same instant, which pushes
+   * the next window a millisecond past the attempt it is meant to hold,
+   * and the test would then pass for the wrong reason.
+   */
+  it('a pass opened in the same millisecond as the last attempt is still untouched', async () => {
+    const own = (
+      await (await post('/api/puzzlebooks', { title: 'One millisecond' })).json()
+    ).slug;
+    for (const n of [1, 2]) {
+      await post(`/api/puzzlebooks/${own}/puzzles`, {
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+        uci: ['a1a2'],
+        san: ['Ka2'],
+        number: n,
+      });
+    }
+
+    // A minute past the real clock, not a fixed date: everything written
+    // above used the real one, and a frozen instant BEFORE those records
+    // would open every window after its own attempts.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(Date.now() + 60_000));
+    try {
+      await post(`/api/puzzlebooks/${own}/cycles`);
+      await post(`/api/puzzlebooks/${own}/attempt`, { id: 'n1', win: true });
+
+      // Closes the pass above — kept, an attempt landed in it — and opens
+      // one that must NOT inherit that attempt, though both share the
+      // millisecond. The new window therefore starts strictly later.
+      const opened = await (await post(`/api/puzzlebooks/${own}/cycles`)).json();
+      expect(opened.cycles).toHaveLength(2);
+      expect(opened.cycles[0].finishedAt).toBeTruthy();
+      expect(opened.cycles[1].startedAt > opened.cycles[0].finishedAt).toBe(true);
+
+      // Untouched, so pressing Start again replaces it rather than filing it.
+      const again = await (await post(`/api/puzzlebooks/${own}/cycles`)).json();
+      expect(again.cycles).toHaveLength(2);
+      expect(again.cycles[1].finishedAt).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('stopping closes the open pass; with none open there is nothing to stop', async () => {
