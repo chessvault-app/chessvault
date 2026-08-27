@@ -153,46 +153,84 @@ export function replayMaterialHit(moves: string, spec: MaterialSpec): number | n
     game rather than silently losing it. */
 export class BadPack extends Error {}
 
-/** The pack's counts machine: per-piece counts per side, evolved one
-    event byte at a time. Indices are the LETTERS order p,n,b,r,q. */
-class Counts {
-  w = [8, 2, 2, 2, 1];
-  b = [8, 2, 2, 2, 1];
-  wTotal = 16;
-  bTotal = 16;
-
-  /** Apply the event that produced position `ply + 1` from `ply`. */
-  apply(event: number, ply: number): void {
-    const captured = event & 7;
-    const promoted = (event >> 3) & 7;
-    const whiteMoved = ply % 2 === 0;
-    if (captured !== 0) {
-      const side = whiteMoved ? this.b : this.w;
-      side[captured - 1] = (side[captured - 1] ?? 0) - 1;
-      if (whiteMoved) this.bTotal -= 1;
-      else this.wTotal -= 1;
-    }
-    if (promoted !== 0) {
-      const side = whiteMoved ? this.w : this.b;
-      side[0] = (side[0] ?? 0) - 1;
-      side[promoted - 1] = (side[promoted - 1] ?? 0) + 1;
-    }
-  }
-
-  equals(wCounts: number[], bCounts: number[]): boolean {
-    for (let at = 0; at < 5; at += 1) {
-      if (this.w[at] !== wCounts[at] || this.b[at] !== bCounts[at]) return false;
-    }
-    return true;
-  }
+/**
+ * A hunt compiled to flat scalars, once per scan, so the per-game loop
+ * touches nothing but locals and pack bytes. The scan runs this loop a
+ * hundred million times per Gigabase hunt: a class with array methods
+ * here measured 4.5 s at 10.36M games, and the flattened form is what
+ * the "sub-second at 10M" bar paid for. Semantics are identical to the
+ * readable spec the loop replaced — the differential tests against the
+ * replay reference are what hold that, not this comment.
+ */
+export interface CompiledPositionHunt {
+  kind: 'position';
+  /** 0 = exact (key32 gate), 1 = pawns/files (pawn-hash gate),
+      2 = material rung (counts alone are the whole test). */
+  gate: 0 | 1 | 2;
+  parity: 0 | 1;
+  key32: number;
+  pawns8: number;
+  tw: number;
+  tb: number;
+  /** The ten target counts, p,n,b,r,q per side. */
+  c: Int32Array;
 }
 
-const header = (pack: Uint8Array): { npos: number; view: DataView } => {
+export interface CompiledMaterialHunt {
+  kind: 'material';
+  stable: number;
+  loW: number;
+  loB: number;
+  /** Bounds, min/max interleaved: white p..q (0..9), black p..q
+      (10..19), diff p..q (20..29), minor (30..31), major (32..33).
+      Unconstrained slots hold sentinels wide enough to always pass. */
+  b: Int32Array;
+}
+
+export type CompiledHunt = CompiledPositionHunt | CompiledMaterialHunt;
+
+export function compilePositionHunt(target: PositionTarget): CompiledPositionHunt {
+  const c = new Int32Array(10);
+  for (let at = 0; at < 5; at += 1) {
+    c[at] = target.wCounts[at]!;
+    c[5 + at] = target.bCounts[at]!;
+  }
+  return {
+    kind: 'position',
+    gate: target.mode === 'exact' ? 0 : target.mode === 'material' ? 2 : 1,
+    parity: target.blackToMove ? 1 : 0,
+    key32: target.key32,
+    pawns8: target.pawns8,
+    tw: target.w,
+    tb: target.b,
+    c,
+  };
+}
+
+export function compileMaterialHunt(spec: MaterialSpec): CompiledMaterialHunt {
+  const { loW, loB } = materialMenBounds(spec);
+  const b = new Int32Array(34);
+  const LETTERS = ['p', 'n', 'b', 'r', 'q'] as const;
+  const put = (at: number, entry: [number, number] | undefined, lo: number, hi: number): void => {
+    b[at] = entry ? entry[0] : lo;
+    b[at + 1] = entry ? entry[1] : hi;
+  };
+  for (let at = 0; at < 5; at += 1) {
+    const letter = LETTERS[at]!;
+    put(at * 2, spec.white[letter], 0, 99);
+    put(10 + at * 2, spec.black[letter], 0, 99);
+    put(20 + at * 2, spec.diff[letter], -99, 99);
+  }
+  put(30, spec.diff.minor, -99, 99);
+  put(32, spec.diff.major, -99, 99);
+  return { kind: 'material', stable: spec.stable, loW, loB, b };
+}
+
+const badLength = (pack: Uint8Array): number => {
   if (pack.length < 2) throw new BadPack('truncated header');
-  const view = new DataView(pack.buffer, pack.byteOffset, pack.byteLength);
-  const npos = view.getUint16(0, true);
+  const npos = pack[0]! | (pack[1]! << 8);
   if (npos < 1 || pack.length !== 2 + 5 * npos + (npos - 1)) throw new BadPack('bad length');
-  return { npos, view };
+  return npos;
 };
 
 /**
@@ -203,32 +241,68 @@ const header = (pack: Uint8Array): { npos: number; view: DataView } => {
  * parity + per-piece counts IS the signature); a prefilter elsewhere —
  * the exact rung gates on parity, counts and the 32-bit key prefix
  * (a collision is possible, a miss is not), and the pawns/files rungs
- * gate on parity and counts alone (the pack has no pawn squares).
- * Callers verify a non-null answer with replayPositionHit unless the
- * mode is 'material'.
+ * add the pawn-files hash. Callers verify a non-null answer with
+ * replayPositionHit unless the mode is 'material'.
  */
-export function packPositionCandidate(pack: Uint8Array, target: PositionTarget): number | null {
-  const { npos, view } = header(pack);
-  const counts = new Counts();
+export function scanPackPosition(pack: Uint8Array, hunt: CompiledPositionHunt): number | null {
+  const npos = badLength(pack);
+  const { gate, parity, key32, pawns8, tw, tb, c } = hunt;
+  const twp = c[0]!, twn = c[1]!, twb = c[2]!, twr = c[3]!, twq = c[4]!;
+  const tbp = c[5]!, tbn = c[6]!, tbb = c[7]!, tbr = c[8]!, tbq = c[9]!;
+  const pawnsAt = 2 + 4 * npos;
+  const eventsAt = 2 + 5 * npos;
+  let wp = 8, wn = 2, wb = 2, wr = 2, wq = 1, wTot = 16;
+  let bp = 8, bn = 2, bb = 2, br = 2, bq = 1, bTot = 16;
   for (let ply = 0; ply < npos; ply += 1) {
     if (
-      (ply % 2 === 1) === target.blackToMove &&
-      counts.wTotal === target.w &&
-      counts.bTotal === target.b &&
-      counts.equals(target.wCounts, target.bCounts) &&
-      // The structure gates, each rung's own: the exact rung has the
-      // key prefix, the pawns and files rungs the pawn-files hash
-      // (same placement implies same file counts, so it is sound for
-      // pawns too), the material rung needs nothing past the counts.
-      (target.mode === 'exact'
-        ? view.getUint32(2 + 4 * ply, true) === target.key32
-        : target.mode === 'material' || pack[2 + 4 * npos + ply] === target.pawns8)
+      (ply & 1) === parity &&
+      wTot === tw && bTot === tb &&
+      wp === twp && wn === twn && wb === twb && wr === twr && wq === twq &&
+      bp === tbp && bn === tbn && bb === tbb && br === tbr && bq === tbq &&
+      (gate === 2 ||
+        (gate === 1
+          ? pack[pawnsAt + ply] === pawns8
+          : ((pack[2 + 4 * ply]! |
+              (pack[3 + 4 * ply]! << 8) |
+              (pack[4 + 4 * ply]! << 16) |
+              (pack[5 + 4 * ply]! << 24)) >>>
+              0) ===
+            key32))
     ) {
       return ply;
     }
     // Men only leave: below the target's totals, this game is done.
-    if (counts.wTotal < target.w || counts.bTotal < target.b) return null;
-    if (ply < npos - 1) counts.apply(pack[2 + 5 * npos + ply]!, ply);
+    if (wTot < tw || bTot < tb) return null;
+    if (ply < npos - 1) {
+      const event = pack[eventsAt + ply]!;
+      if (event !== 0) {
+        const cap = event & 7;
+        const promo = (event >> 3) & 7;
+        if ((ply & 1) === 0) {
+          if (cap !== 0) {
+            bTot -= 1;
+            if (cap === 1) bp -= 1; else if (cap === 2) bn -= 1; else if (cap === 3) bb -= 1;
+            else if (cap === 4) br -= 1; else bq -= 1;
+          }
+          if (promo !== 0) {
+            wp -= 1;
+            if (promo === 2) wn += 1; else if (promo === 3) wb += 1;
+            else if (promo === 4) wr += 1; else wq += 1;
+          }
+        } else {
+          if (cap !== 0) {
+            wTot -= 1;
+            if (cap === 1) wp -= 1; else if (cap === 2) wn -= 1; else if (cap === 3) wb -= 1;
+            else if (cap === 4) wr -= 1; else wq -= 1;
+          }
+          if (promo !== 0) {
+            bp -= 1;
+            if (promo === 2) bn += 1; else if (promo === 3) bb += 1;
+            else if (promo === 4) br += 1; else bq += 1;
+          }
+        }
+      }
+    }
   }
   return null;
 }
@@ -239,35 +313,74 @@ export function packPositionCandidate(pack: Uint8Array, target: PositionTarget):
  * the spec tests. Must answer identically to replayMaterialHit over
  * the same game; the differential tests hold it to that.
  */
-export function packMaterialHit(pack: Uint8Array, spec: MaterialSpec): number | null {
-  const { npos } = header(pack);
-  const { loW, loB } = materialMenBounds(spec);
-  const counts = new Counts();
+export function scanPackMaterial(pack: Uint8Array, hunt: CompiledMaterialHunt): number | null {
+  const npos = badLength(pack);
+  const { stable, loW, loB, b } = hunt;
+  const eventsAt = 2 + 5 * npos;
+  let wp = 8, wn = 2, wb = 2, wr = 2, wq = 1, wTot = 16;
+  let bp = 8, bn = 2, bb = 2, br = 2, bq = 1, bTot = 16;
   let streak = 0;
-  const LETTERS = ['p', 'n', 'b', 'r', 'q'] as const;
-  const inRange = (value: number, entry: [number, number] | undefined): boolean =>
-    entry === undefined || (value >= entry[0] && value <= entry[1]);
-  const satisfied = (): boolean => {
-    for (let at = 0; at < 5; at += 1) {
-      const letter = LETTERS[at]!;
-      if (!inRange(counts.w[at]!, spec.white[letter])) return false;
-      if (!inRange(counts.b[at]!, spec.black[letter])) return false;
-      if (!inRange(counts.w[at]! - counts.b[at]!, spec.diff[letter])) return false;
-    }
-    return (
-      inRange(counts.w[1]! + counts.w[2]! - counts.b[1]! - counts.b[2]!, spec.diff.minor) &&
-      inRange(counts.w[3]! + counts.w[4]! - counts.b[3]! - counts.b[4]!, spec.diff.major)
-    );
-  };
   for (let ply = 0; ply < npos; ply += 1) {
-    if (satisfied()) {
+    if (
+      wp >= b[0]! && wp <= b[1]! && wn >= b[2]! && wn <= b[3]! &&
+      wb >= b[4]! && wb <= b[5]! && wr >= b[6]! && wr <= b[7]! &&
+      wq >= b[8]! && wq <= b[9]! &&
+      bp >= b[10]! && bp <= b[11]! && bn >= b[12]! && bn <= b[13]! &&
+      bb >= b[14]! && bb <= b[15]! && br >= b[16]! && br <= b[17]! &&
+      bq >= b[18]! && bq <= b[19]! &&
+      wp - bp >= b[20]! && wp - bp <= b[21]! &&
+      wn - bn >= b[22]! && wn - bn <= b[23]! &&
+      wb - bb >= b[24]! && wb - bb <= b[25]! &&
+      wr - br >= b[26]! && wr - br <= b[27]! &&
+      wq - bq >= b[28]! && wq - bq <= b[29]! &&
+      wn + wb - bn - bb >= b[30]! && wn + wb - bn - bb <= b[31]! &&
+      wr + wq - br - bq >= b[32]! && wr + wq - br - bq <= b[33]!
+    ) {
       streak += 1;
-      if (streak >= spec.stable) return ply - spec.stable + 1;
+      if (streak >= stable) return ply - stable + 1;
     } else {
       streak = 0;
     }
-    if (counts.wTotal < loW || counts.bTotal < loB) return null;
-    if (ply < npos - 1) counts.apply(pack[2 + 5 * npos + ply]!, ply);
+    if (wTot < loW || bTot < loB) return null;
+    if (ply < npos - 1) {
+      const event = pack[eventsAt + ply]!;
+      if (event !== 0) {
+        const cap = event & 7;
+        const promo = (event >> 3) & 7;
+        if ((ply & 1) === 0) {
+          if (cap !== 0) {
+            bTot -= 1;
+            if (cap === 1) bp -= 1; else if (cap === 2) bn -= 1; else if (cap === 3) bb -= 1;
+            else if (cap === 4) br -= 1; else bq -= 1;
+          }
+          if (promo !== 0) {
+            wp -= 1;
+            if (promo === 2) wn += 1; else if (promo === 3) wb += 1;
+            else if (promo === 4) wr += 1; else wq += 1;
+          }
+        } else {
+          if (cap !== 0) {
+            wTot -= 1;
+            if (cap === 1) wp -= 1; else if (cap === 2) wn -= 1; else if (cap === 3) wb -= 1;
+            else if (cap === 4) wr -= 1; else wq -= 1;
+          }
+          if (promo !== 0) {
+            bp -= 1;
+            if (promo === 2) bn += 1; else if (promo === 3) bb += 1;
+            else if (promo === 4) br += 1; else bq += 1;
+          }
+        }
+      }
+    }
   }
   return null;
+}
+
+/** The uncompiled faces, for tests and one-off callers: compile, scan. */
+export function packPositionCandidate(pack: Uint8Array, target: PositionTarget): number | null {
+  return scanPackPosition(pack, compilePositionHunt(target));
+}
+
+export function packMaterialHit(pack: Uint8Array, spec: MaterialSpec): number | null {
+  return scanPackMaterial(pack, compileMaterialHunt(spec));
 }
