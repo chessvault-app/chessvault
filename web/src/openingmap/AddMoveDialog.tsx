@@ -146,6 +146,7 @@ export function AddMoveDialog({
             <MiniBoard
               fen={facts.fen}
               size={56}
+              orientation={side}
               className="border-border shrink-0 overflow-hidden rounded-md border"
             />
           )}

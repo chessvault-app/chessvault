@@ -1013,6 +1013,9 @@ function NodePanel({
           <MiniBoard
             fen={facts.fen}
             size={72}
+            // Black's map is read from black's side of the board, like
+            // every other board in the app that belongs to one player.
+            orientation={map.color}
             className="border-border shrink-0 overflow-hidden rounded-md border"
           />
         )}

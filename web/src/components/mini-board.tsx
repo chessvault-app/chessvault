@@ -74,15 +74,27 @@ const SQUARES =
 export function MiniBoard({
   fen,
   size = 56,
+  orientation = 'white',
   className,
 }: {
   fen: string;
   /** Edge length in px, border included when the caller adds one. */
   size?: number;
+  /** Which side sits at the bottom. A FEN reads white-side-up, so that is
+      the default; a board that belongs to black passes 'black'. */
+  orientation?: 'white' | 'black';
   className?: string;
 }) {
-  const rows = ranks(fen);
-  if (!rows) return null;
+  const read = ranks(fen);
+  if (!read) return null;
+  // Half a turn, which is all flipping a board is: the ranks come up in
+  // the other order and each one reads right to left. SQUARES is left
+  // alone — that turn maps a8 onto h1 and both are light, so the tile
+  // pattern is its own rotation.
+  const rows =
+    orientation === 'black'
+      ? read.map((row) => [...row].reverse().join('')).reverse()
+      : read;
   return (
     <div
       style={{ width: size, height: size }}
