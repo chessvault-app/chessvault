@@ -884,6 +884,7 @@ export const ko: Record<string, string> = {
   Zinc: '징크',
   Gray: '그레이',
   Blue: '블루',
+  'More options': '옵션 더 보기',
   Corners: '모서리',
   Default: '기본',
   Square: '각진',

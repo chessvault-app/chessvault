@@ -21,6 +21,7 @@ import {
 import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
+import { Disclosure } from '@/components/disclosure';
 import { SettingRow } from '@/components/setting-row';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
@@ -480,6 +481,7 @@ const SCHEME_GROUPS = [
 }));
 
 function AppearanceCard() {
+  const [moreOpen, setMoreOpen] = useState(false);
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
   const { boardTheme, pieces, schemeId, radius, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setCastleStyle, setCoordinates, setAnnotationSize } =
@@ -526,18 +528,6 @@ function AppearanceCard() {
         />
       </Field>
 
-      {/* shadcn's own second knob: every corner in the app is a multiple of
-          one radius, so one number squares or rounds the whole thing. */}
-      <Field label="Corners">
-        <Select
-          value={radius}
-          onValueChange={(v) => setRadius(v as RadiusId)}
-          ariaLabel={t('Corners')}
-          className="w-full"
-          groups={[{ options: RADIUS_PRESETS.map(({ id, label }) => ({ value: id, label })) }]}
-        />
-      </Field>
-
       <Field label="Board">
         <div className="flex items-center gap-3">
           <BoardPreview theme={boardTheme} />
@@ -551,15 +541,6 @@ function AppearanceCard() {
         </div>
       </Field>
 
-      <Field label="Castling">
-        <Select
-          value={castleStyle}
-          onValueChange={(v) => setCastleStyle(v as CastleStyle)}
-          ariaLabel={t('How to castle')}
-          groups={[{ options: CASTLE_STYLES.map(({ id, label }) => ({ value: id, label })) }]}
-        />
-      </Field>
-
       <Field label="Pieces">
         <Select
           value={pieces}
@@ -569,31 +550,67 @@ function AppearanceCard() {
         />
       </Field>
 
-      {/* Appearance rather than Documents: it changes how one panel is
-          drawn on THIS device, and nothing about the document — the same
-          study read on a phone and a desktop is the same file either way.
-          Named for the size rather than the subject, so it cannot be read
-          as a switch for whether annotations show at all. */}
-      <Field label="Annotation size">
+      <Field label="Castling">
         <Select
-          value={annotationSize}
-          onValueChange={(v) => setAnnotationSize(v as AnnotationSize)}
-          ariaLabel={t('Annotation size')}
-          groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
+          value={castleStyle}
+          onValueChange={(v) => setCastleStyle(v as CastleStyle)}
+          ariaLabel={t('How to castle')}
+          groups={[{ options: CASTLE_STYLES.map(({ id, label }) => ({ value: id, label })) }]}
         />
       </Field>
 
-      <SettingRow
-        title={t('Board coordinates')}
-        blurb={t('File and rank labels on the board edge.')}
-      >
-        <Switch
-          checked={coordinates}
-          onCheckedChange={() => setCoordinates(!coordinates)}
-          aria-label={t('Board coordinates')}
-        />
-      </SettingRow>
+      {/* The card was nine controls in one flat column, and a flat column
+          says every row is worth the same glance. These three are not: two
+          are how the app is DRAWN rather than what it draws, and the third
+          is a label toggle. What stays above the fold is what a vault is
+          set up with once — the language every other label on this page is
+          in, the theme, the colours, the board and its pieces, and how a
+          castle is entered.
 
+          Nothing is removed and nothing is more than one press away. The
+          fold is NOT remembered: a settings page that opens differently
+          depending on what you did last time is a settings page you have
+          to re-read before you can use it. */}
+      <Disclosure label="More options" open={moreOpen} onToggle={() => setMoreOpen((v) => !v)}>
+        <div className="flex flex-col gap-3">
+          {/* shadcn's own second knob: every corner in the app is a multiple
+              of one radius, so one number squares or rounds the whole thing. */}
+          <Field label="Corners">
+            <Select
+              value={radius}
+              onValueChange={(v) => setRadius(v as RadiusId)}
+              ariaLabel={t('Corners')}
+              className="w-full"
+              groups={[{ options: RADIUS_PRESETS.map(({ id, label }) => ({ value: id, label })) }]}
+            />
+          </Field>
+
+          {/* Appearance rather than Documents: it changes how one panel is
+              drawn on THIS device, and nothing about the document — the same
+              study read on a phone and a desktop is the same file either way.
+              Named for the size rather than the subject, so it cannot be read
+              as a switch for whether annotations show at all. */}
+          <Field label="Annotation size">
+            <Select
+              value={annotationSize}
+              onValueChange={(v) => setAnnotationSize(v as AnnotationSize)}
+              ariaLabel={t('Annotation size')}
+              groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
+            />
+          </Field>
+
+          <SettingRow
+            title={t('Board coordinates')}
+            blurb={t('File and rank labels on the board edge.')}
+          >
+            <Switch
+              checked={coordinates}
+              onCheckedChange={() => setCoordinates(!coordinates)}
+              aria-label={t('Board coordinates')}
+            />
+          </SettingRow>
+        </div>
+      </Disclosure>
     </Card>
   );
 }
