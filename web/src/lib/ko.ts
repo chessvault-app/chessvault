@@ -495,7 +495,7 @@ export const ko: Record<string, string> = {
   'Record the solution — every move, both sides.': '정답을 기록하세요 — 양쪽 모두, 모든 수를.',
   Solved: '해결',
   Attempts: '시도',
-  'Win rate': '정답률',
+  'Solve rate': '해결률',
   Failed: '실패',
   solved: '해결',
   failed: '실패',

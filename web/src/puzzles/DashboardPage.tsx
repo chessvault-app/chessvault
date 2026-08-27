@@ -139,20 +139,37 @@ export function DashboardPage() {
           actions={<ResetButton onDone={refresh} />}
         />
 
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <StatCard label={t('Solved')} value={user ? String(user.wins) : '…'} />
-          <StatCard
-            label={t('Attempts')}
-            title={t("Training attempts only — review sessions don't count here, which is why this can differ from the review pool")}
-            value={user ? String(user.attempts) : '…'}
-          />
-          <StatCard label={t('Win rate')} value={winRate === null ? '—' : `${winRate}%`} />
-          <StatCard
-            label={t('Failed')}
-            title={t('Distinct puzzles whose latest attempt failed — always the review pool')}
-            value={String(failed)}
-          />
-        </div>
+        <Panel className="mb-4">
+          <PanelHeader title={t('Training')} />
+          {/* A figure list, not four cards. Each number used to be its own
+              raised tile with its value at text-2xl in bold — the rung the
+              type scale reserves for THE one display figure, spent four
+              times in one row — and one of them was a "Win rate" percentage,
+              which is a score. Four scores in 24px bold is a scoreboard, and
+              a scoreboard is the one thing this page is not: these numbers
+              are read beside the band table and the log below them, not
+              beaten.
+
+              The dl is the app's own idiom for facts about a thing — the
+              same grid the trainer's finished-puzzle panel uses. Two pairs
+              to a row from sm, one below it. */}
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
+            <Figure
+              label={t('Attempts')}
+              title={t("Training attempts only — review sessions don't count here, which is why this can differ from the review pool")}
+              value={user ? String(user.attempts) : '…'}
+            />
+            <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
+            {/* "Solve rate", not "win rate": nothing here is won, and the
+                app's own nouns for the two outcomes are solved and failed. */}
+            <Figure label={t('Solve rate')} value={winRate === null ? '—' : `${winRate}%`} />
+            <Figure
+              label={t('Failed')}
+              title={t('Distinct puzzles whose latest attempt failed — always the review pool')}
+              value={String(failed)}
+            />
+          </dl>
+        </Panel>
 
         {/* The review queue, promoted: it was a 14px icon inside the
             Failed card — the one training action this page should be
@@ -443,27 +460,27 @@ function ResetButton({ onDone }: { onDone: () => void }) {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  title,
-  action,
-}: {
-  label: string;
-  value: string;
-  title?: string;
-  action?: React.ReactNode;
-}) {
+/**
+ * One labelled number in the training panel's figure list.
+ *
+ * A fragment of two grid items rather than a box of its own, so labels and
+ * values line up in columns down the whole list — which is what makes it
+ * read as a spec sheet instead of a row of tiles.
+ *
+ * The title goes on BOTH halves: a `display: contents` wrapper would
+ * generate no box for a tooltip to hang off, and the value is as likely a
+ * hover target as the label.
+ */
+function Figure({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <div title={title} className="bg-card flex items-center justify-between rounded-xl ring-1 ring-foreground/10 px-3 py-2.5">
-      <div>
-        <div className="text-muted-foreground text-sm font-medium">
-          {label}
-        </div>
-        <div className="text-foreground font-mono text-2xl font-bold tabular-nums">{value}</div>
-      </div>
-      {action}
-    </div>
+    <>
+      <dt className="text-muted-foreground" title={title}>
+        {label}
+      </dt>
+      <dd className="text-foreground font-mono tabular-nums" title={title}>
+        {value}
+      </dd>
+    </>
   );
 }
 
