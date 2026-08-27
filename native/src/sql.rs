@@ -38,6 +38,15 @@ pub const PLIES_TABLE: &str = "
   );
 ";
 
+/// `server/refgamesIndex.ts` SCAN_PACK_SCHEMA — the packed scan-index
+/// (one blob per game, spec in shared/scanPack.ts).
+pub const SCAN_PACK_TABLE: &str = "
+  CREATE TABLE IF NOT EXISTS scan_pack (
+    game_id INTEGER PRIMARY KEY,
+    pack BLOB NOT NULL
+  );
+";
+
 pub const PLIES_INDEX: &str = "CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);";
 
 /// `server/refgamesIndex.ts` REFGAMES_MOVE_COUNTS — per-(pos, uci, eb)

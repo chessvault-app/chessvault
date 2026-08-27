@@ -3,6 +3,7 @@ import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
+import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack } from '../shared/scanPack.ts';
 
 /**
  * The position index inside a reference-games database.
@@ -44,6 +45,16 @@ const SCHEMA = `
     eb INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);
+`;
+
+/** The packed scan-index (shared/scanPack.ts): one blob per game, in
+    the same file — no sidecar. Keyed by game id; the future scanner
+    walks it in id order. */
+const SCAN_PACK_SCHEMA = `
+  CREATE TABLE IF NOT EXISTS scan_pack (
+    game_id INTEGER PRIMARY KEY,
+    pack BLOB NOT NULL
+  );
 `;
 
 /** The game's result as one small integer carried on every ply row, so
@@ -232,15 +243,29 @@ export function indexPositions(
         append = false; // old shape: rebuild whole, gaining the r column
       }
     }
+    // Whether THIS pass emits scan packs. A full pass always does — it
+    // replays every game, so the table it writes is complete. An append
+    // only extends packs that exist at the current version: extending a
+    // packless (or older-versioned) file would leave holes with a meta
+    // key claiming otherwise, and a partially packed file is the one
+    // shape the spec forbids. The skipped file simply stays packless
+    // until its next full index pass.
+    const packing =
+      !append ||
+      (readMeta(SCAN_PACK_META) === String(SCAN_PACK_VERSION) &&
+        db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'scan_pack'").get() !==
+          undefined);
     if (!append) {
       // move_counts is derived from plies, so it falls with it — a rebuilt
       // index summed against a stale table would answer with the old
       // corpus.
       db.exec(
         'DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; ' +
-          'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;',
+          'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; ' +
+          'DROP TABLE IF EXISTS scan_pack;',
       );
       db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
+      db.exec(SCAN_PACK_SCHEMA);
     } else {
       // The sums are re-derived whole either way — since they carry no
       // join and skip thin positions they cost seconds (measured 78 s →
@@ -253,6 +278,11 @@ export function indexPositions(
     const insert = db.prepare(
       'INSERT INTO plies (pos, uci, game_id, ply, r, eb) VALUES (?, ?, ?, ?, ?, ?)',
     );
+    // OR REPLACE: re-running an append over games a died pass already
+    // packed must not throw on the primary key.
+    const insertPack = packing
+      ? db.prepare('INSERT OR REPLACE INTO scan_pack (game_id, pack) VALUES (?, ?)')
+      : null;
     // Deep search's reachability columns, backfilled for databases built
     // before them — the page loop below already carries every movetext,
     // and the counts are a string scan (see finalMen).
@@ -314,6 +344,11 @@ export function indexPositions(
           ply += 1;
           plies += 1;
         }
+        // The pack replays the game again, full depth, in its own
+        // module: the loop above is golden-pinned behaviour and stops
+        // at maxPly, and sharing its state to save one replay would
+        // couple the frozen table to the versioned one.
+        insertPack?.run(row.id, Buffer.from(encodeScanPack(row.moves)));
         games += 1;
       }
       db.exec('COMMIT');
@@ -329,6 +364,7 @@ export function indexPositions(
     db.exec(REFGAMES_MOVE_COUNTS);
 
     const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
+    if (packing) setMeta.run(SCAN_PACK_META, String(SCAN_PACK_VERSION));
     setMeta.run('plies', String(append ? (Number(readMeta('plies')) || 0) + plies : plies));
     setMeta.run('index_max_ply', String(maxPly));
     setMeta.run('indexed_at', new Date().toISOString());

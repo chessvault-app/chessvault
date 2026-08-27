@@ -111,6 +111,7 @@ struct GameGolden {
     #[serde(rename = "finalBmen")]
     final_bmen: i64,
     plies: Vec<PlyGolden>,
+    pack: String,
 }
 
 #[derive(Deserialize)]
@@ -118,6 +119,10 @@ struct PlyGolden {
     ply: u32,
     pos: String,
     uci: String,
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn load() -> Goldens {
@@ -291,5 +296,14 @@ fn game_replays_match() {
             );
             assert_eq!(row.uci, golden.uci, "{} ply {}", game.why, golden.ply);
         }
+
+        // The packed scan-index, to the byte: whichever side scans a
+        // database reads blobs the other may have written.
+        assert_eq!(
+            hex(&chessvault_core::scan_pack::encode_scan_pack(&game.moves)),
+            game.pack,
+            "scan pack of: {}",
+            game.why
+        );
     }
 }

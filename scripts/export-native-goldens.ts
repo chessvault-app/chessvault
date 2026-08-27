@@ -30,6 +30,7 @@ import {
   materialSatisfied,
   parseMaterialSpec,
 } from '../shared/scanMatch.ts';
+import { encodeScanPack } from '../shared/scanPack.ts';
 import { REF_MAX_PLY, eloBucket, finalMen, resultCode } from '../server/refgamesIndex.ts';
 
 const OUT_DIR = resolve(import.meta.dirname, '..', 'native', 'tests');
@@ -152,6 +153,9 @@ type GameGolden = {
   finalWmen: number;
   finalBmen: number;
   plies: { ply: number; pos: string; uci: string }[];
+  /** The packed scan-index blob (shared/scanPack.ts), hex — pinned to
+      the byte because whichever side scans reads what the other wrote. */
+  pack: string;
 };
 
 const replayGolden = (
@@ -185,6 +189,7 @@ const replayGolden = (
     finalWmen: men.w,
     finalBmen: men.b,
     plies,
+    pack: Buffer.from(encodeScanPack(moves)).toString('hex'),
   };
 };
 

@@ -10,6 +10,7 @@ use std::path::Path;
 use rusqlite::{params, Connection, OptionalExtension};
 use shakmaty::{san::SanPlus, CastlingMode, Chess, Position};
 
+use crate::scan_pack::{encode_scan_pack, SCAN_PACK_META, SCAN_PACK_VERSION};
 use crate::sql;
 use crate::util::{commas, iso_now};
 use crate::zobrist::{hash_position, to_db_key};
@@ -146,12 +147,28 @@ pub fn index_positions(
             append = false;
         }
     }
+    // Whether THIS pass emits scan packs — the TS twin's rule: a full
+    // pass always packs; an append only extends packs already at the
+    // current version, because a partially packed file is the one shape
+    // the spec forbids.
+    let packing = !append
+        || (read_meta(&conn, SCAN_PACK_META).as_deref() == Some(&SCAN_PACK_VERSION.to_string())
+            && conn
+                .query_row(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'scan_pack'",
+                    [],
+                    |_| Ok(()),
+                )
+                .optional()?
+                .is_some());
     if !append {
         conn.execute_batch(
             "DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; \
-             DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;",
+             DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; \
+             DROP TABLE IF EXISTS scan_pack;",
         )?;
         conn.execute_batch(sql::PLIES_TABLE)?;
+        conn.execute_batch(sql::SCAN_PACK_TABLE)?;
     } else {
         // The sums are re-derived whole either way — see the TS twin.
         conn.execute_batch(
@@ -215,6 +232,16 @@ pub fn index_positions(
             let mut insert = conn.prepare_cached(
                 "INSERT INTO plies (pos, uci, game_id, ply, r, eb) VALUES (?, ?, ?, ?, ?, ?)",
             )?;
+            // OR REPLACE: re-running an append over games a died pass
+            // already packed must not throw on the primary key. Only
+            // prepared while packing — the table may not exist at all.
+            let mut insert_pack = if packing {
+                Some(conn.prepare_cached(
+                    "INSERT OR REPLACE INTO scan_pack (game_id, pack) VALUES (?, ?)",
+                )?)
+            } else {
+                None
+            };
             let mut set_men = conn.prepare_cached(
                 "UPDATE games SET ply_count = ?, final_wmen = ?, final_bmen = ? WHERE id = ?",
             )?;
@@ -236,6 +263,12 @@ pub fn index_positions(
                         eb
                     ])?;
                     plies += 1;
+                }
+                // A second replay, full depth, in the pack's own module
+                // — the loop above is golden-pinned and capped, and the
+                // TS twin makes the same trade for the same reason.
+                if let Some(insert_pack) = insert_pack.as_mut() {
+                    insert_pack.execute(params![row.id, encode_scan_pack(&row.moves)])?;
                 }
                 games += 1;
             }
@@ -269,6 +302,9 @@ pub fn index_positions(
         .flatten()
         .unwrap_or(0);
     let mut set_meta = conn.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)")?;
+    if packing {
+        set_meta.execute(params![SCAN_PACK_META, SCAN_PACK_VERSION.to_string()])?;
+    }
     set_meta.execute(params!["plies", (prev_plies + plies).to_string()])?;
     set_meta.execute(params!["index_max_ply", max_ply.to_string()])?;
     set_meta.execute(params!["indexed_at", iso_now()])?;

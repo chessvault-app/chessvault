@@ -112,6 +112,7 @@ src/deep.rs      search every game for a position (the /deep-search route)
 src/optimize.rs  the housekeeping pass (scripts/optimize-refgames.ts)
 src/filters.rs   the reference filters as SQL (gamesWhere in server/refgames.ts)
 src/scan_match.rs  the relaxation ladder and material search (shared/scanMatch.ts)
+src/scan_pack.rs   the packed scan-index blob (shared/scanPack.ts)
 src/sql.rs       SQL mirrored from the TS side, each constant naming its source
 ```
 

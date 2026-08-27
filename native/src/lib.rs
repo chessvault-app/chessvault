@@ -4,6 +4,7 @@ pub mod filters;
 pub mod index;
 pub mod optimize;
 pub mod scan_match;
+pub mod scan_pack;
 pub mod sql;
 pub mod util;
 pub mod zobrist;
