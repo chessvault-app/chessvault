@@ -1209,7 +1209,22 @@ function DifficultyChip({
   );
 }
 
-/** ✓/✗ pinned to the destination square of the last move, NAG-badge style. */
+/**
+ * The verdict on the move just played, pinned to its destination square.
+ *
+ * The app's own notation, not a quiz's: `!` for the move that solves it,
+ * `??` for one that throws it away. It was ✓ and ✗ — marks a chess player
+ * meets on a worksheet and nowhere on a board — while the analysis board
+ * two files over was already drawing the same disc, in the same two
+ * colours, with `!` and `??` on it. A reader who knows what a `??` on e4
+ * means had to learn a second alphabet to be told the same thing by the
+ * trainer.
+ *
+ * The glyph AND the fill are BOARD_NAGS' own pairs: `!` on --nag-good,
+ * `??` on --nag-blunder. So the colours do not move — green still means
+ * found it and red still means lost it, as the colour grammar requires —
+ * and the marks now agree with the board they sit on.
+ */
 function MoveBadge({
   kind,
   view,
@@ -1227,7 +1242,7 @@ function MoveBadge({
       orientation={orientation}
       className={kind === 'good' ? 'bg-nag-good' : 'bg-nag-blunder'}
     >
-      {kind === 'good' ? '✓' : '✗'}
+      {kind === 'good' ? '!' : '??'}
     </SquareBadge>
   );
 }
