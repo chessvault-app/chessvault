@@ -73,14 +73,17 @@ export function PageShell({
     <div
       className={cn(
         'h-full min-h-0',
-        // The gutter is a FINE-pointer fix (the 5px centring artifact
-        // above needs a drawn scrollbar to exist). A phone's bars are
-        // overlay and its pages must meet the same 16px edge as the
-        // pages that scroll themselves — and whether scrollbar-gutter
-        // reserves space for overlay bars varies by browser, so the
-        // reservation is scoped by pointer rather than trusted to
-        // overlay semantics.
-        scroll && 'overflow-y-auto pointer-fine:[scrollbar-gutter:stable_both-edges]',
+        // The gutter is a WIDE, fine-pointer fix: the 5px centring
+        // artifact above needs a drawn scrollbar and a centred column
+        // with room around it to exist. At phone widths — real phones
+        // (overlay bars, coarse pointer) and narrow desktop windows
+        // alike — the reservation put these pages 12px deeper than the
+        // pages that scroll themselves (Home, Games), and lanph3re saw
+        // the two gutters side by side. So it is scoped twice: md, and
+        // pointer-fine (whether scrollbar-gutter reserves space for
+        // overlay bars varies by browser, so coarse pointers never
+        // trust it).
+        scroll && 'overflow-y-auto md:pointer-fine:[scrollbar-gutter:stable_both-edges]',
       )}
     >
       <div
