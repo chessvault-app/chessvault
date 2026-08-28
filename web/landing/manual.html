@@ -90,11 +90,17 @@
         border-bottom: 1px solid var(--border);
       }
       .bar { display: flex; align-items: center; gap: var(--s3); height: var(--header-h); max-width: 90rem; margin: 0 auto; padding-inline: var(--s4); }
-      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; }
-      .mark svg { width: 1.75rem; height: 1.75rem; border-radius: 0.45rem; background: oklch(14.5% 0 0); color: oklch(100% 0 0); padding: 0.2rem; }
-      @media (prefers-color-scheme: dark) {
-        .mark svg { box-shadow: 0 0 0 1px var(--hairline); }
+      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
+      /* A phone-width bar keeps three things: the drawer, the name, the
+         language. The demo link and the word "manual" go — the sidebar
+         and the page itself say where you are. */
+      @media (max-width: 33rem) {
+        .bar > .btn[href], .mark small { display: none; }
       }
+      /* The bare hex, no tile: next to the squared Contents button a tiled
+         logo reads as a second button. currentColor keeps it right in both
+         themes. */
+      .mark svg { width: 1.5rem; height: 1.5rem; }
       .mark small { font-weight: 400; color: var(--muted-foreground); }
       .bar .spacer { margin-left: auto; }
       .lang {
@@ -124,7 +130,8 @@
         .btn:hover { background: color-mix(in oklch, var(--foreground) 12%, transparent); }
       }
       /* The Contents button exists for the narrow layout only. */
-      #nav-toggle { display: none; }
+      #nav-toggle { display: none; width: 2.25rem; padding-inline: 0; }
+      #nav-toggle svg { width: 1.125rem; height: 1.125rem; }
 
       /* ---- Shell: sidebar + article, MS-Learn shaped ---- */
       .shell { display: flex; max-width: 90rem; margin: 0 auto; }
@@ -228,14 +235,16 @@
 
       .pager { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--border); }
       .pager a {
-        display: block; text-decoration: none; max-width: 48%;
+        display: inline-flex; align-items: center; gap: var(--s2);
+        text-decoration: none; max-width: 48%; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
         background: var(--card); box-shadow: 0 0 0 1px var(--hairline);
         border-radius: var(--radius-lg); padding: var(--s2) var(--s3);
         font-size: 0.875rem; font-weight: 500;
       }
       .pager a:hover { background: var(--muted); }
-      .pager a small { display: block; font-weight: 400; color: var(--muted-foreground); }
-      .pager .next { margin-left: auto; text-align: right; }
+      .pager a small { font-weight: 400; color: var(--muted-foreground); }
+      .pager .next { margin-left: auto; }
 
       footer { border-top: 1px solid var(--border); padding-block: var(--s5) var(--s6); color: var(--muted-foreground); font-size: 0.85rem; }
       footer .inner { max-width: 47rem; margin: 0 auto; padding-inline: var(--s4); }
@@ -247,8 +256,16 @@
   <body>
     <header>
       <div class="bar">
-        <button type="button" id="nav-toggle" class="btn" aria-expanded="false" aria-controls="side-nav" data-ko="목차">Contents</button>
+        <button type="button" id="nav-toggle" class="btn" aria-expanded="false" aria-controls="side-nav" aria-label="Contents" title="Contents">
+          <!-- A sidebar-panel glyph, matching the drawer it opens. -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <line x1="9" y1="4" x2="9" y2="20" />
+          </svg>
+        </button>
         <a class="mark" href="./">
+          <!-- The hex mark alone, no tile: beside the squared Contents
+               button, two squares in a row read as two buttons. -->
           <svg viewBox="20 20 80 80" fill="currentColor" aria-hidden="true">
             <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" />
             <path d="M60 60 L60 24 L91 42 Z" />
@@ -2036,7 +2053,7 @@
             var next = document.createElement('a');
             next.href = '#' + ids[i + 1];
             next.className = 'next';
-            next.innerHTML = '<small>›</small>' + labelOf(ids[i + 1]);
+            next.innerHTML = labelOf(ids[i + 1]) + '<small>›</small>';
             nav.appendChild(next);
           }
           doc.appendChild(nav);
