@@ -192,6 +192,10 @@ export function GameListShell({
                 // max-content, which blew the notation column out to
                 // the widest untruncated line.
                 listHeader != null ? 'min-w-[var(--gt-min)]' : listClassName,
+                // Room to scroll the last row clear of the Games page's
+                // import FAB, which floats over the pane's corner below
+                // md (every host of this shell lives on that page).
+                'max-md:pb-20',
               )}
             >
               {listLoading ? (
