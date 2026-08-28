@@ -211,7 +211,6 @@ const ArchiveRow = memo(function ArchiveRow({
   // under the pointer is one you cannot tick with your eyes.
   const checkbox = selecting && (
     <Checkbox
-      className="mr-1"
       aria-label={t('Select this game')}
       checked={picked}
       onClick={(e) => e.stopPropagation()}
@@ -236,10 +235,12 @@ const ArchiveRow = memo(function ArchiveRow({
     );
   }
   // The card rows keep the Add button standing: on a phone there is no
-  // panel beside the list to carry it.
+  // panel beside the list to carry it. The checkbox leads the row
+  // instead (the `leading` slot below) — the table's selection column
+  // sits leftmost for the same reason, and ticking marks the ROW, not
+  // one more control in the trailing furniture.
   const standing = (
     <>
-      {checkbox}
       <Button
         variant={inCollection ? 'ghost' : 'secondary'}
         size="sm"
@@ -271,6 +272,7 @@ const ArchiveRow = memo(function ArchiveRow({
       // details panel, for the rows that are cards.
       menu={[{ label: 'Game details', icon: Info, onSelect: () => onDetails(game) }]}
       standing={standing}
+      leading={checkbox || undefined}
     />
   );
 });

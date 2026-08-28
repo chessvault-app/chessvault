@@ -174,6 +174,7 @@ export function GameRow({
   contextMenu = false,
   menu,
   standing,
+  leading,
 }: {
   game: GameSummary;
   onOpen: () => void;
@@ -211,6 +212,11 @@ export function GameRow({
    * joined control where the elite list's look like two separate ones.
    */
   standing?: React.ReactNode;
+  /** A control at the row's LEADING edge, before the names — the
+      archive's selection checkbox, which reads as a mark on the row
+      the way a list's checkboxes always sit, not as one more button in
+      the trailing furniture. */
+  leading?: React.ReactNode;
   /** A user-chosen document name (in-game rename), shown instead of the matchup. */
   customName?: string | null;
   renaming?: boolean;
@@ -335,6 +341,11 @@ export function GameRow({
       )}
     >
       {onSwipeAway && <SwipeTrack dx={swipe.dx} bookmarked={bookmarked} />}
+      {leading && (
+        <div style={swipe.style} className="flex shrink-0 items-center">
+          {leading}
+        </div>
+      )}
       <div className="flex min-w-[8rem] flex-1 items-center gap-3" style={swipe.style}>
         {/* The name is asked for in a sheet, like every other rename; the
             row keeps showing what it is called meanwhile. */}
