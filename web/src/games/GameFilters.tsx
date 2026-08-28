@@ -606,55 +606,33 @@ const openingCatalog = (): Promise<{ eco: string; name: string }[]> => {
   return catalogCache;
 };
 
-/** The five ECO families — what an empty eco: usefully offers, since
-    each letter is itself a valid prefix search. */
-const ECO_FAMILIES: { v: string; desc: string }[] = [
-  { v: 'A', desc: 'Flank openings' },
-  { v: 'B', desc: 'Semi-open games' },
-  { v: 'C', desc: 'Open games and the French Defense' },
-  { v: 'D', desc: 'Closed games and the Queen’s Gambit' },
-  { v: 'E', desc: 'Indian defences' },
-];
-
-/** The openings an empty opening: leads with — the catalogue has no
-    popularity axis, so the canonical big names stand in for one. */
-const HEADLINE_OPENINGS = [
-  'Sicilian Defense',
-  'Ruy Lopez',
-  'Italian Game',
-  'French Defense',
-  'Caro-Kann Defense',
-  "Queen's Gambit",
-];
-
 export async function catalogSuggest(
   field: 'opening' | 'eco',
   value: string,
 ): Promise<ValueSuggestion[]> {
   const needle = value.toLowerCase();
   const lines = await openingCatalog();
-  if (!needle) {
-    if (field === 'eco') return ECO_FAMILIES.map((f) => ({ v: f.v, desc: t(f.desc) }));
-    return HEADLINE_OPENINGS.flatMap((name) => {
-      const hit = lines.find((l) => l.name === name || l.name.startsWith(`${name}:`));
-      return hit ? [{ v: name, desc: hit.eco }] : [];
-    });
-  }
+  // The WHOLE catalogue answers, not a top slice — the panel scrolls,
+  // and a dictionary with no popularity axis has no honest way to
+  // pick six. An empty value is simply the everything-prefix.
   if (field === 'eco') {
     const seen = new Map<string, string>();
     for (const line of lines) {
       const eco = line.eco.toUpperCase();
       if (eco.toLowerCase().startsWith(needle) && !seen.has(eco)) seen.set(eco, line.name);
     }
-    return [...seen].slice(0, 6).map(([v, desc]) => ({ v, desc }));
+    return [...seen].sort(([a], [b]) => a.localeCompare(b)).map(([v, desc]) => ({ v, desc }));
   }
   // Names that START with the needle first — "naj" should offer the
-  // Najdorf before every line merely containing it.
+  // Najdorf before every line merely containing it. The catalogue's
+  // own order (ECO order, families together) carries within each half.
   const starts = lines.filter((l) => l.name.toLowerCase().startsWith(needle));
-  const contains = lines.filter(
-    (l) => !l.name.toLowerCase().startsWith(needle) && l.name.toLowerCase().includes(needle),
-  );
-  return [...starts, ...contains].slice(0, 6).map((l) => ({ v: l.name, desc: l.eco }));
+  const contains = needle
+    ? lines.filter(
+        (l) => !l.name.toLowerCase().startsWith(needle) && l.name.toLowerCase().includes(needle),
+      )
+    : [];
+  return [...starts, ...contains].map((l) => ({ v: l.name, desc: l.eco }));
 }
 
 /** One issue line: the offending piece as a badge, the reason beside it. */
@@ -788,9 +766,15 @@ export function SearchQueryHints({
           : [];
 
   const [active, setActive] = useState(-1);
+  const listRef = useRef<HTMLUListElement | null>(null);
   useEffect(() => {
     setActive(-1);
   }, [query]);
+  // Walking with the keyboard must not leave the active row below the
+  // fold of the scrollable list.
+  useEffect(() => {
+    listRef.current?.querySelector('[data-active]')?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
 
   const handleKey = (e: React.KeyboardEvent): boolean => {
     if (entries.length === 0) return false;
@@ -836,12 +820,21 @@ export function SearchQueryHints({
         </p>
       )}
       {entries.length > 0 && (
-        <ul>
+        // Capped and scrollable: the catalogue fields answer with
+        // EVERYTHING they know, and thousands of rows need the same
+        // cheap virtualization the game lists use plus a viewport of
+        // their own. The active row keeps itself in view (the effect
+        // below) so the keyboard can walk past the fold.
+        <ul
+          ref={listRef}
+          className="max-h-72 overflow-y-auto [&>li]:[contain-intrinsic-size:auto_1.75rem] [&>li]:[content-visibility:auto]"
+        >
           {entries.map((entry, i) => (
             <li key={entry.id}>
               <button
                 type="button"
                 tabIndex={-1}
+                data-active={i === active || undefined}
                 className={cn(
                   'hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left',
                   i === active && 'bg-accent',
