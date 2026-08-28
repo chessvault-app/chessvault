@@ -209,20 +209,39 @@ const ArchiveRow = memo(function ArchiveRow({
   selectedRow?: boolean;
   onSelectRow: (game: GameSummary) => void;
 }) {
-  // Outside the hover tray in either presentation: Add is what this
-  // list is FOR, and a selection checkbox that only appears under the
-  // pointer is one you cannot tick with your eyes.
+  // Outside the hover tray: a selection checkbox that only appears
+  // under the pointer is one you cannot tick with your eyes.
+  const checkbox = selecting && (
+    <Checkbox
+      className="mr-1"
+      aria-label={t('Select this game')}
+      checked={picked}
+      onClick={(e) => e.stopPropagation()}
+      onCheckedChange={(on) => onToggle(gameKey(game), on === true)}
+    />
+  );
+  if (table) {
+    // The wide pane's dense presentation: click selects for the
+    // details panel beside it, double click opens — the same contract
+    // as every other tab's table. No Add column: the details panel is
+    // the row's verb surface now, and a page of "Added" pills said the
+    // same word down the whole list. The pinned column exists only in
+    // selection mode, and only as the checkbox.
+    return (
+      <GameTableRow
+        game={game}
+        selected={selectedRow}
+        onSelect={() => onSelectRow(game)}
+        onOpen={() => onOpen(game)}
+        standing={selecting ? checkbox : undefined}
+      />
+    );
+  }
+  // The card rows keep the Add button standing: on a phone there is no
+  // panel beside the list to carry it.
   const standing = (
     <>
-      {selecting && (
-        <Checkbox
-          className="mr-1"
-          aria-label={t('Select this game')}
-          checked={picked}
-          onClick={(e) => e.stopPropagation()}
-          onCheckedChange={(on) => onToggle(gameKey(game), on === true)}
-        />
-      )}
+      {checkbox}
       <Button
         variant={inCollection ? 'ghost' : 'secondary'}
         size="sm"
@@ -244,20 +263,6 @@ const ArchiveRow = memo(function ArchiveRow({
       </Button>
     </>
   );
-  if (table) {
-    // The wide pane's dense presentation: click selects for the
-    // details panel beside it, double click opens — the same contract
-    // as every other tab's table.
-    return (
-      <GameTableRow
-        game={game}
-        selected={selectedRow}
-        onSelect={() => onSelectRow(game)}
-        onOpen={() => onOpen(game)}
-        standing={standing}
-      />
-    );
-  }
   return (
     <GameRow
       game={game}
@@ -753,7 +758,9 @@ export function ArchiveBrowser({
   const rowSelect = useCallback((g: GameSummary) => rowHandlers.current.selectRow(g), []);
   // The ⋯ → Game details sheet, for the card rows.
   const [details, setDetails] = useState<GameSummary | null>(null);
-  const tableVars = useGameTableVars(true);
+  // The pinned column exists only while selecting (checkbox-only) —
+  // outside selection mode the archive table is the plain ten columns.
+  const tableVars = useGameTableVars(selecting);
   const rowToggle = useCallback((key: string, on: boolean) => {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -1168,7 +1175,7 @@ export function ArchiveBrowser({
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}
-      listHeader={table && rows ? <GameTableHeader withStanding /> : undefined}
+      listHeader={table && rows ? <GameTableHeader withStanding={selecting} /> : undefined}
       listVars={table && rows ? tableVars : undefined}
       dense={table}
       list={rows}

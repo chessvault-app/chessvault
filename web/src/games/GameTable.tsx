@@ -59,12 +59,14 @@ const COLUMNS: GameColumn[] = [
   { id: 'date', label: 'Date', width: 80, min: 64 },
   { id: 'notation', label: 'Notation', width: 220, min: 80, fr: 1.8 },
 ];
-// The archive's trailing standing column (checkbox + Add — what that
-// list is FOR). Trailing, not leading: a column of buttons ahead of
-// the player names pushed the row's identity off its left edge.
-const STANDING: GameColumn = { id: 'standing', label: '', width: 96, min: 80 };
+// The archive's standing column — the selection checkbox, in selection
+// mode only (Add lives in the details panel). LEADING: a checkbox is
+// where every selectable list puts it, and at its width the player
+// names lose nothing (the Add-button column that used to lead was the
+// thing that pushed the row's identity off its left edge).
+const STANDING: GameColumn = { id: 'standing', label: '', width: 40, min: 36 };
 const colsOf = (withStanding: boolean): GameColumn[] =>
-  withStanding ? [...COLUMNS, STANDING] : COLUMNS;
+  withStanding ? [STANDING, ...COLUMNS] : COLUMNS;
 
 /**
  * The dragged column widths, shared by every table on the device the
@@ -215,7 +217,7 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
             // Pinned like the rows' own standing cell (see below), and
             // without a resize handle — a pinned column's width is the
             // controls', not the reader's.
-            <span key={c.id} className="bg-card sticky right-0" aria-hidden />
+            <span key={c.id} className="bg-card sticky left-0" aria-hidden />
           ) : (
           <span
             key={c.id}
@@ -317,6 +319,14 @@ export function GameTableRow({
         bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
       )}
     >
+      {standing !== undefined && (
+        // Pinned to the pane's left edge: the checkbox must stay in
+        // reach however far the table is scrolled. Opaque, following
+        // the row's hover so the pin reads as part of its row.
+        <span className="border-border bg-card group-hover:bg-accent sticky left-0 z-[1] flex items-center self-stretch transition-colors duration-100">
+          {standing}
+        </span>
+      )}
       {name(game.white, 'white')}
       <span className={cn(quiet, 'text-right tabular-nums')}>
         {game.whiteElo || ''}
@@ -339,17 +349,6 @@ export function GameTableRow({
       <span className={cn(quiet, 'font-mono')}>
         {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
       </span>
-      {standing !== undefined && (
-        // Pinned to the pane's right edge: in a window narrower than
-        // the columns the table scrolls sideways, and Add and the
-        // selection checkbox are what this list is FOR — scrolled out
-        // of sight they simply looked removed. Opaque, following the
-        // row's hover so the pin reads as part of its row; the left
-        // hairline owns up to being a pinned column.
-        <span className="border-border bg-card group-hover:bg-accent sticky right-0 z-[1] flex items-center justify-end gap-1 self-stretch border-l pl-1.5 transition-colors duration-100">
-          {standing}
-        </span>
-      )}
     </li>
   );
 

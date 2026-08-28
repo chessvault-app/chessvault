@@ -48,7 +48,9 @@ const TABS: { id: MainTab; label: string }[] = [
   { id: 'databases', label: 'Databases' },
   { id: 'collection', label: 'Collection' },
   // Site names, not sentences — they stay untranslated on purpose.
-  { id: 'chesscom', label: 'chess.com' },
+  // Capitalised like its neighbours: a lowercase word in a row of
+  // capitalised tabs read as a typo, not as branding.
+  { id: 'chesscom', label: 'Chess.com' },
   { id: 'lichess', label: 'Lichess' },
 ];
 
