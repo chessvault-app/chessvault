@@ -463,6 +463,17 @@ button row (a list of settings, which applies as you touch it) it is the
 only visible way out. A phone still shows none: the sheet drags away from anywhere
 on itself, which is the gesture it was given instead.
 
+**The X means out, and never back.** It shuts the window it sits on and
+every window that one was opened inside, so it says the same thing on
+page three of a chain as it does on page one; the footer's Cancel is the
+same verb in words and does the same. It was the primitive's own Close,
+which shuts one Root — and one Root is one page here, so on a nested
+page the X uncovered the parent and became a second chevron pointing the
+same way. Back is the chevron's job, and only the chevron's. The one
+control that stays window-scoped is a confirmation's own Confirm and
+Cancel (`AlertDialogAction`, `AlertDialogCancel`): a layer is answered
+and hands you back what asked it, which is the answer, not an exit.
+
 **A window may turn its own page rather than open another.** A sheet
 that needs to show a detail — the contents of one earlier version, say —
 sets `DialogContent`'s `onBack` and replaces its own body, and the

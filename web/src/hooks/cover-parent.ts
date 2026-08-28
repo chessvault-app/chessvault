@@ -23,4 +23,20 @@ export const CoverParent = createContext<{
   cover: () => () => void;
   /** The parent card's current height, read BEFORE it is parked. */
   height: () => number;
+  /**
+   * Shut this window AND every window it was itself opened inside.
+   *
+   * The chevron and the X are not two spellings of one verb. Back is a
+   * step: it closes this page and hands you the window underneath, which
+   * is the whole point of a page. Close is an exit: it means "I am done
+   * with this", and a window that answers it by revealing a window you
+   * had already walked past is a Back button wearing an X. Three pages
+   * deep in the editor's position chain, the X shut one page and left
+   * two more to dismiss.
+   *
+   * So the X walks the chain instead. A LAYER never calls this — a
+   * confirmation is answered and returns you to what asked it, and
+   * AlertDialog's own buttons stay window-scoped for that reason.
+   */
+  dismissAll: () => void;
 } | null>(null);

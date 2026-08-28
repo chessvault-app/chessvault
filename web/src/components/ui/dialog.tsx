@@ -302,6 +302,23 @@ function DialogContent({
   // context. `height` is this card, read live.
   const [covered, setCovered] = React.useState(0);
   const card = React.useRef<HTMLElement | null>(null);
+  const coverParent = React.useContext(CoverParent);
+
+  // The X's verb: shut this window, then every window it was opened
+  // inside (see CoverParent.dismissAll). Read through refs so the handle
+  // below keeps ONE identity for the life of the window — `close` is
+  // rebuilt from the call site's inline onOpenChange on every render, and
+  // a handle that changed with it would re-run every child's cover effect
+  // and rebuild its ResizeObserver each render.
+  const closeRef = React.useRef(close);
+  closeRef.current = close;
+  const parentRef = React.useRef(coverParent);
+  parentRef.current = coverParent;
+  const dismissAll = React.useCallback(() => {
+    closeRef.current();
+    parentRef.current?.dismissAll();
+  }, []);
+
   const asParent = React.useMemo(
     () => ({
       cover: () => {
@@ -309,10 +326,10 @@ function DialogContent({
         return () => setCovered((c) => c - 1);
       },
       height: () => card.current?.offsetHeight ?? 0,
+      dismissAll,
     }),
-    [],
+    [dismissAll],
   );
-  const coverParent = React.useContext(CoverParent);
 
   // A PAGE parks the window it came from and opens AS TALL AS it, on a
   // phone — a floor, not a size, measured once in the same effect.
@@ -484,20 +501,26 @@ function DialogContent({
             {actions}
             {/* A way out for the mouse, and only for the mouse: a phone
                 has three already — drag the sheet down, tap the scrim,
-                press Back. */}
-            <DialogClose
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title={t('Close')}
-                  aria-label={t('Close')}
-                  className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
-                />
-              }
+                press Back.
+
+                Out, not back: it shuts this window and every window this
+                one was opened inside, so it means the same thing on page
+                three of a chain as it does on page one. It was the
+                primitive's own Close, which shuts one Root — and one Root
+                is one PAGE here, so on a nested page the X uncovered the
+                parent and read as a second chevron. The chevron beside it
+                is the control that steps back; this one leaves. */}
+            <Button
+              data-slot="dialog-close"
+              variant="ghost"
+              size="icon-sm"
+              title={t('Close')}
+              aria-label={t('Close')}
+              className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
+              onClick={dismissAll}
             >
               <XIcon />
-            </DialogClose>
+            </Button>
           </div>
         </div>
       )}
@@ -678,6 +701,11 @@ function DialogFooter({
   children,
   ...props
 }: React.ComponentProps<'div'> & { showCloseButton?: boolean }) {
+  // The footer's Cancel is the X in words, so it has to mean what the X
+  // means — out of the whole chain, not back one page. Inside the card
+  // this context is the window's OWN handle (DialogContent provides it to
+  // its children), so `dismissAll` here already starts with this window.
+  const chain = React.useContext(CoverParent);
   return (
     <div
       data-slot="dialog-footer"
@@ -699,7 +727,11 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && <DialogClose render={<Button variant="outline" />}>{t('Close')}</DialogClose>}
+      {showCloseButton && (
+        <Button variant="outline" onClick={chain?.dismissAll}>
+          {t('Close')}
+        </Button>
+      )}
     </div>
   );
 }
