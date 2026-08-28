@@ -218,7 +218,11 @@ function GameDetailsContent({
         // Right-aligned like every other action row in the app (dialog
         // footers, the managers): controls end where the eye expects a
         // decision, and the content above stays the reading column.
-        <div className="flex flex-wrap items-center justify-end gap-2">{selection.actions}</div>
+        // The hairline under it closes the header-and-verbs block, so
+        // the board below reads as the content the block introduced.
+        <div className="border-border flex flex-wrap items-center justify-end gap-2 border-b pb-3">
+          {selection.actions}
+        </div>
       )}
 
       {fen && (

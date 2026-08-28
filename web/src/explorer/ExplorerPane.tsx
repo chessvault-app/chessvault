@@ -1336,7 +1336,7 @@ function TopGamesList({
                   <SideDot side="white" className="mr-1 inline-block size-2 align-[-1px]" />
                   <span className="text-foreground">{g.white}</span>
                   <span className="text-muted-foreground font-mono text-xs"> {g.whiteElo || ''} </span>
-                  <span className="text-muted-foreground">v</span>
+                  <span className="text-muted-foreground">vs</span>
                   <SideDot side="black" className="mx-1 inline-block size-2 align-[-1px]" />
                   <span className="text-foreground">{g.black}</span>
                   <span className="text-muted-foreground font-mono text-xs"> {g.blackElo || ''}</span>

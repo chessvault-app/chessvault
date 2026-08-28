@@ -27,14 +27,21 @@ export function ResultBadge({
 }) {
   const parts = result.split('-');
   const winner = result === '1-0' ? 'white' : result === '0-1' ? 'black' : null;
+  // With a known side, the tone is the player's own verdict (green
+  // won, red lost). Without one, the WINNING COLOUR wears the chip —
+  // the eval bar's white and black — so a column of reference games
+  // still says who won before the digits are read; draws and
+  // unfinished games stay grey.
   const tone =
     parts.length !== 2 || !winner
       ? 'bg-accent text-muted-foreground'
-      : !userSide
-        ? 'bg-accent text-foreground'
-        : userSide === winner
+      : userSide
+        ? userSide === winner
           ? 'bg-good/15 text-good'
-          : 'bg-destructive/15 text-destructive';
+          : 'bg-destructive/15 text-destructive'
+        : winner === 'white'
+          ? 'bg-eval-white text-on-eval-white'
+          : 'bg-eval-black text-on-eval-black';
   return (
     <span
       title={fmt(result)}
