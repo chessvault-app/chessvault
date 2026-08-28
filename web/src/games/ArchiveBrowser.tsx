@@ -9,8 +9,6 @@ import { useAnalysis } from '@/store/analysis';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { KnightIcon } from '@/components/knight-icon';
-import { Segmented } from '@/components/segmented';
 import { CloudBoardArt } from '@/components/cloud-board-art';
 
 import { Select } from '@/components/ui/select';
@@ -23,7 +21,7 @@ import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
-import { GameListShell, type GameListShape } from './GameListShell';
+import { GameListShell } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
@@ -281,7 +279,6 @@ export function ArchiveBrowser({
   collectionKeys,
   onCollected,
   onPreview,
-  shape = 'framed',
   table = false,
   site,
   onSelect,
@@ -290,26 +287,18 @@ export function ArchiveBrowser({
   collectionKeys: Set<string>;
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
-  /** Dense table rows instead of cards — the wide window's
-      presentation. Explicit, never inferred: the phone sheet stays
-      cards whatever the window says. */
+  /** Dense table rows instead of cards — the wide pane's presentation.
+      Explicit, never inferred: the same list renders as cards below lg
+      whatever the pane says. */
   table?: boolean;
-  /** Pin the browser to ONE provider — the wide page's per-site tabs,
-      where the tab strip already says which site this is and the
-      provider track would say it twice. The phone sheet passes
-      nothing and keeps the track. */
-  site?: 'chesscom' | 'lichess';
+  /** The ONE provider this browser answers for — the page's per-site
+      tabs, where the tab strip already says which site this is and a
+      provider track of its own would say it twice. */
+  site: 'chesscom' | 'lichess';
   /** Table mode: a click packages the row for the details panel;
       null when the rows it described reset. */
   onSelect?: (sel: DetailsSelection | null) => void;
   selectedKey?: string | null;
-  /**
-   * Where this is being shown — GameListShell's vocabulary, which owns
-   * the paddings and rules each place needs. (This used to be a local
-   * `framed | panel | window` enum; the shell's shapes are the same
-   * three places under the one name every list of games now uses.)
-   */
-  shape?: GameListShape;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -433,12 +422,11 @@ export function ArchiveBrowser({
    * cache when the provider cannot be reached, and a partially cached
    * account simply pages the missing months in as they are scrolled
    * to. Pressing Browse remains the way to look up someone ELSE. Once
-   * per mount, and only for the pinned tabs: the phone sheet keeps
-   * asking first.
+   * per mount.
    */
   const autoLooked = useRef(false);
   useEffect(() => {
-    if (!site || provider !== site || autoLooked.current) return;
+    if (provider !== site || autoLooked.current) return;
     if (months.length > 0 || loading !== null || !username.trim()) return;
     autoLooked.current = true;
     void loadMonths();
@@ -639,12 +627,11 @@ export function ArchiveBrowser({
     setError(null);
   };
 
-  // A pinned browser answers for ITS site whatever another instance
-  // left in the shared browse store — the phone sheet, or the other
-  // provider's tab. Reconciling is the same reset the provider track
-  // performs, which is what switching sites has always cost.
+  // This browser answers for ITS site whatever another instance left
+  // in the shared browse store — the other provider's tab. Reconciling
+  // is the same reset switching sites has always cost.
   useEffect(() => {
-    if (site && provider !== site) switchProvider(site);
+    if (provider !== site) switchProvider(site);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, provider]);
 
@@ -792,51 +779,10 @@ export function ArchiveBrowser({
 
 
   // The shell owns this band's box and padding; these are its contents.
+  // No provider track: the page's tab strip made the site choice, and a
+  // track of its own would say it twice.
   const toolbar = (
     <>
-        {/* One track, one lit segment. As two chips it was impossible to
-            tell by looking whether they were a choice or two independent
-            toggles — and both being unlit is not a state this has.
-            Absent entirely when the browser is pinned to one site: the
-            page's tab strip already made the choice. */}
-        {!site && (
-        <Segmented
-          value={provider}
-          onChange={switchProvider}
-          ariaLabel="Which site to browse"
-          kind="tabs"
-          className="w-full"
-          segments={[
-            {
-              value: 'chesscom',
-              // Each site answers in its own colour when it is the live
-              // one: chess.com's green, Lichess's near-white.
-              accent: '#8fbb5c',
-              label: (
-                <>
-                  {/* chess.com's pawn, in its brand green */}
-                  <svg viewBox="5 4.5 35 37" className="size-3.5 shrink-0" fill="#7fa650" aria-hidden>
-                    <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
-                  </svg>
-                  <span className="truncate">chess.com</span>
-                </>
-              ),
-            },
-            {
-              value: 'lichess',
-              accent: '#f2f2f0',
-              label: (
-                <>
-                  {/* lichess's knight mark */}
-                  <KnightIcon className="size-3.5 shrink-0 fill-current" />
-                  <span className="truncate">Lichess</span>
-                </>
-              ),
-            },
-          ]}
-        />
-        )}
-
         <div className="flex items-center gap-1">
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
@@ -1185,10 +1131,7 @@ export function ArchiveBrowser({
       />
     )}
     <GameListShell
-      shape={shape}
-      // In the column it shares a panel with the Databases browser and the tab has
-      // already said which one this is; framed it brings its own title.
-      title={t('Online archives')}
+      shape="panel"
       panelClassName="shrink-0 sm:min-h-0 sm:flex-1"
       toolbar={toolbar}
       filtersLoading={months.length === 0 && loading === 'months'}
@@ -1204,21 +1147,7 @@ export function ArchiveBrowser({
       // take the games away and leave one line of text where the list
       // had been, so the panel appeared to close and reopen.
       listLoading={Boolean(month) && loading === 'games' && visibleMonthGames.length === 0}
-      // Who scrolls, the list or the thing holding it.
-      //
-      // In a panel it is the list: it sits in a column beside the
-      // collection and 24rem is the share of that column it may take. In
-      // a SHEET on a phone the window is already a fixed-height card
-      // with its own scroller, and the same cap stopped the list 24rem
-      // down a sheet more than twice that tall — measured at 440x956: an
-      // 841px sheet, a 384px list, 190px of empty surface under it and
-      // the last row cut through the middle. So there the rows simply
-      // flow and the sheet scrolls them, which is what the sheet is for.
-      listClassName={
-        shape === 'sheet'
-          ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto'
-          : 'max-h-96 overflow-y-auto sm:max-h-none sm:flex-1'
-      }
+      listClassName="max-h-96 overflow-y-auto sm:max-h-none sm:flex-1"
       // The end of the list asks for the next months. Older play is
       // reached by scrolling towards it, which is the same gesture that
       // used to be a minute of waiting before anything showed.

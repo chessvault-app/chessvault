@@ -454,7 +454,6 @@ export function CollectionView() {
               />
             ) : tab === 'chesscom' || tab === 'lichess' ? (
               <ArchiveBrowser
-                shape="panel"
                 table={wide}
                 site={tab}
                 collectionKeys={collectionKeys}
