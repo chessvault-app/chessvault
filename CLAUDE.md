@@ -134,8 +134,9 @@ All three of these, every time, before the version is bumped:
 mechanical parts on every push and pull request. `check:repo` documents
 its own list at the top of `scripts/check-repo.ts` — currently absolute
 paths and credentials, a rating rendered without `bandOf()`, the lockfile
-agreeing with package.json, the Rust crate notice matching Cargo.lock, and
-the retired colour names in either the class or the `var()` form. Add to
+agreeing with package.json, the Rust crate notice matching Cargo.lock, the
+retired colour names in either the class or the `var()` form, and every
+UI string the manual "quotes" still existing in the app's source. Add to
 that list whenever a mistake turns out to have a shape a grep can catch;
 keep the header in step with what the file does, or this paragraph starts
 lying about it.
@@ -150,7 +151,19 @@ publishing.
 **Read the docs and fix what has gone stale.** `README.md`, everything in
 `docs/`, `scripts/ml/README.md`, `desktop/README.md`, and the published
 site's user-facing pages — `web/landing/index.html` and
-`web/landing/manual.html`, both languages. Docs rot silently —
+`web/landing/manual.html`, both languages.
+
+**Audit the manual against the app.** The manual is a control-by-control
+reference, which makes it the doc most able to rot: `check:repo` proves
+its quoted strings still exist somewhere in the source, but not that a
+control still sits on the page the manual puts it on, that a described
+workflow still runs that way, or that the Korean still says what the
+English does. Walk it page by page with the app open beside it, in both
+languages. Its screenshots come from `npm run shots` against the built
+demo — if the release changed anything visible, recapture and commit
+what actually differs. When quoting a new UI string, curly double quotes
+mean "the screen says this" and are what the check enforces; use straight
+quotes or guillemets for anything looser. Docs rot silently —
 a number that was true, a file that has been renamed, a limitation that
 has been fixed — and a wrong doc is worse than a missing one because it
 is believed. Add the release's entry to `docs/update-log.md` while you
