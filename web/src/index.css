@@ -1017,6 +1017,22 @@ cg-board square.check {
     max-width: min(64rem, max(18rem, 100dvh - 10rem));
   }
 
+  /* When the cap bites inside a `.force-stacked` region — a wide window
+     laying a board page out phone-style, e.g. the games hunt's "Set up a
+     position" dialog — the column is a cross-axis stretch child of a
+     flex-column shell, and a stretch child clamped by max-width pins to
+     the START edge: measured in that dialog at 1500x900, an 806px shell
+     held the 740px column flush left with all 66px of slack on the right.
+     width:100% + auto margins reproduces stretch exactly until the clamp,
+     then splits the slack. (Not bare auto margins: they turn off stretch,
+     and the shrink-to-fit column measured 514px — the toolbar's wrap
+     width — instead of 740.) Scoped to force-stacked because the true
+     stacked layouts are portrait and never enter this media block. */
+  :where(.force-stacked) .board-col-cap {
+    width: 100%;
+    margin-inline: auto;
+  }
+
   /* And the column beside it stops where the board stops. --board-col-h is
      published by the board block itself (board/boardBlock.ts): the height
      is the end of a min/max chain no sibling selector can read, and the
