@@ -441,7 +441,7 @@ const QUERY_OPS: {
   { key: 'white', sample: 'white:name', desc: 'This player as White', valueHint: 'Type a player name' },
   { key: 'black', sample: 'black:name', desc: 'This player as Black', valueHint: 'Type a player name' },
   { key: 'opening', sample: 'opening:name', desc: 'Opening name contains', valueHint: 'Type an opening name' },
-  { key: 'eco', sample: 'eco:B90', desc: 'ECO code starts with', valueHint: 'Type an ECO code — B90, C6…' },
+  { key: 'eco', sample: 'eco:code', desc: 'ECO code starts with', valueHint: 'Type an ECO code — B90, C6…' },
   {
     key: 'event',
     sample: 'event:"name"',
@@ -450,7 +450,7 @@ const QUERY_OPS: {
   },
   {
     key: 'result',
-    sample: 'result:1-0',
+    sample: 'result:score',
     desc: 'Exact score',
     values: [
       { v: '1-0', desc: 'White won' },
@@ -460,7 +460,7 @@ const QUERY_OPS: {
   },
   {
     key: 'year',
-    sample: 'year:2014',
+    sample: 'year:when',
     desc: 'A year, or a span of years',
     valueHint: 'Type a year, or a span — 2014, 2010-2015',
   },
@@ -675,6 +675,11 @@ interface HintItem {
   secondary?: string;
 }
 
+/** Every row stands exactly this tall (h-7) — the windowing below
+    turns a scroll offset into a row index with plain division, so the
+    height must be pinned, not measured. */
+const HINT_ROW_PX = 28;
+
 const HintRow = memo(function HintRow({
   item,
   active,
@@ -685,13 +690,13 @@ const HintRow = memo(function HintRow({
   pick: (insert: string) => void;
 }) {
   return (
-    <li>
+    <li className="h-7">
       <button
         type="button"
         tabIndex={-1}
         data-active={active || undefined}
         className={cn(
-          'hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left',
+          'hover:bg-accent flex h-full w-full items-center gap-2 rounded-sm px-2 text-left',
           active && 'bg-accent',
         )}
         onMouseDown={(e) => {
@@ -824,10 +829,34 @@ export function SearchQueryHints({
   useEffect(() => {
     setActive(-1);
   }, [query]);
-  // Walking with the keyboard must not leave the active row below the
-  // fold of the scrollable list.
+  // The list mounts only the rows in view (plus overscan): a catalogue
+  // of thousands rendered whole was cheap for React after memoising but
+  // still thousands of DOM nodes for layout on every change — the lag
+  // the memo pass didn't cure. Fixed-height rows make the window pure
+  // arithmetic on scrollTop.
+  const [scrollTop, setScrollTop] = useState(0);
   useEffect(() => {
-    listRef.current?.querySelector('[data-active]')?.scrollIntoView({ block: 'nearest' });
+    setScrollTop(0);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [entries]);
+  // Walking with the keyboard must not leave the active row outside the
+  // fold — computed from the row index, since the row may not be
+  // mounted yet for scrollIntoView to find.
+  useEffect(() => {
+    const ul = listRef.current;
+    if (!ul || active < 0) return;
+    const top = active * HINT_ROW_PX;
+    const bottom = top + HINT_ROW_PX;
+    let next = ul.scrollTop;
+    if (top < next) next = top;
+    else if (bottom > next + ul.clientHeight) next = bottom - ul.clientHeight;
+    if (next !== ul.scrollTop) {
+      ul.scrollTop = next;
+      // The scroll event echoing this assignment arrives a frame late —
+      // shift the mounted window now, or the active row it must show
+      // isn't in the DOM yet.
+      setScrollTop(next);
+    }
   }, [active]);
 
   const handleKey = (e: React.KeyboardEvent): boolean => {
@@ -873,21 +902,39 @@ export function SearchQueryHints({
           {t('Narrow the search with')}
         </p>
       )}
-      {entries.length > 0 && (
-        // Capped and scrollable: the catalogue fields answer with
-        // EVERYTHING they know, and thousands of rows need the same
-        // cheap virtualization the game lists use plus a viewport of
-        // their own. The active row keeps itself in view (the effect
-        // below) so the keyboard can walk past the fold.
-        <ul
-          ref={listRef}
-          className="max-h-72 overflow-y-auto [&>li]:[contain-intrinsic-size:auto_1.75rem] [&>li]:[content-visibility:auto]"
-        >
-          {entries.map((entry, i) => (
-            <HintRow key={entry.id} item={entry} active={i === active} pick={pick} />
-          ))}
-        </ul>
-      )}
+      {entries.length > 0 &&
+        (() => {
+          // Capped and scrollable: the catalogue fields answer with
+          // EVERYTHING they know, but only the rows in the viewport
+          // (max-h-72 = 288px) plus overscan are mounted; spacer items
+          // hold the scrollbar honest for the rest.
+          const overscan = 8;
+          const start = Math.max(0, Math.floor(scrollTop / HINT_ROW_PX) - overscan);
+          const end = Math.min(
+            entries.length,
+            Math.ceil((scrollTop + 288) / HINT_ROW_PX) + overscan,
+          );
+          return (
+            <ul
+              ref={listRef}
+              className="max-h-72 overflow-y-auto"
+              onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+            >
+              {start > 0 && <li aria-hidden style={{ height: start * HINT_ROW_PX }} />}
+              {entries.slice(start, end).map((entry, j) => (
+                <HintRow
+                  key={entry.id}
+                  item={entry}
+                  active={start + j === active}
+                  pick={pick}
+                />
+              ))}
+              {end < entries.length && (
+                <li aria-hidden style={{ height: (entries.length - end) * HINT_ROW_PX }} />
+              )}
+            </ul>
+          );
+        })()}
       {hint && <p className="text-muted-foreground px-2 py-1 text-xs">{hint}</p>}
     </div>
   );
