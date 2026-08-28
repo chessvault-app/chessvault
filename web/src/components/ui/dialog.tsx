@@ -166,18 +166,7 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
  * note at the top). The phone branch styles the Drawer's Viewport with
  * the same classes instead; this element is the Dialog's.
  */
-function DialogOverlay({
-  className,
-  onClick,
-  still = false,
-  ...props
-}: DialogPrimitive.Backdrop.Props & {
-  /** No entrance fade: for a PAGE in a same-rect window chain, whose
-      parent's scrim vanishes the same frame — a scrim fading in from
-      nothing over that left one bare-page frame, read as a screen
-      flicker (lanph3re, the test-2 chain). */
-  still?: boolean;
-}) {
+function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
@@ -203,7 +192,7 @@ function DialogOverlay({
       }}
       className={cn(
         'vv-band fixed inset-0 isolate z-50 flex justify-center bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs',
-        !still && 'sm:data-open:animate-in sm:data-open:fade-in-0',
+        'sm:data-open:animate-in sm:data-open:fade-in-0',
         className,
       )}
       {...props}
@@ -263,28 +252,6 @@ export interface DialogContentProps extends Omit<DialogPrimitive.Popup.Props, 'r
   /** Out of sight, still mounted — for a window that has opened another as a sibling. */
   hidden?: boolean;
   /**
-   * EXPERIMENT (test 2, lanph3re): a page turn in a same-rect window
-   * CHAIN. The stock entrance — parent parks, child fades in from
-   * nothing, scrim and all — leaves one bare frame between the two,
-   * which reads as the screen flickering. A page instead arrives
-   * opaque, sliding in from the right over an instant scrim, and
-   * closes with no exit animation at all: the parent is simply there
-   * again, in the same rect. Desktop only; the phone sheet keeps its
-   * own physics.
-   */
-  page?: boolean;
-  /**
-   * A page that FLOATS over the window it came from on a desktop, where a
-   * page normally parks it — for a window whose parent is a whole
-   * workspace (the hunt's board window), which blinking out for a small
-   * card read as the app closing it (lanph3re: the transition
-   * distracts). The chevron stays: it closes back to the parent, which
-   * never left. On a phone this does nothing — bottom sheets stack from
-   * the same edge, so the page there keeps parking (one scrim, and the
-   * child opens as tall as what it covers).
-   */
-  float?: boolean;
-  /**
    * `sm` is the one-question window (a confirm, a rename, a picker);
    * `default` a window (a form, a list); `full` a wide one on a DESKTOP.
    * On a phone every one of them is the bottom sheet.
@@ -304,8 +271,6 @@ function DialogContent({
   actions,
   onBack,
   hidden = false,
-  float = false,
-  page = false,
   size = 'default',
   fill = false,
   alert = false,
@@ -341,12 +306,10 @@ function DialogContent({
   // phone — a floor, not a size, measured once in the same effect.
   const [pageMinH, setPageMinH] = React.useState(0);
   React.useEffect(() => {
-    // A floating page neither parks its parent nor takes its height —
-    // but only where the parent would otherwise vanish (see `float`).
-    if (small || hidden || !coverParent || (float && !phone)) return;
+    if (small || hidden || !coverParent) return;
     setPageMinH(coverParent.height());
     return coverParent.cover();
-  }, [small, hidden, coverParent, float, phone]);
+  }, [small, hidden, coverParent]);
 
   // A LAYER never parks its parent; it is capped to it, and grows the
   // chevron once it has hidden it completely — see use-sheet-cover.
@@ -654,7 +617,6 @@ function DialogContent({
         // retires the overlay's own `flex`; its `justify-center` is a
         // no-op on the utility's single full-width column.
         className="grid optical-center p-4"
-        still={page}
         style={hidden ? { display: 'none' } : covered > 0 ? { visibility: 'hidden' } : undefined}
       >
         <DialogPrimitive.Popup
@@ -680,11 +642,8 @@ function DialogContent({
             cardClass,
             'h-auto max-h-full rounded-xl',
             small ? 'max-w-sm' : size === 'full' ? 'max-w-4xl' : 'max-w-lg',
-            // The desktop card arrives the stock way — except a chain
-            // page, which slides in opaque (see `page` above).
-            page
-              ? 'data-open:animate-in data-open:slide-in-from-right-16 data-open:duration-150'
-              : 'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 duration-100',
+            // The desktop card arrives the stock way.
+            'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 duration-100',
           )}
           {...props}
         >

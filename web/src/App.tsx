@@ -30,6 +30,8 @@ import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { LeaveDialog } from '@/components/leave-dialog';
+import { PageShell } from '@/components/page-shell';
+import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { t, useLang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -534,37 +536,33 @@ const MORE_SECTIONS = MORE_GROUPS.flatMap((g) => g.items);
 /** A plain page, not a popover — lanph3re's call after trying the sheet. */
 function MorePage() {
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-md flex-col gap-4 p-4">
-        <h1 className="px-1 text-xl font-semibold tracking-tight">{t('More')}</h1>
-        {MORE_GROUPS.map(({ heading, items }) => (
-          <div key={heading} className="flex flex-col gap-2">
-            <h2 className="text-muted-foreground px-1 text-sm font-medium">
-              {t(heading)}
-            </h2>
-            {items.map(({ section, param, label, icon: Icon, blurb }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => (param ? navigate(section, param) : navigate(section))}
-                className={cn(
-                  'bg-card flex items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left',
-                  'active:bg-accent transition-colors duration-100',
-                )}
-              >
-                <div className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-lg">
-                  <Icon className="size-5" strokeWidth={2} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-base font-medium">{t(label)}</div>
-                  <div className="text-muted-foreground text-sm">{t(blurb)}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
+    <PageShell width="narrow">
+      <PageHeader title={t('More')} />
+      {MORE_GROUPS.map(({ heading, items }) => (
+        <div key={heading} className="flex flex-col gap-2">
+          <h2 className="text-muted-foreground text-sm font-medium">{t(heading)}</h2>
+          {items.map(({ section, param, label, icon: Icon, blurb }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => (param ? navigate(section, param) : navigate(section))}
+              className={cn(
+                'bg-card flex items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left',
+                'active:bg-accent transition-colors duration-100',
+              )}
+            >
+              <div className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-lg">
+                <Icon className="size-5" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-base font-medium">{t(label)}</div>
+                <div className="text-muted-foreground text-sm">{t(blurb)}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ))}
+    </PageShell>
   );
 }
 

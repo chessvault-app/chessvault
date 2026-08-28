@@ -35,6 +35,7 @@ struct SignatureGolden {
     pawns: String,
     files: String,
     material: String,
+    structure: String,
 }
 
 #[derive(Deserialize)]
@@ -211,6 +212,7 @@ fn ladder_signatures_match() {
             (Rung::Pawns, &golden.pawns),
             (Rung::Files, &golden.files),
             (Rung::Material, &golden.material),
+            (Rung::Structure, &golden.structure),
         ] {
             assert_eq!(
                 &match_signature(pos.board(), rung),

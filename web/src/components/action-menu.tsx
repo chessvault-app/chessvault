@@ -246,8 +246,15 @@ function ActionSheetBody({
             rows inside the sheet's padding, the title, the icons and the
             labels made three left edges (16, 28, 56) and a lit row looked
             shifted against its own heading. mt-2: the lit row's pill used
-            to touch the title. */}
-        <div className="-mx-2 mt-2 flex flex-col">
+            to touch the title.
+
+            pt-3.5 where there is no detail line: the strip's reach-through
+            is taken out of whichever child comes first, and with no detail
+            that is this list — mt-2 gave back 8 of the 14, so the first
+            row sat 6px under the opaque strip with its top clipped. The
+            padding pays the 14 back inside the list, leaving mt-2 to be
+            the gap it says it is. */}
+        <div className={cn('-mx-2 mt-2 flex flex-col', !detail && 'pt-3.5')}>
           {actions.map(({ label, icon: Icon, danger, className, onSelect }) => (
             <button
               key={label}

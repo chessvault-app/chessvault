@@ -428,6 +428,7 @@ const signatures = FENS.map(({ fen, why }) => ({
   pawns: matchSignature(boardOf(fen), 'pawns'),
   files: matchSignature(boardOf(fen), 'files'),
   material: matchSignature(boardOf(fen), 'material'),
+  structure: matchSignature(boardOf(fen), 'structure'),
 }));
 
 const MATERIAL_SPECS: { why: string; raw: string }[] = [

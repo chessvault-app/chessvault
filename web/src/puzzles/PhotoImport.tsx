@@ -39,21 +39,21 @@ export function PhotoImport({
   onApply,
   onClose,
   initialFile,
-  windowClassName,
-  windowPage = false,
+  embedded = false,
 }: {
   templates: Template[];
   onApply: (reading: PhotoReading) => void;
   onClose: () => void;
   /** Skip the chooser: a file already picked by the caller's own UI. */
   initialFile?: Blob;
-  /** On the window itself — for a caller whose window CHAIN shares one
-      size, so this page opens in the same rect it covers (the editor's
-      test-2 experiment). */
-  windowClassName?: string;
-  /** The chain's page physics too — slide in, instant back (see
-      DialogContent.page). */
-  windowPage?: boolean;
+  /**
+   * No window of its own: the content rendered bare, for a host that
+   * shows it as a PAGE of its own window (the hunt chain — a separate
+   * window here was the chain's last window swap, and it flickered
+   * exactly like the ones already retired). The host carries the title
+   * row and the way back; Cancel still calls onClose.
+   */
+  embedded?: boolean;
 }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);
@@ -304,27 +304,8 @@ export function PhotoImport({
     };
   }, [pick]);
 
-  return (
-    // The app's window, like every other one: a bottom sheet on a phone,
-    // a centred card on a desktop. This was a hand-rolled scrim and box —
-    // the last overlay that was not one — so it had no grab handle, no
-    // drag, no keyboard band, no title row of the shared shape, and its
-    // own Escape listener instead of the platform's close request. It is
-    // dismissible the way the rest are now, scrim and drag included, which
-    // the hand-rolled version deliberately was not.
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DialogContent
-        title="Position from an image"
-        icon={ImageUp}
-        fill
-        page={windowPage}
-        className={cn('relative sm:max-w-[38rem]', windowClassName, dragOver && 'border-primary')}
-      >
+  const inner = (
+    <>
         {dragOver && (
           <div className="bg-muted/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
             <p className="text-primary text-base font-semibold">{t('Drop the image')}</p>
@@ -427,7 +408,10 @@ export function PhotoImport({
             desktop the card is sm:h-auto — no spare room, nothing to sink
             through — so it simply follows the image. */}
         {img && (
-          <div className="mt-auto flex justify-end gap-2 pt-1">
+          // Embedded, the row follows the content — the host page has
+          // spare room and the buttons belong under the last field
+          // (lanph3re); the sheet keeps its sink.
+          <div className={cn('flex justify-end gap-2 pt-1', !embedded && 'mt-auto')}>
             <Button variant="ghost" size="sm" onClick={onClose}>
               {t('Cancel')}
             </Button>
@@ -453,6 +437,41 @@ export function PhotoImport({
             )}
           </div>
         )}
+    </>
+  );
+
+  // Embedded: bare content for a host that shows it as a page of its
+  // own window (see the prop). rounded-lg gives the drop overlay's
+  // rounded-[inherit] a shape to inherit.
+  if (embedded) {
+    return (
+      <div className={cn('relative flex min-h-0 flex-1 flex-col gap-4 rounded-lg', dragOver && 'border-primary')}>
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    // The app's window, like every other one: a bottom sheet on a phone,
+    // a centred card on a desktop. This was a hand-rolled scrim and box —
+    // the last overlay that was not one — so it had no grab handle, no
+    // drag, no keyboard band, no title row of the shared shape, and its
+    // own Escape listener instead of the platform's close request. It is
+    // dismissible the way the rest are now, scrim and drag included, which
+    // the hand-rolled version deliberately was not.
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        title="Position from an image"
+        icon={ImageUp}
+        fill
+        className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
+      >
+        {inner}
       </DialogContent>
     </Dialog>
   );

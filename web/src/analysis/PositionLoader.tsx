@@ -202,7 +202,7 @@ export function LoadPositionForm({
           sat in the row dialogs keep their close button and read as
           chrome (lanph3re's report). It shows only while the field is
           empty, which is exactly as long as it is useful. */}
-      <div className={cn('relative', fill && 'sm:flex sm:min-h-0 sm:grow sm:flex-col')}>
+      <div className="relative">
         <Textarea
           ref={textarea}
           autoFocus={autoFocusField()}
@@ -229,7 +229,12 @@ export function LoadPositionForm({
           placeholder={t('Paste a FEN or PGN, then press Enter')}
           className={cn(
             'w-full resize-none font-mono leading-relaxed placeholder:font-sans',
-            fill && 'sm:min-h-0 sm:grow',
+            // Fixed heights, not growth: growing boxes swallowed the
+            // whole frame and read as oversized, and a capped textarea
+            // inside a growing wrapper left the Paste button floating
+            // mid-page (lanph3re's screenshot) — the wrapper sizes to
+            // the textarea, so the corner button anchors to its corner.
+            fill && 'sm:h-48',
           )}
         />
         {!text && (
@@ -260,7 +265,7 @@ export function LoadPositionForm({
       <label
         className={cn(
           'border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
-          fill && 'sm:grow sm:justify-center',
+          fill && 'sm:h-44 sm:justify-center',
         )}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -283,7 +288,8 @@ export function LoadPositionForm({
           }}
         />
       </label>
-      <div className={cn('mt-1 flex justify-end gap-2', fill && 'sm:mt-auto')}>
+      {/* Under the last field, not sunk to the window's floor (lanph3re). */}
+      <div className="mt-1 flex justify-end gap-2">
         {onCancel && (
           <Button variant="ghost" size="sm" onClick={onCancel}>
             {t('Cancel')}
@@ -326,9 +332,7 @@ function LoadDialog({
         if (!open) onClose();
       }}
     >
-      {/* float: opened from the hunt's board window (the editor's column
-          header), this must hover over that whole workspace, not park it. */}
-      <DialogContent title="Load position" onBack={onBack} float className="sm:max-w-md">
+      <DialogContent title="Load position" onBack={onBack} className="sm:max-w-md">
         <LoadPositionForm
           loadText={loadText}
           onDone={onClose}

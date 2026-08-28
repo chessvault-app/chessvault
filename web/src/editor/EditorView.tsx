@@ -31,16 +31,12 @@ import { Input } from '@/components/ui/input';
 import { KingIcon } from '@/components/king-icon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/components/panel';
-import {
-  BOARD_SCROLL_SHELL,
-  BOARD_WIDE_COLUMN,
-  BOARD_WIDE_SIDE,
-  EDITOR_WINDOW_SIZE,
-} from '@/components/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { useMediaQuery } from '@/lib/media';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -135,6 +131,8 @@ export function EditorView({
   useLabel = t('Analyse'),
   initialFen,
   anyPosition = false,
+  paged = false,
+  onChainChange,
 }: {
   /** Embedded mode: hand the legal position back instead of navigating. */
   onUse?: (fen: string) => void;
@@ -149,6 +147,24 @@ export function EditorView({
    * nothing, and the line says why — but it no longer bars the button.
    */
   anyPosition?: boolean;
+  /**
+   * The chain turns pages INSIDE this one window instead of opening
+   * windows over it — the settled design (lanph3re, after trying
+   * parking, floating and same-rect sibling windows, each of which
+   * cost a visible frame somewhere): the Position, Load and picture
+   * pages are content of the embedded editor itself, swapped
+   * instantly within the host's fixed frame (EDITOR_WINDOW_SIZE).
+   * Desktop only; under 640px the sheet flow stands.
+   */
+  paged?: boolean;
+  /**
+   * Told what page the paged chain is on, so the HOST window's own
+   * title row can turn with it — title and back chevron both — rather
+   * than the pages drawing headers of their own inside the content
+   * (lanph3re: page in the outer card, not an inner one). Null when
+   * the board page is up.
+   */
+  onChainChange?: (page: { title: string; back: () => void } | null) => void;
 }) {
   /** Embedded: someone else owns the position, by prop or by callback. */
   const embedded = onUse !== undefined || initialFen !== undefined;
@@ -170,6 +186,57 @@ export function EditorView({
   const [tool, setTool] = useState<Tool>(() => restored?.tool ?? { kind: 'move' });
   const [orientation, setOrientation] = useState<Color>(() => restored?.orientation ?? 'white');
   const [sheetOpen, setSheetOpen] = useState(false);
+  /** The paged chain's current page (see `paged`). */
+  type ChainPage = 'board' | 'position' | 'load' | 'photo';
+  const [chain, setChain] = useState<{ page: ChainPage }>({ page: 'board' });
+  const goto = (page: ChainPage): void => setChain({ page });
+  /**
+   * The chain's Position page keeps the sheet's DRAFT contract
+   * (lanph3re: it lost Cancel/Apply in the first fitting — "apply on
+   * Apply, everything else discards" is the standing rule). The
+   * snapshot is taken on the way in; Apply keeps, Cancel and the
+   * window's chevron put it back. Loading — text or picture — commits,
+   * as it does in the sheet: the loaded position IS the answer.
+   */
+  const pageSnapshot = useRef<EditorState | null>(null);
+  const leavePage = (commit: boolean): void => {
+    if (!commit && pageSnapshot.current) setState(pageSnapshot.current);
+    pageSnapshot.current = null;
+    goto('board');
+  };
+  /** The sheet's breakpoint: below it the Position button opens the sheet. */
+  const overSm = useMediaQuery('(min-width: 40rem)');
+  /** Paging live this render — bounded by viewport so a resize resolves it. */
+  const paging = paged && overSm;
+  // The host window's title row follows the page (see onChainChange).
+  const onChainChangeRef = useRef(onChainChange);
+  onChainChangeRef.current = onChainChange;
+  useEffect(() => {
+    const tell = onChainChangeRef.current;
+    if (!tell) return;
+    if (!paging || chain.page === 'board') {
+      tell(null);
+      return;
+    }
+    tell({
+      title:
+        chain.page === 'position'
+          ? 'Position'
+          : chain.page === 'load'
+            ? 'Load position'
+            : 'Position from an image',
+      back: () => {
+        if (chain.page === 'photo') setPhotoTemplates(null);
+        // Backing out of the Position page discards its draft, the
+        // sheet's own rule; the deeper pages return within the draft.
+        if (chain.page === 'position') leavePage(false);
+        else goto(chain.page === 'load' ? 'position' : 'load');
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- goto is stable in effect
+  }, [paging, chain.page]);
+  // The host must not keep a page title for an editor that is gone.
+  useEffect(() => () => onChainChangeRef.current?.(null), []);
   /**
    * The position as it stood when the Position sheet was opened.
    *
@@ -365,6 +432,117 @@ export function EditorView({
     navigate('board');
   };
 
+  /** The fields themselves, shared by every place they appear —
+      including the paged chain's Position page, which wears no card. */
+  const positionFields = (
+    <>
+      {/* First because it sets everything under it: an opening decides
+          the pieces, the turn and the castling rights the rest of these
+          fields exist to adjust. */}
+      <Field label="Opening">
+        <OpeningPicker
+          value={preset !== null && preset.fen === fen ? preset.tpl : null}
+          placeholder={t('Pick an opening or ECO code')}
+          onChange={pickPreset}
+        />
+      </Field>
+
+      {/* One of these, so it wears the control that says so. It was a
+          pair of buttons lit primary/secondary — the same question the
+          repertoire's New game panel asks, asked in a different shape,
+          and that panel's own comment already says which shape is
+          right: Segmented is the track for one-of-these, not two
+          actions sitting side by side. */}
+      <Field label="Side to move">
+        <Segmented
+          value={state.turn}
+          onChange={(turn: Color) => patch({ turn })}
+          ariaLabel={t('Side to move')}
+          // The king, as the repertoire's own "Play as" track does
+          // it: a side is a piece before it is a word, and the two
+          // controls now read the same way in both places.
+          segments={(['white', 'black'] as Color[]).map((side) => ({
+            value: side,
+            label: (
+              <>
+                <KingIcon side={side} />
+                {side === 'white' ? t('White') : t('Black')}
+              </>
+            ),
+          }))}
+        />
+      </Field>
+
+      <Field label="Castling rights">
+        {/* The registry's toggle group, four independent toggles
+            (`multiple`): outlined when off, the accent fill when on,
+            aria-pressed from the primitive. Not the filled primary:
+            these four are a state, and primary is the colour of the
+            thing to PRESS on a screen — a board full of pieces and
+            one Save (lanph3re). */}
+        <ToggleGroup
+          multiple
+          variant="outline"
+          size="sm"
+          spacing={1}
+          value={[...state.castling]}
+          onValueChange={(flags) => patch({ castling: new Set(flags as CastlingFlag[]) })}
+          aria-label={t('Castling rights')}
+          className="w-full"
+        >
+          {(
+            [
+              ['K', 'White O-O'],
+              ['Q', 'White O-O-O'],
+              ['k', 'Black O-O'],
+              ['q', 'Black O-O-O'],
+            ] as [CastlingFlag, string][]
+          ).map(([flag, title]) => (
+            <ToggleGroupItem key={flag} value={flag} title={t(title)} className="flex-1 font-mono">
+              {flag}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </Field>
+
+      <Field label="En passant target">
+        <Select
+          value={state.epSquare ?? ''}
+          onValueChange={(v) => patch({ epSquare: v || null })}
+          ariaLabel={t('En passant target')}
+          inset
+          mono
+          className="w-full"
+          groups={[
+            {
+              options: [
+                { value: '', label: t('none') },
+                ...epOptions.map((square) => ({ value: square, label: square })),
+              ],
+            },
+          ]}
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Halfmove clock">
+          <NumberInput
+            value={state.halfmoves}
+            min={0}
+            onChange={(halfmoves) => patch({ halfmoves })}
+          />
+        </Field>
+        <Field label="Move number">
+          <NumberInput
+            value={state.fullmoves}
+            min={1}
+            onChange={(fullmoves) => patch({ fullmoves })}
+          />
+        </Field>
+      </div>
+    </>
+  );
+
   /**
    * Where the panel is being shown, which decides its chrome — named
    * places rather than two booleans, the same fix as ArchiveBrowser's
@@ -374,132 +552,24 @@ export function EditorView({
    *              header, with the Load button beside it.
    * - `sheet`  — the phone's Position window: the Modal already says
    *              Position, so no header (the same word twice, three lines
-   *              apart), and the loader is a page turn from the FEN
-   *              footer, having no header to live in.
+   *              apart), NO CARD (a window's sole content wrapped in a
+   *              card is the window's chrome twice — lanph3re had every
+   *              such nesting removed), and the loader is a page turn
+   *              from the FEN line, having no header to live in.
    */
-  const positionPanels = (place: 'column' | 'sheet') => (
-    <>
+  const positionPanels = (place: 'column' | 'sheet') =>
+    place === 'column' ? (
         <Panel>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
               header to carry it. */}
-          {place === 'column' && (
-            <PanelHeader
-              title={t('Position')}
-              actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
-            />
-          )}
-          {/* The sheet has no PanelHeader, whose height is what normally
-              holds the first field off the card's top border — so it pads
-              itself; the column would double-space. The bottom pad is for
-              both: Panel zeroes the card's gap, so without it the last
-              inputs sit flush against the FEN footer's rule. */}
-          <div className={cn('grid gap-3 px-(--card-spacing) pb-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
-            {/* First in the column because it sets everything under it:
-                an opening decides the pieces, the turn and the castling
-                rights the rest of these fields exist to adjust. */}
-            <Field label="Opening">
-              <OpeningPicker
-                value={preset !== null && preset.fen === fen ? preset.tpl : null}
-                placeholder={t('Pick an opening or ECO code')}
-                onChange={pickPreset}
-              />
-            </Field>
-
-            {/* One of these, so it wears the control that says so. It was a
-                pair of buttons lit primary/secondary — the same question the
-                repertoire's New game panel asks, asked in a different shape,
-                and that panel's own comment already says which shape is
-                right: Segmented is the track for one-of-these, not two
-                actions sitting side by side. */}
-            <Field label="Side to move">
-              <Segmented
-                value={state.turn}
-                onChange={(turn: Color) => patch({ turn })}
-                ariaLabel={t('Side to move')}
-                // The king, as the repertoire's own "Play as" track does
-                // it: a side is a piece before it is a word, and the two
-                // controls now read the same way in both places.
-                segments={(['white', 'black'] as Color[]).map((side) => ({
-                  value: side,
-                  label: (
-                    <>
-                      <KingIcon side={side} />
-                      {side === 'white' ? t('White') : t('Black')}
-                    </>
-                  ),
-                }))}
-              />
-            </Field>
-
-            <Field label="Castling rights">
-              {/* The registry's toggle group, four independent toggles
-                  (`multiple`): outlined when off, the accent fill when on,
-                  aria-pressed from the primitive. Not the filled primary:
-                  these four are a state, and primary is the colour of the
-                  thing to PRESS on a screen — a board full of pieces and
-                  one Save (lanph3re). */}
-              <ToggleGroup
-                multiple
-                variant="outline"
-                size="sm"
-                spacing={1}
-                value={[...state.castling]}
-                onValueChange={(flags) => patch({ castling: new Set(flags as CastlingFlag[]) })}
-                aria-label={t('Castling rights')}
-                className="w-full"
-              >
-                {(
-                  [
-                    ['K', 'White O-O'],
-                    ['Q', 'White O-O-O'],
-                    ['k', 'Black O-O'],
-                    ['q', 'Black O-O-O'],
-                  ] as [CastlingFlag, string][]
-                ).map(([flag, title]) => (
-                  <ToggleGroupItem key={flag} value={flag} title={t(title)} className="flex-1 font-mono">
-                    {flag}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </Field>
-
-            <Field label="En passant target">
-              <Select
-                value={state.epSquare ?? ''}
-                onValueChange={(v) => patch({ epSquare: v || null })}
-                ariaLabel={t('En passant target')}
-                inset
-                mono
-                className="w-full"
-                groups={[
-                  {
-                    options: [
-                      { value: '', label: t('none') },
-                      ...epOptions.map((square) => ({ value: square, label: square })),
-                    ],
-                  },
-                ]}
-              />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Halfmove clock">
-                <NumberInput
-                  value={state.halfmoves}
-                  min={0}
-                  onChange={(halfmoves) => patch({ halfmoves })}
-                />
-              </Field>
-              <Field label="Move number">
-                <NumberInput
-                  value={state.fullmoves}
-                  min={1}
-                  onChange={(fullmoves) => patch({ fullmoves })}
-                />
-              </Field>
-            </div>
+          <PanelHeader
+            title={t('Position')}
+            actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
+          />
+          <div className="grid gap-3 px-(--card-spacing) pb-(--card-spacing)">
+            {positionFields}
           </div>
 
           {/* FEN lives in a status footer, not its own panel — reading it
@@ -511,7 +581,7 @@ export function EditorView({
                   centred on the FIRST line (items-start keeps multi-line
                   reasons hanging right); mt-px sat it visibly high. */}
               <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
-              {validity.reason}
+              {t(validity.reason ?? '')}
             </p>
           )}
           {/* -mb: the row is the card's floor, so it claims the card's own
@@ -531,46 +601,55 @@ export function EditorView({
             <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
               {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
             </Button>
-            {/* Opened from the sheet, the loader REPLACES the sheet rather
-                than stacking a second one on it: the sheet closes as the
-                loader opens, and the loader's back chevron brings it
-                straight back. Two scrims deep on a phone is a window you
-                have to dismiss twice to get out of. */}
-            {place === 'sheet' && (
-              // Inside the sheet this is a page turn, not a new window.
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t('Load a position — FEN, PGN, or image')}
-                onClick={() => setLoadPage(true)}
-              >
-                <FolderInput className="size-3.5" />
-              </Button>
-            )}
           </div>
         </Panel>
-
+    ) : (
+      <>
+        <div className="grid gap-3">{positionFields}</div>
+        {!validity.legal && (
+          <p className="text-warn flex items-start gap-1.5 text-sm">
+            <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+            {t(validity.reason ?? '')}
+          </p>
+        )}
+        {/* The FEN status line, with the loader's page turn at its end.
+            Opened from the sheet, the loader REPLACES the sheet rather
+            than stacking a second one on it: the sheet closes as the
+            loader opens, and the loader's back chevron brings it
+            straight back. Two scrims deep on a phone is a window you
+            have to dismiss twice to get out of. */}
+        <div className="border-border flex shrink-0 items-center gap-1.5 border-t pt-1.5">
+          {validity.legal && (
+            <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+          )}
+          <code className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs" title={fen}>
+            {fen}
+          </code>
+          <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
+            {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Load a position — FEN, PGN, or image')}
+            onClick={() => setLoadPage(true)}
+          >
+            <FolderInput className="size-3.5" />
+          </Button>
+        </div>
         {/* The row every window in this app ends on (components/prompt-dialog):
             justify-end, gap-2, the primary one LAST. Apply is the ONLY
-            way a change made in here survives; see closeSheet. Only in
-            the sheet — the wide layout's column is not a window, it is
-            the editor itself, and its edits are the position. */}
-        {place === 'sheet' && (
-          // mt-auto: in the chain's fixed-height card (EDITOR_WINDOW_SIZE)
-          // the fields end mid-window, and the buttons sit on the floor
-          // like every window's do. A content-sized phone sheet has no
-          // slack, so nothing moves there.
-          <div className="mt-auto flex justify-end gap-2">
-            <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
-              {t('Cancel')}
-            </Button>
-            <Button variant="default" size="sm" onClick={() => closeSheet(true)}>
-              {t('Apply')}
-            </Button>
-          </div>
-        )}
-    </>
-  );
+            way a change made in here survives; see closeSheet. */}
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
+            {t('Cancel')}
+          </Button>
+          <Button variant="default" size="sm" onClick={() => closeSheet(true)}>
+            {t('Apply')}
+          </Button>
+        </div>
+      </>
+    );
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -594,8 +673,17 @@ export function EditorView({
 
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
-          Top-anchored like AnalysisBoard: same board y in every view. */}
-      <div className={`${BOARD_WIDE_COLUMN} stacked:my-auto`}>
+          Top-anchored like AnalysisBoard: same board y in every view.
+          On the paged chain's other pages the column steps aside but
+          stays mounted, so chessground never rebuilds and the way back
+          is instant. */}
+      <div
+        className={cn(
+          BOARD_WIDE_COLUMN,
+          'stacked:my-auto',
+          paging && chain.page !== 'board' && 'hidden',
+        )}
+      >
         {/* The eval bar's width, kept open beside the whole stack rather
             than beside the board alone: the palettes and the toolbar align
             to the board's edges, so they are indented by exactly what the
@@ -746,6 +834,14 @@ export function EditorView({
                 active={sheetOpen}
                 className="h-full wide:hidden"
                 onClick={() => {
+                  // The paged chain: a page of this window, not a window
+                  // over it (see `paged`). Edits are live, like the wide
+                  // column's; the draft-and-Apply stays the sheet's.
+                  if (paging) {
+                    pageSnapshot.current = state;
+                    goto('position');
+                    return;
+                  }
                   if (sheetOpen) {
                     closeSheet(false);
                     return;
@@ -769,7 +865,7 @@ export function EditorView({
                     ? onUse
                       ? useLabel
                       : t('Analyse this position')
-                    : validity.reason
+                    : t(validity.reason ?? '')
                 }
               >
                 {/* Analysis = the game-review microscope; embedded mode records
@@ -782,6 +878,104 @@ export function EditorView({
           </div>
         </div>
       </div>
+
+      {/* The paged chain's pages, in the board's place. No slide, no
+          fade — the swap is instant (lanph3re tried the swipe and cut
+          it): the frame holds still and the content is simply the next
+          page. NO card around either page (the inner card read as
+          clutter) — the fields stand directly in the window, the way
+          every ordinary window carries its form; the WINDOW's own
+          title row names the page and holds the way back
+          (onChainChange). */}
+      {paging && chain.page !== 'board' && (
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
+          {chain.page === 'position' ? (
+            <>
+              <div className="grid gap-3">{positionFields}</div>
+              {!validity.legal && (
+                <p className="text-warn flex items-start gap-1.5 text-sm">
+                  <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+                  {t(validity.reason ?? '')}
+                </p>
+              )}
+              {/* The FEN status line, as the cards carry it — with the
+                  Load page turn at its end, the sheet's own idiom. It
+                  follows the fields (lanph3re: rows belong under the
+                  last field, not sunk to the window's floor). */}
+              <div className="border-border flex shrink-0 items-center gap-1.5 border-t pt-1.5">
+                {validity.legal && (
+                  <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+                )}
+                <code className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs" title={fen}>
+                  {fen}
+                </code>
+                <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
+                  {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Load a position — FEN, PGN, or image')}
+                  onClick={() => goto('load')}
+                >
+                  <FolderInput className="size-3.5" />
+                </Button>
+              </div>
+              {/* The draft's two doors, right under the last row
+                  (lanph3re: no sinking to the window's floor). */}
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" size="sm" onClick={() => leavePage(false)}>
+                  {t('Cancel')}
+                </Button>
+                <Button variant="default" size="sm" onClick={() => leavePage(true)}>
+                  {t('Apply')}
+                </Button>
+              </div>
+            </>
+          ) : chain.page === 'load' ? (
+            <LoadPositionForm
+              loadText={loadText}
+              fill
+              // A loaded position IS the answer: it commits the draft
+              // and lands on the board that now shows it.
+              onDone={() => leavePage(true)}
+              onImage={(file) => {
+                setPhotoFile(file);
+                void builtinTemplates()
+                  .then((tpl) => {
+                    setPhotoTemplates(tpl);
+                    goto('photo');
+                  })
+                  .catch(() => {
+                    setPhotoTemplates([]);
+                    goto('photo');
+                  });
+              }}
+            />
+          ) : (
+            // The picture flow as the chain's fourth page — a separate
+            // window here was the chain's last window swap, and it
+            // flickered exactly like the ones already retired
+            // (lanph3re: pasting an image swaps the window).
+            <Suspense fallback={null}>
+              <PhotoImport
+                embedded
+                templates={photoTemplates ?? []}
+                initialFile={photoFile ?? undefined}
+                onApply={(reading) => {
+                  if (reading.fen) applyImageFen(reading.fen);
+                  setPhotoTemplates(null);
+                  leavePage(true);
+                }}
+                onClose={() => {
+                  setPhotoTemplates(null);
+                  goto('load');
+                }}
+              />
+            </Suspense>
+          )}
+        </div>
+      )}
 
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
@@ -813,11 +1007,10 @@ export function EditorView({
             if (!open) closeSheet(false);
           }}
         >
-          {/* EXPERIMENT (test 2): the same rect as the board window it
-              pages over — a park between same-sized windows is a content
-              swap, not a blink — so no float, and `page` for the swap's
-              own physics (slide in, instant back). Phones keep the sheet. */}
-          <DialogContent title="Position" className={EDITOR_WINDOW_SIZE} page>
+          {/* The paged chain no longer opens this on a desktop (its
+              Position is a content page now); this window serves phones
+              and the standalone stacked editor, in its own clothes. */}
+          <DialogContent title="Position">
             {positionPanels('sheet')}
             {/* The second page, written inside the first: Modal parks this
                 sheet behind it, wires the back chevron to onClose and holds
@@ -829,10 +1022,9 @@ export function EditorView({
                   if (!open) setLoadPage(false);
                 }}
               >
-                <DialogContent title="Load position" className={EDITOR_WINDOW_SIZE} page>
+                <DialogContent title="Load position">
                   <LoadPositionForm
                     loadText={loadText}
-                    fill
                     // The loaded position IS the answer, so this commits —
                     // there is nothing of the draft left to keep or discard.
                     onDone={() => closeSheet(true)}
@@ -854,8 +1046,6 @@ export function EditorView({
                       <PhotoImport
                         templates={photoTemplates}
                         initialFile={photoFile ?? undefined}
-                        windowClassName={EDITOR_WINDOW_SIZE}
-                        windowPage
                         onApply={(reading) => {
                           if (reading.fen) applyImageFen(reading.fen);
                           setPhotoTemplates(null);
