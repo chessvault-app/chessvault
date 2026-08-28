@@ -285,10 +285,17 @@
    * itself behind it.
    */
   --eco-l: 45%;
-  --eco-c: calc(0.12 * var(--accent-tint));
+  /* FIXED chroma, not scaled by --accent-tint: the family hue is DATA
+     — which opening this is — not chrome, and the neutral appearance
+     drained it to grey along with the buttons, leaving the games table
+     one wash of monochrome (lanph3re's report). --warn, --info and the
+     result chips already hold their colour through the neutral theme
+     for exactly this reason; the ECO tag now sits on the same side of
+     that line. */
+  --eco-c: 0.12;
   --eco-wash: 10%;
   --eco-name-l: 45%;
-  --eco-name-c: calc(0.05 * var(--accent-tint));
+  --eco-name-c: 0.05;
 
   /* The transient chip — the undo offer, and anything else that floats
      over the page for a few seconds and must not read as part of it.
@@ -381,12 +388,14 @@
   /* Dark mode's --destructive is a light red; white on it is unreadable. */
   --destructive-foreground: oklch(18% 0.03 25);
   --warn-foreground: oklch(20% 0.04 80);
-  /* Light text on a near-black page — the pair the tag was drawn with. */
+  /* Light text on a near-black page — the pair the tag was drawn with.
+     Fixed chroma for the same reason as the light theme's: the family
+     hue is data, and the neutral appearance must not grey it out. */
   --eco-l: 80%;
-  --eco-c: calc(0.08 * var(--accent-tint));
+  --eco-c: 0.08;
   --eco-wash: 15%;
   --eco-name-l: 72%;
-  --eco-name-c: calc(0.045 * var(--accent-tint));
+  --eco-name-c: 0.045;
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner
