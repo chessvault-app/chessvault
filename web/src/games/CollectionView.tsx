@@ -120,7 +120,7 @@ export function CollectionView() {
       }
       return [...counted]
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 50)
         .map(([name, n]) => ({ v: name, desc: t('{n} games', { n: String(n) }) }));
     },
     [games],

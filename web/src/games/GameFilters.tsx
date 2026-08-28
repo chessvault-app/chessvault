@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { SlidersHorizontal, TriangleAlert, X } from 'lucide-react';
 import { composeQueryChips, parseSearchQuery, splitQueryChips } from '@shared/searchQuery';
 import { api } from '@/lib/api';
@@ -440,11 +440,11 @@ const QUERY_OPS: {
   { key: 'opponent', sample: 'opponent:name', desc: 'Somebody else in the same game', valueHint: 'Type a player name' },
   { key: 'white', sample: 'white:name', desc: 'This player as White', valueHint: 'Type a player name' },
   { key: 'black', sample: 'black:name', desc: 'This player as Black', valueHint: 'Type a player name' },
-  { key: 'opening', sample: 'opening:najdorf', desc: 'Opening name contains', valueHint: 'Type an opening name' },
+  { key: 'opening', sample: 'opening:name', desc: 'Opening name contains', valueHint: 'Type an opening name' },
   { key: 'eco', sample: 'eco:B90', desc: 'ECO code starts with', valueHint: 'Type an ECO code — B90, C6…' },
   {
     key: 'event',
-    sample: 'event:"tata steel"',
+    sample: 'event:"name"',
     desc: 'Tournament name contains — quotes hold spaces',
     valueHint: 'Type a tournament name',
   },
@@ -664,6 +664,67 @@ export interface SearchQueryHintsHandle {
   handleKey: (e: React.KeyboardEvent) => boolean;
 }
 
+/** One suggestion row's data, plain values only — the row component
+    is memoised on it, so walking the active highlight through a
+    catalogue of thousands re-renders two rows, not all of them. */
+interface HintItem {
+  id: string;
+  insert: string;
+  kind: 'sample' | 'value' | 'name';
+  primary: string;
+  secondary?: string;
+}
+
+const HintRow = memo(function HintRow({
+  item,
+  active,
+  pick,
+}: {
+  item: HintItem;
+  active: boolean;
+  pick: (insert: string) => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        tabIndex={-1}
+        data-active={active || undefined}
+        className={cn(
+          'hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left',
+          active && 'bg-accent',
+        )}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          pick(item.insert);
+        }}
+      >
+        {item.kind === 'sample' ? (
+          <span className="text-foreground shrink-0 font-mono text-xs">{item.primary}</span>
+        ) : item.kind === 'value' ? (
+          <Badge variant="secondary" className="shrink-0 font-mono">
+            {item.primary}
+          </Badge>
+        ) : (
+          <span className="text-foreground min-w-0 truncate text-xs font-medium">
+            {item.primary}
+          </span>
+        )}
+        {item.secondary !== undefined && (
+          <span
+            className={cn(
+              'text-muted-foreground text-xs',
+              item.kind === 'name' ? 'shrink-0 font-mono' : 'min-w-0 truncate',
+            )}
+          >
+            {item.secondary}
+          </span>
+        )}
+      </button>
+    </li>
+  );
+});
+
 export function SearchQueryHints({
   query,
   onPick,
@@ -721,49 +782,42 @@ export function SearchQueryHints({
   }, [suggest, fetchKey]);
 
   // One flat list whatever the mode, so the keyboard walks it blind.
-  const entries: { id: string; insert: string; row: ReactNode }[] =
-    prefixOps.length > 0
-      ? prefixOps.map((op) => ({
-          id: `op:${op.key}`,
-          insert: `${head}${op.key}:`,
-          row: (
-            <>
-              <span className="text-foreground shrink-0 font-mono text-xs">{op.sample}</span>
-              <span className="text-muted-foreground min-w-0 truncate text-xs">{t(op.desc)}</span>
-            </>
-          ),
-        }))
-      : valueOp && values.length > 0
-        ? values.map((val) => ({
-            id: `enum:${val.v}`,
-            insert: `${head}${valueOp.key}:${val.v} `,
-            row: (
-              <>
-                <Badge variant="secondary" className="shrink-0 font-mono">
-                  {val.v}
-                </Badge>
-                <span className="text-muted-foreground min-w-0 truncate text-xs">{t(val.desc)}</span>
-              </>
-            ),
+  // Memoised as DATA: the rows are memo components over these, and an
+  // active-row change must not reconcile a catalogue of thousands.
+  const entries = useMemo<HintItem[]>(
+    () =>
+      prefixOps.length > 0
+        ? prefixOps.map((op) => ({
+            id: `op:${op.key}`,
+            insert: `${head}${op.key}:`,
+            kind: 'sample' as const,
+            primary: op.sample,
+            secondary: t(op.desc),
           }))
-        : valueOp && !valueOp.values
-          ? fetched.map((val) => ({
-              id: `live:${val.v}`,
-              insert: `${head}${valueOp.key}:${/\s/.test(val.v) ? `"${val.v}"` : val.v} `,
-              row: (
-                <>
-                  <span className="text-foreground min-w-0 truncate text-xs font-medium">
-                    {val.v}
-                  </span>
-                  {val.desc && (
-                    <span className="text-muted-foreground shrink-0 font-mono text-xs">
-                      {val.desc}
-                    </span>
-                  )}
-                </>
-              ),
+        : valueOp && values.length > 0
+          ? values.map((val) => ({
+              id: `enum:${val.v}`,
+              insert: `${head}${valueOp.key}:${val.v} `,
+              kind: 'value' as const,
+              primary: val.v,
+              secondary: t(val.desc),
             }))
-          : [];
+          : valueOp && !valueOp.values
+            ? fetched.map((val) => ({
+                id: `live:${val.v}`,
+                insert: `${head}${valueOp.key}:${/\s/.test(val.v) ? `"${val.v}"` : val.v} `,
+                kind: 'name' as const,
+                primary: val.v,
+                secondary: val.desc,
+              }))
+            : [],
+    // Everything above derives from the query and the fetched values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [query, fetched],
+  );
+  const pickRef = useRef(onPick);
+  pickRef.current = onPick;
+  const pick = useCallback((insert: string) => pickRef.current(insert), []);
 
   const [active, setActive] = useState(-1);
   const listRef = useRef<HTMLUListElement | null>(null);
@@ -830,23 +884,7 @@ export function SearchQueryHints({
           className="max-h-72 overflow-y-auto [&>li]:[contain-intrinsic-size:auto_1.75rem] [&>li]:[content-visibility:auto]"
         >
           {entries.map((entry, i) => (
-            <li key={entry.id}>
-              <button
-                type="button"
-                tabIndex={-1}
-                data-active={i === active || undefined}
-                className={cn(
-                  'hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left',
-                  i === active && 'bg-accent',
-                )}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onPick(entry.insert);
-                }}
-              >
-                {entry.row}
-              </button>
-            </li>
+            <HintRow key={entry.id} item={entry} active={i === active} pick={pick} />
           ))}
         </ul>
       )}

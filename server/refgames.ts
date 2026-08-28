@@ -1225,9 +1225,11 @@ export function refGamesApi(
     const rows = (
       q
         ? found.db
-            .prepare('SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 6')
+            .prepare(
+              'SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 50',
+            )
             .all(`${q}%`)
-        : found.db.prepare('SELECT name, games FROM players ORDER BY games DESC LIMIT 6').all()
+        : found.db.prepare('SELECT name, games FROM players ORDER BY games DESC LIMIT 50').all()
     ) as { name: string; games: number }[];
     return c.json({ names: rows });
   });
