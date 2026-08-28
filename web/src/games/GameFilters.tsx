@@ -563,10 +563,18 @@ function IssueLine({ badge, message }: { badge: string; message: string }) {
  * matching nothing. mousedown (not click) with preventDefault, or the
  * press would blur the input and close the panel under the click.
  */
+/** How a caller forwards the input's key events into the panel:
+    ↓/↑ move the active row, Enter takes it; anything unhandled
+    returns false and stays the input's. */
+export interface SearchQueryHintsHandle {
+  handleKey: (e: React.KeyboardEvent) => boolean;
+}
+
 export function SearchQueryHints({
   query,
   onPick,
   suggest,
+  controlRef,
 }: {
   query: string;
   onPick: (nextQuery: string) => void;
@@ -574,18 +582,15 @@ export function SearchQueryHints({
       database's own aggregate, openings and ECO from the vendored
       catalogue. Absent fields simply keep the typed-value hint. */
   suggest?: (field: string, value: string) => Promise<ValueSuggestion[]>;
+  /** Where the caller reaches the keyboard handle. */
+  controlRef?: { current: SearchQueryHintsHandle | null };
 }) {
-  const { issues } = parseSearchQuery(query);
   const rawLast = query.slice(query.lastIndexOf(' ') + 1);
   const lastToken = rawLast.toLowerCase();
   const colon = lastToken.indexOf(':');
   const typedKey = colon > 0 ? lastToken.slice(0, colon) : null;
   const typedValue = colon > 0 ? rawLast.slice(colon + 1).replace(/"/g, '') : '';
   const head = query.slice(0, query.length - rawLast.length);
-
-  // A mistake still under the caret is not a mistake yet: an issue on
-  // the token being typed waits until a space finishes it.
-  const shownIssues = query.endsWith(' ') ? issues : issues.filter((i) => i.raw !== rawLast);
 
   const valueOp = typedKey ? QUERY_OPS.find((op) => op.key === typedKey) : undefined;
   const prefixOps =
@@ -596,7 +601,9 @@ export function SearchQueryHints({
     valueOp?.values?.filter((val) => typedValue === '' || val.v.startsWith(typedValue)) ?? [];
 
   // The live values, debounced a beat behind the typing; a stale
-  // answer must not overwrite a fresher question's.
+  // answer must not overwrite a fresher question's. An EMPTY value
+  // asks too — a completed qualifier opens on the field's top names
+  // before a character is typed.
   const [fetched, setFetched] = useState<ValueSuggestion[]>([]);
   const fetchKey = valueOp && !valueOp.values ? `${valueOp.key}:${typedValue}` : null;
   useEffect(() => {
@@ -619,97 +626,170 @@ export function SearchQueryHints({
     };
   }, [suggest, fetchKey]);
 
-  const issueLines = shownIssues.map((issue, i) =>
-    issue.kind === 'empty' ? (
-      <IssueLine key={i} badge={`${issue.qualifier}:`} message={t('needs a value')} />
-    ) : issue.kind === 'bad-result' ? (
-      <IssueLine key={i} badge={issue.value ?? ''} message={t('is not a result — 1-0, 0-1 or draw')} />
-    ) : (
-      <IssueLine
-        key={i}
-        badge={issue.value ?? ''}
-        message={t('is not a year or a span — 2014, 2010-2015')}
-      />
-    ),
+  // One flat list whatever the mode, so the keyboard walks it blind.
+  const entries: { id: string; insert: string; row: ReactNode }[] =
+    prefixOps.length > 0
+      ? prefixOps.map((op) => ({
+          id: `op:${op.key}`,
+          insert: `${head}${op.key}:`,
+          row: (
+            <>
+              <span className="text-foreground shrink-0 font-mono text-xs">{op.sample}</span>
+              <span className="text-muted-foreground min-w-0 truncate text-xs">{t(op.desc)}</span>
+            </>
+          ),
+        }))
+      : valueOp && values.length > 0
+        ? values.map((val) => ({
+            id: `enum:${val.v}`,
+            insert: `${head}${valueOp.key}:${val.v} `,
+            row: (
+              <>
+                <Badge variant="secondary" className="shrink-0 font-mono">
+                  {val.v}
+                </Badge>
+                <span className="text-muted-foreground min-w-0 truncate text-xs">{t(val.desc)}</span>
+              </>
+            ),
+          }))
+        : valueOp && !valueOp.values
+          ? fetched.map((val) => ({
+              id: `live:${val.v}`,
+              insert: `${head}${valueOp.key}:${/\s/.test(val.v) ? `"${val.v}"` : val.v} `,
+              row: (
+                <>
+                  <span className="text-foreground min-w-0 truncate text-xs font-medium">
+                    {val.v}
+                  </span>
+                  {val.desc && (
+                    <span className="text-muted-foreground shrink-0 font-mono text-xs">
+                      {val.desc}
+                    </span>
+                  )}
+                </>
+              ),
+            }))
+          : [];
+
+  const [active, setActive] = useState(-1);
+  useEffect(() => {
+    setActive(-1);
+  }, [query]);
+
+  const handleKey = (e: React.KeyboardEvent): boolean => {
+    if (entries.length === 0) return false;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((a) => (a + 1) % entries.length);
+      return true;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((a) => (a <= 0 ? entries.length - 1 : a - 1));
+      return true;
+    }
+    if (e.key === 'Enter' && active >= 0 && entries[active]) {
+      e.preventDefault();
+      onPick(entries[active].insert);
+      return true;
+    }
+    return false;
+  };
+  useEffect(() => {
+    if (controlRef) controlRef.current = { handleKey };
+  });
+  useEffect(
+    () => () => {
+      if (controlRef) controlRef.current = null;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
-  const suggestions =
-    prefixOps.length > 0 ? (
-      <>
+  const hint =
+    valueOp && !valueOp.values && entries.length === 0
+      ? t(valueOp.valueHint ?? '')
+      : null;
+
+  if (entries.length === 0 && hint === null) return null;
+  return (
+    <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
+      {prefixOps.length > 0 && (
         <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
           {t('Narrow the search with')}
         </p>
+      )}
+      {entries.length > 0 && (
         <ul>
-          {prefixOps.map((op) => (
-            <li key={op.key}>
+          {entries.map((entry, i) => (
+            <li key={entry.id}>
               <button
                 type="button"
                 tabIndex={-1}
-                className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
+                className={cn(
+                  'hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left',
+                  i === active && 'bg-accent',
+                )}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onPick(`${head}${op.key}:`);
+                  onPick(entry.insert);
                 }}
               >
-                <span className="text-foreground shrink-0 font-mono text-xs">{op.sample}</span>
-                <span className="text-muted-foreground min-w-0 truncate text-xs">{t(op.desc)}</span>
+                {entry.row}
               </button>
             </li>
           ))}
         </ul>
-      </>
-    ) : valueOp && values.length > 0 ? (
-      <ul>
-        {values.map((val) => (
-          <li key={val.v}>
-            <button
-              type="button"
-              tabIndex={-1}
-              className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onPick(`${head}${valueOp.key}:${val.v} `);
-              }}
-            >
-              <Badge variant="secondary" className="shrink-0 font-mono">
-                {val.v}
-              </Badge>
-              <span className="text-muted-foreground min-w-0 truncate text-xs">{t(val.desc)}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    ) : valueOp && !valueOp.values && fetched.length > 0 ? (
-      <ul>
-        {fetched.map((val) => (
-          <li key={val.v}>
-            <button
-              type="button"
-              tabIndex={-1}
-              className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const quoted = /\s/.test(val.v) ? `"${val.v}"` : val.v;
-                onPick(`${head}${valueOp.key}:${quoted} `);
-              }}
-            >
-              <span className="text-foreground min-w-0 truncate text-xs font-medium">{val.v}</span>
-              {val.desc && (
-                <span className="text-muted-foreground shrink-0 font-mono text-xs">{val.desc}</span>
-              )}
-            </button>
-          </li>
-        ))}
-      </ul>
-    ) : valueOp && !valueOp.values && typedValue === '' ? (
-      <p className="text-muted-foreground px-2 py-1 text-xs">{t(valueOp.valueHint ?? '')}</p>
-    ) : null;
+      )}
+      {hint && <p className="text-muted-foreground px-2 py-1 text-xs">{hint}</p>}
+    </div>
+  );
+}
 
-  if (issueLines.length === 0 && suggestions === null) return null;
+/**
+ * The query's problems, as a BLOCK under the search bar — GitHub's
+ * warning box, not a floating layer: it stands in the layout while the
+ * query stands wrong, focused or not. While the box is focused, an
+ * issue on the token still under the caret waits for the space that
+ * finishes it; once focus leaves, everything wrong is said.
+ */
+export function SearchQueryIssues({
+  query,
+  pending = false,
+  className,
+}: {
+  query: string;
+  /** True while the box has focus — the last token may still be
+      mid-type. */
+  pending?: boolean;
+  className?: string;
+}) {
+  const { issues } = parseSearchQuery(query);
+  const rawLast = query.slice(query.lastIndexOf(' ') + 1);
+  const shown =
+    pending && !query.endsWith(' ') ? issues.filter((i) => i.raw !== rawLast) : issues;
+  if (shown.length === 0) return null;
   return (
-    <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
-      {issueLines.length > 0 && <ul>{issueLines}</ul>}
-      {suggestions}
+    <div className={cn('border-warn/40 bg-warn/10 rounded-md border px-1 py-0.5', className)}>
+      <ul>
+        {shown.map((issue, i) =>
+          issue.kind === 'empty' ? (
+            <IssueLine key={i} badge={`${issue.qualifier}:`} message={t('needs a value')} />
+          ) : issue.kind === 'bad-result' ? (
+            <IssueLine
+              key={i}
+              badge={issue.value ?? ''}
+              message={t('is not a result — 1-0, 0-1 or draw')}
+            />
+          ) : (
+            <IssueLine
+              key={i}
+              badge={issue.value ?? ''}
+              message={t('is not a year or a span — 2014, 2010-2015')}
+            />
+          ),
+        )}
+      </ul>
     </div>
   );
 }

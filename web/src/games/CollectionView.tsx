@@ -37,6 +37,8 @@ import {
   catalogSuggest,
   highlightQuery,
   SearchQueryHints,
+  SearchQueryIssues,
+  type SearchQueryHintsHandle,
   type ValueSuggestion,
 } from './GameFilters';
 import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
@@ -92,14 +94,16 @@ export function CollectionView() {
   /** The query-language panel under the collection search, open while
       the box has focus. */
   const [searchHintsOpen, setSearchHintsOpen] = useState(false);
+  const searchHintsControl = useRef<SearchQueryHintsHandle | null>(null);
   /** Live values for the panel: players and events aggregate from the
       rows already in the page; openings and ECO come from the vendored
       catalogue, same as everywhere. */
   const suggestCollection = useCallback(
     async (field: string, value: string): Promise<ValueSuggestion[]> => {
       if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
+      // An empty value still counts — the panel opens on the
+      // collection's most frequent names before a character is typed.
       const v = value.trim().toLowerCase();
-      if (!v) return [];
       const counted = new Map<string, number>();
       if (field === 'event') {
         for (const g of games) {
@@ -306,7 +310,11 @@ export function CollectionView() {
           onFocus={() => setSearchHintsOpen(true)}
           onBlur={() => setSearchHintsOpen(false)}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setSearchHintsOpen(false);
+            if (e.key === 'Escape') {
+              setSearchHintsOpen(false);
+              return;
+            }
+            if (searchHintsOpen && searchHintsControl.current?.handleKey(e)) return;
           }}
           placeholder={t('Search collection…')}
           renderHighlight={highlightQuery}
@@ -315,7 +323,12 @@ export function CollectionView() {
         {/* The same query language the databases box speaks — one
             parser in shared/, one panel teaching it. */}
         {searchHintsOpen && (
-          <SearchQueryHints query={query} onPick={setQuery} suggest={suggestCollection} />
+          <SearchQueryHints
+            query={query}
+            onPick={setQuery}
+            suggest={suggestCollection}
+            controlRef={searchHintsControl}
+          />
         )}
       </div>
       {/* Icon only, like the shelves': the word Bookmarked beside it was
@@ -462,7 +475,10 @@ export function CollectionView() {
           }
         />
 
-        <div className="flex items-center gap-2 lg:hidden">{finders('flex-1')}</div>
+        <div className="flex flex-col gap-2 lg:hidden">
+          <div className="flex items-center gap-2">{finders('flex-1')}</div>
+          <SearchQueryIssues query={query} pending={searchHintsOpen} />
+        </div>
       </div>
 
       {importing && (
@@ -578,21 +594,24 @@ export function CollectionView() {
                 onClearSearch={() => setQuery('')}
                 onShowAll={() => setMarkedOnly(false)}
                 toolbar={
-                  <div className="flex w-full items-center gap-1.5">
-                    {finders('min-w-0 flex-1')}
-                    {/* Import lives WITH the collection it grows: the
-                        page-header button beside this big pane did not
-                        stand out (lanph3re's report), and the empty
-                        state already points here. */}
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="shrink-0"
-                      onClick={() => setImporting(true)}
-                    >
-                      <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
-                      {t('Import a game')}
-                    </Button>
+                  <div className="flex w-full flex-col gap-2">
+                    <div className="flex w-full items-center gap-1.5">
+                      {finders('min-w-0 flex-1')}
+                      {/* Import lives WITH the collection it grows: the
+                          page-header button beside this big pane did not
+                          stand out (lanph3re's report), and the empty
+                          state already points here. */}
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => setImporting(true)}
+                      >
+                        <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+                        {t('Import a game')}
+                      </Button>
+                    </div>
+                    <SearchQueryIssues query={query} pending={searchHintsOpen} />
                   </div>
                 }
                 onSelect={(g) => setColSelKey(g ? gameKey(g) : null)}

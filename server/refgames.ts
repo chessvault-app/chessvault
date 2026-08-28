@@ -1218,11 +1218,17 @@ export function refGamesApi(
   api.get('/refgames/suggest', (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ names: [] });
+    if (!hasLookups(found.db)) return c.json({ names: [] });
     const q = (c.req.query('q') ?? '').trim();
-    if (!q || !hasLookups(found.db)) return c.json({ names: [] });
-    const rows = found.db
-      .prepare('SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 6')
-      .all(`${q}%`) as { name: string; games: number }[];
+    // An empty prefix answers with the database's biggest names — the
+    // panel opens on them before a character is typed.
+    const rows = (
+      q
+        ? found.db
+            .prepare('SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 6')
+            .all(`${q}%`)
+        : found.db.prepare('SELECT name, games FROM players ORDER BY games DESC LIMIT 6').all()
+    ) as { name: string; games: number }[];
     return c.json({ names: rows });
   });
 

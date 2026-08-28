@@ -21,9 +21,11 @@ import {
   highlightQuery,
   ResultSelect,
   SearchQueryHints,
+  SearchQueryIssues,
   StrengthSelect,
   StructuredFiltersWindow,
   type ResultFilter,
+  type SearchQueryHintsHandle,
   type StructuredFilters,
   type ValueSuggestion,
 } from './GameFilters';
@@ -433,16 +435,17 @@ export function DatabaseGames({
   /** The query-language panel under the search box, open while the box
       has focus. */
   const [hintsOpen, setHintsOpen] = useState(false);
+  const hintsControl = useRef<SearchQueryHintsHandle | null>(null);
   /** Live values for the panel: players from THIS database's derived
       lookup, openings and ECO from the vendored catalogue. */
   const suggestValues = useCallback(
     async (field: string, value: string): Promise<ValueSuggestion[]> => {
       if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
       if (field === 'player' || field === 'opponent' || field === 'white' || field === 'black') {
-        const v = value.trim();
-        if (!v) return [];
+        // An empty value still asks: the panel opens on the database's
+        // biggest names before a character is typed.
         try {
-          const params = new URLSearchParams({ q: v });
+          const params = new URLSearchParams({ q: value.trim() });
           if (curDb) params.set('db', curDb);
           const body = await api<{ names: { name: string; games: number }[] }>(
             `/api/refgames/suggest?${params.toString()}`,
@@ -1250,7 +1253,11 @@ export function DatabaseGames({
                 onFocus={() => setHintsOpen(true)}
                 onBlur={() => setHintsOpen(false)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Escape') setHintsOpen(false);
+                  if (e.key === 'Escape') {
+                    setHintsOpen(false);
+                    return;
+                  }
+                  if (hintsOpen && hintsControl.current?.handleKey(e)) return;
                 }}
                 placeholder={t('Search database…')}
                 spellCheck={false}
@@ -1258,7 +1265,12 @@ export function DatabaseGames({
                 className="w-full"
               />
               {hintsOpen && (
-                <SearchQueryHints query={query} onPick={onQuery} suggest={suggestValues} />
+                <SearchQueryHints
+                  query={query}
+                  onPick={onQuery}
+                  suggest={suggestValues}
+                  controlRef={hintsControl}
+                />
               )}
             </div>
             <Button
@@ -1279,6 +1291,7 @@ export function DatabaseGames({
               <ScanSearch className="size-3.5" />
             </Button>
           </div>
+          <SearchQueryIssues query={query} pending={hintsOpen} />
           {huntControls}
         </div>
       }
