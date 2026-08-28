@@ -210,7 +210,13 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
       <div
         className={cn(GRID, 'text-muted-foreground min-h-7 py-1 text-xs font-medium')}
       >
-        {colsOf(withStanding).map((c) => (
+        {colsOf(withStanding).map((c) =>
+          c.id === 'standing' ? (
+            // Pinned like the rows' own standing cell (see below), and
+            // without a resize handle — a pinned column's width is the
+            // controls', not the reader's.
+            <span key={c.id} className="bg-card sticky right-0" aria-hidden />
+          ) : (
           <span
             key={c.id}
             className={cn(
@@ -249,7 +255,8 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
               <span className="bg-border/60 h-3.5 w-px" />
             </span>
           </span>
-        ))}
+          ),
+        )}
       </div>
     </div>
   );
@@ -299,7 +306,7 @@ export function GameTableRow({
       title={`${game.white} vs ${game.black}`}
       className={cn(
         GRID,
-        'hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
+        'group hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
         // Selection over zebra: aria-selected because the row IS a
         // selection, and the accent wash because the details panel is
         // describing this exact line.
@@ -333,7 +340,15 @@ export function GameTableRow({
         {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
       </span>
       {standing !== undefined && (
-        <span className="flex items-center justify-end gap-1">{standing}</span>
+        // Pinned to the pane's right edge: in a window narrower than
+        // the columns the table scrolls sideways, and Add and the
+        // selection checkbox are what this list is FOR — scrolled out
+        // of sight they simply looked removed. Opaque, following the
+        // row's hover so the pin reads as part of its row; the left
+        // hairline owns up to being a pinned column.
+        <span className="border-border bg-card group-hover:bg-accent sticky right-0 z-[1] flex items-center justify-end gap-1 self-stretch border-l pl-1.5 transition-colors duration-100">
+          {standing}
+        </span>
       )}
     </li>
   );
