@@ -74,6 +74,18 @@ grows eventually, kept off until a use case actually asks for them —
   material — Scid's ladder), which answer most of the same questions at
   a fraction of the UI; revisit only when the ladder plus motifs fail a
   question someone actually asked.
+- **Tablebase support** — Syzygy probing for exact few-piece endgame
+  verdicts; worth adding when engine evaluation of an ending stops
+  being good enough — grading endgame play against perfection, or
+  settling a drawn-or-won question the engine hedges on.
+- **Multi-engine support** — installing and switching between engines
+  beyond the bundled one; worth adding when someone actually wants a
+  second opinion, or needs an engine the app does not ship.
+- **Server-side engine computation** — running the engine on the
+  server instead of in the client; worth adding when a client too weak
+  to run it well (a phone) needs real analysis, or when a long
+  analysis job should outlive the tab that asked for it. One engine
+  serving requests, not the analysis farm rejected below.
 - **Similarity and strategic-theme search** — ChessBase's similar
   endgames/structures/moves and CB18's theme search. Like novelty
   detection they only mean anything over a big canonical corpus, and
