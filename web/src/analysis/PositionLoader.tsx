@@ -9,6 +9,7 @@ const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ de
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
@@ -120,6 +121,82 @@ export function LoadPositionButton({
             </Suspense>
           )}
         </LoadDialog>
+      )}
+    </>
+  );
+}
+
+/**
+ * The same loader as a POPOVER on the trigger, for a Load button that
+ * lives inside another window — the editor's Position panel inside the
+ * hunt's board window. A window there had to do something with its
+ * parent (park it, float over it), and both read as windows breeding
+ * windows; a popover is a control's flyout, the thing every select
+ * inside a dialog already opens, so it carries no scrim and no
+ * dismissal question. The photo flow still needs a real window — the
+ * corner-adjust surface is a workspace — so it opens one, and the
+ * popover HOLDS (close requests are refused while the picture is up):
+ * backing out of the picture lands on the form exactly as it was left,
+ * typed FEN and all, which is the regression the one-window design
+ * fixed once already (see LoadDialog's page comment).
+ */
+export function LoadPositionPopover({
+  loadText,
+  applyImageFen,
+}: {
+  loadText: (value: string) => string | null;
+  applyImageFen: (fen: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [templates, setTemplates] = useState<Template[] | null>(null);
+  const [imageFile, setImageFile] = useState<Blob | null>(null);
+  return (
+    <>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (!next && templates !== null) return;
+          setOpen(next);
+        }}
+      >
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={open}
+              title={t('Load a position — FEN, PGN, or image')}
+            />
+          }
+        >
+          <FolderInput className="size-3.5" />
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-80 p-3">
+          <LoadPositionForm
+            loadText={loadText}
+            onDone={() => setOpen(false)}
+            onImage={(file) => {
+              setImageFile(file);
+              void builtinTemplates()
+                .then(setTemplates)
+                .catch(() => setTemplates([]));
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+      {templates !== null && (
+        <Suspense fallback={null}>
+          <PhotoImport
+            templates={templates}
+            initialFile={imageFile ?? undefined}
+            onApply={(reading) => {
+              if (reading.fen) applyImageFen(reading.fen);
+              setTemplates(null);
+              setOpen(false);
+            }}
+            onClose={() => setTemplates(null)}
+          />
+        </Suspense>
       )}
     </>
   );
@@ -310,9 +387,7 @@ function LoadDialog({
         if (!open) onClose();
       }}
     >
-      {/* float: opened from the hunt's board window (the editor's column
-          header), this must hover over that whole workspace, not park it. */}
-      <DialogContent title="Load position" onBack={onBack} float className="sm:max-w-md">
+      <DialogContent title="Load position" onBack={onBack} className="sm:max-w-md">
         <LoadPositionForm
           loadText={loadText}
           onDone={onClose}

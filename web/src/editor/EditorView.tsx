@@ -35,7 +35,7 @@ import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/compon
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
-import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { LoadPositionForm, LoadPositionPopover } from '@/analysis/PositionLoader';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -369,11 +369,13 @@ export function EditorView({
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
-              header to carry it. */}
+              header to carry it. A popover, not a window: this panel can
+              itself sit inside the hunt's board window, where a window
+              would have to park it or float over it. */}
           {place === 'column' && (
             <PanelHeader
               title={t('Position')}
-              actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
+              actions={<LoadPositionPopover loadText={loadText} applyImageFen={applyImageFen} />}
             />
           )}
           {/* The sheet has no PanelHeader, whose height is what normally
@@ -718,12 +720,16 @@ export function EditorView({
               <div className="flex h-9 items-center gap-2">
               {/* Position details (side to move, castling, FEN) — a LABELLED
                   button on phones, where the side column is hidden, so the FEN
-                  is never buried behind an anonymous gear. */}
+                  is never buried behind an anonymous gear. Phones ONLY
+                  (sm:hidden): everything 640px and up shows the fields
+                  standing — beside the board at wide, under it when
+                  stacked — so the button and its sheet exist for the one
+                  screen too small for either. */}
               <Button
                 variant="secondary"
                 size="sm"
                 active={sheetOpen}
-                className="h-full wide:hidden"
+                className="h-full sm:hidden"
                 onClick={() => {
                   if (sheetOpen) {
                     closeSheet(false);
@@ -754,6 +760,23 @@ export function EditorView({
             </div>
           </div>
         </div>
+
+        {/* The same panels INLINE, for the stacked layout on a desktop-
+            sized surface (a 640-704px window, a portrait tablet, the hunt
+            window on either): the host scrolls, so the fields can simply
+            sit under the board — no Position window, and none of the
+            window-over-window question that came with one (lanph3re).
+            Phones keep the button and the sheet: under 640px the board
+            must own the screen. Mounted alongside the wide column below
+            and switched by CSS, the palettes' own pattern; only one is
+            ever visible. Its own width cap, not the board's: the board
+            follows the window's HEIGHT and in a short window shrinks to
+            200px, which is a readable board but not a usable form —
+            measured there, "Halfmove clock" wrapped mid-word. 28rem is
+            the sheet's own field width. */}
+        <div className="hidden w-full max-w-md flex-col gap-3 sm:stacked:flex">
+          {positionPanels('column')}
+        </div>
       </div>
 
       {/* Position metadata: a side column when there is width for it, and a
@@ -777,7 +800,7 @@ export function EditorView({
           a scrim and a rounded-sm box built in place, from before there was a
           shared sheet — so it had no grab handle, no drag, no keyboard
           band and its own idea of the safe area. Modal is a bottom sheet
-          on a phone and this only ever opens on one (`wide:hidden` on the
+          on a phone and this only ever opens on one (`sm:hidden` on the
           button that opens it). */}
       {sheetOpen && (
         <Dialog
@@ -786,11 +809,7 @@ export function EditorView({
             if (!open) closeSheet(false);
           }}
         >
-          {/* float: on a stacked-but-desktop viewport this opens from the
-              hunt's full board window, and a page would park it — the
-              same blink the wide layout was rid of. The phone keeps the
-              page (float is a no-op there). */}
-          <DialogContent title="Position" float>
+          <DialogContent title="Position">
             {positionPanels('sheet')}
             {/* The second page, written inside the first: Modal parks this
                 sheet behind it, wires the back chevron to onClose and holds
