@@ -1008,6 +1008,7 @@ describe('native filter negotiation', () => {
       event: 'Tata Steel',
       from: '2020-01-01',
       to: '2020-01-01',
+      terms: '[{"kind":"eco","value":"B9"}]',
     };
     const value = values[key];
     if (value === undefined) {
@@ -1028,6 +1029,47 @@ describe('native filter negotiation', () => {
       return sample(key);
     });
     expect([...asked].sort()).toEqual([...GAMES_WHERE_KEYS].sort());
+  });
+
+  it('compiles the box terms to the SQL the search route built inline', () => {
+    // The clause text and bind order the /refgames/search route emitted
+    // before term compilation moved into gamesWhere — pinned here so
+    // the move is provably a move, not a rewrite.
+    const q =
+      'player:carlsen white:kasparov black:karpov opening:najdorf eco:B9 event:"world championship" result:1-0 year:2010-2015 ';
+    const { terms } = parseSearchQuery(q);
+    const got = gamesWhere((k) => (k === 'terms' ? JSON.stringify(terms) : undefined), '', false);
+    expect(got.clauses).toEqual([
+      '(white LIKE ? OR black LIKE ?)',
+      'white LIKE ?',
+      'black LIKE ?',
+      'opening LIKE ?',
+      'eco LIKE ?',
+      'event LIKE ?',
+      'result = ?',
+      "REPLACE(date, '.', '-') >= ? AND REPLACE(date, '.', '-') <= ?",
+    ]);
+    expect(got.binds).toEqual([
+      '%carlsen%',
+      '%carlsen%',
+      '%kasparov%',
+      '%karpov%',
+      '%najdorf%',
+      'B9%',
+      '%world championship%',
+      '1-0',
+      '2010-01-01',
+      '2015-12-31',
+    ]);
+    // The seek-aware player matching, same as the window's fields.
+    const seek = gamesWhere(
+      (k) => (k === 'terms' ? '[{"kind":"white","value":"carlsen"}]' : undefined),
+      '',
+      true,
+    );
+    expect(seek.clauses).toEqual(['white IN (SELECT name FROM players WHERE name LIKE ?)']);
+    // Malformed JSON filters nothing rather than everything.
+    expect(gamesWhere((k) => (k === 'terms' ? 'not json' : undefined)).clauses).toEqual([]);
   });
 
   it('parses a declaration and rejects everything else', () => {

@@ -10,7 +10,7 @@ import { makeSan, parseSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import { renameRetrying } from './atomic.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
-import { parseSearchQuery } from '../shared/searchQuery.ts';
+import { parseSearchQuery, type SearchTerm } from '../shared/searchQuery.ts';
 import {
   MATCH_MODES,
   canonicalMaterial,
@@ -520,6 +520,9 @@ export const GAMES_WHERE_KEYS = [
   'event',
   'from',
   'to',
+  // The search box's parsed terms, JSON-encoded — the whole query
+  // language as one negotiated key. See the terms block in gamesWhere.
+  'terms',
 ] as const;
 
 export function gamesWhere(
@@ -636,6 +639,60 @@ export function gamesWhere(
   if (to && DATE_RE.test(to)) {
     clauses.push(`REPLACE(${alias}date, '.', '-') <= ?`);
     binds.push(to);
+  }
+
+  // The search box's parsed terms, one JSON-encoded key so the whole
+  // query language is ONE entry in the negotiation vocabulary: a native
+  // binary that has not declared `terms` routes the request down the JS
+  // path, the same migration lane every filter takes. Parsing the
+  // LANGUAGE stays in shared/searchQuery.ts — what travels here is the
+  // already-parsed term list, and this block only compiles it, after
+  // the structured clauses exactly as the search route always ordered
+  // them. A term that fails its shape check is dropped, matching how
+  // the parser already keeps unparseable qualifiers out of `terms`.
+  const termsRaw = get('terms');
+  if (termsRaw) {
+    let terms: SearchTerm[] = [];
+    try {
+      const parsed: unknown = JSON.parse(termsRaw);
+      if (Array.isArray(parsed)) terms = parsed as SearchTerm[];
+    } catch {
+      /* malformed JSON filters nothing rather than everything */
+    }
+    for (const term of terms) {
+      if (typeof term !== 'object' || term === null) continue;
+      if (term.kind === 'player' && typeof term.value === 'string') {
+        clauses.push(`(${whiteMatch} OR ${blackMatch})`);
+        binds.push(like(term.value), like(term.value));
+      } else if (term.kind === 'white' && typeof term.value === 'string') {
+        clauses.push(whiteMatch);
+        binds.push(like(term.value));
+      } else if (term.kind === 'black' && typeof term.value === 'string') {
+        clauses.push(blackMatch);
+        binds.push(like(term.value));
+      } else if (term.kind === 'opening' && typeof term.value === 'string') {
+        clauses.push(`${alias}opening LIKE ?`);
+        binds.push(like(term.value));
+      } else if (term.kind === 'eco' && typeof term.value === 'string') {
+        clauses.push(`${alias}eco LIKE ?`);
+        binds.push(`${term.value}%`);
+      } else if (term.kind === 'event' && typeof term.value === 'string') {
+        clauses.push(`${alias}event LIKE ?`);
+        binds.push(like(term.value));
+      } else if (term.kind === 'result' && typeof term.value === 'string') {
+        clauses.push(`${alias}result = ?`);
+        binds.push(term.value);
+      } else if (
+        term.kind === 'year' &&
+        typeof term.from === 'number' &&
+        typeof term.to === 'number'
+      ) {
+        clauses.push(
+          `REPLACE(${alias}date, '.', '-') >= ? AND REPLACE(${alias}date, '.', '-') <= ?`,
+        );
+        binds.push(`${term.from}-01-01`, `${term.to}-12-31`);
+      }
+    }
   }
 
   return { clauses, binds };
@@ -1254,43 +1311,24 @@ export function refGamesApi(
     // Beside it, the structured filters — player/side/outcome, opening,
     // event, dates, result, strength — every combination composable (see
     // gamesWhere).
-    const structured = gamesWhere((k) => c.req.query(k), '', seek);
+    // The parsed terms ride through gamesWhere as its `terms` key — the
+    // ONE compiler for both the window's fields and the box's language,
+    // so `kasparov vs karpov` in the box and Player + Opponent in the
+    // window build the same SQL, and the deep-search route composes the
+    // same way. The raw query's own `terms` key (if a caller sent one)
+    // is overridden: this route's terms come from `q` alone.
+    const structured = gamesWhere(
+      (k) =>
+        k === 'terms'
+          ? parsed.terms.length > 0
+            ? JSON.stringify(parsed.terms)
+            : undefined
+          : c.req.query(k),
+      '',
+      seek,
+    );
     const clauses = [...structured.clauses];
     const args = [...structured.binds];
-
-    // The parsed terms, each one more AND clause — the same player
-    // matching gamesWhere uses (through the lookup table where the
-    // database carries it), so `kasparov vs karpov` in the box and
-    // Player + Opponent in the window build the same SQL.
-    const whiteMatch = seek ? 'white IN (SELECT name FROM players WHERE name LIKE ?)' : 'white LIKE ?';
-    const blackMatch = seek ? 'black IN (SELECT name FROM players WHERE name LIKE ?)' : 'black LIKE ?';
-    for (const term of parsed.terms) {
-      if (term.kind === 'player') {
-        clauses.push(`(${whiteMatch} OR ${blackMatch})`);
-        args.push(`%${term.value}%`, `%${term.value}%`);
-      } else if (term.kind === 'white') {
-        clauses.push(whiteMatch);
-        args.push(`%${term.value}%`);
-      } else if (term.kind === 'black') {
-        clauses.push(blackMatch);
-        args.push(`%${term.value}%`);
-      } else if (term.kind === 'opening') {
-        clauses.push('opening LIKE ?');
-        args.push(`%${term.value}%`);
-      } else if (term.kind === 'eco') {
-        clauses.push('eco LIKE ?');
-        args.push(`${term.value}%`);
-      } else if (term.kind === 'event') {
-        clauses.push('event LIKE ?');
-        args.push(`%${term.value}%`);
-      } else if (term.kind === 'result') {
-        clauses.push('result = ?');
-        args.push(term.value);
-      } else if (term.kind === 'year') {
-        clauses.push("REPLACE(date, '.', '-') >= ? AND REPLACE(date, '.', '-') <= ?");
-        args.push(`${term.from}-01-01`, `${term.to}-12-31`);
-      }
-    }
 
     if (q) {
       if (seek) {
