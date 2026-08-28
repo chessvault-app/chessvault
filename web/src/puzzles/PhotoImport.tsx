@@ -39,12 +39,17 @@ export function PhotoImport({
   onApply,
   onClose,
   initialFile,
+  windowClassName,
 }: {
   templates: Template[];
   onApply: (reading: PhotoReading) => void;
   onClose: () => void;
   /** Skip the chooser: a file already picked by the caller's own UI. */
   initialFile?: Blob;
+  /** On the window itself — for a caller whose window CHAIN shares one
+      size, so this page opens in the same rect it covers (the editor's
+      test-2 experiment). */
+  windowClassName?: string;
 }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);
@@ -313,7 +318,7 @@ export function PhotoImport({
         title="Position from an image"
         icon={ImageUp}
         fill
-        className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
+        className={cn('relative sm:max-w-[38rem]', windowClassName, dragOver && 'border-primary')}
       >
         {dragOver && (
           <div className="bg-muted/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">

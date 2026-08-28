@@ -31,7 +31,12 @@ import { Input } from '@/components/ui/input';
 import { KingIcon } from '@/components/king-icon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/components/panel';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import {
+  BOARD_SCROLL_SHELL,
+  BOARD_WIDE_COLUMN,
+  BOARD_WIDE_SIDE,
+  EDITOR_WINDOW_SIZE,
+} from '@/components/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
@@ -539,7 +544,11 @@ export function EditorView({
             the sheet — the wide layout's column is not a window, it is
             the editor itself, and its edits are the position. */}
         {place === 'sheet' && (
-          <div className="flex justify-end gap-2">
+          // mt-auto: in the chain's fixed-height card (EDITOR_WINDOW_SIZE)
+          // the fields end mid-window, and the buttons sit on the floor
+          // like every window's do. A content-sized phone sheet has no
+          // slack, so nothing moves there.
+          <div className="mt-auto flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
               {t('Cancel')}
             </Button>
@@ -786,11 +795,10 @@ export function EditorView({
             if (!open) closeSheet(false);
           }}
         >
-          {/* float: on a stacked-but-desktop viewport this opens from the
-              hunt's full board window, and a page would park it — the
-              same blink the wide layout was rid of. The phone keeps the
-              page (float is a no-op there). */}
-          <DialogContent title="Position" float>
+          {/* EXPERIMENT (test 2): the same rect as the board window it
+              pages over — a park between same-sized windows is a content
+              swap, not a blink — so no float. Phones keep the sheet. */}
+          <DialogContent title="Position" className={EDITOR_WINDOW_SIZE}>
             {positionPanels('sheet')}
             {/* The second page, written inside the first: Modal parks this
                 sheet behind it, wires the back chevron to onClose and holds
@@ -802,7 +810,7 @@ export function EditorView({
                   if (!open) setLoadPage(false);
                 }}
               >
-                <DialogContent title="Load position">
+                <DialogContent title="Load position" className={EDITOR_WINDOW_SIZE}>
                   <LoadPositionForm
                     loadText={loadText}
                     // The loaded position IS the answer, so this commits —
@@ -826,6 +834,7 @@ export function EditorView({
                       <PhotoImport
                         templates={photoTemplates}
                         initialFile={photoFile ?? undefined}
+                        windowClassName={EDITOR_WINDOW_SIZE}
                         onApply={(reading) => {
                           if (reading.fen) applyImageFen(reading.fen);
                           setPhotoTemplates(null);

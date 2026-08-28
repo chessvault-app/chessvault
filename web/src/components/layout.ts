@@ -168,3 +168,18 @@ export const BOARD_SCROLL_SHELL =
  */
 export const BOARD_HELD_SHELL =
   'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ' + BOARD_WIDE_SHELL;
+
+/**
+ * EXPERIMENT (nested windows, test 2 — lanph3re): one fixed size for the
+ * whole editor window CHAIN — the hunt's board window, the Position
+ * window it pages to, that window's Load page, and the picture window
+ * after that. A page parks the window it came from, and the park reads
+ * as a blink exactly when the successor is a different size; four
+ * windows sharing one rect make each page turn a content swap in a
+ * frame that never moves. Desktop only (sm:) — the phone sheets keep
+ * their own physics. The height term also feeds the board's size: at
+ * 46rem the board runs to the card's 28rem inner width; on shorter
+ * viewports both the card (94dvh) and the board's own dvh formula
+ * shrink in step.
+ */
+export const EDITOR_WINDOW_SIZE = 'sm:h-[min(46rem,94dvh)] sm:w-[min(30rem,94vw)] sm:max-w-none';
