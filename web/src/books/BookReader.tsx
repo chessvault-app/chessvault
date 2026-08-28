@@ -164,7 +164,13 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const job = useDiagramJob();
   const reading = job.bookId === id && job.status === 'running' ? job : null;
 
-  const [tab, setTab] = useState<'book' | 'board'>('book');
+  const [tab, setTab] = useState<'book' | 'board' | 'editor'>('book');
+  // Opening the editor at wide swaps it for the board beside the page; on
+  // a phone the editor IS a pane, so opening one is turning to its tab.
+  const openEditor = (fen: string) => {
+    setEditing(fen);
+    if (!wide) setTab('editor');
+  };
   // The board-over-panel arrangement beside the PDF: one pane at a time
   // under the board, as the phone does, rather than a panel that scrolls.
   const [loadOpen, setLoadOpen] = useState(false);
@@ -196,7 +202,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             onSet={() => {
               if (!wide) setTab('board');
             }}
-            onEdit={setEditing}
+            onEdit={openEditor}
           />
         )}
       </>
@@ -256,11 +262,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
               onLoadPosition={() => setLoadOpen(true)}
               extra={[
                 {
-                  label: 'Fix this position in the editor',
-                  icon: SquarePen,
-                  onSelect: () => setEditing(boardFen),
-                },
-                {
                   label: 'Open on the board page',
                   icon: Grid3x3,
                   onSelect: () => {
@@ -286,20 +287,32 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       {/* The same band as the toolbars over the PDF and the board — outside
           the force-stacked box below, whose `wide:` classes are off. Inset
           only at wide: stacked, it sits in the board shell's own padding,
-          flush like the reader's row there. */}
-      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
-        <Button variant="ghost" size="icon-sm" title={t('Back to the board')} onClick={() => setEditing(null)}>
-          <ChevronLeft className="size-3.5" />
-        </Button>
-        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{t('Edit position')}</h1>
-      </div>
+          flush like the reader's row there.
+
+          Wide only, now that a phone reaches the editor through the tab
+          strip: the strip already names this pane and is already the way
+          out of it, so a header saying both again cost the editor a row of
+          board for nothing. */}
+      {wide && (
+        <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
+          <Button variant="ghost" size="icon-sm" title={t('Back to the board')} onClick={() => setEditing(null)}>
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{t('Edit position')}</h1>
+        </div>
+      )}
       <div className={cn('min-h-0 flex-1', stackEditor && 'force-stacked')}>
         <EditorView
           key={editing}
           initialFen={editing}
           useLabel={t('Use on the board')}
           onUse={(fen) => {
-            if (loadFen(fen)) setEditing(null);
+            if (!loadFen(fen)) return;
+            // At wide the editor is standing where the board was, so using
+            // a position is closing it; on a phone the board is the tab
+            // next door, and the editor stays as it is behind it.
+            if (wide) setEditing(null);
+            else setTab('board');
           }}
         />
       </div>
@@ -348,7 +361,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         variant="ghost"
         size="icon-sm"
         title={t('Fix this position in the editor')}
-        onClick={() => setEditing(boardFen)}
+        onClick={() => openEditor(boardFen)}
       >
         <SquarePen className="size-3.5" />
       </Button>
@@ -416,10 +429,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // turns the page between the book, filling the screen, and the board
   // with its moves under it — never both; the bottom bar is the board's
   // and only shows with it.
-  if (editor) {
-    // Editing is the whole screen: the editor's own band is the header.
-    return <div className={BOARD_HELD_SHELL}>{editor}</div>;
-  }
   return (
     <div className={BOARD_HELD_SHELL}>
       {header(true)}
@@ -427,10 +436,20 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         <>
           <PaneTabs
             value={tab}
-            onChange={setTab}
+            onChange={(id) => {
+              // The tab is reached by hand as well as from a diagram, and
+              // by hand it has no position of its own: what Edit means
+              // with nothing chosen is the board as it stands. Seeded on
+              // the way in rather than while rendering, so the key — and
+              // with it the editor's state — holds still while the board
+              // moves behind the other tabs.
+              if (id === 'editor' && editing === null) setEditing(boardFen);
+              setTab(id);
+            }}
             tabs={[
               { id: 'book', label: t('Book'), icon: BookText },
               { id: 'board', label: t('Board'), icon: Grid3x3 },
+              { id: 'editor', label: t('Edit'), icon: SquarePen },
             ]}
           />
           <div
@@ -440,12 +459,20 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             {pdfPane(stackedPaneW, true)}
           </div>
           <div className={cn('flex min-h-0 flex-1 flex-col gap-2', tab !== 'board' && 'hidden')}>
-            <AnalysisBoard />
+            {/* No navigation under the board: the moves panel below has it
+                at md, the bottom bar has it under that. */}
+            <AnalysisBoard nav={false} />
             <div
               className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
             >
               {movesPanel()}
             </div>
+          </div>
+          {/* Kept mounted behind the other tabs, as they are behind it: an
+              editor unmounted on the way to the page it was read from
+              would lose a half-placed position every time. */}
+          <div className={cn('flex min-h-0 flex-1 flex-col', tab !== 'editor' && 'hidden')}>
+            {editor}
           </div>
         </>
       }
@@ -455,7 +482,14 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         {tab === 'board' ? (
           <BoardControls keyboard={false} className="py-1.5" />
         ) : (
-          <div ref={setBarSlot} className="flex flex-1 items-center justify-center" />
+          // The editor carries its own toolbar under its board, so the bar
+          // holds nothing on that tab — claimed and empty (as a note being
+          // written does), which is what keeps the global navigation from
+          // coming back under a half-placed position.
+          <div
+            ref={setBarSlot}
+            className={cn('flex flex-1 items-center justify-center', tab === 'editor' && 'hidden')}
+          />
         )}
       </MobileActionBar>
     </div>
