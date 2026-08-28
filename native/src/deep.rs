@@ -11,7 +11,7 @@ use std::path::Path;
 use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension};
 use serde_json::json;
-use shakmaty::{fen::Fen, san::SanPlus, CastlingMode, Chess, Color, Position};
+use shakmaty::{fen::Fen, san::SanPlus, CastlingMode, Chess, Color, FromSetup, Position};
 
 use crate::filters::games_where;
 use crate::scan_match::{
@@ -161,19 +161,34 @@ pub fn run_deep_search(
     } else {
         let fen = fen.ok_or("--fen or --material is required")?;
         let parsed: Fen = fen.trim().parse().map_err(|_| "bad fen")?;
-        let pos: Chess = parsed
-            .into_position(CastlingMode::Chess960)
-            .map_err(|_| "bad position")?;
-        target = match rung {
-            None => Target::Exact(to_db_key(hash_position(&pos))),
+        let setup = parsed.into_setup();
+        // Mirror of the JS route (server/refgames.ts): the relaxed rungs
+        // compare pawn squares, files or counts and the side to move —
+        // none of the facts legality guards — so a kingless sketch (a
+        // pawn-structure query) builds its target from the raw setup.
+        // Exact stays strict: its key comes from the legal, normalised
+        // position. The two paths must refuse and accept the same inputs.
+        let (board, turn) = match rung {
+            None => {
+                let pos: Chess = Chess::from_setup(setup, CastlingMode::Chess960)
+                    .map_err(|_| "bad position")?;
+                target = Target::Exact(to_db_key(hash_position(&pos)));
+                (pos.board().clone(), pos.turn())
+            }
             Some(raw) => {
                 let rung = Rung::parse(raw).ok_or("bad match mode")?;
-                Target::Relaxed(rung, match_signature(pos.board(), rung))
+                target = Target::Relaxed(rung, match_signature(&setup.board, rung));
+                (setup.board.clone(), setup.turn)
             }
         };
-        target_w = i64::from(pos.board().white().count() as u32);
-        target_b = i64::from(pos.board().black().count() as u32);
-        want_black_to_move = pos.turn() == Color::Black;
+        // The men gates count a missing king as present, as the JS side
+        // does: every position a game passes through has both kings, so
+        // a kingless sketch means "this structure, kings wherever they
+        // stand". A legal target is unchanged.
+        let kingless = |side: shakmaty::Bitboard| i64::from((board.kings() & side).is_empty());
+        target_w = i64::from(board.white().count() as u32) + kingless(board.white());
+        target_b = i64::from(board.black().count() as u32) + kingless(board.black());
+        want_black_to_move = turn == Color::Black;
         (target_w, target_b, 32 - target_w - target_b, None)
     };
 

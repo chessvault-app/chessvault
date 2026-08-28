@@ -1,4 +1,6 @@
 import { Chess } from 'chessops/chess';
+import type { Setup } from 'chessops/setup';
+import type { SquareSet } from 'chessops/squareSet';
 import { parseSan } from 'chessops/san';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import {
@@ -52,27 +54,41 @@ export interface PositionTarget {
 
 const MASK32 = 0xffffffffn;
 
-/** Build the target from a parsed position, for either speed. */
-export function positionTarget(target: Chess, mode: MatchMode): PositionTarget {
-  const hash = hashSetup(target.toSetup());
-  const sets = [
-    target.board.pawn,
-    target.board.knight,
-    target.board.bishop,
-    target.board.rook,
-    target.board.queen,
-  ];
+/**
+ * Build the target from a parsed position, for either speed.
+ *
+ * A raw Setup is accepted for the RELAXED rungs: they compare pawn
+ * squares, files or counts and the side to move — none of the facts
+ * legality guards — so a kingless sketch (a pawn-structure query) is a
+ * legitimate target there. A legal position still goes through
+ * `toSetup()` normalisation, which is what keeps the exact rung's key
+ * identical to index time (the consistency rule in shared/zobrist.ts);
+ * the exact rung must therefore never be handed a raw Setup, and the
+ * route guards that.
+ */
+export function positionTarget(target: Chess | Setup, mode: MatchMode): PositionTarget {
+  const setup = target instanceof Chess ? target.toSetup() : target;
+  const hash = hashSetup(setup);
+  const board = setup.board;
+  const sets = [board.pawn, board.knight, board.bishop, board.rook, board.queen];
+  // The men gates (w/b) count a missing king as present: every position
+  // a game passes through has both kings, so a kingless sketch means
+  // "this structure, kings wherever they stand" — and a gate demanding
+  // king-less men counts would match nothing, ever, with no error to
+  // say so. A legal target is unchanged: its kings are on the board.
+  const kingless = (side: SquareSet): 0 | 1 =>
+    board.king.intersect(side).isEmpty() ? 1 : 0;
   return {
     mode,
     key: toDbKey(hash),
     key32: Number(hash & MASK32),
-    sig: mode === 'exact' ? '' : matchSignature(target.board, mode),
-    pawns8: pawnFilesHash(target.board),
-    wCounts: sets.map((s) => s.intersect(target.board.white).size()),
-    bCounts: sets.map((s) => s.intersect(target.board.black).size()),
-    w: target.board.white.size(),
-    b: target.board.black.size(),
-    blackToMove: target.turn === 'black',
+    sig: mode === 'exact' ? '' : matchSignature(board, mode),
+    pawns8: pawnFilesHash(board),
+    wCounts: sets.map((s) => s.intersect(board.white).size()),
+    bCounts: sets.map((s) => s.intersect(board.black).size()),
+    w: board.white.size() + kingless(board.white),
+    b: board.black.size() + kingless(board.black),
+    blackToMove: setup.turn === 'black',
   };
 }
 

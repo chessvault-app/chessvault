@@ -1729,8 +1729,18 @@ export function refGamesApi(
       const setup = parseFen(fen);
       if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
       const position = Chess.fromSetup(setup.unwrap());
-      if (position.isErr) return c.json({ error: 'bad position' }, 400);
-      target = positionTarget(position.unwrap(), mode);
+      // The relaxed rungs compare pawn squares, files or counts and the
+      // side to move — none of the facts legality guards — so a kingless
+      // sketch (a pawn-structure query) is a legitimate target there and
+      // builds from the raw setup. Exact stays strict: its key must come
+      // from the NORMALISED setup (shared/zobrist.ts's consistency rule),
+      // which only a legal position can produce. Mirrored in
+      // native/src/deep.rs — the two paths must refuse and accept the
+      // same inputs.
+      if (position.isErr && mode === 'exact') return c.json({ error: 'bad position' }, 400);
+      target = position.isErr
+        ? positionTarget(setup.unwrap(), mode)
+        : positionTarget(position.unwrap(), mode);
       menCeilW = target.w;
       menCeilB = target.b;
       minPly = 32 - target.w - target.b;
