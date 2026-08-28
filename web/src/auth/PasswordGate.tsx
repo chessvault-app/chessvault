@@ -116,10 +116,11 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     <div className="bg-background text-foreground flex h-[100dvh] flex-col items-center justify-center p-6">
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* The same mark as the sidebar — the lock screen is the front
-            door, so it wears the brand, not a padlock. */}
-        <div className="bg-primary text-primary-foreground mb-5 grid size-14 place-items-center rounded-2xl shadow-sm">
-          <BrandMark className="size-8" />
-        </div>
+            door, so it wears the brand, not a padlock. Bare, like the
+            sidebar's and the home header's: everywhere in the app the
+            mark is line-work in the surrounding ink, and the tile lives
+            only where an OS icon needs its own ground (favicon, splash). */}
+        <BrandMark className="mb-5 size-10" />
         <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
         <p className="text-muted-foreground mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 

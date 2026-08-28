@@ -354,9 +354,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         title={t('Home')}
         className="hover:bg-accent flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
       >
-        <div className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-lg">
-          <BrandMark className="size-5" />
-        </div>
+        {/* Bare, in the text's own ink — the same treatment as the home
+            header. The filled tile it used to sit on read as a button
+            distinct from the wordmark beside it. */}
+        <BrandMark className="size-6 shrink-0" />
         <span className="hidden truncate text-base font-semibold tracking-tight lg:block">
           {t('Chess Vault')}
         </span>
