@@ -41,6 +41,7 @@ mkdirSync(SITE, { recursive: true });
 cpSync(APP_BUILD, resolve(SITE, 'app'), { recursive: true });
 
 copyFileSync(resolve(REPO_ROOT, 'web/landing/index.html'), resolve(SITE, 'index.html'));
+copyFileSync(resolve(REPO_ROOT, 'web/landing/manual.html'), resolve(SITE, 'manual.html'));
 
 // Screenshots are shared with the README rather than duplicated.
 const shots = resolve(SITE, 'shots');
@@ -65,5 +66,6 @@ const size = (dir: string): number => {
 
 console.log(`site: ${SITE} (${(size(SITE) / 1024 / 1024).toFixed(1)} MB)`);
 console.log('  /            landing page');
+console.log('  /manual.html the manual');
 console.log('  /app/        the demo');
 console.log('  /shots/      screenshots');
