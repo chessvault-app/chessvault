@@ -117,12 +117,9 @@
       header { padding-block: var(--s3); border-bottom: 1px solid var(--border); }
       .bar { display: flex; align-items: center; gap: var(--s3); }
       .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; }
-      /* The app's mark: white on a black tile, in both themes — it takes
-         no side, like the favicon. */
-      .mark svg { width: 1.75rem; height: 1.75rem; border-radius: 0.45rem; background: oklch(14.5% 0 0); color: oklch(100% 0 0); padding: 0.2rem; }
-      @media (prefers-color-scheme: dark) {
-        .mark svg { box-shadow: 0 0 0 1px var(--hairline); }
-      }
+      /* The bare hex in currentColor, as the manual wears it — one mark
+         across the site's pages. */
+      .mark svg { width: 1.5rem; height: 1.5rem; }
       .bar .spacer { margin-left: auto; }
       /* The language switch is the registry's Tabs: a muted track, and the
          chosen tab a raised pill on the card colour. */
@@ -274,7 +271,7 @@
     <header>
       <div class="wrap bar">
         <span class="mark">
-          <!-- The app's mark: the hex from favicon.svg, white on its black tile. -->
+          <!-- The app's mark: the hex from favicon.svg, bare in currentColor. -->
           <svg viewBox="20 20 80 80" fill="currentColor" aria-hidden="true">
             <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" />
             <path d="M60 60 L60 24 L91 42 Z" />
