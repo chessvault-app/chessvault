@@ -1,4 +1,11 @@
-import { ExternalLink, MousePointerClick } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ExternalLink,
+  MousePointerClick,
+} from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -7,6 +14,7 @@ import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { cn } from '@/lib/utils';
 
+import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -204,7 +212,10 @@ function GameDetailsContent({
       </div>
 
       {selection.actions && (
-        <div className="flex flex-wrap items-center gap-2">{selection.actions}</div>
+        // Right-aligned like every other action row in the app (dialog
+        // footers, the managers): controls end where the eye expects a
+        // decision, and the content above stays the reading column.
+        <div className="flex flex-wrap items-center justify-end gap-2">{selection.actions}</div>
       )}
 
       {fen && (
@@ -215,6 +226,54 @@ function GameDetailsContent({
           coordinates={false}
           className="w-full rounded-lg"
         />
+      )}
+
+      {/* The stepper says out loud what ←/→ and the tappable notation
+          do quietly — a board that navigates is not a fact a still
+          image volunteers. Same four verbs as the analysis board's own
+          bar, in miniature, with the ply count between them. */}
+      {replay && replay.plies.length > 0 && (
+        <div className="-mt-1 flex items-center justify-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Start')}
+            disabled={idx === 0}
+            onClick={() => setIdx(0)}
+          >
+            <ChevronsLeft className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Back')}
+            disabled={idx === 0}
+            onClick={() => setIdx(Math.max(0, idx - 1))}
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <span className="text-muted-foreground min-w-14 text-center text-xs tabular-nums">
+            {idx} / {replay.plies.length}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Forward')}
+            disabled={idx === replay.plies.length}
+            onClick={() => setIdx(Math.min(replay.plies.length, idx + 1))}
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('End')}
+            disabled={idx === replay.plies.length}
+            onClick={() => setIdx(replay.plies.length)}
+          >
+            <ChevronsRight className="size-3.5" />
+          </Button>
+        </div>
       )}
 
       {replay ? (

@@ -1,8 +1,10 @@
 import {
   Bookmark,
   Globe,
+  Pencil,
   Play,
   Plus,
+  Trash2,
   Database as DatabaseIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -314,6 +316,29 @@ export function CollectionView() {
                     data-icon="inline-start"
                   />
                   {bookmarks.has(gameKey(colSelGame)) ? t('Bookmarked') : t('Bookmark')}
+                </Button>
+                {/* The row's remaining verbs, visible: the table rows
+                    have no tray or ⋯, and a verb that lives only behind
+                    a right-click is a verb most people never find. */}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setRenamingKey(gameKey(colSelGame))}
+                >
+                  <Pencil className="size-3.5" data-icon="inline-start" />
+                  {t('Rename')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => {
+                    dropGame(colSelGame);
+                    setColSelKey(null);
+                  }}
+                >
+                  <Trash2 className="size-3.5" data-icon="inline-start" />
+                  {t('Remove')}
                 </Button>
               </>
             ),
