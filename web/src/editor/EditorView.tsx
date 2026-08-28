@@ -41,6 +41,7 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { useMediaQuery } from '@/lib/media';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -135,6 +136,7 @@ export function EditorView({
   useLabel = t('Analyse'),
   initialFen,
   anyPosition = false,
+  paged = false,
 }: {
   /** Embedded mode: hand the legal position back instead of navigating. */
   onUse?: (fen: string) => void;
@@ -149,6 +151,16 @@ export function EditorView({
    * nothing, and the line says why — but it no longer bars the button.
    */
   anyPosition?: boolean;
+  /**
+   * EXPERIMENT (test 2, third fitting — lanph3re): the chain turns
+   * pages INSIDE this one window instead of opening windows over it.
+   * Two windows trading places always cost a frame somewhere — the
+   * animation rode the window, not the content — so the Position and
+   * Load pages become content of the embedded editor itself, sliding
+   * within the host's fixed frame. Desktop only; under 640px the
+   * sheet flow stands.
+   */
+  paged?: boolean;
 }) {
   /** Embedded: someone else owns the position, by prop or by callback. */
   const embedded = onUse !== undefined || initialFen !== undefined;
@@ -170,6 +182,21 @@ export function EditorView({
   const [tool, setTool] = useState<Tool>(() => restored?.tool ?? { kind: 'move' });
   const [orientation, setOrientation] = useState<Color>(() => restored?.orientation ?? 'white');
   const [sheetOpen, setSheetOpen] = useState(false);
+  /**
+   * The paged chain's current page and travel direction (see `paged`).
+   * Direction feeds the slide: forward pages arrive from the right,
+   * back from the left — the content moves, the window never does.
+   */
+  const PAGE_IDX = { board: 0, position: 1, load: 2 } as const;
+  const [chain, setChain] = useState<{ page: 'board' | 'position' | 'load'; dir: 'fwd' | 'back' }>(
+    { page: 'board', dir: 'fwd' },
+  );
+  const goto = (page: 'board' | 'position' | 'load'): void =>
+    setChain((c) => ({ page, dir: PAGE_IDX[page] > PAGE_IDX[c.page] ? 'fwd' : 'back' }));
+  /** The sheet's breakpoint: below it the Position button opens the sheet. */
+  const overSm = useMediaQuery('(min-width: 40rem)');
+  /** Paging live this render — bounded by viewport so a resize resolves it. */
+  const paging = paged && overSm;
   /**
    * The position as it stood when the Position sheet was opened.
    *
@@ -377,17 +404,47 @@ export function EditorView({
    *              apart), and the loader is a page turn from the FEN
    *              footer, having no header to live in.
    */
-  const positionPanels = (place: 'column' | 'sheet') => (
+  const positionPanels = (place: 'column' | 'page' | 'sheet') => (
     <>
         <Panel>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
-              header to carry it. */}
+              header to carry it. In the paged chain ('page') the header
+              also leads with the chevron back to the board, and Load is
+              the chain's next page, not a window. */}
           {place === 'column' && (
             <PanelHeader
               title={t('Position')}
               actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
+            />
+          )}
+          {place === 'page' && (
+            <PanelHeader
+              title={
+                <span className="flex items-center gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t('Back to the board')}
+                    className="-ml-1.5 shrink-0"
+                    onClick={() => goto('board')}
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </Button>
+                  {t('Position')}
+                </span>
+              }
+              actions={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Load a position — FEN, PGN, or image')}
+                  onClick={() => goto('load')}
+                >
+                  <FolderInput className="size-3.5" />
+                </Button>
+              }
             />
           )}
           {/* The sheet has no PanelHeader, whose height is what normally
@@ -594,8 +651,17 @@ export function EditorView({
 
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
-          Top-anchored like AnalysisBoard: same board y in every view. */}
-      <div className={`${BOARD_WIDE_COLUMN} stacked:my-auto`}>
+          Top-anchored like AnalysisBoard: same board y in every view.
+          On the paged chain's other pages the column steps aside but
+          stays mounted, so chessground never rebuilds and the way back
+          is instant. */}
+      <div
+        className={cn(
+          BOARD_WIDE_COLUMN,
+          'stacked:my-auto',
+          paging && chain.page !== 'board' && 'hidden',
+        )}
+      >
         {/* The eval bar's width, kept open beside the whole stack rather
             than beside the board alone: the palettes and the toolbar align
             to the board's edges, so they are indented by exactly what the
@@ -746,6 +812,13 @@ export function EditorView({
                 active={sheetOpen}
                 className="h-full wide:hidden"
                 onClick={() => {
+                  // The paged chain: a page of this window, not a window
+                  // over it (see `paged`). Edits are live, like the wide
+                  // column's; the draft-and-Apply stays the sheet's.
+                  if (paging) {
+                    goto('position');
+                    return;
+                  }
                   if (sheetOpen) {
                     closeSheet(false);
                     return;
@@ -783,6 +856,59 @@ export function EditorView({
         </div>
       </div>
 
+      {/* The paged chain's pages, in the board's place — keyed so each
+          arrival animates, and the SLIDE is on this content block, not
+          on any window: the frame around it never moves (lanph3re: the
+          window-level animation still read as flicker). Forward comes
+          from the right, back from the left. */}
+      {paging && chain.page !== 'board' && (
+        <div
+          key={chain.page}
+          className={cn(
+            'animate-in flex min-h-0 w-full flex-1 flex-col gap-3 duration-150',
+            chain.dir === 'fwd' ? 'slide-in-from-right-8' : 'slide-in-from-left-8',
+          )}
+        >
+          {chain.page === 'position' ? (
+            positionPanels('page')
+          ) : (
+            <Panel className="flex min-h-0 flex-1 flex-col">
+              <PanelHeader
+                title={
+                  <span className="flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title={t('Back')}
+                      className="-ml-1.5 shrink-0"
+                      onClick={() => goto('position')}
+                    >
+                      <ChevronLeft className="size-3.5" />
+                    </Button>
+                    {t('Load position')}
+                  </span>
+                }
+              />
+              <div className="flex min-h-0 flex-1 flex-col gap-3 px-(--card-spacing) pb-(--card-spacing)">
+                <LoadPositionForm
+                  loadText={loadText}
+                  fill
+                  // A loaded position IS the answer: back to the board
+                  // that now shows it.
+                  onDone={() => goto('board')}
+                  onImage={(file) => {
+                    setPhotoFile(file);
+                    void builtinTemplates()
+                      .then(setPhotoTemplates)
+                      .catch(() => setPhotoTemplates([]));
+                  }}
+                />
+              </div>
+            </Panel>
+          )}
+        </div>
+      )}
+
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
       <div className={`hidden min-h-0 flex-col gap-3 overflow-y-auto [&>section]:shrink-0 wide:flex ${BOARD_WIDE_SIDE}`}>
@@ -813,11 +939,10 @@ export function EditorView({
             if (!open) closeSheet(false);
           }}
         >
-          {/* EXPERIMENT (test 2): the same rect as the board window it
-              pages over — a park between same-sized windows is a content
-              swap, not a blink — so no float, and `page` for the swap's
-              own physics (slide in, instant back). Phones keep the sheet. */}
-          <DialogContent title="Position" className={EDITOR_WINDOW_SIZE} page>
+          {/* The paged chain no longer opens this on a desktop (its
+              Position is a content page now); this window serves phones
+              and the standalone stacked editor, in its own clothes. */}
+          <DialogContent title="Position">
             {positionPanels('sheet')}
             {/* The second page, written inside the first: Modal parks this
                 sheet behind it, wires the back chevron to onClose and holds
@@ -829,10 +954,9 @@ export function EditorView({
                   if (!open) setLoadPage(false);
                 }}
               >
-                <DialogContent title="Load position" className={EDITOR_WINDOW_SIZE} page>
+                <DialogContent title="Load position">
                   <LoadPositionForm
                     loadText={loadText}
-                    fill
                     // The loaded position IS the answer, so this commits —
                     // there is nothing of the draft left to keep or discard.
                     onDone={() => closeSheet(true)}
@@ -854,8 +978,6 @@ export function EditorView({
                       <PhotoImport
                         templates={photoTemplates}
                         initialFile={photoFile ?? undefined}
-                        windowClassName={EDITOR_WINDOW_SIZE}
-                        windowPage
                         onApply={(reading) => {
                           if (reading.fen) applyImageFen(reading.fen);
                           setPhotoTemplates(null);
@@ -872,6 +994,27 @@ export function EditorView({
         </Dialog>
       )}
 
+      {/* The picture flow for the paged chain's Load page: still a real
+          window — the corner-adjust surface is a workspace — wearing the
+          chain's rect and page physics. The sheet flow's copy lives
+          nested in its load page above; this one answers only when no
+          sheet is up. */}
+      {photoTemplates !== null && !sheetOpen && (
+        <Suspense fallback={null}>
+          <PhotoImport
+            templates={photoTemplates}
+            initialFile={photoFile ?? undefined}
+            windowClassName={EDITOR_WINDOW_SIZE}
+            windowPage
+            onApply={(reading) => {
+              if (reading.fen) applyImageFen(reading.fen);
+              setPhotoTemplates(null);
+              goto('board');
+            }}
+            onClose={() => setPhotoTemplates(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

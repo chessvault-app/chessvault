@@ -1429,6 +1429,8 @@ export function DatabaseGames({
                 // rungs (pawn structure, material); legality must not
                 // bar the Search button here (lanph3re).
                 anyPosition
+                // The chain pages inside this window (see EditorView.paged).
+                paged
                 onUse={(fen) => {
                   setHuntFen(fen);
                   setSettingUp(false);

@@ -229,7 +229,10 @@ export function LoadPositionForm({
           placeholder={t('Paste a FEN or PGN, then press Enter')}
           className={cn(
             'w-full resize-none font-mono leading-relaxed placeholder:font-sans',
-            fill && 'sm:min-h-0 sm:grow',
+            // Capped growth: uncapped, the two boxes swallowed the whole
+            // frame and read as oversized (lanph3re) — a paste box wants
+            // a paragraph's height, not a page's.
+            fill && 'sm:min-h-0 sm:max-h-48 sm:grow',
           )}
         />
         {!text && (
@@ -260,7 +263,7 @@ export function LoadPositionForm({
       <label
         className={cn(
           'border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
-          fill && 'sm:grow sm:justify-center',
+          fill && 'sm:max-h-44 sm:grow sm:justify-center',
         )}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
