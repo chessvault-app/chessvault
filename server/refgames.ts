@@ -1702,9 +1702,28 @@ export function refGamesApi(
       minPly = 32 - target.w - target.b;
     }
 
+    // The search box rides along with the hunt: `q` parses here with
+    // the shared parser, its plain text becomes a player term (either
+    // seat — the meaning the text search gives bare words), and the
+    // terms travel as gamesWhere's `terms` key. ONE getter feeds the
+    // JS WHERE, the native negotiation and the native forward below,
+    // so the three paths cannot disagree about what was asked. A
+    // caller-sent raw `terms` key is overridden — this route's terms
+    // come from `q` alone, as on /refgames/search.
+    const parsedQ = parseSearchQuery((c.req.query('q') ?? '').trim());
+    const qTerms: SearchTerm[] = parsedQ.text
+      ? [...parsedQ.terms, { kind: 'player', value: parsedQ.text }]
+      : parsedQ.terms;
+    const getFilter = (k: string): string | undefined =>
+      k === 'terms'
+        ? qTerms.length > 0
+          ? JSON.stringify(qTerms)
+          : undefined
+        : c.req.query(k);
+
     // The filter SQL, computed once for every path below: the resident
     // scan narrows its id list with it, the JS loop pages with it.
-    const { clauses, binds } = gamesWhere((k) => c.req.query(k), '', hasLookups(db));
+    const { clauses, binds } = gamesWhere(getFilter, '', hasLookups(db));
     const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     // A database indexed before the reachability columns scans without
     // the prefilter — slower, never wrong; the next index pass adds them.
@@ -1978,13 +1997,11 @@ export function refGamesApi(
     const binary = dir === REFGAMES_DIR ? nativeBinary() : null;
     const declared = binary ? await nativeFilters(binary) : null;
     const native =
-      binary && declared && undeclaredFilters(declared, (k) => c.req.query(k)).length === 0
-        ? binary
-        : null;
+      binary && declared && undeclaredFilters(declared, getFilter).length === 0 ? binary : null;
     if (native) {
       const filters: Record<string, string> = {};
       for (const key of GAMES_WHERE_KEYS) {
-        const value = c.req.query(key);
+        const value = getFilter(key);
         if (value !== undefined) filters[key] = value;
       }
       const argv = ['deep-search', found.name, '--filters', JSON.stringify(filters), '--data', DATA];

@@ -360,8 +360,11 @@ export function DatabaseGames({
     structured.to !== '' ||
     structured.side !== 'any' ||
     structured.outcome !== 'any';
-  const filterRef = useRef({ resultFilter, minElo, structured });
-  filterRef.current = { resultFilter, minElo, structured };
+  // `query` rides along for the hunt path: the box narrows a hunt the
+  // way the filters do, so the hunt request must read the box's CURRENT
+  // text from wherever the press happens.
+  const filterRef = useRef({ resultFilter, minElo, structured, query });
+  filterRef.current = { resultFilter, minElo, structured, query };
 
   // Read through a ref where reset points live inside stable callbacks —
   // the selection must clear when the rows it described go away.
@@ -373,6 +376,9 @@ export function DatabaseGames({
   const tableVars = useGameTableVars();
 
   const searchSeq = useRef(0);
+  /** What the text rows last answered — closing a hunt refetches only
+      if the box moved while the hunt had it. */
+  const searchedQ = useRef('');
   /** The committed filters as query params — the /search and the deep
       hunt speak the same gamesWhere, so one builder serves both. Reads
       through filterRef so its identity never moves. */
@@ -394,6 +400,7 @@ export function DatabaseGames({
   // search. The server seeks below it instead of walking an OFFSET.
   const search = useCallback(async (q: string, cursor: number | null, db: string | null) => {
     const seq = ++searchSeq.current;
+    searchedQ.current = q;
     setLoading(true);
     try {
       const params = new URLSearchParams({ q });
@@ -495,6 +502,9 @@ export function DatabaseGames({
     setHunting(false);
     setHuntProgress(null);
     setHuntFailed(null);
+    // While the hunt was open the box was editing the HUNT — if it
+    // moved, the text rows this returns to answer a stale query.
+    if (searchedQ.current !== query) void search(query, null, curDb);
   };
 
   // The handed-off position, consumed once (StrictMode's double effect
@@ -538,6 +548,10 @@ export function DatabaseGames({
       const params = new URLSearchParams();
       if (curDb) params.set('db', curDb);
       applyFilters(params);
+      // The box narrows the hunt too — the server parses the same
+      // query language and folds the terms into the scan's WHERE.
+      const boxQ = filterRef.current.query.trim();
+      if (boxQ) params.set('q', boxQ);
       if (huntKind === 'position') {
         params.set('fen', (fenOverride ?? huntFen).trim());
         if (rung !== 'exact') params.set('match', rung);
@@ -699,7 +713,13 @@ export function DatabaseGames({
     onSelectRef.current?.(null);
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => void search(q, null, curDb), 250);
+    // With a hunt open the box edits the HUNT, exactly as a filter
+    // press does below — the stale-sequence guard abandons the scan
+    // this keystroke obsoletes.
+    debounce.current = setTimeout(() => {
+      if (huntRows !== null) void runHunt();
+      else void search(q, null, curDb);
+    }, 250);
   };
 
   // A filter press re-asks from the top, with the query still in the box
