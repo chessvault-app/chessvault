@@ -139,6 +139,14 @@ const findImpossible = (withRaw: { term: SearchTerm; raw: string }[], issues: Se
     if (lo > hi) impossible('year', years.map((t) => t.raw));
   }
 
+  const elos = withRaw.filter((t) => t.term.kind === 'elo');
+  if (elos.length > 1) {
+    const spans = elos.map((t) => t.term as { lo: number; hi: number | null });
+    const lo = Math.max(...spans.map((s) => s.lo));
+    const hi = Math.min(...spans.map((s) => s.hi ?? Infinity));
+    if (lo > hi) impossible('elo', elos.map((t) => t.raw));
+  }
+
   const seat = (kind: 'white' | 'black' | 'player') =>
     withRaw
       .filter((t) => t.term.kind === kind)

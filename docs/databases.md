@@ -112,7 +112,12 @@ What a built database answers, and from where:
 - The **Databases browser** on the Games page searches whole games —
   players and openings seek through small derived lookup tables, pages
   seek by id, and a filtered count stops at "10,000+" rather than
-  scanning millions of rows to finish the digit.
+  scanning millions of rows to finish the digit. The search box speaks
+  a small qualifier language (`player:`, `white:`/`black:`, `opening:`,
+  `eco:`, `event:`, `result:`, `year:`, `elo:` — the box's own panel
+  documents it), parsed once in `shared/searchQuery.ts` for the server
+  and the in-page collection search alike; impossible combinations
+  warn instead of silently finding nothing.
 - The same browser **hunts by position or material**. The scan-search
   toggle beside the search box unfolds the controls. A position hunt
   takes a FEN — pasted, or set up on a board — and how closely to
@@ -123,10 +128,11 @@ What a built database answers, and from where:
   pawn endings to "a queen up" — or a custom per-piece, per-side count
   editor, plus how long the material must hold (any moment, 4+ or 8+
   moves). Hits stream in as the scan runs, with progress; the filter
-  row above narrows a hunt exactly as it narrows the text search; and
-  typing a text search leaves the hunt. The explorer's own **Find this
-  position in the databases browser** button hands the current position
-  across, prefilled and already running.
+  row above and the search box both narrow a hunt exactly as they
+  narrow the text search — editing either re-runs an open hunt. The
+  explorer's own **Find this position in the databases browser**
+  button hands the current position across, prefilled and already
+  running.
 - The **explorer** answers any position in the first 30 plies from
   precomputed per-move sums — including sliced by the **Level** band
   (200-point buckets of the game's lower rating), so "what do players

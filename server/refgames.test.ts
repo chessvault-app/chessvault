@@ -958,6 +958,15 @@ describe('parseSearchQuery', () => {
         raw: 'player:carlsen',
       },
     ]);
+    // Elo bands with no common rating.
+    expect(parseSearchQuery('elo:2600 elo:2400-2500').issues).toEqual([
+      {
+        qualifier: 'elo',
+        kind: 'impossible',
+        value: 'elo:2600 · elo:2400-2500',
+        raw: 'elo:2400-2500',
+      },
+    ]);
     // The terms stay in the search — zero rows is the right answer.
     expect(parseSearchQuery('result:1-0 result:0-1').terms).toHaveLength(2);
   });
@@ -971,6 +980,8 @@ describe('parseSearchQuery', () => {
     ok('year:2010-2015 year:2014'); // overlapping spans
     ok('result:draw result:1/2-1/2'); // same score, two spellings
     ok('eco:B90 opening:french'); // deliberately not judged
+    ok('elo:2400-2600 elo:2500'); // overlapping elo constraints
+    ok('elo:2400 elo:2500'); // two floors — the higher simply wins
   });
 });
 
