@@ -121,9 +121,30 @@ What a built database answers, and from where:
 - The same browser **hunts by position or material**. The scan-search
   toggle beside the search box unfolds the controls. A position hunt
   takes a FEN — pasted, or set up on a board — and how closely to
-  match: exact position, same pawns, same pawn files, or same material,
-  the fixed relaxation ladder (`docs/deferred.md` records why it is a
-  ladder and not a query language). A material hunt picks an endgame
+  match (`docs/deferred.md` records why this is a fixed ladder and not
+  a query language). Concretely, per rung:
+  - **Exact position** — this position to the square, side to move,
+    castling and en passant included; transpositions count.
+  - **Same pawns & material** — every pawn on its exact square and the
+    same piece counts, only the pieces' squares free. A Carlsbad
+    middlegame with R+B vs R+N finds the games fought with that exact
+    skeleton and those exact forces — the "show me this middlegame in
+    master play" search, seeded from a real position.
+  - **Same pawn files & material** — the pawns may advance within
+    their files, material still identical: the same structure a tempo
+    or two further on.
+  - **Same pawn structure** — the pawn skeleton alone; pieces and the
+    side to move are both free. This is the rung a pawns-only sketch
+    means: place just the pawns of 1.e4 c5 on the editor's board
+    (kings optional — the hunt accepts a kingless sketch) and every
+    game that ever passed through the Sicilian structure answers,
+    whatever was on the board around it.
+  - **Same material** — piece counts alone: every R+P-vs-R ending,
+    wherever the men stood.
+  Every rung except *Same pawn structure* also keeps the target's side
+  to move — those rungs relax *where* things stand, never whose turn
+  it is; a structure is a fact about a phase, so that rung keeps
+  neither. A material hunt picks an endgame
   situation — the presets are data, `web/src/games/endgames.json`, from
   pawn endings to "a queen up" — or a custom per-piece, per-side count
   editor, plus how long the material must hold (any moment, 4+ or 8+

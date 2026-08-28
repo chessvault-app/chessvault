@@ -9,10 +9,19 @@ import { squareFile } from 'chessops/util';
  * always compared; `pawns` keeps every pawn on its exact square and the
  * piece material identical but lets the pieces stand anywhere; `files`
  * keeps the pawns only to their files; `material` keeps the piece
- * counts alone. Every rung keeps the target's side to move — the ladder
- * relaxes WHERE things stand, never whose turn it is — and none of the
- * relaxed rungs sees castling rights or en passant, which are facts
- * about squares the rung has already let go of.
+ * counts alone. Every one of THOSE rungs keeps the target's side to
+ * move — they relax WHERE things stand, never whose turn it is — and
+ * none of the relaxed rungs sees castling rights or en passant, which
+ * are facts about squares the rung has already let go of.
+ *
+ * `structure` stands beside the ladder rather than on it (lanph3re's
+ * rung): every pawn on its exact square and NOTHING else — pieces
+ * free, side to move free. It is the query a pawns-only sketch means
+ * ("games with this pawn skeleton, whatever the pieces are doing"),
+ * which no ladder rung can express because they all pin the piece
+ * material. The side to move is dropped deliberately: a structure is
+ * a fact about a phase of the game, not about a move's turn, and
+ * keeping it would silently halve the results of every hunt.
  *
  * The material search (ChessTempo's model) has no target position at
  * all: a spec of per-piece count ranges, white-minus-black difference
@@ -25,7 +34,7 @@ import { squareFile } from 'chessops/util';
  * build:native-goldens). Change anything here and regenerate.
  */
 
-export const MATCH_MODES = ['exact', 'pawns', 'files', 'material'] as const;
+export const MATCH_MODES = ['exact', 'pawns', 'files', 'material', 'structure'] as const;
 export type MatchMode = (typeof MATCH_MODES)[number];
 
 /** Piece letters in the fixed order every signature and spec uses. */
@@ -52,7 +61,15 @@ function squares(set: Iterable<number>): number[] {
  * ply parity) already pass. The format is part of the native parity
  * contract; see the header.
  */
-export function matchSignature(board: Board, mode: 'pawns' | 'files' | 'material'): string {
+export function matchSignature(
+  board: Board,
+  mode: 'pawns' | 'files' | 'material' | 'structure',
+): string {
+  if (mode === 'structure') {
+    const wp = squares(board.pawn.intersect(board.white)).join('.');
+    const bp = squares(board.pawn.intersect(board.black)).join('.');
+    return `s:${wp}/${bp}`;
+  }
   const { w, b } = counts(board);
   const material = `${w.join(',')}-${b.join(',')}`;
   if (mode === 'material') return `m:${material}`;

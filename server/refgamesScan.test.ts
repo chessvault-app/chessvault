@@ -187,6 +187,26 @@ describe('pack scan vs replay scan', () => {
     expect(target.w).toBe(2);
   });
 
+  it('the structure rung frees the pieces and the side to move', () => {
+    // The Sicilian skeleton after 1.e4 c5, drawn as PAWNS ONLY with
+    // black to move — the sketch a user actually draws. The position it
+    // must find has thirty men on the board and WHITE to move: the
+    // structure rung ignores both, and hits at the first ply the
+    // skeleton exists (ply 2).
+    const game = 'e4 c5 Nf3 Nc6 d4 cxd4';
+    const sketch = parseFen('8/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/8 b - - 0 1').unwrap();
+    const target = positionTarget(sketch, 'structure');
+    expect(replayPositionHit(game, target)).toBe(2);
+    // The pack's candidate respects the soundness contract.
+    const candidate = packPositionCandidate(encodeScanPack(game), target);
+    expect(candidate).not.toBeNull();
+    expect(candidate!).toBeLessThanOrEqual(2);
+    // The ladder's pawns rung refuses the same sketch — it pins the
+    // piece material, and the sketch declares none. That contrast is
+    // the structure rung's whole reason (lanph3re's pawns-only hunt).
+    expect(replayPositionHit(game, positionTarget(sketch, 'pawns'))).toBeNull();
+  });
+
   it('refuses a malformed pack instead of answering from it', () => {
     const target = positionTarget(Chess.default(), 'exact');
     const spec = parseMaterialSpec('{"white":{"q":[0,0]}}')!;

@@ -83,6 +83,49 @@ fn find_position_hit(
     None
 }
 
+/// The structure rung's own loop, the exact shape of the JS
+/// `replayStructureHit`: no parity gate (a structure is a fact about a
+/// phase, not a turn), no men gates (the pieces are free); the cheap
+/// gate is the PAWN counts, read from the board itself so en-passant
+/// captures and promotions are counted exactly. Pawns only ever leave
+/// (a promotion is a leaving too), so below the target's counts the
+/// game is done.
+fn find_structure_hit(moves: &str, sig: &str, target_wp: i64, target_bp: i64) -> Option<u32> {
+    let mut pos = Chess::default();
+    let mut ply: u32 = 0;
+    let pawn_counts = |pos: &Chess| {
+        (
+            (pos.board().pawns() & pos.board().white()).count() as i64,
+            (pos.board().pawns() & pos.board().black()).count() as i64,
+        )
+    };
+    let at_target = |pos: &Chess| {
+        let (wp, bp) = pawn_counts(pos);
+        wp == target_wp && bp == target_bp && match_signature(pos.board(), Rung::Structure) == *sig
+    };
+    for token in moves.split(' ') {
+        if at_target(&pos) {
+            return Some(ply);
+        }
+        let Ok(san) = token.parse::<SanPlus>() else {
+            break;
+        };
+        let Ok(m) = san.san.to_move(&pos) else {
+            break;
+        };
+        pos.play_unchecked(m);
+        ply += 1;
+        let (wp, bp) = pawn_counts(&pos);
+        if wp < target_wp || bp < target_bp {
+            return None;
+        }
+    }
+    if at_target(&pos) {
+        return Some(ply);
+    }
+    None
+}
+
 /// The FIRST ply of the earliest streak satisfying the material spec
 /// for its stability length, or None — the exact shape of the JS
 /// `findMaterialHit`: no parity gate, the spec's own floor as the early
@@ -154,6 +197,8 @@ pub fn run_deep_search(
     let mut target = Target::Exact(0);
     let mut target_w = 0i64;
     let mut target_b = 0i64;
+    let mut target_wp = 0i64;
+    let mut target_bp = 0i64;
     let mut want_black_to_move = false;
     let (men_ceil_w, men_ceil_b, min_ply, material_floor) = if let Some(spec) = &spec {
         let (lo_w, hi_w, lo_b, hi_b) = material_men_bounds(spec);
@@ -189,7 +234,16 @@ pub fn run_deep_search(
         target_w = i64::from(board.white().count() as u32) + kingless(board.white());
         target_b = i64::from(board.black().count() as u32) + kingless(board.black());
         want_black_to_move = turn == Color::Black;
-        (target_w, target_b, 32 - target_w - target_b, None)
+        target_wp = (board.pawns() & board.white()).count() as i64;
+        target_bp = (board.pawns() & board.black()).count() as i64;
+        if matches!(target, Target::Relaxed(Rung::Structure, _)) {
+            // Mirror of the JS route: the pieces are free, so the men
+            // columns say nothing and any game long enough to have
+            // moved a pawn qualifies.
+            (16, 16, 0, None)
+        } else {
+            (target_w, target_b, 32 - target_w - target_b, None)
+        }
     };
 
     let conn = Connection::open_with_flags(
@@ -331,9 +385,12 @@ pub fn run_deep_search(
         }
         for row in &batch {
             scanned += 1;
-            let hit = match (&spec, material_floor) {
-                (Some(spec), Some((lo_w, lo_b))) => {
+            let hit = match (&spec, material_floor, &target) {
+                (Some(spec), Some((lo_w, lo_b)), _) => {
                     find_material_hit(&row.moves, spec, lo_w, lo_b)
+                }
+                (_, _, Target::Relaxed(Rung::Structure, sig)) => {
+                    find_structure_hit(&row.moves, sig, target_wp, target_bp)
                 }
                 _ => find_position_hit(&row.moves, &target, target_w, target_b, want_black_to_move),
             };
