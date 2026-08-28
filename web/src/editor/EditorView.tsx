@@ -31,12 +31,7 @@ import { Input } from '@/components/ui/input';
 import { KingIcon } from '@/components/king-icon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/components/panel';
-import {
-  BOARD_SCROLL_SHELL,
-  BOARD_WIDE_COLUMN,
-  BOARD_WIDE_SIDE,
-  EDITOR_WINDOW_SIZE,
-} from '@/components/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
@@ -196,12 +191,28 @@ export function EditorView({
    * Direction feeds the slide: forward pages arrive from the right,
    * back from the left — the content moves, the window never does.
    */
-  const PAGE_IDX = { board: 0, position: 1, load: 2 } as const;
-  const [chain, setChain] = useState<{ page: 'board' | 'position' | 'load'; dir: 'fwd' | 'back' }>(
-    { page: 'board', dir: 'fwd' },
-  );
-  const goto = (page: 'board' | 'position' | 'load'): void =>
+  const PAGE_IDX = { board: 0, position: 1, load: 2, photo: 3 } as const;
+  type ChainPage = keyof typeof PAGE_IDX;
+  const [chain, setChain] = useState<{ page: ChainPage; dir: 'fwd' | 'back' }>({
+    page: 'board',
+    dir: 'fwd',
+  });
+  const goto = (page: ChainPage): void =>
     setChain((c) => ({ page, dir: PAGE_IDX[page] > PAGE_IDX[c.page] ? 'fwd' : 'back' }));
+  /**
+   * The chain's Position page keeps the sheet's DRAFT contract
+   * (lanph3re: it lost Cancel/Apply in the first fitting — "apply on
+   * Apply, everything else discards" is the standing rule). The
+   * snapshot is taken on the way in; Apply keeps, Cancel and the
+   * window's chevron put it back. Loading — text or picture — commits,
+   * as it does in the sheet: the loaded position IS the answer.
+   */
+  const pageSnapshot = useRef<EditorState | null>(null);
+  const leavePage = (commit: boolean): void => {
+    if (!commit && pageSnapshot.current) setState(pageSnapshot.current);
+    pageSnapshot.current = null;
+    goto('board');
+  };
   /** The sheet's breakpoint: below it the Position button opens the sheet. */
   const overSm = useMediaQuery('(min-width: 40rem)');
   /** Paging live this render — bounded by viewport so a resize resolves it. */
@@ -217,8 +228,19 @@ export function EditorView({
       return;
     }
     tell({
-      title: chain.page === 'position' ? 'Position' : 'Load position',
-      back: () => goto(chain.page === 'position' ? 'board' : 'position'),
+      title:
+        chain.page === 'position'
+          ? 'Position'
+          : chain.page === 'load'
+            ? 'Load position'
+            : 'Position from an image',
+      back: () => {
+        if (chain.page === 'photo') setPhotoTemplates(null);
+        // Backing out of the Position page discards its draft, the
+        // sheet's own rule; the deeper pages return within the draft.
+        if (chain.page === 'position') leavePage(false);
+        else goto(chain.page === 'load' ? 'position' : 'load');
+      },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- goto is stable in effect
   }, [paging, chain.page]);
@@ -618,11 +640,7 @@ export function EditorView({
             the sheet — the wide layout's column is not a window, it is
             the editor itself, and its edits are the position. */}
         {place === 'sheet' && (
-          // mt-auto: in the chain's fixed-height card (EDITOR_WINDOW_SIZE)
-          // the fields end mid-window, and the buttons sit on the floor
-          // like every window's do. A content-sized phone sheet has no
-          // slack, so nothing moves there.
-          <div className="mt-auto flex justify-end gap-2">
+          <div className="flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
               {t('Cancel')}
             </Button>
@@ -821,6 +839,7 @@ export function EditorView({
                   // over it (see `paged`). Edits are live, like the wide
                   // column's; the draft-and-Apply stays the sheet's.
                   if (paging) {
+                    pageSnapshot.current = state;
                     goto('position');
                     return;
                   }
@@ -888,8 +907,10 @@ export function EditorView({
                 </p>
               )}
               {/* The FEN status line, as the cards carry it — with the
-                  Load page turn at its end, the sheet's own idiom. */}
-              <div className="border-border mt-auto flex shrink-0 items-center gap-1.5 border-t pt-1.5">
+                  Load page turn at its end, the sheet's own idiom. It
+                  follows the fields (lanph3re: rows belong under the
+                  last field, not sunk to the window's floor). */}
+              <div className="border-border flex shrink-0 items-center gap-1.5 border-t pt-1.5">
                 {validity.legal && (
                   <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
                 )}
@@ -908,21 +929,58 @@ export function EditorView({
                   <FolderInput className="size-3.5" />
                 </Button>
               </div>
+              {/* The draft's two doors, right under the last row
+                  (lanph3re: no sinking to the window's floor). */}
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" size="sm" onClick={() => leavePage(false)}>
+                  {t('Cancel')}
+                </Button>
+                <Button variant="default" size="sm" onClick={() => leavePage(true)}>
+                  {t('Apply')}
+                </Button>
+              </div>
             </>
-          ) : (
+          ) : chain.page === 'load' ? (
             <LoadPositionForm
               loadText={loadText}
               fill
-              // A loaded position IS the answer: back to the board
-              // that now shows it.
-              onDone={() => goto('board')}
+              // A loaded position IS the answer: it commits the draft
+              // and lands on the board that now shows it.
+              onDone={() => leavePage(true)}
               onImage={(file) => {
                 setPhotoFile(file);
                 void builtinTemplates()
-                  .then(setPhotoTemplates)
-                  .catch(() => setPhotoTemplates([]));
+                  .then((tpl) => {
+                    setPhotoTemplates(tpl);
+                    goto('photo');
+                  })
+                  .catch(() => {
+                    setPhotoTemplates([]);
+                    goto('photo');
+                  });
               }}
             />
+          ) : (
+            // The picture flow as the chain's fourth page — a separate
+            // window here was the chain's last window swap, and it
+            // flickered exactly like the ones already retired
+            // (lanph3re: pasting an image swaps the window).
+            <Suspense fallback={null}>
+              <PhotoImport
+                embedded
+                templates={photoTemplates ?? []}
+                initialFile={photoFile ?? undefined}
+                onApply={(reading) => {
+                  if (reading.fen) applyImageFen(reading.fen);
+                  setPhotoTemplates(null);
+                  leavePage(true);
+                }}
+                onClose={() => {
+                  setPhotoTemplates(null);
+                  goto('load');
+                }}
+              />
+            </Suspense>
           )}
         </div>
       )}
@@ -1012,27 +1070,6 @@ export function EditorView({
         </Dialog>
       )}
 
-      {/* The picture flow for the paged chain's Load page: still a real
-          window — the corner-adjust surface is a workspace — wearing the
-          chain's rect and page physics. The sheet flow's copy lives
-          nested in its load page above; this one answers only when no
-          sheet is up. */}
-      {photoTemplates !== null && !sheetOpen && (
-        <Suspense fallback={null}>
-          <PhotoImport
-            templates={photoTemplates}
-            initialFile={photoFile ?? undefined}
-            windowClassName={EDITOR_WINDOW_SIZE}
-            windowPage
-            onApply={(reading) => {
-              if (reading.fen) applyImageFen(reading.fen);
-              setPhotoTemplates(null);
-              goto('board');
-            }}
-            onClose={() => setPhotoTemplates(null)}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

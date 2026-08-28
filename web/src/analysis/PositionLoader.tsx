@@ -288,7 +288,8 @@ export function LoadPositionForm({
           }}
         />
       </label>
-      <div className={cn('mt-1 flex justify-end gap-2', fill && 'sm:mt-auto')}>
+      {/* Under the last field, not sunk to the window's floor (lanph3re). */}
+      <div className="mt-1 flex justify-end gap-2">
         {onCancel && (
           <Button variant="ghost" size="sm" onClick={onCancel}>
             {t('Cancel')}
