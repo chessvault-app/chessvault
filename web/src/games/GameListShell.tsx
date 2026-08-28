@@ -135,7 +135,11 @@ export function GameListShell({
         <div className="flex flex-wrap items-center gap-2 px-3 py-2">{notice}</div>
       )}
       {countBand != null && (
-        <div className="border-border flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-sm">
+        // px-3 on BOTH sides now: the band's controls used to end at
+        // pr-1.5, which put its icon button 6px right of the identical
+        // buttons in the toolbar and filter rows above — one ragged
+        // stack of icons down the pane's right edge.
+        <div className="border-border flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 text-sm">
           {countBand}
         </div>
       )}
@@ -153,7 +157,13 @@ export function GameListShell({
                 // enough to group the lines that belong together, not enough
                 // to read as a highlight. The archive list was the one of the
                 // three without it, for no reason anyone could name.
-                '[&>li:nth-child(even)]:bg-foreground/[0.022]',
+                //
+                // The stripe stands DOWN for a hovered or selected row: this
+                // selector (.class > li:nth-child(even)) is more specific
+                // than the row's own hover:bg-accent and bg-accent, so
+                // without the :not guards every even row swallowed both —
+                // half the list answered a pointer with nothing.
+                '[&>li:nth-child(even):not(:hover):not([aria-selected=true])]:bg-foreground/[0.022]',
                 // The virtualization the shell bought, in its cheapest form:
                 // offscreen rows skip render and layout entirely, onscreen
                 // ones pay as before. A deep scroll through a big database
@@ -168,11 +178,15 @@ export function GameListShell({
                 dense
                   ? '[&>li]:[contain-intrinsic-size:auto_2.125rem]'
                   : '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
-                // In the table wrapper the ul grows to its rows' template
-                // (that is what makes the wrapper scroll sideways) and the
-                // wrapper does the scrolling; the ul's own scrolling classes
-                // move up to it.
-                listHeader != null ? 'min-w-fit' : listClassName,
+                // In the table wrapper the ul keeps the columns' own
+                // minimum (that is what makes the wrapper scroll
+                // sideways) and the wrapper does the scrolling; the ul's
+                // own scrolling classes move up to it. The minimum is
+                // the STATED sum from useGameTableVars, never
+                // min-w-fit: fit-content resolves fr tracks at
+                // max-content, which blew the notation column out to
+                // the widest untruncated line.
+                listHeader != null ? 'min-w-[var(--gt-min)]' : listClassName,
               )}
             >
               {listLoading ? (
@@ -196,7 +210,9 @@ export function GameListShell({
               {/* Sticky, opaque, and as wide as the rows: the header
                   scrolls sideways WITH the table and stays put over a
                   vertical scroll. */}
-              <div className="bg-card sticky top-0 z-10 min-w-fit shrink-0">{listHeader}</div>
+              <div className="bg-card sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0">
+                {listHeader}
+              </div>
               {rows}
             </div>
           );

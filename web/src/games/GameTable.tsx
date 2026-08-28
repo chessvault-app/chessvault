@@ -111,13 +111,21 @@ const widthOf = (c: GameColumn, stored: Record<string, number>): number =>
  */
 export function useGameTableVars(withStanding = false): CSSProperties {
   const stored = useColWidths();
-  const template = colsOf(withStanding)
+  const list = colsOf(withStanding);
+  const template = list
     .map((c) => {
       const w = widthOf(c, stored);
       return c.fr ? `minmax(${w}px,${c.fr}fr)` : `${w}px`;
     })
     .join(' ');
-  return { '--gt-cols': template } as CSSProperties;
+  // The row's true minimum, stated in px: columns + the gap-x-2 gaps +
+  // px-3. min-width:fit-content would be wrong here — under fit-content
+  // a grid resolves its fr tracks at MAX-content, so the notation
+  // column grew to the widest untruncated SAN string and the table
+  // scrolled to nowhere.
+  const min =
+    list.reduce((sum, c) => sum + widthOf(c, stored), 0) + (list.length - 1) * 8 + 24;
+  return { '--gt-cols': template, '--gt-min': `${min}px` } as CSSProperties;
 }
 
 const GRID = 'grid items-center gap-x-2 px-3 [grid-template-columns:var(--gt-cols)]';
