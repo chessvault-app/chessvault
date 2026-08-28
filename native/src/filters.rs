@@ -17,7 +17,7 @@ use crate::util::js_number;
 /// `games_where` the key — the test below holds the two together.
 pub const SUPPORTED_FILTERS: &[&str] = &[
     "result", "minElo", "band", "player", "player2", "side", "outcome", "opening", "event",
-    "from", "to",
+    "from", "to", "terms",
 ];
 
 pub struct GamesWhere {
@@ -198,6 +198,76 @@ pub fn games_where(
         binds.push(Value::Text(to));
     }
 
+    // The search box's parsed terms — one JSON-encoded key carrying the
+    // whole query language (the `terms` block in gamesWhere,
+    // server/refgames.ts). This side never parses the LANGUAGE: the
+    // server already did, with the one shared parser; what arrives is
+    // the term list, compiled here clause-for-clause and bind-for-bind
+    // as the JS side compiles it. A term that fails its shape check is
+    // skipped, matching the JS guards; malformed JSON filters nothing
+    // rather than everything.
+    if let Some(raw) = get("terms") {
+        let parsed: Option<Vec<serde_json::Value>> = serde_json::from_str(&raw).ok();
+        for term in parsed.unwrap_or_default() {
+            let kind = term.get("kind").and_then(|k| k.as_str());
+            let value = term.get("value").and_then(|v| v.as_str());
+            match (kind, value) {
+                (Some("player"), Some(v)) => {
+                    clauses.push(format!("({white_match} OR {black_match})"));
+                    binds.push(Value::Text(like(v)));
+                    binds.push(Value::Text(like(v)));
+                }
+                (Some("white"), Some(v)) => {
+                    clauses.push(white_match.clone());
+                    binds.push(Value::Text(like(v)));
+                }
+                (Some("black"), Some(v)) => {
+                    clauses.push(black_match.clone());
+                    binds.push(Value::Text(like(v)));
+                }
+                (Some("opening"), Some(v)) => {
+                    clauses.push(format!("{alias}opening LIKE ?"));
+                    binds.push(Value::Text(like(v)));
+                }
+                (Some("eco"), Some(v)) => {
+                    clauses.push(format!("{alias}eco LIKE ?"));
+                    binds.push(Value::Text(format!("{v}%")));
+                }
+                (Some("event"), Some(v)) => {
+                    clauses.push(format!("{alias}event LIKE ?"));
+                    binds.push(Value::Text(like(v)));
+                }
+                (Some("result"), Some(v)) => {
+                    clauses.push(format!("{alias}result = ?"));
+                    binds.push(Value::Text(v.to_owned()));
+                }
+                (Some("year"), _) => {
+                    if let (Some(from), Some(to)) = (
+                        term.get("from").and_then(serde_json::Value::as_i64),
+                        term.get("to").and_then(serde_json::Value::as_i64),
+                    ) {
+                        clauses.push(format!(
+                            "REPLACE({alias}date, '.', '-') >= ? AND REPLACE({alias}date, '.', '-') <= ?"
+                        ));
+                        binds.push(Value::Text(format!("{from}-01-01")));
+                        binds.push(Value::Text(format!("{to}-12-31")));
+                    }
+                }
+                (Some("elo"), _) => {
+                    if let Some(lo) = term.get("lo").and_then(serde_json::Value::as_i64) {
+                        clauses.push(format!("MIN({alias}white_elo, {alias}black_elo) >= ?"));
+                        binds.push(Value::Integer(lo));
+                        if let Some(hi) = term.get("hi").and_then(serde_json::Value::as_i64) {
+                            clauses.push(format!("MIN({alias}white_elo, {alias}black_elo) <= ?"));
+                            binds.push(Value::Integer(hi));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
     GamesWhere { clauses, binds }
 }
 
@@ -225,6 +295,7 @@ mod tests {
             "opening" => "B90",
             "event" => "Tata Steel",
             "from" | "to" => "2020-01-01",
+            "terms" => r#"[{"kind":"eco","value":"B9"}]"#,
             other => panic!("games_where consults a key SUPPORTED_FILTERS does not declare: {other}"),
         }
         .to_owned()
@@ -247,5 +318,60 @@ mod tests {
         let mut declared: Vec<String> = SUPPORTED_FILTERS.iter().map(|s| (*s).to_owned()).collect();
         declared.sort();
         assert_eq!(asked, declared);
+    }
+
+    /// The `terms` key compiles clause-for-clause and bind-for-bind what
+    /// the JS side compiles — the pinned expectations here mirror the
+    /// "compiles the box terms" test in server/refgames.test.ts.
+    #[test]
+    fn compiles_the_box_terms_like_the_js_side() {
+        let terms = r#"[
+            {"kind":"player","value":"carlsen"},
+            {"kind":"white","value":"kasparov"},
+            {"kind":"black","value":"karpov"},
+            {"kind":"opening","value":"najdorf"},
+            {"kind":"eco","value":"B9"},
+            {"kind":"event","value":"world championship"},
+            {"kind":"result","value":"1-0"},
+            {"kind":"year","from":2010,"to":2015},
+            {"kind":"elo","lo":2400,"hi":2600}
+        ]"#;
+        let get = |key: &str| (key == "terms").then(|| terms.to_owned());
+        let w = games_where(&get, "", false);
+        assert_eq!(
+            w.clauses,
+            vec![
+                "(white LIKE ? OR black LIKE ?)",
+                "white LIKE ?",
+                "black LIKE ?",
+                "opening LIKE ?",
+                "eco LIKE ?",
+                "event LIKE ?",
+                "result = ?",
+                "REPLACE(date, '.', '-') >= ? AND REPLACE(date, '.', '-') <= ?",
+                "MIN(white_elo, black_elo) >= ?",
+                "MIN(white_elo, black_elo) <= ?",
+            ]
+        );
+        assert_eq!(
+            w.binds,
+            vec![
+                Value::Text("%carlsen%".into()),
+                Value::Text("%carlsen%".into()),
+                Value::Text("%kasparov%".into()),
+                Value::Text("%karpov%".into()),
+                Value::Text("%najdorf%".into()),
+                Value::Text("B9%".into()),
+                Value::Text("%world championship%".into()),
+                Value::Text("1-0".into()),
+                Value::Text("2010-01-01".into()),
+                Value::Text("2015-12-31".into()),
+                Value::Integer(2400),
+                Value::Integer(2600),
+            ]
+        );
+        // Malformed JSON filters nothing rather than everything.
+        let bad = |key: &str| (key == "terms").then(|| "not json".to_owned());
+        assert!(games_where(&bad, "", false).clauses.is_empty());
     }
 }
