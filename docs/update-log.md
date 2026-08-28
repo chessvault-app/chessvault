@@ -5,6 +5,158 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.6.0
+
+One game browser at every width, a query language both search boxes
+speak, and deep search that answers under a second at ten million games.
+
+- **The Games pane is one browser at every width.** Databases,
+  Collection, Chess.com and Lichess were tabs on a wide screen and
+  something else entirely below it: the collection was the page, and the
+  other three hid behind an Add games menu as sheets. The tabs are the
+  page now at every width, and width changes only the dressing — a
+  desktop adds the details column and the dense table, a phone gives the
+  same tabs card rows and opens details from a row's own menu. The
+  phone's separate apparatus went with the split (the archive sheets and
+  the slot that held them, the Add games menu, the under-title finders
+  row), and the create button became one press straight to import, since
+  everything else it used to offer is a tab. The page leads with the
+  databases as a table with a game beside it, the table answers the
+  keyboard, and a position handed over from the explorer lands on the
+  Databases tab on a phone exactly as on a desktop.
+- **One query language, spoken by both boxes and taught by a panel.**
+  The language lives in `shared/searchQuery.ts` — one parser the server
+  compiles to SQL for the reference databases and the browser answers in
+  the page for your own collection, the two written in the same file so
+  they are reviewed together. Both boxes speak all of it: `player:`,
+  `opponent:`, `eco:`, `event:`, `year:`, `result:`, `elo:`. Finished
+  terms become chips, the field colours itself as you type and waits
+  until you pause to warn, suggestions open unprompted and answer the
+  keyboard, and names and tournaments complete from the database's own
+  derived lookups. A query that cannot match anything says so rather
+  than returning nothing, and a term the surrounding filters leave no
+  room for — a disjoint rating band, an outcome its result contradicts —
+  warns instead of quietly finding zero. A panel teaches the language
+  with a live example per field; `vs` is gone, because an infix
+  qualifier was the one piece that could never be completed like the
+  rest.
+- **Deep search answers under a second at ten million games.** Three
+  rungs, each measured on `lumbras_otb` (10.36M games), warm: the scan
+  loop compiled to flat scalars once per hunt rather than run as the
+  readable spec, the packed index moved into `SharedArrayBuffer`s with a
+  fixed shard set scanning contiguous ranges, and a count envelope that
+  turns exact search into a lookup. An exact deep hunt went 4.53s →
+  2.57s → 0.75s, the pawn-structure rung 5.37s → 2.76s → 1.47s, the
+  files rung 3.90s → 2.27s → 1.28s, with matched counts identical at
+  every step. The shard width is set by the machine once at load, never
+  by request volume — still one worker owning one structure, which is
+  the shape `deferred.md` settled on. Two residual floors are recorded
+  rather than pulled: the relaxed rungs spend their remainder verifying
+  candidates on the main thread, and a filtered hunt spends it
+  materialising its id list from SQL.
+- **Fast search is a switch on the database, and it states its cost.** A
+  worker holds one database's packed index whole in memory — lazy on the
+  first hunt, evicted after thirty minutes idle, terminated when the
+  database is deleted or the API closes. Opting in is a toggle on the
+  Databases page, refused where no full index pass has written the
+  packs, and it loads immediately so the answer arrives with the price
+  attached: 280k games cost 1.0s and 120MB, 1.12M cost 3.0s and 481MB,
+  5.04M cost 12–17s and 2.17GB. Against the replay path on the same
+  machine, an exact deep hunt at 5.04M runs 2.0–2.6s where replay takes
+  192s. Every failure falls through to a path that answers identically,
+  and an end-to-end test holds eight hunts to identical game frames
+  before and after enabling it.
+- **A position can be searched loosely, or not given at all.** The scan
+  climbs Scid's relaxation ladder — exact, pawns, files, material, the
+  same position loosened by degrees with the side to move kept
+  throughout — and runs ChessTempo's material search with no position at
+  all: per-piece count ranges, white-minus-black differences with minor
+  and major aggregates, and a stability length in plies. Pawn structure
+  is a rung of its own, carried by one byte per position. A hunt takes
+  its position from a board rather than only from a pasted FEN, a
+  material hunt can be built by hand instead of picked off the shelf,
+  and the relaxed rungs accept a kingless sketch, since a pawn structure
+  is a real query. The Rust twin climbs the same ladder, pinned by
+  exported goldens, and declares which hunts it supports before it is
+  trusted with any — so a binary that has not caught up simply leaves
+  those hunts on the JS path.
+- **The site has a manual, and it is a reference.** Twenty-two pages
+  with a navigation tree, one page at a time and prev/next at each foot:
+  five to start, one per tool, one per shelf, the training four, and
+  reference. Each page goes past the overview down to the controls
+  themselves — every button, toggle and menu item named by its own UI
+  string, with the tooltip text where a control is icon-only. It keeps
+  the landing page's mechanics: one self-contained file, no build step,
+  Korean switched by the same stored key. `check:repo` now holds its
+  quoted strings to account against the app's source, and the release
+  routine gained a pass that walks it control by control, because a
+  manual is the document most able to rot.
+- **Density.** The app could recolour itself eleven ways and round its
+  corners four, and had nothing to say about how much of your vault fits
+  on a screen — the setting a tool ships and a toy does not. Three
+  custom properties on the root, read by the three surfaces every list
+  here is made of, so a density is three declarations rather than a
+  sweep of call sites. It reaches the game rows, the panel rows, the
+  cards they sit in, the move list, the explorer's tables and the
+  studies chapter list.
+- **The editor's position chain stops blinking.** Opening a window over
+  a window to set up a position always cost a frame somewhere, because
+  two dialog elements trading places always do. The Position and Load
+  pages are content of the one embedded editor now, keyed so each
+  arrival slides — forward from the right, back from the left — inside a
+  frame that never moves, with the host window's own title row turning
+  to name the page. Measured through the whole chain: one dialog element
+  at every step, the same rect byte-identical from board to Position to
+  Load and back. The board column steps aside but stays mounted, so
+  nothing rebuilds and the way back is instant. The picture flow joined
+  the chain as its fourth page, and `float` — a prop that existed to let
+  a page hover over a parent it turned out never to have — retired with
+  the pattern.
+- **A window's X means out, and never back.** Every page of a nested
+  chain is its own window here, and the X shut exactly one of them — so
+  three pages deep it uncovered the page beneath and read as a second
+  back chevron, with leaving costing three presses that each looked like
+  the last. It walks the chain now, and the footer's Cancel is the same
+  verb in words. A confirmation's own buttons deliberately stay where
+  they were: answering a question hands you back what asked it, which is
+  an answer and not an exit.
+- **The reader survives a pinch, and a rotation.** A pinch on iOS
+  scrolled instead of zooming — the touch arithmetic depends on
+  cancelling two-finger moves, and iOS hands the touches to a native pan
+  the moment one finger moves before the second lands, after which
+  cancelling is silently ignored. WebKit's own gesture events carry the
+  pinch now; they fire with the recognised scale whatever the scroller
+  is doing. Releasing one no longer flickers: the page under it stays
+  mounted and each page canvas keeps its own compositor layer. A
+  rotation turns the stale bitmap rather than smearing it, holds the
+  rendered range and corrects the scroll before paint, and the fresh
+  raster reaches the screen together with the styles that present it.
+  The reader's editor became a tab beside the book and the board, and
+  the PDF cap is 500 MB.
+- **Notation is prose, and a rating is a column.** Moves were set in a
+  terminal face in six places and in prose everywhere else; SAN is prose
+  everywhere now, said explicitly with `--font-moves`. Ratings are
+  columns wherever they appear, so they are monospaced wherever they
+  appear. `check:repo` watches both roles.
+- **The icons say what the thing is.** Games wore crossed swords, the
+  explorer a compass, the repertoire a swatch book, and "index this
+  database" a hammer — a games console, an expedition, a paint shop and
+  a building site, for a folder of games, a table of continuations, a
+  stack of prepared lines and a scan of games already on disk. Nothing
+  is magic either, so nothing wears sparkles: growing an opening map
+  reads the games already in your vault, and optimizing states its three
+  steps before it runs. The mark stands bare everywhere the app wears
+  it, the favicon and the home header included.
+- **Home opens into your work.** It led with the app's own name and, on
+  a desktop, redrew the sidebar beside it; it reports the vault now, and
+  a phone gets the header every other page opens with. The puzzle
+  dashboard reads its numbers instead of scoring them — the run of
+  consecutive correct answers is gone, because a count that survives
+  only while you do not fail is a reason to pick puzzles you will get
+  right, and the useful session is the one you fail in. The trainers
+  report a result rather than congratulating you, and mark a wrong move
+  in chess notation rather than with a quiz mark.
+
 ## 0.5.0
 
 The Games menu unified, the reference layer built for millions of
