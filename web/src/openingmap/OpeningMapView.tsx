@@ -385,7 +385,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
         onSelectChild={setSelectedId}
         // Only the tree can show one line: the constellation is a picture
         // of the whole shape, and one line of it is a row of dots.
-        onIsolate={arrangement === 'tree' ? () => setOnly(selected) : undefined}
+        // Pruning is a question about the map, so the phone's sheet gets
+        // out of the way to show the answer; it otherwise sat over the
+        // isolated line as if nothing had happened.
+        onIsolate={
+          arrangement === 'tree'
+            ? () => {
+                setOnly(selected);
+                setDetailsOpen(false);
+              }
+            : undefined
+        }
         onDelete={() => setSelectedId(null)}
       />
     ) : null;
