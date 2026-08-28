@@ -426,6 +426,26 @@ export function ArchiveBrowser({
   };
 
   /**
+   * A pinned tab looks its player up BY ITSELF once a username is in
+   * hand (the saved handle, or the profile prefill landing a moment
+   * later): the tab exists to show these games, and in the common case
+   * they are already cached on disk — the months route serves the
+   * cache when the provider cannot be reached, and a partially cached
+   * account simply pages the missing months in as they are scrolled
+   * to. Pressing Browse remains the way to look up someone ELSE. Once
+   * per mount, and only for the pinned tabs: the phone sheet keeps
+   * asking first.
+   */
+  const autoLooked = useRef(false);
+  useEffect(() => {
+    if (!site || provider !== site || autoLooked.current) return;
+    if (months.length > 0 || loading !== null || !username.trim()) return;
+    autoLooked.current = true;
+    void loadMonths();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [site, provider, username, months.length, loading]);
+
+  /**
    * One month, from the session cache if it has been seen before.
    *
    * Newest game first, which is the order every list here is in — the
