@@ -86,6 +86,13 @@ matters.
   side) and a whole-file diff; `CHESS_NATIVE=0` pins the JS path for
   comparing them. Nothing requires the binary — it is a speed, not a
   dependency. `native/README.md` has the build, the test and the rule.
+  One heavy job deliberately is **not** a child: fast search
+  (`server/scanWorker.ts`) holds an opted-in database's packed
+  scan-index resident in server memory — one worker thread owning one
+  database, requests queueing into it, evicted after 30 idle minutes —
+  because its whole point is state that outlives a request, which a
+  spawned-per-job child cannot keep. `docs/databases.md`, "How the
+  search answers", has the shape.
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,

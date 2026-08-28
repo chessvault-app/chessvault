@@ -226,7 +226,8 @@ exact route settles: that one game replayed and verified. Nothing is
 answered from the pack alone.
 
 **Fast search is residency, not a different algorithm.** Opting a
-database in loads its packs into one worker thread that owns them
+database in — the toggle on its row in the manager — loads its packs
+into one worker thread that owns them
 (`server/scanWorker.ts`) — one worker per database, requests queueing
 into it, idle-evicted after 30 minutes; inside, a fixed set of shard
 threads set by the machine's cores (never by request volume) divides
