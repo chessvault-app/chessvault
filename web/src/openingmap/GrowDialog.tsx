@@ -222,6 +222,14 @@ export function GrowDialog({
           </>
         )}
         <div className="mt-1 flex justify-end gap-2">
+          {/* Window-scoped on purpose, against the rule that a footer
+              Cancel leaves the whole chain (design-principles: "The X
+              means out, and never back"). This window was opened BY the
+              move-details panel to ask one thing about the move that
+              panel is showing, so Cancel here means "do not grow this
+              move" — an answer, like a confirmation's. Dismissing the
+              panel behind it would throw away the selection the question
+              was about. The X in the title row still leaves outright. */}
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>

@@ -469,10 +469,18 @@ page three of a chain as it does on page one; the footer's Cancel is the
 same verb in words and does the same. It was the primitive's own Close,
 which shuts one Root — and one Root is one page here, so on a nested
 page the X uncovered the parent and became a second chevron pointing the
-same way. Back is the chevron's job, and only the chevron's. The one
-control that stays window-scoped is a confirmation's own Confirm and
-Cancel (`AlertDialogAction`, `AlertDialogCancel`): a layer is answered
-and hands you back what asked it, which is the answer, not an exit.
+same way. Back is the chevron's job, and only the chevron's.
+
+The exception is a window that was opened to ask ONE question, where
+Cancel is an answer rather than an exit: a confirmation's own buttons
+(`AlertDialogAction`, `AlertDialogCancel`), and a window a panel opened
+to ask something about what the panel is showing — the opening map's
+Grow, whose Cancel means "do not grow this move", not "close the move
+details behind me". Answering hands you back what asked, which is the
+point of asking. The test is whether the parent is still the subject: if
+cancelling leaves you looking at the thing you were working on, it is an
+answer; if it leaves you looking at a window you had already finished
+with, it is the Back button in disguise and belongs on `dismissAll`.
 
 **A window may turn its own page rather than open another.** A sheet
 that needs to show a detail — the contents of one earlier version, say —

@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -30,6 +30,7 @@ import { Segmented } from '@/components/segmented';
 import { Input } from '@/components/ui/input';
 import { KingIcon } from '@/components/king-icon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { CoverParent } from '@/hooks/cover-parent';
 import { Panel, PanelHeader } from '@/components/panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
@@ -203,6 +204,30 @@ export function EditorView({
     if (!commit && pageSnapshot.current) setState(pageSnapshot.current);
     pageSnapshot.current = null;
     goto('board');
+  };
+  /**
+   * The window this editor is embedded in, if any (the games hunt's "Set up
+   * a position"). Null where the editor IS the page — standalone, the book
+   * reader's pane, the puzzle workbench — and everything below then keeps
+   * its in-page behaviour.
+   */
+  const hostWindow = useContext(CoverParent);
+  /**
+   * The Position page's Cancel: discard the draft AND leave the window.
+   *
+   * `leavePage(false)` is the chain's BACK (it is what onChainChange hands
+   * the host's chevron), and back is a step — it discards and lands on the
+   * board page. Cancel is the X in words, and the X means out of the whole
+   * window (design-principles: "The X means out, and never back"). The two
+   * shared one function, which is exactly the divergence closeSheet's note
+   * below warns about, from the other side: the chevron and the Cancel
+   * beside it read as one verb because they WERE one.
+   */
+  const cancelPage = (): void => {
+    if (pageSnapshot.current) setState(pageSnapshot.current);
+    pageSnapshot.current = null;
+    if (hostWindow) hostWindow.dismissAll();
+    else goto('board');
   };
   /** The sheet's breakpoint: below it the Position button opens the sheet. */
   const overSm = useMediaQuery('(min-width: 40rem)');
@@ -924,7 +949,7 @@ export function EditorView({
               {/* The draft's two doors, right under the last row
                   (lanph3re: no sinking to the window's floor). */}
               <div className="flex justify-end gap-2">
-                <Button variant="secondary" size="sm" onClick={() => leavePage(false)}>
+                <Button variant="secondary" size="sm" onClick={cancelPage}>
                   {t('Cancel')}
                 </Button>
                 <Button variant="default" size="sm" onClick={() => leavePage(true)}>
@@ -1028,7 +1053,15 @@ export function EditorView({
                     // The loaded position IS the answer, so this commits —
                     // there is nothing of the draft left to keep or discard.
                     onDone={() => closeSheet(true)}
-                    onCancel={() => setLoadPage(false)}
+                    // Out of the sheet, not back to Position: the chevron
+                    // in the title row above is what goes back one page,
+                    // and this used to be a second copy of it sitting in
+                    // the footer. closeSheet(false) discards the draft on
+                    // the way, which is what every other way out does.
+                    onCancel={() => {
+                      closeSheet(false);
+                      hostWindow?.dismissAll();
+                    }}
                     onImage={(file) => {
                       setPhotoFile(file);
                       void builtinTemplates()

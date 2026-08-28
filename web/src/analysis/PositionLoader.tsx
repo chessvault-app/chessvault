@@ -1,5 +1,5 @@
 import { AlertCircle, ClipboardPaste, FolderInput, ImagePlus } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAnalysis } from '@/store/analysis';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
 import type { Template } from '@/puzzles/ocr/classify';
@@ -9,6 +9,7 @@ const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ de
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { CoverParent } from '@/hooks/cover-parent';
 import { autoFocusField } from '@/lib/media';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -325,6 +326,23 @@ function LoadDialog({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  /**
+   * The window this one was opened inside, if any — read HERE, outside the
+   * card, so it is the PARENT's handle and not this window's own.
+   *
+   * Cancel is the X in words (design-principles: "The X means out, and
+   * never back"), so it leaves the chain rather than one page of it. Opened
+   * from the hunt's board window this window is a child, and a Cancel that
+   * shut only itself handed you back the workspace you had already walked
+   * past — the same thing the X did before it learned to walk the chain.
+   * `onBack`'s chevron is what steps back, and it stays.
+   */
+  const parent = useContext(CoverParent);
+  const cancel = (): void => {
+    onClose();
+    parent?.dismissAll();
+  };
+
   return (
     <Dialog
       open
@@ -337,8 +355,11 @@ function LoadDialog({
       <DialogContent title="Load position" onBack={onBack} float className="sm:max-w-md">
         <LoadPositionForm
           loadText={loadText}
+          // Loading is this page's Apply: it answers the question the
+          // window was opened to ask, so it closes this window and leaves
+          // whatever opened it up. Cancel is the way OUT (see above).
           onDone={onClose}
-          onCancel={onClose}
+          onCancel={cancel}
           onImage={onImage}
         />
         {children}
