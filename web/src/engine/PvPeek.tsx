@@ -164,7 +164,7 @@ export function PvPeek({
       {/* The label, always — including on Black's moves, where the line
           itself prints none. On the board there is no line to read the
           number off, so "exd4" alone would not say which move this is. */}
-      <p className="text-muted-foreground pt-1 text-center font-mono text-[10px]">
+      <p className="text-muted-foreground font-moves pt-1 text-center text-[10px]">
         {peek.ply.label} {peek.ply.san}
       </p>
     </div>,

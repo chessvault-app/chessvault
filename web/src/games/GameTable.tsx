@@ -346,7 +346,7 @@ export function GameTableRow({
         {isNoiseEvent(game.event) ? '' : (game.event ?? '')}
       </span>
       <span className={cn(quiet, 'tabular-nums')}>{game.date}</span>
-      <span className={cn(quiet, 'font-mono')}>
+      <span className={cn(quiet, 'font-moves')}>
         {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
       </span>
     </li>
