@@ -786,7 +786,11 @@ export function EditorView({
             if (!open) closeSheet(false);
           }}
         >
-          <DialogContent title="Position">
+          {/* float: on a stacked-but-desktop viewport this opens from the
+              hunt's full board window, and a page would park it — the
+              same blink the wide layout was rid of. The phone keeps the
+              page (float is a no-op there). */}
+          <DialogContent title="Position" float>
             {positionPanels('sheet')}
             {/* The second page, written inside the first: Modal parks this
                 sheet behind it, wires the back chevron to onClose and holds

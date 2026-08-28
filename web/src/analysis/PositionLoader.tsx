@@ -310,7 +310,9 @@ function LoadDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent title="Load position" onBack={onBack} className="sm:max-w-md">
+      {/* float: opened from the hunt's board window (the editor's column
+          header), this must hover over that whole workspace, not park it. */}
+      <DialogContent title="Load position" onBack={onBack} float className="sm:max-w-md">
         <LoadPositionForm
           loadText={loadText}
           onDone={onClose}
