@@ -475,9 +475,13 @@ const QUERY_OPS: {
 function QueryChip({ raw, onRemove }: { raw: string; onRemove: () => void }) {
   const colon = raw.indexOf(':');
   return (
-    <Badge variant="secondary" className="shrink-0 gap-0.5 pr-1 font-mono">
+    // The app's own text face, not mono — a chip is a phrase, not
+    // code — and an explicit accent-on-border coat: the secondary
+    // wash sat on the input's own surface and vanished in the dark
+    // theme.
+    <Badge variant="outline" className="bg-accent border-border shrink-0 gap-0.5 pr-1">
       <span className="text-muted-foreground">{raw.slice(0, colon + 1)}</span>
-      <span className="text-info">{raw.slice(colon + 1).replace(/"/g, '')}</span>
+      <span className="text-info font-medium">{raw.slice(colon + 1).replace(/"/g, '')}</span>
       <button
         type="button"
         tabIndex={-1}
@@ -547,9 +551,12 @@ export function QueryBox({
             }
           }
         }}
-        placeholder={placeholder}
+        // With chips standing in the field the box is not empty, and a
+        // placeholder beside them read as text someone typed.
+        placeholder={chips.length > 0 ? undefined : placeholder}
         spellCheck={false}
         className="w-full"
+        onClearAll={() => onQuery('')}
         tokens={
           chips.length > 0
             ? chips.map((raw, i) => (
@@ -599,13 +606,40 @@ const openingCatalog = (): Promise<{ eco: string; name: string }[]> => {
   return catalogCache;
 };
 
+/** The five ECO families — what an empty eco: usefully offers, since
+    each letter is itself a valid prefix search. */
+const ECO_FAMILIES: { v: string; desc: string }[] = [
+  { v: 'A', desc: 'Flank openings' },
+  { v: 'B', desc: 'Semi-open games' },
+  { v: 'C', desc: 'Open games and the French Defense' },
+  { v: 'D', desc: 'Closed games and the Queen’s Gambit' },
+  { v: 'E', desc: 'Indian defences' },
+];
+
+/** The openings an empty opening: leads with — the catalogue has no
+    popularity axis, so the canonical big names stand in for one. */
+const HEADLINE_OPENINGS = [
+  'Sicilian Defense',
+  'Ruy Lopez',
+  'Italian Game',
+  'French Defense',
+  'Caro-Kann Defense',
+  "Queen's Gambit",
+];
+
 export async function catalogSuggest(
   field: 'opening' | 'eco',
   value: string,
 ): Promise<ValueSuggestion[]> {
   const needle = value.toLowerCase();
-  if (!needle) return [];
   const lines = await openingCatalog();
+  if (!needle) {
+    if (field === 'eco') return ECO_FAMILIES.map((f) => ({ v: f.v, desc: t(f.desc) }));
+    return HEADLINE_OPENINGS.flatMap((name) => {
+      const hit = lines.find((l) => l.name === name || l.name.startsWith(`${name}:`));
+      return hit ? [{ v: name, desc: hit.eco }] : [];
+    });
+  }
   if (field === 'eco') {
     const seen = new Map<string, string>();
     for (const line of lines) {

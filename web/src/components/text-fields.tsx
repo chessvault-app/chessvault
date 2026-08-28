@@ -130,6 +130,7 @@ export function SearchInput({
   value,
   ref,
   tokens,
+  onClearAll,
   ...props
 }: InputProps & {
   /**
@@ -142,6 +143,10 @@ export function SearchInput({
    * besides.)
    */
   tokens?: ReactNode;
+  /** What the X clears when tokens are present: everything, not just
+      the input's own text — emptying the visible field must not keep
+      invisible constraints alive. */
+  onClearAll?: () => void;
 }) {
   const [focused, setFocused] = useState(false);
   // For an uncontrolled caller, which the X still has to know about.
@@ -207,9 +212,18 @@ export function SearchInput({
         />
         {/* Inside the field, because it is about the field's contents. It
             appears with the text and leaves with it — an X over an empty
-            box is a button that does nothing. */}
-        {text && (
-          <ClearButton className="right-1.5" label="Clear search" onClear={() => empty('stay')} />
+            box is a button that does nothing. Chips COUNT as contents:
+            a field holding only tokens still offers the X, and clearing
+            it takes the tokens too. */}
+        {(text || tokens) && (
+          <ClearButton
+            className="right-1.5"
+            label="Clear search"
+            onClear={() => {
+              if (tokens && onClearAll) onClearAll();
+              else empty('stay');
+            }}
+          />
         )}
       </InputGroup>
       {/* Touch only. Cancel exists to put a keyboard away and give the
