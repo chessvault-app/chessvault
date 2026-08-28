@@ -10,10 +10,14 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { memo, useMemo, useState, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
-import { matchesSearchTerms, parseSearchQuery } from '@shared/searchQuery';
+import {
+  matchesSearchTerms,
+  parseSearchQuery,
+  type FilterConstraints,
+} from '@shared/searchQuery';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -202,6 +206,7 @@ export function CollectionList({
   toolbar,
   onSelect,
   selectedKey,
+  onFilterConstraints,
 }: {
   /** framed — its own card on the page; panel — hosted behind the Games
       pane's tabs, where the toolbar carries the finders instead of a
@@ -234,6 +239,10 @@ export function CollectionList({
       null (Escape) clears it. */
   onSelect?: (game: GameSummary | null) => void;
   selectedKey?: string | null;
+  /** The active filters, reported upward whenever they change, so the
+      HOST's warning box (which owns the query) can say when a query
+      term and a filter leave no game possible. */
+  onFilterConstraints?: (f: FilterConstraints) => void;
 }) {
   // The quick filters, session-only like the archive's: what you want to
   // see is a question of the moment, not a preference.
@@ -244,6 +253,21 @@ export function CollectionList({
   // a few dozen games are already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
+  // The host's warning box judges the query AGAINST these — reported
+  // whenever they change (ownership and notes are vault facts no game
+  // header can contradict, so they stay out).
+  useEffect(() => {
+    onFilterConstraints?.({
+      result: resultFilter !== 'any' ? resultFilter : undefined,
+      player: structured.player || undefined,
+      side: structured.side,
+      outcome: structured.outcome,
+      player2: structured.player2 || undefined,
+      from: structured.from || undefined,
+      to: structured.to || undefined,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultFilter, structured]);
   // The row's selects, drafted for the window: one state, two views —
   // Apply commits both (see StructuredFiltersWindow's extraFields).
   const [quickDraft, setQuickDraft] = useState({

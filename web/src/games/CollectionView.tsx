@@ -31,6 +31,7 @@ import { CreateControl, FabSpacer } from '@/components/fab';
 import { useUndoable } from '@/hooks/use-undoable';
 
 import { t } from '@/lib/i18n';
+import type { FilterConstraints } from '@shared/searchQuery';
 import { GamePreview, docId, gameKey, type GameSummary, type Preview } from './shared';
 import { CollectionList, customName } from './CollectionList';
 import {
@@ -92,6 +93,9 @@ export function CollectionView() {
   /** The query-language panel under the collection search, open while
       the box has focus. */
   const [searchHintsOpen, setSearchHintsOpen] = useState(false);
+  // The collection list's active filters, reported upward so the
+  // warning box beside the query can judge the two surfaces together.
+  const [colConstraints, setColConstraints] = useState<FilterConstraints | undefined>(undefined);
   /** Live values for the panel: players and events aggregate from the
       rows already in the page; openings and ECO come from the vendored
       catalogue, same as everywhere. */
@@ -454,7 +458,7 @@ export function CollectionView() {
 
         <div className="flex flex-col gap-2 lg:hidden">
           <div className="flex items-center gap-2">{finders('flex-1')}</div>
-          <SearchQueryIssues query={query} pending={searchHintsOpen} />
+          <SearchQueryIssues query={query} pending={searchHintsOpen} filters={colConstraints} />
         </div>
       </div>
 
@@ -493,6 +497,7 @@ export function CollectionView() {
             onImport={() => setImporting(true)}
             onClearSearch={() => setQuery('')}
             onShowAll={() => setMarkedOnly(false)}
+            onFilterConstraints={setColConstraints}
           />
         </div>
       )}
@@ -588,11 +593,16 @@ export function CollectionView() {
                         {t('Import a game')}
                       </Button>
                     </div>
-                    <SearchQueryIssues query={query} pending={searchHintsOpen} />
+                    <SearchQueryIssues
+                      query={query}
+                      pending={searchHintsOpen}
+                      filters={colConstraints}
+                    />
                   </div>
                 }
                 onSelect={(g) => setColSelKey(g ? gameKey(g) : null)}
                 selectedKey={colSelKey}
+                onFilterConstraints={setColConstraints}
               />
             )}
           </Panel>

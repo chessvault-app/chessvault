@@ -1287,7 +1287,20 @@ export function DatabaseGames({
               <ScanSearch className="size-3.5" />
             </Button>
           </div>
-          <SearchQueryIssues query={query} pending={hintsOpen} />
+          <SearchQueryIssues
+            query={query}
+            pending={hintsOpen}
+            filters={{
+              result: resultFilter !== 'any' ? resultFilter : undefined,
+              minElo: minElo > 0 ? minElo : undefined,
+              player: structured.player || undefined,
+              side: structured.side,
+              outcome: structured.outcome,
+              player2: structured.player2 || undefined,
+              from: structured.from || undefined,
+              to: structured.to || undefined,
+            }}
+          />
           {huntControls}
         </div>
       }

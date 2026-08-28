@@ -45,6 +45,29 @@ export interface SearchIssue {
       `impossible`, the LAST token of the conflict, so the warning
       waits until the token that completes it is finished. */
   raw: string;
+  /** True when the conflict is with the ACTIVE FILTERS rather than
+      inside the query — findCrossImpossible's issues, worded
+      differently by the box. */
+  cross?: boolean;
+}
+
+/**
+ * The other surface's constraints, as findCrossImpossible reads them:
+ * the quick row's score and strength, and the filter window's sentence.
+ * Every slot optional — pass what is set, the same values the search
+ * request itself carries.
+ */
+export interface FilterConstraints {
+  result?: string;
+  minElo?: number;
+  band?: { lo: number; hi: number | null };
+  player?: string;
+  side?: 'any' | 'white' | 'black';
+  outcome?: 'any' | 'won' | 'lost' | 'drawn';
+  player2?: string;
+  /** ISO dates, as the from/to fields hold them. */
+  from?: string;
+  to?: string;
 }
 
 export const SEARCH_PREFIXES = [
@@ -98,8 +121,8 @@ const namesCompatible = (a: string, b: string): boolean => {
 
 /** Constraints bucketed into "could be the same name" groups —
     containment-greedy, which is enough for a warning. */
-const nameGroups = (vals: { value: string; raw: string }[]): { value: string; raw: string }[][] => {
-  const groups: { value: string; raw: string }[][] = [];
+const nameGroups = <T extends { value: string }>(vals: T[]): T[][] => {
+  const groups: T[][] = [];
   for (const v of vals) {
     const g = groups.find((members) => members.some((m) => namesCompatible(m.value, v.value)));
     if (g) g.push(v);
@@ -165,10 +188,13 @@ const findImpossible = (withRaw: { term: SearchTerm; raw: string }[], issues: Se
   }
 };
 
-export function parseSearchQuery(q: string): {
+/** The parse with each term's raw token kept — parseSearchQuery's
+    public shape drops the raws; findCrossImpossible needs them. */
+function parseWithRaws(q: string): {
   text: string;
   terms: SearchTerm[];
   issues: SearchIssue[];
+  withRaw: { term: SearchTerm; raw: string }[];
 } {
   // Tokens split on whitespace, with double quotes holding a phrase
   // together — `event:"tata steel"` is one token.
@@ -235,7 +261,136 @@ export function parseSearchQuery(q: string): {
   }
 
   findImpossible(withRaw, issues);
-  return { text: textParts.join(' ').trim(), terms, issues };
+  return { text: textParts.join(' ').trim(), terms, issues, withRaw };
+}
+
+export function parseSearchQuery(q: string): {
+  text: string;
+  terms: SearchTerm[];
+  issues: SearchIssue[];
+} {
+  const { text, terms, issues } = parseWithRaws(q);
+  return { text, terms, issues };
+}
+
+/**
+ * The contradictions BETWEEN the surfaces: a query term the active
+ * filters leave no room for. Same judged cases as inside the query —
+ * exact scores, date spans, elo bands, seats — with the filter
+ * window's relative constraints translated first (a player's
+ * "won as White" IS result 1-0; "won" with no side merely excludes
+ * the draw). Only conflicts a query term participates in are
+ * reported: the window arguing with itself is the window's own
+ * business, and it has its own hint for that.
+ */
+export function findCrossImpossible(q: string, f: FilterConstraints): SearchIssue[] {
+  const { withRaw } = parseWithRaws(q);
+  const issues: SearchIssue[] = [];
+  const cross = (qualifier: string, involved: string[], lastRaw: string) => {
+    issues.push({
+      qualifier,
+      kind: 'impossible',
+      cross: true,
+      value: [...new Set(involved)].join(' · '),
+      raw: lastRaw,
+    });
+  };
+
+  // What the filters say about the exact score. A named player's
+  // outcome pins it only WITH a side; without one, won/lost still
+  // rules out the draw.
+  const exactResult =
+    f.result === '1-0' || f.result === '0-1' || f.result === '1/2-1/2'
+      ? f.result
+      : f.player && f.outcome === 'drawn'
+        ? '1/2-1/2'
+        : f.player && (f.outcome === 'won' || f.outcome === 'lost') && f.side === 'white'
+          ? f.outcome === 'won'
+            ? '1-0'
+            : '0-1'
+          : f.player && (f.outcome === 'won' || f.outcome === 'lost') && f.side === 'black'
+            ? f.outcome === 'won'
+              ? '0-1'
+              : '1-0'
+            : null;
+  const excludesDraw =
+    Boolean(f.player) && (f.outcome === 'won' || f.outcome === 'lost') && f.side === 'any';
+  for (const t of withRaw) {
+    if (t.term.kind !== 'result') continue;
+    if (exactResult && t.term.value !== exactResult) cross('result', [t.raw], t.raw);
+    else if (excludesDraw && t.term.value === '1/2-1/2') cross('result', [t.raw], t.raw);
+  }
+
+  // Dates: the query's years against the window's from/to, compared as
+  // dates. Skipped when the years already contradict each other — that
+  // warning stands on its own.
+  const years = withRaw.filter((t) => t.term.kind === 'year');
+  if (years.length > 0 && (f.from || f.to)) {
+    const spans = years.map((t) => t.term as { from: number; to: number });
+    let lo = `${Math.max(...spans.map((s) => s.from))}-01-01`;
+    let hi = `${Math.min(...spans.map((s) => s.to))}-12-31`;
+    if (lo <= hi) {
+      if (f.from && f.from > lo) lo = f.from;
+      if (f.to && f.to < hi) hi = f.to;
+      if (lo > hi) cross('year', years.map((t) => t.raw), years[years.length - 1]!.raw);
+    }
+  }
+
+  // Elo: the query's bands against the quick row's floor and the
+  // window's band, one intersection.
+  const elos = withRaw.filter((t) => t.term.kind === 'elo');
+  if (elos.length > 0 && ((f.minElo ?? 0) > 0 || f.band)) {
+    const spans = elos.map((t) => t.term as { lo: number; hi: number | null });
+    let lo = Math.max(...spans.map((s) => s.lo));
+    let hi = Math.min(...spans.map((s) => s.hi ?? Infinity));
+    if (lo <= hi) {
+      lo = Math.max(lo, f.minElo ?? 0, f.band?.lo ?? 0);
+      hi = Math.min(hi, f.band?.hi ?? Infinity);
+      if (lo > hi) cross('elo', elos.map((t) => t.raw), elos[elos.length - 1]!.raw);
+    }
+  }
+
+  // Seats: the window's player takes the seat its side names (either
+  // seat on "any"), the opponent either seat — then the same grouping
+  // as inside the query. Filter names show as bare names in the
+  // warning; query terms as typed.
+  const qSeat = (kind: 'white' | 'black' | 'player') =>
+    withRaw
+      .filter((t) => t.term.kind === kind)
+      .map((t) => ({ value: (t.term as { value: string }).value, raw: t.raw as string | undefined }));
+  const fName = (name: string | undefined) =>
+    name?.trim() ? [{ value: name.trim(), raw: undefined }] : [];
+  const fWhite = f.side === 'white' ? fName(f.player) : [];
+  const fBlack = f.side === 'black' ? fName(f.player) : [];
+  const fEither = [...(f.side === 'white' || f.side === 'black' ? [] : fName(f.player)), ...fName(f.player2)];
+  const seatConflict = (
+    qualifier: string,
+    entries: { value: string; raw: string | undefined }[],
+    seats: number,
+  ) => {
+    if (!entries.some((e) => e.raw !== undefined)) return false; // window-internal
+    const groups = nameGroups(entries);
+    if (groups.length <= seats) return false;
+    const qRaws = entries.filter((e) => e.raw !== undefined).map((e) => e.raw!);
+    cross(
+      qualifier,
+      groups.map((g) => g[0]!.raw ?? g[0]!.value),
+      qRaws[qRaws.length - 1]!,
+    );
+    return true;
+  };
+  if (
+    !seatConflict('white', [...qSeat('white'), ...fWhite], 1) &&
+    !seatConflict('black', [...qSeat('black'), ...fBlack], 1)
+  ) {
+    seatConflict(
+      'player',
+      [...qSeat('white'), ...fWhite, ...qSeat('black'), ...fBlack, ...qSeat('player'), ...fEither],
+      2,
+    );
+  }
+
+  return issues;
 }
 
 /**

@@ -15,7 +15,11 @@ import {
   undeclaredFilters,
 } from './refgames.ts';
 import { indexPositions } from './refgamesIndex.ts';
-import { matchesSearchTerms, parseSearchQuery } from '../shared/searchQuery.ts';
+import {
+  findCrossImpossible,
+  matchesSearchTerms,
+  parseSearchQuery,
+} from '../shared/searchQuery.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
 /**
@@ -969,6 +973,37 @@ describe('parseSearchQuery', () => {
     ]);
     // The terms stay in the search — zero rows is the right answer.
     expect(parseSearchQuery('result:1-0 result:0-1').terms).toHaveLength(2);
+  });
+
+  it('warns when a query term and the active filters leave no game', () => {
+    const cross = (q: string, f: Parameters<typeof findCrossImpossible>[1]) =>
+      findCrossImpossible(q, f);
+    // Exact score against the quick row, and against a pinned outcome.
+    expect(cross('result:0-1 ', { result: '1-0' })).toMatchObject([
+      { qualifier: 'result', kind: 'impossible', cross: true, raw: 'result:0-1' },
+    ]);
+    expect(
+      cross('result:0-1 ', { player: 'carlsen', side: 'white', outcome: 'won' }),
+    ).toMatchObject([{ qualifier: 'result', cross: true }]);
+    // Won with no side rules out only the draw.
+    expect(cross('result:draw ', { player: 'carlsen', side: 'any', outcome: 'won' })).toHaveLength(1);
+    expect(cross('result:1-0 ', { player: 'carlsen', side: 'any', outcome: 'won' })).toHaveLength(0);
+    // Dates and elo intersect across the surfaces.
+    expect(cross('year:2014 ', { from: '2016-01-01' })).toHaveLength(1);
+    expect(cross('year:2014-2020 ', { from: '2016-01-01' })).toHaveLength(0);
+    expect(cross('elo:2400-2500 ', { minElo: 2600 })).toHaveLength(1);
+    expect(cross('elo:2400-2500 ', { band: { lo: 2450, hi: 2480 } })).toHaveLength(0);
+    // Seats: the window's player claims the seat its side names.
+    expect(
+      cross('white:nakamura ', { player: 'carlsen', side: 'white' }),
+    ).toMatchObject([{ qualifier: 'white', cross: true }]);
+    expect(cross('white:carlsen ', { player: 'carlsen', side: 'white' })).toHaveLength(0);
+    // Three names, two seats, across the surfaces.
+    expect(
+      cross('player:kasparov ', { player: 'carlsen', player2: 'nakamura' }),
+    ).toMatchObject([{ qualifier: 'player', cross: true }]);
+    // The window arguing with itself is not the box's business.
+    expect(cross('', { result: '0-1', player: 'x', side: 'white', outcome: 'won' })).toHaveLength(0);
   });
 
   it('does not warn on combinations that can hold', () => {

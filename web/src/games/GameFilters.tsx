@@ -1,6 +1,12 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { SlidersHorizontal, TriangleAlert, X } from 'lucide-react';
-import { composeQueryChips, parseSearchQuery, splitQueryChips } from '@shared/searchQuery';
+import {
+  composeQueryChips,
+  findCrossImpossible,
+  parseSearchQuery,
+  splitQueryChips,
+  type FilterConstraints,
+} from '@shared/searchQuery';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Select } from '@/components/ui/select';
@@ -956,18 +962,23 @@ export function SearchQueryHints({
 export function SearchQueryIssues({
   query,
   pending = false,
+  filters,
   className,
 }: {
   query: string;
   /** True while the box has focus — the last token may still be
       mid-type. */
   pending?: boolean;
+  /** The OTHER surface's constraints — the quick row and the filter
+      window — so a query term the filters leave no room for warns
+      here too, instead of silently finding nothing. */
+  filters?: FilterConstraints;
   className?: string;
 }) {
   const { issues } = parseSearchQuery(query);
+  const all = filters ? [...issues, ...findCrossImpossible(query, filters)] : issues;
   const rawLast = query.slice(query.lastIndexOf(' ') + 1);
-  const shown =
-    pending && !query.endsWith(' ') ? issues.filter((i) => i.raw !== rawLast) : issues;
+  const shown = pending && !query.endsWith(' ') ? all.filter((i) => i.raw !== rawLast) : all;
   if (shown.length === 0) return null;
   return (
     <div className={cn('border-warn/40 bg-warn/10 rounded-md border px-1 py-0.5', className)}>
@@ -997,7 +1008,11 @@ export function SearchQueryIssues({
             <IssueLine
               key={i}
               badge={issue.value ?? ''}
-              message={t('cannot all hold in one game')}
+              message={
+                issue.cross
+                  ? t('cannot hold with the active filters')
+                  : t('cannot all hold in one game')
+              }
             />
           ),
         )}
