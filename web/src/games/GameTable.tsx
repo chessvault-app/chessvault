@@ -44,20 +44,21 @@ const COLS_HEADER =
   '@max-[44rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
   '@max-[38rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
 
-// The archive's variant: a leading standing column (the select
-// checkbox and the Add button — what that list is FOR), ahead of the
-// same columns. 5.5rem seats the w-16 button with the checkbox beside
-// it in selection mode.
+// The archive's variant: a trailing standing column (the select
+// checkbox and the Add button — what that list is FOR), after the
+// same columns. Trailing, not leading: a column of buttons ahead of
+// the player names pushed the row's identity off its left edge. 6rem
+// seats the w-16 button with the checkbox beside it in selection mode.
 const COLS_ROW_STANDING =
-  '[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)] ' +
-  '@max-[56rem]/arc:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem] ' +
-  '@max-[44rem]/arc:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
-  '@max-[38rem]/arc:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
+  '[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)_6rem] ' +
+  '@max-[56rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_6rem] ' +
+  '@max-[44rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem_6rem] ' +
+  '@max-[38rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem_6rem]';
 const COLS_HEADER_STANDING =
-  '[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)] ' +
-  '@max-[56rem]/arch:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem] ' +
-  '@max-[44rem]/arch:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
-  '@max-[38rem]/arch:[grid-template-columns:5.5rem_minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
+  '[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)_6rem] ' +
+  '@max-[56rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_6rem] ' +
+  '@max-[44rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem_6rem] ' +
+  '@max-[38rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem_6rem]';
 
 const HIDE_NOTATION_ROW = '@max-[56rem]/arc:hidden';
 const HIDE_EVENT_ROW = '@max-[44rem]/arc:hidden';
@@ -151,7 +152,6 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
           'text-muted-foreground min-h-7 py-1 text-xs font-medium',
         )}
       >
-        {withStanding && <span aria-hidden />}
         {head('White')}
         {head('Elo', cn('text-right', HIDE_ELO_HEADER))}
         {head('Black')}
@@ -162,6 +162,7 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
         {head('Tournament', HIDE_EVENT_HEADER)}
         {head('Date')}
         {head('Notation', HIDE_NOTATION_HEADER)}
+        {withStanding && <span aria-hidden />}
       </div>
     </div>
   );
@@ -223,9 +224,6 @@ export function GameTableRow({
         bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
       )}
     >
-      {standing !== undefined && (
-        <span className="flex items-center gap-1">{standing}</span>
-      )}
       {name(game.white, 'white')}
       <span className={cn(quiet, 'text-right tabular-nums', HIDE_ELO_ROW)}>
         {game.whiteElo || ''}
@@ -248,6 +246,9 @@ export function GameTableRow({
       <span className={cn(quiet, 'font-mono', HIDE_NOTATION_ROW)}>
         {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
       </span>
+      {standing !== undefined && (
+        <span className="flex items-center justify-end gap-1">{standing}</span>
+      )}
     </li>
   );
 

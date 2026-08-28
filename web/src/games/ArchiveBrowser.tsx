@@ -949,7 +949,20 @@ export function ArchiveBrowser({
                same weight as the buttons and put Cancel wherever the text
                happened to end. */
             <>
-              <label className="flex min-w-0 cursor-pointer items-center gap-1.5">
+              <label
+                className={cn(
+                  'flex min-w-0 items-center gap-1.5',
+                  uncollected.length > 0 ? 'cursor-pointer' : 'opacity-60',
+                )}
+                // "New" can be nobody: a master checkbox that ticks
+                // nothing reads as broken unless it says why. The
+                // per-row checkboxes still take deliberate re-adds.
+                title={
+                  uncollected.length === 0
+                    ? t('Every game shown is already in the collection')
+                    : undefined
+                }
+              >
                 <Checkbox
                   // Indeterminate is the honest state for a partial
                   // selection: an unchecked box next to eight ticked rows
@@ -958,11 +971,16 @@ export function ArchiveBrowser({
                   indeterminate={
                     picked.size > 0 && picked.size !== uncollected.length
                   }
+                  disabled={uncollected.length === 0}
                   onCheckedChange={(on) =>
                     setPicked(on === true ? new Set(uncollected.map(gameKey)) : new Set())
                   }
                 />
-                <span className="text-muted-foreground truncate">{t('Select all new')}</span>
+                <span className="text-muted-foreground truncate">
+                  {uncollected.length === 0
+                    ? t('Select all new — none are new')
+                    : t('Select all new')}
+                </span>
               </label>
               {/* A badge, not another grey sentence: it is the one number
                   that changes as you tick rows. */}
