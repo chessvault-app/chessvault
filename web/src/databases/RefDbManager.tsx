@@ -1,4 +1,4 @@
-import { Database, FileText, Hammer, Plus, Trash2, Upload, Zap } from 'lucide-react';
+﻿import { Database, FileText, Hammer, Plus, Trash2, Upload, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -65,7 +65,14 @@ interface Source {
 
 type Tab = 'databases' | 'sources';
 
-const mb = (bytes: number): string => `${(bytes / 1e6).toFixed(1)} MB`;
+/** 8.2 MB, 667 MB, 34.7 GB — the unit climbs with the file, so a big
+    database is not a five-digit MB figure beside a one-digit one. */
+const fmtBytes = (bytes: number): string => {
+  const [unit, div] =
+    bytes >= 1e9 ? (['GB', 1e9] as const) : bytes >= 1e6 ? (['MB', 1e6] as const) : (['KB', 1e3] as const);
+  const v = bytes / div;
+  return `${v >= 10 ? Math.round(v).toLocaleString() : v.toFixed(1)} ${unit}`;
+};
 
 export function RefDbManager({
   databases,
@@ -215,14 +222,21 @@ export function RefDbManager({
   };
 
   /** Fast search on or off: the server loads (or evicts) the packed
-      index in a worker's memory, and the choice rides in the file. */
+      index in a worker's memory, and the choice rides in the file.
+      Loading is ~0.5 KB per game read off disk — a big database takes
+      real seconds, so the row says so instead of playing dead (the
+      press looked ignored, and the first search merely slow). */
+  const [scanBusy, setScanBusy] = useState<string | null>(null);
   const fastScan = async (dbName: string, on: boolean): Promise<void> => {
     setError(null);
+    setScanBusy(dbName);
     try {
       await api('/api/refgames/fast-scan', { method: 'POST', json: { db: dbName, on } });
       onChanged();
     } catch (error) {
       setError(`${dbName}: ${t(apiErrorMessage(error))}`);
+    } finally {
+      setScanBusy(null);
     }
   };
 
@@ -297,6 +311,7 @@ export function RefDbManager({
         onOptimize={(n) => void optimize(n)}
         onAddTo={(n) => setAddTo(n)}
         onFastScan={(n, on) => void fastScan(n, on)}
+        scanBusy={scanBusy}
         optimizeDisabled={running}
       />
     ) : (
@@ -550,6 +565,7 @@ function DbList({
   onOptimize,
   onAddTo,
   onFastScan,
+  scanBusy,
   optimizeDisabled,
 }: {
   databases: RefDb[];
@@ -557,6 +573,8 @@ function DbList({
   onOptimize: (name: string) => void;
   onAddTo: (name: string) => void;
   onFastScan: (name: string, on: boolean) => void;
+  /** The database whose scan index is loading or unloading right now. */
+  scanBusy: string | null;
   optimizeDisabled: boolean;
 }) {
   return (
@@ -576,8 +594,15 @@ function DbList({
           <span className="text-foreground min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
-          <span className="text-muted-foreground shrink-0">
-            {t('{n} games', { n: d.games.toLocaleString() })} · {mb(d.bytes)}
+          {/* Two aligned columns, not one dotted run: with counts from
+              four digits to eight the run put every size at a different
+              x, and the eye could not compare either figure down the
+              list. Fixed right-aligned columns line both up. */}
+          <span className="text-muted-foreground w-32 shrink-0 text-right tabular-nums">
+            {t('{n} games', { n: d.games.toLocaleString() })}
+          </span>
+          <span className="text-muted-foreground w-16 shrink-0 text-right tabular-nums">
+            {fmtBytes(d.bytes)}
           </span>
           {/* Built before the position index existed: the explorer
               offers to add it when this database is its source. */}
@@ -589,22 +614,40 @@ function DbList({
               (~0.5 KB per game), so position and material hunts scan
               bytes instead of replaying movetext. Only offered where a
               full index pass has written the packs. */}
-          {d.packed === true && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              active={d.fastScan === true}
-              className="shrink-0"
-              title={
-                d.fastScan === true
-                  ? t('Fast search is on — the scan index is held in server memory')
-                  : t('Fast search: hold the scan index in server memory')
-              }
-              onClick={() => onFastScan(d.name, d.fastScan !== true)}
-            >
-              <Zap className="size-3.5" />
-            </Button>
-          )}
+          {/* The slot is reserved even where the toggle is not offered:
+              without it the +, hammer and trash of an unpacked row stood
+              28px left of their neighbours', and the icon columns read
+              as ragged rather than as columns. */}
+          {d.packed !== true && <span className="w-7 shrink-0" aria-hidden />}
+          {d.packed === true &&
+            (scanBusy === d.name ? (
+              // The load is seconds of real disk work on a big database
+              // — say so where the press landed, or it reads as ignored
+              // and the first search merely slow.
+              <span
+                className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs"
+                role="status"
+              >
+                <Spinner className="size-3.5" />
+                {d.fastScan === true ? t('Releasing the scan index…') : t('Loading the scan index…')}
+              </span>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                active={d.fastScan === true}
+                disabled={scanBusy !== null}
+                className="shrink-0"
+                title={
+                  d.fastScan === true
+                    ? t('Fast search is on — the scan index is held in server memory')
+                    : t('Fast search: hold the scan index in server memory')
+                }
+                onClick={() => onFastScan(d.name, d.fastScan !== true)}
+              >
+                <Zap className="size-3.5" />
+              </Button>
+            ))}
           {/* Growing THIS database, from its own row — burying append
               behind typing a matching name into the build form was not
               a flow anyone would find (lanph3re said so). */}
@@ -693,7 +736,7 @@ function SourceList({
               onCheckedChange={(on) => onToggle(s.name, on === true)}
             />
             <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
-            <span className="text-muted-foreground shrink-0">{mb(s.bytes)}</span>
+            <span className="text-muted-foreground shrink-0">{fmtBytes(s.bytes)}</span>
           </label>
           {/* Uploading is how a phone gets a file onto the server, so
               deleting one has to be possible there too — the app was the
@@ -776,7 +819,7 @@ function AddToWindow({
                       }
                     />
                     <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
-                    <span className="text-muted-foreground shrink-0">{mb(s.bytes)}</span>
+                    <span className="text-muted-foreground shrink-0">{fmtBytes(s.bytes)}</span>
                   </label>
                 </li>
               ))}
