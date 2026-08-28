@@ -465,7 +465,6 @@ export function CollectionView() {
               />
             ) : (
               <CollectionList
-                shape="panel"
                 table={wide}
                 games={games}
                 loaded={loaded}

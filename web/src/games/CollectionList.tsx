@@ -41,7 +41,7 @@ import {
   type StructuredFilters,
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
-import { GameListShell, type GameListShape } from './GameListShell';
+import { GameListShell } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -178,13 +178,12 @@ export const customName = (g: GameSummary): string | null => {
 };
 
 /**
- * The collection's list: the framed panel, its filter row, its rows and
- * its empty states. The games themselves, the bookmarks and every verb
- * that writes stay in CollectionView — this component owns only what
- * narrows and shows the list it was given.
+ * The collection's list behind the Games pane's tabs: its filter row,
+ * its rows and its empty states. The games themselves, the bookmarks
+ * and every verb that writes stay in CollectionView — this component
+ * owns only what narrows and shows the list it was given.
  */
 export function CollectionList({
-  shape = 'framed',
   table = false,
   games,
   loaded,
@@ -202,19 +201,14 @@ export function CollectionList({
   onImport,
   onClearSearch,
   onShowAll,
-  headerActions,
   toolbar,
   onSelect,
   selectedKey,
   onFilterConstraints,
 }: {
-  /** framed — its own card on the page; panel — hosted behind the Games
-      pane's tabs, where the toolbar carries the finders instead of a
-      panel header. */
-  shape?: GameListShape;
   /** Dense table rows instead of cards — the wide pane's presentation.
-      Explicit, never inferred: the same list renders as cards in the
-      phone sheet whatever the window says. */
+      Explicit, never inferred: the same list renders as cards below lg
+      whatever the pane says. */
   table?: boolean;
   games: GameSummary[];
   loaded: boolean;
@@ -232,8 +226,7 @@ export function CollectionList({
   onImport: () => void;
   onClearSearch: () => void;
   onShowAll: () => void;
-  headerActions?: ReactNode;
-  /** panel shape: the finders pair, in the shell's toolbar band. */
+  /** The finders pair, in the shell's toolbar band. */
   toolbar?: ReactNode;
   /** Table mode: a click makes this row the details panel's subject;
       null (Escape) clears it. */
@@ -377,29 +370,14 @@ export function CollectionList({
   return (
     <>
     <GameListShell
-      shape={shape}
-      // shrink-0 below lg: loading an archive month must not squeeze this
-      // panel — the page column scrolls instead.
-      panelClassName={
-        shape === 'framed' ? 'shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch' : undefined
-      }
-      title={shape === 'framed' ? `${t('Collection')} · ${visible.length}` : undefined}
-      // At lg the finders pair lives here, with the list it filters, and
-      // the row under the page title is not rendered. The field grows
-      // into whatever the header has spare — on a wide panel a 48-wide
-      // box sat beside dead space — while the title's own flex share
-      // keeps the panel's name in place.
-      headerActionsClassName="min-w-0 grow"
-      headerActions={shape === 'framed' ? headerActions : undefined}
+      shape="panel"
       toolbar={toolbar}
       // The panel shape has no framed title to carry the tally, so the
       // count band says it.
       countBand={
-        shape === 'panel' ? (
-          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-            {t('{n} games', { n: visible.length.toLocaleString() })}
-          </span>
-        ) : undefined
+        <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+          {t('{n} games', { n: visible.length.toLocaleString() })}
+        </span>
       }
       listHeader={table ? <GameTableHeader /> : undefined}
       listVars={table ? tableVars : undefined}
@@ -505,11 +483,7 @@ export function CollectionList({
             )
           : undefined
       }
-      listClassName={
-        shape === 'framed'
-          ? 'flex-1 overflow-y-auto sm:max-h-[38dvh] lg:max-h-none'
-          : 'flex-1 overflow-y-auto'
-      }
+      listClassName="flex-1 overflow-y-auto"
       tail={
         !loaded ? undefined : /* Nothing to show and nothing narrowing the list. Two ways to get
             here: the collection really is empty, or its last rows were just
