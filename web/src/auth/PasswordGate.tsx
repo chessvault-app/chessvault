@@ -117,9 +117,10 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* The same mark as the sidebar — the lock screen is the front
             door, so it wears the brand, not a padlock. Bare, like the
-            sidebar's and the home header's: everywhere in the app the
-            mark is line-work in the surrounding ink, and the tile lives
-            only where an OS icon needs its own ground (favicon, splash). */}
+            sidebar's and the home header's: everywhere the mark appears
+            it is line-work in the surrounding ink, and a ground survives
+            only on the icons an OS composites onto grounds the image
+            cannot see (apple-touch, the desktop installers). */}
         <BrandMark className="mb-5 size-10" />
         <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
         <p className="text-muted-foreground mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
