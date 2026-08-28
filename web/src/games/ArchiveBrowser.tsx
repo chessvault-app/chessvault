@@ -1,4 +1,4 @@
-import { Globe, Info, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { Globe, Info, Play, Plus, SlidersHorizontal } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
@@ -24,9 +24,55 @@ import { forgetMyGames } from '@/openingmap/useGaps';
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow, useGameTableVars } from './GameTable';
-import { GameDetailsSheet } from './GameDetails';
+import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
+
+/**
+ * The details view's action pair for an archive row, with its own
+ * added-state — the node lives in the page's selection state, so it
+ * cannot read the browser's `added` set after the fact; what it CAN do
+ * is remember its own success (RefRowActions' reasoning).
+ */
+function ArchiveRowActions({
+  inCollection,
+  onOpen,
+  onCollect,
+}: {
+  inCollection: boolean;
+  onOpen: () => void;
+  onCollect: () => Promise<boolean>;
+}) {
+  const [added, setAdded] = useState(inCollection);
+  return (
+    // Primary rightmost — the app's button order.
+    <>
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={added}
+        onClick={() => {
+          void onCollect().then((ok) => {
+            if (ok) setAdded(true);
+          });
+        }}
+      >
+        {added ? (
+          t('Added')
+        ) : (
+          <>
+            <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+            {t('Add to collection')}
+          </>
+        )}
+      </Button>
+      <Button variant="default" size="sm" onClick={onOpen}>
+        <Play className="size-3.5" data-icon="inline-start" />
+        {t('Open the game')}
+      </Button>
+    </>
+  );
+}
 import {
   EMPTY_STRUCTURED_FILTERS,
   hasStructuredFilters,
@@ -80,36 +126,6 @@ interface ArchiveBrowseState {
 // shape — see lib/storageSweep.
 const userKey = (provider: string): string => `chess-vault:archive-user:${provider}`;
 
-/** Handles looked up before, on either site. */
-const RECENTS_KEY = 'chess-vault:recent';
-/** What the two per-site lists were called, before they became one. */
-const LEGACY_RECENTS = ['chess-vault:recent-chesscom', 'chess-vault:recent-lichess'];
-
-const readList = (key: string): string[] => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(key) ?? '[]') as unknown;
-    return Array.isArray(stored) ? stored.filter((s): s is string => typeof s === 'string') : [];
-  } catch {
-    return [];
-  }
-};
-
-/**
- * The shared list, or the two old ones folded into it.
- *
- * Somebody who has been using this has a history under each site; making
- * the list shared must not read as having lost it. The fold happens on
- * the first read and is written back by the first search after it.
- */
-const readRecents = (): string[] => {
-  const shared = readList(RECENTS_KEY);
-  if (shared.length > 0) return shared.slice(0, 4);
-  const merged: string[] = [];
-  for (const who of LEGACY_RECENTS.flatMap(readList)) {
-    if (!merged.some((seen) => seen.toLowerCase() === who.toLowerCase())) merged.push(who);
-  }
-  return merged.slice(0, 4);
-};
 const savedUser = (provider: string): string => localStorage.getItem(userKey(provider)) ?? '';
 
 const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
@@ -176,6 +192,8 @@ const ArchiveRow = memo(function ArchiveRow({
   onToggle,
   onCollect,
   onDetails,
+  selectedRow = false,
+  onSelectRow,
 }: {
   game: GameSummary;
   table: boolean;
@@ -187,6 +205,9 @@ const ArchiveRow = memo(function ArchiveRow({
   onToggle: (key: string, on: boolean) => void;
   onCollect: (game: GameSummary) => void;
   onDetails: (game: GameSummary) => void;
+  /** Table mode: this row is the details panel's subject. */
+  selectedRow?: boolean;
+  onSelectRow: (game: GameSummary) => void;
 }) {
   // Outside the hover tray in either presentation: Add is what this
   // list is FOR, and a selection checkbox that only appears under the
@@ -224,13 +245,14 @@ const ArchiveRow = memo(function ArchiveRow({
     </>
   );
   if (table) {
-    // The wide window's dense presentation. No details panel stands
-    // beside this list, so a click opens — the card rows' own verb.
+    // The wide pane's dense presentation: click selects for the
+    // details panel beside it, double click opens — the same contract
+    // as every other tab's table.
     return (
       <GameTableRow
         game={game}
-        selected={false}
-        onSelect={() => onOpen(game)}
+        selected={selectedRow}
+        onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
         standing={standing}
       />
@@ -256,6 +278,9 @@ export function ArchiveBrowser({
   onPreview,
   shape = 'framed',
   table = false,
+  site,
+  onSelect,
+  selectedKey,
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
@@ -264,6 +289,15 @@ export function ArchiveBrowser({
       presentation. Explicit, never inferred: the phone sheet stays
       cards whatever the window says. */
   table?: boolean;
+  /** Pin the browser to ONE provider — the wide page's per-site tabs,
+      where the tab strip already says which site this is and the
+      provider track would say it twice. The phone sheet passes
+      nothing and keeps the track. */
+  site?: 'chesscom' | 'lichess';
+  /** Table mode: a click packages the row for the details panel;
+      null when the rows it described reset. */
+  onSelect?: (sel: DetailsSelection | null) => void;
+  selectedKey?: string | null;
   /**
    * Where this is being shown — GameListShell's vocabulary, which owns
    * the paddings and rules each place needs. (This used to be a local
@@ -311,22 +345,6 @@ export function ArchiveBrowser({
    * Typing a username is the one thing this panel asks for over and over,
    * and until an archive is loaded the space below it does nothing.
    */
-  const [recents, setRecents] = useState<string[]>(() => readRecents());
-  const rememberRecent = (who: string): void => {
-    setRecents((prev) => {
-      const next = [who, ...prev.filter((p) => p.toLowerCase() !== who.toLowerCase())].slice(0, 4);
-      localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-  /** A mistyped handle should not sit there for the next four searches. */
-  const forgetRecent = (who: string): void => {
-    setRecents((prev) => {
-      const next = prev.filter((p) => p !== who);
-      localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
   const [loading, setLoading] = useState<'months' | 'games' | null>(null);
   // On a phone this panel sits under the collection, so an archive that has
   // just arrived is off the bottom of the screen. Scrolled to, once, when it
@@ -344,6 +362,10 @@ export function ArchiveBrowser({
   }, [months.length]);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  // Read through a ref where reset points live inside async flows —
+  // the selection must clear when the rows it described go away.
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
 
   /** Games already on disk across every cached month — what "All dates"
       can show without touching the network. */
@@ -353,7 +375,7 @@ export function ArchiveBrowser({
     const user = (who ?? username).trim();
     if (!user) return;
     localStorage.setItem(userKey(provider), user);
-    rememberRecent(user);
+    onSelectRef.current?.(null);
     setLoading('months');
     setError(null);
     setMonth('');
@@ -497,6 +519,7 @@ export function ArchiveBrowser({
   }, [month, cursor, months.length]);
 
   const loadMonth = async (m: string): Promise<void> => {
+    onSelectRef.current?.(null);
     if (m === ALL_MONTHS) return loadAllMonths();
     setMonth(m);
     setLoading('games');
@@ -583,12 +606,22 @@ export function ArchiveBrowser({
 
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
     if (next === provider) return;
+    onSelectRef.current?.(null);
     setProvider(next);
     setMonths([]);
     setMonth('');
     setMonthGames([]);
     setError(null);
   };
+
+  // A pinned browser answers for ITS site whatever another instance
+  // left in the shared browse store — the phone sheet, or the other
+  // provider's tab. Reconciling is the same reset the provider track
+  // performs, which is what switching sites has always cost.
+  useEffect(() => {
+    if (site && provider !== site) switchProvider(site);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [site, provider]);
 
   /**
    * Add many games in one request.
@@ -645,7 +678,7 @@ export function ArchiveBrowser({
     if (failure) setError(failure);
   };
 
-  const collect = async (game: GameSummary): Promise<void> => {
+  const collect = async (game: GameSummary): Promise<boolean> => {
     try {
       await api('/api/games/collect', {
         method: 'POST',
@@ -656,9 +689,31 @@ export function ArchiveBrowser({
       // sheet learned about it a moment ago is now out of date.
       forgetMyGames();
       onCollected();
+      return true;
     } catch (failure) {
       setError(t(apiErrorMessage(failure)));
+      return false;
     }
+  };
+
+  /** The row, packaged for the details panel — summary, PGN loader and
+      verbs, the same shape every list hands it. */
+  const selectRow = (game: GameSummary): void => {
+    onSelect?.({
+      key: gameKey(game),
+      summary: game,
+      loadPgn: loadGamePgn(game),
+      actions: (
+        <ArchiveRowActions
+          inCollection={
+            added.has(gameKey(game)) ||
+            collectionKeys.has(`${game.white}|${game.black}|${game.date}`)
+          }
+          onOpen={() => void openInAnalysis(game)}
+          onCollect={() => collect(game)}
+        />
+      ),
+    });
   };
 
   // The rows memoise on primitives, so every callback handed to them must
@@ -667,10 +722,35 @@ export function ArchiveBrowser({
   // which is what lets ticking one checkbox re-render one row instead of
   // the whole month (measured before: 562 GameRow renders per tick on a
   // 281-game month; after: the two rows whose props changed).
-  const rowHandlers = useRef({ openInAnalysis, collect });
-  rowHandlers.current = { openInAnalysis, collect };
+  // ↑/↓/Enter/Escape drive the table selection over the visible rows —
+  // the same contract as the databases and collection tabs.
+  const tableNav = useTableNav(table && onSelect !== undefined);
+  const navRows = visibleMonthGames.slice(0, MAX_ROWS);
+  tableNav.current = {
+    move: (delta) => {
+      const at = navRows.findIndex((g) => gameKey(g) === selectedKey);
+      const next =
+        navRows[
+          at < 0
+            ? delta > 0
+              ? 0
+              : navRows.length - 1
+            : Math.min(navRows.length - 1, Math.max(0, at + delta))
+        ];
+      if (next) selectRow(next);
+    },
+    open: () => {
+      const g = navRows.find((g) => gameKey(g) === selectedKey);
+      if (g) void openInAnalysis(g);
+    },
+    clear: () => onSelect?.(null),
+  };
+
+  const rowHandlers = useRef({ openInAnalysis, collect, selectRow });
+  rowHandlers.current = { openInAnalysis, collect, selectRow };
   const rowOpen = useCallback((g: GameSummary) => void rowHandlers.current.openInAnalysis(g), []);
   const rowCollect = useCallback((g: GameSummary) => void rowHandlers.current.collect(g), []);
+  const rowSelect = useCallback((g: GameSummary) => rowHandlers.current.selectRow(g), []);
   // The ⋯ → Game details sheet, for the card rows.
   const [details, setDetails] = useState<GameSummary | null>(null);
   const tableVars = useGameTableVars(true);
@@ -689,7 +769,10 @@ export function ArchiveBrowser({
     <>
         {/* One track, one lit segment. As two chips it was impossible to
             tell by looking whether they were a choice or two independent
-            toggles — and both being unlit is not a state this has. */}
+            toggles — and both being unlit is not a state this has.
+            Absent entirely when the browser is pinned to one site: the
+            page's tab strip already made the choice. */}
+        {!site && (
         <Segmented
           value={provider}
           onChange={switchProvider}
@@ -725,6 +808,7 @@ export function ArchiveBrowser({
             },
           ]}
         />
+        )}
 
         <div className="flex items-center gap-1">
           {/* SearchInput, not a bare Input: a mistyped handle needed
@@ -754,46 +838,6 @@ export function ArchiveBrowser({
           </Button>
         </div>
 
-        {/* Who you have looked up before, on this provider. Typing a handle
-            again is the one thing this panel asks for repeatedly, and the
-            empty space under it was doing nothing. A list of names with no
-            heading read as a result, not as history — and there was no way
-            to drop one that had been mistyped. */}
-        {months.length === 0 && recents.length > 0 && (
-          <div className="mt-1 flex flex-col gap-1.5">
-            <p className="text-muted-foreground text-sm font-medium">
-              {t('Recent searches')}
-            </p>
-            <div className="flex flex-wrap items-center gap-1">
-              {recents.map((who) => (
-                <span
-                  key={who}
-                  className="border-border text-muted-foreground hover:border-border hover:text-foreground group/recent flex w-fit shrink-0 items-center rounded-full border pl-2.5 transition-colors duration-100"
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUsername(who);
-                      void loadMonths(who);
-                    }}
-                    className="max-w-[9rem] truncate py-1 text-sm"
-                  >
-                    {who}
-                  </button>
-                  <button
-                    type="button"
-                    title={t('Forget this search')}
-                    aria-label={t('Forget this search')}
-                    onClick={() => forgetRecent(who)}
-                    className="text-muted-foreground hover:text-destructive grid size-6 shrink-0 place-items-center rounded-full transition-colors duration-100"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
     </>
   );
 
@@ -1038,6 +1082,8 @@ export function ArchiveBrowser({
           onToggle={rowToggle}
           onCollect={rowCollect}
           onDetails={setDetails}
+          selectedRow={selectedKey === gameKey(game)}
+          onSelectRow={rowSelect}
         />
       ))
     : undefined;

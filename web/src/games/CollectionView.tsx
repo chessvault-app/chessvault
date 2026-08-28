@@ -37,14 +37,19 @@ import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
 
-/** The wide page's two tabs: the reference databases lead — since the
-    search work they are the strongest surface on this page — and the
-    collection is one press away. The online archive is an import task,
-    so it lives in the Add games menu's window at every width. */
-type MainTab = 'databases' | 'collection';
+/** The wide page's tabs: the reference databases lead — since the
+    search work they are the strongest surface on this page — the
+    collection beside them, and the two online archives each as their
+    own tab (one tab per site keeps the archive's toolbar as short as
+    the others'; the strip is the provider choice). Below lg the
+    archives stay Add games windows. */
+type MainTab = 'databases' | 'collection' | 'chesscom' | 'lichess';
 const TABS: { id: MainTab; label: string }[] = [
   { id: 'databases', label: 'Databases' },
   { id: 'collection', label: 'Collection' },
+  // Site names, not sentences — they stay untranslated on purpose.
+  { id: 'chesscom', label: 'chess.com' },
+  { id: 'lichess', label: 'Lichess' },
 ];
 
 /** Which tab is showing, held OUTSIDE the component for heldSheet's
@@ -107,11 +112,13 @@ export function CollectionView() {
       a packaged selection of its own. Switching tabs clears both. */
   const [colSelKey, setColSelKey] = useState<string | null>(null);
   const [dbSel, setDbSel] = useState<DetailsSelection | null>(null);
+  const [archSel, setArchSel] = useState<DetailsSelection | null>(null);
   const setTab = (next: MainTab): void => {
     heldTab = next;
     setTabState(next);
     setColSelKey(null);
     setDbSel(null);
+    setArchSel(null);
   };
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
   // many items, so at lg the Add games button drew a chevron and a popover
@@ -347,7 +354,9 @@ export function CollectionView() {
             ),
           }
         : null
-      : dbSel;
+      : tab === 'databases'
+        ? dbSel
+        : archSel;
 
   return (
     <PageShell
@@ -378,25 +387,22 @@ export function CollectionView() {
         <PageHeader
           title={t('Games')}
           actions={
-            /* Every way to get a game, in one place. The archive is an
-               import task and lives here at every width — browsing a
-               month and promoting games is the same shape of work as
-               pasting a PGN, and its window is the same window the
-               phone opens. Databases stays width-gated: at lg it is a
-               tab on the pane itself, and a sheet over a visible pane
-               is worse than no menu item. */
-            <CreateControl
-              label="Add games"
-              actions={[
-                { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
-                { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
-                ...(wide
-                  ? []
-                  : [
-                      { label: 'Databases', icon: DatabaseIcon, onSelect: () => setElite(true) },
-                    ]),
-              ]}
-            />
+            /* Every way to get a game, in one place — below lg only,
+               where the FAB is how every page adds things. At lg all
+               of them are ON the page: the archives and databases are
+               tabs, and Import is a button in the Collection tab's own
+               toolbar (a lone header button beside that pane did not
+               stand out — lanph3re's report). */
+            wide ? undefined : (
+              <CreateControl
+                label="Add games"
+                actions={[
+                  { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
+                  { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
+                  { label: 'Databases', icon: DatabaseIcon, onSelect: () => setElite(true) },
+                ]}
+              />
+            )
           }
         />
 
@@ -484,6 +490,17 @@ export function CollectionView() {
                 onSelect={setDbSel}
                 selectedKey={dbSel?.key ?? null}
               />
+            ) : tab === 'chesscom' || tab === 'lichess' ? (
+              <ArchiveBrowser
+                shape="panel"
+                table
+                site={tab}
+                collectionKeys={collectionKeys}
+                onCollected={() => void load()}
+                onPreview={setPreview}
+                onSelect={setArchSel}
+                selectedKey={archSel?.key ?? null}
+              />
             ) : (
               <CollectionList
                 shape="panel"
@@ -507,6 +524,19 @@ export function CollectionView() {
                 toolbar={
                   <div className="flex w-full items-center gap-1.5">
                     {finders('min-w-0 flex-1')}
+                    {/* Import lives WITH the collection it grows: the
+                        page-header button beside this big pane did not
+                        stand out (lanph3re's report), and the empty
+                        state already points here. */}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => setImporting(true)}
+                    >
+                      <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+                      {t('Import a game')}
+                    </Button>
                   </div>
                 }
                 onSelect={(g) => setColSelKey(g ? gameKey(g) : null)}
