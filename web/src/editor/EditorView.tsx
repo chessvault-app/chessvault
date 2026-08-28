@@ -35,7 +35,8 @@ import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/compon
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
-import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { LoadPositionForm } from '@/analysis/PositionLoader';
+import { useMediaQuery } from '@/lib/media';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -156,6 +157,25 @@ export function EditorView({
   const [tool, setTool] = useState<Tool>(() => restored?.tool ?? { kind: 'move' });
   const [orientation, setOrientation] = useState<Color>(() => restored?.orientation ?? 'white');
   const [sheetOpen, setSheetOpen] = useState(false);
+  /**
+   * EXPERIMENT (nested-window alternatives, lanph3re): pages instead of
+   * windows, at two scopes.
+   *
+   * `panelPage` — the Position CARD's own page: its header turns to a
+   * back chevron and its body to the load form. The column's Load used
+   * to open a window over whatever window held the editor.
+   *
+   * `modalPage` — the whole EMBEDDED editor's page, for the stacked
+   * layout on a desktop-sized surface (the hunt window at 640-704px, a
+   * portrait tablet): the Position button turns the modal's content to
+   * the fields instead of opening a second window over the first. Both
+   * are CSS-guarded to their own breakpoints, so a lingering value after
+   * a resize shows nothing wrong. Phones keep the sheet flow untouched.
+   */
+  const [panelPage, setPanelPage] = useState<'fields' | 'load'>('fields');
+  const [modalPage, setModalPage] = useState<'board' | 'position'>('board');
+  /** The sheet's breakpoint: below it the Position button opens the sheet. */
+  const overSm = useMediaQuery('(min-width: 40rem)');
   /**
    * The position as it stood when the Position sheet was opened.
    *
@@ -358,29 +378,96 @@ export function EditorView({
    *
    * - `column` — the wide layout's side column: carries its own Position
    *              header, with the Load button beside it.
+   * - `page`   — the same card standing as the embedded modal's second
+   *              page (see modalPage): the header additionally leads with
+   *              the chevron back to the board.
    * - `sheet`  — the phone's Position window: the Modal already says
    *              Position, so no header (the same word twice, three lines
    *              apart), and the loader is a page turn from the FEN
    *              footer, having no header to live in.
    */
-  const positionPanels = (place: 'column' | 'sheet') => (
+  const positionPanels = (place: 'column' | 'page' | 'sheet') => {
+    /** The card is on its Load page: fields, warning and footer step aside. */
+    const loadUp = place !== 'sheet' && panelPage === 'load';
+    return (
     <>
         <Panel>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
-              header to carry it. */}
-          {place === 'column' && (
+              header to carry it. Load is this CARD's second page, not a
+              window: the header turns to a chevron and the body to the
+              form (the experiment's first scope — see panelPage). */}
+          {place !== 'sheet' && panelPage === 'fields' && (
             <PanelHeader
-              title={t('Position')}
-              actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
+              title={
+                place === 'page' ? (
+                  <span className="flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title={t('Back to the board')}
+                      className="-ml-1.5 shrink-0"
+                      onClick={() => setModalPage('board')}
+                    >
+                      <ChevronLeft className="size-3.5" />
+                    </Button>
+                    {t('Position')}
+                  </span>
+                ) : (
+                  t('Position')
+                )
+              }
+              actions={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Load a position — FEN, PGN, or image')}
+                  onClick={() => setPanelPage('load')}
+                >
+                  <FolderInput className="size-3.5" />
+                </Button>
+              }
             />
+          )}
+          {place !== 'sheet' && panelPage === 'load' && (
+            <>
+              <PanelHeader
+                title={
+                  <span className="flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title={t('Back')}
+                      className="-ml-1.5 shrink-0"
+                      onClick={() => setPanelPage('fields')}
+                    >
+                      <ChevronLeft className="size-3.5" />
+                    </Button>
+                    {t('Load position')}
+                  </span>
+                }
+              />
+              <div className="grid gap-3 px-(--card-spacing) pb-(--card-spacing)">
+                <LoadPositionForm
+                  loadText={loadText}
+                  onDone={() => setPanelPage('fields')}
+                  onImage={(file) => {
+                    setPhotoFile(file);
+                    void builtinTemplates()
+                      .then(setPhotoTemplates)
+                      .catch(() => setPhotoTemplates([]));
+                  }}
+                />
+              </div>
+            </>
           )}
           {/* The sheet has no PanelHeader, whose height is what normally
               holds the first field off the card's top border — so it pads
               itself; the column would double-space. The bottom pad is for
               both: Panel zeroes the card's gap, so without it the last
               inputs sit flush against the FEN footer's rule. */}
+          {!loadUp && (
           <div className={cn('grid gap-3 px-(--card-spacing) pb-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
             {/* First in the column because it sets everything under it:
                 an opening decides the pieces, the turn and the castling
@@ -487,11 +574,12 @@ export function EditorView({
               </Field>
             </div>
           </div>
+          )}
 
           {/* FEN lives in a status footer, not its own panel — reading it
               back or loading a new one is occasional, editing is constant
               (lanph3re's call, same as the analysis Load panel). */}
-          {!validity.legal && (
+          {!loadUp && !validity.legal && (
             <p className="text-warn flex items-start gap-1.5 px-3 pb-1.5 text-sm">
               <AlertCircle className="mt-px size-3.5 shrink-0" />
               {validity.reason}
@@ -501,6 +589,7 @@ export function EditorView({
               bottom padding — left in place, those 16px sat under the row
               and the FEN line read top-heavy in a band taller than it
               needed. py-1.5 is symmetric, so the line centres itself. */}
+          {!loadUp && (
           <div className="border-border -mb-(--card-spacing) flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
             {validity.legal && (
               <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
@@ -531,6 +620,7 @@ export function EditorView({
               </Button>
             )}
           </div>
+          )}
         </Panel>
 
         {/* The row every window in this app ends on (components/prompt-dialog):
@@ -549,7 +639,8 @@ export function EditorView({
           </div>
         )}
     </>
-  );
+    );
+  };
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -573,8 +664,11 @@ export function EditorView({
 
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
-          Top-anchored like AnalysisBoard: same board y in every view. */}
-      <div className={`${BOARD_WIDE_COLUMN} stacked:my-auto`}>
+          Top-anchored like AnalysisBoard: same board y in every view.
+          On the modal's position page the whole column steps aside — CSS-
+          guarded to the page's own breakpoints (stacked, ≥sm), so the
+          state lingering across a resize shows nothing wrong. */}
+      <div className={cn(BOARD_WIDE_COLUMN, 'stacked:my-auto', modalPage === 'position' && 'sm:stacked:hidden')}>
         {/* The eval bar's width, kept open beside the whole stack rather
             than beside the board alone: the palettes and the toolbar align
             to the board's edges, so they are indented by exactly what the
@@ -584,8 +678,15 @@ export function EditorView({
             Not on a phone: nothing sits beside the board there, and the
             stacked editor's board is deliberately as wide as the screen
             (EDITOR_BOARD_MAX_W) — the slot is `wide` only, so the phone
-            layout keeps every pixel it had. */}
-        <div className={cn('flex w-full items-stretch gap-2', EDITOR_BOARD_MAX_W)}>
+            layout keeps every pixel it had.
+            The embedded stacked board keeps the stacked formula but with
+            its 100% swapped for 27rem: the formula follows the window's
+            HEIGHT, so crossing from the wide layout into stacked GREW
+            the board — 573px on a portrait tablet against ~470 at wide —
+            right as the layout got less room (lanph3re). The height
+            terms stay, so a short window still clamps below the cap.
+            Phones (< sm) keep the full-width board. */}
+        <div className={cn('flex w-full items-stretch gap-2', EDITOR_BOARD_MAX_W, onUse && 'sm:stacked:max-w-[min(27rem,max(35dvh,calc(100dvh-20rem)),56dvh)]')}>
           <EvalBarSlot />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             {/* Desktop: one fixed-height combined row above the board (board
@@ -725,6 +826,14 @@ export function EditorView({
                 active={sheetOpen}
                 className="h-full wide:hidden"
                 onClick={() => {
+                  // The experiment's second scope: embedded on a desktop-
+                  // sized surface, this is a PAGE of the modal — the board
+                  // steps aside for the fields — not a second window over
+                  // the first. Phones keep the sheet and its draft.
+                  if (embedded && overSm) {
+                    setModalPage('position');
+                    return;
+                  }
                   if (sheetOpen) {
                     closeSheet(false);
                     return;
@@ -755,6 +864,17 @@ export function EditorView({
           </div>
         </div>
       </div>
+
+      {/* The modal's SECOND PAGE (the experiment's second scope): the
+          fields where the board stood, a chevron back to it. Same width
+          discipline as a form anywhere: 28rem, centred (w-full + mx-auto,
+          not bare auto margins — a stretch child clamped by max-width
+          pins to the start edge, the board-col-cap lesson). */}
+      {embedded && modalPage === 'position' && (
+        <div className="mx-auto hidden w-full max-w-md flex-col gap-3 sm:stacked:flex">
+          {positionPanels('page')}
+        </div>
+      )}
 
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
@@ -842,6 +962,24 @@ export function EditorView({
         </Dialog>
       )}
 
+      {/* The picture flow for the CARD's load page (the column or the
+          modal's position page): its own window, as everywhere the
+          corner-adjust surface appears. The sheet's copy lives nested in
+          its load page above; this one answers only when no sheet is up. */}
+      {photoTemplates !== null && !sheetOpen && (
+        <Suspense fallback={null}>
+          <PhotoImport
+            templates={photoTemplates}
+            initialFile={photoFile ?? undefined}
+            onApply={(reading) => {
+              if (reading.fen) applyImageFen(reading.fen);
+              setPhotoTemplates(null);
+              setPanelPage('fields');
+            }}
+            onClose={() => setPhotoTemplates(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
