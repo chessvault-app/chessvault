@@ -16,7 +16,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
-import { getNode, mainlineFrom } from '@shared/tree';
+import { createTree, getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import { Board, type BoardApi, type BoardPiece } from '@/board/Board';
 import { copyText } from '@/lib/clipboard';
@@ -36,6 +36,8 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
+import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
 import type { Template } from '@/puzzles/ocr/classify';
 import { Suspense, lazy } from 'react';
@@ -227,6 +229,25 @@ export function EditorView({
     if (next) setState(next);
   };
 
+  /**
+   * The repertoire's opening presets, offered as a Position field: the
+   * curated spread plus the whole ECO catalogue, each set up by replaying
+   * its line and taking the END position — the one shape an editor can
+   * edit. Remembered WITH the FEN it produced, so the trigger names the
+   * opening only while the board still shows it: move one piece and the
+   * position is nobody's tabiya any more, and the picker goes back to its
+   * placeholder rather than mislabelling what is on the board.
+   */
+  const [preset, setPreset] = useState<{ tpl: OpeningTemplate; fen: string } | null>(null);
+  const pickPreset = (tpl: OpeningTemplate): void => {
+    const fresh = createTree();
+    const { tree, tip } = replayLine(fresh, fresh.rootId, tpl.sans);
+    const next = fromFen(getNode(tree, tip).fen);
+    if (!next) return;
+    setState(next);
+    setPreset({ tpl, fen: toFen(next) });
+  };
+
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
 
   const fen = useMemo(() => toFen(state), [state]);
@@ -361,6 +382,17 @@ export function EditorView({
               both: Panel zeroes the card's gap, so without it the last
               inputs sit flush against the FEN footer's rule. */}
           <div className={cn('grid gap-3 px-(--card-spacing) pb-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
+            {/* First in the column because it sets everything under it:
+                an opening decides the pieces, the turn and the castling
+                rights the rest of these fields exist to adjust. */}
+            <Field label="Opening">
+              <OpeningPicker
+                value={preset !== null && preset.fen === fen ? preset.tpl : null}
+                placeholder={t('Pick an opening or ECO code')}
+                onChange={pickPreset}
+              />
+            </Field>
+
             {/* One of these, so it wears the control that says so. It was a
                 pair of buttons lit primary/secondary — the same question the
                 repertoire's New game panel asks, asked in a different shape,
