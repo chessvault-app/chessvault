@@ -56,9 +56,10 @@ and delete the ad-hoc hook.
 `desktop:package:linux` the AppImage and deb. Pipeline:
 
 1. `desktop/build-server.mjs`: esbuild-bundles the server to
-   `release/server/index.mjs` and the database builders beside it
+   `release/server/index.mjs`, the database builders beside it
    (`build-refgames.mjs`, `build-puzzles.mjs`,
-   `index-refgames-positions.mjs`, `optimize-refgames.mjs`), copies
+   `index-refgames-positions.mjs`, `optimize-refgames.mjs`) and the
+   resident scan worker fast search runs in (`scan-worker.mjs`), copies
    better-sqlite3 next to them (v13 ships Node-API prebuilds — ABI-stable
    under Electron, no rebuild), and renders `icon.ico`.
 
@@ -94,7 +95,9 @@ machine profile.
 The puzzle pool and the reference databases all build in the
 packaged app: `build-puzzles.mjs`, `build-refgames.mjs`,
 `index-refgames-positions.mjs` and `optimize-refgames.mjs` ship beside
-the server bundle and the server prefers them over the repo scripts —
+the server bundle and the server prefers them over the repo scripts.
+`scan-worker.mjs` ships there too, which is what lets a database with
+fast search turned on hold its packed index in the packaged app —
 and prefers the native binary over both, where one shipped. The
 installer seeds a starter reference database (position index included)
 on first run besides.
