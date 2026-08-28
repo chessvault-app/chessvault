@@ -34,6 +34,32 @@ import { t } from '@/lib/i18n';
 export type SideFilter = 'any' | 'white' | 'black';
 export type ResultFilter = 'any' | '1-0' | '0-1' | '1/2-1/2';
 
+/**
+ * The More-filters toggle, once for the three browsers that carried it
+ * as pasted literals. While the WINDOW holds filters, the button is lit
+ * and wears a primary dot — the quick selects beside it display their
+ * own values, so the dot answers for exactly the constraints the row
+ * cannot show. A lit-only state read as "pressed", not "narrowing your
+ * list" (lanph3re's report).
+ */
+export function MoreFiltersButton({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={on}
+      title={t('More filters')}
+      className="relative shrink-0"
+      onClick={onClick}
+    >
+      <SlidersHorizontal className="size-3.5" />
+      {on && (
+        <span aria-hidden className="bg-primary absolute right-1 top-1 size-1.5 rounded-full" />
+      )}
+    </Button>
+  );
+}
+
 /** The standard one-line rail the filter selects sit in. */
 export function FilterRow({ className, children }: { className?: string; children: ReactNode }) {
   return (

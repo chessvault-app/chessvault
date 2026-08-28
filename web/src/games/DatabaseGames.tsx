@@ -19,6 +19,7 @@ import ENDGAMES from './endgames.json';
 import {
   catalogSuggest,
   EMPTY_STRUCTURED_FILTERS,
+  MoreFiltersButton,
   QueryBox,
   ResultSelect,
   SearchQueryIssues,
@@ -1019,19 +1020,13 @@ export function DatabaseGames({
       {/* The rest of the constraints — who, which side, which outcome,
           which opening, which tournament, which dates — live in a window:
           they are text, not chips, and a lit icon says they are on. */}
-      <Button
-        variant="secondary"
-        size="icon-sm"
-        active={structuredOn}
-        title={t('More filters')}
-        className="shrink-0"
+      <MoreFiltersButton
+        on={structuredOn}
         onClick={() => {
           setQuickDraft({ result: resultFilter, minElo });
           setEditingFilters(true);
         }}
-      >
-        <SlidersHorizontal className="size-3.5" />
-      </Button>
+      />
       {editingFilters && (
         <StructuredFiltersWindow
           initial={structured}
@@ -1192,7 +1187,11 @@ export function DatabaseGames({
             // between the field and the match select read as belonging to
             // neither. Leading the field, it is the other way to fill it.
             start={
+              // secondary, not the addon's ghost: inside a field a bare
+              // icon reads as the field's own decoration (the search
+              // box's magnifier) — a filled chip says pressable.
               <InputGroupButton
+                variant="secondary"
                 size="icon-xs"
                 title={t('Set the position up on a board')}
                 onClick={() => setSettingUp(true)}

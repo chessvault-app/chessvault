@@ -1,4 +1,4 @@
-import { Globe, Info, Play, Plus, SlidersHorizontal } from 'lucide-react';
+import { Globe, Info, Play, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
@@ -75,6 +75,7 @@ import {
   EMPTY_STRUCTURED_FILTERS,
   hasStructuredFilters,
   matchesStructured,
+  MoreFiltersButton,
   ResultSelect,
   SideSelect,
   StructuredFiltersWindow,
@@ -872,19 +873,13 @@ export function ArchiveBrowser({
               browser carry, answered client-side against the loaded
               month. No Tournament field — matchesStructured has no event
               answer, exactly as in the collection. */}
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            active={hasStructuredFilters(structured)}
-            title={t('More filters')}
-            className="shrink-0"
+          <MoreFiltersButton
+            on={hasStructuredFilters(structured)}
             onClick={() => {
               setQuickDraft({ side: sideFilter, result: resultFilter });
               setEditingFilters(true);
             }}
-          >
-            <SlidersHorizontal className="size-3.5" />
-          </Button>
+          />
           {editingFilters && (
             <StructuredFiltersWindow
               initial={structured}

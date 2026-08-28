@@ -6,7 +6,6 @@ import {
   Pencil,
   Plus,
   SearchX,
-  SlidersHorizontal,
   Trash2,
   X,
 } from 'lucide-react';
@@ -31,6 +30,7 @@ import {
   hasStructuredFilters,
   matchesOwnership,
   matchesStructured,
+  MoreFiltersButton,
   NotesSelect,
   OwnershipSelect,
   ResultSelect,
@@ -397,19 +397,13 @@ export function CollectionList({
             <OwnershipSelect value={ownFilter} onChange={setOwnFilter} />
             <ResultSelect value={resultFilter} onChange={setResultFilter} />
             <NotesSelect value={notesFilter} onChange={setNotesFilter} />
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              active={hasStructuredFilters(structured)}
-              title={t('More filters')}
-              className="shrink-0"
+            <MoreFiltersButton
+              on={hasStructuredFilters(structured)}
               onClick={() => {
                 setQuickDraft({ own: ownFilter, result: resultFilter, notes: notesFilter });
                 setEditingFilters(true);
               }}
-            >
-              <SlidersHorizontal className="size-3.5" />
-            </Button>
+            />
             {editingFilters && (
               <StructuredFiltersWindow
                 initial={structured}
