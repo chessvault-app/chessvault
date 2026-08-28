@@ -75,7 +75,10 @@ export function ResultSelect({
     <Select
       value={value}
       onValueChange={(v) => onChange(v as ResultFilter)}
-      ariaLabel={t('Outcome')}
+      // 'Result', not 'Outcome': the options are literal scores, and the
+      // filter window ALSO holds the player-outcome select — two
+      // comboboxes both announcing "Outcome" was a screen-reader riddle.
+      ariaLabel={t('Result')}
       size="sm"
       className="min-w-0 flex-1"
       groups={[
