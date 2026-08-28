@@ -140,7 +140,11 @@ export function GameListShell({
         // 6px right of theirs, and gap-2 put its SELECT 2px left of
         // theirs — a rail of controls that almost lined up reads worse
         // than one that plainly does not.
-        <div className="border-border flex min-h-8 flex-wrap items-center gap-1.5 border-t px-3 py-1 text-sm">
+        // 37px measured: a band holding sm controls stands h-7 + py-1 +
+        // border-t, and a text-only band must claim the same or the count
+        // row jumps a few pixels when the tab beside it holds controls.
+        // (min-height is border-box, so the border is inside the number.)
+        <div className="border-border flex min-h-[2.3125rem] flex-wrap items-center gap-1.5 border-t px-3 py-1 text-sm">
           {countBand}
         </div>
       )}
