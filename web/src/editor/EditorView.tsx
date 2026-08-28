@@ -763,7 +763,12 @@ export function EditorView({
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="flex h-9 shrink-0 items-center gap-2">
-          <h1 className="text-foreground text-base font-semibold">{t('Editor')}</h1>
+          {/* Only when the editor IS the page: every embedder (the games
+              hunt's window, the book reader's pane, the puzzle entry)
+              names the surface itself, and "Editor" under that title was
+              the same thing said twice. The row stays for the alignment
+              above. */}
+          {!onUse && <h1 className="text-foreground text-base font-semibold">{t('Editor')}</h1>}
         </div>
         {positionPanels('column')}
       </div>

@@ -1404,9 +1404,15 @@ export function DatabaseGames({
       >
         {/* The same full window the reference sheet uses: the editor is
             a board and its tools, and a content-sized card would grow
-            under the hand placing pieces on it. */}
+            under the hand placing pieces on it. NOT force-stacked: a full
+            window on a desktop has the width for the editor's own wide
+            layout, whose side column keeps the Position panel in view —
+            forcing the phone layout put those fields behind a Position
+            button whose window PARKED this one, a full-screen board
+            blinking out for a small card (lanph3re: the transition
+            distracts). Narrow viewports still stack via the media query. */}
         <DialogContent title="Set up a position" className="max-sm:h-[88%]" size="full">
-          <div className="force-stacked min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <Suspense
               fallback={<Spinner className="text-muted-foreground m-auto size-5" />}
             >
