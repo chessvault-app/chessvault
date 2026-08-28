@@ -8,3 +8,9 @@ demo-seed/** text eol=lf
 # The generated module is always written with \n, so check it out that way
 # too; otherwise every Windows build leaves it looking modified.
 web/src/demo/seed.ts text eol=lf
+
+# Same story: collect-crate-licenses.ts writes the notice with \n, and
+# check:repo reads its "Crates covered:" manifest as the block up to the
+# first blank line. The reader normalises now, but keep the file LF on
+# disk too, so the next thing to parse it does not have to.
+licenses/rust-crates.txt text eol=lf
