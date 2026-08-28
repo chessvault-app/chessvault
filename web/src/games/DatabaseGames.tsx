@@ -1187,17 +1187,17 @@ export function DatabaseGames({
             // between the field and the match select read as belonging to
             // neither. Leading the field, it is the other way to fill it.
             start={
-              // outline, not the addon's ghost: inside a field a bare
-              // icon reads as the field's own decoration (the search
-              // box's magnifier), and the secondary fill sat within a
-              // few percent of the field's own dark surface — measured
-              // invisible. The BORDER is what says a control is nested
-              // in a control.
+              // The field's attached leading segment (the slot draws it
+              // full-height): a faint fill and the hairline to the text
+              // say pressable without a second border — the floating
+              // outlined chip read as clutter, and the ghost icon as
+              // the field's own decoration.
               <InputGroupButton
-                variant="outline"
+                variant="ghost"
                 size="icon-xs"
                 title={t('Set the position up on a board')}
                 onClick={() => setSettingUp(true)}
+                className="border-border bg-foreground/5 hover:bg-foreground/10 h-full w-8 rounded-none border-r"
               >
                 <Grid3x3 className="size-3.5" />
               </InputGroupButton>

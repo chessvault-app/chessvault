@@ -76,7 +76,16 @@ export function ClearableInput({
 
   return (
     <InputGroup inputSize={inputSize} className={cn('inline-flex w-auto', className)}>
-      {start && <InputGroupAddon>{start}</InputGroupAddon>}
+      {start && (
+        // The slot is the field's leading SEGMENT — full height, flush
+        // with the group's own corner, its button drawing the hairline
+        // to the text — not a chip floating inside: a bordered box
+        // within the bordered box read as clutter (lanph3re, on the
+        // hunt bar's board button, this slot's only tenant).
+        <InputGroupAddon className="self-stretch overflow-hidden rounded-l-[inherit] p-0 has-[>button]:ml-0">
+          {start}
+        </InputGroupAddon>
+      )}
       <InputGroupInput
         ref={(node) => {
           self.current = node;
