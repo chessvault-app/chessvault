@@ -1,0 +1,2132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Chess Vault — manual</title>
+    <meta
+      name="description"
+      content="The Chess Vault manual: a page for every part of the app — getting started, the vault, the board, the engine, studies, notes, games, databases, books, puzzles, the repertoire trainer and the opening map — down to every button."
+    />
+    <link rel="icon" href="app/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Chess Vault" />
+    <meta property="og:url" content="https://chessvault-app.github.io/manual.html" />
+    <meta property="og:title" content="Chess Vault — manual" />
+    <meta
+      property="og:description"
+      content="How to use Chess Vault, page by page and control by control."
+    />
+    <meta property="og:image" content="https://chessvault-app.github.io/shots/social-card.png" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="color-scheme" content="light dark" />
+    <style>
+      /* Self-contained like the landing page, and in the same voice: the
+         app's shadcn neutral theme written out by hand, so the manual, the
+         landing page and the app all read as one thing. The tokens are
+         copied from web/landing/index.html — change them there, change
+         them here. */
+      :root {
+        color-scheme: light;
+        --background: oklch(100% 0 0);
+        --foreground: oklch(14.5% 0 0);
+        --card: oklch(100% 0 0);
+        --muted: oklch(97% 0 0);
+        --muted-foreground: oklch(55.6% 0 0);
+        --border: oklch(92.2% 0 0);
+        --primary: oklch(20.5% 0 0);
+        --primary-foreground: oklch(98.5% 0 0);
+        --ring: oklch(70.8% 0 0);
+        --hairline: oklch(14.5% 0 0 / 10%);
+        --radius: 0.625rem;
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+        --s1: 0.25rem;
+        --s2: 0.5rem;
+        --s3: 0.75rem;
+        --s4: 1rem;
+        --s5: 1.5rem;
+        --s6: 2rem;
+        --s7: 3rem;
+        --s8: 4rem;
+        --header-h: 3.5rem;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --background: oklch(14.5% 0 0);
+          --foreground: oklch(98.5% 0 0);
+          --card: oklch(20.5% 0 0);
+          --muted: oklch(26.9% 0 0);
+          --muted-foreground: oklch(70.8% 0 0);
+          --border: oklch(100% 0 0 / 10%);
+          --primary: oklch(92.2% 0 0);
+          --primary-foreground: oklch(20.5% 0 0);
+          --ring: oklch(55.6% 0 0);
+          --hairline: oklch(98.5% 0 0 / 10%);
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; }
+      :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+      .btn:focus-visible { border-color: var(--ring); }
+
+      /* ---- Header ---- */
+      header {
+        position: sticky; top: 0; z-index: 40;
+        background: var(--background);
+        border-bottom: 1px solid var(--border);
+      }
+      .bar { display: flex; align-items: center; gap: var(--s3); height: var(--header-h); max-width: 90rem; margin: 0 auto; padding-inline: var(--s4); }
+      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
+      /* A phone-width bar keeps three things: the drawer, the name, the
+         language. The demo link and the word "manual" go — the sidebar
+         and the page itself say where you are. */
+      @media (max-width: 33rem) {
+        .bar > .btn[href], .mark small { display: none; }
+      }
+      /* The bare hex, no tile: next to the squared Contents button a tiled
+         logo reads as a second button. currentColor keeps it right in both
+         themes. */
+      .mark svg { width: 1.5rem; height: 1.5rem; }
+      .mark small { font-weight: 400; color: var(--muted-foreground); }
+      .bar .spacer { margin-left: auto; }
+      .lang {
+        display: inline-flex; gap: var(--s1); padding: 3px;
+        background: var(--muted); border-radius: var(--radius-lg);
+      }
+      .lang button {
+        font: inherit; font-size: 0.8rem; line-height: 1; padding: 0.375rem 0.625rem; border: 1px solid transparent;
+        border-radius: var(--radius-md); background: transparent; color: var(--muted-foreground); cursor: pointer;
+      }
+      .lang button[aria-pressed='true'] { background: var(--card); color: var(--foreground); font-weight: 500; border-color: var(--hairline); box-shadow: 0 1px 2px oklch(0% 0 0 / 0.05); }
+      @media (prefers-color-scheme: dark) {
+        .lang button[aria-pressed='true'] { background: color-mix(in oklch, var(--foreground) 10%, transparent); border-color: var(--border); }
+      }
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
+        height: 2.25rem; padding-inline: 0.875rem; border-radius: var(--radius-lg); text-decoration: none;
+        font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap;
+        border: 1px solid var(--border); background: var(--background); color: var(--foreground);
+        cursor: pointer; font-family: inherit;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+      }
+      .btn:hover { background: var(--muted); }
+      .btn:active { transform: translateY(1px); }
+      @media (prefers-color-scheme: dark) {
+        .btn { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
+        .btn:hover { background: color-mix(in oklch, var(--foreground) 12%, transparent); }
+      }
+      /* The Contents button exists for the narrow layout only. */
+      #nav-toggle { display: none; width: 2.25rem; padding-inline: 0; }
+      #nav-toggle svg { width: 1.125rem; height: 1.125rem; }
+
+      /* ---- Shell: sidebar + article, MS-Learn shaped ---- */
+      .shell { display: flex; max-width: 90rem; margin: 0 auto; }
+      nav.side {
+        width: 17.5rem; flex: none;
+        position: sticky; top: var(--header-h); align-self: flex-start;
+        max-height: calc(100vh - var(--header-h)); overflow-y: auto;
+        padding: var(--s4) var(--s3) var(--s7);
+        border-right: 1px solid var(--border);
+        font-size: 0.875rem;
+      }
+      nav.side h5 {
+        margin: var(--s4) var(--s2) var(--s1);
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--muted-foreground);
+      }
+      nav.side h5:first-child { margin-top: 0; }
+      nav.side a {
+        display: block; padding: 0.3rem var(--s2); border-radius: var(--radius-md);
+        text-decoration: none; color: var(--muted-foreground);
+      }
+      nav.side a:hover { background: var(--muted); color: var(--foreground); }
+      nav.side a[aria-current='page'] { background: var(--muted); color: var(--foreground); font-weight: 500; }
+      .scrim { display: none; }
+
+      main.content { flex: 1; min-width: 0; }
+      .doc { max-width: 47rem; margin: 0 auto; padding: var(--s6) var(--s4) var(--s7); }
+
+      @media (max-width: 63.99rem) {
+        #nav-toggle { display: inline-flex; }
+        nav.side {
+          position: fixed; z-index: 60; top: 0; bottom: 0; left: 0;
+          width: min(20rem, 85vw); max-height: none;
+          background: var(--background); border-right: 1px solid var(--border);
+          transform: translateX(-105%); transition: transform 0.2s ease;
+          box-shadow: 0 0 3rem oklch(0% 0 0 / 0.25);
+        }
+        body.nav-open nav.side { transform: none; }
+        body.nav-open .scrim {
+          display: block; position: fixed; inset: 0; z-index: 50;
+          background: oklch(0% 0 0 / 0.4);
+        }
+        body.nav-open { overflow: hidden; }
+      }
+
+      /* ---- Article typography ---- */
+      h1 { font-size: clamp(1.6rem, 4vw, 2.1rem); line-height: 1.15; margin: 0 0 var(--s3); letter-spacing: -0.03em; font-weight: 600; }
+      .lede { color: var(--muted-foreground); margin: 0 0 var(--s5); }
+      h2 { font-size: 1.25rem; letter-spacing: -0.02em; margin: var(--s6) 0 var(--s3); font-weight: 600; }
+      h3 { font-size: 1rem; margin: var(--s5) 0 var(--s2); font-weight: 600; }
+      p, ul, ol { margin: 0 0 var(--s3); }
+      ul, ol { padding-left: 1.25rem; }
+      li { margin-bottom: var(--s1); }
+      .doc > p, .doc li, .doc td, .note-card p { color: color-mix(in oklch, var(--foreground) 82%, var(--muted-foreground)); }
+      strong { color: var(--foreground); }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em;
+        background: var(--muted); border-radius: var(--radius-md); padding: 0.1rem 0.35rem;
+      }
+      kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8em;
+        background: var(--muted); border: 1px solid var(--border); border-bottom-width: 2px;
+        border-radius: var(--radius-md); padding: 0.1rem 0.4rem; white-space: nowrap;
+      }
+      table { border-collapse: collapse; width: 100%; margin: 0 0 var(--s4); font-size: 0.875rem; }
+      th, td { text-align: left; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--border); vertical-align: top; }
+      th { font-weight: 600; white-space: nowrap; }
+      .scroll-x { overflow-x: auto; }
+      /* Control tables: the first column is the control, kept from wrapping
+         mid-label where it fits. */
+      table.controls td:first-child { color: var(--foreground); font-weight: 500; }
+
+      .note-card {
+        background: var(--card); box-shadow: 0 0 0 1px var(--hairline);
+        border-radius: var(--radius-xl); padding: var(--s3) var(--s4); margin: 0 0 var(--s3);
+      }
+      .note-card p:last-child { margin-bottom: 0; }
+
+      figure {
+        margin: var(--s4) 0 var(--s5); display: flex; align-items: center; justify-content: center;
+        flex-direction: column; gap: var(--s2);
+        padding: var(--s3); background: var(--muted);
+        box-shadow: 0 0 0 1px var(--hairline); border-radius: var(--radius-xl);
+      }
+      figure img {
+        display: block; width: auto; height: auto; max-width: 100%; max-height: 30rem;
+        object-fit: contain; border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--hairline);
+      }
+      figcaption { font-size: 0.8rem; color: var(--muted-foreground); text-align: center; }
+
+      /* ---- Pages: one visible at a time once the script is running.
+         Without the script every page renders in order, so the document
+         still reads (and prints) as one manual. ---- */
+      body.paged .page { display: none; }
+      body.paged .page.is-active { display: block; }
+      /* An anchored load scrolls the section to the viewport's top, where
+         the sticky header covers its heading — this keeps it clear, for
+         the no-script reader and the moment before show() rewinds. */
+      .page { scroll-margin-top: calc(var(--header-h) + var(--s4)); }
+
+      .pager { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--border); }
+      .pager a {
+        display: inline-flex; align-items: center; gap: var(--s2);
+        text-decoration: none; max-width: 48%; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+        background: var(--card); box-shadow: 0 0 0 1px var(--hairline);
+        border-radius: var(--radius-lg); padding: var(--s2) var(--s3);
+        font-size: 0.875rem; font-weight: 500;
+      }
+      .pager a:hover { background: var(--muted); }
+      .pager a small { font-weight: 400; color: var(--muted-foreground); }
+      .pager .next { margin-left: auto; }
+
+      footer { border-top: 1px solid var(--border); padding-block: var(--s5) var(--s6); color: var(--muted-foreground); font-size: 0.85rem; }
+      footer .inner { max-width: 47rem; margin: 0 auto; padding-inline: var(--s4); }
+      footer p { margin: 0 0 var(--s2); }
+      footer a { text-decoration: none; }
+      footer a:hover { text-decoration: underline; color: var(--foreground); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="bar">
+        <button type="button" id="nav-toggle" class="btn" aria-expanded="false" aria-controls="side-nav" aria-label="Contents" title="Contents">
+          <!-- A sidebar-panel glyph, matching the drawer it opens. -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <line x1="9" y1="4" x2="9" y2="20" />
+          </svg>
+        </button>
+        <a class="mark" href="./">
+          <!-- The hex mark alone, no tile: beside the squared Contents
+               button, two squares in a row read as two buttons. -->
+          <svg viewBox="20 20 80 80" fill="currentColor" aria-hidden="true">
+            <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" />
+            <path d="M60 60 L60 24 L91 42 Z" />
+          </svg>
+          Chess Vault&nbsp;<small data-ko="설명서">manual</small>
+        </a>
+        <span class="spacer"></span>
+        <a class="btn" href="app/" data-ko="데모 열기">Try the demo</a>
+        <div class="lang" role="group" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">English</button>
+          <button type="button" data-lang="ko" aria-pressed="false">한국어</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="scrim" id="scrim"></div>
+
+    <div class="shell">
+      <nav class="side" id="side-nav" aria-label="Manual pages">
+        <h5 data-ko="첫걸음">Start here</h5>
+        <a href="#overview" data-ko="개요">Overview</a>
+        <a href="#start" data-ko="시작하기">Getting started</a>
+        <a href="#vault" data-ko="보관함">The vault</a>
+        <a href="#around" data-ko="앱 둘러보기와 홈">Around the app, and Home</a>
+        <a href="#shortcuts" data-ko="키보드와 제스처">Keyboard and gestures</a>
+        <h5 data-ko="도구">Tools</h5>
+        <a href="#board" data-ko="보드">The board</a>
+        <a href="#engine" data-ko="엔진">The engine</a>
+        <a href="#explorer" data-ko="탐색기">The explorer</a>
+        <a href="#editor" data-ko="에디터">The editor</a>
+        <h5 data-ko="서재">Your library</h5>
+        <a href="#studies" data-ko="스터디">Studies</a>
+        <a href="#notes" data-ko="노트">Notes</a>
+        <a href="#games" data-ko="기보">Games</a>
+        <a href="#db-search" data-ko="데이터베이스 검색">Searching the databases</a>
+        <a href="#databases" data-ko="데이터베이스 관리">Managing databases</a>
+        <a href="#books" data-ko="책">Books</a>
+        <h5 data-ko="훈련">Training</h5>
+        <a href="#puzzles" data-ko="퍼즐">Puzzles</a>
+        <a href="#puzzle-books" data-ko="퍼즐 책">Puzzle books</a>
+        <a href="#repertoire" data-ko="레퍼토리 트레이너">Repertoire trainer</a>
+        <a href="#opening-map" data-ko="오프닝 맵">The opening map</a>
+        <h5 data-ko="참고">Reference</h5>
+        <a href="#settings" data-ko="설정">Settings</a>
+        <a href="#phone" data-ko="휴대폰에서">On a phone</a>
+        <a href="#faq" data-ko="자주 묻는 것들">Common questions</a>
+      </nav>
+
+      <main class="content">
+
+        <section class="page" id="overview">
+          <div class="doc">
+            <h1 data-ko="Chess Vault 설명서">The Chess Vault manual</h1>
+            <p class="lede" data-ko="페이지마다 앱의 화면 하나를 다룹니다 — 무엇을 하는 화면인지부터, 버튼 하나하나가 무슨 일을 하는지까지. 왼쪽 목차에서 페이지를 고르세요. 모든 내용은 데모에서 직접 해 볼 수 있습니다 — 설치도 계정도 필요 없습니다.">
+              One page per screen of the app — from what the screen is for, down to what every
+              button does. Pick a page from the contents on the left. Everything here can be tried
+              in the demo — no install, no account.
+            </p>
+            <p data-ko="Chess Vault는 직접 호스팅하는 개인 체스 작업대입니다: 엔진 분석, 오프닝 탐색기, 스터디, 노트, 기보 모음, 그리고 실제 종이책을 읽어 들이는 퍼즐 트레이너 — 전부가 당신이 소유한 폴더 하나에 평범한 파일(PGN, 마크다운, JSON)로 저장됩니다.">
+              Chess Vault is a private, self-hosted chess workbench: engine analysis, an opening
+              explorer, studies, notes, a curated game collection, and a puzzle trainer fed by real
+              paper books — everything stored as plain files (PGN, markdown, JSON) in one folder you
+              own.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
+                <img src="shots/board.png" alt="The analysis board with the engine running" />
+              </picture>
+              <figcaption data-ko="분석 보드 — 브라우저 안에서 도는 Stockfish 18과 함께.">
+                The analysis board, with Stockfish 18 running in the browser.
+              </figcaption>
+            </figure>
+            <h2 data-ko="처음이라면">If you are new</h2>
+            <ol>
+              <li data-ko="<a href='#start'>시작하기</a> — 설치 방법과 첫 실행, 그리고 첫 몇 분에 할 일.">
+                <a href="#start">Getting started</a> — how to install it, the first run, and what
+                to do in the first minutes.
+              </li>
+              <li data-ko="<a href='#vault'>보관함</a> — 데이터가 어디에 어떻게 사는지. 이 앱을 이해하는 열쇠입니다.">
+                <a href="#vault">The vault</a> — where your data lives and how. The key to
+                understanding the app.
+              </li>
+              <li data-ko="<a href='#around'>앱 둘러보기</a> — 화면들이 어떻게 배치되어 있는지.">
+                <a href="#around">Around the app</a> — how the screens are laid out.
+              </li>
+            </ol>
+            <p data-ko="그다음은 순서대로 읽어도, 궁금한 화면만 골라 읽어도 됩니다. 각 페이지는 혼자서도 읽히게 쓰여 있습니다.">
+              After that, read in order or jump to the screen you are curious about — each page is
+              written to stand alone.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="start">
+          <div class="doc">
+            <h1 data-ko="시작하기">Getting started</h1>
+            <p class="lede" data-ko="Chess Vault를 쓰는 방법은 두 가지이고, 어느 쪽이든 같은 앱입니다. 다른 것은 보관함 — 기보, 스터디, 노트, 퍼즐이 담긴 폴더 — 이 어디에 있느냐뿐입니다.">
+              There are two ways to run Chess Vault, and both are the same app. The only difference
+              is where the vault lives — the folder holding your games, studies, notes and puzzles.
+            </p>
+            <ul>
+              <li data-ko="<strong>이 컴퓨터에서.</strong> <a href='https://github.com/chessvault-app/chessvault/releases/latest'>Releases</a>에서 Windows, macOS, Linux 설치 프로그램을 받아 실행합니다. Node도 터미널도 필요 없고, 업데이트는 앱이 스스로 받습니다.">
+                <strong>On this machine.</strong> Download the installer for Windows, macOS or
+                Linux from
+                <a href="https://github.com/chessvault-app/chessvault/releases/latest">Releases</a>
+                and run it. No Node, no terminal; updates arrive through the app itself.
+              </li>
+              <li data-ko="<strong>서버에서.</strong> 작은 리눅스 서버 하나가 보관함을 소유하고, 휴대폰·노트북·데스크톱이 전부 그 서버의 클라이언트가 됩니다. 설치 방법은 <a href='https://github.com/chessvault-app/chessvault#readme'>README</a>에 있습니다.">
+                <strong>On a server.</strong> One small Linux box owns the vault, and every device
+                — phone, laptop, desktop — becomes a client of it. The
+                <a href="https://github.com/chessvault-app/chessvault#readme">README</a> has the
+                server setup.
+              </li>
+            </ul>
+            <p data-ko="확신이 없다면 첫 번째로 시작하세요. 보관함은 폴더이므로, 나중에 서버로 옮기는 일은 폴더를 복사하는 일입니다.">
+              When in doubt, start with the first. The vault is a folder, so moving to a server
+              later is copying a folder.
+            </p>
+
+            <h2 data-ko="첫 실행">First run</h2>
+            <p data-ko="데스크톱 앱은 처음 열릴 때 보관함이 어디에 사는지 묻습니다:">
+              The desktop app's first question is where your vault lives:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>On this computer</td>
+                    <td data-ko="모든 것이 이 기기에서 돌고, 이 기기에 남습니다. 이어서 폴더를 묻습니다 — 아래 참조.">
+                      Everything runs and stays locally. It then asks which folder — below.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>On my server</td>
+                    <td data-ko="같은 앱이 당신이 호스팅하는 서버의 창이 됩니다. 주소는 <code>https://</code>로 시작해야 합니다.">
+                      The same app becomes a window onto a server you host. The address must start
+                      with <code>https://</code>.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="<strong>On this computer</strong>를 고르면 «Open your vault»가 두 가지를 제안합니다:">
+              Choosing <strong>On this computer</strong>, the “Open your vault” step offers two
+              answers:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>App-managed vault</td>
+                    <td data-ko="앱이 사용자 프로필 안에 폴더를 하나 고르고 알아서 진행합니다. 나중에 옮길 수 있습니다.">
+                      The app picks a folder in your user profile and gets on with it. You can move
+                      it later.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Open a folder…</td>
+                    <td data-ko="아무 폴더나 보관함이 됩니다 — 이미 쓰던 보관함도 그대로 열립니다. 파생 데이터(참고 데이터베이스, 색인)도 그 폴더 안에 살아서, 폴더를 옮기거나 동기화하면 전부 함께 갑니다.">
+                      Any folder becomes your vault, including one you already have. Derived data
+                      (reference databases, indexes) lives inside it too, so moving or syncing the
+                      folder takes everything with it.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="이 선택은 붙박이가 아닙니다: 설정 → Desktop app → Vault → <strong>Switch…</strong>에서 언제든 바꿉니다.">
+              The choice is not permanent: Settings → Desktop app → Vault →
+              <strong>Switch…</strong> changes it any time.
+            </p>
+
+            <h2 data-ko="첫 몇 분">The first minutes</h2>
+            <p data-ko="빈 보관함이 열리면 홈 화면이 <strong>Set up your vault</strong> 카드로 세 가지를 권합니다. 셋 다 앱 안에서 끝납니다:">
+              A fresh vault opens onto a Home page with a <strong>Set up your vault</strong> card
+              suggesting three things, all done inside the app:
+            </p>
+            <ol>
+              <li data-ko="설정에 <strong>chess.com / Lichess 사용자명</strong>을 넣으면 Games 페이지가 당신의 아카이브를 스스로 채웁니다.">
+                Add your <strong>chess.com / Lichess usernames</strong> in Settings — the Games
+                page fills itself from them.
+              </li>
+              <li data-ko="Puzzles를 열고 앱이 권하는 <strong>퍼즐 데이터베이스</strong>를 받습니다. 몇 분 걸리고, 페이지를 떠나도 계속 진행되며, 이후 트레이너는 오프라인으로 돌아갑니다.">
+                Open Puzzles and accept the <strong>puzzle database</strong> it offers to fetch. It
+                takes a few minutes, keeps running if you leave the page, and the trainer works
+                offline from then on.
+              </li>
+              <li data-ko="갖고 있는 <strong>스캔된 전술책</strong>이 있다면 읽어 들입니다 — <a href='#puzzle-books'>퍼즐 책</a> 참조. 이건 언제 해도 됩니다.">
+                Import a <strong>scanned tactics book</strong> you own — see
+                <a href="#puzzle-books">Puzzle books</a>. This one can wait.
+              </li>
+            </ol>
+            <p data-ko="<strong>Lichess 토큰</strong>은 온라인 부가 기능(온라인 오프닝 탐색기, Lichess 스터디·퍼즐 이력 가져오기)을 쓸 때만 필요합니다 — <a href='#settings'>설정</a> 참조. 없어도 앱의 나머지는 전부 돌아갑니다.">
+              A <strong>Lichess token</strong> is only needed for the online extras — the online
+              opening explorer, importing Lichess studies and puzzle history; see
+              <a href="#settings">Settings</a>. Everything else runs without one.
+            </p>
+            <div class="note-card">
+              <p data-ko="<strong>잠금 화면?</strong> 설정에서 앱 비밀번호를 정했을 때만 나타납니다. 순수 로컬 설치는 볼 일이 없고, 여럿이 닿는 서버라면 정해 두는 것이 좋습니다 — <a href='#settings'>설정 → Security</a>.">
+                <strong>A lock screen?</strong> It only exists once an app password is set in
+                Settings. A purely local install never sees it; a server others can reach should
+                set one — <a href="#settings">Settings → Security</a>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="vault">
+          <div class="doc">
+            <h1 data-ko="보관함">The vault</h1>
+            <p class="lede" data-ko="보관함은 평범한 파일들의 폴더입니다: 스터디와 기보는 PGN, 노트는 마크다운, 진행 상황은 JSON. 어떤 편집기로도 열리고, Obsidian에서도 그대로 읽히며, 이 앱이 사라져도 당신의 체스는 다른 도구로 열립니다.">
+              The vault is a folder of plain files: studies and games are PGN, notes are markdown,
+              progress is JSON. Any editor opens them, Obsidian reads them as they are, and if this
+              app ever goes away your chess opens in something else.
+            </p>
+            <h2 data-ko="백업">Backing up</h2>
+            <p data-ko="백업은 보관함 폴더를 복사하는 일입니다 — 파생 데이터베이스와 색인까지 전부 따라갑니다. 파생된 것들(퍼즐 풀, 참고 게임 데이터베이스, 색인)은 언제든 지우고 다시 만들 수 있습니다. 당신의 작업을 인질로 잡는 데이터베이스는 없습니다.">
+              Backing up is copying the vault folder — derived databases and indexes included. The
+              derived things (the puzzle pool, reference game databases, indexes) can always be
+              deleted and rebuilt; no database holds your work hostage.
+            </p>
+            <h2 data-ko="이전 버전">Earlier versions</h2>
+            <p data-ko="모든 스터디·기보·노트의 머리에는 시계 버튼(<strong>Earlier versions</strong>)이 있습니다. 저장할 때마다의 판본이 자동으로 보관되며, 시점을 골라 들여다보고 <strong>Restore this version</strong>으로 복원합니다. 복원해도 지금 버전은 함께 보존됩니다 — 언제든 돌아올 수 있습니다. 판본 보관이 꺼진 보관함(예: 데모)에서는 «This vault is not keeping a history, so there is nothing earlier to show»라고 말해 줍니다.">
+              Every study, game and note carries a clock button in its header —
+              <strong>Earlier versions</strong>. Each save is kept automatically; pick a time to
+              look at it and <strong>Restore this version</strong> brings it back. The version you
+              have now is kept too, so you can always come back. A vault that keeps no history (the
+              demo, for example) says so: “This vault is not keeping a history, so there is nothing earlier to show.”
+            </p>
+            <h2 data-ko="지운 것 되살리기, 그리고 전부 지우기">Restoring, and starting over</h2>
+            <ul>
+              <li data-ko="<strong>설정 → Deleted documents</strong>가 완전히 사라진 스터디·노트·기보를 <strong>Bring this back</strong>으로 되살립니다.">
+                <strong>Settings → Deleted documents</strong> restores studies, notes and games
+                that are gone entirely — <strong>Bring this back</strong>.
+              </li>
+              <li data-ko="<strong>설정 → Danger zone</strong>이 보관함 전체를 비웁니다. 확인 문구를 직접 입력해 무장한 뒤, 비밀번호가 있으면 그것까지 다시 물은 다음에야 진행됩니다. 되돌릴 수 없습니다.">
+                <strong>Settings → Danger zone</strong> wipes the whole vault. It makes you type an
+                arming phrase, then asks for the app password when one is set. There is no undo.
+              </li>
+            </ul>
+            <h2 data-ko="무엇이 어디에">What lives where</h2>
+            <div class="scroll-x">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-ko="내용">What</th>
+                    <th data-ko="형식">Format</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td data-ko="스터디와 기보 (챕터·변화수·주석·화살표 포함)">Studies and games (chapters, variations, comments, arrows)</td><td>PGN</td></tr>
+                  <tr><td data-ko="노트 (위키링크와 보드 펜스 포함)">Notes (wiki-links and board fences included)</td><td data-ko="마크다운">Markdown</td></tr>
+                  <tr><td data-ko="퍼즐 진행, 레퍼토리 기록, 홈 배치, 오프닝 맵">Puzzle progress, the repertoire record, the home layout, the opening map</td><td>JSON</td></tr>
+                  <tr><td data-ko="업로드한 책 PDF, PGN 모음">Uploaded book PDFs, PGN collections</td><td data-ko="파일 그대로">The files themselves</td></tr>
+                  <tr><td data-ko="참고 데이터베이스, 퍼즐 풀, 색인 (파생 — 재생성 가능)">Reference databases, the puzzle pool, indexes (derived — rebuildable)</td><td>SQLite</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="설정 페이지 맨 아래 줄이 보관함의 정확한 경로를 알려 줍니다.">
+              The line at the bottom of the Settings page names the vault's exact path.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="around">
+          <div class="doc">
+            <h1 data-ko="앱 둘러보기와 홈">Around the app, and Home</h1>
+            <p class="lede" data-ko="넓은 화면에서는 왼쪽 사이드바가, 휴대폰에서는 하단 바가 페이지들을 잇습니다. 홈은 마지막으로 하던 일에서 시작하고, 배치는 당신이 정합니다.">
+              A left sidebar joins the pages on a wide screen, a bottom bar on a phone. Home leads
+              with what you were last doing, and its arrangement is yours to decide.
+            </p>
+            <h2 data-ko="탐색">Navigation</h2>
+            <p data-ko="사이드바의 순서: <strong>Games · Studies · Notes · Books · Puzzles</strong>(하위로 Dashboard, Puzzle books, Themes) · <strong>Opening map</strong> · <strong>Tools</strong>(Board, Editor, Explorer, Repertoire) · <strong>Databases</strong>. 사이드바 아래에는 연결 상태 표시(«This machine», 서버 이름, 또는 «Offline»), 설정 톱니, 라이트/다크 전환이 있습니다.">
+              The sidebar, top to bottom: <strong>Games · Studies · Notes · Books ·
+              Puzzles</strong> (with Dashboard, Puzzle books and Themes under it) ·
+              <strong>Opening map</strong> · <strong>Tools</strong> (Board, Editor, Explorer,
+              Repertoire) · <strong>Databases</strong>. Below them sit the connection label (“This
+              machine”, your server's name, or “Offline”), the Settings gear, and the light/dark
+              toggle.
+            </p>
+            <p data-ko="휴대폰의 하단 바는 <strong>Home · Games · Studies · Notes · Puzzles · More</strong>를 들고, Books·Opening map·Databases·Settings와 나머지 도구는 <strong>More</strong> 안에 있습니다. 보드가 있는 페이지에서는 하단 바가 그 페이지의 조작으로 바뀝니다 — <a href='#phone'>휴대폰에서</a> 참조.">
+              A phone's bottom bar carries <strong>Home · Games · Studies · Notes · Puzzles ·
+              More</strong>; Books, Opening map, Databases, Settings and the rest of the tools live
+              under <strong>More</strong>. On a page with a board the bar becomes that page's own
+              controls — see <a href="#phone">On a phone</a>.
+            </p>
+            <h2 data-ko="홈">Home</h2>
+            <p data-ko="홈의 구성 요소, 위에서부터:">What Home is made of, top to bottom:</p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>Continue</td>
+                    <td data-ko="최대 세 줄로 하던 일을 잇습니다: 최근 스터디(«Continue study»), 마지막 기보(«Last game»), 그리고 훈련 재개(«Resume training», 현재 난이도 낱말과 함께 — 퍼즐 데이터베이스가 준비되고 한 번이라도 풀었을 때).">
+                      Up to three one-tap resume rows: your latest study (“Continue study”), the
+                      last game document (“Last game”), and “Resume training” with the current
+                      difficulty word — once the puzzle database is ready and something has been
+                      attempted.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Set up your vault</td>
+                    <td data-ko="새 보관함의 세 단계 체크리스트(사용자명, 퍼즐 데이터베이스, 전술책). 단계가 끝날 때마다 체크되고, 다 끝나면 카드가 사라집니다. X(«Hide this checklist»)로 미리 감출 수도 있습니다.">
+                      The three-step checklist for a new vault (usernames, the puzzle database, a
+                      tactics book). Steps tick off as they are done and the card leaves when all
+                      three are; the X (“Hide this checklist”) dismisses it early.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-ko="타일 그리드 <small>(휴대폰)</small>">The tile grid <small>(phone)</small></td>
+                    <td data-ko="목적지 타일들과 개인 카운트. 그리드에서 내린 목적지는 아래 버튼 줄에 남으므로, 어떤 것도 손이 닿지 않는 곳으로 치워지지 않습니다.">
+                      Destination tiles with personal counts. A destination demoted from the grid
+                      keeps a button in the row underneath, so nothing can be arranged out of
+                      reach.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-ko="대시보드 패널 <small>(데스크톱)</small>">The dashboard panels <small>(desktop)</small></td>
+                    <td data-ko="«Training»(오늘 푼 수, 복습 예정), «Recent games», «Puzzle books»(진행 막대와 함께), «Recent work»(최근 스터디·노트).">
+                      “Training” (solved today, what is due), “Recent games”, “Puzzle books” (with
+                      progress bars), and “Recent work” (latest studies and notes).
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <h3>Customise home</h3>
+            <p data-ko="슬라이더 버튼(«Customise home»)이 여는 창은 바로 적용됩니다 — 저장 버튼이 없습니다. 안에는:">
+              The sliders button (“Customise home”) opens a dialog that applies immediately — there
+              is no save button. Inside:
+            </p>
+            <ul>
+              <li data-ko="<strong>Continue</strong>와 <strong>Set up your vault</strong> 카드의 켜고 끄기.">
+                Switches for the <strong>Continue</strong> and <strong>Set up your vault</strong>
+                cards.
+              </li>
+              <li data-ko="<strong>On the grid</strong> — 타일마다 «Move up» / «Move down» 화살표, «Hide»(눈 감김 아이콘), 그리고 스위치(끄면 아래 줄로 내려감). 끌어서 놓기는 없습니다 — 순서는 화살표로 정합니다.">
+                <strong>On the grid</strong> — per tile: “Move up” / “Move down” arrows, “Hide”
+                (the crossed-eye icon), and a switch (off demotes it to the row below). There is no
+                drag-and-drop; the arrows are the ordering.
+              </li>
+              <li data-ko="<strong>In the row below</strong> — 버튼 줄의 목적지들. 스위치를 켜면 그리드로 승격됩니다.">
+                <strong>In the row below</strong> — the demoted destinations; their switch promotes
+                them back to the grid.
+              </li>
+              <li data-ko="<strong>Off the page</strong> — 숨긴 목적지들. «Bring back»(눈 아이콘)으로 되돌립니다.">
+                <strong>Off the page</strong> — the hidden ones, each with a “Bring back” eye.
+              </li>
+              <li data-ko="맨 아래 <strong>Reset to default</strong>.">
+                <strong>Reset to default</strong>, at the bottom.
+              </li>
+            </ul>
+            <p data-ko="배치는 보관함에 저장됩니다 — 이 보관함을 여는 모든 기기가 같은 홈을 봅니다.">
+              The arrangement is stored in the vault, so every device that opens this vault agrees.
+            </p>
+            <h2 data-ko="저장, 그리고 떠나기">Saving, and leaving</h2>
+            <ul>
+              <li data-ko="문서 머리의 저장 표시는 네 상태를 오갑니다: <strong>Saved</strong>(체크) · <strong>Saving…</strong>(스피너) · <strong>Save</strong> 버튼(저장 안 된 변경이 있음 — <kbd>Ctrl/⌘ S</kbd>도 같습니다) · <strong>Retry save</strong>(실패, 이유는 툴팁에).">
+                A document header's save control has four states: <strong>Saved</strong> (a check)
+                · <strong>Saving…</strong> (a spinner) · a <strong>Save</strong> button (unsaved
+                changes — <kbd>Ctrl/⌘ S</kbd> does the same) · <strong>Retry save</strong>
+                (failed, the reason in its tooltip).
+              </li>
+              <li data-ko="저장하지 않고 떠나려 하면 «Unsaved changes» 창이 묻습니다 — 저장, <strong>Discard changes</strong>, 또는 <strong>Cancel</strong>.">
+                Leaving with unsaved changes raises the “Unsaved changes” question — save,
+                <strong>Discard changes</strong>, or <strong>Cancel</strong>.
+              </li>
+              <li data-ko="저절로 저장되기를 바라면 설정 → Documents의 <strong>Auto-save</strong>를 켜세요. 기본은 꺼짐입니다.">
+                Prefer changes written as you make them? Settings → Documents →
+                <strong>Auto-save</strong>. Off by default.
+              </li>
+            </ul>
+            <p data-ko="페이지가 복구 불가능한 오류를 만나면 «Something went wrong» 카드가 <strong>Reload</strong>와 <strong>Go home</strong>을 내밉니다 — 보관함의 내용은 영향받지 않습니다.">
+              If a page hits an error it cannot recover from, a “Something went wrong” card offers
+              <strong>Reload</strong> and <strong>Go home</strong> — nothing in the vault is
+              affected.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="shortcuts">
+          <div class="doc">
+            <h1 data-ko="키보드와 제스처">Keyboard and gestures</h1>
+            <p class="lede" data-ko="앱 안 어디서든 <kbd>?</kbd>를 누르면 단축키 목록이 뜹니다. 여기 실린 표가 그 목록이고, 그 아래는 목록에 싣지 않은 손버릇들입니다.">
+              Press <kbd>?</kbd> anywhere in the app for the shortcut list. The first table below
+              is that list; after it come the habits the list leaves out.
+            </p>
+            <h2 data-ko="단축키">The shortcuts</h2>
+            <div class="scroll-x">
+              <table>
+                <tbody>
+                  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td data-ko="이전 / 다음 수">Previous / next move</td></tr>
+                  <tr><td><kbd>↑</kbd> / <kbd>Home</kbd></td><td data-ko="처음으로">Go to the start</td></tr>
+                  <tr><td><kbd>↓</kbd> / <kbd>End</kbd></td><td data-ko="끝으로">Go to the end</td></tr>
+                  <tr><td><kbd>f</kbd></td><td data-ko="보드 뒤집기 (<kbd>Ctrl+F</kbd>는 브라우저 찾기로 남습니다)">Flip the board (<kbd>Ctrl+F</kbd> stays the browser's find)</td></tr>
+                  <tr><td><kbd>Enter</kbd></td><td data-ko="입력한 수 두기 (수 입력 상자에서)">Play the typed move (in the move box)</td></tr>
+                  <tr><td><kbd>Ctrl/⌘ S</kbd></td><td data-ko="열린 문서 저장">Save the open document</td></tr>
+                  <tr><td><kbd>Esc</kbd></td><td data-ko="열린 창 닫기">Close the open window</td></tr>
+                  <tr><td><kbd>?</kbd></td><td data-ko="이 목록">This list</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="보드 키는 입력란 안이나 대화 상자가 열려 있는 동안에는 듣지 않습니다 — 열린 창이 키보드를 갖습니다.">
+              The board keys go quiet inside a text field or while a dialog is open — the open
+              window owns the keyboard.
+            </p>
+            <h2 data-ko="목록에 없는 것들">Not on the list</h2>
+            <ul>
+              <li data-ko="<strong>목록과 표</strong> — 기보 테이블에서 <kbd>↑</kbd> <kbd>↓</kbd>가 선택을 옮기고 <kbd>Enter</kbd>가 열고 <kbd>Esc</kbd>가 선택을 지웁니다. 기보 상세 패널에서는 <kbd>←</kbd> <kbd>→</kbd> <kbd>Home</kbd> <kbd>End</kbd>가 그 판을 넘깁니다.">
+                <strong>Lists and tables</strong> — in a game table <kbd>↑</kbd> <kbd>↓</kbd> move
+                the selection, <kbd>Enter</kbd> opens, <kbd>Esc</kbd> clears; in the game-details
+                panel <kbd>←</kbd> <kbd>→</kbd> <kbd>Home</kbd> <kbd>End</kbd> step through that
+                game.
+              </li>
+              <li data-ko="<strong>노트</strong> — <code>[[</code>를 치면 위키링크 자동 완성이 뜹니다: <kbd>↑</kbd> <kbd>↓</kbd>로 고르고 <kbd>Enter</kbd>/<kbd>Tab</kbd>으로 받고 <kbd>Esc</kbd>로 무릅니다.">
+                <strong>Notes</strong> — typing <code>[[</code> opens the wiki-link autocomplete:
+                <kbd>↑</kbd> <kbd>↓</kbd> pick, <kbd>Enter</kbd>/<kbd>Tab</kbd> accept,
+                <kbd>Esc</kbd> dismisses.
+              </li>
+              <li data-ko="<strong>사진에서 포지션</strong> — 이미지 대화 상자들은 <kbd>Ctrl+V</kbd> 붙여넣기를 받습니다.">
+                <strong>Position from a picture</strong> — the image dialogs take a
+                <kbd>Ctrl+V</kbd> paste.
+              </li>
+              <li data-ko="<strong>마우스 휠</strong> — 보드 위에서 굴리면 수가 넘어갑니다.">
+                <strong>The mouse wheel</strong> — rolling it over the board steps through the
+                moves.
+              </li>
+              <li data-ko="<strong>누르고 있기</strong> — Back/Forward 버튼을 누르고 있으면 반복됩니다.">
+                <strong>Press and hold</strong> — the Back/Forward buttons repeat while held.
+              </li>
+            </ul>
+            <h2 data-ko="그리기">Drawing on the board</h2>
+            <p data-ko="오른쪽 버튼으로 <strong>끌면 화살표</strong>, <strong>클릭하면 동그라미</strong>입니다. 수식 키가 색을 고릅니다: 그냥 = 초록, <kbd>Shift</kbd>/<kbd>Ctrl</kbd> = 빨강, <kbd>Alt</kbd> = 파랑, <kbd>Shift+Alt</kbd> = 노랑. 이 네 색만 PGN으로 저장됩니다(스터디에서는 Edit 모드에서만 그려집니다). 엔진의 최선수 화살표는 별도의 파란 자동 화살표라, 직접 그린 것과 섞이지 않습니다.">
+              With the right button, <strong>drag for an arrow</strong>, <strong>click for a
+              circle</strong>. Modifier keys pick the colour: plain = green,
+              <kbd>Shift</kbd>/<kbd>Ctrl</kbd> = red, <kbd>Alt</kbd> = blue,
+              <kbd>Shift+Alt</kbd> = yellow — these four are what PGN can store (in a study,
+              drawing works in Edit mode). The engine's best-move arrow is a separate blue
+              auto-arrow, so your drawings never clobber it.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="board">
+          <div class="doc">
+            <h1 data-ko="보드">The board</h1>
+            <p class="lede" data-ko="Tools 아래의 Board는 자유 분석 보드입니다. 수를 두면 변화수·주석·기호·화살표를 갖춘 수 트리가 자라고, 곁의 패널이 Moves·Engine·Explorer 탭을 오갑니다. 여기서 배우는 것은 스터디, 기보, 책, 퍼즐 — 보드가 있는 모든 곳에서 그대로 통합니다.">
+              The Board, under Tools, is the free analysis board. Play moves and a tree grows —
+              variations, comments, glyphs, arrows — while the panel beside it tabs between Moves,
+              Engine and Explorer. What you learn here carries everywhere a board appears: studies,
+              games, books, puzzles.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
+                <img src="shots/board.png" alt="The analysis board: the move tree and the engine beside the board" />
+              </picture>
+            </figure>
+
+            <h2 data-ko="보드 자체">The board itself</h2>
+            <ul>
+              <li data-ko="수는 <strong>끌어서</strong> 또는 <strong>두 번 클릭</strong>(출발 칸, 도착 칸)으로 둡니다. 승격은 기물 고르는 창이 뜹니다. 캐슬링 입력 방식은 설정 → Appearance → Castling에서 고릅니다: 킹을 두 칸(g1) 또는 룩 위로(h1).">
+                Moves go by <strong>drag</strong> or by <strong>two clicks</strong> (from-square,
+                to-square). Promotion opens a piece picker. How castling is entered is a setting —
+                Appearance → Castling: king two squares (g1) or king onto the rook (h1).
+              </li>
+              <li data-ko="양쪽의 <strong>선수 막대</strong>가 이름·레이팅·시계(PGN에 시계가 있으면)를 보여 줍니다. Board 페이지에서는 이름 칸이 편집됩니다.">
+                The <strong>player bars</strong> on either side show names, ratings and clocks
+                (when the PGN carries them). On the Board page the name fields are editable.
+              </li>
+              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점이고, 가운데 빨간 눈금이 균형입니다.">
+                The <strong>evaluation bar</strong> is drawn beside the board while the engine is
+                on — always from White's point of view, a red midline marking equality.
+              </li>
+              <li data-ko="현재 수가 품질 기호를 달고 있으면 도착 칸에 색 배지가 붙습니다: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code> — 그리고 북 무브에는 펼친 책 기호.">
+                When the current move carries a quality glyph, a coloured badge pins to its
+                destination square — <code>!</code> <code>?</code> <code>!!</code> <code>??</code>
+                <code>!?</code> <code>?!</code> — and an open-book badge marks a book move.
+              </li>
+            </ul>
+            <h3 data-ko="보드 아래 버튼">The buttons under the board</h3>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Start (↑) · Back (←) · Forward (→) · End (↓)</td><td data-ko="수 이동. Back/Forward는 누르고 있으면 반복됩니다.">Move navigation; Back/Forward repeat while held.</td></tr>
+                  <tr><td>Flip board (f)</td><td data-ko="보드 뒤집기.">Turns the board around.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h2 data-ko="수 트리 (Moves 패널)">The move tree (the Moves panel)</h2>
+            <p data-ko="패널 제목은 현재 오프닝의 이름입니다(처음에는 «Starting position»). 본선은 번호·백·흑의 세 칸으로, 변화수는 들여쓰기된 곁줄로, 주석은 줄 전체로 그려집니다. 수 하나를 클릭하면 그 시점으로 갑니다. 수 옆의 작은 점은 «Has a comment», 펼친 책은 «Book move»입니다. 빈 트리는 이렇게 말합니다: «Play a move on the board, or load a FEN or PGN.»">
+              The panel is titled with the live opening name (“Starting position” at first). The
+              mainline draws as number–White–Black rows, side lines as indented branches, comments
+              as full-width rows. Clicking any move goes there. A small dot on a move means “Has a
+              comment”; an open book, “Book move”. An empty tree says: “Play a move on the board,
+              or load a FEN or PGN.”
+            </p>
+            <p data-ko="커서가 곁줄에 있으면 표 아래에 <strong>Make mainline</strong> 띠가 나타나 그 줄을 본선으로 승격합니다.">
+              Whenever the cursor sits on a side line, a <strong>Make mainline</strong> strip
+              appears under the table to promote it.
+            </p>
+            <h3 data-ko="패널 머리의 버튼, 순서대로">The panel's header buttons, in order</h3>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Show the current line only</td><td data-ko="가지 갈래를 접고 지금 줄만 봅니다. 트리에 갈래가 없으면 아예 나타나지 않습니다.">Folds the branches away to read one line. Absent while the tree has no branches at all.</td></tr>
+                  <tr><td>Engine review</td><td data-ko="게임 전체를 판정합니다 — 아래 «게임 리뷰» 참조.">Judges the whole game — see Game review below.</td></tr>
+                  <tr><td>Add this game to the collection</td><td data-ko="불러온 게임을 모음에 담습니다. 담기면 «In the collection»(초록 체크)으로 바뀝니다. Board 페이지에서, 헤더가 있는 게임이 실려 있을 때만 나타납니다.">Puts a loaded game into your collection; turns into “In the collection” (a green check). Board page only, and only with a real game loaded.</td></tr>
+                  <tr><td>Load a position — FEN, PGN, or image</td><td data-ko="아래 «포지션 불러오기» 참조.">See “Loading a position” below.</td></tr>
+                  <tr><td>Delete this move and everything after it</td><td data-ko="휴지통 아이콘. 실행 취소 토스트가 잠깐 떠 있습니다.">The trash icon; undoable via a toast for a moment.</td></tr>
+                  <tr><td>Clear all moves · Clear the board</td><td data-ko="트리 비우기, 그리고 (허용된 곳에서) 보드까지 비우기.">Empty the tree — and, where allowed, the board too.</td></tr>
+                  <tr><td>More (⋯)</td><td data-ko="좁은 화면에서 밀려난 것들이 모이는 메뉴 — 그리고 <strong>Copy FEN</strong>과 <strong>Copy PGN</strong>이 여기 삽니다.">The overflow menu for whatever the width pushed out — and the home of <strong>Copy FEN</strong> and <strong>Copy PGN</strong>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h2 data-ko="주석 달기">Annotating</h2>
+            <p data-ko="주석 도구는 보드 아래의 주석 패널에 있습니다(스터디와 기보에서는 <strong>Edit</strong> 모드에서만 보입니다). 기호 팔레트는 두 무리입니다 — 품질: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code>, 평가: <code>⩲</code> <code>±</code> <code>+−</code> <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. 각 무리 안에서는 하나만 켜지고, 켜진 것을 다시 누르면 지워집니다. 곁의 접기 화살표(«Show glyphs» / «Hide glyphs»)가 팔레트를 접습니다. 그 아래 상자가 이 수의 주석입니다 — 뿌리에서는 챕터 서문이 됩니다. 화살표와 동그라미는 여기 없습니다: <a href='#shortcuts'>보드에 직접 그립니다</a>.">
+              The annotation tools live in a pane under the board (in studies and games it appears
+              only in <strong>Edit</strong> mode). The glyph palette comes in two groups — quality:
+              <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code>
+              <code>?!</code>, and assessment: <code>⩲</code> <code>±</code> <code>+−</code>
+              <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. One per
+              group; pressing the active one clears it. The chevron beside the box (“Show glyphs” /
+              “Hide glyphs”) folds the palette. The text box below is the comment on this move —
+              at the root it becomes the chapter introduction. Arrows and circles are not here:
+              <a href="#shortcuts">they are drawn on the board itself</a>.
+            </p>
+
+            <h2 data-ko="포지션 불러오기">Loading a position</h2>
+            <p data-ko="<strong>Load a position</strong> 대화 상자는 세 가지를 받습니다: 입력란에 붙여 넣는 <strong>FEN</strong> 또는 <strong>PGN</strong>(<kbd>Enter</kbd>로 실행, 비어 있을 때는 구석의 «Paste» 버튼이 클립보드를 읽습니다), 그리고 점선 상자에 놓는 <strong>그림</strong> — «click to choose, drop a file, or paste an image». 그림은 스크린샷이나 스캔이 가장 잘 읽히고, 네 손잡이를 도해의 모서리에 맞춘 뒤 <strong>Read position</strong>을 누릅니다. 아래쪽이 흑이면 «Black at the bottom»을 켭니다.">
+              The <strong>Load a position</strong> dialog takes three things: a <strong>FEN</strong>
+              or <strong>PGN</strong> pasted into the field (<kbd>Enter</kbd> submits; while empty,
+              a corner “Paste” button reads the clipboard), or a <strong>picture</strong> dropped on
+              the dashed box — “click to choose, drop a file, or paste an image”. A screenshot or
+              scan reads best; drag the four handles onto the diagram's corners and press
+              <strong>Read position</strong>, ticking “Black at the bottom” when it is.
+            </p>
+
+            <h2 data-ko="게임 리뷰">Game review</h2>
+            <p data-ko="<strong>Engine review</strong>(현미경 아이콘 — «judge every move (?!/?/??) and measure accuracy»)가 게임 전체를 훑습니다. 끝나면 수 목록 아래 띠에:">
+              <strong>Engine review</strong> (the microscope — “judge every move (?!/?/??) and
+              measure accuracy”) sweeps the whole game. When it finishes, the strip under the move
+              list holds:
+            </p>
+            <ul>
+              <li data-ko="클릭(또는 끌기)으로 이동하는 <strong>평가 그래프</strong> — 접었다 펼 수 있습니다.">
+                The <strong>evaluation graph</strong> — click or drag to jump; folds away.
+              </li>
+              <li data-ko="진영별 요약: 정확도 %, 평균 손실, 북 무브 수(«known opening theory, not judged»), 그리고 <code>!!</code> <code>?!</code> <code>?</code> <code>??</code>의 개수. 판정 기호는 수 목록과 보드에도 그대로 붙습니다.">
+                Per-side summaries: accuracy %, average loss, the book-move count (“known opening
+                theory, not judged”), and how many <code>!!</code> <code>?!</code> <code>?</code>
+                <code>??</code> each side earned — the verdicts land on the move list and the board
+                too.
+              </li>
+              <li data-ko="<strong>Dismiss review</strong> — 띠를 걷습니다.">
+                <strong>Dismiss review</strong> takes the strip away.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="page" id="engine">
+          <div class="doc">
+            <h1 data-ko="엔진">The engine</h1>
+            <p class="lede" data-ko="Stockfish 18이 브라우저 안에서 돌아갑니다 — 서버도 인터넷도 필요 없습니다. Engine 패널은 데스크톱에서 Moves 패널 위에 얹히고, 휴대폰에서는 제 탭을 가집니다.">
+              Stockfish 18 runs in the browser itself — no server, no internet. The Engine panel
+              docks above the moves on a desktop and gets its own tab on a phone.
+            </p>
+            <h2 data-ko="패널 머리">The panel header</h2>
+            <p data-ko="«Engine»이라는 제목 곁에, 켜져 있는 동안은 현재 평가(백 우세면 초록, 흑 우세면 빨강)와 <code>depth</code> 읽기가 섭니다. 오른쪽에 버튼 셋:">
+              Beside the word “Engine”, while it runs, sit the current score (green when White is
+              better, red when Black is) and the <code>depth</code> readout. To the right, three
+              controls:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>Piece values on the board</td>
+                    <td data-ko="온도계 아이콘. 기물마다 엔진(NNUE)이 매기는 실제 가치를 폰 단위 칩으로 보드에 겹칩니다 — 명목 가치보다 한참 높으면 밝게, 한참 낮으면 어둡게. 검색이 아니라 평가만 읽으므로 즉답입니다. 이 값을 답할 수 없는 엔진 빌드에서는 버튼 자체가 없습니다.">
+                      The thermometer. Overlays each piece with the value the engine's evaluation
+                      (NNUE) actually assigns it, in pawns — tinted bright when it is worth much
+                      more than its nominal value, dimmed when much less. It reads the evaluation,
+                      not a search, so it answers instantly. On an engine build that cannot answer,
+                      the button is simply absent.
+                    </td>
+                  </tr>
+                  <tr><td>Engine settings</td><td data-ko="아래 표의 대화 상자를 엽니다. 엔진이 꺼져 있어도 열립니다.">Opens the dialog below — whether or not the engine is on.</td></tr>
+                  <tr><td>Engine on/off</td><td data-ko="스위치. 툴팁이 «Turn the engine on» / «Turn the engine off»를 오갑니다.">The switch; its tooltip reads “Turn the engine on” / “Turn the engine off”.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="엔진 설정">Engine settings</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <thead>
+                  <tr><th data-ko="항목">Setting</th><th data-ko="범위">Range</th><th data-ko="뜻">Meaning</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Threads</td><td data-ko="1 – 코어 수">1 – your cores</td><td data-ko="병렬 검색. 다중 스레드는 교차 출처 격리된 페이지(HTTPS)가 필요합니다 — 안 되는 곳에서는 «unavailable in this context»로 잠깁니다.">Parallel search. Multi-threading needs a cross-origin-isolated page (HTTPS); where that is missing the slider is locked with “unavailable in this context”.</td></tr>
+                  <tr><td>Lines</td><td>1 – 6</td><td data-ko="동시에 보여 줄 후보 수(MultiPV).">How many candidate lines to show at once (MultiPV).</td></tr>
+                  <tr><td>Depth</td><td>10 – 40</td><td data-ko="검색을 멈추는 깊이.">Where the search stops.</td></tr>
+                  <tr><td>Time limit</td><td data-ko="0 – 60초">0 – 60 s</td><td data-ko="수당 시간 상한. 0이면 꺼짐(—).">A per-position ceiling; 0 means off (—).</td></tr>
+                  <tr><td>Hash</td><td>16 – 1024 MB</td><td data-ko="치환표 크기.">The transposition table.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="후보 수 목록">The candidate lines</h2>
+            <ul>
+              <li data-ko="줄마다 고정폭 점수 칸과 SAN 변화수가 옵니다. <strong>수 하나를 클릭하면 그 줄이 트리로 들어가고</strong>, 데스크톱에서 수 위에 머무르면 그 시점의 미니 보드가 뜹니다.">
+                Each line is a fixed-width score column and the variation in SAN.
+                <strong>Clicking any move plays the line into the tree</strong>; hovering one (on a
+                desktop) pops a mini-board preview of that point.
+              </li>
+              <li data-ko="아직 답이 없으면 «Thinking…», 더 검색할 것이 없는 끝 포지션이면 «Checkmate — there is nothing left to search.» 같은 정직한 문장이 옵니다.">
+                While it has nothing yet: “Thinking…”. A terminal position says so honestly —
+                “Checkmate — there is nothing left to search.”
+              </li>
+              <li data-ko="오류는 경고 삼각형과 함께 그대로 표시됩니다 — 엔진이 스스로 꺼졌을 때도 이유는 남습니다.">
+                Errors show with a warning triangle — even when the engine has switched itself
+                off, the reason stays visible.
+              </li>
+            </ul>
+            <div class="note-card">
+              <p data-ko="<strong>설명은 왜 없나요?</strong> 일부러 없습니다. 이 앱은 엔진의 판단을 사람 말로 번역해 주는 척하지 않습니다 — 그 번역은 자주 그럴듯한 거짓말이 되기 때문입니다. 대신 기물 가치 온도계처럼, 엔진이 실제로 아는 것을 그대로 보여 주는 도구를 둡니다.">
+                <strong>Why no explanations?</strong> Deliberately. The app does not pretend to
+                translate the engine's judgement into prose — that translation too often becomes a
+                plausible lie. Instead it offers tools that show what the engine actually knows,
+                the piece-value thermometer being one.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="explorer">
+          <div class="doc">
+            <h1 data-ko="탐색기">The explorer</h1>
+            <p class="lede" data-ko="지금 포지션에서 무엇이 두어졌는지 — 수별 게임 수와 승·무·패, 그리고 열어 볼 수 있는 게임들. Tools → Explorer로 바로 열거나, 보드가 있는 곳 어디서든 Explorer 패널을 켭니다.">
+              What has been played from the current position — a move table with game counts and
+              win/draw/loss, plus games you can open. Reach it as Tools → Explorer, or switch the
+              Explorer panel on wherever a board is.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/explorer-dark.png" />
+                <img src="shots/explorer.png" alt="The explorer after 1. e4: the opening name and the reply table with result bars" />
+              </picture>
+              <figcaption data-ko="1. e4 다음 — 오프닝 이름과 응수 테이블. (데모의 출처는 My games뿐입니다.)">
+                After 1. e4 — the opening strip and the reply table. (The demo's only source is My
+                games.)
+              </figcaption>
+            </figure>
+            <h2 data-ko="패널 머리">The panel header</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>Explorer source</td>
+                    <td data-ko="출처 선택. 세 무리: <strong>Your vault</strong> → My games(보관함의 모든 기보), <strong>Reference databases</strong> → 만든 데이터베이스마다 하나, <strong>Online (via proxy)</strong> → Lichess 데이터베이스(설정의 토큰 필요).">
+                      The source picker, in three groups: <strong>Your vault</strong> → My games
+                      (every game in the vault); <strong>Reference databases</strong> — one per
+                      database you built; <strong>Online (via proxy)</strong> — the Lichess
+                      database (needs the token from Settings).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Filters</td>
+                    <td data-ko="출처마다 다른 필터 창 — 아래 참조. 필터가 걸려 있으면 아이콘이 켜져 있습니다.">
+                      A filter dialog per source — below. The icon stays lit while any filter is
+                      set.
+                    </td>
+                  </tr>
+                  <tr><td>Manage reference databases</td><td data-ko="Databases 페이지로 갑니다.">Goes to the Databases page.</td></tr>
+                  <tr><td>Show the explorer / Hide the explorer</td><td data-ko="패널 스위치.">The panel's switch.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="테이블 읽기">Reading the table</h2>
+            <p data-ko="머리 띠에는 ECO 코드와 오프닝 이름이(모르는 곳에서는 «Out of book») 섭니다. 줄마다: 수(SAN), 게임 수(정확한 수는 툴팁에), 그리고 승·무·패 막대 — 흰 조각이 백 승, 가운데가 무승부, 어두운 조각이 흑 승이고, 12% 이상인 조각에만 숫자가 인쇄됩니다. <strong>줄을 클릭하면 그 수가 보드에 두어집니다.</strong> 상위 8개 다음은 «Show all {n} moves»가 폅니다.">
+              The strip above names the ECO code and opening (“Out of book” where nothing does).
+              Each row: the move in SAN, the game count (the exact number in its tooltip), and the
+              win/draw/loss bar — the light segment is White wins, the middle draws, the dark one
+              Black wins, and a segment prints its percentage only when it is wide enough to carry
+              it. <strong>Clicking a row plays that move.</strong> The top eight show; “Show all
+              {n} moves” unfolds the rest.
+            </p>
+            <p data-ko="테이블 아래에는 <strong>Top games</strong>(My games에서는 최신순이라 <strong>Recent games</strong>)가 오고, 줄을 클릭하면 그 게임이 열립니다. https 출처가 있는 게임에는 바깥 링크(«needs internet»)도 붙습니다.">
+              Below the table, <strong>Top games</strong> (<strong>Recent games</strong> for My
+              games, which lists newest first) — a row opens that game, and one with an https
+              source also carries an external link (“needs internet”).
+            </p>
+            <h2 data-ko="필터">The filters</h2>
+            <ul>
+              <li data-ko="<strong>My games</strong> — Side(Any/White/Black), Result(All/Won/Drew/Lost), Time control(Bullet/Blitz/Rapid/Classical, 복수 선택), «Kept only»(모음에 담은 게임만 — 아카이브 전체가 아니라), Played between(기간). 실황 카운트가 아래 줄에 섭니다.">
+                <strong>My games</strong> — Side (Any/White/Black), Result (All/Won/Drew/Lost),
+                Time control (Bullet/Blitz/Rapid/Classical, multi-select), “Kept only” (only the
+                games in your collection, not every archived one), Played between (dates). A live
+                count sits under the controls.
+              </li>
+              <li data-ko="<strong>참고 데이터베이스</strong> — Result, Strength(Any/2300+/2500+/2700+), Level, Player(진영·결과 조건과 함께), Opening or ECO, Tournament, Played between.">
+                <strong>A reference database</strong> — Result, Strength (Any/2300+/2500+/2700+),
+                Level, Player (with side and outcome conditions), Opening or ECO, Tournament,
+                Played between.
+              </li>
+              <li data-ko="<strong>Lichess 데이터베이스</strong> — Opponent strength(레이팅 구간)와 Time control.">
+                <strong>The Lichess database</strong> — Opponent strength (the rating bands) and
+                Time control.
+              </li>
+            </ul>
+            <h2 data-ko="테이블 너머">Past the table</h2>
+            <ul>
+              <li data-ko="<strong>Search every game for this position</strong> — 색인이 끝나는 곳 너머를 데이터베이스 전체 스캔으로 잇습니다: «Searching… {scanned} of {total} games» → «{n} games reach this position». 네이티브 코어가 있는 설치에서는 버튼 없이 저절로 이어집니다.">
+                <strong>Search every game for this position</strong> — where the index ends, a scan
+                of the whole database takes over: “Searching… {scanned} of {total} games” → “{n}
+                games reach this position”. On an install with the native core it runs by itself,
+                no button needed.
+              </li>
+              <li data-ko="<strong>Find this position in the databases browser</strong> — 이 포지션을 Games → Databases 탭에 미리 채워 넘깁니다. 거기서는 근사 일치와 기물 검색까지 잇습니다 — <a href='#db-search'>데이터베이스 검색</a>.">
+                <strong>Find this position in the databases browser</strong> — hands the position
+                to the Games page's Databases tab, pre-filled, where relaxed and material search
+                continue — <a href="#db-search">Searching the databases</a>.
+              </li>
+              <li data-ko="색인이 없는 데이터베이스에는 <strong>Index positions</strong> 버튼이 그 자리를 대신합니다.">
+                A database with no position index offers <strong>Index positions</strong> in the
+                table's place.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="page" id="editor">
+          <div class="doc">
+            <h1 data-ko="에디터">The editor</h1>
+            <p class="lede" data-ko="아무 포지션이나 차리는 곳입니다 — 책의 도해를 옮기거나, 연습 문제를 만들거나, 국면 하나를 처음부터 놓거나. 완성되면 한 버튼으로 분석 보드에 넘깁니다.">
+              Where any position gets set up — a diagram copied from a book, an exercise of your
+              own, a structure laid from scratch. One button hands the finished position to the
+              analysis board.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/editor-dark.png" />
+                <img src="shots/editor.png" alt="The editor: the piece palette, the mode toolbar, and the position details panel" />
+              </picture>
+            </figure>
+            <h2 data-ko="기물 팔레트">The piece palette</h2>
+            <p data-ko="색마다 여섯 기물이 한 줄씩 — 데스크톱에서는 보드 위 한 줄(상대 색 먼저), 휴대폰에서는 상대 색이 보드 위, 내 색이 아래. 버튼을 <strong>클릭하면 그 기물이 도구가 되어</strong> 칸을 클릭할 때마다 놓이고, <strong>누른 채 끌면</strong> 그 한 번만 바로 놓입니다.">
+              Six pieces per colour — one combined row above the board on a desktop (opponent's
+              colour first), split above/below on a phone. <strong>Click a button to arm it as the
+              tool</strong> — every square you click gets that piece — or <strong>press and
+              drag</strong> to place one directly.
+            </p>
+            <h2 data-ko="도구 막대">The toolbar</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Move</td><td data-ko="기물을 끌어 옮기는 기본 모드. 보드 밖에 놓으면 지워집니다.">The default: drag pieces around; dropping one off the board deletes it.</td></tr>
+                  <tr><td>Erase</td><td data-ko="클릭한 칸의 기물을 지웁니다.">Click a square to remove its piece.</td></tr>
+                  <tr><td>Flip board</td><td data-ko="보드 뒤집기 (아이콘만).">Turns the board (icon only).</td></tr>
+                  <tr><td>Reset</td><td data-ko="시작 포지션으로.">Back to the starting position.</td></tr>
+                  <tr><td>Clear</td><td data-ko="빈 보드로.">An empty board.</td></tr>
+                  <tr><td>Position</td><td data-ko="좁은 화면에서 상세 패널을 여는 버튼 — 넓은 화면에서는 패널이 항상 곁에 있습니다.">Opens the details sheet on a narrow screen — on a wide one the panel is always beside the board.</td></tr>
+                  <tr><td>Analyse</td><td data-ko="완성된 포지션을 보드로. 불법 포지션이면 잠기고, 이유가 툴팁에 섭니다.">Hands the position to the analysis board. Locked while the position is illegal — the reason in its tooltip.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="포지션 상세">Position details</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Opening</td><td data-ko="«Pick an opening or ECO code» — 이름이나 코드로 찾아 고르면 그 라인의 끝 포지션이 차려집니다. 보드가 달라지는 순간 표시는 지워집니다.">“Pick an opening or ECO code” — search by name or code and the line's end position is set up. The label clears the moment the board no longer matches.</td></tr>
+                  <tr><td>Side to move</td><td>White / Black</td></tr>
+                  <tr><td>Castling rights</td><td data-ko="<code>K</code> <code>Q</code> <code>k</code> <code>q</code> 네 토글 — 백 O-O, 백 O-O-O, 흑 O-O, 흑 O-O-O.">Four toggles — <code>K</code> <code>Q</code> <code>k</code> <code>q</code>: White O-O, White O-O-O, Black O-O, Black O-O-O.</td></tr>
+                  <tr><td>En passant target</td><td data-ko="«none» 또는 합법인 칸들만.">“none”, or only the squares that are legal.</td></tr>
+                  <tr><td>Halfmove clock · Move number</td><td data-ko="FEN의 두 숫자.">The FEN's two counters.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="패널 바닥에는 합법성 표시(초록 체크 «Legal position», 문제가 있으면 호박색 줄과 이유), 전체 FEN, <strong>Copy</strong>가 있습니다. 여기서도 <strong>Load a position — FEN, PGN, or image</strong>로 불러올 수 있습니다 — 사진에서 읽어 와 손보는 것이 도해 옮기기의 가장 빠른 길입니다. 휴대폰의 시트는 <strong>Apply</strong>로만 반영됩니다 — 다른 길로 닫으면 되돌아갑니다.">
+              The panel's foot holds the legality line (a green “Legal position” check, or an amber
+              line naming the problem), the full FEN, and <strong>Copy</strong>. Loading works here
+              too — <strong>Load a position — FEN, PGN, or image</strong> — and reading a photo
+              then fixing it up is the fastest way to copy a diagram. On a phone the details sheet
+              commits only through <strong>Apply</strong>; closing it any other way reverts.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="studies">
+          <div class="doc">
+            <h1 data-ko="스터디">Studies</h1>
+            <p class="lede" data-ko="스터디는 챕터로 나뉜 PGN 문서입니다 — 오프닝 파일, 연습 모음, 아이디어 정리. 선반에서 만들고 가져오며, 한 편을 열면 보드와 챕터 패널이 함께 옵니다.">
+              A study is a PGN document in chapters — an opening file, a set of exercises, a body
+              of ideas. The shelf creates and imports them; opening one brings the board and its
+              chapters together.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/study-dark.png" />
+                <img src="shots/study.png" alt="A study open on its chapters, with the chapter introduction beside the board" />
+              </picture>
+            </figure>
+            <h2 data-ko="선반">The shelf</h2>
+            <p data-ko="위 줄에 제목과 도구들: 북마크 필터(«Show bookmarked only» / «Show all»), 정렬(«Sort by»: Last modified · Title · Size, 방향 버튼과 함께), 보기 전환(«Grid view» / «List view»), 그리고 만들기 메뉴. 아래 줄이 검색(«Search studies…»)입니다. 카드는 미리보기 보드, 제목, «{n} chapters» · «edited {when}»을 보여 주고 — 북마크된 카드는 왼쪽 모서리가 따뜻한 색으로 표시됩니다. 카드 메뉴(⋯)에 <strong>Bookmark · Rename · Move to a collection · Remove</strong>가 있고, 터치에서는 카드를 왼쪽으로 쓸면 지우고(실행 취소 가능) 오른쪽으로 쓸면 북마크합니다.">
+              The top row holds the title and its tools: the bookmark filter (“Show bookmarked
+              only” / “Show all”), sorting (“Sort by”: Last modified · Title · Size, with a
+              direction button), the view switch (“Grid view” / “List view”), and the create menu.
+              The row below is search (“Search studies…”). A card shows a preview board, the title
+              and “{n} chapters” · “edited {when}” — a bookmarked one wears a warm left edge. Its ⋯
+              menu holds <strong>Bookmark · Rename · Move to a collection · Remove</strong>; on
+              touch, swiping a card left removes it (undoable) and right bookmarks it.
+            </p>
+            <h3 data-ko="만들기 메뉴">The create menu</h3>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>New study</td><td data-ko="빈 스터디 하나.">A fresh study.</td></tr>
+                  <tr><td>New collection</td><td data-ko="스터디를 묶는 폴더.">A folder to group studies.</td></tr>
+                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «a Lichess study export imports with all its chapters, comments and arrows» — 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 컬렉션을 정합니다.">Paste a PGN or choose a file — “a Lichess study export imports with all its chapters, comments and arrows.” Set the title and target collection.</td></tr>
+                  <tr><td>From Lichess</td><td data-ko="사용자명을 넣고 «List this account's studies» → 가져올 것을 체크 → Import. 비공개 스터디는 <code>study:read</code> 스코프의 토큰이 필요합니다.">Enter a username, “List this account's studies”, tick what to bring, Import. Private studies need a token with the <code>study:read</code> scope.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="스터디 안에서">Inside a study</h2>
+            <p data-ko="머리, 왼쪽부터: 뒤로(«All studies») · 제목(두 번 클릭해 이름 바꾸기) · 시계(«Earlier versions» — <a href='#vault'>보관함</a> 참조) · <strong>Edit</strong> 토글(«Show NAGs, comments and move tools» / «Hide the editing tools») · 저장 표시. 기물은 읽는 중에도 움직입니다 — Edit는 주석 도구를 꺼내는 스위치일 뿐이라, 그냥 따라 읽을 때는 보드가 어지럽지 않습니다.">
+              The header, left to right: back (“All studies”) · the title (double-click to rename)
+              · the clock (“Earlier versions” — see <a href="#vault">The vault</a>) · the
+              <strong>Edit</strong> toggle (“Show NAGs, comments and move tools” / “Hide the
+              editing tools”) · the save control. The pieces move whether you are reading or
+              editing — Edit only brings out the annotation tools, so the board stays uncluttered
+              when you are just stepping through.
+            </p>
+            <h3 data-ko="챕터 패널">The chapters panel</h3>
+            <ul>
+              <li data-ko="«Chapters» 머리가 개수를 달고 있고, 그 <strong>+</strong>가 챕터를 더합니다. 줄에 마우스를 올리면(터치에서는 항상) 트레이가 나옵니다: <strong>Add a sub-chapter</strong>(최상위 줄만) · <strong>Rename this chapter</strong> · <strong>Delete this chapter</strong>(챕터가 둘 이상일 때만 — 하위 챕터가 있으면 «its sub-chapters move to the top level»이라고 미리 말해 줍니다).">
+                The “Chapters” header carries the count, and its <strong>+</strong> adds one. Hovering a row (always,
+                on touch) reveals its tray: <strong>Add a sub-chapter</strong> (top-level rows
+                only) · <strong>Rename this chapter</strong> · <strong>Delete this chapter</strong>
+                (only while more than one exists — and it warns “its sub-chapters move to the top
+                level” when they would).
+              </li>
+              <li data-ko="부모 줄의 화살표가 접기입니다: «Fold sub-chapters» / «Unfold {n} sub-chapters». 줄 자체의 툴팁은 «Double-click to rename».">
+                A parent row's chevron folds: “Fold sub-chapters” / “Unfold {n} sub-chapters”. The
+                row's own tooltip: “Double-click to rename”.
+              </li>
+            </ul>
+            <p data-ko="나머지는 보드의 문법 그대로입니다: <a href='#board'>수 트리와 주석</a>, <a href='#engine'>엔진</a>과 리뷰, <a href='#explorer'>탐색기</a>. 저장은 손실 없는 왕복 변환이고, 브라우저가 죽어도 작업본이 보관함에 남습니다.">
+              The rest is the board's own grammar: the <a href="#board">move tree and
+              annotation</a>, the <a href="#engine">engine</a> and its review, the
+              <a href="#explorer">explorer</a>. Saving is a lossless round-trip, and a copy is
+              parked in the vault so a browser that dies does not take the work with it.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="notes">
+          <div class="doc">
+            <h1 data-ko="노트">Notes</h1>
+            <p class="lede" data-ko="노트는 마크다운입니다 — 그리고 두 가지가 체스 노트로 만듭니다: 글 속의 살아 있는 보드와, 노트·스터디·기보를 잇는 위키링크.">
+              Notes are markdown — and two things make them chess notes: live boards in the text,
+              and wiki-links joining notes, studies and games.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/note-phone-dark.png" />
+                <img src="shots/note-phone.png" alt="A note: markdown headings, a live board in the text, wiki-links" />
+              </picture>
+            </figure>
+            <h2 data-ko="읽기와 쓰기">Reading and writing</h2>
+            <p data-ko="노트는 읽기 모드로 열립니다 — 링크는 바로 따라가지고, 도구 막대는 없습니다. 머리의 <strong>Edit</strong>(«Edit this note»)가 편집으로 바꾸고, 같은 자리가 <strong>Done</strong>(«Back to reading»)이 됩니다. 머리의 나머지는 다른 문서와 같습니다: 뒤로, 제목(두 번 클릭해 이름 바꾸기), 시계(«Earlier versions»), 저장 표시.">
+              A note opens read-only — links follow on a click, and there is no toolbar. The
+              header's <strong>Edit</strong> (“Edit this note”) switches to writing; the same spot
+              becomes <strong>Done</strong> (“Back to reading”). The rest of the header matches
+              every document: back, the title (double-click to rename), the clock (“Earlier
+              versions”), the save control.
+            </p>
+            <h3 data-ko="서식 도구 막대">The formatting toolbar</h3>
+            <p data-ko="편집 중에만, 노트 위에 고정되어. 열 개의 버튼, 순서대로:">
+              While editing only, pinned above the note. Ten buttons, in order:
+            </p>
+            <p><strong>Bold · Italic · Strikethrough · Code · Heading · Subheading · Bulleted list
+            · Numbered list · Quote · Insert a board</strong></p>
+            <p data-ko="커서가 어떤 서식 안에 있으면 해당 버튼이 켜져 보입니다.">
+              A button lights while the caret sits inside its mark.
+            </p>
+            <h2 data-ko="글 속의 보드">Boards in the text</h2>
+            <p data-ko="<strong>Insert a board</strong>가 <code>```chess</code> 펜스를 끼워 넣습니다 — 문단 사이의 진짜 대화형 보드로, FEN이나 수순을 담습니다. 파일은 여전히 평범한 마크다운이라 Obsidian에서는 코드 블록으로 보입니다.">
+              <strong>Insert a board</strong> drops a <code>```chess</code> fence — a real
+              interactive board between paragraphs, holding a FEN or moves. The file stays plain
+              markdown, so Obsidian shows the same block as code.
+            </p>
+            <h2 data-ko="위키링크">Wiki-links</h2>
+            <p data-ko="<code>[[</code>를 치면 자동 완성이 노트·스터디·기보를 가로질러 찾아 줍니다(<kbd>↑</kbd><kbd>↓</kbd> 고르기, <kbd>Enter</kbd>/<kbd>Tab</kbd> 받기). 노트가 스터디를, 스터디가 기보를, 기보가 무엇이 문제였는지 적어 둔 노트를 가리킵니다 — 체스 자료는 낱장이 아니라 하나로 이어진 작업이 됩니다. 문법은 Obsidian의 그것이라, 링크도 그쪽에서 그대로 읽힙니다.">
+              Typing <code>[[</code> opens autocomplete across notes, studies and games
+              (<kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>Enter</kbd>/<kbd>Tab</kbd> accept). A note links
+              a study, the study links a game, the game links back to the note where you worked out
+              what went wrong — the material becomes one connected body of work. The syntax is
+              Obsidian's, so the links read there too.
+            </p>
+            <p data-ko="선반은 스터디의 것과 같은 문법입니다 — 검색, 정렬, 북마크, 컬렉션, 그리고 만들기 메뉴의 <strong>New note</strong> / <strong>New collection</strong>.">
+              The shelf speaks the studies shelf's grammar — search, sorting, bookmarks,
+              collections, and a create menu of <strong>New note</strong> /
+              <strong>New collection</strong>.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="games">
+          <div class="doc">
+            <h1 data-ko="기보">Games</h1>
+            <p class="lede" data-ko="Games 페이지는 네 탭입니다: <strong>Databases · Collection · Chess.com · Lichess</strong> — 참고 데이터베이스 검색, 간직할 기보의 모음, 그리고 당신의 온라인 아카이브 둘. 넓은 화면에서는 곁에 «Game details» 패널이 항상 섭니다.">
+              The Games page is four tabs — <strong>Databases · Collection · Chess.com ·
+              Lichess</strong>: searching the reference databases, the collection of games worth
+              keeping, and your two online archives. On a wide screen the “Game details” panel
+              stands beside them all.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/games-dark.png" />
+                <img src="shots/games.png" alt="The Games page: the game table beside the details panel" />
+              </picture>
+            </figure>
+            <h2 data-ko="모음">The collection</h2>
+            <ul>
+              <li data-ko="검색(«Search collection…»)과 북마크 필터가 위에. 줄의 동작: <strong>Open the game · Rename · Bookmark · Remove from the collection</strong>(잠깐 실행 취소 가능) · <strong>View online</strong>(출처가 있으면). 오른쪽 클릭이 같은 메뉴를 엽니다.">
+                Search (“Search collection…”) and the bookmark filter on top. Per row:
+                <strong>Open the game · Rename · Bookmark · Remove from the collection</strong>
+                (undoable for a moment) · <strong>View online</strong> where a source exists. A
+                right-click opens the same menu.
+              </li>
+              <li data-ko="<strong>Import a game</strong> — PGN을 붙여 넣습니다: «Paste a PGN — or just moves: 1. e4 e5 2. Nf3 …». 헤더가 있으면 아래 칸들(White/Black, 레이팅, 날짜, 이벤트)이 저절로 채워지고, Result는 <strong>Auto · 1-0 · 0-1 · ½-½</strong>에서 고릅니다. 제출은 <strong>Add to collection</strong>.">
+                <strong>Import a game</strong> — paste a PGN: “Paste a PGN — or just moves: 1. e4
+                e5 2. Nf3 …”. Headers fill the detail fields (players, ratings, date, event) by
+                themselves; Result is a segmented <strong>Auto · 1-0 · 0-1 · ½-½</strong>. Submit
+                is <strong>Add to collection</strong>.
+              </li>
+              <li data-ko="모음의 기보를 열면 스터디와 똑같이 주석이 달립니다 — 변화수, 코멘트, 기호, 화살표, 그리고 이전 버전까지.">
+                Opening a collected game gives it a study's whole toolkit — variations, comments,
+                glyphs, arrows, and its earlier versions.
+              </li>
+            </ul>
+            <h2 data-ko="아카이브 (Chess.com · Lichess)">The archives (Chess.com · Lichess)</h2>
+            <ul>
+              <li data-ko="사용자명은 설정에서 미리 채워집니다. <strong>Archive month</strong>를 골라 달을 넘기고, «More filters»가 진영·결과로 거릅니다.">
+                Usernames come pre-filled from Settings. Pick an <strong>Archive month</strong> and
+                browse; “More filters” narrows by side and result.
+              </li>
+              <li data-ko="게임마다 <strong>Add to collection</strong> — 또는 <strong>Select all new</strong>로 모두 체크하고 <strong>Add selected</strong>로 한꺼번에(«Adding {done}/{total}…»). 이미 담긴 달은 «Every game shown is already in the collection»이라고 말해 줍니다.">
+                Per game, <strong>Add to collection</strong> — or <strong>Select all new</strong>
+                then <strong>Add selected</strong> for the lot (“Adding {done}/{total}…”). A fully
+                collected month says so: “Every game shown is already in the collection”.
+              </li>
+              <li data-ko="열어 본 달은 디스크에 캐시됩니다 — 다음에는 즉시, 오프라인에서도 열립니다(«offline — cached months only»). 캐시 목록과 비우기는 설정 → Browsed games에.">
+                Browsed months are cached on disk — instant next time, and open offline (“offline
+                — cached months only”). The inventory and its clear-all live in Settings → Browsed
+                games.
+              </li>
+            </ul>
+            <h2 data-ko="기보 테이블과 상세 패널">The table, and the details panel</h2>
+            <p data-ko="모든 기보 목록이 같은 테이블입니다. 열: <strong>White · Elo · Black · Elo · Result · Moves · ECO · Tournament · Date · Notation</strong>. 주석 달린 기보에는 White 칸에 공책 기호가 붙고, 모음에 담긴 줄은 왼쪽 모서리가 따뜻한 색입니다. 머리 사이의 손잡이로 열 너비를 끕니다(«Drag to resize · double-click to reset»). 한 번 클릭이 선택(상세 패널로), 두 번이 열기, <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd>는 <a href='#shortcuts'>단축키</a>대로.">
+              Every game list is the same table. Columns: <strong>White · Elo · Black · Elo ·
+              Result · Moves · ECO · Tournament · Date · Notation</strong>. An annotated game wears
+              a notebook glyph in its White cell; a kept one, the warm left edge. The nubs between
+              headers resize columns (“Drag to resize · double-click to reset”). One click selects
+              (feeding the details panel), a double click opens, and
+              <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd> behave as
+              <a href="#shortcuts">the shortcuts page</a> says.
+            </p>
+            <p data-ko="<strong>Game details</strong> 패널: 두 선수 줄(당신 진영이 강조), 결과 배지, 오프닝(ECO와 이름), 이벤트·라운드, 날짜·수·시간 제한·«View online» — 그리고 그 아래, 좌표 없는 미리보기 보드와 넘김 버튼(Start · Back · {idx} / {plies} · Forward · End), 본선 전체가 클릭 가능한 SAN으로. 휴대폰에서는 같은 내용이 «{white} vs {black}» 시트로 옵니다.">
+              The <strong>Game details</strong> panel: the two player rows (your side accented),
+              the result badge, the opening (ECO and name), event and round, date · moves · time
+              control · “View online” — then a coordinate-free preview board with its stepper
+              (Start · Back · {idx} / {plies} · Forward · End) and the whole mainline as clickable
+              SAN. On a phone the same arrives as a “{white} vs {black}” sheet.
+            </p>
+            <p data-ko="좁은 화면에서는 모음이 페이지 전체가 되고, 나머지는 <strong>Add games</strong> FAB의 세 항목으로 갑니다: <strong>Import a game · Browse an online archive · Databases</strong>.">
+              On a narrow screen the collection is the page, and the rest hides behind the
+              <strong>Add games</strong> FAB: <strong>Import a game · Browse an online archive ·
+              Databases</strong>.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="db-search">
+          <div class="doc">
+            <h1 data-ko="데이터베이스 검색">Searching the databases</h1>
+            <p class="lede" data-ko="Games 페이지의 Databases 탭은 참고 데이터베이스를 데스크톱 체스 데이터베이스처럼 검색합니다 — 글로, 포지션으로, 기물 구성으로. 위의 선택 상자가 어느 데이터베이스를 뒤질지 정합니다.">
+              The Games page's Databases tab searches a reference database the way a desktop chess
+              database would — by text, by position, by material. The picker at the top chooses
+              which database answers.
+            </p>
+            <h2 data-ko="글로">By text</h2>
+            <p data-ko="검색 상자 하나가 선수·오프닝 이름·ECO 코드 — 그리고 <em>A vs B</em>를 알아듣습니다. «More filters»가 조건을 좁힙니다:">
+              One search box understands players, opening names, ECO codes — and <em>A vs B</em>.
+              “More filters” narrows things down:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Player · Against</td><td data-ko="선수, 그리고 그 상대.">A player, and who they faced.</td></tr>
+                  <tr><td>Opening or ECO</td><td data-ko="«Najdorf, B90…»">“Najdorf, B90…”</td></tr>
+                  <tr><td>Tournament · Played between</td><td data-ko="대회와 기간.">The event, and a date range.</td></tr>
+                  <tr><td>Strength</td><td data-ko="Any rating · 2300+ · 2500+ · 2700+">Any rating · 2300+ · 2500+ · 2700+</td></tr>
+                  <tr><td>Side · Result · Outcome</td><td data-ko="진영(Either side / As White / As Black), 결과(White won / Black won / Drawn), 그리고 지목한 선수 기준의 승패(Won / Lost / Drew).">The side (Either side / As White / As Black), the game's result (White won / Black won / Drawn), and — for the named player — their outcome (Won / Lost / Drew).</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="포지션으로">By position</h2>
+            <p data-ko="«Search by» 전환을 <strong>Position</strong>으로 — «Paste a FEN» 또는 «Set the position up on a board». 그다음 두 사다리가 일치의 뜻을 정합니다:">
+              Flip “Search by” to <strong>Position</strong> — “Paste a FEN” or “Set the position up
+              on a board”. Two ladders then define what a match means:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>How closely to match</td>
+                    <td data-ko="<strong>Exact position</strong> → <strong>Same pawns</strong>(기물은 달라도 폰 구조가 같음) → <strong>Same pawn files</strong> → <strong>Same material</strong>(구성만 같음).">
+                      <strong>Exact position</strong> → <strong>Same pawns</strong> (same pawn
+                      structure, pieces free) → <strong>Same pawn files</strong> →
+                      <strong>Same material</strong> (the composition alone).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>How long it must hold</td>
+                    <td data-ko="<strong>At any moment</strong> · <strong>Held 4+ moves</strong> · <strong>Held 8+ moves</strong> — 스쳐 간 포지션과 자리 잡은 구조를 가릅니다.">
+                      <strong>At any moment</strong> · <strong>Held 4+ moves</strong> ·
+                      <strong>Held 8+ moves</strong> — telling a passing position from a settled
+                      structure.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="기물 구성으로">By material</h2>
+            <p data-ko="<strong>Material</strong>은 폰 엔딩부터 «A queen up»까지의 엔드게임 프리셋, 또는 <strong>Custom…</strong> — 진영·기물별 개수(«0–1», «1–2», «2+»)를 직접 짭니다. 아무 조건도 없으면 앱이 말립니다: «Pick at least one count, or every game matches.»">
+              <strong>Material</strong> offers endgame presets from pawn endings to “A queen up”,
+              or <strong>Custom…</strong> — per-side, per-piece counts (“0–1”, “1–2”, “2+”). With
+              no constraint at all the app objects: “Pick at least one count, or every game
+              matches.”
+            </p>
+            <h2 data-ko="결과">The results</h2>
+            <ul>
+              <li data-ko="정확한 포지션 검색은 색인으로 즉답합니다. 근사·기물 검색은 스캔이라 진행이 보입니다: «Searching… {scanned} of {total} games» — 데이터베이스의 <strong>Fast search</strong>가 켜져 있으면 수십 배 빠릅니다(<a href='#databases'>데이터베이스 관리</a>).">
+                Exact position search answers from the index, instantly. The relaxed and material
+                hunts are scans, with visible progress — “Searching… {scanned} of {total} games” —
+                and run many times faster when the database's <strong>Fast search</strong> is on
+                (<a href="#databases">Managing databases</a>).
+              </li>
+              <li data-ko="찾은 게임은 <a href='#games'>기보 테이블</a> 그대로입니다: <strong>Open on the board · Add to collection · Game details</strong>. 결과가 넘치면 정직하게 멈춥니다: «{n}+ games found — the list stops here».">
+                Found games land in <a href="#games">the same game table</a>: <strong>Open on the
+                board · Add to collection · Game details</strong>. An overflowing result stops
+                honestly: “{n}+ games found — the list stops here”.
+              </li>
+              <li data-ko="<a href='#explorer'>탐색기</a>의 «Find this position in the databases browser»가 바로 이 탭으로, 포지션을 미리 채워 데려옵니다.">
+                The <a href="#explorer">explorer</a>'s “Find this position in the databases
+                browser” lands here with the position pre-filled.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="page" id="databases">
+          <div class="doc">
+            <h1 data-ko="데이터베이스 관리">Managing databases</h1>
+            <p class="lede" data-ko="참고 데이터베이스는 업로드한 PGN으로 직접 만듭니다. 만들어지면 탐색기의 출처, 검색 대상, 레퍼토리 트레이너의 필드, 오프닝 맵의 비교 기준이 됩니다. Databases 페이지는 두 패널입니다: <strong>Databases</strong>와 <strong>PGN collections</strong>.">
+              Reference databases are built from PGNs you upload. Once built, one serves as an
+              explorer source, a search target, a field for the repertoire trainer and a yardstick
+              for the opening map. The page is one panel with two views —
+              <strong>Databases</strong> and <strong>PGN collections</strong>.
+            </p>
+            <h2 data-ko="만들기">Building one</h2>
+            <ol>
+              <li data-ko="<strong>업로드.</strong> PGN collections 쪽의 넓은 드롭 영역에 <code>.pgn</code> 파일을 놓습니다(«Choose .pgn files» / «Or drop them anywhere in this box»). 다른 확장자는 거절합니다: «Only .pgn files can be uploaded here».">
+                <strong>Upload.</strong> Drop <code>.pgn</code> files on the PGN collections view's
+                big target (“Choose .pgn files” / “Or drop them anywhere in this box”). Anything
+                else is refused: “Only .pgn files can be uploaded here”.
+              </li>
+              <li data-ko="<strong>골라서 빌드.</strong> 모음들을 체크하면 바닥에 «{n} selected» 막대가 떠오르고, <strong>Build</strong>가 «Build a database» 창을 엽니다 — 이름 하나만 물으며, «Indexing {n} collections into one searchable database of whole games.» 빌드는 페이지를 떠나도 계속됩니다.">
+                <strong>Tick and build.</strong> Ticking collections raises a “{n} selected” bar at
+                the bottom; <strong>Build</strong> opens the “Build a database” window — one name
+                to give, and “Indexing {n} collections into one searchable database of whole
+                games.” Building keeps going if you leave the page.
+              </li>
+              <li data-ko="<strong>키우기.</strong> 데이터베이스 줄의 <strong>+</strong>(«Add games to {name}»)가 모음을 더합니다 — «Only the games it does not already hold are indexed.» 같은 이름으로 다시 빌드하면 <strong>Replace</strong>와 <strong>Add to it</strong> 중에 고릅니다.">
+                <strong>Grow it.</strong> A row's <strong>+</strong> (“Add games to {name}”)
+                feeds it more collections — “Only the games it does not already hold are indexed.”
+                Building over an existing name asks: <strong>Replace</strong> or
+                <strong>Add to it</strong>.
+              </li>
+            </ol>
+            <h2 data-ko="줄마다의 도구">Per-row tools</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>Fast search</td>
+                    <td data-ko="«Fast search: hold the scan index in server memory» — 근사·기물 검색이 상주 색인에서 돌아 수십 배 빨라집니다. 메모리를 내주는 대신 속도를 사는 스위치입니다.">
+                      “Fast search: hold the scan index in server memory” — the relaxed and material hunts run
+                      from a resident index, many times faster. A switch that spends memory to buy
+                      speed.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Optimize</td>
+                    <td data-ko="중복 게임을 지우고, 파생 테이블을 다시 만들고, 파일을 다집니다 — «index behind» 상태의 데이터베이스도 여기서 고쳐집니다.">
+                      Removes duplicate games, re-derives the tables, compacts the file — and heals
+                      a database marked “index behind”.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-ko="지우기">Delete</td>
+                    <td data-ko="묻고 나서 지우며, 무엇이 <em>안</em> 지워지는지 함께 말합니다: «The collections it was built from are kept.» 모음 쪽을 지울 때는 반대로 «Databases already built from it are not affected.» 지우기는 최종입니다 — 휴지통이 없습니다.">
+                      Asks first, and says what is <em>not</em> affected: “The collections it was
+                      built from are kept.” Deleting a collection says the reverse: “Databases
+                      already built from it are not affected.” Deletion is final — there is no
+                      trash.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="줄의 상태 표시: «{n} games» · «no position index» · «index behind». 데스크톱 설치본에는 시작용 데이터베이스(엘리트 게임 한 달치, 38,977국)가 들어 있어 탐색기가 첫날부터 답합니다 — 지우면 되돌아오지 않습니다. 서버 설치나 소스 체크아웃은 비어 있는 채로 시작합니다.">
+              Row states: “{n} games” · “no position index” · “index behind”. A desktop install
+              ships a starter database (one month of elite games, 38,977 of them) so the explorer
+              answers from day one — deleting it is final. A server install or source checkout
+              starts empty.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="books">
+          <div class="doc">
+            <h1 data-ko="책">Books</h1>
+            <p class="lede" data-ko="당신의 체스책 서재입니다: 아무 PDF나 올려 앱 안에서, 분석 보드 곁의 창으로 읽습니다. 특징은 도해 버튼 — 인쇄된 도해마다 그 포지션을 보드에 차려 주는 버튼이 붙습니다.">
+              A library of your chess books: upload any PDF and read it beside the analysis board.
+              The signature is the diagram buttons — every printed diagram grows a button that sets
+              its position up on the board.
+            </p>
+            <figure>
+              <img src="shots/book-to-board.gif" alt="A printed diagram becoming the position on the board beside the book" />
+              <figcaption data-ko="도해 버튼: 책 속 포지션이 곁의 보드로.">A diagram button carrying the printed position to the board.</figcaption>
+            </figure>
+            <h2 data-ko="선반">The shelf</h2>
+            <p data-ko="<strong>Upload PDF</strong>(«Add a book» — PDF를 놓고 제목과 컬렉션을 정한 뒤 «Add to library»), 검색, 정렬(Title · Added · Last read · Size), 북마크 필터. 책 카드에는 «{n} pages»와 «Page {page} of {pages}» — 읽던 자리가 책마다 기억됩니다. 카드 메뉴: <strong>Read · Rename · Move to a collection · Replace PDF… · Remove from library</strong> — PDF를 바꿔도 읽던 페이지는 유지되고, 지울 때는 «any puzzle book read from it is kept»라고 미리 말해 줍니다.">
+              <strong>Upload PDF</strong> (“Add a book” — drop the PDF, set a title and collection,
+              “Add to library”), search, sorting (Title · Added · Last read · Size), the bookmark
+              filter. A card shows “{n} pages” and “Page {page} of {pages}” — your place is kept
+              per book. Its menu: <strong>Read · Rename · Move to a collection · Replace PDF… ·
+              Remove from library</strong> — replacing the PDF keeps your page, and removing warns
+              “any puzzle book read from it is kept”.
+            </p>
+            <h2 data-ko="리더의 도구 막대">The reader's toolbar</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Previous page · Go to page · Next page</td><td data-ko="페이지 넘김 — 가운데 입력란에 번호를 치고 <kbd>Enter</kbd>.">Turning pages — type a number into the field, <kbd>Enter</kbd>.</td></tr>
+                  <tr><td>Fit the whole page / Fit the width</td><td data-ko="맞춤 전환.">The fit toggle.</td></tr>
+                  <tr><td>Zoom out · {n}% · Zoom in</td><td data-ko="확대·축소 — 가운데 %가 «Reset zoom»입니다. 휴대폰에서는 손가락 벌리기가 줌입니다.">Zoom — the % in the middle is “Reset zoom”. On a phone, pinch is the zoom.</td></tr>
+                  <tr><td>Rotate the page</td><td data-ko="90°씩.">Quarter turns.</td></tr>
+                  <tr><td>Show the diagram buttons / Hide …</td><td data-ko="도해 버튼 오버레이의 스위치 — 켜짐이 기기에 기억됩니다.">The diagram-button overlay's switch — remembered on this device.</td></tr>
+                  <tr><td>Search the book</td><td data-ko="전문 검색: «Search the book…» → «{k} of {n}», Previous/Next match, «No matches». 찾은 자리는 페이지 위에 호박색 상자로 칠해집니다.">Full-text search: “Search the book…” → “{k} of {n}”, Previous/Next match, “No matches”. Hits paint as amber boxes on the page.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="좁은 창에서는 가운데 도구들이 ⋯ 메뉴로 접힙니다 — 검색만은 늘 밖에 남습니다.">
+              In a narrow pane the middle tools fold into the ⋯ menu — search alone always stays
+              out.
+            </p>
+            <h2 data-ko="도해에서 보드로">From diagram to board</h2>
+            <p data-ko="도해 오른쪽 위의 작은 버튼(«Set up this position»)을 누르면 «White to move» / «Black to move» / «Edit position…»을 묻고, 포지션이 곁의 보드에 차려집니다. 보드 쪽 도구 막대(넓은 화면): <strong>Load a position · Reset to the starting position · Fix this position in the editor · Open on the board page</strong> — 도해 인식이 칸 하나를 잘못 읽었을 때 에디터가 바로잡는 길입니다. 휴대폰은 <strong>Book</strong>/<strong>Board</strong> 두 탭으로 갈라지고, 하단 바가 열린 탭의 도구를 듭니다.">
+              The small button off a diagram's top-right corner (“Set up this position”) asks
+              “White to move” / “Black to move” / “Edit position…”, and the position lands on the board
+              beside it. The board side's toolbar (wide layouts): <strong>Load a position · Reset
+              to the starting position · Fix this position in the editor · Open on the board
+              page</strong> — the editor being the road to fixing a square the recognition
+              misread. A phone splits into <strong>Book</strong>/<strong>Board</strong> tabs, the
+              bottom bar carrying the open tab's tools.
+            </p>
+            <p data-ko="전술책이라면 여기서 한 걸음 더: <a href='#puzzle-books'>퍼즐 책</a>으로 읽어 들이면 도해들이 풀 수 있는 퍼즐이 됩니다. 이미 읽어 들인 책의 카드에는 <strong>Read diagrams</strong>와 <strong>Open the puzzle book</strong>이 함께 붙습니다.">
+              A tactics book can go a step further: import it as a
+              <a href="#puzzle-books">puzzle book</a> and its diagrams become solvable puzzles — a
+              book that has one gains <strong>Read diagrams</strong> and <strong>Open the puzzle
+              book</strong> on its card.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="puzzles">
+          <div class="doc">
+            <h1 data-ko="퍼즐">Puzzles</h1>
+            <p class="lede" data-ko="트레이너는 Lichess 퍼즐 데이터베이스(CC0)를 씁니다. 처음 열면 내려받아 빌드해 주고, 그다음부터는 완전히 오프라인입니다 — 6백만 개가 넘는 퍼즐이 이 기기에 삽니다.">
+              The trainer runs on the Lichess puzzle database (CC0). The first visit offers to
+              fetch and build it; from then on it is fully offline — over six million puzzles
+              living on this machine.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/puzzle-trainer-dark.png" />
+                <img src="shots/puzzle-trainer.png" alt="The puzzle trainer mid-puzzle: the board and the answer panel" />
+              </picture>
+            </figure>
+            <h2 data-ko="첫 방문: 풀 만들기">First visit: building the pool</h2>
+            <p data-ko="데이터베이스가 없으면 «No puzzle database yet»과 <strong>Download and build</strong> 버튼이 섭니다. 단계가 그대로 보이고(«Downloading the puzzle dump» → «Building the database» → «Indexing»), «This keeps running if you leave the page. It takes a few minutes.» — 정말로 그렇습니다.">
+              With no database the page shows “No puzzle database yet” and a
+              <strong>Download and build</strong> button. The stages report themselves
+              (“Downloading the puzzle dump” → “Building the database” → “Indexing”), and — “This
+              keeps running if you leave the page. It takes a few minutes.” — it does.
+            </p>
+            <h2 data-ko="풀기">Solving</h2>
+            <p data-ko="«White to play» / «Black to play»와 «Find the best move.» — 이길 수를 찾아 둡니다. 맞으면 상대가 응수하고(«Opponent is moving…»), 틀리면 «Wrong move — the board rolls back.» 난이도와 테마는 끝날 때까지 숨겨져 있습니다. 패널의 버튼:">
+              “White to play” / “Black to play”, and “Find the best move.” A right move brings the
+              reply (“Opponent is moving…”); a wrong one, “Wrong move — the board rolls back.”
+              Difficulty and themes stay hidden until you finish. The panel's buttons:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Hint</td><td data-ko="두 단계: 처음엔 기물에 동그라미, 다음엔 수 전체 — «not counted as a fail».">Two presses: first the piece is circled, then the full move — “not counted as a fail”.</td></tr>
+                  <tr><td>Solution</td><td data-ko="«Counts as a failed attempt» — 해답을 보여 주고 실패로 칩니다.">“Counts as a failed attempt” — shows the answer and scores a fail.</td></tr>
+                  <tr><td>Skip</td><td data-ko="넘어갑니다. 특정 퍼즐 다시 풀기 모드에는 없습니다.">Moves on. Absent when replaying one specific puzzle.</td></tr>
+                  <tr><td data-ko="끝난 뒤">After it ends</td><td data-ko="<strong>From this game</strong>(«Opens lichess (needs internet)») · <strong>Retry</strong>(연습 — 기록되지 않음) · <strong>Next puzzle</strong>. 판정은 «Solved» / «Solved after a wrong try» / «Solution shown»으로, 난이도(낱말), 등장 횟수, 테마와 함께.">
+                    <strong>From this game</strong> (“Opens lichess (needs internet)”) ·
+                    <strong>Retry</strong> (practice — nothing is reported) · <strong>Next
+                    puzzle</strong>. The verdict reads “Solved” / “Solved after a wrong try” /
+                    “Solution shown”, with the difficulty (a word), the play count and the themes.
+                  </td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h3 data-ko="퍼즐 설정">Puzzle settings</h3>
+            <p data-ko="패널의 설정 줄이 여는 창에서 <strong>Difficulty</strong>를 고릅니다 — <strong>Any · Adaptive</strong>(«follows your solving») <strong>· Easy · Medium · Hard · Expert</strong> — 그리고 <strong>Theme</strong>(«All themes» 또는 하나). Themes 페이지(«Puzzle themes», 검색 «Find a theme»)가 테마별 훈련의 입구입니다.">
+              The settings row opens a dialog for <strong>Difficulty</strong> — <strong>Any ·
+              Adaptive</strong> (“follows your solving”) <strong>· Easy · Medium · Hard
+              · Expert</strong> — and <strong>Theme</strong> (“All themes”, or one). The Themes
+              page (“Puzzle themes”, with its “Find a theme” search) is the door to training a
+              single theme.
+            </p>
+            <h2 data-ko="복습 사다리">The review ladder</h2>
+            <p data-ko="놓친 퍼즐은 하루 뒤에 돌아오고, 그다음은 3일, 7일, 21일 — 매 단계를 깨끗이 풀면 은퇴합니다. 복습 배너가 스스로 설명합니다: «Reviewing — not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.»">
+              What you miss comes back after a day, then 3, 7 and 21 — and retires after a clean
+              solve at every step. The review banner explains itself: “Reviewing — not counted.
+              Each clean solve spaces the puzzle further out, and enough in a row retire it.”
+            </p>
+            <h2 data-ko="대시보드">The dashboard</h2>
+            <p data-ko="Puzzles → Dashboard: <strong>Attempts · Solved · Failed · Solve rate</strong>, 난이도별 분해(«By difficulty»), 책 진행, 그리고 모든 시도의 이력 — 결과와 난이도로 걸러서(«Filter by outcome» / «Filter by difficulty»), 어느 퍼즐이든 «Replay puzzle #{id}»로 다시. 복습 입구(«Review puzzles · {n} due»)와, 퍼즐 진행을 지우는 «Reset»도 여기 있습니다. 휴대폰에는 별도의 허브 화면이 있어 «Next puzzle», 복습, 책의 다음 퍼즐, 풀이 이력을 한눈에 잇습니다.">
+              Puzzles → Dashboard: <strong>Attempts · Solved · Failed · Solve rate</strong>, the
+              “By difficulty” breakdown, book progress, and a history of every attempt — filtered
+              by outcome and difficulty, any puzzle replayable via “Replay puzzle #{id}”. The
+              review entry (“Review puzzles · {n} due”) and the progress “Reset” live here too. A
+              phone gets a hub screen joining “Next puzzle”, the review, your book's next puzzle
+              and the history at a glance.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="puzzle-books">
+          <div class="doc">
+            <h1 data-ko="퍼즐 책">Puzzle books</h1>
+            <p class="lede" data-ko="갖고 있는 전술책의 스캔 PDF를 주면, 앱 안의 ML 파이프라인이 도해를 읽고, 인쇄된 해답을 파싱하고, 그 해답을 실제로 재생해 검증한 뒤, 퍼즐마다 정직한 신뢰 등급을 붙여 들여옵니다. 전부 이 기기에서 일어나고, 아무것도 밖으로 나가지 않습니다.">
+              Hand the app a scanned PDF of a tactics book you own, and an ML pipeline — running
+              entirely in the app — reads the diagrams, parses the printed solutions, verifies them
+              by replaying every move, and imports each puzzle with an honest fidelity tier.
+              Nothing leaves this machine.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/dashboard-dark.png" />
+                <img src="shots/dashboard.png" alt="The puzzle dashboard with book progress" />
+              </picture>
+            </figure>
+            <h2 data-ko="읽어 들이기">The import</h2>
+            <ol>
+              <li data-ko="Puzzles → Puzzle books → <strong>New book</strong> → <strong>Import PDF</strong>. 시작 전에 두 옵션이 있습니다: «Ask the engine where the book cannot be read»와 «Try harder on boards that fail». 그리고 한 줄의 당부 — «Import only a book you own.»">
+                Puzzles → Puzzle books → <strong>New book</strong> → <strong>Import PDF</strong>.
+                Two options up front — “Ask the engine where the book cannot be read” and “Try
+                harder on boards that fail” — and one request: “Import only a book you own.”
+              </li>
+              <li data-ko="진행이 페이지 단위로 보입니다: «page {page}/{pages} — {n} diagrams so far» — «nothing leaves this machine — and you can keep using the app while it runs». <strong>Pause</strong>는 잃는 것이 없고(«Paused at page {page} of {pages}. Nothing is lost.»), 다음에 열면 «Carry on from page {page}»가 이어받습니다.">
+                Progress reports page by page: “page {page}/{pages} — {n} diagrams so far” —
+                “nothing leaves this machine — and you can keep using the app while it runs”.
+                <strong>Pause</strong> loses nothing (“Paused at page {page} of {pages}. Nothing is
+                lost.”); the next visit offers “Carry on from page {page}”.
+              </li>
+              <li data-ko="검토 단계: «{n} diagrams found — untick any false positives, then add the rest as drafts.» 도해마다 «Keep this diagram»과 «Show the scan»이 있고, <strong>Add {n} as drafts</strong>로 마칩니다.">
+                The review step: “{n} diagrams found — untick any false positives, then add the
+                rest as drafts.” Each has “Keep this diagram” and “Show the scan”;
+                <strong>Add {n} as drafts</strong> finishes.
+              </li>
+              <li data-ko="결과 보고는 신뢰 등급별로 정직합니다: «{n} puzzles imported with their solutions» · «{n} numbered diagrams had no solution we could read.» · «{n} had a square misread, found by the book's own solution.» 해답이 안 읽힌 것도 버려지지 않습니다 — 증거(원본 페이지 스캔)가 붙은 <strong>초안</strong>으로 남아, 스캔과 대조해 손으로 마무리합니다. 어림짐작으로 들어오는 것은 없습니다.">
+                The report is honest by tier: “{n} puzzles imported with their solutions” · “{n}
+                numbered diagrams had no solution we could read.” · “{n} had a square misread,
+                found by the book's own solution.” What could not be read is not discarded — it
+                stays a <strong>draft</strong> with its evidence attached (the original page scan),
+                to finish by hand against the scan. Nothing is imported on a guess.
+              </li>
+            </ol>
+            <p data-ko="같은 책을 다시 읽어 들이면 묻습니다: «This book already holds {n} puzzles. What should the import do with them?» — 제자리 갱신(진행 유지) 또는 비우고 새로.">
+              Re-importing an existing book asks: “This book already holds {n} puzzles. What should
+              the import do with them?” — update in place (progress survives) or clear and rebuild.
+            </p>
+            <h2 data-ko="책으로 훈련하기">Training from a book</h2>
+            <ul>
+              <li data-ko="책 트레이너는 자유 탐색 후 제출입니다: «Explore freely — only the mainline is judged on submit.» 판정은 책의 정답과 대조하되 공정합니다 — «Exactly as the book has it.» / «Correct so far, but the book line goes further.» / <strong>«Off the book at the end, but the engine approves.»</strong> / «The marked move is where the line goes wrong.»">
+                The book trainer is explore-then-submit: “Explore freely — only the mainline is
+                judged on submit.” The verdicts judge against the book's answer, fairly — “Exactly
+                as the book has it.” / “Correct so far, but the book line goes further.” /
+                <strong>“Off the book at the end, but the engine approves.”</strong> / “The marked
+                move is where the line goes wrong.”
+              </li>
+              <li data-ko="<strong>복습</strong>은 일반 퍼즐과 같은 간격 사다리를 타고(«Review puzzles · {n} due»), <strong>사이클</strong>은 우드페커식입니다: 책 전체를 한 바퀴씩, 매 퍼즐을 바퀴마다 한 번, 첫 시도로 채점 — «Cycle {n}»과 지난 바퀴들의 점수가 남습니다.">
+                <strong>Review</strong> rides the same spaced ladder as the main trainer (“Review
+                puzzles · {n} due”); <strong>cycles</strong> are Woodpecker-style — the whole book
+                in passes, every puzzle once per pass, scored by first attempts, “Cycle {n}” and
+                past passes kept.
+              </li>
+              <li data-ko="<strong>Add a puzzle</strong>가 손 입력을 엽니다 — Diagram / Board / Solutions 세 탭: 도해에 맞게 보드를 차리고, «Record the solution — every move, both sides.» 상대 수를 클릭해 «any move»(책의 ~)로 표시할 수 있고, <strong>Verify</strong>가 «Ask Stockfish whether every solver move really wins»를 해 줍니다. 잘못 읽힌 퍼즐은 «Correct this puzzle against the book scan»으로 바로잡습니다.">
+                <strong>Add a puzzle</strong> opens manual entry — three tabs, Diagram / Board /
+                Solutions: make the board match the diagram, then “Record the solution — every
+                move, both sides.” An opponent move clicked becomes “any move” (the book's ~), and
+                <strong>Verify</strong> will “Ask Stockfish whether every solver move really
+                wins”. A misread puzzle is fixed via “Correct this puzzle against the book scan”.
+              </li>
+            </ul>
+            <div class="note-card">
+              <p data-ko="책에서 나온 퍼즐은 당신의 보관함에 남습니다 — 앱에 책이 동봉되지 않는 이유이기도 합니다. 당신이 소유한 책만 읽어 들이세요.">
+                The puzzles a book yields stay in your vault — which is also why no book comes
+                bundled with the app. Import only a book you own.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="repertoire">
+          <div class="doc">
+            <h1 data-ko="레퍼토리 트레이너">Repertoire trainer</h1>
+            <p class="lede" data-ko="오프닝을 <em>필드</em> — 실제 게임의 통계 — 를 상대로 연습합니다. 상대의 응수는 그 포지션에서 실제로 두어진 빈도대로 가중 무작위 추첨되므로, 자주 나오는 수를 자주 만납니다.">
+              Practise an opening against <em>the field</em> — the statistics of real games.
+              Replies are drawn weighted-random from what was actually played in each position, so
+              you meet the common moves often.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/repertoire-dark.png" />
+                <img src="shots/repertoire.png" alt="The repertoire trainer's New game form" />
+              </picture>
+            </figure>
+            <h2 data-ko="새 게임 차리기">Setting up a game</h2>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Mode</td><td data-ko="<strong>Free play</strong>(자유 대국) 또는 <strong>Drill a study</strong>(스터디 암송).">Two ways to train: <strong>Free play</strong>, or <strong>Drill a study</strong>.</td></tr>
+                  <tr><td>Play as</td><td>White / Black</td></tr>
+                  <tr><td>Source</td><td data-ko="«Where replies come from»: <strong>Lichess database</strong>(온라인, 토큰 필요 — 곁에 <strong>Rating</strong>으로 상대 기력대를 고릅니다) 또는 아무 <strong>참고 데이터베이스</strong> — 동봉된 것 포함, 오프라인으로 돌아갑니다.">“Where replies come from”: the <strong>Lichess database</strong> (online, token needed — an <strong>Rating</strong> select picks the opponent band) or any <strong>reference database</strong>, the bundled one included, offline.</td></tr>
+                  <tr><td>Opening <small>(Free play)</small></td><td data-ko="이름이나 ECO 코드로 약 3,800개 중 검색 — «Search any opening or ECO code…».">Searchable by name or ECO code, about 3,800 of them — “Search any opening or ECO code…”.</td></tr>
+                  <tr><td>Study · Chapter <small>(Drill)</small></td><td data-ko="암송할 스터디와 범위 — «Whole study» 또는 챕터 하나. 오프닝 맵에서 보내온 드릴이면 «From the opening map» 블록이 그 범위를 설명합니다.">What to recite and how much — “Whole study” or one chapter. A drill sent from the opening map shows a “From the opening map” block naming its scope.</td></tr>
+                  <tr><td>Start</td><td data-ko="시작. 그 아래, 기록이 쌓이면 <strong>Drill a missed position</strong>도 섭니다.">Begins. Below it, once a record exists, <strong>Drill a missed position</strong>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h2 data-ko="치는 동안, 그리고 끝">During, and after</h2>
+            <ul>
+              <li data-ko="상태 줄이 이끕니다: «Your move.» → «Your opponent is replying…». 앞수를 되짚는 중이면 «Reviewing an earlier move — step to the end to keep playing.»">
+                The status line leads: “Your move.” → “Your opponent is replying…”. Stepping back
+                mid-game: “Reviewing an earlier move — step to the end to keep playing.”
+              </li>
+              <li data-ko="<strong>드릴</strong>에서는 스터디에 없는 수가 거부됩니다: «Your study plays {moves} here — try it again.» 세션은 셋 중 하나로 끝납니다 — «End of your prepared line — every move matched the study.», 갭(«The field answered {san} — {pct}% of games here — and your study holds no reply.»), 또는 «This line has run past the database — you are on your own now.»">
+                In a <strong>drill</strong>, a move your study does not play is refused: “Your
+                study plays {moves} here — try it again.” A session ends one of three ways — “End
+                of your prepared line — every move matched the study.”, a gap (“The field answered
+                {san} — {pct}% of games here — and your study holds no reply.”), or “This line has
+                run past the database — you are on your own now.”
+              </li>
+              <li data-ko="<strong>Free play</strong>에서 라인이 북을 벗어나면 엔진이 상대를 이어받아 게임이 계속됩니다.">
+                In <strong>free play</strong>, when the line leaves book the engine takes over the
+                replies and the game keeps going.
+              </li>
+              <li data-ko="끝나면: 엔진 평가, <strong>Analyse</strong>, 그리고 <strong>Save line to study</strong>(자유 대국) 또는 <strong>Go to study</strong>(드릴), <strong>New game</strong>.">
+                Afterwards: an engine verdict, <strong>Analyse</strong>, then <strong>Save line to
+                study</strong> (free play) or <strong>Go to study</strong> (drill), and
+                <strong>New game</strong>.
+              </li>
+            </ul>
+            <h2 data-ko="기록">The record</h2>
+            <p data-ko="더듬은 포지션은 복습 풀이 됩니다 — 대기 화면이 «{n} positions to review»와 «{n} replies with no answer yet»을 세고, <strong>Drill a missed position</strong>이 그 풀에서 냅니다. 갭은 드릴이 아니라 스터디를 고쳐서 메우는 것 — 그래서 곁에 보고만 됩니다. 기록 전체는 «Forget the drill record» 확인을 거쳐 지웁니다.">
+              What you fumble becomes a review pool — the idle panel counts “{n} positions to
+              review” and “{n} replies with no answer yet”, and <strong>Drill a missed
+              position</strong> deals from it. A gap is fixed by editing the study, not by drilling
+              — so it is reported beside the pool, not drilled. The whole record clears through the
+              “Forget the drill record” confirmation.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="opening-map">
+          <div class="doc">
+            <h1 data-ko="오프닝 맵">The opening map</h1>
+            <p class="lede" data-ko="당신의 준비를 목록이 아니라 형태로 봅니다: 레퍼토리를 정의하는 수들을 색마다 맵 하나에 놓으면, 별자리 또는 트리로 그려집니다. 스터디를 연결하면 그 아래는 전부 스터디에서 실시간으로 유도되므로 — 맵이 준비되었다고 말하는 것은 실제로 준비된 것입니다.">
+              Your preparation as a shape rather than a list: the moves that define your
+              repertoire, one map per colour, drawn as a constellation or a tree. Link a study and
+              everything below it is derived live from that study — so what the map claims you have
+              prepared is what you have.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
+                <img src="shots/opening-map.png" alt="A white repertoire as a constellation, dots sized by how often the field plays them" />
+              </picture>
+            </figure>
+            <h2 data-ko="맵 메뉴">The map menu</h2>
+            <p data-ko="데스크톱에서는 머리의 아이콘 줄, 휴대폰에서는 «Map menu» FAB. 순서대로:">
+              Icons in the header on a desktop, the “Map menu” FAB on a phone. In order:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr><td>Align the map</td><td data-ko="흐트러진 배치를 다시 폅니다.">Lays a pulled-about map back out.</td></tr>
+                  <tr><td>Restore the whole graph</td><td data-ko="한 줄만 남긴 상태(Prune)를 되돌립니다 — 그때만 나타납니다.">Undoes a prune — appears only while one line is isolated.</td></tr>
+                  <tr><td>Show the constellation / Show the tree</td><td data-ko="같은 수들의 두 배치. 기기가 어느 쪽을 썼는지 기억합니다.">Two arrangements of the same moves; the device remembers which.</td></tr>
+                  <tr><td>Switch to the black map / … white map</td><td data-ko="색마다 맵 하나.">One map per colour.</td></tr>
+                  <tr><td>Check coverage against…</td><td data-ko="필드 고르기 — 아래 참조.">Picking the field — below.</td></tr>
+                  <tr><td>Compare my moves with a database</td><td data-ko="당신이 두는 수와 데이터베이스의 흐름을 나란히: «You play {mine} ({mineShare}) — they answer {top} ({topShare} of {total})». 문제없으면 그렇게 말합니다: «Nothing to flag…»">Your habits against a database's: “You play {mine} ({mineShare}) — they answer {top} ({topShare} of {total})”. When nothing stands out it says so: “Nothing to flag…”</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="휠/핀치가 줌, 끌기가 이동이고, 점을 끌면 거미줄이 당겨집니다. 검색(«Search moves and opening names»)은 수와 오프닝 이름을 함께 찾습니다.">
+              Wheel/pinch zooms, dragging pans, and dragging a dot pulls the web. The search field
+              (“Search moves and opening names”) finds both.
+            </p>
+            <h2 data-ko="수 놓기">Charting moves</h2>
+            <ul>
+              <li data-ko="<strong>Add</strong> — 이 포지션에서 «Every reply the field plays here — tap one to chart it», 또는 직접 치기(«Type a move…»).">
+                <strong>Add</strong> — “Every reply the field plays here — tap one to chart it”,
+                or type your own (“Type a move…”).
+              </li>
+              <li data-ko="<strong>Grow</strong>(«Chart what your games already play from here») — 어떤 게임에서(«From which games»: 시간 제한, «Kept only»), 몇 판 이상 나온 수를(«Chart moves seen in at least» + 개수) 미리 보여 주고(«{n} moves to chart, ending in {k} lines») 한꺼번에 올립니다.">
+                <strong>Grow</strong> (“Chart what your games already play from here”) — choose the
+                games (“From which games”: time controls, “Kept only”), set the floor (“Chart moves seen in at least” a count), preview (“{n} moves to chart, ending in {k} lines”),
+                chart them all.
+              </li>
+            </ul>
+            <h2 data-ko="필드">The field</h2>
+            <p data-ko="<strong>Check coverage against…</strong>가 비교 대상을 정합니다 — 당신의 기보(My games), Lichess 데이터베이스(기력대와 함께), 또는 로컬 참고 데이터베이스. 그 순간부터 «gap badges, dot sizes and the statistics table all read from it»: 점은 실제 채택 빈도만큼 커지고, 답이 없는 응수에 배지가 붙고, 통계 패널(«Against the field»)이 «{pct}% met» — 필드의 몇 %가 준비에 부딪히는지 — 를 셉니다.">
+              <strong>Check coverage against…</strong> names the yardstick — your own games, the
+              Lichess database (with a strength band), or a local reference database. From then on
+              “gap badges, dot sizes and the statistics table all read from it”: dots size by how
+              often each move is actually played, replies you have no answer for get badges, and
+              the “Against the field” panel counts “{pct}% met” — the share of the field that runs
+              into your preparation.
+            </p>
+            <h2 data-ko="수 하나의 패널">One move's panel</h2>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-node-dark.png" />
+                <img src="shots/opening-map-node.png" alt="One move's panel: name, preparation depth, linked studies and notes, and the field's replies" />
+              </picture>
+            </figure>
+            <p data-ko="점을 고르면 오프닝 카탈로그가 이름을 붙이고, 패널이 그 수를 덮는 것들을 보여 줍니다:">
+              Select a dot and the opening catalogue names it, while its panel shows what covers
+              it:
+            </p>
+            <ul>
+              <li data-ko="<strong>준비 깊이</strong> — «Prepared {plies} plies deep, {lines} lines» / «Prepared to move {reached} — target {target}» — 연결된 스터디에서 실시간으로 계산됩니다. <strong>Intended depth</strong>(1–40 풀무브)가 목표를 정합니다.">
+                <strong>Preparation depth</strong> — “Prepared {plies} plies deep, {lines} lines” /
+                “Prepared to move {reached} — target {target}” — derived live from the linked
+                studies. <strong>Intended depth</strong> (1–40 full moves) sets the target.
+              </li>
+              <li data-ko="<strong>Linked games, studies and notes</strong> — «Link a game, study or note»로 잇고(챕터 하나만도 가능), «New study from this line»으로 새로 시작합니다. 준비 여부를 말할 수 있는 것은 스터디뿐 — 노트는 읽는 사람을 위한 참고입니다.">
+                <strong>Linked games, studies and notes</strong> — joined via “Link a game, study
+                or note” (one chapter alone works too), or started fresh with “New study from this
+                line”. Only studies get to say what is prepared; notes come along for the reader.
+              </li>
+              <li data-ko="<strong>드릴 건강</strong> — «{n} fumbled in drills — drill from here» · «{n} drill gaps — the studies lack an answer».">
+                <strong>Drill health</strong> — “{n} fumbled in drills — drill from here” · “{n}
+                drill gaps — the studies lack an answer”.
+              </li>
+              <li data-ko="<strong>Games that left here</strong> — 이 포지션에서 북을 벗어난 당신의 게임들: 벗어난 수(«You left the book with this move» / «They left …»), «Chart it on the map», «Analyse to the deviation».">
+                <strong>Games that left here</strong> — your games that left book at this
+                position: the deviating move (“You left the book with this move” / “They left …”),
+                “Chart it on the map”, “Analyse to the deviation”.
+              </li>
+              <li data-ko="<strong>Prepared, not on the map</strong> — 스터디에는 있는데 아직 안 올린 이음수들, 탭 한 번으로 올라갑니다.">
+                <strong>Prepared, not on the map</strong> — continuations your studies hold that
+                the map does not chart yet; a tap charts one.
+              </li>
+            </ul>
+            <p data-ko="패널 바닥의 동작 줄, 순서대로: <strong>Add · Grow · Drill</strong>(스터디가 연결되어야 — «Link a study first — a drill needs prepared moves») <strong>· Prune</strong>(«Show only this line», 트리에서) <strong>· Analyse · Delete</strong>(«Delete this move and everything after it? Linked studies are untouched.»).">
+              The action row at the panel's foot, in order: <strong>Add · Grow · Drill</strong>
+              (needs a linked study — “Link a study first — a drill needs prepared moves”)
+              <strong>· Prune</strong> (“Show only this line”, in the tree) <strong>· Analyse ·
+              Delete</strong> (“Delete this move and everything after it? Linked studies are
+              untouched.”).
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="settings">
+          <div class="doc">
+            <h1 data-ko="설정">Settings</h1>
+            <p class="lede" data-ko="사용자로서 하는 모든 일은 앱 안에서 됩니다 — 셸이 필요한 일은 없습니다. 카드 순서대로:">
+              Everything you do as a user happens in the app — nothing needs a shell. Card by
+              card, in order:
+            </p>
+            <div class="scroll-x">
+              <table class="controls">
+                <tbody>
+                  <tr>
+                    <td>Profile</td>
+                    <td data-ko="<strong>Display name</strong>(«How the app greets you»), <strong>chess.com username</strong>, <strong>Lichess username</strong> — «Usernames pre-fill the archive browser on the Games page.» — 그리고 <strong>Save profile</strong>.">
+                      <strong>Display name</strong> (“How the app greets you”),
+                      <strong>chess.com username</strong>, <strong>Lichess username</strong> —
+                      “Usernames pre-fill the archive browser on the Games page.” — and
+                      <strong>Save profile</strong>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Desktop app</td>
+                    <td data-ko="데스크톱 셸 안에서만. <strong>Vault → Switch…</strong> — «Point this window at a server, or host a folder on this machine.»">
+                      Inside the desktop shell only. <strong>Vault → Switch…</strong> — “Point
+                      this window at a server, or host a folder on this machine.”
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Appearance</td>
+                    <td data-ko="<strong>App language</strong>(English · 한국어) · <strong>App theme</strong>(Follow system / Light / Dark) · <strong>Density</strong>(Comfortable / Compact) · <strong>Colours</strong>(shadcn 중립조 다섯, 유채색 일곱, High contrast) · <strong>Board</strong>(실황 견본과 함께 여덟 테마) · <strong>Pieces</strong>(Cburnett부터 열 세트) · <strong>Castling</strong>(킹 두 칸 g1 / 룩 위 h1) · <strong>Board coordinates</strong> — 그리고 «More options» 아래 <strong>Corners</strong>(모서리 반경)와 <strong>Annotation size</strong>. 전부 기기별입니다.">
+                      <strong>App language</strong> (English · 한국어) · <strong>App theme</strong>
+                      (Follow system / Light / Dark) · <strong>Density</strong> (Comfortable /
+                      Compact) · <strong>Colours</strong> (five shadcn neutrals, seven coloured
+                      schemes, High contrast) · <strong>Board</strong> (eight themes with a live
+                      swatch) · <strong>Pieces</strong> (ten sets, Cburnett onward) ·
+                      <strong>Castling</strong> (king two squares g1 / onto the rook h1) ·
+                      <strong>Board coordinates</strong> — and, behind “More options”,
+                      <strong>Corners</strong> and <strong>Annotation size</strong>. All
+                      per-device.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Sound</td>
+                    <td data-ko="<strong>Move sounds</strong> · <strong>Vibrate on moves</strong>(진동이 있는 기기에서) · <strong>Volume</strong> · <strong>Move sound</strong>와 <strong>Capture sound</strong>(번호 붙은 변주들, «Rotate through all» 포함 — 고르면 바로 들려줍니다).">
+                      <strong>Move sounds</strong> · <strong>Vibrate on moves</strong> (where the
+                      device vibrates) · <strong>Volume</strong> · <strong>Move sound</strong> and
+                      <strong>Capture sound</strong> (numbered variants plus “Rotate through all” —
+                      picking one plays it).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Documents</td>
+                    <td data-ko="<strong>Auto-save</strong>: «Write changes to the vault as you make them. Off, they wait for you to save.» 기본은 꺼짐.">
+                      <strong>Auto-save</strong>: “Write changes to the vault as you make them.
+                      Off, they wait for you to save.” Off by default.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Security</td>
+                    <td data-ko="<strong>Set an app password</strong>(잠금 화면을 켭니다 — 없으면 «anyone who can reach this server sees everything») · <strong>Two-factor authentication</strong>(«Set up 2FA» → QR 코드와 수동 키 → «Verify &amp; enable»; 끄기도 현재 코드가 필요) · <strong>Sign out</strong>(«Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.»). 자격이 바뀌면 잠금 화면으로 돌아갑니다.">
+                      <strong>Set an app password</strong> (turns the lock screen on — without
+                      one, “anyone who can reach this server sees everything”) ·
+                      <strong>Two-factor authentication</strong> (“Set up 2FA” → a QR code and
+                      manual key → “Verify &amp; enable”; turning it off asks for a current code) ·
+                      <strong>Sign out</strong> (“Ends this device’s session on the server, so a copy of its
+                      cookie stops working too. Other devices stay signed in.”). Any credential change signs you back out.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Lichess token</td>
+                    <td data-ko="«Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.» 레퍼토리 트레이너의 Lichess 출처와 스터디 가져오기도 이 토큰입니다(비공개 스터디는 <code>study:read</code>). 저장되면 «A token ending in {last4} is configured.»만 남습니다.">
+                      “Powers the online opening explorer and your Lichess puzzle history. Create
+                      one with no scopes, then paste it here — it is stored in the vault and never
+                      shown again.” The repertoire trainer's Lichess source and study import ride
+                      the same token (<code>study:read</code> for private studies). Once saved,
+                      only “A token ending in {last4} is configured.” remains.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Browsed games</td>
+                    <td data-ko="캐시된 아카이브 월들의 목록 — 선수별 크기와 «{size} in total», 그리고 <strong>Clear all</strong>. «Nothing here is in your collection…» — 캐시일 뿐입니다.">
+                      The cached archive months — sizes per player, “{size} in total”, and
+                      <strong>Clear all</strong>. “Nothing here is in your collection…” — it is
+                      only a cache.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Storage used</td>
+                    <td data-ko="영역별 저장 공간: Games, Studies, Notes, Books, Puzzle books, Puzzle progress, Repertoire, PGN sources, Browsed games, Document history, Reference databases, 캐시들 — 그리고 합계. 읽기 전용이고, 앞 넷은 제 페이지로 이어집니다.">
+                      Storage by area — Games, Studies, Notes, Books, Puzzle books, Puzzle
+                      progress, Repertoire, PGN sources, Browsed games, Document history, Reference
+                      databases, the caches — and a total. Read-only; the first four link to their
+                      pages.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Deleted documents</td>
+                    <td data-ko="사라진 문서들의 목록과 <strong>Bring this back</strong>. 지운 것이 없으면 «Nothing is missing.» 판본을 보관하지 않는 보관함(데모 등)에서는 카드 자체가 없습니다.">
+                      The gone documents, each with <strong>Bring this back</strong>; “Nothing is
+                      missing.” otherwise. Absent entirely where the vault keeps no history (the
+                      demo).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Danger zone</td>
+                    <td data-ko="보관함 전체 비우기 — 변경 이력까지. «The app password, 2FA and tokens survive. There is no undo…» 확인 문구를 입력해 무장하고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
+                      Wiping the vault — change history included. “The app password, 2FA and
+                      tokens survive. There is no undo…” Typing the arming phrase unlocks the
+                      button, and the confirm asks for the app password when one is set.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Version</td>
+                    <td data-ko="서버·빌드·데스크톱 버전, <strong>Check for updates</strong>(«{version} is available — it installs when you quit.» / «This is the newest build.»), «Free software under the GPL-3.0.», 소스 코드와 라이선스 링크.">
+                      Server, build and desktop versions, <strong>Check for updates</strong>
+                      (“{version} is available — it installs when you quit.” / “This is the newest
+                      build.”), “Free software under the GPL-3.0.”, and the source-code and
+                      licences links.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p data-ko="페이지 바닥의 한 줄이 요약입니다: Vault: {path} «— every game, study and puzzle lives there as plain files. Display settings live on this device.»">
+              The page's last line is the summary: Vault: {path} “— every game, study and puzzle lives
+              there as plain files. Display settings live on this device.”
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="phone">
+          <div class="doc">
+            <h1 data-ko="휴대폰에서">On a phone</h1>
+            <p class="lede" data-ko="설치할 것은 없습니다: 서버 주소를 휴대폰 브라우저로 열고 홈 화면에 추가하면, 아이콘·스플래시·오프라인 셸을 갖춘 온전한 앱(PWA)이 됩니다. 보관함이 서버에 있어야 합니다 — <a href='#start'>시작하기</a>의 두 번째 방법.">
+              There is nothing to install: open your server's address in the phone's browser and
+              add it to the home screen — a full app (a PWA) with an icon, splash screens and an
+              offline shell. It wants the vault on a server — the second way from
+              <a href="#start">Getting started</a>.
+            </p>
+            <figure>
+              <picture>
+                <source media="(prefers-color-scheme: dark)" srcset="shots/games-phone-dark.png" />
+                <img src="shots/games-phone.png" alt="The game collection at phone width, the bottom bar underneath" />
+              </picture>
+            </figure>
+            <h2 data-ko="무엇이 달라지나">What changes</h2>
+            <ul>
+              <li data-ko="하단 바가 <strong>Home · Games · Studies · Notes · Puzzles · More</strong>를 들고, 나머지는 More에. 각 페이지의 만들기·추가는 오른쪽 아래 FAB로 옵니다.">
+                The bottom bar carries <strong>Home · Games · Studies · Notes · Puzzles ·
+                More</strong>, the rest under More; each page's create/add actions arrive as a FAB.
+              </li>
+              <li data-ko="보드가 있는 페이지에서는 하단 바가 <strong>그 페이지의 조작</strong>이 됩니다 — chess.com·Lichess 앱들의 방식 그대로: 보드에서는 수 이동, 퍼즐에서는 퍼즐 이동, 책에서는 열린 탭(Book/Board)의 도구, 오프닝 맵에서는 선택한 수의 띠. 페이지를 떠나면 원래 탭들이 돌아옵니다.">
+                On a page with a board, the bar becomes <strong>that page's controls</strong> —
+                the way the chess.com and Lichess apps do it: move navigation on boards, puzzle
+                navigation in the trainer, the open tab's tools in the book reader, the selected
+                move's strip on the opening map. Leaving the page brings the tabs back.
+              </li>
+              <li data-ko="보드 곁의 패널들은 탭이 됩니다 — Moves / Engine / Chapters / Explorer — 그리고 상세 패널들은 아래에서 올라오는 시트가 됩니다.">
+                The panels beside a board become tabs — Moves / Engine / Chapters / Explorer — and
+                the detail panels become bottom sheets.
+              </li>
+              <li data-ko="주석 상자는 탭하면 열리는 시트가 되고, 노트를 편집하는 동안은 키보드에 자리를 내주느라 하단 바가 비웁니다.">
+                The comment box opens as a sheet, and while a note is being edited the bottom bar
+                steps aside for the keyboard.
+              </li>
+            </ul>
+            <p data-ko="같은 서버를 보는 모든 기기는 같은 것을 봅니다 — 기보도, 진행도, 홈 배치도. 기기별인 것은 표시 설정(테마, 보드, 밀도)뿐입니다.">
+              Every device on the same server sees the same things — games, progress, the home
+              arrangement. Only the display settings (theme, board, density) are per-device.
+            </p>
+          </div>
+        </section>
+
+        <section class="page" id="faq">
+          <div class="doc">
+            <h1 data-ko="자주 묻는 것들">Common questions</h1>
+
+            <h2 data-ko="데모는 진짜 앱과 뭐가 다른가요?">What is different in the demo?</h2>
+            <p data-ko="데모는 진짜 앱이 브라우저 탭 안의 샘플 보관함 위에서 도는 것입니다 — 배너가 말하듯: «Demo — this is a sample vault of your own. Edit anything; a reload puts it back.» 서버가 있어야 하는 것들은 빠져 있습니다: 프로필, 비밀번호와 2FA, Lichess 토큰(따라서 온라인 출처들), 문서 이전 버전, 데이터베이스 만들기. 앱을 설치하거나 호스팅하면 그 자리들이 진짜가 됩니다.">
+              The demo is the real app running on a sample vault inside your browser tab — as its
+              banner says: “Demo — this is a sample vault of your own. Edit anything; a reload puts
+              it back.” What needs a server of your own is absent: profile, password and 2FA, the
+              Lichess token (and so the online sources), document history, database building.
+              Install or host the app and those places become real.
+            </p>
+
+            <h2 data-ko="macOS에서 앱이 안 열려요">The app will not open on macOS</h2>
+            <p data-ko="macOS 빌드는 서명되어 있지 않습니다. 처음 한 번은 앱을 <strong>오른쪽 클릭 → 열기</strong>로 열어 주세요. 그 뒤로는 평소처럼 열립니다.">
+              The macOS build is unsigned. The first launch needs <strong>right-click →
+              Open</strong>; after that it opens normally.
+            </p>
+
+            <h2 data-ko="오프라인에서는 뭐가 되나요?">What works offline?</h2>
+            <p data-ko="로컬 설치라면: 사실상 전부입니다. 엔진·글꼴·아이콘이 앱에 동봉되어 런타임에 부르는 CDN이 없습니다. 인터넷이 필요한 것은 온라인 데이터베이스(Lichess), 아카이브의 새 달 받아 오기, Lichess에서 가져오기뿐 — 이미 열어 본 아카이브 달은 캐시에서 열립니다.">
+              On a local install: essentially everything. The engine, fonts and icons ship with
+              the app, and there are no runtime CDN calls. What needs the internet is the online
+              database (Lichess), fetching new archive months, and importing from Lichess —
+              archive months you have browsed open from the cache.
+            </p>
+
+            <h2 data-ko="내 데이터는 어디에 있나요?">Where is my data?</h2>
+            <p data-ko="전부 보관함 폴더 안에, 평범한 파일로 있습니다. 설정 페이지 맨 아래가 정확한 경로를 알려 줍니다. 백업은 그 폴더를 복사하는 일입니다 — <a href='#vault'>보관함</a> 참조.">
+              All of it in the vault folder, as plain files. The bottom of the Settings page names
+              the exact path, and backing up is copying that folder — see
+              <a href="#vault">The vault</a>.
+            </p>
+
+            <h2 data-ko="여러 기기에서 쓰려면?">More than one device?</h2>
+            <p data-ko="보관함을 서버로 옮깁니다 — 폴더 복사입니다 — 그리고 모든 기기가 클라이언트가 됩니다: 휴대폰은 <a href='#phone'>PWA로</a>, 데스크톱 앱은 첫 물음(또는 설정 → Desktop app)에서 그 서버를 가리키게 해서. 같은 기보, 같은 진행, 어느 기기에서 열어도.">
+              Move the vault to a server — a folder copy — and every device becomes a client: a
+              phone <a href="#phone">as a PWA</a>, the desktop app pointed at the server through
+              its first question (or Settings → Desktop app). Same games, same progress, whichever
+              device you opened.
+            </p>
+
+            <h2 data-ko="더 물어볼 곳">Where to ask more</h2>
+            <p data-ko="버그와 질문은 <a href='https://github.com/chessvault-app/chessvault/issues'>GitHub 이슈</a>로. 작동 원리가 궁금하면 저장소의 <a href='https://github.com/chessvault-app/chessvault/tree/main/docs'>docs 폴더</a>에 레퍼토리 트레이너, 오프닝 맵, 데이터베이스, 책 가져오기의 상세한 문서가 있습니다.">
+              Bugs and questions go to
+              <a href="https://github.com/chessvault-app/chessvault/issues">GitHub issues</a>. For
+              how things work under the hood, the repository's
+              <a href="https://github.com/chessvault-app/chessvault/tree/main/docs">docs
+              folder</a> holds detailed write-ups of the repertoire trainer, the opening map, the
+              databases and book import.
+            </p>
+          </div>
+        </section>
+
+
+        <footer>
+          <div class="inner">
+            <p data-ko="Chess Vault는 GPL-3.0 자유 소프트웨어입니다. 퍼즐은 Lichess 퍼즐 데이터베이스(CC0)에서 왔습니다.">
+              Chess Vault is free software under GPL-3.0. Puzzles come from the Lichess puzzle
+              database (CC0).
+            </p>
+            <p
+              data-ko='<a href="./">홈</a> · <a href="app/">데모</a> · <a href="https://github.com/chessvault-app/chessvault">소스 코드</a> · <a href="app/licenses/index.html">라이선스</a>'
+            >
+              <a href="./">Home</a> ·
+              <a href="app/">Demo</a> ·
+              <a href="https://github.com/chessvault-app/chessvault">Source code</a> ·
+              <a href="app/licenses/index.html">Licences</a>
+            </p>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      // ---- Pages. Each top-level section is one manual page; the script
+      // shows one at a time and the sidebar is the switcher. Without the
+      // script nothing is hidden and the document reads (and prints) top to
+      // bottom — which is why the class goes on at runtime rather than in
+      // the markup.
+      var renderPager = function () {};
+      (function () {
+        var pages = Array.prototype.slice.call(document.querySelectorAll('.page'));
+        if (!pages.length) return;
+        document.body.classList.add('paged');
+        var ids = pages.map(function (s) { return s.id; });
+        var links = Array.prototype.slice.call(document.querySelectorAll('nav.side a'));
+        var labelOf = function (id) {
+          var link = links.filter(function (a) { return a.getAttribute('href') === '#' + id; })[0];
+          return link ? link.textContent : id;
+        };
+        var current = function () {
+          var h = location.hash.replace(/^#/, '');
+          return ids.indexOf(h) >= 0 ? h : ids[0];
+        };
+        renderPager = function () {
+          var id = current();
+          var i = ids.indexOf(id);
+          pages.forEach(function (s) {
+            var pager = s.querySelector('.pager');
+            if (pager) pager.remove();
+          });
+          var doc = pages[i].querySelector('.doc');
+          if (!doc) return;
+          var nav = document.createElement('div');
+          nav.className = 'pager';
+          if (i > 0) {
+            var prev = document.createElement('a');
+            prev.href = '#' + ids[i - 1];
+            prev.innerHTML = '<small>‹</small>' + labelOf(ids[i - 1]);
+            nav.appendChild(prev);
+          }
+          if (i < ids.length - 1) {
+            var next = document.createElement('a');
+            next.href = '#' + ids[i + 1];
+            next.className = 'next';
+            next.innerHTML = labelOf(ids[i + 1]) + '<small>›</small>';
+            nav.appendChild(next);
+          }
+          doc.appendChild(nav);
+        };
+        var show = function () {
+          var id = current();
+          pages.forEach(function (s) { s.classList.toggle('is-active', s.id === id); });
+          links.forEach(function (a) {
+            if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'page');
+            else a.removeAttribute('aria-current');
+          });
+          renderPager();
+          document.body.classList.remove('nav-open');
+          document.getElementById('nav-toggle').setAttribute('aria-expanded', 'false');
+          // After the browser's own anchor scroll, not before it — a page
+          // change starts reading at the top.
+          setTimeout(function () { window.scrollTo(0, 0); }, 0);
+        };
+        window.addEventListener('hashchange', show);
+        show();
+      })();
+
+      // ---- The narrow layout's Contents button and its scrim.
+      (function () {
+        var toggle = document.getElementById('nav-toggle');
+        toggle.addEventListener('click', function () {
+          var open = document.body.classList.toggle('nav-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+        document.getElementById('scrim').addEventListener('click', function () {
+          document.body.classList.remove('nav-open');
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      })();
+
+      // ---- The landing page's language switch, unchanged: every
+      // translatable node carries its Korean in data-ko, the English stays
+      // in the markup, and the choice shares the app's own localStorage key
+      // so the three surfaces agree. The pager re-renders because its
+      // labels are cloned from the sidebar's.
+      (function () {
+        var nodes = document.querySelectorAll('[data-ko]');
+        var english = [];
+        nodes.forEach(function (node) {
+          english.push(node.innerHTML);
+        });
+        function apply(lang) {
+          nodes.forEach(function (node, i) {
+            node.innerHTML = lang === 'ko' ? node.getAttribute('data-ko') : english[i];
+          });
+          document.documentElement.lang = lang;
+          document.querySelectorAll('.lang button').forEach(function (button) {
+            button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
+          });
+          try {
+            localStorage.setItem('chess-vault:lang', lang);
+          } catch (e) {
+            /* private mode: the choice just does not persist */
+          }
+          renderPager();
+        }
+        var saved = null;
+        try {
+          saved = localStorage.getItem('chess-vault:lang');
+        } catch (e) {
+          /* ignore */
+        }
+        apply(saved === 'ko' || (!saved && (navigator.language || '').toLowerCase().indexOf('ko') === 0) ? 'ko' : 'en');
+        document.querySelectorAll('.lang button').forEach(function (button) {
+          button.addEventListener('click', function () {
+            apply(button.dataset.lang);
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

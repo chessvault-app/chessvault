@@ -36,6 +36,15 @@
  *    in a var(), which is how --color-subtle survived a theme migration
  *    and painted the opening map's captions black. An undefined var in
  *    an SVG fill is black, not an error.
+ *
+ * 6. Every string the manual "quotes" still exists in the app. The manual
+ *    (web/landing/manual.html) names controls by their verbatim UI
+ *    strings, in curly double quotes — a couple of hundred of them, each
+ *    one a sentence that silently starts lying the day the label is
+ *    reworded. A quote must appear in the app's source (web/src, the
+ *    desktop chooser), with {placeholders} standing for whatever the code
+ *    interpolates and a trailing … marking a deliberate truncation. The
+ *    first run of this check caught fourteen misquotes.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -188,6 +197,51 @@ if (existsSync(CRATE_LOCK) && existsSync(CRATE_NOTICE)) {
         line: 1,
         text: crates.slice(0, 4).join(', ') + (crates.length > 4 ? `, +${crates.length - 4} more` : ''),
         why: `${crates.length} crate(s) ${why} — run npx tsx scripts/collect-crate-licenses.ts`,
+      });
+    }
+  }
+}
+
+// The manual's quoted strings against the app's own. Curly double quotes
+// are the manual's marker for "this is what the screen says", so they are
+// what is held to account; guillemets carry the Korean and straight quotes
+// carry paraphrase, and neither is checked. The haystack is
+// whitespace-collapsed so JSX line wrapping does not hide a match, and
+// typographic apostrophes are folded because the two sides disagree
+// about them.
+const MANUAL = 'web/landing/manual.html';
+if (existsSync(MANUAL)) {
+  const collapse = (s: string): string =>
+    s.replace(/&amp;/g, '&').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
+  let hay = '';
+  for (const file of tracked) {
+    if (!/^(?:web\/src\/.*\.(?:ts|tsx|json)|desktop\/.*\.(?:html|mjs))$/.test(file)) continue;
+    try {
+      hay += readFileSync(file, 'utf-8') + '\n';
+    } catch {
+      continue;
+    }
+  }
+  hay = collapse(hay);
+  const manualText = readFileSync(MANUAL, 'utf-8');
+  const seen = new Set<string>();
+  for (const match of manualText.matchAll(/“([^”]+)”/g)) {
+    const quote = collapse(match[1]!);
+    if (seen.has(quote)) continue;
+    seen.add(quote);
+    // A trailing ellipsis is a deliberate truncation: match the prefix.
+    // A {placeholder} stands for whatever the code interpolates there —
+    // a template literal's expression, a t() parameter.
+    const probe = quote
+      .replace(/\s*…$/, '')
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\\\{[^{}]*\\\}/g, '.{1,80}?');
+    if (!new RegExp(probe).test(hay)) {
+      findings.push({
+        file: MANUAL,
+        line: manualText.slice(0, match.index).split('\n').length,
+        text: quote.slice(0, 120),
+        why: 'a “quoted” manual string with no match in the app source — the UI moved, or the quote is wrong',
       });
     }
   }
