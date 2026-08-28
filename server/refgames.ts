@@ -136,6 +136,13 @@ export function undeclaredFilters(
   return [
     ...GAMES_WHERE_KEYS.filter((key) => get(key) !== undefined && !declared.filters.has(key)),
     ...SCAN_KEYS.filter((key) => get(key) !== undefined && !declared.scan.has(key)),
+    // The structure rung is negotiated as its own token: it changed what
+    // `match` can carry, and a binary from before it would refuse the
+    // value outright rather than answer wrongly — so an old declaration
+    // routes structure hunts down the JS path instead.
+    ...(get('match') === 'structure' && !declared.scan.has('match:structure')
+      ? ['match:structure']
+      : []),
   ];
 }
 
@@ -1741,9 +1748,19 @@ export function refGamesApi(
       target = position.isErr
         ? positionTarget(setup.unwrap(), mode)
         : positionTarget(position.unwrap(), mode);
-      menCeilW = target.w;
-      menCeilB = target.b;
-      minPly = 32 - target.w - target.b;
+      if (mode === 'structure') {
+        // The pieces are free, so the men columns say nothing: a
+        // matching position holds anywhere from kings-and-pawns to a
+        // full board. Only the pawn counts gate (in the scans), and any
+        // game long enough to have moved a pawn qualifies.
+        menCeilW = 16;
+        menCeilB = 16;
+        minPly = 0;
+      } else {
+        menCeilW = target.w;
+        menCeilB = target.b;
+        minPly = 32 - target.w - target.b;
+      }
     }
 
     // The search box rides along with the hunt: `q` parses here with

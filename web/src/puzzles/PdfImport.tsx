@@ -25,7 +25,7 @@ const PEEK_W = 208;
     file in memory while it renders, so a multi-gigabyte pick would go
     straight into the page's heap — and a phone tab is killed far below
     this cap. One sentence at intake beats a dead tab on page three. */
-const MAX_PDF_BYTES = 300 * 1024 * 1024;
+const MAX_PDF_BYTES = 500 * 1024 * 1024;
 
 /** One shared empty list, so "this job isn't mine" keeps a stable identity
     and the memos downstream of it stay memos. */

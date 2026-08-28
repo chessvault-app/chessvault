@@ -252,17 +252,6 @@ export interface DialogContentProps extends Omit<DialogPrimitive.Popup.Props, 'r
   /** Out of sight, still mounted — for a window that has opened another as a sibling. */
   hidden?: boolean;
   /**
-   * A page that FLOATS over the window it came from on a desktop, where a
-   * page normally parks it — for a window whose parent is a whole
-   * workspace (the hunt's board window), which blinking out for a small
-   * card read as the app closing it (lanph3re: the transition
-   * distracts). The chevron stays: it closes back to the parent, which
-   * never left. On a phone this does nothing — bottom sheets stack from
-   * the same edge, so the page there keeps parking (one scrim, and the
-   * child opens as tall as what it covers).
-   */
-  float?: boolean;
-  /**
    * `sm` is the one-question window (a confirm, a rename, a picker);
    * `default` a window (a form, a list); `full` a wide one on a DESKTOP.
    * On a phone every one of them is the bottom sheet.
@@ -282,7 +271,6 @@ function DialogContent({
   actions,
   onBack,
   hidden = false,
-  float = false,
   size = 'default',
   fill = false,
   alert = false,
@@ -335,12 +323,10 @@ function DialogContent({
   // phone — a floor, not a size, measured once in the same effect.
   const [pageMinH, setPageMinH] = React.useState(0);
   React.useEffect(() => {
-    // A floating page neither parks its parent nor takes its height —
-    // but only where the parent would otherwise vanish (see `float`).
-    if (small || hidden || !coverParent || (float && !phone)) return;
+    if (small || hidden || !coverParent) return;
     setPageMinH(coverParent.height());
     return coverParent.cover();
-  }, [small, hidden, coverParent, float, phone]);
+  }, [small, hidden, coverParent]);
 
   // A LAYER never parks its parent; it is capped to it, and grows the
   // chevron once it has hidden it completely — see use-sheet-cover.

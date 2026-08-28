@@ -492,7 +492,7 @@ function SolutionRecorder({
                 // be marked "any move" — the ~ books use.
                 const isDefender = i % 2 === 1;
                 return (
-                  <span key={i} className="flex items-baseline gap-0.5 font-mono text-sm">
+                  <span key={i} className="font-moves flex items-baseline gap-0.5 text-sm">
                     {i % 2 === 0 ? (
                       <span className="text-muted-foreground">
                         {Math.floor(i / 2) + 1}

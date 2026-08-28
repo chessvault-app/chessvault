@@ -387,7 +387,7 @@ export function GameRow({
                   {game.white}
                 </span>
                 {game.whiteElo ? (
-                  <span className="text-muted-foreground shrink-0 text-sm tabular-nums">{game.whiteElo}</span>
+                  <span className="text-muted-foreground shrink-0 font-mono text-sm">{game.whiteElo}</span>
                 ) : null}
                 {game.annotated && (
                   <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
@@ -404,7 +404,7 @@ export function GameRow({
                   {game.black}
                 </span>
                 {game.blackElo ? (
-                  <span className="text-muted-foreground shrink-0 text-sm tabular-nums">{game.blackElo}</span>
+                  <span className="text-muted-foreground shrink-0 font-mono text-sm">{game.blackElo}</span>
                 ) : null}
               </p>
             </>

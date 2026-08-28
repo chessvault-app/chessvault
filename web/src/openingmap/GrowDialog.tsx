@@ -211,7 +211,7 @@ export function GrowDialog({
             </p>
             <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
               {tips.slice(0, 8).map((l) => (
-                <p key={l.join(' ')} className="text-muted-foreground truncate text-sm">
+                <p key={l.join(' ')} className="text-muted-foreground font-moves truncate text-sm">
                   {line(l)}
                 </p>
               ))}

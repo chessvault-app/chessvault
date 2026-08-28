@@ -328,15 +328,15 @@ export function GameTableRow({
         </span>
       )}
       {name(game.white, 'white')}
-      <span className={cn(quiet, 'text-right tabular-nums')}>
+      <span className={cn(quiet, 'text-right font-mono')}>
         {game.whiteElo || ''}
       </span>
       {name(game.black, 'black')}
-      <span className={cn(quiet, 'text-right tabular-nums')}>
+      <span className={cn(quiet, 'text-right font-mono')}>
         {game.blackElo || ''}
       </span>
       <ResultScore result={game.result} userSide={game.userSide} />
-      <span className={cn(quiet, 'text-right tabular-nums')}>
+      <span className={cn(quiet, 'text-right font-mono')}>
         {game.plyCount > 0 ? moveCount(game.plyCount) : ''}
       </span>
       <span className="truncate">
@@ -346,7 +346,7 @@ export function GameTableRow({
         {isNoiseEvent(game.event) ? '' : (game.event ?? '')}
       </span>
       <span className={cn(quiet, 'tabular-nums')}>{game.date}</span>
-      <span className={cn(quiet, 'font-mono')}>
+      <span className={cn(quiet, 'font-moves')}>
         {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
       </span>
     </li>

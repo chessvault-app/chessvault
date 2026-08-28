@@ -369,7 +369,7 @@ function MoveCell({
         active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
       )}
     >
-      <span>{figurine(node.san ?? '?')}</span>
+      <span className="font-moves">{figurine(node.san ?? '?')}</span>
       {node.nags.length > 0 && (
         <span className={cn('font-semibold', !active && nagClass(node.nags))}>
           {nagText(node.nags)}
@@ -598,7 +598,7 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
         onClick={onClick}
         data-active={active}
         className={cn(
-          'rounded-sm px-1 py-px font-medium transition-colors duration-100',
+          'font-moves rounded-sm px-1 py-px font-medium transition-colors duration-100',
           'hover:bg-accent',
           active && 'bg-primary text-primary-foreground hover:bg-primary',
         )}

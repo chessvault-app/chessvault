@@ -59,10 +59,10 @@ const BOOKS_DIR = resolve(VAULT, 'books');
 /**
  * The most a PDF may be. The same figure as the importer's own intake
  * cap (web/src/puzzles/PdfImport.tsx): a scanned book is tens of
- * megabytes, a big one a couple of hundred, and anything beyond that is
- * not something a browser could open page by page anyway.
+ * megabytes, a big one a few hundred, and anything beyond that is not
+ * something a browser could open page by page anyway.
  */
-export const PDF_CAP = 300 * 1024 * 1024;
+export const PDF_CAP = 500 * 1024 * 1024;
 
 const newBookId = (): string => `b${randomBytes(8).toString('hex')}`;
 export const isLibraryBookId = (name: string): boolean => /^b[0-9a-f]{16}$/.test(name);
@@ -241,7 +241,7 @@ export function booksApi(
     if (!c.req.raw.body) return c.json({ error: 'empty upload' }, 400);
     const declared = Number(c.req.header('content-length'));
     if (Number.isFinite(declared) && declared > PDF_CAP) {
-      return c.json({ error: 'that PDF is too big (300 MB cap)' }, 413);
+      return c.json({ error: 'that PDF is too big (500 MB cap)' }, 413);
     }
     mkdirSync(bookDir(id), { recursive: true });
     const target = pdfPath(id);
@@ -282,7 +282,7 @@ export function booksApi(
       await finished(sink).catch(() => {});
       rmSync(part, { force: true });
       const why = (error as Error).message;
-      if (why === 'too big') return c.json({ error: 'that PDF is too big (300 MB cap)' }, 413);
+      if (why === 'too big') return c.json({ error: 'that PDF is too big (500 MB cap)' }, 413);
       if (why === 'not a pdf') return c.json({ error: 'that file is not a PDF' }, 400);
       return c.json({ error: `upload failed: ${why}` }, 500);
     }

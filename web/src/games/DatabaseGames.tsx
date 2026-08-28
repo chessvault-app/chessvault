@@ -135,11 +135,16 @@ const consumePendingHunt = (): { fen: string; db: string } | null => {
   return handed;
 };
 
-/** The relaxation rungs, in the ladder's own order (shared/scanMatch). */
+/** The relaxation rungs, strictest first (shared/scanMatch). The "&
+    material" halves are load-bearing, not decoration: the ladder rungs
+    pin the piece counts, and the old labels hid it — a pawns-only
+    sketch through "Same pawns" found nothing and nothing said why
+    (lanph3re). "Same pawn structure" is the rung that frees them. */
 const RUNGS: { id: MatchMode; label: string }[] = [
   { id: 'exact', label: 'Exact position' },
-  { id: 'pawns', label: 'Same pawns' },
-  { id: 'files', label: 'Same pawn files' },
+  { id: 'pawns', label: 'Same pawns & material' },
+  { id: 'files', label: 'Same pawn files & material' },
+  { id: 'structure', label: 'Same pawn structure' },
   { id: 'material', label: 'Same material' },
 ];
 
@@ -1406,14 +1411,14 @@ export function DatabaseGames({
           if (!open) setSettingUp(false);
         }}
       >
-        {/* EXPERIMENT (nested windows, test 2 — lanph3re): the window
-            holds ONLY the board at every width — force-stacked, so the
-            wide side column and its second field set never appear — and
-            wears EDITOR_WINDOW_SIZE, the one rect the whole chain
-            shares: this window, the Position window behind its button,
-            the Load page behind that, the picture window after. A page
-            parks its parent, and four windows in one rect make each
-            park a content swap in a frame that never moves. */}
+        {/* The window holds ONLY the board at every width —
+            force-stacked, so the wide side column and its second field
+            set never appear — and wears EDITOR_WINDOW_SIZE, the one
+            rect the whole page chain lives in: board, Position, Load,
+            picture, each a content page of THIS window (see
+            EditorView.paged), named by this title row. The settled
+            design (lanph3re): one window, one frame, instant page
+            swaps. */}
         <DialogContent
           // The title row IS the chain's page header: the editor tells
           // us which page is up (onChainChange below) and the row turns

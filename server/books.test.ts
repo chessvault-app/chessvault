@@ -75,7 +75,7 @@ describe('books api', () => {
 
   it('refuses an upload without a title, and one declaring more than the cap', async () => {
     expect((await upload('title=', PDF)).status).toBe(400);
-    const res = await upload('title=Huge', PDF, { 'content-length': String(400 * 1024 * 1024) });
+    const res = await upload('title=Huge', PDF, { 'content-length': String(600 * 1024 * 1024) });
     expect(res.status).toBe(413);
   });
 

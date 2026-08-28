@@ -145,7 +145,7 @@ function GameDetailsContent({
         {name}
       </span>
       {elo ? (
-        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{elo}</span>
+        <span className="text-muted-foreground shrink-0 font-mono text-xs">{elo}</span>
       ) : null}
     </p>
   );
@@ -285,7 +285,7 @@ function GameDetailsContent({
 
       {replay ? (
         replay.plies.length > 0 && (
-          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 font-mono text-xs leading-5">
+          <div className="font-moves flex flex-wrap items-baseline gap-x-1 gap-y-0.5 text-xs leading-5">
             {replay.plies.map((ply, i) => (
               <Fragment key={i}>
                 {i % 2 === 0 && (
@@ -321,7 +321,7 @@ function GameDetailsContent({
         // The game is still on its way (or could not be had): the
         // summary's opening plies, read-only, so the panel says
         // something true meanwhile.
-        <p className="text-muted-foreground font-mono text-xs leading-5">
+        <p className="text-muted-foreground font-moves text-xs leading-5">
           {numberedSan(summary.sanPrefix, summary.plyCount > 24)}
         </p>
       ) : null}

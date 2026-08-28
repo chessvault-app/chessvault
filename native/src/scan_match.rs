@@ -13,7 +13,11 @@ use shakmaty::{Bitboard, Board};
 /// The scan-mode request keys this build understands — the `scan` field
 /// of the `capabilities` declaration, beside `SUPPORTED_FILTERS`. The
 /// server routes a request using an undeclared key down its JS path.
-pub const SUPPORTED_SCAN: &[&str] = &["match", "material"];
+/// `match:structure` is a VALUE token: the structure rung changed what
+/// `match` can carry, and a binary without the token would refuse the
+/// value rather than answer wrongly — declaring it is what lets the
+/// server forward structure hunts here at all.
+pub const SUPPORTED_SCAN: &[&str] = &["match", "material", "match:structure"];
 
 /// Piece letters in the fixed order every signature and spec uses.
 const LETTERS: [&str; 5] = ["p", "n", "b", "r", "q"];
@@ -23,6 +27,9 @@ pub enum Rung {
     Pawns,
     Files,
     Material,
+    /// Every pawn on its exact square and nothing else — pieces free,
+    /// side to move free (see shared/scanMatch.ts's header).
+    Structure,
 }
 
 impl Rung {
@@ -31,6 +38,7 @@ impl Rung {
             "pawns" => Some(Rung::Pawns),
             "files" => Some(Rung::Files),
             "material" => Some(Rung::Material),
+            "structure" => Some(Rung::Structure),
             _ => None,
         }
     }
@@ -65,9 +73,21 @@ fn joined(values: &[i64]) -> String {
 /// The position's signature under a relaxed rung — identical bytes to
 /// `matchSignature` in shared/scanMatch.ts.
 pub fn match_signature(board: &Board, rung: Rung) -> String {
+    if rung == Rung::Structure {
+        let squares = |set: Bitboard| {
+            set.into_iter()
+                .map(|sq| (sq as u32).to_string())
+                .collect::<Vec<_>>()
+                .join(".")
+        };
+        let wp = squares(board.pawns() & board.white());
+        let bp = squares(board.pawns() & board.black());
+        return format!("s:{wp}/{bp}");
+    }
     let (w, b) = counts(board);
     let material = format!("{}-{}", joined(&w), joined(&b));
     match rung {
+        Rung::Structure => unreachable!(),
         Rung::Material => format!("m:{material}"),
         Rung::Pawns => {
             let squares = |set: Bitboard| {

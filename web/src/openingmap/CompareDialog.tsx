@@ -201,7 +201,7 @@ export function CompareDialog({
                 className="hover:bg-accent flex flex-col gap-0.5 rounded-md px-2 py-1.5 text-left"
               >
                 <span className="flex w-full items-baseline gap-2">
-                  <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
+                  <span className="text-foreground font-moves min-w-0 flex-1 truncate text-sm font-medium">
                     {row.sans.length === 0 ? t('Start position') : line(row.sans)}
                   </span>
                   {row.games > 1 && (

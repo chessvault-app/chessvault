@@ -22,6 +22,7 @@ import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
+import { useAllPanesShown } from '@/lib/media';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
@@ -74,6 +75,8 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const [failed, setFailed] = useState(false);
   // Small screens show one pane at a time under the board.
   const [pane, setPane] = useState<StudyPane>('moves');
+  // Whether the side column shows every pane at once — see the board below.
+  const allPanes = useAllPanesShown();
   // Reading vs annotating: reading hides the NAG toolbar and comment boxes
   // — and, in the store, keeps the autosave from writing what a reader
   // merely walked through. See the subscriber in store/study.ts.
@@ -242,7 +245,9 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           pending until you save it, and the badge above says so. What the
           pencil still switches is the TOOLS: drawn arrows, NAGs, comments,
           move surgery. */}
-      <AnalysisBoard drawShapes={editing} />
+      {/* Same as the board page: the row goes where the moves panel's own
+          copy is on screen to carry it. */}
+      <AnalysisBoard drawShapes={editing} nav={!allPanes && pane !== 'moves'} />
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}

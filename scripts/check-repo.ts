@@ -45,6 +45,15 @@
  *    desktop chooser), with {placeholders} standing for whatever the code
  *    interpolates and a trailing … marking a deliberate truncation. The
  *    first run of this check caught fourteen misquotes.
+ *
+ * 7. Move text and Elo wear the right face. index.css gives mono to what
+ *    the eye scans as a column and --font-moves to SAN, "prose, not
+ *    data" — and both roles drifted anyway, in the shape a grep can see:
+ *    a move list set in font-mono (the details panel's ply strip read as
+ *    a terminal beside a move tree that did not), an Elo left in the
+ *    sans default (the same rating in two faces on one screen). The
+ *    check reads the className enclosing each render, so it sees the
+ *    class that actually governs rather than the file it sits in.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -101,6 +110,79 @@ const RETIRED_COLORS: { pattern: RegExp; why: string }[] = [
   },
 ];
 
+/**
+ * The two font roles, at the point where they are actually decided.
+ *
+ * A class governs the element it sits on, so grepping a line in
+ * isolation says nothing: `{game.whiteElo}` is correct or wrong entirely
+ * according to a className that is often on the line above it. Both
+ * patterns below are therefore resolved against the nearest className
+ * opening at or before the render — `enclosingClass` — which is the same
+ * thing the cascade does, minus the cases where the class lives on a
+ * grandparent. Those it cannot see, and it says so by staying quiet.
+ */
+const SAN_RENDER = /figurine\(|numberedSan\(|\{[^{}]*\b\w+\.san\b[^{}]*\}/g;
+const ELO_RENDER = /\{[^{}]*\b(?:elo|\w+\.(?:white|black)Elo)\b[^{}]*\}/;
+
+/**
+ * Where the element opened at `tagStart` closes, as an offset into `text`.
+ *
+ * Needed because the drift's real shape is a CONTAINER: the details
+ * panel's ply strip put font-mono on a div and the SAN twenty-six lines
+ * below it, which no fixed lookback window from the render would ever
+ * see. Counts nesting rather than stopping at the first `</`, so a
+ * child closing inside the element does not end it.
+ */
+function elementEnd(text: string, tagStart: number): number {
+  const open = text.indexOf('>', tagStart);
+  if (open === -1) return text.length;
+  if (text[open - 1] === '/') return open; // self-closing: no children
+  const tags = /<\/?[A-Za-z][^>]*?\/?>/g;
+  tags.lastIndex = open + 1;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  while ((m = tags.exec(text))) {
+    if (m[0].startsWith('</')) {
+      if (depth === 0) return m.index;
+      depth -= 1;
+    } else if (!m[0].endsWith('/>')) {
+      depth += 1;
+    }
+  }
+  return text.length;
+}
+
+/**
+ * The className string governing line `i`, or null if none is in reach.
+ *
+ * "Nearest className above" is not good enough on its own: the move-tree
+ * chip prints its ply number in a font-mono span and the SAN after it, so
+ * the nearest class above the SAN belongs to a sibling that has already
+ * closed. A candidate is therefore rejected when anything closes between
+ * its tag and the render, and the search keeps walking back.
+ */
+function enclosingClass(lines: string[], i: number): string | null {
+  // Twelve lines covers every multi-line cn() in this codebase; beyond
+  // that the class is on some ancestor and this check does not guess.
+  const from = Math.max(0, i - 12);
+  const window = lines.slice(from, i + 1).join('\n');
+  const renderAt = window.lastIndexOf('\n') + 1;
+  let search = window.length;
+  while (search > 0) {
+    const at = window.lastIndexOf('className=', search - 1);
+    if (at === -1) return null;
+    search = at;
+    const rest = window.slice(at);
+    const end = rest.indexOf('>');
+    const cls = end === -1 ? rest : rest.slice(0, end);
+    // Everything between this opening tag and the render line. A `</` or
+    // a self-closing `/>` in there means this element is a sibling.
+    const between = end === -1 ? '' : window.slice(at + end, renderAt);
+    if (!/<\/|\/>/.test(between)) return cls;
+  }
+  return null;
+}
+
 const tracked = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf-8' })
   .split('\0')
   .filter(Boolean);
@@ -146,6 +228,49 @@ for (const file of tracked) {
       for (const { pattern, why } of RETIRED_COLORS) {
         if (pattern.test(line)) {
           findings.push({ file, line: i + 1, text: line.trim().slice(0, 120), why });
+        }
+      }
+    });
+  }
+
+  if (/^web\/src\/.*\.tsx$/.test(file)) {
+    // SAN, from the mono element inwards: every element whose own class
+    // says font-mono, then anything it renders as move text.
+    const lineAt = (offset: number): number => text.slice(0, offset).split('\n').length;
+    const classes = /className=(?:\{[^}]*\}|"[^"]*")/g;
+    let cm: RegExpExecArray | null;
+    while ((cm = classes.exec(text))) {
+      if (!/\bfont-mono\b/.test(cm[0]) || /\bfont-moves\b/.test(cm[0])) continue;
+      const tagStart = text.lastIndexOf('<', cm.index);
+      if (tagStart === -1) continue;
+      const span = text.slice(cm.index, elementEnd(text, tagStart));
+      SAN_RENDER.lastIndex = 0;
+      const hit = SAN_RENDER.exec(span);
+      if (hit) {
+        findings.push({
+          file,
+          line: lineAt(cm.index + hit.index),
+          text: hit[0].slice(0, 120),
+          why: 'move text set in font-mono — SAN is prose, use font-moves (see index.css "Three roles")',
+        });
+      }
+    }
+
+    lines.forEach((line, i) => {
+      const code = line.trim();
+      if (code.startsWith('//') || code.startsWith('*') || code.startsWith('/*')) return;
+      // `{player(summary.white, summary.whiteElo, 'white')}` hands the
+      // number to a helper that renders it somewhere else, under its own
+      // class; only the plain interpolation is judged here.
+      if (ELO_RENDER.test(line) && !/\{[^{}]*\(/.test(line)) {
+        const cls = enclosingClass(lines, i);
+        if (cls && !/\bfont-mono\b/.test(cls)) {
+          findings.push({
+            file,
+            line: i + 1,
+            text: code.slice(0, 120),
+            why: 'an Elo not in font-mono — a rating is a column, and the explorer already sets it in mono',
+          });
         }
       }
     });

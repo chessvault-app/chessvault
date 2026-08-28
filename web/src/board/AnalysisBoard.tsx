@@ -42,6 +42,7 @@ export function AnalysisBoard({
   editablePlayers = false,
   drawShapes = true,
   strip = true,
+  nav = true,
 }: {
   editablePlayers?: boolean;
   /**
@@ -62,6 +63,13 @@ export function AnalysisBoard({
    * something you leave for a reader rather than something you try out.
    */
   drawShapes?: boolean;
+  /**
+   * The navigation row under the board. Off for a page whose moves panel
+   * already carries one at md — where this row is not hidden by
+   * `max-md:hidden` and the phone's bottom bar is not there to hold it
+   * either, so both were on screen at once (the book reader's board tab).
+   */
+  nav?: boolean;
 } = {}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -258,7 +266,7 @@ export function AnalysisBoard({
           contextual bottom bar (MobileActionBar), so hide it below md to
           reclaim the row. Kept for md-portrait tablets (no bottom bar) and
           hidden on wide, where the Moves-panel copy takes over. */}
-      <BoardControls className="max-md:hidden wide:hidden" />
+      {nav && <BoardControls className="max-md:hidden wide:hidden" />}
     </div>
   );
 }
@@ -425,7 +433,7 @@ function PlayerBar({
       ) : (
         <span className="text-foreground min-w-0 truncate text-base font-medium">{name}</span>
       )}
-      {elo && <span className="text-muted-foreground text-sm">{elo}</span>}
+      {elo && <span className="text-muted-foreground font-mono text-sm">{elo}</span>}
       {clock !== undefined && (
         <span
           className={cn(

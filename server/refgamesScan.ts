@@ -100,6 +100,7 @@ export function positionTarget(target: Chess | Setup, mode: MatchMode): Position
  * the game is done; the final position is a position too.
  */
 export function replayPositionHit(moves: string, target: PositionTarget): number | null {
+  if (target.mode === 'structure') return replayStructureHit(moves, target);
   const pos = Chess.default();
   let w = 16;
   let b = 16;
@@ -122,6 +123,41 @@ export function replayPositionHit(moves: string, target: PositionTarget): number
     }
     pos.play(move);
     ply += 1;
+  }
+  return atTarget() ? ply : null;
+}
+
+/**
+ * The structure rung's own loop: no parity gate (side to move is
+ * deliberately not part of a structure — see shared/scanMatch.ts), no
+ * men gates (the pieces are free); the cheap gate is the PAWN counts,
+ * read from the board itself so en-passant captures and promotions —
+ * both of which SAN's capture mark cannot attribute to a pawn — are
+ * counted exactly. Pawns only ever leave (a promotion is a leaving
+ * too), so below the target's counts the game is done.
+ * MIRRORED in native/src/deep.rs (find_structure_hit).
+ */
+function replayStructureHit(moves: string, target: PositionTarget): number | null {
+  const pos = Chess.default();
+  let ply = 0;
+  const twp = target.wCounts[0]!;
+  const tbp = target.bCounts[0]!;
+  const pawnCounts = (): [number, number] => [
+    pos.board.pawn.intersect(pos.board.white).size(),
+    pos.board.pawn.intersect(pos.board.black).size(),
+  ];
+  const atTarget = (): boolean => {
+    const [wp, bp] = pawnCounts();
+    return wp === twp && bp === tbp && matchSignature(pos.board, 'structure') === target.sig;
+  };
+  for (const san of moves.split(' ')) {
+    if (atTarget()) return ply;
+    const move = parseSan(pos, san);
+    if (!move) break;
+    pos.play(move);
+    ply += 1;
+    const [wp, bp] = pawnCounts();
+    if (wp < twp || bp < tbp) return null;
   }
   return atTarget() ? ply : null;
 }
@@ -181,8 +217,10 @@ export class BadPack extends Error {}
 export interface CompiledPositionHunt {
   kind: 'position';
   /** 0 = exact (key32 gate), 1 = pawns/files (pawn-hash gate),
-      2 = material rung (counts alone are the whole test). */
-  gate: 0 | 1 | 2;
+      2 = material rung (counts alone are the whole test),
+      3 = structure (pawn counts + pawn-hash; no parity, no piece
+      gates — the pieces are free and so is the side to move). */
+  gate: 0 | 1 | 2 | 3;
   parity: 0 | 1;
   key32: number;
   pawns8: number;
@@ -215,7 +253,14 @@ export function compilePositionHunt(target: PositionTarget): CompiledPositionHun
   }
   return {
     kind: 'position',
-    gate: target.mode === 'exact' ? 0 : target.mode === 'material' ? 2 : 1,
+    gate:
+      target.mode === 'exact'
+        ? 0
+        : target.mode === 'material'
+          ? 2
+          : target.mode === 'structure'
+            ? 3
+            : 1,
     parity: target.blackToMove ? 1 : 0,
     key32: target.key32,
     pawns8: target.pawns8,
@@ -269,9 +314,11 @@ export function scanPackPosition(pack: Uint8Array, hunt: CompiledPositionHunt): 
   const tbp = c[5]!, tbn = c[6]!, tbb = c[7]!, tbr = c[8]!, tbq = c[9]!;
   // The envelope: reject the whole game when the target's counts fall
   // outside what it ever held — a necessary condition, so a skipped
-  // game never could have matched.
-  if (pack[2]! > tw || pack[3]! > tb) return null;
+  // game never could have matched. The structure rung (gate 3) frees
+  // the pieces, so only the PAWN rows constrain it.
+  if (gate !== 3 && (pack[2]! > tw || pack[3]! > tb)) return null;
   for (let at = 0; at < 10; at += 1) {
+    if (gate === 3 && at !== 0 && at !== 5) continue;
     const env = pack[4 + at]!;
     const want = c[at]!;
     if (want < env >> 4 || want > (env & 15)) return null;
@@ -282,24 +329,31 @@ export function scanPackPosition(pack: Uint8Array, hunt: CompiledPositionHunt): 
   let bp = 8, bn = 2, bb = 2, br = 2, bq = 1, bTot = 16;
   for (let ply = 0; ply < npos; ply += 1) {
     if (
-      (ply & 1) === parity &&
-      wTot === tw && bTot === tb &&
-      wp === twp && wn === twn && wb === twb && wr === twr && wq === twq &&
-      bp === tbp && bn === tbn && bb === tbb && br === tbr && bq === tbq &&
-      (gate === 2 ||
-        (gate === 1
-          ? pack[pawnsAt + ply] === pawns8
-          : ((pack[PACK_KEYS_AT + 4 * ply]! |
-              (pack[PACK_KEYS_AT + 1 + 4 * ply]! << 8) |
-              (pack[PACK_KEYS_AT + 2 + 4 * ply]! << 16) |
-              (pack[PACK_KEYS_AT + 3 + 4 * ply]! << 24)) >>>
-              0) ===
-            key32))
+      gate === 3
+        ? // Structure: pawn counts and the pawn-files hash — the pieces
+          // are free and so is the side to move. A sound prefilter like
+          // the pawns/files gate: equal squares imply equal files, so a
+          // hash miss is final and a hit is verified by the replay.
+          wp === twp && bp === tbp && pack[pawnsAt + ply] === pawns8
+        : (ply & 1) === parity &&
+          wTot === tw && bTot === tb &&
+          wp === twp && wn === twn && wb === twb && wr === twr && wq === twq &&
+          bp === tbp && bn === tbn && bb === tbb && br === tbr && bq === tbq &&
+          (gate === 2 ||
+            (gate === 1
+              ? pack[pawnsAt + ply] === pawns8
+              : ((pack[PACK_KEYS_AT + 4 * ply]! |
+                  (pack[PACK_KEYS_AT + 1 + 4 * ply]! << 8) |
+                  (pack[PACK_KEYS_AT + 2 + 4 * ply]! << 16) |
+                  (pack[PACK_KEYS_AT + 3 + 4 * ply]! << 24)) >>>
+                  0) ===
+                key32))
     ) {
       return ply;
     }
-    // Men only leave: below the target's totals, this game is done.
-    if (wTot < tw || bTot < tb) return null;
+    // Men only leave (pawns doubly so — a promotion is a leaving too):
+    // below the target's counts, this game is done.
+    if (gate === 3 ? wp < twp || bp < tbp : wTot < tw || bTot < tb) return null;
     if (ply < npos - 1) {
       const event = pack[eventsAt + ply]!;
       if (event !== 0) {

@@ -149,13 +149,13 @@ export function EditorView({
    */
   anyPosition?: boolean;
   /**
-   * EXPERIMENT (test 2, third fitting — lanph3re): the chain turns
-   * pages INSIDE this one window instead of opening windows over it.
-   * Two windows trading places always cost a frame somewhere — the
-   * animation rode the window, not the content — so the Position and
-   * Load pages become content of the embedded editor itself, sliding
-   * within the host's fixed frame. Desktop only; under 640px the
-   * sheet flow stands.
+   * The chain turns pages INSIDE this one window instead of opening
+   * windows over it — the settled design (lanph3re, after trying
+   * parking, floating and same-rect sibling windows, each of which
+   * cost a visible frame somewhere): the Position, Load and picture
+   * pages are content of the embedded editor itself, swapped
+   * instantly within the host's fixed frame (EDITOR_WINDOW_SIZE).
+   * Desktop only; under 640px the sheet flow stands.
    */
   paged?: boolean;
   /**
@@ -606,7 +606,7 @@ export function EditorView({
                   centred on the FIRST line (items-start keeps multi-line
                   reasons hanging right); mt-px sat it visibly high. */}
               <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
-              {validity.reason}
+              {t(validity.reason ?? '')}
             </p>
           )}
           {/* -mb: the row is the card's floor, so it claims the card's own
@@ -634,7 +634,7 @@ export function EditorView({
         {!validity.legal && (
           <p className="text-warn flex items-start gap-1.5 text-sm">
             <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
-            {validity.reason}
+            {t(validity.reason ?? '')}
           </p>
         )}
         {/* The FEN status line, with the loader's page turn at its end.
@@ -890,7 +890,7 @@ export function EditorView({
                     ? onUse
                       ? useLabel
                       : t('Analyse this position')
-                    : validity.reason
+                    : t(validity.reason ?? '')
                 }
               >
                 {/* Analysis = the game-review microscope; embedded mode records
@@ -920,7 +920,7 @@ export function EditorView({
               {!validity.legal && (
                 <p className="text-warn flex items-start gap-1.5 text-sm">
                   <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
-                  {validity.reason}
+                  {t(validity.reason ?? '')}
                 </p>
               )}
               {/* The FEN status line, as the cards carry it — with the

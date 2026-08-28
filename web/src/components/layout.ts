@@ -129,12 +129,20 @@ export const BOARD_WIDE_SIDE =
  * then a 10px scrollbar), so p-3 alone left the panels almost touching
  * the thumb while the whole column sat 10px left of centre.
  *
+ * Both are FINE-POINTER allowances, and scoped so (the same judgment
+ * as PageShell's gutter): the styled classic scrollbar they make room
+ * for only exists where index.css styles one, which is pointer: fine.
+ * A phone's overlay scrollbar draws over content and reserves nothing,
+ * so on coarse pointers the pair only made the right edge 16px against
+ * the left's 12 — the gutter asymmetry lanph3re flagged on the margins
+ * pass.
+ *
  * The pages whose panels own their scrolling take BOARD_HELD_SHELL
  * instead — see below. The gutter earns nothing there: it reserves a lane
  * for a scrollbar that cannot appear.
  */
 export const BOARD_SCROLL_SHELL =
-  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ' +
+  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pointer-fine:pr-4 stacked:pointer-fine:[scrollbar-gutter:stable_both-edges] ' +
   BOARD_WIDE_SHELL;
 
 /**
@@ -170,16 +178,16 @@ export const BOARD_HELD_SHELL =
   'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ' + BOARD_WIDE_SHELL;
 
 /**
- * EXPERIMENT (nested windows, test 2 — lanph3re): one fixed size for the
- * whole editor window CHAIN — the hunt's board window, the Position
- * window it pages to, that window's Load page, and the picture window
- * after that. A page parks the window it came from, and the park reads
- * as a blink exactly when the successor is a different size; four
- * windows sharing one rect make each page turn a content swap in a
- * frame that never moves. Desktop only (sm:) — the phone sheets keep
- * their own physics. The height term also feeds the board's size: at
- * 46rem the board runs to the card's 28rem inner width; on shorter
- * viewports both the card (94dvh) and the board's own dvh formula
- * shrink in step.
+ * One fixed size for the editor window's whole page CHAIN — board,
+ * Position, Load, picture. The design was settled by iteration
+ * (lanph3re, 2026-08-29): the pages are CONTENT of one window, and a
+ * frame that never moves is what makes each page turn read as the
+ * window changing its mind rather than windows trading places — every
+ * window-swap variant tried before it (parking, floating, same-rect
+ * sibling windows) cost a visible frame somewhere. Desktop only
+ * (sm:) — the phone sheets keep their own physics. The height term
+ * also feeds the board's size: at 46rem the board runs to the card's
+ * 28rem inner width; on shorter viewports both the card (94dvh) and
+ * the board's own dvh formula shrink in step.
  */
 export const EDITOR_WINDOW_SIZE = 'sm:h-[min(46rem,94dvh)] sm:w-[min(30rem,94vw)] sm:max-w-none';
