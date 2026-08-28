@@ -137,6 +137,7 @@ export function EditorView({
   initialFen,
   anyPosition = false,
   paged = false,
+  onChainChange,
 }: {
   /** Embedded mode: hand the legal position back instead of navigating. */
   onUse?: (fen: string) => void;
@@ -161,6 +162,14 @@ export function EditorView({
    * sheet flow stands.
    */
   paged?: boolean;
+  /**
+   * Told what page the paged chain is on, so the HOST window's own
+   * title row can turn with it — title and back chevron both — rather
+   * than the pages drawing headers of their own inside the content
+   * (lanph3re: page in the outer card, not an inner one). Null when
+   * the board page is up.
+   */
+  onChainChange?: (page: { title: string; back: () => void } | null) => void;
 }) {
   /** Embedded: someone else owns the position, by prop or by callback. */
   const embedded = onUse !== undefined || initialFen !== undefined;
@@ -197,6 +206,24 @@ export function EditorView({
   const overSm = useMediaQuery('(min-width: 40rem)');
   /** Paging live this render — bounded by viewport so a resize resolves it. */
   const paging = paged && overSm;
+  // The host window's title row follows the page (see onChainChange).
+  const onChainChangeRef = useRef(onChainChange);
+  onChainChangeRef.current = onChainChange;
+  useEffect(() => {
+    const tell = onChainChangeRef.current;
+    if (!tell) return;
+    if (!paging || chain.page === 'board') {
+      tell(null);
+      return;
+    }
+    tell({
+      title: chain.page === 'position' ? 'Position' : 'Load position',
+      back: () => goto(chain.page === 'position' ? 'board' : 'position'),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- goto is stable in effect
+  }, [paging, chain.page]);
+  // The host must not keep a page title for an editor that is gone.
+  useEffect(() => () => onChainChangeRef.current?.(null), []);
   /**
    * The position as it stood when the Position sheet was opened.
    *
@@ -392,6 +419,117 @@ export function EditorView({
     navigate('board');
   };
 
+  /** The fields themselves, shared by every place they appear —
+      including the paged chain's Position page, which wears no card. */
+  const positionFields = (
+    <>
+      {/* First because it sets everything under it: an opening decides
+          the pieces, the turn and the castling rights the rest of these
+          fields exist to adjust. */}
+      <Field label="Opening">
+        <OpeningPicker
+          value={preset !== null && preset.fen === fen ? preset.tpl : null}
+          placeholder={t('Pick an opening or ECO code')}
+          onChange={pickPreset}
+        />
+      </Field>
+
+      {/* One of these, so it wears the control that says so. It was a
+          pair of buttons lit primary/secondary — the same question the
+          repertoire's New game panel asks, asked in a different shape,
+          and that panel's own comment already says which shape is
+          right: Segmented is the track for one-of-these, not two
+          actions sitting side by side. */}
+      <Field label="Side to move">
+        <Segmented
+          value={state.turn}
+          onChange={(turn: Color) => patch({ turn })}
+          ariaLabel={t('Side to move')}
+          // The king, as the repertoire's own "Play as" track does
+          // it: a side is a piece before it is a word, and the two
+          // controls now read the same way in both places.
+          segments={(['white', 'black'] as Color[]).map((side) => ({
+            value: side,
+            label: (
+              <>
+                <KingIcon side={side} />
+                {side === 'white' ? t('White') : t('Black')}
+              </>
+            ),
+          }))}
+        />
+      </Field>
+
+      <Field label="Castling rights">
+        {/* The registry's toggle group, four independent toggles
+            (`multiple`): outlined when off, the accent fill when on,
+            aria-pressed from the primitive. Not the filled primary:
+            these four are a state, and primary is the colour of the
+            thing to PRESS on a screen — a board full of pieces and
+            one Save (lanph3re). */}
+        <ToggleGroup
+          multiple
+          variant="outline"
+          size="sm"
+          spacing={1}
+          value={[...state.castling]}
+          onValueChange={(flags) => patch({ castling: new Set(flags as CastlingFlag[]) })}
+          aria-label={t('Castling rights')}
+          className="w-full"
+        >
+          {(
+            [
+              ['K', 'White O-O'],
+              ['Q', 'White O-O-O'],
+              ['k', 'Black O-O'],
+              ['q', 'Black O-O-O'],
+            ] as [CastlingFlag, string][]
+          ).map(([flag, title]) => (
+            <ToggleGroupItem key={flag} value={flag} title={t(title)} className="flex-1 font-mono">
+              {flag}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </Field>
+
+      <Field label="En passant target">
+        <Select
+          value={state.epSquare ?? ''}
+          onValueChange={(v) => patch({ epSquare: v || null })}
+          ariaLabel={t('En passant target')}
+          inset
+          mono
+          className="w-full"
+          groups={[
+            {
+              options: [
+                { value: '', label: t('none') },
+                ...epOptions.map((square) => ({ value: square, label: square })),
+              ],
+            },
+          ]}
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Halfmove clock">
+          <NumberInput
+            value={state.halfmoves}
+            min={0}
+            onChange={(halfmoves) => patch({ halfmoves })}
+          />
+        </Field>
+        <Field label="Move number">
+          <NumberInput
+            value={state.fullmoves}
+            min={1}
+            onChange={(fullmoves) => patch({ fullmoves })}
+          />
+        </Field>
+      </div>
+    </>
+  );
+
   /**
    * Where the panel is being shown, which decides its chrome — named
    * places rather than two booleans, the same fix as ArchiveBrowser's
@@ -404,47 +542,17 @@ export function EditorView({
    *              apart), and the loader is a page turn from the FEN
    *              footer, having no header to live in.
    */
-  const positionPanels = (place: 'column' | 'page' | 'sheet') => (
+  const positionPanels = (place: 'column' | 'sheet') => (
     <>
         <Panel>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
-              header to carry it. In the paged chain ('page') the header
-              also leads with the chevron back to the board, and Load is
-              the chain's next page, not a window. */}
+              header to carry it. */}
           {place === 'column' && (
             <PanelHeader
               title={t('Position')}
               actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
-            />
-          )}
-          {place === 'page' && (
-            <PanelHeader
-              title={
-                <span className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t('Back to the board')}
-                    className="-ml-1.5 shrink-0"
-                    onClick={() => goto('board')}
-                  >
-                    <ChevronLeft className="size-3.5" />
-                  </Button>
-                  {t('Position')}
-                </span>
-              }
-              actions={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title={t('Load a position — FEN, PGN, or image')}
-                  onClick={() => goto('load')}
-                >
-                  <FolderInput className="size-3.5" />
-                </Button>
-              }
             />
           )}
           {/* The sheet has no PanelHeader, whose height is what normally
@@ -453,110 +561,7 @@ export function EditorView({
               both: Panel zeroes the card's gap, so without it the last
               inputs sit flush against the FEN footer's rule. */}
           <div className={cn('grid gap-3 px-(--card-spacing) pb-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
-            {/* First in the column because it sets everything under it:
-                an opening decides the pieces, the turn and the castling
-                rights the rest of these fields exist to adjust. */}
-            <Field label="Opening">
-              <OpeningPicker
-                value={preset !== null && preset.fen === fen ? preset.tpl : null}
-                placeholder={t('Pick an opening or ECO code')}
-                onChange={pickPreset}
-              />
-            </Field>
-
-            {/* One of these, so it wears the control that says so. It was a
-                pair of buttons lit primary/secondary — the same question the
-                repertoire's New game panel asks, asked in a different shape,
-                and that panel's own comment already says which shape is
-                right: Segmented is the track for one-of-these, not two
-                actions sitting side by side. */}
-            <Field label="Side to move">
-              <Segmented
-                value={state.turn}
-                onChange={(turn: Color) => patch({ turn })}
-                ariaLabel={t('Side to move')}
-                // The king, as the repertoire's own "Play as" track does
-                // it: a side is a piece before it is a word, and the two
-                // controls now read the same way in both places.
-                segments={(['white', 'black'] as Color[]).map((side) => ({
-                  value: side,
-                  label: (
-                    <>
-                      <KingIcon side={side} />
-                      {side === 'white' ? t('White') : t('Black')}
-                    </>
-                  ),
-                }))}
-              />
-            </Field>
-
-            <Field label="Castling rights">
-              {/* The registry's toggle group, four independent toggles
-                  (`multiple`): outlined when off, the accent fill when on,
-                  aria-pressed from the primitive. Not the filled primary:
-                  these four are a state, and primary is the colour of the
-                  thing to PRESS on a screen — a board full of pieces and
-                  one Save (lanph3re). */}
-              <ToggleGroup
-                multiple
-                variant="outline"
-                size="sm"
-                spacing={1}
-                value={[...state.castling]}
-                onValueChange={(flags) => patch({ castling: new Set(flags as CastlingFlag[]) })}
-                aria-label={t('Castling rights')}
-                className="w-full"
-              >
-                {(
-                  [
-                    ['K', 'White O-O'],
-                    ['Q', 'White O-O-O'],
-                    ['k', 'Black O-O'],
-                    ['q', 'Black O-O-O'],
-                  ] as [CastlingFlag, string][]
-                ).map(([flag, title]) => (
-                  <ToggleGroupItem key={flag} value={flag} title={t(title)} className="flex-1 font-mono">
-                    {flag}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </Field>
-
-            <Field label="En passant target">
-              <Select
-                value={state.epSquare ?? ''}
-                onValueChange={(v) => patch({ epSquare: v || null })}
-                ariaLabel={t('En passant target')}
-                inset
-                mono
-                className="w-full"
-                groups={[
-                  {
-                    options: [
-                      { value: '', label: t('none') },
-                      ...epOptions.map((square) => ({ value: square, label: square })),
-                    ],
-                  },
-                ]}
-              />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Halfmove clock">
-                <NumberInput
-                  value={state.halfmoves}
-                  min={0}
-                  onChange={(halfmoves) => patch({ halfmoves })}
-                />
-              </Field>
-              <Field label="Move number">
-                <NumberInput
-                  value={state.fullmoves}
-                  min={1}
-                  onChange={(fullmoves) => patch({ fullmoves })}
-                />
-              </Field>
-            </div>
+            {positionFields}
           </div>
 
           {/* FEN lives in a status footer, not its own panel — reading it
@@ -860,7 +865,11 @@ export function EditorView({
           arrival animates, and the SLIDE is on this content block, not
           on any window: the frame around it never moves (lanph3re: the
           window-level animation still read as flicker). Forward comes
-          from the right, back from the left. */}
+          from the right, back from the left. NO card around either page
+          (lanph3re: the inner card read as clutter) — the fields stand
+          directly in the window, the way every ordinary window carries
+          its form; the WINDOW's own title row names the page and holds
+          the way back (onChainChange). */}
       {paging && chain.page !== 'board' && (
         <div
           key={chain.page}
@@ -870,41 +879,50 @@ export function EditorView({
           )}
         >
           {chain.page === 'position' ? (
-            positionPanels('page')
-          ) : (
-            <Panel className="flex min-h-0 flex-1 flex-col">
-              <PanelHeader
-                title={
-                  <span className="flex items-center gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title={t('Back')}
-                      className="-ml-1.5 shrink-0"
-                      onClick={() => goto('position')}
-                    >
-                      <ChevronLeft className="size-3.5" />
-                    </Button>
-                    {t('Load position')}
-                  </span>
-                }
-              />
-              <div className="flex min-h-0 flex-1 flex-col gap-3 px-(--card-spacing) pb-(--card-spacing)">
-                <LoadPositionForm
-                  loadText={loadText}
-                  fill
-                  // A loaded position IS the answer: back to the board
-                  // that now shows it.
-                  onDone={() => goto('board')}
-                  onImage={(file) => {
-                    setPhotoFile(file);
-                    void builtinTemplates()
-                      .then(setPhotoTemplates)
-                      .catch(() => setPhotoTemplates([]));
-                  }}
-                />
+            <>
+              <div className="grid gap-3">{positionFields}</div>
+              {!validity.legal && (
+                <p className="text-warn flex items-start gap-1.5 text-sm">
+                  <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+                  {validity.reason}
+                </p>
+              )}
+              {/* The FEN status line, as the cards carry it — with the
+                  Load page turn at its end, the sheet's own idiom. */}
+              <div className="border-border mt-auto flex shrink-0 items-center gap-1.5 border-t pt-1.5">
+                {validity.legal && (
+                  <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+                )}
+                <code className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs" title={fen}>
+                  {fen}
+                </code>
+                <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
+                  {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Load a position — FEN, PGN, or image')}
+                  onClick={() => goto('load')}
+                >
+                  <FolderInput className="size-3.5" />
+                </Button>
               </div>
-            </Panel>
+            </>
+          ) : (
+            <LoadPositionForm
+              loadText={loadText}
+              fill
+              // A loaded position IS the answer: back to the board
+              // that now shows it.
+              onDone={() => goto('board')}
+              onImage={(file) => {
+                setPhotoFile(file);
+                void builtinTemplates()
+                  .then(setPhotoTemplates)
+                  .catch(() => setPhotoTemplates([]));
+              }}
+            />
           )}
         </div>
       )}

@@ -494,6 +494,8 @@ export function DatabaseGames({
       nobody has a FEN of — the editor validates, so only a legal
       position ever comes back through onUse. */
   const [settingUp, setSettingUp] = useState(false);
+  /** Which page of the board window's chain is up — drives its title row. */
+  const [chainPage, setChainPage] = useState<{ title: string; back: () => void } | null>(null);
   const [huntRows, setHuntRows] = useState<RefGame[] | null>(null);
   const [hunting, setHunting] = useState(false);
   const [huntProgress, setHuntProgress] = useState<{ scanned: number; total: number } | null>(null);
@@ -1413,7 +1415,11 @@ export function DatabaseGames({
             parks its parent, and four windows in one rect make each
             park a content swap in a frame that never moves. */}
         <DialogContent
-          title="Set up a position"
+          // The title row IS the chain's page header: the editor tells
+          // us which page is up (onChainChange below) and the row turns
+          // with it — name and back chevron — while the frame holds.
+          title={chainPage?.title ?? 'Set up a position'}
+          onBack={chainPage?.back}
           className={cn('max-sm:h-[88%]', EDITOR_WINDOW_SIZE)}
           size="full"
         >
@@ -1431,6 +1437,7 @@ export function DatabaseGames({
                 anyPosition
                 // The chain pages inside this window (see EditorView.paged).
                 paged
+                onChainChange={setChainPage}
                 onUse={(fen) => {
                   setHuntFen(fen);
                   setSettingUp(false);

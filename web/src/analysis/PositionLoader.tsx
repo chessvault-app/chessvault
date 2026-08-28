@@ -202,7 +202,7 @@ export function LoadPositionForm({
           sat in the row dialogs keep their close button and read as
           chrome (lanph3re's report). It shows only while the field is
           empty, which is exactly as long as it is useful. */}
-      <div className={cn('relative', fill && 'sm:flex sm:min-h-0 sm:grow sm:flex-col')}>
+      <div className="relative">
         <Textarea
           ref={textarea}
           autoFocus={autoFocusField()}
@@ -229,10 +229,12 @@ export function LoadPositionForm({
           placeholder={t('Paste a FEN or PGN, then press Enter')}
           className={cn(
             'w-full resize-none font-mono leading-relaxed placeholder:font-sans',
-            // Capped growth: uncapped, the two boxes swallowed the whole
-            // frame and read as oversized (lanph3re) — a paste box wants
-            // a paragraph's height, not a page's.
-            fill && 'sm:min-h-0 sm:max-h-48 sm:grow',
+            // Fixed heights, not growth: growing boxes swallowed the
+            // whole frame and read as oversized, and a capped textarea
+            // inside a growing wrapper left the Paste button floating
+            // mid-page (lanph3re's screenshot) — the wrapper sizes to
+            // the textarea, so the corner button anchors to its corner.
+            fill && 'sm:h-48',
           )}
         />
         {!text && (
@@ -263,7 +265,7 @@ export function LoadPositionForm({
       <label
         className={cn(
           'border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
-          fill && 'sm:max-h-44 sm:grow sm:justify-center',
+          fill && 'sm:h-44 sm:justify-center',
         )}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
