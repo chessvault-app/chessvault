@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react';
+import type { CSSProperties, ReactNode, Ref } from 'react';
 
 import { cn } from '@/lib/utils';
 import { Panel, PanelHeader } from '@/components/panel';
@@ -56,6 +56,7 @@ export function GameListShell({
   notice,
   countBand,
   listHeader,
+  listVars,
   list,
   listClassName,
   listLoading = false,
@@ -89,8 +90,14 @@ export function GameListShell({
   /** A band pinned directly above the list — the table mode's column
       header. Outside the ul on purpose: the ul's nth-child stripe and
       sentinel arithmetic count rows, and a header standing among them
-      would shift both by one. */
+      would shift both by one. With a header, the shell wraps header
+      and list in ONE two-axis scroller (header sticky), so a table
+      wider than the pane scrolls sideways as a unit instead of the
+      header and rows shearing apart. */
   listHeader?: ReactNode;
+  /** CSS variables for the table wrapper — the pane's column template
+      (see useGameTableVars), read by header and rows alike. */
+  listVars?: CSSProperties;
   /** The rows. null/undefined with listLoading false means no list band
       at all (nothing looked up yet — see `tail`). */
   list?: ReactNode;
@@ -132,52 +139,68 @@ export function GameListShell({
           {countBand}
         </div>
       )}
-      {listHeader != null && (list != null || listLoading) && listHeader}
-      {(list != null || listLoading) && (
-        <ul
-          className={cn(
-            // Named container: GameRow's narrow-row rules answer to the
-            // list's own width, not the window's.
-            '@container/arc divide-border border-border min-h-0 divide-y border-t',
-            // Dividers AND a faint stripe on every other row: at two
-            // lines a row is tall enough that a hairline alone leaves the
-            // list reading as one block of text. 2% of the foreground —
-            // enough to group the lines that belong together, not enough
-            // to read as a highlight. The archive list was the one of the
-            // three without it, for no reason anyone could name.
-            '[&>li:nth-child(even)]:bg-foreground/[0.022]',
-            // The virtualization the shell bought, in its cheapest form:
-            // offscreen rows skip render and layout entirely, onscreen
-            // ones pay as before. A deep scroll through a big database
-            // accumulates thousands of rows (50 per page, uncapped), and
-            // this keeps them from all laying out on every frame — while
-            // the DOM stays intact, so the nth-child stripe, the scroll
-            // sentinel and find-in-page all keep working, which is what
-            // a windowed renderer would have had to rebuild. The
-            // intrinsic size matches a two-line row; `auto` remembers
-            // the real height once a row has rendered.
-            '[&>li]:[content-visibility:auto]',
-            dense
-              ? '[&>li]:[contain-intrinsic-size:auto_2.125rem]'
-              : '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
-            listClassName,
-          )}
-        >
-          {listLoading ? (
-            <li>
-              <SkeletonGameRows rows={6} />
-            </li>
-          ) : (
-            list
-          )}
-          {!listLoading && more && (
-            <li ref={more.ref} className="flex items-center justify-center gap-2 p-3">
-              <Spinner className="text-muted-foreground size-4" />
-              <span className="text-muted-foreground text-sm">{more.label}</span>
-            </li>
-          )}
-        </ul>
-      )}
+      {(list != null || listLoading) &&
+        (() => {
+          const rows = (
+            <ul
+              className={cn(
+                // Named container: GameRow's narrow-row rules answer to the
+                // list's own width, not the window's.
+                '@container/arc divide-border border-border min-h-0 divide-y border-t',
+                // Dividers AND a faint stripe on every other row: at two
+                // lines a row is tall enough that a hairline alone leaves the
+                // list reading as one block of text. 2% of the foreground —
+                // enough to group the lines that belong together, not enough
+                // to read as a highlight. The archive list was the one of the
+                // three without it, for no reason anyone could name.
+                '[&>li:nth-child(even)]:bg-foreground/[0.022]',
+                // The virtualization the shell bought, in its cheapest form:
+                // offscreen rows skip render and layout entirely, onscreen
+                // ones pay as before. A deep scroll through a big database
+                // accumulates thousands of rows (50 per page, uncapped), and
+                // this keeps them from all laying out on every frame — while
+                // the DOM stays intact, so the nth-child stripe, the scroll
+                // sentinel and find-in-page all keep working, which is what
+                // a windowed renderer would have had to rebuild. The
+                // intrinsic size matches a two-line row; `auto` remembers
+                // the real height once a row has rendered.
+                '[&>li]:[content-visibility:auto]',
+                dense
+                  ? '[&>li]:[contain-intrinsic-size:auto_2.125rem]'
+                  : '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
+                // In the table wrapper the ul grows to its rows' template
+                // (that is what makes the wrapper scroll sideways) and the
+                // wrapper does the scrolling; the ul's own scrolling classes
+                // move up to it.
+                listHeader != null ? 'min-w-fit' : listClassName,
+              )}
+            >
+              {listLoading ? (
+                <li>
+                  <SkeletonGameRows rows={6} />
+                </li>
+              ) : (
+                list
+              )}
+              {!listLoading && more && (
+                <li ref={more.ref} className="flex items-center justify-center gap-2 p-3">
+                  <Spinner className="text-muted-foreground size-4" />
+                  <span className="text-muted-foreground text-sm">{more.label}</span>
+                </li>
+              )}
+            </ul>
+          );
+          if (listHeader == null) return rows;
+          return (
+            <div className={cn('flex min-h-0 flex-col overflow-auto', listClassName)} style={listVars}>
+              {/* Sticky, opaque, and as wide as the rows: the header
+                  scrolls sideways WITH the table and stays put over a
+                  vertical scroll. */}
+              <div className="bg-card sticky top-0 z-10 min-w-fit shrink-0">{listHeader}</div>
+              {rows}
+            </div>
+          );
+        })()}
       {footnote}
       {tail}
     </>

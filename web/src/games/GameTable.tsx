@@ -1,5 +1,12 @@
 import { NotebookPen } from 'lucide-react';
-import { useEffect, useRef, type MutableRefObject, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+  type CSSProperties,
+  type MutableRefObject,
+  type ReactNode,
+} from 'react';
 
 import { cn } from '@/lib/utils';
 import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
@@ -16,58 +23,104 @@ import { OpeningTag, ResultScore, type GameSummary } from './shared';
  *
  * Not an HTML table: the rows are `li` in GameListShell's ul, which is
  * what carries the virtualization, the zebra stripe and the scroll
- * sentinel. Header and rows agree on one grid template so they cannot
- * drift — and the template DROPS columns as the pane narrows, by
- * container query: notation first, then tournament, then the ratings.
- *
- * Two container names for one width: the rows answer the ul's own
- * `@container/arc`; the header stands OUTSIDE the ul (GameListShell's
- * listHeader band, so the stripe and sentinel arithmetic stay row-only)
- * and brings its own `@container/arch` wrapper. The two boxes are bands
- * of the same column, so the same breakpoints fire together.
+ * sentinel. Header and rows agree on one grid template because both
+ * read it from the SAME variable — `--gt-cols`, set by the pane on the
+ * shell's table wrapper (listVars) from useGameTableVars, which folds
+ * in the per-column widths the header's drag handles write. A pane too
+ * narrow for the columns scrolls sideways (the wrapper's job) rather
+ * than shedding them.
  */
 
 /** The one place a raw Elo is shown deliberately: game metadata about
     the two players, not the trainer's own rating (CLAUDE.md's stated
     games-list exception). */
 
-// Complete literals only — Tailwind's scanner reads class names from
-// this file, and a template assembled at runtime would never be emitted.
-const COLS_ROW =
-  '[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)] ' +
-  '@max-[56rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem] ' +
-  '@max-[44rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
-  '@max-[38rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
-const COLS_HEADER =
-  '[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)] ' +
-  '@max-[56rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem] ' +
-  '@max-[44rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem] ' +
-  '@max-[38rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem]';
+interface GameColumn {
+  id: string;
+  label: string;
+  /** Starting width in px; a drag on the header overrides it, per device. */
+  width: number;
+  min: number;
+  /** Share of any slack beyond the columns' own widths — the truncating
+      text columns; fixed columns are numbers and badges. */
+  fr?: number;
+  align?: 'right' | 'center';
+}
 
-// The archive's variant: a trailing standing column (the select
-// checkbox and the Add button — what that list is FOR), after the
-// same columns. Trailing, not leading: a column of buttons ahead of
-// the player names pushed the row's identity off its left edge. 6rem
-// seats the w-16 button with the checkbox beside it in selection mode.
-const COLS_ROW_STANDING =
-  '[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)_6rem] ' +
-  '@max-[56rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_6rem] ' +
-  '@max-[44rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem_6rem] ' +
-  '@max-[38rem]/arc:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem_6rem]';
-const COLS_HEADER_STANDING =
-  '[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_minmax(6rem,1.8fr)_6rem] ' +
-  '@max-[56rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_minmax(4rem,1fr)_4.8rem_6rem] ' +
-  '@max-[44rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_2.75rem_minmax(6rem,1.3fr)_2.75rem_2.9rem_2.4rem_2.4rem_4.8rem_6rem] ' +
-  '@max-[38rem]/arch:[grid-template-columns:minmax(6rem,1.3fr)_minmax(6rem,1.3fr)_2.9rem_2.4rem_2.4rem_4.8rem_6rem]';
+const COLUMNS: GameColumn[] = [
+  { id: 'white', label: 'White', width: 150, min: 90, fr: 1.3 },
+  { id: 'whiteElo', label: 'Elo', width: 44, min: 36, align: 'right' },
+  { id: 'black', label: 'Black', width: 150, min: 90, fr: 1.3 },
+  { id: 'blackElo', label: 'Elo', width: 44, min: 36, align: 'right' },
+  { id: 'result', label: 'Result', width: 48, min: 44, align: 'center' },
+  { id: 'moves', label: 'Moves', width: 44, min: 36, align: 'right' },
+  { id: 'eco', label: 'ECO', width: 40, min: 34 },
+  { id: 'event', label: 'Tournament', width: 110, min: 60, fr: 1 },
+  { id: 'date', label: 'Date', width: 80, min: 64 },
+  { id: 'notation', label: 'Notation', width: 220, min: 80, fr: 1.8 },
+];
+// The archive's trailing standing column (checkbox + Add — what that
+// list is FOR). Trailing, not leading: a column of buttons ahead of
+// the player names pushed the row's identity off its left edge.
+const STANDING: GameColumn = { id: 'standing', label: '', width: 96, min: 80 };
+const colsOf = (withStanding: boolean): GameColumn[] =>
+  withStanding ? [...COLUMNS, STANDING] : COLUMNS;
 
-const HIDE_NOTATION_ROW = '@max-[56rem]/arc:hidden';
-const HIDE_EVENT_ROW = '@max-[44rem]/arc:hidden';
-const HIDE_ELO_ROW = '@max-[38rem]/arc:hidden';
-const HIDE_NOTATION_HEADER = '@max-[56rem]/arch:hidden';
-const HIDE_EVENT_HEADER = '@max-[44rem]/arch:hidden';
-const HIDE_ELO_HEADER = '@max-[38rem]/arch:hidden';
+/**
+ * The dragged column widths, shared by every table on the device the
+ * way Panel heights are (vault:panel-h:*): a column width is a reading
+ * preference, not a per-list fact. Absent means the default.
+ */
+const WIDTHS_KEY = 'vault:game-table-cols';
+let colWidths: Record<string, number> = {};
+try {
+  colWidths = JSON.parse(localStorage.getItem(WIDTHS_KEY) ?? '{}') as Record<string, number>;
+} catch {
+  /* defaults stand */
+}
+const widthSubs = new Set<() => void>();
+function setColWidth(id: string, px: number | null): void {
+  const next = { ...colWidths };
+  if (px === null) delete next[id];
+  else next[id] = Math.round(px);
+  colWidths = next;
+  try {
+    localStorage.setItem(WIDTHS_KEY, JSON.stringify(colWidths));
+  } catch {
+    /* the session still resizes; it just will not survive a reload */
+  }
+  for (const fn of widthSubs) fn();
+}
+function useColWidths(): Record<string, number> {
+  return useSyncExternalStore(
+    (fn) => {
+      widthSubs.add(fn);
+      return () => widthSubs.delete(fn);
+    },
+    () => colWidths,
+  );
+}
+const widthOf = (c: GameColumn, stored: Record<string, number>): number =>
+  Math.max(c.min, stored[c.id] ?? c.width);
 
-const GRID = 'grid items-center gap-x-2 px-3';
+/**
+ * The pane's half of the contract: put this on GameListShell's
+ * `listVars` so the header and every row read one template. Fixed
+ * columns are exact px; the text columns keep a share of any slack, so
+ * a wide pane spends its width on names and notation.
+ */
+export function useGameTableVars(withStanding = false): CSSProperties {
+  const stored = useColWidths();
+  const template = colsOf(withStanding)
+    .map((c) => {
+      const w = widthOf(c, stored);
+      return c.fr ? `minmax(${w}px,${c.fr}fr)` : `${w}px`;
+    })
+    .join(' ');
+  return { '--gt-cols': template } as CSSProperties;
+}
+
+const GRID = 'grid items-center gap-x-2 px-3 [grid-template-columns:var(--gt-cols)]';
 
 /** Bare space-separated SAN, numbered for reading: "1. e4 e5 2. Nf3 …". */
 export function numberedSan(sans: string, truncated = false): string {
@@ -140,29 +193,55 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
 }
 
 export function GameTableHeader({ withStanding = false }: { withStanding?: boolean }) {
-  const head = (label: string, className?: string) => (
-    <span className={cn('truncate', className)}>{t(label)}</span>
-  );
+  // No width subscription needed here: the cells' widths arrive through
+  // the grid template variable the pane sets; the drag reads the live
+  // store when it starts.
+  const drag = useRef<{ id: string; x: number; w: number } | null>(null);
   return (
-    <div className="@container/arch border-border border-t">
+    <div className="border-border border-t">
       <div
-        className={cn(
-          GRID,
-          withStanding ? COLS_HEADER_STANDING : COLS_HEADER,
-          'text-muted-foreground min-h-7 py-1 text-xs font-medium',
-        )}
+        className={cn(GRID, 'text-muted-foreground min-h-7 py-1 text-xs font-medium')}
       >
-        {head('White')}
-        {head('Elo', cn('text-right', HIDE_ELO_HEADER))}
-        {head('Black')}
-        {head('Elo', cn('text-right', HIDE_ELO_HEADER))}
-        {head('Result', 'text-center')}
-        {head('Moves', 'text-right')}
-        {head('ECO')}
-        {head('Tournament', HIDE_EVENT_HEADER)}
-        {head('Date')}
-        {head('Notation', HIDE_NOTATION_HEADER)}
-        {withStanding && <span aria-hidden />}
+        {colsOf(withStanding).map((c) => (
+          <span
+            key={c.id}
+            className={cn(
+              'relative flex min-w-0 items-center',
+              c.align === 'right' && 'justify-end',
+              c.align === 'center' && 'justify-center',
+            )}
+          >
+            <span className="truncate">{c.label ? t(c.label) : ''}</span>
+            {/* The column's edge, draggable: a slim nub standing in the
+                gap between headings. Width is written to the shared
+                store, so every table's rows follow the same template
+                the moment it moves. */}
+            <span
+              title={t('Drag to resize · double-click to reset')}
+              className="hover:bg-border absolute inset-y-0 -right-2 flex w-2.5 cursor-col-resize touch-none items-center justify-center rounded-sm"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                drag.current = { id: c.id, x: e.clientX, w: widthOf(c, colWidths) };
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  /* no live pointer to capture — the move still tracks */
+                }
+              }}
+              onPointerMove={(e) => {
+                const d = drag.current;
+                if (!d || d.id !== c.id || (e.buttons & 1) === 0) return;
+                setColWidth(c.id, Math.max(c.min, d.w + e.clientX - d.x));
+              }}
+              onPointerUp={() => {
+                drag.current = null;
+              }}
+              onDoubleClick={() => setColWidth(c.id, null)}
+            >
+              <span className="bg-border/60 h-3.5 w-px" />
+            </span>
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -212,7 +291,6 @@ export function GameTableRow({
       title={`${game.white} vs ${game.black}`}
       className={cn(
         GRID,
-        standing !== undefined ? COLS_ROW_STANDING : COLS_ROW,
         'hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
         // Selection over zebra: aria-selected because the row IS a
         // selection, and the accent wash because the details panel is
@@ -225,11 +303,11 @@ export function GameTableRow({
       )}
     >
       {name(game.white, 'white')}
-      <span className={cn(quiet, 'text-right tabular-nums', HIDE_ELO_ROW)}>
+      <span className={cn(quiet, 'text-right tabular-nums')}>
         {game.whiteElo || ''}
       </span>
       {name(game.black, 'black')}
-      <span className={cn(quiet, 'text-right tabular-nums', HIDE_ELO_ROW)}>
+      <span className={cn(quiet, 'text-right tabular-nums')}>
         {game.blackElo || ''}
       </span>
       <ResultScore result={game.result} userSide={game.userSide} />
@@ -239,11 +317,11 @@ export function GameTableRow({
       <span className="truncate">
         {game.opening ? <OpeningTag eco={game.opening.eco} /> : game.eco ? <OpeningTag eco={game.eco} /> : null}
       </span>
-      <span className={cn(quiet, HIDE_EVENT_ROW)} title={game.event ?? undefined}>
+      <span className={quiet} title={game.event ?? undefined}>
         {isNoiseEvent(game.event) ? '' : (game.event ?? '')}
       </span>
       <span className={cn(quiet, 'tabular-nums')}>{game.date}</span>
-      <span className={cn(quiet, 'font-mono', HIDE_NOTATION_ROW)}>
+      <span className={cn(quiet, 'font-mono')}>
         {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
       </span>
       {standing !== undefined && (

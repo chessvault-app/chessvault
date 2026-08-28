@@ -37,7 +37,7 @@ import {
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow, useTableNav } from './GameTable';
+import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
 
@@ -314,6 +314,7 @@ export function CollectionList({
 
   // ↑/↓/Enter/Escape drive the table selection over the filtered rows.
   const tableNav = useTableNav(table && onSelect !== undefined);
+  const tableVars = useGameTableVars();
   tableNav.current = {
     move: (delta) => {
       const at = visible.findIndex((g) => gameKey(g) === selectedKey);
@@ -369,6 +370,7 @@ export function CollectionList({
         ) : undefined
       }
       listHeader={table ? <GameTableHeader /> : undefined}
+      listVars={table ? tableVars : undefined}
       dense={table}
       // The wait, in the shape of the strip and rows that are coming —
       // drawn at once rather than behind useSlowLoad: these rows are the

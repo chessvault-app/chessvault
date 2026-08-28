@@ -24,7 +24,7 @@ import { forgetMyGames } from '@/openingmap/useGaps';
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow } from './GameTable';
+import { GameTableHeader, GameTableRow, useGameTableVars } from './GameTable';
 import { GameDetailsSheet } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
 import {
@@ -673,6 +673,7 @@ export function ArchiveBrowser({
   const rowCollect = useCallback((g: GameSummary) => void rowHandlers.current.collect(g), []);
   // The ⋯ → Game details sheet, for the card rows.
   const [details, setDetails] = useState<GameSummary | null>(null);
+  const tableVars = useGameTableVars(true);
   const rowToggle = useCallback((key: string, on: boolean) => {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -1122,6 +1123,7 @@ export function ArchiveBrowser({
       notice={notice}
       countBand={countBand}
       listHeader={table && rows ? <GameTableHeader withStanding /> : undefined}
+      listVars={table && rows ? tableVars : undefined}
       dense={table}
       list={rows}
       // Rows, not a spinner on an empty box: fetching a month used to

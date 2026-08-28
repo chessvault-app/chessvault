@@ -40,7 +40,7 @@ const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
 import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
-import { GameTableHeader, GameTableRow, useTableNav } from './GameTable';
+import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
 /**
@@ -60,11 +60,8 @@ function RefRowActions({
 }) {
   const [added, setAdded] = useState(inCollection);
   return (
+    // Primary rightmost — the app's button order.
     <>
-      <Button variant="default" size="sm" onClick={onOpen}>
-        <Play className="size-3.5" data-icon="inline-start" />
-        {t('Open on the board')}
-      </Button>
       <Button
         variant="secondary"
         size="sm"
@@ -83,6 +80,10 @@ function RefRowActions({
             {t('Add to collection')}
           </>
         )}
+      </Button>
+      <Button variant="default" size="sm" onClick={onOpen}>
+        <Play className="size-3.5" data-icon="inline-start" />
+        {t('Open on the board')}
       </Button>
     </>
   );
@@ -364,6 +365,7 @@ export function DatabaseGames({
   // ↑/↓/Enter/Escape drive the table selection; the ref is filled below
   // the early returns, once the rows on screen are known.
   const tableNav = useTableNav(table);
+  const tableVars = useGameTableVars();
 
   const searchSeq = useRef(0);
   /** The committed filters as query params — the /search and the deep
@@ -1236,6 +1238,7 @@ export function DatabaseGames({
       filters={filters}
       countBand={countBand}
       listHeader={table ? <GameTableHeader /> : undefined}
+      listVars={table ? tableVars : undefined}
       dense={table}
       // undefined when empty, or the bare bordered ul doubles the empty
       // state's own top rule.

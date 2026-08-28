@@ -298,14 +298,38 @@ export function CollectionView() {
               }
             },
             actions: (
+              // One row, primary rightmost — the app's button order
+              // (dialog footers end on their primary). The secondary
+              // verbs are icons with tooltips so all four fit the
+              // panel's width on one line; the destructive one leads,
+              // farthest from the primary.
               <>
-                <Button variant="default" size="sm" onClick={() => openGame(colSelGame)}>
-                  <Play className="size-3.5" data-icon="inline-start" />
-                  {t('Open the game')}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Remove from the collection')}
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => {
+                    dropGame(colSelGame);
+                    setColSelKey(null);
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
                 </Button>
                 <Button
-                  variant="secondary"
-                  size="sm"
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Rename')}
+                  onClick={() => setRenamingKey(gameKey(colSelGame))}
+                >
+                  <Pencil className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={
+                    bookmarks.has(gameKey(colSelGame)) ? t('Remove bookmark') : t('Bookmark')
+                  }
                   onClick={() => void toggleBookmark(colSelGame)}
                 >
                   <Bookmark
@@ -313,32 +337,11 @@ export function CollectionView() {
                       'size-3.5',
                       bookmarks.has(gameKey(colSelGame)) && 'fill-warn text-warn',
                     )}
-                    data-icon="inline-start"
                   />
-                  {bookmarks.has(gameKey(colSelGame)) ? t('Bookmarked') : t('Bookmark')}
                 </Button>
-                {/* The row's remaining verbs, visible: the table rows
-                    have no tray or ⋯, and a verb that lives only behind
-                    a right-click is a verb most people never find. */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setRenamingKey(gameKey(colSelGame))}
-                >
-                  <Pencil className="size-3.5" data-icon="inline-start" />
-                  {t('Rename')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    dropGame(colSelGame);
-                    setColSelKey(null);
-                  }}
-                >
-                  <Trash2 className="size-3.5" data-icon="inline-start" />
-                  {t('Remove')}
+                <Button variant="default" size="sm" onClick={() => openGame(colSelGame)}>
+                  <Play className="size-3.5" data-icon="inline-start" />
+                  {t('Open the game')}
                 </Button>
               </>
             ),
