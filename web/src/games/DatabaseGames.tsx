@@ -1,4 +1,4 @@
-import { Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+﻿import { Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -18,6 +18,7 @@ import ENDGAMES from './endgames.json';
 import {
   EMPTY_STRUCTURED_FILTERS,
   ResultSelect,
+  SearchQueryHints,
   StrengthSelect,
   StructuredFiltersWindow,
   type ResultFilter,
@@ -42,71 +43,6 @@ const EditorView = lazy(() =>
 import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
-
-/**
- * The search box's query language, listed under the box while it has
- * focus — the way GitHub's search suggests its qualifiers. `insert` is
- * what a click puts into the box (replacing the half-typed token);
- * the panel never takes focus, so typing is uninterrupted.
- */
-const QUERY_OPS: { insert: string; token: string; sample: string; desc: string }[] = [
-  { insert: 'vs ', token: 'vs', sample: 'A vs B', desc: 'Games between two players' },
-  { insert: 'player:', token: 'player:', sample: 'player:name', desc: 'This player, either side' },
-  { insert: 'white:', token: 'white:', sample: 'white:name', desc: 'This player as White' },
-  { insert: 'black:', token: 'black:', sample: 'black:name', desc: 'This player as Black' },
-  { insert: 'opening:', token: 'opening:', sample: 'opening:najdorf', desc: 'Opening name contains' },
-  { insert: 'eco:', token: 'eco:', sample: 'eco:B90', desc: 'ECO code starts with' },
-  { insert: 'event:', token: 'event:', sample: 'event:"tata steel"', desc: 'Tournament name contains — quotes hold spaces' },
-  { insert: 'result:', token: 'result:', sample: 'result:1-0', desc: 'Exact score — 1-0, 0-1 or draw' },
-  { insert: 'year:', token: 'year:', sample: 'year:2010-2015', desc: 'A year, or a span of years' },
-];
-
-/**
- * The suggestion panel itself. Plain text keeps plain behaviour, so
- * the panel is reference, not a gate: it lists every operator while
- * the box is empty and narrows to the one being typed. mousedown
- * (not click) with preventDefault, or the press would blur the input
- * and close the panel before the click could land.
- */
-function QueryHints({
-  query,
-  onPick,
-}: {
-  query: string;
-  onPick: (nextQuery: string) => void;
-}) {
-  const lastToken = query.slice(query.lastIndexOf(' ') + 1).toLowerCase();
-  const shown = QUERY_OPS.filter(
-    (op) => lastToken === '' || op.token.startsWith(lastToken),
-  );
-  if (shown.length === 0) return null;
-  return (
-    <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
-      <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
-        {t('Narrow the search with')}
-      </p>
-      <ul>
-        {shown.map((op) => (
-          <li key={op.token}>
-            <button
-              type="button"
-              tabIndex={-1}
-              className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const head = query.slice(0, query.length - lastToken.length);
-                onPick(`${head}${op.insert}`);
-              }}
-            >
-              <span className="text-foreground shrink-0 font-mono text-xs">{op.sample}</span>
-              <span className="text-muted-foreground min-w-0 truncate text-xs">{t(op.desc)}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 /**
  * The details panel's action pair for a reference row, with its own
@@ -1291,7 +1227,7 @@ export function DatabaseGames({
                 spellCheck={false}
                 className="w-full"
               />
-              {hintsOpen && <QueryHints query={query} onPick={onQuery} />}
+              {hintsOpen && <SearchQueryHints query={query} onPick={onQuery} />}
             </div>
             <Button
               variant="ghost"

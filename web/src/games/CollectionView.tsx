@@ -33,6 +33,7 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { t } from '@/lib/i18n';
 import { GamePreview, docId, gameKey, type GameSummary, type Preview } from './shared';
 import { CollectionList, customName } from './CollectionList';
+import { SearchQueryHints } from './GameFilters';
 import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
@@ -83,6 +84,9 @@ export function CollectionView() {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [markedOnly, setMarkedOnly] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
+  /** The query-language panel under the collection search, open while
+      the box has focus. */
+  const [searchHintsOpen, setSearchHintsOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column.
       Mirrors heldSheet so the sheet survives a trip to the Board. */
@@ -256,14 +260,24 @@ export function CollectionView() {
    */
   const finders = (fieldClass: string): ReactNode => (
     <>
-      <SearchInput
-        type="text"
-        inputSize="sm"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t('Search collection…')}
-        className={cn('min-w-0', fieldClass)}
-      />
+      <div className={cn('relative min-w-0', fieldClass)}>
+        <SearchInput
+          type="text"
+          inputSize="sm"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setSearchHintsOpen(true)}
+          onBlur={() => setSearchHintsOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setSearchHintsOpen(false);
+          }}
+          placeholder={t('Search collection…')}
+          className="w-full"
+        />
+        {/* The same query language the databases box speaks — one
+            parser in shared/, one panel teaching it. */}
+        {searchHintsOpen && <SearchQueryHints query={query} onPick={setQuery} />}
+      </div>
       {/* Icon only, like the shelves': the word Bookmarked beside it was
           the only label in any of them, and a pressed state says the same
           thing without asking for the width. */}

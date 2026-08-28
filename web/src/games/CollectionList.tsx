@@ -10,9 +10,10 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { memo, useState, type ReactNode } from 'react';
+import { memo, useMemo, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
+import { matchesSearchTerms, parseSearchQuery } from '@shared/searchQuery';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -251,10 +252,15 @@ export function CollectionList({
     notes: 'any' as NotesFilter,
   });
 
-  const needle = query.trim().toLowerCase();
+  // The shared query language: recognised qualifiers become terms the
+  // rows answer in the page (matchesSearchTerms is the parser's own
+  // twin of the server's SQL); the remainder is the plain needle.
+  const parsedQuery = useMemo(() => parseSearchQuery(query), [query]);
+  const needle = parsedQuery.text.trim().toLowerCase();
   const visible = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
     if (markedOnly && !bookmarks.has(gameKey(g))) return false;
+    if (!matchesSearchTerms(parsedQuery.terms, g)) return false;
     // Ownership, not "side": the collection holds reference games beside
     // your own, so mine-ness is asked openly (userSide comes from the
     // VaultSide header stamped when collecting from the profile's own
@@ -274,8 +280,10 @@ export function CollectionList({
     notesFilter !== 'any' ||
     hasStructuredFilters(structured);
   /** Whether anything the reader chose is narrowing the list — the only
-      reason an empty list can be blamed on something they can undo. */
-  const filtering = filtersOn || markedOnly || needle !== '';
+      reason an empty list can be blamed on something they can undo.
+      The whole query counts, not just its plain-text remainder: a box
+      holding only `eco:B90` is still narrowing. */
+  const filtering = filtersOn || markedOnly || query.trim() !== '';
   const clearFilters = (): void => {
     setOwnFilter('any');
     setResultFilter('any');

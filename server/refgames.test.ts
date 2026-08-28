@@ -9,13 +9,13 @@ import {
   gamesWhere,
   migrateLegacyRefgames,
   parseNativeCapabilities,
-  parseSearchQuery,
   refGamesApi,
   seedBundledRefgames,
   sweepUnfinishedBuilds,
   undeclaredFilters,
 } from './refgames.ts';
 import { indexPositions } from './refgamesIndex.ts';
+import { matchesSearchTerms, parseSearchQuery } from '../shared/searchQuery.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
 /**
@@ -842,25 +842,8 @@ describe('parseSearchQuery', () => {
     expect(parseSearchQuery('kasparov najdorf')).toEqual({
       text: 'kasparov najdorf',
       terms: [],
+      issues: [],
     });
-  });
-
-  it('splits A vs B into two player terms', () => {
-    expect(parseSearchQuery('kasparov vs karpov')).toEqual({
-      text: '',
-      terms: [
-        { kind: 'player', value: 'kasparov' },
-        { kind: 'player', value: 'karpov' },
-      ],
-    });
-    // Multi-word names ride the split whole.
-    expect(parseSearchQuery('van wely VS van der sterren').terms).toEqual([
-      { kind: 'player', value: 'van wely' },
-      { kind: 'player', value: 'van der sterren' },
-    ]);
-    // A dangling vs is just text.
-    expect(parseSearchQuery('vs karpov')).toEqual({ text: 'vs karpov', terms: [] });
-    expect(parseSearchQuery('karpov vs')).toEqual({ text: 'karpov vs', terms: [] });
   });
 
   it('reads the field prefixes, quotes holding spaces together', () => {
@@ -871,6 +854,7 @@ describe('parseSearchQuery', () => {
         { kind: 'black', value: 'botvinnik' },
         { kind: 'eco', value: 'B90' },
       ],
+      issues: [],
     });
     expect(parseSearchQuery('event:"tata steel" opening:najdorf')).toEqual({
       text: '',
@@ -878,7 +862,16 @@ describe('parseSearchQuery', () => {
         { kind: 'event', value: 'tata steel' },
         { kind: 'opening', value: 'najdorf' },
       ],
+      issues: [],
     });
+  });
+
+  it('reads opponent: as another participant', () => {
+    // The window's Against slot wearing its search name.
+    expect(parseSearchQuery('player:kasparov opponent:karpov').terms).toEqual([
+      { kind: 'player', value: 'kasparov' },
+      { kind: 'player', value: 'karpov' },
+    ]);
   });
 
   it('normalises results and year spans', () => {
@@ -892,22 +885,61 @@ describe('parseSearchQuery', () => {
     ]);
   });
 
-  it('keeps an unparseable prefix as the text it is', () => {
-    // The box must never silently drop what was typed.
-    expect(parseSearchQuery('result:maybe')).toEqual({ text: 'result:maybe', terms: [] });
-    expect(parseSearchQuery('year:soon')).toEqual({ text: 'year:soon', terms: [] });
-    expect(parseSearchQuery('year:2020-2010')).toEqual({ text: 'year:2020-2010', terms: [] });
+  it('reports an unparseable or empty qualifier as an issue and drops it', () => {
+    // An intended filter must not silently become text or match nothing.
+    expect(parseSearchQuery('result:maybe')).toEqual({
+      text: '',
+      terms: [],
+      issues: [{ qualifier: 'result', kind: 'bad-result', value: 'maybe' }],
+    });
+    expect(parseSearchQuery('year:soon').issues).toEqual([
+      { qualifier: 'year', kind: 'bad-year', value: 'soon' },
+    ]);
+    expect(parseSearchQuery('year:2020-2010').issues).toEqual([
+      { qualifier: 'year', kind: 'bad-year', value: '2020-2010' },
+    ]);
+    expect(parseSearchQuery('carlsen result:')).toEqual({
+      text: 'carlsen',
+      terms: [],
+      issues: [{ qualifier: 'result', kind: 'empty' }],
+    });
   });
 
-  it('mixes prefixes, text and vs in one query', () => {
-    expect(parseSearchQuery('eco:C67 kasparov vs karpov')).toEqual({
-      text: '',
-      terms: [
-        { kind: 'eco', value: 'C67' },
-        { kind: 'player', value: 'kasparov' },
-        { kind: 'player', value: 'karpov' },
-      ],
+  it('mixes prefixes and text in one query', () => {
+    expect(parseSearchQuery('eco:C67 kasparov')).toEqual({
+      text: 'kasparov',
+      terms: [{ kind: 'eco', value: 'C67' }],
+      issues: [],
     });
+  });
+});
+
+describe('matchesSearchTerms', () => {
+  const game = {
+    white: 'Kasparov, Garry',
+    black: 'Karpov, Anatoly',
+    result: '1-0',
+    date: '1990.10.15',
+    eco: 'C92',
+    opening: { eco: 'C92', name: 'Ruy Lopez: Zaitsev' },
+    event: 'World Championship',
+  };
+
+  it('answers the same terms the server compiles to SQL', () => {
+    const yes = (q: string) => expect(matchesSearchTerms(parseSearchQuery(q).terms, game)).toBe(true);
+    const no = (q: string) => expect(matchesSearchTerms(parseSearchQuery(q).terms, game)).toBe(false);
+    yes('player:kasparov opponent:karpov');
+    yes('white:kasparov black:karpov');
+    no('white:karpov');
+    yes('eco:C9');
+    no('eco:B');
+    yes('opening:zaitsev');
+    yes('event:"world championship"');
+    yes('result:1-0');
+    no('result:draw');
+    yes('year:1990');
+    yes('year:1985-1995');
+    no('year:2000');
   });
 });
 

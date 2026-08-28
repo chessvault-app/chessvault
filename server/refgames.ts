@@ -10,6 +10,7 @@ import { makeSan, parseSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import { renameRetrying } from './atomic.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
+import { parseSearchQuery } from '../shared/searchQuery.ts';
 import {
   MATCH_MODES,
   canonicalMaterial,
@@ -640,98 +641,6 @@ export function gamesWhere(
   return { clauses, binds };
 }
 
-/** One recognised piece of the search box's small query language. */
-export type SearchTerm =
-  | { kind: 'player' | 'white' | 'black' | 'opening' | 'event'; value: string }
-  | { kind: 'eco'; value: string }
-  | { kind: 'result'; value: '1-0' | '0-1' | '1/2-1/2' }
-  | { kind: 'year'; from: number; to: number };
-
-const SEARCH_PREFIXES = new Set([
-  'player',
-  'white',
-  'black',
-  'opening',
-  'event',
-  'eco',
-  'result',
-  'year',
-]);
-
-/**
- * The search box's query language, deliberately small:
- *
- *   kasparov vs karpov          — both players, either seat each
- *   white:tal black:botvinnik   — a seat apiece
- *   eco:B90  opening:najdorf    — code prefix; name substring
- *   event:"tata steel"          — quotes keep spaces together
- *   result:1-0 · result:draw    — the literal score
- *   year:2014 · year:2010-2015  — a year or a span
- *
- * Anything else stays plain text and keeps today's behaviour (players,
- * opening names, ECO prefix, OR-ed). A prefix whose value does not
- * parse (result:maybe, year:soon) falls back to plain text too — the
- * box must never silently drop what was typed. Every recognised term
- * is one more AND clause beside the structured filters', so the box
- * and the window compose instead of competing.
- */
-export function parseSearchQuery(q: string): { text: string; terms: SearchTerm[] } {
-  // Tokens split on whitespace, with double quotes holding a phrase
-  // together — `event:"tata steel"` is one token.
-  const tokens = q.match(/(?:[^\s"]+|"[^"]*")+/g) ?? [];
-  const unquote = (s: string): string => s.replace(/"/g, '').trim();
-  const textParts: string[] = [];
-  const terms: SearchTerm[] = [];
-
-  for (const raw of tokens) {
-    const colon = raw.indexOf(':');
-    const key = colon > 0 ? raw.slice(0, colon).toLowerCase() : '';
-    if (colon > 0 && SEARCH_PREFIXES.has(key)) {
-      const value = unquote(raw.slice(colon + 1));
-      if (!value) continue;
-      if (key === 'result') {
-        const norm =
-          value.toLowerCase() === 'draw' || value === '½-½' || value === '1/2-1/2'
-            ? '1/2-1/2'
-            : value;
-        if (norm === '1-0' || norm === '0-1' || norm === '1/2-1/2') {
-          terms.push({ kind: 'result', value: norm });
-          continue;
-        }
-      } else if (key === 'year') {
-        const m = /^(\d{4})(?:-(\d{4}))?$/.exec(value);
-        if (m) {
-          const from = Number(m[1]);
-          const to = m[2] !== undefined ? Number(m[2]) : from;
-          if (to >= from) {
-            terms.push({ kind: 'year', from, to });
-            continue;
-          }
-        }
-      } else {
-        terms.push({ kind: key as 'player' | 'white' | 'black' | 'opening' | 'event' | 'eco', value });
-        continue;
-      }
-      // A prefix that failed to parse is searched as the text it is.
-      textParts.push(unquote(raw));
-      continue;
-    }
-    textParts.push(unquote(raw));
-  }
-
-  // `A vs B` over whatever text remains: both played, either seat each.
-  const vsAt = textParts.findIndex((t) => t.toLowerCase() === 'vs');
-  if (vsAt > 0 && vsAt < textParts.length - 1) {
-    const a = textParts.slice(0, vsAt).join(' ').trim();
-    const b = textParts.slice(vsAt + 1).join(' ').trim();
-    if (a && b) {
-      terms.push({ kind: 'player', value: a }, { kind: 'player', value: b });
-      return { text: '', terms };
-    }
-  }
-
-  return { text: textParts.join(' ').trim(), terms };
-}
 
 /** One build at a time, like books — the indexer is CPU-bound. */
 interface BuildJob {

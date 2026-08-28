@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, TriangleAlert } from 'lucide-react';
+import { parseSearchQuery } from '@shared/searchQuery';
 import { cn } from '@/lib/utils';
 import { Select } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { ClearableInput } from '@/components/text-fields';
@@ -415,6 +417,168 @@ export function StructuredFiltersWindow({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * The search box's query language, listed under the box while it has
+ * focus — the way GitHub's search suggests its qualifiers. One panel
+ * for every box that speaks the language (the databases pane and the
+ * collection tab); the language itself lives in shared/searchQuery.
+ */
+const QUERY_OPS: {
+  key: string;
+  sample: string;
+  desc: string;
+  /** Enumerable values, clickable; absent means free text. */
+  values?: { v: string; desc: string }[];
+  /** What a free-text value should be, said while one is awaited. */
+  valueHint?: string;
+}[] = [
+  { key: 'player', sample: 'player:name', desc: 'This player, either side', valueHint: 'Type a player name' },
+  { key: 'opponent', sample: 'opponent:name', desc: 'Somebody else in the same game', valueHint: 'Type a player name' },
+  { key: 'white', sample: 'white:name', desc: 'This player as White', valueHint: 'Type a player name' },
+  { key: 'black', sample: 'black:name', desc: 'This player as Black', valueHint: 'Type a player name' },
+  { key: 'opening', sample: 'opening:najdorf', desc: 'Opening name contains', valueHint: 'Type an opening name' },
+  { key: 'eco', sample: 'eco:B90', desc: 'ECO code starts with', valueHint: 'Type an ECO code — B90, C6…' },
+  {
+    key: 'event',
+    sample: 'event:"tata steel"',
+    desc: 'Tournament name contains — quotes hold spaces',
+    valueHint: 'Type a tournament name',
+  },
+  {
+    key: 'result',
+    sample: 'result:1-0',
+    desc: 'Exact score',
+    values: [
+      { v: '1-0', desc: 'White won' },
+      { v: '0-1', desc: 'Black won' },
+      { v: 'draw', desc: 'Drawn' },
+    ],
+  },
+  {
+    key: 'year',
+    sample: 'year:2014',
+    desc: 'A year, or a span of years',
+    valueHint: 'Type a year, or a span — 2014, 2010-2015',
+  },
+];
+
+/** One issue line: the offending piece as a badge, the reason beside it. */
+function IssueLine({ badge, message }: { badge: string; message: string }) {
+  return (
+    <li className="flex items-baseline gap-2 px-2 py-1">
+      <TriangleAlert className="text-warn size-3 shrink-0 self-center" aria-hidden />
+      <Badge variant="outline" className="shrink-0 font-mono">
+        {badge}
+      </Badge>
+      <span className="text-warn min-w-0 truncate text-xs">{message}</span>
+    </li>
+  );
+}
+
+/**
+ * The suggestion panel. Plain text keeps plain behaviour, so this is
+ * reference, not a gate: while the box is empty it lists every
+ * qualifier, a half-typed one narrows the list, a completed one shows
+ * its VALUES (clickable where they enumerate, described where they are
+ * free text), and a qualifier gone wrong warns instead of silently
+ * matching nothing. mousedown (not click) with preventDefault, or the
+ * press would blur the input and close the panel under the click.
+ */
+export function SearchQueryHints({
+  query,
+  onPick,
+}: {
+  query: string;
+  onPick: (nextQuery: string) => void;
+}) {
+  const { issues } = parseSearchQuery(query);
+  const lastToken = query.slice(query.lastIndexOf(' ') + 1).toLowerCase();
+  const colon = lastToken.indexOf(':');
+  const typedKey = colon > 0 ? lastToken.slice(0, colon) : null;
+  const typedValue = colon > 0 ? lastToken.slice(colon + 1) : '';
+  const head = query.slice(0, query.length - lastToken.length);
+
+  const valueOp = typedKey ? QUERY_OPS.find((op) => op.key === typedKey) : undefined;
+  const prefixOps =
+    typedKey === null
+      ? QUERY_OPS.filter((op) => lastToken === '' || `${op.key}:`.startsWith(lastToken))
+      : [];
+  const values =
+    valueOp?.values?.filter((val) => typedValue === '' || val.v.startsWith(typedValue)) ?? [];
+
+  const issueLines = issues.map((issue, i) =>
+    issue.kind === 'empty' ? (
+      <IssueLine key={i} badge={`${issue.qualifier}:`} message={t('needs a value')} />
+    ) : issue.kind === 'bad-result' ? (
+      <IssueLine key={i} badge={issue.value ?? ''} message={t('is not a result — 1-0, 0-1 or draw')} />
+    ) : (
+      <IssueLine
+        key={i}
+        badge={issue.value ?? ''}
+        message={t('is not a year or a span — 2014, 2010-2015')}
+      />
+    ),
+  );
+
+  const suggestions =
+    prefixOps.length > 0 ? (
+      <>
+        <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
+          {t('Narrow the search with')}
+        </p>
+        <ul>
+          {prefixOps.map((op) => (
+            <li key={op.key}>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onPick(`${head}${op.key}:`);
+                }}
+              >
+                <span className="text-foreground shrink-0 font-mono text-xs">{op.sample}</span>
+                <span className="text-muted-foreground min-w-0 truncate text-xs">{t(op.desc)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </>
+    ) : valueOp && values.length > 0 ? (
+      <ul>
+        {values.map((val) => (
+          <li key={val.v}>
+            <button
+              type="button"
+              tabIndex={-1}
+              className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onPick(`${head}${valueOp.key}:${val.v} `);
+              }}
+            >
+              <Badge variant="secondary" className="shrink-0 font-mono">
+                {val.v}
+              </Badge>
+              <span className="text-muted-foreground min-w-0 truncate text-xs">{t(val.desc)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : valueOp && !valueOp.values && typedValue === '' ? (
+      <p className="text-muted-foreground px-2 py-1 text-xs">{t(valueOp.valueHint ?? '')}</p>
+    ) : null;
+
+  if (issueLines.length === 0 && suggestions === null) return null;
+  return (
+    <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
+      {issueLines.length > 0 && <ul>{issueLines}</ul>}
+      {suggestions}
+    </div>
   );
 }
 
