@@ -336,7 +336,7 @@ export function GameTableRow({
         {game.blackElo || ''}
       </span>
       <ResultScore result={game.result} userSide={game.userSide} />
-      <span className={cn(quiet, 'text-right tabular-nums')}>
+      <span className={cn(quiet, 'text-right font-mono')}>
         {game.plyCount > 0 ? moveCount(game.plyCount) : ''}
       </span>
       <span className="truncate">
