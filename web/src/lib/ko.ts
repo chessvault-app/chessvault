@@ -1850,4 +1850,30 @@ export const ko: Record<string, string> = {
   'Document history': '문서 기록',
   'Explorer cache': '탐색기 캐시',
   'Tablebase cache': '테이블베이스 캐시',
+
+  // The Games page table and its details panel. (White, Black, Result,
+  // Moves, Tournament, Date, Game, Start, Back and Forward already
+  // have entries above.)
+  Elo: 'Elo',
+  ECO: 'ECO',
+  Notation: '기보',
+  End: '끝',
+  'What the pane is showing': '이 판이 보여주는 것',
+  'No game selected': '선택된 게임 없음',
+  'Select a game from the list to see it here — its players, its opening, and the game itself, move by move.':
+    '목록에서 게임을 선택하면 여기에 표시됩니다 — 두 기사와 오프닝, 그리고 게임 자체를 한 수씩.',
+  'Open the game': '게임 열기',
+  'Open on the board': '체스판에서 열기',
+  'Game details': '게임 정보',
+  Bookmarked: '즐겨찾음',
+  'Remove from the collection': '모음에서 제거',
+  'round {n}': '{n}라운드',
+
+  // The archive window's selection band.
+  'Select all new — none are new': '새 게임 전체 선택 — 새 게임 없음',
+  'Every game shown is already in the collection': '표시된 게임이 모두 이미 모음에 있습니다',
+
+  // The Databases page's fast-search toggle.
+  'Loading the scan index…': '스캔 인덱스 불러오는 중…',
+  'Releasing the scan index…': '스캔 인덱스 해제 중…',
 };
