@@ -243,34 +243,54 @@ export function Board({
       api.current = Chessground(el, config);
       if (apiRef) apiRef.current = api.current;
     };
-    // Held-back mount: chessground measures its wrap ONCE, at creation,
-    // and a board mounting while an ancestor transform is still scaling
-    // it — a desktop dialog zooming in from 95% with the board's chunk
-    // already cached — bakes that scaled rect in, then the settle
-    // listener below snaps it to size when the animation ends: a board
-    // that visibly resizes as the window lands (lanph3re). An ancestor
-    // scale is the one case layout and measurement disagree, so it is
-    // detectable: offsetWidth is the layout box, getBoundingClientRect
-    // the transformed one. When they disagree at mount, wait for them to
-    // agree (a frame poll — the animations are ~100ms) and create then:
-    // the board's first paint is at its true size, under the window's
-    // own fade. The frame cap covers a transform that never settles;
-    // there the old behaviour (mount scaled, settle corrects) returns.
+    // Held-back mount: a board created inside a window that is still
+    // animating open bakes the mid-flight rect in. TWO measurements go
+    // stale, not one — chessground reads its wrap at creation, and its
+    // ResizeObserver ALWAYS delivers once, a frame after observe(), when
+    // the dialog's 100ms zoom is mid-flight — so a rect comparison at
+    // mount raced the animation's start and lost either way: check too
+    // early and the observer re-pins the scaled rect a frame later
+    // (right → small → snap, the wobble lanph3re still saw); check
+    // mid-flight and creation itself pins it. The gate is therefore the
+    // ancestor's ANIMATION, not the rect: create only when nothing
+    // finite is animating an element above us, so both the creation
+    // measure and the observer's initial delivery see settled geometry.
+    // The common still mount stays synchronous — held before this
+    // effect's own paint, which is the whole point of the layout effect
+    // above. The deadline covers an animation that never yields (a
+    // hidden tab freezing the clocks); past it the old behaviour —
+    // mount scaled, the settle listener below corrects — returns.
     let raf = 0;
+    let cancelled = false;
     const misscaled = (): boolean =>
       el.offsetWidth > 0 && Math.abs(el.getBoundingClientRect().width - el.offsetWidth) > 1.5;
-    if (misscaled()) {
-      let frames = 0;
-      const poll = (): void => {
-        if (!misscaled() || ++frames > 30) {
-          create();
-          // The push effects already ran against a null api this commit;
-          // rerun them against the instance that now exists.
-          setLateMount((n) => n + 1);
-        } else raf = requestAnimationFrame(poll);
-      };
-      raf = requestAnimationFrame(poll);
-    } else create();
+    const ancestorAnims = (): Animation[] =>
+      document.getAnimations().filter((a) => {
+        if (a.playState !== 'running' && !a.pending) return false;
+        const effect = a.effect;
+        if (!(effect instanceof KeyframeEffect)) return false;
+        const target = effect.target;
+        if (!(target instanceof Element) || !target.contains(el)) return false;
+        // A spinner never settles; it also never scales an ancestor.
+        return effect.getComputedTiming().iterations !== Infinity;
+      });
+    if (ancestorAnims().length === 0 && !misscaled()) create();
+    else {
+      void (async () => {
+        const deadline = performance.now() + 600;
+        while (!cancelled && performance.now() < deadline) {
+          const anims = ancestorAnims();
+          if (anims.length === 0 && !misscaled()) break;
+          if (anims.length > 0) await Promise.allSettled(anims.map((a) => a.finished));
+          else await new Promise<void>((r) => (raf = requestAnimationFrame(() => r())));
+        }
+        if (cancelled) return;
+        create();
+        // The push effects already ran against a null api this commit;
+        // rerun them against the instance that now exists.
+        setLateMount((n) => n + 1);
+      })();
+    }
     // chessground caches the board's rect and drops the cache only on
     // document scroll and window resize — a layout shift that MOVES the
     // board without either (the eval bar row appearing above it when the
@@ -311,6 +331,7 @@ export function Board({
     for (const ev of ['animationend', 'transitionend'] as const)
       document.addEventListener(ev, settle, { capture: true, passive: true });
     return () => {
+      cancelled = true;
       cancelAnimationFrame(raf);
       for (const ev of ['animationend', 'transitionend'] as const)
         document.removeEventListener(ev, settle, { capture: true });
