@@ -10,6 +10,7 @@
  *   event:"tata steel"             — quotes hold spaces together
  *   result:1-0 | 0-1 | draw        — the literal score
  *   year:2014 · year:2010-2015     — a year, or a span
+ *   elo:2500 · elo:2400-2600       — the weaker player's floor, or band
  *
  * Anything else stays plain text with the caller's own behaviour.
  * A known qualifier whose value is missing or unparseable becomes an
@@ -26,11 +27,16 @@ export type SearchTerm =
   | { kind: 'player' | 'white' | 'black' | 'opening' | 'event'; value: string }
   | { kind: 'eco'; value: string }
   | { kind: 'result'; value: '1-0' | '0-1' | '1/2-1/2' }
-  | { kind: 'year'; from: number; to: number };
+  | { kind: 'year'; from: number; to: number }
+  /** The game's WEAKER player in [lo, hi] — `elo:2500` is a floor on
+      both (hi null), `elo:2400-2600` a band, `elo:2400-` the open-top
+      spelling of the floor. The window's strength filters compile the
+      same clause. */
+  | { kind: 'elo'; lo: number; hi: number | null };
 
 export interface SearchIssue {
   qualifier: string;
-  kind: 'empty' | 'bad-result' | 'bad-year' | 'impossible';
+  kind: 'empty' | 'bad-result' | 'bad-year' | 'bad-elo' | 'impossible';
   /** For `impossible`: the conflicting tokens, ` · `-joined, for the
       warning to quote. */
   value?: string;
@@ -51,6 +57,7 @@ export const SEARCH_PREFIXES = [
   'eco',
   'result',
   'year',
+  'elo',
 ] as const;
 const PREFIX_SET = new Set<string>(SEARCH_PREFIXES);
 
@@ -66,6 +73,17 @@ const parseYearSpan = (value: string): { from: number; to: number } | null => {
   const from = Number(m[1]);
   const to = m[2] !== undefined ? Number(m[2]) : from;
   return to >= from ? { from, to } : null;
+};
+
+/** "2500" (floor), "2400-2600" (band), "2400-" (open top — the same
+    floor, spelled as a span). */
+const parseEloSpan = (value: string): { lo: number; hi: number | null } | null => {
+  const m = /^(\d{3,4})(?:-(\d{3,4})?)?$/.exec(value);
+  if (!m) return null;
+  const lo = Number(m[1]);
+  const hi = m[2] !== undefined ? Number(m[2]) : null;
+  if (hi !== null && hi < lo) return null;
+  return { lo, hi };
 };
 
 /** Two name constraints that can hold on ONE name — one contains the
@@ -185,6 +203,15 @@ export function parseSearchQuery(q: string): {
         }
         continue;
       }
+      if (key === 'elo') {
+        const span = parseEloSpan(value);
+        if (span) {
+          add({ kind: 'elo', lo: span.lo, hi: span.hi }, raw);
+        } else {
+          issues.push({ qualifier: key, kind: 'bad-elo', value, raw });
+        }
+        continue;
+      }
       // `opponent:` is the window's Against slot wearing its search
       // name — the same constraint as another player: term.
       add(
@@ -232,7 +259,9 @@ export function splitQueryChips(q: string): { chips: string[]; text: string } {
           ? normalizeResult(value) !== null
           : key === 'year'
             ? parseYearSpan(value) !== null
-            : true);
+            : key === 'elo'
+              ? parseEloSpan(value) !== null
+              : true);
       if (valid) {
         chips.push(raw);
         return;
@@ -266,6 +295,8 @@ export function matchesSearchTerms(
     eco: string | null;
     opening?: { eco: string; name: string } | string | null;
     event?: string | null;
+    whiteElo?: number | null;
+    blackElo?: number | null;
   },
 ): boolean {
   const openingName = (
@@ -290,6 +321,12 @@ export function matchesSearchTerms(
     } else if (term.kind === 'year') {
       const year = Number((g.date ?? '').slice(0, 4));
       if (!Number.isFinite(year) || year < term.from || year > term.to) return false;
+    } else if (term.kind === 'elo') {
+      // The WEAKER player carries the game into the band — the same
+      // MIN(white_elo, black_elo) the server compiles. An unrated game
+      // (0 or absent) never qualifies, as 0 never clears a floor.
+      const min = Math.min(g.whiteElo ?? 0, g.blackElo ?? 0);
+      if (min < term.lo || (term.hi !== null && min > term.hi)) return false;
     }
   }
   return true;

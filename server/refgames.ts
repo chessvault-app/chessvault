@@ -691,6 +691,15 @@ export function gamesWhere(
           `REPLACE(${alias}date, '.', '-') >= ? AND REPLACE(${alias}date, '.', '-') <= ?`,
         );
         binds.push(`${term.from}-01-01`, `${term.to}-12-31`);
+      } else if (term.kind === 'elo' && typeof term.lo === 'number') {
+        // The band's own clause shape: MIN >= lo IS "both at least lo",
+        // so the floor form needs no second spelling.
+        clauses.push(`MIN(${alias}white_elo, ${alias}black_elo) >= ?`);
+        binds.push(term.lo);
+        if (typeof term.hi === 'number') {
+          clauses.push(`MIN(${alias}white_elo, ${alias}black_elo) <= ?`);
+          binds.push(term.hi);
+        }
       }
     }
   }

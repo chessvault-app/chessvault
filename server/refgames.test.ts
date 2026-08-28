@@ -913,6 +913,20 @@ describe('parseSearchQuery', () => {
     });
   });
 
+  it('parses elo floors and bands', () => {
+    expect(parseSearchQuery('elo:2500').terms).toEqual([{ kind: 'elo', lo: 2500, hi: null }]);
+    expect(parseSearchQuery('elo:2400-2600').terms).toEqual([
+      { kind: 'elo', lo: 2400, hi: 2600 },
+    ]);
+    expect(parseSearchQuery('elo:2400-').terms).toEqual([{ kind: 'elo', lo: 2400, hi: null }]);
+    expect(parseSearchQuery('elo:grandmaster').issues).toEqual([
+      { qualifier: 'elo', kind: 'bad-elo', value: 'grandmaster', raw: 'elo:grandmaster' },
+    ]);
+    expect(parseSearchQuery('elo:2600-2400').issues).toEqual([
+      { qualifier: 'elo', kind: 'bad-elo', value: '2600-2400', raw: 'elo:2600-2400' },
+    ]);
+  });
+
   it('warns on terms that cannot all hold in one game', () => {
     // Two exact scores; two spans with no common year.
     expect(parseSearchQuery('result:1-0 result:0-1').issues).toEqual([
@@ -986,6 +1000,18 @@ describe('matchesSearchTerms', () => {
     yes('year:1990');
     yes('year:1985-1995');
     no('year:2000');
+  });
+
+  it('answers elo like the server: the weaker player carries the game', () => {
+    const rated = { ...game, whiteElo: 2800, blackElo: 2730 };
+    const yes = (q: string) => expect(matchesSearchTerms(parseSearchQuery(q).terms, rated)).toBe(true);
+    const no = (q: string) => expect(matchesSearchTerms(parseSearchQuery(q).terms, rated)).toBe(false);
+    yes('elo:2700');
+    no('elo:2750'); // Black's 2730 is under the floor
+    yes('elo:2700-2750');
+    no('elo:2800-2900'); // the weaker player is outside the band
+    // Unrated games never qualify.
+    expect(matchesSearchTerms(parseSearchQuery('elo:2000').terms, game)).toBe(false);
   });
 });
 
@@ -1068,6 +1094,20 @@ describe('native filter negotiation', () => {
       true,
     );
     expect(seek.clauses).toEqual(['white IN (SELECT name FROM players WHERE name LIKE ?)']);
+    // elo compiles the band's clause shape — MIN >= lo IS "both at
+    // least lo", so the floor needs no second spelling.
+    const elo = gamesWhere((k) =>
+      k === 'terms' ? JSON.stringify(parseSearchQuery('elo:2400-2600').terms) : undefined,
+    );
+    expect(elo.clauses).toEqual([
+      'MIN(white_elo, black_elo) >= ?',
+      'MIN(white_elo, black_elo) <= ?',
+    ]);
+    expect(elo.binds).toEqual([2400, 2600]);
+    expect(
+      gamesWhere((k) => (k === 'terms' ? JSON.stringify(parseSearchQuery('elo:2500').terms) : undefined))
+        .clauses,
+    ).toEqual(['MIN(white_elo, black_elo) >= ?']);
     // Malformed JSON filters nothing rather than everything.
     expect(gamesWhere((k) => (k === 'terms' ? 'not json' : undefined)).clauses).toEqual([]);
   });

@@ -464,6 +464,12 @@ const QUERY_OPS: {
     desc: 'A year, or a span of years',
     valueHint: 'Type a year, or a span — 2014, 2010-2015',
   },
+  {
+    key: 'elo',
+    sample: 'elo:floor',
+    desc: 'Both players at least — or a band',
+    valueHint: 'Type a floor, or a band — 2500, 2400-2600',
+  },
 ];
 
 /**
@@ -980,6 +986,12 @@ export function SearchQueryIssues({
               key={i}
               badge={issue.value ?? ''}
               message={t('is not a year or a span — 2014, 2010-2015')}
+            />
+          ) : issue.kind === 'bad-elo' ? (
+            <IssueLine
+              key={i}
+              badge={issue.value ?? ''}
+              message={t('is not an Elo floor or band — 2500, 2400-2600')}
             />
           ) : (
             <IssueLine
