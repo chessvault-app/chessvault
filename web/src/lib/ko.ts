@@ -1530,6 +1530,7 @@ export const ko: Record<string, string> = {
   "{n}+ games": "{n}개 이상 게임",
   "depth": "깊이",
   "…or read the position from a picture": "…또는 사진에서 포지션을 읽어 옵니다",
+  "Pick an opening or ECO code": "오프닝 또는 ECO 코드 선택",
   "Advanced pawn": "전진한 폰",
   "Advantage": "우세",
   "Anastasia mate": "아나스타샤 메이트",

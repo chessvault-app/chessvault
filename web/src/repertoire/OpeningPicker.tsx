@@ -92,9 +92,13 @@ function loadCatalogue(): Promise<OpeningTemplate[]> {
 export function OpeningPicker({
   value,
   onChange,
+  placeholder,
 }: {
-  value: OpeningTemplate;
+  /** Null where nothing is chosen yet — the loader's offer, not a state. */
+  value: OpeningTemplate | null;
   onChange: (tpl: OpeningTemplate) => void;
+  /** Shown muted while `value` is null, the way an Input's placeholder is. */
+  placeholder?: string;
 }) {
   const [all, setAll] = useState<OpeningTemplate[] | null>(() => catalogue);
   const [query, setQuery] = useState('');
@@ -156,10 +160,10 @@ export function OpeningPicker({
         'hover:border-primary/40',
       )}
     >
-      <span className="min-w-0 flex-1 truncate">
+      <span className={cn('min-w-0 flex-1 truncate', !value && 'text-muted-foreground')}>
         {/* t() so "Start position" translates; real opening names are
             proper nouns and pass through untouched. */}
-        {value.eco ? `${value.eco}  ${value.name}` : t(value.name)}
+        {value ? (value.eco ? `${value.eco}  ${value.name}` : t(value.name)) : placeholder}
       </span>
     </button>
   );
@@ -198,7 +202,7 @@ export function OpeningPicker({
                       className={cn(
                         'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-sm',
                         'hover:bg-accent transition-colors duration-100 pointer-coarse:py-2.5',
-                        o.name === value.name && o.eco === value.eco
+                        value !== null && o.name === value.name && o.eco === value.eco
                           ? 'text-primary font-medium'
                           : 'text-foreground',
                       )}
