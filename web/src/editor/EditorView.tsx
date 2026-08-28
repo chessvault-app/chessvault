@@ -134,12 +134,21 @@ export function EditorView({
   onUse,
   useLabel = t('Analyse'),
   initialFen,
+  anyPosition = false,
 }: {
   /** Embedded mode: hand the legal position back instead of navigating. */
   onUse?: (fen: string) => void;
   useLabel?: string;
   /** Prefill (e.g. a diagram read from a photo); falls back to the start. */
   initialFen?: string;
+  /**
+   * Hand back ANY arrangement, legal or not: the games hunt's relaxed
+   * rungs match pawn structures and material, where a kingless sketch
+   * is a real query (lanph3re). The legality warning stays on screen
+   * as information — an exact hunt for an impossible position finds
+   * nothing, and the line says why — but it no longer bars the button.
+   */
+  anyPosition?: boolean;
 }) {
   /** Embedded: someone else owns the position, by prop or by callback. */
   const embedded = onUse !== undefined || initialFen !== undefined;
@@ -343,7 +352,7 @@ export function EditorView({
 
   /** Hand the position to the analysis board — or to the embedder. */
   const analyse = (): void => {
-    if (!validity.legal) return;
+    if (!validity.legal && !anyPosition) return;
     if (onUse) {
       onUse(fen);
       return;
@@ -498,7 +507,10 @@ export function EditorView({
               (lanph3re's call, same as the analysis Load panel). */}
           {!validity.legal && (
             <p className="text-warn flex items-start gap-1.5 px-3 pb-1.5 text-sm">
-              <AlertCircle className="mt-px size-3.5 shrink-0" />
+              {/* mt-[3px]: text-sm's 20px line around a 14px icon —
+                  centred on the FIRST line (items-start keeps multi-line
+                  reasons hanging right); mt-px sat it visibly high. */}
+              <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
               {validity.reason}
             </p>
           )}
@@ -750,9 +762,15 @@ export function EditorView({
                 variant="default"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
-                disabled={!validity.legal}
+                disabled={!validity.legal && !anyPosition}
                 onClick={analyse}
-                title={validity.legal ? (onUse ? useLabel : t('Analyse this position')) : validity.reason}
+                title={
+                  validity.legal || anyPosition
+                    ? onUse
+                      ? useLabel
+                      : t('Analyse this position')
+                    : validity.reason
+                }
               >
                 {/* Analysis = the game-review microscope; embedded mode records
                     a move list, so the glyph says "list", not "go". */}
@@ -797,8 +815,9 @@ export function EditorView({
         >
           {/* EXPERIMENT (test 2): the same rect as the board window it
               pages over — a park between same-sized windows is a content
-              swap, not a blink — so no float. Phones keep the sheet. */}
-          <DialogContent title="Position" className={EDITOR_WINDOW_SIZE}>
+              swap, not a blink — so no float, and `page` for the swap's
+              own physics (slide in, instant back). Phones keep the sheet. */}
+          <DialogContent title="Position" className={EDITOR_WINDOW_SIZE} page>
             {positionPanels('sheet')}
             {/* The second page, written inside the first: Modal parks this
                 sheet behind it, wires the back chevron to onClose and holds
@@ -810,9 +829,10 @@ export function EditorView({
                   if (!open) setLoadPage(false);
                 }}
               >
-                <DialogContent title="Load position" className={EDITOR_WINDOW_SIZE}>
+                <DialogContent title="Load position" className={EDITOR_WINDOW_SIZE} page>
                   <LoadPositionForm
                     loadText={loadText}
+                    fill
                     // The loaded position IS the answer, so this commits —
                     // there is nothing of the draft left to keep or discard.
                     onDone={() => closeSheet(true)}
@@ -835,6 +855,7 @@ export function EditorView({
                         templates={photoTemplates}
                         initialFile={photoFile ?? undefined}
                         windowClassName={EDITOR_WINDOW_SIZE}
+                        windowPage
                         onApply={(reading) => {
                           if (reading.fen) applyImageFen(reading.fen);
                           setPhotoTemplates(null);

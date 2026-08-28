@@ -40,6 +40,7 @@ export function PhotoImport({
   onClose,
   initialFile,
   windowClassName,
+  windowPage = false,
 }: {
   templates: Template[];
   onApply: (reading: PhotoReading) => void;
@@ -50,6 +51,9 @@ export function PhotoImport({
       size, so this page opens in the same rect it covers (the editor's
       test-2 experiment). */
   windowClassName?: string;
+  /** The chain's page physics too — slide in, instant back (see
+      DialogContent.page). */
+  windowPage?: boolean;
 }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);
@@ -318,6 +322,7 @@ export function PhotoImport({
         title="Position from an image"
         icon={ImageUp}
         fill
+        page={windowPage}
         className={cn('relative sm:max-w-[38rem]', windowClassName, dragOver && 'border-primary')}
       >
         {dragOver && (

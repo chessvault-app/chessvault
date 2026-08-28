@@ -1425,6 +1425,10 @@ export function DatabaseGames({
                 key={huntFen.trim() || 'blank'}
                 initialFen={huntFen.trim() || undefined}
                 useLabel={t('Search')}
+                // Pawns-only sketches are real queries for the relaxed
+                // rungs (pawn structure, material); legality must not
+                // bar the Search button here (lanph3re).
+                anyPosition
                 onUse={(fen) => {
                   setHuntFen(fen);
                   setSettingUp(false);

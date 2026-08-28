@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -141,6 +142,7 @@ export function LoadPositionForm({
   onDone,
   onCancel,
   onImage,
+  fill = false,
 }: {
   loadText: (value: string) => string | null;
   /** A position was loaded. */
@@ -148,6 +150,14 @@ export function LoadPositionForm({
   /** The Cancel button. Omitted where the window's own way out is enough. */
   onCancel?: () => void;
   onImage: (file: Blob | null) => void;
+  /**
+   * Grow into a FIXED-HEIGHT window (the editor chain's, test 2): the
+   * paste box and the picture drop split the slack and the buttons sit
+   * on the floor, instead of the form ending mid-card over a blank
+   * band (lanph3re). Desktop-scoped (sm:), so the content-sized phone
+   * sheets and the analysis window are untouched.
+   */
+  fill?: boolean;
 }) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -192,7 +202,7 @@ export function LoadPositionForm({
           sat in the row dialogs keep their close button and read as
           chrome (lanph3re's report). It shows only while the field is
           empty, which is exactly as long as it is useful. */}
-      <div className="relative">
+      <div className={cn('relative', fill && 'sm:flex sm:min-h-0 sm:grow sm:flex-col')}>
         <Textarea
           ref={textarea}
           autoFocus={autoFocusField()}
@@ -217,7 +227,10 @@ export function LoadPositionForm({
           rows={5}
           spellCheck={false}
           placeholder={t('Paste a FEN or PGN, then press Enter')}
-          className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
+          className={cn(
+            'w-full resize-none font-mono leading-relaxed placeholder:font-sans',
+            fill && 'sm:min-h-0 sm:grow',
+          )}
         />
         {!text && (
           <Button
@@ -245,7 +258,10 @@ export function LoadPositionForm({
       {/* The photo half of the ONE load dialog (lanph3re's call): click,
           drop, or paste an image; the corner-adjust flow takes over. */}
       <label
-        className="border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors"
+        className={cn(
+          'border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
+          fill && 'sm:grow sm:justify-center',
+        )}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -267,7 +283,7 @@ export function LoadPositionForm({
           }}
         />
       </label>
-      <div className="mt-1 flex justify-end gap-2">
+      <div className={cn('mt-1 flex justify-end gap-2', fill && 'sm:mt-auto')}>
         {onCancel && (
           <Button variant="ghost" size="sm" onClick={onCancel}>
             {t('Cancel')}
