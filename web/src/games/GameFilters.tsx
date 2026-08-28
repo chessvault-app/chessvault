@@ -255,11 +255,15 @@ export function StructuredFiltersWindow({
               placeholder={t('Any player')}
               className="min-w-0 flex-1"
             />
+            {/* Static widths sized to their longest option: without
+                one, a select is as wide as its current VALUE, and the
+                pair breathed every time a pick changed. */}
             <Select
               value={draft.side}
               onValueChange={(v) => patch({ side: v as StructuredFilters['side'] })}
               ariaLabel={t('Side')}
               size="sm"
+              className="w-28 shrink-0"
               groups={[
                 {
                   options: [
@@ -275,6 +279,7 @@ export function StructuredFiltersWindow({
               onValueChange={(v) => patch({ outcome: v as StructuredFilters['outcome'] })}
               ariaLabel={t('Outcome')}
               size="sm"
+              className="w-32 shrink-0"
               groups={[
                 {
                   options: [
