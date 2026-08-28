@@ -1132,7 +1132,6 @@ export function ArchiveBrowser({
     )}
     <GameListShell
       shape="panel"
-      panelClassName="shrink-0 sm:min-h-0 sm:flex-1"
       toolbar={toolbar}
       filtersLoading={months.length === 0 && loading === 'months'}
       filters={filters}
@@ -1147,7 +1146,10 @@ export function ArchiveBrowser({
       // take the games away and leave one line of text where the list
       // had been, so the panel appeared to close and reopen.
       listLoading={Boolean(month) && loading === 'games' && visibleMonthGames.length === 0}
-      listClassName="max-h-96 overflow-y-auto sm:max-h-none sm:flex-1"
+      // flex-1 at every width: the 24rem cap below sm was the old side
+      // column's share; in the all-widths tabbed pane the list owns the
+      // panel's height on a phone like every other tab's.
+      listClassName="flex-1 overflow-y-auto"
       // The end of the list asks for the next months. Older play is
       // reached by scrolling towards it, which is the same gesture that
       // used to be a minute of waiting before anything showed.
