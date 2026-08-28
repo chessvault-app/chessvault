@@ -9,6 +9,7 @@ import {
   gamesWhere,
   migrateLegacyRefgames,
   parseNativeCapabilities,
+  parseSearchQuery,
   refGamesApi,
   seedBundledRefgames,
   sweepUnfinishedBuilds,
@@ -836,6 +837,80 @@ describe('position index and explore', () => {
  * (npm run build:native, then a filtered deep search with and without
  * CHESS_NATIVE=0 must answer identically).
  */
+describe('parseSearchQuery', () => {
+  it('leaves plain text alone', () => {
+    expect(parseSearchQuery('kasparov najdorf')).toEqual({
+      text: 'kasparov najdorf',
+      terms: [],
+    });
+  });
+
+  it('splits A vs B into two player terms', () => {
+    expect(parseSearchQuery('kasparov vs karpov')).toEqual({
+      text: '',
+      terms: [
+        { kind: 'player', value: 'kasparov' },
+        { kind: 'player', value: 'karpov' },
+      ],
+    });
+    // Multi-word names ride the split whole.
+    expect(parseSearchQuery('van wely VS van der sterren').terms).toEqual([
+      { kind: 'player', value: 'van wely' },
+      { kind: 'player', value: 'van der sterren' },
+    ]);
+    // A dangling vs is just text.
+    expect(parseSearchQuery('vs karpov')).toEqual({ text: 'vs karpov', terms: [] });
+    expect(parseSearchQuery('karpov vs')).toEqual({ text: 'karpov vs', terms: [] });
+  });
+
+  it('reads the field prefixes, quotes holding spaces together', () => {
+    expect(parseSearchQuery('white:tal black:botvinnik eco:B90')).toEqual({
+      text: '',
+      terms: [
+        { kind: 'white', value: 'tal' },
+        { kind: 'black', value: 'botvinnik' },
+        { kind: 'eco', value: 'B90' },
+      ],
+    });
+    expect(parseSearchQuery('event:"tata steel" opening:najdorf')).toEqual({
+      text: '',
+      terms: [
+        { kind: 'event', value: 'tata steel' },
+        { kind: 'opening', value: 'najdorf' },
+      ],
+    });
+  });
+
+  it('normalises results and year spans', () => {
+    expect(parseSearchQuery('result:draw').terms).toEqual([
+      { kind: 'result', value: '1/2-1/2' },
+    ]);
+    expect(parseSearchQuery('result:1-0').terms).toEqual([{ kind: 'result', value: '1-0' }]);
+    expect(parseSearchQuery('year:2014').terms).toEqual([{ kind: 'year', from: 2014, to: 2014 }]);
+    expect(parseSearchQuery('year:2010-2015').terms).toEqual([
+      { kind: 'year', from: 2010, to: 2015 },
+    ]);
+  });
+
+  it('keeps an unparseable prefix as the text it is', () => {
+    // The box must never silently drop what was typed.
+    expect(parseSearchQuery('result:maybe')).toEqual({ text: 'result:maybe', terms: [] });
+    expect(parseSearchQuery('year:soon')).toEqual({ text: 'year:soon', terms: [] });
+    expect(parseSearchQuery('year:2020-2010')).toEqual({ text: 'year:2020-2010', terms: [] });
+  });
+
+  it('mixes prefixes, text and vs in one query', () => {
+    expect(parseSearchQuery('eco:C67 kasparov vs karpov')).toEqual({
+      text: '',
+      terms: [
+        { kind: 'eco', value: 'C67' },
+        { kind: 'player', value: 'kasparov' },
+        { kind: 'player', value: 'karpov' },
+      ],
+    });
+  });
+});
+
 describe('native filter negotiation', () => {
   /** A value each filter accepts — with every key answered, the whole
       of gamesWhere runs, including the keys it only reads behind
@@ -848,6 +923,7 @@ describe('native filter negotiation', () => {
       minElo: '2500',
       band: '1600-1999',
       player: 'Carlsen',
+      player2: 'Kasparov',
       side: 'white',
       outcome: 'won',
       opening: 'B90',

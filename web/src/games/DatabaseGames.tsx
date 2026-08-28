@@ -349,6 +349,7 @@ export function DatabaseGames({
   const [quickDraft, setQuickDraft] = useState({ result: 'any' as ResultFilter, minElo: 0 });
   const structuredOn =
     structured.player !== '' ||
+    structured.player2 !== '' ||
     structured.opening !== '' ||
     structured.event !== '' ||
     structured.from !== '' ||
@@ -379,6 +380,7 @@ export function DatabaseGames({
     if (st.player) params.set('player', st.player);
     if (st.player && st.side !== 'any') params.set('side', st.side);
     if (st.player && st.outcome !== 'any') params.set('outcome', st.outcome);
+    if (st.player2) params.set('player2', st.player2);
     if (st.opening) params.set('opening', st.opening);
     if (st.event) params.set('event', st.event);
     if (st.from) params.set('from', st.from);
@@ -1211,7 +1213,13 @@ export function DatabaseGames({
               inputSize="sm"
               value={query}
               onChange={(e) => onQuery(e.target.value)}
-              placeholder={t('Search players, openings, or ECO')}
+              placeholder={t('Search players, openings, ECO — or A vs B')}
+              // The box's small query language, said where the box is —
+              // a native tooltip, since this is reference text, not a
+              // control's name.
+              title={t(
+                'Plain text searches players, opening names and ECO codes. Also: A vs B · white:name · black:name · player:name · eco:B90 · opening:najdorf · event:"tata steel" · result:1-0 or result:draw · year:2014 or year:2010-2015. Every term narrows further, alongside the filters below.',
+              )}
               spellCheck={false}
               className="min-w-0 flex-1"
             />

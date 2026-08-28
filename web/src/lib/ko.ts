@@ -1869,6 +1869,11 @@ export const ko: Record<string, string> = {
   'Remove from the collection': '모음에서 제거',
   'round {n}': '{n}라운드',
 
+  Against: '상대',
+  'Any opponent': '모든 상대',
+  'Search players, openings, ECO — or A vs B': '플레이어·오프닝·ECO 검색 — 또는 A vs B',
+  'Plain text searches players, opening names and ECO codes. Also: A vs B · white:name · black:name · player:name · eco:B90 · opening:najdorf · event:"tata steel" · result:1-0 or result:draw · year:2014 or year:2010-2015. Every term narrows further, alongside the filters below.':
+    '일반 텍스트는 플레이어·오프닝 이름·ECO 코드를 검색합니다. 추가 문법: A vs B · white:이름 · black:이름 · player:이름 · eco:B90 · opening:najdorf · event:"tata steel" · result:1-0 또는 result:draw · year:2014 또는 year:2010-2015. 모든 조건은 아래 필터와 함께 AND로 좁혀 갑니다.',
   'That outcome and that result can never happen in the same game — no game will match.':
     '그 승패와 그 결과는 한 게임에서 동시에 성립할 수 없습니다 — 일치하는 게임이 없게 됩니다.',
 

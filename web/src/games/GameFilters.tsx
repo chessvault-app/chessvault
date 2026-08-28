@@ -331,6 +331,19 @@ export function StructuredFiltersWindow({
           )}
         </Field>
 
+        {/* The head-to-head slot: somebody ELSE in the same game, either
+            seat. No side or outcome of their own — the player's above
+            pin the pair's. */}
+        <Field label="Against">
+          <ClearableInput
+            inputSize="sm"
+            value={draft.player2}
+            onChange={(e) => patch({ player2: e.target.value })}
+            placeholder={t('Any opponent')}
+            className="w-full"
+          />
+        </Field>
+
         <Field label="Opening or ECO">
           <ClearableInput
             inputSize="sm"
@@ -408,6 +421,10 @@ export function StructuredFiltersWindow({
 /** The structured search constraints, all optional, all composable. */
 export interface StructuredFilters {
   player: string;
+  /** Somebody ELSE in the same game, either seat — the head-to-head
+      slot. No side or outcome of their own: the named player's pin
+      the pair's. */
+  player2: string;
   side: 'any' | 'white' | 'black';
   outcome: 'any' | 'won' | 'lost' | 'drawn';
   opening: string;
@@ -418,6 +435,7 @@ export interface StructuredFilters {
 
 export const EMPTY_STRUCTURED_FILTERS: StructuredFilters = {
   player: '',
+  player2: '',
   side: 'any',
   outcome: 'any',
   opening: '',
@@ -430,6 +448,7 @@ export const EMPTY_STRUCTURED_FILTERS: StructuredFilters = {
 export function hasStructuredFilters(f: StructuredFilters): boolean {
   return (
     f.player !== '' ||
+    f.player2 !== '' ||
     f.opening !== '' ||
     f.event !== '' ||
     f.from !== '' ||
@@ -479,6 +498,11 @@ export function matchesStructured(
         if (!ok) return false;
       }
     }
+  }
+  const player2 = f.player2.trim().toLowerCase();
+  if (player2) {
+    if (!g.white.toLowerCase().includes(player2) && !g.black.toLowerCase().includes(player2))
+      return false;
   }
   const opening = f.opening.trim().toLowerCase();
   if (opening) {

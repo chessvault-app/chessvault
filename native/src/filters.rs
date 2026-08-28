@@ -16,7 +16,8 @@ use crate::util::js_number;
 /// one. Grow this list only in the same change that teaches
 /// `games_where` the key — the test below holds the two together.
 pub const SUPPORTED_FILTERS: &[&str] = &[
-    "result", "minElo", "band", "player", "side", "outcome", "opening", "event", "from", "to",
+    "result", "minElo", "band", "player", "player2", "side", "outcome", "opening", "event",
+    "from", "to",
 ];
 
 pub struct GamesWhere {
@@ -160,6 +161,17 @@ pub fn games_where(
         }
     }
 
+    // The opponent: somebody ELSE in the same game, either seat — no
+    // side or outcome of their own (the named player's pin the pair's).
+    if let Some(player2) = get("player2")
+        .map(|p| p.trim().to_owned())
+        .filter(|p| !p.is_empty())
+    {
+        clauses.push(format!("({white_match} OR {black_match})"));
+        binds.push(Value::Text(like(&player2)));
+        binds.push(Value::Text(like(&player2)));
+    }
+
     if let Some(opening) = get("opening")
         .map(|o| o.trim().to_owned())
         .filter(|o| !o.is_empty())
@@ -207,6 +219,7 @@ mod tests {
             "minElo" => "2500",
             "band" => "1600-1999",
             "player" => "Carlsen",
+            "player2" => "Kasparov",
             "side" => "white",
             "outcome" => "won",
             "opening" => "B90",
