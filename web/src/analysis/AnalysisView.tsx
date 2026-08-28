@@ -7,7 +7,7 @@ import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useMediaQuery } from '@/lib/media';
+import { useAllPanesShown, useMediaQuery } from '@/lib/media';
 import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
@@ -46,6 +46,8 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   // Small screens show ONE pane under the board (lichess-app style); the
   // others stay mounted but hidden so the engine keeps following the board.
   const [pane, setPane] = useState<AnalysisPane>(wantExplorer ? 'explorer' : 'moves');
+  // Whether the side column shows every pane at once — see the board below.
+  const allPanes = useAllPanesShown();
   // Held here because two things open it: the header's button on a desktop
   // and the ⋯ on a phone, and they must share one dialog.
   const [loadOpen, setLoadOpen] = useState(false);
@@ -95,7 +97,11 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
       {/* Stacked layouts lead with a header like every other page; games
           opened here from elite/archives get a way back on phones. */}
       <BoardPageHeader explorer={wantExplorer} />
-      <AnalysisBoard editablePlayers />
+      {/* No navigation under the board where the moves panel below has
+          it (its copy is `max-md:hidden`, so this is the md-to-lg band
+          where the panel is a tab that may be turned off); under md the
+          bottom bar carries it and this row is hidden either way. */}
+      <AnalysisBoard editablePlayers nav={!allPanes && pane !== 'moves'} />
 
       {/* Side column. Desktop shows every pane and scrolls the column; on
           phones exactly one pane shows, fills the height left under the
