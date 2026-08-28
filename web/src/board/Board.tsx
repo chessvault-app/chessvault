@@ -3,7 +3,7 @@ import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
-import { useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
 import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/utils';
@@ -140,6 +140,10 @@ export function Board({
 }: BoardProps) {
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<CgApi | null>(null);
+  // Bumped when chessground was created LATER than the mount commit (see
+  // the held-back mount below): the push effects' deps have not changed by
+  // then, so this is what re-runs them against the new instance.
+  const [lateMount, setLateMount] = useState(0);
 
   // Callbacks live in refs so changing a handler never forces a board rebuild.
   const onMoveRef = useRef(onMove);
@@ -234,8 +238,39 @@ export function Board({
       // A local single-user vault never needs premoves.
       premovable: { enabled: false },
     };
-    api.current = Chessground(host.current, config);
-    if (apiRef) apiRef.current = api.current;
+    const el = host.current;
+    const create = (): void => {
+      api.current = Chessground(el, config);
+      if (apiRef) apiRef.current = api.current;
+    };
+    // Held-back mount: chessground measures its wrap ONCE, at creation,
+    // and a board mounting while an ancestor transform is still scaling
+    // it — a desktop dialog zooming in from 95% with the board's chunk
+    // already cached — bakes that scaled rect in, then the settle
+    // listener below snaps it to size when the animation ends: a board
+    // that visibly resizes as the window lands (lanph3re). An ancestor
+    // scale is the one case layout and measurement disagree, so it is
+    // detectable: offsetWidth is the layout box, getBoundingClientRect
+    // the transformed one. When they disagree at mount, wait for them to
+    // agree (a frame poll — the animations are ~100ms) and create then:
+    // the board's first paint is at its true size, under the window's
+    // own fade. The frame cap covers a transform that never settles;
+    // there the old behaviour (mount scaled, settle corrects) returns.
+    let raf = 0;
+    const misscaled = (): boolean =>
+      el.offsetWidth > 0 && Math.abs(el.getBoundingClientRect().width - el.offsetWidth) > 1.5;
+    if (misscaled()) {
+      let frames = 0;
+      const poll = (): void => {
+        if (!misscaled() || ++frames > 30) {
+          create();
+          // The push effects already ran against a null api this commit;
+          // rerun them against the instance that now exists.
+          setLateMount((n) => n + 1);
+        } else raf = requestAnimationFrame(poll);
+      };
+      raf = requestAnimationFrame(poll);
+    } else create();
     // chessground caches the board's rect and drops the cache only on
     // document scroll and window resize — a layout shift that MOVES the
     // board without either (the eval bar row appearing above it when the
@@ -245,23 +280,19 @@ export function Board({
     // instead — capture phase on the wrap, so it beats chessground's own
     // handlers on the same events; the memo refills on first read, one
     // getBoundingClientRect per gesture.
-    const el = host.current;
     const refreshBounds = (): void => api.current?.state.dom.bounds.clear();
     for (const ev of ['touchstart', 'mousedown'] as const)
       el.addEventListener(ev, refreshBounds, { capture: true, passive: true });
-    // The same staleness, but for the PIECES: a board that mounts while an
-    // ancestor is still animating open measures the mid-animation rect, and
-    // every piece translate is computed from it — permanently, since no
-    // resize event ever fires. The games hunt's "Set up a position" dialog
-    // zooms in from 95% over 100ms, and with the editor chunk already
-    // cached the board mounts inside that window: measured pieces 0.35 of
-    // a square off at the far files, and still off a second later. (The
-    // first open looked fine only because the lazy chunk outlived the
-    // animation.) transitionend/animationend bubble, so listen once on the
-    // document and re-render when an ANCESTOR's animation settles having
-    // actually changed the board's measured size — one rect read per
-    // settle, and redrawAll (the coordinates toggle's call, below) only
-    // when it moved.
+    // The belt under the held-back mount above: an ancestor animation that
+    // BEGINS after the board exists (or one the frame cap gave up on)
+    // leaves the same baked-in rect, and no resize ever fires — the wrap's
+    // LAYOUT size never changed, so chessground's own ResizeObserver stays
+    // quiet. Measured before the held-back mount existed: pieces 0.35 of a
+    // square off at the far files, permanently. transitionend/animationend
+    // bubble, so listen once on the document and re-render when an
+    // ANCESTOR's animation settles having actually changed the board's
+    // measured size — one rect read per settle, and redrawAll (the
+    // coordinates toggle's call, below) only when it moved.
     const settle = (e: Event): void => {
       const target = e.target;
       const board = api.current;
@@ -280,6 +311,7 @@ export function Board({
     for (const ev of ['animationend', 'transitionend'] as const)
       document.addEventListener(ev, settle, { capture: true, passive: true });
     return () => {
+      cancelAnimationFrame(raf);
       for (const ev of ['animationend', 'transitionend'] as const)
         document.removeEventListener(ev, settle, { capture: true });
       for (const ev of ['touchstart', 'mousedown'] as const)
@@ -344,18 +376,21 @@ export function Board({
     // Read at line ~179; leaving it out froze a castle-style change on any
     // already-mounted board until the next position change.
     castleStyle,
+    // A held-back mount created chessground AFTER this effect's first run
+    // saw a null api; the bump replays it against the instance.
+    lateMount,
   ]);
 
   // User-owned shapes (arrows/circles saved into the study).
   useEffect(() => {
     api.current?.setShapes(shapes ? [...shapes] : []);
-  }, [shapes]);
+  }, [shapes, lateMount]);
 
   // App-owned shapes (engine best-move arrows), kept separate so drawing over
   // them never overwrites the user's own annotations.
   useEffect(() => {
     api.current?.setAutoShapes(autoShapes ? [...autoShapes] : []);
-  }, [autoShapes]);
+  }, [autoShapes, lateMount]);
 
   return (
     <div
