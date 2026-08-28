@@ -440,16 +440,24 @@ export function DatabaseGames({
   /** Whether the query panel is open — the issues box holds its
       tongue about the token still being typed while it is. */
   const [hintsOpen, setHintsOpen] = useState(false);
-  /** Live values for the panel: players from THIS database's derived
-      lookup, openings and ECO from the vendored catalogue. */
+  /** Live values for the panel: players and tournaments from THIS
+      database's derived lookups, openings and ECO from the vendored
+      catalogue. */
   const suggestValues = useCallback(
     async (field: string, value: string): Promise<ValueSuggestion[]> => {
       if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
-      if (field === 'player' || field === 'opponent' || field === 'white' || field === 'black') {
+      if (
+        field === 'player' ||
+        field === 'opponent' ||
+        field === 'white' ||
+        field === 'black' ||
+        field === 'event'
+      ) {
         // An empty value still asks: the panel opens on the database's
         // biggest names before a character is typed.
         try {
           const params = new URLSearchParams({ q: value.trim() });
+          if (field === 'event') params.set('field', 'event');
           if (curDb) params.set('db', curDb);
           const body = await api<{ names: { name: string; games: number }[] }>(
             `/api/refgames/suggest?${params.toString()}`,

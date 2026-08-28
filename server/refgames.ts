@@ -452,6 +452,15 @@ function hasLookups(db: InstanceType<typeof Database>): boolean {
   );
 }
 
+/** The tournaments lookup arrived after players/openings — a database
+    can carry those and still predate this one. */
+function hasEvents(db: InstanceType<typeof Database>): boolean {
+  return (
+    db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'events'").get() !==
+    undefined
+  );
+}
+
 /**
  * Derive the lookup tables into a database that predates them, in place.
  *
@@ -466,7 +475,7 @@ function upgradeInPlace(file: string): void {
   let probe: InstanceType<typeof Database> | null = null;
   try {
     probe = new Database(file, { readonly: true, fileMustExist: true });
-    const done = hasLookups(probe);
+    const done = hasLookups(probe) && hasEvents(probe);
     probe.close();
     if (done) return;
   } catch {
@@ -1284,8 +1293,24 @@ export function refGamesApi(
   api.get('/refgames/suggest', (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ names: [] });
-    if (!hasLookups(found.db)) return c.json({ names: [] });
     const q = (c.req.query('q') ?? '').trim();
+    // Tournaments answer from their own lookup — a contains match, not
+    // the players' prefix, because a tournament is remembered by any
+    // word of its name ("olympiad" must find "42nd Olympiad").
+    if (c.req.query('field') === 'event') {
+      if (!hasEvents(found.db)) return c.json({ names: [] });
+      const rows = (
+        q
+          ? found.db
+              .prepare(
+                'SELECT event AS name, games FROM events WHERE event LIKE ? ORDER BY games DESC LIMIT 50',
+              )
+              .all(`%${q}%`)
+          : found.db.prepare('SELECT event AS name, games FROM events ORDER BY games DESC LIMIT 50').all()
+      ) as { name: string; games: number }[];
+      return c.json({ names: rows });
+    }
+    if (!hasLookups(found.db)) return c.json({ names: [] });
     // An empty prefix answers with the database's biggest names — the
     // panel opens on them before a character is typed.
     const rows = (

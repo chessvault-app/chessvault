@@ -74,6 +74,10 @@ export const REFGAMES_LOOKUPS = `
     SELECT opening, eco, COUNT(*) AS games FROM games
     WHERE opening IS NOT NULL OR eco IS NOT NULL
     GROUP BY opening, eco;
+  CREATE TABLE IF NOT EXISTS events AS
+    SELECT event, COUNT(*) AS games FROM games
+    WHERE event IS NOT NULL
+    GROUP BY event;
 `;
 
 /** True when the table exists (a database may predate part of the schema). */
@@ -91,9 +95,11 @@ export function tune(db: Db): string[] {
   if (has(db, 'games')) {
     db.exec(REFGAMES_INDEXES);
     applied.push('idx_games_players');
-    if (!has(db, 'players')) {
+    // IF NOT EXISTS throughout, so a file that has players but predates
+    // the events table (added later) derives just what it lacks.
+    if (!has(db, 'players') || !has(db, 'events')) {
       db.exec(REFGAMES_LOOKUPS);
-      applied.push('players', 'openings');
+      applied.push('players', 'openings', 'events');
     }
   }
   // The per-move sums the unfiltered explore answers from — derived from
