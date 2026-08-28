@@ -13,6 +13,7 @@ import { placeNear } from '@/lib/floating';
 
 import { Button } from '@/components/ui/button';
 
+import { ResultBadge } from '@/components/result-badge';
 import { SideDot } from '@/components/side-dot';
 
 import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
@@ -525,12 +526,9 @@ export function GameRow({
 }
 
 /**
- * The result stacked one score per line, mirroring the player lines it
- * sits beside. The winner's digit carries the outcome colour from the
- * user's perspective (green won, red lost) and is bold either way, so
- * the signal isn't colour-only; games without a known side just
- * brighten the winner. This replaced the old leading result dot — same
- * information, no extra column.
+ * The games lists' name for the one result chip the app has — the
+ * shared ResultBadge, tinted from the player's own point of view (see
+ * components/result-badge for the grammar and why it is one chip).
  */
 export function ResultScore({
   result,
@@ -539,33 +537,7 @@ export function ResultScore({
   result: string;
   userSide: 'white' | 'black' | null;
 }) {
-  const parts = result.split('-');
-  const winner = result === '1-0' ? 'white' : result === '0-1' ? 'black' : null;
-  // Read at a glance, in one tag, instead of two faint characters stacked
-  // in a 24px column: at that size neither the score nor which side got it
-  // survived, and the pair read as one smudge down the side of the list.
-  // Tinted from the player's own point of view where there is one — a win
-  // and a loss are not the same fact, and the list is mostly their games.
-  const tone =
-    parts.length !== 2 || !winner
-      ? 'bg-accent text-muted-foreground'
-      : !userSide
-        ? 'bg-accent text-foreground'
-        : userSide === winner
-          ? 'bg-good/15 text-good'
-          : 'bg-destructive/15 text-destructive';
-  return (
-    <span
-      title={fmtResult(result)}
-      className={cn(
-        'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-semibold',
-        'tabular-nums leading-4',
-        tone,
-      )}
-    >
-      {fmtResult(result)}
-    </span>
-  );
+  return <ResultBadge result={result} userSide={userSide} />;
 }
 
 /**

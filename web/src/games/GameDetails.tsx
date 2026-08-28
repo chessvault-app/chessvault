@@ -164,7 +164,10 @@ function GameDetailsContent({
 
   return (
     <div className={cn('flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto', className)}>
-      <div className="flex items-start justify-between gap-3">
+      {/* items-center, not start: the result tag reads as the verdict
+          on the PAIR of players, so it sits level with the pair, not
+          with whoever happens to be White. */}
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           {player(summary.white, summary.whiteElo, 'white')}
           {player(summary.black, summary.blackElo, 'black')}
