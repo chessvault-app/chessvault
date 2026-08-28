@@ -113,6 +113,20 @@ What a built database answers, and from where:
   players and openings seek through small derived lookup tables, pages
   seek by id, and a filtered count stops at "10,000+" rather than
   scanning millions of rows to finish the digit.
+- The same browser **hunts by position or material**. The scan-search
+  toggle beside the search box unfolds the controls. A position hunt
+  takes a FEN — pasted, or set up on a board — and how closely to
+  match: exact position, same pawns, same pawn files, or same material,
+  the fixed relaxation ladder (`docs/deferred.md` records why it is a
+  ladder and not a query language). A material hunt picks an endgame
+  situation — the presets are data, `web/src/games/endgames.json`, from
+  pawn endings to "a queen up" — or a custom per-piece, per-side count
+  editor, plus how long the material must hold (any moment, 4+ or 8+
+  moves). Hits stream in as the scan runs, with progress; the filter
+  row above narrows a hunt exactly as it narrows the text search; and
+  typing a text search leaves the hunt. The explorer's own **Find this
+  position in the databases browser** button hands the current position
+  across, prefilled and already running.
 - The **explorer** answers any position in the first 30 plies from
   precomputed per-move sums — including sliced by the **Level** band
   (200-point buckets of the game's lower rating), so "what do players
@@ -163,6 +177,62 @@ way the bundled starter is. It is an ordinary database from then
 on, one name among however many are built beside it, and deleting it
 works like deleting any other. A server install gets no seed; it takes
 the commit, not the release artefacts.
+
+## How the search answers
+
+The structure behind the surfaces above — what each kind of question
+reads, and why none of them walks ten million rows to say so. The byte
+layouts live as spec comments in the files named here, each pinned
+against the Rust twin by golden fixtures; this section is the map.
+
+**Text search resolves against small tables before touching big ones.**
+Distinct players and openings number in the tens of thousands whatever
+the game count, so the query runs against those derived lookup tables
+first, and what resolves decides the plan. Nothing resolving means the
+answer is empty for the cost of a lookup-table LIKE — the old
+worst case, a full walk to discover no match. A rare name (the resolved
+rows' own game counts say so) is **union-seeked**: its few games are
+fetched through the per-column indexes rather than scanned for. A
+common name keeps the plain walk, which fills its page near the top and
+stops. Pages seek by keyset (last id seen), never OFFSET, and a
+filtered count gives up at 10,000+ instead of finishing the digit.
+
+**Every game carries a packed scan-index** (`shared/scanPack.ts`): one
+blob per game holding, per position, the low 32 bits of its Zobrist
+key and a pawn-structure hash; per ply, what the move did to the
+material; and a twelve-byte **count envelope** — the game's material
+extremes, letting a scan reject a whole game in constant time when the
+target's counts could never overlap it. The blob is written once, at
+index time, so a scan reads bytes instead of parsing SAN and replaying.
+
+**Exact position search is a lookup, not a scan.** The inverted key
+index (`shared/keyIndex.ts`) is derived entirely from the packs — every
+position's 32-bit key, inverted into sorted per-bucket runs — so an
+exact hunt reads one bucket and binary-searches it: what desktop
+databases call a search booster. It answers only key equality; and a
+32-bit key is a prefilter, not an answer, so the few candidate games
+are replayed through the reference implementation before anything is
+returned. The index is rebuilt whole whenever the packs are.
+
+**The relaxed rungs and material hunts scan the packs**, because no
+inversion can pre-answer them. The ladder (`shared/scanMatch.ts`,
+Scid's) loosens where things stand — exact key, pawns on their squares,
+pawns on their files, bare material — but never whose turn it is; the
+material search has no target position at all, just per-piece count
+ranges, white-minus-black difference ranges, and how many plies the
+situation must hold. The envelope skips whole games, the pack gates
+the rest, and every surviving candidate is settled the same way the
+exact route settles: that one game replayed and verified. Nothing is
+answered from the pack alone.
+
+**Fast search is residency, not a different algorithm.** Opting a
+database in loads its packs into one worker thread that owns them
+(`server/scanWorker.ts`) — one worker per database, requests queueing
+into it, idle-evicted after 30 minutes; inside, a fixed set of shard
+threads set by the machine's cores (never by request volume) divides
+the load, the scan and the in-place verification. Without residency
+the same hunts stream through the native binary, or plain JavaScript
+without that — slower, never unavailable.
 
 ## Scale and hardware
 
