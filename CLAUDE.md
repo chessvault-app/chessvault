@@ -148,7 +148,9 @@ The point is to catch drift while it is one line, not at the moment of
 publishing.
 
 **Read the docs and fix what has gone stale.** `README.md`, everything in
-`docs/`, `scripts/ml/README.md`, `desktop/README.md`. Docs rot silently —
+`docs/`, `scripts/ml/README.md`, `desktop/README.md`, and the published
+site's user-facing pages — `web/landing/index.html` and
+`web/landing/manual.html`, both languages. Docs rot silently —
 a number that was true, a file that has been renamed, a limitation that
 has been fixed — and a wrong doc is worse than a missing one because it
 is believed. Add the release's entry to `docs/update-log.md` while you
