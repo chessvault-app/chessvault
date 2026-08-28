@@ -44,6 +44,71 @@ import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
 /**
+ * The search box's query language, listed under the box while it has
+ * focus — the way GitHub's search suggests its qualifiers. `insert` is
+ * what a click puts into the box (replacing the half-typed token);
+ * the panel never takes focus, so typing is uninterrupted.
+ */
+const QUERY_OPS: { insert: string; token: string; sample: string; desc: string }[] = [
+  { insert: 'vs ', token: 'vs', sample: 'A vs B', desc: 'Games between two players' },
+  { insert: 'player:', token: 'player:', sample: 'player:name', desc: 'This player, either side' },
+  { insert: 'white:', token: 'white:', sample: 'white:name', desc: 'This player as White' },
+  { insert: 'black:', token: 'black:', sample: 'black:name', desc: 'This player as Black' },
+  { insert: 'opening:', token: 'opening:', sample: 'opening:najdorf', desc: 'Opening name contains' },
+  { insert: 'eco:', token: 'eco:', sample: 'eco:B90', desc: 'ECO code starts with' },
+  { insert: 'event:', token: 'event:', sample: 'event:"tata steel"', desc: 'Tournament name contains — quotes hold spaces' },
+  { insert: 'result:', token: 'result:', sample: 'result:1-0', desc: 'Exact score — 1-0, 0-1 or draw' },
+  { insert: 'year:', token: 'year:', sample: 'year:2010-2015', desc: 'A year, or a span of years' },
+];
+
+/**
+ * The suggestion panel itself. Plain text keeps plain behaviour, so
+ * the panel is reference, not a gate: it lists every operator while
+ * the box is empty and narrows to the one being typed. mousedown
+ * (not click) with preventDefault, or the press would blur the input
+ * and close the panel before the click could land.
+ */
+function QueryHints({
+  query,
+  onPick,
+}: {
+  query: string;
+  onPick: (nextQuery: string) => void;
+}) {
+  const lastToken = query.slice(query.lastIndexOf(' ') + 1).toLowerCase();
+  const shown = QUERY_OPS.filter(
+    (op) => lastToken === '' || op.token.startsWith(lastToken),
+  );
+  if (shown.length === 0) return null;
+  return (
+    <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
+      <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
+        {t('Narrow the search with')}
+      </p>
+      <ul>
+        {shown.map((op) => (
+          <li key={op.token}>
+            <button
+              type="button"
+              tabIndex={-1}
+              className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const head = query.slice(0, query.length - lastToken.length);
+                onPick(`${head}${op.insert}`);
+              }}
+            >
+              <span className="text-foreground shrink-0 font-mono text-xs">{op.sample}</span>
+              <span className="text-muted-foreground min-w-0 truncate text-xs">{t(op.desc)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
  * The details panel's action pair for a reference row, with its own
  * added-state: the node lives in the page's selection state, so it
  * cannot read the pane's `added` set after the fact — what it CAN do is
@@ -426,6 +491,9 @@ export function DatabaseGames({
    * that ends without its `done` frame FAILED rather than found
    * nothing, and a stale sequence number abandons frames mid-read.
    */
+  /** The query-language panel under the search box, open while the box
+      has focus. */
+  const [hintsOpen, setHintsOpen] = useState(false);
   const [huntOpen, setHuntOpen] = useState(false);
   const [huntKind, setHuntKind] = useState<'position' | 'material'>('position');
   const [huntFen, setHuntFen] = useState('');
@@ -1209,20 +1277,22 @@ export function DatabaseGames({
       toolbar={
         <div className="flex w-full flex-col gap-2">
           <div className="flex w-full items-center gap-1.5">
-            <SearchInput
-              inputSize="sm"
-              value={query}
-              onChange={(e) => onQuery(e.target.value)}
-              placeholder={t('Search players, openings, ECO — or A vs B')}
-              // The box's small query language, said where the box is —
-              // a native tooltip, since this is reference text, not a
-              // control's name.
-              title={t(
-                'Plain text searches players, opening names and ECO codes. Also: A vs B · white:name · black:name · player:name · eco:B90 · opening:najdorf · event:"tata steel" · result:1-0 or result:draw · year:2014 or year:2010-2015. Every term narrows further, alongside the filters below.',
-              )}
-              spellCheck={false}
-              className="min-w-0 flex-1"
-            />
+            <div className="relative min-w-0 flex-1">
+              <SearchInput
+                inputSize="sm"
+                value={query}
+                onChange={(e) => onQuery(e.target.value)}
+                onFocus={() => setHintsOpen(true)}
+                onBlur={() => setHintsOpen(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setHintsOpen(false);
+                }}
+                placeholder={t('Search database…')}
+                spellCheck={false}
+                className="w-full"
+              />
+              {hintsOpen && <QueryHints query={query} onPick={onQuery} />}
+            </div>
             <Button
               variant="ghost"
               size="icon-sm"
