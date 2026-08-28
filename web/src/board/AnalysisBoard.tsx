@@ -425,7 +425,7 @@ function PlayerBar({
       ) : (
         <span className="text-foreground min-w-0 truncate text-base font-medium">{name}</span>
       )}
-      {elo && <span className="text-muted-foreground text-sm">{elo}</span>}
+      {elo && <span className="text-muted-foreground font-mono text-sm">{elo}</span>}
       {clock !== undefined && (
         <span
           className={cn(

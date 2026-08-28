@@ -145,7 +145,7 @@ function GameDetailsContent({
         {name}
       </span>
       {elo ? (
-        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{elo}</span>
+        <span className="text-muted-foreground shrink-0 font-mono text-xs">{elo}</span>
       ) : null}
     </p>
   );

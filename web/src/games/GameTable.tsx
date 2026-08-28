@@ -328,11 +328,11 @@ export function GameTableRow({
         </span>
       )}
       {name(game.white, 'white')}
-      <span className={cn(quiet, 'text-right tabular-nums')}>
+      <span className={cn(quiet, 'text-right font-mono')}>
         {game.whiteElo || ''}
       </span>
       {name(game.black, 'black')}
-      <span className={cn(quiet, 'text-right tabular-nums')}>
+      <span className={cn(quiet, 'text-right font-mono')}>
         {game.blackElo || ''}
       </span>
       <ResultScore result={game.result} userSide={game.userSide} />
