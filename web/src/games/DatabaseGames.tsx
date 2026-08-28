@@ -31,6 +31,8 @@ import {
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { EDITOR_WINDOW_SIZE } from '@/components/layout';
+import { cn } from '@/lib/utils';
 import { useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell } from './GameListShell';
@@ -492,6 +494,8 @@ export function DatabaseGames({
       nobody has a FEN of — the editor validates, so only a legal
       position ever comes back through onUse. */
   const [settingUp, setSettingUp] = useState(false);
+  /** Which page of the board window's chain is up — drives its title row. */
+  const [chainPage, setChainPage] = useState<{ title: string; back: () => void } | null>(null);
   const [huntRows, setHuntRows] = useState<RefGame[] | null>(null);
   const [hunting, setHunting] = useState(false);
   const [huntProgress, setHuntProgress] = useState<{ scanned: number; total: number } | null>(null);
@@ -1402,17 +1406,24 @@ export function DatabaseGames({
           if (!open) setSettingUp(false);
         }}
       >
-        {/* The same full window the reference sheet uses: the editor is
-            a board and its tools, and a content-sized card would grow
-            under the hand placing pieces on it. NOT force-stacked: a full
-            window on a desktop has the width for the editor's own wide
-            layout, whose side column keeps the Position panel in view —
-            forcing the phone layout put those fields behind a Position
-            button whose window PARKED this one, a full-screen board
-            blinking out for a small card (lanph3re: the transition
-            distracts). Narrow viewports still stack via the media query. */}
-        <DialogContent title="Set up a position" className="max-sm:h-[88%]" size="full">
-          <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* EXPERIMENT (nested windows, test 2 — lanph3re): the window
+            holds ONLY the board at every width — force-stacked, so the
+            wide side column and its second field set never appear — and
+            wears EDITOR_WINDOW_SIZE, the one rect the whole chain
+            shares: this window, the Position window behind its button,
+            the Load page behind that, the picture window after. A page
+            parks its parent, and four windows in one rect make each
+            park a content swap in a frame that never moves. */}
+        <DialogContent
+          // The title row IS the chain's page header: the editor tells
+          // us which page is up (onChainChange below) and the row turns
+          // with it — name and back chevron — while the frame holds.
+          title={chainPage?.title ?? 'Set up a position'}
+          onBack={chainPage?.back}
+          className={cn('max-sm:h-[88%]', EDITOR_WINDOW_SIZE)}
+          size="full"
+        >
+          <div className="force-stacked flex min-h-0 flex-1 flex-col overflow-y-auto">
             <Suspense
               fallback={<Spinner className="text-muted-foreground m-auto size-5" />}
             >
@@ -1420,6 +1431,13 @@ export function DatabaseGames({
                 key={huntFen.trim() || 'blank'}
                 initialFen={huntFen.trim() || undefined}
                 useLabel={t('Search')}
+                // Pawns-only sketches are real queries for the relaxed
+                // rungs (pawn structure, material); legality must not
+                // bar the Search button here (lanph3re).
+                anyPosition
+                // The chain pages inside this window (see EditorView.paged).
+                paged
+                onChainChange={setChainPage}
                 onUse={(fen) => {
                   setHuntFen(fen);
                   setSettingUp(false);

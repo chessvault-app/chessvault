@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chess, normalizeMove } from 'chessops/chess';
-import { makeFen } from 'chessops/fen';
+import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
 import type { NormalMove, Role } from 'chessops/types';
 import { MATCH_MODES, parseMaterialSpec } from '../shared/scanMatch.ts';
@@ -161,6 +161,30 @@ describe('pack scan vs replay scan', () => {
       }
     }
     expect(hits).toBeGreaterThan(20);
+  });
+
+  it('builds a relaxed target from a kingless setup — a pawn-structure sketch', () => {
+    // The relaxed rungs never read what legality guards, so a raw setup
+    // is a legitimate target for them (the editor's Search accepts any
+    // arrangement for this reason). The signature must match the same
+    // structure computed from a board that HAS kings: kings are implicit
+    // in the count vectors and absent from the pawn terms.
+    const sketch = parseFen('8/2p5/8/8/8/2P5/8/8 w - - 0 1').unwrap();
+    const target = positionTarget(sketch, 'files');
+    const legal = positionTarget(
+      Chess.fromSetup(parseFen('4k3/2p5/8/8/8/2P5/8/4K3 w - - 0 1').unwrap()).unwrap(),
+      'files',
+    );
+    expect(target.sig).toBe(legal.sig);
+    expect(target.wCounts).toEqual([1, 0, 0, 0, 0]);
+    expect(target.blackToMove).toBe(false);
+    // The men gates count the ABSENT kings as present — every position
+    // a game passes through has both, so the kingless sketch and its
+    // with-kings twin must gate identically, or the sketch matches
+    // nothing, ever, with no error to say so.
+    expect(target.w).toBe(legal.w);
+    expect(target.b).toBe(legal.b);
+    expect(target.w).toBe(2);
   });
 
   it('refuses a malformed pack instead of answering from it', () => {
