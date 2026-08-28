@@ -47,7 +47,7 @@ export interface PageDiagramRecord {
  * pdf.js holds what it renders in memory, and a phone tab is killed far
  * below this.
  */
-export const MAX_PDF_BYTES = 300 * 1024 * 1024;
+export const MAX_PDF_BYTES = 500 * 1024 * 1024;
 
 /**
  * The shelf's list, remembered between pages the way the puzzle shelf's

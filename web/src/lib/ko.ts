@@ -1766,7 +1766,7 @@ export const ko: Record<string, string> = {
   'Upload cancelled': '업로드가 취소되었습니다',
   'The PDF could not be kept in the library: {reason}':
     'PDF를 서재에 보관하지 못했습니다: {reason}',
-  'that PDF is too big (300 MB cap)': 'PDF가 너무 큽니다 (최대 300 MB)',
+  'that PDF is too big (500 MB cap)': 'PDF가 너무 큽니다 (최대 500 MB)',
   'that file is not a PDF': 'PDF 파일이 아닙니다',
   'no such page': '그런 페이지가 없습니다',
   'not a library book': '서재의 책이 아닙니다',
