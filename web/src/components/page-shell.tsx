@@ -73,7 +73,14 @@ export function PageShell({
     <div
       className={cn(
         'h-full min-h-0',
-        scroll && 'overflow-y-auto [scrollbar-gutter:stable_both-edges]',
+        // The gutter is a FINE-pointer fix (the 5px centring artifact
+        // above needs a drawn scrollbar to exist). A phone's bars are
+        // overlay and its pages must meet the same 16px edge as the
+        // pages that scroll themselves — and whether scrollbar-gutter
+        // reserves space for overlay bars varies by browser, so the
+        // reservation is scoped by pointer rather than trusted to
+        // overlay semantics.
+        scroll && 'overflow-y-auto pointer-fine:[scrollbar-gutter:stable_both-edges]',
       )}
     >
       <div
