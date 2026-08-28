@@ -1411,14 +1411,14 @@ export function DatabaseGames({
           if (!open) setSettingUp(false);
         }}
       >
-        {/* EXPERIMENT (nested windows, test 2 — lanph3re): the window
-            holds ONLY the board at every width — force-stacked, so the
-            wide side column and its second field set never appear — and
-            wears EDITOR_WINDOW_SIZE, the one rect the whole chain
-            shares: this window, the Position window behind its button,
-            the Load page behind that, the picture window after. A page
-            parks its parent, and four windows in one rect make each
-            park a content swap in a frame that never moves. */}
+        {/* The window holds ONLY the board at every width —
+            force-stacked, so the wide side column and its second field
+            set never appear — and wears EDITOR_WINDOW_SIZE, the one
+            rect the whole page chain lives in: board, Position, Load,
+            picture, each a content page of THIS window (see
+            EditorView.paged), named by this title row. The settled
+            design (lanph3re): one window, one frame, instant page
+            swaps. */}
         <DialogContent
           // The title row IS the chain's page header: the editor tells
           // us which page is up (onChainChange below) and the row turns
