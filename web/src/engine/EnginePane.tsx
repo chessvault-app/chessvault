@@ -311,7 +311,7 @@ function CurrentLine() {
         type="button"
         onClick={() => setCursor(id)}
         className={cn(
-          'rounded-sm px-1 py-0.5 text-sm transition-colors duration-100',
+          'font-moves rounded-sm px-1 py-0.5 text-sm transition-colors duration-100',
           // The one you are on carries the accent, the same way a hovered
           // ply in a variation above does — one grammar for "this move" in
           // the whole panel.

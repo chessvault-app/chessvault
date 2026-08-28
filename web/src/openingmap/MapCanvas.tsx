@@ -1213,6 +1213,7 @@ export function MapCanvas({
                 <text
                   x={0}
                   y={r + 12 * inv}
+                  className="font-moves"
                   fontSize={10.5 * inv}
                   fontWeight={600}
                   textAnchor="middle"
