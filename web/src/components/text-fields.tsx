@@ -34,6 +34,15 @@ const cancelSizes = {
 
 export interface ClearableInputProps extends InputProps {
   inputClassName?: string;
+  /**
+   * A leading addon inside the field's border — an InputGroupButton or a
+   * badge, the shadcn buttons-inside-inputs shape. At the START, never the
+   * end: the X below owns the right edge, and the two would sit on each
+   * other. (Grown for the hunt bar's board button, which stood beside the
+   * FEN field as a lone unlabelled icon; inside the border it reads as
+   * "the other way to fill this field".)
+   */
+  start?: ReactNode;
 }
 
 /**
@@ -55,6 +64,7 @@ export function ClearableInput({
   value,
   defaultValue,
   ref,
+  start,
   ...props
 }: ClearableInputProps) {
   const [focused, setFocused] = useState(false);
@@ -66,6 +76,7 @@ export function ClearableInput({
 
   return (
     <InputGroup inputSize={inputSize} className={cn('inline-flex w-auto', className)}>
+      {start && <InputGroupAddon>{start}</InputGroupAddon>}
       <InputGroupInput
         ref={(node) => {
           self.current = node;

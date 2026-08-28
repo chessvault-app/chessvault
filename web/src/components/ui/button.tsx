@@ -17,8 +17,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  *   - bigger hit areas on coarse pointers (`pointer-coarse:`): 28px icon
  *     buttons are fine under a mouse and hostile under a thumb. Where
  *     that widens a size's padding it widens the icon side too, or the
- *     registry's trim below would grow with it — `sm` at `px-3` against
- *     an untouched `pl-1.5` was a 6px lean where the registry draws 4;
+ *     icon-side trim below would grow with it;
+ *   - `sm` trims its icon side by 2px, not the registry's 4. Every other
+ *     size trims exactly 2 (`xs` px-2→pl-1.5, `default`/`lg` px-2.5→pl-2);
+ *     the registry's `sm` alone pairs px-2.5 with pl-1.5, and the extra
+ *     2px read as an off-centre label on the filled hunt Search button
+ *     (measured: icon 7px off the left edge, text 11px off the right).
+ *     The coarse widths keep the same 2px trim (px-3 → pl-2.5);
  *   - `title` as a Tooltip, and as the accessible name of an icon-only
  *     button; `type="button"` unless told otherwise;
  *   - `not-[.w-full]` on the registry's icon-side padding trim. That trim
@@ -51,7 +56,7 @@ const buttonVariants = cva(
         default:
           'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:not-[.w-full]:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pl-2 pointer-coarse:h-9',
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:not-[.w-full]:pr-1.5 has-data-[icon=inline-start]:not-[.w-full]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:not-[.w-full]:pr-1.5 has-data-[icon=inline-start]:not-[.w-full]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5 pointer-coarse:h-9 pointer-coarse:px-3 has-data-[icon=inline-end]:not-[.w-full]:pointer-coarse:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pointer-coarse:pl-2",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:not-[.w-full]:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pl-2 [&_svg:not([class*='size-'])]:size-3.5 pointer-coarse:h-9 pointer-coarse:px-3 has-data-[icon=inline-end]:not-[.w-full]:pointer-coarse:pr-2.5 has-data-[icon=inline-start]:not-[.w-full]:pointer-coarse:pl-2.5",
         lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:not-[.w-full]:pr-2 has-data-[icon=inline-start]:not-[.w-full]:pl-2',
         icon: 'size-8 pointer-coarse:size-11',
         'icon-xs':
