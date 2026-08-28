@@ -1187,11 +1187,14 @@ export function DatabaseGames({
             // between the field and the match select read as belonging to
             // neither. Leading the field, it is the other way to fill it.
             start={
-              // secondary, not the addon's ghost: inside a field a bare
+              // outline, not the addon's ghost: inside a field a bare
               // icon reads as the field's own decoration (the search
-              // box's magnifier) — a filled chip says pressable.
+              // box's magnifier), and the secondary fill sat within a
+              // few percent of the field's own dark surface — measured
+              // invisible. The BORDER is what says a control is nested
+              // in a control.
               <InputGroupButton
-                variant="secondary"
+                variant="outline"
                 size="icon-xs"
                 title={t('Set the position up on a board')}
                 onClick={() => setSettingUp(true)}
