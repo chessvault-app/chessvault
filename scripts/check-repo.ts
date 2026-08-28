@@ -174,11 +174,19 @@ for (const [where, got] of [
 // The crate notice against the lockfile it is generated from. Names and
 // versions only, read out of the notice's own "Crates covered:" manifest,
 // so this needs neither cargo nor the registry — it runs anywhere.
+//
+// The manifest is the block up to the first blank line, which means the
+// newlines have to be normalised before it is split. The file is committed
+// LF, but a Windows checkout with core.autocrlf=true hands it back CRLF,
+// and then the blank line never matches: the whole rest of the file reads
+// as the manifest, and every separator rule, "--- LICENSE-APACHE ---"
+// header and line of licence text counts as a crate no longer in the
+// lockfile. That is 7178 phantom crates against a real 48.
 const CRATE_LOCK = 'native/Cargo.lock';
 const CRATE_NOTICE = 'licenses/rust-crates.txt';
 if (existsSync(CRATE_LOCK) && existsSync(CRATE_NOTICE)) {
   const wanted = lockCrates(readFileSync(CRATE_LOCK, 'utf-8')).map((c) => `${c.name} ${c.version}`);
-  const notice = readFileSync(CRATE_NOTICE, 'utf-8');
+  const notice = readFileSync(CRATE_NOTICE, 'utf-8').replace(/\r\n/g, '\n');
   const listed = notice
     .split('Crates covered:')[1]
     ?.split('\n\n')[0]
