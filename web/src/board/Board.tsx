@@ -249,7 +249,39 @@ export function Board({
     const refreshBounds = (): void => api.current?.state.dom.bounds.clear();
     for (const ev of ['touchstart', 'mousedown'] as const)
       el.addEventListener(ev, refreshBounds, { capture: true, passive: true });
+    // The same staleness, but for the PIECES: a board that mounts while an
+    // ancestor is still animating open measures the mid-animation rect, and
+    // every piece translate is computed from it — permanently, since no
+    // resize event ever fires. The games hunt's "Set up a position" dialog
+    // zooms in from 95% over 100ms, and with the editor chunk already
+    // cached the board mounts inside that window: measured pieces 0.35 of
+    // a square off at the far files, and still off a second later. (The
+    // first open looked fine only because the lazy chunk outlived the
+    // animation.) transitionend/animationend bubble, so listen once on the
+    // document and re-render when an ANCESTOR's animation settles having
+    // actually changed the board's measured size — one rect read per
+    // settle, and redrawAll (the coordinates toggle's call, below) only
+    // when it moved.
+    const settle = (e: Event): void => {
+      const target = e.target;
+      const board = api.current;
+      if (!board || !(target instanceof Element) || !target.contains(el)) return;
+      // Not a before/after of the board's own rect: chessground WROTE the
+      // wrong size onto the container (updateBounds floors the wrap's
+      // mid-animation rect and pins it in px), so the broken state
+      // measures as self-consistent. Instead recompute what updateBounds
+      // would produce from the wrap as it stands NOW and compare with
+      // what it produced then.
+      const wrapWidth = board.state.dom.elements.wrap.getBoundingClientRect().width;
+      const expected = (Math.floor((wrapWidth * devicePixelRatio) / 8) * 8) / devicePixelRatio;
+      const current = board.state.dom.elements.container.getBoundingClientRect().width;
+      if (Math.abs(expected - current) > 0.5) board.redrawAll();
+    };
+    for (const ev of ['animationend', 'transitionend'] as const)
+      document.addEventListener(ev, settle, { capture: true, passive: true });
     return () => {
+      for (const ev of ['animationend', 'transitionend'] as const)
+        document.removeEventListener(ev, settle, { capture: true });
       for (const ev of ['touchstart', 'mousedown'] as const)
         el.removeEventListener(ev, refreshBounds, { capture: true });
       api.current?.destroy();
