@@ -53,6 +53,39 @@ matters.
 
 ## Processes
 
+The whole app, as who talks to whom — every client speaks HTTP to the
+one server, and the server is the only thing that touches disk:
+
+```mermaid
+flowchart LR
+  subgraph clients ["Clients — HTTP only"]
+    web["Web app / PWA"]
+    desk["Desktop shell (Electron)"]
+  end
+  subgraph srv ["Server process (Hono on Node)"]
+    api["HTTP API"]
+    scanw["Resident scan worker
+    (fast search, opt-in)"]
+  end
+  subgraph jobs ["Job children — one slot"]
+    impl["TypeScript scripts, or the
+    native binary when present
+    (goldens hold them identical)"]
+  end
+  vault[("vault/
+  PGN, notes, config")]
+  data[("data/
+  derived sqlite")]
+  web --> api
+  desk --> api
+  api --> vault
+  api --> data
+  api -- "spawn per job" --> impl
+  impl --> data
+  api <--> scanw
+  scanw --> data
+```
+
 - **Server** (`server/`, Hono on Node): HTTP API over the vault files,
   plus static serving of the built web app. Beyond plain vault I/O it
   owns the optional auth gate (password + authenticator 2FA/TOTP,

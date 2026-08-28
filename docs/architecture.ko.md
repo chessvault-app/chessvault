@@ -52,6 +52,39 @@ PGN이며, 퍼즐 진행 상황은 JSON 라인입니다. 이 앱은 Obsidian에�
 
 ## 프로세스
 
+앱 전체를 누가 누구와 이야기하는가로 그리면 — 모든 클라이언트는 서버
+하나에 HTTP로 말하고, 디스크를 만지는 것은 서버뿐입니다:
+
+```mermaid
+flowchart LR
+  subgraph clients ["클라이언트 — HTTP 전용"]
+    web["웹 앱 / PWA"]
+    desk["데스크톱 셸 (Electron)"]
+  end
+  subgraph srv ["서버 프로세스 (Node 위의 Hono)"]
+    api["HTTP API"]
+    scanw["상주 스캔 워커
+    (빠른 검색, 옵트인)"]
+  end
+  subgraph jobs ["작업 자식 — 슬롯 하나"]
+    impl["TypeScript 스크립트, 또는
+    있으면 네이티브 바이너리
+    (골든이 둘을 일치시킴)"]
+  end
+  vault[("vault/
+  PGN, 노트, 설정")]
+  data[("data/
+  파생 sqlite")]
+  web --> api
+  desk --> api
+  api --> vault
+  api --> data
+  api -- "작업마다 스폰" --> impl
+  impl --> data
+  api <--> scanw
+  scanw --> data
+```
+
 - **서버** (`server/`, Node 위의 Hono): 보관함 파일에 대한 HTTP API와 빌드된
   웹 앱의 정적 서빙을 담당합니다. 단순한 보관함 입출력 외에 선택적 인증
   게이트(비밀번호 + 인증 앱 2FA/TOTP, `server/auth.ts` + `server/totp.ts`),

@@ -185,6 +185,31 @@ reads, and why none of them walks ten million rows to say so. The byte
 layouts live as spec comments in the files named here, each pinned
 against the Rust twin by golden fixtures; this section is the map.
 
+```mermaid
+flowchart TD
+  q["A search"] --> text["Players / openings / ECO"]
+  q --> exact["Exact position"]
+  q --> hunt["Relaxed rung, or material spec"]
+  text --> lut["Derived lookup tables"] --> plan{"What resolved?"}
+  plan -- "nothing" --> empty["Empty answer, lookup cost"]
+  plan -- "rare names" --> seek["Union-seek their games
+  through per-column indexes"]
+  plan -- "common names" --> walk["Plain walk — fills its
+  page near the top"]
+  exact --> ki["Inverted key index:
+  one bucket, binary search"]
+  hunt --> env["Count envelope
+  skips whole games"]
+  env --> packs["Scan the packed index
+  (resident / native / JS)"]
+  ki --> verify["Replay the few candidates
+  through the reference"]
+  packs --> verify
+  verify --> rows["Rows"]
+  seek --> rows
+  walk --> rows
+```
+
 **Text search resolves against small tables before touching big ones.**
 Distinct players and openings number in the tens of thousands whatever
 the game count, so the query runs against those derived lookup tables

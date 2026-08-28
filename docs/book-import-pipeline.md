@@ -58,6 +58,29 @@ was printed on, its rect on that page, and the page its answer is on.
 
 ## Stages (`scripts/ml/`)
 
+```mermaid
+flowchart TD
+  pdf["Book PDF"] --> dump["1 Text layer dump
+  word boxes + page text"]
+  pdf --> renders["Page renders"]
+  dump --> measure["2 Measure — detect diagrams,
+  match printed numbers, read cells,
+  parse solutions, replay (4 passes)"]
+  renders --> measure
+  measure --> rot["2b Upside-down pages
+  derotated, numbering recovered"]
+  rot -- "extra labels" --> measure
+  helpers["Self-supervised helpers:
+  digit shapes, figurine glyphs"] -- "hints" --> measure
+  measure --> import["3 Import — tier every entry
+  (shared/bookEngine.ts, Stockfish)"]
+  import --> book["Vault book: puzzles,
+  drafts, evidence manifest"]
+  evid["4–5 Evidence images
+  + solution pages"] --> book
+  measure --> evid
+```
+
 1. **Text layer dump** — `extract_pdf_words.py <book.pdf> <out.json>`:
    pymupdf word boxes + page text.
 2. **Measure** — `autoimport-measure.ts <pages_dir> --book <cfg>`:

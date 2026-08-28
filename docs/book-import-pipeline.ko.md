@@ -54,6 +54,29 @@
 
 ## 단계 (`scripts/ml/`)
 
+```mermaid
+flowchart TD
+  pdf["책 PDF"] --> dump["1 텍스트 레이어 덤프
+  단어 상자 + 페이지 텍스트"]
+  pdf --> renders["페이지 렌더"]
+  dump --> measure["2 측정 — 다이어그램 검출,
+  인쇄된 번호 매칭, 칸 읽기,
+  해답 파싱, 리플레이 (4패스)"]
+  renders --> measure
+  measure --> rot["2b 뒤집힌 페이지
+  되돌리고 번호 복원"]
+  rot -- "추가 라벨" --> measure
+  helpers["자기지도 도우미:
+  숫자 모양, 피규린 글리프"] -- "힌트" --> measure
+  measure --> import["3 가져오기 — 항목마다 등급
+  (shared/bookEngine.ts, Stockfish)"]
+  import --> book["보관함 책: 퍼즐,
+  초안, 증거 매니페스트"]
+  evid["4–5 증거 이미지
+  + 해답 페이지"] --> book
+  measure --> evid
+```
+
 1. **텍스트 레이어 덤프** — `extract_pdf_words.py <book.pdf> <out.json>`:
    pymupdf 단어 상자 + 페이지 텍스트.
 2. **측정** — `autoimport-measure.ts <pages_dir> --book <cfg>`: 페이지마다
