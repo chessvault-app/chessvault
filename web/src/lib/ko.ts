@@ -1869,6 +1869,9 @@ export const ko: Record<string, string> = {
   'Remove from the collection': '모음에서 제거',
   'round {n}': '{n}라운드',
 
+  'That outcome and that result can never happen in the same game — no game will match.':
+    '그 승패와 그 결과는 한 게임에서 동시에 성립할 수 없습니다 — 일치하는 게임이 없게 됩니다.',
+
   // The archive window's selection band.
   'Select all new — none are new': '새 게임 전체 선택 — 새 게임 없음',
   'Every game shown is already in the collection': '표시된 게임이 모두 이미 모음에 있습니다',

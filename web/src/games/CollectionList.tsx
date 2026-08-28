@@ -403,6 +403,7 @@ export function CollectionList({
             {editingFilters && (
               <StructuredFiltersWindow
                 initial={structured}
+                draftResult={quickDraft.result}
                 // No Tournament field: collection games carry no Event.
                 showEvent={false}
                 extraFields={

@@ -214,6 +214,7 @@ export function StructuredFiltersWindow({
   showEvent = true,
   extraFields,
   onClear,
+  draftResult,
 }: {
   initial: StructuredFilters;
   onApply: (filters: StructuredFilters) => void;
@@ -230,9 +231,25 @@ export function StructuredFiltersWindow({
   extraFields?: ReactNode;
   /** Reset the caller's mirrored drafts when Clear filters is pressed. */
   onClear?: () => void;
+  /** The caller's drafted absolute Result (one of the extraFields) —
+      handed in so the window can say when it contradicts the player's
+      outcome above, instead of letting Apply produce a silent zero. */
+  draftResult?: ResultFilter;
 }) {
   const [draft, setDraft] = useState<StructuredFilters>(initial);
   const patch = (part: Partial<StructuredFilters>): void => setDraft((d) => ({ ...d, ...part }));
+
+  // The always-impossible pairs only: a decisive outcome against a
+  // drawn result, or "drew" against a decisive one. A decisive outcome
+  // WITH a decisive result stays quiet — that pair pins the side, which
+  // is a feature. Gated on a named player, since a playerless outcome
+  // filters nothing (and has its own hint below).
+  const contradictory =
+    draftResult !== undefined &&
+    draftResult !== 'any' &&
+    draft.player.trim() !== '' &&
+    (((draft.outcome === 'won' || draft.outcome === 'lost') && draftResult === '1/2-1/2') ||
+      (draft.outcome === 'drawn' && draftResult !== '1/2-1/2'));
 
   return (
     <Dialog
@@ -341,6 +358,12 @@ export function StructuredFiltersWindow({
         </Field>
 
         {extraFields}
+
+        {contradictory && (
+          <p className="text-warn text-sm">
+            {t('That outcome and that result can never happen in the same game — no game will match.')}
+          </p>
+        )}
 
         <div className="mt-1 flex items-center justify-end gap-2">
           <Button

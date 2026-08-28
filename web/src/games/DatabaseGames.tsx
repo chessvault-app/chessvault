@@ -971,6 +971,7 @@ export function DatabaseGames({
       {editingFilters && (
         <StructuredFiltersWindow
           initial={structured}
+          draftResult={quickDraft.result}
           extraFields={
             <Field label="Result and strength">
               <div className="flex gap-2">

@@ -940,6 +940,7 @@ export function ArchiveBrowser({
           {editingFilters && (
             <StructuredFiltersWindow
               initial={structured}
+              draftResult={quickDraft.result}
               showEvent={false}
               extraFields={
                 // The row's selects, mirrored — side here is the SEARCHED
