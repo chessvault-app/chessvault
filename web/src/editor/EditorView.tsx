@@ -186,19 +186,10 @@ export function EditorView({
   const [tool, setTool] = useState<Tool>(() => restored?.tool ?? { kind: 'move' });
   const [orientation, setOrientation] = useState<Color>(() => restored?.orientation ?? 'white');
   const [sheetOpen, setSheetOpen] = useState(false);
-  /**
-   * The paged chain's current page and travel direction (see `paged`).
-   * Direction feeds the slide: forward pages arrive from the right,
-   * back from the left — the content moves, the window never does.
-   */
-  const PAGE_IDX = { board: 0, position: 1, load: 2, photo: 3 } as const;
-  type ChainPage = keyof typeof PAGE_IDX;
-  const [chain, setChain] = useState<{ page: ChainPage; dir: 'fwd' | 'back' }>({
-    page: 'board',
-    dir: 'fwd',
-  });
-  const goto = (page: ChainPage): void =>
-    setChain((c) => ({ page, dir: PAGE_IDX[page] > PAGE_IDX[c.page] ? 'fwd' : 'back' }));
+  /** The paged chain's current page (see `paged`). */
+  type ChainPage = 'board' | 'position' | 'load' | 'photo';
+  const [chain, setChain] = useState<{ page: ChainPage }>({ page: 'board' });
+  const goto = (page: ChainPage): void => setChain({ page });
   /**
    * The chain's Position page keeps the sheet's DRAFT contract
    * (lanph3re: it lost Cancel/Apply in the first fitting — "apply on
@@ -561,28 +552,23 @@ export function EditorView({
    *              header, with the Load button beside it.
    * - `sheet`  — the phone's Position window: the Modal already says
    *              Position, so no header (the same word twice, three lines
-   *              apart), and the loader is a page turn from the FEN
-   *              footer, having no header to live in.
+   *              apart), NO CARD (a window's sole content wrapped in a
+   *              card is the window's chrome twice — lanph3re had every
+   *              such nesting removed), and the loader is a page turn
+   *              from the FEN line, having no header to live in.
    */
-  const positionPanels = (place: 'column' | 'sheet') => (
-    <>
+  const positionPanels = (place: 'column' | 'sheet') =>
+    place === 'column' ? (
         <Panel>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
               header to carry it. */}
-          {place === 'column' && (
-            <PanelHeader
-              title={t('Position')}
-              actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
-            />
-          )}
-          {/* The sheet has no PanelHeader, whose height is what normally
-              holds the first field off the card's top border — so it pads
-              itself; the column would double-space. The bottom pad is for
-              both: Panel zeroes the card's gap, so without it the last
-              inputs sit flush against the FEN footer's rule. */}
-          <div className={cn('grid gap-3 px-(--card-spacing) pb-(--card-spacing)', place === 'sheet' && 'pt-(--card-spacing)')}>
+          <PanelHeader
+            title={t('Position')}
+            actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
+          />
+          <div className="grid gap-3 px-(--card-spacing) pb-(--card-spacing)">
             {positionFields}
           </div>
 
@@ -615,42 +601,55 @@ export function EditorView({
             <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
               {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
             </Button>
-            {/* Opened from the sheet, the loader REPLACES the sheet rather
-                than stacking a second one on it: the sheet closes as the
-                loader opens, and the loader's back chevron brings it
-                straight back. Two scrims deep on a phone is a window you
-                have to dismiss twice to get out of. */}
-            {place === 'sheet' && (
-              // Inside the sheet this is a page turn, not a new window.
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t('Load a position — FEN, PGN, or image')}
-                onClick={() => setLoadPage(true)}
-              >
-                <FolderInput className="size-3.5" />
-              </Button>
-            )}
           </div>
         </Panel>
-
+    ) : (
+      <>
+        <div className="grid gap-3">{positionFields}</div>
+        {!validity.legal && (
+          <p className="text-warn flex items-start gap-1.5 text-sm">
+            <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+            {validity.reason}
+          </p>
+        )}
+        {/* The FEN status line, with the loader's page turn at its end.
+            Opened from the sheet, the loader REPLACES the sheet rather
+            than stacking a second one on it: the sheet closes as the
+            loader opens, and the loader's back chevron brings it
+            straight back. Two scrims deep on a phone is a window you
+            have to dismiss twice to get out of. */}
+        <div className="border-border flex shrink-0 items-center gap-1.5 border-t pt-1.5">
+          {validity.legal && (
+            <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+          )}
+          <code className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs" title={fen}>
+            {fen}
+          </code>
+          <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
+            {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Load a position — FEN, PGN, or image')}
+            onClick={() => setLoadPage(true)}
+          >
+            <FolderInput className="size-3.5" />
+          </Button>
+        </div>
         {/* The row every window in this app ends on (components/prompt-dialog):
             justify-end, gap-2, the primary one LAST. Apply is the ONLY
-            way a change made in here survives; see closeSheet. Only in
-            the sheet — the wide layout's column is not a window, it is
-            the editor itself, and its edits are the position. */}
-        {place === 'sheet' && (
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
-              {t('Cancel')}
-            </Button>
-            <Button variant="default" size="sm" onClick={() => closeSheet(true)}>
-              {t('Apply')}
-            </Button>
-          </div>
-        )}
-    </>
-  );
+            way a change made in here survives; see closeSheet. */}
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
+            {t('Cancel')}
+          </Button>
+          <Button variant="default" size="sm" onClick={() => closeSheet(true)}>
+            {t('Apply')}
+          </Button>
+        </div>
+      </>
+    );
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -880,23 +879,16 @@ export function EditorView({
         </div>
       </div>
 
-      {/* The paged chain's pages, in the board's place — keyed so each
-          arrival animates, and the SLIDE is on this content block, not
-          on any window: the frame around it never moves (lanph3re: the
-          window-level animation still read as flicker). Forward comes
-          from the right, back from the left. NO card around either page
-          (lanph3re: the inner card read as clutter) — the fields stand
-          directly in the window, the way every ordinary window carries
-          its form; the WINDOW's own title row names the page and holds
-          the way back (onChainChange). */}
+      {/* The paged chain's pages, in the board's place. No slide, no
+          fade — the swap is instant (lanph3re tried the swipe and cut
+          it): the frame holds still and the content is simply the next
+          page. NO card around either page (the inner card read as
+          clutter) — the fields stand directly in the window, the way
+          every ordinary window carries its form; the WINDOW's own
+          title row names the page and holds the way back
+          (onChainChange). */}
       {paging && chain.page !== 'board' && (
-        <div
-          key={chain.page}
-          className={cn(
-            'animate-in flex min-h-0 w-full flex-1 flex-col gap-3 duration-150',
-            chain.dir === 'fwd' ? 'slide-in-from-right-8' : 'slide-in-from-left-8',
-          )}
-        >
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
           {chain.page === 'position' ? (
             <>
               <div className="grid gap-3">{positionFields}</div>
