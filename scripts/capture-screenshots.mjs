@@ -111,6 +111,45 @@ const TARGETS = [
   },
   { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-border' },
   { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
+  // The manual's per-page figures: every reference page in the manual gets
+  // one picture of the screen it describes, in the same frame as the rest.
+  { hash: '#/editor', out: 'editor.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
+  {
+    hash: `#/studies/${encodeURIComponent('Openings/Ruy Lopez - the Berlin')}`,
+    out: 'study.png',
+    win: [1904, 996],
+    css: 1100,
+    wait: 'cg-board',
+  },
+  // One move first, so the table is statistics about a position rather
+  // than the starting position's evergreen numbers — and `think` even with
+  // no engine in the shot: an offscreen window's capture can hand back a
+  // frame older than the last thing done to the DOM (see the crop note
+  // below), and capturing straight after the clicks shot the position
+  // BEFORE them while MOVE_LANDED said they were on the board. The pause
+  // is for a repaint, exactly as board.png gets one from its search.
+  //
+  // ONE move, not an opening: the explorer refreshes its lookup after
+  // every move, and a click landing mid-refresh is swallowed — three moves
+  // reliably captured a piece left selected with its destination dots on.
+  // The source stays My games because in the demo it is the only source
+  // there is (no reference databases are mounted for the explorer's list).
+  {
+    hash: '#/board/explorer',
+    out: 'explorer.png',
+    win: [1904, 996],
+    css: 1100,
+    wait: 'cg-board',
+    moves: ['e2e4'],
+    think: 1500,
+  },
+  { hash: '#/puzzles', out: 'puzzle-trainer.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
+  { hash: '#/repertoire', out: 'repertoire.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
+  // No databases shot: the demo's Databases page is one read-only card
+  // ("uploading collections and building databases need the installed
+  // app"), and a picture of that under a section describing the manager
+  // would illustrate the wrong thing.
+  { hash: '#/books', out: 'books.png', win: [1904, 996], css: 1100, wait: 'button' },
   // The whole repertoire at once — README and the landing page's map section.
   //
   // NOT ZOOMED, and NARROW. Both for the same reason.
@@ -421,8 +460,12 @@ app.whenReady().then(async () => {
     // has ever been asked for a frame hands back that region of a surface
     // nothing has drawn to yet: a rectangle of the right size, correctly
     // placed, and empty. One full capture first is what makes it paint.
-    // The cost is a discarded frame on the one shot that crops.
-    if (box) await win.webContents.capturePage();
+    // The cost is a discarded frame on the shots that need it — and the
+    // shots that PLAY MOVES need it too: the same laziness can hand back
+    // a frame from before the clicks, a board MOVE_LANDED swears the move
+    // is on. Measured on explorer.png — the starting position in the
+    // raster, the move in the DOM, intermittently across runs.
+    if (box || moves) await win.webContents.capturePage();
     const image = await win.webContents.capturePage(
       box
         ? {
