@@ -335,7 +335,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
           <MoveTreePane />
           <ReviewStrip />
-          <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />
+          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />
           <AnnotationPane
             editing={editing}
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}

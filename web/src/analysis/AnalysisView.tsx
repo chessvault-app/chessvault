@@ -171,7 +171,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           <ReviewStrip />
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
-          <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />
+          {/* -mb takes back the card's floor, as the resize grip does: the
+              band draws the panel's bottom edge, so it has to reach it. */}
+          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
