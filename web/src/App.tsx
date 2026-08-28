@@ -352,7 +352,11 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         type="button"
         onClick={() => navigate('home')}
         title={t('Home')}
-        className="hover:bg-accent flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
+        // justify-center in the collapsed rail: the icons below centre
+        // themselves in the 68px column (their buttons are justify-center
+        // inside p-2), so a left-aligned logo under px-4 sat 6px to their
+        // left. At lg the wordmark returns and the row left-aligns again.
+        className="hover:bg-accent flex h-14 items-center justify-center gap-2.5 px-4 text-left transition-colors duration-100 lg:justify-start"
       >
         {/* Bare, in the text's own ink — the same treatment as the home
             header. The filled tile it used to sit on read as a button

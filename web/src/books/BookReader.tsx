@@ -274,7 +274,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         }
       />
       <MoveTreePane />
-      {nav && <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />}
+      {nav && <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />}
     </Panel>
   );
 
