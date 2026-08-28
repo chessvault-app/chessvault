@@ -1,13 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { SlidersHorizontal, TriangleAlert } from 'lucide-react';
-import { parseSearchQuery, tokenizeSearchQuery } from '@shared/searchQuery';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { SlidersHorizontal, TriangleAlert, X } from 'lucide-react';
+import { composeQueryChips, parseSearchQuery, splitQueryChips } from '@shared/searchQuery';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
-import { ClearableInput } from '@/components/text-fields';
+import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { DatePicker } from '@/components/date-picker';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
@@ -467,30 +467,112 @@ const QUERY_OPS: {
 ];
 
 /**
- * The in-field colouring, GitHub's grammar: qualifiers step back to the
- * muted ink, their values carry the accent, a value that cannot parse
- * wears the warning wave. Rendered by SearchInput's overlay, so the
- * span texts must reproduce the input exactly — tokenizeSearchQuery's
- * contract.
+ * One committed query term, standing in the field as a chip: the
+ * qualifier in the muted ink, its value in the accent, an X to take
+ * it out again. mousedown-preventDefault on the X so the press does
+ * not blur the input it stands inside.
  */
-export function highlightQuery(text: string): ReactNode {
-  return tokenizeSearchQuery(text).map((span, i) =>
-    span.type === 'plain' ? (
-      <span key={i}>{span.text}</span>
-    ) : (
-      <span
-        key={i}
-        className={
-          span.type === 'qualifier'
-            ? 'text-muted-foreground'
-            : span.type === 'value'
-              ? 'text-info font-medium'
-              : 'text-warn underline decoration-wavy underline-offset-3'
-        }
+function QueryChip({ raw, onRemove }: { raw: string; onRemove: () => void }) {
+  const colon = raw.indexOf(':');
+  return (
+    <Badge variant="secondary" className="shrink-0 gap-0.5 pr-1 font-mono">
+      <span className="text-muted-foreground">{raw.slice(0, colon + 1)}</span>
+      <span className="text-info">{raw.slice(colon + 1).replace(/"/g, '')}</span>
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={t('Remove this term')}
+        className="text-muted-foreground hover:text-foreground -mr-0.5 grid size-3.5 shrink-0 place-items-center rounded-full"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onRemove}
       >
-        {span.text}
-      </span>
-    ),
+        <X className="size-2.5" />
+      </button>
+    </Badge>
+  );
+}
+
+/**
+ * The query search box, whole: a finished valid qualifier becomes a
+ * chip inside the field (the string stays the single source of truth
+ * — chips are DERIVED by splitQueryChips, and every edit recomposes
+ * it), the text still under the caret stays text, the qualifier panel
+ * hangs below while focused. Backspace at the text's start pops the
+ * last chip back into the text for editing; a chip's X removes its
+ * term outright.
+ */
+export function QueryBox({
+  query,
+  onQuery,
+  suggest,
+  placeholder,
+  onOpenChange,
+  className,
+}: {
+  query: string;
+  onQuery: (next: string) => void;
+  suggest?: (field: string, value: string) => Promise<ValueSuggestion[]>;
+  placeholder: string;
+  /** The panel's focus state, for the caller's issues box gating. */
+  onOpenChange?: (open: boolean) => void;
+  className?: string;
+}) {
+  const [open, setOpenState] = useState(false);
+  const setOpen = (next: boolean): void => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
+  const control = useRef<SearchQueryHintsHandle | null>(null);
+  const { chips, text } = splitQueryChips(query);
+  return (
+    <div className={cn('relative min-w-0 flex-1', className)}>
+      <SearchInput
+        inputSize="sm"
+        value={text}
+        onChange={(e) => onQuery(composeQueryChips(chips, e.target.value))}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            setOpen(false);
+            return;
+          }
+          if (open && control.current?.handleKey(e)) return;
+          if (e.key === 'Backspace' && chips.length > 0) {
+            const el = e.currentTarget as HTMLInputElement;
+            if (el.selectionStart === 0 && el.selectionEnd === 0) {
+              e.preventDefault();
+              const last = chips[chips.length - 1]!;
+              onQuery(composeQueryChips(chips.slice(0, -1), text ? `${last} ${text}` : last));
+            }
+          }
+        }}
+        placeholder={placeholder}
+        spellCheck={false}
+        className="w-full"
+        tokens={
+          chips.length > 0
+            ? chips.map((raw, i) => (
+                <QueryChip
+                  key={`${raw}-${i}`}
+                  raw={raw}
+                  onRemove={() =>
+                    onQuery(
+                      composeQueryChips(
+                        chips.filter((_, j) => j !== i),
+                        text,
+                      ),
+                    )
+                  }
+                />
+              ))
+            : undefined
+        }
+      />
+      {open && (
+        <SearchQueryHints query={query} onPick={onQuery} suggest={suggest} controlRef={control} />
+      )}
+    </div>
   );
 }
 

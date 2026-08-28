@@ -115,41 +115,50 @@ export function parseSearchQuery(q: string): {
 }
 
 /**
- * The query split into styled spans for an in-field highlight — the
- * concatenated span texts reproduce the input EXACTLY, character for
- * character, or the overlay drifts off the glyphs it colours.
+ * The query split for a token-chip search box: every FINISHED valid
+ * qualifier token becomes a chip, and everything else — plain words,
+ * invalid qualifiers (the warning box explains those), and the token
+ * still under the caret — stays editable text. "Finished" means not
+ * the trailing token, unless the query ends in whitespace. Composing
+ * `[...chips, text]` back with spaces reproduces an equivalent query,
+ * which is what keeps the string the single source of truth.
  */
-export type QuerySpan = {
-  text: string;
-  type: 'plain' | 'qualifier' | 'value' | 'invalid';
-};
-
-export function tokenizeSearchQuery(q: string): QuerySpan[] {
-  const spans: QuerySpan[] = [];
-  const re = /(\s+)|((?:[^\s"]+|"[^"]*")+)/g;
-  for (const m of q.matchAll(re)) {
-    if (m[1] !== undefined) {
-      spans.push({ text: m[1], type: 'plain' });
-      continue;
-    }
-    const raw = m[2]!;
+export function splitQueryChips(q: string): { chips: string[]; text: string } {
+  const tokens = q.match(/(?:[^\s"]+|"[^"]*")+/g) ?? [];
+  const endsSpace = /\s$/.test(q);
+  const chips: string[] = [];
+  const rest: string[] = [];
+  tokens.forEach((raw, i) => {
+    const unfinished = i === tokens.length - 1 && !endsSpace;
     const colon = raw.indexOf(':');
     const key = colon > 0 ? raw.slice(0, colon).toLowerCase() : '';
-    if (colon > 0 && PREFIX_SET.has(key)) {
-      spans.push({ text: raw.slice(0, colon + 1), type: 'qualifier' });
-      const rest = raw.slice(colon + 1);
-      if (rest) {
-        const value = rest.replace(/"/g, '').trim();
-        const bad =
-          (key === 'result' && !normalizeResult(value)) ||
-          (key === 'year' && !parseYearSpan(value));
-        spans.push({ text: rest, type: bad ? 'invalid' : 'value' });
+    if (!unfinished && colon > 0 && PREFIX_SET.has(key)) {
+      const value = raw
+        .slice(colon + 1)
+        .replace(/"/g, '')
+        .trim();
+      const valid =
+        value !== '' &&
+        (key === 'result'
+          ? normalizeResult(value) !== null
+          : key === 'year'
+            ? parseYearSpan(value) !== null
+            : true);
+      if (valid) {
+        chips.push(raw);
+        return;
       }
-    } else {
-      spans.push({ text: raw, type: 'plain' });
     }
-  }
-  return spans;
+    rest.push(raw);
+  });
+  return { chips, text: rest.join(' ') + (endsSpace && rest.length > 0 ? ' ' : '') };
+}
+
+/** The chips and the tail back into one query string. */
+export function composeQueryChips(chips: string[], text: string): string {
+  const base = chips.join(' ');
+  if (!base) return text;
+  return text ? `${base} ${text}` : `${base} `;
 }
 
 /**

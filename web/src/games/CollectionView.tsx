@@ -1,4 +1,4 @@
-import {
+﻿import {
   Bookmark,
   Globe,
   Pencil,
@@ -22,7 +22,7 @@ import { Segmented } from '@/components/segmented';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 
-import { ClearableInput, SearchInput } from '@/components/text-fields';
+import { ClearableInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
 
 import { Panel } from '@/components/panel';
@@ -35,10 +35,8 @@ import { GamePreview, docId, gameKey, type GameSummary, type Preview } from './s
 import { CollectionList, customName } from './CollectionList';
 import {
   catalogSuggest,
-  highlightQuery,
-  SearchQueryHints,
+  QueryBox,
   SearchQueryIssues,
-  type SearchQueryHintsHandle,
   type ValueSuggestion,
 } from './GameFilters';
 import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
@@ -94,7 +92,6 @@ export function CollectionView() {
   /** The query-language panel under the collection search, open while
       the box has focus. */
   const [searchHintsOpen, setSearchHintsOpen] = useState(false);
-  const searchHintsControl = useRef<SearchQueryHintsHandle | null>(null);
   /** Live values for the panel: players and events aggregate from the
       rows already in the page; openings and ECO come from the vendored
       catalogue, same as everywhere. */
@@ -301,36 +298,16 @@ export function CollectionView() {
    */
   const finders = (fieldClass: string): ReactNode => (
     <>
-      <div className={cn('relative min-w-0', fieldClass)}>
-        <SearchInput
-          type="text"
-          inputSize="sm"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setSearchHintsOpen(true)}
-          onBlur={() => setSearchHintsOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setSearchHintsOpen(false);
-              return;
-            }
-            if (searchHintsOpen && searchHintsControl.current?.handleKey(e)) return;
-          }}
-          placeholder={t('Search collection…')}
-          renderHighlight={highlightQuery}
-          className="w-full"
-        />
-        {/* The same query language the databases box speaks — one
-            parser in shared/, one panel teaching it. */}
-        {searchHintsOpen && (
-          <SearchQueryHints
-            query={query}
-            onPick={setQuery}
-            suggest={suggestCollection}
-            controlRef={searchHintsControl}
-          />
-        )}
-      </div>
+      {/* The same query language the databases box speaks — one
+          parser in shared/, one chip box teaching it. */}
+      <QueryBox
+        query={query}
+        onQuery={setQuery}
+        suggest={suggestCollection}
+        placeholder={t('Search collection…')}
+        onOpenChange={setSearchHintsOpen}
+        className={fieldClass}
+      />
       {/* Icon only, like the shelves': the word Bookmarked beside it was
           the only label in any of them, and a pressed state says the same
           thing without asking for the width. */}

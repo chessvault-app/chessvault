@@ -13,19 +13,17 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/components/ui/button';
 
 import { Select } from '@/components/ui/select';
-import { ClearableInput, SearchInput } from '@/components/text-fields';
+import { ClearableInput } from '@/components/text-fields';
 import ENDGAMES from './endgames.json';
 import {
   catalogSuggest,
   EMPTY_STRUCTURED_FILTERS,
-  highlightQuery,
+  QueryBox,
   ResultSelect,
-  SearchQueryHints,
   SearchQueryIssues,
   StrengthSelect,
   StructuredFiltersWindow,
   type ResultFilter,
-  type SearchQueryHintsHandle,
   type StructuredFilters,
   type ValueSuggestion,
 } from './GameFilters';
@@ -432,10 +430,9 @@ export function DatabaseGames({
    * that ends without its `done` frame FAILED rather than found
    * nothing, and a stale sequence number abandons frames mid-read.
    */
-  /** The query-language panel under the search box, open while the box
-      has focus. */
+  /** Whether the query panel is open — the issues box holds its
+      tongue about the token still being typed while it is. */
   const [hintsOpen, setHintsOpen] = useState(false);
-  const hintsControl = useRef<SearchQueryHintsHandle | null>(null);
   /** Live values for the panel: players from THIS database's derived
       lookup, openings and ECO from the vendored catalogue. */
   const suggestValues = useCallback(
@@ -1245,34 +1242,13 @@ export function DatabaseGames({
       toolbar={
         <div className="flex w-full flex-col gap-2">
           <div className="flex w-full items-center gap-1.5">
-            <div className="relative min-w-0 flex-1">
-              <SearchInput
-                inputSize="sm"
-                value={query}
-                onChange={(e) => onQuery(e.target.value)}
-                onFocus={() => setHintsOpen(true)}
-                onBlur={() => setHintsOpen(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setHintsOpen(false);
-                    return;
-                  }
-                  if (hintsOpen && hintsControl.current?.handleKey(e)) return;
-                }}
-                placeholder={t('Search database…')}
-                spellCheck={false}
-                renderHighlight={highlightQuery}
-                className="w-full"
-              />
-              {hintsOpen && (
-                <SearchQueryHints
-                  query={query}
-                  onPick={onQuery}
-                  suggest={suggestValues}
-                  controlRef={hintsControl}
-                />
-              )}
-            </div>
+            <QueryBox
+              query={query}
+              onQuery={onQuery}
+              suggest={suggestValues}
+              placeholder={t('Search database…')}
+              onOpenChange={setHintsOpen}
+            />
             <Button
               variant="ghost"
               size="icon-sm"

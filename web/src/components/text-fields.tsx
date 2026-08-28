@@ -129,28 +129,24 @@ export function SearchInput({
   onChange,
   value,
   ref,
-  renderHighlight,
+  tokens,
   ...props
 }: InputProps & {
   /**
-   * In-field syntax colouring: the input's own glyphs go transparent
-   * (caret kept) and this renders the SAME text, styled, in an overlay
-   * exactly over them — so the metrics must match to the pixel, which
-   * is why the overlay copies the input's font and padding classes and
-   * mirrors its horizontal scroll. The one cost: selected text shows
-   * only the selection wash, since the selected glyphs are the
-   * transparent ones.
+   * Finished query terms as chips standing INSIDE the field, before
+   * the text still being typed — the token-input shape. The chips
+   * carry their own remove affordance; with any present the group
+   * grows and wraps instead of clipping. (An earlier attempt painted
+   * the qualifiers via a transparent-text overlay; the mirrored caret
+   * was never quite honest, and chips say "this term is committed"
+   * besides.)
    */
-  renderHighlight?: (text: string) => ReactNode;
+  tokens?: ReactNode;
 }) {
   const [focused, setFocused] = useState(false);
   // For an uncontrolled caller, which the X still has to know about.
   const [typed, setTyped] = useState('');
   const self = useRef<HTMLInputElement | null>(null);
-  const overlay = useRef<HTMLSpanElement | null>(null);
-  const syncScroll = (): void => {
-    if (overlay.current && self.current) overlay.current.scrollLeft = self.current.scrollLeft;
-  };
   const text = value === undefined ? typed : String(value);
 
   /** See the two buttons: the X stays in the field, Cancel leaves it. */
@@ -169,29 +165,14 @@ export function SearchInput({
         focused && 'max-sm:w-full',
       )}
     >
-      <InputGroup inputSize={inputSize} className="min-w-0 flex-1">
+      <InputGroup
+        inputSize={inputSize}
+        className={cn('min-w-0 flex-1', tokens && 'h-auto min-h-7 flex-wrap gap-y-1 py-0.5')}
+      >
         <InputGroupAddon>
           <Search className="text-muted-foreground pointer-events-none size-3.5" />
         </InputGroupAddon>
-        {renderHighlight && (
-          <span
-            aria-hidden
-            ref={overlay}
-            className={cn(
-              // The input's own text box, mirrored: same font scale,
-              // same paddings (pl from the addon rule, pr-7 while the
-              // clear button stands), centred the way an input centres
-              // its line. overflow-hidden still honours a programmatic
-              // scrollLeft, which is how it follows the caret.
-              'text-foreground pointer-events-none absolute inset-y-0 left-[1.375rem] right-0 z-0 flex items-center',
-              'overflow-hidden whitespace-pre text-base md:text-sm',
-              'pl-1.5 pr-2',
-              text && 'pr-7',
-            )}
-          >
-            {renderHighlight(text)}
-          </span>
-        )}
+        {tokens}
         <InputGroupInput
           ref={(node) => {
             self.current = node;
@@ -200,7 +181,6 @@ export function SearchInput({
           }}
           inputSize={inputSize}
           value={value}
-          onScroll={renderHighlight ? syncScroll : undefined}
           // Not `type` — every plain Input is type="search" here, for the
           // autofill reasons in components/ui/input — so a REAL search box has to say
           // so itself. The dialog focus rule reads this: a window whose
@@ -210,13 +190,7 @@ export function SearchInput({
           data-search-field=""
           // The badge is 8px in and 14px wide; 6px more puts the text at
           // the 28px every search field has always started at.
-          className={cn(
-            'pl-1.5',
-            text && 'pr-7',
-            // Highlighting: the overlay draws the glyphs, the input
-            // keeps only its caret (and its focus, and its events).
-            renderHighlight && 'relative z-[1] text-transparent [caret-color:var(--color-foreground)]',
-          )}
+          className={cn('pl-1.5', text && 'pr-7', tokens && 'min-w-[8rem] basis-32')}
           onFocus={(e) => {
             setFocused(true);
             onFocus?.(e);
@@ -228,9 +202,6 @@ export function SearchInput({
           onChange={(e) => {
             setTyped(e.target.value);
             onChange?.(e);
-            // The caret may have auto-scrolled the input; the overlay
-            // follows on the next frame, once layout has settled.
-            if (renderHighlight) requestAnimationFrame(syncScroll);
           }}
           {...props}
         />
