@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { SlidersHorizontal, TriangleAlert } from 'lucide-react';
-import { parseSearchQuery } from '@shared/searchQuery';
+import { parseSearchQuery, tokenizeSearchQuery } from '@shared/searchQuery';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -465,6 +466,81 @@ const QUERY_OPS: {
   },
 ];
 
+/**
+ * The in-field colouring, GitHub's grammar: qualifiers step back to the
+ * muted ink, their values carry the accent, a value that cannot parse
+ * wears the warning wave. Rendered by SearchInput's overlay, so the
+ * span texts must reproduce the input exactly — tokenizeSearchQuery's
+ * contract.
+ */
+export function highlightQuery(text: string): ReactNode {
+  return tokenizeSearchQuery(text).map((span, i) =>
+    span.type === 'plain' ? (
+      <span key={i}>{span.text}</span>
+    ) : (
+      <span
+        key={i}
+        className={
+          span.type === 'qualifier'
+            ? 'text-muted-foreground'
+            : span.type === 'value'
+              ? 'text-info font-medium'
+              : 'text-warn underline decoration-wavy underline-offset-3'
+        }
+      >
+        {span.text}
+      </span>
+    ),
+  );
+}
+
+/** One suggestion a completed qualifier can offer for its value. */
+export interface ValueSuggestion {
+  v: string;
+  desc?: string;
+}
+
+/**
+ * Opening and ECO suggestions come from the vendored catalogue — the
+ * app's own 3,810 named lines, not whatever a particular database
+ * happens to contain — fetched once through the endpoint the
+ * repertoire picker already uses and kept for the session.
+ */
+let catalogCache: Promise<{ eco: string; name: string }[]> | null = null;
+const openingCatalog = (): Promise<{ eco: string; name: string }[]> => {
+  catalogCache ??= api<{ openings: { eco: string; name: string }[] }>('/api/openings')
+    .then((body) => body.openings)
+    .catch(() => {
+      catalogCache = null;
+      return [];
+    });
+  return catalogCache;
+};
+
+export async function catalogSuggest(
+  field: 'opening' | 'eco',
+  value: string,
+): Promise<ValueSuggestion[]> {
+  const needle = value.toLowerCase();
+  if (!needle) return [];
+  const lines = await openingCatalog();
+  if (field === 'eco') {
+    const seen = new Map<string, string>();
+    for (const line of lines) {
+      const eco = line.eco.toUpperCase();
+      if (eco.toLowerCase().startsWith(needle) && !seen.has(eco)) seen.set(eco, line.name);
+    }
+    return [...seen].slice(0, 6).map(([v, desc]) => ({ v, desc }));
+  }
+  // Names that START with the needle first — "naj" should offer the
+  // Najdorf before every line merely containing it.
+  const starts = lines.filter((l) => l.name.toLowerCase().startsWith(needle));
+  const contains = lines.filter(
+    (l) => !l.name.toLowerCase().startsWith(needle) && l.name.toLowerCase().includes(needle),
+  );
+  return [...starts, ...contains].slice(0, 6).map((l) => ({ v: l.name, desc: l.eco }));
+}
+
 /** One issue line: the offending piece as a badge, the reason beside it. */
 function IssueLine({ badge, message }: { badge: string; message: string }) {
   return (
@@ -490,16 +566,26 @@ function IssueLine({ badge, message }: { badge: string; message: string }) {
 export function SearchQueryHints({
   query,
   onPick,
+  suggest,
 }: {
   query: string;
   onPick: (nextQuery: string) => void;
+  /** Live values for a free-text qualifier — player names from the
+      database's own aggregate, openings and ECO from the vendored
+      catalogue. Absent fields simply keep the typed-value hint. */
+  suggest?: (field: string, value: string) => Promise<ValueSuggestion[]>;
 }) {
   const { issues } = parseSearchQuery(query);
-  const lastToken = query.slice(query.lastIndexOf(' ') + 1).toLowerCase();
+  const rawLast = query.slice(query.lastIndexOf(' ') + 1);
+  const lastToken = rawLast.toLowerCase();
   const colon = lastToken.indexOf(':');
   const typedKey = colon > 0 ? lastToken.slice(0, colon) : null;
-  const typedValue = colon > 0 ? lastToken.slice(colon + 1) : '';
-  const head = query.slice(0, query.length - lastToken.length);
+  const typedValue = colon > 0 ? rawLast.slice(colon + 1).replace(/"/g, '') : '';
+  const head = query.slice(0, query.length - rawLast.length);
+
+  // A mistake still under the caret is not a mistake yet: an issue on
+  // the token being typed waits until a space finishes it.
+  const shownIssues = query.endsWith(' ') ? issues : issues.filter((i) => i.raw !== rawLast);
 
   const valueOp = typedKey ? QUERY_OPS.find((op) => op.key === typedKey) : undefined;
   const prefixOps =
@@ -509,7 +595,31 @@ export function SearchQueryHints({
   const values =
     valueOp?.values?.filter((val) => typedValue === '' || val.v.startsWith(typedValue)) ?? [];
 
-  const issueLines = issues.map((issue, i) =>
+  // The live values, debounced a beat behind the typing; a stale
+  // answer must not overwrite a fresher question's.
+  const [fetched, setFetched] = useState<ValueSuggestion[]>([]);
+  const fetchKey = valueOp && !valueOp.values ? `${valueOp.key}:${typedValue}` : null;
+  useEffect(() => {
+    if (!suggest || fetchKey === null) {
+      setFetched([]);
+      return;
+    }
+    let stale = false;
+    const timer = setTimeout(() => {
+      const [field, ...rest] = fetchKey.split(':');
+      void suggest(field!, rest.join(':'))
+        .then((got) => {
+          if (!stale) setFetched(got);
+        })
+        .catch(() => {});
+    }, 150);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [suggest, fetchKey]);
+
+  const issueLines = shownIssues.map((issue, i) =>
     issue.kind === 'empty' ? (
       <IssueLine key={i} badge={`${issue.qualifier}:`} message={t('needs a value')} />
     ) : issue.kind === 'bad-result' ? (
@@ -565,6 +675,28 @@ export function SearchQueryHints({
                 {val.v}
               </Badge>
               <span className="text-muted-foreground min-w-0 truncate text-xs">{t(val.desc)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : valueOp && !valueOp.values && fetched.length > 0 ? (
+      <ul>
+        {fetched.map((val) => (
+          <li key={val.v}>
+            <button
+              type="button"
+              tabIndex={-1}
+              className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-1 text-left"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const quoted = /\s/.test(val.v) ? `"${val.v}"` : val.v;
+                onPick(`${head}${valueOp.key}:${quoted} `);
+              }}
+            >
+              <span className="text-foreground min-w-0 truncate text-xs font-medium">{val.v}</span>
+              {val.desc && (
+                <span className="text-muted-foreground shrink-0 font-mono text-xs">{val.desc}</span>
+              )}
             </button>
           </li>
         ))}

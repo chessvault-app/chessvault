@@ -16,13 +16,16 @@ import { Select } from '@/components/ui/select';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import ENDGAMES from './endgames.json';
 import {
+  catalogSuggest,
   EMPTY_STRUCTURED_FILTERS,
+  highlightQuery,
   ResultSelect,
   SearchQueryHints,
   StrengthSelect,
   StructuredFiltersWindow,
   type ResultFilter,
   type StructuredFilters,
+  type ValueSuggestion,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -430,6 +433,32 @@ export function DatabaseGames({
   /** The query-language panel under the search box, open while the box
       has focus. */
   const [hintsOpen, setHintsOpen] = useState(false);
+  /** Live values for the panel: players from THIS database's derived
+      lookup, openings and ECO from the vendored catalogue. */
+  const suggestValues = useCallback(
+    async (field: string, value: string): Promise<ValueSuggestion[]> => {
+      if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
+      if (field === 'player' || field === 'opponent' || field === 'white' || field === 'black') {
+        const v = value.trim();
+        if (!v) return [];
+        try {
+          const params = new URLSearchParams({ q: v });
+          if (curDb) params.set('db', curDb);
+          const body = await api<{ names: { name: string; games: number }[] }>(
+            `/api/refgames/suggest?${params.toString()}`,
+          );
+          return body.names.map((n) => ({
+            v: n.name,
+            desc: t('{n} games', { n: n.games.toLocaleString() }),
+          }));
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    },
+    [curDb],
+  );
   const [huntOpen, setHuntOpen] = useState(false);
   const [huntKind, setHuntKind] = useState<'position' | 'material'>('position');
   const [huntFen, setHuntFen] = useState('');
@@ -1225,9 +1254,12 @@ export function DatabaseGames({
                 }}
                 placeholder={t('Search database…')}
                 spellCheck={false}
+                renderHighlight={highlightQuery}
                 className="w-full"
               />
-              {hintsOpen && <SearchQueryHints query={query} onPick={onQuery} />}
+              {hintsOpen && (
+                <SearchQueryHints query={query} onPick={onQuery} suggest={suggestValues} />
+              )}
             </div>
             <Button
               variant="ghost"

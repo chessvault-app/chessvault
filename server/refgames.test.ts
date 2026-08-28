@@ -890,18 +890,18 @@ describe('parseSearchQuery', () => {
     expect(parseSearchQuery('result:maybe')).toEqual({
       text: '',
       terms: [],
-      issues: [{ qualifier: 'result', kind: 'bad-result', value: 'maybe' }],
+      issues: [{ qualifier: 'result', kind: 'bad-result', value: 'maybe', raw: 'result:maybe' }],
     });
     expect(parseSearchQuery('year:soon').issues).toEqual([
-      { qualifier: 'year', kind: 'bad-year', value: 'soon' },
+      { qualifier: 'year', kind: 'bad-year', value: 'soon', raw: 'year:soon' },
     ]);
     expect(parseSearchQuery('year:2020-2010').issues).toEqual([
-      { qualifier: 'year', kind: 'bad-year', value: '2020-2010' },
+      { qualifier: 'year', kind: 'bad-year', value: '2020-2010', raw: 'year:2020-2010' },
     ]);
     expect(parseSearchQuery('carlsen result:')).toEqual({
       text: 'carlsen',
       terms: [],
-      issues: [{ qualifier: 'result', kind: 'empty' }],
+      issues: [{ qualifier: 'result', kind: 'empty', raw: 'result:' }],
     });
   });
 

@@ -1204,6 +1204,28 @@ export function refGamesApi(
    */
   const COUNT_CAP = 10_000;
 
+  /**
+   * Value suggestions for the search box's player-shaped qualifiers,
+   * answered from the derived players lookup — tens of thousands of
+   * names behind an indexed prefix LIKE, ordered by how many games
+   * each name carries. Cheap by construction. A mount without the
+   * lookup tables simply offers nothing; openings and ECO come from
+   * the vendored catalogue (/api/openings), not from here — the
+   * language's names should not depend on which database is picked —
+   * and events have no lookup table, so suggesting them would scan
+   * the games themselves.
+   */
+  api.get('/refgames/suggest', (c) => {
+    const found = fromQuery(c);
+    if (!found) return c.json({ names: [] });
+    const q = (c.req.query('q') ?? '').trim();
+    if (!q || !hasLookups(found.db)) return c.json({ names: [] });
+    const rows = found.db
+      .prepare('SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 6')
+      .all(`${q}%`) as { name: string; games: number }[];
+    return c.json({ names: rows });
+  });
+
   api.get('/refgames/search', (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);

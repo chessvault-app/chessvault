@@ -28,6 +28,9 @@ export interface SearchIssue {
   qualifier: string;
   kind: 'empty' | 'bad-result' | 'bad-year';
   value?: string;
+  /** The offending token exactly as typed — how a box can tell a
+      finished mistake from one still under the caret. */
+  raw: string;
 }
 
 export const SEARCH_PREFIXES = [
@@ -42,6 +45,20 @@ export const SEARCH_PREFIXES = [
   'year',
 ] as const;
 const PREFIX_SET = new Set<string>(SEARCH_PREFIXES);
+
+const normalizeResult = (value: string): '1-0' | '0-1' | '1/2-1/2' | null => {
+  const norm =
+    value.toLowerCase() === 'draw' || value === '½-½' || value === '1/2-1/2' ? '1/2-1/2' : value;
+  return norm === '1-0' || norm === '0-1' || norm === '1/2-1/2' ? norm : null;
+};
+
+const parseYearSpan = (value: string): { from: number; to: number } | null => {
+  const m = /^(\d{4})(?:-(\d{4}))?$/.exec(value);
+  if (!m) return null;
+  const from = Number(m[1]);
+  const to = m[2] !== undefined ? Number(m[2]) : from;
+  return to >= from ? { from, to } : null;
+};
 
 export function parseSearchQuery(q: string): {
   text: string;
@@ -62,29 +79,24 @@ export function parseSearchQuery(q: string): {
     if (colon > 0 && PREFIX_SET.has(key)) {
       const value = unquote(raw.slice(colon + 1));
       if (!value) {
-        issues.push({ qualifier: key, kind: 'empty' });
+        issues.push({ qualifier: key, kind: 'empty', raw });
         continue;
       }
       if (key === 'result') {
-        const norm =
-          value.toLowerCase() === 'draw' || value === '½-½' || value === '1/2-1/2'
-            ? '1/2-1/2'
-            : value;
-        if (norm === '1-0' || norm === '0-1' || norm === '1/2-1/2') {
+        const norm = normalizeResult(value);
+        if (norm) {
           terms.push({ kind: 'result', value: norm });
         } else {
-          issues.push({ qualifier: key, kind: 'bad-result', value });
+          issues.push({ qualifier: key, kind: 'bad-result', value, raw });
         }
         continue;
       }
       if (key === 'year') {
-        const m = /^(\d{4})(?:-(\d{4}))?$/.exec(value);
-        const from = m ? Number(m[1]) : 0;
-        const to = m && m[2] !== undefined ? Number(m[2]) : from;
-        if (m && to >= from) {
-          terms.push({ kind: 'year', from, to });
+        const span = parseYearSpan(value);
+        if (span) {
+          terms.push({ kind: 'year', from: span.from, to: span.to });
         } else {
-          issues.push({ qualifier: key, kind: 'bad-year', value });
+          issues.push({ qualifier: key, kind: 'bad-year', value, raw });
         }
         continue;
       }
@@ -100,6 +112,44 @@ export function parseSearchQuery(q: string): {
   }
 
   return { text: textParts.join(' ').trim(), terms, issues };
+}
+
+/**
+ * The query split into styled spans for an in-field highlight — the
+ * concatenated span texts reproduce the input EXACTLY, character for
+ * character, or the overlay drifts off the glyphs it colours.
+ */
+export type QuerySpan = {
+  text: string;
+  type: 'plain' | 'qualifier' | 'value' | 'invalid';
+};
+
+export function tokenizeSearchQuery(q: string): QuerySpan[] {
+  const spans: QuerySpan[] = [];
+  const re = /(\s+)|((?:[^\s"]+|"[^"]*")+)/g;
+  for (const m of q.matchAll(re)) {
+    if (m[1] !== undefined) {
+      spans.push({ text: m[1], type: 'plain' });
+      continue;
+    }
+    const raw = m[2]!;
+    const colon = raw.indexOf(':');
+    const key = colon > 0 ? raw.slice(0, colon).toLowerCase() : '';
+    if (colon > 0 && PREFIX_SET.has(key)) {
+      spans.push({ text: raw.slice(0, colon + 1), type: 'qualifier' });
+      const rest = raw.slice(colon + 1);
+      if (rest) {
+        const value = rest.replace(/"/g, '').trim();
+        const bad =
+          (key === 'result' && !normalizeResult(value)) ||
+          (key === 'year' && !parseYearSpan(value));
+        spans.push({ text: rest, type: bad ? 'invalid' : 'value' });
+      }
+    } else {
+      spans.push({ text: raw, type: 'plain' });
+    }
+  }
+  return spans;
 }
 
 /**

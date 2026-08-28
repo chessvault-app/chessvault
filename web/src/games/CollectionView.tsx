@@ -33,7 +33,12 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { t } from '@/lib/i18n';
 import { GamePreview, docId, gameKey, type GameSummary, type Preview } from './shared';
 import { CollectionList, customName } from './CollectionList';
-import { SearchQueryHints } from './GameFilters';
+import {
+  catalogSuggest,
+  highlightQuery,
+  SearchQueryHints,
+  type ValueSuggestion,
+} from './GameFilters';
 import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
@@ -87,6 +92,38 @@ export function CollectionView() {
   /** The query-language panel under the collection search, open while
       the box has focus. */
   const [searchHintsOpen, setSearchHintsOpen] = useState(false);
+  /** Live values for the panel: players and events aggregate from the
+      rows already in the page; openings and ECO come from the vendored
+      catalogue, same as everywhere. */
+  const suggestCollection = useCallback(
+    async (field: string, value: string): Promise<ValueSuggestion[]> => {
+      if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
+      const v = value.trim().toLowerCase();
+      if (!v) return [];
+      const counted = new Map<string, number>();
+      if (field === 'event') {
+        for (const g of games) {
+          if (g.event && g.event.toLowerCase().includes(v))
+            counted.set(g.event, (counted.get(g.event) ?? 0) + 1);
+        }
+      } else if (['player', 'opponent', 'white', 'black'].includes(field)) {
+        for (const g of games) {
+          for (const name of field === 'white'
+            ? [g.white]
+            : field === 'black'
+              ? [g.black]
+              : [g.white, g.black]) {
+            if (name.toLowerCase().startsWith(v)) counted.set(name, (counted.get(name) ?? 0) + 1);
+          }
+        }
+      }
+      return [...counted]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([name, n]) => ({ v: name, desc: t('{n} games', { n: String(n) }) }));
+    },
+    [games],
+  );
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column.
       Mirrors heldSheet so the sheet survives a trip to the Board. */
@@ -272,11 +309,14 @@ export function CollectionView() {
             if (e.key === 'Escape') setSearchHintsOpen(false);
           }}
           placeholder={t('Search collection…')}
+          renderHighlight={highlightQuery}
           className="w-full"
         />
         {/* The same query language the databases box speaks — one
             parser in shared/, one panel teaching it. */}
-        {searchHintsOpen && <SearchQueryHints query={query} onPick={setQuery} />}
+        {searchHintsOpen && (
+          <SearchQueryHints query={query} onPick={setQuery} suggest={suggestCollection} />
+        )}
       </div>
       {/* Icon only, like the shelves': the word Bookmarked beside it was
           the only label in any of them, and a pressed state says the same
