@@ -227,7 +227,17 @@ function GameDetailsContent({
                 )}
                 <button
                   type="button"
-                  onClick={() => setIdx(i + 1)}
+                  // Out of the focus story on purpose: the list is
+                  // driven by ←/→ (and Home/End), not by tabbing
+                  // through hundreds of plies — and a clicked ply that
+                  // KEPT focus grew a focus-visible ring the moment
+                  // the arrows were used, a second, stale marker
+                  // beside the filled highlight that had walked on.
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    setIdx(i + 1);
+                  }}
                   className={cn(
                     'hover:bg-accent cursor-pointer rounded-sm px-0.5',
                     idx === i + 1
