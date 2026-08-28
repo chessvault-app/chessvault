@@ -1885,6 +1885,7 @@ export const ko: Record<string, string> = {
   'needs a value': '값이 필요합니다',
   'is not a result — 1-0, 0-1 or draw': '은(는) 결과가 아닙니다 — 1-0, 0-1 또는 draw',
   'is not a year or a span — 2014, 2010-2015': '은(는) 연도나 범위가 아닙니다 — 2014, 2010-2015',
+  'cannot all hold in one game': '은(는) 한 게임에서 동시에 성립할 수 없습니다',
   'This player as White': '이 플레이어가 백인 게임',
   'This player as Black': '이 플레이어가 흑인 게임',
   'Opening name contains': '오프닝 이름에 포함',

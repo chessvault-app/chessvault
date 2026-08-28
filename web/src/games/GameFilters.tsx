@@ -975,11 +975,17 @@ export function SearchQueryIssues({
               badge={issue.value ?? ''}
               message={t('is not a result — 1-0, 0-1 or draw')}
             />
-          ) : (
+          ) : issue.kind === 'bad-year' ? (
             <IssueLine
               key={i}
               badge={issue.value ?? ''}
               message={t('is not a year or a span — 2014, 2010-2015')}
+            />
+          ) : (
+            <IssueLine
+              key={i}
+              badge={issue.value ?? ''}
+              message={t('cannot all hold in one game')}
             />
           ),
         )}

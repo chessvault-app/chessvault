@@ -912,6 +912,52 @@ describe('parseSearchQuery', () => {
       issues: [],
     });
   });
+
+  it('warns on terms that cannot all hold in one game', () => {
+    // Two exact scores; two spans with no common year.
+    expect(parseSearchQuery('result:1-0 result:0-1').issues).toEqual([
+      {
+        qualifier: 'result',
+        kind: 'impossible',
+        value: 'result:1-0 · result:0-1',
+        raw: 'result:0-1',
+      },
+    ]);
+    expect(parseSearchQuery('year:2014 year:2020').issues).toEqual([
+      { qualifier: 'year', kind: 'impossible', value: 'year:2014 · year:2020', raw: 'year:2020' },
+    ]);
+    // One seat, two names that cannot be the same person.
+    expect(parseSearchQuery('white:carlsen white:nakamura').issues).toEqual([
+      {
+        qualifier: 'white',
+        kind: 'impossible',
+        value: 'white:carlsen · white:nakamura',
+        raw: 'white:nakamura',
+      },
+    ]);
+    // Three distinct names, two seats.
+    expect(parseSearchQuery('player:carlsen white:nakamura black:kasparov').issues).toEqual([
+      {
+        qualifier: 'player',
+        kind: 'impossible',
+        value: 'white:nakamura · black:kasparov · player:carlsen',
+        raw: 'player:carlsen',
+      },
+    ]);
+    // The terms stay in the search — zero rows is the right answer.
+    expect(parseSearchQuery('result:1-0 result:0-1').terms).toHaveLength(2);
+  });
+
+  it('does not warn on combinations that can hold', () => {
+    const ok = (q: string) => expect(parseSearchQuery(q).issues).toEqual([]);
+    ok('player:carlsen opponent:kasparov'); // head-to-head
+    ok('white:carlsen black:kasparov');
+    ok('player:carlsen white:carlsen'); // same name, both hold
+    ok('white:carl white:carlsen'); // one contains the other
+    ok('year:2010-2015 year:2014'); // overlapping spans
+    ok('result:draw result:1/2-1/2'); // same score, two spellings
+    ok('eco:B90 opening:french'); // deliberately not judged
+  });
 });
 
 describe('matchesSearchTerms', () => {

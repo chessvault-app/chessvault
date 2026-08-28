@@ -15,7 +15,11 @@
  * A known qualifier whose value is missing or unparseable becomes an
  * ISSUE — reported so the box can warn, and dropped from the search
  * (an intended filter that silently matched nothing, or silently
- * became text, was the worse of both).
+ * became text, was the worse of both). Terms that PARSE but cannot
+ * all hold in one game — two exact scores, years that share no span,
+ * two names on one seat, more names than a game has seats — become an
+ * `impossible` issue and stay in the search: the zero rows they find
+ * are correct, the warning says why.
  */
 
 export type SearchTerm =
@@ -26,10 +30,14 @@ export type SearchTerm =
 
 export interface SearchIssue {
   qualifier: string;
-  kind: 'empty' | 'bad-result' | 'bad-year';
+  kind: 'empty' | 'bad-result' | 'bad-year' | 'impossible';
+  /** For `impossible`: the conflicting tokens, ` · `-joined, for the
+      warning to quote. */
   value?: string;
   /** The offending token exactly as typed — how a box can tell a
-      finished mistake from one still under the caret. */
+      finished mistake from one still under the caret. For
+      `impossible`, the LAST token of the conflict, so the warning
+      waits until the token that completes it is finished. */
   raw: string;
 }
 
@@ -60,6 +68,77 @@ const parseYearSpan = (value: string): { from: number; to: number } | null => {
   return to >= from ? { from, to } : null;
 };
 
+/** Two name constraints that can hold on ONE name — one contains the
+    other, the way `white:carl` and `white:carlsen` both match Carlsen.
+    Matching is substring matching, so this is the honest test of
+    "these could be the same person". */
+const namesCompatible = (a: string, b: string): boolean => {
+  const x = a.toLowerCase();
+  const y = b.toLowerCase();
+  return x.includes(y) || y.includes(x);
+};
+
+/** Constraints bucketed into "could be the same name" groups —
+    containment-greedy, which is enough for a warning. */
+const nameGroups = (vals: { value: string; raw: string }[]): { value: string; raw: string }[][] => {
+  const groups: { value: string; raw: string }[][] = [];
+  for (const v of vals) {
+    const g = groups.find((members) => members.some((m) => namesCompatible(m.value, v.value)));
+    if (g) g.push(v);
+    else groups.push([v]);
+  }
+  return groups;
+};
+
+/** The provable contradictions, appended as `impossible` issues. The
+    judged cases: two exact scores, year spans with no common year,
+    incompatible names on one seat, and more distinct names than a
+    game's two seats. `eco:` against `opening:` is deliberately NOT
+    judged — opening: matches the database's own free-text names,
+    which no catalogue can be trusted to mirror. */
+const findImpossible = (withRaw: { term: SearchTerm; raw: string }[], issues: SearchIssue[]) => {
+  const impossible = (qualifier: string, raws: string[]) => {
+    // The same token typed twice is one constraint — quote it once.
+    const involved = [...new Set(raws)];
+    issues.push({
+      qualifier,
+      kind: 'impossible',
+      value: involved.join(' · '),
+      raw: involved[involved.length - 1] ?? '',
+    });
+  };
+
+  const results = withRaw.filter((t) => t.term.kind === 'result');
+  if (new Set(results.map((t) => (t.term as { value: string }).value)).size > 1) {
+    impossible('result', results.map((t) => t.raw));
+  }
+
+  const years = withRaw.filter((t) => t.term.kind === 'year');
+  if (years.length > 1) {
+    const spans = years.map((t) => t.term as { from: number; to: number });
+    const lo = Math.max(...spans.map((s) => s.from));
+    const hi = Math.min(...spans.map((s) => s.to));
+    if (lo > hi) impossible('year', years.map((t) => t.raw));
+  }
+
+  const seat = (kind: 'white' | 'black' | 'player') =>
+    withRaw
+      .filter((t) => t.term.kind === kind)
+      .map((t) => ({ value: (t.term as { value: string }).value, raw: t.raw }));
+  const firstRaws = (groups: { raw: string }[][]) =>
+    groups.flatMap((g) => (g.length > 0 ? [g[0]!.raw] : []));
+  const whites = nameGroups(seat('white'));
+  const blacks = nameGroups(seat('black'));
+  if (whites.length > 1) impossible('white', firstRaws(whites));
+  else if (blacks.length > 1) impossible('black', firstRaws(blacks));
+  else {
+    // Each seat holds at most one name, so more than two distinct
+    // names across every player constraint leaves somebody standing.
+    const all = nameGroups([...seat('white'), ...seat('black'), ...seat('player')]);
+    if (all.length > 2) impossible('player', firstRaws(all));
+  }
+};
+
 export function parseSearchQuery(q: string): {
   text: string;
   terms: SearchTerm[];
@@ -72,6 +151,12 @@ export function parseSearchQuery(q: string): {
   const textParts: string[] = [];
   const terms: SearchTerm[] = [];
   const issues: SearchIssue[] = [];
+  const withRaw: { term: SearchTerm; raw: string }[] = [];
+
+  const add = (term: SearchTerm, raw: string) => {
+    terms.push(term);
+    withRaw.push({ term, raw });
+  };
 
   for (const raw of tokens) {
     const colon = raw.indexOf(':');
@@ -85,7 +170,7 @@ export function parseSearchQuery(q: string): {
       if (key === 'result') {
         const norm = normalizeResult(value);
         if (norm) {
-          terms.push({ kind: 'result', value: norm });
+          add({ kind: 'result', value: norm }, raw);
         } else {
           issues.push({ qualifier: key, kind: 'bad-result', value, raw });
         }
@@ -94,7 +179,7 @@ export function parseSearchQuery(q: string): {
       if (key === 'year') {
         const span = parseYearSpan(value);
         if (span) {
-          terms.push({ kind: 'year', from: span.from, to: span.to });
+          add({ kind: 'year', from: span.from, to: span.to }, raw);
         } else {
           issues.push({ qualifier: key, kind: 'bad-year', value, raw });
         }
@@ -102,15 +187,19 @@ export function parseSearchQuery(q: string): {
       }
       // `opponent:` is the window's Against slot wearing its search
       // name — the same constraint as another player: term.
-      terms.push({
-        kind: key === 'opponent' ? 'player' : (key as 'player' | 'white' | 'black' | 'opening' | 'event' | 'eco'),
-        value,
-      });
+      add(
+        {
+          kind: key === 'opponent' ? 'player' : (key as 'player' | 'white' | 'black' | 'opening' | 'event' | 'eco'),
+          value,
+        },
+        raw,
+      );
       continue;
     }
     textParts.push(unquote(raw));
   }
 
+  findImpossible(withRaw, issues);
   return { text: textParts.join(' ').trim(), terms, issues };
 }
 
