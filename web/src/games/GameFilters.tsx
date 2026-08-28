@@ -242,17 +242,30 @@ export function StructuredFiltersWindow({
   const [draft, setDraft] = useState<StructuredFilters>(initial);
   const patch = (part: Partial<StructuredFilters>): void => setDraft((d) => ({ ...d, ...part }));
 
-  // The always-impossible pairs only: a decisive outcome against a
-  // drawn result, or "drew" against a decisive one. A decisive outcome
-  // WITH a decisive result stays quiet — that pair pins the side, which
-  // is a feature. Gated on a named player, since a playerless outcome
-  // filters nothing (and has its own hint below).
+  // The impossible pairs only. Which results the player row still
+  // allows: "drew" allows only the draw; a decisive outcome with a
+  // chosen SIDE allows exactly one score (won as White is 1-0 and
+  // nothing else); side-agnostic won/lost allows either decisive
+  // score. An absolute Result outside that set can never match — a
+  // decisive outcome WITH a compatible result stays quiet, since that
+  // pair pins the side, which is a feature. Gated on a named player: a
+  // playerless outcome filters nothing (and has its own hint below).
+  const allowedResults = ((): ResultFilter[] | null => {
+    if (draft.outcome === 'any') return null;
+    if (draft.outcome === 'drawn') return ['1/2-1/2'];
+    // The score this outcome produces, per seat the player might hold.
+    const asWhite = draft.outcome === 'won' ? '1-0' : '0-1';
+    const asBlack = draft.outcome === 'won' ? '0-1' : '1-0';
+    if (draft.side === 'white') return [asWhite];
+    if (draft.side === 'black') return [asBlack];
+    return ['1-0', '0-1'];
+  })();
   const contradictory =
     draftResult !== undefined &&
     draftResult !== 'any' &&
     draft.player.trim() !== '' &&
-    (((draft.outcome === 'won' || draft.outcome === 'lost') && draftResult === '1/2-1/2') ||
-      (draft.outcome === 'drawn' && draftResult !== '1/2-1/2'));
+    allowedResults !== null &&
+    !allowedResults.includes(draftResult);
 
   return (
     <Dialog

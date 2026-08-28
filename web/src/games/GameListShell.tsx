@@ -135,11 +135,12 @@ export function GameListShell({
         <div className="flex flex-wrap items-center gap-2 px-3 py-2">{notice}</div>
       )}
       {countBand != null && (
-        // px-3 on BOTH sides now: the band's controls used to end at
-        // pr-1.5, which put its icon button 6px right of the identical
-        // buttons in the toolbar and filter rows above — one ragged
-        // stack of icons down the pane's right edge.
-        <div className="border-border flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 text-sm">
+        // px-3 on BOTH sides and gap-1.5, both matching the toolbar and
+        // filter rows above: pr-1.5 used to put this band's icon button
+        // 6px right of theirs, and gap-2 put its SELECT 2px left of
+        // theirs — a rail of controls that almost lined up reads worse
+        // than one that plainly does not.
+        <div className="border-border flex min-h-8 flex-wrap items-center gap-1.5 border-t px-3 py-1 text-sm">
           {countBand}
         </div>
       )}
