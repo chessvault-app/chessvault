@@ -144,7 +144,12 @@ What a built database answers, and from where:
   Every rung except *Same pawn structure* also keeps the target's side
   to move — those rungs relax *where* things stand, never whose turn
   it is; a structure is a fact about a phase, so that rung keeps
-  neither. A material hunt picks an endgame
+  neither. The rungs nest only up to a point: exact ⊂ pawns&material,
+  and pawns&material ⊂ each of the other three — every one of them
+  forgets one more thing — but files&material, material and structure
+  fan out from there, none containing another. Loosening down the
+  chain only adds games; switching between the three loose rungs can
+  lose and gain games at once. A material hunt picks an endgame
   situation — the presets are data, `web/src/games/endgames.json`, from
   pawn endings to "a queen up" — or a custom per-piece, per-side count
   editor, plus how long the material must hold (any moment, 4+ or 8+
