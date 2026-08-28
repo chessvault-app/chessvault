@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <rect width="120" height="120" rx="27" fill="#0a0a0a" />
-  <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" />
-  <path d="M60 60 L60 24 L91 42 Z" fill="#ffffff" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 20 80 80">
+  <style>:root{color:#0a0a0a}@media(prefers-color-scheme:dark){:root{color:#ffffff}}</style>
+  <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M60 60 L60 24 L91 42 Z" fill="currentColor"/>
 </svg>

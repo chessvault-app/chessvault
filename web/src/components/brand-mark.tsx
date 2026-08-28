@@ -1,9 +1,11 @@
 /**
  * The app's mark: a hexagon outline with one of its six wedges filled.
- * The same drawing as web/public/favicon.svg, minus the rounded square —
- * whoever places it supplies the tile, so it sits on the sidebar's
- * primary tile, the lock screen's, and the home header's in whatever
- * colour the theme gives them.
+ * The same drawing as web/public/favicon.svg (which
+ * scripts/render-icons.mjs writes from the same paths). Everywhere the
+ * mark appears it is bare in the surrounding ink — the sidebar, the lock
+ * screen, the home header, the favicon, the splash screens. A ground
+ * survives only on the icons an OS composites onto grounds the image
+ * cannot see: apple-touch and the desktop installers.
  *
  * It is the BRAND, not "chess": where the app needs to say chess (the
  * notes palette, an archive row, an empty state) it still uses

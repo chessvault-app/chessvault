@@ -2,16 +2,62 @@ import { Resvg } from '@resvg/resvg-js';
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import pngToIco from 'png-to-ico';
 
-/** Rasterise the favicon mark into every PNG the app ships. */
-const svg = readFileSync('web/public/favicon.svg', 'utf-8');
-const render = (size, path) => {
+/**
+ * The mark, once — the same drawing as web/src/components/brand-mark.tsx.
+ * Everything below is a choice of ink and ground around it.
+ */
+const MARK = (ink) => `
+  <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="${ink}" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M60 60 L60 24 L91 42 Z" fill="${ink}"/>`;
+
+/**
+ * Bare, on nothing — how the app itself wears the mark since the sidebar
+ * and lock screen dropped their tiles. Browser surfaces can afford it:
+ * the SVG favicon adapts its ink to the tab's scheme, the .ico fallback
+ * only reaches legacy contexts, and Android backdrops a manifest icon it
+ * puts on a home screen.
+ */
+const bare = (ink) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 20 80 80">${MARK(ink)}</svg>`;
+
+/**
+ * Grounded — for the icons an OS composites onto grounds the image cannot
+ * see. iOS fills apple-touch transparency with solid black (full bleed:
+ * it masks its own corners, and the old rounded tile's corners were
+ * being blackfilled anyway); a desktop taskbar or dock is as often dark
+ * as light, where a bare near-black glyph simply vanishes. These two keep
+ * the dark ground and the white mark.
+ */
+const grounded = (rx) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="${rx}" fill="#0a0a0a"/>${MARK('#ffffff')}</svg>`;
+
+const INK = '#0a0a0a';
+
+/**
+ * The favicon is written here rather than read from here, so the tab
+ * icon and every raster stay one drawing. currentColor plus the media
+ * query is what lets the bare mark survive a dark tab strip.
+ */
+writeFileSync(
+  'web/public/favicon.svg',
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 20 80 80">
+  <style>:root{color:${INK}}@media(prefers-color-scheme:dark){:root{color:#ffffff}}</style>
+  <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M60 60 L60 24 L91 42 Z" fill="currentColor"/>
+</svg>
+`,
+);
+console.log('web/public/favicon.svg  bare, scheme-adaptive');
+
+const render = (svg, size, path) => {
   const png = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng();
   writeFileSync(path, png);
   console.log(`${path}  ${size}x${size}  ${png.length} bytes`);
 };
-render(512, 'web/public/icon-512.png');
-render(192, 'web/public/icon-192.png');
-render(180, 'web/public/apple-touch-icon.png');
+render(bare(INK), 512, 'web/public/icon-512.png');
+render(bare(INK), 192, 'web/public/icon-192.png');
+render(grounded(0), 180, 'web/public/apple-touch-icon.png');
 // Three sizes, because the platforms disagree and one file cannot satisfy
 // any two of them. NSIS refuses anything over 256 — desktop/build-server.mjs
 // turns the 256 into icon.ico, and feeding it a 512 produced "invalid icon
@@ -23,9 +69,9 @@ render(180, 'web/public/apple-touch-icon.png');
 // from a 512 has no @2x slot for its largest size, so every Retina display
 // in the Finder was upscaling a 512 and the result looked like a bad
 // thumbnail, because it was one.
-render(1024, 'desktop/icon-1024.png');
-render(512, 'desktop/icon.png');
-render(256, 'desktop/icon-256.png');
+render(grounded(27), 1024, 'desktop/icon-1024.png');
+render(grounded(27), 512, 'desktop/icon.png');
+render(grounded(27), 256, 'desktop/icon-256.png');
 
 /**
  * favicon.ico, still, in 2026.
@@ -39,7 +85,7 @@ render(256, 'desktop/icon-256.png');
 const ICO_SIZES = [16, 32, 48];
 const tmp = ICO_SIZES.map((size) => {
   const path = `web/public/.favicon-${size}.png`;
-  render(size, path);
+  render(bare(INK), size, path);
   return path;
 });
 writeFileSync('web/public/favicon.ico', await pngToIco(tmp));
