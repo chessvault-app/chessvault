@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 
 import { Select } from '@/components/ui/select';
 import { ClearableInput } from '@/components/text-fields';
+import { InputGroupButton } from '@/components/ui/input-group';
 import ENDGAMES from './endgames.json';
 import {
   catalogSuggest,
@@ -1187,15 +1188,19 @@ export function DatabaseGames({
             placeholder={t('Paste a FEN')}
             spellCheck={false}
             className="min-w-0 flex-1 basis-40"
+            // Inside the field, not beside it: a lone unlabelled icon
+            // between the field and the match select read as belonging to
+            // neither. Leading the field, it is the other way to fill it.
+            start={
+              <InputGroupButton
+                size="icon-xs"
+                title={t('Set the position up on a board')}
+                onClick={() => setSettingUp(true)}
+              >
+                <Grid3x3 className="size-3.5" />
+              </InputGroupButton>
+            }
           />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('Set the position up on a board')}
-            onClick={() => setSettingUp(true)}
-          >
-            <Grid3x3 className="size-3.5" />
-          </Button>
           <Select
             value={rung}
             onValueChange={(v) => setRung(v as MatchMode)}
