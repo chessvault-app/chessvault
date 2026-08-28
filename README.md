@@ -65,8 +65,13 @@ is one connected body of work, and the links are what make it that.
   across notes, studies and games. Files stay Obsidian-readable.
 - **Games** — a curated collection (annotatable like studies), your
   chess.com / Lichess archives browsed month by month with filters,
-  manual PGN import, and a searchable reference database of elite
-  games.
+  manual PGN import, and reference databases searched like a desktop
+  database: by player, opening and ECO, by **position** (exact, or
+  relaxed by degrees down to bare material), or by **material
+  situation** — rook endings, "a queen up", or your own spec. Exact
+  position search answers in milliseconds on a ten-million-game
+  corpus, and the relaxed hunts in tenths of a second with fast
+  search on.
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/games-dark.png">
@@ -363,7 +368,12 @@ scan-index and the inverted key index that make deep and exact search
 fast — an Elite month (280,059 games) indexes in 64 s through the
 native binary, 178 s in plain JavaScript, into a ~1 GB file; Mega-scale
 corpora (10 M+ games) take about an hour and ~32 GB, and exact position
-search answers in milliseconds at that size. The full table of
+search answers in milliseconds at that size. Turning **fast search** on
+for a database (a toggle on its row in the manager) holds its
+scan-index resident in server memory, and the relaxed-position and
+material hunts answer in 0.1–0.8 s across those same ten million games
+— without it they stream through the native binary in ~30 s, or plain
+JavaScript in minutes. The full table of
 measured costs per size class, and what RAM each job wants, is in
 ["Scale and hardware"](docs/databases.md#scale-and-hardware).
 
