@@ -410,24 +410,40 @@ export function CollectionView() {
                 the pane is what a header does, and the live tab is the
                 header's own rule, thickened under the name showing. */}
             <Tabs value={tab} onValueChange={(v) => setTab(v as MainTab)} className="contents">
-              <TabsList
-                variant="line"
-                aria-label={t('What the pane is showing')}
-                // overflow-x-auto: four labels JUST fit a 375px phone in
-                // Korean and brush the edge in English — a strip that
-                // scrolls beats one that clips its last tab.
-                className="border-border flex h-10 w-auto shrink-0 items-center justify-start gap-1 overflow-x-auto rounded-none border-b p-0 px-2"
-              >
-                {TABS.map(({ id, label }) => (
-                  <TabsTrigger
-                    key={id}
-                    value={id}
-                    className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:-bottom-px"
-                  >
-                    <span className="truncate">{t(label)}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              {/* The SCROLLER is a wrapper, never the list itself. Four
+                  labels just fit a 375px phone in Korean and brush the
+                  edge in English, so the strip must scroll sideways —
+                  but the registry's line tabs draw their 40px triggers
+                  and the active underline OVERFLOWING the list's own
+                  32px box, and a list turned scroll container clipped
+                  them (first symptom: the underline vanished under the
+                  new scrollbar; hidden bar, it was still losing its
+                  lower pixels to the clip). box-content h-10: the
+                  wrapper's CONTENT box matches the triggers exactly, so
+                  nothing is clipped and the underline ends flush on the
+                  border. */}
+              <div className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b">
+                <TabsList
+                  variant="line"
+                  aria-label={t('What the pane is showing')}
+                  className="flex w-max min-w-full items-center justify-start gap-1 rounded-none border-0 bg-transparent p-0 px-2"
+                >
+                  {TABS.map(({ id, label }) => (
+                    <TabsTrigger
+                      key={id}
+                      value={id}
+                      // after:bottom-0, not the -bottom-px the other
+                      // line tabs use: inside the scrolling wrapper the
+                      // underline cannot overlap the border without
+                      // being clipped, so it sits ON the rule instead
+                      // of thickening it — the same 2px to the eye.
+                      className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:bottom-0"
+                    >
+                      <span className="truncate">{t(label)}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
             </Tabs>
             {tab === 'databases' ? (
               <DatabaseGames
