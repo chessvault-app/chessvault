@@ -431,19 +431,15 @@ export function CollectionList({
       shape="panel"
       toolbar={toolbar}
       // The panel shape has no framed title to carry the tally, so the
-      // count band says it. At table density the filters fold into this
-      // band too — one 37px row instead of two, and in a short pane
+      // count band says it. At table density the count moves UP into the
+      // filter row instead — one row instead of two, and in a short pane
       // (the workspace's games band) every reclaimed band is a game row
-      // shown. Card mode keeps the stacked bands.
+      // shown — and it is the same FilterRow the archive draws, so the
+      // two tabs' control rows share one padding by construction
+      // (lanph3re caught them 7px apart). Card mode keeps the stacked
+      // bands.
       countBand={
-        table ? (
-          <>
-            {filterControls}
-            <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
-              {t('{n} games', { n: visible.length.toLocaleString() })}
-            </span>
-          </>
-        ) : (
+        table ? undefined : (
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
             {t('{n} games', { n: visible.length.toLocaleString() })}
           </span>
@@ -455,11 +451,21 @@ export function CollectionList({
       // The wait, in the shape of the strip and rows that are coming —
       // drawn at once rather than behind useSlowLoad: these rows are the
       // panel's height, so held back they left a header over nothing
-      // that grew a fifth of a second later. No reserved filter row at
-      // table density, where no filter band will come.
-      filtersLoading={!loaded && !table}
+      // that grew a fifth of a second later.
+      filtersLoading={!loaded}
       listLoading={!loaded}
-      filters={table ? undefined : filterControls}
+      filters={
+        table ? (
+          <>
+            {filterControls}
+            <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
+              {t('{n} games', { n: visible.length.toLocaleString() })}
+            </span>
+          </>
+        ) : (
+          filterControls
+        )
+      }
       list={
         loaded && visible.length > 0
           ? visible.map((game) =>

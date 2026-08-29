@@ -245,7 +245,10 @@ export function GameListShell({
             // game rows, and every reclaimed step is a row shown.
             shape === 'sheet' && 'pb-2 pt-1',
             shape === 'framed' && 'px-3 pb-3 pt-3',
-            shape === 'panel' && (dense ? 'px-3 pb-2 pt-2.5' : 'px-3 pb-3 pt-4'),
+            // py-2 at table density, matching FilterRow's own rhythm: the
+            // merged control rows and the filter rows read as one system
+            // when every band pads its controls by the same 8px.
+            shape === 'panel' && (dense ? 'px-3 py-2' : 'px-3 pb-3 pt-4'),
           )}
         >
           {toolbar}
