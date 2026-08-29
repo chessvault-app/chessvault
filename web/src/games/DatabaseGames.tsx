@@ -1,4 +1,4 @@
-﻿import { Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+﻿import { CornerDownLeft, Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -1299,7 +1299,11 @@ export function DatabaseGames({
           widest piece and wrapped onto a line of its own in narrow panes
           (lanph3re's report). The FEN field submits on Enter besides, so
           the button is the pointer's way in, not the only one. Primary
-          still — it is the row's one verb. */}
+          still — it is the row's one verb. The glyph is the RETURN
+          symbol, not ScanSearch: the toggle one row up already wears
+          that one and means it (search BY position), and two identical
+          icons stacked read as one control twice (lanph3re's catch) —
+          ↵ says what this one does and how the keyboard does it. */}
       <Button
         variant="default"
         size="icon-sm"
@@ -1311,7 +1315,7 @@ export function DatabaseGames({
         }
         onClick={() => void runHunt()}
       >
-        <ScanSearch className="size-3.5" />
+        <CornerDownLeft className="size-3.5" />
       </Button>
     </div>
   );
