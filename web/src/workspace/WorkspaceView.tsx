@@ -329,7 +329,11 @@ function Workspace() {
           style={budget > 0 ? { width: clampBoardWidth(budget) } : undefined}
           className="flex flex-none self-start"
         >
-          <AnalysisBoard editablePlayers nav={false} />
+          {/* verticalKeys off: ↑/↓ browse the games band's rows here
+              (useTableNav), and both listeners answering at once stepped
+              the list AND threw the board to an end. Home/End still jump
+              the board. */}
+          <AnalysisBoard editablePlayers nav={false} verticalKeys={false} />
         </div>
 
         {/* The Board page's moves panel, rearranged: engine docked on

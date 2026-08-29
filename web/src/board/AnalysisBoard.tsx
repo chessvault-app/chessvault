@@ -43,7 +43,19 @@ export function AnalysisBoard({
   drawShapes = true,
   strip = true,
   nav = true,
+  verticalKeys = true,
 }: {
+  /**
+   * ↑/↓ as go-to-start / go-to-end. Off for a host that shares the
+   * window's keyboard with a games table (the workspace), where the
+   * vertical arrows browse rows through useTableNav and both listeners
+   * firing at once stepped the list AND threw the board to an end —
+   * Home and End still jump the board there, so nothing is lost, and
+   * the split reads as a grammar: horizontal arrows walk the moves,
+   * vertical arrows walk the games. Opt-in from the caller; every
+   * full-page board keeps the default.
+   */
+  verticalKeys?: boolean;
   editablePlayers?: boolean;
   /**
    * The fixed-height strip over the board at `wide`, where a game's player
@@ -199,11 +211,19 @@ export function AnalysisBoard({
           goForward();
           break;
         case 'ArrowUp':
+          if (!verticalKeys) break;
+          e.preventDefault();
+          goToStart();
+          break;
         case 'Home':
           e.preventDefault();
           goToStart();
           break;
         case 'ArrowDown':
+          if (!verticalKeys) break;
+          e.preventDefault();
+          goToEnd();
+          break;
         case 'End':
           e.preventDefault();
           goToEnd();
@@ -220,7 +240,7 @@ export function AnalysisBoard({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goBack, goForward, goToStart, goToEnd, flip]);
+  }, [goBack, goForward, goToStart, goToEnd, flip, verticalKeys]);
   useEffect(() => {
     const el = boardColumn.current;
     if (!el) return;
