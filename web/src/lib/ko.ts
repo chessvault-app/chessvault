@@ -376,8 +376,12 @@ export const ko: Record<string, string> = {
   'No studies yet — create one in Studies, or save a line you played first.':
     '아직 스터디가 없습니다. 스터디에서 만들거나, 방금 둔 라인을 먼저 저장해 보세요.',
   '{n} positions to review': '복습할 포지션 {n}개',
+  '{n} positions due for review': '복습할 때가 된 포지션 {n}개',
+  'Nothing due — the next position comes back {when}':
+    '지금은 복습할 것이 없습니다 — 다음 포지션은 {when}',
   '{n} replies with no answer yet': '아직 대비 없는 응수 {n}개',
   'Drill a missed position': '놓친 포지션 드릴',
+  'Drill a position due for review': '복습할 때가 된 포지션 드릴',
   'Every drilled position stands recalled.': '드릴한 모든 포지션을 기억하고 있습니다.',
   'Forget the drill record — misses, gaps and recalls in every study':
     '드릴 기록 지우기 — 모든 스터디의 미스, 갭, 회상 기록',
@@ -1140,6 +1144,7 @@ export const ko: Record<string, string> = {
   'Continue study': '스터디 계속하기',
   'Last game': '최근 게임',
   'Resume training': '훈련 이어하기',
+  'Repertoire review': '레퍼토리 복습',
   'Set up your vault': '보관함 준비하기',
   'Hide this checklist': '이 목록 숨기기',
   'Add your Lichess or Chess.com username — the Games page fills itself from it':
@@ -1151,6 +1156,8 @@ export const ko: Record<string, string> = {
 
   // --- the desktop dashboard -----------------------------------------------
   Overview: '개요',
+  '{n} repertoire positions due': '복습할 때가 된 레퍼토리 포지션 {n}개',
+  'Repertoire — the next position comes back {when}': '레퍼토리 — 다음 포지션은 {when}',
   // 'Recent games' already has an entry (the explorer's my-games panel).
   'Recent work': '최근 작업',
   'Nothing to show yet': '아직 보여줄 것이 없습니다',

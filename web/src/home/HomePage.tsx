@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Folder,
   Grid3x3,
+  Layers,
   Library,
   NotebookPen,
   Puzzle,
@@ -108,6 +109,13 @@ interface HomeData {
   /** The review schedule, straight off /api/puzzles/meta. */
   due: number;
   nextDue: string | null;
+  /**
+   * The repertoire drill's half of the same schedule, off
+   * /api/repertoire/meta — the two trainers share the ladder
+   * (shared/review.ts), so the two rows below mean the same thing by
+   * "due" and are read as one list rather than two dialects.
+   */
+  repertoire: { attempted: number; due: number; nextDue: string | null };
   /** The most recently trained puzzle books, at most three. */
   books: PuzzleBookSummary[];
   /** Studies and notes by last touch, newest first, at most five. */
@@ -278,7 +286,8 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they
       // answer with a `studies` list.
-      const [studies, notes, games, puzzles, settings, books, library, map] = await Promise.all([
+      const [studies, notes, games, puzzles, settings, books, library, map, repertoire] =
+        await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
         grab('/api/games/docs'),
@@ -290,6 +299,8 @@ export function HomePage() {
         // skeleton of SAN and links, capped at 5000 nodes and 1 MB, with
         // no positions in it.
         grab('/api/openingmap'),
+        // Counts only — home links to the trainer, it does not drill.
+        grab('/api/repertoire/meta'),
       ]);
       if (!live) return;
       const docs = (v: unknown): number | undefined =>
@@ -378,6 +389,11 @@ export function HomePage() {
         hasPuzzleBook: puzzleBooks.length > 0,
         due: meta?.due ?? 0,
         nextDue: meta?.nextDue ?? null,
+        repertoire: {
+          attempted: (repertoire as { attempted?: number } | null)?.attempted ?? 0,
+          due: (repertoire as { due?: number } | null)?.due ?? 0,
+          nextDue: (repertoire as { nextDue?: string | null } | null)?.nextDue ?? null,
+        },
         books: topBooks,
         recentDocs,
       });
@@ -432,7 +448,16 @@ export function HomePage() {
     checklist: layout?.checklist !== false,
   };
 
-  const continueRows: { icon: typeof Grid3x3; label: string; detail: string; go: () => void }[] =
+  const continueRows: {
+    icon: typeof Grid3x3;
+    label: string;
+    detail: string;
+    go: () => void;
+    /** Where the row is drawn. Only the repertoire reminder sets it: the
+        desktop carries that in the Training panel, and a phone has no
+        Training panel to carry it. */
+    className?: string;
+  }[] =
     data === null
       ? []
       : [
@@ -463,6 +488,21 @@ export function HomePage() {
                   label: t('Resume training'),
                   detail: t(difficultyLabel),
                   go: () => navigate('puzzles'),
+                },
+              ]
+            : []),
+          // The repertoire's schedule, where a phone can see it. Only
+          // when something is actually due: Continue is a way back in,
+          // not a place to read a timetable, so "nothing until Tuesday"
+          // belongs in the desktop's panel and nowhere else.
+          ...(data.repertoire.due > 0
+            ? [
+                {
+                  icon: Layers,
+                  label: t('Repertoire review'),
+                  detail: t('{n} due', { n: data.repertoire.due }),
+                  go: () => navigate('repertoire'),
+                  className: 'md:hidden',
                 },
               ]
             : []),
@@ -503,10 +543,17 @@ export function HomePage() {
   // Whether the Training panel has a single row to offer. Stated once,
   // because the dashboard's "nothing at all" card is the negation of every
   // panel's condition, and a duplicated condition is how the two drift.
+  // Whether the repertoire has a schedule to report at all. A vault that
+  // has never drilled says nothing here — an empty reminder is a nag.
+  const showRepertoireDue =
+    data !== null &&
+    data.repertoire.attempted > 0 &&
+    (data.repertoire.due > 0 || data.repertoire.nextDue !== null);
   const showTraining =
     data !== null &&
-    data.puzzleDbReady &&
-    ((dash !== null && dash.solvedToday !== null) || data.due > 0 || data.nextDue !== null);
+    ((data.puzzleDbReady &&
+      ((dash !== null && dash.solvedToday !== null) || data.due > 0 || data.nextDue !== null)) ||
+      showRepertoireDue);
 
   return (
     // grid-cols-[minmax(0,1fr)] is load-bearing, not tidiness: a grid's
@@ -606,8 +653,8 @@ export function HomePage() {
             <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
-            {continueRows.map(({ icon: Icon, label, detail, go }) => (
-              <ListRow key={label + detail} divided onClick={go} className="text-sm">
+            {continueRows.map(({ icon: Icon, label, detail, go, className }) => (
+              <ListRow key={label + detail} divided onClick={go} className={cn('text-sm', className)}>
                 <Icon className="text-muted-foreground size-3.5 shrink-0" />
                 <span className="text-foreground min-w-0 flex-1 truncate font-medium">{label}</span>
                 <span className="text-muted-foreground shrink-0">{detail}</span>
@@ -750,7 +797,7 @@ export function HomePage() {
                 {/* Today's count is skipped when the history endpoint did
                     not answer: a nought that is really an error would say
                     you have not trained when you may well have. */}
-                {dash.solvedToday !== null && (
+                {data.puzzleDbReady && dash.solvedToday !== null && (
                   <ListRow divided onClick={() => navigate('puzzles')} className="text-sm">
                     <Puzzle className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
@@ -759,7 +806,7 @@ export function HomePage() {
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>
                 )}
-                {(data.due > 0 || data.nextDue !== null) && (
+                {data.puzzleDbReady && (data.due > 0 || data.nextDue !== null) && (
                   <ListRow divided onClick={() => navigate('puzzles')} className="text-sm">
                     <RotateCcw className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
@@ -767,6 +814,25 @@ export function HomePage() {
                         ? t('{n} due for review', { n: data.due })
                         : t('Nothing due — the next review lands {when}', {
                             when: formatUntil(data.nextDue!),
+                          })}
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  </ListRow>
+                )}
+                {/* The repertoire's own reminder, in the same panel and
+                    the same words as the puzzles' — the two trainers
+                    share one ladder, so what is due in each belongs on
+                    one list rather than in two places to remember to
+                    look. It carries the repertoire's own glyph so the
+                    row says which trainer it is sending you to. */}
+                {showRepertoireDue && (
+                  <ListRow divided onClick={() => navigate('repertoire')} className="text-sm">
+                    <Layers className="text-muted-foreground size-3.5 shrink-0" />
+                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+                      {data.repertoire.due > 0
+                        ? t('{n} repertoire positions due', { n: data.repertoire.due })
+                        : t('Repertoire — the next position comes back {when}', {
+                            when: formatUntil(data.repertoire.nextDue!),
                           })}
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />

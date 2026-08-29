@@ -35,6 +35,7 @@ import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
 import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
+import { formatUntil } from '@/lib/dates';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
@@ -128,8 +129,9 @@ function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
  * passing and recorded, because a gap is fixed by editing the study, not
  * by drilling harder. Only a position where the study covers NONE of the
  * field's replies ends the drill on one. The record lives in the vault
- * (server/repertoire.ts); missed positions form a review pool under the
- * puzzle trainer's own rule — latest attempt decides.
+ * (server/repertoire.ts); missed positions come back on the
+ * puzzle trainer's own schedule — due tomorrow, then 3, 7 and 21 days
+ * out after each clean recall, then graduated (shared/review.ts).
  *
  * Scope is a choice: one chapter (the default), or the whole study as
  * one repertoire. The drill's position is a SET of study nodes — every
@@ -140,12 +142,17 @@ function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
  */
 type Mode = 'spar' | 'drill';
 
-/** One review-pool entry, as the summary endpoint returns it. */
+/** One review-pool entry, as the summary endpoint returns it. Ordered
+    most overdue first, so drilling from the top of the list is drilling
+    what the schedule asked for. */
 interface ReviewEntry {
   chapter: string;
   key: string;
   path: string[];
   expected: string[];
+  /** When the ladder wants this position back (shared/review.ts). Still
+      in the future for one just fumbled — drillable, not yet due. */
+  due: string;
 }
 
 /** The SANs from the root down to a node — the drill record's evidence. */
@@ -316,7 +323,13 @@ export function RepertoireView() {
   const [chapterPick, setChapterPick] = useState('0');
   const [summary, setSummary] = useState<{
     attempted: number;
+    /** Drillable now, due-first — see ReviewEntry. */
     review: ReviewEntry[];
+    /** How many of those the schedule says to look at today. */
+    due: number;
+    /** Recalled and waiting: coming back on their own, later. */
+    scheduled: number;
+    nextDue: string | null;
     gaps: number;
   } | null>(null);
   const [drillNotice, setDrillNotice] = useState<string | null>(null);
@@ -388,9 +401,14 @@ export function RepertoireView() {
     }
     let cancelled = false;
     const scope = wholeStudy ? '' : `&chapter=${encodeURIComponent(chapter.name)}`;
-    void api<{ attempted?: number; review?: ReviewEntry[]; gaps?: unknown[] } | null>(
-      `/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`,
-    )
+    void api<{
+      attempted?: number;
+      review?: ReviewEntry[];
+      due?: number;
+      scheduled?: number;
+      nextDue?: string | null;
+      gaps?: unknown[];
+    } | null>(`/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`)
       .then((body) => {
         if (!cancelled) {
           setSummary(
@@ -398,6 +416,9 @@ export function RepertoireView() {
               ? {
                   attempted: body.attempted ?? 0,
                   review: body.review ?? [],
+                  due: body.due ?? 0,
+                  scheduled: body.scheduled ?? 0,
+                  nextDue: body.nextDue ?? null,
                   gaps: (body.gaps ?? []).length,
                 }
               : null,
@@ -975,13 +996,21 @@ export function RepertoireView() {
   };
 
   /**
-   * Re-drill a position the record says was fumbled: replay its path
+   * Re-drill a position the schedule has brought back: replay its path
    * against both trees and start there. A study edited since the miss may
    * no longer contain the line — then the drill starts from the top
    * rather than inventing a position the study cannot answer for.
+   *
+   * Due first, and only then whatever else is drillable, so a session
+   * spent pressing this button works the schedule off rather than
+   * wandering the pool. Random WITHIN that half: the list is ordered by
+   * due date, and always taking its head would drill the same position
+   * every press until it was recalled.
    */
   const startFromMiss = (): void => {
-    const pool = summary?.review ?? [];
+    const all = summary?.review ?? [];
+    const due = summary?.due ?? 0;
+    const pool = due > 0 ? all.slice(0, due) : all;
     const scoped = wholeStudy ? (drillChapters ?? []) : drillChapter ? [drillChapter] : [];
     if (mode !== 'drill' || scoped.length === 0 || pool.length === 0) return;
     const entry = pool[Math.floor(Math.random() * pool.length)]!;
@@ -1296,12 +1325,30 @@ export function RepertoireView() {
           record can still be wiped. */}
       {mode === 'drill' && summary && summary.attempted > 0 && (
         <div className="flex items-center gap-2">
+          {/* What the schedule says first, because it is the thing to
+              act on: how many positions are due today. A record with
+              nothing due still says when the next line comes back, so
+              "nothing to do" reads as a schedule rather than as an
+              empty page. Positions fumbled since the last due date are
+              drillable without being due, and are counted only in the
+              fallback line — the due number must mean what the same
+              number means on the puzzles page. */}
           <p className="text-muted-foreground min-w-0 flex-1 text-sm leading-relaxed">
-            {summary.review.length > 0 &&
-              t('{n} positions to review', { n: summary.review.length })}
-            {summary.review.length > 0 && summary.gaps > 0 && ' · '}
+            {summary.due > 0
+              ? t('{n} positions due for review', { n: summary.due })
+              : summary.review.length > 0
+                ? t('{n} positions to review', { n: summary.review.length })
+                : summary.scheduled > 0 && summary.nextDue !== null
+                  ? t('Nothing due — the next position comes back {when}', {
+                      when: formatUntil(summary.nextDue),
+                    })
+                  : ''}
+            {(summary.due > 0 || summary.review.length > 0 || summary.scheduled > 0) &&
+              summary.gaps > 0 &&
+              ' · '}
             {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
             {summary.review.length === 0 &&
+              summary.scheduled === 0 &&
               summary.gaps === 0 &&
               t('Every drilled position stands recalled.')}
           </p>
@@ -1312,7 +1359,16 @@ export function RepertoireView() {
             confirmLabel={t('Forget everything')}
             onConfirm={() => {
               void api('/api/repertoire/reset', { method: 'POST' })
-                .then(() => setSummary({ attempted: 0, review: [], gaps: 0 }))
+                .then(() =>
+                  setSummary({
+                    attempted: 0,
+                    review: [],
+                    due: 0,
+                    scheduled: 0,
+                    nextDue: null,
+                    gaps: 0,
+                  }),
+                )
                 .catch(() => {});
             }}
           />
@@ -1352,7 +1408,13 @@ export function RepertoireView() {
         </Button>
         {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
           <Button variant="secondary" size="default" className="w-full" disabled={!drillReady} onClick={startFromMiss}>
-            {t('Drill a missed position')}
+            {/* "Due" while the schedule has something to say, because
+                that is what the press does then; a position fumbled and
+                not yet due is still drillable, and the button says so
+                in the words it always did. */}
+            {(summary?.due ?? 0) > 0
+              ? t('Drill a position due for review')
+              : t('Drill a missed position')}
           </Button>
         )}
       </div>

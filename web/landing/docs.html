@@ -596,11 +596,13 @@
                 <tbody>
                   <tr>
                     <td>Continue</td>
-                    <td data-ko="최대 세 줄로 하던 일을 잇습니다: 최근 스터디(«Continue study»), 마지막 기보(«Last game»), 그리고 훈련 재개(«Resume training», 현재 난이도 낱말과 함께 — 퍼즐 데이터베이스가 준비되고 한 번이라도 풀었을 때).">
-                      Up to three one-tap resume rows: your latest study (“Continue study”), the
-                      last game document (“Last game”), and “Resume training” with the current
+                    <td data-ko="최대 네 줄로 하던 일을 잇습니다: 최근 스터디(«Continue study»), 마지막 기보(«Last game»), 훈련 재개(«Resume training», 현재 난이도 낱말과 함께 — 퍼즐 데이터베이스가 준비되고 한 번이라도 풀었을 때), 그리고 복습할 때가 된 레퍼토리 포지션이 있을 때의 «Repertoire review». 마지막 줄은 휴대폰 전용입니다 — 데스크톱에서는 아래 «Training» 패널이 같은 것을 알려 줍니다.">
+                      Up to four one-tap resume rows: your latest study (“Continue study”), the
+                      last game document (“Last game”), “Resume training” with the current
                       difficulty word — once the puzzle database is ready and something has been
-                      attempted.
+                      attempted — and “Repertoire review” whenever the drill schedule has
+                      positions due. That last row is the phone’s only reminder of it; on a
+                      desktop the “Training” panel below carries it instead.
                     </td>
                   </tr>
                   <tr>
@@ -621,9 +623,13 @@
                   </tr>
                   <tr>
                     <td data-ko="대시보드 패널 <small>(데스크톱)</small>">The dashboard panels <small>(desktop)</small></td>
-                    <td data-ko="«Training»(오늘 푼 수, 복습 예정), «Recent games», «Puzzle books»(진행 막대와 함께), «Recent work»(최근 스터디·노트).">
-                      “Training” (solved today, what is due), “Recent games”, “Puzzle books” (with
-                      progress bars), and “Recent work” (latest studies and notes).
+                    <td data-ko="«Training»(오늘 푼 수, 그리고 퍼즐과 레퍼토리 각각의 복습 예정 — 두 트레이너가 같은 일정표를 쓰므로 한 패널에 같이 섭니다), «Recent games», «Puzzle books»(진행 막대와 함께), «Recent work»(최근 스터디·노트).">
+                      “Training” — solved today, and what each trainer has due: the puzzles
+                      (“{n} due for review”) and the repertoire drill
+                      (“{n} repertoire positions due”, or “Repertoire — the next position comes
+                      back {when}”). They share one schedule, so they share one panel. Then
+                      “Recent games”, “Puzzle books” (with progress bars), and “Recent work”
+                      (latest studies and notes).
                     </td>
                   </tr>
                   <tr>
@@ -1801,7 +1807,7 @@
                   <tr><td>Source</td><td data-ko="«Where replies come from»: <strong>Lichess database</strong>(온라인, 토큰 필요 — 곁에 <strong>Rating</strong>으로 상대 기력대를 고릅니다) 또는 아무 <strong>참고 데이터베이스</strong> — 동봉된 것 포함, 오프라인으로 돌아갑니다.">“Where replies come from”: the <strong>Lichess database</strong> (online, token needed — an <strong>Rating</strong> select picks the opponent band) or any <strong>reference database</strong>, the bundled one included, offline.</td></tr>
                   <tr><td>Opening <small>(Free play)</small></td><td data-ko="이름이나 ECO 코드로 약 3,800개 중 검색 — «Search any opening or ECO code…».">Searchable by name or ECO code, about 3,800 of them — “Search any opening or ECO code…”.</td></tr>
                   <tr><td>Study · Chapter <small>(Drill)</small></td><td data-ko="암송할 스터디와 범위 — «Whole study» 또는 챕터 하나. 오프닝 맵에서 보내온 드릴이면 «From the opening map» 블록이 그 범위를 설명합니다.">What to recite and how much — “Whole study” or one chapter. A drill sent from the opening map shows a “From the opening map” block naming its scope.</td></tr>
-                  <tr><td>Start</td><td data-ko="시작. 그 아래, 기록이 쌓이면 <strong>Drill a missed position</strong>도 섭니다.">Begins. Below it, once a record exists, <strong>Drill a missed position</strong>.</td></tr>
+                  <tr><td>Start</td><td data-ko="시작. 그 아래, 기록이 쌓이면 <strong>Drill a position due for review</strong>(기한이 아직이면 <strong>Drill a missed position</strong>)도 섭니다.">Begins. Below it, once a record exists, <strong>Drill a position due for review</strong> — or <strong>Drill a missed position</strong> while nothing is due yet.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1829,11 +1835,15 @@
               </li>
             </ul>
             <h2 data-ko="기록">The record</h2>
-            <p data-ko="더듬은 포지션은 복습 풀이 됩니다 — 대기 화면이 «{n} positions to review»와 «{n} replies with no answer yet»을 세고, <strong>Drill a missed position</strong>이 그 풀에서 냅니다. 갭은 드릴이 아니라 스터디를 고쳐서 메우는 것 — 그래서 곁에 보고만 됩니다. 기록 전체는 «Forget the drill record» 확인을 거쳐 지웁니다.">
-              What you fumble becomes a review pool — the idle panel counts “{n} positions to
-              review” and “{n} replies with no answer yet”, and <strong>Drill a missed
-              position</strong> deals from it. A gap is fixed by editing the study, not by drilling
-              — so it is reported beside the pool, not drilled. The whole record clears through the
+            <p data-ko="더듬은 포지션은 퍼즐 트레이너와 같은 간격 반복 일정으로 돌아옵니다 — 내일, 그다음 회상마다 3일·7일·21일 뒤, 그리고 졸업. 대기 화면이 «{n} positions due for review»를 세고, 오늘 볼 것이 없으면 «Nothing due — the next position comes back {when}»이라고 알려 주며, <strong>Drill a position due for review</strong>가 밀린 것부터 냅니다. 방금 더듬은 포지션은 아직 기한이 아니어도 «{n} positions to review»로 바로 다시 드릴할 수 있습니다. 갭은 드릴이 아니라 스터디를 고쳐서 메우는 것 — 그래서 곁에 «{n} replies with no answer yet»으로 보고만 됩니다. 기록 전체는 «Forget the drill record» 확인을 거쳐 지웁니다.">
+              What you fumble comes back on the puzzle trainer’s own schedule — tomorrow, then
+              3, 7 and 21 days out after each clean recall, then graduated. The idle panel counts
+              “{n} positions due for review”, says “Nothing due — the next position comes back
+              {when}” when today is clear, and <strong>Drill a position due for review</strong>
+              deals the most overdue first. A position fumbled minutes ago is drillable before its
+              date comes round — the panel counts those as “{n} positions to review”. A gap is
+              fixed by editing the study, not by drilling — so it is reported beside the pool as
+              “{n} replies with no answer yet”, not drilled. The whole record clears through the
               “Forget the drill record” confirmation.
             </p>
           </div>

@@ -159,15 +159,41 @@ it obeys the puzzle trainer's rule:
 {"study":"Ruy Lopez","chapter":"Main line","key":"…","result":"gap","path":["e4","e5","Nf3","Nc6","Bb5","a6"],"played":"a6","at":"…"}
 ```
 
-The **latest** entry per position decides its state. Misses form the
-review pool; a later clean recall removes them. Gaps are reported
-*beside* the pool, never inside it — a gap is fixed by editing the
-study, not by drilling harder. The idle panel shows both counts, and
-**Drill a missed position** replays a recorded path to start a session
-at a position the record says was fumbled (falling back to the start if
-the study no longer contains the line). In a whole-study drill the
+Those entries are read as the puzzle trainer reads its own history: one
+position's `hit`/`miss` lines in order are a ladder of attempts, and
+`shared/review.ts` says when it is next due — tomorrow after a miss,
+then 3, 7 and 21 days out after each clean recall, then graduated out
+of rotation. It is the same shared function the puzzle trainer calls,
+so "{n} due" means one thing across the app. Nothing is stored beside
+the attempts: the schedule is derived on every read, so histories
+written before it existed simply fall onto the ladder, and forgetting
+the record forgets the schedule with it.
+
+A `gap` is not a recall attempt at all — it neither advances nor resets
+a ladder — and gaps are reported *beside* the pool, never inside it: a
+gap is fixed by editing the study, not by drilling harder.
+
+The idle panel counts what is due today; a position fumbled minutes ago
+is still drillable before its date comes round, which is the puzzle
+trainer's bargain exactly — the schedule decides the order and the
+count, the pool decides what may be served. **Drill a position due for
+review** replays a recorded path to start a session at one of them,
+most overdue first, falling back to the start if the study no longer
+contains the line. Evidence comes from the newest *miss* under a
+position, because a recall is recorded bare. In a whole-study drill the
 record still files under the chapter the position belongs to, so
-chapter-scoped counts stay meaningful.
+chapter-scoped counts stay meaningful, and `/api/repertoire/meta`
+answers the same schedule across every study at once — which is what
+home's reminder row reads.
+
+Why a ladder is safe here, when it was argued against for a while: the
+drill records a `hit` for **every** prepared move played, not only at
+positions where something was fumbled. A whole-study drill that walks
+the same first plies every session therefore appends a recall for each
+of those positions and pushes them up the ladder, so the schedule
+cannot call a position due after 21 quiet days when it was in fact
+played through that morning. The rehearsal the scheduler cannot see is
+the case that does not arise.
 
 The file is damage-tolerant (a torn last line loses one attempt, never
 the trainer) and lives in the vault: it travels with backups, and the

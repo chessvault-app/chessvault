@@ -10,6 +10,32 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The repertoire drill remembers on a schedule, and home says when.**
+  A position you fumbled used to sit in the drill's review pool for
+  ever, and one scraped recall retired it for good. It now rides the
+  ladder the puzzle trainer already uses (`shared/review.ts`): due
+  again tomorrow, then 3, 7 and 21 days out after each clean recall,
+  then graduated out of rotation. The idle panel counts what is due
+  today, says when the next position comes back if none is, and
+  **Drill a position due for review** deals the most overdue first —
+  with a position fumbled minutes ago still drillable before its date
+  arrives, which is the trainer's own bargain: the schedule decides the
+  order and the count, the pool decides what may be served. Home's
+  Training panel gains a row for it beside the puzzles', and a phone —
+  which has no Training panel — gets a "Repertoire review" row in
+  Continue whenever something is due.
+
+  Nothing new is stored: the schedule is derived from
+  `history.jsonl` on every read, so records written before this
+  release fall onto the ladder as they are, and forgetting the drill
+  record still forgets the schedule with it. This was deferred for a
+  while on the argument that a repertoire position gets rehearsed by
+  routes a scheduler cannot see — but the drill records a recall for
+  *every* prepared move played, not only where something was fumbled,
+  so a whole-study drill walking the same first plies each session
+  pushes those positions up the ladder itself. The case the objection
+  feared does not arise.
+
 - **A wood board, with the grain drawn rather than photographed.**
   Settings → Appearance → Board gains "Wood grain": the rust brown of a
   printed diagram, and the first theme with a texture. The grain is an
