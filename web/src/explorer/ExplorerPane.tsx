@@ -423,7 +423,9 @@ export function ExplorerPane({
                       onClick={() => setAllMoves((v) => !v)}
                       className="text-muted-foreground hover:text-foreground w-full px-3 py-(--row-py-tight) text-left text-xs transition-colors duration-100"
                     >
-                      {allMoves ? 'Show fewer moves' : `Show all ${moves.length} moves`}
+                      {allMoves
+                        ? t('Show fewer moves')
+                        : t('Show all {n} moves', { n: moves.length })}
                     </button>
                   )}
                 </>

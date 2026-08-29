@@ -1235,6 +1235,7 @@ export const ko: Record<string, string> = {
   'Show the explorer': '탐색기 보기',
   'Out of book': '정석을 벗어남',
   'Show fewer moves': '수 적게 보기',
+  'Show all {n} moves': '{n}개 수 모두 보기',
   Delete: '삭제',
 
   // --- games ---------------------------------------------------------------
