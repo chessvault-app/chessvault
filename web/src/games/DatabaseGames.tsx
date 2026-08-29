@@ -305,6 +305,7 @@ export function DatabaseGames({
   table = false,
   onSelect,
   selectedKey,
+  inPlace = false,
 }: {
   shape?: 'panel' | 'sheet';
   /** Dense table rows instead of cards — the wide pane's presentation.
@@ -315,6 +316,10 @@ export function DatabaseGames({
       — for the details panel; null when the rows it described reset. */
   onSelect?: (sel: DetailsSelection | null) => void;
   selectedKey?: string | null;
+  /** The host already shows the analysis board (the workspace): opening
+      a game loads it and stays put, instead of handing off to #/board.
+      Opt-in from the caller, so the Games page keeps its navigation. */
+  inPlace?: boolean;
 }) {
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
@@ -786,7 +791,7 @@ export function DatabaseGames({
     } catch {
       return; // as before: a row that cannot be fetched simply does not open
     }
-    if (useAnalysis.getState().loadPgn(pgn)) {
+    if (useAnalysis.getState().loadPgn(pgn) && !inPlace) {
       useAnalysis.setState({ handoff: true });
       navigate('board');
     }

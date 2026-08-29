@@ -286,6 +286,7 @@ export function ArchiveBrowser({
   site,
   onSelect,
   selectedKey,
+  inPlace = false,
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
@@ -302,6 +303,10 @@ export function ArchiveBrowser({
       null when the rows it described reset. */
   onSelect?: (sel: DetailsSelection | null) => void;
   selectedKey?: string | null;
+  /** The host already shows the analysis board (the workspace): opening
+      a game loads it and stays put, instead of handing off to #/board.
+      Opt-in from the caller, so the Games page keeps its navigation. */
+  inPlace?: boolean;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -556,8 +561,10 @@ export function ArchiveBrowser({
       const { loadPgn } = useAnalysis.getState();
       if (loadPgn(pgn)) {
         if (game.userSide) useAnalysis.setState({ orientation: game.userSide });
-        useAnalysis.setState({ handoff: true });
-        navigate('board');
+        if (!inPlace) {
+          useAnalysis.setState({ handoff: true });
+          navigate('board');
+        }
       }
     } catch {
       setError(t('could not load that game'));

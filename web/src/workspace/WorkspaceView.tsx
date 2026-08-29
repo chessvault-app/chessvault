@@ -9,7 +9,7 @@ import { CollectGameButton, MoveActions, MovesOverflow } from '@/analysis/Analys
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { ArchiveBrowser } from '@/games/ArchiveBrowser';
-import { DatabaseGames } from '@/games/DatabaseGames';
+import { DatabaseGames, handOffPositionHunt } from '@/games/DatabaseGames';
 import { GamePreview, type Preview } from '@/games/shared';
 import { type DetailsSelection } from '@/games/GameDetails';
 import { loadCollection } from '@/games/collection';
@@ -156,6 +156,19 @@ function Workspace() {
     setSel(null);
   };
 
+  // The explorer's hunt button, pointed at the band instead of #/games:
+  // same mailbox the cross-page handoff uses, consumed the same way (on
+  // the browser's mount) — the key bump is what makes an already-mounted
+  // Databases tab remount and consume it.
+  const [huntSeq, setHuntSeq] = useState(0);
+  const huntInBand = useCallback((fen: string, db: string): void => {
+    handOffPositionHunt(fen, db);
+    heldBandTab = 'databases';
+    setTabState('databases');
+    setSel(null);
+    setHuntSeq((n) => n + 1);
+  }, []);
+
   /** What the archive tabs need to mark already-kept games. */
   const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
   const reloadCollectionKeys = useCallback((): void => {
@@ -234,7 +247,7 @@ function Workspace() {
             page it shares the side column and is capped for it; here it
             has the height the region has. No resizeKey: the grip resizes
             a panel in a stack, and this panel is alone in its column. */}
-        <ExplorerPane className="min-w-0 flex-1" />
+        <ExplorerPane className="min-w-0 flex-1" onPositionHunt={huntInBand} />
       </div>
 
       {/* The games band: the Games page's browser as a full-width strip —
@@ -260,10 +273,18 @@ function Workspace() {
           </div>
         </Tabs>
         {tab === 'databases' ? (
-          <DatabaseGames shape="panel" table onSelect={setSel} selectedKey={sel?.key ?? null} />
+          <DatabaseGames
+            key={huntSeq}
+            shape="panel"
+            table
+            inPlace
+            onSelect={setSel}
+            selectedKey={sel?.key ?? null}
+          />
         ) : (
           <ArchiveBrowser
             table
+            inPlace
             site={tab}
             collectionKeys={collectionKeys}
             onCollected={reloadCollectionKeys}

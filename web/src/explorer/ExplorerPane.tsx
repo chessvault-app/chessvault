@@ -56,9 +56,15 @@ const MOVE_LIMIT = 8;
 export function ExplorerPane({
   className,
   resizeKey,
+  onPositionHunt,
 }: {
   className?: string;
   resizeKey?: string;
+  /** Where the hunt button sends this position. The default is the
+      mailbox handoff to #/games; a host with the browser already on
+      screen (the workspace) points the hunt at its own pane instead.
+      Opt-in from the caller, so the board pages keep their navigation. */
+  onPositionHunt?: (fen: string, db: string) => void;
 }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -327,6 +333,10 @@ export function ExplorerPane({
                   size="icon-sm"
                   title={t('Find this position in the databases browser')}
                   onClick={() => {
+                    if (onPositionHunt) {
+                      onPositionHunt(node.fen, refDbName(book!));
+                      return;
+                    }
                     handOffPositionHunt(node.fen, refDbName(book!));
                     navigate('games');
                   }}
