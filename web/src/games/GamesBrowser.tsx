@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Panel } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Fab } from '@/components/fab';
+import { useElementWidth } from '@/hooks/use-element-width';
 import { useUndoable } from '@/hooks/use-undoable';
 
 import { t } from '@/lib/i18n';
@@ -59,6 +60,18 @@ const TABS: { id: MainTab; label: string }[] = [
     band are two views of the same browser, so leaving one on Lichess
     and finding the other there is continuity, not leakage. */
 let heldTab: MainTab | null = null;
+
+/**
+ * The narrowest pane the one-row chrome honestly fits — the English
+ * labels' worst case with slack. The fold is TIERED on the measured
+ * pane, never free-wrapped: a wrapping flex row between the tiers put
+ * the count and picker on a ragged second line with nothing marking it
+ * as a band (lanph3re's report), while the stacked bands below this
+ * width are the layout that was designed for narrow panes and reads as
+ * one. The measurement is the tab strip's own wrapper — full pane
+ * width, no extra node.
+ */
+const MERGED_MIN_PX = 896;
 
 /**
  * The tabbed games browser: reference databases, the collection, and
@@ -160,6 +173,9 @@ export function GamesBrowser({
   const [colSelKey, setColSelKey] = useState<string | null>(null);
   const [dbSel, setDbSel] = useState<DetailsSelection | null>(null);
   const [archSel, setArchSel] = useState<DetailsSelection | null>(null);
+  /** The pane's own width — see MERGED_MIN_PX. */
+  const [stripRef, paneW] = useElementWidth();
+  const merged = table && paneW >= MERGED_MIN_PX;
   const setTab = (next: MainTab): void => {
     heldTab = next;
     setTabState(next);
@@ -440,7 +456,10 @@ export function GamesBrowser({
               wrapper's CONTENT box matches the triggers exactly, so
               nothing is clipped and the underline ends flush on the
               border. */}
-          <div className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b">
+          <div
+            ref={stripRef}
+            className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b"
+          >
             <TabsList
               variant="line"
               aria-label={t('What the pane is showing')}
@@ -471,6 +490,7 @@ export function GamesBrowser({
           <DatabaseGames
             shape="panel"
             table={table}
+            merged={merged}
             inPlace={inPlace}
             onSelect={setDbSel}
             selectedKey={dbSel?.key ?? null}
@@ -478,6 +498,7 @@ export function GamesBrowser({
         ) : tab === 'chesscom' || tab === 'lichess' ? (
           <ArchiveBrowser
             table={table}
+            merged={merged}
             inPlace={inPlace}
             site={tab}
             collectionKeys={collectionKeys}
@@ -489,6 +510,7 @@ export function GamesBrowser({
         ) : (
           <CollectionList
             table={table}
+            merged={merged}
             games={games}
             loaded={loaded}
             bookmarks={bookmarks}
@@ -505,7 +527,7 @@ export function GamesBrowser({
             onImport={() => setImporting(true)}
             onClearSearch={() => setQuery('')}
             onShowAll={() => setMarkedOnly(false)}
-            search={finders(table ? 'min-w-0 flex-1 basis-72' : 'min-w-0 flex-1')}
+            search={finders(merged ? 'min-w-0 flex-1 basis-72' : 'min-w-0 flex-1')}
             importButton={
               /* Import lives WITH the collection it grows: the
                  page-header button beside this big pane did not stand

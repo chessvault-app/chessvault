@@ -306,6 +306,7 @@ export function DatabaseGames({
   onSelect,
   selectedKey,
   inPlace = false,
+  merged = false,
 }: {
   shape?: 'panel' | 'sheet';
   /** Dense table rows instead of cards — the wide pane's presentation.
@@ -320,6 +321,12 @@ export function DatabaseGames({
       a game loads it and stays put, instead of handing off to #/board.
       Opt-in from the caller, so the Games page keeps its navigation. */
   inPlace?: boolean;
+  /** One-row chrome - search, filters and count folded into a single
+      row. Decided by the MEASURED pane (see GamesBrowser), never by the
+      viewport: below the tier the stacked bands return, because a
+      free-wrapping row between the two read as ragged lines rather
+      than bands. */
+  merged?: boolean;
 }) {
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
@@ -1032,12 +1039,12 @@ export function DatabaseGames({
       <ResultSelect
         value={resultFilter}
         onChange={setResultFilter}
-        className={table ? 'flex-none' : undefined}
+        className={merged ? 'flex-none' : undefined}
       />
       <StrengthSelect
         value={minElo}
         onChange={setMinElo}
-        className={table ? 'flex-none' : undefined}
+        className={merged ? 'flex-none' : undefined}
       />
       {/* The rest of the constraints — who, which side, which outcome,
           which opening, which tournament, which dates — live in a window:
@@ -1307,14 +1314,14 @@ export function DatabaseGames({
               back toward the old two rows with no second layout. Card
               mode keeps the stacked bands: a phone's rows are cards, and
               its chrome was never the problem. */}
-          <div className={cn('flex w-full items-center gap-1.5', table && 'flex-wrap')}>
+          <div className={cn('flex w-full items-center gap-1.5', merged && 'flex-wrap')}>
             <QueryBox
               query={query}
               onQuery={onQuery}
               suggest={suggestValues}
               placeholder={t('Search database…')}
               onOpenChange={setHintsOpen}
-              className={table ? 'basis-72' : undefined}
+              className={merged ? 'basis-72' : undefined}
             />
             {/* secondary, not ghost: the row's rule (lanph3re asked for
                 one) is that stateful toggles wear the box of the fields
@@ -1340,7 +1347,7 @@ export function DatabaseGames({
             >
               <ScanSearch className="size-3.5" />
             </Button>
-            {table && (
+            {merged && (
               <>
                 {filters}
                 <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
@@ -1369,8 +1376,8 @@ export function DatabaseGames({
           {huntControls}
         </div>
       }
-      filters={table ? undefined : filters}
-      countBand={table ? undefined : countBand}
+      filters={merged ? undefined : filters}
+      countBand={merged ? undefined : countBand}
       listHeader={table ? <GameTableHeader /> : undefined}
       listVars={table ? tableVars : undefined}
       dense={table}

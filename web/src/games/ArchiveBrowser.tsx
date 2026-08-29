@@ -287,6 +287,7 @@ export function ArchiveBrowser({
   onSelect,
   selectedKey,
   inPlace = false,
+  merged = false,
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
@@ -307,6 +308,8 @@ export function ArchiveBrowser({
       a game loads it and stays put, instead of handing off to #/board.
       Opt-in from the caller, so the Games page keeps its navigation. */
   inPlace?: boolean;
+  /** One-row chrome by measured pane width - see DatabaseGames. */
+  merged?: boolean;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -802,7 +805,7 @@ export function ArchiveBrowser({
             onValueChange={(m) => void loadMonth(m)}
             ariaLabel={t('Archive month')}
             size="sm"
-            className={cn('min-w-0 flex-1', table && 'flex-none')}
+            className={cn('min-w-0 flex-1', merged && 'flex-none')}
             groups={[
               {
                 options: [
@@ -841,12 +844,12 @@ export function ArchiveBrowser({
           <SideSelect
             value={sideFilter}
             onChange={setSideFilter}
-            className={table ? 'flex-none' : undefined}
+            className={merged ? 'flex-none' : undefined}
           />
           <ResultSelect
             value={resultFilter}
             onChange={setResultFilter}
-            className={table ? 'flex-none' : undefined}
+            className={merged ? 'flex-none' : undefined}
           />
           {/* The same More-filters window the collection and the elite
               browser carry, answered client-side against the loaded
@@ -919,7 +922,7 @@ export function ArchiveBrowser({
         <span
           className={cn(
             'text-muted-foreground min-w-0 truncate text-sm tabular-nums font-medium',
-            !table && 'flex-1',
+            !merged && 'flex-1',
           )}
         >
           {month === ALL_MONTHS
@@ -952,7 +955,7 @@ export function ArchiveBrowser({
   const countBand =
     month && visibleMonthGames.length > 0 ? (
       !selecting ? (
-            table ? undefined : countGroup
+            merged ? undefined : countGroup
           ) : (
             /* What is selected on the left, what to do with it on the
                right. Four controls in one wrapping run gave the count the
@@ -1040,7 +1043,7 @@ export function ArchiveBrowser({
   // it sits below them rather than leading the bands as it used to.
   const toolbar = (
     <>
-        <div className={cn('flex items-center gap-1', table && 'w-full flex-wrap gap-1.5')}>
+        <div className={cn('flex items-center gap-1', merged && 'w-full flex-wrap gap-1.5')}>
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
           <SearchInput
@@ -1050,7 +1053,7 @@ export function ArchiveBrowser({
               if (e.key === 'Enter' && username.trim()) void loadMonths();
             }}
             placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
-            className={cn('min-w-0 flex-1', table && 'basis-72')}
+            className={cn('min-w-0 flex-1', merged && 'basis-72')}
             inputSize="sm"
           />
           <Button
@@ -1066,7 +1069,7 @@ export function ArchiveBrowser({
               <Globe className="size-3.5" />
             )}
           </Button>
-          {table && (
+          {merged && (
             <>
               {filters}
               {countGroup && (
@@ -1177,8 +1180,8 @@ export function ArchiveBrowser({
       toolbar={toolbar}
       // No reserved filter row at table density, where the filters live
       // in the toolbar row and no filter band will come.
-      filtersLoading={months.length === 0 && loading === 'months' && !table}
-      filters={table ? undefined : filters}
+      filtersLoading={months.length === 0 && loading === 'months' && !merged}
+      filters={merged ? undefined : filters}
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}

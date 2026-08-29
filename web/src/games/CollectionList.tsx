@@ -204,6 +204,7 @@ export function CollectionList({
   search,
   importButton,
   searchIssues,
+  merged = false,
   onSelect,
   selectedKey,
   onFilterConstraints,
@@ -235,6 +236,8 @@ export function CollectionList({
   search?: ReactNode;
   importButton?: ReactNode;
   searchIssues?: ReactNode;
+  /** One-row chrome by measured pane width - see DatabaseGames. */
+  merged?: boolean;
   /** Table mode: a click makes this row the details panel's subject;
       null (Escape) clears it. */
   onSelect?: (game: GameSummary | null) => void;
@@ -384,17 +387,17 @@ export function CollectionList({
         <OwnershipSelect
           value={ownFilter}
           onChange={setOwnFilter}
-          className={table ? 'flex-none' : undefined}
+          className={merged ? 'flex-none' : undefined}
         />
         <ResultSelect
           value={resultFilter}
           onChange={setResultFilter}
-          className={table ? 'flex-none' : undefined}
+          className={merged ? 'flex-none' : undefined}
         />
         <NotesSelect
           value={notesFilter}
           onChange={setNotesFilter}
-          className={table ? 'flex-none' : undefined}
+          className={merged ? 'flex-none' : undefined}
         />
         <MoreFiltersButton
           on={hasStructuredFilters(structured)}
@@ -457,9 +460,9 @@ export function CollectionList({
       // used to arrive pre-assembled in.
       toolbar={
         <div className="flex w-full flex-col gap-2">
-          <div className={cn('flex w-full items-center gap-1.5', table && 'flex-wrap')}>
+          <div className={cn('flex w-full items-center gap-1.5', merged && 'flex-wrap')}>
             {search}
-            {table ? (
+            {merged ? (
               <>
                 {filterControls}
                 <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
@@ -480,7 +483,7 @@ export function CollectionList({
       // count band says it — in card mode; at table the count rides the
       // toolbar row above.
       countBand={
-        table ? undefined : (
+        merged ? undefined : (
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
             {t('{n} games', { n: visible.length.toLocaleString() })}
           </span>
@@ -494,9 +497,9 @@ export function CollectionList({
       // panel's height, so held back they left a header over nothing
       // that grew a fifth of a second later. No reserved filter row at
       // table density, where no filter band will come.
-      filtersLoading={!loaded && !table}
+      filtersLoading={!loaded && !merged}
       listLoading={!loaded}
-      filters={table ? undefined : filterControls}
+      filters={merged ? undefined : filterControls}
       list={
         loaded && visible.length > 0
           ? visible.map((game) =>
