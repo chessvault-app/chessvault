@@ -47,7 +47,23 @@ function getRootHasMoves(s: { tree: { rootId: string; nodes: unknown } }): boole
  * Review progress, evaluation graph and per-side summary, docked under
  * the move list (lanph3re's call). Renders nothing until a review starts.
  */
-export function ReviewStrip() {
+export function ReviewStrip({
+  panel = false,
+  className,
+}: {
+  /**
+   * Hosted as a panel's own content (the workspace's Analysis panel)
+   * rather than docked under a move list. The panel's header carries a
+   * fold of its own, so the strip's graph-fold and dismiss buttons go —
+   * two closes one above the other were closing different things — and
+   * the graph draws taller, because a panel has the room a moves panel's
+   * foot never did. The error state keeps its X: that one clears a
+   * failure, not the panel. Opt-in from the caller; the board pages are
+   * unchanged.
+   */
+  panel?: boolean;
+  className?: string;
+} = {}) {
   const status = useReview((s) => s.status);
   // Folded state outlives one review: someone who does not want the graph
   // does not want it again on the next game either.
@@ -75,7 +91,7 @@ export function ReviewStrip() {
   if (status === 'idle') {
     if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
     return (
-      <div className="border-border flex shrink-0 items-center gap-2 border-t px-3 py-2">
+      <div className={cn('border-border flex shrink-0 items-center gap-2 border-t px-3 py-2', className)}>
         <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm">
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
@@ -83,20 +99,22 @@ export function ReviewStrip() {
           <Microscope className="size-3.5" data-icon="inline-start" />
           {t('Review game')}
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('Dismiss')}
-          onClick={() => setOfferDismissed(gameHeaders)}
-        >
-          <X className="size-3" />
-        </Button>
+        {!panel && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Dismiss')}
+            onClick={() => setOfferDismissed(gameHeaders)}
+          >
+            <X className="size-3" />
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="border-border shrink-0 border-t">
+    <div className={cn('border-border shrink-0 border-t', className)}>
       {status === 'running' ? (
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="text-muted-foreground text-sm font-medium">
@@ -121,13 +139,18 @@ export function ReviewStrip() {
         </div>
       ) : (
         <>
-          {points && points.length > 1 && graphOpen && <EvalGraph points={points} />}
+          {/* A panel host always draws the graph: its fold pref belongs
+              to the docked strip, and the panel's own fold covers "not
+              now" without stranding the graph behind a hidden pref. */}
+          {points && points.length > 1 && (panel || graphOpen) && (
+            <EvalGraph points={points} tall={panel} />
+          )}
           <div className="flex items-center gap-1 px-3 py-1.5">
             <div className="grid min-w-0 flex-1 gap-0.5">
               {white && <SummaryRow side="white" summary={white} />}
               {black && <SummaryRow side="black" summary={black} />}
             </div>
-            {points && points.length > 1 && (
+            {!panel && points && points.length > 1 && (
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -137,9 +160,11 @@ export function ReviewStrip() {
                 <ChevronDown className={cn('size-3 transition-transform', graphOpen && 'rotate-180')} />
               </Button>
             )}
-            <Button variant="ghost" size="icon-sm" title={t('Dismiss review')} onClick={clear}>
-              <X className="size-3" />
-            </Button>
+            {!panel && (
+              <Button variant="ghost" size="icon-sm" title={t('Dismiss review')} onClick={clear}>
+                <X className="size-3" />
+              </Button>
+            )}
           </div>
         </>
       )}
@@ -156,13 +181,19 @@ const GRAPH_H = 28;
 /**
  * Winning-chances area chart, lichess-style: white's share fills from the
  * bottom, the midline is equality. Click or drag to jump to a position;
- * the cursor's ply is marked.
+ * the cursor's ply is marked, and the ply under the pointer is marked
+ * too — a guide line and a grown dot, so the graph says "this is where
+ * a click lands" before it is clicked. cursor-pointer for the same
+ * reason: a crosshair promised measuring, and this surface only ever
+ * navigates (lanph3re's call).
  */
-function EvalGraph({ points }: { points: GraphPoint[] }) {
+function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: boolean }) {
   const svg = useRef<SVGSVGElement>(null);
   const cursorId = useAnalysis((s) => s.cursorId);
   const setCursor = useAnalysis((s) => s.setCursor);
   const nodes = useAnalysis((s) => s.tree.nodes as Record<string, unknown>);
+  /** The ply the pointer is over — the one a click would jump to. */
+  const [hover, setHover] = useState<number | null>(null);
 
   const x = (i: number): number => (i / (points.length - 1)) * GRAPH_W;
   const y = (chances: number): number => (1 - chances) * GRAPH_H;
@@ -174,11 +205,16 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
 
   const cursorIndex = points.findIndex((p) => p.id === cursorId);
 
-  const scrub = (e: React.PointerEvent<SVGSVGElement>): void => {
+  const indexAt = (e: React.PointerEvent<SVGSVGElement>): number | null => {
     const rect = svg.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return;
+    if (!rect || rect.width === 0) return null;
     const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    const target = points[Math.round(fraction * (points.length - 1))];
+    return Math.round(fraction * (points.length - 1));
+  };
+
+  const scrub = (e: React.PointerEvent<SVGSVGElement>): void => {
+    const i = indexAt(e);
+    const target = i === null ? undefined : points[i];
     // The tree may have been edited since the review ran; never navigate
     // to a node that no longer exists.
     if (target && nodes[target.id] && target.id !== useAnalysis.getState().cursorId) {
@@ -192,7 +228,12 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
         ref={svg}
         viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
         preserveAspectRatio="none"
-        className="bg-muted/50 block h-16 w-full cursor-crosshair touch-none select-none"
+        className={cn(
+          'bg-muted/50 block w-full cursor-pointer touch-none select-none',
+          // Taller where a panel hosts it (the workspace): the reading
+          // surface is the whole panel, not a strip stealing move rows.
+          tall ? 'h-24' : 'h-16',
+        )}
         onPointerDown={(e) => {
           try {
             e.currentTarget.setPointerCapture(e.pointerId);
@@ -204,7 +245,9 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
         }}
         onPointerMove={(e) => {
           if (e.buttons & 1) scrub(e);
+          else setHover(indexAt(e));
         }}
+        onPointerLeave={() => setHover(null)}
         role="slider"
         aria-label={t('Evaluation graph — click to jump to a move')}
       >
@@ -227,6 +270,21 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
+        {/* The hover guide: where a click would land. Over the area fill
+            (it would be lost under it) and thinner than the cursor's own
+            line, so the two never read as one. */}
+        {hover !== null && hover !== cursorIndex && (
+          <line
+            x1={x(hover)}
+            y1="0"
+            x2={x(hover)}
+            y2={GRAPH_H}
+            stroke="var(--color-muted-foreground)"
+            strokeWidth="1"
+            opacity="0.6"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
         {cursorIndex >= 0 && (
           <line
             x1={x(cursorIndex)}
@@ -249,7 +307,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
               key={p.id}
               style={{ left: `${(i / (points.length - 1)) * 100}%`, top: `${(1 - p.chances) * 100}%` }}
               className={cn(
-                'absolute -translate-x-1/2 -translate-y-1/2',
+                'absolute -translate-x-1/2 -translate-y-1/2 transition-transform duration-75',
                 // Shape as well as colour: a blunder is a diamond, a
                 // mistake a square, an inaccuracy a circle — so the graph
                 // still reads when the hues do not.
@@ -263,6 +321,9 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
                         ? 'bg-nag-book size-1 rounded-full'
                         : 'bg-border size-1 rounded-full',
                 i === cursorIndex && 'ring-primary ring-2',
+                // The dot a click would land on grows under the pointer —
+                // the guide line says where, the dot says "this one".
+                i === hover && 'scale-[1.8]',
               )}
             />
           ),

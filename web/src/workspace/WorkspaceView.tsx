@@ -1,4 +1,4 @@
-import { LayoutDashboard } from 'lucide-react';
+import { ChevronDown, LayoutDashboard } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -20,6 +20,7 @@ import { useOpeningName } from '@/lib/opening';
 import { useWorkspaceViewport } from '@/lib/media';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -97,6 +98,9 @@ const BAND_TABS: { id: BandTab; label: string }[] = [
     mailbox shape (and reason) as CollectionView's heldTab. */
 let heldBandTab: BandTab | null = null;
 
+/** Where the Analysis panel's fold is remembered across sessions. */
+const ANALYSIS_FOLD = 'vault:workspace-analysis';
+
 /**
  * What the board wrapper stacks around the board at `wide`, in px: the
  * player strip (h-10) + gap-2 over the board, the bottom player bar
@@ -162,6 +166,19 @@ function Workspace() {
   const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
   const reviewIdle = useReview((s) => s.status) === 'idle';
+
+  // The Analysis panel's fold, remembered the way the strip remembers its
+  // graph fold: someone who wants the explorer's rows more than the
+  // review wants that tomorrow too.
+  const [analysisOpen, setAnalysisOpen] = useState(
+    () => localStorage.getItem(ANALYSIS_FOLD) !== 'closed',
+  );
+  const toggleAnalysis = (): void => {
+    setAnalysisOpen((open) => {
+      localStorage.setItem(ANALYSIS_FOLD, open ? 'closed' : 'open');
+      return !open;
+    });
+  };
 
   // Two measurements, no cycle between them. The SHELL's height fixes the
   // board's budget (shell minus its chrome, the band's floor and the
@@ -350,15 +367,40 @@ function Workspace() {
           {/* The same ReviewStrip the Board page docks under its move
               list, hosted as a panel: every state it draws (the offer,
               progress, the graph and summary) is this panel's content,
-              and the header's button is the trigger. The hint stands in
-              only where the strip has nothing to say. */}
-          <Panel fit className="shrink-0">
-            <PanelHeader title="Analysis" actions={<ReviewButton />} />
-            <ReviewStrip />
-            {reviewIdle && !(hasGame && hasMoves) && (
-              <p className="text-muted-foreground border-border border-t px-3 py-2 text-sm">
-                {t('Play moves or load a game, then run an engine review.')}
-              </p>
+              and the header's button is the trigger. panel mode takes the
+              strip's own fold and dismiss away — the header's chevron is
+              the one fold here, and folding is this panel's close. The
+              hint stands in only where the strip has nothing to say, and
+              both take back the card's floor the way BoardControls does:
+              a band is the panel's bottom edge. */}
+          <Panel fit className={cn('shrink-0', !analysisOpen && 'pb-0')}>
+            <PanelHeader
+              title="Analysis"
+              actions={
+                <>
+                  <ReviewButton />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={analysisOpen ? t('Fold') : t('Unfold')}
+                    onClick={toggleAnalysis}
+                  >
+                    <ChevronDown
+                      className={cn('size-3 transition-transform', analysisOpen && 'rotate-180')}
+                    />
+                  </Button>
+                </>
+              }
+            />
+            {analysisOpen && (
+              <>
+                <ReviewStrip panel className="-mb-(--card-spacing)" />
+                {reviewIdle && !(hasGame && hasMoves) && (
+                  <p className="text-muted-foreground border-border -mb-(--card-spacing) border-t px-3 py-2 text-sm">
+                    {t('Play moves or load a game, then run an engine review.')}
+                  </p>
+                )}
+              </>
             )}
           </Panel>
         </div>
