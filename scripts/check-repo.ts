@@ -44,7 +44,10 @@
  *    reworded. A quote must appear in the app's source (web/src, the
  *    desktop chooser), with {placeholders} standing for whatever the code
  *    interpolates and a trailing … marking a deliberate truncation. The
- *    first run of this check caught fourteen misquotes.
+ *    first run of this check caught fourteen misquotes. The Korean
+ *    dictionary is NOT part of that haystack: it mirrors the app's
+ *    strings rather than rendering them, so a key outliving its call site
+ *    would keep vouching for a label the screen no longer shows.
  *
  * 7. Move text and Elo wear the right face. index.css gives mono to what
  *    the eye scans as a column and --font-moves to SAN, "prose, not
@@ -342,20 +345,41 @@ if (existsSync(CRATE_LOCK) && existsSync(CRATE_NOTICE)) {
 // whitespace-collapsed so JSX line wrapping does not hide a match, and
 // typographic apostrophes are folded because the two sides disagree
 // about them.
+//
+// NOT the dictionary. ko.ts is a mirror of the app's strings, not a place
+// any of them is rendered from, so a key left behind after its call site was
+// reworded went on vouching for the manual's quote of it — the check would
+// have said the label still existed while the screen had stopped saying it.
+// One quote was in that position when this was measured, and it was a false
+// alarm rather than a hidden misquote; the loophole is closed while it is
+// empty. (138 such keys were deleted in the commit before this one, which is
+// how the loophole came to be looked at.)
 const MANUAL = 'web/landing/manual.html';
+const DICTIONARY = 'web/src/lib/ko.ts';
 if (existsSync(MANUAL)) {
   const collapse = (s: string): string =>
     s.replace(/&amp;/g, '&').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
+  // A call site may spell a character as an escape: CollectionView writes its
+  // PGN placeholder's dash and ellipsis as \u2014 and \u2026,
+  // while the manual quotes the characters. Decoded text is APPENDED, not
+  // substituted, so a string written either way is found. The dictionary used
+  // to cover this by accident, being the one file holding those characters
+  // literally — which is why excluding it needs this in the same commit.
+  const decodeEscapes = (s: string): string =>
+    s.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex: string) =>
+      String.fromCharCode(parseInt(hex, 16)),
+    );
   let hay = '';
   for (const file of tracked) {
     if (!/^(?:web\/src\/.*\.(?:ts|tsx|json)|desktop\/.*\.(?:html|mjs))$/.test(file)) continue;
+    if (file === DICTIONARY) continue;
     try {
       hay += readFileSync(file, 'utf-8') + '\n';
     } catch {
       continue;
     }
   }
-  hay = collapse(hay);
+  hay = collapse(hay + '\n' + decodeEscapes(hay));
   const manualText = readFileSync(MANUAL, 'utf-8');
   const seen = new Set<string>();
   for (const match of manualText.matchAll(/“([^”]+)”/g)) {
