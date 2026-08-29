@@ -10,6 +10,29 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **One header across the site, and the manual's file is renamed too.**
+  The docs page still wore the old chrome — an outline demo button and a
+  segmented English/한국어 track — so the two pages of one site disagreed
+  about the only thing on screen at both. It now has the landing page's
+  bar exactly: `EN / KO` in mono, the demo as the one button, and 61px of
+  height at every width (which cost the docs page a token — its sidebar
+  sticks under the header, so `--header-h` had to move from 3.5rem to
+  3.75rem to arrive at the same number the landing page reaches by
+  addition). Its phone bar no longer drops the demo either; it shortens to
+  "Demo" the way the landing one does. And `manual.html` is `docs.html`,
+  with every reference followed: the landing's two links, the page's own
+  og:url, the site build, `check:repo` (the path, its identifiers, and the
+  prose describing check 6) and this file's own release checklist. The
+  published /manual.html is not dropped, because it is in whatever links
+  to it — the build now writes a redirect stub there pointing at the
+  canonical /docs.html, so the source folder holds two pages and the
+  deploy holds three.
+- **The opening screenshot joins the column it interrupts.** It ran to
+  76rem against a 62rem page so it would break the reading line, which
+  only made the board too big to take in and put the page's first two
+  vertical rules somewhere nothing else returns to. It is on the column
+  now: the shot, the index and the download table all span the same 144px
+  to 1136px at 1280.
 - **The header lost its boxes, and the manual is the docs.** The bar held
   two boxed controls — an outline Manual button and a segmented language
   track — competing for one corner of a 60px strip, on a page whose whole
@@ -20,9 +43,8 @@ installer. This section becomes the next version's heading.
   thing that is an action, and it is now the demo — which is the reason the
   bar is sticky at all. Separately, every user-facing "Manual" is "Docs"
   (설명서 → 문서): the landing header and footer, and the docs page's own
-  title, social cards, masthead and heading. `manual.html` keeps its name,
-  because the published address is what inbound links point at, and the
-  app's own "manual entry" and "manual key" mean by hand and are untouched.
+  title, social cards, masthead and heading. The app's own "manual entry"
+  and "manual key" mean by hand, not documentation, and are untouched.
   The cost was the phone: the new row did not fit one. At 320px it ran 21px
   past the viewport and at 390px the wordmark broke after "Chess", taking
   the header to 73px — so the label shortens to "Demo" below 30rem, the gap

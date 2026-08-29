@@ -8,7 +8,16 @@
  *
  *   npx tsx scripts/build-landing.ts     (after vite build --config web/vite.demo.config.ts)
  */
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { resolve } from 'node:path';
 import { REPO_ROOT } from '../server/paths.ts';
 
@@ -41,7 +50,30 @@ mkdirSync(SITE, { recursive: true });
 cpSync(APP_BUILD, resolve(SITE, 'app'), { recursive: true });
 
 copyFileSync(resolve(REPO_ROOT, 'web/landing/index.html'), resolve(SITE, 'index.html'));
-copyFileSync(resolve(REPO_ROOT, 'web/landing/manual.html'), resolve(SITE, 'manual.html'));
+copyFileSync(resolve(REPO_ROOT, 'web/landing/docs.html'), resolve(SITE, 'docs.html'));
+
+// The docs used to live at /manual.html, and that address is in whatever
+// links to it — a comment, a bookmark, a chat. The stub is generated rather
+// than kept in web/landing/ because it is a fact about what this site USED
+// to serve, not a page anyone edits: source holds two pages, the deploy
+// holds three.
+writeFileSync(
+  resolve(SITE, 'manual.html'),
+  `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Chess Vault — docs</title>
+    <link rel="canonical" href="https://chessvault-app.github.io/docs.html" />
+    <meta http-equiv="refresh" content="0; url=docs.html" />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <p>The manual is now <a href="docs.html">the docs</a>.</p>
+  </body>
+</html>
+`,
+);
 
 // Screenshots are shared with the README rather than duplicated.
 const shots = resolve(SITE, 'shots');
@@ -66,6 +98,7 @@ const size = (dir: string): number => {
 
 console.log(`site: ${SITE} (${(size(SITE) / 1024 / 1024).toFixed(1)} MB)`);
 console.log('  /            landing page');
-console.log('  /manual.html the manual');
+console.log('  /docs.html   the docs');
+console.log('  /manual.html redirect to /docs.html');
 console.log('  /app/        the demo');
 console.log('  /shots/      screenshots');

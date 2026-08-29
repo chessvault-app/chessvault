@@ -151,7 +151,7 @@ publishing.
 **Read the docs and fix what has gone stale.** `README.md`, everything in
 `docs/`, `scripts/ml/README.md`, `desktop/README.md`, and the published
 site's user-facing pages — `web/landing/index.html` and
-`web/landing/manual.html`, both languages.
+`web/landing/docs.html`, both languages.
 
 **Audit the manual against the app.** The manual is a control-by-control
 reference, which makes it the doc most able to rot: `check:repo` proves

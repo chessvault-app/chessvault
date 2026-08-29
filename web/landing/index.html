@@ -132,12 +132,12 @@
       :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
       .btn:focus-visible { border-color: var(--ring); }
 
-      /* ONE width for the reading column, every section on the same two
-         vertical lines. `.bleed` is the single exception: the opening
-         screenshot runs wider than the words, which is the whole reason it
-         is allowed to interrupt them. */
+      /* ONE width for the whole page, and no exception. The opening
+         screenshot used to run to 76rem so it would interrupt the words —
+         which only made the board too big to take in and put the page's
+         first two vertical lines somewhere the rest of it never returns
+         to. It sits on the column now, like everything else. */
       .wrap { max-width: 62rem; margin: 0 auto; padding-inline: var(--s4); }
-      .bleed { max-width: 76rem; margin: 0 auto; padding-inline: var(--s4); }
 
       /* The mono voice. Used for a path on disk, a figure number and a
          section kicker — never for prose. */
@@ -429,7 +429,7 @@
           <span class="wordmark">Chess Vault</span>
         </span>
         <span class="spacer"></span>
-        <a class="quiet" href="manual.html" data-ko="문서">Docs</a>
+        <a class="quiet" href="docs.html" data-ko="문서">Docs</a>
         <!-- aria-label carries the language's own name; the visible label is
              the two-letter code the mono voice wants. -->
         <div class="lang" role="group" aria-label="Language">
@@ -508,7 +508,7 @@
         </figure>
       </div>
 
-      <div class="bleed shot">
+      <div class="wrap shot">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
           <img src="shots/board.png" alt="The analysis board with the engine and opening explorer" />
@@ -752,9 +752,9 @@ CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
              GPLv2+), so the texts have to be reachable from here and not
              only from inside the demo. -->
         <p
-          data-ko='<a href="manual.html">문서</a> · <a href="https://github.com/chessvault-app/chessvault">소스 코드</a> · <a href="app/licenses/index.html">라이선스</a>'
+          data-ko='<a href="docs.html">문서</a> · <a href="https://github.com/chessvault-app/chessvault">소스 코드</a> · <a href="app/licenses/index.html">라이선스</a>'
         >
-          <a href="manual.html">Docs</a> ·
+          <a href="docs.html">Docs</a> ·
           <a href="https://github.com/chessvault-app/chessvault">Source code</a> ·
           <a href="app/licenses/index.html">Licences</a>
         </p>

@@ -37,8 +37,8 @@
  *    and painted the opening map's captions black. An undefined var in
  *    an SVG fill is black, not an error.
  *
- * 6. Every string the manual "quotes" still exists in the app. The manual
- *    (web/landing/manual.html) names controls by their verbatim UI
+ * 6. Every string the docs "quote" still exists in the app. The docs page
+ *    (web/landing/docs.html) names controls by their verbatim UI
  *    strings, in curly double quotes — a couple of hundred of them, each
  *    one a sentence that silently starts lying the day the label is
  *    reworded. A quote must appear in the app's source (web/src, the
@@ -338,8 +338,8 @@ if (existsSync(CRATE_LOCK) && existsSync(CRATE_NOTICE)) {
   }
 }
 
-// The manual's quoted strings against the app's own. Curly double quotes
-// are the manual's marker for "this is what the screen says", so they are
+// The docs page's quoted strings against the app's own. Curly double quotes
+// are the docs' marker for "this is what the screen says", so they are
 // what is held to account; guillemets carry the Korean and straight quotes
 // carry paraphrase, and neither is checked. The haystack is
 // whitespace-collapsed so JSX line wrapping does not hide a match, and
@@ -348,20 +348,20 @@ if (existsSync(CRATE_LOCK) && existsSync(CRATE_NOTICE)) {
 //
 // NOT the dictionary. ko.ts is a mirror of the app's strings, not a place
 // any of them is rendered from, so a key left behind after its call site was
-// reworded went on vouching for the manual's quote of it — the check would
+// reworded went on vouching for the docs' quote of it — the check would
 // have said the label still existed while the screen had stopped saying it.
 // One quote was in that position when this was measured, and it was a false
 // alarm rather than a hidden misquote; the loophole is closed while it is
 // empty. (138 such keys were deleted in the commit before this one, which is
 // how the loophole came to be looked at.)
-const MANUAL = 'web/landing/manual.html';
+const DOCS = 'web/landing/docs.html';
 const DICTIONARY = 'web/src/lib/ko.ts';
-if (existsSync(MANUAL)) {
+if (existsSync(DOCS)) {
   const collapse = (s: string): string =>
     s.replace(/&amp;/g, '&').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
   // A call site may spell a character as an escape: CollectionView writes its
   // PGN placeholder's dash and ellipsis as \u2014 and \u2026,
-  // while the manual quotes the characters. Decoded text is APPENDED, not
+  // while the docs quote the characters. Decoded text is APPENDED, not
   // substituted, so a string written either way is found. The dictionary used
   // to cover this by accident, being the one file holding those characters
   // literally — which is why excluding it needs this in the same commit.
@@ -380,9 +380,9 @@ if (existsSync(MANUAL)) {
     }
   }
   hay = collapse(hay + '\n' + decodeEscapes(hay));
-  const manualText = readFileSync(MANUAL, 'utf-8');
+  const docsText = readFileSync(DOCS, 'utf-8');
   const seen = new Set<string>();
-  for (const match of manualText.matchAll(/“([^”]+)”/g)) {
+  for (const match of docsText.matchAll(/“([^”]+)”/g)) {
     const quote = collapse(match[1]!);
     if (seen.has(quote)) continue;
     seen.add(quote);
@@ -395,10 +395,10 @@ if (existsSync(MANUAL)) {
       .replace(/\\\{[^{}]*\\\}/g, '.{1,80}?');
     if (!new RegExp(probe).test(hay)) {
       findings.push({
-        file: MANUAL,
-        line: manualText.slice(0, match.index).split('\n').length,
+        file: DOCS,
+        line: docsText.slice(0, match.index).split('\n').length,
         text: quote.slice(0, 120),
-        why: 'a “quoted” manual string with no match in the app source — the UI moved, or the quote is wrong',
+        why: 'a “quoted” docs string with no match in the app source — the UI moved, or the quote is wrong',
       });
     }
   }
