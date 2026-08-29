@@ -24,6 +24,7 @@ import { Panel, PanelHeader } from '@/components/panel';
 import { Switch } from '@/components/ui/switch';
 import { WORKSPACE_SHELL } from '@/components/layout';
 import { useElementHeight } from '@/hooks/use-element-height';
+import { useElementWidth } from '@/hooks/use-element-width';
 
 /**
  * The workspace: every analysis surface at once — board, moves + engine,
@@ -120,6 +121,17 @@ const clampBoardWidth = (px: number): number => Math.min(Math.max(px, 288), 1024
 const MOVES_MAX_PX = 480;
 const EXPLORER_MAX_PX = 512;
 
+/** And their floors (the min-w classes below), which the BOARD answers
+    to: the board column takes its height budget as an explicit width,
+    and on a tall window that budget plus these floors outgrew the row —
+    the explorer stood flush against the viewport's edge with the
+    shell's padding overflowed past it (lanph3re's report). The board
+    yields first: its width is capped at what the row holds after the
+    floors, measured on the width-cap wrapper. */
+const MOVES_MIN_PX = 272;
+const EXPLORER_MIN_PX = 304;
+const REGION_GAPS_PX = 24;
+
 function Workspace() {
   // The explorer is a dedicated column here, so it opens open: a page
   // whose third column is a folded header reads as broken, not as a
@@ -213,6 +225,18 @@ function Workspace() {
         } as CSSProperties)
       : undefined;
 
+  // The board column's width: its height budget, capped by what the row
+  // actually holds once the other columns keep their floors — see
+  // MOVES_MIN_PX. Measured on the width-cap wrapper below.
+  const [capRef, capW] = useElementWidth();
+  const boardColW =
+    capW > 0
+      ? Math.max(
+          288,
+          Math.min(clampBoardWidth(budget), capW - MOVES_MIN_PX - EXPLORER_MIN_PX - REGION_GAPS_PX),
+        )
+      : clampBoardWidth(budget);
+
   // --- the games band -------------------------------------------------
   // The band is the GamesBrowser — the Games page's own tabbed pane,
   // collection included — and this is just the selection it emits.
@@ -268,9 +292,10 @@ function Workspace() {
           mx-auto centres both as one block, the board-row-cap judgment
           applied to the whole page. */}
       <div
+        ref={capRef}
         style={
           budget > 0
-            ? { maxWidth: clampBoardWidth(budget) + MOVES_MAX_PX + EXPLORER_MAX_PX + 24 }
+            ? { maxWidth: boardColW + MOVES_MAX_PX + EXPLORER_MAX_PX + REGION_GAPS_PX }
             : undefined
         }
         className="mx-auto flex min-h-0 w-full flex-1 flex-col gap-3"
@@ -292,7 +317,7 @@ function Workspace() {
             story twice). */}
         <div
           ref={boardColRef}
-          style={budget > 0 ? { width: clampBoardWidth(budget) } : undefined}
+          style={budget > 0 ? { width: boardColW } : undefined}
           className="flex flex-none self-start"
         >
           {/* verticalKeys off: ↑/↓ browse the games band's rows here
@@ -310,7 +335,7 @@ function Workspace() {
         {/* The Board page's moves panel, rearranged: engine docked on
             top, the opening's own name as the title, the board's
             navigation at the foot. Same parts, same order, no copies. */}
-        <Panel className="flex min-w-[18rem] max-w-[30rem] flex-1 flex-col">
+        <Panel className="flex min-w-[17rem] max-w-[30rem] flex-1 flex-col">
           <EngineBlock />
           <PanelHeader
             title={openingName ?? 'Starting position'}
@@ -340,7 +365,7 @@ function Workspace() {
             gives up only what the review actually draws. No resizeKey on
             the explorer: the grip resizes a panel in a stack against a
             stored height, and this stack sizes itself. */}
-        <div className="flex min-w-[20rem] max-w-[32rem] flex-1 flex-col gap-3">
+        <div className="flex min-w-[19rem] max-w-[32rem] flex-1 flex-col gap-3">
           <ExplorerPane className="min-h-0 flex-1" onPositionHunt={huntInBand} />
           {/* The same ReviewStrip the Board page docks under its move
               list, hosted as a panel: every state it draws (the offer,
