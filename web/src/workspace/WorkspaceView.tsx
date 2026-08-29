@@ -1,5 +1,5 @@
-import { PanelsTopLeft } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { LayoutDashboard } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -57,7 +57,7 @@ function WorkspaceGate() {
     <div className="optical-center h-full p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
-          <PanelsTopLeft className="size-6" strokeWidth={1.75} />
+          <LayoutDashboard className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight">{t('Workspace')}</h1>
         <p className="text-muted-foreground text-base leading-relaxed">
@@ -100,11 +100,26 @@ let heldBandTab: BandTab | null = null;
 /**
  * What the board wrapper stacks around the board at `wide`, in px: the
  * player strip (h-10) + gap-2 over the board, the bottom player bar
- * (~h-9) + gap-2 under it. Subtracted from the measured region height to
- * make the --board-budget the board square itself can spend — the
+ * (~h-9) + gap-2 under it. Part of the --board-budget arithmetic — the
  * workspace's stand-in for the 10rem the full-viewport pages reserve.
  */
 const BOARD_STRIPS_PX = 92;
+
+/** The shell's own chrome around the top row, in px: p-4 above and below
+    (32) plus the gap-3 between the row and the games band (12). */
+const SHELL_CHROME_PX = 44;
+
+/**
+ * The games band's floor, in px (matches its min-h-80 class). The band is
+ * flex-1 — everything the board cannot spend is its to show rows in — and
+ * this floor is what the board's budget is computed AROUND, so the board
+ * only ever grows into height the band keeps anyway.
+ */
+const BAND_MIN_PX = 320;
+
+/** The board column's width bounds: the 18rem usability floor every board
+    page keeps, and the 64rem ceiling lg imposes so panes keep room. */
+const clampBoardWidth = (px: number): number => Math.min(Math.max(px, 288), 1024);
 
 function Workspace() {
   // The explorer is a dedicated column here, so it opens open: a page
@@ -133,14 +148,50 @@ function Workspace() {
   );
   const [loadOpen, setLoadOpen] = useState(false);
 
-  // The board region measures itself and publishes the height budget the
-  // board may spend (see boardSize.ts): the viewport formula every other
-  // board page uses assumes the board owns the window, and here the games
-  // band owns the bottom of it.
-  const [regionRef, regionH] = useElementHeight();
+  // Two measurements, no cycle between them. The SHELL's height fixes the
+  // board's budget (shell minus its chrome, the band's floor and the
+  // strips around the board — see boardSize.ts for who reads the
+  // variable): the viewport formula every other board page uses assumes
+  // the board owns the window, and here the games band owns the bottom of
+  // it. The BOARD COLUMN's resulting height then sizes the top row
+  // exactly, so the panels beside the board end where the board block
+  // ends — bottom player bar included — instead of running past it, and
+  // everything the board cannot spend (its 64rem cap on tall windows)
+  // falls through to the band as rows rather than sitting under the board
+  // as air. The column is measured, not computed: its height is the end
+  // of the min/max chain in boardSize.ts, the same reason
+  // publishBoardHeight measures on the board pages.
+  const [shellRef, shellH] = useElementHeight();
+  const budget = Math.max(0, shellH - SHELL_CHROME_PX - BAND_MIN_PX - BOARD_STRIPS_PX);
+
+  // The board column's height, measured two ways on one element: a
+  // ResizeObserver for content-driven changes, and a layout effect keyed
+  // on the budget for the change the observer only reports a frame late —
+  // the shell's first measurement lands as state, the wrapper's width
+  // changes in the SAME commit, and the row's height must not spend a
+  // paint holding the stale answer.
+  const boardColEl = useRef<HTMLDivElement | null>(null);
+  const [boardColH, setBoardColH] = useState(0);
+  const boardColRO = useRef<ResizeObserver | null>(null);
+  const boardColRef = useCallback((el: HTMLDivElement | null) => {
+    boardColRO.current?.disconnect();
+    boardColRO.current = null;
+    boardColEl.current = el;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setBoardColH(el.clientHeight));
+    observer.observe(el);
+    setBoardColH(el.clientHeight);
+    boardColRO.current = observer;
+  }, []);
+  useLayoutEffect(() => {
+    if (boardColEl.current) setBoardColH(boardColEl.current.clientHeight);
+  }, [budget]);
   const regionStyle =
-    regionH > 0
-      ? ({ '--board-budget': `${Math.max(0, regionH - BOARD_STRIPS_PX)}px` } as CSSProperties)
+    shellH > 0
+      ? ({
+          '--board-budget': `${budget}px`,
+          ...(boardColH > 0 ? { height: boardColH } : null),
+        } as CSSProperties)
       : undefined;
 
   // --- the games band -------------------------------------------------
@@ -208,19 +259,39 @@ function Workspace() {
   }, [sel?.key]);
 
   return (
-    <div className={WORKSPACE_SHELL}>
+    <div ref={shellRef} className={WORKSPACE_SHELL}>
       <h1 className="sr-only">{t('Workspace')}</h1>
 
-      {/* The top row: board, moves + engine, explorer — three columns,
-          none of them centred (see WORKSPACE_SHELL). min-h keeps the row
-          a row on short windows; past it the shell scrolls. */}
-      <div ref={regionRef} style={regionStyle} className="flex min-h-[22rem] flex-1 gap-3">
-        <AnalysisBoard editablePlayers nav={false} />
+      {/* The top row: board, moves + engine, explorer. Its height is the
+          board column's own (see the measurement note above), so the
+          panels stretch to end exactly where the board block does. The
+          moves and explorer columns carry caps — a move list and an
+          explorer table past ~30rem are blank space between a name and
+          its number — and justify-center puts what none of the three can
+          spend into margins either side, the board-row-cap judgment
+          applied to a row of three. min-h keeps the row a row before the
+          first measurement and on short windows; past it the shell
+          scrolls. */}
+      <div style={regionStyle} className="flex min-h-[22rem] shrink-0 justify-center gap-3">
+        {/* self-start, so the wrapper's height is the column's content
+            height and not the row's — this is the element the region's
+            own height is measured FROM. Width is the budget, stated on
+            the wrapper rather than left to flex: a flex-grown column
+            collects the row's surplus and centres the board in it, which
+            put the surplus BETWEEN the columns (layout.ts tells this
+            story twice). */}
+        <div
+          ref={boardColRef}
+          style={budget > 0 ? { width: clampBoardWidth(budget) } : undefined}
+          className="flex flex-none self-start"
+        >
+          <AnalysisBoard editablePlayers nav={false} />
+        </div>
 
         {/* The Board page's moves panel, rearranged: engine docked on
             top, the opening's own name as the title, the board's
             navigation at the foot. Same parts, same order, no copies. */}
-        <Panel className="flex w-[min(27rem,30%)] shrink-0 flex-col">
+        <Panel className="flex min-w-[18rem] max-w-[30rem] flex-1 flex-col">
           <EngineBlock />
           <PanelHeader
             title={openingName ?? 'Starting position'}
@@ -247,12 +318,15 @@ function Workspace() {
             page it shares the side column and is capped for it; here it
             has the height the region has. No resizeKey: the grip resizes
             a panel in a stack, and this panel is alone in its column. */}
-        <ExplorerPane className="min-w-0 flex-1" onPositionHunt={huntInBand} />
+        <ExplorerPane className="min-w-[20rem] max-w-[32rem] flex-1" onPositionHunt={huntInBand} />
       </div>
 
       {/* The games band: the Games page's browser as a full-width strip —
-          game rows are tables and want width, not a column's sliver. */}
-      <Panel className="h-80 shrink-0">
+          game rows are tables and want width, not a column's sliver.
+          flex-1 with a floor (BAND_MIN_PX is this min-h in px): the row
+          above is exactly the board's height, so every line the board
+          leaves is a game row here. */}
+      <Panel className="min-h-80 flex-1">
         <Tabs value={tab} onValueChange={(v) => setTab(v as BandTab)} className="contents">
           <div className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b">
             <TabsList

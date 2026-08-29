@@ -12,8 +12,8 @@ import {
   Layers,
   Library,
   Network,
+  LayoutDashboard,
   NotebookPen,
-  PanelsTopLeft,
   Puzzle,
   Settings,
   SquareMousePointer,
@@ -105,7 +105,11 @@ const TOOLS_SUBNAV: {
   // query the page gates on) — a phone or a half-screen window never
   // sees a destination it could only meet as a "too narrow" card. It is
   // also why the entry is absent from MORE_GROUPS below.
-  { key: 'workspace', label: 'Workspace', icon: PanelsTopLeft, nav: ['workspace'], active: (s) => s === 'workspace' },
+  // LayoutDashboard, not PanelsTopLeft: at rail size PanelsTopLeft and
+  // the Explorer's Table2 are the same square-with-lines silhouette two
+  // rows apart (lanph3re caught it); the dashboard tiles read as "many
+  // panes" without twinning anything else in the sidebar.
+  { key: 'workspace', label: 'Workspace', icon: LayoutDashboard, nav: ['workspace'], active: (s) => s === 'workspace' },
   { key: 'repertoire', label: 'Repertoire', icon: Layers, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
 // Databases is deliberately NOT in Tools: the entries there are boards

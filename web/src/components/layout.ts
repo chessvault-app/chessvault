@@ -193,7 +193,7 @@ export const BOARD_HELD_SHELL =
  * family to the board's own sizing chain.
  *
  * `overflow-y-auto` is the same fallback the board shell carries: the
- * board keeps an 18rem floor and the games band a fixed height, so a
+ * board keeps an 18rem floor and the games band a height floor, so a
  * pathologically short window scrolls the page instead of clipping panes.
  */
 export const WORKSPACE_SHELL =
