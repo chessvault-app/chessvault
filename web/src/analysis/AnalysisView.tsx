@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Table2, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Table2, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -384,10 +384,15 @@ export function MoveActions({
           }}
           title={t('Clear all moves')}
         >
-          {/* The same arrow the Board has always used for its own clear.
-              Games and Studies drew an eraser for what a reader takes to
-              be one action, so it is one icon now (lanph3re's call). */}
-          <RotateCcw className="size-3.5" />
+          {/* The eraser again (lanph3re's call, reversing an earlier
+              one). It briefly shared the Board's arrow — Games and
+              Studies drew an eraser for what a reader takes to be one
+              clear — but this button renders BESIDE the arrow whenever a
+              loaded position has moves, and there the two verbs differ
+              in exactly what matters: one keeps that position, one
+              throws it away. Two identical icons told apart only by
+              tooltip is worse than two icons for one perceived act. */}
+          <Eraser className="size-3.5" />
         </Button>
       )}
       {allowReset && (
@@ -496,7 +501,7 @@ export function MovesOverflow({
       ? [
           {
             label: 'Clear all moves',
-            icon: RotateCcw,
+            icon: Eraser,
             danger: true,
             onSelect: () => {
               capture(t('all moves'));
