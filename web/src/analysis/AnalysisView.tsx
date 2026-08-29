@@ -169,7 +169,8 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
                   triggerClassName="max-md:hidden"
                 />
                 <MoveActions allowClear />
-                <MovesOverflow allowClear onLoadPosition={() => setLoadOpen(true)} />
+                {/* ownReview: the microscope above is this page's own. */}
+                <MovesOverflow allowClear ownReview onLoadPosition={() => setLoadOpen(true)} />
               </>
             }
           />
@@ -421,12 +422,16 @@ export function MoveActions({
  * list go away on a phone: it was a row of chrome spending a line of
  * height on a string nobody reads on a phone.
  *
- * A desktop keeps every icon on the header and its status bar, so this
- * renders nothing there.
+ * A desktop keeps its icons on the header, so there the menu lists only
+ * what the header does NOT show — Copy FEN, Copy PGN, a caller's extras.
+ * A verb whose button is already on screen is not listed again one icon
+ * away: the menu used to repeat the review, both clears and the loader
+ * on a desktop, which read as a header full of duplicates.
  */
 export function MovesOverflow({
   allowReset = true,
   allowClear = false,
+  ownReview = false,
   onLoadPosition,
   extra = [],
 }: {
@@ -437,6 +442,13 @@ export function MovesOverflow({
    * by leaving it off.
    */
   allowClear?: boolean;
+  /**
+   * The page draws a review control of its own on a desktop (the Board
+   * header's microscope, the workspace's Analysis panel), so the menu
+   * lists Engine review only on a phone. Left off where the menu row is
+   * the only trigger there is — the trainers, studies, the book reader.
+   */
+  ownReview?: boolean;
   /** Opens the caller's Load position dialog; omitted where there is none. */
   onLoadPosition?: () => void;
   /** A caller's own verbs, listed after the position loader. */
@@ -465,8 +477,8 @@ export function MovesOverflow({
       : []),
     ...extra,
     // Offered only when there is a game to judge, and not while it is
-    // already judging one.
-    ...(hasMoves && !reviewing
+    // already judging one — nor beside a page's own review control.
+    ...(hasMoves && !reviewing && (phone || !ownReview)
       ? [{ label: 'Engine review', icon: Microscope, onSelect: () => void runReview() }]
       : []),
     {
@@ -478,7 +490,9 @@ export function MovesOverflow({
     // Takes the moves off and leaves the position they were played from
     // — the only clear a study can have, and on the Board the one that
     // spares a loaded position. Undoable, like every other clear here.
-    ...(clearMoves.offered
+    // Phone only, like the loader row: MoveActions' own buttons are
+    // max-md:hidden, so on a desktop these rows were their duplicates.
+    ...(phone && clearMoves.offered
       ? [
           {
             label: 'Clear all moves',
@@ -494,7 +508,7 @@ export function MovesOverflow({
     // Last and tinted: it throws the board away. Never offered in a
     // study or a game, where the board IS the document — the same reason
     // MoveActions takes allowReset.
-    ...(allowReset
+    ...(phone && allowReset
       ? [
           {
             label: 'Clear the board',
