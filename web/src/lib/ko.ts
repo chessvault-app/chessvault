@@ -32,8 +32,9 @@ export const ko: Record<string, string> = {
   Explorer: '탐색기',
   Workspace: '워크스페이스',
   Analysis: '분석',
-  Fold: '접기',
-  Unfold: '펼치기',
+  'Analysis on/off': '분석 켜기/끄기',
+  'Hide the analysis': '분석 숨기기',
+  'Show the analysis': '분석 표시',
   'Play moves or load a game, then run an engine review.':
     '수를 두거나 게임을 불러온 뒤 엔진 리뷰를 실행하세요.',
   'The workspace shows the board, the moves, the explorer and the games browser side by side, and needs a window wide enough to hold them all. On this screen its panes are pages of their own.':

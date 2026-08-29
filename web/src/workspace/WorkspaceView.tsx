@@ -1,4 +1,4 @@
-import { ChevronDown, LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -23,6 +23,7 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from '@/components/panel';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WORKSPACE_SHELL } from '@/components/layout';
 import { useElementHeight } from '@/hooks/use-element-height';
@@ -379,16 +380,15 @@ function Workspace() {
               actions={
                 <>
                   <ReviewButton />
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={analysisOpen ? t('Fold') : t('Unfold')}
-                    onClick={toggleAnalysis}
-                  >
-                    <ChevronDown
-                      className={cn('size-3 transition-transform', analysisOpen && 'rotate-180')}
-                    />
-                  </Button>
+                  {/* The same switch the explorer's header wears — one
+                      folding grammar for the workspace's foldable panels
+                      (lanph3re's call, replacing a chevron). */}
+                  <Switch
+                    checked={analysisOpen}
+                    onCheckedChange={toggleAnalysis}
+                    aria-label={t('Analysis on/off')}
+                    title={analysisOpen ? t('Hide the analysis') : t('Show the analysis')}
+                  />
                 </>
               }
             />

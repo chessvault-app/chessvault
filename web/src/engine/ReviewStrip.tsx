@@ -114,9 +114,34 @@ export function ReviewStrip({
   }
 
   return (
-    <div className={cn('border-border shrink-0 border-t', className)}>
+    // A shrinkable flex column, not shrink-0: this strip is the newest
+    // band in a panel whose every other band refuses to shrink, and the
+    // panel clips from the BOTTOM when its children outgrow it — so a
+    // rigid strip did not lose itself to a short window, it lost the
+    // navigation bar below it (measured at 1440x500 with the engine on:
+    // BoardControls at y 484..525 in a panel clipped at 384). The graph
+    // is the part that gives — see EvalGraph.
+    //
+    // The floor is stated EXPLICITLY, and both of its alternatives were
+    // measured wrong. min-h-0 let the strip fold to 1px and paint its
+    // summary rows over the controls; no min-height at all floored it at
+    // its intrinsic minimum, which flexbox computes from the graph
+    // wrapper's SPECIFIED 4rem, not from the 1.75rem it can shrink to —
+    // so the strip never shrank. 6rem is the compressed graph plus the
+    // two summary rows.
+    <div
+      className={cn(
+        'border-border flex shrink flex-col border-t',
+        // The done state only: progress and error are single rows that a
+        // 5rem floor would inflate. 5rem = the graph at its 1.5rem floor
+        // + the two summary rows + the border, exactly — a floor an inch
+        // over its contents just moves the clip onto the band below.
+        status !== 'running' && status !== 'error' && 'min-h-20',
+        className,
+      )}
+    >
       {status === 'running' ? (
-        <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex shrink-0 items-center gap-2 px-3 py-2">
           <span className="text-muted-foreground text-sm font-medium">
             {t('Reviewing')}
           </span>
@@ -131,7 +156,7 @@ export function ReviewStrip({
           </span>
         </div>
       ) : status === 'error' ? (
-        <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex shrink-0 items-center gap-2 px-3 py-2">
           <span className="text-destructive min-w-0 flex-1 truncate text-sm">{error}</span>
           <Button variant="ghost" size="icon-sm" title={t('Dismiss')} onClick={clear}>
             <X className="size-3" />
@@ -145,7 +170,7 @@ export function ReviewStrip({
           {points && points.length > 1 && (panel || graphOpen) && (
             <EvalGraph points={points} tall={panel} />
           )}
-          <div className="flex items-center gap-1 px-3 py-1.5">
+          <div className="flex shrink-0 items-center gap-1 px-3 py-1.5">
             <div className="grid min-w-0 flex-1 gap-0.5">
               {white && <SummaryRow side="white" summary={white} />}
               {black && <SummaryRow side="black" summary={black} />}
@@ -223,17 +248,29 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
   };
 
   return (
-    <div className="relative">
+    // The band that gives when the panel is short: the WRAPPER carries
+    // the height and a 1.75rem floor, and the svg fills it — sized the
+    // other way round (a fixed-height svg inside), the svg's 4rem was
+    // the strip's intrinsic minimum and the strip never shrank at all;
+    // flexbox floors an item at its content's min size, and a floor on
+    // the box the content merely fills is what that arithmetic can see.
+    // The svg follows the wrapper down (preserveAspectRatio none
+    // compresses the drawing rather than clipping it), because a
+    // squashed graph is still a graph while a clipped panel loses its
+    // navigation bar — the trade the strip's root explains.
+    <div
+      className={cn(
+        'relative min-h-6 shrink overflow-hidden',
+        // Taller where a panel hosts it (the workspace): the reading
+        // surface is the whole panel, not a strip stealing move rows.
+        tall ? 'h-24' : 'h-16',
+      )}
+    >
       <svg
         ref={svg}
         viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
         preserveAspectRatio="none"
-        className={cn(
-          'bg-muted/50 block w-full cursor-pointer touch-none select-none',
-          // Taller where a panel hosts it (the workspace): the reading
-          // surface is the whole panel, not a strip stealing move rows.
-          tall ? 'h-24' : 'h-16',
-        )}
+        className="bg-muted/50 block h-full w-full cursor-pointer touch-none select-none"
         onPointerDown={(e) => {
           try {
             e.currentTarget.setPointerCapture(e.pointerId);
@@ -321,9 +358,13 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
                         ? 'bg-nag-book size-1 rounded-full'
                         : 'bg-border size-1 rounded-full',
                 i === cursorIndex && 'ring-primary ring-2',
-                // The dot a click would land on grows under the pointer —
-                // the guide line says where, the dot says "this one".
-                i === hover && 'scale-[1.8]',
+                // The dot a click would land on grows AND recolours under
+                // the pointer — the guide line says where, the dot says
+                // "this one". Recoloured because most dots are border-grey
+                // on a muted ground, and a grown grey dot was still grey
+                // (lanph3re's report); primary is the same ink the cursor
+                // line answers in.
+                i === hover && 'bg-primary scale-[1.8]',
               )}
             />
           ),
