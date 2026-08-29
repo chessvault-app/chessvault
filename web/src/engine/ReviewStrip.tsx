@@ -132,11 +132,18 @@ export function ReviewStrip({
     <div
       className={cn(
         'border-border flex shrink flex-col border-t',
-        // The done state only: progress and error are single rows that a
-        // 5rem floor would inflate. 5rem = the graph at its 1.5rem floor
+        // Only while the graph is actually drawn: progress and error are
+        // single rows that a 5rem floor would inflate, and a FOLDED graph
+        // left the same inflation as dead space under the summary rows
+        // (lanph3re's screenshot). 5rem = the graph at its 1.5rem floor
         // + the two summary rows + the border, exactly — a floor an inch
         // over its contents just moves the clip onto the band below.
-        status !== 'running' && status !== 'error' && 'min-h-20',
+        status !== 'running' &&
+          status !== 'error' &&
+          points &&
+          points.length > 1 &&
+          (panel || graphOpen) &&
+          'min-h-20',
         className,
       )}
     >
@@ -308,17 +315,18 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
           vectorEffect="non-scaling-stroke"
         />
         {/* The hover guide: where a click would land. Over the area fill
-            (it would be lost under it) and thinner than the cursor's own
-            line, so the two never read as one. */}
+            (it would be lost under it), thinner than the cursor's own
+            line, and in the hovered dot's own info blue, so line and dot
+            read as one "this one" and never as a second cursor. */}
         {hover !== null && hover !== cursorIndex && (
           <line
             x1={x(hover)}
             y1="0"
             x2={x(hover)}
             y2={GRAPH_H}
-            stroke="var(--color-muted-foreground)"
+            stroke="var(--color-info)"
             strokeWidth="1"
-            opacity="0.6"
+            opacity="0.7"
             vectorEffect="non-scaling-stroke"
           />
         )}
@@ -360,11 +368,12 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
                 i === cursorIndex && 'ring-primary ring-2',
                 // The dot a click would land on grows AND recolours under
                 // the pointer — the guide line says where, the dot says
-                // "this one". Recoloured because most dots are border-grey
-                // on a muted ground, and a grown grey dot was still grey
-                // (lanph3re's report); primary is the same ink the cursor
-                // line answers in.
-                i === hover && 'bg-primary scale-[1.8]',
+                // "this one". Recoloured in the info blue the opening map
+                // lights its mainline with (MapCanvas's ACCENT): primary
+                // was tried first and is near-white in the neutral theme,
+                // invisible on a chart whose dominant inks are already
+                // white and black (lanph3re's report, twice).
+                i === hover && 'bg-info scale-[1.8]',
               )}
             />
           ),
