@@ -4,8 +4,9 @@
 
 Your chess, in plain files. A private, self-hosted chess workbench:
 engine analysis, opening explorer, studies, notes, a curated game
-collection, and a puzzle trainer fed by real paper books — everything
-stored as PGN, markdown and JSON in one folder you own.
+collection, desktop-grade database search, and a puzzle trainer fed by
+real paper books — everything stored as PGN, markdown and JSON in one
+folder you own.
 
 **Try it first:** the [live demo](https://chessvault-app.github.io/app/)
 runs the whole app in a browser, on a seeded vault — no install, no
@@ -64,14 +65,23 @@ is one connected body of work, and the links are what make it that.
   (```` ```chess ```` fences) and Obsidian-style `[[wiki-links]]`
   across notes, studies and games. Files stay Obsidian-readable.
 - **Games** — a curated collection (annotatable like studies), your
-  chess.com / Lichess archives browsed month by month with filters,
-  manual PGN import, and reference databases searched like a desktop
-  database: by player, opening and ECO, by **position** (exact, or
-  relaxed by degrees down to bare material), or by **material
-  situation** — rook endings, "a queen up", or your own spec. Exact
-  position search answers in milliseconds on a ten-million-game
-  corpus, and the relaxed hunts in tenths of a second with fast
-  search on.
+  chess.com / Lichess archives browsed month by month with filters, and
+  manual PGN import.
+- **Database search** — reference databases built from your own PGNs,
+  searched the way a desktop chess database searches, three ways. A
+  **query language** for the who and the what — `player:`, `opponent:`,
+  `opening:`, `eco:`, `event:`, `result:`, `year:`, `elo:` — with
+  chips, suggestions and live warnings for a query that cannot match.
+  **By position**: exact — transpositions included — or loosened by
+  degrees, down through same-pawns-and-material to bare pawn structure
+  or bare material, with a hold requirement to tell a settled structure
+  from a passing one. **By material situation**: endgame presets from
+  pawn endings to "a queen up", or your own per-side, per-piece spec.
+  Exact position search answers in milliseconds on a ten-million-game
+  corpus, and the relaxed and material hunts in tenths of a second with
+  fast search on —
+  ["Scale and hardware"](docs/databases.md#scale-and-hardware) has the
+  measured table.
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/games-dark.png">
