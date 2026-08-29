@@ -2,6 +2,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Grid3x3 } from 'lucide-react';
 import { cloneElement, useEffect, useState } from 'react';
 
+import { positionOf } from '@shared/bookEngine';
+
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -27,6 +29,13 @@ import { useDiagramJob } from './diagramJob';
  * importer uses (ocr/pdfPage.ts), and remembered on the server so a page
  * is read once per vault. A diagram alone does not say who is to move, so
  * a read-here position asks — two entries, not a guess.
+ *
+ * And CellNet does not always win. A scan it cannot read returns a
+ * placement that is no position at all — empty, or a king short — which
+ * the board refuses; a whole book can come back that way. Those diagrams
+ * still get their button, because the reader is sitting in front of the
+ * printed one, but it opens the editor rather than offering a side to
+ * move that would be thrown away. See `readable` below.
  */
 
 /** Placement as a key, to match a known position to a detected box. */
@@ -134,6 +143,25 @@ export function SearchHighlights({
   );
 }
 
+/**
+ * Can this reading become a position at all?
+ *
+ * A board the classifier could not read comes back as a placement no
+ * chess position accepts — most often empty, or with a king missing —
+ * and `loadFen` refuses it. Nothing used to ask: the hotspot offered a
+ * side to move, the answer was rejected, and the tap did nothing at all.
+ * So the question is asked once, here, against the very strings the
+ * chooser would build, and a reading that cannot take a side is not
+ * offered one.
+ */
+function readable(fen: string): boolean {
+  const placement = fen.split(' ')[0] ?? fen;
+  const own = fen.split(' ')[1];
+  return (['w', 'b'] as const).some(
+    (side) => positionOf(side === own ? fen : `${placement} ${side} - - 0 1`) !== null,
+  );
+}
+
 /** A known position on a page: where it is, and its full FEN. */
 export interface KnownDiagram {
   rect: PageDiagramRecord['rect'];
@@ -172,17 +200,31 @@ export function DiagramHotspots({
   };
   // Every known position is offered; a detected box that matches one is
   // folded into it (the puzzle's side to move wins), the rest ask.
-  const spots: { key: string; rect: PageDiagramRecord['rect']; fen: string; sure: boolean }[] = [];
-  known.forEach((k, i) => spots.push({ key: `k${i}`, rect: k.rect, fen: k.fen, sure: true }));
+  const spots: {
+    key: string;
+    rect: PageDiagramRecord['rect'];
+    fen: string;
+    sure: boolean;
+    /** The reading is a position; false means only the editor is offered. */
+    ok: boolean;
+  }[] = [];
+  known.forEach((k, i) =>
+    spots.push({ key: `k${i}`, rect: k.rect, fen: k.fen, sure: true, ok: readable(k.fen) }),
+  );
   (diagrams ?? []).forEach((d, i) => {
     if (!d.fen) return;
     if (known.some((k) => overlaps(k.rect, d.rect))) return;
-    spots.push({ key: `d${i}`, rect: d.rect, fen: d.fen, sure: false });
+    spots.push({ key: `d${i}`, rect: d.rect, fen: d.fen, sure: false, ok: readable(d.fen) });
   });
-  if (spots.length === 0) return null;
+  // A misread board is still worth a button while there is an editor to
+  // send it to — the reader is looking at the printed diagram, and setting
+  // it up by hand beside the page beats no button at all. With nowhere to
+  // send it there is nothing to offer, so it keeps its corner clear.
+  const shown = spots.filter((s) => s.ok || onEdit);
+  if (shown.length === 0) return null;
   return (
     <>
-      {spots.map((s0) => {
+      {shown.map((s0) => {
         const s = { ...s0, rect: rotateRect(s0.rect, rotation) };
         // Just outside the board, off its right edge, top edges aligned:
         // nothing of the diagram is covered, and the button reads as the
@@ -193,11 +235,13 @@ export function DiagramHotspots({
         };
         const button = (
           <Button
-            variant="secondary"
+            // An outline button for a board that was not read: the reader
+            // can see which diagrams the app has before tapping one.
+            variant={s.ok ? 'secondary' : 'outline'}
             size="icon-sm"
             className={cn('absolute shadow-md', 'pointer-coarse:size-9')}
             style={style}
-            title={t('Set up this position')}
+            title={s.ok ? t('Set up this position') : t('Edit position')}
           >
             <Grid3x3 className="size-3.5" />
           </Button>
@@ -209,6 +253,7 @@ export function DiagramHotspots({
           <SideToMovePopover
             key={s.key}
             fen={s.fen}
+            readable={s.ok}
             sheet={sheet}
             onSet={set}
             onEdit={onEdit}
@@ -225,9 +270,15 @@ export function DiagramHotspots({
  * "White to move / Black to move" under a hotspot whose diagram did not
  * say. Closes itself on the answer: a chooser that stays open over the
  * page it just acted on looks like it did nothing.
+ *
+ * A board that was not read (`readable` false) offers the editor alone.
+ * The two sides are dropped rather than shown and refused: the position
+ * they would build is one `loadFen` rejects, and a choice that cannot be
+ * taken is worse than no choice — it was, for a whole book of diagrams.
  */
 function SideToMovePopover({
   fen,
+  readable: ok = true,
   sheet = false,
   onSet,
   onEdit,
@@ -236,6 +287,10 @@ function SideToMovePopover({
   /** The position; when the side chosen is the one it carries, the whole
       FEN is kept (a puzzle book's castling rights and the like). */
   fen: string;
+  /** Whether the reading is a position. False offers only the editor —
+      asking a side to move for a board no side can move on is the tap
+      that used to do nothing. */
+  readable?: boolean;
   /** A phone: a bottom sheet rather than a popover off the button. */
   sheet?: boolean;
   onSet: (fen: string) => void;
@@ -250,17 +305,18 @@ function SideToMovePopover({
   };
   const choices = (
     <>
-      {(['w', 'b'] as const).map((side) => (
-        <Button
-          key={side}
-          variant="ghost"
-          size={sheet ? 'lg' : 'sm'}
-          className="justify-start"
-          onClick={() => choose(side)}
-        >
-          {side === 'w' ? t('White to move') : t('Black to move')}
-        </Button>
-      ))}
+      {ok &&
+        (['w', 'b'] as const).map((side) => (
+          <Button
+            key={side}
+            variant="ghost"
+            size={sheet ? 'lg' : 'sm'}
+            className="justify-start"
+            onClick={() => choose(side)}
+          >
+            {side === 'w' ? t('White to move') : t('Black to move')}
+          </Button>
+        ))}
       {onEdit && (
         <Button
           variant="ghost"
@@ -289,7 +345,11 @@ function SideToMovePopover({
               if (!next) setOpen(false);
             }}
           >
-            <DialogContent size="sm" title={t('Who is to move?')} icon={Grid3x3}>
+            <DialogContent
+              size="sm"
+              title={ok ? t('Who is to move?') : t('Edit position')}
+              icon={Grid3x3}
+            >
               <div className="flex flex-col gap-1">{choices}</div>
             </DialogContent>
           </Dialog>
