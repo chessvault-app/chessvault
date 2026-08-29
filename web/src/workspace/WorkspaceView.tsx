@@ -291,7 +291,12 @@ function Workspace() {
               (useTableNav), and both listeners answering at once stepped
               the list AND threw the board to an end. Home/End still jump
               the board. */}
-          <AnalysisBoard editablePlayers nav={false} verticalKeys={false} />
+          <AnalysisBoard
+            editablePlayers
+            nav={false}
+            verticalKeys={false}
+            alignPlayersTo="panels"
+          />
         </div>
 
         {/* The Board page's moves panel, rearranged: engine docked on
