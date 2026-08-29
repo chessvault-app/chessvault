@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -175,12 +175,16 @@ export function SearchInput({
 
   // The mirror follows the input's own horizontal scroll — on scroll
   // events, and after every render, because typing at the far end
-  // scrolls the field as a side effect of the caret moving.
+  // scrolls the field as a side effect of the caret moving. A LAYOUT
+  // effect, not a plain one: the input scrolls itself synchronously as
+  // the value commits, and syncing after paint let an overflowed field
+  // show one frame of the old offset per keystroke — a visible jiggle
+  // exactly while typing (lanph3re's report).
   const syncMirror = (): void => {
     if (mirror.current && self.current)
       mirror.current.style.transform = `translateX(${-self.current.scrollLeft}px)`;
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (highlight != null) syncMirror();
   });
 
@@ -208,9 +212,16 @@ export function SearchInput({
           // pl-7 is the 28px the input note below derives; pr-7 is the
           // input's own clearance for the X. whitespace-pre, because the
           // mirror must measure spaces exactly as the input does.
+          //
+          // No z-indexes anywhere in this stack: mirror, input and the
+          // X are all positioned, so DOM order IS paint order — mirror
+          // under input under button. The input briefly wore z-[1] to
+          // clear the mirror and thereby covered the X too: its centre
+          // hit-tested to the input and the clear did nothing
+          // (lanph3re's report).
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-0 flex items-center overflow-hidden pl-7 pr-7"
+            className="pointer-events-none absolute inset-0 flex items-center overflow-hidden pl-7 pr-7"
           >
             <span ref={mirror} className="text-foreground whitespace-pre text-base md:text-sm">
               {highlight}
@@ -240,7 +251,7 @@ export function SearchInput({
             // The mirror holds the ink; the input keeps the caret and
             // the selection. Placeholder colour is its own rule, so an
             // empty field still says what it is for.
-            highlight != null && 'relative z-[1] text-transparent caret-foreground',
+            highlight != null && 'relative text-transparent caret-foreground',
           )}
           onScroll={highlight != null ? syncMirror : undefined}
           onFocus={(e) => {
