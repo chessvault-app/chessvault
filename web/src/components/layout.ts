@@ -208,8 +208,21 @@ export const WORKSPACE_SHELL =
  * window-swap variant tried before it (parking, floating, same-rect
  * sibling windows) cost a visible frame somewhere. Desktop only
  * (sm:) — the phone sheets keep their own physics. The height term
- * also feeds the board's size: at 46rem the board runs to the card's
- * 28rem inner width; on shorter viewports both the card (94dvh) and
- * the board's own dvh formula shrink in step.
+ * also feeds the board's size, through --editor-board-budget
+ * (boardSize.ts): the height the WINDOW has, minus the chrome the
+ * editor stacks around the board IN THIS WINDOW. The board's stacked
+ * default reads 100dvh, and a board sized to the viewport inside a
+ * 94dvh card overflowed it by the difference — a scrollbar on
+ * mid-height windows. 21rem, not the phone page's 19rem: the chrome
+ * here measures 327px (title row 68 with the card's seam, two 53px
+ * palettes, the toolbar wrapped to two rows 76, gaps and padding) —
+ * 20.44rem, so 21rem leaves ~9px of slack. The reserve must reach
+ * least to that line or a band of heights just under the width-bound
+ * point still scrolled: the column tops out at 380px wide, and with a
+ * 19rem reserve a 750px-tall window computed a 401px budget the board
+ * could not shrink into (measured: 639px of content in a 637px
+ * shell). Published sm: like the size itself, so the phone sheet
+ * keeps its own physics here too.
  */
-export const EDITOR_WINDOW_SIZE = 'sm:h-[min(46rem,94dvh)] sm:w-[min(30rem,94vw)] sm:max-w-none';
+export const EDITOR_WINDOW_SIZE =
+  'sm:h-[min(46rem,94dvh)] sm:w-[min(30rem,94vw)] sm:max-w-none sm:[--editor-board-budget:calc(min(46rem,94dvh)_-_21rem)]';

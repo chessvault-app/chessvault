@@ -41,4 +41,13 @@ export const EDITOR_BOARD_MAX_W =
   // toolbar flush against the nav. The rest is breathing room (rio-tuned
   // on an iPad mini). Tall phones stay width-bound, so it costs them
   // nothing.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-19rem)),56dvh)] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] wide:lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),64rem)]';
+  // --editor-board-budget: the same idea as wide's --board-budget, for a
+  // stacked editor whose region is NOT the viewport — the games hunt's
+  // "Set up a position" window, which is min(46rem,94dvh) tall while this
+  // default reads 100dvh, so on mid-height windows the board outgrew its
+  // window by exactly the 6dvh the card had given up and the shell grew a
+  // scrollbar (measured at 1280x720: 624px of content in a 609px shell).
+  // The window publishes its own budget (EDITOR_WINDOW_SIZE); every
+  // true-stacked page leaves the variable unset and computes what it
+  // always did.
+  'max-w-[min(100%,max(35dvh,var(--editor-board-budget,calc(100dvh-19rem))),56dvh)] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] wide:lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),64rem)]';
