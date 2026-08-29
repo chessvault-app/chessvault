@@ -788,42 +788,6 @@ export function ArchiveBrowser({
   }, []);
 
 
-  // The shell owns this band's box and padding; these are its contents.
-  // No provider track: the page's tab strip made the site choice, and a
-  // track of its own would say it twice.
-  const toolbar = (
-    <>
-        <div className="flex items-center gap-1">
-          {/* SearchInput, not a bare Input: a mistyped handle needed
-              selecting and retyping — the X empties it in one press. */}
-          <SearchInput
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && username.trim()) void loadMonths();
-            }}
-            placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
-            className="min-w-0 flex-1"
-            inputSize="sm"
-          />
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            title={t("Browse this player's online archive")}
-            disabled={loading !== null || !username.trim()}
-            onClick={() => void loadMonths()}
-          >
-            {loading === 'months' ? (
-              <Spinner className="size-3.5" />
-            ) : (
-              <Globe className="size-3.5" />
-            )}
-          </Button>
-        </div>
-
-    </>
-  );
-
   /* Three selects, not eight chips on a rail.
      Seven chips and a select never fit the 30% column this panel
      lives in, so the row scrolled sideways behind a pair of arrows
@@ -838,7 +802,7 @@ export function ArchiveBrowser({
             onValueChange={(m) => void loadMonth(m)}
             ariaLabel={t('Archive month')}
             size="sm"
-            className="min-w-0 flex-1"
+            className={cn('min-w-0 flex-1', table && 'flex-none')}
             groups={[
               {
                 options: [
@@ -874,8 +838,16 @@ export function ArchiveBrowser({
               },
             ]}
           />
-          <SideSelect value={sideFilter} onChange={setSideFilter} />
-          <ResultSelect value={resultFilter} onChange={setResultFilter} />
+          <SideSelect
+            value={sideFilter}
+            onChange={setSideFilter}
+            className={table ? 'flex-none' : undefined}
+          />
+          <ResultSelect
+            value={resultFilter}
+            onChange={setResultFilter}
+            className={table ? 'flex-none' : undefined}
+          />
           {/* The same More-filters window the collection and the elite
               browser carry, answered client-side against the loaded
               month. No Tournament field — matchesStructured has no event
@@ -932,40 +904,55 @@ export function ArchiveBrowser({
       </>
     ) : undefined;
 
+  // The count and the way into selection mode — the count band's quiet
+  // face. At table density it rides the merged toolbar row's right end
+  // instead (see the toolbar below), so the band only exists while
+  // SELECTING: the mode's controls earn a row of their own for exactly
+  // as long as the mode is on.
+  const countGroup =
+    month && visibleMonthGames.length > 0 && !selecting ? (
+      <>
+        {/* How much of the archive is in hand. It used to be all of
+            it, so there was nothing to say; now the list grows as it
+            is scrolled and the count is the only thing that tells
+            you Select all does not mean the whole decade. */}
+        <span
+          className={cn(
+            'text-muted-foreground min-w-0 truncate text-sm tabular-nums font-medium',
+            !table && 'flex-1',
+          )}
+        >
+          {month === ALL_MONTHS
+            ? cursor >= months.length
+              ? t('{n} games · all {total} months', {
+                  n: visibleMonthGames.length,
+                  total: months.length,
+                })
+              : t('{n} games · {at} of {total} months', {
+                  n: visibleMonthGames.length,
+                  at: cursor,
+                  total: months.length,
+                })
+            : t('{n} games', { n: visibleMonthGames.length })}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={pickable.length === 0}
+          onClick={() => setSelecting(true)}
+        >
+          {t('Select…')}
+        </Button>
+      </>
+    ) : undefined;
+
   // The shell draws the count band's box, so the two lists that take
   // turns in the games column share it by construction (lanph3re's call,
   // kept from when this row copied the elite panel's by hand).
   const countBand =
     month && visibleMonthGames.length > 0 ? (
       !selecting ? (
-            <>
-              {/* How much of the archive is in hand. It used to be all of
-                  it, so there was nothing to say; now the list grows as it
-                  is scrolled and the count is the only thing that tells
-                  you Select all does not mean the whole decade. */}
-              <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm tabular-nums font-medium">
-                {month === ALL_MONTHS
-                  ? cursor >= months.length
-                    ? t('{n} games · all {total} months', {
-                        n: visibleMonthGames.length,
-                        total: months.length,
-                      })
-                    : t('{n} games · {at} of {total} months', {
-                        n: visibleMonthGames.length,
-                        at: cursor,
-                        total: months.length,
-                      })
-                  : t('{n} games', { n: visibleMonthGames.length })}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={pickable.length === 0}
-                onClick={() => setSelecting(true)}
-              >
-                {t('Select…')}
-              </Button>
-            </>
+            table ? undefined : countGroup
           ) : (
             /* What is selected on the left, what to do with it on the
                right. Four controls in one wrapping run gave the count the
@@ -1042,6 +1029,57 @@ export function ArchiveBrowser({
             </>
           )
     ) : undefined;
+
+  // The shell owns this band's box and padding; these are its contents.
+  // No provider track: the page's tab strip made the site choice, and a
+  // track of its own would say it twice. At table density this one
+  // WRAPPING row is the whole resting chrome — the lookup, the filters
+  // and the count folded together, the same fold the databases pane
+  // made — and flex-wrap is the narrow-pane story. Card mode keeps the
+  // stacked bands. Defined after the pieces it folds in, which is why
+  // it sits below them rather than leading the bands as it used to.
+  const toolbar = (
+    <>
+        <div className={cn('flex items-center gap-1', table && 'w-full flex-wrap gap-1.5')}>
+          {/* SearchInput, not a bare Input: a mistyped handle needed
+              selecting and retyping — the X empties it in one press. */}
+          <SearchInput
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && username.trim()) void loadMonths();
+            }}
+            placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
+            className={cn('min-w-0 flex-1', table && 'basis-72')}
+            inputSize="sm"
+          />
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            title={t("Browse this player's online archive")}
+            disabled={loading !== null || !username.trim()}
+            onClick={() => void loadMonths()}
+          >
+            {loading === 'months' ? (
+              <Spinner className="size-3.5" />
+            ) : (
+              <Globe className="size-3.5" />
+            )}
+          </Button>
+          {table && (
+            <>
+              {filters}
+              {countGroup && (
+                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                  {countGroup}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+    </>
+  );
 
   const rows = month
     ? visibleMonthGames.slice(0, MAX_ROWS).map((game) => (
@@ -1137,8 +1175,10 @@ export function ArchiveBrowser({
     <GameListShell
       shape="panel"
       toolbar={toolbar}
-      filtersLoading={months.length === 0 && loading === 'months'}
-      filters={filters}
+      // No reserved filter row at table density, where the filters live
+      // in the toolbar row and no filter band will come.
+      filtersLoading={months.length === 0 && loading === 'months' && !table}
+      filters={table ? undefined : filters}
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}

@@ -75,9 +75,12 @@ export function FilterRow({ className, children }: { className?: string; childre
 export function SideSelect({
   value,
   onChange,
+  className,
 }: {
   value: SideFilter;
   onChange: (value: SideFilter) => void;
+  /** See ResultSelect — the merged control row passes flex-none. */
+  className?: string;
 }) {
   return (
     <Select
@@ -85,7 +88,7 @@ export function SideSelect({
       onValueChange={(v) => onChange(v as SideFilter)}
       ariaLabel={t('Side')}
       size="sm"
-      className="min-w-0 flex-1"
+      className={cn('min-w-0 flex-1', className)}
       groups={[
         {
           options: [
