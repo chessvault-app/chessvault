@@ -19,32 +19,18 @@ not a layer over what you were doing (see "The manager" in
 [databases.md](databases.md)) — so collapsing it is a UX decision to
 make on purpose, not a cleanup to fold into other work.
 
-**The Collection tab in the workspace's games band.** The band shows
-the reference databases and both archives; the collection is absent,
-and not as an oversight. `DatabaseGames` and `ArchiveBrowser` are
-self-contained components the workspace simply mounts, but the
-Collection tab is not a component at all — `CollectionView` *is* the
-Games page, and the collection's state (loading, bookmarks, search,
-rename, delete-with-undo, import) is woven through it. Showing it in
-the workspace without a second implementation means extracting the
-whole tabbed browser into a shared composite that both pages host
-thinly — a large, provable-neutral refactor of a core page. The tab is
-wanted (decided while the workspace was new); what defers it is that
-refactor, not doubt. The interaction is settled too, and needs no new
-chrome: collection games are annotatable documents, so in the band a
-single click previews the game on the board the way every other row
-does, while opening the document and the row's other verbs (rename,
-bookmark, remove) ride the table's existing double-click and ⋯ menu —
-the same grammar the Games page's table already speaks. What stays
-deliberately out is editing the document IN the workspace: the band
-loads rows onto the board freely only because the board is throwaway,
-and a board that can hold unsaved annotations puts a leave-guard
-question under every row click. If previewing-then-jumping ever
-grates, the document's chrome (title, history, Done, Saved) would
-arrive as a mode of the moves panel's header — the title slot is
-already the panel's identity, and the analysis-only verbs retreat into
-the ⋯ menu the way MovesOverflow already absorbs actions — not as a
-new bar.
+**Editing a collection game inside the workspace.** The workspace's
+games band shows the whole browser, Collection included (the
+GamesBrowser extraction); a click previews any game on the board, and
+opening one goes to its document page. What stays deliberately out is
+editing the document IN the workspace: the band loads rows onto the
+board freely only because the board is throwaway, and a board that can
+hold unsaved annotations puts a leave-guard question under every row
+click. If previewing-then-jumping ever grates, the document's chrome
+(title, history, Done, Saved) would arrive as a mode of the moves
+panel's header — the title slot is already the panel's identity, and
+the analysis-only verbs retreat into the ⋯ menu the way MovesOverflow
+already absorbs actions — not as a new bar.
 
 **Several independent boards in the workspace.** The workspace is
 deliberately one analysis context shown many ways: every pane reads
