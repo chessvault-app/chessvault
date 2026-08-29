@@ -25,10 +25,14 @@ installer. This section becomes the next version's heading.
   own coordinates: each cell clips a different patch of one noise field,
   so all 64 squares differ and the grain breaks at every seam the way an
   inlaid board does. One cell would run the grain straight across the
-  seams and read as a painted panel. The whole texture is 472 bytes
-  gzipped — the CSS bundle is 61590 with it and 61118 without — against
-  138 KB for the photographic wood board it stands in for, and it brings
-  no third-party artwork to carry a licence notice for.
+  seams and read as a painted panel. Its detail stops at three octaves
+  because a fourth put the finest band at one device pixel per cycle on a
+  small board — aliasing by definition, and it shimmered hardest beside
+  the pieces' outlines, where it read as though the pieces were at fault.
+  The whole texture is 474 bytes gzipped — the CSS bundle is 61592 with
+  it and 61118 without — against 138 KB for the photographic wood board
+  it stands in for, and it brings no third-party artwork to carry a
+  licence notice for.
 - **One header across the site, and the manual's file is renamed too.**
   The docs page still wore the old chrome — an outline demo button and a
   segmented English/한국어 track — so the two pages of one site disagreed
