@@ -35,7 +35,16 @@ chrome: collection games are annotatable documents, so in the band a
 single click previews the game on the board the way every other row
 does, while opening the document and the row's other verbs (rename,
 bookmark, remove) ride the table's existing double-click and ⋯ menu —
-the same grammar the Games page's table already speaks.
+the same grammar the Games page's table already speaks. What stays
+deliberately out is editing the document IN the workspace: the band
+loads rows onto the board freely only because the board is throwaway,
+and a board that can hold unsaved annotations puts a leave-guard
+question under every row click. If previewing-then-jumping ever
+grates, the document's chrome (title, history, Done, Saved) would
+arrive as a mode of the moves panel's header — the title slot is
+already the panel's identity, and the analysis-only verbs retreat into
+the ⋯ menu the way MovesOverflow already absorbs actions — not as a
+new bar.
 
 **Several independent boards in the workspace.** The workspace is
 deliberately one analysis context shown many ways: every pane reads
