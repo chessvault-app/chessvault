@@ -505,32 +505,30 @@ export function GamesBrowser({
             onImport={() => setImporting(true)}
             onClearSearch={() => setQuery('')}
             onShowAll={() => setMarkedOnly(false)}
-            toolbar={
-              <div className="flex w-full flex-col gap-2">
-                <div className="flex w-full items-center gap-1.5">
-                  {finders('min-w-0 flex-1')}
-                  {/* Import lives WITH the collection it grows: the
-                      page-header button beside this big pane did not
-                      stand out (lanph3re's report), and the empty
-                      state already points here. Below md the FAB is
-                      the import button, so this one steps aside
-                      rather than crowd the phone's toolbar. */}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="hidden shrink-0 md:inline-flex"
-                    onClick={() => setImporting(true)}
-                  >
-                    <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
-                    {t('Import a game')}
-                  </Button>
-                </div>
-                <SearchQueryIssues
-                  query={query}
-                  pending={searchHintsOpen}
-                  filters={colConstraints}
-                />
-              </div>
+            search={finders(table ? 'min-w-0 flex-1 basis-72' : 'min-w-0 flex-1')}
+            importButton={
+              /* Import lives WITH the collection it grows: the
+                 page-header button beside this big pane did not stand
+                 out (lanph3re's report), and the empty state already
+                 points here. Below md the FAB is the import button, so
+                 this one steps aside rather than crowd the phone's
+                 toolbar. */
+              <Button
+                variant="default"
+                size="sm"
+                className="hidden shrink-0 md:inline-flex"
+                onClick={() => setImporting(true)}
+              >
+                <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+                {t('Import a game')}
+              </Button>
+            }
+            searchIssues={
+              <SearchQueryIssues
+                query={query}
+                pending={searchHintsOpen}
+                filters={colConstraints}
+              />
             }
             onSelect={(g) => setColSelKey(g ? gameKey(g) : null)}
             selectedKey={colSelKey}

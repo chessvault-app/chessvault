@@ -201,7 +201,9 @@ export function CollectionList({
   onImport,
   onClearSearch,
   onShowAll,
-  toolbar,
+  search,
+  importButton,
+  searchIssues,
   onSelect,
   selectedKey,
   onFilterConstraints,
@@ -226,8 +228,13 @@ export function CollectionList({
   onImport: () => void;
   onClearSearch: () => void;
   onShowAll: () => void;
-  /** The finders pair, in the shell's toolbar band. */
-  toolbar?: ReactNode;
+  /** The browser's pieces for the toolbar band, passed apart rather
+      than pre-assembled: how they stand depends on density, and the
+      density is this list's to know — card mode stacks search over the
+      filter band, table mode folds everything into one row. */
+  search?: ReactNode;
+  importButton?: ReactNode;
+  searchIssues?: ReactNode;
   /** Table mode: a click makes this row the details panel's subject;
       null (Escape) clears it. */
   onSelect?: (game: GameSummary | null) => void;
@@ -441,15 +448,37 @@ export function CollectionList({
     <>
     <GameListShell
       shape="panel"
-      toolbar={toolbar}
+      // At table density this one WRAPPING row is the whole resting
+      // chrome, the same fold as the other three tabs: the search pair,
+      // the filter selects, then — reading left to right as the
+      // narrowing runs — the count the narrowing produced, and Import
+      // last, the row ending on its primary the way the app's dialog
+      // footers do. Card mode rebuilds the stacked layout these pieces
+      // used to arrive pre-assembled in.
+      toolbar={
+        <div className="flex w-full flex-col gap-2">
+          <div className={cn('flex w-full items-center gap-1.5', table && 'flex-wrap')}>
+            {search}
+            {table ? (
+              <>
+                {filterControls}
+                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                  <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
+                    {t('{n} games', { n: visible.length.toLocaleString() })}
+                  </span>
+                  {importButton}
+                </span>
+              </>
+            ) : (
+              importButton
+            )}
+          </div>
+          {searchIssues}
+        </div>
+      }
       // The panel shape has no framed title to carry the tally, so the
-      // count band says it. At table density the count moves UP into the
-      // filter row instead — one row instead of two, and in a short pane
-      // (the workspace's games band) every reclaimed band is a game row
-      // shown — and it is the same FilterRow the archive draws, so the
-      // two tabs' control rows share one padding by construction
-      // (lanph3re caught them 7px apart). Card mode keeps the stacked
-      // bands.
+      // count band says it — in card mode; at table the count rides the
+      // toolbar row above.
       countBand={
         table ? undefined : (
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
@@ -463,21 +492,11 @@ export function CollectionList({
       // The wait, in the shape of the strip and rows that are coming —
       // drawn at once rather than behind useSlowLoad: these rows are the
       // panel's height, so held back they left a header over nothing
-      // that grew a fifth of a second later.
-      filtersLoading={!loaded}
+      // that grew a fifth of a second later. No reserved filter row at
+      // table density, where no filter band will come.
+      filtersLoading={!loaded && !table}
       listLoading={!loaded}
-      filters={
-        table ? (
-          <>
-            {filterControls}
-            <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
-              {t('{n} games', { n: visible.length.toLocaleString() })}
-            </span>
-          </>
-        ) : (
-          filterControls
-        )
-      }
+      filters={table ? undefined : filterControls}
       list={
         loaded && visible.length > 0
           ? visible.map((game) =>
