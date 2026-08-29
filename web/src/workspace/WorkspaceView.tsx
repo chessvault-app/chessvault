@@ -81,24 +81,28 @@ function WorkspaceGate() {
 const ANALYSIS_FOLD = 'vault:workspace-analysis';
 
 /**
- * What the board wrapper stacks around the board at `wide`, in px: the
- * player strip (h-10) + gap-2 over the board, the bottom player bar
- * (~h-9) + gap-2 under it. Part of the --board-budget arithmetic — the
+ * What the board wrapper stacks around the board at `wide`, in px: a
+ * player bar (~h-9) + gap-2 on each side of the board — the top strip
+ * sits at natural height here (alignPlayersTo="panels"), not the board
+ * pages' h-10 reserve. Part of the --board-budget arithmetic — the
  * workspace's stand-in for the 10rem the full-viewport pages reserve.
  */
-const BOARD_STRIPS_PX = 92;
+const BOARD_STRIPS_PX = 88;
 
 /** The shell's own chrome around the top row, in px: p-4 above and below
     (32) plus the gap-3 between the row and the games band (12). */
 const SHELL_CHROME_PX = 44;
 
 /**
- * The games band's floor, in px (matches its min-h-80 class). The band is
+ * The games band's floor, in px (matches its min-h-72 class). The band is
  * flex-1 — everything the board cannot spend is its to show rows in — and
  * this floor is what the board's budget is computed AROUND, so the board
- * only ever grows into height the band keeps anyway.
+ * only ever grows into height the band keeps anyway. 18rem, down from
+ * 20: with the band's chrome folded to one row the floor still holds
+ * ~5 table rows, and the two reclaimed rems are the board's
+ * (lanph3re asked for a bit more board).
  */
-const BAND_MIN_PX = 320;
+const BAND_MIN_PX = 288;
 
 /** The board column's width bounds: the 18rem usability floor every board
     page keeps, and the 64rem ceiling lg imposes so panes keep room. */
@@ -388,7 +392,7 @@ function Workspace() {
         table
         inPlace
         onSelect={setSel}
-        className="min-h-80 flex-1"
+        className="min-h-72 flex-1"
       />
       </div>
     </div>

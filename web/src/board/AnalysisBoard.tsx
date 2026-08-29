@@ -47,16 +47,18 @@ export function AnalysisBoard({
   alignPlayersTo = 'board',
 }: {
   /**
-   * What the top player bar lines up with inside its fixed strip. The
-   * board pages keep 'board' — items-end, the name hugging the board it
-   * belongs to, while the side column's own title band answers the
+   * What the top player bar lines up with. The board pages keep
+   * 'board': a fixed h-10 strip, items-end, the name hugging the board
+   * it belongs to, while the side column's own title band answers the
    * strip's height. The workspace passes 'panels': its neighbours are
-   * panels starting at the row's very top with their titles centred in
-   * a min-h-11 header, so an end-aligned name floated below the panel
-   * edge with nothing across from it (lanph3re's report) — centred in
-   * the h-10 strip, the name sits on the same optical line as the
-   * headers beside it. The strip's height never changes, so the board's
-   * own y is the same under either answer.
+   * panels starting at the row's very top, so the whole column stack —
+   * bar, board, bar — top-aligns with them instead: the strip drops
+   * its reserve and sits at its natural height on the row's first
+   * line, which also makes the gap above the board equal the gap
+   * below it (centring the bar in the fixed strip was tried and
+   * rejected — it put 14px over the board against 8 under, and the
+   * three pieces read as three misaligned things; lanph3re's call).
+   * The freed reserve goes to the board through the host's budget.
    */
   alignPlayersTo?: 'board' | 'panels';
   /**
@@ -296,10 +298,11 @@ export function AnalysisBoard({
         {(strip || hasGame || editablePlayers) && (
           <div
             className={cn(
-              'w-full items-end wide:flex wide:h-10',
               // See alignPlayersTo — wide only; stacked keeps the bar on
               // the board it sits directly above.
-              alignPlayersTo === 'panels' && 'wide:items-center',
+              alignPlayersTo === 'panels'
+                ? 'w-full items-start wide:flex wide:h-auto'
+                : 'w-full items-end wide:flex wide:h-10',
               hasNames ? 'flex' : 'hidden wide:flex',
               engineOn && 'stacked:hidden',
             )}
