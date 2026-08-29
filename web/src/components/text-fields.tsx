@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -149,30 +149,40 @@ export function SearchInput({
   onChange,
   value,
   ref,
-  tokens,
-  onClearAll,
+  highlight,
   ...props
 }: InputProps & {
   /**
-   * Finished query terms as chips standing INSIDE the field, before
-   * the text still being typed — the token-input shape. The chips
-   * carry their own remove affordance; with any present the group
-   * grows and wraps instead of clipping. (An earlier attempt painted
-   * the qualifiers via a transparent-text overlay; the mirrored caret
-   * was never quite honest, and chips say "this term is committed"
-   * besides.)
+   * A coloured mirror of `value`, drawn BEHIND the input while the
+   * input's own text goes transparent — the GitHub-search look, where
+   * a qualifier's value colours itself in place and the whole query
+   * stays one run of editable text (lanph3re's call, retiring the
+   * chips). An earlier overlay attempt was rejected for a mirrored
+   * caret that was never quite honest; this one keeps the NATIVE
+   * caret — the input stays on top, only its glyph colour is
+   * transparent, and caret-color paints the real caret — so the only
+   * contract is that the mirror wears the input's exact font and
+   * text offset, and follows its horizontal scroll.
    */
-  tokens?: ReactNode;
-  /** What the X clears when tokens are present: everything, not just
-      the input's own text — emptying the visible field must not keep
-      invisible constraints alive. */
-  onClearAll?: () => void;
+  highlight?: ReactNode;
 }) {
   const [focused, setFocused] = useState(false);
   // For an uncontrolled caller, which the X still has to know about.
   const [typed, setTyped] = useState('');
   const self = useRef<HTMLInputElement | null>(null);
+  const mirror = useRef<HTMLSpanElement | null>(null);
   const text = value === undefined ? typed : String(value);
+
+  // The mirror follows the input's own horizontal scroll — on scroll
+  // events, and after every render, because typing at the far end
+  // scrolls the field as a side effect of the caret moving.
+  const syncMirror = (): void => {
+    if (mirror.current && self.current)
+      mirror.current.style.transform = `translateX(${-self.current.scrollLeft}px)`;
+  };
+  useEffect(() => {
+    if (highlight != null) syncMirror();
+  });
 
   /** See the two buttons: the X stays in the field, Cancel leaves it. */
   const empty = (then: 'stay' | 'leave'): void => {
@@ -190,14 +200,23 @@ export function SearchInput({
         focused && 'max-sm:w-full',
       )}
     >
-      <InputGroup
-        inputSize={inputSize}
-        className={cn('min-w-0 flex-1', tokens && 'h-auto min-h-7 flex-wrap gap-y-1 py-0.5')}
-      >
+      <InputGroup inputSize={inputSize} className="min-w-0 flex-1">
         <InputGroupAddon>
           <Search className="text-muted-foreground pointer-events-none size-3.5" />
         </InputGroupAddon>
-        {tokens}
+        {highlight != null && text !== '' && (
+          // pl-7 is the 28px the input note below derives; pr-7 is the
+          // input's own clearance for the X. whitespace-pre, because the
+          // mirror must measure spaces exactly as the input does.
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0 flex items-center overflow-hidden pl-7 pr-7"
+          >
+            <span ref={mirror} className="text-foreground whitespace-pre text-base md:text-sm">
+              {highlight}
+            </span>
+          </div>
+        )}
         <InputGroupInput
           ref={(node) => {
             self.current = node;
@@ -215,7 +234,15 @@ export function SearchInput({
           data-search-field=""
           // The badge is 8px in and 14px wide; 6px more puts the text at
           // the 28px every search field has always started at.
-          className={cn('pl-1.5', text && 'pr-7', tokens && 'min-w-[8rem] basis-32')}
+          className={cn(
+            'pl-1.5',
+            text && 'pr-7',
+            // The mirror holds the ink; the input keeps the caret and
+            // the selection. Placeholder colour is its own rule, so an
+            // empty field still says what it is for.
+            highlight != null && 'relative z-[1] text-transparent caret-foreground',
+          )}
+          onScroll={highlight != null ? syncMirror : undefined}
           onFocus={(e) => {
             setFocused(true);
             onFocus?.(e);
@@ -232,17 +259,12 @@ export function SearchInput({
         />
         {/* Inside the field, because it is about the field's contents. It
             appears with the text and leaves with it — an X over an empty
-            box is a button that does nothing. Chips COUNT as contents:
-            a field holding only tokens still offers the X, and clearing
-            it takes the tokens too. */}
-        {(text || tokens) && (
+            box is a button that does nothing. */}
+        {text && (
           <ClearButton
             className="right-1.5"
             label="Clear search"
-            onClear={() => {
-              if (tokens && onClearAll) onClearAll();
-              else empty('stay');
-            }}
+            onClear={() => empty('stay')}
           />
         )}
       </InputGroup>

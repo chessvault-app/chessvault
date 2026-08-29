@@ -394,55 +394,6 @@ export function findCrossImpossible(q: string, f: FilterConstraints): SearchIssu
 }
 
 /**
- * The query split for a token-chip search box: every FINISHED valid
- * qualifier token becomes a chip, and everything else — plain words,
- * invalid qualifiers (the warning box explains those), and the token
- * still under the caret — stays editable text. "Finished" means not
- * the trailing token, unless the query ends in whitespace. Composing
- * `[...chips, text]` back with spaces reproduces an equivalent query,
- * which is what keeps the string the single source of truth.
- */
-export function splitQueryChips(q: string): { chips: string[]; text: string } {
-  const tokens = q.match(/(?:[^\s"]+|"[^"]*")+/g) ?? [];
-  const endsSpace = /\s$/.test(q);
-  const chips: string[] = [];
-  const rest: string[] = [];
-  tokens.forEach((raw, i) => {
-    const unfinished = i === tokens.length - 1 && !endsSpace;
-    const colon = raw.indexOf(':');
-    const key = colon > 0 ? raw.slice(0, colon).toLowerCase() : '';
-    if (!unfinished && colon > 0 && PREFIX_SET.has(key)) {
-      const value = raw
-        .slice(colon + 1)
-        .replace(/"/g, '')
-        .trim();
-      const valid =
-        value !== '' &&
-        (key === 'result'
-          ? normalizeResult(value) !== null
-          : key === 'year'
-            ? parseYearSpan(value) !== null
-            : key === 'elo'
-              ? parseEloSpan(value) !== null
-              : true);
-      if (valid) {
-        chips.push(raw);
-        return;
-      }
-    }
-    rest.push(raw);
-  });
-  return { chips, text: rest.join(' ') + (endsSpace && rest.length > 0 ? ' ' : '') };
-}
-
-/** The chips and the tail back into one query string. */
-export function composeQueryChips(chips: string[], text: string): string {
-  const base = chips.join(' ');
-  if (!base) return text;
-  return text ? `${base} ${text}` : `${base} `;
-}
-
-/**
  * The same terms, answered against a row already in the page — the
  * collection's side of the language. Mirrors what the server compiles
  * to SQL: substrings for names and events, a prefix for ECO, the

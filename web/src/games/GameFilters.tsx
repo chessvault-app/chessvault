@@ -1,10 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { SlidersHorizontal, TriangleAlert, X } from 'lucide-react';
+import { SlidersHorizontal, TriangleAlert } from 'lucide-react';
 import {
-  composeQueryChips,
   findCrossImpossible,
   parseSearchQuery,
-  splitQueryChips,
+  SEARCH_PREFIXES,
   type FilterConstraints,
 } from '@shared/searchQuery';
 import { api } from '@/lib/api';
@@ -523,43 +522,52 @@ const QUERY_OPS: {
 ];
 
 /**
- * One committed query term, standing in the field as a chip: the
- * qualifier in the muted ink, its value in the accent, an X to take
- * it out again. mousedown-preventDefault on the X so the press does
- * not blur the input it stands inside.
+ * The query, recoloured in place for the search box's mirror: a known
+ * qualifier keeps the chips' old ink — the name muted, the value in
+ * the info accent — and everything else, plain words and unknown
+ * qualifiers alike, stays the plain foreground. Whitespace passes
+ * through untouched (the mirror must measure exactly what the input
+ * holds), and quotes stay visible in the value: they are part of what
+ * was typed, and hiding them moved every glyph after them.
  */
-function QueryChip({ raw, onRemove }: { raw: string; onRemove: () => void }) {
-  const colon = raw.indexOf(':');
-  return (
-    // The app's own text face, not mono — a chip is a phrase, not
-    // code — and an explicit accent-on-border coat: the secondary
-    // wash sat on the input's own surface and vanished in the dark
-    // theme.
-    <Badge variant="outline" className="bg-accent border-border shrink-0 gap-0.5 pr-1">
-      <span className="text-muted-foreground">{raw.slice(0, colon + 1)}</span>
-      <span className="text-info font-medium">{raw.slice(colon + 1).replace(/"/g, '')}</span>
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label={t('Remove this term')}
-        className="text-muted-foreground hover:text-foreground -mr-0.5 grid size-3.5 shrink-0 place-items-center rounded-full"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={onRemove}
-      >
-        <X className="size-2.5" />
-      </button>
-    </Badge>
-  );
+function QueryHighlight({ query }: { query: string }) {
+  const out: ReactNode[] = [];
+  // Tokens as the parser sees them, plus the whitespace runs between.
+  const re = /(?:[^\s"]+|"[^"]*"?)+|\s+/g;
+  let m: RegExpExecArray | null;
+  let i = 0;
+  while ((m = re.exec(query))) {
+    const raw = m[0];
+    if (/^\s+$/.test(raw)) {
+      out.push(raw);
+      continue;
+    }
+    const colon = raw.indexOf(':');
+    const key = colon > 0 ? raw.slice(0, colon).toLowerCase() : '';
+    if (colon > 0 && (SEARCH_PREFIXES as readonly string[]).includes(key) && colon < raw.length - 1) {
+      out.push(
+        <span key={i++} className="text-muted-foreground">
+          {raw.slice(0, colon + 1)}
+        </span>,
+        <span key={i++} className="text-info font-medium">
+          {raw.slice(colon + 1)}
+        </span>,
+      );
+    } else {
+      out.push(raw);
+    }
+  }
+  return <>{out}</>;
 }
 
 /**
- * The query search box, whole: a finished valid qualifier becomes a
- * chip inside the field (the string stays the single source of truth
- * — chips are DERIVED by splitQueryChips, and every edit recomposes
- * it), the text still under the caret stays text, the qualifier panel
- * hangs below while focused. Backspace at the text's start pops the
- * last chip back into the text for editing; a chip's X removes its
- * term outright.
+ * The query search box, whole: one run of editable text, with known
+ * qualifiers' values coloured IN PLACE through the SearchInput mirror
+ * (the GitHub-search look — lanph3re's call, retiring the chips: a
+ * committed term is edited like any other text now, no per-term X),
+ * and the qualifier panel hanging below while focused. The string was
+ * always the single source of truth; now it is also the single thing
+ * on screen.
  */
 export function QueryBox({
   query,
@@ -583,13 +591,12 @@ export function QueryBox({
     onOpenChange?.(next);
   };
   const control = useRef<SearchQueryHintsHandle | null>(null);
-  const { chips, text } = splitQueryChips(query);
   return (
     <div className={cn('relative min-w-0 flex-1', className)}>
       <SearchInput
         inputSize="sm"
-        value={text}
-        onChange={(e) => onQuery(composeQueryChips(chips, e.target.value))}
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onKeyDown={(e) => {
@@ -598,39 +605,11 @@ export function QueryBox({
             return;
           }
           if (open && control.current?.handleKey(e)) return;
-          if (e.key === 'Backspace' && chips.length > 0) {
-            const el = e.currentTarget as HTMLInputElement;
-            if (el.selectionStart === 0 && el.selectionEnd === 0) {
-              e.preventDefault();
-              const last = chips[chips.length - 1]!;
-              onQuery(composeQueryChips(chips.slice(0, -1), text ? `${last} ${text}` : last));
-            }
-          }
         }}
-        // With chips standing in the field the box is not empty, and a
-        // placeholder beside them read as text someone typed.
-        placeholder={chips.length > 0 ? undefined : placeholder}
+        placeholder={placeholder}
         spellCheck={false}
         className="w-full"
-        onClearAll={() => onQuery('')}
-        tokens={
-          chips.length > 0
-            ? chips.map((raw, i) => (
-                <QueryChip
-                  key={`${raw}-${i}`}
-                  raw={raw}
-                  onRemove={() =>
-                    onQuery(
-                      composeQueryChips(
-                        chips.filter((_, j) => j !== i),
-                        text,
-                      ),
-                    )
-                  }
-                />
-              ))
-            : undefined
-        }
+        highlight={<QueryHighlight query={query} />}
       />
       {open && (
         <SearchQueryHints query={query} onPick={onQuery} suggest={suggest} controlRef={control} />
