@@ -10,6 +10,25 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The landing page is rebuilt around the vault.** It had the shape every
+  project's front page has — a centred hero, a grid of six bordered cards,
+  four alternating image rows — which said nothing about this one. It is
+  now built out of the product's own claim: the opening is two unequal
+  columns, the headline beside a listing of the vault as it sits on disk
+  (`studies/`, `notes/`, `games/collection/`, and what each one holds), so
+  "plain files" is shown in the same eyeful it is asserted in. The six
+  cards became a printed index — a hairline between entries, the labels in
+  one column, the prose starting on one line down the page — and the four
+  feature rows became numbered figures hung off a continuous rail, which
+  reads as a series rather than as four unrelated bands. Download's three
+  cards are three rows of a table, so a row can be as tall as its own
+  content instead of every card growing to the tallest. Same palette, same
+  tokens, same screenshots; the index copy was tightened in both languages.
+  Two bugs fell out of the rebuild and are fixed for the whole page: a grid
+  column defaults to `min-width: auto`, so the clone command's `pre` had
+  been sizing its column to its longest line and taking the page 66px wider
+  than a 390px phone; and Korean was breaking mid-eojeol without
+  `word-break: keep-all` — the headline read "평범 / 한 파일로".
 - **The moves menu stops repeating its own header.** On a desktop the
   moves panel's ⋯ listed Engine review, Clear all moves and Clear the
   board one icon away from the buttons that already offer them — a

@@ -37,13 +37,23 @@
          THE DESIGN IS THE APP'S. The app is a shadcn/ui project and wears
          the registry's neutral theme at rest (docs/design-principles.md,
          "The component layer"): a white page, grey surfaces, a near-black
-         primary, hairline-ring cards, one radius every corner derives from.
-         This sheet is that theme written out by hand — the same token names
-         and the same values the registry ships, so clicking "Try the demo"
-         lands in an app that looks like the page that offered it. The page
-         follows the system's light/dark setting because the app does too:
-         the OLD page was dark and only dark, which was continuous with an
-         app whose default theme was dark, and is not any more. */
+         primary, hairline-ring surfaces, one radius every corner derives
+         from. This sheet is that theme written out by hand — the same token
+         names and the same values the registry ships, so clicking "Try the
+         demo" lands in an app that looks like the page that offered it. The
+         page follows the system's light/dark setting because the app does
+         too: the OLD page was dark and only dark, which was continuous with
+         an app whose default theme was dark, and is not any more.
+
+         THE LAYOUT IS NOT THE REGISTRY'S, and that is the point. A centred
+         hero over a grid of six bordered boxes is what every project ships,
+         and it said nothing about this one. The page is now built out of
+         the product's own claim: the vault is a folder of plain files, so
+         the folder is the first thing a stranger sees, the feature list is
+         a printed index rather than six cards, the screenshots are numbered
+         figures hung off a rail, and the download choices are rows in a
+         table. Boxes appear exactly twice — the vault listing and the
+         figure plinths — because both hold something that needs a frame. */
       :root {
         color-scheme: light;
         /* shadcn's neutral theme, light. */
@@ -56,12 +66,12 @@
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
         --ring: oklch(70.8% 0 0);
-        /* The card's hairline: ring-foreground/10, not the border colour —
-           the registry's nova card is a ring, and it is what makes a white
-           card read on a white page. */
+        /* The hairline: ring-foreground/10, not the border colour — the
+           registry's nova card is a ring, and it is what makes a white
+           surface read on a white page. */
         --hairline: oklch(14.5% 0 0 / 10%);
         /* One radius, and the ladder it implies: lg is the radius (buttons,
-           inputs), xl is a step up (cards), md a step down (the pills). */
+           inputs), xl is a step up (panels), md a step down (the pills). */
         --radius: 0.625rem;
         --radius-md: calc(var(--radius) - 2px);
         --radius-lg: var(--radius);
@@ -77,6 +87,10 @@
         --s6: 2rem;
         --s7: 3rem;
         --s8: 4rem;
+
+        /* The page has a second voice: anything that is literally a name on
+           disk, or a label on a figure, is set in mono. Nothing else is. */
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -103,6 +117,14 @@
         font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
         -webkit-font-smoothing: antialiased;
+        /* Korean has no spaces inside an eojeol, and the default breaking
+           rule will split one anywhere it likes — the headline read
+           "당신의 체스를, 평범 / 한 파일로." until this was set. `keep-all`
+           breaks Korean at spaces only and does nothing at all to English;
+           `break-word` is the escape hatch for the one token (a URL, a
+           path) longer than its column. */
+        word-break: keep-all;
+        overflow-wrap: break-word;
       }
       a { color: inherit; }
       /* One focus ring, the registry's: ring-3 in ring/50, and no outline
@@ -110,11 +132,28 @@
       :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
       .btn:focus-visible { border-color: var(--ring); }
 
-      /* ONE width for the whole page, feature rows included, so every
-         section starts and ends on the same two vertical lines. */
+      /* ONE width for the reading column, every section on the same two
+         vertical lines. `.bleed` is the single exception: the opening
+         screenshot runs wider than the words, which is the whole reason it
+         is allowed to interrupt them. */
       .wrap { max-width: 62rem; margin: 0 auto; padding-inline: var(--s4); }
+      .bleed { max-width: 76rem; margin: 0 auto; padding-inline: var(--s4); }
 
-      header { padding-block: var(--s3); border-bottom: 1px solid var(--border); }
+      /* The mono voice. Used for a path on disk, a figure number and a
+         section kicker — never for prose. */
+      .slug {
+        font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em;
+        color: var(--muted-foreground); margin: 0;
+      }
+
+      /* Sticky, because the page is now long enough that the language
+         switch would otherwise scroll away from a reader who needs it. */
+      header {
+        position: sticky; top: 0; z-index: 10;
+        padding-block: var(--s3); border-bottom: 1px solid var(--border);
+        background: color-mix(in oklch, var(--background) 85%, transparent);
+        backdrop-filter: saturate(180%) blur(8px);
+      }
       .bar { display: flex; align-items: center; gap: var(--s3); }
       .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; }
       /* The bare hex in currentColor, as the manual wears it — one mark
@@ -139,7 +178,7 @@
       /* Buttons are shadcn's: `.btn` is the outline variant (border, page
          colour, muted on hover) and `.btn.primary` the default one (a
          near-black fill, a near-white face). Their height is the
-         registry's lg; the hero's pair get a size up, which the registry
+         registry's lg; the opening's pair get a size up, which the registry
          has no name for because no app button needs it. */
       .btn {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
@@ -157,89 +196,160 @@
         .btn:not(.primary):hover { background: color-mix(in oklch, var(--foreground) 12%, transparent); }
       }
 
-      .hero { padding-block: var(--s8) var(--s7); text-align: center; }
-      h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.1; margin: 0 0 var(--s4); letter-spacing: -0.03em; font-weight: 600; }
-      .tagline { font-size: clamp(1.05rem, 2.4vw, 1.25rem); color: var(--muted-foreground); margin: 0 auto var(--s6); max-width: 36rem; }
-      .cta { display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: center; }
+      /* THE OPENING. Two unequal columns, not a centred stack: the claim on
+         the left and the thing itself on the right. The page says "plain
+         files" and then shows the files, in the same eyeful, before a
+         visitor has scrolled anything. */
+      .lede { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s6); padding-block: var(--s7) var(--s6); }
+      @media (min-width: 56rem) {
+        .lede { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: var(--s8); align-items: center; padding-block: var(--s8) var(--s7); }
+      }
+      h1 { font-size: clamp(2.1rem, 5.5vw, 3.4rem); line-height: 1.08; margin: 0 0 var(--s4); letter-spacing: -0.03em; font-weight: 600; }
+      .tagline { font-size: clamp(1rem, 1.6vw, 1.125rem); color: var(--muted-foreground); margin: 0 0 var(--s5); max-width: 34rem; }
+      .cta { display: flex; flex-wrap: wrap; gap: var(--s3); }
       .cta .btn { height: 2.5rem; padding-inline: var(--s5); font-size: 0.9375rem; }
       .note { color: var(--muted-foreground); font-size: 0.82rem; margin-top: var(--s4); }
+
+      /* The vault listing. A definition list wearing a directory's clothes:
+         the path in mono on the left, what it holds in prose on the right,
+         so it reflows instead of being a preformatted block that overflows
+         on a phone. The names are the real ones from docs/architecture.md
+         and have to stay that way — a made-up path here is a promise the
+         app does not keep. */
+      .vault {
+        background: var(--muted); box-shadow: 0 0 0 1px var(--hairline);
+        border-radius: var(--radius-xl); padding: var(--s4) var(--s5) var(--s5);
+      }
+      .vault .root { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted-foreground); display: block; margin-bottom: var(--s3); }
+      .vault ul { list-style: none; margin: 0; padding: 0; }
+      .vault li {
+        display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+        gap: 0 var(--s4); padding-block: 0.3rem;
+      }
+      .vault .path { font-family: var(--mono); font-size: 0.8125rem; white-space: pre; }
+      .vault .path .tick { color: var(--muted-foreground); }
+      .vault .gloss { font-size: 0.78rem; color: var(--muted-foreground); text-align: right; }
+      .vault figcaption { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--hairline); font-size: 0.78rem; color: var(--muted-foreground); }
 
       /* Screenshots are shown in both themes: a `<picture>` picks the dark
          capture under the same media query that picks the dark tokens, so
          the app in the picture is the app the page is drawn in. */
-      .shot { margin: var(--s7) 0 0; }
+      /* s7, not s8: `section` opens with s7, so this puts the rule below
+         the screenshot equidistant from both instead of nearer the heading
+         it introduces. */
+      .shot { margin-bottom: var(--s7); }
       .shot img {
         width: 100%; height: auto; display: block; border-radius: var(--radius-xl);
         box-shadow: 0 0 0 1px var(--hairline), 0 1.5rem 3rem oklch(0% 0 0 / 0.18);
       }
 
-      section { padding-block: var(--s8); }
-      section + section { border-top: 1px solid var(--border); }
-      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: 0 0 var(--s5); font-weight: 600; }
-      .grid { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-      /* The registry's card: the card fill, a hairline ring, rounded-xl,
-         no shadow. */
-      .card { background: var(--card); box-shadow: 0 0 0 1px var(--hairline); border-radius: var(--radius-xl); padding: var(--s5); }
-      .card h3 { margin: 0 0 var(--s2); font-size: 0.9375rem; font-weight: 600; }
-      .card p { margin: 0; color: var(--muted-foreground); font-size: 0.875rem; }
+      section { padding-block: var(--s7) var(--s8); }
+      section + section, .shot + section { border-top: 1px solid var(--border); }
+      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: var(--s2) 0 var(--s5); font-weight: 600; }
 
-      /* The feature rows: one figure, one headline, one paragraph, the
-         sides swapping every row so the page does not march down one edge.
+      /* THE INDEX. What used to be six bordered cards. Six boxes on a grid
+         hide the shape of a list — every one the same size whatever it
+         holds, and the eye has to enter and leave each frame. A printed
+         index does not: one hairline between entries, a fixed column for
+         the label, and the prose all starting on the same line down the
+         page, which is what makes it scannable at a glance. */
+      .index { margin: 0; }
+      .entry {
+        display: grid; grid-template-columns: 2.25rem minmax(0, 1fr);
+        gap: var(--s1) var(--s3); padding-block: var(--s4);
+        border-top: 1px solid var(--border); align-items: baseline;
+      }
+      .entry:last-child { border-bottom: 1px solid var(--border); }
+      .entry .n { grid-column: 1; grid-row: 1; font-family: var(--mono); font-size: 0.75rem; color: var(--muted-foreground); }
+      .entry h3 { grid-column: 2; grid-row: 1; margin: 0; font-size: 0.9375rem; font-weight: 600; }
+      .entry p { grid-column: 2; grid-row: 2; margin: 0; color: var(--muted-foreground); font-size: 0.875rem; max-width: 62ch; }
+      @media (min-width: 48rem) {
+        .entry { grid-template-columns: 2.25rem 11rem minmax(0, 1fr); gap: var(--s4); }
+        .entry p { grid-column: 3; grid-row: 1; }
+      }
 
-         Stacked below 48rem with the FIGURE FIRST — the markup is written
-         figure-first for exactly that, and the flipped rows reorder in the
-         desktop media query rather than in the document, so the phone
-         always gets picture-then-words whichever way the row reads wide.
+      /* THE PLATES. The four screenshots, hung off one continuous rail like
+         numbered figures in a book rather than laid out as alternating
+         marketing rows. The rail is what does it: the numbers sit on a line
+         that runs the length of the section, so the eye reads a series
+         instead of four unrelated bands.
+
+         Figure first in the markup, always, so a phone reads picture then
+         words all the way down; the flipped plates move the figure to the
+         right in the wide layout only. The rail and its numbers never move.
 
          NOTHING IS CROPPED AND NOTHING IS CAPPED. These are screenshots of
          a working interface: `cover` would fill a frame by cutting the
          interface away, and a max-height does not cut but shrinks — which
          on a tall panel is the same loss by a slower route. So the image
          keeps its own aspect at its own height, and the only limit is
-         width. The card is what makes that safe: the space an image does
+         width. The plinth is what makes that safe: the space an image does
          not fill belongs to a surface with a ring and a radius, so it
          reads as a frame rather than as a hole in the page.
 
          `width: auto` and not `100%`: these are raster screenshots, and
          stretching one past its own pixels only blurs it. */
-      .row { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
-      .row h2 { margin: 0 0 var(--s3); }
-      .row p { color: var(--muted-foreground); margin: 0; }
-      .row figure {
+      .plates { border-left: 1px solid var(--border); padding-left: var(--s4); margin-top: var(--s5); }
+      /* The figure number sits above its plate on a phone rather than
+         beside it: a 3.5rem gutter is 14% of a 390px screen, and it was
+         taking that width off the screenshot, which is the one thing on
+         the plate that needs it. */
+      .plate { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s3); padding-block: var(--s6); }
+      .plate:first-child { padding-top: var(--s2); }
+      .plate:last-child { padding-bottom: 0; }
+      .plate + .plate { border-top: 1px solid var(--border); }
+      .plate .n { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; color: var(--muted-foreground); }
+      .plate .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
+      .plate h2 { margin: 0 0 var(--s3); }
+      .plate p { color: var(--muted-foreground); margin: 0; max-width: 62ch; }
+      .plate figure {
         margin: 0; justify-self: center;
         display: flex; align-items: center; justify-content: center;
-        width: 100%; max-width: 37.5rem; padding: var(--s3);
+        width: 100%; max-width: 34rem; padding: var(--s3);
         background: var(--muted); box-shadow: 0 0 0 1px var(--hairline);
         border-radius: var(--radius-xl);
       }
-      .row figure img {
+      .plate figure img {
         display: block; width: auto; height: auto;
         max-width: 100%; object-fit: contain;
         border-radius: var(--radius-lg);
         box-shadow: 0 0 0 1px var(--hairline);
       }
-      @media (min-width: 48rem) {
-        .row { grid-template-columns: 1fr 1fr; gap: var(--s7); align-items: center; }
-        .row.flip figure { order: 2; }
+      @media (min-width: 40rem) {
+        .plate { grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0; }
+        .plate .n { grid-column: 1; grid-row: 1; padding-top: 0.2rem; }
+        .plate .body { grid-column: 2; }
+      }
+      @media (min-width: 56rem) {
+        .plate .body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: var(--s6); align-items: center; }
+        .plate.flip figure { order: 2; }
       }
 
-      .downloads { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
-      /* Column + auto margin on the last child: the three cards carry
-         different amounts of prose, and without this their calls to action
-         sat at three different heights. */
-      .dl {
-        display: flex; flex-direction: column;
-        background: var(--card); box-shadow: 0 0 0 1px var(--hairline);
-        border-radius: var(--radius-xl); padding: var(--s5);
+      /* THE DOWNLOAD TABLE. Three cards became three rows, for the reason
+         the index did: the three answers differ in kind, not in weight, and
+         a row can be as tall as its own content without the other two
+         having to grow with it — which is what the old cards' equalising
+         auto-margin was there to hide. */
+      /* minmax(0, 1fr), not the implicit auto column: a grid track sizes
+         to its content's minimum, and `pre { overflow-x: auto }` does not
+         lower that minimum — so the clone command sized this row to its own
+         longest line and took the whole page 66px wider than a phone. */
+      .dl-row {
+        display: grid; grid-template-columns: minmax(0, 1fr);
+        gap: var(--s3) var(--s6); padding-block: var(--s5);
+        border-top: 1px solid var(--border);
       }
-      .dl h3 { margin: 0 0 var(--s2); font-size: 0.9375rem; font-weight: 600; }
-      .dl p { margin: 0 0 var(--s4); color: var(--muted-foreground); font-size: 0.875rem; }
-      .dl > :last-child { margin-top: auto; }
-      .dl > .btn { justify-content: center; }
+      .dl-row:last-of-type { border-bottom: 1px solid var(--border); }
+      @media (min-width: 48rem) {
+        .dl-row { grid-template-columns: 13rem minmax(0, 1fr); align-items: start; }
+      }
+      .dl-row h3 { margin: 0 0 var(--s1); font-size: 0.9375rem; font-weight: 600; }
+      .dl-row p { margin: 0 0 var(--s4); color: var(--muted-foreground); font-size: 0.875rem; max-width: 62ch; }
+      .dl-row pre { max-width: 34rem; }
       /* One row, never wrapped. The three share the width equally and
-         shrink together, so the card cannot be narrow enough to break the
+         shrink together, so the column cannot be narrow enough to break the
          line. */
-      .os-row { display: flex; flex-wrap: nowrap; gap: var(--s2); }
+      .os-row { display: flex; flex-wrap: nowrap; gap: var(--s2); max-width: 27rem; }
       .btn.os {
         /* Basis auto, not 0: forcing three equal widths gave "Windows" the
            same share as "Linux", so the longest label overflowed while the
@@ -252,14 +362,18 @@
       }
       .btn.os svg { width: 1em; height: 1em; flex: none; }
       code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em;
+        font-family: var(--mono); font-size: 0.85em;
         background: var(--muted); border-radius: var(--radius-md); padding: 0.1rem 0.35rem;
       }
       pre {
         background: var(--muted); border-radius: var(--radius-lg);
         padding: var(--s3) var(--s4); overflow-x: auto; font-size: 0.8rem; line-height: 1.55; margin: 0;
+        font-family: var(--mono);
       }
       pre code { background: none; padding: 0; font-size: inherit; }
+      /* The sticky header would otherwise land on top of the heading a
+         #download jump scrolls to. */
+      [id] { scroll-margin-top: 4.5rem; }
 
       footer { border-top: 1px solid var(--border); padding-block: var(--s6) var(--s7); color: var(--muted-foreground); font-size: 0.85rem; }
       footer p { margin: 0 0 var(--s2); }
@@ -288,184 +402,239 @@
     </header>
 
     <main>
-      <div class="wrap hero">
-        <h1 data-ko="당신의 체스를, 평범한 파일로.">Your chess, in plain files.</h1>
-        <p
-          class="tagline"
-          data-ko="직접 호스팅하는 개인 체스 작업대입니다. 분석, 오프닝 탐색기, 스터디, 노트, 기보 모음, 퍼즐 훈련 — 모두 당신이 소유한 폴더 하나에."
-        >
-          A private, self-hosted chess workbench: analysis, an opening explorer, studies, notes, a
-          game collection and puzzle training — all in one folder you own.
-        </p>
-        <div class="cta">
-          <a class="btn primary" href="app/" data-ko="데모 열기">Try the demo</a>
-          <a class="btn" href="#download" data-ko="내려받기">Download</a>
+      <div class="wrap lede">
+        <div>
+          <h1 data-ko="당신의 체스를, 평범한 파일로.">Your chess, in plain files.</h1>
+          <p
+            class="tagline"
+            data-ko="직접 호스팅하는 개인 체스 작업대입니다. 분석, 오프닝 탐색기, 스터디, 노트, 기보 모음, 퍼즐 훈련 — 모두 당신이 소유한 폴더 하나에."
+          >
+            A private, self-hosted chess workbench: analysis, an opening explorer, studies, notes, a
+            game collection and puzzle training — all in one folder you own.
+          </p>
+          <div class="cta">
+            <a class="btn primary" href="app/" data-ko="데모 열기">Try the demo</a>
+            <a class="btn" href="#download" data-ko="내려받기">Download</a>
+          </div>
+          <p
+            class="note"
+            data-ko="데모는 설치도 계정도 필요 없고, 브라우저에서 그대로 돌아갑니다."
+          >
+            The demo needs no install and no account — it runs entirely in your browser.
+          </p>
         </div>
-        <p
-          class="note"
-          data-ko="데모는 설치도 계정도 필요 없고, 브라우저에서 그대로 돌아갑니다."
-        >
-          The demo needs no install and no account — it runs entirely in your browser.
-        </p>
-        <div class="shot">
-          <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
-            <img src="shots/board.png" alt="The analysis board with the engine and opening explorer" />
-          </picture>
-        </div>
+
+        <!-- The paths are the real ones (docs/architecture.md). Only the
+             glosses are translated; a filename does not change language. -->
+        <figure class="vault">
+          <span class="root">~/chess-vault/</span>
+          <ul>
+            <li>
+              <span class="path"><span class="tick">├ </span>studies/</span>
+              <span class="gloss" data-ko="PGN, 한 파일에 챕터를">PGN, chapters in one file</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">├ </span>notes/</span>
+              <span class="gloss" data-ko="마크다운, 본문에 보드를">markdown, boards in the text</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">├ </span>games/collection/</span>
+              <span class="gloss" data-ko="간직할 만한 기보">the ones worth keeping</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">├ </span>puzzles/</span>
+              <span class="gloss" data-ko="무엇을 언제 풀었는지">what you solved, and when</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">├ </span>repertoire/map.json</span>
+              <span class="gloss" data-ko="오프닝 맵">the opening map</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">└ </span>.history.git</span>
+              <span class="gloss" data-ko="모든 변경을 되돌릴 수 있게">every change, undoable</span>
+            </li>
+          </ul>
+          <figcaption data-ko="보관함이 디스크에 놓인 그대로입니다. 데이터베이스도, 독자 규격도 없습니다.">
+            Your vault as it sits on disk. No database, no proprietary format.
+          </figcaption>
+        </figure>
       </div>
 
-      <section class="wrap">
+      <div class="bleed shot">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
+          <img src="shots/board.png" alt="The analysis board with the engine and opening explorer" />
+        </picture>
+      </div>
+
+      <section class="wrap" id="what">
+        <p class="slug" data-ko="목차">contents</p>
         <h2 data-ko="무엇을 할 수 있나요">What it does</h2>
-        <div class="grid">
-          <div class="card">
+        <div class="index">
+          <div class="entry">
+            <span class="n">01</span>
             <h3 data-ko="분석 보드">Analysis board</h3>
-            <p data-ko="Stockfish 18이 브라우저에서 돌아갑니다. 변화수, 주석, 화살표를 갖춘 완전한 수 트리와, 정확도를 매기는 게임 리뷰까지.">
-              Stockfish 18 runs in the browser. Full move trees with variations, comments and
-              arrows, plus a game review that scores accuracy.
+            <p data-ko="브라우저에서 도는 Stockfish 18, 변화수와 주석과 화살표를 갖춘 수 트리, 정확도를 매기는 게임 리뷰.">
+              Stockfish 18 in the browser, a move tree with variations, comments and arrows, and a
+              game review that scores accuracy.
             </p>
           </div>
-          <div class="card">
+          <div class="entry">
+            <span class="n">02</span>
             <h3 data-ko="스터디와 노트">Studies and notes</h3>
-            <p data-ko="챕터로 나뉜 PGN 스터디와, 대화형 보드를 끼워 넣는 마크다운 노트. 파일은 Obsidian에서도 그대로 읽힙니다.">
-              PGN chapter studies, and markdown notes with interactive boards embedded in the text.
-              The files stay readable in Obsidian.
+            <p data-ko="챕터로 나뉜 PGN 스터디와, 본문에 대화형 보드를 끼워 넣는 마크다운 노트. 파일은 Obsidian에서도 그대로 읽힙니다.">
+              PGN chapter studies, and markdown notes with interactive boards in the text. The files
+              stay readable in Obsidian.
             </p>
           </div>
-          <div class="card">
+          <div class="entry">
+            <span class="n">03</span>
             <h3 data-ko="퍼즐 훈련">Puzzle training</h3>
-            <p data-ko="Lichess 퍼즐을 난이도 구간과 진행 대시보드로 훈련합니다. 스캔한 전술책을 읽어 들이는 기능도 있습니다.">
-              Train on the Lichess puzzle set with difficulty bands and a progress dashboard — and
-              import scanned tactics books.
+            <p data-ko="난이도 구간으로 나뉜 Lichess 퍼즐, 진행 대시보드, 그리고 앱이 직접 읽어 들이는 스캔 전술책.">
+              The Lichess puzzle set by difficulty band, a progress dashboard, and scanned tactics
+              books the app reads in itself.
             </p>
           </div>
-          <div class="card">
+          <div class="entry">
+            <span class="n">04</span>
             <h3 data-ko="오프닝">Openings</h3>
-            <p data-ko="직접 만든 참고 데이터베이스로 탐색하고, 레퍼토리 트레이너로 실제 통계를 상대해 연습합니다.">
-              Explore with reference databases built from your own PGNs, and rehearse lines against
-              real statistics in the repertoire trainer.
+            <p data-ko="직접 만든 참고 데이터베이스를 훑는 탐색기와, 실제 통계를 상대로 라인을 연습하는 레퍼토리 트레이너.">
+              An explorer over reference databases built from your own PGNs, and a repertoire
+              trainer that rehearses lines against real statistics.
             </p>
           </div>
-          <div class="card">
+          <div class="entry">
+            <span class="n">05</span>
             <h3 data-ko="당신의 기보">Your games</h3>
-            <p data-ko="chess.com과 Lichess 기보를 월별로 넘겨 보고, 주석을 달아 모음으로 간직합니다.">
-              Browse your chess.com and Lichess archives month by month, and keep an annotated
-              collection of the ones worth keeping.
+            <p data-ko="chess.com과 Lichess 아카이브를 월별로 넘겨 보고, 간직할 기보에는 주석을 달아 모음으로.">
+              chess.com and Lichess archives month by month, and an annotated collection of the ones
+              worth keeping.
             </p>
           </div>
-          <div class="card">
+          <div class="entry">
+            <span class="n">06</span>
             <h3 data-ko="완전히 오프라인">Completely offline</h3>
-            <p data-ko="기본은 이 기기입니다. 앱도 보관함도 당신의 컴퓨터에 있고, 엔진·글꼴·아이콘이 전부 함께 들어 있어 런타임에 부르는 CDN이 없습니다. 인터넷을 끊어도 달라지는 것이 없습니다.">
-              By default it runs on this machine — the app and the vault both. The engine, fonts and
-              icons all ship with it and there are no runtime CDN calls, so pulling the network
-              cable changes nothing.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- The feature rows. Figure first in every one; the flipped rows put
-           it on the right at 48rem and up, so a phone reads picture, then
-           words, all the way down. -->
-      <section class="wrap">
-        <div class="row">
-          <figure>
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
-              <img
-                src="shots/opening-map.png"
-                alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
-              />
-            </picture>
-          </figure>
-          <div>
-            <h2 data-ko="오프닝 맵">The opening map</h2>
-            <p data-ko="레퍼토리를 목록이 아니라 형태로 봅니다. 직접 고른 수를 색마다 하나의 맵에 배치하면, 각 점은 실제 채택 빈도만큼 커지고 아직 답이 없는 곳에는 배지가 붙습니다. 스터디를 연결하면 그 아래는 전부 스터디에서 유도되므로, 맵이 준비되었다고 말하는 것은 실제로 준비된 것입니다.">
-              Your repertoire as a shape rather than a list: the moves you chose, one map per
-              colour, each dot sized by how often the field plays it and badged where you have no
-              answer yet. Link a study and everything below is derived from it, so what the map
-              claims you have prepared is what you have.
+            <p data-ko="엔진도 글꼴도 아이콘도 함께 들어 있고 실행 중에 불러오는 CDN이 없어, 인터넷을 끊어도 달라지는 것이 없습니다.">
+              The engine, fonts and icons all ship with it and there are no runtime CDN calls, so
+              pulling the network cable changes nothing.
             </p>
           </div>
         </div>
       </section>
 
       <section class="wrap">
-        <div class="row flip">
-          <figure>
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-node-dark.png" />
-              <img
-                src="shots/opening-map-node.png"
-                alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
-              />
-            </picture>
-          </figure>
-          <div>
-            <h2 data-ko="수 하나하나가 무엇에 덮이는지 압니다">Every move knows what covers it</h2>
-            <p data-ko="점 하나를 고르면 오프닝 카탈로그가 이름을 붙이고, 연결된 스터디가 실제로 얼마나 깊이 —몇 개의 라인으로— 준비하는지를 패널이 세어 줍니다. 노트는 읽는 사람을 위한 참고일 뿐, 무엇이 준비되었는지 말할 수 있는 것은 스터디뿐입니다.">
-              Select a dot and the opening catalogue names it, while the panel counts how deep your
-              linked studies actually prepare it and how many lines they end in. Notes come along
-              for the reader; only the studies are allowed to say what is prepared.
-            </p>
-          </div>
-        </div>
-      </section>
+        <p class="slug" data-ko="그림">figures</p>
+        <h2 data-ko="조금 더 가까이">A closer look</h2>
+        <div class="plates">
+          <article class="plate">
+            <span class="n" data-ko="그림 1">fig. 1</span>
+            <div class="body">
+              <figure>
+                <picture>
+                  <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
+                  <img
+                    src="shots/opening-map.png"
+                    alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
+                  />
+                </picture>
+              </figure>
+              <div>
+                <h2 data-ko="오프닝 맵">The opening map</h2>
+                <p data-ko="레퍼토리를 목록이 아니라 형태로 봅니다. 직접 고른 수를 색마다 하나의 맵에 배치하면, 각 점은 실제 채택 빈도만큼 커지고 아직 답이 없는 곳에는 배지가 붙습니다. 스터디를 연결하면 그 아래는 전부 스터디에서 유도되므로, 맵이 준비되었다고 말하는 것은 실제로 준비된 것입니다.">
+                  Your repertoire as a shape rather than a list: the moves you chose, one map per
+                  colour, each dot sized by how often the field plays it and badged where you have
+                  no answer yet. Link a study and everything below is derived from it, so what the
+                  map claims you have prepared is what you have.
+                </p>
+              </div>
+            </div>
+          </article>
 
-      <section class="wrap">
-        <div class="row">
-          <figure>
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="shots/note-phone-dark.png" />
-              <img
-                src="shots/note-phone.png"
-                alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
-              />
-            </picture>
-          </figure>
-          <div>
-            <h2 data-ko="파일이 곧 형식입니다">The files are the format</h2>
-            <p data-ko="스터디는 PGN이고, 노트는 마크다운이며, 진행 상황은 JSON입니다. 데이터베이스가 진실의 원천이 되는 일도, 독자 규격도 없습니다. 백업은 폴더 하나를 복사하는 일이고, 이 앱이 사라져도 당신의 체스는 다른 도구로 열립니다.">
-              Studies are PGN, notes are markdown, progress is JSON. No database as the source of
-              truth, no proprietary formats. Backing up is copying a folder — and if this app ever
-              goes away, your chess opens in something else.
-            </p>
-          </div>
-        </div>
-      </section>
+          <article class="plate flip">
+            <span class="n" data-ko="그림 2">fig. 2</span>
+            <div class="body">
+              <figure>
+                <picture>
+                  <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-node-dark.png" />
+                  <img
+                    src="shots/opening-map-node.png"
+                    alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
+                  />
+                </picture>
+              </figure>
+              <div>
+                <h2 data-ko="수 하나하나가 무엇에 덮이는지 압니다">Every move knows what covers it</h2>
+                <p data-ko="점 하나를 고르면 오프닝 카탈로그가 이름을 붙이고, 연결된 스터디가 실제로 얼마나 깊이 —몇 개의 라인으로— 준비하는지를 패널이 세어 줍니다. 노트는 읽는 사람을 위한 참고일 뿐, 무엇이 준비되었는지 말할 수 있는 것은 스터디뿐입니다.">
+                  Select a dot and the opening catalogue names it, while the panel counts how deep
+                  your linked studies actually prepare it and how many lines they end in. Notes come
+                  along for the reader; only the studies are allowed to say what is prepared.
+                </p>
+              </div>
+            </div>
+          </article>
 
-      <section class="wrap">
-        <div class="row flip">
-          <figure>
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="shots/games-phone-dark.png" />
-              <img
-                src="shots/games-phone.png"
-                alt="The same game collection at phone width, with the bottom bar the app uses there"
-              />
-            </picture>
-          </figure>
-          <div>
-            <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
-            <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 작은 리눅스 서버 하나가 보관함을 소유하고 나머지는 전부 클라이언트가 될 수도 있습니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서. 어느 기기에서 열어도 같은 기보, 같은 진행 상황입니다.">
-              Keeping the vault on this machine is the default, but one small Linux box can own it
-              instead and everything else becomes a client — a phone's home screen as a PWA, or the
-              same desktop app pointed at it. Same games, same progress, whichever device you
-              opened.
-            </p>
-          </div>
+          <article class="plate">
+            <span class="n" data-ko="그림 3">fig. 3</span>
+            <div class="body">
+              <figure>
+                <picture>
+                  <source media="(prefers-color-scheme: dark)" srcset="shots/note-phone-dark.png" />
+                  <img
+                    src="shots/note-phone.png"
+                    alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
+                  />
+                </picture>
+              </figure>
+              <div>
+                <h2 data-ko="파일이 곧 형식입니다">The files are the format</h2>
+                <p data-ko="스터디는 PGN이고, 노트는 마크다운이며, 진행 상황은 JSON입니다. 데이터베이스가 진실의 원천이 되는 일도, 독자 규격도 없습니다. 백업은 폴더 하나를 복사하는 일이고, 이 앱이 사라져도 당신의 체스는 다른 도구로 열립니다.">
+                  Studies are PGN, notes are markdown, progress is JSON. No database as the source
+                  of truth, no proprietary formats. Backing up is copying a folder — and if this app
+                  ever goes away, your chess opens in something else.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article class="plate flip">
+            <span class="n" data-ko="그림 4">fig. 4</span>
+            <div class="body">
+              <figure>
+                <picture>
+                  <source media="(prefers-color-scheme: dark)" srcset="shots/games-phone-dark.png" />
+                  <img
+                    src="shots/games-phone.png"
+                    alt="The same game collection at phone width, with the bottom bar the app uses there"
+                  />
+                </picture>
+              </figure>
+              <div>
+                <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
+                <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 작은 리눅스 서버 하나가 보관함을 소유하고 나머지는 전부 클라이언트가 될 수도 있습니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서. 어느 기기에서 열어도 같은 기보, 같은 진행 상황입니다.">
+                  Keeping the vault on this machine is the default, but one small Linux box can own
+                  it instead and everything else becomes a client — a phone's home screen as a PWA,
+                  or the same desktop app pointed at it. Same games, same progress, whichever device
+                  you opened.
+                </p>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
       <section class="wrap" id="download">
+        <p class="slug" data-ko="세 가지 길">three ways</p>
         <h2 data-ko="내려받기">Download</h2>
-        <div class="downloads">
-          <div class="dl">
+
+        <div class="dl-row">
+          <div>
             <h3 data-ko="데스크톱 앱">Desktop app</h3>
-            <p data-ko="Windows, macOS, Linux 설치 프로그램. 기본은 이 기기의 폴더를 보관함으로 쓰는 로컬 모드이고, 원한다면 서버에 연결하는 클라이언트로도 씁니다. 실행할 때 스스로 갱신됩니다.">
-              Installers for Windows, macOS and Linux. By default it keeps the vault in a folder on
-              that machine; point it at a server instead if you have one. It updates itself on
-              launch.
+            <p class="slug">windows · macos · linux</p>
+          </div>
+          <div>
+            <p data-ko="기본은 이 기기의 폴더를 보관함으로 쓰는 로컬 모드이고, 원한다면 서버에 연결하는 클라이언트로도 씁니다. 실행할 때 스스로 갱신됩니다.">
+              By default it keeps the vault in a folder on that machine; point it at a server
+              instead if you have one. It updates itself on launch.
             </p>
             <!-- All three are listed, always. The one matching the visitor's
                  OS is promoted to the primary button and moved first by the
@@ -486,9 +655,18 @@
                 <span>Linux</span>
               </a>
             </div>
+            <p class="note" data-ko="macOS 빌드는 서명되어 있지 않아, 처음 한 번은 오른쪽 클릭 후 열기가 필요합니다.">
+              The macOS build is unsigned, so the first launch needs right-click then Open.
+            </p>
           </div>
-          <div class="dl">
+        </div>
+
+        <div class="dl-row">
+          <div>
             <h3 data-ko="직접 호스팅">Host it yourself</h3>
+            <p class="slug">node</p>
+          </div>
+          <div>
             <p data-ko="Node가 있는 아무 기기에서나 돌릴 수 있습니다. 포트 하나가 앱과 API를 함께 제공합니다.">
               Run it anywhere Node runs. One port serves both the app and its API.
             </p>
@@ -498,8 +676,14 @@ npm install
 npm run build
 CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
           </div>
-          <div class="dl">
+        </div>
+
+        <div class="dl-row">
+          <div>
             <h3 data-ko="휴대폰">Phone</h3>
+            <p class="slug">pwa</p>
+          </div>
+          <div>
             <p data-ko="설치할 것이 없습니다. 서버 주소를 열고 홈 화면에 추가하면 오프라인 셸을 갖춘 온전한 앱이 됩니다.">
               Nothing to install: open your server's address and add it to the home screen for a
               full app with an offline shell.
@@ -507,9 +691,6 @@ CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
             <a class="btn" href="app/" data-ko="먼저 데모를 써 보세요">Try the demo first</a>
           </div>
         </div>
-        <p class="note" data-ko="macOS 빌드는 서명되어 있지 않아, 처음 한 번은 오른쪽 클릭 후 열기가 필요합니다.">
-          The macOS build is unsigned, so the first launch needs right-click then Open.
-        </p>
       </section>
     </main>
 
@@ -551,7 +732,7 @@ CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
         var probe = (platform + ' ' + ua).toLowerCase();
         var os = null;
         // iOS and Android get nothing promoted — there is no installer for
-        // them, and the Phone card beside this one is their answer.
+        // them, and the Phone row below this one is their answer.
         if (/iphone|ipad|ipod|android/.test(probe)) os = null;
         else if (/mac/.test(probe)) os = 'mac';
         else if (/win/.test(probe)) os = 'win';
