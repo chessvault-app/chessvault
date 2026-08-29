@@ -166,8 +166,13 @@ mean "the screen says this" and are what the check enforces; use straight
 quotes or guillemets for anything looser. Docs rot silently —
 a number that was true, a file that has been renamed, a limitation that
 has been fixed — and a wrong doc is worse than a missing one because it
-is believed. Add the release's entry to `docs/update-log.md` while you
-are there.
+is believed. Settle the release's entry in `docs/update-log.md` while you
+are there, in both languages. It is usually not written from nothing: an
+`Unreleased` heading collects whatever landed after the last tag, and
+cutting a version renames that heading, gives it a lede, and adds
+whatever went in without being written up. A release that finds no such
+heading starts one the same way. Anything left under `Unreleased` after
+a release is a claim that it is in no installer, so it has to be true.
 
 **Check the licence inventory.** The npm side is generated at build time
 (`web/vite.licenses.ts` walks `node_modules` into `licenses/index.html` and
