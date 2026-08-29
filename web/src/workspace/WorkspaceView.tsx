@@ -8,11 +8,9 @@ import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { CollectGameButton, MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
-import { ArchiveBrowser } from '@/games/ArchiveBrowser';
-import { DatabaseGames, handOffPositionHunt } from '@/games/DatabaseGames';
-import { GamePreview, type Preview } from '@/games/shared';
+import { handOffPositionHunt } from '@/games/DatabaseGames';
+import { GamesBrowser } from '@/games/GamesBrowser';
 import { type DetailsSelection } from '@/games/GameDetails';
-import { loadCollection } from '@/games/collection';
 import { useAnalysis } from '@/store/analysis';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -24,7 +22,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WORKSPACE_SHELL } from '@/components/layout';
 import { useElementHeight } from '@/hooks/use-element-height';
 
@@ -79,25 +76,6 @@ function WorkspaceGate() {
     </div>
   );
 }
-
-/** The games band's tabs: the reference databases lead for the same
-    reason they lead on the Games page, and each archive is its own tab.
-    The collection is deliberately absent for now — its games are
-    DOCUMENTS (annotatable, opened in the game viewer), and a band whose
-    rows load onto a throwaway analysis board would quietly offer to
-    treat them as less than they are. */
-type BandTab = 'databases' | 'chesscom' | 'lichess';
-const BAND_TABS: { id: BandTab; label: string }[] = [
-  { id: 'databases', label: 'Databases' },
-  // Site names, untranslated on purpose — same rule as the Games page.
-  { id: 'chesscom', label: 'Chess.com' },
-  { id: 'lichess', label: 'Lichess' },
-];
-
-/** Which band tab is showing, held outside the component so leaving the
-    workspace and coming back lands on the tab that was left — the same
-    mailbox shape (and reason) as CollectionView's heldTab. */
-let heldBandTab: BandTab | null = null;
 
 /** Where the Analysis panel's fold is remembered across sessions. */
 const ANALYSIS_FOLD = 'vault:workspace-analysis';
@@ -228,41 +206,21 @@ function Workspace() {
       : undefined;
 
   // --- the games band -------------------------------------------------
-  const [tab, setTabState] = useState<BandTab>(() => heldBandTab ?? 'databases');
+  // The band is the GamesBrowser — the Games page's own tabbed pane,
+  // collection included — and this is just the selection it emits.
   const [sel, setSel] = useState<DetailsSelection | null>(null);
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const setTab = (next: BandTab): void => {
-    heldBandTab = next;
-    setTabState(next);
-    // The old tab's rows are gone; the highlight must not survive them.
-    // The board keeps what it holds — a selection paints the board, but
-    // the board is not a details panel to be emptied.
-    setSel(null);
-  };
 
   // The explorer's hunt button, pointed at the band instead of #/games:
   // same mailbox the cross-page handoff uses, consumed the same way (on
-  // the browser's mount) — the key bump is what makes an already-mounted
-  // Databases tab remount and consume it.
+  // the browser's mount — a pending hunt makes it open on Databases) —
+  // the key bump is what makes an already-mounted browser remount and
+  // consume it.
   const [huntSeq, setHuntSeq] = useState(0);
   const huntInBand = useCallback((fen: string, db: string): void => {
     handOffPositionHunt(fen, db);
-    heldBandTab = 'databases';
-    setTabState('databases');
     setSel(null);
     setHuntSeq((n) => n + 1);
   }, []);
-
-  /** What the archive tabs need to mark already-kept games. */
-  const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
-  const reloadCollectionKeys = useCallback((): void => {
-    void loadCollection()
-      .then((games) =>
-        setCollectionKeys(new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))),
-      )
-      .catch(() => {});
-  }, []);
-  useEffect(reloadCollectionKeys, [reloadCollectionKeys]);
 
   // Selecting a row loads the game onto the board, in place — the whole
   // reason this page exists, and why there is no details column: the
@@ -410,56 +368,22 @@ function Workspace() {
         </div>
       </div>
 
-      {/* The games band: the Games page's browser as a full-width strip —
-          game rows are tables and want width, not a column's sliver.
-          flex-1 with a floor (BAND_MIN_PX is this min-h in px): the row
-          above is exactly the board's height, so every line the board
-          leaves is a game row here. */}
-      <Panel className="min-h-80 flex-1">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as BandTab)} className="contents">
-          <div className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b">
-            <TabsList
-              variant="line"
-              aria-label={t('What the pane is showing')}
-              className="flex w-max min-w-full items-center justify-start gap-1 rounded-none border-0 bg-transparent p-0 px-2"
-            >
-              {BAND_TABS.map(({ id, label }) => (
-                <TabsTrigger
-                  key={id}
-                  value={id}
-                  className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:bottom-0"
-                >
-                  <span className="truncate">{t(label)}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-        </Tabs>
-        {tab === 'databases' ? (
-          <DatabaseGames
-            key={huntSeq}
-            shape="panel"
-            table
-            inPlace
-            onSelect={setSel}
-            selectedKey={sel?.key ?? null}
-          />
-        ) : (
-          <ArchiveBrowser
-            table
-            inPlace
-            site={tab}
-            collectionKeys={collectionKeys}
-            onCollected={reloadCollectionKeys}
-            onPreview={setPreview}
-            onSelect={setSel}
-            selectedKey={sel?.key ?? null}
-          />
-        )}
-      </Panel>
+      {/* The games band: the Games page's own tabbed browser — the
+          collection included — as a full-width strip; game rows are
+          tables and want width, not a column's sliver. flex-1 with a
+          floor (BAND_MIN_PX is this min-h in px): the row above is
+          exactly the board's height, so every line the board leaves is
+          a game row here. Selecting any row previews it on the board
+          (the load effect above); opening a collection game goes to its
+          document page, because annotating is a document's work. */}
+      <GamesBrowser
+        key={huntSeq}
+        table
+        inPlace
+        onSelect={setSel}
+        className="min-h-80 flex-1"
+      />
       </div>
-
-      <GamePreview preview={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
