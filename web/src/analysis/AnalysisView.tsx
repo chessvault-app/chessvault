@@ -127,8 +127,8 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           onChange={setPane}
           tabs={[
             { id: 'moves', label: t('Moves'), icon: ListOrdered },
-            { id: 'engine', label: 'Engine', icon: Cpu },
-            { id: 'explorer', label: 'Explorer', icon: Table2 },
+            { id: 'engine', label: t('Engine'), icon: Cpu },
+            { id: 'explorer', label: t('Explorer'), icon: Table2 },
           ]}
         />
         {/* Desktop keeps an explicit floor; phones drop it so the panel
@@ -245,10 +245,10 @@ export function CollectGameButton() {
       disabled={state === 'busy'}
       title={
         state === 'done'
-          ? 'In the collection'
+          ? t('In the collection')
           : state === 'failed'
-            ? 'Could not add this game'
-            : 'Add this game to the collection'
+            ? t('Could not add this game')
+            : t('Add this game to the collection')
       }
       className={state === 'failed' ? 'text-destructive' : state === 'done' ? 'text-good' : undefined}
       onClick={() => void collect()}
