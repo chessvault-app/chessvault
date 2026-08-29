@@ -549,7 +549,16 @@ function QueryHighlight({ query }: { query: string }) {
         <span key={i++} className="text-muted-foreground">
           {raw.slice(0, colon + 1)}
         </span>,
-        <span key={i++} className="text-info font-medium">
+        // Colour ONLY — never weight. The chips wore font-medium and it
+        // came along; but medium glyphs are wider than the regular ones
+        // the transparent input lays out, so the caret and the visible
+        // text drifted apart by a fraction of a pixel per glyph —
+        // measured 4px over one two-term query, exactly the "slightly
+        // off" lanph3re could see. GitHub's own QueryBuilder (the blog:
+        // aria-hidden styled div behind, transparent input on top, same
+        // architecture as ours) colours its values and leaves the
+        // metrics alone.
+        <span key={i++} className="text-info">
           {raw.slice(colon + 1)}
         </span>,
       );
