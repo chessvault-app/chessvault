@@ -94,6 +94,47 @@ installer. This section becomes the next version's heading.
   been sizing its column to its longest line and taking the page 66px wider
   than a 390px phone; and Korean was breaking mid-eojeol without
   `word-break: keep-all` — the headline read "평범 / 한 파일로".
+- **The workspace: every analysis surface on one page.** A new
+  wide-screen page under Tools — the board, the moves panel with the
+  engine docked, the explorer with an Analysis panel under it, and the
+  whole games browser as a full-width band underneath. Selecting any
+  band row previews the game on the board in place (archive games from
+  your side; ↑/↓ walk the rows, each game taking the board in turn),
+  the explorer's position hunt fills the band instead of leaving, and a
+  collection game's double-click opens its document page, because
+  annotating is a document's work and a throwaway board is what keeps
+  browsing free. Nothing on it is new by design: every pane is the
+  component some other page shows one at a time, driven by the same
+  stores — which is also why a position follows you between the Board
+  page and the workspace. On a window too narrow for its panes the page
+  steps aside with a card, and the sidebar row is not drawn at all; the
+  Games page's tabbed browser was extracted into a component
+  (GamesBrowser) to make the band possible, proved byte-identical on
+  the page it came from.
+- **The games tables' chrome folds to one row where the pane holds
+  one.** Search, the filter selects and the count stood as three
+  stacked bands over every list — in the workspace's band that was half
+  the height showing controls. Where the measured pane is wide enough
+  they fold into a single row (each tab's own arrangement: the
+  databases with their search, the collection ending on Import, the
+  archives on the count and Select…, whose selection controls now
+  appear as a band only while the mode is on); narrower panes keep the
+  stacked bands, and the ragged in-between wrap never exists. The row's
+  icons follow one rule now — stateful toggles wear the box of the
+  fields they stand among, verbs that navigate away stay quiet — and
+  the position hunt runs from Enter in its FEN field, its button an ↵
+  at the row's end.
+- **A review dies with the tree it judged, and the arrow keys come
+  back.** Reviewing a game, leaving, and returning with another left
+  the old evaluation graph drawn over the new game with every click
+  silently dead — the review store now clears itself the moment the
+  tree is replaced. The arrow keys had died across every board page in
+  the nav-row consolidation (the one listener lived on a row that
+  stopped rendering on desktops); they live on the board itself now.
+  And the graph got legible: the move under the pointer marks itself
+  with a blue dot and a guide line, the cursor is a pointer, a folded
+  graph takes no room, and the strip compresses on short windows
+  instead of clipping the navigation bar under it.
 - **The moves menu stops repeating its own header.** On a desktop the
   moves panel's ⋯ listed Engine review, Clear all moves and Clear the
   board one icon away from the buttons that already offer them — a

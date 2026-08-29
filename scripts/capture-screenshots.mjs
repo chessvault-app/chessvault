@@ -143,6 +143,22 @@ const TARGETS = [
     moves: ['e2e4'],
     think: 1500,
   },
+  // Wider CSS viewport than the other pages: the workspace gates itself
+  // at 72rem (1152px) and renders its explanation card below that — a
+  // shot at the usual 1100 would picture the gate, not the page. And a
+  // TALLER one (a narrower window at the same css width = less zoom =
+  // more css height): the board takes what the height allows, and at
+  // the standard frame's 678 css-px it floored at its 18rem minimum
+  // over a mostly-empty band. Waits on the band's rows, not the board —
+  // they land last — and settles for the explorer's lookup.
+  {
+    hash: '#/workspace',
+    out: 'workspace.png',
+    win: [1600, 996],
+    css: 1300,
+    wait: '.divide-border',
+    settle: 1500,
+  },
   { hash: '#/puzzles', out: 'puzzle-trainer.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
   { hash: '#/repertoire', out: 'repertoire.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
   // No databases shot: the demo's Databases page is one read-only card
