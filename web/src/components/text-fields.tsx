@@ -219,13 +219,19 @@ export function SearchInput({
           // clear the mirror and thereby covered the X too: its centre
           // hit-tested to the input and the clear did nothing
           // (lanph3re's report).
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 flex items-center overflow-hidden pl-7 pr-7"
-          >
-            <span ref={mirror} className="text-foreground whitespace-pre text-base md:text-sm">
-              {highlight}
-            </span>
+          <div aria-hidden className="pointer-events-none absolute inset-0 flex pl-7 pr-7">
+            {/* The clip lives on this INNER box, not on the padded one
+                above: overflow-hidden clips at the padding box, so with
+                the padding and the clip on one element the scrolled
+                span painted straight through the pr-7 into the X — and
+                through the pl-7 under the magnifier (lanph3re's
+                screenshot). An inner border box IS the 28px-inset
+                region, so the ink stops where the chrome starts. */}
+            <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+              <span ref={mirror} className="text-foreground whitespace-pre text-base md:text-sm">
+                {highlight}
+              </span>
+            </div>
           </div>
         )}
         <InputGroupInput
