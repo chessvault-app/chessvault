@@ -374,9 +374,21 @@ export function CollectionList({
   const filterControls =
     games.length > 0 ? (
       <>
-        <OwnershipSelect value={ownFilter} onChange={setOwnFilter} />
-        <ResultSelect value={resultFilter} onChange={setResultFilter} />
-        <NotesSelect value={notesFilter} onChange={setNotesFilter} />
+        <OwnershipSelect
+          value={ownFilter}
+          onChange={setOwnFilter}
+          className={table ? 'flex-none' : undefined}
+        />
+        <ResultSelect
+          value={resultFilter}
+          onChange={setResultFilter}
+          className={table ? 'flex-none' : undefined}
+        />
+        <NotesSelect
+          value={notesFilter}
+          onChange={setNotesFilter}
+          className={table ? 'flex-none' : undefined}
+        />
         <MoreFiltersButton
           on={hasStructuredFilters(structured)}
           onClick={() => {

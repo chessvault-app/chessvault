@@ -1029,8 +1029,16 @@ export function DatabaseGames({
    */
   const filters = (
     <>
-      <ResultSelect value={resultFilter} onChange={setResultFilter} />
-      <StrengthSelect value={minElo} onChange={setMinElo} />
+      <ResultSelect
+        value={resultFilter}
+        onChange={setResultFilter}
+        className={table ? 'flex-none' : undefined}
+      />
+      <StrengthSelect
+        value={minElo}
+        onChange={setMinElo}
+        className={table ? 'flex-none' : undefined}
+      />
       {/* The rest of the constraints — who, which side, which outcome,
           which opening, which tournament, which dates — live in a window:
           they are text, not chips, and a lit icon says they are on. */}
@@ -1308,8 +1316,15 @@ export function DatabaseGames({
               onOpenChange={setHintsOpen}
               className={table ? 'basis-72' : undefined}
             />
+            {/* secondary, not ghost: the row's rule (lanph3re asked for
+                one) is that stateful toggles wear the box of the fields
+                they stand among — this one opens the hunt surface and
+                stays lit, the filters button's class of thing — while
+                verbs that navigate away (the manage button at the row's
+                end) stay quiet. The collection's bookmark filter already
+                dresses this way. */}
             <Button
-              variant="ghost"
+              variant="secondary"
               size="icon-sm"
               active={huntOpen}
               title={t('Search by position or material')}

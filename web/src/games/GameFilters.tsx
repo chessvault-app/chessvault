@@ -102,9 +102,15 @@ export function SideSelect({
 export function ResultSelect({
   value,
   onChange,
+  className,
 }: {
   value: ResultFilter;
   onChange: (value: ResultFilter) => void;
+  /** The dedicated filter row stretches its selects across the band
+      (the default); a merged control row passes flex-none so they take
+      their label's width and WRAP when the row is tight — stretched,
+      they crushed to two letters beside a search box instead. */
+  className?: string;
 }) {
   return (
     <Select
@@ -115,7 +121,7 @@ export function ResultSelect({
       // comboboxes both announcing "Outcome" was a screen-reader riddle.
       ariaLabel={t('Result')}
       size="sm"
-      className="min-w-0 flex-1"
+      className={cn('min-w-0 flex-1', className)}
       groups={[
         {
           options: [
@@ -135,9 +141,12 @@ export function ResultSelect({
 export function StrengthSelect({
   value,
   onChange,
+  className,
 }: {
   value: number;
   onChange: (value: number) => void;
+  /** See ResultSelect — the merged control row passes flex-none. */
+  className?: string;
 }) {
   return (
     <Select
@@ -145,7 +154,7 @@ export function StrengthSelect({
       onValueChange={(v) => onChange(Number(v))}
       ariaLabel={t('Strength')}
       size="sm"
-      className="min-w-0 flex-1"
+      className={cn('min-w-0 flex-1', className)}
       groups={[
         {
           options: [
@@ -172,9 +181,12 @@ export type OwnershipFilter = 'any' | 'mine' | 'white' | 'black';
 export function OwnershipSelect({
   value,
   onChange,
+  className,
 }: {
   value: OwnershipFilter;
   onChange: (value: OwnershipFilter) => void;
+  /** See ResultSelect — the merged control row passes flex-none. */
+  className?: string;
 }) {
   return (
     <Select
@@ -182,7 +194,7 @@ export function OwnershipSelect({
       onValueChange={(v) => onChange(v as OwnershipFilter)}
       ariaLabel={t('Whose games')}
       size="sm"
-      className="min-w-0 flex-1"
+      className={cn('min-w-0 flex-1', className)}
       groups={[
         {
           options: [
@@ -213,9 +225,12 @@ export type NotesFilter = 'any' | 'annotated';
 export function NotesSelect({
   value,
   onChange,
+  className,
 }: {
   value: NotesFilter;
   onChange: (value: NotesFilter) => void;
+  /** See ResultSelect — the merged control row passes flex-none. */
+  className?: string;
 }) {
   return (
     <Select
@@ -223,7 +238,7 @@ export function NotesSelect({
       onValueChange={(v) => onChange(v as NotesFilter)}
       ariaLabel={t('Notes')}
       size="sm"
-      className="min-w-0 flex-1"
+      className={cn('min-w-0 flex-1', className)}
       groups={[
         {
           options: [
