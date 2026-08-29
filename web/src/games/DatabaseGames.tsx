@@ -1290,13 +1290,23 @@ export function DatabaseGames({
       shape={shape}
       toolbar={
         <div className="flex w-full flex-col gap-2">
-          <div className="flex w-full items-center gap-1.5">
+          {/* At table density this one WRAPPING row is the whole chrome:
+              search, the filters and the count band folded together.
+              Stacked as three bands they stood ~170px over the rows, and
+              in a short pane (the workspace's games band) that was half
+              the height showing controls instead of games. flex-wrap is
+              the narrow-pane story — the Games page's pane at lg wraps
+              back toward the old two rows with no second layout. Card
+              mode keeps the stacked bands: a phone's rows are cards, and
+              its chrome was never the problem. */}
+          <div className={cn('flex w-full items-center gap-1.5', table && 'flex-wrap')}>
             <QueryBox
               query={query}
               onQuery={onQuery}
               suggest={suggestValues}
               placeholder={t('Search database…')}
               onOpenChange={setHintsOpen}
+              className={table ? 'basis-72' : undefined}
             />
             <Button
               variant="ghost"
@@ -1315,6 +1325,17 @@ export function DatabaseGames({
             >
               <ScanSearch className="size-3.5" />
             </Button>
+            {table && (
+              <>
+                {filters}
+                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                  <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
+                    {count}
+                  </span>
+                  {dbControls}
+                </span>
+              </>
+            )}
           </div>
           <SearchQueryIssues
             query={query}
@@ -1333,8 +1354,8 @@ export function DatabaseGames({
           {huntControls}
         </div>
       }
-      filters={filters}
-      countBand={countBand}
+      filters={table ? undefined : filters}
+      countBand={table ? undefined : countBand}
       listHeader={table ? <GameTableHeader /> : undefined}
       listVars={table ? tableVars : undefined}
       dense={table}

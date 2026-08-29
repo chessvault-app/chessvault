@@ -367,17 +367,87 @@ export function CollectionList({
     ? { key: gameKey(details), summary: details, loadPgn: loadGamePgn(details) }
     : null;
 
+  // The shared filter row's contents (GameFilters): side is YOUR side,
+  // so it matches only the games you played; reference games (no side of
+  // yours) answer to the other two. Where they STAND depends on density
+  // — see the shell props below.
+  const filterControls =
+    games.length > 0 ? (
+      <>
+        <OwnershipSelect value={ownFilter} onChange={setOwnFilter} />
+        <ResultSelect value={resultFilter} onChange={setResultFilter} />
+        <NotesSelect value={notesFilter} onChange={setNotesFilter} />
+        <MoreFiltersButton
+          on={hasStructuredFilters(structured)}
+          onClick={() => {
+            setQuickDraft({ own: ownFilter, result: resultFilter, notes: notesFilter });
+            setEditingFilters(true);
+          }}
+        />
+        {editingFilters && (
+          <StructuredFiltersWindow
+            initial={structured}
+            draftResult={quickDraft.result}
+            // No Tournament field: collection games carry no Event.
+            showEvent={false}
+            extraFields={
+              // The row's selects, mirrored. Ownership is about YOUR
+              // games — a different question from the named player's
+              // seat above, which is why both exist.
+              <Field label="Whose games, result and notes">
+                <div className="flex gap-2">
+                  <OwnershipSelect
+                    value={quickDraft.own}
+                    onChange={(own) => setQuickDraft((d) => ({ ...d, own }))}
+                  />
+                  <ResultSelect
+                    value={quickDraft.result}
+                    onChange={(result) => setQuickDraft((d) => ({ ...d, result }))}
+                  />
+                  <NotesSelect
+                    value={quickDraft.notes}
+                    onChange={(notes) => setQuickDraft((d) => ({ ...d, notes }))}
+                  />
+                </div>
+              </Field>
+            }
+            onClear={() => setQuickDraft({ own: 'any', result: 'any', notes: 'any' })}
+            onApply={(next) => {
+              setEditingFilters(false);
+              setStructured(next);
+              setOwnFilter(quickDraft.own);
+              setResultFilter(quickDraft.result);
+              setNotesFilter(quickDraft.notes);
+            }}
+            onClose={() => setEditingFilters(false)}
+          />
+        )}
+      </>
+    ) : undefined;
+
   return (
     <>
     <GameListShell
       shape="panel"
       toolbar={toolbar}
       // The panel shape has no framed title to carry the tally, so the
-      // count band says it.
+      // count band says it. At table density the filters fold into this
+      // band too — one 37px row instead of two, and in a short pane
+      // (the workspace's games band) every reclaimed band is a game row
+      // shown. Card mode keeps the stacked bands.
       countBand={
-        <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-          {t('{n} games', { n: visible.length.toLocaleString() })}
-        </span>
+        table ? (
+          <>
+            {filterControls}
+            <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
+              {t('{n} games', { n: visible.length.toLocaleString() })}
+            </span>
+          </>
+        ) : (
+          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+            {t('{n} games', { n: visible.length.toLocaleString() })}
+          </span>
+        )
       }
       listHeader={table ? <GameTableHeader /> : undefined}
       listVars={table ? tableVars : undefined}
@@ -385,66 +455,11 @@ export function CollectionList({
       // The wait, in the shape of the strip and rows that are coming —
       // drawn at once rather than behind useSlowLoad: these rows are the
       // panel's height, so held back they left a header over nothing
-      // that grew a fifth of a second later.
-      filtersLoading={!loaded}
+      // that grew a fifth of a second later. No reserved filter row at
+      // table density, where no filter band will come.
+      filtersLoading={!loaded && !table}
       listLoading={!loaded}
-      // The shared filter row (GameFilters): side is YOUR side, so it
-      // matches only the games you played; reference games (no side of
-      // yours) answer to the other two.
-      filters={
-        games.length > 0 ? (
-          <>
-            <OwnershipSelect value={ownFilter} onChange={setOwnFilter} />
-            <ResultSelect value={resultFilter} onChange={setResultFilter} />
-            <NotesSelect value={notesFilter} onChange={setNotesFilter} />
-            <MoreFiltersButton
-              on={hasStructuredFilters(structured)}
-              onClick={() => {
-                setQuickDraft({ own: ownFilter, result: resultFilter, notes: notesFilter });
-                setEditingFilters(true);
-              }}
-            />
-            {editingFilters && (
-              <StructuredFiltersWindow
-                initial={structured}
-                draftResult={quickDraft.result}
-                // No Tournament field: collection games carry no Event.
-                showEvent={false}
-                extraFields={
-                  // The row's selects, mirrored. Ownership is about YOUR
-                  // games — a different question from the named player's
-                  // seat above, which is why both exist.
-                  <Field label="Whose games, result and notes">
-                    <div className="flex gap-2">
-                      <OwnershipSelect
-                        value={quickDraft.own}
-                        onChange={(own) => setQuickDraft((d) => ({ ...d, own }))}
-                      />
-                      <ResultSelect
-                        value={quickDraft.result}
-                        onChange={(result) => setQuickDraft((d) => ({ ...d, result }))}
-                      />
-                      <NotesSelect
-                        value={quickDraft.notes}
-                        onChange={(notes) => setQuickDraft((d) => ({ ...d, notes }))}
-                      />
-                    </div>
-                  </Field>
-                }
-                onClear={() => setQuickDraft({ own: 'any', result: 'any', notes: 'any' })}
-                onApply={(next) => {
-                  setEditingFilters(false);
-                  setStructured(next);
-                  setOwnFilter(quickDraft.own);
-                  setResultFilter(quickDraft.result);
-                  setNotesFilter(quickDraft.notes);
-                }}
-                onClose={() => setEditingFilters(false)}
-              />
-            )}
-          </>
-        ) : undefined
-      }
+      filters={table ? undefined : filterControls}
       list={
         loaded && visible.length > 0
           ? visible.map((game) =>

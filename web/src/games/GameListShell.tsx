@@ -239,10 +239,13 @@ export function GameListShell({
             'flex flex-col gap-2',
             // A sheet's card already pads by 3 on every side; the framed
             // card pads nothing; the panel adds a step of top clearance
-            // under the tab bar's lit rule.
+            // under the tab bar's lit rule — less of one at table
+            // density, where the toolbar's rows are the chrome standing
+            // between a short pane (the workspace's games band) and its
+            // game rows, and every reclaimed step is a row shown.
             shape === 'sheet' && 'pb-2 pt-1',
             shape === 'framed' && 'px-3 pb-3 pt-3',
-            shape === 'panel' && 'px-3 pb-3 pt-4',
+            shape === 'panel' && (dense ? 'px-3 pb-2 pt-2.5' : 'px-3 pb-3 pt-4'),
           )}
         >
           {toolbar}
