@@ -43,7 +43,7 @@ export function AnalysisMovesPanel({
         }
       />
       <MoveTreePane />
-      <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />
+      <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />
     </Panel>
   );
 }

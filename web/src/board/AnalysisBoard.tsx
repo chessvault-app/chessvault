@@ -165,6 +165,62 @@ export function AnalysisBoard({
   const boardColumn = useRef<HTMLDivElement>(null);
   const goBack = useAnalysis((s) => s.goBack);
   const goForward = useAnalysis((s) => s.goForward);
+  const goToStart = useAnalysis((s) => s.goToStart);
+  const goToEnd = useAnalysis((s) => s.goToEnd);
+  const flip = useAnalysis((s) => s.flip);
+
+  // Arrow keys drive the board from anywhere except a text field — owned
+  // HERE, beside the wheel, and not by BoardControls. The listener used
+  // to live on the nav row with a keyboard flag ("exactly one rendered
+  // instance may own it"), and the one instance that owned it was the
+  // row under the board — which the nav-consolidation pass then stopped
+  // rendering wherever the moves panel shows its own row, so every
+  // desktop layout was left with five copies and no
+  // owner (lanph3re's report: arrows dead across the board pages). A
+  // page's board is mounted exactly once, which is what the flag was
+  // trying to say.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      // An open window owns the keyboard. This listens on the window and
+      // cannot see a scrim: arrows were stepping the game behind an open
+      // dialog while its own list wanted them.
+      if (dialogOpen()) return;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          goBack();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          goForward();
+          break;
+        case 'ArrowUp':
+        case 'Home':
+          e.preventDefault();
+          goToStart();
+          break;
+        case 'ArrowDown':
+        case 'End':
+          e.preventDefault();
+          goToEnd();
+          break;
+        case 'f':
+          // Bare `f` only: Ctrl+F is the browser's find, and flipping the
+          // board underneath it turned a search into a surprise.
+          if (e.ctrlKey || e.metaKey || e.altKey) break;
+          flip();
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [goBack, goForward, goToStart, goToEnd, flip]);
   useEffect(() => {
     const el = boardColumn.current;
     if (!el) return;
@@ -515,14 +571,14 @@ function useRepeat(step: () => void): {
   return handlers;
 }
 
-export function BoardControls({
-  className,
-  keyboard = true,
-}: {
-  className?: string;
-  /** Exactly one rendered instance may own the arrow-key listener. */
-  keyboard?: boolean;
-}) {
+/**
+ * The move-navigation row: a purely visual control strip. The arrow-key
+ * listener lives on AnalysisBoard (see the note there) — it used to be
+ * here behind a `keyboard` flag, and the one instance allowed to keep it
+ * stopped being rendered on desktop layouts, which is how every board
+ * page lost its arrows at once.
+ */
+export function BoardControls({ className }: { className?: string }) {
   const goToStart = useAnalysis((s) => s.goToStart);
   const goBack = useAnalysis((s) => s.goBack);
   const goForward = useAnalysis((s) => s.goForward);
@@ -532,51 +588,6 @@ export function BoardControls({
   // which is what let the old version lose its timers on every render.
   const repeatBack = useRepeat(goBack);
   const repeatForward = useRepeat(goForward);
-
-  // Arrow keys should drive the board from anywhere except a text field.
-  useEffect(() => {
-    if (!keyboard) return;
-    const onKey = (e: KeyboardEvent): void => {
-      const target = e.target as HTMLElement | null;
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
-      if (target?.isContentEditable) return;
-      // An open window owns the keyboard. These listen on the window and
-      // cannot see a scrim: arrows were stepping the game behind an open
-      // dialog while its own list wanted them.
-      if (dialogOpen()) return;
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          e.preventDefault();
-          goBack();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          goForward();
-          break;
-        case 'ArrowUp':
-        case 'Home':
-          e.preventDefault();
-          goToStart();
-          break;
-        case 'ArrowDown':
-        case 'End':
-          e.preventDefault();
-          goToEnd();
-          break;
-        case 'f':
-          // Bare `f` only: Ctrl+F is the browser's find, and flipping the
-          // board underneath it turned a search into a surprise.
-          if (e.ctrlKey || e.metaKey || e.altKey) break;
-          flip();
-          break;
-        default:
-          break;
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [keyboard, goBack, goForward, goToStart, goToEnd, flip]);
 
   return (
     <div className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}>

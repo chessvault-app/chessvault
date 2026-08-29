@@ -340,7 +340,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
           <MoveTreePane />
           <ReviewStrip />
-          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />
+          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />
           <AnnotationPane
             editing={editing}
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
@@ -371,7 +371,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
 
       {/* Phones: move navigation in the bottom bar (see AnalysisView). */}
       <MobileActionBar>
-        <BoardControls keyboard={false} className="py-1.5" />
+        <BoardControls className="py-1.5" />
       </MobileActionBar>
     </div>
   );

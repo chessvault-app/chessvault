@@ -275,7 +275,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         }
       />
       <MoveTreePane />
-      {nav && <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />}
+      {nav && <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />}
     </Panel>
   );
 
@@ -392,7 +392,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           (self-center would un-stretch it and collapse it to nothing.) */}
       <AnalysisBoard strip={false} />
       <div className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W)}>
-        <BoardControls keyboard={false} className="-my-1" />
+        <BoardControls className="-my-1" />
       </div>
     </div>
   );
@@ -480,7 +480,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           board's navigation on the Board tab. */}
       <MobileActionBar>
         {tab === 'board' ? (
-          <BoardControls keyboard={false} className="py-1.5" />
+          <BoardControls className="py-1.5" />
         ) : (
           // The editor carries its own toolbar under its board, so the bar
           // holds nothing on that tab — claimed and empty (as a note being

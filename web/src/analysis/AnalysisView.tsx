@@ -179,7 +179,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
               call), not under the board. */}
           {/* -mb takes back the card's floor, as the resize grip does: the
               band draws the panel's bottom edge, so it has to reach it. */}
-          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" keyboard={false} />
+          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
@@ -200,7 +200,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
       {/* Phones: move navigation lives in the bottom bar, replacing the
           global tabs while the board is open. */}
       <MobileActionBar>
-        <BoardControls keyboard={false} className="py-1.5" />
+        <BoardControls className="py-1.5" />
       </MobileActionBar>
     </div>
   );

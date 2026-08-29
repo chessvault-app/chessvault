@@ -881,11 +881,10 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           Once the puzzle is over the board is AnalysisBoard, driven by the
           analysis store rather than this component's tree, so these
           buttons moved nothing — the same dead bar the puzzle trainer had.
-          `keyboard={false}`: the strip inside AnalysisBoard, hidden here
-          by its own classes, already owns the arrow keys. */}
+          AnalysisBoard itself owns the arrow keys. */}
       <MobileActionBar>
         {analysing ? (
-          <BoardControls keyboard={false} className="py-1.5" />
+          <BoardControls className="py-1.5" />
         ) : (
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
           <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(tree.rootId)} title={t('Start')}>

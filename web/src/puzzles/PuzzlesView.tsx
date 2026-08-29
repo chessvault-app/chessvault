@@ -1112,11 +1112,11 @@ function Trainer({
           `review` drive nothing: all four sat there dead (Forward and
           Latest permanently disabled, since `review` never leaves null),
           and so did Flip. The analysis pages' own control strip is what
-          moves that board — `keyboard={false}` because the hidden
-          BoardControls inside AnalysisBoard already owns the arrow keys. */}
+          moves that board, and AnalysisBoard itself owns the arrow
+          keys. */}
       <MobileActionBar>
         {analysing ? (
-          <BoardControls keyboard={false} className="py-1.5" />
+          <BoardControls className="py-1.5" />
         ) : (
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
           <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(1)} title={t('First move')}>

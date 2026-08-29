@@ -352,7 +352,7 @@ function Workspace() {
           <MoveTreePane />
           <BoardControls
             className="border-border -mb-(--card-spacing) border-t"
-            keyboard={false}
+           
           />
         </Panel>
 
