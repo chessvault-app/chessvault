@@ -1209,9 +1209,20 @@ export function DatabaseGames({
             inputSize="sm"
             value={huntFen}
             onChange={(e) => setHuntFen(e.target.value)}
+            // Enter runs the hunt, like the archive's username field: the
+            // field is the subject, so the field submits.
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && huntFen.trim() && !hunting) void runHunt();
+            }}
             placeholder={t('Paste a FEN')}
             spellCheck={false}
-            className="min-w-0 flex-1 basis-40"
+            // basis-24, down from 40: the basis is what flex-wrap breaks
+            // on, and 10rem of it wrapped the row even at the Games
+            // page's narrowest pane (384px beside the details column). A
+            // FEN field is a paste target, not a reading field — it can
+            // START at 6rem and grow into whatever the row has spare,
+            // which at any ordinary pane is most of it.
+            className="min-w-0 flex-1 basis-24"
             // Inside the field, not beside it: a lone unlabelled icon
             // between the field and the match select read as belonging to
             // neither. Leading the field, it is the other way to fill it.
@@ -1283,9 +1294,16 @@ export function DatabaseGames({
           />
         </>
       )}
+      {/* Icon-only, the archive's own precedent (its Browse is a globe
+          beside the username field): the labelled button was the row's
+          widest piece and wrapped onto a line of its own in narrow panes
+          (lanph3re's report). The FEN field submits on Enter besides, so
+          the button is the pointer's way in, not the only one. Primary
+          still — it is the row's one verb. */}
       <Button
         variant="default"
-        size="sm"
+        size="icon-sm"
+        title={t('Search')}
         disabled={
           hunting ||
           (huntKind === 'position' && huntFen.trim() === '') ||
@@ -1293,8 +1311,7 @@ export function DatabaseGames({
         }
         onClick={() => void runHunt()}
       >
-        <ScanSearch className="size-3.5" data-icon="inline-start" />
-        {t('Search')}
+        <ScanSearch className="size-3.5" />
       </Button>
     </div>
   );

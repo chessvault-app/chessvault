@@ -64,11 +64,15 @@ function WorkspaceGate() {
             'The workspace shows the board, the moves, the explorer and the games browser side by side, and needs a window wide enough to hold them all. On this screen its panes are pages of their own.',
           )}
         </p>
+        {/* Both secondary: the error card this borrowed from RECOMMENDS
+            Reload over Go home, but Board and Games are equal
+            destinations here, and an emphasized first button claimed a
+            preference nobody argued (lanph3re's question). */}
         <div className="mt-1 flex gap-2">
           <Button variant="secondary" onClick={() => navigate('board')}>
             {t('Board')}
           </Button>
-          <Button variant="ghost" onClick={() => navigate('games')}>
+          <Button variant="secondary" onClick={() => navigate('games')}>
             {t('Games')}
           </Button>
         </div>
