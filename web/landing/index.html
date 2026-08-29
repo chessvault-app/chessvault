@@ -155,25 +155,48 @@
         backdrop-filter: saturate(180%) blur(8px);
       }
       .bar { display: flex; align-items: center; gap: var(--s3); }
-      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; }
-      /* The bare hex in currentColor, as the manual wears it — one mark
+      /* nowrap: squeezed to 105px the wordmark broke after "Chess" and took
+         the header from 61px to 73. It shrinks the row instead now, and
+         below 22rem it gives up the word and keeps the hex. */
+      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
+      /* The bare hex in currentColor, as the docs page wears it — one mark
          across the site's pages. */
       .mark svg { width: 1.5rem; height: 1.5rem; }
       .bar .spacer { margin-left: auto; }
-      /* The language switch is the registry's Tabs: a muted track, and the
-         chosen tab a raised pill on the card colour. */
-      .lang {
-        display: inline-flex; gap: var(--s1); padding: 3px;
-        background: var(--muted); border-radius: var(--radius-lg);
+
+      /* THE HEADER IS THE PAGE'S VOICE, NOT A STRIP OF CONTROLS. It used to
+         hold two boxed things — an outline button and a segmented language
+         track — competing for the same corner of a bar 60px tall, on a page
+         whose whole argument is that boxes are for things that need a
+         frame. So the two that are not actions lose their chrome: Docs is
+         a link because it is a link, and the language switch is two words
+         with a rule between them, in the same mono the paths and figure
+         numbers are set in. What stays a button is the one thing that is an
+         action — and it is the reason the bar is sticky at all. */
+      .bar .quiet {
+        font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none;
+        /* A text link has no height of its own; a thumb needs one. */
+        padding-block: 0.4rem; border-radius: var(--radius-md);
       }
+      .bar .quiet:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
+      .lang { display: inline-flex; align-items: center; gap: 0.3rem; }
       .lang button {
-        font: inherit; font-size: 0.8rem; line-height: 1; padding: 0.375rem 0.625rem; border: 1px solid transparent;
-        border-radius: var(--radius-md); background: transparent; color: var(--muted-foreground); cursor: pointer;
+        font: inherit; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; line-height: 1;
+        padding: 0.45rem 0.2rem; border: 0; border-radius: var(--radius-md);
+        background: none; color: var(--muted-foreground); cursor: pointer;
       }
-      .lang button[aria-pressed='true'] { background: var(--card); color: var(--foreground); font-weight: 500; border-color: var(--hairline); box-shadow: 0 1px 2px oklch(0% 0 0 / 0.05); }
-      @media (prefers-color-scheme: dark) {
-        .lang button[aria-pressed='true'] { background: color-mix(in oklch, var(--foreground) 10%, transparent); border-color: var(--border); }
+      .lang button:hover { color: var(--foreground); }
+      /* A word set in 12px mono is a 26px target. On a touch screen it gets
+         the height the primary button beside it already has, which costs
+         the header nothing because that button still sets its height. */
+      @media (pointer: coarse) {
+        .lang button { padding-block: 0.7rem; }
+        .bar .quiet { padding-block: 0.6rem; }
       }
+      .lang button[aria-pressed='true'] { color: var(--foreground); }
+      /* Fainter than either label, so the pair reads as one control and the
+         rule between them is not a third thing. */
+      .lang .sep { font-family: var(--mono); font-size: 0.75rem; color: color-mix(in oklch, var(--muted-foreground) 45%, transparent); }
 
       /* Buttons are shadcn's: `.btn` is the outline variant (border, page
          colour, muted on hover) and `.btn.primary` the default one (a
@@ -195,6 +218,19 @@
         .btn:not(.primary) { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
         .btn:not(.primary):hover { background: color-mix(in oklch, var(--foreground) 12%, transparent); }
       }
+
+      /* The header row could not hold "Try the demo" and the wordmark and
+         both other controls on a phone: at 320px it ran 21px past the
+         viewport. The label is the part with slack — the button still goes
+         to the same place — so it shortens first, the gap tightens with it,
+         and only below 22rem does the wordmark go, leaving the hex. */
+      .btn .narrow { display: none; }
+      @media (max-width: 30rem) {
+        .bar { gap: var(--s2); }
+        .btn .wide { display: none; }
+        .btn .narrow { display: inline; }
+      }
+      @media (max-width: 22rem) { .mark .wordmark { display: none; } }
 
       /* THE OPENING. Two unequal columns, not a centred stack: the claim on
          the left and the thing itself on the right. The page says "plain
@@ -390,14 +426,22 @@
             <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" />
             <path d="M60 60 L60 24 L91 42 Z" />
           </svg>
-          Chess Vault
+          <span class="wordmark">Chess Vault</span>
         </span>
         <span class="spacer"></span>
-        <a class="btn" href="manual.html" data-ko="설명서">Manual</a>
+        <a class="quiet" href="manual.html" data-ko="문서">Docs</a>
+        <!-- aria-label carries the language's own name; the visible label is
+             the two-letter code the mono voice wants. -->
         <div class="lang" role="group" aria-label="Language">
-          <button type="button" data-lang="en" aria-pressed="true">English</button>
-          <button type="button" data-lang="ko" aria-pressed="false">한국어</button>
+          <button type="button" data-lang="en" aria-pressed="true" aria-label="English">EN</button>
+          <span class="sep" aria-hidden="true">/</span>
+          <button type="button" data-lang="ko" aria-pressed="false" aria-label="한국어">KO</button>
         </div>
+        <a
+          class="btn primary"
+          href="app/"
+          data-ko='<span class="wide">데모 열기</span><span class="narrow">데모</span>'
+        ><span class="wide">Try the demo</span><span class="narrow">Demo</span></a>
       </div>
     </header>
 
@@ -413,7 +457,11 @@
             game collection and puzzle training — all in one folder you own.
           </p>
           <div class="cta">
-            <a class="btn primary" href="app/" data-ko="데모 열기">Try the demo</a>
+            <a
+          class="btn primary"
+          href="app/"
+          data-ko='<span class="wide">데모 열기</span><span class="narrow">데모</span>'
+        ><span class="wide">Try the demo</span><span class="narrow">Demo</span></a>
             <a class="btn" href="#download" data-ko="내려받기">Download</a>
           </div>
           <p
@@ -704,9 +752,9 @@ CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
              GPLv2+), so the texts have to be reachable from here and not
              only from inside the demo. -->
         <p
-          data-ko='<a href="manual.html">설명서</a> · <a href="https://github.com/chessvault-app/chessvault">소스 코드</a> · <a href="app/licenses/index.html">라이선스</a>'
+          data-ko='<a href="manual.html">문서</a> · <a href="https://github.com/chessvault-app/chessvault">소스 코드</a> · <a href="app/licenses/index.html">라이선스</a>'
         >
-          <a href="manual.html">Manual</a> ·
+          <a href="manual.html">Docs</a> ·
           <a href="https://github.com/chessvault-app/chessvault">Source code</a> ·
           <a href="app/licenses/index.html">Licences</a>
         </p>

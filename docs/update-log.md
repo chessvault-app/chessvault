@@ -10,6 +10,26 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The header lost its boxes, and the manual is the docs.** The bar held
+  two boxed controls — an outline Manual button and a segmented language
+  track — competing for one corner of a 60px strip, on a page whose whole
+  argument is that a box is for something that needs a frame. The two that
+  are not actions gave up their chrome: Docs is a link because it is a
+  link, and the language switch is `EN / KO` in the same mono the vault
+  paths and the figure numbers are set in. What stays a button is the one
+  thing that is an action, and it is now the demo — which is the reason the
+  bar is sticky at all. Separately, every user-facing "Manual" is "Docs"
+  (설명서 → 문서): the landing header and footer, and the docs page's own
+  title, social cards, masthead and heading. `manual.html` keeps its name,
+  because the published address is what inbound links point at, and the
+  app's own "manual entry" and "manual key" mean by hand and are untouched.
+  The cost was the phone: the new row did not fit one. At 320px it ran 21px
+  past the viewport and at 390px the wordmark broke after "Chess", taking
+  the header to 73px — so the label shortens to "Demo" below 30rem, the gap
+  tightens with it, and below 22rem the wordmark goes and the hex stays.
+  The header is 61px at every width now, and a coarse pointer gets the
+  primary button's height on a language code that is otherwise a 26px
+  target.
 - **The landing page is rebuilt around the vault.** It had the shape every
   project's front page has — a centred hero, a grid of six bordered cards,
   four alternating image rows — which said nothing about this one. It is
