@@ -506,7 +506,11 @@ function BookCard({
         tabIndex={0}
         onClick={open}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') open();
+          // Only when the CARD is what's focused: its dialogs (rename, move
+          // to, replace) and the ⋯ are children in the React tree, so their
+          // Enter bubbles here even out of the portal — and confirming a
+          // rename must not also open the book.
+          if (e.key === 'Enter' && e.target === e.currentTarget) open();
         }}
         {...swipe.handlers}
         className={cn(

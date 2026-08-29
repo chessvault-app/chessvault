@@ -87,7 +87,11 @@ export function ShelfCard({
         tabIndex={0}
         onClick={onOpen}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') onOpen();
+          // Only when the CARD is what's focused: its dialogs (rename, move
+          // to) and corner buttons are children in the React tree, so their
+          // Enter bubbles here even out of the portal — and confirming a
+          // rename must not also open what was renamed.
+          if (e.key === 'Enter' && e.target === e.currentTarget) onOpen();
         }}
         {...swipe.handlers}
         className={cn(
