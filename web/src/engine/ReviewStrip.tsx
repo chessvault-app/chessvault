@@ -92,7 +92,11 @@ export function ReviewStrip({
     if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
     return (
       <div className={cn('border-border flex shrink-0 items-center gap-2 border-t px-3 py-2', className)}>
-        <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm">
+        {/* Wraps in a panel, truncates in the dock: the dock is a strip
+            under a move list where one line is the budget, but a panel
+            hosting this as its CONTENT was clipping its own sentence
+            mid-word beside empty height (lanph3re's catch). */}
+        <p className={cn('text-muted-foreground min-w-0 flex-1 text-sm', !panel && 'truncate')}>
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
         <Button variant="secondary" size="sm" onClick={() => void run()}>

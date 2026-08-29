@@ -1211,7 +1211,13 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
                     total: progress.total.toLocaleString(),
                   })
                 : exhaustive
-                  ? t('{n} games reach this position', { n: hits.length })
+                  ? hits.length === 1
+                    ? // Its own sentence, not a {n} at 1: "1 games reach"
+                      // shipped (lanph3re's catch), and English is the
+                      // only language here that inflects — Korean reads
+                      // the same either way.
+                      t('1 game reaches this position')
+                    : t('{n} games reach this position', { n: hits.length })
                   : t('{n}+ games reach this position — the list stops here', { n: hits.length })}
             </p>
           )}

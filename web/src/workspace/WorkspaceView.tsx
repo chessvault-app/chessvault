@@ -356,7 +356,12 @@ function Workspace() {
               title="Analysis"
               actions={
                 <>
-                  <ReviewButton />
+                  {/* Hidden while the offer row below shows its own
+                      labelled Review game button — two triggers for one
+                      act, an icon directly above its labelled twin, was
+                      one too many. The icon returns once a review is
+                      done and re-running is the header's quiet verb. */}
+                  {!(reviewIdle && hasGame && hasMoves) && <ReviewButton />}
                   {/* The same switch the explorer's header wears — one
                       folding grammar for the workspace's foldable panels
                       (lanph3re's call, replacing a chevron). */}
