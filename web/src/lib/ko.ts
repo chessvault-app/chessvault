@@ -31,6 +31,9 @@ export const ko: Record<string, string> = {
   Editor: '편집기',
   Explorer: '탐색기',
   Workspace: '워크스페이스',
+  Analysis: '분석',
+  'Play moves or load a game, then run an engine review.':
+    '수를 두거나 게임을 불러온 뒤 엔진 리뷰를 실행하세요.',
   'The workspace shows the board, the moves, the explorer and the games browser side by side, and needs a window wide enough to hold them all. On this screen its panes are pages of their own.':
     '워크스페이스는 보드, 수순, 탐색기, 게임 브라우저를 나란히 보여주므로 이들을 모두 담을 만큼 넓은 창이 필요합니다. 이 화면에서는 각 창이 저마다의 페이지로 제공됩니다.',
   Repertoire: '레퍼토리',

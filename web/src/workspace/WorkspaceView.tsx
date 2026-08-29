@@ -121,6 +121,14 @@ const BAND_MIN_PX = 320;
     page keeps, and the 64rem ceiling lg imposes so panes keep room. */
 const clampBoardWidth = (px: number): number => Math.min(Math.max(px, 288), 1024);
 
+/** The moves and explorer columns' caps, in px — the max-w-[30rem] and
+    max-w-[32rem] on their classes below, written down once more so the
+    page's own width cap (board + both columns + gaps) can be computed:
+    past ~30rem a move list or an explorer table is blank space between a
+    name and its number. */
+const MOVES_MAX_PX = 480;
+const EXPLORER_MAX_PX = 512;
+
 function Workspace() {
   // The explorer is a dedicated column here, so it opens open: a page
   // whose third column is a folded header reads as broken, not as a
@@ -147,6 +155,13 @@ function Workspace() {
     ),
   );
   const [loadOpen, setLoadOpen] = useState(false);
+
+  // For the Analysis panel's hint: shown only where ReviewStrip itself
+  // has nothing to draw — no game and no moves means no offer, no
+  // progress, no summary.
+  const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
+  const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
+  const reviewIdle = useReview((s) => s.status) === 'idle';
 
   // Two measurements, no cycle between them. The SHELL's height fixes the
   // board's budget (shell minus its chrome, the band's floor and the
@@ -262,17 +277,28 @@ function Workspace() {
     <div ref={shellRef} className={WORKSPACE_SHELL}>
       <h1 className="sr-only">{t('Workspace')}</h1>
 
+      {/* The page's one width cap, over the row AND the games band: what
+          the board and the two capped columns can spend together. Capping
+          only the row left the band running the full window under a
+          centred trio, so its columns started nowhere in particular —
+          mx-auto centres both as one block, the board-row-cap judgment
+          applied to the whole page. */}
+      <div
+        style={
+          budget > 0
+            ? { maxWidth: clampBoardWidth(budget) + MOVES_MAX_PX + EXPLORER_MAX_PX + 24 }
+            : undefined
+        }
+        className="mx-auto flex min-h-0 w-full flex-1 flex-col gap-3"
+      >
       {/* The top row: board, moves + engine, explorer. Its height is the
           board column's own (see the measurement note above), so the
           panels stretch to end exactly where the board block does. The
           moves and explorer columns carry caps — a move list and an
           explorer table past ~30rem are blank space between a name and
-          its number — and justify-center puts what none of the three can
-          spend into margins either side, the board-row-cap judgment
-          applied to a row of three. min-h keeps the row a row before the
-          first measurement and on short windows; past it the shell
-          scrolls. */}
-      <div style={regionStyle} className="flex min-h-[22rem] shrink-0 justify-center gap-3">
+          its number. min-h keeps the row a row before the first
+          measurement and on short windows; past it the shell scrolls. */}
+      <div style={regionStyle} className="flex min-h-[22rem] shrink-0 gap-3">
         {/* self-start, so the wrapper's height is the column's content
             height and not the row's — this is the element the region's
             own height is measured FROM. Width is the budget, stated on
@@ -298,7 +324,6 @@ function Workspace() {
             actions={
               <>
                 <SidelinesToggle />
-                <ReviewButton />
                 <CollectGameButton />
                 <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
                 <MoveActions allowClear />
@@ -307,18 +332,36 @@ function Workspace() {
             }
           />
           <MoveTreePane />
-          <ReviewStrip />
           <BoardControls
             className="border-border -mb-(--card-spacing) border-t"
             keyboard={false}
           />
         </Panel>
 
-        {/* The explorer as a full-height column of its own — on the Board
-            page it shares the side column and is capped for it; here it
-            has the height the region has. No resizeKey: the grip resizes
-            a panel in a stack, and this panel is alone in its column. */}
-        <ExplorerPane className="min-w-[20rem] max-w-[32rem] flex-1" onPositionHunt={huntInBand} />
+        {/* The third column: the explorer over the Analysis panel. On the
+            Board page both dock in the one side column; here the review's
+            summary earns a panel of its own (lanph3re's ask), so the
+            moves panel keeps its full height for moves and the explorer
+            gives up only what the review actually draws. No resizeKey on
+            the explorer: the grip resizes a panel in a stack against a
+            stored height, and this stack sizes itself. */}
+        <div className="flex min-w-[20rem] max-w-[32rem] flex-1 flex-col gap-3">
+          <ExplorerPane className="min-h-0 flex-1" onPositionHunt={huntInBand} />
+          {/* The same ReviewStrip the Board page docks under its move
+              list, hosted as a panel: every state it draws (the offer,
+              progress, the graph and summary) is this panel's content,
+              and the header's button is the trigger. The hint stands in
+              only where the strip has nothing to say. */}
+          <Panel fit className="shrink-0">
+            <PanelHeader title="Analysis" actions={<ReviewButton />} />
+            <ReviewStrip />
+            {reviewIdle && !(hasGame && hasMoves) && (
+              <p className="text-muted-foreground border-border border-t px-3 py-2 text-sm">
+                {t('Play moves or load a game, then run an engine review.')}
+              </p>
+            )}
+          </Panel>
+        </div>
       </div>
 
       {/* The games band: the Games page's browser as a full-width strip —
@@ -368,6 +411,7 @@ function Workspace() {
           />
         )}
       </Panel>
+      </div>
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
     </div>
