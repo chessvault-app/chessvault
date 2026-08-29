@@ -188,3 +188,28 @@ export const useReview = create<ReviewState>()((set, get) => ({
     }
   },
 }));
+
+/**
+ * A review belongs to the tree it judged, and dies with it.
+ *
+ * Node ids are process-unique (shared/tree's counter never reuses one),
+ * so a REPLACED tree — another game opened over the handoff path, a
+ * reset, a study loaded into the same store — carries a new root id and
+ * every point the graph holds dangles: the strip kept drawing a stale
+ * graph whose clicks silently did nothing, because the scrub's
+ * does-this-node-still-exist guard failed on every single point
+ * (lanph3re's repro: review a game, leave, come back with another).
+ * An EDITED tree keeps its root and keeps its review — deleting moves
+ * invalidates points one by one, which that same guard already tolerates.
+ *
+ * Watched here at the store rather than cleared at every call site that
+ * swaps a tree: the Board page's handoff mount deliberately skips its
+ * reset, which is exactly how one such site was forgotten. Clearing
+ * mid-run also aborts the run — the loop checks status every ply.
+ */
+let reviewedRoot = useAnalysis.getState().tree.rootId;
+useAnalysis.subscribe((state) => {
+  if (state.tree.rootId === reviewedRoot) return;
+  reviewedRoot = state.tree.rootId;
+  if (useReview.getState().status !== 'idle') useReview.getState().clear();
+});
