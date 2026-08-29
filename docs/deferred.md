@@ -19,6 +19,35 @@ not a layer over what you were doing (see "The manager" in
 [databases.md](databases.md)) — so collapsing it is a UX decision to
 make on purpose, not a cleanup to fold into other work.
 
+**The Collection tab in the workspace's games band.** The band shows
+the reference databases and both archives; the collection is absent,
+and not as an oversight. `DatabaseGames` and `ArchiveBrowser` are
+self-contained components the workspace simply mounts, but the
+Collection tab is not a component at all — `CollectionView` *is* the
+Games page, and the collection's state (loading, bookmarks, search,
+rename, delete-with-undo, import) is woven through it. Showing it in
+the workspace without a second implementation means extracting the
+whole tabbed browser into a shared composite that both pages host
+thinly — a large, provable-neutral refactor of a core page. The tab is
+wanted (decided while the workspace was new); what defers it is that
+refactor, not doubt. The interaction is settled too, and needs no new
+chrome: collection games are annotatable documents, so in the band a
+single click previews the game on the board the way every other row
+does, while opening the document and the row's other verbs (rename,
+bookmark, remove) ride the table's existing double-click and ⋯ menu —
+the same grammar the Games page's table already speaks.
+
+**Several independent boards in the workspace.** The workspace is
+deliberately one analysis context shown many ways: every pane reads
+the one global analysis store, which is also what makes a game follow
+you between the Board page and the workspace. True multi-context —
+tabs of independent boards, each with its own tree — needs the store
+to become a factory behind a React context whose default is the
+current global instance (so every existing page is untouched), with
+the engine worker following whichever context has focus. A
+well-bounded refactor, deferred until one-context-many-panes proves
+insufficient in practice; it may never need to.
+
 **A prebuilt native binary for servers.** Shipping it to the *desktop*
 is done (0.5.0: each platform's packaging job builds the crate on its
 own runner and `build-server.mjs` drops it beside the bundled JS
