@@ -307,7 +307,9 @@ function Workspace() {
                 <CollectGameButton />
                 <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
                 <MoveActions allowClear />
-                <MovesOverflow allowClear onLoadPosition={() => setLoadOpen(true)} />
+                {/* ownReview: the Analysis panel's header carries the
+                    review button on this page. */}
+                <MovesOverflow allowClear ownReview onLoadPosition={() => setLoadOpen(true)} />
               </>
             }
           />

@@ -10,6 +10,20 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The moves menu stops repeating its own header.** On a desktop the
+  moves panel's ⋯ listed Engine review, Clear all moves and Clear the
+  board one icon away from the buttons that already offer them — a
+  leftover from the menu going every-width when Copy FEN/PGN moved in.
+  Those rows are phone-only again, where the buttons they stand in for
+  are hidden; a page without a review button of its own (the trainers,
+  studies, the book reader) keeps the review row everywhere. Alongside,
+  four strings on the board pages — the collect button's three tooltips
+  and the phone pane tabs' Engine and Explorer labels — finally reach
+  `t()`; their Korean entries had been sitting unused in the dictionary.
+  And Clear all moves draws an eraser again: it shared the reset's
+  arrow, so a loaded position with moves put two identical arrows side
+  by side — one keeping that position, one throwing it away, told apart
+  only by tooltip.
 - **A release's installers land on one release.** Cutting 0.6.0 found the
   desktop workflow racing itself: three package jobs each look for the
   draft to upload into and create one if it is missing, and two of them
