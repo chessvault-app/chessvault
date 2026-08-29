@@ -1,5 +1,5 @@
 /**
- * A page belongs to one of three families. The family is a statement
+ * A page belongs to one of four families. The family is a statement
  * about what the page IS; the width tiers inside `PageShell` are a
  * statement about content, and only the first family has them — which is
  * why a canvas page could not be expressed as a fourth width and had to
@@ -12,8 +12,11 @@
  *    game viewers, trainers, repertoire, editor.
  * 3. **Canvas** — `components/canvas-shell`: one edge-to-edge surface with its
  *    chrome floating on top. The opening map.
+ * 4. **Workspace** — WORKSPACE_SHELL below: a wide-only page of several
+ *    regions at once, none of them centred, the board one column among
+ *    peers. The workspace.
  *
- * A page that fits none of the three is a fourth family to be named here,
+ * A page that fits none of the four is a fifth family to be named here,
  * not markup to be written inline — that is how the map spent its first
  * release off-template.
  */
@@ -176,6 +179,25 @@ export const BOARD_SCROLL_SHELL =
  */
 export const BOARD_HELD_SHELL =
   'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ' + BOARD_WIDE_SHELL;
+
+/**
+ * The workspace-family shell: a column of regions that fits the viewport,
+ * top row of panes over a full-width games band. No stacked half and no
+ * `wide:` prefixes, because the page only renders past its own gate
+ * (useWorkspaceViewport), which implies `wide` and `lg` both. And none of
+ * the board family's centring or row caps: the board is not this page's
+ * subject, it is one pane of several, so the surplus a big window brings
+ * goes to the panes beside it rather than to margin. The board still fits
+ * its region — the workspace measures the region and publishes
+ * `--board-budget` (see boardSize.ts), which is the one thread tying this
+ * family to the board's own sizing chain.
+ *
+ * `overflow-y-auto` is the same fallback the board shell carries: the
+ * board keeps an 18rem floor and the games band a fixed height, so a
+ * pathologically short window scrolls the page instead of clipping panes.
+ */
+export const WORKSPACE_SHELL =
+  'flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-4';
 
 /**
  * One fixed size for the editor window's whole page CHAIN — board,

@@ -69,6 +69,24 @@ export function useWideLayout(): boolean {
 }
 
 /**
+ * The workspace's gate: the viewport where board, moves, explorer AND the
+ * games band earn showing at once.
+ *
+ * Wider than `lg` on purpose — three columns over a games table are
+ * cramped at 64rem — and landscape-only for the same reason `wide` is:
+ * every pane inside the workspace lays itself out with the wide/stacked
+ * variants, and a portrait viewport would run their stacked halves inside
+ * a page designed for none of them. Below this the page renders its gate
+ * card instead of a squeezed layout: the workspace's whole premise is
+ * simultaneity, and its panes already exist one per page as Board and
+ * Games. A capability gate, not a platform sniff — the desktop shell
+ * allows 480px windows and an iPad in landscape clears this honestly.
+ */
+export function useWorkspaceViewport(): boolean {
+  return useMediaQuery('(orientation: landscape) and (min-width: 72rem)');
+}
+
+/**
  * JS mirror of Tailwind's `lg`: the width where a board page's side column
  * stops being one pane at a time behind a tab strip and shows every pane
  * at once.

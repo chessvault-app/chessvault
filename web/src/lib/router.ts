@@ -9,7 +9,7 @@ import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 // section, and now it IS books: the library of PDFs you read beside a
 // board. (`#/puzzles/books` is the puzzle shelf, which is a different
 // thing and says so in its own title.)
-export const SECTIONS = ['home', 'board', 'editor', 'studies', 'notes', 'games', 'books', 'puzzles', 'repertoire', 'openingmap', 'databases', 'settings', 'more'] as const;
+export const SECTIONS = ['home', 'board', 'workspace', 'editor', 'studies', 'notes', 'games', 'books', 'puzzles', 'repertoire', 'openingmap', 'databases', 'settings', 'more'] as const;
 export type Section = (typeof SECTIONS)[number];
 
 const isSection = (v: string): v is Section => (SECTIONS as readonly string[]).includes(v);

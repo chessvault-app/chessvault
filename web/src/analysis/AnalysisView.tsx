@@ -210,8 +210,11 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
  * Keep the loaded game: its PGN (headers included) becomes a collection
  * document, same endpoint the elite/archive Add buttons use. Only shown
  * when an actual game is on the board.
+ *
+ * Exported for the workspace, whose moves panel is this page's panel
+ * rearranged — the same reason MoveActions and MovesOverflow are.
  */
-function CollectGameButton() {
+export function CollectGameButton() {
   const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
   const [state, setState] = useState<'idle' | 'busy' | 'done' | 'failed'>('idle');
   if (!hasGame) return null;

@@ -13,6 +13,7 @@ import {
   Library,
   Network,
   NotebookPen,
+  PanelsTopLeft,
   Puzzle,
   Settings,
   SquareMousePointer,
@@ -34,6 +35,7 @@ import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { t, useLang } from '@/lib/i18n';
+import { useWorkspaceViewport } from '@/lib/media';
 import { isDemo } from '@/lib/demo';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
@@ -44,6 +46,7 @@ import { isDemo } from '@/lib/demo';
 // that has to parse before ANYTHING renders — including the landing page,
 // which uses none of them.
 const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })));
+const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })));
 const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
 const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
 const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
@@ -97,13 +100,19 @@ const TOOLS_SUBNAV: {
   { key: 'board', label: 'Board', icon: Grid3x3, nav: ['board'], active: (s, p) => s === 'board' && p[0] !== 'explorer' },
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Table2, nav: ['board', 'explorer'], active: (s, p) => s === 'board' && p[0] === 'explorer' },
+  // The workspace is every analysis pane at once, so its row exists only
+  // on viewports that can hold them (the Sidebar filters on the same
+  // query the page gates on) — a phone or a half-screen window never
+  // sees a destination it could only meet as a "too narrow" card. It is
+  // also why the entry is absent from MORE_GROUPS below.
+  { key: 'workspace', label: 'Workspace', icon: PanelsTopLeft, nav: ['workspace'], active: (s) => s === 'workspace' },
   { key: 'repertoire', label: 'Repertoire', icon: Layers, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
 // Databases is deliberately NOT in Tools: the entries there are boards
 // you play on, and it is where their data is looked after — so it stands
 // on its own row below the group, beside nothing.
 const inTools = (s: Section): boolean =>
-  s === 'board' || s === 'editor' || s === 'repertoire';
+  s === 'board' || s === 'workspace' || s === 'editor' || s === 'repertoire';
 
 export function App() {
   return (
@@ -206,6 +215,8 @@ function Shell() {
           // handoff set before navigate() survives: the mount effect
           // consumes the flag wherever the mount came from.
           <AnalysisView key={params[0] === 'explorer' ? 'explorer' : 'board'} params={params} />
+        ) : section === 'workspace' ? (
+          <WorkspaceView />
         ) : section === 'editor' ? (
           <EditorView />
         ) : section === 'studies' ? (
@@ -343,6 +354,11 @@ function SubNavItem({
 }
 
 function Sidebar({ active, params }: { active: Section; params: string[] }) {
+  // The workspace row appears only where the workspace can (see the note
+  // on TOOLS_SUBNAV). A hook rather than a class: the list is what has to
+  // know, the same reason media.ts gives for existing.
+  const roomy = useWorkspaceViewport();
+  const tools = TOOLS_SUBNAV.filter(({ key }) => key !== 'workspace' || roomy);
   return (
     <nav
       className={cn(
@@ -451,7 +467,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <SquareMousePointer className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
           <span className="hidden lg:block">{t('Tools')}</span>
         </button>
-        {TOOLS_SUBNAV.map(({ key, label, icon: Icon, nav, active: isActive }) => (
+        {tools.map(({ key, label, icon: Icon, nav, active: isActive }) => (
           <SubNavItem
             key={key}
             label={label}
