@@ -5,6 +5,41 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+Landed after v0.6.0 was tagged, so they are in the repository and in no
+installer. This section becomes the next version's heading.
+
+- **A release's installers land on one release.** Cutting 0.6.0 found the
+  desktop workflow racing itself: three package jobs each look for the
+  draft to upload into and create one if it is missing, and two of them
+  found none in the same second. Linux's AppImage, deb and
+  `latest-linux.yml` went to one release object, the Windows and macOS
+  installers and their two manifests to the other — both tagged `v0.6.0`,
+  both drafts. `gh release view v0.6.0` resolves to one of a pair, so the
+  release read as having lost the exe, the dmg and two of the three
+  updater manifests, which is indistinguishable from the 0.4.9
+  empty-draft failure until you list the releases by API. Nothing was
+  lost; it was somewhere nobody looks. The draft is created once now, by
+  a job that runs before any packaging, and a check after it fails the
+  run if the tag has anything other than exactly one release — listed by
+  API, because a lookup by tag is precisely what cannot see this. 0.6.0's
+  own assets were merged onto one release before it was published, so the
+  release you can download was never affected.
+- **The Korean dictionary drops 138 dead entries, and the manual stops
+  being checked against it.** Auditing the manual turned up one
+  translation key left behind by a menu 0.6.0 removed; there were 138 of
+  1585, including a whole vocabulary — "trade queens", "Temporary
+  sacrifice" — from the heuristic engine explanations that
+  [explaining.md](explaining.md) records as tried and removed. Nothing on
+  screen changes, proved by capturing the Korean text of all sixteen
+  routes before and after, 969 lines, against the noise floor of the same
+  build captured twice.
+  Separately, `check:repo` held the manual's quoted strings against a
+  haystack that included the dictionary, so a key outliving its call site
+  could vouch for a label the screen had stopped showing. It is checked
+  against the app alone now.
+
 ## 0.6.0
 
 One game browser at every width, a query language both search boxes
