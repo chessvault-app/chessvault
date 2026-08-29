@@ -61,6 +61,37 @@ one-off (measured: a 2 GB Lightsail box builds the whole crate
 graph — peak well under its RAM, with swap never touched). Worth doing
 if toolchain-free servers become a real case.
 
+**A spaced schedule for repertoire misses.** The review ladder is
+already generic, shared code — `shared/review.ts` takes attempts in the
+order they happened and answers when the position is next due — and
+`vault/repertoire/history.jsonl` already records that shape, timestamp
+included; only its `result` would have to be read as the ladder's
+`win`. Wiring the drill's review pool to it is a small change, and
+scheduled lines are what every opening trainer sells (Chessable's
+MoveTrainer, Chessbook, Listudy). It is deliberately not wired, for a
+reason particular to openings: **a repertoire position is rehearsed by
+routes the scheduler cannot see.** Repertoire positions share prefixes
+and transpose into one another — a whole-study drill starts at every
+chapter's root and walks the same first plies every session, and a move
+is in book when any candidate in scope prepares it — so a position
+twelve plies down the main line is recalled several times a session
+without one of those recalls being an attempt at *it*. A ladder keyed
+to attempts would call that position due after 21 quiet days when it
+had in fact been played through twice that morning; the pool's rule —
+the latest entry per position decides — cannot make that mistake by
+construction. Studies are edited besides, and a due date outlives the
+line it was set on, where the pool degrades gracefully: **Drill a
+missed position** already falls back to the start when the study no
+longer holds the recorded path.
+
+The trigger is drilling becoming infrequent enough that the pool stops
+being a queue. It is the right structure while sessions are close
+together, because what was fumbled last time is still the best thing to
+do next; when sessions are weeks apart, "what have I forgotten" stops
+being answerable from the last attempt alone. The answer then may not
+be the ladder as it stands but its cheaper half — a staleness reading
+over the whole covered tree, rather than a due date per recorded miss.
+
 ## Kept for a real use case
 
 From the Games-menu research (SCID vs PC, ChessBase, En Croissant,
