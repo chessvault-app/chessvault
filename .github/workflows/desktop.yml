@@ -12,11 +12,22 @@
 #
 # The three manifests — latest.yml (Windows), latest-mac.yml, latest-linux.yml
 # — must land on the SAME release, because electron-updater fetches the one
-# for its own platform from a single address. Three jobs finishing at
-# different times would ordinarily race to create it; they do not, because
-# the release is a DRAFT (build.publish.releaseType in package.json).
-# electron-builder finds an existing draft for the tag and adds to it rather
-# than creating a second one.
+# for its own platform from a single address. electron-builder finds an
+# existing draft for the tag and adds to it, so what has to be prevented is
+# two jobs both finding none and both creating one.
+#
+# This file used to claim a draft was enough on its own. It is not, and 0.6.0
+# proved it: Linux and the other two each created a release for v0.6.0 in the
+# SAME SECOND, and the installers split across the pair. Both were real, both
+# were drafts, and `gh release view v0.6.0` resolves to one of them — so the
+# release looked like it had lost the exe, the dmg and two manifests, which
+# is indistinguishable from the 0.4.9 empty-draft failure until you list the
+# releases by API. Nothing had been lost; it was in a sibling nobody looked at.
+#
+# So the draft is created ONCE, by the `draft` job below, before any packaging
+# starts. The three package jobs only ever find it. `assert-one-release` then
+# checks the invariant directly rather than trusting this comment, because
+# trusting this comment is exactly what went wrong.
 #
 # A draft is also the approval gate. Nothing is visible, and no installed app
 # is offered the update, until a human presses Publish — which is the moment
@@ -36,6 +47,38 @@ permissions:
   contents: write
 
 jobs:
+  # The one draft the three package jobs upload into.
+  #
+  # Its whole purpose is to exist before they start, so that none of them is
+  # ever the one to create it. electron-builder's find-or-create is not atomic
+  # across runners — two find-nothings a millisecond apart both create — and
+  # the loser is invisible to every `gh release` command that takes a tag.
+  #
+  # Idempotent, because a re-run of a tag that already published must not fail
+  # here: if a release for the tag exists at all, draft or not, leave it alone.
+  # Tag runs only — a workflow_dispatch build publishes nothing and wants no
+  # release created on its behalf.
+  draft:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create the draft release for this tag, once
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "a release for $TAG already exists — leaving it alone"
+          else
+            # --notes "" rather than --generate-notes: the body is written by
+            # hand from that version's entry in docs/update-log.md, and a wall
+            # of generated commit titles is harder to replace than an empty one.
+            gh release create "$TAG" --draft --title "${TAG#v}" --notes ""
+            echo "created the draft for $TAG"
+          fi
+
   # The starter reference games that ship inside the installer, built here
   # rather than committed. They are derived data — the repo's rule is that
   # derived data is rebuildable and not tracked — and building them per
@@ -123,7 +166,14 @@ jobs:
           if-no-files-found: error
 
   package:
-    needs: starter-db
+    # Both, so nothing packages until the one draft exists. `draft` is skipped
+    # on a workflow_dispatch build, and a skipped need would skip this job in
+    # turn — hence the explicit result check rather than a bare `needs`.
+    needs: [starter-db, draft]
+    if: >-
+      always()
+      && needs.starter-db.result == 'success'
+      && (needs.draft.result == 'success' || needs.draft.result == 'skipped')
     strategy:
       # Don't cancel the other platform when one fails: knowing Windows is
       # fine while macOS is broken is more useful than one red X.
@@ -245,3 +295,41 @@ jobs:
           path: ${{ matrix.files }}
           if-no-files-found: error
           retention-days: 14
+
+  # The invariant the header used to only assert: ONE release object per tag.
+  #
+  # Listed by API rather than looked up by tag, because a lookup by tag is
+  # precisely what cannot see this failure — it returns one of the duplicates
+  # and reports no problem. Runs after packaging, so it also catches a second
+  # release created mid-run rather than only at the start.
+  #
+  # Not fatal to the installers, which are uploaded and kept as artefacts
+  # either way; fatal to the run, so nobody publishes half a release believing
+  # the green tick.
+  assert-one-release:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert exactly one release exists for this tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # One id per line across every page, so `wc -l` is the count —
+          # `length` per page would need the pages summed.
+          ids=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
+                  --jq '.[] | select(.tag_name == env.TAG) | .id')
+          n=$(printf '%s' "$ids" | grep -c . || true)
+          echo "release objects for ${TAG}: ${n}"
+          if [ "$n" != "1" ]; then
+            echo "expected exactly one release for ${TAG}, found ${n}." >&2
+            echo "The installers are split across them, and no single address" >&2
+            echo "serves all three updater manifests. Merge the assets onto one" >&2
+            echo "release and delete the rest before publishing." >&2
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
+              --jq '.[] | select(.tag_name == env.TAG)
+                    | "  id=\(.id) draft=\(.draft) assets=\(.assets | length)"' >&2
+            exit 1
+          fi
