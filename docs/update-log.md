@@ -10,6 +10,25 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **A wood board, with the grain drawn rather than photographed.**
+  Settings → Appearance → Board gains "Wood grain": the rust brown of a
+  printed diagram, and the first theme with a texture. The grain is an
+  SVG turbulence filter stretched hard along one axis and blended
+  soft-light over the checkerboard already there, which matters for more
+  than tidiness — soft-light leaves the mean untouched, so the two board
+  tokens still describe the squares, and everything that derives from
+  them keeps working without knowing a texture arrived: the coordinate
+  labels pick their contrast from the square they sit on, the mini boards
+  stay flat where flat is right at that size, and the editor's piece tray
+  still takes its backdrop from the light square. It is drawn in 64
+  cells rather than one, because turbulence is evaluated in the image's
+  own coordinates: each cell clips a different patch of one noise field,
+  so all 64 squares differ and the grain breaks at every seam the way an
+  inlaid board does. One cell would run the grain straight across the
+  seams and read as a painted panel. The whole texture is 472 bytes
+  gzipped — the CSS bundle is 61590 with it and 61118 without — against
+  138 KB for the photographic wood board it stands in for, and it brings
+  no third-party artwork to carry a licence notice for.
 - **One header across the site, and the manual's file is renamed too.**
   The docs page still wore the old chrome — an outline demo button and a
   segmented English/한국어 track — so the two pages of one site disagreed

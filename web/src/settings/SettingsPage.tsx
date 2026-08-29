@@ -785,8 +785,14 @@ function BoardPreview({ theme }: { theme: BoardTheme }) {
       className="border-border block size-9 shrink-0 rounded-md border"
       style={{
         backgroundColor: 'var(--board-light)',
-        backgroundImage: 'repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
-        backgroundSize: '50% 50%',
+        // Same two layers as cg-board, so a textured theme is picked with
+        // its texture visible. The swatch shows 4x4 squares, and the grain
+        // is an 8x8 grid of cells, so it takes twice the swatch to put one
+        // cell on one square — at 200% the top-left 4x4 of it shows.
+        backgroundImage:
+          'var(--board-grain, none), repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
+        backgroundSize: '200% 200%, 50% 50%',
+        backgroundBlendMode: 'soft-light, normal',
       }}
     />
   );

@@ -15,7 +15,8 @@ export type BoardTheme =
   | 'slate'
   | 'lavender'
   | 'rosewood'
-  | 'charcoal';
+  | 'charcoal'
+  | 'wood';
 export type PieceSet =
   | 'cburnett'
   | 'merida'
@@ -32,6 +33,8 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: 'default', label: 'Walnut (adaptive)' },
   { id: 'green', label: 'Tournament green' },
   { id: 'brown', label: 'Classic brown' },
+  // The only theme with a texture; the grain is drawn in index.css.
+  { id: 'wood', label: 'Wood grain' },
   { id: 'blue', label: 'Blue' },
   { id: 'slate', label: 'Slate' },
   { id: 'lavender', label: 'Purple' },

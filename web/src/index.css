@@ -809,12 +809,17 @@
 
 cg-board {
   background-color: var(--board-light);
-  background-image: repeating-conic-gradient(
-    var(--board-dark) 0% 25%,
-    transparent 0% 50%
-  );
-  background-size: 25% 25%;
+  /* A theme may add a grain layer over the checkerboard (see --board-grain).
+     soft-light leaves the mean of what it covers untouched, so the grain
+     modulates the two tokens rather than replacing them: the squares keep
+     the colour the theme set, and everything derived from those tokens —
+     the coordinate labels below, the mini board, the editor's piece tray —
+     stays correct without knowing a texture is there. */
+  background-image: var(--board-grain, none),
+    repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%);
+  background-size: 100% 100%, 25% 25%;
   background-position: top left;
+  background-blend-mode: soft-light, normal;
 }
 
 cg-board square.last-move {
@@ -1268,6 +1273,26 @@ cg-board square.check {
 :root[data-board='rosewood'] {
   --board-light: oklch(92% 0.025 30);
   --board-dark: oklch(61% 0.065 25);
+}
+
+/* The one textured board: the ChessBase-style rust brown, with the grain
+   drawn rather than photographed.
+
+   feTurbulence, stretched hard along one axis (baseFrequency 0.045 x,
+   0.004 y) so the noise reads as figure running up the square, with four
+   octaves for the fibre on top of it. The 64 rects are not decoration:
+   turbulence is evaluated in USER space, so each rect's filter region
+   clips a different patch of one noise field — 64 distinct squares from a
+   single rasterisation, breaking at every square edge the way an inlaid
+   board does. One rect would run the grain straight across the seams and
+   read as a painted panel; a smaller tile repeats visibly at 2 squares.
+   472 bytes gzipped (measured: the bundle's CSS is 61590 with it, 61118
+   without), against 138 KB for lichess's wood4, the photograph it stands
+   in for — and no third-party artwork to carry a licence notice for. */
+:root[data-board='wood'] {
+  --board-light: oklch(91% 0.042 84);
+  --board-dark: oklch(58% 0.135 49);
+  --board-grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='800'%3E%3Cfilter%20id='v'%20x='0'%20y='0'%20width='100%'%20height='100%'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.004'%20numOctaves='4'%20seed='5'/%3E%3CfeColorMatrix%20values='.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%200%200%200%200%201'/%3E%3C/filter%3E%3Crect%20x='0'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3C/svg%3E");
 }
 
 /* A deliberately dark board — both squares below mid-lightness, for

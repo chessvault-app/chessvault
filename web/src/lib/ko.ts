@@ -896,6 +896,7 @@ export const ko: Record<string, string> = {
   'Walnut (adaptive)': '월넛 (자동)',
   'Tournament green': '토너먼트 그린',
   'Classic brown': '클래식 브라운',
+  'Wood grain': '나뭇결',
   Slate: '슬레이트',
   Paper: '페이퍼',
   Green: '그린',
