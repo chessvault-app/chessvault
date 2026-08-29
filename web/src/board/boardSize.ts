@@ -20,7 +20,14 @@ export const BOARD_MAX_W =
   // and left the moves panel a sliver — a smaller board that leaves the
   // panels readable is the better trade there (lanph3re's call). Phones
   // are width-bound long before 56dvh, so they are untouched.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] wide:lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),64rem)]';
+  // The wide-mode height budget reads --board-budget with the old
+  // expression as its default: every full-viewport board page leaves the
+  // variable unset and computes exactly what it always did, while a page
+  // whose board region is NOT the viewport (the workspace, whose games
+  // band takes the bottom of the window) publishes the height its region
+  // actually has. `.board-col-cap` (index.css) reads the same variable so
+  // the column keeps agreeing with the board it holds.
+  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] wide:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem))))] wide:lg:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem)),64rem))]';
 
 // (The lg: ceiling rides on wide: — a bare lg: is the viewport's word, and
 // inside a `.force-stacked` region of a wide page it sized the editor's

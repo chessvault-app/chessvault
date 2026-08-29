@@ -1032,9 +1032,18 @@ cg-board square.check {
      have to agree, so two of them are written here, together, where the
      disagreement would be visible. Without this the column is flex-1 and
      takes the whole surplus; with it the surplus never enters the pair and
-     justify-content above puts it outside. */
+     justify-content above puts it outside.
+
+     --board-budget, defaulting to the very expression it replaces: unset
+     (every full-viewport board page) this computes what it always did.
+     The workspace sets it to its own board region's measured height,
+     because there the viewport height is NOT the board's to spend — the
+     games band below has the rest. The row cap above deliberately keeps
+     the bare 100dvh form: it exists only for the standalone board pages,
+     which never set the variable, and the workspace lays its own row out
+     without .board-row-cap. */
   .board-col-cap {
-    max-width: min(64rem, max(18rem, 100dvh - 10rem));
+    max-width: min(64rem, max(18rem, var(--board-budget, calc(100dvh - 10rem))));
   }
 
   /* When the cap bites inside a `.force-stacked` region — a wide window
