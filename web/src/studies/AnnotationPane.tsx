@@ -6,7 +6,7 @@ import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/notation';
 import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
-import { autoFocusField } from '@/lib/media';
+import { autoFocusField, isCoarsePointer } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/components/chip-row';
@@ -46,7 +46,7 @@ export function AnnotationPane({
   const atRoot = node.parentId === null;
 
   const [draft, setDraft] = useState(node.comment ?? '');
-  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
+  const [coarse] = useState(isCoarsePointer);
   const [sheet, setSheet] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(
     () => localStorage.getItem(PALETTE_KEY) !== 'closed',

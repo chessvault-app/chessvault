@@ -25,6 +25,7 @@ import {
   type SourceRect,
   diagramUrl,
 } from './data';
+import { isCoarsePointer } from '@/lib/media';
 
 /**
  * The correction sidebar: the book's own scans, right where the board is
@@ -182,7 +183,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
   // dismissing (tap the eye again, tap anywhere else) cleared only `open`
   // and left the peek on screen. Hover is a mouse's gesture; a coarse
   // pointer does not get one, exactly as the puzzle preview already had it.
-  const fine = (): boolean => !window.matchMedia('(pointer: coarse)').matches;
+  const fine = (): boolean => !isCoarsePointer();
   const shown = open || hover;
   // Measured as it appears, and again never — a peek is a held gesture, so
   // anything that MOVES the eye underneath it closes it instead (below).

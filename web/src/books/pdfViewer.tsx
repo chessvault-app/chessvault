@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
 
 import { pdfUrl } from './data';
+import { isCoarsePointer } from '@/lib/media';
 
 /**
  * The pdf.js half of the book reader: opening a library book by URL and
@@ -161,7 +162,7 @@ export function PdfPage({
       // Device pixels: up to 2× on a fine pointer, 1.5× on a touch screen —
       // a scan at a phone's width is legible at 1.5× and the raster is
       // half the pixels of 2×, which is what scrolling waits on.
-      const coarse = matchMedia('(pointer: coarse)').matches;
+      const coarse = isCoarsePointer();
       let ratio = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
       if (cssW * cssH * ratio * ratio > MAX_CANVAS_PIXELS) {
         ratio = Math.sqrt(MAX_CANVAS_PIXELS / (cssW * cssH));

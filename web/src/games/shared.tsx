@@ -23,6 +23,7 @@ import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { PromptDialog } from '@/components/prompt-dialog';
 
 import { t } from '@/lib/i18n';
+import { isCoarsePointer } from '@/lib/media';
 
 export interface GameSummary {
   file: string;
@@ -53,8 +54,6 @@ export const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.
 /** Collection file -> document id (the path the studies-style API speaks). */
 export const docId = (g: Pick<GameSummary, 'file'>): string =>
   g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
-
-export const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coarse)').matches;
 
 /**
  * A game's link, only if it is safe to leave the app through.

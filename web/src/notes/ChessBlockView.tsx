@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { t } from '@/lib/i18n';
+import { isCoarsePointer } from '@/lib/media';
 
 interface BlockState {
   tree: MoveTree;
@@ -123,7 +124,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
    * of those — so the tap that used to be the price of scrolling past a
    * diagram is not charged for reading any more.
    */
-  const [awake, setAwake] = useState(() => !window.matchMedia('(pointer: coarse)').matches);
+  const [awake, setAwake] = useState(() => !isCoarsePointer());
   // The shared gate (board/usePromotion); the chosen piece rides the same
   // addMove → commit path an ordinary move takes, so it autosaves too.
   const promotion = usePromotion((orig, dest, role) => {
