@@ -75,6 +75,35 @@ writeFileSync(
 `,
 );
 
+// Pretendard, for the two pages at the root.
+//
+// They had a system stack, so their Latin was whatever the OS offered and
+// their KOREAN — which is half of both pages — fell to Noto Sans KR or
+// Apple SD Gothic Neo. The app draws both scripts in Pretendard, and the
+// landing page's own stylesheet says the design is the app's; the one
+// thing it was not matching was the typeface.
+//
+// Copied from node_modules at build time rather than committed, which is
+// how the app gets the same files, and served from this origin rather
+// than a CDN. The subset CSS is taken verbatim — it carries the OFL
+// notice in its header, and its src urls are already relative to itself,
+// so the pair of copies below lands the woff2 exactly where it looks.
+//
+// The dynamic subset, not the 2 MB single file: 92 chunks of which an
+// English reader fetches one. The pages still render with the fonts
+// absent — the system stack stays behind Pretendard in both — so opening
+// web/landing/index.html straight off disk is unchanged.
+const FONT_SRC = resolve(REPO_ROOT, 'node_modules/pretendard/dist/web/variable');
+const fonts = resolve(SITE, 'fonts');
+mkdirSync(fonts, { recursive: true });
+copyFileSync(
+  resolve(FONT_SRC, 'pretendardvariable-dynamic-subset.css'),
+  resolve(fonts, 'pretendard.css'),
+);
+cpSync(resolve(FONT_SRC, 'woff2-dynamic-subset'), resolve(fonts, 'woff2-dynamic-subset'), {
+  recursive: true,
+});
+
 // Screenshots are shared with the README rather than duplicated.
 const shots = resolve(SITE, 'shots');
 mkdirSync(shots, { recursive: true });
@@ -102,3 +131,4 @@ console.log('  /docs.html   the docs');
 console.log('  /manual.html redirect to /docs.html');
 console.log('  /app/        the demo');
 console.log('  /shots/      screenshots');
+console.log('  /fonts/      Pretendard, for the two pages at the root');

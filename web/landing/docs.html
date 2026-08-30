@@ -9,6 +9,11 @@
       content="The Chess Vault docs: a page for every part of the app — getting started, the vault, the board, the engine, studies, notes, games, databases, books, puzzles, the repertoire trainer and the opening map — down to every button."
     />
     <link rel="icon" href="app/favicon.svg" />
+    <!-- Pretendard, from this origin, copied in by scripts/build-landing.ts.
+         Half of this page is Korean and the app draws it in Pretendard; a
+         system stack left it to Noto Sans KR. Absent (opening this file
+         straight off disk), the stack below simply falls through. -->
+    <link rel="stylesheet" href="fonts/pretendard.css" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Chess Vault" />
     <meta property="og:url" content="https://chessvault-app.github.io/docs.html" />
@@ -83,7 +88,7 @@
         margin: 0;
         background: var(--background);
         color: var(--foreground);
-        font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+        font: 15px/1.6 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
         -webkit-font-smoothing: antialiased;
       }

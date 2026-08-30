@@ -9,6 +9,11 @@
       content="A private, self-hosted chess workbench: engine analysis, opening explorer, studies, notes, a game collection and a puzzle trainer — all stored as PGN, markdown and JSON in one folder you own."
     />
     <link rel="icon" href="app/favicon.svg" />
+    <!-- Pretendard, from this origin, copied in by scripts/build-landing.ts.
+         Half of this page is Korean and the app draws it in Pretendard; a
+         system stack left it to Noto Sans KR. Absent (opening this file
+         straight off disk), the stack below simply falls through. -->
+    <link rel="stylesheet" href="fonts/pretendard.css" />
     <!-- ABSOLUTE, and that is not a style choice: a scraper fetches these
          without a document to resolve a relative path against, so the old
          `shots/board.png` rendered every link to this page — Reddit, Hacker
@@ -114,7 +119,7 @@
         margin: 0;
         background: var(--background);
         color: var(--foreground);
-        font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+        font: 15px/1.6 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
         -webkit-font-smoothing: antialiased;
         /* Korean has no spaces inside an eojeol, and the default breaking
