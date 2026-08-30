@@ -17,8 +17,45 @@
  * between two documents is worse than declining to guess.
  */
 
-/** `[[Target]]`, capturing the target. Never matches across a `[` or `]`. */
-export const WIKI_RE = /\[\[([^[\]]+)\]\]/g;
+/**
+ * A wiki link, in the three shapes Obsidian writes them.
+ *
+ *     [[Target]]              the plain link
+ *     [[Target|display]]      shown as `display`, resolved as `Target`
+ *     ![[Target]]             an embed: the target's content, not a link
+ *
+ * Groups: 1 the `!` of an embed (empty for a link), 2 the target,
+ * 3 the display text (undefined when there is none).
+ *
+ * The target excludes `|` as well as the brackets, so the pipe can only be
+ * the separator and never part of a name — which matches Obsidian, and
+ * means an id containing a pipe is unaddressable rather than ambiguous.
+ */
+export const WIKI_RE = /(!?)\[\[([^[\]|]+)(?:\|([^[\]]*))?\]\]/g;
+
+/** One parsed link, however it was written. */
+export interface ParsedWikiLink {
+  /** What it resolves by. */
+  readonly target: string;
+  /** What the reader sees: the display text if given, else the target. */
+  readonly text: string;
+  /** `![[...]]` — the target's content is wanted, not a link to it. */
+  readonly embed: boolean;
+}
+
+/** Read one `WIKI_RE` match into its parts. */
+export function parseWikiMatch(match: RegExpMatchArray): ParsedWikiLink {
+  const target = match[2]!;
+  const display = match[3];
+  return {
+    target,
+    // An empty display (`[[Target|]]`) falls back to the target rather than
+    // rendering as nothing: the writer left it blank, they did not ask for
+    // an invisible link.
+    text: display && display.trim() ? display : target,
+    embed: match[1] === '!',
+  };
+}
 
 /** The three kinds of document a link can point at, in resolution order. */
 export const LINK_SECTIONS = ['notes', 'studies', 'games'] as const;
@@ -100,7 +137,12 @@ export function findWikiMentions(body: string): WikiMention[] {
     const at = match.index;
     const end = at + match[0].length;
     const [from, to] = sentenceAround(body, at, end);
-    found.push({ target: match[1]!, at, context: asProse(body.slice(from, to)) });
+    const { target, text } = parseWikiMatch(match);
+    // The mention carries the words the LINK matched by, which is what the
+    // backlink picks out. Where a display text was given, the context reads
+    // as the note reads, so the target is what to highlight in it only if
+    // it is what is actually shown.
+    found.push({ target: text === target ? target : text, at, context: asProse(body.slice(from, to)) });
   }
   return found;
 }
@@ -181,7 +223,11 @@ function sentenceAround(body: string, at: number, end: number): [number, number]
  */
 function asProse(window: string): string {
   return window
-    .replace(/\[\[([^[\]]+)\]\]/g, '$1')
+    // A link reads as what the note shows: the display text where one was
+    // given, the target otherwise, and neither the pipe nor an embed's `!`.
+    .replace(WIKI_RE, (_whole, _bang: string, target: string, display?: string) =>
+      display && display.trim() ? display : target,
+    )
     // Line-leading marks, while the newlines are still here to find them by.
     .replace(/^\s{0,3}#{1,6}\s+/gm, '')
     .replace(/^\s{0,3}[-*+]\s+/gm, '')
@@ -228,15 +274,22 @@ export function renameLinksIn(
   const short = typeof tailWorks !== 'string' && tailWorks.id === to ? newTail : to;
 
   let touched = false;
-  const next = body.replace(WIKI_RE, (whole, target: string) => {
-    const wanted = target.trim().toLowerCase();
-    if (wanted !== oldId && wanted !== oldTail) return whole;
-    // Still means something? Then it was never pointing at what moved --
-    // or the move did not disturb it -- and rewriting would be a guess.
-    if (typeof resolveWikiLink(target, index) !== 'string') return whole;
-    touched = true;
-    return `[[${wanted === oldTail && wanted !== oldId ? short : to}]]`;
-  });
+  const next = body.replace(
+    WIKI_RE,
+    (whole, bang: string, target: string, display?: string) => {
+      const wanted = target.trim().toLowerCase();
+      if (wanted !== oldId && wanted !== oldTail) return whole;
+      // Still means something? Then it was never pointing at what moved --
+      // or the move did not disturb it -- and rewriting would be a guess.
+      if (typeof resolveWikiLink(target, index) !== 'string') return whole;
+      touched = true;
+      const named = wanted === oldTail && wanted !== oldId ? short : to;
+      // Only the target moves. The display text is the writer's sentence
+      // and an embed stays an embed -- rewriting either would edit what
+      // the note says, not where it points.
+      return `${bang}[[${named}${display === undefined ? '' : `|${display}`}]]`;
+    },
+  );
 
   return touched ? next : null;
 }

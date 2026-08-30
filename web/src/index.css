@@ -852,9 +852,45 @@
   .wiki-link-ambiguous {
     cursor: default;
   }
-  /* Reading mode renders the link text alone, Obsidian-preview style. */
-  .note-editor[contenteditable='false'] .wiki-bracket {
+  /* Reading mode renders the link text alone, Obsidian-preview style:
+     the brackets, and the `Target|` of a link with display text, are
+     notation rather than words. The markdown on disk keeps all of it. */
+  .note-editor[contenteditable='false'] .wiki-syntax {
     display: none;
+  }
+  /* An embed is a card while reading and its literal text while editing —
+     the two never both show, so the note reads as one thing in each mode. */
+  .wiki-embed {
+    display: none;
+  }
+  .note-editor[contenteditable='false'] .wiki-embed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--card);
+    cursor: pointer;
+  }
+  .note-editor[contenteditable='false'] .wiki-embed:hover {
+    border-color: var(--border-strong);
+  }
+  /* While editing, the source text carries the link's own styling; while
+     reading it is hidden and the card speaks instead. */
+  .note-editor[contenteditable='false'] .wiki-embed-source {
+    display: none;
+  }
+  .wiki-embed-name {
+    font-weight: 500;
+  }
+  .wiki-embed-excerpt {
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+  }
+  .wiki-embed-empty .wiki-embed-name {
+    color: var(--muted-foreground);
   }
 
   /* Native <select> popups inherit the control's font — a text-sm mono

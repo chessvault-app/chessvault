@@ -78,7 +78,44 @@ describe('resolveWikiLink', () => {
   });
 });
 
+describe('display text and embeds', () => {
+  it('resolves a piped link by its target, not its display text', () => {
+    const found = findWikiMentions('See [[openings/Najdorf|the sharp one]].');
+    expect(found[0]!.context).toBe('See the sharp one.');
+    expect(resolveWikiLink('openings/Najdorf', index({ studies: ['openings/Najdorf'] }))).toEqual({
+      section: 'studies',
+      id: 'openings/Najdorf',
+    });
+  });
+
+  it('falls back to the target when the display text is blank', () => {
+    expect(findWikiMentions('See [[Najdorf|]].')[0]!.context).toBe('See Najdorf.');
+  });
+
+  it('reads an embed as its text, without the exclamation mark', () => {
+    expect(findWikiMentions('Before ![[Najdorf]] after')[0]!.context).toBe('Before Najdorf after');
+  });
+
+  it('treats a pipe as the separator, never part of a name', () => {
+    const found = findWikiMentions('[[a|b]]');
+    expect(found).toHaveLength(1);
+    expect(found[0]!.target).toBe('b');
+  });
+});
+
 describe('renameLinksIn', () => {
+  it('keeps the display text when the target is rewritten', () => {
+    const after = index({ studies: ['Sicilian'] });
+    expect(renameLinksIn('See [[Najdorf|the sharp one]].', 'Najdorf', 'Sicilian', after)).toBe(
+      'See [[Sicilian|the sharp one]].',
+    );
+  });
+
+  it('keeps an embed an embed', () => {
+    const after = index({ studies: ['Sicilian'] });
+    expect(renameLinksIn('![[Najdorf]]', 'Najdorf', 'Sicilian', after)).toBe('![[Sicilian]]');
+  });
+
   // `index` is always the vault as it stands AFTER the move.
   it('follows a full-id link to the new id', () => {
     const after = index({ studies: ['Sicilian'] });

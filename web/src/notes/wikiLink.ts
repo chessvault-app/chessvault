@@ -9,6 +9,7 @@ import { t } from '@/lib/i18n';
 import {
   LINK_SECTIONS,
   WIKI_RE,
+  parseWikiMatch,
   resolveWikiLink,
   type LinkIndex,
   type LinkSection,
@@ -40,29 +41,48 @@ const SECTION_URL: Record<LinkSection, string> = {
  * fetch per click — which is three chances to disagree about what the
  * vault contains while showing all three answers on one screen.
  */
-let cache: { at: number; index: LinkIndex } | null = null;
+interface Documents {
+  readonly index: LinkIndex;
+  /** `section:id` -> the document's first written line, for an embed. */
+  readonly excerpt: ReadonlyMap<string, string>;
+}
+
+let cache: { at: number; docs: Documents } | null = null;
 const CACHE_MS = 30_000;
 
-/** The index if it is already here, for the synchronous decoration pass. */
-const indexNow = (): LinkIndex | null =>
-  cache && Date.now() - cache.at < CACHE_MS ? cache.index : null;
+/** What is already here, for the synchronous decoration pass. */
+const docsNow = (): Documents | null =>
+  cache && Date.now() - cache.at < CACHE_MS ? cache.docs : null;
+
+const indexNow = (): LinkIndex | null => docsNow()?.index ?? null;
 
 async function documentIndex(): Promise<LinkIndex> {
-  const fresh = indexNow();
+  return (await documents()).index;
+}
+
+async function documents(): Promise<Documents> {
+  const fresh = docsNow();
   if (fresh) return fresh;
+  const excerpt = new Map<string, string>();
   const entries = await Promise.all(
     LINK_SECTIONS.map(async (section) => {
       try {
-        const { studies } = await api<{ studies: { id: string }[] }>(SECTION_URL[section]);
+        const { studies } = await api<{ studies: { id: string; excerpt?: string | null }[] }>(
+          SECTION_URL[section],
+        );
+        for (const s of studies) if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
         return [section, studies.map((s) => s.id)] as const;
       } catch {
         return [section, []] as const; // unreachable section — the others still answer
       }
     }),
   );
-  const index = Object.fromEntries(entries) as unknown as LinkIndex;
-  cache = { at: Date.now(), index };
-  return index;
+  const docs = {
+    index: Object.fromEntries(entries) as unknown as LinkIndex,
+    excerpt,
+  };
+  cache = { at: Date.now(), docs };
+  return docs;
 }
 
 /**
@@ -106,25 +126,124 @@ function stateOf(target: string, index: LinkIndex | null): LinkState {
   return typeof hit === 'string' ? hit : 'ok';
 }
 
+/**
+ * The syntax read mode hides, so `[[Target|display]]` reads as `display`.
+ *
+ * Same trick the brackets have always used, extended: everything that is
+ * notation rather than words gets its own span and is display:none while
+ * the note is being read. The markdown on disk is untouched — which is the
+ * whole point of doing this with decorations — so the note still says
+ * `[[Target|display]]` in Obsidian and in git.
+ */
+const SYNTAX = 'wiki-syntax';
+
+/**
+ * An embed, drawn as a card.
+ *
+ * Obsidian transcludes: `![[Note]]` renders that note's whole content
+ * where it stands. This shows the document's name and its first written
+ * line instead, and says so by looking like a card rather than like the
+ * page. Full transclusion means running the markdown pipeline — and, for a
+ * study or a game, a board — inside a decoration, which is a rendering
+ * engine rather than a link feature. A preview that is honestly a preview
+ * beats one that is a broken imitation of the real thing.
+ *
+ * Plain DOM, no React: this is a ProseMirror widget, and mounting a React
+ * root per embed to render two lines of text would put a second reconciler
+ * inside the editor for no gain.
+ */
+function embedCard(target: string, state: LinkState): HTMLElement {
+  const card = document.createElement('span');
+  card.className = 'wiki-embed';
+  card.setAttribute('role', 'button');
+  card.tabIndex = 0;
+  // The widget sits inside a contenteditable, so the editor must be told
+  // this is not text it owns; otherwise the caret walks into it.
+  card.contentEditable = 'false';
+
+  const name = document.createElement('span');
+  name.className = 'wiki-embed-name';
+  const docs = docsNow();
+  const hit = docs ? resolveWikiLink(target, docs.index) : null;
+  const id = hit && typeof hit !== 'string' ? hit.id : target;
+  name.textContent = id.split('/').at(-1)!;
+  card.append(name);
+
+  if (state !== 'ok') {
+    card.classList.add('wiki-embed-empty');
+    const why = document.createElement('span');
+    why.className = 'wiki-embed-excerpt';
+    why.textContent = t(
+      state === 'ambiguous'
+        ? 'More than one document is named this'
+        : 'Nothing in the vault is named this',
+    );
+    card.append(why);
+    return card;
+  }
+
+  // The excerpt, or failing that what kind of document this is. A study or
+  // a game is usually a PGN with no prose in it at all, and a card holding
+  // nothing but a name does not say what pressing it would open.
+  const excerpt = hit && typeof hit !== 'string' ? docs?.excerpt.get(`${hit.section}:${hit.id}`) : null;
+  const line = document.createElement('span');
+  line.className = 'wiki-embed-excerpt';
+  line.textContent =
+    excerpt ??
+    (hit && typeof hit !== 'string'
+      ? t({ notes: 'Note', studies: 'Study', games: 'Game' }[hit.section])
+      : '');
+  if (line.textContent) card.append(line);
+  const open = (): void => void resolveAndOpen(target);
+  card.addEventListener('click', open);
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      open();
+    }
+  });
+  return card;
+}
+
 function decorate(doc: PmNode, index: LinkIndex | null): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
     for (const match of node.text.matchAll(WIKI_RE)) {
+      const { target, embed } = parseWikiMatch(match);
       const from = pos + match.index;
-      const state = stateOf(match[1]!, index);
+      const to = from + match[0].length;
+      const state = stateOf(target, index);
+      const open = from + (embed ? 3 : 2); // past `[[` or `![[`
       decorations.push(
-        Decoration.inline(from, from + match[0].length, {
-          class: state === 'ok' || state === 'unknown' ? 'wiki-link' : `wiki-link wiki-link-${state}`,
-          'data-target': match[1]!,
+        Decoration.inline(from, to, {
+          class: [
+            'wiki-link',
+            state === 'ok' || state === 'unknown' ? '' : `wiki-link-${state}`,
+            embed ? 'wiki-embed-source' : '',
+          ]
+            .filter(Boolean)
+            .join(' '),
+          'data-target': target,
           'data-link-state': state,
         }),
-        // The brackets get their own spans so read mode can hide them.
-        Decoration.inline(from, from + 2, { class: 'wiki-bracket' }),
-        Decoration.inline(from + match[0].length - 2, from + match[0].length, {
-          class: 'wiki-bracket',
-        }),
+        Decoration.inline(from, open, { class: SYNTAX }),
+        Decoration.inline(to - 2, to, { class: SYNTAX }),
       );
+      // `Target|` is notation too when a display text follows it.
+      if (match[3] !== undefined) {
+        decorations.push(
+          Decoration.inline(open, open + target.length + 1, { class: SYNTAX }),
+        );
+      }
+      // An embed's card. Always in the document, shown only while reading —
+      // the same split the hidden syntax uses, and for the same reason:
+      // `editable` belongs to the view and this is built from the doc.
+      if (embed) {
+        decorations.push(
+          Decoration.widget(to, () => embedCard(target, state), { side: 1 }),
+        );
+      }
     }
   });
   return DecorationSet.create(doc, decorations);
