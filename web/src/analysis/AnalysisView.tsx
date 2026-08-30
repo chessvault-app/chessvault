@@ -24,7 +24,7 @@ import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Panel, PanelHeader } from '@/components/panel';
 import { PaneTabs } from '@/components/pane-tabs';
 import { useUndoable } from '@/hooks/use-undoable';
-import { MoveTreePane, SidelinesToggle } from './MoveTreePane';
+import { MoveTreePane, promoteActions, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 import { t } from '@/lib/i18n';
 
@@ -467,6 +467,7 @@ export function MovesOverflow({
   const phone = useMediaQuery('(max-width: 47.9375rem)');
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
+  const promoteNode = useAnalysis((s) => s.promoteNode);
   const reset = useAnalysis((s) => s.reset);
   const clearMoves = useClearMoves(allowClear, allowReset);
   const { capture } = useTreeUndo();
@@ -477,6 +478,22 @@ export function MovesOverflow({
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
 
   const actions: MenuAction[] = [
+    // First, and at every width, unlike everything below them.
+    //
+    // The rest of this list is folded away on a phone because a desktop
+    // shows the same verb as a button; these two are folded IN because a
+    // width is not a pointer. The other route to them is a right-click on
+    // the move, and a tablet — wide by every query here, `pointer-fine`
+    // by none of them — has no right-click to give. Gating them on width
+    // left the app's only one-step promotion reachable on a phone and on
+    // a mouse, and nowhere on a big touchscreen. (lanph3re's report.)
+    //
+    // The mainline one is therefore said twice on a desktop, beside the
+    // strip under the table. That is the price of the pair staying
+    // together: they are one choice about one move — how far to lift it —
+    // and a menu offering the smaller half while the larger sits
+    // elsewhere reads as two unrelated verbs.
+    ...promoteActions(tree, cursorId, promoteNode),
     ...(onLoadPosition && phone
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),

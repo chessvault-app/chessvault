@@ -120,6 +120,7 @@ export const ko: Record<string, string> = {
   'Play a move on the board, or load a FEN or PGN.':
     '보드에서 수를 두거나, FEN 또는 PGN을 불러오세요.',
   'Make mainline': '메인 라인으로 지정',
+  'Promote this line': '이 라인 한 단계 올리기',
   'Load a position — FEN, PGN, or image': '포지션 불러오기 — FEN, PGN 또는 이미지',
   'Load position': '포지션 불러오기',
   'Paste from clipboard': '클립보드에서 붙여넣기',

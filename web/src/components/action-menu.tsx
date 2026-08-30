@@ -156,11 +156,24 @@ export function ActionContextMenu({
   actions,
   children,
   disabled = false,
+  beforeOpen,
 }: {
   title: string;
   actions: MenuAction[];
   children: ReactElement;
   disabled?: boolean;
+  /**
+   * Runs at the press, before the menu opens; returning false leaves it
+   * shut. Opt-in, and for the caller whose child is one trigger over many
+   * things — a move list, where a row per menu would be a media query and
+   * a menu root per move. Such a caller reads the press here to learn
+   * which of them was hit, and refuses the ones with nothing to offer.
+   *
+   * The press is refused rather than answered with an empty menu: a popup
+   * that opens holding nothing reads as a bug, and is one more thing to
+   * dismiss.
+   */
+  beforeOpen?: (event: React.MouseEvent) => boolean;
 }) {
   const wide = useMediaQuery(WIDE);
   const [open, setOpen] = useState(false);
@@ -170,7 +183,16 @@ export function ActionContextMenu({
   if (wide) {
     return (
       <ContextMenu>
-        <ContextMenuTrigger render={children} />
+        {/* The guard rides the trigger, not the child: Base UI runs a
+            caller's handler BEFORE its own and lets it stop that one
+            (`preventBaseUIHandler`), which is the only way to see the
+            press and still leave the menu shut. */}
+        <ContextMenuTrigger
+          render={children}
+          onContextMenu={(event) => {
+            if (beforeOpen && !beforeOpen(event)) event.preventBaseUIHandler();
+          }}
+        />
         <ContextMenuContent className="w-56">
           <ContextMenuGroup>
             <ContextMenuLabel>{t(title)}</ContextMenuLabel>
@@ -187,6 +209,7 @@ export function ActionContextMenu({
     <>
       <RenderChild
         onContextMenu={(e: React.MouseEvent) => {
+          if (beforeOpen && !beforeOpen(e)) return;
           e.preventDefault();
           setOpen(true);
         }}
