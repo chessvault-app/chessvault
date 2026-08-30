@@ -215,6 +215,8 @@ export const ko: Record<string, string> = {
 
   // --- notes ---------------------------------------------------------------
   'Search notes…': '노트 검색…',
+  'Ctrl+click to open': 'Ctrl+클릭하면 열립니다',
+  'Click to open': '클릭하면 열립니다',
   'Rename this note': '이 노트 이름 바꾸기',
   'Rename this game': '이 게임 이름 바꾸기',
   'All notes': '모든 노트',

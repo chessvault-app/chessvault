@@ -786,17 +786,34 @@
   /* Wiki links in notes ([[Target]]): linky at rest, actionable with
      Ctrl - the text itself stays literal markdown. */
   /* No radius here. There was a `border-radius: 3px`, and it drew
-     nothing: this is an inline decoration span with no background, no
-     border, no outline and no tabindex, so there is no box for a corner
-     to round. It was also the only 3px corner in the app, off the ladder
+     nothing: this is an inline decoration span with no background and no
+     border, so there is no box for a corner to round — the focus ring
+     reading mode gives it is an outline, which follows the inline box on
+     its own. It was also the only 3px corner in the app, off the ladder
      every other corner derives from — a rounding rule that cost a reader
      nothing to obey and told them something untrue about the shape. */
   .wiki-link {
     color: var(--primary);
     cursor: pointer;
-  }
-  .wiki-link:hover {
+    /* Underlined at REST, not on hover. --primary is a choice of colour
+       and so multiplies by --accent-tint: in Neutral it is the grey
+       ladder's last rung, and in Mono it is grey on purpose — the scheme
+       exists to take the one blue link out. Measured against body text in
+       the default scheme it was 0.060 of lightness apart in both light
+       and dark, which by this app's own rule is one grey. Colour cannot
+       be the signal for a token that is allowed to be colourless, so the
+       underline carries it in every scheme and the colour is whatever a
+       tinted scheme has left over. Hover and focus THICKEN it rather than
+       introduce it, so a phone — which never hovers — is not the one
+       client that sees no links. */
     text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+  .wiki-link:hover,
+  .wiki-link:focus-visible {
+    text-decoration-color: currentColor;
   }
   /* Reading mode renders the link text alone, Obsidian-preview style. */
   .note-editor[contenteditable='false'] .wiki-bracket {

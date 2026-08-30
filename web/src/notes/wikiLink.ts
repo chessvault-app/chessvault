@@ -1,9 +1,10 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { navigate } from '@/lib/router';
 import { api } from '@/lib/api';
+import { t } from '@/lib/i18n';
 
 /**
  * Obsidian-style wiki links: `[[Najdorf Mainlines]]` in a note is styled
@@ -62,7 +63,6 @@ function decorate(doc: PmNode): DecorationSet {
       decorations.push(
         Decoration.inline(from, from + match[0].length, {
           class: 'wiki-link',
-          title: 'Ctrl+click to open',
           'data-target': match[1]!,
         }),
         // The brackets get their own spans so read mode can hide them.
@@ -74,6 +74,36 @@ function decorate(doc: PmNode): DecorationSet {
     }
   });
   return DecorationSet.create(doc, decorations);
+}
+
+/**
+ * What a link OFFERS depends on which mode the note is in, and the
+ * decorations above cannot say: they are built from the document, and
+ * editability belongs to the view. So the two attributes that differ are
+ * set here, after every render, from `view.editable` itself.
+ *
+ * Reading mode gets `role="link"` and a tab stop, which is the only way
+ * to reach the wiki link without a mouse — the cross-link is the thing
+ * the vault is FOR, and it was reachable by pointer alone. It gets the
+ * global `:focus-visible` ring for free by being focusable at all.
+ * Editing mode gets neither: a focusable span inside a contenteditable
+ * puts every link in the editor's own tab order and drags the caret
+ * around with it. That split matches the click contract already in
+ * `handleClick` — a plain click follows only where a plain Tab does.
+ */
+function syncLinkAffordance(view: EditorView): void {
+  const follows = !view.editable;
+  const title = t(follows ? 'Click to open' : 'Ctrl+click to open');
+  for (const el of view.dom.querySelectorAll<HTMLElement>('.wiki-link')) {
+    el.title = title;
+    if (follows) {
+      el.setAttribute('role', 'link');
+      el.tabIndex = 0;
+    } else {
+      el.removeAttribute('role');
+      el.removeAttribute('tabindex');
+    }
+  }
 }
 
 // --- [[ autocomplete -------------------------------------------------------
@@ -117,51 +147,76 @@ export const WikiLink = Extension.create({
           init: (_config, state) => decorate(state.doc),
           apply: (tr, old) => (tr.docChanged ? decorate(tr.doc) : old),
         },
-        view: () => ({
-          update: (view) => {
-            
-            if (!view.editable || !view.state.selection.empty) return suggest.hide();
-            const { $from } = view.state.selection;
-            const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
-            const match = /\[\[([^[\]]*)$/.exec(before);
-            if (!match) return suggest.hide();
-            const query = match[1]!.toLowerCase();
-            const cursor = view.state.selection.from;
-            suggest.range = { from: cursor - match[1]!.length, to: cursor };
-            void allTargets().then((all) => {
-              if (!suggest.range) return;
-              suggest.items = all
-                .filter((id) => id.toLowerCase().includes(query))
-                .slice(0, 8);
-              suggest.index = Math.min(suggest.index, Math.max(0, suggest.items.length - 1));
-              if (suggest.items.length === 0) return suggest.hide();
-              if (!suggest.el) {
-                suggest.el = document.createElement('div');
-                suggest.el.className = 'wiki-suggest';
-                document.body.appendChild(suggest.el);
-              }
-              const coords = view.coordsAtPos(cursor);
-              suggest.el.style.left = `${Math.min(coords.left, innerWidth - 280)}px`;
-              suggest.el.style.top = `${coords.bottom + 4}px`;
-              suggest.el.innerHTML = '';
-              suggest.items.forEach((id, i) => {
-                const b = document.createElement('button');
-                b.type = 'button';
-                b.textContent = id;
-                if (i === suggest.index) b.className = 'active';
-                b.onmousedown = (e) => {
-                  e.preventDefault();
-                  pick(view, id);
-                };
-                suggest.el!.appendChild(b);
+        view: (view) => {
+          syncLinkAffordance(view);
+          return {
+            update: (view) => {
+              syncLinkAffordance(view);
+              if (!view.editable || !view.state.selection.empty) return suggest.hide();
+              const { $from } = view.state.selection;
+              const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+              const match = /\[\[([^[\]]*)$/.exec(before);
+              if (!match) return suggest.hide();
+              const query = match[1]!.toLowerCase();
+              const cursor = view.state.selection.from;
+              suggest.range = { from: cursor - match[1]!.length, to: cursor };
+              void allTargets().then((all) => {
+                if (!suggest.range) return;
+                suggest.items = all
+                  .filter((id) => id.toLowerCase().includes(query))
+                  .slice(0, 8);
+                suggest.index = Math.min(suggest.index, Math.max(0, suggest.items.length - 1));
+                if (suggest.items.length === 0) return suggest.hide();
+                if (!suggest.el) {
+                  suggest.el = document.createElement('div');
+                  suggest.el.className = 'wiki-suggest';
+                  document.body.appendChild(suggest.el);
+                }
+                const coords = view.coordsAtPos(cursor);
+                suggest.el.style.left = `${Math.min(coords.left, innerWidth - 280)}px`;
+                suggest.el.style.top = `${coords.bottom + 4}px`;
+                suggest.el.innerHTML = '';
+                suggest.items.forEach((id, i) => {
+                  const b = document.createElement('button');
+                  b.type = 'button';
+                  b.textContent = id;
+                  if (i === suggest.index) b.className = 'active';
+                  b.onmousedown = (e) => {
+                    e.preventDefault();
+                    pick(view, id);
+                  };
+                  suggest.el!.appendChild(b);
+                });
               });
-            });
-          },
-          destroy: () => suggest.hide(),
-        }),
+            },
+            destroy: () => suggest.hide(),
+          };
+        },
         props: {
           decorations(state) {
             return this.getState(state);
+          },
+          /* Enter follows the focused link, which is what Enter on a link
+             does everywhere else.
+             This is `handleDOMEvents` and not `handleKeyDown` below.
+             ProseMirror classes keydown as an EDIT handler and skips every
+             one of them while `editable` is false — and reading mode,
+             where the links are what hold the tab stops, is exactly that
+             state. Custom `handleDOMEvents` run before that test, so they
+             are the only prop that hears a key in a note being read.
+             `handleKeyDown` is still right for the [[ autocomplete, which
+             only ever runs while typing. */
+          handleDOMEvents: {
+            keydown(view, event) {
+              if (event.key !== 'Enter' || view.editable) return false;
+              const el = event.target;
+              if (!(el instanceof HTMLElement) || !el.classList.contains('wiki-link')) return false;
+              const target = el.dataset.target;
+              if (!target) return false;
+              event.preventDefault();
+              void resolveAndOpen(target);
+              return true;
+            },
           },
           handleKeyDown(view, event) {
             if (!suggest.el || !suggest.range) return false;
