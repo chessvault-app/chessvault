@@ -110,11 +110,19 @@ export function SettingsPage() {
             a secret, so in the demo they are described rather than shown —
             a disabled form a visitor can fill in and not submit is a worse
             explanation than a sentence. */}
+        {/* Ordered by CONSEQUENCE: what can change a vault or a secret
+            comes before what changes how the app looks, and the
+            irreversible card stays at the bottom where a reader has to
+            travel to it. It used to open on three appearance dropdowns —
+            thirty-three options between them — with Auto-save, the one
+            switch on this page that decides whether work is kept, below
+            them under Sound. Decoration is what you came for least often
+            and it was the first thing offered. */}
         {isDemo() ? (
           <>
+            <DocumentsCard />
             <AppearanceCard />
             <SoundCard />
-            <DocumentsCard />
             <Card icon={Info} title={t('This is a demo')}>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {t(
@@ -127,15 +135,15 @@ export function SettingsPage() {
         ) : (
           <>
             <ProfileCard settings={settings} onSaved={refresh} />
-            <DesktopCard />
-            <AppearanceCard />
-            <SoundCard />
             <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
             <BrowsedGamesCard />
             <StorageCard />
             <RecoveryCard />
+            <DesktopCard />
+            <AppearanceCard />
+            <SoundCard />
             <DangerCard gate={settings.gate} />
             {typeof __LAG__ !== 'undefined' && __LAG__ && <LagCard />}
             <VersionCard />
