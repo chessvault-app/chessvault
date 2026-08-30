@@ -524,4 +524,17 @@ app.whenReady().then(async () => {
     win.destroy();
   }
   app.quit();
-});
+})
+  // Without this the run does not FAIL, it hangs. A rejection in there —
+  // and the everyday one is a refused connection to BASE, because `shots`
+  // builds nothing and serves nothing itself — only ends the loop, and
+  // `window-all-closed` above is deliberately empty so that destroying
+  // each shot's window does not quit the app. Nothing was then left to
+  // quit it at all. Measured: ERR_CONNECTION_REFUSED three seconds in,
+  // then ten minutes of an idle Electron and an untouched
+  // docs/screenshots, with the reason buried in the GPU cache noise.
+  .catch((err) => {
+    console.error(`shots failed against ${BASE}: ${err?.message ?? err}`);
+    console.error('Is the site being served there? The recipe is at the top of this file.');
+    app.exit(1);
+  });
