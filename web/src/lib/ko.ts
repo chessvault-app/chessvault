@@ -143,6 +143,8 @@ export const ko: Record<string, string> = {
 
   // --- engine, review ------------------------------------------------------
   'Engine settings': '엔진 설정',
+  'Show the whole variation': '변화수 전체 보기',
+  'Show one line': '한 줄만 보기',
   'Engine on/off': '엔진 켜기/끄기',
   Threads: '스레드',
   Lines: '변화 수',

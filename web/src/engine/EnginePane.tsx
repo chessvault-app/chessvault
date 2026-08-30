@@ -1,4 +1,4 @@
-import { AlertTriangle, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Settings2, Thermometer } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, NodeId } from '@shared/types';
@@ -437,6 +437,16 @@ function PvRow({
   const pvKey = line.moves.join(' ');
   const pv = useMemo(() => formatPv(fen, pvKey ? pvKey.split(' ') : []), [fen, pvKey]);
 
+  /**
+   * Opened by the chevron, which exists only where there is no pointer to
+   * hover with. A phone could not read past the first line of a variation
+   * at all: the row truncates, hover-expansion is fine-pointer only for
+   * the two reasons below it, and the other way in — focusing a ply — is
+   * also the gesture that PLAYS the line, so there was no way to look
+   * without acting.
+   */
+  const [open, setOpen] = useState(false);
+
   return (
     <li>
       {/* A div, not a button: the plies inside are the buttons now, and
@@ -472,8 +482,28 @@ function PvRow({
           className={cn(
             'min-w-0 flex-1 truncate',
             'group-focus-within:whitespace-normal pointer-fine:group-hover:whitespace-normal',
+            open && 'whitespace-normal',
           )}
         />
+        {/* Coarse pointers only: a fine pointer has hover, and a second
+            control in the row would be a target it never needs. Growth is
+            deliberate here, so a row pushing the next one down is the
+            answer to a press rather than something that happened while a
+            thumb was on its way somewhere else. */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          title={t(open ? 'Show one line' : 'Show the whole variation')}
+          className={cn(
+            'text-muted-foreground hover:text-foreground -me-1 hidden size-6 shrink-0',
+            'place-items-center rounded-md pointer-coarse:grid',
+          )}
+        >
+          <ChevronDown
+            className={cn('size-3.5 transition-transform duration-150', open && 'rotate-180')}
+          />
+        </button>
       </div>
     </li>
   );

@@ -23,6 +23,7 @@ import { useMediaQuery } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
+import { MiniBoard } from '@/components/mini-board';
 import { ProgressBar } from '@/components/progress-bar';
 import { ResultBadge } from '@/components/result-badge';
 import { Skeleton } from '@/components/skeletons';
@@ -65,6 +66,13 @@ const CustomiseDialog = lazy(() =>
 interface DocMeta {
   id: string;
   updatedAt: string;
+  /**
+   * The document's own position, as the listing already sends it — a
+   * study's first chapter, a note's first board fence. `meaningfulFen`
+   * server-side returns null for the starting array, so a document that
+   * has not been played into has nothing to draw and says so.
+   */
+  fen?: string | null;
 }
 
 /** What the dashboard needs of a collection game — a slice of the games
@@ -134,6 +142,10 @@ interface HomeData {
 const CHECKLIST_KEY = 'vault:home-checklist-dismissed';
 /** Last launch's Continue-row count — the layout reservation, see below. */
 const CONTINUE_ROWS_KEY = 'vault:home-continue-rows';
+/** And whether it led with a board, which is the taller half of that
+    reservation. Same trick, same reason: the card must not resize under
+    the reader when the data lands. */
+const CONTINUE_BOARD_KEY = 'vault:home-continue-board';
 /**
  * The last layout this device saw, kept only so the first paint draws the
  * page you actually have rather than the default one.
@@ -234,6 +246,9 @@ export function HomePage() {
     const n = Number(localStorage.getItem(CONTINUE_ROWS_KEY));
     return Number.isInteger(n) && n > 0 && n <= 3 ? n : 0;
   });
+  /** And whether it led with a board — the same reservation, for the
+      taller thing above the rows. */
+  const [expectedBoard] = useState(() => localStorage.getItem(CONTINUE_BOARD_KEY) === '1');
   // Hoisted out of the Continue row it labels: that row is built inside a
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
@@ -468,6 +483,9 @@ export function HomePage() {
                   label: baseName(data.lastStudy.id),
                   detail: t('Continue study'),
                   go: () => navigate('studies', encodeURIComponent(data.lastStudy!.id)),
+                  // The board above says this on any screen wide enough to
+                  // draw it, so the row would be the same study twice.
+                  ...(data.lastStudy.fen ? { className: 'md:hidden' } : {}),
                 },
               ]
             : []),
@@ -508,9 +526,17 @@ export function HomePage() {
             : []),
         ];
 
+  /** The study the board draws, when there is a position to draw. Hoisted
+      so the JSX below is not re-narrowing `data` inside a branch that
+      only implies it. */
+  const boardStudy = data?.lastStudy?.fen ? data.lastStudy : null;
+
   // Remembered for the NEXT launch's reservation, above.
   useEffect(() => {
     if (data !== null) localStorage.setItem(CONTINUE_ROWS_KEY, String(continueRows.length));
+    if (data !== null) {
+      localStorage.setItem(CONTINUE_BOARD_KEY, data.lastStudy?.fen ? '1' : '0');
+    }
     // continueRows is derived from data; keying on data is keying on it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -628,6 +654,15 @@ export function HomePage() {
             <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
+            {expectedBoard && (
+              <div className="border-border hidden items-center gap-3 border-b px-3 py-3 md:flex">
+                <Skeleton className="size-24 shrink-0 rounded-sm" />
+                <span className="min-w-0 flex-1">
+                  <Skeleton className="h-5 w-44 max-w-full" />
+                  <Skeleton className="mt-1.5 h-4 w-24 max-w-full" />
+                </span>
+              </div>
+            )}
             {Array.from({ length: expectedRows }, (_, i) => (
               <div
                 key={i}
@@ -653,6 +688,37 @@ export function HomePage() {
             <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
+            {/* The one place on this page that shows chess.
+                Home was five panels of identical chevron rows — a vault
+                holding thirty annotated games and a dozen studies showed
+                its owner a settings-app list, and the board, which is the
+                only thing here allowed to carry colour, appeared nowhere.
+                So the top of Continue is the position you were actually
+                last in, drawn from the `fen` the listing already sends.
+                No extra request: this is the eager landing chunk, and
+                MiniBoard is a FEN parser with no dependency on the real
+                board.
+                Desktop only. The phone's Continue is a launcher and its
+                rows are the whole point of the screen; a 96px board above
+                them would push the targets under the fold. */}
+            {boardStudy?.fen && (
+              <button
+                type="button"
+                onClick={() => navigate('studies', encodeURIComponent(boardStudy.id))}
+                className="border-border hover:bg-accent hidden w-full items-center gap-3 border-b px-3 py-3 text-left transition-colors duration-100 md:flex"
+              >
+                <MiniBoard fen={boardStudy.fen} size={96} className="shrink-0 rounded-sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="text-foreground block truncate text-base font-semibold">
+                    {baseName(boardStudy.id)}
+                  </span>
+                  <span className="text-muted-foreground block truncate text-sm">
+                    {t('Continue study')}
+                  </span>
+                </span>
+                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+              </button>
+            )}
             {continueRows.map(({ icon: Icon, label, detail, go, className }) => (
               <ListRow key={label + detail} divided onClick={go} className={cn('text-sm', className)}>
                 <Icon className="text-muted-foreground size-3.5 shrink-0" />
