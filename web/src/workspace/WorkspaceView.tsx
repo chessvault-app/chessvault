@@ -326,7 +326,6 @@ function Workspace() {
               the board. */}
           <AnalysisBoard
             editablePlayers
-            nav={false}
             verticalKeys={false}
             alignPlayersTo="panels"
           />

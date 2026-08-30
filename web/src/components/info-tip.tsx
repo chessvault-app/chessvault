@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { t } from '@/lib/i18n';
+import { isCoarsePointer } from '@/lib/media';
 
 /**
  * A small ? beside a title, holding the sentence that used to sit in the
@@ -15,7 +16,6 @@ import { t } from '@/lib/i18n';
  */
 export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
   const [sheet, setSheet] = useState(false);
-  const coarse = (): boolean => window.matchMedia('(pointer: coarse)').matches;
 
   return (
     <span className="inline-flex">
@@ -34,7 +34,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
               'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
             )}
             onClick={() => {
-              if (coarse()) setSheet(true);
+              if (isCoarsePointer()) setSheet(true);
             }}
           >
             <HelpCircle className="size-3.5" />

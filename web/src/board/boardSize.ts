@@ -32,6 +32,37 @@ export const BOARD_MAX_W =
 // (The lg: ceiling rides on wide: — a bare lg: is the viewport's word, and
 // inside a `.force-stacked` region of a wide page it sized the editor's
 // board for the whole screen while its palettes laid out phone-style.)
+/**
+ * The width the board's block borrows for the eval bar's lane at `roomy` —
+ * the same stacked expression as BOARD_MAX_W plus 2.25rem, which is
+ * EVAL_BAR_W (w-7, engine/EvalBar.tsx) and the board row's gap-2. Change
+ * the bar's width and change this with it: a lane and an allowance that
+ * disagree is a board that moves by the difference.
+ *
+ * ADDED, not taken. Everywhere else the bar comes out of the board's own
+ * width, because the budget is what the board's SURROUNDINGS can spare.
+ * `roomy` is the one layout where the column has more than the board can
+ * use — a 560px board in a 748px column at 840x1000 — so the honest sum
+ * there is board + bar. The 100% term still caps it, so a portrait window
+ * tall enough to make the board width-bound goes back to paying out of the
+ * board, which is the only thing it can do.
+ *
+ * ONLY WHERE A BAR IS ACTUALLY DRAWN, which is why this is a class the
+ * caller adds rather than a term inside BOARD_MAX_W. The block is centred
+ * in its column, so a block that is board + lane centres the PAIR and
+ * leaves the board 18px right of the column's middle. That is right when
+ * the bar is there — the two read as one object — and wrong when it is
+ * not, which at `roomy` is most of the time, because the lane is held open
+ * on every board page whether or not that page has an engine (lanph3re
+ * caught the board sitting off-centre with nothing beside it). So the
+ * board is centred while there is no bar, and the pair is centred when
+ * there is; what that costs is the 18px step the board takes when the
+ * engine is switched on, which is a `roomy`-only price and the one
+ * lanph3re asked to pay.
+ */
+export const BOARD_LANE_ALLOWANCE =
+  'roomy:max-w-[min(100%,calc(min(max(35dvh,calc(100dvh-20rem)),56dvh)+2.25rem))]';
+
 export const EDITOR_BOARD_MAX_W =
   // The stacked editor has no pane below — just palettes, the toolbar and
   // the nav — so its board can run essentially full-width on phones.

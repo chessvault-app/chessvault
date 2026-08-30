@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
+import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_WIDE_COLUMN, BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { t } from '@/lib/i18n';
 
@@ -377,10 +378,16 @@ export function SkeletonBoard({
     </>
   );
   const playerBar = (
-    <div className="flex h-6 w-full items-center gap-2 px-0.5">
-      <Skeleton className="size-2 shrink-0 rounded-full" />
-      <Skeleton className="h-3 w-32" />
-    </div>
+    // In the lane, like the row it stands in for — the board it is drawn
+    // beside is indented by the eval bar's reservation, and a placeholder
+    // that ignores it moves the whole stack sideways when the real view
+    // arrives.
+    <BoardLane>
+      <div className="board-box flex h-6 items-center gap-2">
+        <Skeleton className="size-2 shrink-0 rounded-full" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+    </BoardLane>
   );
   return (
     <Loading
@@ -406,7 +413,9 @@ export function SkeletonBoard({
           >
             {players && playerBar}
           </div>
-          <Skeleton className="aspect-square w-full rounded-xl" />
+          <BoardLane>
+            <Skeleton className="board-box aspect-square rounded-xl" />
+          </BoardLane>
           {players && playerBar}
         </div>
       </div>

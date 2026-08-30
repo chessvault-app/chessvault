@@ -23,7 +23,7 @@ import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { Board, boardAnimMs } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -1097,6 +1097,12 @@ function Trainer({
           </Panel>
         )}
         {(wide || shownPane === 'info') && puzzlePanel}
+        {/* One strip at the column's floor while the panes are tabs, and
+            only once the puzzle is over: until then the board is this
+            component's own tree, not the analysis store these buttons
+            drive (see AnswerPanel), and the answer panel carries its own
+            navigation. */}
+        {analysing && <ColumnControls className="wide:hidden" />}
 
 
 

@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from 'react';
-
 /** Under this much, it is browser chrome moving, not a keyboard. */
 const KEYBOARD_MIN = 120;
 
@@ -33,32 +31,16 @@ function caretRect(): DOMRect | null {
   return rects.length > 0 ? (rects[0] ?? null) : null;
 }
 
-let inset = 0;
-const subscribers = new Set<() => void>();
-
-const subscribe = (fn: () => void): (() => void) => {
-  subscribers.add(fn);
-  return () => subscribers.delete(fn);
-};
-
 /**
  * How much of the window the on-screen keyboard is covering, in pixels.
  *
- * One listener for the whole app, published three ways: this number for
- * components that lay themselves out in JS, the `--kb` custom property for
- * anything that can do it in CSS, and a `kb-open` class on the root for
- * the things that simply go away while typing.
- *
- * Returns 0 where there is no visual viewport (every desktop browser, and
+ * One listener for the whole app, published two ways: the `--kb` custom
+ * property for anything that can lay itself out in CSS, and a `kb-open`
+ * class on the root for the things that simply go away while typing. Both
+ * stay 0 where there is no visual viewport (every desktop browser, and
  * anything without a virtual keyboard), so callers need no branch.
  */
-export function useKeyboardInset(): number {
-  return useSyncExternalStore(
-    subscribe,
-    () => inset,
-    () => 0,
-  );
-}
+let inset = 0;
 
 /**
  * Give the app back the height the keyboard took, instead of letting the
@@ -118,7 +100,6 @@ export function startKeyboardTracking(): void {
       inset = next;
       root.style.setProperty('--kb', `${inset}px`);
       root.classList.toggle('kb-open', inset > 0);
-      for (const fn of subscribers) fn();
     }
 
     // After the shell has been re-pinned to the band, not before: the

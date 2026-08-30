@@ -1,4 +1,4 @@
-import { renameSync, writeFileSync, type WriteFileOptions } from 'node:fs';
+import { readFileSync, renameSync, writeFileSync, type WriteFileOptions } from 'node:fs';
 
 /**
  * Replace a file's content with no window where it is truncated.
@@ -47,4 +47,30 @@ export function renameRetrying(from: string, to: string): void {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5 * (attempt + 1));
     }
   }
+}
+
+/**
+ * A vault JSON file, or the fallback if it is missing or damaged.
+ *
+ * The fallback is the whole point: a vault is allowed not to have the
+ * file yet, and every caller has a sensible empty value to start from.
+ */
+export function readJson<T>(path: string, fallback: T): T {
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * The writeAtomic side of the same pair.
+ *
+ * Atomically because of what these files are: a book's puzzles.json is
+ * hundreds of hand-transcribed puzzles, and progress.json is rewritten on
+ * every attempt — the two least affordable to lose to a crash mid-write,
+ * and readJson's fallback would quietly persist the loss on the next save.
+ */
+export function writeJson(path: string, value: unknown): void {
+  writeAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
 }

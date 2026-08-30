@@ -35,6 +35,7 @@ import {
   forgetBook,
   shelfMemory,
 } from './data';
+import { decodeImages } from '@/lib/media';
 
 // ---------------------------------------------------------------------------
 // Shelf
@@ -89,21 +90,6 @@ function useBookSort(): {
     dir: state.dir,
     setDir: (dir) => setState((prev) => ({ ...prev, dir })),
   };
-}
-
-/** Every book's cover fetched and decoded, capped at two seconds. */
-async function decodeCovers(books: BookSummary[]): Promise<void> {
-  if (books.length === 0) return;
-  const covers = books.map(
-    (b) =>
-      new Promise<void>((done) => {
-        const img = new Image();
-        img.onload = () => done();
-        img.onerror = () => done();
-        img.src = `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`;
-      }),
-  );
-  await Promise.race([Promise.all(covers), new Promise((r) => setTimeout(r, 2000))]);
 }
 
 /**
@@ -164,7 +150,9 @@ export function Shelf() {
       // wait; hot, the cards on screen stay until the fresh set is
       // whole. Bounded, because a cover is a nicety: if the images are
       // slow or missing the shelf draws anyway.
-      await decodeCovers(fresh);
+      await decodeImages(
+        fresh.map((b) => `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`),
+      );
       shelfMemory.coversDecoded = true;
       shelfMemory.books = fresh;
       setBooks(fresh);

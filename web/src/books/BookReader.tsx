@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getNode } from '@shared/tree';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
@@ -275,7 +275,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         }
       />
       <MoveTreePane />
-      {nav && <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />}
+      {nav && <PaneControls />}
     </Panel>
   );
 
@@ -459,9 +459,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             {pdfPane(stackedPaneW, true)}
           </div>
           <div className={cn('flex min-h-0 flex-1 flex-col gap-2', tab !== 'board' && 'hidden')}>
-            {/* No navigation under the board: the moves panel below has it
-                at md, the bottom bar has it under that. */}
-            <AnalysisBoard nav={false} />
+            {/* The moves panel below carries the navigation at md, the
+                bottom bar under that. */}
+            <AnalysisBoard />
             <div
               className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
             >

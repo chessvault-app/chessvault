@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatScore, parseBestMove, parseInfo, toWhitePov, winningChances } from './uci.ts';
+import {
+  formatScore,
+  formatScoreCompact,
+  parseBestMove,
+  parseInfo,
+  toWhitePov,
+  winningChances,
+} from './uci.ts';
 
 describe('parseInfo', () => {
   it('parses a full info line', () => {
@@ -99,6 +106,28 @@ describe('formatScore', () => {
 
   it('handles a missing score', () => {
     expect(formatScore({})).toBe('—');
+  });
+});
+
+describe('formatScoreCompact', () => {
+  it('drops the sign and keeps one decimal', () => {
+    expect(formatScoreCompact({ cp: 124 })).toBe('1.2');
+    expect(formatScoreCompact({ cp: -40 })).toBe('0.4');
+    expect(formatScoreCompact({ cp: 0 })).toBe('0.0');
+  });
+
+  it('rounds away the decimal once the string would outgrow the bar', () => {
+    expect(formatScoreCompact({ cp: 9999 })).toBe('100.0');
+    expect(formatScoreCompact({ cp: -12345 })).toBe('123');
+  });
+
+  it('states a mate in plies to mate, either way round', () => {
+    expect(formatScoreCompact({ mate: 4 })).toBe('#4');
+    expect(formatScoreCompact({ mate: -2 })).toBe('#2');
+  });
+
+  it('has nothing to print without a score', () => {
+    expect(formatScoreCompact({})).toBe('');
   });
 });
 

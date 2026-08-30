@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
-import { BOARD_MAX_W } from '@/board/boardSize';
+import { BOARD_LANE_ALLOWANCE, BOARD_MAX_W } from '@/board/boardSize';
 import { BOARD_WIDE_COLUMN } from '@/components/layout';
 import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
@@ -22,7 +22,7 @@ import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
-import { EvalBar, EvalBarRow, EvalBarSlot } from '@/engine/EvalBar';
+import { BoardLane, EvalBar, EvalBarRow, EvalBarSlot } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -42,7 +42,6 @@ export function AnalysisBoard({
   editablePlayers = false,
   drawShapes = true,
   strip = true,
-  nav = true,
   verticalKeys = true,
   alignPlayersTo = 'board',
 }: {
@@ -91,13 +90,6 @@ export function AnalysisBoard({
    * something you leave for a reader rather than something you try out.
    */
   drawShapes?: boolean;
-  /**
-   * The navigation row under the board. Off for a page whose moves panel
-   * already carries one at md — where this row is not hidden by
-   * `max-md:hidden` and the phone's bottom bar is not there to hold it
-   * either, so both were on screen at once (the book reader's board tab).
-   */
-  nav?: boolean;
 } = {}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -288,7 +280,14 @@ export function AnalysisBoard({
     >
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
-      <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+      {/* BOARD_LANE_ALLOWANCE only while the bar is drawn: at `roomy` the
+          block is centred in a column with room to spare, so a lane held
+          open for an engine that is off would sit the board 18px off the
+          middle of an otherwise empty column. See boardSize.ts. */}
+      <div
+        ref={publishBoardHeight}
+        className={cn('flex w-full flex-col gap-2', BOARD_MAX_W, engineOn && BOARD_LANE_ALLOWANCE)}
+      >
         {/* Fixed-height strip, matching the editor's palette strip: the board
             top stays put whether or not a player bar is shown. On phones the
             strip only exists when there is a player bar to show. */}
@@ -304,23 +303,33 @@ export function AnalysisBoard({
                 ? 'w-full items-start wide:flex wide:h-auto'
                 : 'w-full items-end wide:flex wide:h-10',
               hasNames ? 'flex' : 'hidden wide:flex',
+              // The names go when the bar takes their row, and come back
+              // where it does not: at `roomy` the bar is beside the board,
+              // so the row is the names' again. `roomy` is declared after
+              // `stacked` in index.css, which is what makes this win.
               engineOn && 'stacked:hidden',
+              engineOn && hasNames && 'roomy:flex',
             )}
           >
-            <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
+            <BoardLane bar={engineOn}>
+              <PlayerBar
+                side={orientation === 'white' ? 'black' : 'white'}
+                editable={editablePlayers}
+              />
+            </BoardLane>
           </div>
         )}
         <div className="flex w-full items-stretch gap-2">
           {/* The eval bar sits beside the board in every layout (lanph3re's
               call): on phones it costs a sliver of board width but stays a
               persistent eval readout even when the Engine tab isn't open. */}
-          {/* Beside the board at `wide` only — see EvalBarSlot. The bar
+          {/* Beside the board at `wide` and `roomy` — see EvalBarSlot. The bar
               is drawn when the engine is on and its width held open when it
               is not: rendered conditionally, it took the row's gap-2 with it
               when it went, so switching the engine on stole 20px from the
               board and stepped the whole thing sideways under the thumb. */}
           {engineOn ? (
-            <EvalBar score={evalScore} className="shrink-0 stacked:hidden" />
+            <EvalBar score={evalScore} className="hidden shrink-0 wide:block roomy:block" />
           ) : (
             <EvalBarSlot />
           )}
@@ -352,17 +361,23 @@ export function AnalysisBoard({
         {/* The name under the board goes when the one above it does, and the
             panels below get the row back — a phone has better uses for it
             than two placeholders either side of an engine's opinion. */}
-        <PlayerBar
-          side={orientation}
-          editable={editablePlayers}
-          className={engineOn || !hasNames ? 'stacked:hidden' : undefined}
-        />
+        <BoardLane
+          bar={engineOn}
+          className={cn(
+            (engineOn || !hasNames) && 'stacked:hidden',
+            hasNames && 'roomy:flex',
+          )}
+        >
+          <PlayerBar side={orientation} editable={editablePlayers} />
+        </BoardLane>
       </div>
-      {/* Navigation under the board — but on phones it moves to the
-          contextual bottom bar (MobileActionBar), so hide it below md to
-          reclaim the row. Kept for md-portrait tablets (no bottom bar) and
-          hidden on wide, where the Moves-panel copy takes over. */}
-      {nav && <BoardControls className="max-md:hidden wide:hidden" />}
+      {/* No navigation row here. It used to be drawn under the board for
+          the one layout that had nowhere else to put it — a tablet upright,
+          where the phone's bottom bar is gone and the moves panel may be
+          behind another tab — and it moved as the tab changed: at the
+          panel's floor on Moves, under the board on Engine or Explorer. It
+          lives at the foot of every pane now (PaneControls), so it is in
+          one place whatever is open (lanph3re's call). */}
     </div>
   );
 }
@@ -517,7 +532,12 @@ function PlayerBar({
   const toMove = turn === side;
 
   return (
-    <div className={cn('flex h-6 w-full items-center gap-2 px-0.5', className)}>
+    // `board-box`, and no padding of its own: inside a BoardLane this row is
+    // the board's own rectangle, so the swatch starts where the a-file does
+    // and the clock ends where the h-file does. A w-* utility here would
+    // beat the class (utilities layer over components) and hand back the
+    // couple of pixels it exists to remove.
+    <div className={cn('board-box flex h-6 items-center gap-2', className)}>
       <SideDot side={side} />
       {editable ? (
         <NameField
@@ -609,6 +629,53 @@ function useRepeat(step: () => void): {
   useEffect(() => handlers.onPointerCancel, [handlers]);
 
   return handlers;
+}
+
+/**
+ * The strip at the foot of the MOVES PANEL, which is where it lives on a
+ * layout that shows every pane at once: sat on the panel's own floor, with
+ * the card's bottom padding taken back so the border it draws IS the
+ * panel's bottom edge.
+ *
+ * Only there. Where the panes are TABS — one on screen at a time — the
+ * strip belongs to the column instead (`ColumnControls`), or it sits at a
+ * different height on every tab: the panels are not the same height, and
+ * two of them (a study's chapter list, a switched-off explorer) are as
+ * tall as their contents rather than as tall as the column.
+ *
+ * `max-md:hidden` is the phone, which has the contextual bottom bar and
+ * wants neither copy. The other end of the range is the caller's, because
+ * the pages do not agree on where their panes stop being tabs: analysis
+ * and studies dock theirs at `lg`, the trainers and the workspace at
+ * `wide`.
+ */
+export function PaneControls({ className }: { className?: string }) {
+  return (
+    <BoardControls
+      className={cn('border-border -mb-(--card-spacing) border-t max-md:hidden', className)}
+    />
+  );
+}
+
+/**
+ * The same strip pinned to the floor of the pane COLUMN, for the layouts
+ * that show one pane at a time.
+ *
+ * `mt-auto` is the pin: a pane that fills the column leaves nothing to
+ * push against and the strip lands under it, and a pane that does not —
+ * the chapter list, the collapsed explorer — has the strip at the bottom
+ * of the column all the same. So the buttons are in ONE place whatever tab
+ * is open, which is the whole point of moving them off the board
+ * (lanph3re's call).
+ *
+ * `max-md:hidden`: a phone has the contextual bottom bar
+ * (MobileActionBar), and two rows of the same four arrows is a wasted row.
+ * The caller adds the top of the range — `lg:hidden`, `wide:hidden` — for
+ * the width where its own panes stop being tabs and the moves panel starts
+ * carrying its own.
+ */
+export function ColumnControls({ className }: { className?: string }) {
+  return <BoardControls className={cn('mt-auto shrink-0 max-md:hidden', className)} />;
 }
 
 /**

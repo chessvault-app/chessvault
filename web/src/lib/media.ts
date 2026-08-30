@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 
 /**
- * A media query as state, kept current as the window changes.
+ * Whether the pointer is a thumb rather than a mouse.
  *
- * For the cases a CSS class cannot reach: not "hide this at that size" but
- * "offer something different at that size". A menu whose items are merely
- * `lg:hidden` is still a menu of that many items — it renders a chevron
- * and a popover to show one row — so the list itself has to know.
+ * The single most asked question in the app — eleven call sites had each
+ * written the query out, several giving it a fresh local name, while a
+ * twelfth exported it from games/shared — and the one every hit area,
+ * hover affordance and auto-focus decision turns on.
+ * `pointer-coarse:` is the CSS half of the same question; this is for the
+ * decisions CSS cannot make.
  *
- * Read once at mount as well as subscribed, because the first paint is a
- * real paint: a menu that decides it is narrow and corrects itself a frame
- * later has already been seen.
+ * A function, not a hook: no pointer changes type mid-session that the
+ * layout would need to follow, and every caller reads it once.
  */
+export const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coarse)').matches;
+
 /**
  * Should a window focus its first field as it opens?
  *
@@ -30,10 +33,21 @@ import { useEffect, useState } from 'react';
  * A function, not a hook: `autoFocus` is read once, at mount.
  */
 export function autoFocusField(): boolean {
-  return !window.matchMedia('(pointer: coarse)').matches;
+  return !isCoarsePointer();
 }
 
 /**
+ * A media query as state, kept current as the window changes.
+ *
+ * For the cases a CSS class cannot reach: not "hide this at that size" but
+ * "offer something different at that size". A menu whose items are merely
+ * `lg:hidden` is still a menu of that many items — it renders a chevron
+ * and a popover to show one row — so the list itself has to know.
+ *
+ * Read once at mount as well as subscribed, because the first paint is a
+ * real paint: a menu that decides it is narrow and corrects itself a frame
+ * later has already been seen.
+ *
  * `enabled` lets a caller opt out wholesale — no initial read, no
  * subscription — for the hooks-must-be-unconditional case where the
  * feature the query gates is off (a Panel with no resize grip). While
@@ -87,15 +101,24 @@ export function useWorkspaceViewport(): boolean {
 }
 
 /**
- * JS mirror of Tailwind's `lg`: the width where a board page's side column
- * stops being one pane at a time behind a tab strip and shows every pane
- * at once.
+ * Every one of these images fetched and decoded, capped at `capMs`.
  *
- * Wanted for the same reason as the one above — a page that has to know
- * whether the moves panel (and so the navigation at its foot) is on screen
- * at all, which `pane` alone cannot say below lg and cannot say above it
- * either. Written once here rather than as a literal in each board page.
+ * A shelf that renders its covers as they arrive flickers in one by one;
+ * waiting for all of them and then drawing once does not. The cap is the
+ * other half: one slow or missing image must not hold the shelf back, and
+ * an onerror is as good as an onload for this purpose — the point is that
+ * the browser has stopped working on it, not that it succeeded.
  */
-export function useAllPanesShown(): boolean {
-  return useMediaQuery('(min-width: 64rem)');
+export async function decodeImages(urls: string[], capMs = 2000): Promise<void> {
+  if (urls.length === 0) return;
+  const decoded = urls.map(
+    (url) =>
+      new Promise<void>((done) => {
+        const img = new Image();
+        img.onload = () => done();
+        img.onerror = () => done();
+        img.src = url;
+      }),
+  );
+  await Promise.race([Promise.all(decoded), new Promise((r) => setTimeout(r, capMs))]);
 }

@@ -1,35 +1,13 @@
 import { useState } from 'react';
 import { parseSquare, squareRank } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
+import { pieceAt } from '@/lib/fen';
 
 /** A move stashed while the picker asks which piece the pawn becomes. */
 export interface PendingPromotion {
   orig: string;
   dest: string;
   color: Color;
-}
-
-/**
- * Is the piece on `orig` a pawn? Read straight off the FEN, so callers that
- * only hold a FEN (the lichess trainer's puzzle positions) need no chessops
- * replay to answer it — and callers that do hold a position get the same
- * answer, because the FEN board field IS that position's board.
- */
-function pawnAt(fen: string, orig: string): boolean {
-  const rows = fen.split(' ')[0]!.split('/');
-  const file = orig.charCodeAt(0) - 97;
-  const rank = Number(orig[1]) - 1;
-  const row = rows[7 - rank];
-  if (!row) return false;
-  let col = 0;
-  for (const ch of row) {
-    if (/\d/.test(ch)) col += Number(ch);
-    else {
-      if (col === file) return ch === 'p' || ch === 'P';
-      col++;
-    }
-  }
-  return false;
 }
 
 /**
@@ -59,7 +37,7 @@ export function usePromotion(apply: (orig: string, dest: string, role: Role) => 
     maybeStart: (fen, turn, orig, dest) => {
       const to = parseSquare(dest);
       if (to === undefined || squareRank(to) !== (turn === 'white' ? 7 : 0)) return false;
-      if (!pawnAt(fen, orig)) return false;
+      if (pieceAt(fen, orig)?.toLowerCase() !== 'p') return false;
       setPending({ orig, dest, color: turn });
       return true;
     },

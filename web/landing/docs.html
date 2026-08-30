@@ -883,9 +883,13 @@
                 The <strong>player bars</strong> on either side show names, ratings and clocks
                 (when the PGN carries them). On the Board page the name fields are editable.
               </li>
-              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점이고, 가운데 빨간 눈금이 균형입니다.">
+              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점입니다. 앞선 쪽 끝에 점수가 소수 첫째 자리까지 인쇄되며(마트는 <code>#4</code>), 부호는 막대 위치가 대신 말해 줍니다. 부호가 붙은 자세한 값은 막대에 마우스를 올리면 나옵니다. 보드가 화면 폭 그대로인 휴대폰에서는 막대가 보드 위쪽 모서리에 누워 지고, 앞선 쪽 끝에 같은 숫자를 인쇄합니다.">
                 The <strong>evaluation bar</strong> is drawn beside the board while the engine is
-                on — always from White's point of view, a red midline marking equality.
+                on — always from White's point of view. The score is printed to one decimal at the
+                leading side's end of it (<code>#4</code> for a mate); the sign is left to that
+                placement, and the tooltip carries the signed, more precise figure. On a phone,
+                where the board is as wide as the screen, the bar lies along the top edge of the
+                board instead and prints the same number at its leading end.
               </li>
               <li data-ko="현재 수가 품질 기호를 달고 있으면 도착 칸에 색 배지가 붙습니다: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code> — 그리고 북 무브에는 펼친 책 기호.">
                 When the current move carries a quality glyph, a coloured badge pins to its
@@ -893,7 +897,14 @@
                 <code>!?</code> <code>?!</code> — and an open-book badge marks a book move.
               </li>
             </ul>
-            <h3 data-ko="보드 아래 버튼">The buttons under the board</h3>
+            <h3 data-ko="패널 밑의 이동 버튼">The navigation buttons at a panel's foot</h3>
+            <p data-ko="한 번에 한 창씩 보는 화면에서는 이동 버튼이 그 칸의 맨 아래에 고정됩니다 — Moves, Engine, Explorer, 스터디의 Chapters 어느 탭을 열어도 같은 자리입니다. 창을 모두 펼쳐 보여 주는 넓은 화면에서는 Moves 패널 밑에 붙습니다. 휴대폰에서는 화면 맨 아래 막대가 대신 들고, 보드 아래에는 아무것도 서지 않습니다.">
+              Where the panes are tabs — one at a time — they are pinned to the foot of the
+              column, so they are in the same place whatever tab is open: Moves, Engine, Explorer,
+              a study's Chapters. On a screen wide enough to show every pane at once they sit at
+              the foot of the Moves panel. On a phone the bar at the bottom of the screen carries
+              them instead, and nothing stands under the board.
+            </p>
             <div class="scroll-x">
               <table class="controls">
                 <tbody>

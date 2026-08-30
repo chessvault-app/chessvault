@@ -23,6 +23,7 @@ import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { PromptDialog } from '@/components/prompt-dialog';
 
 import { t } from '@/lib/i18n';
+import { isCoarsePointer } from '@/lib/media';
 
 export interface GameSummary {
   file: string;
@@ -54,8 +55,6 @@ export const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.
 export const docId = (g: Pick<GameSummary, 'file'>): string =>
   g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
 
-export const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coarse)').matches;
-
 /**
  * A game's link, only if it is safe to leave the app through.
  *
@@ -67,9 +66,6 @@ export const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coars
  */
 export const safeLink = (link?: string | null): string | undefined =>
   link && /^https?:\/\//i.test(link) ? link : undefined;
-
-/** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
-export const fmtResult = (result: string): string => result.replaceAll('1/2', '½');
 
 /**
  * The peek card, MEASURED rather than derived: it is `w-44` with `p-1`,

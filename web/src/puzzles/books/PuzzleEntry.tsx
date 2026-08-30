@@ -10,7 +10,7 @@ import { moveSquares } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { Board } from '@/board/Board';
-import { EvalBarSlot } from '@/engine/EvalBar';
+import { BoardLane, EvalBarSlot } from '@/engine/EvalBar';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
@@ -454,10 +454,17 @@ function SolutionRecorder({
               )}
             </div>
           </div>
-          <div className="flex h-6 w-full items-center gap-2 px-0.5 text-sm">
-            <SideDot side={turn} />
-            <span className="text-muted-foreground">{t('Play the solution — every move, both sides.')}</span>
-          </div>
+          {/* Under the BOARD, not under the column: the dot says whose move
+              the position is, so it belongs on the a-file rather than out
+              in the bar's lane. */}
+          <BoardLane>
+            <div className="board-box flex h-6 items-center gap-2 text-sm">
+              <SideDot side={turn} />
+              <span className="text-muted-foreground">
+                {t('Play the solution — every move, both sides.')}
+              </span>
+            </div>
+          </BoardLane>
         </div>
       </div>
 

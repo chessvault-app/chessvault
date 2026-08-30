@@ -95,6 +95,57 @@
   }
 }
 
+/* `roomy` — STACKED, but with room to spare beside the board.
+   A tablet upright, or a portrait desktop window: the page stacks (the
+   panels go below), and yet the board is nowhere near the width of the
+   column, because at these viewports its own budget is bound by height
+   (56dvh, see boardSize.ts) rather than by the 100% term. Measured on an
+   840x838 window: a 469px board in a 780px column, 155px of nothing on
+   either side of it.
+
+   The eval bar is what that space is for. `wide` puts the bar beside the
+   board and `stacked` lays it along the top edge, in the row the player's
+   name would take — the phone bargain, where 36px of lane is 36px off all
+   eight files. That bargain is not the one to make here, so `roomy` takes
+   the `wide` arrangement: the bar beside the board, the names above and
+   below it, and the lane's 36px added to the board's width budget rather
+   than taken out of the board (boardSize.ts again).
+
+   Exactly the part of `stacked` that `wide` does not reach — portrait, and
+   at least md across. A landscape window that wide is already `wide`, and
+   one narrower than 44rem is a phone lying down, which is not roomy in any
+   orientation. `.force-stacked` is excluded for the reason it always is:
+   the viewport says nothing about the room a region inside it has.
+
+   md — 48rem — and not lower, and the line is drawn on WHICH LAYOUT this
+   is rather than on a measurement. Portrait windows between about 38rem
+   and md often have the room too (at 767x1024 the board is 572 in a 735px
+   column), so a rule that asked "is there space" would put the bar beside
+   the board on some phones-held-sideways-in-portrait and above it on
+   others, a few pixels apart. Below md the stacked layout IS the phone's —
+   one pane at a time behind tabs, a bottom bar — and the bar keeps the
+   phone's arrangement with it. lanph3re's call: the sm band can hold the
+   bar and is not worth the inconsistency.
+
+   Room is not guaranteed even here: a portrait window taller than about
+   1.8x its width makes the board width-bound (the 100% term), and there
+   the lane comes out of the board after all — measured at 800x2000, a
+   672px board where there would have been 708. Rare, and the same bargain
+   a phone makes.
+
+   DEFINED AFTER `stacked` ON PURPOSE. Custom variants are emitted in the
+   order they are declared, so `roomy:` rules land after `stacked:` ones
+   and win where both match — which is how a `roomy:flex` puts back a row
+   that `stacked:hidden` took away (AnalysisBoard's player bars). Move this
+   block above `stacked` and those rows disappear on a tablet. */
+@custom-variant roomy {
+  @media (orientation: portrait) and (min-width: 48rem) {
+    &:not(:where(.force-stacked) *) {
+      @slot;
+    }
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Design tokens.
 
@@ -1095,6 +1146,14 @@ cg-board square.check {
    in, and centring it puts back the centring the container was doing.
    The plain `width` first is the fallback for anything without round(),
    which then behaves exactly as this app did before.
+
+   Worn by anything that has to start and end where the BOARD does rather
+   than where its cell does — the player bars above and below it (BoardLane
+   in board/AnalysisBoard.tsx) wear the same class inside a cell of the same
+   width, so the three rectangles round and centre identically instead of a
+   name sitting two pixels to the left of the a-file. Reused rather than
+   copied: two spellings of this expression would be two things to keep in
+   step.
 
    In `components`, NOT unlayered like the .cg-wrap rules above it: those
    have to beat chessground's own unlayered CSS, this one only has to
