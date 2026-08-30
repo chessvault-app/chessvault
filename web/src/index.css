@@ -260,18 +260,49 @@
   --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
   --ring: oklch(calc(70.8% + (50% - 70.8%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
-  --good: oklch(51% 0.141 150);
-  --destructive: oklch(57.7% 0.245 27.3);
-  --warn: oklch(53% 0.112 75);
-  --info: oklch(51% 0.102 230);
+  /* The semantic four stay out of --ui-tint and --accent-tint, for the
+     reason given at the top of this file. They do NOT stay out of
+     --ui-contrast, and leaving them out of it was a bug: contrast is a
+     LIGHTNESS knob (see its own comment), so a scheme could raise it,
+     move every surface underneath these four, and never move them.
+
+     Which made the one scheme chosen for legibility the worst one to
+     read them on. The surfaces darken as the knob comes up, and light
+     mode's semantic colours sit mid-scale, so the gap CLOSED: measured
+     on --surface-3, the raised panel where it is always tightest,
+     good and warn went 4.36 -> 4.00, info 4.53 -> 4.16, and destructive
+     3.85 -> 3.53. High contrast made all four worse than Neutral did.
+
+     So they lerp too, on lightness alone — same hue, same chroma, green
+     still green at either end. The targets are the lightness each one
+     needs to clear 4.5:1 on --surface-3 at knob 1, with a little margin:
+     4.69 / 4.69 / 4.73 / 4.70 there, and 6.3:1 on the page.
+
+     DARK MODE IS DELIBERATELY ABSENT. Its surfaces darken as the knob
+     rises while these four stay light, so the gap opens rather than
+     closes — the worst of them on --surface-3 is 5.69:1 at knob 1
+     against 4.39:1 at knob 0. A lerp there would be a no-op written out
+     four times. */
+  --good: oklch(calc(51% + (47% - 51%) * var(--ui-contrast)) 0.141 150);
+  --destructive: oklch(calc(57.7% + (48% - 57.7%) * var(--ui-contrast)) 0.245 27.3);
+  --warn: oklch(calc(53% + (49% - 53%) * var(--ui-contrast)) 0.112 75);
+  --info: oklch(calc(51% + (48% - 51%) * var(--ui-contrast)) 0.102 230);
   /* What reads ON a filled --destructive panel, in both themes: the dark red is
      dark enough for white in light mode, and the light red of dark mode
      wants near-black. Only the swipe-to-remove strip fills --bad; every
      other use is text or a tint, which keeps the page colour behind it. */
   --destructive-foreground: oklch(98.5% 0 0);
   /* On --warn, which is a light amber in BOTH themes: white on it is a
-     smear. The swipe-to-bookmark strip is the only thing that fills it. */
-  --warn-foreground: oklch(22% 0.04 75);
+     smear. The swipe-to-bookmark strip is the only thing that fills it.
+
+     That holds at rest and stops holding at knob 1, where --warn above is
+     four points darker: the brown falls from 3.23:1 to 2.16:1 on it, and
+     no brown recovers — 10% lightness only reaches 3.31:1. White does,
+     at 6.38:1. So the smear is kept where it was chosen and given up
+     where it costs legibility, which is the trade the knob exists to
+     make. Chroma goes with it; a tinted white is not white. */
+  --warn-foreground: oklch(calc(22% + (100% - 22%) * var(--ui-contrast))
+    calc(0.04 * (1 - var(--ui-contrast))) 75);
   /**
    * The ECO tag: one hue per opening family (A–E), two lightnesses per
    * theme.
