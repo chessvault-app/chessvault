@@ -523,12 +523,19 @@ export function DatabaseGames({
     },
     [],
   );
-  const clearHunt = (): void => {
+  /** Cancel any hunt in flight and drop its results. The bump makes the
+      read loop cancel its reader, which aborts the server's scan. Stable,
+      so effects can depend on it. */
+  const abandonHunt = useCallback((): void => {
     huntSeq.current += 1;
     setHuntRows(null);
     setHunting(false);
     setHuntProgress(null);
     setHuntFailed(null);
+  }, []);
+
+  const clearHunt = (): void => {
+    abandonHunt();
     // While the hunt was open the box was editing the HUNT — if it
     // moved, the text rows this returns to answer a stale query.
     if (searchedQ.current !== query) void search(query, null, curDb);
@@ -710,13 +717,9 @@ export function DatabaseGames({
     onSelectRef.current?.(null);
     // A hunt's rows answered a database that is no longer the one on
     // screen; the controls keep their draft, the results do not.
-    huntSeq.current += 1;
-    setHuntRows(null);
-    setHunting(false);
-    setHuntProgress(null);
-    setHuntFailed(null);
+    abandonHunt();
     void search('', null, next);
-  }, [meta, curDb, search]);
+  }, [meta, curDb, search, abandonHunt]);
 
   // The handed-off hunt runs only after the reconcile above has claimed
   // the rows for the explorer's database — defined after it on purpose:
