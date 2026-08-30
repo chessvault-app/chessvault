@@ -64,7 +64,19 @@ import { UploadBookDialog } from './UploadBookDialog';
  */
 
 const PANE_KEY = 'vault:panel-w:book-reader';
-const PANE_DEFAULT_W = 520;
+const PANE_DEFAULT_W = 560;
+/**
+ * The least the board's column may be squeezed to when the book is taking
+ * its share of a narrow row.
+ *
+ * It used to be 640, which is not a board measurement — BOARD_MAX_W's own
+ * floor in wide mode is 18rem, and the eval lane and controls around it
+ * come to well under a hundred more. What 640 actually did was hand the
+ * remainder to the PDF: on a 1120px window the row is ~912, so the pane
+ * was capped at 272 and a Letter page rendered its body text at about
+ * 4-5px. The page you pressed "Read" to see was the squeezed one.
+ */
+const BOARD_SIDE_MIN = 420;
 /** Lower than the evidence viewers' floor: a whole tall page in a short
     pane is a quarter of its fit-to-width size, and "fit the page" must
     be able to get there. */
@@ -407,7 +419,18 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             defaultWidth={PANE_DEFAULT_W}
             minWidth={320}
             hardMax={1200}
-            maxWidth={wideRowW > 0 ? Math.max(280, wideRowW - 640) : undefined}
+            /* Two ceilings, whichever bites first: the board keeps
+               BOARD_SIDE_MIN, and the book never takes more than 55% of
+               the row. The percentage is what makes the book LEAD where
+               the space is contested — on a 1120px window it resolves to
+               about 490 against the board's 420 — while the fixed default
+               above wins on a wide monitor, where a page much past 560
+               stops gaining anything and the board would rather have it. */
+            maxWidth={
+              wideRowW > 0
+                ? Math.max(320, Math.min(wideRowW - BOARD_SIDE_MIN, Math.round(wideRowW * 0.55)))
+                : undefined
+            }
             className="flex min-h-0 flex-col"
           >
             {(shownW) => pdfPane(shownW, false)}
