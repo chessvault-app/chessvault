@@ -228,20 +228,41 @@ export function promoteToMainline(tree: MoveTree, id: NodeId): MoveTree {
   return { ...tree, nodes };
 }
 
-/** Move `id` one place earlier among its siblings. */
+/**
+ * Move the line `id` stands on one place up among the lines it sits
+ * beside, and stop there.
+ *
+ * Not `id`'s own siblings. A cursor is almost never on the move a
+ * variation starts with — it is somewhere along it, and every move along
+ * a line is its parent's `children[0]`, which has nothing to move past.
+ * So acting on the node alone was a no-op for all but the first move of a
+ * side line, and inside a NESTED line there was then nothing at all
+ * between leaving it where it is and `promoteToMainline` hoisting it past
+ * every line containing it.
+ *
+ * The walk therefore climbs back towards the root and moves the first
+ * branch it meets: the innermost point where this line left the one that
+ * holds it. Press again and the next branch out moves, so the same verb
+ * repeated walks a line of any depth to the mainline one step at a time.
+ * A line already on the mainline has no such branch, and is returned
+ * untouched rather than treated as an error.
+ */
 export function promoteVariation(tree: MoveTree, id: NodeId): MoveTree {
-  const node = getNode(tree, id);
-  if (node.parentId === null) return tree;
-  const parent = getNode(tree, node.parentId);
-  const index = parent.children.indexOf(id);
-  if (index <= 0) return tree;
-  const children = [...parent.children];
-  children[index - 1] = id;
-  children[index] = parent.children[index - 1]!;
-  return {
-    ...tree,
-    nodes: { ...tree.nodes, [parent.id]: { ...parent, children } },
-  };
+  const path = pathTo(tree, id);
+  for (let i = path.length - 1; i > 0; i -= 1) {
+    const childId = path[i]!;
+    const parent = getNode(tree, path[i - 1]!);
+    const index = parent.children.indexOf(childId);
+    if (index <= 0) continue;
+    const children = [...parent.children];
+    children[index - 1] = childId;
+    children[index] = parent.children[index - 1]!;
+    return {
+      ...tree,
+      nodes: { ...tree.nodes, [parent.id]: { ...parent, children } },
+    };
+  }
+  return tree;
 }
 
 /** Shallow-merge changes into one node. */

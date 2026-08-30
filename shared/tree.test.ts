@@ -154,6 +154,42 @@ describe('move tree', () => {
     );
   });
 
+  it('moves the line a nested cursor stands on, not the cursor node', () => {
+    // 1.e4 e5 2.Nf3 with a side line 2.Bc4, and inside THAT a second
+    // reply: 2...Nf6 first, 2...Nc6 beside it. The cursor sits on 3.d3,
+    // a move along the 2...Nc6 line — the only node with siblings on the
+    // way back is 2...Nc6 itself, two levels up from it.
+    const built = line(createTree(), ['e4', 'e5', 'Nf3']);
+    const afterE5 = getNode(built.tree, built.last).parentId!;
+    const bc4 = addSan(built.tree, afterE5, 'Bc4')!;
+    const nf6 = addSan(bc4.tree, bc4.nodeId, 'Nf6')!;
+    const nc6 = addSan(nf6.tree, bc4.nodeId, 'Nc6')!;
+    const d3 = addSan(nc6.tree, nc6.nodeId, 'd3')!;
+
+    const moved = promoteVariation(d3.tree, d3.nodeId);
+    expect(getNode(moved, bc4.nodeId).children).toEqual([nc6.nodeId, nf6.nodeId]);
+    // One step only: the line it belongs to is still a side line of 2.Nf3.
+    expect(isOnMainline(moved, d3.nodeId)).toBe(false);
+    expect(getNode(moved, afterE5).children[0]).toBe(built.last);
+  });
+
+  it('walks a nested line to the mainline one press at a time', () => {
+    const built = line(createTree(), ['e4', 'e5', 'Nf3']);
+    const afterE5 = getNode(built.tree, built.last).parentId!;
+    const bc4 = addSan(built.tree, afterE5, 'Bc4')!;
+    const nf6 = addSan(bc4.tree, bc4.nodeId, 'Nf6')!;
+    const nc6 = addSan(nf6.tree, bc4.nodeId, 'Nc6')!;
+
+    let tree = nc6.tree;
+    // Two branches lie between this line and the mainline, so two presses
+    // reach it — and a third changes nothing.
+    tree = promoteVariation(tree, nc6.nodeId);
+    expect(isOnMainline(tree, nc6.nodeId)).toBe(false);
+    tree = promoteVariation(tree, nc6.nodeId);
+    expect(isOnMainline(tree, nc6.nodeId)).toBe(true);
+    expect(promoteVariation(tree, nc6.nodeId)).toBe(tree);
+  });
+
   it('exposes legal destinations in chessground form', () => {
     const tree = createTree();
     const dests = legalDests(tree, tree.rootId);
