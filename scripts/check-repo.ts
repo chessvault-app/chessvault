@@ -431,7 +431,57 @@ if (existsSync(DOCS)) {
 // writing `t('common.cancel')` in prose, and a check that reads a doc
 // comment as a call site starts by reporting its own documentation.
 const KO_KEY = /^\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|([A-Za-z][A-Za-z0-9_]*)):/gm;
-const T_CALL = /\bt\(\s*'((?:[^'\\]|\\.)*)'/g;
+/**
+ * Every quoted literal in a `t()` call's FIRST argument.
+ *
+ * Not just one immediately after the paren: `t(open ? 'Show one line' :
+ * 'Show the whole variation')` is a call whose key is chosen at runtime
+ * but whose candidates are both right there, and the first version of
+ * this check skipped it as dynamic — which is how two untranslated
+ * strings got added while the check that exists to catch them said
+ * nothing. Both branches of a ternary need Korean, so both are keys.
+ *
+ * The first argument ONLY, up to the top-level comma. Past it lies the
+ * interpolation object, where a literal is a VALUE — `t('Hello {name}',
+ * { name: 'World' })` must not report "World" as a missing key.
+ */
+const T_STRING = /'((?:[^'\\]|\\.)*)'/g;
+function tCallKeys(code: string): { text: string; index: number }[] {
+  const out: { text: string; index: number }[] = [];
+  const call = /\bt\(/g;
+  let m: RegExpExecArray | null;
+  while ((m = call.exec(code))) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    const start = i;
+    for (; i < code.length && depth > 0; i++) {
+      const c = code[i]!;
+      if (c === '(' || c === '[' || c === '{') depth++;
+      else if (c === ')' || c === ']' || c === '}') depth--;
+      else if (c === ',' && depth === 1) break;
+    }
+    const firstArg = code.slice(start, i);
+    for (const lit of firstArg.matchAll(T_STRING)) {
+      const text = lit[1]!
+        .replace(/\\'/g, "'")
+        // A call site may spell a character as an escape where the
+        // dictionary holds it literally — the same disagreement the docs
+        // check decodes for.
+        .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex: string) =>
+          String.fromCharCode(parseInt(hex, 16)),
+        );
+      // An empty string is never a key, and a literal on the right of an
+      // equality is a COMPARISON rather than a message: the condition of
+      // `t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')` sits
+      // inside the first argument too, and 'single' is not something a
+      // Korean reader ever sees.
+      if (text === '') continue;
+      if (/[=!]==?\s*$/.test(firstArg.slice(0, lit.index ?? 0))) continue;
+      out.push({ text, index: start + (lit.index ?? 0) });
+    }
+  }
+  return out;
+}
 if (existsSync(DICTIONARY)) {
   const keys = new Set<string>();
   for (const m of readFileSync(DICTIONARY, 'utf-8').matchAll(KO_KEY)) {
@@ -448,14 +498,17 @@ if (existsSync(DICTIONARY)) {
     }
     // Block comments, and line comments that own their line — `//` inside a
     // string is usually a URL, and cutting there would eat real code.
-    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-    for (const m of code.matchAll(T_CALL)) {
-      const text = m[1]!.replace(/\\'/g, "'");
+    // Blanked, not deleted: a finding's line is counted in this string, so
+    // a stripped comment has to leave its newlines behind or every report
+    // after the first block comment points at the wrong line.
+    const blank = (m: string): string => m.replace(/[^\n]/g, ' ');
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^\s*\/\/.*$/gm, blank);
+    for (const { text, index } of tCallKeys(code)) {
       if (keys.has(text) || seen.has(text)) continue;
       seen.add(text);
       findings.push({
         file,
-        line: src.slice(0, src.indexOf(m[0])).split('\n').length,
+        line: code.slice(0, index).split('\n').length,
         text: text.slice(0, 120),
         why: 'a t() string with no entry in web/src/lib/ko.ts — it renders as English to a Korean reader',
       });
