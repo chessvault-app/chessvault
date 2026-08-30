@@ -113,3 +113,26 @@ export function useWorkspaceViewport(): boolean {
 export function useAllPanesShown(): boolean {
   return useMediaQuery('(min-width: 64rem)');
 }
+
+/**
+ * Every one of these images fetched and decoded, capped at `capMs`.
+ *
+ * A shelf that renders its covers as they arrive flickers in one by one;
+ * waiting for all of them and then drawing once does not. The cap is the
+ * other half: one slow or missing image must not hold the shelf back, and
+ * an onerror is as good as an onload for this purpose — the point is that
+ * the browser has stopped working on it, not that it succeeded.
+ */
+export async function decodeImages(urls: string[], capMs = 2000): Promise<void> {
+  if (urls.length === 0) return;
+  const decoded = urls.map(
+    (url) =>
+      new Promise<void>((done) => {
+        const img = new Image();
+        img.onload = () => done();
+        img.onerror = () => done();
+        img.src = url;
+      }),
+  );
+  await Promise.race([Promise.all(decoded), new Promise((r) => setTimeout(r, capMs))]);
+}
