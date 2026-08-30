@@ -171,8 +171,8 @@ gamified chess-app register of streaks, badges and confetti.
 
 The palette is not a list of colours but a formula. Every neutral in the
 app derives from three knobs — `--ui-hue`, `--ui-tint` and
-`--ui-contrast` — and the accent from two more, so the twelve schemes in
-Settings → Appearance are one system re-parameterised, not twelve
+`--ui-contrast` — and the accent from two more, so the thirteen schemes in
+Settings → Appearance are one system re-parameterised, not thirteen
 palettes. Colours are OKLCH throughout so that light and dark stay
 perceptually matched. Anything that pastes a fixed palette over `:root`
 breaks the knobs, and is therefore forbidden.
@@ -182,7 +182,7 @@ breaks the knobs, and is therefore forbidden.
 - Neutral by default: the grey ladder carries structure, the board carries colour.
 - OKLCH everywhere, parameterised by hue / tint / contrast rather than fixed.
 - Flat: depth is a tonal rung plus a hairline ring, almost never a shadow.
-- Dense and adjustable: three density rungs, read by every surface that repeats a row.
+- Dense and adjustable: two density rungs, read by every surface that repeats a row.
 - One type family for two scripts, with mono reserved for what is scanned as a column.
 - shadcn/ui (Base UI, nova style) at the component layer, worn faithfully.
 

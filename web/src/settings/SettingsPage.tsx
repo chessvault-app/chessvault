@@ -455,9 +455,19 @@ function DesktopCard() {
 
 // --- Appearance --------------------------------------------------------------
 
-/** The colour schemes, grouped the way SCHEME_PRESETS lists them. */
+/**
+ * The colour schemes, grouped the way SCHEME_PRESETS lists them.
+ *
+ * The first group was labelled "shadcn", which is the name of a build
+ * dependency and meant nothing to the club player reading it — it is the
+ * first heading in the first control on the Appearance page. These five
+ * are the registry's base neutral ramps, so they are called that. The
+ * headings go through `t()` at the Select, so they need Korean like any
+ * other string; they did not have it, and `check:repo`'s new dictionary
+ * check cannot see them because `t(group.label)` is a variable.
+ */
 const SCHEME_GROUPS = [
-  { label: 'shadcn', ids: ['default', 'stone', 'zinc', 'gray', 'shadcn-slate'] },
+  { label: 'Neutrals', ids: ['default', 'stone', 'zinc', 'gray', 'shadcn-slate'] },
   { label: 'Coloured', ids: ['slate', 'paper', 'forest', 'rose', 'midnight', 'mono', 'graphite'] },
   { label: 'Contrast', ids: ['high-contrast'] },
 ].map(({ label, ids }) => ({

@@ -959,6 +959,10 @@ export const ko: Record<string, string> = {
   Greyscale: '흑백',
   Graphite: '그래파이트',
   'High contrast': '고대비',
+  // The scheme-picker group headings. They reach t() as `t(group.label)`,
+  // so check:repo's dictionary check cannot see them; "Neutrals" replaces
+  // a heading that read "shadcn" and had nothing to translate.
+  Neutrals: '중성색',
   Coloured: '색상',
   Contrast: '대비',
   Neutral: '뉴트럴',
