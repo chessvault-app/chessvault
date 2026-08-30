@@ -125,12 +125,15 @@ export function EngineBlock({
                 call). */}
             {enabled && top && score && (
               <>
-                <span
-                  className={cn(
-                    'font-mono text-sm font-semibold normal-case tabular-nums tracking-normal',
-                    (score.mate ?? score.cp ?? 0) >= 0 ? 'text-good' : 'text-destructive',
-                  )}
-                >
+                {/* Not green/red. Those mean outcome — solved/failed,
+                    won/lost — and an evaluation is a continuous quantity,
+                    so a dead-drawn +0.33 was painted the same green as a
+                    solved puzzle and -0.01 the same red as a blunder and
+                    a delete button. The sign already says which way it
+                    goes, and the board's vertical bar draws the picture
+                    in the eval colours, which is the vocabulary that
+                    means this. */}
+                <span className="text-foreground font-mono text-sm font-semibold normal-case tabular-nums tracking-normal">
                   {formatScore(score)}
                 </span>
                 <span className="text-muted-foreground font-mono normal-case tracking-normal">
@@ -433,7 +436,6 @@ function PvRow({
   // old identity-keyed memo miss every single time.
   const pvKey = line.moves.join(' ');
   const pv = useMemo(() => formatPv(fen, pvKey ? pvKey.split(' ') : []), [fen, pvKey]);
-  const advantage = score.mate ?? score.cp ?? 0;
 
   return (
     <li>
@@ -450,12 +452,10 @@ function PvRow({
           'transition-colors duration-100',
         )}
       >
-        <span
-          className={cn(
-            'w-[3.25rem] shrink-0 font-mono text-sm font-semibold tabular-nums',
-            advantage >= 0 ? 'text-good' : 'text-destructive',
-          )}
-        >
+        {/* Same as the header's number: an evaluation is not an outcome,
+            and three PV rows in green read as three good results rather
+            than three lines to compare. The sign carries the direction. */}
+        <span className="text-foreground w-[3.25rem] shrink-0 font-mono text-sm font-semibold tabular-nums">
           {formatScore(score)}
         </span>
         {/* One line at rest so three lines cost three rows; the row being
