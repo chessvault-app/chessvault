@@ -102,6 +102,10 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
 
             <span className="bg-muted/50 border-border flex h-2 w-full overflow-hidden rounded-full border">
               <span
+                // Marks the sweep as motion that CARRIES the status, so
+                // index.css's reduced-motion block slows it instead of
+                // crushing it to a flicker with everything decorative.
+                data-motion={fraction === null ? 'status' : undefined}
                 className={cn(
                   'bg-primary h-full',
                   // Nothing to measure against: a segment that sweeps the

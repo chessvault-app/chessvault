@@ -25,7 +25,7 @@ import {
 import type { MoveTree, NodeId } from '@shared/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
-import { BOARD_ANIM_MS, Board } from '@/board/Board';
+import { Board, boardAnimMs } from '@/board/Board';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -355,7 +355,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       // for the analysis one, and a swap mounts a fresh chessground at the
       // final position — so the last move of the line arrived without ever
       // being played. Every move but the last one animated (lanph3re).
-      else timers.current.push(setTimeout(() => setPhase('done'), BOARD_ANIM_MS));
+      else timers.current.push(setTimeout(() => setPhase('done'), boardAnimMs()));
     };
     timers.current.push(setTimeout(step, 400));
   };

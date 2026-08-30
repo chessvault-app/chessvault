@@ -778,6 +778,25 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+
+    /* Except the two things that are MOVING IN ORDER TO SAY SOMETHING.
+       The rule above is right for the enter/leave and the hover fades,
+       which say nothing when they are gone. It is wrong for a looping
+       indicator, and wrong in a way that looks broken rather than calm:
+       an infinite animation given 0.01ms restarts a few hundred times a
+       frame, so the spinner and the indeterminate bar do not stop, they
+       flicker — and the bar is the ONLY progress signal the puzzle build
+       has, deliberately, because a part-filled static bar would be read
+       as a percentage it does not know (see @keyframes sweep).
+
+       So they keep running, slower: 2s against the spinner's 1s and the
+       sweep's 1.6s. Neither is large-area or parallax motion, which is
+       what the setting is actually protecting against; both are small,
+       local, and the only thing on screen saying the app is still there. */
+    [data-slot='spinner'],
+    [data-motion='status'] {
+      animation-duration: 2s !important;
+    }
   }
 }
 

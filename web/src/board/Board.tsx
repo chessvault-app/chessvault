@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } f
 import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/utils';
+import { prefersReducedMotion } from '@/lib/motion';
 
 /** The underlying chessground handle, for callers that need direct calls
     (e.g. the editor starting a spare-piece drag from its palette). */
@@ -110,6 +111,25 @@ function pruneKingCastleDests(
 export const BOARD_ANIM_MS = 180;
 
 /**
+ * That duration, or none at all when the user has asked for less motion.
+ *
+ * Reaching for it here rather than in CSS because CSS cannot reach it:
+ * chessground animates from rAF and puts no transition on a piece, so
+ * `@media (prefers-reduced-motion: reduce)` in index.css slid straight
+ * past the board while it was crushing the spinners.
+ *
+ * Zero rather than merely shorter, because nothing is lost by it: which
+ * move was just played is already carried without motion, by the
+ * last-move highlight two lines below. The slide is the redundant channel,
+ * which is exactly the kind the setting asks to remove.
+ *
+ * Callers that wait out the animation before swapping the board must
+ * spend THIS, not the constant, or they wait 180ms for a move that has
+ * already landed.
+ */
+export const boardAnimMs = (): number => (prefersReducedMotion() ? 0 : BOARD_ANIM_MS);
+
+/**
  * React wrapper around chessground.
  *
  * chessground owns its own DOM and diffs internally, so the element is created
@@ -200,7 +220,7 @@ export function Board({
       // circles in particular never register.
       disableContextMenu: true,
       addDimensionsCssVarsTo: host.current,
-      animation: { enabled: true, duration: BOARD_ANIM_MS },
+      animation: { enabled: true, duration: boardAnimMs() },
       highlight: { lastMove: true, check: true },
       // Touch: dragging a piece must never scroll the page under the board.
       blockTouchScroll: true,
