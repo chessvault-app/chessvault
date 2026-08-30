@@ -15,6 +15,7 @@ import { detectBoardQuad } from './ocr/detect';
 import { classifyBoard, labelsToFen, type CellReading, type Template } from './ocr/classify';
 import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
 import { t } from '@/lib/i18n';
+import { useTheme } from '@/store/theme';
 
 /** Below this ratio-test margin a square is flagged for eyeballing. */
 const CONFIDENT = 0.35;
@@ -76,6 +77,10 @@ export function PhotoImport({
   // a superseded decode cannot fire its error over the picture that
   // replaced it.
   const cancelDecode = useRef<(() => void) | null>(null);
+  // Redraws the detected-quad overlay when the theme flips: the canvas
+  // holds resolved pixels, not a token that could re-resolve itself.
+  const resolved = useTheme((s) => s.resolved);
+
   useEffect(() => () => cancelDecode.current?.(), []);
 
   const pick = useCallback((file: Blob): void => {
@@ -168,8 +173,18 @@ export function PhotoImport({
     canvas.height = Math.round(img.naturalHeight * scale);
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(56,189,248,0.9)';
+    // The quad the detector found, in --info: this is the app saying "here
+    // is what I read", which is the job that colour has everywhere else
+    // (the book-solution tier, the annotated-game pen). It was a literal
+    // sky blue, the one colour in the app that belonged to no theme —
+    // read from the token here because a canvas cannot resolve var(), and
+    // re-read when the theme resolves differently, since `resolved` is in
+    // the deps below and the overlay is redrawn from scratch each time.
+    const info = getComputedStyle(document.documentElement).getPropertyValue('--info').trim();
+    ctx.strokeStyle = info;
+    ctx.fillStyle = info;
     ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.9;
     ctx.beginPath();
     corners.forEach((p, i) => {
       const x = p.x * scale;
@@ -182,11 +197,13 @@ export function PhotoImport({
     for (const p of corners) {
       ctx.beginPath();
       ctx.arc(p.x * scale, p.y * scale, 9, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(56,189,248,0.35)';
+      ctx.globalAlpha = 0.35;
       ctx.fill();
+      ctx.globalAlpha = 0.9;
       ctx.stroke();
     }
-  }, [img, corners, scale]);
+    ctx.globalAlpha = 1;
+  }, [img, corners, scale, resolved]);
 
   const canvasPoint = (e: React.PointerEvent): Point => {
     const rect = canvasRef.current!.getBoundingClientRect();

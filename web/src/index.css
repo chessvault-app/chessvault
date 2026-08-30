@@ -344,6 +344,28 @@
   --eco-name-l: 45%;
   --eco-name-c: 0.05;
 
+  /**
+   * The opening map's colour-by-hue: the highlighted lines, and the faint
+   * family halo behind a node. Same shape as the ECO tag above, and for
+   * the same reason — the hue is DATA, so only its lightness and chroma
+   * can live here.
+   *
+   * The map spelled both in `hsl(h 70% 58%)`, which holds a lightness
+   * that is not one. Around the twelve-hue wheel it walks, hsl at a fixed
+   * 58% spans SIX TIMES in luminance — 0.689 at hue 60 against 0.115 at
+   * hue 240 — so the yellow line shouted and the blue one whispered, on
+   * a map whose whole point is that no two lines rank above each other.
+   * The same L in oklch spans 1.13x, which is the difference between a
+   * palette and an accident.
+   *
+   * Chroma is what the full wheel can hold at that lightness without
+   * leaving sRGB: 0.09 here, 0.12 on the dark side, checked at every one
+   * of 360 hues rather than the twelve the line wheel happens to use,
+   * because the family hue comes from an ECO letter and can be anything.
+   */
+  --map-line-l: 55%;
+  --map-line-c: 0.09;
+
   /* The transient chip — the undo offer, and anything else that floats
      over the page for a few seconds and must not read as part of it.
      It is the surface INVERTED: dark on a light app, light on a dark one.
@@ -443,6 +465,12 @@
   --eco-wash: 15%;
   --eco-name-l: 72%;
   --eco-name-c: 0.045;
+
+  /* Lighter on the near-black page, and the wheel holds more chroma up
+     there: 0.12 against the light theme's 0.09, both the most every one
+     of 360 hues can carry at that lightness inside sRGB. */
+  --map-line-l: 72%;
+  --map-line-c: 0.12;
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner

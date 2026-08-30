@@ -843,7 +843,7 @@ export function MapCanvas({
     const many = lines.length > 1 && lines.length <= HUES;
     lines.forEach((line, at) => {
       const paint = many
-        ? `hsl(${Math.round((210 + (at * 360) / lines.length) % 360)} 70% 58%)`
+        ? `oklch(var(--map-line-l) var(--map-line-c) ${Math.round((210 + (at * 360) / lines.length) % 360)})`
         : ACCENT;
       for (const id of line.nodes) nodes.set(id, paint);
       for (const key of line.edges) edges.set(key, paint);
@@ -907,7 +907,7 @@ export function MapCanvas({
                 cx={x}
                 cy={y}
                 r={r * 2.6}
-                fill={`hsl(${hue} 65% 55%)`}
+                fill={`oklch(var(--map-line-l) var(--map-line-c) ${hue})`}
                 opacity={0.13 * dimOf(id)}
               />
             );
