@@ -221,25 +221,17 @@ export function EvalBar({
             : { top: 0, bottom: 0, left: 0, width: percent }
         }
       />
-      {/* Midpoint marker, so a near-equal position is readable at a
-          glance. 3px and red — a hairline at 45% opacity disappeared
-          against the halves it separates, and the accent blue that
-          replaced it still leaned into the dark half (both lanph3re's
-          reports). Red belongs to neither side of the bar, so it reads
-          on both. Centred on the midline, not below it. */}
-      <div
-        className={cn(
-          'bg-destructive/80 absolute',
-          orientation === 'vertical'
-            ? 'left-0 right-0 top-1/2 h-[3px] -translate-y-1/2'
-            : 'bottom-0 top-0 left-1/2 w-[3px] -translate-x-1/2',
-        )}
-      />
+      {/* No midpoint marker. There was one — 3px of red across the middle,
+          twice re-coloured to keep it legible on both halves — and it was
+          the answer to a bar that could only be read by eye: within a
+          couple of pixels of even, the eye needs something to measure the
+          split against. The number says it now, so the line was one more
+          thing drawn across a 28px bar that already carries digits, a fill
+          edge and a border (lanph3re's call to drop it). */}
       {/* The score itself, at the leading side's end and in that side's
           own text colour — the same pairing the result bars use. Drawn
-          last so it sits over both halves and the midline; unsigned,
-          because where it is and what colour it is already say whose
-          advantage it is (formatScoreCompact). */}
+          over both halves; unsigned, because where it is and what colour
+          it is already say whose advantage it is (formatScoreCompact). */}
       {readout && (
         <span
           className={cn(
