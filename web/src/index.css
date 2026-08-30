@@ -1348,6 +1348,11 @@ cg-board square.check {
   list-style: decimal;
 }
 .note-editor blockquote {
+  /* A blockquote's rule, not a card accent: un-rounded flow content, and
+     --border-strong is a neutral off the grey ladder rather than a colour.
+     The pattern the detector hunts here is a coloured bar down the side of
+     a CARD, which is a different thing wearing the same declaration. */
+  /* impeccable-disable-next-line side-tab: blockquote rule, not a card accent */
   border-left: 3px solid var(--border-strong);
   padding-left: 0.9em;
   color: var(--muted-foreground);
