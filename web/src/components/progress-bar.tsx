@@ -51,7 +51,26 @@ export function ProgressBar({
         <>
           <ProgressIndicator className="bg-nag-good" style={{ width: `${(100 * solved) / total}%` }} />
           {/* Striped, not just red: the two segments must differ by more
-              than hue (the app's own colour-grammar rule). */}
+              than hue (the app's own colour-grammar rule).
+
+              The black is a literal on purpose, and it was measured
+              before it was left alone. It looks like the "knobs are the
+              palette" rule being broken at a call site, and it is not:
+              --nag-blunder is #fa412d, a FIXED hex like every other NAG
+              colour, and it does not move with a scheme or a theme. Ink
+              over it should not either. Composited on that red at 35%,
+              black reaches 2.02:1; --destructive-foreground, the token
+              that means ink-on-a-red-fill, reaches 1.84 and lands 10/4/4
+              of RGB away from black; --foreground reaches 1.93 in light
+              and 1.45 in dark, because it inverts while the fill it sits
+              on does not. Black is the best of the three and the only one
+              that is the same in both themes.
+
+              What is genuinely weak is the STRENGTH, not the hue: 2.02:1
+              of texture, at 2px pitch inside the registry's 4px track, is
+              a thin fallback for a reader who cannot separate green from
+              red. Raising the alpha is the lever (0.5 measures 2.79:1);
+              the track's height belongs to components/ui/progress. */}
           <ProgressIndicator
             className="bg-nag-blunder"
             style={{
