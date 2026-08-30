@@ -16,6 +16,7 @@ export type BoardTheme =
   | 'lavender'
   | 'rosewood'
   | 'charcoal'
+  | 'ink'
   | 'wood';
 export type PieceSet =
   | 'cburnett'
@@ -39,6 +40,9 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: 'slate', label: 'Slate' },
   { id: 'lavender', label: 'Purple' },
   { id: 'rosewood', label: 'Rosewood' },
+  // Paper and ink: the one preset whose two squares are different
+  // materials rather than one material at two lightnesses.
+  { id: 'ink', label: 'Paper and ink' },
   { id: 'charcoal', label: 'Charcoal' },
 ];
 
