@@ -316,6 +316,11 @@ setting them in mono made every one of them look like a terminal.
 
 - **Display** (600, 24px / `text-2xl`): the one display figure on a page.
 - **Headline** (600, 20px / `text-xl`): page titles, via `PageHeader`.
+- **Headline, board family** (600, 16px / `text-base`): the page title on a
+  page whose subject is a board — Board, Editor, Puzzles, Repertoire, the
+  book reader. Still the `h1`; a rung quieter because the title shares a
+  strip with the board's own controls and every point it takes is a point
+  off the board.
 - **Title** (500, 16px / `text-base`): section titles, setting rows.
 - **Body** (400, 14px / `text-sm`): body copy, list rows, panel text.
 - **Label** (500, 12px / `text-xs`): captions and dense labels only.
@@ -332,6 +337,11 @@ emphasis. They are a figure list at body size now.
 The 12px rung is captions — the size Material, Fluent and GitHub all
 reserve for them. Body once sat there at 284 call sites, which on a phone
 is 70% of the size every other app on the device uses.
+
+**The Board Pays Last Rule.** On a page whose subject is a board, chrome
+gives up a rung before the board gives up a pixel. That is why the page
+title is 16px there and 20px everywhere else, and why the density knob
+leaves the reader's toolbar bands alone — they are not rows.
 
 **The Named Tier Rule.** A magic `text-[…]` literal means a tier exists
 that nobody named. Five survive in app code, each sized to a physical
