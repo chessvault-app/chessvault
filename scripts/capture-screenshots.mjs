@@ -174,13 +174,22 @@ const TARGETS = [
   // the standard frame's 678 css-px it floored at its 18rem minimum
   // over a mostly-empty band. Waits on the band's rows, not the board —
   // they land last — and settles for the explorer's lookup.
+  //
+  // 5000, not the 1500 this carried: `.divide-border` is matched by the
+  // band's chrome before its query has returned, so the wait lands early
+  // and the settle is the whole budget for the database search AND the
+  // explorer lookup. At 1500 the shot came back with the table empty
+  // under "Searching..." and the explorer still spinning — a picture of
+  // the workspace loading rather than of the workspace. Measured: this
+  // shot was the noisiest in the set at 14.8% of its pixels between two
+  // runs of one unchanged build, which was that race, not the page.
   {
     hash: '#/workspace',
     out: 'workspace.png',
     win: [1600, 996],
     css: 1300,
     wait: '.divide-border',
-    settle: 1500,
+    settle: 5000,
   },
   { hash: '#/puzzles', out: 'puzzle-trainer.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
   { hash: '#/repertoire', out: 'repertoire.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
