@@ -475,7 +475,17 @@
   --eco-l: 85%;
   --eco-c: 0.08;
   --eco-wash: 15%;
-  --eco-name-l: 72%;
+  /* 75%, for the reason the chip above moved to 85%, and missed the
+     first time: the chip and the name are one label, and only the chip
+     was measured. The opening name on a hovered row read 4.13:1 at 72%
+     — the row fills with --accent and the name does not move with it.
+     75% is where it crosses, at 4.63:1, and it costs nothing at rest,
+     where the name is read against the card.
+
+     Light stays 45%: the same name on the same filled row measures 5.90
+     at worst across the family hues, because --accent there is a pale
+     grey under dark ink. */
+  --eco-name-l: 75%;
   --eco-name-c: 0.045;
 
   /* Lighter on the near-black page, and the wheel holds more chroma up
