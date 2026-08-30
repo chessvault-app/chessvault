@@ -10,6 +10,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **A line nested in another can be lifted one step, instead of all the
+  way.** Promotion was one verb, `Make mainline`, and it hoisted a line
+  past every line containing it — so a variation inside a variation
+  could be left alone or made the main game, and nothing in between.
+  The move tree gains **Promote this line**, which moves the line the
+  cursor stands on one place up among the lines it sits beside; press it
+  again and the next branch out moves, so the mainline is where it ends
+  rather than where it starts. Right-click any side-line move for both
+  verbs (long-press on a phone). Deeply nested lines are the case this
+  was missing: the cursor is almost never on the move a variation begins
+  with, and acting on that move alone did nothing at all.
+
+  Phones reach both through the Moves panel's ⋯, acting on the move you
+  tapped, and get the `Make mainline` strip's line of the list back —
+  the banner now shows from tablet width up, where there is room for it.
+
 - **The repertoire drill remembers on a schedule, and home says when.**
   A position you fumbled used to sit in the drill's review pool for
   ever, and one scraped recall retired it for good. It now rides the

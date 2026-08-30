@@ -24,7 +24,7 @@ import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Panel, PanelHeader } from '@/components/panel';
 import { PaneTabs } from '@/components/pane-tabs';
 import { useUndoable } from '@/hooks/use-undoable';
-import { MoveTreePane, SidelinesToggle } from './MoveTreePane';
+import { MoveTreePane, promoteActions, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 import { t } from '@/lib/i18n';
 
@@ -467,6 +467,7 @@ export function MovesOverflow({
   const phone = useMediaQuery('(max-width: 47.9375rem)');
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
+  const promoteNode = useAnalysis((s) => s.promoteNode);
   const reset = useAnalysis((s) => s.reset);
   const clearMoves = useClearMoves(allowClear, allowReset);
   const { capture } = useTreeUndo();
@@ -477,6 +478,16 @@ export function MovesOverflow({
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
 
   const actions: MenuAction[] = [
+    // First, and only on a phone: they act on the move you are standing
+    // on, which is what brought you to this menu, and the strip that
+    // offers the mainline one on a desktop is `max-md:hidden`. A desktop
+    // has that strip and the right-click on the move itself, so listing
+    // them here too would be the third way to say the same thing.
+    //
+    // Both, not just the mainline one — a nested line is the case where
+    // "make this the mainline" is far more than was wanted, and until
+    // now it was the only promotion the app offered anywhere.
+    ...(phone ? promoteActions(tree, cursorId, promoteNode) : []),
     ...(onLoadPosition && phone
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),

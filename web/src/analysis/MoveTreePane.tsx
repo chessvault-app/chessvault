@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { ArrowUpToLine, BookOpen, GitBranch } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowUpToLine, BookOpen, ChevronUp, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/utils';
+import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
@@ -116,6 +117,10 @@ export function MoveTreePane({ className }: { className?: string }) {
   const promoteNode = useAnalysis((s) => s.promoteNode);
   const currentLineOnly = useAnalysis((s) => s.currentLineOnly);
   const scroller = useRef<HTMLDivElement>(null);
+  // Which move the right-click (or long press) landed on — read out of the
+  // DOM at the press rather than held per move, so the whole list is one
+  // menu instead of one per move.
+  const [menuId, setMenuId] = useState<NodeId | null>(null);
 
   // Keep the active move visible as the user walks the line, along with
   // the comment written under it — and without moving the page.
@@ -131,41 +136,106 @@ export function MoveTreePane({ className }: { className?: string }) {
 
   return (
     <>
-      <div
-        ref={scroller}
-        // The floor keeps a few lines of moves visible even when the whole
-        // panel is squeezed by a short viewport; the panel's minimum height
-        // follows it, pushing its column into scroll instead of clipping.
-        className={cn(
-          // min-h-0 below lg, NOT a fixed floor: the move table must be able
-          // to yield space to the annotation editor beneath it. Panel clips
-          // its overflow, so a floor here pushed the editor out of the panel
-          // entirely — visible on game pages, which spend ~56px more than a
-          // study on the two player bars.
-          'min-h-0 flex-1 overflow-y-auto text-base leading-relaxed lg:min-h-24',
-          className,
-        )}
+      <ActionContextMenu
+        title={menuId ? moveLabel(tree, menuId) : t('Moves')}
+        actions={menuId ? promoteActions(tree, menuId, promoteNode) : []}
+        beforeOpen={(event) => {
+          const id = moveUnderPointer(event);
+          // A move already on the mainline has nothing to promote, and
+          // neither has the space between the moves — so neither opens a
+          // menu that could only say so.
+          if (!id || isOnMainline(tree, id)) return false;
+          setMenuId(id);
+          return true;
+        }}
       >
-        {/* An introduction with no moves under it yet is still the chapter's
-            text, so the table renders for it alone; the hint stays, under it,
-            because the chapter is still empty of moves. */}
-        {(!isEmpty || root.comment) && (
-          <MainlineTable
-            tree={tree}
-            cursorId={cursorId}
-            onSelect={setCursor}
-            currentLineOnly={currentLineOnly}
-          />
-        )}
-        {isEmpty && (
-          <p className="text-muted-foreground px-3 py-6 text-center text-sm">
-            {t('Play a move on the board, or load a FEN or PGN.')}
-          </p>
-        )}
-      </div>
-      <PromoteStrip tree={tree} cursorId={cursorId} onPromote={(id) => promoteNode(id, true)} />
+        <div
+          ref={scroller}
+          // The floor keeps a few lines of moves visible even when the whole
+          // panel is squeezed by a short viewport; the panel's minimum height
+          // follows it, pushing its column into scroll instead of clipping.
+          className={cn(
+            // min-h-0 below lg, NOT a fixed floor: the move table must be able
+            // to yield space to the annotation editor beneath it. Panel clips
+            // its overflow, so a floor here pushed the editor out of the panel
+            // entirely — visible on game pages, which spend ~56px more than a
+            // study on the two player bars.
+            'min-h-0 flex-1 overflow-y-auto text-base leading-relaxed lg:min-h-24',
+            className,
+          )}
+        >
+          {/* An introduction with no moves under it yet is still the chapter's
+              text, so the table renders for it alone; the hint stays, under it,
+              because the chapter is still empty of moves. */}
+          {(!isEmpty || root.comment) && (
+            <MainlineTable
+              tree={tree}
+              cursorId={cursorId}
+              onSelect={setCursor}
+              currentLineOnly={currentLineOnly}
+            />
+          )}
+          {isEmpty && (
+            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
+              {t('Play a move on the board, or load a FEN or PGN.')}
+            </p>
+          )}
+        </div>
+      </ActionContextMenu>
+      {/* Phones reach both promotions through the header's ⋯ instead (see
+          MovesOverflow), and get the panel's last line of moves back: on a
+          390px column the list is the shortest thing on the page, and a
+          banner over it is a move you cannot see. From md the room is
+          there and the banner is the affordance nobody has to find. */}
+      <PromoteStrip
+        tree={tree}
+        cursorId={cursorId}
+        onPromote={(id) => promoteNode(id, true)}
+        className="max-md:hidden"
+      />
     </>
   );
+}
+
+/**
+ * The move a press landed on, or null for the space around them.
+ *
+ * The id comes off the DOM (`data-node`, on every move button the list
+ * draws) rather than from a handler bound per move: a game is hundreds of
+ * moves, and a menu, a media query and a piece of state on each of them is
+ * hundreds of each.
+ */
+function moveUnderPointer(event: React.MouseEvent): NodeId | null {
+  const target = event.target as HTMLElement | null;
+  return target?.closest?.('[data-node]')?.getAttribute('data-node') ?? null;
+}
+
+/** A move named as it is printed — "3... Nf6" — to title its own menu. */
+function moveLabel(tree: MoveTree, id: NodeId): string {
+  const node = getNode(tree, id);
+  return `${moveNumberLabel(node.ply, blackToMoveAtRoot(tree))} ${node.san ?? '?'}`;
+}
+
+/**
+ * The two promotions, as menu rows: written once because both menus that
+ * offer them — the right-click on a move, the ⋯ on a phone — must offer
+ * the same two verbs in the same order, and they live in different files.
+ *
+ * Both are listed even where they do the same thing (a side line one
+ * branch deep is made the mainline either way). Which of the two cases
+ * you are in is a fact about the tree several moves back, and a menu whose
+ * contents depend on it teaches nothing but its own inconsistency.
+ */
+export function promoteActions(
+  tree: MoveTree,
+  id: NodeId,
+  promote: (id: NodeId, toMainline: boolean) => void,
+): MenuAction[] {
+  if (isOnMainline(tree, id)) return [];
+  return [
+    { label: 'Promote this line', icon: ChevronUp, onSelect: () => promote(id, false) },
+    { label: 'Make mainline', icon: ArrowUpToLine, onSelect: () => promote(id, true) },
+  ];
 }
 
 interface RowState {
@@ -364,6 +434,8 @@ function MoveCell({
       type="button"
       onClick={() => onSelect(id)}
       data-active={active}
+      // What the pane's context menu reads to know which move was pressed.
+      data-node={id}
       className={cn(
         'flex items-baseline gap-1 px-3 py-(--row-py-tight) text-left font-medium transition-colors duration-100',
         active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
@@ -407,17 +479,28 @@ export function PromoteStrip({
   tree,
   cursorId,
   onPromote,
+  className,
 }: {
   tree: MoveTree;
   cursorId: NodeId;
   onPromote: (id: NodeId) => void;
+  /**
+   * The caller's, so hiding it at a width is the caller's call: it may
+   * only be dropped where the same verb is reachable another way, and
+   * only the caller knows whether it is. The trainers' panel has no ⋯,
+   * so there the strip is the whole of the offer at every width.
+   */
+  className?: string;
 }) {
   if (isOnMainline(tree, cursorId)) return null;
   return (
     <button
       type="button"
       onClick={() => onPromote(cursorId)}
-      className="bg-primary/10 text-primary hover:bg-primary/20 border-border flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-sm font-medium transition-colors duration-100"
+      className={cn(
+        'bg-primary/10 text-primary hover:bg-primary/20 border-border flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-sm font-medium transition-colors duration-100',
+        className,
+      )}
     >
       <ArrowUpToLine className="size-3.5" />
       {t('Make mainline')}
@@ -452,6 +535,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
     items.push(
       <MoveChip
         key={mainChildId}
+        id={mainChildId}
         label={child.san ?? '?'}
         number={showNumber ? moveNumberLabel(child.ply, blackFirst) : undefined}
         nags={child.nags}
@@ -546,6 +630,7 @@ function VariationBranch({
   return (
     <>
       <MoveChip
+        id={startId}
         label={node.san ?? '?'}
         number={moveNumberLabel(node.ply, blackToMoveAtRoot(tree))}
         nags={node.nags}
@@ -580,6 +665,7 @@ function VariationBranch({
 }
 
 interface MoveChipProps {
+  id: NodeId;
   label: string;
   number?: string;
   nags: number[];
@@ -589,7 +675,7 @@ interface MoveChipProps {
   onClick: () => void;
 }
 
-function MoveChip({ label, number, nags, hasComment, active, book = false, onClick }: MoveChipProps) {
+function MoveChip({ id, label, number, nags, hasComment, active, book = false, onClick }: MoveChipProps) {
   return (
     <span className="inline-flex items-baseline gap-1">
       {number && <span className="text-muted-foreground font-mono text-xs">{number}</span>}
@@ -597,6 +683,8 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
         type="button"
         onClick={onClick}
         data-active={active}
+        // What the pane's context menu reads to know which move was pressed.
+        data-node={id}
         className={cn(
           'font-moves rounded-sm px-1 py-px font-medium transition-colors duration-100',
           'hover:bg-accent',
