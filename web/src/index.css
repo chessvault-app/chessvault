@@ -1306,6 +1306,37 @@ cg-board square.check {
   --board-dark: oklch(61% 0.065 25);
 }
 
+/* Paper and ink. The only preset whose two squares are different
+   MATERIALS rather than one material at two lightnesses: a warm, almost
+   colourless rag paper against a cool iron-gall ink, ~160 degrees of hue
+   apart. It reads as a diagram printed on a page, which is what this app
+   is; every other preset reads as a physical board.
+
+   Three numbers were chosen against constraints, not taste:
+
+   - Lightness 93/54 is a 39-point gap, wider than any other preset
+     (wood 33, slate 32, brown 23). The board is drawn at 64px in the
+     hub's thumbnails and in mini-board.tsx, where a narrow gap stops
+     reading as a checker at all.
+   - Hue 250 sits ~140 degrees from the last-move yellow (108), ~100 from
+     the legal-dest green (150) and ~135 from the check red (27), so all
+     three overlays stay unambiguous on it. This is what the green board
+     gets wrong: its dark square is the same hue family as its own dots.
+   - Chroma stays under 0.03 on both squares because the coordinate
+     labels are mixed OUT of these two tokens (see .cg-wrap coords), and
+     because the board should spend no colour of its own — green, red and
+     the eval bar are what colour means here.
+
+   A preset overrides both light and dark mode, so this pair has to sit
+   against a white frame and a near-black one; a cool desaturated ink
+   does, a saturated navy did not. No grain: a laid-paper texture belongs
+   here but has to clear the sampling arithmetic in the note below, so it
+   is a separate, measured change. */
+:root[data-board='ink'] {
+  --board-light: oklch(93% 0.014 92);
+  --board-dark: oklch(54% 0.028 250);
+}
+
 /* The one textured board: the ChessBase-style rust brown, with the grain
    drawn rather than photographed.
 
