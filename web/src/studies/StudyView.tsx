@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useOpeningName } from '@/lib/opening';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -22,7 +22,6 @@ import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
-import { useAllPanesShown } from '@/lib/media';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
@@ -76,7 +75,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   // Small screens show one pane at a time under the board.
   const [pane, setPane] = useState<StudyPane>('moves');
   // Whether the side column shows every pane at once — see the board below.
-  const allPanes = useAllPanesShown();
   // Reading vs annotating: reading hides the NAG toolbar and comment boxes
   // — and, in the store, keeps the autosave from writing what a reader
   // merely walked through. See the subscriber in store/study.ts.
@@ -247,7 +245,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           move surgery. */}
       {/* Same as the board page: the row goes where the moves panel's own
           copy is on screen to carry it. */}
-      <AnalysisBoard drawShapes={editing} nav={!allPanes && pane !== 'moves'} />
+      <AnalysisBoard drawShapes={editing} />
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}
@@ -340,7 +338,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
           <MoveTreePane />
           <ReviewStrip />
-          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />
+          <PaneControls />
           <AnnotationPane
             editing={editing}
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
@@ -348,6 +346,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         </Panel>
         <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
           <EngineBlock standalone />
+          <PaneControls />
         </Panel>
         <ExplorerPane
           resizeKey="study-explorer"
@@ -537,6 +536,9 @@ function ChaptersPanel() {
           />
         ))}
       </ul>
+      {/* A tab below lg, docked above the moves panel at lg — see the
+          explorer's copy of this line. */}
+      <PaneControls className="lg:hidden" />
     </Panel>
   );
 }

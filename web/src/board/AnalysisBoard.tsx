@@ -42,7 +42,6 @@ export function AnalysisBoard({
   editablePlayers = false,
   drawShapes = true,
   strip = true,
-  nav = true,
   verticalKeys = true,
   alignPlayersTo = 'board',
 }: {
@@ -91,13 +90,6 @@ export function AnalysisBoard({
    * something you leave for a reader rather than something you try out.
    */
   drawShapes?: boolean;
-  /**
-   * The navigation row under the board. Off for a page whose moves panel
-   * already carries one at md — where this row is not hidden by
-   * `max-md:hidden` and the phone's bottom bar is not there to hold it
-   * either, so both were on screen at once (the book reader's board tab).
-   */
-  nav?: boolean;
 } = {}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -371,11 +363,13 @@ export function AnalysisBoard({
           <PlayerBar side={orientation} editable={editablePlayers} />
         </BoardLane>
       </div>
-      {/* Navigation under the board — but on phones it moves to the
-          contextual bottom bar (MobileActionBar), so hide it below md to
-          reclaim the row. Kept for md-portrait tablets (no bottom bar) and
-          hidden on wide, where the Moves-panel copy takes over. */}
-      {nav && <BoardControls className="max-md:hidden wide:hidden" />}
+      {/* No navigation row here. It used to be drawn under the board for
+          the one layout that had nowhere else to put it — a tablet upright,
+          where the phone's bottom bar is gone and the moves panel may be
+          behind another tab — and it moved as the tab changed: at the
+          panel's floor on Moves, under the board on Engine or Explorer. It
+          lives at the foot of every pane now (PaneControls), so it is in
+          one place whatever is open (lanph3re's call). */}
     </div>
   );
 }
@@ -627,6 +621,31 @@ function useRepeat(step: () => void): {
   useEffect(() => handlers.onPointerCancel, [handlers]);
 
   return handlers;
+}
+
+/**
+ * The same strip at the foot of a PANE, which is where it lives on every
+ * board page: sat on the panel's own floor, with the card's bottom padding
+ * taken back so the border it draws IS the panel's bottom edge.
+ *
+ * Every pane wears one — moves, engine, explorer, chapters, a trainer's
+ * puzzle panel — because a pane is what a stacked layout shows one of at a
+ * time, and a control that is only under one of them moves when the tab
+ * does.
+ *
+ * `max-md:hidden`, always: a phone has the contextual bottom bar
+ * (MobileActionBar) and two rows of the same four arrows is one row of
+ * wasted screen. Panes that are DOCKED rather than tabbed at `lg` — the
+ * explorer, a study's chapters, which stand in the column beside the moves
+ * panel and its strip — add `lg:hidden` themselves, or the page grows a
+ * second copy on a desktop.
+ */
+export function PaneControls({ className }: { className?: string }) {
+  return (
+    <BoardControls
+      className={cn('border-border -mb-(--card-spacing) border-t max-md:hidden', className)}
+    />
+  );
 }
 
 /**

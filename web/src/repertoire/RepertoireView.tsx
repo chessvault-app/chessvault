@@ -29,6 +29,7 @@ import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker'
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { PaneControls } from '@/board/AnalysisBoard';
 import { BoardLane, EvalBarSlot } from '@/engine/EvalBar';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -1686,6 +1687,9 @@ export function RepertoireView() {
         </div>
       )}
     </CardFooter>
+    {/* Only while analysing: a drill is driven by this component's own
+        cursor, not the analysis store — see the puzzle trainer's copy. */}
+    {analysing && <PaneControls className="wide:hidden" />}
   </Panel>
   );
   const movesPanel = analysing ? (
@@ -1847,6 +1851,7 @@ export function RepertoireView() {
             {!wide && analysing && shownPane === 'engine' && (
               <Panel className="min-h-0 flex-1">
                 <EngineBlock standalone />
+                <PaneControls />
               </Panel>
             )}
             {(wide || shownPane === 'info') && gamePanel}

@@ -86,16 +86,3 @@ export function useWorkspaceViewport(): boolean {
   return useMediaQuery('(orientation: landscape) and (min-width: 72rem)');
 }
 
-/**
- * JS mirror of Tailwind's `lg`: the width where a board page's side column
- * stops being one pane at a time behind a tab strip and shows every pane
- * at once.
- *
- * Wanted for the same reason as the one above — a page that has to know
- * whether the moves panel (and so the navigation at its foot) is on screen
- * at all, which `pane` alone cannot say below lg and cannot say above it
- * either. Written once here rather than as a literal in each board page.
- */
-export function useAllPanesShown(): boolean {
-  return useMediaQuery('(min-width: 64rem)');
-}

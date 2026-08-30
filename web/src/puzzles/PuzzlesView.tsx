@@ -23,7 +23,7 @@ import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
 import { Board, boardAnimMs } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -938,6 +938,13 @@ function Trainer({
         )}
       </CardFooter>
     </div>
+    {/* Only once the puzzle is over: until then the board is this
+        component's own tree, not the analysis store these buttons drive
+        (see AnswerPanel) — and while it is being solved the panel that
+        carries navigation is the answer's. `wide:hidden` because a wide
+        layout shows this panel and the moves panel at once, and the moves
+        panel's strip is the one on screen. */}
+    {analysing && <PaneControls className="wide:hidden" />}
   </Panel>
   );
 
@@ -1094,6 +1101,7 @@ function Trainer({
         {!wide && analysing && shownPane === 'engine' && (
           <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
+            <PaneControls />
           </Panel>
         )}
         {(wide || shownPane === 'info') && puzzlePanel}

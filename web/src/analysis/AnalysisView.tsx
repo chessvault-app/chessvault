@@ -1,13 +1,13 @@
 import { ChevronLeft, Check, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Table2, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useAllPanesShown, useMediaQuery } from '@/lib/media';
+import { useMediaQuery } from '@/lib/media';
 import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
@@ -47,7 +47,6 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   // others stay mounted but hidden so the engine keeps following the board.
   const [pane, setPane] = useState<AnalysisPane>(wantExplorer ? 'explorer' : 'moves');
   // Whether the side column shows every pane at once — see the board below.
-  const allPanes = useAllPanesShown();
   // Held here because two things open it: the header's button on a desktop
   // and the ⋯ on a phone, and they must share one dialog.
   const [loadOpen, setLoadOpen] = useState(false);
@@ -97,11 +96,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
       {/* Stacked layouts lead with a header like every other page; games
           opened here from elite/archives get a way back on phones. */}
       <BoardPageHeader explorer={wantExplorer} />
-      {/* No navigation under the board where the moves panel below has
-          it (its copy is `max-md:hidden`, so this is the md-to-lg band
-          where the panel is a tab that may be turned off); under md the
-          bottom bar carries it and this row is hidden either way. */}
-      <AnalysisBoard editablePlayers nav={!allPanes && pane !== 'moves'} />
+      <AnalysisBoard editablePlayers />
 
       {/* Side column. Desktop shows every pane and scrolls the column; on
           phones exactly one pane shows, fills the height left under the
@@ -180,12 +175,13 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
               call), not under the board. */}
           {/* -mb takes back the card's floor, as the resize grip does: the
               band draws the panel's bottom edge, so it has to reach it. */}
-          <BoardControls className="border-border -mb-(--card-spacing) border-t max-md:hidden" />
+          <PaneControls />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
         <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
           <EngineBlock standalone />
+          <PaneControls />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}

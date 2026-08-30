@@ -10,6 +10,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The move buttons stopped moving.** They lived at the foot of the Moves
+  panel — and under the board instead whenever the Moves panel was behind
+  another tab, which on a tablet meant they jumped a couple of hundred
+  pixels every time you switched to Engine or Explorer and back. Every
+  pane carries them at its own foot now, Moves, Engine, Explorer and a
+  study's Chapters alike, and the row under the board is gone. A phone is
+  unchanged: the bottom bar carries them there, and the panels keep theirs
+  hidden so the same four arrows are never drawn twice.
+
 - **The names line up with the board.** The player bars above and below it
   were as wide as the board's COLUMN, and the column is the board plus the
   evaluation bar's lane — so a name and its colour swatch started a bar's
