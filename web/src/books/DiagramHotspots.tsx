@@ -162,6 +162,9 @@ function readable(fen: string): boolean {
   );
 }
 
+/** What a diagram the classifier could not read opens the editor on. */
+const EMPTY_BOARD = '8/8/8/8/8/8/8/8 w - - 0 1';
+
 /** A known position on a page: where it is, and its full FEN. */
 export interface KnownDiagram {
   rect: PageDiagramRecord['rect'];
@@ -212,9 +215,16 @@ export function DiagramHotspots({
     spots.push({ key: `k${i}`, rect: k.rect, fen: k.fen, sure: true, ok: readable(k.fen) }),
   );
   (diagrams ?? []).forEach((d, i) => {
-    if (!d.fen) return;
     if (known.some((k) => overlaps(k.rect, d.rect))) return;
-    spots.push({ key: `d${i}`, rect: d.rect, fen: d.fen, sure: false, ok: readable(d.fen) });
+    // A box with no position is a diagram the reader FOUND and could not
+    // read — the detector is surer that something is printed there than
+    // the classifier is about what. That is still worth a corner button:
+    // an empty editor open beside the printed diagram is where someone
+    // sets it up by hand, and it is the only offer the app can make for a
+    // board it cannot read. Two of every five boxes on a faint scan land
+    // here, so skipping them would take the button off most of the book.
+    const fen = d.fen ?? EMPTY_BOARD;
+    spots.push({ key: `d${i}`, rect: d.rect, fen, sure: false, ok: readable(fen) });
   });
   // A misread board is still worth a button while there is an editor to
   // send it to — the reader is looking at the printed diagram, and setting

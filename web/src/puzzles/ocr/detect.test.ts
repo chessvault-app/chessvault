@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectBoardQuad, detectDiagrams, type Rect } from './detect';
+import { detectBoardQuad, detectDiagrams, fitBoardQuad, findBoardBox, type Rect } from './detect';
 import type { Gray, Point, Quad } from './image';
 
 /** A white "page" with helpers to draw print-like content. */
@@ -201,5 +201,72 @@ describe('board-corner detection on photos', () => {
     const page = makePage(1000, 1400);
     drawText(page, 100, 100, 800, 60);
     expect(detectBoardQuad(page)).toBeNull();
+  });
+});
+
+/**
+ * A crop the way a faint scan arrives: a board of MID-TONE squares — no
+ * border line, no hatch, nothing near black — with a coordinate gutter
+ * down its left side and a caption line under it, all on dim paper. This
+ * is the shape detectBoardQuad cannot read, and the reason fitBoardQuad
+ * exists.
+ */
+function drawFaintCrop(
+  w: number,
+  h: number,
+  board: { x: number; y: number; size: number },
+): Gray {
+  const crop: Gray = { w, h, data: new Uint8ClampedArray(w * h).fill(228) };
+  const cell = board.size / 8;
+  for (let y = 0; y < board.size; y++) {
+    for (let x = 0; x < board.size; x++) {
+      const col = Math.min(7, Math.floor(x / cell));
+      const row = Math.min(7, Math.floor(y / cell));
+      // Dark squares are a mid tone that sits ABOVE the ink threshold
+      // (paper x 0.72), so the ink detector sees no board here at all.
+      // That is the whole point: this is the scan it cannot read.
+      const shade = (col + row) % 2 === 1 ? 182 : 224;
+      crop.data[(board.y + y) * w + (board.x + x)] = shade;
+    }
+  }
+  // A caption line below the board, which a blind full-frame warp would
+  // swallow and which is what pushed the grid off by most of a rank.
+  const capY = board.y + board.size + 8;
+  for (let x = board.x; x < board.x + board.size && capY < h; x++) {
+    if (x % 17 > 3) {
+      crop.data[capY * w + x] = 60;
+      crop.data[(capY + 1) * w + x] = 60;
+    }
+  }
+  return crop;
+}
+
+describe('fitting the board when ink detection gives up', () => {
+  const board = { x: 14, y: 6, size: 448 };
+  const faint = (): Gray => drawFaintCrop(512, 512, board);
+
+  it('finds a mid-tone board that detectBoardQuad cannot', () => {
+    const crop = faint();
+    expect(detectBoardQuad(crop)).toBeNull();
+    const box = findBoardBox(crop);
+    expect(box).not.toBeNull();
+    // Within a fifth of a cell on every edge: the grid has to land well
+    // inside a square or the classifier reads across a boundary.
+    const slack = board.size / 8 / 5;
+    expect(Math.abs(box!.x - board.x)).toBeLessThan(slack);
+    expect(Math.abs(box!.y - board.y)).toBeLessThan(slack);
+    expect(Math.abs(box!.w - board.size)).toBeLessThan(slack);
+    expect(Math.abs(box!.h - board.size)).toBeLessThan(slack);
+  });
+
+  it('excludes the caption line under the board', () => {
+    const box = findBoardBox(faint())!;
+    expect(box.y + box.h).toBeLessThan(board.y + board.size + 8);
+  });
+
+  it('gives a quad for a board and nothing for blank paper', () => {
+    expect(fitBoardQuad(faint())).not.toBeNull();
+    const blank: Gray = { w: 512, h: 512, data: new Uint8ClampedArray(512 * 512).fill(228) };
+    expect(fitBoardQuad(blank)).toBeNull();
   });
 });

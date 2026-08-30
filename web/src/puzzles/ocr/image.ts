@@ -139,3 +139,46 @@ export function boardFeatures(board: Gray): Uint8Array[] {
   }
   return out;
 }
+
+/**
+ * Below this ink-to-paper span a board is treated as a faint scan and
+ * stretched to the full range.
+ *
+ * The two books measured sit far apart and nothing lands between them: a
+ * clean scan's boards span 202..252 (median 245 over 240 crops), a faint
+ * one's span 149..162 over 30. Anywhere in 162..202 separates them, so the
+ * threshold is the middle of that gap rather than the edge of either
+ * book's range — the next faint scan will not be exactly this faint.
+ */
+const FAINT_SPAN = 190;
+
+/**
+ * A board's shades pulled out to the full range, when it needs it.
+ *
+ * CellNet takes raw luminance — cellTile divides by 255 and normalises
+ * nothing — so how dark the ink is changes what it reads, not just how
+ * clearly. On a scan whose dark squares sit at ~160 against ~225 paper
+ * every cell falls in its "empty" basin at 0.94 confidence, and a whole
+ * 448-page book read as 1054 empty boards. Stretched, the same crops read
+ * 26 pieces a board.
+ *
+ * Percentiles, not min and max, so one speck of dither does not set the
+ * range. 2/98 and 5/95 both worked on the faint book; 10/90 overshot and
+ * turned it into rooks everywhere, so this is not a knob to widen.
+ *
+ * A board already spanning the range is returned UNTOUCHED, not merely
+ * scaled by roughly one. That is what keeps this provably free of
+ * regression on books that read correctly today: they never enter the
+ * branch, so their pixels are the same pixels.
+ */
+export function normalizeContrast(board: Gray): Gray {
+  const sorted = Uint8ClampedArray.from(board.data).sort();
+  const low = sorted[Math.floor(sorted.length * 0.02)]!;
+  const high = sorted[Math.floor(sorted.length * 0.98)]!;
+  // A board of one flat shade has nothing to stretch and would divide
+  // by zero; blank paper is left as blank paper.
+  if (high - low >= FAINT_SPAN || high === low) return board;
+  const data = new Uint8ClampedArray(board.data.length);
+  for (let i = 0; i < data.length; i++) data[i] = ((board.data[i]! - low) / (high - low)) * 255;
+  return { w: board.w, h: board.h, data };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_PX, boardFeatures, warpQuad, type Gray, type Quad } from './image';
+import { BOARD_PX, boardFeatures, normalizeContrast, warpQuad, type Gray, type Quad } from './image';
 import {
   classifyBoard,
   fenToLabels,
@@ -143,5 +143,39 @@ describe('diagram OCR pipeline', () => {
     expect(counts.get('empty')!).toBeLessThanOrEqual(16);
     for (const [, n] of counts) expect(n).toBeLessThanOrEqual(16);
     expect(templates.length).toBeLessThan(80);
+  });
+});
+
+describe('contrast normalisation of a faint board', () => {
+  const board = (low: number, high: number): Gray => {
+    const data = new Uint8ClampedArray(64 * 64);
+    for (let i = 0; i < data.length; i++) data[i] = i % 2 === 0 ? low : high;
+    return { w: 64, h: 64, data };
+  };
+
+  it('leaves a board that already spans the range byte for byte alone', () => {
+    // Identity, not "scaled by about one": this is what makes the change
+    // provably free of regression on books that read correctly today.
+    const clean = board(10, 255);
+    const out = normalizeContrast(clean);
+    expect(out).toBe(clean);
+  });
+
+  it('pulls a faint board out to the full range', () => {
+    const out = normalizeContrast(board(160, 225));
+    expect(Math.min(...out.data)).toBe(0);
+    expect(Math.max(...out.data)).toBe(255);
+  });
+
+  it('does not read the source array as it writes', () => {
+    const faint = board(160, 225);
+    const before = Uint8ClampedArray.from(faint.data);
+    normalizeContrast(faint);
+    expect(faint.data).toEqual(before);
+  });
+
+  it('leaves a board of one flat shade alone rather than dividing by zero', () => {
+    const flat: Gray = { w: 8, h: 8, data: new Uint8ClampedArray(64).fill(200) };
+    expect(normalizeContrast(flat)).toBe(flat);
   });
 });

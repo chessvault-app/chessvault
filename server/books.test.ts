@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { booksApi } from './books.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 
@@ -145,6 +145,50 @@ describe('books api', () => {
     await json(`/api/books/${id}/diagrams/4`, 'PUT', { diagrams: [] });
     const again = await (await app.request(`/api/books/${id}/diagrams`)).json();
     expect(again.pages['4']).toEqual([]);
+  });
+
+  it('remembers which reader filled the cache, and can be told to forget', async () => {
+    const page = (n: number, reader?: number) =>
+      json(`/api/books/${id}/diagrams/${n}`, 'PUT', {
+        diagrams: [{ rect: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 }, fen: null }],
+        ...(reader === undefined ? {} : { reader }),
+      });
+    const read = async () => (await app.request(`/api/books/${id}/diagrams`)).json();
+
+    await page(3, 2);
+    expect((await read()).reader).toBe(2);
+    // Pages written without a stamp keep whatever the file already had,
+    // so one un-stamped write cannot quietly age the whole cache.
+    await page(4);
+    const both = await read();
+    expect(both.reader).toBe(2);
+    expect(Object.keys(both.pages).sort()).toEqual(['3', '4']);
+
+    // A newer reader stamps the file as it refills it.
+    await page(3, 5);
+    expect((await read()).reader).toBe(5);
+
+    const cleared = await app.request(`/api/books/${id}/diagrams`, { method: 'DELETE' });
+    expect(cleared.status).toBe(200);
+    const empty = await read();
+    expect(empty.pages).toEqual({});
+    expect(empty.reader).toBe(0);
+  });
+
+  it('reads a cache written before the stamp existed as version 0', async () => {
+    // The shape on disk was the page map itself. It has to keep working:
+    // every vault that predates this holds one.
+    await json(`/api/books/${id}/diagrams/9`, 'PUT', {
+      diagrams: [{ rect: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 }, fen: '8/8/8/8/8/8/8/K6k' }],
+      reader: 3,
+    });
+    const file = resolve(dir, id, 'diagrams.json');
+    const stamped = JSON.parse(readFileSync(file, 'utf8'));
+    writeFileSync(file, JSON.stringify(stamped.pages));
+
+    const legacy = await (await app.request(`/api/books/${id}/diagrams`)).json();
+    expect(legacy.reader).toBe(0);
+    expect(legacy.pages['9'][0].fen).toBe('8/8/8/8/8/8/8/K6k');
   });
 
   it('stores and serves a cover', async () => {

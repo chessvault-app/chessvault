@@ -1,5 +1,13 @@
-import { BOARD_PX, boardFeatures, grayscaleFrom, warpQuad, type Gray, type Quad } from './image';
-import { detectBoardQuad } from './detect';
+import {
+  BOARD_PX,
+  boardFeatures,
+  grayscaleFrom,
+  normalizeContrast,
+  warpQuad,
+  type Gray,
+  type Quad,
+} from './image';
+import { detectBoardQuad, fitBoardQuad } from './detect';
 
 /** Canvas-side glue for the OCR pipeline (browser only, not unit-tested). */
 
@@ -21,15 +29,31 @@ function grayFromImage(img: HTMLImageElement): Gray {
  * diagram crop): corner detection trims number strips and coordinate
  * gutters — real-book crops carry both, and a blind full-frame warp
  * misaligns every cell by a fraction of a square.
+ *
+ * Three ways to find the corners, in the order they are trusted. Ink
+ * detection first, because on a scan it can read it is the most accurate
+ * thing here. Where it gives up — a faint scan, whose dark squares never
+ * form one blob — the checkerboard fit, which reads the pattern rather
+ * than the ink. The blind full frame last, and only when neither found a
+ * board at all.
+ *
+ * The order is measured, not assumed: putting the fit FIRST costs the
+ * clean book 98.33% -> 92.50% exact boards. Kept behind detectBoardQuad it
+ * costs nothing at all — 120 of 120 verified positions identical, cell for
+ * cell — because that book never reaches it. See findBoardBox.
+ *
+ * The contrast pass is last and applies to whatever the warp produced; it
+ * leaves an already-clean board byte for byte alone. See normalizeContrast.
  */
 function boardFromGray(gray: Gray): Gray {
-  const quad: Quad = detectBoardQuad(gray) ?? [
-    { x: 0, y: 0 },
-    { x: gray.w, y: 0 },
-    { x: gray.w, y: gray.h },
-    { x: 0, y: gray.h },
-  ];
-  return warpQuad(gray, quad);
+  const quad: Quad = detectBoardQuad(gray) ??
+    fitBoardQuad(gray) ?? [
+      { x: 0, y: 0 },
+      { x: gray.w, y: 0 },
+      { x: gray.w, y: gray.h },
+      { x: 0, y: gray.h },
+    ];
+  return normalizeContrast(warpQuad(gray, quad));
 }
 
 export function boardFromImage(img: HTMLImageElement): Gray {

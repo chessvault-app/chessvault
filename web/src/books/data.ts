@@ -233,6 +233,23 @@ export function saveReadingPage(id: string, page: number): void {
 }
 
 /**
+ * What the diagram reader answers as of this build.
+ *
+ * Bumped whenever a change makes the reader read a page DIFFERENTLY, so a
+ * cache filled by an older one is thrown away and read again. It is not a
+ * schema version — the records have not changed shape — it is a "these
+ * answers are stale" mark, and the reason it has to exist is that the job
+ * skips pages already read: without it, a book read by worse code stays
+ * read by worse code for as long as the vault lives.
+ *
+ * 1: the first stamped reader. Finds a faint scan's board by fitting the
+ *    checkerboard where ink detection gives up, and pulls a faint board's
+ *    contrast out before reading it. Books read before this hold whatever
+ *    the blind full-frame warp made of them.
+ */
+export const DIAGRAM_READER = 1;
+
+/**
  * Every book's read pages, in memory, by page: the diagram job writes here
  * as it reads and the reader reads from here, so a page the job has just
  * finished shows its buttons without a round trip, and a page read once
@@ -251,13 +268,28 @@ export function diagramsOf(id: string): Map<number, PageDiagramRecord[]> {
   return map;
 }
 
-/** The server's record of a book's pages, folded into `diagramsOf(id)`. */
+/**
+ * The server's record of a book's pages, folded into `diagramsOf(id)`.
+ *
+ * A record filled by an older reader is dropped rather than merged: the
+ * job skips pages it already has, so keeping them would pin the book to
+ * the worse answers for good. Dropping costs one re-read of a book that
+ * has not been opened since the reader improved, which is the same work
+ * it did the first time and runs in the background as it did then.
+ */
 export async function loadDiagrams(id: string): Promise<Map<number, PageDiagramRecord[]>> {
   const map = diagramsOf(id);
   try {
-    const body = await api<{ pages: Record<string, PageDiagramRecord[]> }>(
+    const body = await api<{ pages: Record<string, PageDiagramRecord[]>; reader?: number }>(
       `/api/books/${encodeURIComponent(id)}/diagrams`,
     );
+    if ((body.reader ?? 0) < DIAGRAM_READER) {
+      map.clear();
+      await api(`/api/books/${encodeURIComponent(id)}/diagrams`, { method: 'DELETE' }).catch(
+        () => undefined,
+      );
+      return map;
+    }
     for (const [k, v] of Object.entries(body.pages)) map.set(Number(k), v);
   } catch {
     // Offline: what is in memory is what there is.
@@ -269,6 +301,6 @@ export function saveDiagrams(id: string, page: number, diagrams: PageDiagramReco
   diagramsOf(id).set(page, diagrams);
   void api(`/api/books/${encodeURIComponent(id)}/diagrams/${page}`, {
     method: 'PUT',
-    json: { diagrams },
+    json: { diagrams, reader: DIAGRAM_READER },
   }).catch(() => undefined);
 }

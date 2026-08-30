@@ -343,3 +343,159 @@ export function detectBoardQuad(photo: Gray): Quad | null {
   if (Math.min(...sides) < Math.max(...sides) * 0.45) return null;
   return quad;
 }
+
+// --- board corners by fitting the checkerboard --------------------------------
+
+/**
+ * Find the board inside a crop by FITTING THE CHECKERBOARD rather than by
+ * finding ink — the fallback for when detectBoardQuad above gives up.
+ *
+ * detectBoardQuad asks which pixels are dark enough to be a border or a
+ * shaded square, which assumes near-black ink on near-white paper. A
+ * mid-tone scan breaks that: measured over one 448-page book, its dark
+ * squares sit at ~160 against ~225 paper, the blob fragments into pieces
+ * no bigger than two cells, and detectBoardQuad returned null on 30 of 30
+ * crops. The crop then went to a blind full-frame warp that included the
+ * caption line under the board, so the 8x8 grid missed by most of a rank
+ * and CellNet read the whole book as empty boards.
+ *
+ * A board's squares alternate whatever the exposure, so the PATTERN is
+ * the signal that survives where the threshold does not. Score a
+ * candidate box by how cleanly its 64 cells split into two groups by
+ * shade and take the best.
+ *
+ * This runs only where detectBoardQuad returned null (see browser.ts).
+ * That is deliberate and not a matter of taste: measured against the 120
+ * verified positions of a book that reads correctly today, REPLACING
+ * detectBoardQuad with this cost 98.33% -> 92.50% exact boards, nine
+ * boards worse against two better, one of them collapsing from 64 cells
+ * right to 32. It is better than detectBoardQuad on scans detectBoardQuad
+ * cannot read, and worse on the scans it can.
+ */
+export function findBoardBox(
+  photo: Gray,
+): { x: number; y: number; w: number; h: number; score: number } | null {
+  const W = photo.w;
+  const H = photo.h;
+  // Integral image, so any rectangle's mean costs four lookups and the
+  // search below can afford tens of thousands of candidate boxes.
+  const area = new Float64Array((W + 1) * (H + 1));
+  for (let y = 0; y < H; y++) {
+    let row = 0;
+    for (let x = 0; x < W; x++) {
+      row += photo.data[y * W + x]!;
+      area[(y + 1) * (W + 1) + (x + 1)] = area[y * (W + 1) + (x + 1)]! + row;
+    }
+  }
+  const sum = (x0: number, y0: number, x1: number, y1: number): number =>
+    area[y1 * (W + 1) + x1]! - area[y0 * (W + 1) + x1]! - area[y1 * (W + 1) + x0]! +
+    area[y0 * (W + 1) + x0]!;
+
+  /**
+   * A cell's square colour, taken from its OUTER RING. A piece is drawn in
+   * the middle of its square, so the middle is the part that does not say
+   * what colour the square is.
+   */
+  const ring = (x0: number, y0: number, x1: number, y1: number): number => {
+    const ix0 = Math.round(x0 + (x1 - x0) * 0.2);
+    const ix1 = Math.round(x1 - (x1 - x0) * 0.2);
+    const iy0 = Math.round(y0 + (y1 - y0) * 0.2);
+    const iy1 = Math.round(y1 - (y1 - y0) * 0.2);
+    const outer = (x1 - x0) * (y1 - y0) - (ix1 - ix0) * (iy1 - iy0);
+    if (outer <= 0) return 0;
+    return (sum(x0, y0, x1, y1) - sum(ix0, iy0, ix1, iy1)) / outer;
+  };
+
+  /**
+   * How cleanly does an 8x8 grid on this box split into two square colours?
+   * A Fisher discriminant over the 64 ring means: the gap between the light
+   * and dark groups over the spread within them.
+   *
+   * Two simpler scores were tried and both fail, in opposite directions.
+   * Correlation with a +1/-1 checker NORMALISED by the spread of the cell
+   * means is flat across a quarter-square of drift, because misalignment
+   * shrinks numerator and denominator together. Raw correlation is not
+   * flat, but it rewards overshooting the board, because paper is brighter
+   * than any light square and widens the gap. Dividing by the WITHIN-group
+   * spread is what punishes both: too small and cells mix the two colours,
+   * too large and they mix in paper, caption or coordinate gutter.
+   */
+  const score = (bx: number, by: number, bw: number, bh: number): number => {
+    const light: number[] = [];
+    const dark: number[] = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const x0 = Math.round(bx + (c * bw) / 8);
+        const x1 = Math.round(bx + ((c + 1) * bw) / 8);
+        const y0 = Math.round(by + (r * bh) / 8);
+        const y1 = Math.round(by + ((r + 1) * bh) / 8);
+        ((r + c) % 2 === 0 ? light : dark).push(ring(x0, y0, x1, y1));
+      }
+    }
+    const spread = (v: number[]): { mean: number; variance: number } => {
+      const mean = v.reduce((a, b) => a + b, 0) / v.length;
+      let s = 0;
+      for (const x of v) s += (x - mean) ** 2;
+      return { mean, variance: s / v.length };
+    };
+    const a = spread(light);
+    const b = spread(dark);
+    return Math.abs(a.mean - b.mean) / Math.sqrt(a.variance + b.variance + 1);
+  };
+
+  let best: { x: number; y: number; w: number; h: number; score: number } | null = null;
+  const steps = (from: number, to: number, by: number): number[] => {
+    const out: number[] = [];
+    for (let v = from; v <= to; v += by) out.push(v);
+    return out;
+  };
+  const scan = (xs: number[], ys: number[], ws: number[], hs: (w: number) => number[]): void => {
+    for (const bx of xs) {
+      for (const bw of ws) {
+        if (bx + bw > W) continue;
+        for (const by of ys) {
+          for (const bh of hs(bw)) {
+            if (by + bh > H) continue;
+            const s = score(bx, by, bw, bh);
+            if (!best || s > best.score) best = { x: bx, y: by, w: bw, h: bh, score: s };
+          }
+        }
+      }
+    }
+  };
+  // The crop already roughly bounds the board, so the box starts near the
+  // top-left and fills most of the frame. Coarse first, then a pixel at a
+  // time around the winner: the alternative is 250M candidates.
+  scan(
+    steps(0, Math.floor(W * 0.22), 4),
+    steps(0, Math.floor(H * 0.22), 4),
+    steps(Math.floor(W * 0.6), W, 6),
+    (w) => steps(Math.round(w * 0.9), Math.round(w * 1.1), 6),
+  );
+  if (!best) return null;
+  const coarse: { x: number; y: number; w: number; h: number } = best;
+  scan(
+    steps(Math.max(0, coarse.x - 6), coarse.x + 6, 1),
+    steps(Math.max(0, coarse.y - 6), coarse.y + 6, 1),
+    steps(Math.max(1, coarse.w - 6), coarse.w + 6, 1),
+    () => steps(Math.max(1, coarse.h - 6), coarse.h + 6, 1),
+  );
+  return best;
+}
+
+/**
+ * The same fit as a quad, or null when nothing on the crop reads as a
+ * board. The floor is a real board's discriminant against noise's; it is
+ * generous because the caller's own fallback (a blind full-frame warp) is
+ * worse than a mediocre fit, not better.
+ */
+export function fitBoardQuad(photo: Gray): Quad | null {
+  const box = findBoardBox(photo);
+  if (!box || box.score < 1.2) return null;
+  return [
+    { x: box.x, y: box.y },
+    { x: box.x + box.w, y: box.y },
+    { x: box.x + box.w, y: box.y + box.h },
+    { x: box.x, y: box.y + box.h },
+  ];
+}

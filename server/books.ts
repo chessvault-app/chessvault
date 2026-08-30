@@ -28,7 +28,7 @@ import { validId } from '../shared/vaultNames.ts';
  *   vault/books/<id>/book.json      { title, name, pages, addedAt, collection? }
  *   vault/books/<id>/reading.json   { page, at }   where the reader left off
  *   vault/books/<id>/cover.jpg      page 1, rendered by the client
- *   vault/books/<id>/diagrams.json  { [page]: [{ rect, fen }] }
+ *   vault/books/<id>/diagrams.json  { reader, pages: { [page]: [{ rect, fen }] } }
  *
  * Separate from vault/puzzlebooks/, which is a different thing: a puzzle
  * book is the puzzles read OUT of a book, trained with progress; a library
@@ -52,6 +52,14 @@ import { validId } from '../shared/vaultNames.ts';
  * found on a page and the position it read off each, so the hotspot that
  * sets a board up from a printed diagram costs one detection per page per
  * vault rather than per device. It is dropped when the PDF is replaced.
+ *
+ * `reader` is the version of the client that filled it. A cache read by
+ * older code is not wrong in a way anything can see — the positions are
+ * simply worse, and a book read before the reader could handle faint
+ * scans holds 1054 empty boards that no improvement would ever revisit,
+ * because a page already read is skipped. So the client stamps what read
+ * it, compares on load, and clears a cache older than itself. Files
+ * written before this existed carry no stamp and read as version 0.
  */
 
 const BOOKS_DIR = resolve(VAULT, 'books');
@@ -561,10 +569,35 @@ export function booksApi(
     });
   });
 
+  /**
+   * The stored cache, in whichever shape it is on disk. Anything without a
+   * `pages` object is a file from before the stamp existed, and IS the page
+   * map — migrated in place here rather than by a script, because the only
+   * thing that reads it is this route.
+   */
+  const readDiagrams = (id: string): { reader: number; pages: Record<string, Diagram[]> } => {
+    const raw = readJson<Record<string, unknown>>(diagramsPath(id), {});
+    const pages = raw.pages;
+    if (pages && typeof pages === 'object' && !Array.isArray(pages)) {
+      const reader = typeof raw.reader === 'number' ? raw.reader : 0;
+      return { reader, pages: pages as Record<string, Diagram[]> };
+    }
+    return { reader: 0, pages: raw as unknown as Record<string, Diagram[]> };
+  };
+
   api.get('/books/:id/diagrams', (c) => {
     const id = c.req.param('id');
     if (!validBook(id)) return c.json({ error: 'unknown book' }, 404);
-    return c.json({ pages: readJson<Record<string, Diagram[]>>(diagramsPath(id), {}) });
+    const { reader, pages } = readDiagrams(id);
+    return c.json({ pages, reader });
+  });
+
+  /** Throw the cache away, so the reader fills it again from nothing. */
+  api.delete('/books/:id/diagrams', (c) => {
+    const id = c.req.param('id');
+    if (!validBook(id)) return c.json({ error: 'unknown book' }, 404);
+    rmSync(diagramsPath(id), { force: true });
+    return c.json({ cleared: true });
   });
 
   /**
@@ -577,15 +610,19 @@ export function booksApi(
     if (!validBook(id)) return c.json({ error: 'unknown book' }, 404);
     const page = Number(c.req.param('page'));
     if (!Number.isInteger(page) || page < 1) return c.json({ error: 'no such page' }, 400);
-    const body = (await c.req.json().catch(() => ({}))) as { diagrams?: unknown };
+    const body = (await c.req.json().catch(() => ({}))) as { diagrams?: unknown; reader?: unknown };
     if (!Array.isArray(body.diagrams)) return c.json({ error: 'expected diagrams' }, 400);
     const diagrams = body.diagrams
       .map(cleanDiagram)
       .filter((d): d is Diagram => d !== null)
       .slice(0, MAX_DIAGRAMS_PER_PAGE);
-    const all = readJson<Record<string, Diagram[]>>(diagramsPath(id), {});
-    all[String(page)] = diagrams;
-    writeJson(diagramsPath(id), all);
+    const current = readDiagrams(id);
+    const reader =
+      typeof body.reader === 'number' && Number.isInteger(body.reader) && body.reader >= 0
+        ? body.reader
+        : current.reader;
+    const pages = { ...current.pages, [String(page)]: diagrams };
+    writeJson(diagramsPath(id), { reader, pages });
     return c.json({ page, diagrams });
   });
 
