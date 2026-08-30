@@ -460,7 +460,19 @@
   /* Light text on a near-black page — the pair the tag was drawn with.
      Fixed chroma for the same reason as the light theme's: the family
      hue is data, and the neutral appearance must not grey it out. */
-  --eco-l: 80%;
+  /* 85%, not 80%, and the five points are the hover state nobody had
+     measured. An ECO chip is its own colour on a 15% wash of itself, and
+     that pair was checked against the card it sits on. It also sits on
+     the row, and a row under the pointer fills with --accent: on the
+     games list, hovered, A05 measured 4.11:1 at 12px. 84% is where it
+     crosses 4.5; this is that with a little margin, at 4.65:1 hovered
+     and better everywhere else, since a lighter chip on a dark page only
+     gains.
+
+     Light is untouched: the same chip on the same hovered row there
+     measures 5.37:1, because --accent is a light grey and the chip's ink
+     is already dark. */
+  --eco-l: 85%;
   --eco-c: 0.08;
   --eco-wash: 15%;
   --eco-name-l: 72%;
