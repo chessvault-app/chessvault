@@ -704,9 +704,14 @@
 
   /* Wiki links in notes ([[Target]]): linky at rest, actionable with
      Ctrl - the text itself stays literal markdown. */
+  /* No radius here. There was a `border-radius: 3px`, and it drew
+     nothing: this is an inline decoration span with no background, no
+     border, no outline and no tabindex, so there is no box for a corner
+     to round. It was also the only 3px corner in the app, off the ladder
+     every other corner derives from — a rounding rule that cost a reader
+     nothing to obey and told them something untrue about the shape. */
   .wiki-link {
     color: var(--primary);
-    border-radius: 3px;
     cursor: pointer;
   }
   .wiki-link:hover {
