@@ -10,6 +10,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **And every piece set shows its knight.** The same problem one row
+  down, with the same fix: ten set names, and no way to tell Fantasy from
+  Celtic without wearing each of them for a moment. Each row now carries
+  that set's knight — the piece the sets disagree about most — standing on
+  a square of the board you have chosen, which is the background the art
+  was drawn to be legible on. The knights are generated beside the piece
+  stylesheets rather than taken from them, so showing a set costs one
+  piece instead of its other eleven: the settings page grew 12 KB
+  compressed, against 340 KB for the ten full sets.
+
 - **Every board theme shows itself in the list.** Choosing one meant
   reading ten colour names — "Slate", "Rosewood", "Blue" — and then
   picking one to find out what it was, because the only swatch on the

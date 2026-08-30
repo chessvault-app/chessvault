@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { formatWhen } from '@/lib/dates';
 import { navigate, up, type Section } from '@/lib/router';
 import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, DENSITIES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
+import { PIECE_THUMBS } from '@/pieces/thumbs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -574,7 +575,16 @@ function AppearanceCard() {
           value={pieces}
           onValueChange={(v) => setPieces(v as PieceSet)}
           ariaLabel={t('Piece set')}
-          groups={[{ options: PIECE_SETS.map(({ id, label }) => ({ value: id, label })) }]}
+          className="w-full"
+          groups={[
+            {
+              options: PIECE_SETS.map(({ id, label }) => ({
+                value: id,
+                label,
+                thumb: <PiecePreview set={id} />,
+              })),
+            },
+          ]}
         />
       </Field>
 
@@ -815,6 +825,34 @@ function BoardPreview({ theme }: { theme: BoardTheme }) {
           backgroundBlendMode: 'soft-light, normal',
         }}
       />
+    </span>
+  );
+}
+
+/** One knight of a set, standing on a square of the board in use.
+
+    An <img> and not the board's own `piece` element, which is what every
+    other picture of a piece in this app is. Those are painted by CSS keyed
+    on an ANCESTOR's `data-pieces`, and this list wants ten sets at once
+    under a page already wearing one of them: every row would match its own
+    set's rule AND the page's, at the same specificity, and the winner
+    would be whichever stylesheet chunk loaded last. So the art comes
+    straight from `PIECE_THUMBS` — one knight per set, generated beside the
+    stylesheets by scripts/setup-pieces.mjs — and the cascade never enters
+    into it. It also means a row can show Fantasy without fetching the
+    other eleven Fantasy pieces to do it.
+
+    On a board square rather than on the popover, because that is the only
+    background these are drawn to be legible on: white pieces are white,
+    and the list is white in one app theme and near-black in the other. */
+function PiecePreview({ set }: { set: PieceSet }) {
+  return (
+    <span
+      aria-hidden
+      className="border-border block size-5 shrink-0 overflow-hidden rounded-sm border"
+      style={{ backgroundColor: 'var(--board-light)' }}
+    >
+      <img src={PIECE_THUMBS[set]} alt="" className="size-full" />
     </span>
   );
 }
