@@ -14,6 +14,7 @@ import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { WikiSuggest } from './WikiSuggest';
+import { LinkedMentions } from './LinkedMentions';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -386,7 +387,9 @@ function NoteEditor({
           <ChevronLeft className="size-3.5" />
         </Button>
         <NoteTitle id={id} />
-        {/* History, then Edit, then Save — see StudyView's header. */}
+        {/* What links here, then History, then Edit, then Save — see
+            StudyView's header. */}
+        <LinkedMentions section="notes" id={id} />
         <DocumentHistory kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <Button
           variant={editable ? 'default' : 'secondary'}

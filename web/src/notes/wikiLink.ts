@@ -6,6 +6,13 @@ import type { Editor } from '@tiptap/react';
 import { navigate } from '@/lib/router';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import {
+  LINK_SECTIONS,
+  WIKI_RE,
+  resolveWikiLink,
+  type LinkIndex,
+  type LinkSection,
+} from '@shared/wikiLinks';
 
 /**
  * Obsidian-style wiki links: `[[Najdorf Mainlines]]` in a note is styled
@@ -18,34 +25,46 @@ import { t } from '@/lib/i18n';
  * across notes → studies → games. Case-insensitive.
  */
 
-const WIKI_RE = /\[\[([^[\]]+)\]\]/g;
+const SECTION_URL: Record<LinkSection, string> = {
+  notes: '/api/notes',
+  studies: '/api/studies',
+  games: '/api/games/docs',
+};
 
+/** Every document id, in the shape the shared resolver wants. */
+async function linkIndex(): Promise<LinkIndex> {
+  const entries = await Promise.all(
+    LINK_SECTIONS.map(async (section) => {
+      try {
+        const { studies } = await api<{ studies: { id: string }[] }>(SECTION_URL[section]);
+        return [section, studies.map((s) => s.id)] as const;
+      } catch {
+        return [section, []] as const; // unreachable section — the others still answer
+      }
+    }),
+  );
+  return Object.fromEntries(entries) as unknown as LinkIndex;
+}
+
+/**
+ * Follow a link.
+ *
+ * The rule for WHICH document a target names is `resolveWikiLink`, shared
+ * with the server's backlink index. It was written out longhand here once,
+ * which was fine while this was the only side asking; the moment something
+ * else had to answer the same question, one of the two was going to drift
+ * and neither would report a fault. See shared/wikiLinks.
+ */
 async function resolveAndOpen(target: string): Promise<void> {
-  const wanted = target.trim().toLowerCase();
-  const sections = [
-    { section: 'notes', url: '/api/notes' },
-    { section: 'studies', url: '/api/studies' },
-    { section: 'games', url: '/api/games/docs' },
-  ] as const;
-  for (const { section, url } of sections) {
-    try {
-      const { studies } = await api<{ studies: { id: string }[] }>(url);
-      const ids = studies.map((s) => s.id);
-      const exact = ids.find((id) => id.toLowerCase() === wanted);
-      if (exact) {
-        navigate(section, encodeURIComponent(exact));
-        return;
-      }
-      const tails = ids.filter((id) => id.split('/').at(-1)!.toLowerCase() === wanted);
-      if (tails.length === 1) {
-        navigate(section, encodeURIComponent(tails[0]!));
-        return;
-      }
-    } catch {
-      // unreachable section — keep trying the others
-    }
+  const hit = resolveWikiLink(target, await linkIndex());
+  if (typeof hit === 'string') {
+    // Still only a console warning: an unresolved link looks exactly like a
+    // working one in the document, which is a real gap, but the fix belongs
+    // on the decoration rather than here.
+    console.warn(`[wiki-link] "${target}" is ${hit}`);
+    return;
   }
-  console.warn(`[wiki-link] no note, study or game named "${target}"`);
+  navigate(hit.section, encodeURIComponent(hit.id));
 }
 
 function decorate(doc: PmNode): DecorationSet {

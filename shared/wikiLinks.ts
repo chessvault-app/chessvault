@@ -1,0 +1,206 @@
+/**
+ * Obsidian-style `[[wiki links]]`: what they look like, and what they mean.
+ *
+ * This is shared because it is answered in two places that must agree. The
+ * browser resolves a link when it is CLICKED, to know where to navigate;
+ * the server resolves every link in the vault to build the reverse index
+ * that says what points at a document. If those two rules ever drift, a
+ * document shows no backlink for a link that demonstrably works when you
+ * press it — and nothing errors, because both answers are individually
+ * plausible. Same failure shape as the native core and its TypeScript
+ * twin, and the same remedy: one implementation, used by both.
+ *
+ * The rule itself, unchanged from when it only lived in the editor: try an
+ * exact id first, then a unique last segment, and try each across notes,
+ * then studies, then games. Case-insensitive throughout. A last segment
+ * matching more than one document in a section is NOT a match — guessing
+ * between two documents is worse than declining to guess.
+ */
+
+/** `[[Target]]`, capturing the target. Never matches across a `[` or `]`. */
+export const WIKI_RE = /\[\[([^[\]]+)\]\]/g;
+
+/** The three kinds of document a link can point at, in resolution order. */
+export const LINK_SECTIONS = ['notes', 'studies', 'games'] as const;
+export type LinkSection = (typeof LINK_SECTIONS)[number];
+
+/** Document ids per section, as the resolver needs them. */
+export type LinkIndex = Readonly<Record<LinkSection, readonly string[]>>;
+
+export interface ResolvedLink {
+  readonly section: LinkSection;
+  readonly id: string;
+}
+
+/**
+ * Why a target did not resolve. Kept apart because they want different
+ * answers: a broken link is a typo or a deleted document, while an
+ * ambiguous one means two documents share a last segment and the writer
+ * has to say which. Both are currently invisible in the app — see the
+ * console.warn in the editor — and having them named is the start of
+ * showing them.
+ */
+export type LinkFailure = 'broken' | 'ambiguous';
+
+const tail = (id: string): string => id.split('/').at(-1)!;
+
+/**
+ * Resolve `target` against the vault's documents.
+ *
+ * Returns the document it names, or why it names none.
+ */
+export function resolveWikiLink(target: string, index: LinkIndex): ResolvedLink | LinkFailure {
+  const wanted = target.trim().toLowerCase();
+  if (!wanted) return 'broken';
+
+  // Ambiguity is only reported if nothing else matched outright. A section
+  // with an exact hit answers even when a later section has two loose
+  // ones, which keeps the answer the same as the order it is searched in.
+  let ambiguous = false;
+
+  for (const section of LINK_SECTIONS) {
+    const ids = index[section];
+    const exact = ids.find((id) => id.toLowerCase() === wanted);
+    if (exact) return { section, id: exact };
+
+    const tails = ids.filter((id) => tail(id).toLowerCase() === wanted);
+    if (tails.length === 1) return { section, id: tails[0]! };
+    if (tails.length > 1) ambiguous = true;
+  }
+
+  return ambiguous ? 'ambiguous' : 'broken';
+}
+
+export interface WikiMention {
+  /** The raw text inside the brackets, as written. */
+  readonly target: string;
+  /** Character offset of the `[[` within the document body. */
+  readonly at: number;
+  /** The sentence it sits in, for showing the mention in context. */
+  readonly context: string;
+}
+
+/** How much text either side of a mention is worth showing. */
+const CONTEXT_BEFORE = 90;
+const CONTEXT_AFTER = 90;
+
+/**
+ * Every `[[link]]` in one document body, with enough surrounding text to
+ * show why it was written.
+ *
+ * A backlink that is only a document name makes the reader open it to find
+ * out whether it mattered; the sentence around the link usually answers
+ * that on the spot. The window is trimmed to whitespace so it does not cut
+ * a word in half, and the brackets are dropped from the context so it
+ * reads as prose.
+ */
+export function findWikiMentions(body: string): WikiMention[] {
+  const found: WikiMention[] = [];
+  for (const match of body.matchAll(WIKI_RE)) {
+    const at = match.index;
+    const end = at + match[0].length;
+    const [from, to] = sentenceAround(body, at, end);
+    found.push({ target: match[1]!, at, context: asProse(body.slice(from, to)) });
+  }
+  return found;
+}
+
+/** Ends a sentence. A bare newline does not — see `sentenceAround`. */
+const SENTENCE_END = /[.!?]/;
+
+/** A blank line: the one break that is always a change of subject. */
+const PARAGRAPH_BREAK = /\n[ \t]*\n/;
+
+/**
+ * The paragraph a link sits in — the outermost the context may reach.
+ *
+ * A single newline is just where the text wrapped, so it is not a break: a
+ * link written alone on its own line, which is how a list of links is
+ * written, would otherwise have a context of nothing but its own name.
+ */
+function paragraphAround(body: string, at: number, end: number): [number, number] {
+  const before = [...body.slice(0, at).matchAll(new RegExp(PARAGRAPH_BREAK, 'g'))].at(-1);
+  const after = PARAGRAPH_BREAK.exec(body.slice(end));
+  return [
+    before ? before.index + before[0].length : 0,
+    after ? end + after.index : body.length,
+  ];
+}
+
+/**
+ * The bounds of the sentence a link sits in, clamped to a window.
+ *
+ * A fixed character window was the first attempt and read badly: it opened
+ * mid-clause, so every mention began with the tail of whatever preceded it
+ * and the reader had to find the link before the line made sense. Starting
+ * at a sentence boundary puts the point first.
+ *
+ * The window is still the outer limit, for the paragraph that runs for a
+ * page without a full stop. Where no boundary is found inside it, the
+ * window's own edge is used, nudged to a word so it does not cut one in
+ * half.
+ */
+function sentenceAround(body: string, at: number, end: number): [number, number] {
+  const [paraFrom, paraTo] = paragraphAround(body, at, end);
+  const floor = Math.max(paraFrom, at - CONTEXT_BEFORE);
+  const ceil = Math.min(paraTo, end + CONTEXT_AFTER);
+
+  let from = floor > paraFrom ? trimToWord(body, floor, 'start') : floor;
+  for (let i = at - 1; i >= floor; i -= 1) {
+    if (SENTENCE_END.test(body[i]!)) {
+      from = i + 1;
+      break;
+    }
+  }
+
+  let to = ceil < paraTo ? trimToWord(body, ceil, 'end') : ceil;
+  for (let i = end; i < ceil; i += 1) {
+    if (SENTENCE_END.test(body[i]!)) {
+      // Keep the stop itself: a sentence ending in mid-air reads as
+      // truncated even when it is complete.
+      to = i + 1;
+      break;
+    }
+  }
+
+  return [from, to];
+}
+
+/**
+ * A window of markdown, read back as the sentence it says.
+ *
+ * The window is a slice of a source file, so it arrives carrying whatever
+ * syntax happened to fall inside it — a `## Related` heading, a bullet, the
+ * asterisks around a bold run. Rendered into a one-line mention those read
+ * as noise, and the reader is being shown this line to judge whether the
+ * link is worth following, not to see how it was typed.
+ *
+ * Only the marks that are pure syntax are removed. Nothing here tries to
+ * be a markdown parser: a stray asterisk mid-sentence survives, which is
+ * the right way to be wrong.
+ */
+function asProse(window: string): string {
+  return window
+    .replace(/\[\[([^[\]]+)\]\]/g, '$1')
+    // Line-leading marks, while the newlines are still here to find them by.
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s{0,3}[-*+]\s+/gm, '')
+    .replace(/^\s{0,3}>\s?/gm, '')
+    .replace(/\*\*|__/g, '')
+    .replace(/`+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Nudge an offset to the nearest whitespace so a window starts on a word. */
+function trimToWord(text: string, at: number, edge: 'start' | 'end'): number {
+  if (at <= 0 || at >= text.length) return at;
+  const step = edge === 'start' ? 1 : -1;
+  let i = at;
+  // Give up rather than walk far: a long unbroken run has no word edge to
+  // find, and half of one is better than a window of nothing.
+  for (let moved = 0; moved < 20 && i > 0 && i < text.length; moved += 1, i += step) {
+    if (/\s/.test(text[i]!)) return edge === 'start' ? i + 1 : i;
+  }
+  return at;
+}

@@ -2,6 +2,7 @@ import type { Hono } from 'hono';
 import { resolve } from 'node:path';
 import { sourcesApi } from './sources.ts';
 import { gamesApi } from './games.ts';
+import { linksApi } from './links.ts';
 import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
@@ -76,6 +77,9 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   app.route('/api', studiesApi(resolve(games, 'collection'), 'games/docs', '.pgn', follow('game')));
   // Notes: the same document API over markdown files.
   app.route('/api', studiesApi(notes, 'notes', '.md', follow('note')));
+  // What points AT a document, derived by reading the notes — the only
+  // documents that can hold a [[link]] — and resolving each one.
+  app.route('/api', linksApi(notes, studies, resolve(games, 'collection')));
   // The vault's own config.json sits beside its games dir — collecting
   // reads the profile from THIS vault, not the module-default one.
   app.route('/api', gamesApi(games, resolve(games, '..', 'config.json')));

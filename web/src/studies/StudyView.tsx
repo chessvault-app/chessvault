@@ -221,7 +221,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       {/* What links here, then History, then Edit, then Save: what points
           at this document, what it has been, what it is becoming, what it
           becomes. */}
-      <LinkedMentions />
+      <LinkedMentions section={kind === 'game' ? 'games' : 'studies'} id={id} />
       <DocumentHistory
         kind={kind === 'game' ? 'games' : 'studies'}
         id={id}
