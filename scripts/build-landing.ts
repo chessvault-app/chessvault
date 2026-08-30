@@ -120,8 +120,16 @@ copyFileSync(
 // Screenshots are shared with the README rather than duplicated.
 const shots = resolve(SITE, 'shots');
 mkdirSync(shots, { recursive: true });
+// .gif as well as .png, and that is a fix rather than a widening: the
+// manual's Books page has shown a broken image since it was written,
+// because it points at shots/book-to-board.gif and this loop only ever
+// copied PNGs. Nothing failed — the build succeeded, the file simply was
+// not there, and a 404 renders as an empty box. The recorded
+// book-to-board interaction is one of the few things PRODUCT.md lists as
+// evidence on hand, so it is worth carrying.
+const SHOT_TYPES = ['.png', '.gif'];
 for (const name of readdirSync(resolve(REPO_ROOT, 'docs/screenshots'))) {
-  if (name.endsWith('.png')) {
+  if (SHOT_TYPES.some((ext) => name.endsWith(ext))) {
     copyFileSync(resolve(REPO_ROOT, 'docs/screenshots', name), resolve(shots, name));
   }
 }
