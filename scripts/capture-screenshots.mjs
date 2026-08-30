@@ -109,7 +109,19 @@ const TARGETS = [
     clicks: ['[aria-label="Engine on/off"]'],
     think: 5000,
   },
-  { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-border' },
+  // The pin pref, for the reason the comment on `prefs` gives: at this
+  // shot's 1100 css width the details column now starts CLOSED, because
+  // below 1680 it is paid for in table columns (CollectionView). The
+  // figure's whole subject is the table beside that panel, so the shot
+  // asks for it — pinned, this is the same picture it always was.
+  {
+    hash: '#/games',
+    out: 'games.png',
+    win: [1904, 996],
+    css: 1100,
+    wait: '.divide-border',
+    prefs: { 'vault:games-details-pinned': '1' },
+  },
   { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
   // The manual's per-page figures: every reference page in the manual gets
   // one picture of the screen it describes, in the same frame as the rest.
