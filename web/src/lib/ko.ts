@@ -221,6 +221,8 @@ export const ko: Record<string, string> = {
   'Click to open': '클릭하면 열립니다',
   'Link to a note, study or game': '노트, 스터디 또는 게임으로 연결',
   'Linked mentions': '연결된 언급',
+  'Nothing in the vault is named this': '보관함에 이 이름을 가진 항목이 없습니다',
+  'More than one document is named this': '이 이름을 가진 문서가 둘 이상입니다',
   'Untitled note': '제목 없는 노트',
   'could not open “{id}”': '“{id}”을(를) 열 수 없습니다',
 

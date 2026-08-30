@@ -2,7 +2,7 @@ import type { Hono } from 'hono';
 import { resolve } from 'node:path';
 import { sourcesApi } from './sources.ts';
 import { gamesApi } from './games.ts';
-import { linksApi } from './links.ts';
+import { linksApi, linkRenamer } from './links.ts';
 import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
@@ -58,10 +58,22 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // The opening map stores document ids in its tags, so each document API
   // reports its renames and the map's tags follow — the same reason the
   // bookmarks follow inside studiesApi itself.
+  //
+  // Wiki links hold ids too, written into note bodies by hand, and they had
+  // been the one holder that did NOT follow: renaming a document broke every
+  // `[[link]]` into it, and said nothing. The hook was already here; only
+  // the second subscriber was missing.
+  const renamer = linkRenamer(notes, studies, resolve(games, 'collection'));
+  const SECTION = { study: 'studies', note: 'notes', game: 'games' } as const;
   const follow = (kind: 'study' | 'note' | 'game') => ({
-    onMoved: (from: string, to: string) => remapMapTags(repertoire, kind, { from, to }),
-    onFolderMoved: (from: string, to: string) =>
-      remapMapTags(repertoire, kind, { from, to, folder: true }),
+    onMoved: (from: string, to: string) => {
+      remapMapTags(repertoire, kind, { from, to });
+      renamer.moved(from, to);
+    },
+    onFolderMoved: (from: string, to: string) => {
+      remapMapTags(repertoire, kind, { from, to, folder: true });
+      renamer.folderMoved(SECTION[kind], from, to);
+    },
   });
 
   // Given the caller's paths, not the module defaults: the demo mounts a

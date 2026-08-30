@@ -192,6 +192,55 @@ function asProse(window: string): string {
     .trim();
 }
 
+/**
+ * Rewrite the links in one note body after a document was renamed.
+ *
+ * Renaming used to break every link pointing at the document, silently:
+ * navigation stopped working and — since backlinks — the document also
+ * started claiming nothing pointed at it. Obsidian rewrites the links, and
+ * so does this.
+ *
+ * The care is all in NOT rewriting too much. `index` is the vault as it is
+ * AFTER the move, and a target that still resolves to something is left
+ * alone even when it looks like the old name: `[[Najdorf]]` beside a note
+ * actually called Najdorf means that note, and renaming an unrelated study
+ * whose last segment was also "Najdorf" must not touch it. Only a target
+ * that named the moved document and now names nothing is rewritten.
+ *
+ * How it is rewritten follows how it was written. A writer who typed the
+ * last segment gets the new last segment, if that is unambiguous; a writer
+ * who typed the full id gets the full new id. Turning every short link
+ * into a path would be correct and would also rewrite the note into
+ * something its author did not write.
+ */
+export function renameLinksIn(
+  body: string,
+  from: string,
+  to: string,
+  index: LinkIndex,
+): string | null {
+  const oldId = from.toLowerCase();
+  const oldTail = tail(from).toLowerCase();
+  const newTail = tail(to);
+  // Is the new last segment enough on its own? Only then can a short link
+  // stay short.
+  const tailWorks = resolveWikiLink(newTail, index);
+  const short = typeof tailWorks !== 'string' && tailWorks.id === to ? newTail : to;
+
+  let touched = false;
+  const next = body.replace(WIKI_RE, (whole, target: string) => {
+    const wanted = target.trim().toLowerCase();
+    if (wanted !== oldId && wanted !== oldTail) return whole;
+    // Still means something? Then it was never pointing at what moved --
+    // or the move did not disturb it -- and rewriting would be a guess.
+    if (typeof resolveWikiLink(target, index) !== 'string') return whole;
+    touched = true;
+    return `[[${wanted === oldTail && wanted !== oldId ? short : to}]]`;
+  });
+
+  return touched ? next : null;
+}
+
 /** Nudge an offset to the nearest whitespace so a window starts on a word. */
 function trimToWord(text: string, at: number, edge: 'start' | 'end'): number {
   if (at <= 0 || at >= text.length) return at;

@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import {
   findWikiMentions,
+  renameLinksIn,
   resolveWikiLink,
   type LinkIndex,
   type LinkSection,
@@ -96,6 +97,66 @@ function signature(dirs: { dir: string; ext: string }[]): string {
     }
   }
   return parts.join('|');
+}
+
+/**
+ * Keep the links pointing at a document that has been renamed or moved.
+ *
+ * Without this a rename silently breaks every link into the document: the
+ * click stops working, and since backlinks exist the document also starts
+ * claiming that nothing points at it. Neither reports a fault, which is
+ * the worst version — the vault quietly loses the connections it is for.
+ *
+ * Runs AFTER the move, so the index it resolves against is the vault as it
+ * now stands; `renameLinksIn` needs that to tell a link that broke from
+ * one that still means something. Rewrites are confined to notes, the only
+ * documents that can hold a link.
+ */
+export function linkRenamer(notesDir: string, studiesDir: string, gamesDir: string) {
+  const indexNow = (): LinkIndex => ({
+    notes: idsIn(notesDir, '.md'),
+    studies: idsIn(studiesDir, '.pgn'),
+    games: idsIn(gamesDir, '.pgn'),
+  });
+
+  /** Apply every (old id -> new id) pair to every note, in one pass each. */
+  const apply = (pairs: { from: string; to: string }[]): void => {
+    if (pairs.length === 0) return;
+    const index = indexNow();
+    for (const note of index.notes) {
+      const path = resolve(notesDir, `${note}.md`);
+      let body: string;
+      try {
+        body = readFileSync(path, 'utf-8');
+      } catch {
+        continue;
+      }
+      let next = body;
+      for (const { from, to } of pairs) {
+        next = renameLinksIn(next, from, to, index) ?? next;
+      }
+      if (next === body) continue;
+      try {
+        writeFileSync(path, next);
+      } catch {
+        // A note that cannot be written is left as it was. Losing a link
+        // rewrite is recoverable; half-writing someone's note is not.
+      }
+    }
+  };
+
+  return {
+    moved: (from: string, to: string): void => apply([{ from, to }]),
+    /**
+     * A folder move renames every document under it. The documents are
+     * already at their new ids by the time this runs, so the old ones are
+     * derived by putting the old folder name back.
+     */
+    folderMoved: (section: LinkSection, from: string, to: string): void => {
+      const ids = indexNow()[section].filter((id) => id === to || id.startsWith(`${to}/`));
+      apply(ids.map((id) => ({ from: `${from}${id.slice(to.length)}`, to: id })));
+    },
+  };
 }
 
 export function linksApi(notesDir: string, studiesDir: string, gamesDir: string): Hono {

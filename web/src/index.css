@@ -829,6 +829,29 @@
   .wiki-link:focus-visible {
     text-decoration-color: currentColor;
   }
+  /* A link that names nothing, and one that names two things.
+     Not --destructive: nothing has gone wrong and nothing is at risk. A
+     link written before its note is a normal way to work, and colouring it
+     like a failed save would make writing forward feel like an error. It
+     is a link that does not arrive yet, so it is muted rather than blue,
+     and dotted rather than solid — the underline says "provisional" in a
+     way colour alone cannot, and survives both colour schemes and anyone
+     who cannot separate the two hues. Ambiguity is the one the writer must
+     act on, since only they know which document they meant, so it keeps a
+     colour: --warn, the app's word for "this needs you". */
+  .wiki-link-broken {
+    color: var(--muted-foreground);
+    text-decoration-style: dotted;
+  }
+  .wiki-link-ambiguous {
+    color: var(--warn);
+    text-decoration-style: dotted;
+  }
+  /* No pointer on either: neither one opens anything. */
+  .wiki-link-broken,
+  .wiki-link-ambiguous {
+    cursor: default;
+  }
   /* Reading mode renders the link text alone, Obsidian-preview style. */
   .note-editor[contenteditable='false'] .wiki-bracket {
     display: none;

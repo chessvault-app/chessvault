@@ -31,8 +31,25 @@ const SECTION_URL: Record<LinkSection, string> = {
   games: '/api/games/docs',
 };
 
-/** Every document id, in the shape the shared resolver wants. */
-async function linkIndex(): Promise<LinkIndex> {
+/**
+ * Every document id, cached.
+ *
+ * One cache, three readers: the suggester's list, the click that follows a
+ * link, and the decoration that says whether a link resolves at all. They
+ * were two caches for a while — a flat list for the popup and a fresh
+ * fetch per click — which is three chances to disagree about what the
+ * vault contains while showing all three answers on one screen.
+ */
+let cache: { at: number; index: LinkIndex } | null = null;
+const CACHE_MS = 30_000;
+
+/** The index if it is already here, for the synchronous decoration pass. */
+const indexNow = (): LinkIndex | null =>
+  cache && Date.now() - cache.at < CACHE_MS ? cache.index : null;
+
+async function documentIndex(): Promise<LinkIndex> {
+  const fresh = indexNow();
+  if (fresh) return fresh;
   const entries = await Promise.all(
     LINK_SECTIONS.map(async (section) => {
       try {
@@ -43,7 +60,9 @@ async function linkIndex(): Promise<LinkIndex> {
       }
     }),
   );
-  return Object.fromEntries(entries) as unknown as LinkIndex;
+  const index = Object.fromEntries(entries) as unknown as LinkIndex;
+  cache = { at: Date.now(), index };
+  return index;
 }
 
 /**
@@ -56,7 +75,7 @@ async function linkIndex(): Promise<LinkIndex> {
  * and neither would report a fault. See shared/wikiLinks.
  */
 async function resolveAndOpen(target: string): Promise<void> {
-  const hit = resolveWikiLink(target, await linkIndex());
+  const hit = resolveWikiLink(target, await documentIndex());
   if (typeof hit === 'string') {
     // Still only a console warning: an unresolved link looks exactly like a
     // working one in the document, which is a real gap, but the fix belongs
@@ -67,16 +86,38 @@ async function resolveAndOpen(target: string): Promise<void> {
   navigate(hit.section, encodeURIComponent(hit.id));
 }
 
-function decorate(doc: PmNode): DecorationSet {
+/**
+ * What a link is: a document, or one of the two ways of naming none.
+ *
+ * `unknown` is not a failure — it is "the index has not arrived yet", and
+ * it renders as an ordinary link. The alternative is every link in the
+ * document flashing as broken for as long as the first fetch takes, which
+ * would train the reader to ignore the colour that is supposed to mean
+ * something.
+ */
+type LinkState = 'ok' | 'broken' | 'ambiguous' | 'unknown';
+
+/** Transaction meta saying "the index landed, draw the links again". */
+const RE_INDEX = 'wikiLink:reindex';
+
+function stateOf(target: string, index: LinkIndex | null): LinkState {
+  if (!index) return 'unknown';
+  const hit = resolveWikiLink(target, index);
+  return typeof hit === 'string' ? hit : 'ok';
+}
+
+function decorate(doc: PmNode, index: LinkIndex | null): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
     for (const match of node.text.matchAll(WIKI_RE)) {
       const from = pos + match.index;
+      const state = stateOf(match[1]!, index);
       decorations.push(
         Decoration.inline(from, from + match[0].length, {
-          class: 'wiki-link',
+          class: state === 'ok' || state === 'unknown' ? 'wiki-link' : `wiki-link wiki-link-${state}`,
           'data-target': match[1]!,
+          'data-link-state': state,
         }),
         // The brackets get their own spans so read mode can hide them.
         Decoration.inline(from, from + 2, { class: 'wiki-bracket' }),
@@ -106,10 +147,21 @@ function decorate(doc: PmNode): DecorationSet {
  */
 function syncLinkAffordance(view: EditorView): void {
   const follows = !view.editable;
-  const title = t(follows ? 'Click to open' : 'Ctrl+click to open');
+  const opens = t(follows ? 'Click to open' : 'Ctrl+click to open');
   for (const el of view.dom.querySelectorAll<HTMLElement>('.wiki-link')) {
-    el.title = title;
-    if (follows) {
+    const state = (el.dataset.linkState ?? 'unknown') as LinkState;
+    // A link that names nothing says so on hover, and is NOT offered as a
+    // link: no role, no tab stop, because there is nothing to open and
+    // announcing it as a link would be a promise the press cannot keep.
+    const resolves = state === 'ok' || state === 'unknown';
+    el.title = resolves
+      ? opens
+      : t(
+          state === 'broken'
+            ? 'Nothing in the vault is named this'
+            : 'More than one document is named this',
+        );
+    if (follows && resolves) {
       el.setAttribute('role', 'link');
       el.tabIndex = 0;
     } else {
@@ -121,20 +173,10 @@ function syncLinkAffordance(view: EditorView): void {
 
 // --- [[ autocomplete -------------------------------------------------------
 
-let targetCache: { at: number; items: string[] } | null = null;
+/** Every id as one list, in resolution order, for the suggester. */
 async function allTargets(): Promise<string[]> {
-  if (targetCache && Date.now() - targetCache.at < 30_000) return targetCache.items;
-  const items: string[] = [];
-  for (const url of ['/api/notes', '/api/studies', '/api/games/docs']) {
-    try {
-      const { studies } = await api<{ studies: { id: string }[] }>(url);
-      items.push(...studies.map((s) => s.id));
-    } catch {
-      // section unreachable
-    }
-  }
-  targetCache = { at: Date.now(), items };
-  return items;
+  const index = await documentIndex();
+  return LINK_SECTIONS.flatMap((section) => index[section]);
 }
 
 /**
@@ -275,11 +317,27 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
       new Plugin({
         key: new PluginKey('wikiLink'),
         state: {
-          init: (_config, state) => decorate(state.doc),
-          apply: (tr, old) => (tr.docChanged ? decorate(tr.doc) : old),
+          init: (_config, state) => decorate(state.doc, indexNow()),
+          // `reindex` is the arrival of the document index. Without it the
+          // first paint's decorations — drawn before any fetch could
+          // land — would stand until the next keystroke, so a note opened
+          // and read without being touched would never show a broken link.
+          apply: (tr, old) =>
+            tr.docChanged || tr.getMeta(RE_INDEX) ? decorate(tr.doc, indexNow()) : old,
         },
         view: (view) => {
           syncLinkAffordance(view);
+          /**
+           * Draw the links once the index is known.
+           *
+           * Guarded by `alive` rather than left to run: the fetch outlives
+           * a note that is closed while it is in flight, and dispatching
+           * into a destroyed view throws.
+           */
+          let alive = true;
+          void documentIndex().then(() => {
+            if (alive) view.dispatch(view.state.tr.setMeta(RE_INDEX, true));
+          });
           return {
             update: (view) => {
               syncLinkAffordance(view);
@@ -304,7 +362,10 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
                 );
               });
             },
-            destroy: () => suggest.close(),
+            destroy: () => {
+              alive = false;
+              suggest.close();
+            },
           };
         },
         props: {

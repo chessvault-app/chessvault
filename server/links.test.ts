@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { linksApi } from './links.ts';
+import { linkRenamer, linksApi } from './links.ts';
 
 describe('links api', () => {
   let root: string;
@@ -113,6 +113,34 @@ describe('links api', () => {
     note('deep/Nested', 'Buried link to [[Najdorf]].');
     const mentions = await backlinks('studies', 'Najdorf');
     expect(mentions.map((m) => m.from)).toContain('deep/Nested');
+  });
+
+  it('rewrites a link when the document it names is renamed', () => {
+    writeFileSync(join(studies, 'Slav.pgn'), '*');
+    note('Follower', 'Study [[Slav]] tonight.');
+    // The hook fires AFTER the move, so the file goes first.
+    renameSync(join(studies, 'Slav.pgn'), join(studies, 'Semi-Slav.pgn'));
+    linkRenamer(notes, studies, games).moved('Slav', 'Semi-Slav');
+    expect(readFileSync(join(notes, 'Follower.md'), 'utf-8')).toBe('Study [[Semi-Slav]] tonight.');
+  });
+
+  it('leaves a link alone when the old name still resolves', () => {
+    // Nothing actually moved. A renamer told about a move that did not
+    // happen must not rewrite a link that still works.
+    note('Bystander', 'Study [[Najdorf]] tonight.');
+    linkRenamer(notes, studies, games).moved('Najdorf', 'Sicilian');
+    expect(readFileSync(join(notes, 'Bystander.md'), 'utf-8')).toBe('Study [[Najdorf]] tonight.');
+  });
+
+  it('rewrites links after a folder is moved', () => {
+    mkdirSync(join(studies, 'old'), { recursive: true });
+    writeFileSync(join(studies, 'old', 'Line.pgn'), '*');
+    note('FolderFollower', 'See [[old/Line]].');
+    // Perform the move, then tell the renamer, as the route does.
+    mkdirSync(join(studies, 'new'), { recursive: true });
+    renameSync(join(studies, 'old', 'Line.pgn'), join(studies, 'new', 'Line.pgn'));
+    linkRenamer(notes, studies, games).folderMoved('studies', 'old', 'new');
+    expect(readFileSync(join(notes, 'FolderFollower.md'), 'utf-8')).toBe('See [[new/Line]].');
   });
 
   it('refuses an unknown section rather than answering for it', async () => {

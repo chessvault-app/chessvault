@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { findWikiMentions, resolveWikiLink, type LinkIndex } from './wikiLinks.ts';
+import {
+  findWikiMentions,
+  renameLinksIn,
+  resolveWikiLink,
+  type LinkIndex,
+} from './wikiLinks.ts';
 
 const index = (over: Partial<LinkIndex> = {}): LinkIndex => ({
   notes: [],
@@ -70,6 +75,70 @@ describe('resolveWikiLink', () => {
   it('prefers an exact match over a unique tail in the same section', () => {
     const both = index({ notes: ['Najdorf', 'openings/Najdorf'] });
     expect(resolveWikiLink('Najdorf', both)).toEqual({ section: 'notes', id: 'Najdorf' });
+  });
+});
+
+describe('renameLinksIn', () => {
+  // `index` is always the vault as it stands AFTER the move.
+  it('follows a full-id link to the new id', () => {
+    const after = index({ studies: ['Sicilian'] });
+    expect(renameLinksIn('See [[Najdorf]].', 'Najdorf', 'Sicilian', after)).toBe(
+      'See [[Sicilian]].',
+    );
+  });
+
+  it('keeps a short link short when the new last segment is enough', () => {
+    const after = index({ studies: ['openings/Sicilian'] });
+    expect(renameLinksIn('See [[Najdorf]].', 'openings/Najdorf', 'openings/Sicilian', after)).toBe(
+      'See [[Sicilian]].',
+    );
+  });
+
+  it('lengthens a short link only when the new last segment is ambiguous', () => {
+    const after = index({ studies: ['a/Sicilian', 'openings/Sicilian'] });
+    expect(renameLinksIn('See [[Najdorf]].', 'openings/Najdorf', 'openings/Sicilian', after)).toBe(
+      'See [[openings/Sicilian]].',
+    );
+  });
+
+  it('leaves a link alone when it still resolves to something else', () => {
+    // A note really called Najdorf: the target meant that note all along,
+    // and a study whose last segment happened to match must not steal it.
+    const after = index({ notes: ['Najdorf'], studies: ['openings/Sicilian'] });
+    expect(renameLinksIn('See [[Najdorf]].', 'openings/Najdorf', 'openings/Sicilian', after)).toBe(
+      null,
+    );
+  });
+
+  it('reports no change as null rather than handing back the body', () => {
+    const after = index({ studies: ['Sicilian'] });
+    expect(renameLinksIn('No links here.', 'Najdorf', 'Sicilian', after)).toBe(null);
+  });
+
+  it('rewrites every mention in the body', () => {
+    const after = index({ studies: ['Sicilian'] });
+    expect(renameLinksIn('[[Najdorf]] then [[Najdorf]]', 'Najdorf', 'Sicilian', after)).toBe(
+      '[[Sicilian]] then [[Sicilian]]',
+    );
+  });
+
+  it('matches the old name case-insensitively, as resolution does', () => {
+    const after = index({ studies: ['Sicilian'] });
+    expect(renameLinksIn('See [[najdorf]].', 'Najdorf', 'Sicilian', after)).toBe(
+      'See [[Sicilian]].',
+    );
+  });
+
+  it('leaves a short link alone when a move into a folder did not break it', () => {
+    const after = index({ studies: ['openings/Najdorf'] });
+    expect(renameLinksIn('See [[Najdorf]].', 'Najdorf', 'openings/Najdorf', after)).toBe(null);
+  });
+
+  it('leaves unrelated links untouched', () => {
+    const after = index({ studies: ['Sicilian', 'Dragon'] });
+    expect(renameLinksIn('[[Najdorf]] and [[Dragon]]', 'Najdorf', 'Sicilian', after)).toBe(
+      '[[Sicilian]] and [[Dragon]]',
+    );
   });
 });
 
