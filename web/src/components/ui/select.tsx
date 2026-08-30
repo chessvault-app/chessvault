@@ -49,6 +49,17 @@ export interface SelectOption {
       least about it (a colour scheme). `ring` outlines it, so a dot the
       colour of the list can still be seen. */
   dot?: { color: string; ring?: string };
+  /** A picture of what the option IS, in the same place a `dot` would sit
+      and on the closed trigger too. For a list whose options are things
+      you look at rather than things you read — a board's colours, a piece
+      set's art: "Rosewood" and "Slate" are two words that do not tell you
+      which is which, and a 20px checker does it without being read.
+
+      A node rather than a shape this file knows how to draw, because the
+      thing being previewed belongs to the caller — the swatch owns its
+      own size and its own aria-hidden. Sized by convention around the
+      text's own 20px so a row does not grow around it. */
+  thumb?: React.ReactNode;
 }
 
 /** The swatch an option's `dot` asks for, at text size. */
@@ -363,6 +374,7 @@ function SelectField({
           </span>
         ))}
       <span className={cn('flex min-w-0 items-center gap-2', steady && 'col-start-1 row-start-1')}>
+        {selected?.thumb}
         {selected?.dot && <OptionDot dot={selected.dot} />}
         <span className="truncate">{selected ? face(t(selected.short ?? selected.label)) : '—'}</span>
       </span>
@@ -418,6 +430,7 @@ function SelectField({
                         mono && 'font-mono',
                       )}
                     >
+                      {option.thumb}
                       {option.dot && <OptionDot dot={option.dot} />}
                       <span className="min-w-0 flex-1 truncate">{t(option.label)}</span>
                       {option.value === value && <CheckIcon className="size-4 shrink-0" />}
@@ -459,6 +472,7 @@ function SelectField({
             {group.label && <SelectLabel>{t(group.label)}</SelectLabel>}
             {group.options.map((option) => (
               <SelectItem key={option.value} value={toBase(option.value)}>
+                {option.thumb}
                 {option.dot && <OptionDot dot={option.dot} />}
                 {t(option.label)}
               </SelectItem>

@@ -10,6 +10,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **Every board theme shows itself in the list.** Choosing one meant
+  reading ten colour names — "Slate", "Rosewood", "Blue" — and then
+  picking one to find out what it was, because the only swatch on the
+  page showed the theme already in use, which is the one theme you could
+  already see on the board. Each row of the list now carries a swatch
+  painted in its own theme, the closed control wears the same one, and
+  the separate preview is gone: it had become the selected row drawn
+  twice. The swatches read the same palette table the real board does,
+  so there is no second copy of the colours to fall out of step.
+
 - **Asking for less motion now quiets the board, and stops breaking the
   spinners.** The setting was honoured by one blanket rule that cut every
   animation to nothing, and it was wrong at both ends. It never reached

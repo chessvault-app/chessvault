@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
@@ -544,17 +544,29 @@ function AppearanceCard() {
         />
       </Field>
 
+      {/* The swatch used to sit BESIDE the control, showing the theme
+          already chosen — which is the one theme you can already see, on
+          the board itself. What the list could not say was what the other
+          nine look like: nine colour names, picked by reading. So the
+          swatch moved onto the rows, one per preset, and the trigger wears
+          the same one — the separate preview would now be the selected
+          row's swatch drawn twice. */}
       <Field label="Board">
-        <div className="flex items-center gap-3">
-          <BoardPreview theme={boardTheme} />
-          <Select
-            value={boardTheme}
-            onValueChange={(v) => setBoardTheme(v as BoardTheme)}
-            ariaLabel={t('Board theme')}
-            className="flex-1"
-            groups={[{ options: BOARD_THEMES.map(({ id, label }) => ({ value: id, label })) }]}
-          />
-        </div>
+        <Select
+          value={boardTheme}
+          onValueChange={(v) => setBoardTheme(v as BoardTheme)}
+          ariaLabel={t('Board theme')}
+          className="w-full"
+          groups={[
+            {
+              options: BOARD_THEMES.map(({ id, label }) => ({
+                value: id,
+                label,
+                thumb: <BoardPreview theme={id} />,
+              })),
+            },
+          ]}
+        />
       </Field>
 
       <Field label="Pieces">
@@ -773,29 +785,37 @@ function SoundCard() {
   );
 }
 
-/** A 2×2 checker painted with the live board tokens. The theme presets are
-    defined on `:root[data-board=…]`, and selecting one applies it to the
-    root immediately, so reading the plain vars here mirrors exactly what the
-    real board shows — no hand-copied palette to drift. */
+/** A 2×2 checker in one named preset, for a row of the theme list.
+
+    It declares `data-board` and then reads the plain board tokens, which
+    is the whole trick: index.css defines every preset unanchored as well
+    as on the root, so the attribute puts that preset's palette on this
+    span and the swatch is painted by the same table the real board is.
+    There is no palette here to drift from it.
+
+    `--board-grain` is reset on the way in because only one preset defines
+    it: on a page already wearing Wood, every OTHER swatch would inherit
+    the grain from the root. The reset is on the outer span so Wood's own
+    rule — which lands on the inner one, with the attribute — still wins. */
 function BoardPreview({ theme }: { theme: BoardTheme }) {
-  // `theme` is only a re-render trigger; the colours come from :root.
-  void theme;
   return (
-    <span
-      aria-hidden
-      className="border-border block size-9 shrink-0 rounded-md border"
-      style={{
-        backgroundColor: 'var(--board-light)',
-        // Same two layers as cg-board, so a textured theme is picked with
-        // its texture visible. The swatch shows 4x4 squares, and the grain
-        // is an 8x8 grid of cells, so it takes twice the swatch to put one
-        // cell on one square — at 200% the top-left 4x4 of it shows.
-        backgroundImage:
-          'var(--board-grain, none), repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
-        backgroundSize: '200% 200%, 50% 50%',
-        backgroundBlendMode: 'soft-light, normal',
-      }}
-    />
+    <span aria-hidden className="contents" style={{ '--board-grain': 'none' } as CSSProperties}>
+      <span
+        data-board={theme}
+        className="border-border block size-5 shrink-0 rounded-sm border"
+        style={{
+          backgroundColor: 'var(--board-light)',
+          // Same two layers as cg-board, so a textured theme is picked with
+          // its texture visible. The swatch shows 4x4 squares, and the grain
+          // is an 8x8 grid of cells, so it takes twice the swatch to put one
+          // cell on one square — at 200% the top-left 4x4 of it shows.
+          backgroundImage:
+            'var(--board-grain, none), repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
+          backgroundSize: '200% 200%, 50% 50%',
+          backgroundBlendMode: 'soft-light, normal',
+        }}
+      />
+    </span>
   );
 }
 

@@ -374,9 +374,15 @@
   --toast: oklch(calc(24% + (0% - 24%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
   --toast-foreground: oklch(calc(98% + (100% - 98%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
 
-  /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
-  --board-light: oklch(91% 0.035 84);
-  --board-dark: oklch(62% 0.072 52);
+  /* Board — warm cream/walnut, tuned so pieces stay legible on both squares.
+     Held in a `-base` pair as well, because "the adaptive walnut" is one of
+     the presets a swatch has to be able to ASK for: every other preset
+     overrides --board-light on the element that names it, and a swatch of
+     this one would otherwise show whichever preset the page is wearing. */
+  --board-light-base: oklch(91% 0.035 84);
+  --board-dark-base: oklch(62% 0.072 52);
+  --board-light: var(--board-light-base);
+  --board-dark: var(--board-dark-base);
   --board-frame: oklch(88% calc(0.01 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(83% 0.16 108 / 55%);
   --sq-selected: oklch(62% 0.15 150 / 50%);
@@ -501,8 +507,10 @@
   --toast-foreground: oklch(calc(20% + (0% - 20%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 
   /* Cooler, desaturated board so it recedes against the dark chrome. */
-  --board-light: oklch(60% 0.024 250);
-  --board-dark: oklch(39% 0.031 256);
+  --board-light-base: oklch(60% 0.024 250);
+  --board-dark-base: oklch(39% 0.031 256);
+  --board-light: var(--board-light-base);
+  --board-dark: var(--board-dark-base);
   --board-frame: oklch(27% calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(72% 0.15 110 / 42%);
   --sq-selected: oklch(65% 0.15 152 / 45%);
@@ -1364,34 +1372,58 @@ cg-board square.check {
    above adapts to light/dark; a chosen preset is a deliberate fixed
    palette, so it overrides both modes (`:root[data-board]` outranks the
    `.dark` token block).
+
+   Each preset is written twice: once for the root, which is how a theme
+   is CHOSEN, and once unanchored, which is how one is SHOWN. The second
+   form lets any element declare `data-board` and paint its subtree in
+   that preset — the theme picker's thumbnails are one swatch per preset,
+   side by side, and a swatch that had to name its own colours would be a
+   second copy of this table to keep in step. The bare selector is a
+   class-level match like `.dark`, so it wins on order alone; `:root` is
+   kept beside it to hold the specificity the paragraph above claims.
    --------------------------------------------------------------------------- */
 
-:root[data-board='green'] {
+/* The adaptive walnut, named. Nothing sets `data-board='default'` on the
+   root — choosing it REMOVES the attribute — so this rule exists for the
+   swatch that has to show it beside the fixed presets. */
+:root[data-board='default'],
+[data-board='default'] {
+  --board-light: var(--board-light-base);
+  --board-dark: var(--board-dark-base);
+}
+
+:root[data-board='green'],
+[data-board='green'] {
   --board-light: oklch(95% 0.045 105);
   --board-dark: oklch(65% 0.095 135);
 }
 
-:root[data-board='brown'] {
+:root[data-board='brown'],
+[data-board='brown'] {
   --board-light: oklch(89% 0.045 85);
   --board-dark: oklch(66% 0.065 65);
 }
 
-:root[data-board='blue'] {
+:root[data-board='blue'],
+[data-board='blue'] {
   --board-light: oklch(92% 0.018 240);
   --board-dark: oklch(62% 0.065 245);
 }
 
-:root[data-board='slate'] {
+:root[data-board='slate'],
+[data-board='slate'] {
   --board-light: oklch(87% 0.006 260);
   --board-dark: oklch(55% 0.018 260);
 }
 
-:root[data-board='lavender'] {
+:root[data-board='lavender'],
+[data-board='lavender'] {
   --board-light: oklch(93% 0.02 300);
   --board-dark: oklch(64% 0.058 300);
 }
 
-:root[data-board='rosewood'] {
+:root[data-board='rosewood'],
+[data-board='rosewood'] {
   --board-light: oklch(92% 0.025 30);
   --board-dark: oklch(61% 0.065 25);
 }
@@ -1422,7 +1454,8 @@ cg-board square.check {
    does, a saturated navy did not. No grain: a laid-paper texture belongs
    here but has to clear the sampling arithmetic in the note below, so it
    is a separate, measured change. */
-:root[data-board='ink'] {
+:root[data-board='ink'],
+[data-board='ink'] {
   --board-light: oklch(93% 0.014 92);
   --board-dark: oklch(54% 0.028 250);
 }
@@ -1456,7 +1489,8 @@ cg-board square.check {
    474 bytes gzipped (measured: the bundle's CSS is 61592 with it, 61118
    without), against 138 KB for lichess's wood4, the photograph it stands
    in for — and no third-party artwork to carry a licence notice for. */
-:root[data-board='wood'] {
+:root[data-board='wood'],
+[data-board='wood'] {
   --board-light: oklch(91% 0.042 84);
   --board-dark: oklch(58% 0.135 49);
   --board-grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='800'%3E%3Cfilter%20id='v'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.004'%20numOctaves='3'%20seed='5'/%3E%3CfeColorMatrix%20values='.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%200%200%200%200%201'/%3E%3C/filter%3E%3Crect%20x='0'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3C/svg%3E");
@@ -1465,7 +1499,8 @@ cg-board square.check {
 /* A deliberately dark board — both squares below mid-lightness, for
    boards that should recede into a dark room. The white pieces carry
    the contrast. */
-:root[data-board='charcoal'] {
+:root[data-board='charcoal'],
+[data-board='charcoal'] {
   --board-light: oklch(56% 0.008 260);
   --board-dark: oklch(39% 0.008 260);
 }
