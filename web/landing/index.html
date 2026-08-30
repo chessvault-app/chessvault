@@ -44,8 +44,13 @@
          "The component layer"): a white page, grey surfaces, a near-black
          primary, hairline-ring surfaces, one radius every corner derives
          from. This sheet is that theme written out by hand — the same token
-         names and the same values the registry ships, so clicking "Try the
-         demo" lands in an app that looks like the page that offered it. The
+         names, and the values THE APP ships, so clicking "Try the demo"
+         lands in an app that looks like the page that offered it. Those are
+         the registry's values everywhere the app kept them, and the app's
+         where it did not: --muted-foreground is the one that differs, and
+         copying the registry there rather than the app is what put four of
+         this page's text tiers under 4.5:1. Take a token from
+         web/src/index.css, not from the registry, when the two disagree. The
          page follows the system's light/dark setting because the app does
          too: the OLD page was dark and only dark, which was continuous with
          an app whose default theme was dark, and is not any more.
@@ -61,12 +66,21 @@
          figure plinths — because both hold something that needs a frame. */
       :root {
         color-scheme: light;
-        /* shadcn's neutral theme, light. */
+        /* shadcn's neutral theme, light — with the app's one deviation from
+           it, below. */
         --background: oklch(100% 0 0);
         --foreground: oklch(14.5% 0 0);
         --card: oklch(100% 0 0);
         --muted: oklch(97% 0 0);
-        --muted-foreground: oklch(55.6% 0 0);
+        /* 48%, NOT the registry's 55.6%, because the app does not use the
+           registry's either (web/src/index.css, --ui-contrast at 0). The
+           registry's value is 4.74:1 on the page and 4.35:1 on --muted,
+           and --muted is where this page puts its quietest text: the whole
+           caption layer of the vault listing sat under the floor. Measured
+           on the rendered page, not on the token — 4.35 is a number no
+           grep of this file would have produced. 48% measures 6.58:1 and
+           6.04:1 on the same two surfaces. */
+        --muted-foreground: oklch(48% 0 0);
         --border: oklch(92.2% 0 0);
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
@@ -105,7 +119,12 @@
           --foreground: oklch(98.5% 0 0);
           --card: oklch(20.5% 0 0);
           --muted: oklch(26.9% 0 0);
-          --muted-foreground: oklch(70.8% 0 0);
+          /* 74%, the app's, for the reason the light value gives. Dark was
+             already clear at the registry's 70.8% (5.86:1 at worst, so it
+             passed); this keeps the two schemes on the same token rather
+             than fixing one and leaving the other to drift, and takes that
+             worst case to 6.59:1. */
+          --muted-foreground: oklch(74% 0 0);
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);
@@ -136,6 +155,18 @@
          of its own. */
       :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
       .btn:focus-visible { border-color: var(--ring); }
+      /* AND THE SAME RING BACK AS AN OUTLINE UNDER FORCED COLOURS, because
+         the rule above draws it with the one property forced-colors mode
+         throws away. Windows High Contrast forces `box-shadow: none` and
+         honours the author's `outline: none`, so the two lines above
+         compose to a page with NO focus indicator at all — a keyboard user
+         in High Contrast could tab this page and never see where they
+         were. The ring colour is a token that mode also overrides, so the
+         outline takes CanvasText, which is the one colour guaranteed to
+         contrast with whatever Canvas the user chose. */
+      @media (forced-colors: active) {
+        :focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
+      }
 
       /* ONE width for the whole page, and no exception. The opening
          screenshot used to run to 76rem so it would interrupt the words —
@@ -187,13 +218,18 @@
       .lang { display: inline-flex; align-items: center; gap: 0.3rem; }
       .lang button {
         font: inherit; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; line-height: 1;
-        padding: 0.45rem 0.2rem; border: 0; border-radius: var(--radius-md);
+        /* 0.4rem inline, not 0.2: "EN" at 12px mono is 14.6px of text, and
+           0.2rem either side made a 21px-wide target — under the 24px
+           floor, on every pointer, not just a thumb. The height was never
+           the problem (26.4px here); the width was, and the height is what
+           the note below reasoned about. Both axes clear 24 now. */
+        padding: 0.45rem 0.4rem; border: 0; border-radius: var(--radius-md);
         background: none; color: var(--muted-foreground); cursor: pointer;
       }
       .lang button:hover { color: var(--foreground); }
-      /* A word set in 12px mono is a 26px target. On a touch screen it gets
-         the height the primary button beside it already has, which costs
-         the header nothing because that button still sets its height. */
+      /* On a touch screen it gets the height the primary button beside it
+         already has, which costs the header nothing because that button
+         still sets its height. */
       @media (pointer: coarse) {
         .lang button { padding-block: 0.7rem; }
         .bar .quiet { padding-block: 0.6rem; }
@@ -286,7 +322,14 @@
 
       section { padding-block: var(--s7) var(--s8); }
       section + section, .shot + section { border-top: 1px solid var(--border); }
-      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: var(--s2) 0 var(--s5); font-weight: 600; }
+      /* `.plate h3` rides with h2 on purpose. A plate's title is a heading
+         one level under "A closer look" — it was an h2, which made the five
+         figures siblings of the section that contains them in every screen
+         reader's heading list — but it is not a SMALLER heading: it is the
+         only heading on its plate and it carries the plate. The level is
+         the semantics; the size is the design; they are allowed to differ,
+         and here they do. */
+      h2, .plate h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: var(--s2) 0 var(--s5); font-weight: 600; }
 
       /* THE INDEX. What used to be six bordered cards. Six boxes on a grid
          hide the shape of a list — every one the same size whatever it
@@ -341,7 +384,7 @@
       .plate + .plate { border-top: 1px solid var(--border); }
       .plate .n { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; color: var(--muted-foreground); }
       .plate .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
-      .plate h2 { margin: 0 0 var(--s3); }
+      .plate h3 { margin: 0 0 var(--s3); }
       .plate p { color: var(--muted-foreground); margin: 0; max-width: 62ch; }
       .plate figure {
         margin: 0; justify-self: center;
@@ -600,7 +643,7 @@
                 </picture>
               </figure>
               <div>
-                <h2 data-ko="오프닝 맵">The opening map</h2>
+                <h3 data-ko="오프닝 맵">The opening map</h3>
                 <p data-ko="레퍼토리를 목록이 아니라 형태로 봅니다. 직접 고른 수를 색마다 하나의 맵에 배치하면, 각 점은 실제 채택 빈도만큼 커지고 아직 답이 없는 곳에는 배지가 붙습니다. 스터디를 연결하면 그 아래는 전부 스터디에서 유도되므로, 맵이 준비되었다고 말하는 것은 실제로 준비된 것입니다.">
                   Your repertoire as a shape rather than a list: the moves you chose, one map per
                   colour, each dot sized by how often the field plays it and badged where you have
@@ -624,7 +667,7 @@
                 </picture>
               </figure>
               <div>
-                <h2 data-ko="수 하나하나가 무엇에 덮이는지 압니다">Every move knows what covers it</h2>
+                <h3 data-ko="수 하나하나가 무엇에 덮이는지 압니다">Every move knows what covers it</h3>
                 <p data-ko="점 하나를 고르면 오프닝 카탈로그가 이름을 붙이고, 연결된 스터디가 실제로 얼마나 깊이 —몇 개의 라인으로— 준비하는지를 패널이 세어 줍니다. 노트는 읽는 사람을 위한 참고일 뿐, 무엇이 준비되었는지 말할 수 있는 것은 스터디뿐입니다.">
                   Select a dot and the opening catalogue names it, while the panel counts how deep
                   your linked studies actually prepare it and how many lines they end in. Notes come
@@ -647,7 +690,7 @@
                 </picture>
               </figure>
               <div>
-                <h2 data-ko="천만 게임에 제대로 묻습니다">Ask ten million games a real question</h2>
+                <h3 data-ko="천만 게임에 제대로 묻습니다">Ask ten million games a real question</h3>
                 <p data-ko="직접 만든 참고 데이터베이스를 세 가지로 검색합니다. 선수·오프닝·대회·결과를 묻는 질의 언어, 정확한 포지션 — 다른 수순으로 도달한 게임 포함 — 에서 폰 골격과 기물 구성까지 단계별로 풀어 주는 포지션 사다리, 그리고 룩 엔딩이나 퀸 하나 앞선 상황 같은 기물 구성 검색. 정확한 포지션은 천만 게임에서도 밀리초에 답하고, 빠른 검색을 켜면 전수 검색도 1초 안쪽입니다.">
                   Reference databases you build from your own PGNs, searched three ways: a query
                   language for players, openings, events and results; a position ladder from exact
@@ -673,7 +716,7 @@
                 </picture>
               </figure>
               <div>
-                <h2 data-ko="파일이 곧 형식입니다">The files are the format</h2>
+                <h3 data-ko="파일이 곧 형식입니다">The files are the format</h3>
                 <p data-ko="스터디는 PGN이고, 노트는 마크다운이며, 진행 상황은 JSON입니다. 데이터베이스가 진실의 원천이 되는 일도, 독자 규격도 없습니다. 백업은 폴더 하나를 복사하는 일이고, 이 앱이 사라져도 당신의 체스는 다른 도구로 열립니다.">
                   Studies are PGN, notes are markdown, progress is JSON. No database as the source
                   of truth, no proprietary formats. Backing up is copying a folder — and if this app
@@ -696,7 +739,7 @@
                 </picture>
               </figure>
               <div>
-                <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
+                <h3 data-ko="원한다면, 어디서나">Or reach it from anywhere</h3>
                 <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 작은 리눅스 서버 하나가 보관함을 소유하고 나머지는 전부 클라이언트가 될 수도 있습니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서. 어느 기기에서 열어도 같은 기보, 같은 진행 상황입니다.">
                   Keeping the vault on this machine is the default, but one small Linux box can own
                   it instead and everything else becomes a client — a phone's home screen as a PWA,
