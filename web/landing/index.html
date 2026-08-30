@@ -278,6 +278,13 @@
       }
       .btn:hover { background: var(--muted); }
       .btn:active { transform: translateY(1px); }
+      /* The page's only movement is this 1px press — everything else here
+         is a colour transition, which is feedback rather than motion and
+         stays. A blanket `transition: none` would take the hover tint out
+         with it and leave the buttons signalling nothing. */
+      @media (prefers-reduced-motion: reduce) {
+        .btn:active { transform: none; }
+      }
       .btn.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
       .btn.primary:hover { background: color-mix(in oklch, var(--primary) 80%, transparent); }
       @media (prefers-color-scheme: dark) {
