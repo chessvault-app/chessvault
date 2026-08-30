@@ -10,6 +10,53 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **Asking for less motion now quiets the board, and stops breaking the
+  spinners.** The setting was honoured by one blanket rule that cut every
+  animation to nothing, and it was wrong at both ends. It never reached
+  the board at all — pieces are animated from JavaScript, frame by frame,
+  where a stylesheet cannot follow — so a piece still slid across the
+  board for someone who had asked it not to. Meanwhile it was flattening
+  the two animations that mean something: a spinner and the puzzle
+  build's progress bar loop for ever, and an animation cut to nothing
+  does not stop, it restarts hundreds of times a second, so both
+  flickered instead of turning. Now the board simply places the piece —
+  the last-move highlight already says which move it was — and the
+  spinner and the bar keep going, slower. Everything decorative still
+  stops.
+
+- **The colours that carry meaning can be read, and High contrast
+  improves them instead of spoiling them.** Green, amber, blue and red
+  mean solved, careful, trusted and wrong all through the app, and they
+  alone stayed put while every surface behind them moved with the
+  appearance settings. Turning on High contrast therefore darkened the
+  panels and left those four where they were, closing the gap it was
+  chosen to open — the one setting picked for legibility made exactly
+  the colours that carry meaning harder to read. They now follow the
+  same knob. Separately, the red used for text was lightened past
+  comfort on its own faint background: the button that erases a vault,
+  in Settings, was the one label in the app that fell below the
+  readability floor, and it now clears it.
+
+- **The opening map's lines weigh the same as one another.** Colour was
+  spread around the wheel to tell lines and opening families apart, in a
+  form whose lightness number is not a lightness anyone can see: across
+  the hues the map draws, one line was nearly six times brighter than
+  another. The yellow shouted and the blue whispered, on a map whose
+  whole claim is that no line ranks above the rest. They are now within
+  a seventh of each other, with the same hues, and they follow the light
+  and dark themes rather than ignoring both. The frame drawn around a
+  board found in a photo has likewise stopped being a colour from
+  nowhere, and is the same blue the app uses elsewhere for what it has
+  read.
+
+- **The site reads Korean in the app's own typeface.** The landing page
+  and the docs borrowed the app's colours, spacing and corners but not
+  its lettering, so their Korean fell to whatever the machine happened
+  to have and the letterforms changed under you on the way into the
+  demo. Both pages now use Pretendard, served from the site itself
+  rather than fetched from anywhere else, and only the pieces of it a
+  given page needs.
+
 - **A line nested in another can be lifted one step, instead of all the
   way.** Promotion was one verb, `Make mainline`, and it hoisted a line
   past every line containing it — so a variation inside a variation
