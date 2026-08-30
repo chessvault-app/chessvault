@@ -57,6 +57,13 @@
  *    sans default (the same rating in two faces on one screen). The
  *    check reads the className enclosing each render, so it sees the
  *    class that actually governs rather than the file it sits in.
+ *
+ * 8. Every `t('literal')` has a Korean entry. Both CLAUDE.md and
+ *    PRODUCT.md say the two languages are maintained in step, and the
+ *    dictionary falls back to the English original by design — so a
+ *    string added in one language renders perfectly, and silently, in
+ *    the wrong one. Thirty were in that state when this was added. Only
+ *    literals are visible here; `t(variable)` resolves at runtime.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -399,6 +406,58 @@ if (existsSync(DOCS)) {
         line: docsText.slice(0, match.index).split('\n').length,
         text: quote.slice(0, 120),
         why: 'a “quoted” docs string with no match in the app source — the UI moved, or the quote is wrong',
+      });
+    }
+  }
+}
+
+// Every English string the app asks for by name has a Korean one.
+//
+// CLAUDE.md and PRODUCT.md both say it: the interface is English and
+// Korean, both maintained in step, and "a new user-facing string is not
+// finished in one language alone". Nothing enforced that, so the way a
+// string arrived half-done was simply by being added — the dictionary
+// falls back to the English original by design (i18n.ts explains why),
+// which makes a missing entry render perfectly and silently in the wrong
+// language. That is the opposite of a loud failure.
+//
+// Only `t('literal')` can be checked. `t(someVariable)` — 188 call sites,
+// mostly labels held in a const table — resolves at runtime and is
+// invisible here, so this is a tripwire for the common case and not a
+// proof the app is fully translated. Two known gaps live in exactly that
+// blind spot: the Appearance group headings go through `t(group.label)`.
+//
+// Comments are stripped first. i18n.ts's own header explains the design by
+// writing `t('common.cancel')` in prose, and a check that reads a doc
+// comment as a call site starts by reporting its own documentation.
+const KO_KEY = /^\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|([A-Za-z][A-Za-z0-9_]*)):/gm;
+const T_CALL = /\bt\(\s*'((?:[^'\\]|\\.)*)'/g;
+if (existsSync(DICTIONARY)) {
+  const keys = new Set<string>();
+  for (const m of readFileSync(DICTIONARY, 'utf-8').matchAll(KO_KEY)) {
+    keys.add((m[1] ?? m[2] ?? m[3])!);
+  }
+  const seen = new Set<string>();
+  for (const file of tracked) {
+    if (!/^web\/src\/.*\.tsx?$/.test(file) || file === DICTIONARY) continue;
+    let src: string;
+    try {
+      src = readFileSync(file, 'utf-8');
+    } catch {
+      continue;
+    }
+    // Block comments, and line comments that own their line — `//` inside a
+    // string is usually a URL, and cutting there would eat real code.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    for (const m of code.matchAll(T_CALL)) {
+      const text = m[1]!.replace(/\\'/g, "'");
+      if (keys.has(text) || seen.has(text)) continue;
+      seen.add(text);
+      findings.push({
+        file,
+        line: src.slice(0, src.indexOf(m[0])).split('\n').length,
+        text: text.slice(0, 120),
+        why: 'a t() string with no entry in web/src/lib/ko.ts — it renders as English to a Korean reader',
       });
     }
   }

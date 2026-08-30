@@ -217,6 +217,53 @@ export const ko: Record<string, string> = {
   'Search notes…': '노트 검색…',
   'Ctrl+click to open': 'Ctrl+클릭하면 열립니다',
   'Click to open': '클릭하면 열립니다',
+  'Untitled note': '제목 없는 노트',
+  'could not open “{id}”': '“{id}”을(를) 열 수 없습니다',
+
+  // --- the error boundary --------------------------------------------------
+  'Something went wrong': '문제가 발생했습니다',
+  'This page hit an error it could not recover from. Reloading usually clears it — nothing in your vault is affected.':
+    '이 페이지에서 복구할 수 없는 오류가 발생했습니다. 새로고침하면 대개 해결되며, 보관함은 영향을 받지 않습니다.',
+  Reload: '새로고침',
+  'Go home': '홈으로',
+
+  // --- home, customise -----------------------------------------------------
+  'Switch a destination off to keep it as a button under the grid, or hide it to take it off home altogether. The sidebar still reaches everything.':
+    '항목을 끄면 그리드 아래 버튼으로 남고, 숨기면 홈에서 완전히 빠집니다. 사이드바로는 모두 그대로 갈 수 있습니다.',
+  'Off the page': '홈에서 숨김',
+  'Nothing — every destination is on home.': '없음 — 모든 항목이 홈에 있습니다.',
+  'Bring back': '되돌리기',
+  'Bring {name} back': '{name} 되돌리기',
+  'Hide {name}': '{name} 숨기기',
+
+  // --- books, databases, puzzles -------------------------------------------
+  'Untitled book': '제목 없는 책',
+  'Untitled study': '제목 없는 스터디',
+  Upload: '업로드',
+  'Worth practising': '연습할 만한 것',
+  'That image could not be read — it may be corrupt or an unsupported format.':
+    '이미지를 읽을 수 없습니다 — 파일이 손상되었거나 지원하지 않는 형식일 수 있습니다.',
+
+  // --- repertoire ----------------------------------------------------------
+  'Your opponent is replying…': '상대가 두는 중…',
+  'Your move.': '둘 차례입니다.',
+  'Reviewing an earlier move — step to the end to keep playing.':
+    '이전 수를 보는 중입니다 — 계속 두려면 끝으로 이동하세요.',
+  'Leave this line and set up a new game': '이 변화수를 떠나 새 게임 시작하기',
+
+  // --- licences ------------------------------------------------------------
+  'Everything this app is built from, and the terms it is used under.':
+    '이 앱을 이루는 모든 구성 요소와, 그 이용 조건입니다.',
+
+  // --- settings, artificial latency ----------------------------------------
+  'Artificial latency': '인위적 지연',
+  'Delay every request': '모든 요청 지연',
+  'For looking at the loading placeholders. This device only.':
+    '로딩 자리표시자를 확인하기 위한 설정입니다. 이 기기에만 적용됩니다.',
+  Off: '끄기',
+  '0.5 seconds': '0.5초',
+  '1.5 seconds': '1.5초',
+  '3 seconds': '3초',
   'Rename this note': '이 노트 이름 바꾸기',
   'Rename this game': '이 게임 이름 바꾸기',
   'All notes': '모든 노트',
