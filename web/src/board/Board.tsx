@@ -8,6 +8,7 @@ import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/lib/motion';
+import { pieceAt } from '@/lib/fen';
 
 /** The underlying chessground handle, for callers that need direct calls
     (e.g. the editor starting a spare-piece drag from its palette). */
@@ -47,25 +48,6 @@ export interface BoardProps {
   /** Receives the live chessground api for imperative calls. */
   apiRef?: MutableRefObject<BoardApi | null>;
   className?: string;
-}
-
-/** The piece on `square`, as its FEN letter, or null for an empty square. */
-function pieceAt(fen: string, square: string): string | null {
-  const row = fen.split(' ')[0]!.split('/')[8 - Number(square[1])];
-  if (!row) return null;
-  const file = square.charCodeAt(0) - 97;
-  let at = 0;
-  for (const ch of row) {
-    const run = Number(ch);
-    if (Number.isInteger(run)) {
-      at += run;
-      if (at > file) return null; // the empty run covers the square
-    } else {
-      if (at === file) return ch;
-      at += 1;
-    }
-  }
-  return null;
 }
 
 /**

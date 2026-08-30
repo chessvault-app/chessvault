@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { t, useLang } from '@/lib/i18n';
+import { locale } from '@/lib/dates';
 
 /**
  * shadcn's Date Picker — a Popover with the registry's Calendar in it, the
@@ -48,7 +49,7 @@ export function DatePicker({
         }
       >
         <CalendarIcon data-icon="inline-start" />
-        {selected ? selected.toLocaleDateString(lang === 'ko' ? 'ko-KR' : undefined) : t(placeholder)}
+        {selected ? selected.toLocaleDateString(locale()) : t(placeholder)}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar

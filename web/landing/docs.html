@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Chess Vault — docs</title>
+    <title data-ko="Chess Vault — 문서">Chess Vault — docs</title>
     <meta
       name="description"
       content="The Chess Vault docs: a page for every part of the app — getting started, the vault, the board, the engine, studies, notes, games, databases, books, puzzles, the repertoire trainer and the opening map — down to every button."
@@ -32,14 +32,26 @@
          app's shadcn neutral theme written out by hand, so the manual, the
          landing page and the app all read as one thing. The tokens are
          copied from web/landing/index.html — change them there, change
-         them here. */
+         them here.
+
+         THAT SENTENCE IS THE WHOLE RISK, and it has already been paid
+         once: index.html's --muted-foreground was corrected from the
+         registry's 55.6% to the app's 48% and this file was not, so the
+         same contrast defect went on shipping here for a release. Two
+         hand-kept copies drift silently, because nothing fails when they
+         disagree — the page just renders slightly wrong. Until they share
+         a file, the check that catches it is scripts/check-contrast.ts,
+         which now walks both static pages as well as the app. */
       :root {
         color-scheme: light;
         --background: oklch(100% 0 0);
         --foreground: oklch(14.5% 0 0);
         --card: oklch(100% 0 0);
         --muted: oklch(97% 0 0);
-        --muted-foreground: oklch(55.6% 0 0);
+        /* 48%, the APP's value, not the registry's 55.6% — see the long
+           note in index.html. The registry's put this page's figcaptions
+           at 4.35:1 against --muted, under the 4.5 floor. */
+        --muted-foreground: oklch(48% 0 0);
         --border: oklch(92.2% 0 0);
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
@@ -65,6 +77,22 @@
         --header-h: 3.75rem;
         /* The second voice, as on the landing page: a path, a figure
            number, a language code. Never prose. */
+        /* THE TYPE SCALE. The same four steps index.html names, because
+           the two pages are one voice — plus the two heading tiers a
+           manual needs and a landing page does not. That difference is
+           deliberate: this is a document with sections inside sections,
+           and index.html is a page with one headline.
+
+           Before this the file used eight literal sizes, four of them
+           inside 2.5px of each other (0.72 / 0.75 / 0.8 / 0.85 / 0.875rem).
+           Nothing moved by more than 0.5px in collapsing them. */
+        --t-xs: 0.75rem;     /* 12px — mono labels, nav group headings */
+        --t-sm: 0.8125rem;   /* 13px — figure captions */
+        --t-md: 0.875rem;    /* 14px — nav rows, tables, controls, footer */
+        --t-base: 0.9375rem; /* 15px — body */
+        --t-lg: 1rem;        /* 16px — h3 */
+        --t-xl: 1.25rem;     /* 20px — h2 */
+        --t-h1: clamp(1.6rem, 4vw, 2.1rem);
         --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       }
       @media (prefers-color-scheme: dark) {
@@ -74,7 +102,7 @@
           --foreground: oklch(98.5% 0 0);
           --card: oklch(20.5% 0 0);
           --muted: oklch(26.9% 0 0);
-          --muted-foreground: oklch(70.8% 0 0);
+          --muted-foreground: oklch(74% 0 0);
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);
@@ -88,13 +116,19 @@
         margin: 0;
         background: var(--background);
         color: var(--foreground);
-        font: 15px/1.6 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+        font: var(--t-base)/1.6 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
         -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; }
       :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
       .btn:focus-visible { border-color: var(--ring); }
+      /* Forced colours drop box-shadow and honour `outline: none`, so the
+         two rules above compose to no focus indicator at all under Windows
+         High Contrast. Same fallback as index.html. */
+      @media (forced-colors: active) {
+        :focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
+      }
 
       /* ---- Header ---- */
       header {
@@ -126,18 +160,21 @@
          because it operates the page it sits on. */
       .lang { display: inline-flex; align-items: center; gap: 0.3rem; }
       .lang button {
-        font: inherit; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; line-height: 1;
-        padding: 0.45rem 0.2rem; border: 0; border-radius: var(--radius-md);
+        font: inherit; font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.06em; line-height: 1;
+        /* 0.4rem inline, not 0.2: "EN" is 14.6px of text, so 0.2rem either
+           side made a 21px-wide target, under the 24px floor on every
+           pointer. Same fix as index.html. */
+        padding: 0.45rem 0.4rem; border: 0; border-radius: var(--radius-md);
         background: none; color: var(--muted-foreground); cursor: pointer;
       }
       .lang button:hover { color: var(--foreground); }
       .lang button[aria-pressed='true'] { color: var(--foreground); }
-      .lang .sep { font-family: var(--mono); font-size: 0.75rem; color: color-mix(in oklch, var(--muted-foreground) 45%, transparent); }
+      .lang .sep { font-family: var(--mono); font-size: var(--t-xs); color: color-mix(in oklch, var(--muted-foreground) 45%, transparent); }
       @media (pointer: coarse) { .lang button { padding-block: 0.7rem; } }
       .btn {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
         height: 2.25rem; padding-inline: 0.875rem; border-radius: var(--radius-lg); text-decoration: none;
-        font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap;
+        font-size: var(--t-md); font-weight: 500; line-height: 1; white-space: nowrap;
         border: 1px solid var(--border); background: var(--background); color: var(--foreground);
         cursor: pointer; font-family: inherit;
         transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -172,11 +209,11 @@
         max-height: calc(100vh - var(--header-h)); overflow-y: auto;
         padding: var(--s4) var(--s3) var(--s7);
         border-right: 1px solid var(--border);
-        font-size: 0.875rem;
+        font-size: var(--t-md);
       }
       nav.side h5 {
         margin: var(--s4) var(--s2) var(--s1);
-        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+        font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
         color: var(--muted-foreground);
       }
       nav.side h5:first-child { margin-top: 0; }
@@ -208,11 +245,29 @@
         body.nav-open { overflow: hidden; }
       }
 
+      /* TARGETED, NOT A BLANKET KILL. The usual `* { animation: none;
+         transition: none }` takes the feedback out with the motion — a
+         button that no longer tints on hover has lost a signal, not a
+         flourish, and colour is not what reduced-motion is asking about.
+         So the 150ms tints stay and the two things that actually MOVE
+         stop: the contents panel sliding 85vw across the screen, which is
+         the only large movement on this page, and the 1px press. The
+         drawer still opens and closes and the scrim still appears; it
+         just arrives rather than travels.
+
+         After this block on purpose — the drawer's transition is set in
+         the narrow-viewport query above at the same specificity, so
+         source order is what decides. */
+      @media (prefers-reduced-motion: reduce) {
+        nav.side { transition: none; }
+        .btn:active { transform: none; }
+      }
+
       /* ---- Article typography ---- */
-      h1 { font-size: clamp(1.6rem, 4vw, 2.1rem); line-height: 1.15; margin: 0 0 var(--s3); letter-spacing: -0.03em; font-weight: 600; }
+      h1 { font-size: var(--t-h1); line-height: 1.15; margin: 0 0 var(--s3); letter-spacing: -0.03em; font-weight: 600; }
       .lede { color: var(--muted-foreground); margin: 0 0 var(--s5); }
-      h2 { font-size: 1.25rem; letter-spacing: -0.02em; margin: var(--s6) 0 var(--s3); font-weight: 600; }
-      h3 { font-size: 1rem; margin: var(--s5) 0 var(--s2); font-weight: 600; }
+      h2 { font-size: var(--t-xl); letter-spacing: -0.02em; margin: var(--s6) 0 var(--s3); font-weight: 600; }
+      h3 { font-size: var(--t-lg); margin: var(--s5) 0 var(--s2); font-weight: 600; }
       p, ul, ol { margin: 0 0 var(--s3); }
       ul, ol { padding-left: 1.25rem; }
       li { margin-bottom: var(--s1); }
@@ -228,7 +283,7 @@
         background: var(--muted); border: 1px solid var(--border); border-bottom-width: 2px;
         border-radius: var(--radius-md); padding: 0.1rem 0.4rem; white-space: nowrap;
       }
-      table { border-collapse: collapse; width: 100%; margin: 0 0 var(--s4); font-size: 0.875rem; }
+      table { border-collapse: collapse; width: 100%; margin: 0 0 var(--s4); font-size: var(--t-md); }
       th, td { text-align: left; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--border); vertical-align: top; }
       th { font-weight: 600; white-space: nowrap; }
       .scroll-x { overflow-x: auto; }
@@ -252,7 +307,7 @@
         display: block; width: auto; height: auto; max-width: 100%; max-height: 30rem;
         object-fit: contain; border-radius: var(--radius-lg); box-shadow: 0 0 0 1px var(--hairline);
       }
-      figcaption { font-size: 0.8rem; color: var(--muted-foreground); text-align: center; }
+      figcaption { font-size: var(--t-sm); color: var(--muted-foreground); text-align: center; }
 
       /* ---- Pages: one visible at a time once the script is running.
          Without the script every page renders in order, so the document
@@ -271,16 +326,19 @@
         overflow: hidden; text-overflow: ellipsis;
         background: var(--card); box-shadow: 0 0 0 1px var(--hairline);
         border-radius: var(--radius-lg); padding: var(--s2) var(--s3);
-        font-size: 0.875rem; font-weight: 500;
+        font-size: var(--t-md); font-weight: 500;
       }
       .pager a:hover { background: var(--muted); }
       .pager a small { font-weight: 400; color: var(--muted-foreground); }
       .pager .next { margin-left: auto; }
 
-      footer { border-top: 1px solid var(--border); padding-block: var(--s5) var(--s6); color: var(--muted-foreground); font-size: 0.85rem; }
+      footer { border-top: 1px solid var(--border); padding-block: var(--s5) var(--s6); color: var(--muted-foreground); font-size: var(--t-md); }
       footer .inner { max-width: 47rem; margin: 0 auto; padding-inline: var(--s4); }
       footer p { margin: 0 0 var(--s2); }
-      footer a { text-decoration: none; }
+      /* inline-block first: padding on an inline element does not grow its
+         box, so these stayed 16px tall however much was added. Same fix as
+         index.html. */
+      footer a { text-decoration: none; display: inline-block; padding-block: 0.15rem; }
       footer a:hover { text-decoration: underline; color: var(--foreground); }
     </style>
   </head>
@@ -371,8 +429,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
-                <img src="shots/board.png" alt="The analysis board with the engine running" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/board-dark-960.png 960w, shots/board-dark-1280.png 1280w, shots/board-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/board.png"
+                  srcset="shots/board-960.png 960w, shots/board-1280.png 1280w, shots/board.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The analysis board with the engine running"
+                  data-ko-alt="엔진이 도는 분석 보드"
+                />
               </picture>
               <figcaption data-ko="분석 보드 — 브라우저 안에서 도는 Stockfish 18과 함께.">
                 The analysis board, with Stockfish 18 running in the browser.
@@ -781,8 +853,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
-                <img src="shots/board.png" alt="The analysis board: the move tree and the engine beside the board" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/board-dark-960.png 960w, shots/board-dark-1280.png 1280w, shots/board-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/board.png"
+                  srcset="shots/board-960.png 960w, shots/board-1280.png 1280w, shots/board.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The analysis board: the move tree and the engine beside the board"
+                  data-ko-alt="분석 보드: 보드 옆의 수 트리와 엔진"
+                />
               </picture>
             </figure>
 
@@ -992,8 +1078,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/explorer-dark.png" />
-                <img src="shots/explorer.png" alt="The explorer after 1. e4: the opening name and the reply table with result bars" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/explorer-dark-960.png 960w, shots/explorer-dark-1280.png 1280w, shots/explorer-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/explorer.png"
+                  srcset="shots/explorer-960.png 960w, shots/explorer-1280.png 1280w, shots/explorer.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The explorer after 1. e4: the opening name and the reply table with result bars"
+                  data-ko-alt="1. e4 이후의 탐색기: 오프닝 이름과 결과 막대가 붙은 응수 표"
+                />
               </picture>
               <figcaption data-ko="1. e4 다음 — 오프닝 이름과 응수 테이블. (데모의 출처는 My games뿐입니다.)">
                 After 1. e4 — the opening strip and the reply table. (The demo's only source is My
@@ -1088,8 +1188,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/editor-dark.png" />
-                <img src="shots/editor.png" alt="The editor: the piece palette, the mode toolbar, and the position details panel" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/editor-dark-960.png 960w, shots/editor-dark-1280.png 1280w, shots/editor-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/editor.png"
+                  srcset="shots/editor-960.png 960w, shots/editor-1280.png 1280w, shots/editor.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The editor: the piece palette, the mode toolbar, and the position details panel"
+                  data-ko-alt="편집기: 기물 팔레트, 모드 툴바, 그리고 포지션 상세 패널"
+                />
               </picture>
             </figure>
             <h2 data-ko="기물 팔레트">The piece palette</h2>
@@ -1151,8 +1265,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/workspace-dark.png" />
-                <img src="shots/workspace.png" alt="The workspace: the board, moves and explorer over the games band" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/workspace-dark-960.png 960w, shots/workspace-dark-1280.png 1280w, shots/workspace-dark.png 1600w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/workspace.png"
+                  srcset="shots/workspace-960.png 960w, shots/workspace-1280.png 1280w, shots/workspace.png 1600w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1600"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The workspace: the board, moves and explorer over the games band"
+                  data-ko-alt="작업대: 기보 띠 위의 보드와 수순, 그리고 탐색기"
+                />
               </picture>
             </figure>
             <h2 data-ko="넓은 화면 전용">Wide screens only</h2>
@@ -1218,8 +1346,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/study-dark.png" />
-                <img src="shots/study.png" alt="A study open on its chapters, with the chapter introduction beside the board" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/study-dark-960.png 960w, shots/study-dark-1280.png 1280w, shots/study-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/study.png"
+                  srcset="shots/study-960.png 960w, shots/study-1280.png 1280w, shots/study.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="A study open on its chapters, with the chapter introduction beside the board"
+                  data-ko-alt="챕터를 펼친 스터디, 보드 옆에 챕터 소개가 놓인 화면"
+                />
               </picture>
             </figure>
             <h2 data-ko="선반">The shelf</h2>
@@ -1285,7 +1427,15 @@
             <figure>
               <picture>
                 <source media="(prefers-color-scheme: dark)" srcset="shots/note-phone-dark.png" />
-                <img src="shots/note-phone.png" alt="A note: markdown headings, a live board in the text, wiki-links" />
+                <img
+                  src="shots/note-phone.png"
+                  width="585"
+                  height="780"
+                  loading="lazy"
+                  decoding="async"
+                  alt="A note: markdown headings, a live board in the text, wiki-links"
+                  data-ko-alt="노트: 마크다운 제목, 본문 속 대화형 보드, 위키 링크"
+                />
               </picture>
             </figure>
             <h2 data-ko="읽기와 쓰기">Reading and writing</h2>
@@ -1338,8 +1488,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/games-dark.png" />
-                <img src="shots/games.png" alt="The Games page: the game table beside the details panel" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/games-dark-960.png 960w, shots/games-dark-1280.png 1280w, shots/games-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/games.png"
+                  srcset="shots/games-960.png 960w, shots/games-1280.png 1280w, shots/games.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The Games page: the game table beside the details panel"
+                  data-ko-alt="기보 페이지: 상세 패널 옆의 기보 표"
+                />
               </picture>
             </figure>
             <h2 data-ko="모음">The collection</h2>
@@ -1611,7 +1775,15 @@
               its position up on the board.
             </p>
             <figure>
-              <img src="shots/book-to-board.gif" alt="A printed diagram becoming the position on the board beside the book" />
+              <img
+                src="shots/book-to-board.gif"
+                width="944"
+                height="576"
+                loading="lazy"
+                decoding="async"
+                alt="A printed diagram becoming the position on the board beside the book"
+                data-ko-alt="인쇄된 다이어그램이 책 옆 보드 위의 포지션으로 옮겨지는 모습"
+              />
               <figcaption data-ko="도해 버튼: 책 속 포지션이 곁의 보드로.">A diagram button carrying the printed position to the board.</figcaption>
             </figure>
             <h2 data-ko="선반">The shelf</h2>
@@ -1671,8 +1843,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/puzzle-trainer-dark.png" />
-                <img src="shots/puzzle-trainer.png" alt="The puzzle trainer mid-puzzle: the board and the answer panel" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/puzzle-trainer-dark-960.png 960w, shots/puzzle-trainer-dark-1280.png 1280w, shots/puzzle-trainer-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/puzzle-trainer.png"
+                  srcset="shots/puzzle-trainer-960.png 960w, shots/puzzle-trainer-1280.png 1280w, shots/puzzle-trainer.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The puzzle trainer mid-puzzle: the board and the answer panel"
+                  data-ko-alt="퍼즐을 푸는 중의 퍼즐 트레이너: 보드와 정답 패널"
+                />
               </picture>
             </figure>
             <h2 data-ko="첫 방문: 풀 만들기">First visit: building the pool</h2>
@@ -1740,8 +1926,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/dashboard-dark.png" />
-                <img src="shots/dashboard.png" alt="The puzzle dashboard with book progress" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/dashboard-dark-960.png 960w, shots/dashboard-dark-1280.png 1280w, shots/dashboard-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/dashboard.png"
+                  srcset="shots/dashboard-960.png 960w, shots/dashboard-1280.png 1280w, shots/dashboard.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The puzzle dashboard with book progress"
+                  data-ko-alt="책 진행 상황을 보여 주는 퍼즐 대시보드"
+                />
               </picture>
             </figure>
             <h2 data-ko="읽어 들이기">The import</h2>
@@ -1816,8 +2016,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/repertoire-dark.png" />
-                <img src="shots/repertoire.png" alt="The repertoire trainer's New game form" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/repertoire-dark-960.png 960w, shots/repertoire-dark-1280.png 1280w, shots/repertoire-dark.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/repertoire.png"
+                  srcset="shots/repertoire-960.png 960w, shots/repertoire-1280.png 1280w, shots/repertoire.png 1904w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1904"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The repertoire trainer's New game form"
+                  data-ko-alt="레퍼토리 트레이너의 새 게임 양식"
+                />
               </picture>
             </figure>
             <h2 data-ko="새 게임 차리기">Setting up a game</h2>
@@ -1882,8 +2096,22 @@
             </p>
             <figure>
               <picture>
-                <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
-                <img src="shots/opening-map.png" alt="A white repertoire as a constellation, dots sized by how often the field plays them" />
+                <source
+                  media="(prefers-color-scheme: dark)"
+                  srcset="shots/opening-map-dark-960.png 960w, shots/opening-map-dark.png 1200w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                />
+                <img
+                  src="shots/opening-map.png"
+                  srcset="shots/opening-map-960.png 960w, shots/opening-map.png 1200w"
+                  sizes="(min-width: 48rem) 696px, calc(100vw - 3.5rem)"
+                  width="1200"
+                  height="993"
+                  loading="lazy"
+                  decoding="async"
+                  alt="A white repertoire as a constellation, dots sized by how often the field plays them"
+                  data-ko-alt="성좌로 펼친 백 레퍼토리, 각 점은 실제 채택 빈도만큼 커집니다"
+                />
               </picture>
             </figure>
             <h2 data-ko="맵 메뉴">The map menu</h2>
@@ -1931,7 +2159,15 @@
             <figure>
               <picture>
                 <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-node-dark.png" />
-                <img src="shots/opening-map-node.png" alt="One move's panel: name, preparation depth, linked studies and notes, and the field's replies" />
+                <img
+                  src="shots/opening-map-node.png"
+                  width="416"
+                  height="857"
+                  loading="lazy"
+                  decoding="async"
+                  alt="One move's panel: name, preparation depth, linked studies and notes, and the field's replies"
+                  data-ko-alt="수 하나의 패널: 이름, 준비 깊이, 연결된 스터디와 노트, 그리고 실전 응수"
+                />
               </picture>
             </figure>
             <p data-ko="점을 고르면 오프닝 카탈로그가 이름을 붙이고, 패널이 그 수를 덮는 것들을 보여 줍니다:">
@@ -2117,7 +2353,15 @@
             <figure>
               <picture>
                 <source media="(prefers-color-scheme: dark)" srcset="shots/games-phone-dark.png" />
-                <img src="shots/games-phone.png" alt="The game collection at phone width, the bottom bar underneath" />
+                <img
+                  src="shots/games-phone.png"
+                  width="585"
+                  height="780"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The game collection at phone width, the bottom bar underneath"
+                  data-ko-alt="휴대폰 너비에서 본 기보 모음, 아래에 하단 바"
+                />
               </picture>
             </figure>
             <h2 data-ko="무엇이 달라지나">What changes</h2>
@@ -2311,9 +2555,21 @@
         nodes.forEach(function (node) {
           english.push(node.innerHTML);
         });
+        // Alt text needs its own list: it lives in an attribute, so it
+        // cannot ride the innerHTML one. Fifteen English descriptions were
+        // being announced from a document declaring itself Korean. Same
+        // mechanism as index.html.
+        var alts = document.querySelectorAll('[data-ko-alt]');
+        var englishAlts = [];
+        alts.forEach(function (node) {
+          englishAlts.push(node.getAttribute('alt') || '');
+        });
         function apply(lang) {
           nodes.forEach(function (node, i) {
             node.innerHTML = lang === 'ko' ? node.getAttribute('data-ko') : english[i];
+          });
+          alts.forEach(function (node, i) {
+            node.setAttribute('alt', lang === 'ko' ? node.getAttribute('data-ko-alt') : englishAlts[i]);
           });
           document.documentElement.lang = lang;
           document.querySelectorAll('.lang button').forEach(function (button) {

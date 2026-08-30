@@ -1,7 +1,7 @@
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
-import { addSan, createTree, getNode, INITIAL_FEN } from '@shared/tree';
+import { addSanOwned, createTree, getNode, INITIAL_FEN } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 
 /**
@@ -130,7 +130,10 @@ export interface ResolvedMap {
 
 export function resolveMap(map: OpeningMap): ResolvedMap {
   const nodes = new Map<string, ResolvedNode>();
-  let tree = createTree(INITIAL_FEN);
+  // Built in place: the scratch tree is made here and handed out whole, so
+  // nobody is holding the intermediate versions an immutable addSan would
+  // copy the node record to produce.
+  const tree = createTree(INITIAL_FEN);
   nodes.set(map.root.id, {
     mapNode: map.root,
     parentId: null,
@@ -143,10 +146,8 @@ export function resolveMap(map: OpeningMap): ResolvedMap {
   const walk = (parent: MapNode, parentTreeId: NodeId | null): void => {
     const parentFacts = nodes.get(parent.id)!;
     for (const child of parent.children) {
-      const added =
-        parentTreeId !== null && child.san ? addSan(tree, parentTreeId, child.san) : undefined;
-      if (added) tree = added.tree;
-      const treeId = added ? added.nodeId : null;
+      const treeId =
+        parentTreeId !== null && child.san ? (addSanOwned(tree, parentTreeId, child.san) ?? null) : null;
       nodes.set(child.id, {
         mapNode: child,
         parentId: parent.id,

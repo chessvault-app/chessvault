@@ -85,8 +85,25 @@ export function moveSquares(node: {
  * the existing tree instead of littering it with identical variations.
  */
 export function addMove(tree: MoveTree, parentId: NodeId, requested: Move): AddMoveResult {
+  return addMoveAt(tree, parentId, positionAt(tree, parentId), requested);
+}
+
+/**
+ * The same, for a caller that has already built the parent's position.
+ *
+ * addSan and addUci both construct one to read the move at all, and then
+ * addMove built a second from the same FEN — two parseFen + Chess.fromSetup
+ * per added move, each of which validates legality and recomputes checkers.
+ * `pos` is CONSUMED: makeSanAndPlay plays the move on it.
+ */
+function addMoveAt(
+  tree: MoveTree,
+  parentId: NodeId,
+  pos: Chess,
+  requested: Move,
+  owned = false,
+): AddMoveResult {
   const parent = getNode(tree, parentId);
-  const pos = positionAt(tree, parentId);
   // Castling to g1 and castling to h1 are the same move; normalising here
   // means one spelling reaches the tree, so a line replays and matches
   // whichever way it was entered.
@@ -118,6 +135,12 @@ export function addMove(tree: MoveTree, parentId: NodeId, requested: Move): AddM
     shapes: [],
   };
 
+  if (owned) {
+    tree.nodes[id] = node;
+    parent.children.push(id);
+    return { tree, nodeId: id, existed: false };
+  }
+
   return {
     tree: {
       ...tree,
@@ -132,14 +155,36 @@ export function addMove(tree: MoveTree, parentId: NodeId, requested: Move): AddM
   };
 }
 
+/**
+ * addSan for a tree the caller built and holds alone.
+ *
+ * The immutable copy is what lets React see a new tree, and every
+ * interactive move wants it. Bulk BUILDING does not: resolveMap replays a
+ * whole opening map into a scratch tree, and copying `tree.nodes` per node
+ * made that O(N^2) — and the map re-resolves on every edit. Writing in
+ * place instead is linear. Measured on Node 24, resolving one generated
+ * map: 2047 nodes went from 451ms to 22ms, 1201 from 131ms to 14ms, 301
+ * from 7.4ms to 4.6ms.
+ *
+ * Only for a tree no one else is holding — it is mutated, so a caller that
+ * hands one to React state must use addSan.
+ */
+export function addSanOwned(tree: MoveTree, parentId: NodeId, san: string): NodeId | undefined {
+  const pos = positionAt(tree, parentId);
+  const move = parseSan(pos, san);
+  if (!move) return undefined;
+  return addMoveAt(tree, parentId, pos, move, true).nodeId;
+}
+
 /** Play a move given in SAN. Returns `undefined` if the SAN is illegal here. */
 export function addSan(
   tree: MoveTree,
   parentId: NodeId,
   san: string,
 ): AddMoveResult | undefined {
-  const move = parseSan(positionAt(tree, parentId), san);
-  return move ? addMove(tree, parentId, move) : undefined;
+  const pos = positionAt(tree, parentId);
+  const move = parseSan(pos, san);
+  return move ? addMoveAt(tree, parentId, pos, move) : undefined;
 }
 
 /** Play a move given in UCI. Returns `undefined` if it isn't legal here. */
@@ -151,7 +196,7 @@ export function addUci(
   const move = parseUci(uci);
   if (!move) return undefined;
   const pos = positionAt(tree, parentId);
-  return pos.isLegal(move) ? addMove(tree, parentId, move) : undefined;
+  return pos.isLegal(move) ? addMoveAt(tree, parentId, pos, move) : undefined;
 }
 
 /** Ids from the root down to `id`, inclusive. */

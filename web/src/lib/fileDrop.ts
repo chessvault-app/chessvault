@@ -79,5 +79,3 @@ export const byExtension =
   (file: File): boolean =>
     extensions.some((ext) => file.name.toLowerCase().endsWith(ext));
 
-/** Anything the browser calls an image. */
-export const isImage = (file: File): boolean => file.type.startsWith('image/');

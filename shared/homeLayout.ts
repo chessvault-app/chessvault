@@ -41,7 +41,7 @@ export interface HomeLayout {
 export const MAX_HOME_TILES = 40;
 export const MAX_HOME_ID = 64;
 
-const ID = /^[a-z0-9-]{1,64}$/;
+const ID = new RegExp(`^[a-z0-9-]{1,${MAX_HOME_ID}}$`);
 
 /**
  * Anything at all → a layout, or null if it is not one.

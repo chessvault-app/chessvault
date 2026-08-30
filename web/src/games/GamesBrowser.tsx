@@ -488,7 +488,6 @@ export function GamesBrowser({
         {error && <p className="text-destructive px-3 py-2 text-sm">{error}</p>}
         {tab === 'databases' ? (
           <DatabaseGames
-            shape="panel"
             table={table}
             merged={merged}
             inPlace={inPlace}

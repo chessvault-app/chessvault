@@ -8,6 +8,7 @@ import type { NodeGaps } from './gaps';
 import { createLiveSim, layoutGraph, layoutTree, PAD, type LiveSim } from './graph';
 import { favouriteChild } from './mainline';
 import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
+import { prefersReducedMotion } from '@/lib/motion';
 
 /**
  * The map as a graph view — dots, springs and labels, the way the
@@ -205,7 +206,7 @@ export function MapCanvas({
     const before = settledRef.current;
     const finals = new Map(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
     settledRef.current = { mapId: map.id, pos: finals };
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || graph.nodes.length < 2) {
+    if (prefersReducedMotion() || graph.nodes.length < 2) {
       overture.current = null;
       return;
     }
@@ -308,7 +309,7 @@ export function MapCanvas({
    * state, which is exactly as much motion as that setting asks for.
    */
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (prefersReducedMotion()) return;
     let frame = 0;
     // Set on the frame that has nothing left to animate, so the loop can
     // stop instead of running forever over a picture that is not moving.
@@ -439,7 +440,7 @@ export function MapCanvas({
    * nothing else. A physics simulation is exactly the kind of motion that
    * setting is asking us not to run.
    */
-  const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const calm = () => prefersReducedMotion();
   const grab = (id: string, at0: { x: number; y: number }): void => {
     // A tree is an arrangement with an answer, so there is nothing for a
     // drag to settle into: towing a dot would leave the picture wrong

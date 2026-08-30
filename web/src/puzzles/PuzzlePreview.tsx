@@ -7,6 +7,7 @@ import { placeNear } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
+import { isCoarsePointer } from '@/lib/media';
 
 /**
  * Same card, same measured size, as the game list's peek — `w-44` with
@@ -60,7 +61,7 @@ export function usePuzzlePreview(): {
   const cache = useRef<Map<string, ApiPuzzle>>(new Map());
   const seqRef = useRef(0);
   const openFor = useRef<string | null>(null);
-  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
+  const [coarse] = useState(isCoarsePointer);
 
   const show = async (id: string, anchor: Element): Promise<void> => {
     const seq = ++seqRef.current;
@@ -99,13 +100,13 @@ export function usePuzzlePreview(): {
     className: 'text-muted-foreground hover:text-foreground size-3.5 shrink-0',
     'aria-label': t('Preview the position'),
     onMouseEnter: (e: React.MouseEvent) => {
-      if (!window.matchMedia('(pointer: coarse)').matches) void show(id, e.currentTarget);
+      if (!isCoarsePointer()) void show(id, e.currentTarget);
     },
     onMouseLeave: () => {
-      if (!window.matchMedia('(pointer: coarse)').matches) hide();
+      if (!isCoarsePointer()) hide();
     },
     onClick: (e: React.MouseEvent) => {
-      if (!window.matchMedia('(pointer: coarse)').matches) return;
+      if (!isCoarsePointer()) return;
       // The row underneath navigates; a peek must not also open it.
       e.stopPropagation();
       if (openFor.current === id) {

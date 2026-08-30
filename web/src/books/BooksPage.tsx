@@ -36,6 +36,7 @@ import {
 } from './data';
 import { UploadBookDialog } from './UploadBookDialog';
 import { useDiagramJob } from './diagramJob';
+import { decodeImages } from '@/lib/media';
 
 /**
  * The library: every PDF that has been uploaded to read. Any chess book —
@@ -107,23 +108,6 @@ function useLibrarySort(): {
   };
 }
 
-/** Every cover of `books` fetched and decoded, capped at two seconds. */
-async function decodeCovers(books: LibraryBook[]): Promise<void> {
-  const covers = books
-    .filter((b) => b.cover)
-    .map(
-      (b) =>
-        new Promise<void>((done) => {
-          const img = new Image();
-          img.onload = () => done();
-          img.onerror = () => done();
-          img.src = coverUrl(b.id, b.bytes);
-        }),
-    );
-  if (covers.length === 0) return;
-  await Promise.race([Promise.all(covers), new Promise((r) => setTimeout(r, 2000))]);
-}
-
 /** Bytes as a shelf would say them. */
 export function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -189,7 +173,7 @@ export function BooksPage() {
       // list at once and the new or re-versioned cover popped in later.
       // Bounded, because a cover is a nicety: if the images are slow or
       // missing the shelf draws anyway.
-      await decodeCovers(next);
+      await decodeImages(next.filter((b) => b.cover).map((b) => coverUrl(b.id, b.bytes)));
       libraryMemory.coversDecoded = true;
       setBooks(next);
       setFolders(libraryMemory.folders);

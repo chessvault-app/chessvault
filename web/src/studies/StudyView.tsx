@@ -22,6 +22,7 @@ import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
+import { isCoarsePointer } from '@/lib/media';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
@@ -590,7 +591,7 @@ function ChapterRow({
     setRenaming(null);
   };
 
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  const coarse = isCoarsePointer();
   return (
     <li className={cn('group flex items-center', sub && 'pl-5')}>
       {renaming === index && coarse ? (

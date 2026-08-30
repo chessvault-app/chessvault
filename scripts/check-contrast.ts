@@ -34,6 +34,8 @@ import { REPO_ROOT } from '../server/paths.ts';
 
 const DEMO = resolve(REPO_ROOT, 'dist-demo');
 const PORT = Number(process.env.CONTRAST_PORT ?? 8131);
+/** The landing pages get their own, so both servers can be up at once. */
+const STATIC_PORT = PORT + 1;
 
 /** Routes worth walking: every section that renders a list, a form or a panel. */
 const ROUTES = [
@@ -95,7 +97,7 @@ const TYPES: Record<string, string> = {
   '.zst': 'application/octet-stream',
 };
 
-function serve(root: string): Promise<Server> {
+function serve(root: string, port = PORT): Promise<Server> {
   const server = createServer(async (req, res) => {
     try {
       let path = join(root, decodeURIComponent((req.url ?? '/').split('?')[0]!));
@@ -107,7 +109,7 @@ function serve(root: string): Promise<Server> {
       res.writeHead(404).end('not found');
     }
   });
-  return new Promise((ok) => server.listen(PORT, () => ok(server)));
+  return new Promise((ok) => server.listen(port, () => ok(server)));
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +223,63 @@ const FORCE_STATES = `(() => {
 
 const UNFORCE = `document.getElementById('contrast-forced-states')?.remove()`;
 
+/**
+ * The two static pages, walked separately from the app.
+ *
+ * WHY THEY ARE HERE. This file existed and still missed a live defect:
+ * both landing pages hand-copy the app's tokens, index.html took the
+ * registry's --muted-foreground (55.6%) where the app uses 48%, and four
+ * text tiers shipped at 4.35:1 — the vault listing's whole caption layer
+ * on one page, the figcaptions on the other. Nothing here looked at
+ * either file, because ROUTES above is the app and only the app. A
+ * checker with a blind spot the size of the site's front door is a
+ * checker that certifies the wrong thing.
+ *
+ * They need their own walk for three reasons the app's loop cannot cover:
+ * the scheme comes from prefers-color-scheme rather than a persisted
+ * preference, so it is emulated; docs.html is twenty-three sections of
+ * which one is visible, so each has to be brought forward in turn; and
+ * neither page is in dist-demo — they are served from source, where the
+ * inline stylesheet that decides every colour already is.
+ */
+const STATIC_ROOT = resolve(REPO_ROOT, 'web/landing');
+const STATIC_SCHEMES = ['light', 'dark'] as const;
+
+async function walkStatic(page: Page, base: string, scheme: 'light' | 'dark'): Promise<Finding[]> {
+  const found: Finding[] = [];
+  const scan = async (route: string) => {
+    for (const state of ['rest', 'hover + focus'] as const) {
+      if (state !== 'rest') await page.evaluate(FORCE_STATES);
+      await page.waitForTimeout(80);
+      const hits = (await page.evaluate(SCAN)) as Omit<Finding, 'route' | 'theme' | 'state'>[];
+      if (state !== 'rest') await page.evaluate(UNFORCE);
+      for (const h of hits) found.push({ ...h, route, theme: scheme, state });
+    }
+  };
+
+  await page.goto(`${base}/index.html`, { waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  await scan('index.html');
+
+  await page.goto(`${base}/docs.html`, { waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  const ids: string[] = await page.evaluate(
+    `[...document.querySelectorAll('section.page')].map((s) => s.id)`,
+  );
+  for (const id of ids) {
+    // Bring one page forward exactly as the nav does. Every page shares
+    // the shell, so a scan of only the open one measures 1 of 23.
+    await page.evaluate(`(() => {
+      const all = [...document.querySelectorAll('section.page')];
+      all.forEach((s) => s.classList.remove('is-active'));
+      document.getElementById(${JSON.stringify(id)}).classList.add('is-active');
+    })()`);
+    await page.waitForTimeout(50);
+    await scan(`docs.html#${id}`);
+  }
+  return found;
+}
+
 async function walk(page: Page, base: string, theme: (typeof THEMES)[number]): Promise<Finding[]> {
   const found: Finding[] = [];
   for (const route of ROUTES) {
@@ -278,6 +337,26 @@ try {
     findings.push(...(await walk(page, base, theme)));
     await context.close();
   }
+
+  // The two static pages, from source, on their own port. Skipped when
+  // BASE points somewhere else, because then the app under test is not
+  // necessarily this checkout and these files might not match it.
+  if (!process.env.BASE) {
+    const staticServer = await serve(STATIC_ROOT, STATIC_PORT);
+    try {
+      for (const scheme of STATIC_SCHEMES) {
+        const context = await browser.newContext({
+          viewport: { width: 1280, height: 900 },
+          colorScheme: scheme,
+        });
+        const page = await context.newPage();
+        findings.push(...(await walkStatic(page, `http://localhost:${STATIC_PORT}`, scheme)));
+        await context.close();
+      }
+    } finally {
+      staticServer.close();
+    }
+  }
 } finally {
   await browser.close();
   server?.close();
@@ -288,7 +367,7 @@ try {
 // ---------------------------------------------------------------------------
 if (!findings.length) {
   console.log(
-    `contrast: nothing below the floor — ${ROUTES.length} routes x ${THEMES.length} schemes, at rest and with hover/focus forced`,
+    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
   );
   process.exit(0);
 }

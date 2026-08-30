@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isCoarsePointer } from '@/lib/media';
 
 /**
  * Focus management for the shared dialog primitives.
@@ -168,7 +169,7 @@ export function soleTextField(node: HTMLElement): HTMLElement | null {
    * the box takes nothing away from the list beside it, and typing
    * straight into a window you opened is the whole point of the rule.
    */
-  if (only.hasAttribute('data-fallback-field') && window.matchMedia('(pointer: coarse)').matches) {
+  if (only.hasAttribute('data-fallback-field') && isCoarsePointer()) {
     return null;
   }
   if (only instanceof HTMLTextAreaElement) return only;

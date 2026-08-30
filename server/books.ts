@@ -15,7 +15,7 @@ import { resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { finished, pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
-import { renameRetrying, writeAtomic } from './atomic.ts';
+import { readJson, renameRetrying, writeJson } from './atomic.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
 
@@ -72,7 +72,21 @@ const BOOKS_DIR = resolve(VAULT, 'books');
  */
 export const PDF_CAP = 500 * 1024 * 1024;
 
-const newBookId = (): string => `b${randomBytes(8).toString('hex')}`;
+/**
+ * A book's folder: `b` and eight random bytes as hex.
+ *
+ * Random rather than a hash of the title, because two books may be called
+ * the same thing — the shelf's own New button offers one name to every
+ * book it makes — and a hash would file them both in one folder, which is
+ * the collision this id exists to make impossible. Eight bytes is 2^64:
+ * a vault would need billions of books before two ever met.
+ *
+ * The puzzle shelf mints its folders the same way, so both sides import
+ * this rather than keeping a second copy of the scheme to drift from.
+ */
+export const newBookId = (): string => `b${randomBytes(8).toString('hex')}`;
+
+/** Minted here, so a folder that was never minted here is recognisable. */
 export const isLibraryBookId = (name: string): boolean => /^b[0-9a-f]{16}$/.test(name);
 
 /**
@@ -110,18 +124,6 @@ const MAX_DIAGRAMS_PER_PAGE = 32;
 
 /** The piece-placement field of a FEN: ranks of pieces and digits. */
 const FEN_PLACEMENT = /^([pnbrqkPNBRQK1-8]{1,8}\/){7}[pnbrqkPNBRQK1-8]{1,8}$/;
-
-function readJson<T>(path: string, fallback: T): T {
-  try {
-    return JSON.parse(readFileSync(path, 'utf-8')) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(path: string, value: unknown): void {
-  writeAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
-}
 
 const roundRect = (rect: Diagram['rect']): Diagram['rect'] => {
   const to4 = (n: number): number => Math.round(n * 10000) / 10000;

@@ -239,11 +239,21 @@ export function openingsApi(): Hono {
       : null;
     if (!fens) return c.json({ error: 'expected fens' }, 400);
     if (fens.length > 1024) return c.json({ error: 'too many positions' }, 400);
+    // One freshness check for the whole batch. Asking per position meant
+    // two statSync calls each, so a full 1024-FEN request stat'd the index
+    // 2048 times -- 33ms of blocking syscalls in front of every other
+    // request, to re-answer a question that cannot change mid-batch.
+    const index = loadIndex();
     const positions = fens.map((fen) => {
       try {
         const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
         const key = hashSetup(pos.toSetup()).toString(16);
-        return { fen, opening: openingForKey(key), book: isBookKey(key) };
+        const entry = index?.byKey[key];
+        return {
+          fen,
+          opening: entry ? { eco: entry[0], name: entry[1] } : null,
+          book: index?.members.has(key) ?? false,
+        };
       } catch {
         return { fen, opening: null, book: false };
       }

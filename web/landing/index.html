@@ -278,6 +278,13 @@
       }
       .btn:hover { background: var(--muted); }
       .btn:active { transform: translateY(1px); }
+      /* The page's only movement is this 1px press — everything else here
+         is a colour transition, which is feedback rather than motion and
+         stays. A blanket `transition: none` would take the hover tint out
+         with it and leave the buttons signalling nothing. */
+      @media (prefers-reduced-motion: reduce) {
+        .btn:active { transform: none; }
+      }
       .btn.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
       .btn.primary:hover { background: color-mix(in oklch, var(--primary) 80%, transparent); }
       @media (prefers-color-scheme: dark) {
@@ -677,9 +684,15 @@
            <source> elements. -->
       <div class="wrap shot">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset="shots/board-dark-960.png 960w, shots/board-dark-1280.png 1280w, shots/board-dark.png 1904w"
+            sizes="(min-width: 62rem) 960px, calc(100vw - 2rem)"
+          />
           <img
             src="shots/board.png"
+            srcset="shots/board-960.png 960w, shots/board-1280.png 1280w, shots/board.png 1904w"
+            sizes="(min-width: 62rem) 960px, calc(100vw - 2rem)"
             width="1904"
             height="993"
             fetchpriority="high"
@@ -761,9 +774,15 @@
             <div class="body">
               <figure>
                 <picture>
-                  <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
+                  <source
+                    media="(prefers-color-scheme: dark)"
+                    srcset="shots/opening-map-dark-960.png 960w, shots/opening-map-dark.png 1200w"
+                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
+                  />
                   <img
                     src="shots/opening-map.png"
+                    srcset="shots/opening-map-960.png 960w, shots/opening-map.png 1200w"
+                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
                     width="1200"
                     height="993"
                     loading="lazy"
@@ -818,9 +837,15 @@
             <div class="body">
               <figure>
                 <picture>
-                  <source media="(prefers-color-scheme: dark)" srcset="shots/games-dark.png" />
+                  <source
+                    media="(prefers-color-scheme: dark)"
+                    srcset="shots/games-dark-960.png 960w, shots/games-dark-1280.png 1280w, shots/games-dark.png 1904w"
+                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
+                  />
                   <img
                     src="shots/games.png"
+                    srcset="shots/games-960.png 960w, shots/games-1280.png 1280w, shots/games.png 1904w"
+                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
                     width="1904"
                     height="993"
                     loading="lazy"
