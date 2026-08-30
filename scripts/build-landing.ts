@@ -21,7 +21,8 @@ import {
 // Build-time only, and a devDependency for that reason: nothing sharp
 // does reaches the shipped site except the files it writes here.
 import sharp from 'sharp';
-import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
 import { REPO_ROOT } from '../server/paths.ts';
 
 const APP_BUILD = resolve(REPO_ROOT, 'dist-demo');
@@ -96,7 +97,14 @@ writeFileSync(
 // English reader fetches one. The pages still render with the fonts
 // absent — the system stack stays behind Pretendard in both — so opening
 // web/landing/index.html straight off disk is unchanged.
-const FONT_SRC = resolve(REPO_ROOT, 'node_modules/pretendard/dist/web/variable');
+// ASKED FOR, not spelled out as REPO_ROOT/node_modules/pretendard. npm
+// hoists node_modules to the main checkout, so in a git worktree — which
+// is how this repo is worked in — that path does not exist, and the whole
+// site build died copying a stylesheet from it while the package sat
+// installed one directory up. Resolution follows the same lookup the app's
+// imports do and finds it wherever it landed.
+const PRETENDARD = dirname(createRequire(import.meta.url).resolve('pretendard/package.json'));
+const FONT_SRC = resolve(PRETENDARD, 'dist/web/variable');
 const fonts = resolve(SITE, 'fonts');
 mkdirSync(fonts, { recursive: true });
 copyFileSync(
@@ -116,7 +124,7 @@ cpSync(resolve(FONT_SRC, 'woff2-dynamic-subset'), resolve(fonts, 'woff2-dynamic-
 // what it was licensed under. The OFL asks to travel with the font, so it
 // travels in the same directory.
 copyFileSync(
-  resolve(REPO_ROOT, 'node_modules/pretendard/dist/LICENSE.txt'),
+  resolve(PRETENDARD, 'dist/LICENSE.txt'),
   resolve(fonts, 'LICENSE.txt'),
 );
 
