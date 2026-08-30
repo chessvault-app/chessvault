@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { randomBytes } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
@@ -11,8 +10,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
-import { renameRetrying, writeAtomic } from './atomic.ts';
-import { isLibraryBookId, libraryBookHasPdf } from './books.ts';
+import { readJson, renameRetrying, writeAtomic, writeJson } from './atomic.ts';
+import { isLibraryBookId, libraryBookHasPdf, newBookId } from './books.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
 import { cycleAttempt, reviewDueAt, type CycleWindow } from '../shared/review.ts';
@@ -71,20 +70,6 @@ const BOOKS_DIR = resolve(VAULT, 'puzzlebooks');
  * than a tree.
  */
 const validSlug = (slug: string): boolean => !slug.includes('/') && validId(slug);
-
-/**
- * A book's folder: `b` and eight random bytes as hex.
- *
- * Random rather than a hash of the title, because two books may be called
- * the same thing — the shelf's own New button offers one name to every
- * book it makes — and a hash would file them both in one folder, which is
- * the collision this id exists to make impossible. Eight bytes is 2^64:
- * a vault would need billions of books before two ever met.
- */
-const newBookId = (): string => `b${randomBytes(8).toString('hex')}`;
-
-/** Minted here, so a folder that was never minted here is recognisable. */
-const isBookId = (name: string): boolean => /^b[0-9a-f]{16}$/.test(name);
 
 interface BookPuzzle {
   id: string;
@@ -224,21 +209,6 @@ const HISTORY_MAX = 100;
  */
 const attemptsOf = (entry: PuzzleProgress | undefined): { win: boolean; at: string }[] =>
   entry === undefined ? [] : (entry.history ?? [{ win: entry.last === 'win', at: entry.at }]);
-
-function readJson<T>(path: string, fallback: T): T {
-  try {
-    return JSON.parse(readFileSync(path, 'utf-8')) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(path: string, value: unknown): void {
-  // Atomically: puzzles.json is hundreds of hand-transcribed puzzles and
-  // progress.json is rewritten on every attempt — the two files least
-  // affordable to lose to a crash mid-write.
-  writeAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
-}
 
 /**
  * The folder holding the book with this title, made if there is not one.
@@ -453,7 +423,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
    */
   if (existsSync(dir)) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isDirectory() || isBookId(entry.name)) continue;
+      if (!entry.isDirectory() || isLibraryBookId(entry.name)) continue;
       const path = resolve(bookDir(entry.name), 'book.json');
       const book = readJson<{ title?: string; createdAt?: string }>(path, {});
       // The folder name IS the book's name when book.json does not say
