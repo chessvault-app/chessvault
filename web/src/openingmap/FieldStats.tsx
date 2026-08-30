@@ -2,7 +2,8 @@ import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import type { FieldMove } from '@/repertoire/field';
+import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
+import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { Field } from '@/components/ui/field';
 import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import type { NodeCoverage } from './coverage';
@@ -50,6 +51,14 @@ export function FieldStats({
   onSelectChild: (id: string) => void;
 }) {
   const [field, setField] = useState<FieldMove[] | null>(null);
+  /**
+   * The online field with no token behind it answers nothing, and an
+   * empty answer leaves this table out altogether — so the panel simply
+   * had no statistics in it, with no word about why. Same sentence the
+   * canvas and the source window say.
+   */
+  const hasToken = useLichessToken();
+  const needsToken = source === ONLINE_SOURCE && hasToken === false;
 
   /**
    * `field` is null both before the answer arrives and when there is no
@@ -90,6 +99,13 @@ export function FieldStats({
   );
 
   if (!source) return null;
+  if (needsToken) {
+    return (
+      <Field label="Against the field">
+        <LichessTokenNotice className="px-1" />
+      </Field>
+    );
+  }
   if (pending) {
     return (
       <Field label="Against the field">

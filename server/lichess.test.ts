@@ -213,12 +213,15 @@ describe('explorer proxy', () => {
       const res = await app.request(
         `/api/explorer/masters?fen=${encodeURIComponent(INITIAL_FEN)}`,
       );
-      // No token configured and nothing cached: a 502 with instructions.
+      // No token configured and nothing cached: a 502 with instructions,
+      // and they name the place in the APP where a token goes — the file
+      // it lands in is the server's business, not the reader's.
       // (If the start position were cached this would be a 200 — the cache
       // dir is derived data, so the skipIf guard keeps this test honest.)
       const body = (await res.json()) as { error?: string };
       if (res.status === 502) {
-        expect(body.error).toContain('vault/config.json');
+        expect(body.error).toContain('API token');
+        expect(body.error).toContain('Settings');
       } else {
         expect(res.status).toBe(200); // served from disk cache
       }

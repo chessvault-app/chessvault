@@ -12,8 +12,10 @@ import { DATA_EXPLORER_CACHE, VAULT_CONFIG, VAULT_STUDIES } from './paths.ts';
  *
  * The explorer moved to explorer.lichess.org in 2026-03 and now requires an
  * OAuth token — any valid token, zero scopes (anonymous requests get a bare
- * nginx 401 with no WWW-Authenticate header). The token lives in
- * vault/config.json as { "lichessToken": "lip_..." }, which is gitignored.
+ * nginx 401 with no WWW-Authenticate header). Settings is where a user
+ * puts one; it lands in vault/config.json as { "lichessToken": "lip_..." },
+ * which is gitignored — and which is why no error out of here names the
+ * file: the app can add the token, so the app is where the error points.
  *
  * Every successful response is cached on disk keyed by EPD+params, so any
  * position visited once keeps working offline forever. Order of preference:
@@ -247,7 +249,7 @@ export function lichessExplorerApi(
         }
         if (answer.status === 401) {
           return c.json(
-            { error: 'Lichess rejected the token in vault/config.json — create a new one (no scopes needed) at lichess.org/account/oauth/token/create' },
+            { error: 'Lichess rejected this vault’s token — replace it in Settings with a new one (no scopes needed) from lichess.org/account/oauth/token/create' },
             502,
           );
         }
@@ -265,8 +267,13 @@ export function lichessExplorerApi(
       {
         error: token
           ? 'Lichess explorer is unreachable and this position is not cached'
-          : 'Lichess explorer needs an API token: put { "lichessToken": "..." } in vault/config.json (create one with no scopes at lichess.org/account/oauth/token/create)',
-        offline: true,
+          : 'Lichess explorer needs an API token — add one in Settings (create one with no scopes at lichess.org/account/oauth/token/create)',
+        // Only the first of those two is an outage. Both used to carry
+        // this flag, which made a vault that has never had a token look
+        // like a network that is down — and the client colours the two
+        // apart now (amber for out of reach, and its own worded notice
+        // for a token nobody has added yet).
+        offline: token !== null,
       },
       502,
     );

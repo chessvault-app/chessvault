@@ -2,7 +2,8 @@ import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import type { FieldMove } from '@/repertoire/field';
+import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
+import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
 import { MiniBoard } from '@/components/mini-board';
@@ -55,6 +56,8 @@ export function AddMoveDialog({
   onClose: () => void;
 }) {
   const [field, setField] = useState<FieldMove[] | null>(source ? null : []);
+  const hasToken = useLichessToken();
+  const needsToken = source === ONLINE_SOURCE && hasToken === false;
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -163,7 +166,15 @@ export function AddMoveDialog({
             around it is a row of pills, and what makes a zebra readable is
             that the bands meet. The panel's table is the same. */}
         <div className={cn(LIST, 'min-h-0 grow content-start overflow-y-auto sm:max-h-72')}>
-          {field === null ? null : rows.length === 0 ? (
+          {field === null ? null : needsToken ? (
+            /* "Nothing to offer" is a claim about the position, and with
+               no token behind the online field nothing was ever asked.
+               Say which — the same sentence the map and its source
+               window say. */
+            <div className="col-span-3 px-2 py-4">
+              <LichessTokenNotice />
+            </div>
+          ) : rows.length === 0 ? (
             <p className="text-muted-foreground col-span-3 px-2 py-4 text-center text-sm">
               {t('Nothing to offer — type the move instead.')}
             </p>

@@ -841,14 +841,12 @@ export const ko: Record<string, string> = {
   'New password': '새 비밀번호',
   'Repeat new password': '새 비밀번호 확인',
   'Lichess token': 'Lichess 토큰',
-  'Add a Lichess token in Settings': '설정에서 Lichess 토큰을 추가하세요',
   'Save line to study': '라인을 스터디로 저장',
   'Go to study': '스터디로 가기',
   '{n} moves': '{n}수',
   'Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.':
     '실제 게임의 상대와 오프닝을 연습합니다. 내가 수를 두면, 이 포지션에서 실제로 두어진 수 가운데 응수가 뽑힙니다.',
-  'The online database goes through your Lichess token.':
-    '온라인 데이터베이스는 Lichess 토큰을 통해 접속합니다.',
+  'The Lichess database needs an API token.': 'Lichess 데이터베이스에는 API 토큰이 필요합니다.',
   'Add one in Settings': '설정에서 추가하기',
   'Danger zone': '보관함 내 데이터 초기화',
   Server: '서버',
@@ -1233,8 +1231,6 @@ export const ko: Record<string, string> = {
   'Only empty collections can be deleted': '빈 모음만 삭제할 수 있습니다',
   'Remove this book and its progress': '이 책과 진행 상황 삭제',
   'New note': '새 노트',
-  'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.':
-    'Lichess 데이터베이스에는 API 토큰이 필요합니다. 설정에서 등록하거나, 참조 데이터베이스를 선택하세요.',
   'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.':
     '아직 색인된 게임이 없습니다. 게임 페이지에서 온라인 아카이브나 PGN으로 게임을 모으면, 여기서 읽을 것이 생깁니다.',
   'None of your games reach this position.': '이 위치에 도달한 게임이 없습니다.',

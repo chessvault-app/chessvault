@@ -99,6 +99,14 @@ interface ExplorerState {
   openingsSeen: Record<string, Opening>;
   loading: boolean;
   error: string | null;
+  /**
+   * Whether `error` is an outage rather than a fault: the vault server or
+   * Lichess out of reach, with nothing cached to answer from. The pane
+   * draws it amber, which is what the colour grammar gives an offline
+   * notice — red is for something that failed, and a network that is down
+   * has not failed at anything.
+   */
+  offline: boolean;
 
   toggle: () => void;
   selectBook: (name: string) => void;
@@ -315,6 +323,7 @@ export const useExplorer = create<ExplorerState>()(
               : s.openingsSeen,
             loading: false,
             error: null,
+            offline: false,
           }));
         } catch (error) {
           // api() folds an abort into ApiError status 0, so the signal —
@@ -328,6 +337,7 @@ export const useExplorer = create<ExplorerState>()(
               error instanceof ApiError && error.status !== 0
                 ? error.message
                 : t('explorer server unreachable'),
+            offline: !(error instanceof ApiError) || error.offline,
           });
         }
       };
@@ -349,6 +359,7 @@ export const useExplorer = create<ExplorerState>()(
         openingsSeen: {},
         loading: false,
         error: null,
+        offline: false,
 
         toggle: () => set((s) => ({ enabled: !s.enabled })),
 
@@ -423,9 +434,12 @@ export const useExplorer = create<ExplorerState>()(
               nativeScan: body.native === true,
               dbsLoaded: true,
               error: null,
+              offline: false,
             });
           } catch {
-            set({ dbsLoaded: true, error: t('explorer server unreachable') });
+            // The vault's own server, not Lichess: unreachable is the only
+            // way this call fails, so it is always the amber reading.
+            set({ dbsLoaded: true, error: t('explorer server unreachable'), offline: true });
           }
         },
 

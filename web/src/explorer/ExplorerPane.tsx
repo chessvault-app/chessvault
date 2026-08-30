@@ -30,6 +30,7 @@ import {
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/components/ui/button';
+import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { handOffPositionHunt } from '@/games/DatabaseGames';
 import { ResultBadge } from '@/components/result-badge';
 import { ResultBar } from '@/components/result-bar';
@@ -83,6 +84,8 @@ export function ExplorerPane({
   const openingsSeen = useExplorer((s) => s.openingsSeen);
   const loading = useExplorer((s) => s.loading);
   const error = useExplorer((s) => s.error);
+  // Whether that error is an outage rather than a fault — see the store.
+  const offline = useExplorer((s) => s.offline);
   const myFilters = useExplorer((s) => s.myFilters);
   const refreshMyStats = useExplorer((s) => s.refreshMyStats);
   const refDbs = useExplorer((s) => s.refDbs);
@@ -133,6 +136,11 @@ export function ExplorerPane({
   // Rare continuations are noise most of the time — show the top handful
   // and keep the pane's room for the reference games below.
   const [allMoves, setAllMoves] = useState(false);
+
+  // Whether the server has a Lichess token, which is what the online
+  // databases are read through — asked once for the session, and only
+  // spoken about when an online lookup has actually failed.
+  const hasToken = useLichessToken();
 
   const node = getNode(tree, cursorId);
   const book = activeBook({ book: selectedBook, refDbs });
@@ -349,30 +357,55 @@ export function ExplorerPane({
 
 
           {error ? (
-            // A bare red line was a dead end: the pane never asked again
-            // until the position changed. Say what happened, offer to go
-            // again in place.
-            <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-              <p className="text-destructive text-sm">{error}</p>
-              {/* The online databases go through the server's Lichess
-                  token; when they fail, the fix has an address. */}
-              {isRemoteDb(book) && (
-                <a href="#/settings" className="text-primary text-sm hover:underline">
-                  {t('Add a Lichess token in Settings')}
-                </a>
-              )}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void refreshDbs();
-                  lookup(node.fen);
-                }}
-              >
-                <RotateCw className="size-3.5" data-icon="inline-start" />
-                {t('Try again')}
-              </Button>
-            </div>
+            /* The online databases go through the server's Lichess
+               token, and where that token is simply absent the app knows
+               it before the server answers — so the pane says the one
+               sentence the trainer and the opening map say, translated
+               and carrying its own way to Settings, INSTEAD of the
+               server's English paragraph about the file it keeps the
+               token in. That paragraph is still what a direct caller of
+               the API gets.
+
+               It comes with no Try again: without a token the next
+               attempt fails exactly as this one did, and an offer to
+               repeat a certainty is the pane pretending it might be
+               unlucky. Adding one is the only way forward, so it is the
+               only press. (Returning from Settings re-asks by itself.)
+
+               Its own padding, since it stands where the error row's
+               used to.
+
+               Not while the server is unreachable, though: with nothing
+               able to answer, "add a token" is advice about a fault that
+               is not the one in the way. */
+            isRemoteDb(book) && hasToken === false && !offline ? (
+              <LichessTokenNotice className="px-3 py-2.5" />
+            ) : (
+              // A bare red line was a dead end: the pane never asked again
+              // until the position changed. Say what happened, offer to go
+              // again in place.
+              <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+                {/* Amber where the network is simply not there, red where
+                    something actually failed. The colour grammar gives red
+                    to an outcome and amber to an offline notice (see
+                    docs/design-principles.md), and the archive browser
+                    already draws that line in one row — but every failure
+                    here was red, so a tunnel, a dropped wifi and a Lichess
+                    rate limit all read as the app being broken. */}
+                <p className={cn('text-sm', offline ? 'text-warn' : 'text-destructive')}>{error}</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void refreshDbs();
+                    lookup(node.fen);
+                  }}
+                >
+                  <RotateCw className="size-3.5" data-icon="inline-start" />
+                  {t('Try again')}
+                </Button>
+              </div>
+            )
           ) : refdb && fresh && !refIndexed ? (
             <IndexPositionsCta
               name={refDbName(book!)}

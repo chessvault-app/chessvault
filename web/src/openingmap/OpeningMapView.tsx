@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { MiniBoard } from '@/components/mini-board';
 import { Fab, type FabAction } from '@/components/fab';
+import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { ResultBadge } from '@/components/result-badge';
 import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -113,6 +114,24 @@ export function OpeningMapView({ params }: { params: string[] }) {
       .catch(() => setDatabases([]));
   }, []);
   /**
+   * The online field goes through the server's Lichess token, and
+   * without one it answers nothing — so the map drew no gap badges, no
+   * share-scaled dots and no statistics table, which reads as a map with
+   * nothing to report rather than as a field that was never consulted.
+   * The fault said so nowhere on this page; the explorer and the trainer
+   * both named it. All three say the same sentence now.
+   *
+   * It is said where the field is, and nowhere else on the page: in the
+   * window that picks the source, in the panel where the statistics
+   * would have been, and in the sheet where the moves would have been.
+   * It spent a version as a card floating in the canvas's corner (over
+   * the constellation, panning with nothing) and a version on the title
+   * row (which pushed nothing, but put a message where the page's name
+   * is) — the map itself has no room for a sentence that is not about a
+   * position.
+   */
+  const hasToken = useLichessToken();
+  /**
    * Which reference database IS the field, if any.
    *
    * Its picker is a dropdown, and a dropdown's trigger states the
@@ -129,6 +148,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
       /* full or blocked storage loses the memo, nothing else */
     }
   };
+
+  const needsToken = field.source === ONLINE_SOURCE && hasToken === false;
 
   // One label lookup for the whole canvas: each node's own position, as
   // deep as the catalogue can possibly name.
@@ -724,6 +745,12 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 ))}
               </div>
             ))}
+
+            {/* Said where the choice is made: a row you can tick that
+                will answer nothing is worth a word before you leave the
+                window, not after — and this window is where the source
+                that cannot answer was picked in the first place. */}
+            {needsToken && <LichessTokenNotice className="px-1" />}
 
             {databases.length > 0 && (
               <div className="flex flex-col gap-1">
