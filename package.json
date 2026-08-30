@@ -47,7 +47,8 @@
     "shots": "electron scripts/capture-screenshots.mjs",
     "shots:gif": "node scripts/record-demo-gif.mjs",
     "desktop:package:linux": "node desktop/build-server.mjs && npm run build && electron-builder --linux AppImage deb",
-    "fuzz:parity": "tsx scripts/fuzz-parity.ts"
+    "fuzz:parity": "tsx scripts/fuzz-parity.ts",
+    "check:contrast": "tsx scripts/check-contrast.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
