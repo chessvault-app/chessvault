@@ -101,6 +101,7 @@ function addMoveAt(
   parentId: NodeId,
   pos: Chess,
   requested: Move,
+  owned = false,
 ): AddMoveResult {
   const parent = getNode(tree, parentId);
   // Castling to g1 and castling to h1 are the same move; normalising here
@@ -134,6 +135,12 @@ function addMoveAt(
     shapes: [],
   };
 
+  if (owned) {
+    tree.nodes[id] = node;
+    parent.children.push(id);
+    return { tree, nodeId: id, existed: false };
+  }
+
   return {
     tree: {
       ...tree,
@@ -146,6 +153,27 @@ function addMoveAt(
     nodeId: id,
     existed: false,
   };
+}
+
+/**
+ * addSan for a tree the caller built and holds alone.
+ *
+ * The immutable copy is what lets React see a new tree, and every
+ * interactive move wants it. Bulk BUILDING does not: resolveMap replays a
+ * whole opening map into a scratch tree, and copying `tree.nodes` per node
+ * made that O(N^2) — and the map re-resolves on every edit. Writing in
+ * place instead is linear. Measured on Node 24, resolving one generated
+ * map: 2047 nodes went from 451ms to 22ms, 1201 from 131ms to 14ms, 301
+ * from 7.4ms to 4.6ms.
+ *
+ * Only for a tree no one else is holding — it is mutated, so a caller that
+ * hands one to React state must use addSan.
+ */
+export function addSanOwned(tree: MoveTree, parentId: NodeId, san: string): NodeId | undefined {
+  const pos = positionAt(tree, parentId);
+  const move = parseSan(pos, san);
+  if (!move) return undefined;
+  return addMoveAt(tree, parentId, pos, move, true).nodeId;
 }
 
 /** Play a move given in SAN. Returns `undefined` if the SAN is illegal here. */
