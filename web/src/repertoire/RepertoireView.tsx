@@ -48,6 +48,7 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Field } from '@/components/ui/field';
 import { InfoTip } from '@/components/info-tip';
+import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { KingIcon } from '@/components/king-icon';
 import { Segmented } from '@/components/segmented';
 import { SideDot } from '@/components/side-dot';
@@ -291,21 +292,15 @@ export function RepertoireView() {
    * happen: pick the Lichess database, press Start, watch the board set
    * itself up, and only then be told that the field cannot be consulted
    * without a token. The check is one field of the settings this page
-   * could always have asked for.
+   * could always have asked for — and the same one the opening map and
+   * the explorer ask, which is why it lives beside the sentence all
+   * three of them say (see components/lichess-token-notice).
    *
    * Undefined until the answer is in — the difference between "no token"
    * and "nobody has said yet" is the difference between a reason and a
    * false accusation, and Start stays available while it is unknown.
    */
-  const [hasToken, setHasToken] = useState<boolean | undefined>(undefined);
-  useEffect(() => {
-    if (isDemo()) return;
-    void api<{ lichess?: { configured?: boolean } }>('/api/settings')
-      .then((body) => setHasToken(body?.lichess?.configured === true))
-      // Unreachable settings are not a missing token; leave it unknown and
-      // let the run report whatever actually goes wrong.
-      .catch(() => setHasToken(undefined));
-  }, []);
+  const hasToken = useLichessToken();
   const needsToken = source === ONLINE_SOURCE && hasToken === false;
 
   const [tree, setTree] = useState<MoveTree>(() => createTree());
@@ -1305,13 +1300,7 @@ export function RepertoireView() {
     <>
       {/* A disabled Start with no word is a riddle; the reason
           is one line. */}
-      {needsToken && (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {t(
-            'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.',
-          )}
-        </p>
-      )}
+      {needsToken && <LichessTokenNotice />}
       {mode === 'drill' && drillChapter && !drillReady && (
         <p className="text-muted-foreground text-sm leading-relaxed">
           {wholeStudy
@@ -1623,15 +1612,14 @@ export function RepertoireView() {
       {/* The dependency arrow, pointed back: Settings knows it
           powers this, but this error never said Settings was
           the fix. A tokenless user read "could not reach" as
-          the app being broken. */}
-      {error && source === ONLINE_SOURCE && (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {t('The online database goes through your Lichess token.')}{' '}
-          <a href="#/settings" className="text-primary hover:underline">
-            {t('Add one in Settings')}
-          </a>
-        </p>
-      )}
+          the app being broken.
+
+          Only where the token is the actual answer. It used to follow
+          every online failure, so a rate limit or a dropped connection
+          was blamed on a token that was there all along; a token the
+          server HAS and Lichess refuses is named by the server's own
+          error, on the line above this one. */}
+      {error && needsToken && <LichessTokenNotice />}
       {/* The score and its bar only: what this ending OFFERS is on the
           panel's floor with New game, so the two things you might press
           next stand in one row rather than one of them sitting up in the

@@ -17,12 +17,27 @@ import { t } from '@/lib/i18n';
 
 /** A failed request: status 0 means the network, anything else the server. */
 export class ApiError extends Error {
+  /**
+   * The failure is an outage rather than a fault — nothing is broken and
+   * nothing the user did is wrong; a machine in the middle could not be
+   * reached. True for every network-level failure, and for a server that
+   * says so in its own body (`{ offline: true }` — the Lichess proxy
+   * sends it when it can reach neither Lichess nor its cache).
+   *
+   * It exists so a caller can colour the two apart: the app's grammar
+   * gives red to a failure and amber to an offline notice, and until this
+   * flag there was nothing at a call site to tell them apart.
+   */
+  readonly offline: boolean;
+
   constructor(
     readonly status: number,
     message: string,
+    offline = false,
   ) {
     super(message);
     this.name = 'ApiError';
+    this.offline = offline;
   }
 }
 
@@ -80,14 +95,19 @@ export async function api<T = unknown>(
     throw new ApiError(
       0,
       navigator.onLine ? t('vault server unreachable') : t('no internet connection'),
+      true,
     );
   }
   if (res.status === 401) onUnauthorized?.();
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    const body = (await res.json().catch(() => null)) as {
+      error?: string;
+      offline?: boolean;
+    } | null;
     throw new ApiError(
       res.status,
       body?.error ?? t('Request failed ({status})', { status: res.status }),
+      body?.offline === true,
     );
   }
   // Routes that answer with no body (or plain ok) parse to undefined.
@@ -119,9 +139,10 @@ export function apiUpload<T = unknown>(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) options.onProgress?.(e.loaded, e.total);
     };
-    const fail = (status: number, message: string): void => reject(new ApiError(status, message));
+    const fail = (status: number, message: string, offline = false): void =>
+      reject(new ApiError(status, message, offline));
     xhr.onerror = () =>
-      fail(0, navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
+      fail(0, navigator.onLine ? t('vault server unreachable') : t('no internet connection'), true);
     xhr.onabort = () => fail(0, t('Upload cancelled'));
     xhr.onload = () => {
       if (xhr.status === 401) onUnauthorized?.();
@@ -132,8 +153,12 @@ export function apiUpload<T = unknown>(
         body = undefined;
       }
       if (xhr.status < 200 || xhr.status >= 300) {
-        const error = (body as { error?: string } | undefined)?.error;
-        fail(xhr.status, error ?? t('Request failed ({status})', { status: xhr.status }));
+        const envelope = body as { error?: string; offline?: boolean } | undefined;
+        fail(
+          xhr.status,
+          envelope?.error ?? t('Request failed ({status})', { status: xhr.status }),
+          envelope?.offline === true,
+        );
         return;
       }
       resolve(body as T);

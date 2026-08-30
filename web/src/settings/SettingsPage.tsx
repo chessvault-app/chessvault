@@ -3,6 +3,7 @@ import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
@@ -1055,6 +1056,9 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
       return;
     }
     setToken('');
+    // Every view that warns about a missing token asked once for the
+    // session; without this the warning outlives the token it is about.
+    forgetLichessToken();
     setNote({ kind: 'ok', text: t('Token saved.') });
     await onChanged();
   };
@@ -1068,6 +1072,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
+    forgetLichessToken();
     setNote({ kind: 'ok', text: t('Token removed.') });
     await onChanged();
   };
