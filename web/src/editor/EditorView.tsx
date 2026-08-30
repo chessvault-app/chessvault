@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -1138,41 +1138,47 @@ function PiecePalette({
     // above the board never clips.
     <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1 wide:flex-nowrap">
       {colors.map((color, groupIndex) => (
-        <div key={color} className="flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1">
+        // The divider is a sibling of the two groups, not a child of the
+        // second one: both groups are `flex-1`, so a divider inside one of
+        // them comes out of that group's share and its six pieces render
+        // smaller than the other colour's.
+        <Fragment key={color}>
           {groupIndex > 0 && <span className="bg-border mx-1.5 hidden h-6 w-px shrink-0 wide:block" />}
-          {ROLES.map((role) => {
-            const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
-            return (
-              <button
-                key={role}
-                type="button"
-                aria-label={placeLabel(color, role)}
-                title={placeLabel(color, role)}
-                onClick={() => onPick({ kind: 'piece', role, color })}
-                // A drag is chessground's from the first pixel; a clean
-                // click (no movement, so no drop) still arms the tool.
-                onMouseDown={(e) => onDragStart?.(color, role, e.nativeEvent)}
-                onTouchStart={(e) => onDragStart?.(color, role, e.nativeEvent)}
-                className={cn(
-                  // A board-square backdrop: --board-light is tuned per theme
-                  // to keep BOTH piece colours legible, which the page
-                  // background is not (black pieces vanish on dark).
-                  // touch-none: a touch on a palette piece starts a drag,
-                  // never a page scroll.
-                  'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
-                  'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
-                  active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
-                )}
-              >
-                {/* Same sprite-reuse trick as the promotion picker. */}
-                <span
-                  className="block size-full"
-                  dangerouslySetInnerHTML={{ __html: `<piece class="${role} ${color}"></piece>` }}
-                />
-              </button>
-            );
-          })}
-        </div>
+          <div className="flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1">
+            {ROLES.map((role) => {
+              const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  aria-label={placeLabel(color, role)}
+                  title={placeLabel(color, role)}
+                  onClick={() => onPick({ kind: 'piece', role, color })}
+                  // A drag is chessground's from the first pixel; a clean
+                  // click (no movement, so no drop) still arms the tool.
+                  onMouseDown={(e) => onDragStart?.(color, role, e.nativeEvent)}
+                  onTouchStart={(e) => onDragStart?.(color, role, e.nativeEvent)}
+                  className={cn(
+                    // A board-square backdrop: --board-light is tuned per theme
+                    // to keep BOTH piece colours legible, which the page
+                    // background is not (black pieces vanish on dark).
+                    // touch-none: a touch on a palette piece starts a drag,
+                    // never a page scroll.
+                    'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
+                    'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
+                    active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
+                  )}
+                >
+                  {/* Same sprite-reuse trick as the promotion picker. */}
+                  <span
+                    className="block size-full"
+                    dangerouslySetInnerHTML={{ __html: `<piece class="${role} ${color}"></piece>` }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </Fragment>
       ))}
     </div>
   );
