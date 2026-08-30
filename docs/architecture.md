@@ -140,11 +140,11 @@ flowchart LR
   the analysis board — the landing page must not pay for the engine, the
   explorer and the PGN parsers to draw a launcher — which is also why the
   home page's customise dialog is the one thing on it that is lazy. It
-  currently loads 619 kB of JS in Korean — 516 kB of shell across 44
-  chunks (the 233 kB entry, 129 kB of the component layer, 61 kB of
-  dialog) and 102 kB of dictionary — and 516 kB in English; measured on
-  the 0.6.0 build. The shell was 217 kB before the component layer came
-  in, and the Base UI port grew the layer's and the dialog's chunks
+  currently loads 637 kB of JS in Korean — 542 kB of shell across 45
+  chunks (the 240 kB entry, 132 kB of the component layer, 63 kB of
+  dialog) and 95 kB of dictionary — and 542 kB in English; measured on
+  the post-0.6.0 build. The shell was 217 kB before the component layer
+  came in, and the Base UI port grew the layer's and the dialog's chunks
   again. New UI strings usually cost the dictionary and nothing else —
   0.5.0 added the Databases vocabulary, the level bands, the deep search
   and the comparison report without the shell moving a kilobyte — but
@@ -152,7 +152,12 @@ flowchart LR
   dictionary grew 96 → 102 kB as expected, and the shell grew 503 → 516
   kB with it, because the query language, the density knob and the
   editor's paged chain are code the launcher loads rather than words it
-  looks up. The component layer and the dialog chunk did not move.
+  looks up. Since 0.6.0 the two have moved in opposite directions: the
+  dictionary fell 102 → 95 kB when 138 dead entries were swept out of it,
+  while the shell grew 516 → 542 kB — the workspace, the extracted games
+  browser and the eval bar's own panel are all code, and the entry took
+  233 → 240 kB of it. The component layer and the dialog chunk moved by
+  about 2 kB each.
 
 ## Deployment model
 
