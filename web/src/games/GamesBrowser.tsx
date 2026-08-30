@@ -178,10 +178,29 @@ export function GamesBrowser({
   /** Which tab the pane is showing. A handed-over position lands on
       Databases whatever was held — that is what it is for, and with
       the tabs at every width the phone consumes the handoff the same
-      way the desktop does. */
-  const [tab, setTabState] = useState<MainTab>(() =>
-    positionHuntPending() ? 'databases' : (heldTab ?? 'databases'),
-  );
+      way the desktop does.
+
+      Otherwise it opens on YOUR games when you have any. This used to
+      open on Databases unconditionally, reasoning that the search work
+      made them the strongest surface — true, and a ranking of the code
+      rather than of the person clicking. A section called Games, in a
+      product whose whole claim is that the files are yours, opened on
+      several thousand strangers' engine games while the reader's own
+      thirty sat one tab to the right.
+
+      `cachedCollection()` answers synchronously on every visit after the
+      first, so the choice is normally made before the first paint and
+      nothing moves. Only a cold start with no cache has to guess, and
+      the effect below corrects that once — see `guessedTab`. */
+  const guessedTab = useRef(false);
+  const [tab, setTabState] = useState<MainTab>(() => {
+    if (positionHuntPending()) return 'databases';
+    if (heldTab) return heldTab;
+    const cached = cachedCollection();
+    if (cached) return cached.length > 0 ? 'collection' : 'databases';
+    guessedTab.current = true;
+    return 'databases';
+  });
   /** The emitted selection's subject, per tab: the collection remembers
       a KEY and re-resolves it against the live array (load() replaces
       the objects after a rename or a reload); the database pane hands
@@ -234,6 +253,18 @@ export function GamesBrowser({
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
   }, [load]);
+
+  /* The one correction the synchronous guess above cannot make.
+     With no cached collection there is nothing to ask at mount, so the
+     pane opens on Databases and moves to the collection when the load
+     comes back holding games. It fires at most once per mount, and only
+     while `heldTab` is still null — a tab the reader chose in the
+     meantime sets it, and their choice outranks this. */
+  useEffect(() => {
+    if (!guessedTab.current || !loaded) return;
+    guessedTab.current = false;
+    if (heldTab === null && games.length > 0) setTabState('collection');
+  }, [loaded, games.length]);
 
   const toggleBookmark = async (game: GameSummary): Promise<void> => {
     let key: string;
