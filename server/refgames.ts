@@ -59,7 +59,6 @@ import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
  */
 
 const REFGAMES_DIR = resolve(DATA, 'refgames');
-const LEGACY_DB = resolve(DATA, 'refgames.sqlite');
 const PAGE = 50;
 
 /**
@@ -2235,6 +2234,6 @@ export function refGamesApi(
   });
 }
 
-// Referenced by scripts that need the same resolution (tune-dbs, the
-// bundled-set curator, the demo curator) without duplicating the layout.
-export { REFGAMES_DIR, LEGACY_DB };
+// Exported so anything that needs the same resolution gets it from here
+// rather than duplicating the layout.
+export { REFGAMES_DIR };

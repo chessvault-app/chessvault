@@ -68,9 +68,6 @@ export const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coars
 export const safeLink = (link?: string | null): string | undefined =>
   link && /^https?:\/\//i.test(link) ? link : undefined;
 
-/** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
-export const fmtResult = (result: string): string => result.replaceAll('1/2', '½');
-
 /**
  * The peek card, MEASURED rather than derived: it is `w-44` with `p-1`,
  * so the width is 176 and the board inside it should make the height 176

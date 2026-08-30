@@ -39,8 +39,6 @@ export const keyEntry = (key32: number, gameId: number, ply: number): bigint =>
 
 export const entryGameId = (entry: bigint): number => Number((entry >> 16n) & 0xffffffffn);
 
-export const entryPly = (entry: bigint): number => Number(entry & 0xffffn);
-
 /** The [from, to) bounds of one low16's run, for a bucket's entries. */
 export const low16Bounds = (key32: number): { lo: bigint; hi: bigint } => {
   const low16 = BigInt(key32 & 0xffff);
