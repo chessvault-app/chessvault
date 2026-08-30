@@ -21,9 +21,13 @@ function PopoverContent({
   side = 'bottom',
   sideOffset = 4,
   collisionPadding,
+  anchor,
   ...props
 }: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, 'align' | 'alignOffset' | 'side' | 'sideOffset' | 'collisionPadding'>) {
+  Pick<
+    PopoverPrimitive.Positioner.Props,
+    'align' | 'alignOffset' | 'side' | 'sideOffset' | 'collisionPadding' | 'anchor'
+  >) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -32,6 +36,10 @@ function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
+        // Forwarded so a popup can hang off something that is not its
+        // trigger — a caret, a cell, a point on a board. Base UI takes an
+        // element, a ref, or a virtual `{ getBoundingClientRect }`.
+        anchor={anchor}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup

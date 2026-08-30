@@ -13,6 +13,7 @@ import { DocumentHistory } from '@/components/history-panel';
 import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
+import { WikiSuggest } from './WikiSuggest';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -406,6 +407,7 @@ function NoteEditor({
       </div>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+      <WikiSuggest editor={editor} />
 
       {recovery && editor && (
         <RecoveryDialog

@@ -219,6 +219,7 @@ export const ko: Record<string, string> = {
   'Search notes…': '노트 검색…',
   'Ctrl+click to open': 'Ctrl+클릭하면 열립니다',
   'Click to open': '클릭하면 열립니다',
+  'Link to a note, study or game': '노트, 스터디 또는 게임으로 연결',
   'Untitled note': '제목 없는 노트',
   'could not open “{id}”': '“{id}”을(를) 열 수 없습니다',
 
