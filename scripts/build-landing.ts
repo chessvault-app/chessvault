@@ -103,6 +103,19 @@ copyFileSync(
 cpSync(resolve(FONT_SRC, 'woff2-dynamic-subset'), resolve(fonts, 'woff2-dynamic-subset'), {
   recursive: true,
 });
+// And the licence, beside the font it covers.
+//
+// The subset CSS opens by saying the OFL is "copied below". It is not —
+// the header carries the copyright and a URL, and the file continues
+// straight into @font-face. That is fine inside the app, whose generated
+// licences page carries the full text; it was not fine here, where these
+// pages serve the font from the site root and nothing at that level said
+// what it was licensed under. The OFL asks to travel with the font, so it
+// travels in the same directory.
+copyFileSync(
+  resolve(REPO_ROOT, 'node_modules/pretendard/dist/LICENSE.txt'),
+  resolve(fonts, 'LICENSE.txt'),
+);
 
 // Screenshots are shared with the README rather than duplicated.
 const shots = resolve(SITE, 'shots');
