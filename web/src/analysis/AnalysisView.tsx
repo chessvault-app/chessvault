@@ -478,16 +478,22 @@ export function MovesOverflow({
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
 
   const actions: MenuAction[] = [
-    // First, and only on a phone: they act on the move you are standing
-    // on, which is what brought you to this menu, and the strip that
-    // offers the mainline one on a desktop is `max-md:hidden`. A desktop
-    // has that strip and the right-click on the move itself, so listing
-    // them here too would be the third way to say the same thing.
+    // First, and at every width, unlike everything below them.
     //
-    // Both, not just the mainline one — a nested line is the case where
-    // "make this the mainline" is far more than was wanted, and until
-    // now it was the only promotion the app offered anywhere.
-    ...(phone ? promoteActions(tree, cursorId, promoteNode) : []),
+    // The rest of this list is folded away on a phone because a desktop
+    // shows the same verb as a button; these two are folded IN because a
+    // width is not a pointer. The other route to them is a right-click on
+    // the move, and a tablet — wide by every query here, `pointer-fine`
+    // by none of them — has no right-click to give. Gating them on width
+    // left the app's only one-step promotion reachable on a phone and on
+    // a mouse, and nowhere on a big touchscreen. (lanph3re's report.)
+    //
+    // The mainline one is therefore said twice on a desktop, beside the
+    // strip under the table. That is the price of the pair staying
+    // together: they are one choice about one move — how far to lift it —
+    // and a menu offering the smaller half while the larger sits
+    // elsewhere reads as two unrelated verbs.
+    ...promoteActions(tree, cursorId, promoteNode),
     ...(onLoadPosition && phone
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),

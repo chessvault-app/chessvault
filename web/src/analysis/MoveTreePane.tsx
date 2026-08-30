@@ -182,11 +182,12 @@ export function MoveTreePane({ className }: { className?: string }) {
           )}
         </div>
       </ActionContextMenu>
-      {/* Phones reach both promotions through the header's ⋯ instead (see
-          MovesOverflow), and get the panel's last line of moves back: on a
-          390px column the list is the shortest thing on the page, and a
-          banner over it is a move you cannot see. From md the room is
-          there and the banner is the affordance nobody has to find. */}
+      {/* Dropped on a phone, where the panel's ⋯ carries both promotions
+          at every width (see MovesOverflow) and the list gets its last
+          line back: on a 390px column the moves are the shortest thing on
+          the page, and a banner over them is a move you cannot see. From
+          md the room is there, and the banner stays as the one promotion
+          nobody has to go looking for. */}
       <PromoteStrip
         tree={tree}
         cursorId={cursorId}

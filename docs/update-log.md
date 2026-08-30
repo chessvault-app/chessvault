@@ -22,9 +22,11 @@ installer. This section becomes the next version's heading.
   was missing: the cursor is almost never on the move a variation begins
   with, and acting on that move alone did nothing at all.
 
-  Phones reach both through the Moves panel's ⋯, acting on the move you
-  tapped, and get the `Make mainline` strip's line of the list back —
-  the banner now shows from tablet width up, where there is room for it.
+  Both also sit at the top of the Moves panel's ⋯ at every width, acting
+  on the move you are standing on — a tablet is wide enough for the
+  right-click route and has no right-click to give. Phones additionally
+  get the `Make mainline` strip's line of the list back: the banner now
+  shows from tablet width up, where there is room for it.
 
 - **The repertoire drill remembers on a schedule, and home says when.**
   A position you fumbled used to sit in the drill's review pool for
