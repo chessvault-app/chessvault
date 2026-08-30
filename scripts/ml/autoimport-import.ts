@@ -1,13 +1,14 @@
-// Import the 1001 book's puzzles into the vault, three fidelity tiers:
+// Import the 1001 book's puzzles into the vault.
 //
-//   book-parsed          position + side + solution all verified by replaying
-//                        the book's own line (autoimport-measure output)
-//   engine-corroborated  Stockfish solves from the read position; the squares
-//                        the book's entry mentions overlap the engine line —
-//                        the text corroborates the POSITION even though its
-//                        movetext was unparseable
-//   engine-only          Stockfish alone (lanph3re's accepted fallback): legal
-//                        position, decisive line, no text to corroborate
+// Tier one is this file's own: book-parsed, where the position, the side
+// and the solution were all verified by replaying the book's printed line
+// (autoimport-measure's output).
+//
+// Every tier below that — engine-corroborated, engine-only,
+// engine-unverified — is shared/bookEngine.ts's decision, not this
+// script's. That module exists so the browser import and this pipeline
+// answer identically, with the engine as a parameter; this file's job is
+// to hand it a Stockfish it spawned itself. Do not re-derive a tier here.
 //
 // Anything left (illegal position, nothing decisive) becomes a draft with the
 // CNN's read prefilled. Every imported puzzle carries evidence images: its
@@ -20,9 +21,15 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { bookDirFor } from '../../server/puzzlebooks.ts';
-import { Chess } from 'chessops/chess';
-import { parseFen } from 'chessops/fen';
-import { makeSanAndPlay, parseSan } from 'chessops/san';
+import {
+  engineTier,
+  fullFen,
+  overlap,
+  positionOf,
+  type EngineLine,
+  type EngineSearch,
+} from '../../shared/bookEngine.ts';
+import { parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 
 const REPO = resolve(import.meta.dirname, '..', '..');
@@ -154,36 +161,21 @@ class Engine {
 
 // --- helpers ------------------------------------------------------------------
 
-function castlingRights(placement: string): string {
-  const expand = (rank: string): string[] => {
-    const out: string[] = [];
-    for (const ch of rank) {
-      if (ch >= '1' && ch <= '8') out.push(...Array(Number(ch)).fill(''));
-      else out.push(ch);
-    }
-    return out;
-  };
-  const ranks = placement.split('/');
-  const r1 = expand(ranks[7]!);
-  const r8 = expand(ranks[0]!);
-  let rights = '';
-  if (r1[4] === 'K' && r1[7] === 'R') rights += 'K';
-  if (r1[4] === 'K' && r1[0] === 'R') rights += 'Q';
-  if (r8[4] === 'k' && r8[7] === 'r') rights += 'k';
-  if (r8[4] === 'k' && r8[0] === 'r') rights += 'q';
-  return rights || '-';
-}
-
-function fullFen(placement: string, side: 'w' | 'b'): string {
-  return `${placement} ${side} ${castlingRights(placement)} - 0 1`;
-}
-
-function positionOf(fen: string): Chess | null {
-  const setup = parseFen(fen);
-  if (setup.isErr) return null;
-  const pos = Chess.fromSetup(setup.unwrap());
-  return pos.isErr ? null : pos.unwrap();
-}
+/**
+ * The bar a repair candidate must clear to be worth considering.
+ *
+ * Deliberately NOT bookEngine's DECISIVE_CP. That one asks "is this line
+ * good enough to be the answer"; this asks "is this board reading the real
+ * one", and the filtering there is done by uniqueness — exactly one
+ * candidate may pass — plus the overlap with the squares the book printed.
+ * A candidate scoring +1.5 is already saying something about the reading.
+ *
+ * It is lower than 250 because it was written before bookEngine existed
+ * and has never been re-examined against it; it is preserved rather than
+ * unified because raising it would change which repairs settle, and
+ * nothing has been measured that says it should.
+ */
+const REPAIR_CP = 150;
 
 /** SAN mainline -> uci+san arrays via replay (report stores SAN only). */
 function lineFromSans(fen: string, sans: string[]): { uci: string[]; san: string[] } | null {
@@ -198,47 +190,6 @@ function lineFromSans(fen: string, sans: string[]): { uci: string[]; san: string
   }
   return { uci, san: sans };
 }
-
-/** UCI pv -> san line, trimmed to `plies`, stopping cleanly at mate. */
-function lineFromPv(fen: string, pv: string[], plies: number): { uci: string[]; san: string[] } | null {
-  const pos = positionOf(fen);
-  if (!pos) return null;
-  const uci: string[] = [];
-  const san: string[] = [];
-  for (const u of pv.slice(0, plies)) {
-    const move = parseUciMove(u);
-    if (!move || !pos.isLegal(move)) break;
-    san.push(makeSanAndPlay(pos, move));
-    uci.push(u);
-    if (pos.isCheckmate()) break;
-  }
-  return uci.length > 0 ? { uci, san } : null;
-}
-
-function parseUciMove(u: string): { from: number; to: number; promotion?: 'queen' | 'rook' | 'bishop' | 'knight' } | null {
-  if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(u)) return null;
-  const sq = (s: string): number => (s.charCodeAt(0) - 97) + (s.charCodeAt(1) - 49) * 8;
-  const promos = { q: 'queen', r: 'rook', b: 'bishop', n: 'knight' } as const;
-  return {
-    from: sq(u.slice(0, 2)),
-    to: sq(u.slice(2, 4)),
-    promotion: u[4] ? promos[u[4] as keyof typeof promos] : undefined,
-  };
-}
-
-/** Defender plies (odd indices) become wildcards for forced-mate lines. */
-function defenderWildcards(count: number): number[] {
-  const out: number[] = [];
-  for (let i = 1; i < count - 1; i += 2) out.push(i);
-  return out;
-}
-
-const overlap = (line: string[], squares: string[]): number => {
-  const dests = new Set(line.map((u) => u.slice(2, 4)));
-  let hit = 0;
-  for (const d of dests) if (squares.includes(d)) hit++;
-  return dests.size === 0 ? 0 : hit / dests.size;
-};
 
 // --- main ---------------------------------------------------------------------
 
@@ -288,6 +239,21 @@ async function main(): Promise<void> {
     return result;
   };
 
+  /**
+   * The spawned Stockfish as shared/bookEngine's EngineSearch.
+   *
+   * That module takes the engine as a parameter precisely so this pipeline
+   * and the browser can run one tiering rule; this is the whole of what it
+   * needs from us. Still memoized, so the cache keeps working. No bestmove
+   * means the engine had no answer, which is the null the tiers expect.
+   */
+  const searchFor =
+    (engine: Engine): EngineSearch =>
+    async (fen: string, moveMs: number): Promise<EngineLine | null> => {
+      const r = await search(engine, fen, `movetime ${moveMs}`);
+      return r.bestmove ? { cp: r.cp, mate: r.mate, pv: r.pv } : null;
+    };
+
   const puzzles: ImportedPuzzle[] = [];
   const leftovers: ReportEntry[] = [];
   const counts = {
@@ -310,14 +276,14 @@ async function main(): Promise<void> {
     };
     const push = (
       provenance: ImportedPuzzle['provenance'],
-      side: 'w' | 'b',
+      fen: string,
       line: { uci: string[]; san: string[] },
       wildcards: number[],
     ): void => {
       counts[provenance]++;
       puzzles.push({
         id: `n${entry.number}`,
-        fen: fullFen(entry.fen!, side),
+        fen,
         uci: line.uci,
         san: line.san,
         ...(wildcards.length > 0 ? { wildcards } : {}),
@@ -341,7 +307,9 @@ async function main(): Promise<void> {
         if (!positionOf(fen)) continue;
         const result = await search(engine, fen, 'movetime 500');
         const decisiveCand =
-          !!result.bestmove && ((result.mate !== null && result.mate > 0) || (result.cp !== null && result.cp >= 150));
+          !!result.bestmove &&
+          ((result.mate !== null && result.mate > 0) ||
+            (result.cp !== null && result.cp >= REPAIR_CP));
         const corroborated =
           (entry.squares?.length ?? 0) < 2 || overlap(result.pv.slice(0, 6), entry.squares!) >= 0.5;
         if (decisiveCand && corroborated) passing.push(cand);
@@ -351,7 +319,7 @@ async function main(): Promise<void> {
         if (line) {
           entry.fen = passing[0]!.fen;
           settledAmbiguous++;
-          push('book-parsed', passing[0]!.side, line, []);
+          push('book-parsed', fullFen(passing[0]!.fen, passing[0]!.side), line, []);
           return;
         }
       }
@@ -361,7 +329,7 @@ async function main(): Promise<void> {
     if (entry.status === 'validated') {
       const line = lineFromSans(fullFen(entry.fen!, entry.side!), entry.sans!);
       if (line) {
-        push('book-parsed', entry.side!, line, []);
+        push('book-parsed', fullFen(entry.fen!, entry.side!), line, []);
         return;
       }
     }
@@ -371,74 +339,35 @@ async function main(): Promise<void> {
       return;
     }
 
-    // Engine tiers. Side: from the text when parsed; otherwise inferred by
-    // unique decisiveness.
-    const trySide = async (side: 'w' | 'b'): Promise<EngineResult & { side: 'w' | 'b' } | null> => {
-      const fen = fullFen(entry.fen!, side);
-      if (!positionOf(fen)) return null;
-      const goal = entry.mateIn ?? 0;
-      // Fixed-time search; the mate score (if any) arrives in the info
-      // lines. Mate-in-N is trivial for the engine inside this budget.
-      const result = await search(engine, fen, `movetime ${goal > 0 ? 800 : 500}`);
-      if (!result.bestmove) return null;
-      return { ...result, side };
-    };
-
-    const decisive = (r: EngineResult | null): boolean =>
-      !!r && ((r.mate !== null && r.mate > 0) || (r.cp !== null && r.cp >= 250));
-
-    let solved: (EngineResult & { side: 'w' | 'b' }) | null = null;
-    if (entry.side) {
-      const r = await trySide(entry.side);
-      if (decisive(r)) solved = r;
-    } else {
-      const w = await trySide('w');
-      const b = await trySide('b');
-      const wOk = decisive(w);
-      const bOk = decisive(b);
-      if (wOk && !bOk) solved = w;
-      else if (bOk && !wOk) solved = b;
-      else if (wOk && bOk) {
-        const margin = (r: EngineResult): number => (r.mate !== null ? 100000 - r.mate : r.cp!);
-        if (Math.abs(margin(w!) - margin(b!)) >= 300) solved = margin(w!) > margin(b!) ? w : b;
-      }
-    }
-
-    // Import-everything tier: no decisive line, but the position is legal
-    // and the text told us the side — take the engine's best line anyway,
-    // clearly badged. (Without a side there is nothing sane to import.)
-    if (!solved && entry.side) {
-      const fen = fullFen(entry.fen, entry.side);
-      if (positionOf(fen)) {
-        const best = await search(engine, fen, 'movetime 500');
-        const line = best.pv.length > 0 ? lineFromPv(fen, best.pv, 6) : null;
-        if (line) {
-          push('engine-unverified', entry.side, line, []);
-          return;
-        }
-      }
-    }
+    /**
+     * Engine tiers: shared/bookEngine.ts's decision, on this script's
+     * Stockfish.
+     *
+     * This block used to re-derive the whole thing — its own trySide, its
+     * own decisive/margin thresholds, its own unverified fallback — and it
+     * had drifted from the module that was extracted to own it: the
+     * fallback searched the SAME position a second time for the SAME budget
+     * to get a line the first search had already returned, which
+     * bookEngine.ts removed deliberately. A book imported here and in the
+     * app could be tiered differently, silently, while the docs said the
+     * two ran one rule.
+     */
+    const solved = await engineTier(
+      {
+        number: entry.number,
+        placement: entry.fen,
+        ...(entry.side ? { side: entry.side } : {}),
+        squares: entry.squares ?? [],
+        ...(entry.mateIn ? { mateIn: entry.mateIn } : {}),
+      },
+      searchFor(engine),
+    );
     if (!solved) {
       leftovers.push(entry);
       counts.draft++;
       return;
     }
-    const isMate = solved.mate !== null && solved.mate > 0;
-    const plies = isMate ? solved.mate! * 2 - 1 : Math.min(solved.pv.length, 6);
-    const line = lineFromPv(fullFen(entry.fen, solved.side), solved.pv, Math.max(plies, 1));
-    if (!line) {
-      leftovers.push(entry);
-      counts.draft++;
-      return;
-    }
-    const corroborated =
-      (entry.squares?.length ?? 0) >= 2 && overlap(line.uci, entry.squares!) >= 0.5;
-    push(
-      corroborated ? 'engine-corroborated' : 'engine-only',
-      solved.side,
-      line,
-      isMate ? defenderWildcards(line.uci.length) : [],
-    );
+    push(solved.provenance, solved.fen, { uci: solved.uci, san: solved.san }, solved.wildcards ?? []);
   };
 
   const queue = report.sort((a, b) => a.number - b.number);
