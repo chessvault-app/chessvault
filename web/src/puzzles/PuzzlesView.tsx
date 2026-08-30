@@ -906,6 +906,28 @@ function Trainer({
           </>
         ) : (
           <>
+            {/* Skip sits at the far end, away from Solution, and is first
+                in the DOM so the reading order is the order on screen.
+                The three used to be one right-aligned run: Hint, then
+                Solution, then Skip, touching, with the two that END the
+                puzzle side by side under the thumb — and neither asks
+                first, because neither should have to. Solution is the
+                consequential one (it records a failed attempt), Skip
+                costs nothing but the puzzle, and having them adjacent
+                meant one mis-tap could not be told from the other. `me-auto`
+                is all the separation this needs; a confirm on either would
+                be a question asked hundreds of times to catch a slip. */}
+            {mode !== 'single' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="me-auto"
+                onClick={() => void loadNext(theme, difficulty)}
+              >
+                <X className="size-3.5" data-icon="inline-start" />
+                {t('Skip')}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -926,16 +948,6 @@ function Trainer({
               <Eye className="size-3.5" data-icon="inline-start" />
               {t('Solution')}
             </Button>
-            {mode !== 'single' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void loadNext(theme, difficulty)}
-              >
-                <X className="size-3.5" data-icon="inline-start" />
-                {t('Skip')}
-              </Button>
-            )}
           </>
         )}
       </CardFooter>
