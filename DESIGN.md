@@ -38,7 +38,7 @@ colors:
   warn-dark: "oklch(80% 0.15 80)"
   info: "oklch(51% 0.102 230)"
   info-dark: "oklch(72% 0.13 232)"
-  destructive: "oklch(57.7% 0.245 27.3)"
+  destructive: "oklch(52.5% 0.245 27.3)"
   destructive-dark: "oklch(70.4% 0.191 22.2)"
   board-light: "oklch(91% 0.035 84)"
   board-dark: "oklch(62% 0.072 52)"
@@ -115,7 +115,7 @@ components:
     height: "2rem"
     padding: "0 0.625rem"
   button-destructive:
-    backgroundColor: "color-mix(in oklch, oklch(57.7% 0.245 27.3) 10%, transparent)"
+    backgroundColor: "color-mix(in oklch, oklch(52.5% 0.245 27.3) 10%, transparent)"
     textColor: "{colors.destructive}"
     rounded: "{rounded.lg}"
     height: "2rem"
@@ -238,8 +238,15 @@ These four are the app's colour grammar. They do **not** multiply by the
 tint knobs — a puzzle that cannot say *wrong* in red has lost something a
 palette was never meant to take.
 
+They **do** follow `--ui-contrast`, on lightness alone. Leaving them out
+of it was an accident with one visible consequence: the surfaces moved as
+the knob rose and these four did not, so High contrast — the one scheme
+chosen for legibility — closed the gap on exactly the colours carrying
+the meaning. Hue and chroma stay put; only the lightness lerps, and only
+in light mode, where the gap closes. In dark it already opens.
+
 - **good** (`oklch(51% 0.141 150)` / `oklch(72% 0.16 152)`): outcome — solved, won.
-- **destructive** (`oklch(57.7% 0.245 27.3)` / `oklch(70.4% 0.191 22.2)`):
+- **destructive** (`oklch(52.5% 0.245 27.3)` / `oklch(70.4% 0.191 22.2)`):
   outcome — failed, lost; and destructive actions.
 - **warn** (`oklch(53% 0.112 75)` / `oklch(80% 0.15 80)`): caution — the
   engine-guess fidelity tier, offline notices.
@@ -258,6 +265,16 @@ NAG colours (`nag-good`, `nag-mistake`, `nag-brilliant`, `nag-blunder`,
 `nag-interesting`, `nag-dubious`, `nag-book`), which are the only hex
 values left in the system because they match a published annotation
 convention rather than this palette.
+
+Two families are **coloured by data**, where the hue is the information
+and only its lightness and chroma belong to the theme. The ECO tag takes
+`--eco-l` / `--eco-c` (with `--eco-wash` for the tint behind it) and the
+opening map takes `--map-line-l` / `--map-line-c`; the caller supplies
+the hue — an ECO letter, a position on the wheel — and the token supplies
+everything else. Both are OKLCH for a reason that is not consistency:
+holding a *hue-independent* lightness is the whole point, and the map
+spelled the same idea in `hsl` for a while, where one line came out
+nearly six times brighter than another.
 
 ### Named Rules
 
