@@ -39,6 +39,7 @@ import { ClearableInput } from '@/components/text-fields';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
+import { LinkedMentions } from '@/notes/LinkedMentions';
 import { PaneTabs } from '@/components/pane-tabs';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
@@ -217,8 +218,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <ChevronLeft className="size-3.5" />
       </Button>
       <TitleEditor id={id} backSection={backSection} />
-      {/* History, then Edit, then Save: what this document has been, what
-          it is becoming, what it becomes. */}
+      {/* What links here, then History, then Edit, then Save: what points
+          at this document, what it has been, what it is becoming, what it
+          becomes. */}
+      <LinkedMentions />
       <DocumentHistory
         kind={kind === 'game' ? 'games' : 'studies'}
         id={id}
