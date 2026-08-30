@@ -106,8 +106,20 @@ let pendingNavigate = false;
  * document to a new id and lands on the same document, so stopping to ask
  * whether to save it first would be a question about nothing.
  */
+/**
+ * The address a section IS.
+ *
+ * Exported so a nav item can put it in a real `href` and this function can
+ * set it, from one expression. They used to be the same string written
+ * twice — except the sidebar never wrote it at all, being buttons, which
+ * is how the whole navigation lost middle-click and open-in-new-tab on an
+ * app where two windows side by side is an obvious way to work.
+ */
+export const sectionHref = (section: Section, ...params: string[]): string =>
+  `#/${[section, ...params].join('/')}`;
+
 export function navigateNow(section: Section, ...params: string[]): void {
-  const target = `#/${[section, ...params].join('/')}`;
+  const target = sectionHref(section, ...params);
   // Same hash fires no hashchange, so the mark would sit unconsumed and
   // mislabel the next Back as a navigate.
   if (window.location.hash !== target) pendingNavigate = true;

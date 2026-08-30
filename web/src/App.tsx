@@ -24,7 +24,7 @@ import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } fr
 import { cn } from '@/lib/utils';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
-import { navigate, useRoute, type Section } from '@/lib/router';
+import { navigate, sectionHref, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
 import { Button } from '@/components/ui/button';
@@ -331,22 +331,65 @@ const PUZZLE_SUBNAV = [
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
 ] as const;
 
+/**
+ * A sidebar destination, as a real link.
+ *
+ * These were all `<button onClick={navigate}>`, which works for a click and
+ * for nothing else: no middle-click, no ctrl/cmd-click, no open-in-new-tab,
+ * no copy-link — on a self-hosted workbench where having the board in one
+ * window and notes in another is an obvious way to work, and where the hash
+ * router already supported it. `aria-current` was correct throughout; the
+ * markup simply withheld the capability.
+ *
+ * A plain left click is still ours, so `navigate()` still runs and the
+ * leave guard still gets to ask before an unsaved document disappears.
+ * Everything the browser has a meaning for — a modifier, the middle button
+ * — is handed straight back to it.
+ */
+function NavLink({
+  href,
+  onActivate,
+  children,
+  ...rest
+}: {
+  href: string;
+  onActivate: () => void;
+  children: ReactNode;
+} & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'onClick' | 'children'>) {
+  return (
+    <a
+      href={href}
+      onClick={(e) => {
+        if (e.defaultPrevented) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        onActivate();
+      }}
+      {...rest}
+    >
+      {children}
+    </a>
+  );
+}
+
 /** An indented child row under a top-level sidebar entry. */
 function SubNavItem({
   label,
   icon: Icon,
   active,
+  href,
   onClick,
 }: {
   label: string;
   icon: typeof Folder;
   active: boolean;
+  href: string;
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <NavLink
+      href={href}
+      onActivate={onClick}
       title={t(label)}
       aria-current={active ? 'page' : undefined}
       className={cn(
@@ -357,7 +400,7 @@ function SubNavItem({
     >
       <Icon className="size-3.5 shrink-0" />
       <span className="hidden lg:block">{t(label)}</span>
-    </button>
+    </NavLink>
   );
 }
 
@@ -398,9 +441,9 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           const isActive = section === active;
           return (
             <Fragment key={section}>
-            <button
-              type="button"
-              onClick={() => navigate(section)}
+            <NavLink
+              href={sectionHref(section)}
+              onActivate={() => navigate(section)}
               // aria-label, not title: the label is written beside the icon
               // at lg, so the native tooltip only ever repeated what was
               // already on screen — and it popped over the item below it.
@@ -424,7 +467,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               )}
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
               <span className="hidden lg:block">{t(label)}</span>
-            </button>
+            </NavLink>
             {/* A section's children are drawn by the section, not after the
                 whole list. They used to be appended below the NAV loop,
                 which only looked right for as long as Puzzles happened to
@@ -438,6 +481,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                   label={sub}
                   icon={SubIcon}
                   active={active === 'puzzles' && params[0] === param}
+                  href={sectionHref('puzzles', param)}
                   onClick={() => navigate('puzzles', param)}
                 />
               ))}
@@ -460,9 +504,9 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             and withdrawn on sight: three small blobs directly under
             Network's three, which is the clustering this whole sweep is
             against. */}
-        <button
-          type="button"
-          onClick={() => navigate('board')}
+        <NavLink
+          href={sectionHref('board')}
+          onActivate={() => navigate('board')}
           title={t('Tools')}
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
@@ -474,21 +518,22 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <SquareMousePointer className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
           <span className="hidden lg:block">{t('Tools')}</span>
-        </button>
+        </NavLink>
         {tools.map(({ key, label, icon: Icon, nav, active: isActive }) => (
           <SubNavItem
             key={key}
             label={label}
             icon={Icon}
             active={isActive(active, params)}
+            href={sectionHref(...nav)}
             onClick={() => navigate(...nav)}
           />
         ))}
 
         {/* Databases: a top-level row of its own — management, not a tool. */}
-        <button
-          type="button"
-          onClick={() => navigate('databases')}
+        <NavLink
+          href={sectionHref('databases')}
+          onActivate={() => navigate('databases')}
           title={t('Databases')}
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
@@ -500,15 +545,15 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           {active === 'databases' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <Database className="size-[1.15rem] shrink-0" strokeWidth={active === 'databases' ? 2.4 : 2} />
           <span className="hidden lg:block">{t('Databases')}</span>
-        </button>
+        </NavLink>
       </div>
 
       <div className="border-border flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
         <ConnectionLabel />
         <div className="flex flex-col items-center gap-1 lg:flex-row">
-          <button
-            type="button"
-            onClick={() => navigate('settings')}
+          <NavLink
+            href={sectionHref('settings')}
+            onActivate={() => navigate('settings')}
             title={t('Settings')}
             aria-current={active === 'settings' ? 'page' : undefined}
             className={cn(
@@ -519,7 +564,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             )}
           >
             <Settings className="size-[1.15rem]" strokeWidth={2} />
-          </button>
+          </NavLink>
           <ThemeToggle />
         </div>
       </div>
