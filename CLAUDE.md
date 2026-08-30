@@ -131,7 +131,10 @@ eval colours). Old names (`text-fg`, `text-subtle`, `bg-surface-3`,
 All three of these, every time, before the version is bumped:
 
 **Audit the repo against this file.** `npm run verify` now does the
-mechanical parts on every push and pull request. `check:repo` documents
+mechanical parts on every push and pull request, and `check:contrast`
+runs beside it as its own CI job — it is not in `verify` because it is
+the one check that needs a browser and a built demo, and it was a script
+nobody ran until that job existed. `check:repo` documents
 its own list at the top of `scripts/check-repo.ts` — currently absolute
 paths and credentials, a rating rendered without `bandOf()`, the lockfile
 agreeing with package.json, the Rust crate notice matching Cargo.lock, the

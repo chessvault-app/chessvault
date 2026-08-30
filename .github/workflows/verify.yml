@@ -9,6 +9,17 @@
 # Deliberately no `setup:engine`: the engine's WASM is a runtime asset for
 # the browser, and the tests that cover eval parsing use recorded output
 # rather than a live search, so downloading it here would buy nothing.
+#
+# The second job is `check:contrast`, which `verify` does not include and
+# so nothing ran. It is the only check here that needs a browser: the
+# ratios it reports depend on what text is painted ON, and the backgrounds
+# that fail are composed ones that do not exist until something has
+# composited them — which is why check-repo.ts cannot grep for them, and
+# why its own header says so. Four real defects were found by hand in one
+# afternoon before it existed; leaving it as a script somebody remembers
+# to type is the state that let those four ship. It is a separate job so
+# the fast gate above still fails fast, and it builds the demo because
+# that is the one vault that is the same for everyone.
 name: verify
 
 on:
@@ -35,3 +46,26 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       - run: npm run verify
+
+  contrast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # Chromium only, and only its own dependencies: the check drives one
+      # headless page and never needs the other two engines.
+      - run: npx playwright install --with-deps chromium
+
+      # The demo is the target, for the reason check-contrast.ts gives: it
+      # is the only vault that is the same for everyone, and it answers
+      # /api in the page, so this needs no server and no seeded machine.
+      - run: npm run build:demo
+
+      - run: npm run check:contrast
