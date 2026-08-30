@@ -38,6 +38,13 @@ export function ProgressBar({
       // name is for everyone else.
       title={label}
       aria-label={label}
+      // `value` is how much has been ATTEMPTED, which is what fills the
+      // track; the two fills inside then split that by outcome. Left to
+      // itself the primitive announced "100%" beside a name reading "13
+      // solved · 6 failed", where the percentage sounds like the solve
+      // rate and is not one. Saying the counts twice is better than
+      // saying a number that means a different thing each time.
+      aria-valuetext={label}
       className={className}
     >
       {total > 0 && (
