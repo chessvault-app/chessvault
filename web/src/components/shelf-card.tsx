@@ -65,6 +65,12 @@ export function ShelfCard({
   // a wall of competing pictures, and the thumbnail is a reminder, not
   // the content. Hover brings the position back to full colour — on the
   // same transition the card lifts with, so the two read as one gesture.
+  //
+  // Except where nothing hovers. On a coarse pointer the restore never
+  // fires, so the dimming was permanent and the one thing that tells two
+  // studies apart at a glance stayed washed out for the whole of a phone's
+  // life. There is no wall of competing pictures to calm down there
+  // either: the shelf is one column.
   const board =
     layout === 'grid' && fen ? (
       <MiniBoard
@@ -73,6 +79,7 @@ export function ShelfCard({
         className={cn(
           'brightness-[0.65] saturate-[0.55] transition-[filter] duration-200 ease-in-out',
           'group-hover:brightness-100 group-hover:saturate-100',
+          'pointer-coarse:brightness-100 pointer-coarse:saturate-100',
         )}
       />
     ) : null;
@@ -141,7 +148,14 @@ export function ShelfCard({
                 beside it makes 58. On a touch screen the bookmark is not
                 there at all (it is a swipe and a menu row instead), so the
                 ⋯ alone is 36. */}
+            {/* `title` because the line above truncates and had no way
+                back: measured on the Studies shelf, four of five names
+                were cut, and "Prophylaxis - Nimzowits…" is not something
+                you can pick a study by. This app's tooltip IS the title
+                attribute, so the name is one hover away instead of one
+                open-and-close. */}
             <p
+              title={title}
               className={cn(
                 'text-foreground truncate font-semibold',
                 layout === 'grid' ? 'text-base leading-6' : 'text-base',
