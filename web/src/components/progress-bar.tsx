@@ -66,17 +66,20 @@ export function ProgressBar({
               on does not. Black is the best of the three and the only one
               that is the same in both themes.
 
-              What is genuinely weak is the STRENGTH, not the hue: 2.02:1
-              of texture, at 2px pitch inside the registry's 4px track, is
-              a thin fallback for a reader who cannot separate green from
-              red. Raising the alpha is the lever (0.5 measures 2.79:1);
-              the track's height belongs to components/ui/progress. */}
+              The alpha is 0.5 rather than the 0.35 it was, and that is
+              the part that was actually wrong. What the stripe is for is
+              the reader who cannot separate green from red, and 2.02:1 of
+              texture at 2px pitch inside the registry's 4px track is a
+              thin thing to hang that on; 0.5 measures 2.79:1 on the same
+              red. The track's height is not ours to change — it is
+              components/ui/progress, and the registry owns it — so the
+              alpha is the only lever this side of the primitive. */}
           <ProgressIndicator
             className="bg-nag-blunder"
             style={{
               width: `${(100 * failed) / total}%`,
               backgroundImage:
-                'repeating-linear-gradient(135deg, transparent 0 2px, rgba(0,0,0,0.35) 2px 4px)',
+                'repeating-linear-gradient(135deg, transparent 0 2px, rgba(0,0,0,0.5) 2px 4px)',
             }}
           />
         </>
