@@ -12,6 +12,7 @@ Chess Vault는 오프라인을 우선하는 개인 체스 작업대입니다. �
 ```
 vault/
   config.json         앱 비밀번호 + TOTP 비밀키 + Lichess 토큰, 모드 0600
+  sessions.json       살아 있는 로그인 세션의 해시 (server/auth.ts)
   studies/            *.pgn        (챕터 = 파일 하나 안의 여러 게임)
   notes/              *.md         (마크다운 + ```chess 펜스 보드)
   games/
@@ -31,7 +32,7 @@ vault/
                       map.json       (오프닝 맵, 색마다 트리 하나)
   sources/            참고용 PGN 덤프 (참고 게임 색인의 입력)
   .welcomed           표식: 환영 스터디와 노트는 한 번만 심었으니, 지우면 지워진 채로 남는다
-  .history.git        자동 커밋 히스토리 저장소 (세밀한 되돌리기, config.json 제외)
+  .history.git        자동 커밋 히스토리 저장소 (세밀한 되돌리기, config.json과 sessions.json 제외)
 ```
 
 잃으면 아까울 만한 것은 전부 다른 도구도 읽을 수 있는 파일입니다. 노트는

@@ -113,9 +113,9 @@ What a built database answers, and from where:
   players and openings seek through small derived lookup tables, pages
   seek by id, and a filtered count stops at "10,000+" rather than
   scanning millions of rows to finish the digit. The search box speaks
-  a small qualifier language (`player:`, `white:`/`black:`, `opening:`,
-  `eco:`, `event:`, `result:`, `year:`, `elo:` — the box's own panel
-  documents it), parsed once in `shared/searchQuery.ts` for the server
+  a small qualifier language (`player:`, `opponent:`, `white:`/`black:`,
+  `opening:`, `eco:`, `event:`, `result:`, `year:`, `elo:` — the box's own
+  panel documents it), parsed once in `shared/searchQuery.ts` for the server
   and the in-page collection search alike; impossible combinations
   warn instead of silently finding nothing.
 - The same browser **hunts by position or material**. The scan-search

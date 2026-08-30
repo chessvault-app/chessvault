@@ -12,6 +12,7 @@ person's tool, built to outlive any one machine.
 ```
 vault/
   config.json         app password + TOTP secret + Lichess token, mode 0600
+  sessions.json       hashes of the live sign-in sessions (server/auth.ts)
   studies/            *.pgn        (chapters = games in one file)
   notes/              *.md         (markdown + ```chess fenced boards)
   games/
@@ -31,7 +32,7 @@ vault/
                       map.json       (the opening map, one tree per colour)
   sources/            reference PGN dumps (input to refgames index)
   .welcomed           marker: the welcome study and note were seeded once, so deleting them sticks
-  .history.git        auto-commit history repo (fine-grained undo; excludes config.json)
+  .history.git        auto-commit history repo (fine-grained undo; excludes config.json and sessions.json)
 ```
 
 Everything a person would grieve losing is a file another tool can read.
