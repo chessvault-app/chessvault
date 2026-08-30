@@ -419,7 +419,7 @@ export function PuzzleList({
               {/* Same glyph redundancy as the panel grid: tint alone is
                   invisible to colour-blind eyes. */}
               {(state === 'solved' || state === 'failed') && (
-                <span className="absolute bottom-1 left-1.5 text-[0.625rem] leading-none" aria-hidden>
+                <span className="absolute bottom-1 left-1.5 text-micro leading-none" aria-hidden>
                   {state === 'solved' ? '✓' : '✗'}
                 </span>
               )}

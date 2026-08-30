@@ -341,8 +341,25 @@ setting them in mono made every one of them look like a terminal.
 - **Title** (500, 16px / `text-base`): section titles, setting rows.
 - **Body** (400, 14px / `text-sm`): body copy, list rows, panel text.
 - **Label** (500, 12px / `text-xs`): captions and dense labels only.
+- **Micro** (10px / `text-micro`): the last rung, and the only one below
+  the label. A number or a mark read off a dense surface and never a
+  sentence — the eval bar's readout, the PV peek's move label, a solved
+  mark on a puzzle tile. It exists because seven places already needed
+  something under 12px and each wrote its own literal.
 
 ### Named Rules
+
+**The Fitted-Glyph Exception.** A glyph sized to a box it has to sit
+inside is not on this ladder and does not have to be. The heat-map badge
+is sized to a board square, the result bar's figures to their own 16px
+track, the ✓/✗ to a tile corner; those numbers answer to geometry, and
+rounding them onto a type rung would push them out of the box that
+decides them. They are the only literal font sizes the app is allowed,
+and each says in place what box it is fitted to. Everything a reader
+reads as text is on a rung. The annotation-size setting is also not on
+this ladder: it is a user preference with its own three rungs, whose
+smallest step (11px) is written down in `store/prefs.ts` with the reason
+the gap has to survive at the bottom.
 
 **The One Display Figure Rule.** If the top rung appears more than once
 on a page, the page has stopped ranking its own content. The puzzle
@@ -388,7 +405,7 @@ wide page.
 The side column next to the board is `--board-side` (27rem), written down
 in exactly one place.
 
-**Density** is a first-class control with three rungs, expressed as five
+**Density** is a first-class control with two rungs, expressed as five
 custom properties on the root and read by every surface in the app that
 repeats a row: game rows, panel rows, the card they sit in, the move
 tree, the explorer's tables, the studies chapter list. Default row

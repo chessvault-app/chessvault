@@ -693,6 +693,20 @@
      ladder: Tailwind resolves it from a theme key named --radius itself,
      which this file keeps as a plain :root property on purpose — the
      badges and move chips that use it want 4px, not the knob. */
+  /* The rung below --text-xs, and the last one there is.
+     The ramp stopped at the 12px label, and seven places needed
+     something smaller than that and wrote it as a magic
+     `text-[10px]`/`text-[0.625rem]` each — a tier nobody had named, which
+     is the shape DESIGN.md forbids. Three of them were the same 10px
+     asking for the same thing: a number or a mark read off a dense
+     surface, never a sentence. That is this.
+
+     It does NOT cover the sizes below it. A glyph fitted to a box it has
+     to sit inside — the heat-map badge in a board square, the result bar
+     inside its 16px track, the ✓/✗ in a tile corner — is sized by the box
+     and is not on the ladder at all; see DESIGN.md. */
+  --text-micro: 0.625rem;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

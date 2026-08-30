@@ -256,7 +256,7 @@ export function EvalBar({
       {readout && (
         <span
           className={cn(
-            'absolute font-mono text-[10px] leading-none tabular-nums',
+            'absolute font-mono text-micro leading-none tabular-nums',
             orientation === 'vertical'
               ? cn('inset-x-0 text-center', whiteAhead ? 'bottom-0.5' : 'top-0.5')
               : cn('top-1/2 -translate-y-1/2', whiteAhead ? 'left-1' : 'right-1'),
