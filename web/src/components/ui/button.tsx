@@ -46,8 +46,19 @@ const buttonVariants = cva(
           'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         ghost:
           'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        // The ink follows the fill on hover, the way the ghost and outline
+        // variants above take hover:text-foreground with their hover:bg.
+        // Here it is not a look but the readability floor: this variant is
+        // a wash of --destructive read by --destructive, so deepening the
+        // wash alone walks the label towards its own background. Measured
+        // on the puzzle dashboard's Reset at 12.8px, light: 4.09:1 at rest
+        // ink over the /20 hover fill, 4.91:1 with the mix. Dark's hover
+        // was /30 and came to 3.97:1 — /25 keeps a step from its /20 rest
+        // and reads 4.80:1. Mixed toward --foreground rather than black so
+        // the same declaration darkens the light theme and lightens the
+        // dark one.
         destructive:
-          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25 dark:focus-visible:ring-destructive/40',
         'destructive-solid':
           'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20',
         link: 'text-primary underline-offset-4 hover:underline',

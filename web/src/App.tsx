@@ -143,7 +143,11 @@ function DemoBanner() {
       // by matching its own sentence, which meant the images depended on
       // a string nobody would think to check when editing it.
       data-demo-banner
-      className="text-warn border-border flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--background))] px-3 py-1.5 text-center text-sm"
+      // 10%, not 14%: this is --warn read against a wash of --warn, and at
+      // 14% the sentence came to 4.39:1 in light — under the floor, on the
+      // first thing anyone sees after clicking "Try the demo". 10% reads
+      // 4.68:1 and is still plainly a band. Dark was never close (9.32:1).
+      className="text-warn border-border flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--background))] px-3 py-1.5 text-center text-sm"
     >
       {t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
     </div>
