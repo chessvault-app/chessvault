@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Tags } from 'lucide-react';
-import { readAliases, writeAliases } from '@shared/frontMatter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -8,44 +7,51 @@ import { Input } from '@/components/ui/input';
 import { t } from '@/lib/i18n';
 
 /**
- * The other names this note answers to.
+ * The other names a document answers to.
  *
  * An alias exists because a filename and the way you refer to something in
- * a sentence are different things: the note is called "Sicilian Defence —
+ * a sentence are different things: the study is called "Sicilian Defence —
  * Najdorf Variation" because that reads well in a list, and mid-sentence
- * you write "the Najdorf". Display text fixes how a link READS;
- * an alias fixes what you have to type.
+ * you write "the Najdorf". Display text fixes how a link READS; an alias
+ * fixes what you have to type.
  *
- * It lives in the note's front matter, which is where Obsidian keeps it,
- * so the two agree about a vault opened in both. That block is otherwise
- * held aside untouched for the whole visit — see NoteView — and this is
- * the one key the app understands: `writeAliases` edits that key and
- * leaves every other line exactly as the writer left it.
+ * One dialog for all three kinds, because it is one idea. WHERE the names
+ * are kept is not its business and differs by kind — front matter for a
+ * note, which is where Obsidian keeps it so a vault opened in both agrees;
+ * an `[Aliases]` PGN header for a study or a game, which have no front
+ * matter but whose codec preserves headers it does not know. The caller
+ * hands over the current list and takes back the edited one.
  *
  * It needs an editor at all because of the standing rule that every user
  * action must be possible in the app. Reading aliases while requiring a
  * text editor to set one would put half a feature behind file access.
  */
 export function AliasEditor({
-  front,
-  onChange,
+  title,
+  names,
+  onSave,
 }: {
-  front: string;
-  onChange: (front: string) => void;
+  /** What the control and its dialog are called, e.g. "…for this study". */
+  title: string;
+  names: string[];
+  onSave: (names: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const current = names.join(', ');
 
   // Re-read on open rather than on every render: the field is a draft
   // while the dialog is up, and a save elsewhere must not retype it.
   useEffect(() => {
-    if (open) setText(readAliases(front).join(', '));
-  }, [open, front]);
+    if (open) setText(current);
+  }, [open, current]);
 
   const commit = (): void => {
     setOpen(false);
-    const next = writeAliases(front, text.split(','));
-    if (next !== front) onChange(next);
+    const next = text.split(',');
+    // Compared as the cleaned list the caller would store, so closing the
+    // dialog having typed nothing new never writes the document.
+    if (next.map((n) => n.trim()).filter(Boolean).join(', ') !== current) onSave(next);
   };
 
   return (
@@ -54,14 +60,14 @@ export function AliasEditor({
         variant="ghost"
         size="icon-sm"
         className="shrink-0"
-        title={t('Other names for this note')}
+        title={title}
         active={open}
         onClick={() => setOpen(true)}
       >
         <Tags className="size-3.5" />
       </Button>
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : commit())}>
-        <DialogContent size="sm" title={t('Other names for this note')}>
+        <DialogContent size="sm" title={title}>
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="note-aliases">{t('Names')}</FieldLabel>
@@ -76,7 +82,7 @@ export function AliasEditor({
                 placeholder={t('Najdorf, B90')}
               />
               <FieldDescription>
-                {t('Separated by commas. A [[link]] to any of these opens this note.')}
+                {t('Separated by commas. A [[link]] to any of these opens this document.')}
               </FieldDescription>
             </Field>
           </FieldGroup>

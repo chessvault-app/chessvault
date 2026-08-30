@@ -122,6 +122,8 @@ interface StudyState {
   renameChapter: (index: number, name: string) => void;
   deleteChapter: (index: number) => void;
   save: () => Promise<void>;
+  /** Other names `[[links]]` may use for this document. */
+  setAliases: (names: string[]) => Promise<void>;
   /** Throw the pending changes away and go back to what the vault has. */
   discard: () => void;
 }
@@ -614,6 +616,37 @@ export const useStudy = create<StudyState>()((set, get) => {
       const index = Math.min(chapterIndex, chapters.length - 1);
       set({ chapters, chapterIndex: index, saveState: 'saved', error: null });
       loadIntoAnalysis(chapters[index]!);
+    },
+
+    /**
+     * The names this document also answers to, in the first chapter's
+     * `[Aliases]` header.
+     *
+     * On the first chapter because the alias belongs to the DOCUMENT, not
+     * to a chapter of it — a study is one thing to link to however many
+     * chapters it has — and because the server reads the header out of the
+     * file's first bytes.
+     *
+     * Written through the normal save, so it queues behind an in-flight
+     * PUT like every other change and the header cannot be lost by racing
+     * one. PGN keeps headers it does not understand, which is what makes
+     * this possible without a second file.
+     */
+    setAliases: async (names: string[]) => {
+      const { chapters } = get();
+      const first = chapters[0];
+      if (!first) return;
+      const headers = { ...first.headers };
+      const value = names
+        .map((n) => n.trim())
+        .filter(Boolean)
+        .join(', ');
+      // Removed rather than written empty, so a document that never had
+      // aliases and had them added and cleared ends up as it started.
+      if (value) headers['Aliases'] = value;
+      else delete headers['Aliases'];
+      set({ chapters: chapters.map((c, i) => (i === 0 ? { ...c, headers } : c)) });
+      await get().save();
     },
 
     save: async () => {

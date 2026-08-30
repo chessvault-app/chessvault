@@ -40,6 +40,8 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
 import { LinkedMentions } from '@/notes/LinkedMentions';
+import { AliasEditor } from '@/notes/AliasEditor';
+import { splitAliasList } from '@shared/frontMatter';
 import { PaneTabs } from '@/components/pane-tabs';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
@@ -63,6 +65,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   // title is already in the header above. A game has one chapter named
   // after the document, so it takes the opening instead, like the Board.
   const chapterName = useStudy((s) => s.chapters[s.chapterIndex]?.name ?? '');
+  // The document's own aliases live in the first chapter's header — see
+  // the store. The SELECTOR takes the raw string and the split happens
+  // after: a selector returning a fresh array is a new value on every
+  // render, which is an infinite loop rather than a wasted comparison.
+  const aliasHeader = useStudy((s) => s.chapters[0]?.headers['Aliases'] ?? '');
+  const aliases = useMemo(() => splitAliasList(aliasHeader), [aliasHeader]);
+  const setAliases = useStudy((s) => s.setAliases);
   const analysisTree = useAnalysis((s) => s.tree);
   const analysisCursor = useAnalysis((s) => s.cursorId);
   const openingName = useOpeningName(
@@ -221,6 +230,11 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       {/* What links here, then History, then Edit, then Save: what points
           at this document, what it has been, what it is becoming, what it
           becomes. */}
+      <AliasEditor
+        title={t(kind === 'game' ? 'Other names for this game' : 'Other names for this study')}
+        names={aliases}
+        onSave={(names) => void setAliases(names)}
+      />
       <LinkedMentions section={kind === 'game' ? 'games' : 'studies'} id={id} />
       <DocumentHistory
         kind={kind === 'game' ? 'games' : 'studies'}

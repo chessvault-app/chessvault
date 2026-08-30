@@ -16,6 +16,7 @@ import { EditorPalette } from './EditorPalette';
 import { WikiSuggest } from './WikiSuggest';
 import { LinkedMentions } from './LinkedMentions';
 import { AliasEditor } from './AliasEditor';
+import { readAliases, writeAliases } from '@shared/frontMatter';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -395,8 +396,13 @@ function NoteEditor({
         {/* What links here, then History, then Edit, then Save — see
             StudyView's header. */}
         <AliasEditor
-          front={frontMatter}
-          onChange={(next) => {
+          title={t('Other names for this note')}
+          names={readAliases(frontMatter)}
+          onSave={(names) => {
+            // A note keeps them in front matter, which this is the only key
+            // of that the app understands — every other line comes back
+            // exactly as the writer left it.
+            const next = writeAliases(frontMatter, names);
             // Both the ref every write reads and the state this prop comes
             // from: the ref so the save below carries the new block, the
             // state so reopening the dialog shows what was just set.
