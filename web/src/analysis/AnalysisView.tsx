@@ -7,7 +7,7 @@ import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useMediaQuery } from '@/lib/media';
+import { useMediaQuery, useTabbedPanes } from '@/lib/media';
 import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
@@ -23,6 +23,7 @@ import { MobileActionBar } from '@/components/mobile-action-bar';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Panel, PanelHeader } from '@/components/panel';
 import { PaneTabs } from '@/components/pane-tabs';
+import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { useUndoable } from '@/hooks/use-undoable';
 import { MoveTreePane, promoteActions, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
@@ -89,6 +90,23 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
     if (useReview.getState().status === 'running') useReview.getState().clear();
   }, []);
 
+  // One list, read by the strip and by the swipe that turns it: the two
+  // are the same row, and an array written twice is an order that drifts.
+  const panes = [
+    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
+    { id: 'engine' as const, label: t('Engine'), icon: Cpu },
+    { id: 'explorer' as const, label: t('Explorer'), icon: Table2 },
+  ];
+  // Swipe the column sideways to turn to the next pane — the strip's own
+  // page turn, made where the thumb already is. Off above `lg`, where the
+  // column shows every pane at once and there is no row to turn.
+  const paneSwipe = usePaneSwipe({
+    panes,
+    value: pane,
+    onChange: setPane,
+    enabled: useTabbedPanes(),
+  });
+
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
@@ -107,7 +125,10 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           667x375 (a phone in landscape narrow enough to stay stacked) it
           was 54px with an 18px panel in it. Below the floor the shell
           scrolls instead — see BOARD_HELD_SHELL. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        {...paneSwipe}
+      >
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
@@ -116,16 +137,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             {wantExplorer ? t('Explorer') : t('Board')}
           </h1>
         </div>
-        <PaneTabs
-          className="lg:hidden"
-          value={pane}
-          onChange={setPane}
-          tabs={[
-            { id: 'moves', label: t('Moves'), icon: ListOrdered },
-            { id: 'engine', label: t('Engine'), icon: Cpu },
-            { id: 'explorer', label: t('Explorer'), icon: Table2 },
-          ]}
-        />
+        <PaneTabs className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
         {/* Desktop keeps an explicit floor; phones drop it so the panel
             shrinks into the slot and the move table scrolls inside.
             The floor is a share of the column as well as a size: the column

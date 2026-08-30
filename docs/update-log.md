@@ -10,6 +10,31 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The panes under a board turn with a swipe.** On a phone the panels
+  beside a board are one pane at a time behind a strip of tabs — Moves,
+  Engine, Explorer, a study's Chapters, a trainer's Puzzle — and reaching
+  that strip meant taking the thumb off what it was reading and back up to
+  the top of the column, on every page with a board (the board page,
+  studies and games, the repertoire, both puzzle trainers). Swiping the
+  panel sideways now turns to the next tab where the thumb already is:
+  left for the next pane, right for the one before, 56px to commit. It
+  stops at both ends rather than wrapping, because nothing else on the
+  page says the row of tabs is a ring. The strip is unchanged and is still
+  the switcher — a swipe and a tap do the same thing, instantly, with no
+  animation between them. What it deliberately does NOT take: gestures on
+  the board (those move pieces), gestures that are more vertical than
+  horizontal (those are the scroll the panes exist to be read by),
+  gestures that start on a screen edge (the platform's own Back), and
+  gestures that start on something that already handles sideways
+  movement — a row that scrolls sideways, a text field, the review strip
+  and the resize grips, which declare it in CSS. Measured in the demo at
+  375x812: the board page's three panes and a study's four turn in both
+  directions and stop at each end; a 55px drag does nothing and a 56px one
+  turns; the same drag across the board, from either screen edge, or
+  running 120px across and 160px down leaves the pane alone; and a probe
+  box added to the live column turns the pane in a plain box while the
+  identical drag inside a sideways-scrolling one and inside a
+  `touch-action: none` one is ignored.
 - **The Games page stops paying for a details panel nobody asked for.**
   The column stood beside the list at every width wide enough to hold it,
   whether or not a game was selected — and the table beside it never

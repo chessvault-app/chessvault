@@ -59,6 +59,7 @@ import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
 import { PaneTabs } from '@/components/pane-tabs';
+import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { useWideLayout } from '@/lib/media';
 import { useEngine } from '@/store/engine';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
@@ -1711,6 +1712,24 @@ export function RepertoireView() {
   />
   );
 
+  // One list for the strip and for the swipe that turns it — see the
+  // puzzle trainer, the same column and the same reason.
+  const panes = [
+    { id: 'info' as const, label: t('Game'), icon: Info },
+    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
+    // The engine is what a line is FOR — offered when the answer is in,
+    // not while it is being looked for.
+    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
+  ];
+  // Only while a game is on: the idle column is the setup form, which is
+  // not a row of panes and has no strip above it.
+  const paneSwipe = usePaneSwipe({
+    panes,
+    value: shownPane,
+    onChange: setPane,
+    enabled: !wide && phase !== 'idle',
+  });
+
   return (
     <div className={BOARD_SCROLL_SHELL}>
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
@@ -1802,7 +1821,10 @@ export function RepertoireView() {
           not scroll, which is most of them (lanph3re's report). Flush at
           the end of a scroll is how every other board page's column ends,
           and the panels end in a footer band now, which is a finish. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        {...paneSwipe}
+      >
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {phase === 'idle' ? (
@@ -1831,19 +1853,7 @@ export function RepertoireView() {
           <>
             {/* Moves above the game on a desktop; one pane at a time on a
                 phone, the engine chosen for you when the line ends. */}
-            {!wide && (
-              <PaneTabs
-                value={shownPane}
-                onChange={setPane}
-                tabs={[
-                  { id: 'info', label: t('Game'), icon: Info },
-                  { id: 'moves', label: t('Moves'), icon: ListOrdered },
-                  // The engine is what a line is FOR — offered when the
-                  // answer is in, not while it is being looked for.
-                  ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-                ]}
-              />
-            )}
+            {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
             {(wide || shownPane === 'moves') && movesPanel}
             {!wide && analysing && shownPane === 'engine' && (
               <Panel className="min-h-0 flex-1">

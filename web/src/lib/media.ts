@@ -83,6 +83,23 @@ export function useWideLayout(): boolean {
 }
 
 /**
+ * Whether the board pages that fold at `lg` are showing their panes one at
+ * a time — the JS mirror of the `lg:hidden` their tab strip is drawn
+ * behind (analysis, studies and games).
+ *
+ * Wanted by the swipe that turns from one pane to the next
+ * (hooks/use-pane-swipe): a gesture must not move a row that is not on
+ * screen. Named here rather than written out twice, for the reason
+ * useWideLayout is — the second copy of a query is written, not found.
+ * The pages that fold at `wide` instead (the trainers, the repertoire)
+ * ask useWideLayout, which is a different question about a different
+ * layout, not a second spelling of this one.
+ */
+export function useTabbedPanes(): boolean {
+  return useMediaQuery('(max-width: 63.9375rem)');
+}
+
+/**
  * The workspace's gate: the viewport where board, moves, explorer AND the
  * games band earn showing at once.
  *

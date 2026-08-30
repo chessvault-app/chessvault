@@ -5,6 +5,7 @@ import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBo
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
 import { PaneTabs } from '@/components/pane-tabs';
+import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { useEngine } from '@/store/engine';
 
 import { parseFen } from 'chessops/fen';
@@ -444,6 +445,23 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // order every render, and the branch it feeds is one of the returns.
   const pending = useSlowLoad(book === null || !puzzle || !tree || !node || !pos);
 
+  // One list for the strip and for the swipe that turns it — see the
+  // puzzle trainer, the same column and the same reason. Above the early
+  // return for the same reason `pending` is.
+  const panes = [
+    { id: 'info' as const, label: t('Puzzle'), icon: Info },
+    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
+    // The engine is what a puzzle is FOR — offered when the answer
+    // is in, not while it is being looked for.
+    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
+  ];
+  const paneSwipe = usePaneSwipe({
+    panes,
+    value: shownPane,
+    onChange: setPane,
+    enabled: !wide,
+  });
+
   if (book === null || !puzzle || !tree || !node || !pos) {
     // A puzzle needs BOTH the book and the solutions, which arrive in two
     // requests — so "no such puzzle" may only be said once both are in.
@@ -848,7 +866,10 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         </div>
       )}
 
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        {...paneSwipe}
+      >
         {/* The same h-9 band every other board page opens its column with:
             h-9 plus the column's gap-3 equals the board's h-10 strip plus
             its gap-2, which is what puts the first panel level with the
@@ -860,19 +881,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             read while solving and the engine docks on top of them the
             moment it is over. One at a time on a phone, behind the
             switcher. */}
-        {!wide && (
-          <PaneTabs
-            value={shownPane}
-            onChange={setPane}
-            tabs={[
-              { id: 'info', label: t('Puzzle'), icon: Info },
-              { id: 'moves', label: t('Moves'), icon: ListOrdered },
-              // The engine is what a puzzle is FOR — offered when the answer
-              // is in, not while it is being looked for.
-              ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-            ]}
-          />
-        )}
+        {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
         {(wide || shownPane === 'moves') && movesPanel}
         {!wide && analysing && shownPane === 'engine' && (
           <Panel className="min-h-0 flex-1">

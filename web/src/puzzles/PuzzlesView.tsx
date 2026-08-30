@@ -29,6 +29,7 @@ import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { PaneTabs } from '@/components/pane-tabs';
+import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
 import { EvalBarSlot } from '@/engine/EvalBar';
@@ -605,6 +606,27 @@ function Trainer({
         })()
       : [];
 
+  // One list, read by the strip and by the swipe that turns it: the two
+  // are the same row, and an array written twice is an order that drifts.
+  // Above the early return below — a hook must run in the same order on
+  // every render, the database-setup screen included.
+  const panes = [
+    { id: 'info' as const, label: t('Puzzle'), icon: Info },
+    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
+    // The engine is what a puzzle is FOR — offered when the answer
+    // is in, not while it is being looked for.
+    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
+  ];
+  // Swipe the column sideways to turn to the next pane — the strip's own
+  // page turn, made where the thumb already is. Only where the panes ARE
+  // a row: a wide layout stands them all in the column at once.
+  const paneSwipe = usePaneSwipe({
+    panes,
+    value: shownPane,
+    onChange: setPane,
+    enabled: !wide,
+  });
+
   if (meta && !meta.ready) {
     return (
       <PuzzleDbSetup
@@ -1055,7 +1077,10 @@ function Trainer({
         </div>
       )}
 
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        {...paneSwipe}
+      >
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
@@ -1091,19 +1116,7 @@ function Trainer({
             desktop. The switcher is the phone's whole navigation here:
             analysing used to replace the page, and going back for the
             puzzle's own text meant leaving the analysis. */}
-        {!wide && (
-          <PaneTabs
-            value={shownPane}
-            onChange={setPane}
-            tabs={[
-              { id: 'info', label: t('Puzzle'), icon: Info },
-              { id: 'moves', label: t('Moves'), icon: ListOrdered },
-              // The engine is what a puzzle is FOR — offered when the answer
-              // is in, not while it is being looked for.
-              ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-            ]}
-          />
-        )}
+        {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
         {(wide || shownPane === 'moves') && movesPanel}
         {!wide && analysing && shownPane === 'engine' && (
           <Panel className="min-h-0 flex-1">

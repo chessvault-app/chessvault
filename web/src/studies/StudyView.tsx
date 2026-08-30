@@ -22,7 +22,7 @@ import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
-import { isCoarsePointer } from '@/lib/media';
+import { isCoarsePointer, useTabbedPanes } from '@/lib/media';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
@@ -44,6 +44,7 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl } from '@/components/save-control';
 import { DocumentHistory } from '@/components/history-panel';
+import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
 
@@ -161,6 +162,21 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     }),
   [id]);
 
+  // One list for the strip and for the swipe that turns it — see
+  // AnalysisView, the same column and the same reason.
+  const panes = [
+    { id: 'moves' as const, label: 'Moves', icon: ListOrdered },
+    { id: 'engine' as const, label: 'Engine', icon: Cpu },
+    ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters', icon: Files }] : []),
+    { id: 'explorer' as const, label: 'Explorer', icon: Table2 },
+  ];
+  const paneSwipe = usePaneSwipe({
+    panes,
+    value: pane,
+    onChange: setPane,
+    enabled: useTabbedPanes(),
+  });
+
   if (failed) {
     return (
       <div className="optical-center h-full p-8">
@@ -250,20 +266,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        {...paneSwipe}
+      >
         {titleRow('stacked:hidden')}
 
-        <PaneTabs
-          className="lg:hidden"
-          value={pane}
-          onChange={setPane}
-          tabs={[
-            { id: 'moves', label: 'Moves', icon: ListOrdered },
-            { id: 'engine', label: 'Engine', icon: Cpu },
-            ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters', icon: Files }] : []),
-            { id: 'explorer', label: 'Explorer', icon: Table2 },
-          ]}
-        />
+        <PaneTabs className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
         {kind === 'study' && (
           <div className={cn('contents', pane !== 'chapters' && 'max-lg:hidden')}>
             <ChaptersPanel />
