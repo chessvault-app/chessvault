@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
+import { EVAL_LANE_PX } from '@/engine/EvalBar';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { CollectGameButton, MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
@@ -12,6 +13,7 @@ import { handOffPositionHunt } from '@/games/DatabaseGames';
 import { GamesBrowser } from '@/games/GamesBrowser';
 import { type DetailsSelection } from '@/games/GameDetails';
 import { useAnalysis } from '@/store/analysis';
+import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { useOpeningName } from '@/lib/opening';
@@ -195,6 +197,20 @@ function Workspace() {
   const [shellRef, shellH] = useElementHeight();
   const budget = Math.max(0, shellH - SHELL_CHROME_PX - BAND_MIN_PX - BOARD_STRIPS_PX);
 
+  // The eval bar's lane, ADDED to the board's column rather than taken out
+  // of the board — the only board host that can do it, because this one
+  // states its column's width instead of centring in what a page has left
+  // (AnalysisBoard's reserveEvalLane, and EvalBarSlot for why every other
+  // page reserves instead). The board is therefore exactly `budget` wide
+  // whether the engine is on or off, so nothing in this column moves when
+  // it is switched: the row's height is the board's, and the games band
+  // below is measured from it. What pays is the row — the moves and
+  // explorer columns are flex-1 between a floor and a cap, so the 36px
+  // comes off their share, 18 each, and only while a bar is actually
+  // drawn.
+  const engineOn = useEngine((s) => s.enabled);
+  const laneW = engineOn ? EVAL_LANE_PX : 0;
+
   // The board column's height, measured two ways on one element: a
   // ResizeObserver for content-driven changes, and a layout effect keyed
   // on the budget for the change the observer only reports a frame late —
@@ -216,26 +232,43 @@ function Workspace() {
   }, []);
   useLayoutEffect(() => {
     if (boardColEl.current) setBoardColH(boardColEl.current.clientHeight);
-  }, [budget]);
+  }, [budget, laneW]);
   const regionStyle =
     shellH > 0
       ? ({
-          '--board-budget': `${budget}px`,
+          // Plus the lane, because the variable caps the BLOCK and not the
+          // board: `.board-col-cap` and BOARD_MAX_W both spend it on the
+          // wrapper that holds bar + gap + board (index.css says so where
+          // the row cap declines to allow for the bar). The board's own
+          // share of it is `budget`, which is the height this region has —
+          // publish the bare budget and the lane would come back out of
+          // the board, which is the thing this is avoiding.
+          '--board-budget': `${budget + laneW}px`,
           ...(boardColH > 0 ? { height: boardColH } : null),
         } as CSSProperties)
       : undefined;
 
-  // The board column's width: its height budget, capped by what the row
-  // actually holds once the other columns keep their floors — see
-  // MOVES_MIN_PX. Measured on the width-cap wrapper below.
+  // The board column's width: its height budget PLUS the lane, capped by
+  // what the row actually holds once the other columns keep their floors —
+  // see MOVES_MIN_PX. Measured on the width-cap wrapper below.
+  //
+  // The lane is added outside clampBoardWidth on purpose: those bounds are
+  // the BOARD's (18rem usable, 64rem before the panes starve), so a bar
+  // beside a board at either limit widens the column past it rather than
+  // eating into a board that is already at its floor. The row cap is the
+  // one bound that still applies to the pair, since past it the explorer
+  // runs off the page.
   const [capRef, capW] = useElementWidth();
   const boardColW =
     capW > 0
       ? Math.max(
-          288,
-          Math.min(clampBoardWidth(budget), capW - MOVES_MIN_PX - EXPLORER_MIN_PX - REGION_GAPS_PX),
+          288 + laneW,
+          Math.min(
+            clampBoardWidth(budget) + laneW,
+            capW - MOVES_MIN_PX - EXPLORER_MIN_PX - REGION_GAPS_PX,
+          ),
         )
-      : clampBoardWidth(budget);
+      : clampBoardWidth(budget) + laneW;
 
   // --- the games band -------------------------------------------------
   // The band is the GamesBrowser — the Games page's own tabbed pane,
@@ -324,10 +357,13 @@ function Workspace() {
               (useTableNav), and both listeners answering at once stepped
               the list AND threw the board to an end. Home/End still jump
               the board. */}
+          {/* reserveEvalLane off: the lane is added to the column above
+              rather than held open inside the board — see laneW. */}
           <AnalysisBoard
             editablePlayers
             verticalKeys={false}
             alignPlayersTo="panels"
+            reserveEvalLane={false}
           />
         </div>
 

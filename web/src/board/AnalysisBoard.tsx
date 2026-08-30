@@ -44,6 +44,7 @@ export function AnalysisBoard({
   strip = true,
   verticalKeys = true,
   alignPlayersTo = 'board',
+  reserveEvalLane = true,
 }: {
   /**
    * What the top player bar lines up with. The board pages keep
@@ -71,6 +72,17 @@ export function AnalysisBoard({
    * full-page board keeps the default.
    */
   verticalKeys?: boolean;
+  /**
+   * Whether the eval bar's lane beside the board is held open while the
+   * engine is off. Every centred board page keeps the default, because the
+   * only width it could pay the bar with when the engine comes on is the
+   * board's own — see `EvalBarSlot`. The workspace passes false: it sizes
+   * its board column itself, so it widens the column by the lane instead,
+   * and holding 36px open beside a board that is already the smallest
+   * thing on that page bought nothing (lanph3re). Opt-in from the caller,
+   * so nothing else here changes.
+   */
+  reserveEvalLane?: boolean;
   editablePlayers?: boolean;
   /**
    * The fixed-height strip over the board at `wide`, where a game's player
@@ -311,7 +323,7 @@ export function AnalysisBoard({
               engineOn && hasNames && 'roomy:flex',
             )}
           >
-            <BoardLane bar={engineOn}>
+            <BoardLane bar={engineOn} reserve={reserveEvalLane}>
               <PlayerBar
                 side={orientation === 'white' ? 'black' : 'white'}
                 editable={editablePlayers}
@@ -331,7 +343,7 @@ export function AnalysisBoard({
           {engineOn ? (
             <EvalBar score={evalScore} className="hidden shrink-0 wide:block roomy:block" />
           ) : (
-            <EvalBarSlot />
+            <EvalBarSlot reserve={reserveEvalLane} />
           )}
           <div className="relative min-w-0 flex-1">
             <Board
@@ -363,6 +375,7 @@ export function AnalysisBoard({
             than two placeholders either side of an engine's opinion. */}
         <BoardLane
           bar={engineOn}
+          reserve={reserveEvalLane}
           className={cn(
             (engineOn || !hasNames) && 'stacked:hidden',
             hasNames && 'roomy:flex',
