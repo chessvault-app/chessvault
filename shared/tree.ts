@@ -85,8 +85,24 @@ export function moveSquares(node: {
  * the existing tree instead of littering it with identical variations.
  */
 export function addMove(tree: MoveTree, parentId: NodeId, requested: Move): AddMoveResult {
+  return addMoveAt(tree, parentId, positionAt(tree, parentId), requested);
+}
+
+/**
+ * The same, for a caller that has already built the parent's position.
+ *
+ * addSan and addUci both construct one to read the move at all, and then
+ * addMove built a second from the same FEN — two parseFen + Chess.fromSetup
+ * per added move, each of which validates legality and recomputes checkers.
+ * `pos` is CONSUMED: makeSanAndPlay plays the move on it.
+ */
+function addMoveAt(
+  tree: MoveTree,
+  parentId: NodeId,
+  pos: Chess,
+  requested: Move,
+): AddMoveResult {
   const parent = getNode(tree, parentId);
-  const pos = positionAt(tree, parentId);
   // Castling to g1 and castling to h1 are the same move; normalising here
   // means one spelling reaches the tree, so a line replays and matches
   // whichever way it was entered.
@@ -138,8 +154,9 @@ export function addSan(
   parentId: NodeId,
   san: string,
 ): AddMoveResult | undefined {
-  const move = parseSan(positionAt(tree, parentId), san);
-  return move ? addMove(tree, parentId, move) : undefined;
+  const pos = positionAt(tree, parentId);
+  const move = parseSan(pos, san);
+  return move ? addMoveAt(tree, parentId, pos, move) : undefined;
 }
 
 /** Play a move given in UCI. Returns `undefined` if it isn't legal here. */
@@ -151,7 +168,7 @@ export function addUci(
   const move = parseUci(uci);
   if (!move) return undefined;
   const pos = positionAt(tree, parentId);
-  return pos.isLegal(move) ? addMove(tree, parentId, move) : undefined;
+  return pos.isLegal(move) ? addMoveAt(tree, parentId, pos, move) : undefined;
 }
 
 /** Ids from the root down to `id`, inclusive. */
