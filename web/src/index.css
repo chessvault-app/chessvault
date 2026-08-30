@@ -284,7 +284,23 @@
      against 4.39:1 at knob 0. A lerp there would be a no-op written out
      four times. */
   --good: oklch(calc(51% + (47% - 51%) * var(--ui-contrast)) 0.141 150);
-  --destructive: oklch(calc(57.7% + (48% - 57.7%) * var(--ui-contrast)) 0.245 27.3);
+  /* 52.5%, not the registry's 57.7%, and the four points were measured
+     off the one place it actually fails: "Delete all data" in Settings.
+     That button is `bg-destructive/10 text-destructive`, so the red is
+     read against ITSELF at a tenth over the card — rgb(252,229,230), not
+     the white the token was checked against — and the label came to
+     3.97:1. The most destructive control in the app held the only string
+     in it that failed AA. 52.9% is where it crosses; 52.5% is that with
+     a little margin, and it reaches 4.6:1 there and 5.3:1 on the page.
+
+     The wash is why this one moved and --good, --warn and --text-subtle
+     did not, though all four fail the same arithmetic against
+     --surface-3: a live scan of every text node on six pages, in both
+     themes, compositing each background down to the page, found this and
+     nothing else. The others fail only against a fill that appears while
+     a control is pressed, which that scan cannot render. Theory, until
+     someone catches one. */
+  --destructive: oklch(calc(52.5% + (48% - 52.5%) * var(--ui-contrast)) 0.245 27.3);
   --warn: oklch(calc(53% + (49% - 53%) * var(--ui-contrast)) 0.112 75);
   --info: oklch(calc(51% + (48% - 51%) * var(--ui-contrast)) 0.102 230);
   /* What reads ON a filled --destructive panel, in both themes: the dark red is
