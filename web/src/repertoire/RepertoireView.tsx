@@ -29,7 +29,7 @@ import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker'
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
-import { EvalBarSlot } from '@/engine/EvalBar';
+import { BoardLane, EvalBarSlot } from '@/engine/EvalBar';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
@@ -198,7 +198,10 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
     // name rather than the row holding them, and they sat 7px lower than
     // the Board tab's (measured, 958px wide: centre 13px above the board's
     // top edge against 20px).
-    <div className="flex h-6 w-full items-center gap-2 px-0.5">
+    // In a BoardLane and wearing `board-box`, exactly as the Board tab's
+    // own row does: this slot exists so the two pages agree, and a row that
+    // spans the COLUMN starts a bar's width left of the board it names.
+    <div className="board-box flex h-6 items-center gap-2">
       <SideDot side={side} />
       <span className={cn('min-w-0 flex-1 truncate text-base', toMove ? 'text-foreground font-medium' : 'text-muted-foreground')}>
         {side === 'white' ? t('White') : t('Black')}
@@ -1740,7 +1743,9 @@ export function RepertoireView() {
                 is the row's business, and a slot stretched to 40px itself put
                 them 7px lower than every other board page's. */}
             <div className="flex w-full items-end wide:h-10">
-              <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
+              <BoardLane>
+                <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
+              </BoardLane>
             </div>
             {/* The eval bar's width, held open before there is an eval bar:
                 when the line ends this board is replaced by AnalysisBoard,
@@ -1760,7 +1765,9 @@ export function RepertoireView() {
                 />
               </div>
             </div>
-            <PlayerSlot side={orientation} fen={node.fen} />
+            <BoardLane>
+              <PlayerSlot side={orientation} fen={node.fen} />
+            </BoardLane>
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useEngine } from '@/store/engine';
@@ -8,6 +9,12 @@ interface EvalBarProps {
   score: { cp?: number; mate?: number } | null;
   /** Vertical bar beside the board, or horizontal above a pane. */
   orientation?: 'vertical' | 'horizontal';
+  /**
+   * Print the score inside the bar. Off for a caller that already prints
+   * it beside the bar — the repertoire's assessment does, at text-xl and
+   * signed, and the same number twice reads as two numbers.
+   */
+  showScore?: boolean;
   className?: string;
 }
 
@@ -21,6 +28,21 @@ interface EvalBarProps {
  * hundred pawns. It was 12px while the bar was a gauge and nothing else.
  */
 const EVAL_BAR_W = 'w-7';
+
+/**
+ * The horizontal bar's height, WITH a number in it and without.
+ *
+ * 20px is the number's room — a 10px line and its 1px borders, with enough
+ * either side that the digits are not wedged against them — and it costs
+ * nothing where it is spent: that bar is drawn against the bottom of a row
+ * that is already h-6, so the 8px come out of the empty half of the row
+ * rather than out of the board.
+ *
+ * 12px is what a bar with nothing printed in it needs, and it is what the
+ * repertoire's assessment keeps: that one has the score beside it already
+ * (showScore={false}), so height there would be height for nothing.
+ */
+const EVAL_BAR_H = { withScore: 'h-5', bare: 'h-3' };
 
 /**
  * The room the bar takes, kept open whether or not there is a bar in it —
@@ -43,6 +65,39 @@ const EVAL_BAR_W = 'w-7';
  */
 export function EvalBarSlot() {
   return <div className={cn('hidden shrink-0 wide:block', EVAL_BAR_W)} aria-hidden />;
+}
+
+/**
+ * A row laid over the BOARD, not over the board's column.
+ *
+ * The column is this bar's lane plus the board, so a `w-full` row above or
+ * below the board starts a bar's width and a gap to the LEFT of the board it
+ * describes — a player's colour swatch lining up with nothing (lanph3re).
+ * This is the board row's own geometry, reused: the same reservation on the
+ * left (`EvalBarSlot`, hidden exactly where the bar is), the same `flex-1`
+ * cell, and the child then carries `.board-box` so it rounds down to the
+ * pixel grid and centres in that cell exactly as the board does. The cell
+ * alone is not enough: the board box is up to a square-quantum narrower
+ * than the cell and centres in what is left, so a row that filled the cell
+ * still started a couple of pixels left of the a-file (2px at 1280x800,
+ * and it moves with the window).
+ *
+ * The gap costs nothing when stacked: the slot is `display: none` there, so
+ * it is not a flex item and there is no gap to draw either side of it.
+ *
+ * Every row that stands over a board wears one, and they are not all
+ * players: the repertoire's two side slots, which exist so its board sits
+ * where the Board tab's does, and the line the book trainer's entry board
+ * prints under itself. A row that skips it is a row that says it belongs to
+ * the board and then starts somewhere else.
+ */
+export function BoardLane({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('flex w-full gap-2', className)}>
+      <EvalBarSlot />
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
 }
 
 /**
@@ -96,7 +151,13 @@ export function EvalBarRow({ fen }: { fen: string }) {
     // gap-2 alone. The row keeps its height, so nothing else moves —
     // lanph3re asked for the gap under the bar, not the one over it.
     <div className="flex h-6 w-full items-end wide:hidden">
-      <EvalBar score={score} orientation="horizontal" />
+      {/* `board-box`: the bar is the board's, and now that its ends carry
+          the number they have to BE the board's ends — the box below is up
+          to a square-quantum narrower than the column and centres in what
+          is left, so a bar drawn to the column overhung it by a pixel or
+          two either side. Same class as the board, so the two cannot
+          disagree. */}
+      <EvalBar score={score} orientation="horizontal" className="board-box" />
     </div>
   );
 }
@@ -108,15 +169,20 @@ export function EvalBarRow({ fen }: { fen: string }) {
  * is the convention every chess site uses — flipping it with the board would
  * make the same position appear to change evaluation.
  */
-export function EvalBar({ score, orientation = 'vertical', className }: EvalBarProps) {
+export function EvalBar({
+  score,
+  orientation = 'vertical',
+  showScore = true,
+  className,
+}: EvalBarProps) {
   const fraction = score ? winningChances(score) : 0.5;
   const percent = `${(fraction * 100).toFixed(1)}%`;
   const label = score ? formatScore(score) : '—';
   // Which end of the bar the readout sits at, and therefore which of the two
   // halves it is printed on. At or above the midpoint the White block is at
-  // least half the bar, so the bottom is inside it; below, the Black block
-  // holds the top by the same arithmetic. No score, nothing to print.
-  const readout = score && orientation === 'vertical' ? formatScoreCompact(score) : '';
+  // least half the bar, so that end is inside it; below, the Black block
+  // holds the other end by the same arithmetic. No score, nothing to print.
+  const readout = score && showScore ? formatScoreCompact(score) : '';
   const whiteAhead = fraction >= 0.5;
 
   return (
@@ -128,7 +194,16 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
         // where the number is printed, and `rounded-full` on a 28px bar is
         // a 14px radius — the whole of the row the digits sit in.
         'bg-eval-black border-eval-border relative overflow-hidden border',
-        orientation === 'vertical' ? cn('h-full', EVAL_BAR_W) : 'h-3 w-full',
+        // No width of its own when horizontal: the caller says how wide,
+        // because the two of them want different answers — the board's own
+        // rectangle above a phone's board, the rest of a row in the
+        // repertoire's assessment — and a `w-full` here would beat either
+        // (utilities layer over components).
+        orientation === 'vertical'
+          ? cn('h-full', EVAL_BAR_W)
+          : showScore
+            ? EVAL_BAR_H.withScore
+            : EVAL_BAR_H.bare,
         className,
       )}
       role="meter"
@@ -168,8 +243,11 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
       {readout && (
         <span
           className={cn(
-            'absolute inset-x-0 text-center font-mono text-[10px] leading-none tabular-nums',
-            whiteAhead ? 'text-on-eval-white bottom-0.5' : 'text-on-eval-black top-0.5',
+            'absolute font-mono text-[10px] leading-none tabular-nums',
+            orientation === 'vertical'
+              ? cn('inset-x-0 text-center', whiteAhead ? 'bottom-0.5' : 'top-0.5')
+              : cn('top-1/2 -translate-y-1/2', whiteAhead ? 'left-1' : 'right-1'),
+            whiteAhead ? 'text-on-eval-white' : 'text-on-eval-black',
           )}
           aria-hidden
         >

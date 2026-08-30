@@ -127,7 +127,10 @@ export function FinalAssessment({
           <span className="text-foreground flex min-w-[3.75rem] items-center font-mono text-xl font-semibold tabular-nums">
             {score ? formatScore(score) : <Spinner className="text-muted-foreground size-4" />}
           </span>
-          <EvalBar score={score} orientation="horizontal" className="flex-1" />
+          {/* showScore off: the number is already beside it, at text-xl
+              and signed. Twice is two numbers to reconcile, not one read
+              twice. */}
+          <EvalBar score={score} orientation="horizontal" showScore={false} className="flex-1" />
         </div>
         <p className="text-muted-foreground min-h-[0.875rem] text-xs leading-none">
           {verdict || settled ? '' : t('Evaluating the position…')}

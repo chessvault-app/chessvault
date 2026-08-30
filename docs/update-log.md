@@ -17,6 +17,11 @@ installer. This section becomes the next version's heading.
   now sit over the board itself, and they round and centre by the same rule
   the board does rather than by an approximation of it, so the swatch starts
   on the a-file and a clock ends on the h-file whatever the window is doing.
+  Every row that stands over a board does this now, not just the Board
+  page's: the repertoire's two side slots, the line under the book
+  trainer's entry board, and the placeholder rows a page draws while it is
+  still loading — which had the board 36px wider than the one about to
+  replace it.
 
 - **The evaluation bar prints its number.** It was a gauge and nothing
   else: a position was "about half white", and the score itself lived in
@@ -27,7 +32,12 @@ installer. This section becomes the next version's heading.
   sits and what colour it is already say whose advantage it is. Its tooltip
   still carries the signed, two-decimal figure. The wider bar costs each
   board 16px of width, and costs it on every page that reserves the bar's
-  lane, so no board changes size against another.
+  lane, so no board changes size against another. The phone's bar — the one
+  that lies along the top of the board instead of beside it — prints the
+  same number at the leading end, and grew from 12px to 20px tall to hold
+  it, out of the empty half of a row it was already sitting in rather than
+  out of the board. The repertoire's assessment keeps the bar it had: the
+  score is already printed beside that one, twice the size.
 
 - **And every piece set shows its knight.** The same problem one row
   down, with the same fix: ten set names, and no way to tell Fantasy from

@@ -6,7 +6,7 @@ import {
   ChevronRight,
   FlipVertical2,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -22,7 +22,7 @@ import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
-import { EvalBar, EvalBarRow, EvalBarSlot } from '@/engine/EvalBar';
+import { BoardLane, EvalBar, EvalBarRow, EvalBarSlot } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -466,33 +466,6 @@ function NameField({
       />
       {showClear && <ClearButton className="right-0" onClear={() => setDraft('')} />}
     </span>
-  );
-}
-
-/**
- * A row laid over the BOARD, not over the board's column.
- *
- * The column is the eval bar's lane plus the board, so a `w-full` row above
- * or below the board starts a bar's width and a gap to the LEFT of the board
- * it describes — a player's colour swatch lining up with nothing (lanph3re).
- * This is the board row's own geometry, reused: the same reservation on the
- * left (`EvalBarSlot`, hidden exactly where the bar is), the same `flex-1`
- * cell, and the child then carries `.board-box` so it rounds down to the
- * pixel grid and centres in that cell exactly as the board does. The cell
- * alone is not enough: the board box is up to a square-quantum narrower
- * than the cell and centres in what is left, so a row that filled the cell
- * still started a couple of pixels left of the a-file (2px at 1280x800,
- * and it moves with the window).
- *
- * The gap costs nothing when stacked: the slot is `display: none` there, so
- * it is not a flex item and there is no gap to draw either side of it.
- */
-function BoardLane({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <div className={cn('flex w-full gap-2', className)}>
-      <EvalBarSlot />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
   );
 }
 
