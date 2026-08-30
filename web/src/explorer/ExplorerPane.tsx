@@ -41,7 +41,6 @@ import { DatePicker } from '@/components/date-picker';
 import { FilterChip } from '@/components/filter-chip';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { PaneControls } from '@/board/AnalysisBoard';
 import { SideDot } from '@/components/side-dot';
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
@@ -481,10 +480,6 @@ export function ExplorerPane({
           )}
         </>
       )}
-      {/* `lg:hidden`: below lg this pane is one tab of several and has to
-          carry the navigation itself; at lg it stands in the column under
-          the moves panel, which is showing its own. */}
-      <PaneControls className="lg:hidden" />
     </Panel>
   );
 }

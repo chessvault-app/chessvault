@@ -48,10 +48,11 @@ const EVAL_BAR_H = { withScore: 'h-5', bare: 'h-3' };
  * The room the bar takes, kept open whether or not there is a bar in it —
  * one of these per axis, because the bar changes sides with the layout.
  *
- * `EvalBarSlot` is its WIDTH, beside the board, and exists wherever the bar
- * stands beside the board — `wide`, and `roomy`, which is a tablet upright.
- * Narrower than that the bar takes the player's row instead (EvalBarRow
- * below), so there is nothing to reserve.
+ * `EvalBarSlot` is its WIDTH, beside the board. At `wide` it is held open
+ * whether or not there is a bar in it; at `roomy` — a tablet upright — it
+ * is only there when the bar is, so `drawn` says which. Narrower than that
+ * the bar takes the player's row instead (EvalBarRow below), so there is
+ * nothing to reserve.
  *
  * Both exist because the bar shares the board's box rather than floating
  * over it: the bar's width and 8px of gap come out of whatever axis it sits
@@ -60,14 +61,21 @@ const EVAL_BAR_H = { withScore: 'h-5', bare: 'h-3' };
  * same board — the engine being switched on, or a trainer handing its board
  * to AnalysisBoard when the puzzle ends. Reserved, nothing moves either way.
  *
- * The reservation goes wherever the bar does, for the same reason the bar
- * does: it buys a board that does not resize when the engine is switched.
- * At `wide` it costs 36px of the board's width; at `roomy` it costs
- * nothing, because there the 36px is added to the board's budget out of a
- * column that had it spare (boardSize.ts).
+ * The reservation buys a board that does not resize when the engine is
+ * switched, and at `wide` it costs 36px of the board's width to do it.
+ * `roomy` does not reserve, and does not have to: there the 36px is added
+ * to the board's budget out of a column that had it spare
+ * (BOARD_LANE_ALLOWANCE in boardSize.ts), so the board is the same size
+ * either way — it only moves, by the 18px that centring board-plus-bar
+ * costs against centring the board alone.
  */
-export function EvalBarSlot() {
-  return <div className={cn('hidden shrink-0 wide:block roomy:block', EVAL_BAR_W)} aria-hidden />;
+export function EvalBarSlot({ drawn = false }: { drawn?: boolean } = {}) {
+  return (
+    <div
+      className={cn('hidden shrink-0 wide:block', drawn && 'roomy:block', EVAL_BAR_W)}
+      aria-hidden
+    />
+  );
 }
 
 /**
@@ -94,10 +102,19 @@ export function EvalBarSlot() {
  * prints under itself. A row that skips it is a row that says it belongs to
  * the board and then starts somewhere else.
  */
-export function BoardLane({ className, children }: { className?: string; children: ReactNode }) {
+export function BoardLane({
+  bar = false,
+  className,
+  children,
+}: {
+  /** Whether a bar is drawn beside the board — see `EvalBarSlot`'s `drawn`. */
+  bar?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <div className={cn('flex w-full gap-2', className)}>
-      <EvalBarSlot />
+      <EvalBarSlot drawn={bar} />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );

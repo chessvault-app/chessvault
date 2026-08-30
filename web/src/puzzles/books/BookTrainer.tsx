@@ -1,7 +1,7 @@
 import { BarChart3, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Cpu, Eye, FlipVertical2, History, Info, LayoutGrid, ListOrdered, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
-import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
 import { PaneTabs } from '@/components/pane-tabs';
@@ -759,8 +759,6 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         )}
       </CardFooter>
     </div>
-    {/* Once the puzzle is over — see the puzzle trainer's copy. */}
-    {analysing && <PaneControls className="wide:hidden" />}
   </Panel>
   );
   const movesPanel = analysing ? (
@@ -870,10 +868,11 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         {!wide && analysing && shownPane === 'engine' && (
           <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
-            <PaneControls />
           </Panel>
         )}
         {(wide || shownPane === 'info') && puzzlePanel}
+        {/* Once the puzzle is over — see the puzzle trainer's copy. */}
+        {analysing && <ColumnControls className="wide:hidden" />}
 
       </div>
 

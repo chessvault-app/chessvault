@@ -43,7 +43,9 @@ export function AnalysisMovesPanel({
         }
       />
       <MoveTreePane />
-      <PaneControls />
+      {/* `stacked:hidden`: where this panel is one tab of several, the
+          column's own strip carries the buttons (ColumnControls). */}
+      <PaneControls className="stacked:hidden" />
     </Panel>
   );
 }

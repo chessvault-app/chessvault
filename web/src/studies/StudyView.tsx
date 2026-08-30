@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useOpeningName } from '@/lib/opening';
-import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -338,7 +338,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
           <MoveTreePane />
           <ReviewStrip />
-          <PaneControls />
+          <PaneControls className="max-lg:hidden" />
           <AnnotationPane
             editing={editing}
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
@@ -346,7 +346,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         </Panel>
         <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
           <EngineBlock standalone />
-          <PaneControls />
         </Panel>
         <ExplorerPane
           resizeKey="study-explorer"
@@ -355,6 +354,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
+        <ColumnControls className="lg:hidden" />
       </div>
 
       {recovery && (
@@ -536,9 +536,6 @@ function ChaptersPanel() {
           />
         ))}
       </ul>
-      {/* A tab below lg, docked above the moves panel at lg — see the
-          explorer's copy of this line. */}
-      <PaneControls className="lg:hidden" />
     </Panel>
   );
 }

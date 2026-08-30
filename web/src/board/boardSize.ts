@@ -27,31 +27,42 @@ export const BOARD_MAX_W =
   // band takes the bottom of the window) publishes the height its region
   // actually has. `.board-col-cap` (index.css) reads the same variable so
   // the column keeps agreeing with the board it holds.
-  // The `roomy:` term is the same stacked expression plus 2.25rem, and the
-  // 2.25rem is the eval bar's lane: EVAL_BAR_W (w-7) in engine/EvalBar.tsx
-  // plus the board row's gap-2. Change the bar's width and change this with
-  // it — a lane and an allowance that disagree is a board that moves by the
-  // difference.
-  //
-  // ADDED, not taken. Everywhere else the bar comes out of the board's own
-  // width, because the budget is what the board's SURROUNDINGS can spare.
-  // `roomy` is the one layout where the column has more than the board can
-  // use (a 469px board in a 780px column at 840x838), so the honest sum
-  // there is board + bar rather than board − bar. The 100% term still caps
-  // it, so a portrait window tall enough to make the board width-bound goes
-  // back to paying for the lane out of the board, which is the only thing
-  // it can do.
-  //
-  // What the reader sees: the bar hangs in what was margin, and the board
-  // is the same size and in the same place as it was before the engine was
-  // switched on. The pair is centred rather than the board, so the board's
-  // own middle sits 18px right of the column's — the same offset `wide` has
-  // always had, where nobody has ever noticed it.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] roomy:max-w-[min(100%,calc(min(max(35dvh,calc(100dvh-20rem)),56dvh)+2.25rem))] wide:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem))))] wide:lg:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem)),64rem))]';
+  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] wide:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem))))] wide:lg:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem)),64rem))]';
 
 // (The lg: ceiling rides on wide: — a bare lg: is the viewport's word, and
 // inside a `.force-stacked` region of a wide page it sized the editor's
 // board for the whole screen while its palettes laid out phone-style.)
+/**
+ * The width the board's block borrows for the eval bar's lane at `roomy` —
+ * the same stacked expression as BOARD_MAX_W plus 2.25rem, which is
+ * EVAL_BAR_W (w-7, engine/EvalBar.tsx) and the board row's gap-2. Change
+ * the bar's width and change this with it: a lane and an allowance that
+ * disagree is a board that moves by the difference.
+ *
+ * ADDED, not taken. Everywhere else the bar comes out of the board's own
+ * width, because the budget is what the board's SURROUNDINGS can spare.
+ * `roomy` is the one layout where the column has more than the board can
+ * use — a 560px board in a 748px column at 840x1000 — so the honest sum
+ * there is board + bar. The 100% term still caps it, so a portrait window
+ * tall enough to make the board width-bound goes back to paying out of the
+ * board, which is the only thing it can do.
+ *
+ * ONLY WHERE A BAR IS ACTUALLY DRAWN, which is why this is a class the
+ * caller adds rather than a term inside BOARD_MAX_W. The block is centred
+ * in its column, so a block that is board + lane centres the PAIR and
+ * leaves the board 18px right of the column's middle. That is right when
+ * the bar is there — the two read as one object — and wrong when it is
+ * not, which at `roomy` is most of the time, because the lane is held open
+ * on every board page whether or not that page has an engine (lanph3re
+ * caught the board sitting off-centre with nothing beside it). So the
+ * board is centred while there is no bar, and the pair is centred when
+ * there is; what that costs is the 18px step the board takes when the
+ * engine is switched on, which is a `roomy`-only price and the one
+ * lanph3re asked to pay.
+ */
+export const BOARD_LANE_ALLOWANCE =
+  'roomy:max-w-[min(100%,calc(min(max(35dvh,calc(100dvh-20rem)),56dvh)+2.25rem))]';
+
 export const EDITOR_BOARD_MAX_W =
   // The stacked editor has no pane below — just palettes, the toolbar and
   // the nav — so its board can run essentially full-width on phones.
@@ -70,8 +81,4 @@ export const EDITOR_BOARD_MAX_W =
   // The window publishes its own budget (EDITOR_WINDOW_SIZE); every
   // true-stacked page leaves the variable unset and computes what it
   // always did.
-  // The same `roomy:` allowance as BOARD_MAX_W, for the same reason: the
-  // editor reserves the bar's lane too (it never draws a bar — the
-  // reservation is what keeps its board the same board as analysis's), and
-  // an upright tablet has the room to give it.
-  'max-w-[min(100%,max(35dvh,var(--editor-board-budget,calc(100dvh-19rem))),56dvh)] roomy:max-w-[min(100%,calc(min(max(35dvh,var(--editor-board-budget,calc(100dvh-19rem))),56dvh)+2.25rem))] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] wide:lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),64rem)]';
+  'max-w-[min(100%,max(35dvh,var(--editor-board-budget,calc(100dvh-19rem))),56dvh)] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] wide:lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),64rem)]';

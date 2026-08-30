@@ -15,9 +15,13 @@ installer. This section becomes the next version's heading.
   another tab, which on a tablet meant they jumped a couple of hundred
   pixels every time you switched to Engine or Explorer and back. Every
   pane carries them at its own foot now, Moves, Engine, Explorer and a
-  study's Chapters alike, and the row under the board is gone. A phone is
-  unchanged: the bottom bar carries them there, and the panels keep theirs
-  hidden so the same four arrows are never drawn twice.
+  study's Chapters alike, and the row under the board is gone. Where the
+  panes are tabs the buttons are pinned to the foot of the COLUMN rather
+  than to each panel's own floor — the panels are not all the same height,
+  and pinning them to the panel put the buttons at a different height on a
+  chapter list than on the move list. A phone is unchanged: the bottom bar
+  carries them there, and the panels keep theirs hidden so the same four
+  arrows are never drawn twice.
 
 - **The names line up with the board.** The player bars above and below it
   were as wide as the board's COLUMN, and the column is the board plus the
@@ -48,7 +52,11 @@ installer. This section becomes the next version's heading.
   gets the bar beside the board as well: the page still stacks its panels
   below, but the board there is bound by height and had 150px of unused
   column either side of it, so the bar stands in that margin and the board
-  neither shrinks nor moves when the engine is switched on. Narrower than
+  is the same size with it as without. The board is centred in its column
+  while the engine is off, and the board and its bar are centred together
+  once it is on — which is an 18px step sideways at the moment of
+  switching, and the price of not sitting a board off-centre in an empty
+  column for the sake of a bar that is not there. Narrower than
   that — a phone — the bar still lies along the top of the board, prints the
   same number at the leading end, and grew from 12px to 20px tall to hold
   it, out of the empty half of a row it was already sitting in rather than

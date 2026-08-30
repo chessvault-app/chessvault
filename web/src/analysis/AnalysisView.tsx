@@ -1,7 +1,7 @@
 import { ChevronLeft, Check, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Table2, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
-import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -171,17 +171,16 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           />
           <MoveTreePane />
           <ReviewStrip />
-          {/* Navigation lives at the bottom of the moves panel (lanph3re's
-              call), not under the board. */}
           {/* -mb takes back the card's floor, as the resize grip does: the
-              band draws the panel's bottom edge, so it has to reach it. */}
-          <PaneControls />
+              band draws the panel's bottom edge, so it has to reach it.
+              At lg the panes are all on screen and this is the one that
+              carries the buttons; below it they belong to the column. */}
+          <PaneControls className="max-lg:hidden" />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
         <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
           <EngineBlock standalone />
-          <PaneControls />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}
@@ -192,6 +191,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
+        {/* One strip for the whole column, at its floor, whichever tab is
+            open — see ColumnControls. */}
+        <ColumnControls className="lg:hidden" />
       </div>
 
       {/* Phones: move navigation lives in the bottom bar, replacing the
