@@ -107,6 +107,27 @@
         --s7: 3rem;
         --s8: 4rem;
 
+        /* THE TYPE SCALE, and the reason it exists. The page had ten sizes
+           between 11.775px and 16px — 0.75, 0.78, 0.8, 0.8125, 0.82, 0.85,
+           0.875, 0.9375rem and the 15px body — which is seven steps doing
+           the work of four, each one a tier nobody had named. They collapse
+           here to four, and nothing moved by more than 0.6px.
+
+           Four steps and no fifth: if something needs a size that is not
+           one of these, the answer is one of these. */
+        --t-xs: 0.75rem;     /* 12px — mono kickers, figure numbers */
+        --t-sm: 0.8125rem;   /* 13px — paths, glosses, captions, code */
+        --t-md: 0.875rem;    /* 14px — secondary prose, controls, footer */
+        --t-base: 0.9375rem; /* 15px — body, and the titles set at its weight */
+
+        /* The display tier, which is the page's own and has no counterpart
+           in the app: DESIGN.md's ramp stops at 1.5rem because no panel in
+           a chess workbench needs 54px type. Named here so the headline is
+           one value rather than a clamp repeated from memory. */
+        --t-lead: clamp(1rem, 1.6vw, 1.125rem);
+        --t-h2: clamp(1.35rem, 3vw, 1.75rem);
+        --t-h1: clamp(2.1rem, 5.5vw, 3.4rem);
+
         /* The page has a second voice: anything that is literally a name on
            disk, or a label on a figure, is set in mono. Nothing else is. */
         --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -138,7 +159,7 @@
         margin: 0;
         background: var(--background);
         color: var(--foreground);
-        font: 15px/1.6 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+        font: var(--t-base)/1.6 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
         -webkit-font-smoothing: antialiased;
         /* Korean has no spaces inside an eojeol, and the default breaking
@@ -178,7 +199,7 @@
       /* The mono voice. Used for a path on disk, a figure number and a
          section kicker — never for prose. */
       .slug {
-        font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em;
+        font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.06em;
         color: var(--muted-foreground); margin: 0;
       }
 
@@ -210,14 +231,14 @@
          numbers are set in. What stays a button is the one thing that is an
          action — and it is the reason the bar is sticky at all. */
       .bar .quiet {
-        font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none;
+        font-size: var(--t-md); color: var(--muted-foreground); text-decoration: none;
         /* A text link has no height of its own; a thumb needs one. */
         padding-block: 0.4rem; border-radius: var(--radius-md);
       }
       .bar .quiet:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
       .lang { display: inline-flex; align-items: center; gap: 0.3rem; }
       .lang button {
-        font: inherit; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; line-height: 1;
+        font: inherit; font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.06em; line-height: 1;
         /* 0.4rem inline, not 0.2: "EN" at 12px mono is 14.6px of text, and
            0.2rem either side made a 21px-wide target — under the 24px
            floor, on every pointer, not just a thumb. The height was never
@@ -237,7 +258,7 @@
       .lang button[aria-pressed='true'] { color: var(--foreground); }
       /* Fainter than either label, so the pair reads as one control and the
          rule between them is not a third thing. */
-      .lang .sep { font-family: var(--mono); font-size: 0.75rem; color: color-mix(in oklch, var(--muted-foreground) 45%, transparent); }
+      .lang .sep { font-family: var(--mono); font-size: var(--t-xs); color: color-mix(in oklch, var(--muted-foreground) 45%, transparent); }
 
       /* Buttons are shadcn's: `.btn` is the outline variant (border, page
          colour, muted on hover) and `.btn.primary` the default one (a
@@ -247,7 +268,7 @@
       .btn {
         display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
         height: 2.25rem; padding-inline: 0.875rem; border-radius: var(--radius-lg); text-decoration: none;
-        font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap;
+        font-size: var(--t-md); font-weight: 500; line-height: 1; white-space: nowrap;
         border: 1px solid var(--border); background: var(--background); color: var(--foreground);
         transition: background 0.15s, border-color 0.15s, color 0.15s;
       }
@@ -281,11 +302,11 @@
       @media (min-width: 56rem) {
         .lede { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: var(--s8); align-items: center; padding-block: var(--s8) var(--s7); }
       }
-      h1 { font-size: clamp(2.1rem, 5.5vw, 3.4rem); line-height: 1.08; margin: 0 0 var(--s4); letter-spacing: -0.03em; font-weight: 600; }
-      .tagline { font-size: clamp(1rem, 1.6vw, 1.125rem); color: var(--muted-foreground); margin: 0 0 var(--s5); max-width: 34rem; }
+      h1 { font-size: var(--t-h1); line-height: 1.08; margin: 0 0 var(--s4); letter-spacing: -0.03em; font-weight: 600; }
+      .tagline { font-size: var(--t-lead); color: var(--muted-foreground); margin: 0 0 var(--s5); max-width: 34rem; }
       .cta { display: flex; flex-wrap: wrap; gap: var(--s3); }
-      .cta .btn { height: 2.5rem; padding-inline: var(--s5); font-size: 0.9375rem; }
-      .note { color: var(--muted-foreground); font-size: 0.82rem; margin-top: var(--s4); }
+      .cta .btn { height: 2.5rem; padding-inline: var(--s5); font-size: var(--t-base); }
+      .note { color: var(--muted-foreground); font-size: var(--t-sm); margin-top: var(--s4); }
 
       /* The vault listing. A definition list wearing a directory's clothes:
          the path in mono on the left, what it holds in prose on the right,
@@ -297,16 +318,16 @@
         background: var(--muted); box-shadow: 0 0 0 1px var(--hairline);
         border-radius: var(--radius-xl); padding: var(--s4) var(--s5) var(--s5);
       }
-      .vault .root { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted-foreground); display: block; margin-bottom: var(--s3); }
+      .vault .root { font-family: var(--mono); font-size: var(--t-sm); color: var(--muted-foreground); display: block; margin-bottom: var(--s3); }
       .vault ul { list-style: none; margin: 0; padding: 0; }
       .vault li {
         display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
         gap: 0 var(--s4); padding-block: 0.3rem;
       }
-      .vault .path { font-family: var(--mono); font-size: 0.8125rem; white-space: pre; }
+      .vault .path { font-family: var(--mono); font-size: var(--t-sm); white-space: pre; }
       .vault .path .tick { color: var(--muted-foreground); }
-      .vault .gloss { font-size: 0.78rem; color: var(--muted-foreground); text-align: right; }
-      .vault figcaption { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--hairline); font-size: 0.78rem; color: var(--muted-foreground); }
+      .vault .gloss { font-size: var(--t-sm); color: var(--muted-foreground); text-align: right; }
+      .vault figcaption { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--hairline); font-size: var(--t-sm); color: var(--muted-foreground); }
 
       /* Screenshots are shown in both themes: a `<picture>` picks the dark
          capture under the same media query that picks the dark tokens, so
@@ -329,7 +350,7 @@
          only heading on its plate and it carries the plate. The level is
          the semantics; the size is the design; they are allowed to differ,
          and here they do. */
-      h2, .plate h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: var(--s2) 0 var(--s5); font-weight: 600; }
+      h2, .plate h3 { font-size: var(--t-h2); letter-spacing: -0.02em; margin: var(--s2) 0 var(--s5); font-weight: 600; }
 
       /* THE INDEX. What used to be six bordered cards. Six boxes on a grid
          hide the shape of a list — every one the same size whatever it
@@ -344,9 +365,9 @@
         border-top: 1px solid var(--border); align-items: baseline;
       }
       .entry:last-child { border-bottom: 1px solid var(--border); }
-      .entry .n { grid-column: 1; grid-row: 1; font-family: var(--mono); font-size: 0.75rem; color: var(--muted-foreground); }
-      .entry h3 { grid-column: 2; grid-row: 1; margin: 0; font-size: 0.9375rem; font-weight: 600; }
-      .entry p { grid-column: 2; grid-row: 2; margin: 0; color: var(--muted-foreground); font-size: 0.875rem; max-width: 62ch; }
+      .entry .n { grid-column: 1; grid-row: 1; font-family: var(--mono); font-size: var(--t-xs); color: var(--muted-foreground); }
+      .entry h3 { grid-column: 2; grid-row: 1; margin: 0; font-size: var(--t-base); font-weight: 600; }
+      .entry p { grid-column: 2; grid-row: 2; margin: 0; color: var(--muted-foreground); font-size: var(--t-md); max-width: 62ch; }
       @media (min-width: 48rem) {
         .entry { grid-template-columns: 2.25rem 11rem minmax(0, 1fr); gap: var(--s4); }
         .entry p { grid-column: 3; grid-row: 1; }
@@ -402,7 +423,7 @@
       .plate:first-child { padding-top: var(--s2); }
       .plate:last-child { padding-bottom: 0; }
       .plate + .plate { border-top: 1px solid var(--border); }
-      .plate .n { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; color: var(--muted-foreground); }
+      .plate .n { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: 0.04em; color: var(--muted-foreground); }
       .plate .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); }
       .plate h3 { margin: 0 0 var(--s3); }
       .plate p { color: var(--muted-foreground); margin: 0; max-width: 62ch; }
@@ -447,8 +468,8 @@
       @media (min-width: 48rem) {
         .dl-row { grid-template-columns: 13rem minmax(0, 1fr); align-items: start; }
       }
-      .dl-row h3 { margin: 0 0 var(--s1); font-size: 0.9375rem; font-weight: 600; }
-      .dl-row p { margin: 0 0 var(--s4); color: var(--muted-foreground); font-size: 0.875rem; max-width: 62ch; }
+      .dl-row h3 { margin: 0 0 var(--s1); font-size: var(--t-base); font-weight: 600; }
+      .dl-row p { margin: 0 0 var(--s4); color: var(--muted-foreground); font-size: var(--t-md); max-width: 62ch; }
       .dl-row pre { max-width: 34rem; }
       /* One row, never wrapped. The three share the width equally and
          shrink together, so the column cannot be narrow enough to break the
@@ -461,7 +482,7 @@
         flex: 1 1 auto; min-width: 0; justify-content: center;
         gap: 0.35rem; padding-inline: var(--s2);
         /* Shrinks with the viewport so the row never has to wrap. */
-        font-size: clamp(0.72rem, 0.636rem + 0.41vw, 0.875rem);
+        font-size: clamp(0.72rem, 0.636rem + 0.41vw, var(--t-md));
         white-space: nowrap;
       }
       .btn.os svg { width: 1em; height: 1em; flex: none; }
@@ -471,7 +492,7 @@
       }
       pre {
         background: var(--muted); border-radius: var(--radius-lg);
-        padding: var(--s3) var(--s4); overflow-x: auto; font-size: 0.8rem; line-height: 1.55; margin: 0;
+        padding: var(--s3) var(--s4); overflow-x: auto; font-size: var(--t-sm); line-height: 1.55; margin: 0;
         font-family: var(--mono);
       }
       pre code { background: none; padding: 0; font-size: inherit; }
@@ -479,7 +500,7 @@
          #download jump scrolls to. */
       [id] { scroll-margin-top: 4.5rem; }
 
-      footer { border-top: 1px solid var(--border); padding-block: var(--s6) var(--s7); color: var(--muted-foreground); font-size: 0.85rem; }
+      footer { border-top: 1px solid var(--border); padding-block: var(--s6) var(--s7); color: var(--muted-foreground); font-size: var(--t-md); }
       footer p { margin: 0 0 var(--s2); }
       footer a { text-decoration: none; }
       footer a:hover { text-decoration: underline; color: var(--foreground); }
