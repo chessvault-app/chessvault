@@ -1096,6 +1096,14 @@ cg-board square.check {
    The plain `width` first is the fallback for anything without round(),
    which then behaves exactly as this app did before.
 
+   Worn by anything that has to start and end where the BOARD does rather
+   than where its cell does — the player bars above and below it (BoardLane
+   in board/AnalysisBoard.tsx) wear the same class inside a cell of the same
+   width, so the three rectangles round and centre identically instead of a
+   name sitting two pixels to the left of the a-file. Reused rather than
+   copied: two spellings of this expression would be two things to keep in
+   step.
+
    In `components`, NOT unlayered like the .cg-wrap rules above it: those
    have to beat chessground's own unlayered CSS, this one only has to
    beat nothing. Left unlayered it beat the Tailwind `utilities` layer as

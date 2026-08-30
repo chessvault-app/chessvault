@@ -10,6 +10,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The names line up with the board.** The player bars above and below it
+  were as wide as the board's COLUMN, and the column is the board plus the
+  evaluation bar's lane — so a name and its colour swatch started a bar's
+  width to the left of the board they describe, lined up with nothing. They
+  now sit over the board itself, and they round and centre by the same rule
+  the board does rather than by an approximation of it, so the swatch starts
+  on the a-file and a clock ends on the h-file whatever the window is doing.
+
 - **The evaluation bar prints its number.** It was a gauge and nothing
   else: a position was "about half white", and the score itself lived in
   the engine panel, which is not where you are looking while you play

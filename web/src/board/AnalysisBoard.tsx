@@ -6,7 +6,7 @@ import {
   ChevronRight,
   FlipVertical2,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -307,7 +307,12 @@ export function AnalysisBoard({
               engineOn && 'stacked:hidden',
             )}
           >
-            <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
+            <BoardLane>
+              <PlayerBar
+                side={orientation === 'white' ? 'black' : 'white'}
+                editable={editablePlayers}
+              />
+            </BoardLane>
           </div>
         )}
         <div className="flex w-full items-stretch gap-2">
@@ -352,11 +357,9 @@ export function AnalysisBoard({
         {/* The name under the board goes when the one above it does, and the
             panels below get the row back — a phone has better uses for it
             than two placeholders either side of an engine's opinion. */}
-        <PlayerBar
-          side={orientation}
-          editable={editablePlayers}
-          className={engineOn || !hasNames ? 'stacked:hidden' : undefined}
-        />
+        <BoardLane className={engineOn || !hasNames ? 'stacked:hidden' : undefined}>
+          <PlayerBar side={orientation} editable={editablePlayers} />
+        </BoardLane>
       </div>
       {/* Navigation under the board — but on phones it moves to the
           contextual bottom bar (MobileActionBar), so hide it below md to
@@ -467,6 +470,33 @@ function NameField({
 }
 
 /**
+ * A row laid over the BOARD, not over the board's column.
+ *
+ * The column is the eval bar's lane plus the board, so a `w-full` row above
+ * or below the board starts a bar's width and a gap to the LEFT of the board
+ * it describes — a player's colour swatch lining up with nothing (lanph3re).
+ * This is the board row's own geometry, reused: the same reservation on the
+ * left (`EvalBarSlot`, hidden exactly where the bar is), the same `flex-1`
+ * cell, and the child then carries `.board-box` so it rounds down to the
+ * pixel grid and centres in that cell exactly as the board does. The cell
+ * alone is not enough: the board box is up to a square-quantum narrower
+ * than the cell and centres in what is left, so a row that filled the cell
+ * still started a couple of pixels left of the a-file (2px at 1280x800,
+ * and it moves with the window).
+ *
+ * The gap costs nothing when stacked: the slot is `display: none` there, so
+ * it is not a flex item and there is no gap to draw either side of it.
+ */
+function BoardLane({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('flex w-full gap-2', className)}>
+      <EvalBarSlot />
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+/**
  * Name plate for one side of a loaded game: player, rating, and the clock as
  * it stood at the current move (from the [%clk] comments chess.com and
  * lichess write). Renders nothing for scratch analysis.
@@ -517,7 +547,12 @@ function PlayerBar({
   const toMove = turn === side;
 
   return (
-    <div className={cn('flex h-6 w-full items-center gap-2 px-0.5', className)}>
+    // `board-box`, and no padding of its own: inside a BoardLane this row is
+    // the board's own rectangle, so the swatch starts where the a-file does
+    // and the clock ends where the h-file does. A w-* utility here would
+    // beat the class (utilities layer over components) and hand back the
+    // couple of pixels it exists to remove.
+    <div className={cn('board-box flex h-6 items-center gap-2', className)}>
       <SideDot side={side} />
       {editable ? (
         <NameField
