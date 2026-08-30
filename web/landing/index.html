@@ -372,7 +372,27 @@
          reads as a frame rather than as a hole in the page.
 
          `width: auto` and not `100%`: these are raster screenshots, and
-         stretching one past its own pixels only blurs it. */
+         stretching one past its own pixels only blurs it.
+
+         WHICH IS WHY THE MARKUP CARRIES width/height, AND WHY IT HAD TO
+         ARRIVE WITH THE `loading="lazy"` BESIDE IT. The two are one
+         change; either alone is worse than neither. Measured at 1280x800
+         with the images answering in 600ms, scrolling the page end to
+         end:
+
+             all six eager, no width/height     CLS 0
+             all five lazy, no width/height     CLS 0.248  (2 shifts)
+             all five lazy, with width/height   CLS 0
+
+         The page never had a layout-shift problem, because an eager
+         image arrives long before a reader can scroll to where it would
+         push anything. Lazy loading is what creates the exposure — the
+         plate now loads WHILE it is on screen — and with both CSS
+         dimensions `auto` the attributes are the only thing that tells
+         the browser how big it will be. Adding lazy on its own would
+         have bought 467KB off the first paint and spent a 0.248 CLS,
+         which is Google's "poor" band, to get it. Do not remove one of
+         these without the other. */
       .plates { border-left: 1px solid var(--border); padding-left: var(--s4); margin-top: var(--s5); }
       /* The figure number sits above its plate on a phone rather than
          beside it: a 3.5rem gutter is 14% of a 390px screen, and it was
@@ -556,10 +576,39 @@
         </figure>
       </div>
 
+      <!-- EAGER, AND THE ONLY ONE. This shot sits 527px down a 1280x800
+           desktop — above the fold, and the largest thing in it, so it is
+           what LCP is measured on. `loading="lazy"` here would defer the
+           one image the score depends on. On a 390px phone it lands 8px
+           BELOW the fold, which is near enough that lazy would still be
+           the wrong call. The five plates below are 1959px down and
+           further; they are lazy.
+
+           width/height ON EVERY IMAGE, including this one, which is
+           eager and so never had a shift of its own to fix. It carries
+           them because the rule is cheaper to keep than to reason about
+           per image, and because this one is the page's LCP element: the
+           ratio lets the space be reserved before the first byte. The
+           plates below are where the attributes actually earn their
+           keep, and the numbers are with them.
+
+           The number is the LIGHT capture's, and it is right for both
+           only because the pair is the same size — capture-screenshots.mjs
+           renders one target spec under two themes, and the app's themes
+           swap colour, not geometry. Verified: all six pairs match to the
+           pixel. If a capture ever makes them differ, the ratio here is
+           wrong in one scheme and the attributes have to move onto the
+           <source> elements. -->
       <div class="wrap shot">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
-          <img src="shots/board.png" alt="The analysis board with the engine and opening explorer" />
+          <img
+            src="shots/board.png"
+            width="1904"
+            height="993"
+            fetchpriority="high"
+            alt="The analysis board with the engine and opening explorer"
+          />
         </picture>
       </div>
 
@@ -638,6 +687,10 @@
                   <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
                   <img
                     src="shots/opening-map.png"
+                    width="1200"
+                    height="993"
+                    loading="lazy"
+                    decoding="async"
                     alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
                   />
                 </picture>
@@ -662,6 +715,10 @@
                   <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-node-dark.png" />
                   <img
                     src="shots/opening-map-node.png"
+                    width="416"
+                    height="857"
+                    loading="lazy"
+                    decoding="async"
                     alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
                   />
                 </picture>
@@ -685,6 +742,10 @@
                   <source media="(prefers-color-scheme: dark)" srcset="shots/games-dark.png" />
                   <img
                     src="shots/games.png"
+                    width="1904"
+                    height="993"
+                    loading="lazy"
+                    decoding="async"
                     alt="The Games page's Databases tab: a query box, filters, and a table of reference games beside the details panel"
                   />
                 </picture>
@@ -711,6 +772,10 @@
                   <source media="(prefers-color-scheme: dark)" srcset="shots/note-phone-dark.png" />
                   <img
                     src="shots/note-phone.png"
+                    width="585"
+                    height="780"
+                    loading="lazy"
+                    decoding="async"
                     alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
                   />
                 </picture>
@@ -734,6 +799,10 @@
                   <source media="(prefers-color-scheme: dark)" srcset="shots/games-phone-dark.png" />
                   <img
                     src="shots/games-phone.png"
+                    width="585"
+                    height="780"
+                    loading="lazy"
+                    decoding="async"
                     alt="The same game collection at phone width, with the bottom bar the app uses there"
                   />
                 </picture>
