@@ -1215,7 +1215,13 @@ export function MapCanvas({
                   x={0}
                   y={r + 12 * inv}
                   className="font-moves"
-                  fontSize={10.5 * inv}
+                  // 12 and 10 below: the label rung and the micro rung
+                  // (DESIGN.md typography). These were 10.5 and 8, a pair
+                  // nobody had named, and the 8 rendered smaller than
+                  // anything else the app asks a reader to read — the
+                  // scene units are divided by the zoom, so what is on
+                  // screen is these numbers exactly, at any scale.
+                  fontSize={12 * inv}
                   fontWeight={600}
                   textAnchor="middle"
                   // A hit names itself however far out the view is: the
@@ -1230,8 +1236,8 @@ export function MapCanvas({
                 {caption && (labelOpacity > 0 || matches?.has(id)) && (
                   <text
                     x={0}
-                    y={r + 22 * inv}
-                    fontSize={8 * inv}
+                    y={r + 24 * inv}
+                    fontSize={10 * inv}
                     textAnchor="middle"
                     opacity={matches?.has(id) ? 1 : labelOpacity}
                     // The registry's word for secondary text — the retired
