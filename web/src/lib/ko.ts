@@ -1737,6 +1737,10 @@ export const ko: Record<string, string> = {
   End: '끝',
   'What the pane is showing': '이 판이 보여주는 것',
   'No game selected': '선택된 게임 없음',
+  // The details column's pin: on, it holds its place with nothing
+  // selected; off, it arrives with a selected game and leaves with it.
+  'Keep the panel open': '패널 계속 열어두기',
+  'Keeping the panel open': '패널을 계속 열어둠',
   'Select a game from the list to see it here — its players, its opening, and the game itself, move by move.':
     '목록에서 게임을 선택하면 여기에 표시됩니다 — 두 기사와 오프닝, 그리고 게임 자체를 한 수씩.',
   'Open the game': '게임 열기',

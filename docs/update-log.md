@@ -10,6 +10,23 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The Games page stops paying for a details panel nobody asked for.**
+  The column stood beside the list at every width wide enough to hold it,
+  whether or not a game was selected — and the table beside it never
+  sheds columns, it scrolls sideways to reach them. On a 1440-wide window
+  that cost 236 pixels of table (790 shown of the 1026 it asks for) to
+  keep a column reading "No game selected" on screen. The column now
+  carries a switch in its own header: kept open, it holds its place as
+  before; let go, it arrives with the game you select and leaves when you
+  clear it, and the table has every column back — 1174 of 1174, nothing
+  behind a scroll. The default follows the window rather than a taste. At
+  1680 and wider the panel is free (the table measures 1030 against 1030
+  beside it) and stays open as it always has; below that it starts closed.
+  What it costs is the selection: at 1440 the click that opens the panel
+  narrows the table by 368 pixels and refolds the pane's toolbar 34 pixels
+  taller. That cost is why this is a switch and not simply the new
+  behaviour — a window wide enough to want the panel keeps it.
+
 - **And every piece set shows its knight.** The same problem one row
   down, with the same fix: ten set names, and no way to tell Fantasy from
   Celtic without wearing each of them for a moment. Each row now carries

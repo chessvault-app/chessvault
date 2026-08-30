@@ -5,6 +5,8 @@ import {
   ChevronsRight,
   ExternalLink,
   MousePointerClick,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -332,14 +334,45 @@ function GameDetailsContent({
 /** The desktop column: the selected game beside the table. */
 export function GameDetailsPanel({
   selection,
+  pinned,
+  onTogglePin,
   className,
 }: {
   selection: DetailsSelection | null;
+  /**
+   * Whether the panel keeps its column when nothing is selected.
+   *
+   * The panel does not act on this — its host mounts it or does not —
+   * but the switch belongs in this header, beside the thing it governs,
+   * rather than in a toolbar over the list it gives room back to. Both
+   * are optional together: a host with no choice to offer (a fixed band)
+   * passes neither and gets no button.
+   */
+  pinned?: boolean;
+  onTogglePin?: () => void;
   className?: string;
 }) {
   return (
     <Panel className={cn('min-h-0', className)}>
-      <PanelHeader title={t('Game')} />
+      <PanelHeader
+        title={t('Game')}
+        actions={
+          onTogglePin && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={pinned}
+              onClick={onTogglePin}
+              aria-pressed={pinned}
+              // Button makes `title` the tooltip AND the accessible name of
+              // an icon-only button, so it is not stated twice here.
+              title={pinned ? t('Keeping the panel open') : t('Keep the panel open')}
+            >
+              {pinned ? <Pin className="size-3.5" /> : <PinOff className="size-3.5" />}
+            </Button>
+          )
+        }
+      />
       {selection ? (
         <GameDetailsContent
           key={selection.key}
