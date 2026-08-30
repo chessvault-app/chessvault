@@ -5,6 +5,17 @@
  *   npx http-server dist-site -p 8129 --silent   (any static server)
  *   npm run shots                                (or SHOT_BASE=... npm run shots)
  *
+ * NOT EVERY SHOT IS REPRODUCIBLE, so "recapture and commit what differs"
+ * needs a second look. Measured by running this twice over one unchanged
+ * build: eight of the twenty-eight came back different from themselves —
+ * opening-map and workspace-dark by 5.7-6.8% of their pixels,
+ * puzzle-trainer by 3.7-5.2%, workspace by 1.0%, explorer by 0.3% — while
+ * the other twenty were byte-identical. They are the shots of things that
+ * settle rather than render: a force-directed map, an engine's output, a
+ * trainer's chosen puzzle. Committing those is churn that says a release
+ * changed something it did not. Diff a fresh pair of runs before believing
+ * a difference belongs to the release.
+ *
  * The demo is the source because it is the only vault that is the same for
  * everyone — capturing from a personal one would put somebody's games and
  * usernames in the README.
