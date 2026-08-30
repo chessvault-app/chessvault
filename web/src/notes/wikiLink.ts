@@ -11,6 +11,7 @@ import {
   WIKI_RE,
   parseWikiMatch,
   resolveWikiLink,
+  type AliasIndex,
   type LinkIndex,
   type LinkSection,
 } from '@shared/wikiLinks';
@@ -43,6 +44,8 @@ const SECTION_URL: Record<LinkSection, string> = {
  */
 interface Documents {
   readonly index: LinkIndex;
+  /** The other names documents answer to. */
+  readonly aliases: AliasIndex;
   /** `section:id` -> the document's first written line, for an embed. */
   readonly excerpt: ReadonlyMap<string, string>;
 }
@@ -54,23 +57,31 @@ const CACHE_MS = 30_000;
 const docsNow = (): Documents | null =>
   cache && Date.now() - cache.at < CACHE_MS ? cache.docs : null;
 
-const indexNow = (): LinkIndex | null => docsNow()?.index ?? null;
 
-async function documentIndex(): Promise<LinkIndex> {
-  return (await documents()).index;
-}
 
 async function documents(): Promise<Documents> {
   const fresh = docsNow();
   if (fresh) return fresh;
   const excerpt = new Map<string, string>();
+  const aliasEntries: (readonly [LinkSection, Map<string, string>])[] = [];
   const entries = await Promise.all(
     LINK_SECTIONS.map(async (section) => {
+      const aliases = new Map<string, string>();
+      aliasEntries.push([section, aliases]);
       try {
-        const { studies } = await api<{ studies: { id: string; excerpt?: string | null }[] }>(
-          SECTION_URL[section],
-        );
-        for (const s of studies) if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
+        const { studies } = await api<
+          { studies: { id: string; excerpt?: string | null; aliases?: string[] }[] }
+        >(SECTION_URL[section]);
+        for (const s of studies) {
+          if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
+          // First writer wins, matching the server's index: a duplicated
+          // alias must not let the later document steal the earlier one's
+          // links on one side and not the other.
+          for (const name of s.aliases ?? []) {
+            const key = name.toLowerCase();
+            if (!aliases.has(key)) aliases.set(key, s.id);
+          }
+        }
         return [section, studies.map((s) => s.id)] as const;
       } catch {
         return [section, []] as const; // unreachable section — the others still answer
@@ -79,6 +90,7 @@ async function documents(): Promise<Documents> {
   );
   const docs = {
     index: Object.fromEntries(entries) as unknown as LinkIndex,
+    aliases: Object.fromEntries(aliasEntries) as unknown as AliasIndex,
     excerpt,
   };
   cache = { at: Date.now(), docs };
@@ -95,7 +107,8 @@ async function documents(): Promise<Documents> {
  * and neither would report a fault. See shared/wikiLinks.
  */
 async function resolveAndOpen(target: string): Promise<void> {
-  const hit = resolveWikiLink(target, await documentIndex());
+  const docs = await documents();
+  const hit = resolveWikiLink(target, docs.index, docs.aliases);
   if (typeof hit === 'string') {
     // Still only a console warning: an unresolved link looks exactly like a
     // working one in the document, which is a real gap, but the fix belongs
@@ -120,9 +133,9 @@ type LinkState = 'ok' | 'broken' | 'ambiguous' | 'unknown';
 /** Transaction meta saying "the index landed, draw the links again". */
 const RE_INDEX = 'wikiLink:reindex';
 
-function stateOf(target: string, index: LinkIndex | null): LinkState {
-  if (!index) return 'unknown';
-  const hit = resolveWikiLink(target, index);
+function stateOf(target: string, docs: Documents | null): LinkState {
+  if (!docs) return 'unknown';
+  const hit = resolveWikiLink(target, docs.index, docs.aliases);
   return typeof hit === 'string' ? hit : 'ok';
 }
 
@@ -164,7 +177,7 @@ function embedCard(target: string, state: LinkState): HTMLElement {
   const name = document.createElement('span');
   name.className = 'wiki-embed-name';
   const docs = docsNow();
-  const hit = docs ? resolveWikiLink(target, docs.index) : null;
+  const hit = docs ? resolveWikiLink(target, docs.index, docs.aliases) : null;
   const id = hit && typeof hit !== 'string' ? hit.id : target;
   name.textContent = id.split('/').at(-1)!;
   card.append(name);
@@ -205,7 +218,7 @@ function embedCard(target: string, state: LinkState): HTMLElement {
   return card;
 }
 
-function decorate(doc: PmNode, index: LinkIndex | null): DecorationSet {
+function decorate(doc: PmNode, docs: Documents | null): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
@@ -213,7 +226,7 @@ function decorate(doc: PmNode, index: LinkIndex | null): DecorationSet {
       const { target, embed } = parseWikiMatch(match);
       const from = pos + match.index;
       const to = from + match[0].length;
-      const state = stateOf(target, index);
+      const state = stateOf(target, docs);
       const open = from + (embed ? 3 : 2); // past `[[` or `![[`
       decorations.push(
         Decoration.inline(from, to, {
@@ -294,7 +307,7 @@ function syncLinkAffordance(view: EditorView): void {
 
 /** Every id as one list, in resolution order, for the suggester. */
 async function allTargets(): Promise<string[]> {
-  const index = await documentIndex();
+  const index = (await documents()).index;
   return LINK_SECTIONS.flatMap((section) => index[section]);
 }
 
@@ -436,13 +449,13 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
       new Plugin({
         key: new PluginKey('wikiLink'),
         state: {
-          init: (_config, state) => decorate(state.doc, indexNow()),
+          init: (_config, state) => decorate(state.doc, docsNow()),
           // `reindex` is the arrival of the document index. Without it the
           // first paint's decorations — drawn before any fetch could
           // land — would stand until the next keystroke, so a note opened
           // and read without being touched would never show a broken link.
           apply: (tr, old) =>
-            tr.docChanged || tr.getMeta(RE_INDEX) ? decorate(tr.doc, indexNow()) : old,
+            tr.docChanged || tr.getMeta(RE_INDEX) ? decorate(tr.doc, docsNow()) : old,
         },
         view: (view) => {
           syncLinkAffordance(view);
@@ -454,7 +467,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
            * into a destroyed view throws.
            */
           let alive = true;
-          void documentIndex().then(() => {
+          void documents().then(() => {
             if (alive) view.dispatch(view.state.tr.setMeta(RE_INDEX, true));
           });
           return {

@@ -78,6 +78,67 @@ describe('resolveWikiLink', () => {
   });
 });
 
+describe('aliases', () => {
+  const withAliases = (over: Partial<Record<string, [string, string][]>>) => ({
+    notes: new Map(over.notes ?? []),
+    studies: new Map(over.studies ?? []),
+    games: new Map(over.games ?? []),
+  });
+
+  it('resolves a document by a name it chose', () => {
+    const hit = resolveWikiLink(
+      'Najdorf',
+      index({ studies: ['Openings/Sicilian Defence'] }),
+      withAliases({ studies: [['najdorf', 'Openings/Sicilian Defence']] }),
+    );
+    expect(hit).toEqual({ section: 'studies', id: 'Openings/Sicilian Defence' });
+  });
+
+  it('ignores case, as every other match does', () => {
+    const hit = resolveWikiLink(
+      'B90',
+      index({ studies: ['Openings/Najdorf'] }),
+      withAliases({ studies: [['b90', 'Openings/Najdorf']] }),
+    );
+    expect(hit).toEqual({ section: 'studies', id: 'Openings/Najdorf' });
+  });
+
+  it('is beaten by an exact id, even one in a later section', () => {
+    // Somebody typed a real document's full name; that is not a near miss.
+    const hit = resolveWikiLink(
+      'Najdorf',
+      index({ notes: ['Other'], games: ['Najdorf'] }),
+      withAliases({ notes: [['najdorf', 'Other']] }),
+    );
+    expect(hit).toEqual({ section: 'games', id: 'Najdorf' });
+  });
+
+  it('beats a last segment, which is a name nobody chose', () => {
+    const hit = resolveWikiLink(
+      'Najdorf',
+      index({ notes: ['Chosen'], studies: ['openings/Najdorf'] }),
+      withAliases({ notes: [['najdorf', 'Chosen']] }),
+    );
+    expect(hit).toEqual({ section: 'notes', id: 'Chosen' });
+  });
+
+  it('rescues a target that two last segments would have made ambiguous', () => {
+    const hit = resolveWikiLink(
+      'Twin',
+      index({ studies: ['a/Twin', 'b/Twin'] }),
+      withAliases({ notes: [['twin', 'The Real One']] }),
+    );
+    expect(hit).toEqual({ section: 'notes', id: 'The Real One' });
+  });
+
+  it('changes nothing when no document has an alias', () => {
+    expect(resolveWikiLink('Najdorf', index({ notes: ['Najdorf'] }))).toEqual({
+      section: 'notes',
+      id: 'Najdorf',
+    });
+  });
+});
+
 describe('display text and embeds', () => {
   it('resolves a piped link by its target, not its display text', () => {
     const found = findWikiMentions('See [[openings/Najdorf|the sharp one]].');

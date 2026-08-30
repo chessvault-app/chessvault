@@ -5,9 +5,11 @@ import {
   findWikiMentions,
   renameLinksIn,
   resolveWikiLink,
+  type AliasIndex,
   type LinkIndex,
   type LinkSection,
 } from '../shared/wikiLinks.ts';
+import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
 
 /**
  * What points at a document.
@@ -47,6 +49,37 @@ interface Mention {
 type Backlinks = Map<string, Mention[]>;
 
 const keyOf = (section: LinkSection, id: string): string => `${section}:${id}`;
+
+/**
+ * The aliases of every document under `dir`, lowercased -> id.
+ *
+ * Read straight from the files rather than through the listing route: this
+ * module already walks the same directories, and a document whose alias
+ * the index missed would show no backlink for a link that works when
+ * pressed — the exact disagreement the shared resolver exists to prevent.
+ */
+function aliasesIn(dir: string, ext: string, ids: readonly string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const id of ids) {
+    let head: string;
+    try {
+      head = readFileSync(resolve(dir, `${id}${ext}`), 'utf-8').slice(0, 8192);
+    } catch {
+      continue;
+    }
+    const names =
+      ext === '.md'
+        ? readAliases(splitFrontMatter(head).front)
+        : splitAliasList(/^\[Aliases\s+"([^"]*)"\]/m.exec(head)?.[1] ?? '');
+    // First writer wins, so a duplicated alias cannot make the later
+    // document silently steal links from the earlier one.
+    for (const name of names) {
+      const key = name.toLowerCase();
+      if (!map.has(key)) map.set(key, id);
+    }
+  }
+  return map;
+}
 
 /** Ids under `dir` with extension `ext`, in the app's forward-slash form. */
 function idsIn(dir: string, ext: string): string[] {
@@ -175,6 +208,11 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
       studies: idsIn(studiesDir, '.pgn'),
       games: idsIn(gamesDir, '.pgn'),
     };
+    const aliases: AliasIndex = {
+      notes: aliasesIn(notesDir, '.md', index.notes),
+      studies: aliasesIn(studiesDir, '.pgn', index.studies),
+      games: aliasesIn(gamesDir, '.pgn', index.games),
+    };
     const links: Backlinks = new Map();
 
     for (const from of index.notes) {
@@ -185,7 +223,7 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
         continue; // deleted mid-scan
       }
       for (const mention of findWikiMentions(body)) {
-        const hit = resolveWikiLink(mention.target, index);
+        const hit = resolveWikiLink(mention.target, index, aliases);
         // Broken and ambiguous links are dropped here rather than
         // reported. They are worth surfacing -- an unresolved link is
         // currently invisible in the app -- but on the link itself, in the

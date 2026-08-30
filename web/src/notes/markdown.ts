@@ -8,6 +8,7 @@ import {
   type MarkdownSerializerState,
 } from 'prosemirror-markdown';
 import type { Node as PmNode, Schema } from '@tiptap/pm/model';
+import { splitFrontMatter } from '@shared/frontMatter';
 import { ChessBlock } from './ChessBlock';
 import { WikiLink } from './wikiLink';
 
@@ -97,17 +98,13 @@ const parser = new MarkdownParser(noteSchema, md, {
  * it is metadata about the note, not part of what somebody is writing, and
  * a block nobody can edit is better than one that can be half-deleted.
  *
- * The ambiguity with a document that genuinely opens on a horizontal rule
- * is resolved the way every other markdown tool resolves it — in favour of
- * front matter.
+ * Finding the block is `shared/frontMatter`, because the server needs the
+ * same answer to skip metadata when it takes a preview excerpt. It was
+ * written here and there separately and the two disagreed — see that
+ * file's header for the three inputs that proved it, one of which was this
+ * very bug still happening for an empty block.
  */
-const FRONT_MATTER = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
-
-export function splitFrontMatter(markdown: string): { front: string; body: string } {
-  const found = FRONT_MATTER.exec(markdown);
-  if (!found) return { front: '', body: markdown };
-  return { front: found[0], body: markdown.slice(found[0].length) };
-}
+export { splitFrontMatter } from '@shared/frontMatter';
 
 export function markdownToDoc(markdown: string): PmNode {
   return parser.parse(splitFrontMatter(markdown).body);

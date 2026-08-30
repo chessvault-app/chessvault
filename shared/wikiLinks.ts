@@ -64,6 +64,23 @@ export type LinkSection = (typeof LINK_SECTIONS)[number];
 /** Document ids per section, as the resolver needs them. */
 export type LinkIndex = Readonly<Record<LinkSection, readonly string[]>>;
 
+/**
+ * The other names documents answer to, lowercased alias -> id.
+ *
+ * A filename and the way you refer to something in a sentence are
+ * different things: the study is called `Openings/Sicilian Defence —
+ * Najdorf Variation` because that sorts and reads well in a list, and
+ * mid-sentence you write "the Najdorf". Display text solves how it READS;
+ * an alias solves what you have to TYPE.
+ */
+export type AliasIndex = Readonly<Record<LinkSection, ReadonlyMap<string, string>>>;
+
+export const NO_ALIASES: AliasIndex = {
+  notes: new Map(),
+  studies: new Map(),
+  games: new Map(),
+};
+
 export interface ResolvedLink {
   readonly section: LinkSection;
   readonly id: string;
@@ -86,21 +103,34 @@ const tail = (id: string): string => id.split('/').at(-1)!;
  *
  * Returns the document it names, or why it names none.
  */
-export function resolveWikiLink(target: string, index: LinkIndex): ResolvedLink | LinkFailure {
+export function resolveWikiLink(
+  target: string,
+  index: LinkIndex,
+  aliases: AliasIndex = NO_ALIASES,
+): ResolvedLink | LinkFailure {
   const wanted = target.trim().toLowerCase();
   if (!wanted) return 'broken';
 
-  // Ambiguity is only reported if nothing else matched outright. A section
-  // with an exact hit answers even when a later section has two loose
-  // ones, which keeps the answer the same as the order it is searched in.
-  let ambiguous = false;
-
+  // Three passes, not one loop per section. A name is matched as strongly
+  // as it can be ANYWHERE before a weaker match is considered: an exact id
+  // in games beats a loose last-segment match in notes, because the writer
+  // who typed a full id meant it. Within a pass, the section order decides.
   for (const section of LINK_SECTIONS) {
-    const ids = index[section];
-    const exact = ids.find((id) => id.toLowerCase() === wanted);
+    const exact = index[section].find((id) => id.toLowerCase() === wanted);
     if (exact) return { section, id: exact };
+  }
 
-    const tails = ids.filter((id) => tail(id).toLowerCase() === wanted);
+  // An alias is a name its document chose, so it outranks a last segment,
+  // which is a name that merely happens to collide.
+  for (const section of LINK_SECTIONS) {
+    const named = aliases[section].get(wanted);
+    if (named) return { section, id: named };
+  }
+
+  // Ambiguity is only reported if nothing matched outright anywhere.
+  let ambiguous = false;
+  for (const section of LINK_SECTIONS) {
+    const tails = index[section].filter((id) => tail(id).toLowerCase() === wanted);
     if (tails.length === 1) return { section, id: tails[0]! };
     if (tails.length > 1) ambiguous = true;
   }

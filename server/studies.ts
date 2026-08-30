@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { VAULT_STUDIES } from './paths.ts';
+import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
 import { validId } from '../shared/vaultNames.ts';
 import { mainlineEndFen } from '../shared/pgn.ts';
 
@@ -109,22 +110,24 @@ export interface DocPreview {
   excerpt: string | null;
   /** Where the document's first board ends up. */
   fen: string | null;
+  /**
+   * Other names this document answers to, for `[[wiki links]]`.
+   *
+   * Read here rather than in a route of its own because the listing is
+   * already reading each file's head and caching it by mtime — an alias
+   * costs a regex over bytes that are in hand, where a second walk of the
+   * vault would be the same read done twice.
+   */
+  aliases?: string[];
 }
 
-/** Split the head into its front matter (if any) and the body after it. */
-function splitFrontMatter(head: string): { front: string; body: string[] } {
-  const lines = head.split('\n');
-  // Front matter is a BLOCK, not a rule, and only if it opens the file:
-  // skipping just its `---` fences left "tags: endgame" standing there as
-  // the note's first sentence.
-  if (lines[0]?.trim() === '---') {
-    const close = lines.findIndex((line, at) => at > 0 && line.trim() === '---');
-    if (close > 0) {
-      return { front: `${lines.slice(0, close + 1).join('\n')}\n`, body: lines.slice(close + 1) };
-    }
-  }
-  return { front: '', body: lines };
+/** `[Aliases "B90, Najdorf"]`, the PGN answer to front matter. */
+function pgnAliases(head: string): { aliases?: string[] } {
+  const found = /^\[Aliases\s+"([^"]*)"\]/m.exec(head);
+  const list = found ? splitAliasList(found[1]!) : [];
+  return list.length ? { aliases: list } : {};
 }
+
 
 
 /**
@@ -211,8 +214,20 @@ function firstChapterFen(head: string, read: number): string | null {
 
 /** Everything a note's card shows beyond its name, size and time. */
 function readPreview(head: string): DocPreview {
-  const { body } = splitFrontMatter(head);
-  return { excerpt: firstProseLine(body), fen: firstBoardFen(body) };
+  // Front matter is a BLOCK, not a rule, and only if it opens the file:
+  // skipping just its `---` fences left "tags: endgame" standing there as
+  // the note's first sentence. Finding it is shared with the editor, which
+  // takes the same block off before parsing — the two were written
+  // separately and disagreed; see shared/frontMatter for the three inputs
+  // that proved it.
+  const { front, body } = splitFrontMatter(head);
+  const lines = body.split('\n');
+  const aliases = readAliases(front);
+  return {
+    excerpt: firstProseLine(lines),
+    fen: firstBoardFen(lines),
+    ...(aliases.length ? { aliases } : {}),
+  };
 }
 
 /**
@@ -327,7 +342,7 @@ export function studiesApi(
         preview =
           ext === '.md'
             ? readPreview(head)
-            : { excerpt: null, fen: firstChapterFen(head, read) };
+            : { excerpt: null, fen: firstChapterFen(head, read), ...pgnAliases(head) };
       } finally {
         closeSync(fd);
       }

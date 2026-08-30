@@ -15,6 +15,7 @@ import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from '
 import { EditorPalette } from './EditorPalette';
 import { WikiSuggest } from './WikiSuggest';
 import { LinkedMentions } from './LinkedMentions';
+import { AliasEditor } from './AliasEditor';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -108,6 +109,7 @@ export function NoteView({ id }: { id: string }) {
       initialDoc={initialDoc}
       loaded={loaded}
       frontMatter={frontMatter}
+      setFrontMatter={setFrontMatter}
       saveState={saveState}
       setSaveState={setSaveState}
       saveTimer={saveTimer}
@@ -123,6 +125,7 @@ function NoteEditor({
   initialDoc,
   loaded,
   frontMatter,
+  setFrontMatter,
   saveState,
   setSaveState,
   saveTimer,
@@ -136,6 +139,8 @@ function NoteEditor({
   loaded: string;
   /** Put back on every write; it is not part of the document. */
   frontMatter: string;
+  /** Editing aliases rewrites one key of it — see AliasEditor. */
+  setFrontMatter: (front: string) => void;
   saveState: SaveState;
   setSaveState: (s: SaveState) => void;
   saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
@@ -389,6 +394,17 @@ function NoteEditor({
         <NoteTitle id={id} />
         {/* What links here, then History, then Edit, then Save — see
             StudyView's header. */}
+        <AliasEditor
+          front={frontMatter}
+          onChange={(next) => {
+            // Both the ref every write reads and the state this prop comes
+            // from: the ref so the save below carries the new block, the
+            // state so reopening the dialog shows what was just set.
+            front.current = next;
+            setFrontMatter(next);
+            if (editor) void save(docToMarkdown(editor.state.doc, next));
+          }}
+        />
         <LinkedMentions section="notes" id={id} />
         <DocumentHistory kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <Button
