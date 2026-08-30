@@ -3,7 +3,7 @@ import { t, getLang } from './i18n.ts';
     OS's. A bare toLocaleString() on a Korean system used to print Korean
     dates through an English UI; pinning it to English fixed that and then
     became wrong the moment the app itself could be Korean. */
-const locale = (): string => (getLang() === 'ko' ? 'ko-KR' : 'en-US');
+export const locale = (): string => (getLang() === 'ko' ? 'ko-KR' : 'en-US');
 
 export function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString(locale(), {
