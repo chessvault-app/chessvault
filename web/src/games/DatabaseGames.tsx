@@ -288,27 +288,23 @@ function CustomMaterialWindow({
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
  *
- * Two shapes, one component, because it is one thing — GameListShell's
- * vocabulary, exactly as the archive browser uses it:
- *
- * `panel` — the second half of the column that finds games, behind the
- * tab beside Online archives. Where it belongs on a desktop: the archive
- * and the reference database answer the same question, so they take turns
- * in one panel rather than each taking a box.
- *
- * `sheet` — below lg, where there is no column. A bottom sheet on a
- * phone, like the archive. (There was a `page` shape on its own route
- * once; nothing ever navigated to it.)
+ * One shape, GameListShell's `panel`: the second half of the column that
+ * finds games, behind the tab beside Online archives. The archive and the
+ * reference database answer the same question, so they take turns in one
+ * panel rather than each taking a box — and GamesBrowser, the only thing
+ * that renders this, is that column at every width. (Two other shapes
+ * were once offered here: a `page` on its own route, which nothing ever
+ * navigated to, and a `sheet` for below lg, which nothing ever asked for
+ * either. GameListShell still has all three for the browsers that do use
+ * them.)
  */
 export function DatabaseGames({
-  shape = 'sheet',
   table = false,
   onSelect,
   selectedKey,
   inPlace = false,
   merged = false,
 }: {
-  shape?: 'panel' | 'sheet';
   /** Dense table rows instead of cards — the wide pane's presentation.
       Explicit, never inferred: the phone sheet stays cards whatever the
       window says. */
@@ -1323,7 +1319,7 @@ export function DatabaseGames({
   return (
     <>
     <GameListShell
-      shape={shape}
+      shape="panel"
       toolbar={
         <div className="flex w-full flex-col gap-2">
           {/* At table density this one WRAPPING row is the whole chrome:
@@ -1411,13 +1407,7 @@ export function DatabaseGames({
       // second list above them. A hunt streams rows in as it scans, so
       // it never shows the skeleton at all.
       listLoading={!inHunt && searching}
-      // In a sheet the card scrolls below sm and the list scrolls from sm
-      // up, exactly like the archive in the same window.
-      listClassName={
-        shape === 'sheet'
-          ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto'
-          : 'flex-1 overflow-y-auto'
-      }
+      listClassName="flex-1 overflow-y-auto"
       more={
         // "more", not "older": this list is in insertion order (id DESC),
         // which is no promise about dates. A hunt has no pages: the scan
