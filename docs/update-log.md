@@ -35,8 +35,12 @@ installer. This section becomes the next version's heading.
   be read at all, and a printed number does that better than a marker to
   measure the split against. The wider bar costs each
   board 16px of width, and costs it on every page that reserves the bar's
-  lane, so no board changes size against another. The phone's bar — the one
-  that lies along the top of the board instead of beside it — prints the
+  lane, so no board changes size against another. A tablet held upright now
+  gets the bar beside the board as well: the page still stacks its panels
+  below, but the board there is bound by height and had 150px of unused
+  column either side of it, so the bar stands in that margin and the board
+  neither shrinks nor moves when the engine is switched on. Narrower than
+  that — a phone — the bar still lies along the top of the board, prints the
   same number at the leading end, and grew from 12px to 20px tall to hold
   it, out of the empty half of a row it was already sitting in rather than
   out of the board. The repertoire's assessment keeps the bar it had: the

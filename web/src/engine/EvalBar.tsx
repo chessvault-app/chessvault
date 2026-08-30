@@ -48,9 +48,10 @@ const EVAL_BAR_H = { withScore: 'h-5', bare: 'h-3' };
  * The room the bar takes, kept open whether or not there is a bar in it —
  * one of these per axis, because the bar changes sides with the layout.
  *
- * `EvalBarSlot` is its WIDTH, beside the board, and exists only at `wide`;
- * stacked, the bar takes the player's row instead (EvalBarRow below), so
- * there is nothing to reserve.
+ * `EvalBarSlot` is its WIDTH, beside the board, and exists wherever the bar
+ * stands beside the board — `wide`, and `roomy`, which is a tablet upright.
+ * Narrower than that the bar takes the player's row instead (EvalBarRow
+ * below), so there is nothing to reserve.
  *
  * Both exist because the bar shares the board's box rather than floating
  * over it: the bar's width and 8px of gap come out of whatever axis it sits
@@ -59,12 +60,14 @@ const EVAL_BAR_H = { withScore: 'h-5', bare: 'h-3' };
  * same board — the engine being switched on, or a trainer handing its board
  * to AnalysisBoard when the puzzle ends. Reserved, nothing moves either way.
  *
- * The reservation is a `wide` idea for the same reason the bar is: it buys
- * a board that does not resize when the engine is switched, and it costs
- * 36px of width, which only the wide layout has to spend.
+ * The reservation goes wherever the bar does, for the same reason the bar
+ * does: it buys a board that does not resize when the engine is switched.
+ * At `wide` it costs 36px of the board's width; at `roomy` it costs
+ * nothing, because there the 36px is added to the board's budget out of a
+ * column that had it spare (boardSize.ts).
  */
 export function EvalBarSlot() {
-  return <div className={cn('hidden shrink-0 wide:block', EVAL_BAR_W)} aria-hidden />;
+  return <div className={cn('hidden shrink-0 wide:block roomy:block', EVAL_BAR_W)} aria-hidden />;
 }
 
 /**
@@ -116,12 +119,13 @@ export function useEvalScore(fen: string): { cp?: number; mate?: number } | null
 }
 
 /**
- * Where the bar goes when the board is stacked: along the top edge, in the
- * row the player's name occupies, and only while the engine is on.
+ * Where the bar goes when the board is stacked and NARROW: along the top
+ * edge, in the row the player's name occupies, and only while the engine is
+ * on. A stacked tablet is `roomy` instead and gets the bar beside the board
+ * like `wide` — this row is the phone's arrangement, and hides there.
  *
- * Beside the board is a `wide` idea — there the column has width to spare.
- * On a phone the board IS the page, and 20px off its width is 20px off all
- * eight files. Under the board was the first answer to that and it was
+ * Beside the board needs a column with width to spare. On a phone the board
+ * IS the page, and 36px off its width is 36px off all eight files. Under the board was the first answer to that and it was
  * worse: the row had to be held open whether or not the engine was on, or
  * the panels moved when it was switched, and a permanently empty strip
  * between the board and the name under it is exactly the space a phone has
@@ -150,7 +154,7 @@ export function EvalBarRow({ fen }: { fen: string }) {
     // (6px of row plus the block's gap-2); against the bottom it is the
     // gap-2 alone. The row keeps its height, so nothing else moves —
     // lanph3re asked for the gap under the bar, not the one over it.
-    <div className="flex h-6 w-full items-end wide:hidden">
+    <div className="flex h-6 w-full items-end wide:hidden roomy:hidden">
       {/* `board-box`: the bar is the board's, and now that its ends carry
           the number they have to BE the board's ends — the box below is up
           to a square-quantum narrower than the column and centres in what

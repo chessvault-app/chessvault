@@ -304,7 +304,12 @@ export function AnalysisBoard({
                 ? 'w-full items-start wide:flex wide:h-auto'
                 : 'w-full items-end wide:flex wide:h-10',
               hasNames ? 'flex' : 'hidden wide:flex',
+              // The names go when the bar takes their row, and come back
+              // where it does not: at `roomy` the bar is beside the board,
+              // so the row is the names' again. `roomy` is declared after
+              // `stacked` in index.css, which is what makes this win.
               engineOn && 'stacked:hidden',
+              engineOn && hasNames && 'roomy:flex',
             )}
           >
             <BoardLane>
@@ -319,13 +324,13 @@ export function AnalysisBoard({
           {/* The eval bar sits beside the board in every layout (lanph3re's
               call): on phones it costs a sliver of board width but stays a
               persistent eval readout even when the Engine tab isn't open. */}
-          {/* Beside the board at `wide` only — see EvalBarSlot. The bar
+          {/* Beside the board at `wide` and `roomy` — see EvalBarSlot. The bar
               is drawn when the engine is on and its width held open when it
               is not: rendered conditionally, it took the row's gap-2 with it
               when it went, so switching the engine on stole 20px from the
               board and stepped the whole thing sideways under the thumb. */}
           {engineOn ? (
-            <EvalBar score={evalScore} className="shrink-0 stacked:hidden" />
+            <EvalBar score={evalScore} className="hidden shrink-0 wide:block roomy:block" />
           ) : (
             <EvalBarSlot />
           )}
@@ -357,7 +362,12 @@ export function AnalysisBoard({
         {/* The name under the board goes when the one above it does, and the
             panels below get the row back — a phone has better uses for it
             than two placeholders either side of an engine's opinion. */}
-        <BoardLane className={engineOn || !hasNames ? 'stacked:hidden' : undefined}>
+        <BoardLane
+          className={cn(
+            (engineOn || !hasNames) && 'stacked:hidden',
+            hasNames && 'roomy:flex',
+          )}
+        >
           <PlayerBar side={orientation} editable={editablePlayers} />
         </BoardLane>
       </div>
