@@ -69,6 +69,7 @@ import {
 } from './data';
 import { useWideLayout } from '@/lib/media';
 import { EvidencePeek } from './evidence';
+import { outcomeTone } from '../outcome';
 import { PuzzleGrid } from './PuzzleList';
 
 // ---------------------------------------------------------------------------
@@ -625,8 +626,16 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         fixed. */}
     <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
       <div className="flex flex-col gap-0.5">
+        {/* Three sentences, so three tones. This branched on `won` alone,
+            which painted "Solved with help" the same red as "Not solved"
+            — and the other trainer calls the same thing amber. */}
         {phase === 'done' ? (
-          <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-destructive')}>
+          <p
+            className={cn(
+              'text-base font-semibold',
+              outcomeTone(won ? 'solved' : helped ? 'helped' : 'missed'),
+            )}
+          >
             {won ? t('Solved') : helped ? t('Solved with help') : t('Not solved')}
           </p>
         ) : (

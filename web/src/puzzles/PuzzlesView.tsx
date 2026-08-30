@@ -35,6 +35,7 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
 import { SquareBadge } from '@/board/square-overlay';
+import { outcomeTone } from './outcome';
 import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { navigate } from '@/lib/router';
@@ -769,8 +770,9 @@ function Trainer({
               'text-base font-semibold',
               // Green for a clean solve, amber for one that took a
               // second go — it was still found — and red only where
-              // the answer was handed over.
-              revealed ? 'text-destructive' : failed ? 'text-warn' : 'text-good',
+              // the answer was handed over. Shared with the book
+              // trainer, which had the middle case painted as failure.
+              outcomeTone(revealed ? 'missed' : failed ? 'helped' : 'solved'),
             )}
           >
             {revealed
