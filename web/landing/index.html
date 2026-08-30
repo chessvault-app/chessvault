@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Chess Vault — your chess, in plain files</title>
+    <!-- data-ko here too: the script swaps <title> like any other node, so a
+         Korean reader gets a Korean tab and bookmark. The og: and description
+         meta stay English on purpose — a scraper reads the static file and
+         never runs the script, so there is exactly one shot at those. -->
+    <title data-ko="Chess Vault — 당신의 체스를, 평범한 파일로">Chess Vault — your chess, in plain files</title>
     <meta
       name="description"
       content="A private, self-hosted chess workbench: engine analysis, opening explorer, studies, notes, a game collection and a puzzle trainer — all stored as PGN, markdown and JSON in one folder you own."
@@ -315,6 +319,21 @@
          and have to stay that way — a made-up path here is a promise the
          app does not keep. */
       .vault {
+        /* margin: 0 IS THE FIX, not a tidy-up. This is a <figure>, and the
+           UA sheet gives every figure `margin: 1em 40px` — 80px of inline
+           margin nobody asked for, which on a 360px phone is 22% of the
+           screen taken off the one element whose whole job is to be read.
+           It is why the glosses used to wrap: the listing had 248px to lay
+           out in where the column offered 328. `.plate figure` already set
+           this; the vault was missed. With it, wrapping at 360px goes from
+           four rows of six to none, and at 320px from six to one.
+
+           A container, so the rule below asks how wide the LISTING is and
+           not how wide the window is. Those differ: past 56rem the vault
+           moves into a 0.95fr column of the opening grid, so the viewport
+           stops predicting its width. */
+        margin: 0;
+        container-type: inline-size;
         background: var(--muted); box-shadow: 0 0 0 1px var(--hairline);
         border-radius: var(--radius-xl); padding: var(--s4) var(--s5) var(--s5);
       }
@@ -328,6 +347,22 @@
       .vault .path .tick { color: var(--muted-foreground); }
       .vault .gloss { font-size: var(--t-sm); color: var(--muted-foreground); text-align: right; }
       .vault figcaption { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--hairline); font-size: var(--t-sm); color: var(--muted-foreground); }
+      /* ALL SIX ROWS STACK, OR NONE DO. The two-column row is a nice shape
+         while both halves fit on one line, and the wrap is per-row, so at
+         the widths in between the listing became a mix — path and gloss
+         facing each other on some rows, the gloss dropped to a second line
+         and still right-aligned on others, pointing at nothing. One odd row
+         out of six reads as breakage; six stacked rows read as a list.
+
+         18.75rem is measured, not chosen: sweeping the listing's width in
+         10px steps, all six rows fit on one line at 300px and the first
+         one breaks at 290. Below that they all stack, and the gloss goes
+         left under its path, indented by the width of the "|- " tick so it
+         hangs off the name rather than the margin. */
+      @container (width < 18.75rem) {
+        .vault li { display: block; padding-block: 0.35rem; }
+        .vault .gloss { display: block; text-align: left; padding-left: 1rem; }
+      }
 
       /* Screenshots are shown in both themes: a `<picture>` picks the dark
          capture under the same media query that picks the dark tokens, so
@@ -471,15 +506,26 @@
       .dl-row h3 { margin: 0 0 var(--s1); font-size: var(--t-base); font-weight: 600; }
       .dl-row p { margin: 0 0 var(--s4); color: var(--muted-foreground); font-size: var(--t-md); max-width: 62ch; }
       .dl-row pre { max-width: 34rem; }
-      /* One row, never wrapped. The three share the width equally and
-         shrink together, so the column cannot be narrow enough to break the
-         line. */
-      .os-row { display: flex; flex-wrap: nowrap; gap: var(--s2); max-width: 27rem; }
+      /* One row at every width a phone actually has — 232px of buttons in
+         the 248px this column offers at 320px, and they still fit at 280.
+         But that margin was the whole safety net: `nowrap` plus
+         `min-width: 0` meant the row could not wrap, so the first label
+         that did not fit would have run out through the side of its own
+         button rather than moving to a second line. A clamp floor was
+         holding that off, and a clamp floor is not a guarantee — one
+         longer word, one wider fallback font, and it goes.
+
+         So the row keeps its single line by fitting, not by being
+         forbidden to wrap: `min-width: fit-content` stops a button
+         shrinking below its own label, and `wrap` is what happens instead
+         when three of them genuinely cannot fit. Measured after: still one
+         row at 280, 320 and 390. */
+      .os-row { display: flex; flex-wrap: wrap; gap: var(--s2); max-width: 27rem; }
       .btn.os {
         /* Basis auto, not 0: forcing three equal widths gave "Windows" the
            same share as "Linux", so the longest label overflowed while the
            shortest had slack. */
-        flex: 1 1 auto; min-width: 0; justify-content: center;
+        flex: 1 1 auto; min-width: fit-content; justify-content: center;
         gap: 0.35rem; padding-inline: var(--s2);
         /* Shrinks with the viewport so the row never has to wrap. */
         font-size: clamp(0.72rem, 0.636rem + 0.41vw, var(--t-md));
@@ -502,7 +548,16 @@
 
       footer { border-top: 1px solid var(--border); padding-block: var(--s6) var(--s7); color: var(--muted-foreground); font-size: var(--t-md); }
       footer p { margin: 0 0 var(--s2); }
-      footer a { text-decoration: none; }
+      /* inline-block AND padding, because neither alone does it: an inline
+         link's box is the font's em box, so "Docs" was a 31x16 target no
+         matter what padding-block it carried — padding on an inline element
+         does not grow the line box, it just spills over the lines above and
+         below. inline-block gives it the line-height as a real height, and
+         then the padding is what clears 24. WCAG 2.5.8's exception for
+         links inside a sentence is arguable here and not worth arguing:
+         this is a row of three links separated by middots, and on a phone
+         it was genuinely fiddly. */
+      footer a { text-decoration: none; display: inline-block; padding-block: 0.15rem; }
       footer a:hover { text-decoration: underline; color: var(--foreground); }
     </style>
   </head>
@@ -629,6 +684,7 @@
             height="993"
             fetchpriority="high"
             alt="The analysis board with the engine and opening explorer"
+            data-ko-alt="엔진과 오프닝 탐색기를 함께 띄운 분석 보드"
           />
         </picture>
       </div>
@@ -713,6 +769,7 @@
                     loading="lazy"
                     decoding="async"
                     alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
+                    data-ko-alt="오프닝 맵: 백 레퍼토리를 수의 성좌로 펼친 화면. 각 점은 오프닝 카탈로그가 이름을 붙이고, 실제 채택 빈도만큼 커집니다"
                   />
                 </picture>
               </figure>
@@ -741,6 +798,7 @@
                     loading="lazy"
                     decoding="async"
                     alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
+                    data-ko-alt="수 하나의 패널: 포지션, 카탈로그가 붙인 이름, 연결된 스터디가 준비하는 깊이, 그리고 태그된 스터디와 노트"
                   />
                 </picture>
               </figure>
@@ -768,6 +826,7 @@
                     loading="lazy"
                     decoding="async"
                     alt="The Games page's Databases tab: a query box, filters, and a table of reference games beside the details panel"
+                    data-ko-alt="기보 페이지의 데이터베이스 탭: 질의 입력란과 필터, 그리고 상세 패널 옆의 참고 기보 표"
                   />
                 </picture>
               </figure>
@@ -798,6 +857,7 @@
                     loading="lazy"
                     decoding="async"
                     alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
+                    data-ko-alt="노트: 마크다운 제목, 본문에 삽입된 대화형 보드, 그리고 다른 문서로 이어지는 위키 링크"
                   />
                 </picture>
               </figure>
@@ -825,6 +885,7 @@
                     loading="lazy"
                     decoding="async"
                     alt="The same game collection at phone width, with the bottom bar the app uses there"
+                    data-ko-alt="같은 기보 모음을 휴대폰 너비에서 본 화면, 앱이 그 크기에서 쓰는 하단 바와 함께"
                   />
                 </picture>
               </figure>
@@ -973,9 +1034,25 @@ CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
         nodes.forEach(function (node) {
           english.push(node.innerHTML);
         });
+        // ALT TEXT IS TRANSLATED TOO, and it is a separate list because it
+        // lives in an attribute rather than in the element's content. It
+        // was the one part of this page that stayed English while
+        // documentElement.lang said "ko" — so a Korean screen-reader user
+        // got six English sentences announced inside a document claiming to
+        // be Korean, which is worse than not declaring the language at all.
+        // These alts are descriptions, not decoration; they carry what the
+        // screenshot shows.
+        var alts = document.querySelectorAll('[data-ko-alt]');
+        var englishAlts = [];
+        alts.forEach(function (node) {
+          englishAlts.push(node.getAttribute('alt') || '');
+        });
         function apply(lang) {
           nodes.forEach(function (node, i) {
             node.innerHTML = lang === 'ko' ? node.getAttribute('data-ko') : english[i];
+          });
+          alts.forEach(function (node, i) {
+            node.setAttribute('alt', lang === 'ko' ? node.getAttribute('data-ko-alt') : englishAlts[i]);
           });
           document.documentElement.lang = lang;
           document.querySelectorAll('.lang button').forEach(function (button) {
