@@ -797,9 +797,12 @@
                 The <strong>player bars</strong> on either side show names, ratings and clocks
                 (when the PGN carries them). On the Board page the name fields are editable.
               </li>
-              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점이고, 가운데 빨간 눈금이 균형입니다.">
+              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점이고, 가운데 빨간 눈금이 균형입니다. 앞선 쪽 끝에 점수가 소수 첫째 자리까지 인쇄되며(마트는 <code>#4</code>), 부호는 막대 위치가 대신 말해 줍니다. 부호가 붙은 자세한 값은 막대에 마우스를 올리면 나옵니다.">
                 The <strong>evaluation bar</strong> is drawn beside the board while the engine is
-                on — always from White's point of view, a red midline marking equality.
+                on — always from White's point of view, a red midline marking equality. The score
+                is printed to one decimal at the leading side's end of it (<code>#4</code> for a
+                mate); the sign is left to that placement, and the tooltip carries the signed,
+                more precise figure.
               </li>
               <li data-ko="현재 수가 품질 기호를 달고 있으면 도착 칸에 색 배지가 붙습니다: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code> — 그리고 북 무브에는 펼친 책 기호.">
                 When the current move carries a quality glyph, a coloured badge pins to its

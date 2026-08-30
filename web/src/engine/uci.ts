@@ -133,6 +133,24 @@ export function formatScore(score: { cp?: number; mate?: number }): string {
 }
 
 /**
+ * The same score as the eval bar prints INSIDE itself: magnitude only, to
+ * one decimal, e.g. `0.4`, `12.3`, `#4`.
+ *
+ * Unsigned because the number is drawn at the leading side's end of the bar
+ * and in that side's colour, so a sign would say a third time what the
+ * position and the colour already say — and the bar is 28px wide, which is
+ * four monospace digits and no more. Past 100 pawns the decimal is noise
+ * and the string outgrows the bar, so it rounds. `formatScore` above stays
+ * the signed, two-decimal form the bar's label and tooltip carry.
+ */
+export function formatScoreCompact(score: { cp?: number; mate?: number }): string {
+  if (score.mate !== undefined) return `#${Math.abs(score.mate)}`;
+  if (score.cp === undefined) return '';
+  const pawns = Math.abs(score.cp) / 100;
+  return pawns >= 100 ? String(Math.round(pawns)) : pawns.toFixed(1);
+}
+
+/**
  * Map a score to a 0..1 White-advantage fraction for the eval bar.
  *
  * Uses a logistic curve rather than a linear clamp: the difference between +1

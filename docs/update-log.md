@@ -10,6 +10,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The evaluation bar prints its number.** It was a gauge and nothing
+  else: a position was "about half white", and the score itself lived in
+  the engine panel, which is not where you are looking while you play
+  through a game. It is now square-cornered rather than a pill, 28px wide
+  instead of 12, and prints the score to one decimal at the leading side's
+  end of it in that side's own colour — unsigned, because where the number
+  sits and what colour it is already say whose advantage it is. Its tooltip
+  still carries the signed, two-decimal figure. The wider bar costs each
+  board 16px of width, and costs it on every page that reserves the bar's
+  lane, so no board changes size against another.
+
 - **And every piece set shows its knight.** The same problem one row
   down, with the same fix: ten set names, and no way to tell Fantasy from
   Celtic without wearing each of them for a moment. Each row now carries

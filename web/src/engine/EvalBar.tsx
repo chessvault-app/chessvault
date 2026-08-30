@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useEngine } from '@/store/engine';
-import { formatScore, toWhitePov, winningChances } from './uci.ts';
+import { formatScore, formatScoreCompact, toWhitePov, winningChances } from './uci.ts';
 
 interface EvalBarProps {
   /** Score from White's point of view, or null when there is no evaluation. */
@@ -12,6 +12,17 @@ interface EvalBarProps {
 }
 
 /**
+ * The vertical bar's width, and the width `EvalBarSlot` holds open for it —
+ * ONE constant, because a reservation that disagrees with the bar moves the
+ * board by the difference the moment the engine is switched on.
+ *
+ * 28px is what the readout needs: four monospace digits at 10px inside the
+ * 1px border ("12.3"), which is every score the bar prints short of a
+ * hundred pawns. It was 12px while the bar was a gauge and nothing else.
+ */
+const EVAL_BAR_W = 'w-7';
+
+/**
  * The room the bar takes, kept open whether or not there is a bar in it —
  * one of these per axis, because the bar changes sides with the layout.
  *
@@ -20,18 +31,18 @@ interface EvalBarProps {
  * there is nothing to reserve.
  *
  * Both exist because the bar shares the board's box rather than floating
- * over it: 12px of bar and 8px of gap come out of whatever axis it sits on,
- * so a board drawn without the reservation is 20px bigger than the same
+ * over it: the bar's width and 8px of gap come out of whatever axis it sits
+ * on, so a board drawn without the reservation is 36px bigger than the same
  * board drawn with it, and the difference shows the moment the two are the
  * same board — the engine being switched on, or a trainer handing its board
  * to AnalysisBoard when the puzzle ends. Reserved, nothing moves either way.
  *
  * The reservation is a `wide` idea for the same reason the bar is: it buys
  * a board that does not resize when the engine is switched, and it costs
- * 20px of width, which only the wide layout has to spend.
+ * 36px of width, which only the wide layout has to spend.
  */
 export function EvalBarSlot() {
-  return <div className="hidden w-3 shrink-0 wide:block" aria-hidden />;
+  return <div className={cn('hidden shrink-0 wide:block', EVAL_BAR_W)} aria-hidden />;
 }
 
 /**
@@ -101,14 +112,23 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
   const fraction = score ? winningChances(score) : 0.5;
   const percent = `${(fraction * 100).toFixed(1)}%`;
   const label = score ? formatScore(score) : '—';
+  // Which end of the bar the readout sits at, and therefore which of the two
+  // halves it is printed on. At or above the midpoint the White block is at
+  // least half the bar, so the bottom is inside it; below, the Black block
+  // holds the top by the same arithmetic. No score, nothing to print.
+  const readout = score && orientation === 'vertical' ? formatScoreCompact(score) : '';
+  const whiteAhead = fraction >= 0.5;
 
   return (
     <div
       className={cn(
         // The explicit border keeps the dark half readable against a dark
         // panel background (and the light half against a light one).
+        // Square, not the pill it was (lanph3re's call): the ends are
+        // where the number is printed, and `rounded-full` on a 28px bar is
+        // a 14px radius — the whole of the row the digits sit in.
         'bg-eval-black border-eval-border relative overflow-hidden border',
-        orientation === 'vertical' ? 'h-full w-3 rounded-full' : 'h-3 w-full rounded-full',
+        orientation === 'vertical' ? cn('h-full', EVAL_BAR_W) : 'h-3 w-full',
         className,
       )}
       role="meter"
@@ -140,6 +160,22 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
             : 'bottom-0 top-0 left-1/2 w-[3px] -translate-x-1/2',
         )}
       />
+      {/* The score itself, at the leading side's end and in that side's
+          own text colour — the same pairing the result bars use. Drawn
+          last so it sits over both halves and the midline; unsigned,
+          because where it is and what colour it is already say whose
+          advantage it is (formatScoreCompact). */}
+      {readout && (
+        <span
+          className={cn(
+            'absolute inset-x-0 text-center font-mono text-[10px] leading-none tabular-nums',
+            whiteAhead ? 'text-on-eval-white bottom-0.5' : 'text-on-eval-black top-0.5',
+          )}
+          aria-hidden
+        >
+          {readout}
+        </span>
+      )}
     </div>
   );
 }
