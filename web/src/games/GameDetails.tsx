@@ -7,6 +7,7 @@ import {
   MousePointerClick,
   Pin,
   PinOff,
+  X,
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -336,6 +337,7 @@ export function GameDetailsPanel({
   selection,
   pinned,
   onTogglePin,
+  onClose,
   className,
 }: {
   selection: DetailsSelection | null;
@@ -350,6 +352,13 @@ export function GameDetailsPanel({
    */
   pinned?: boolean;
   onTogglePin?: () => void;
+  /**
+   * Drop the selection, and with it this panel — the mouse's way out of
+   * an unpinned column, which otherwise had only Escape and a change of
+   * tab. Shown only while unpinned: pinned, the panel stays whatever the
+   * selection does, so a close there would just be the pin again.
+   */
+  onClose?: () => void;
   className?: string;
 }) {
   return (
@@ -358,18 +367,25 @@ export function GameDetailsPanel({
         title={t('Game')}
         actions={
           onTogglePin && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              active={pinned}
-              onClick={onTogglePin}
-              aria-pressed={pinned}
-              // Button makes `title` the tooltip AND the accessible name of
-              // an icon-only button, so it is not stated twice here.
-              title={pinned ? t('Keeping the panel open') : t('Keep the panel open')}
-            >
-              {pinned ? <Pin className="size-3.5" /> : <PinOff className="size-3.5" />}
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                active={pinned}
+                onClick={onTogglePin}
+                aria-pressed={pinned}
+                // Button makes `title` the tooltip AND the accessible name
+                // of an icon-only button, so it is not stated twice here.
+                title={pinned ? t('Keeping the panel open') : t('Keep the panel open')}
+              >
+                {pinned ? <Pin className="size-3.5" /> : <PinOff className="size-3.5" />}
+              </Button>
+              {!pinned && onClose && (
+                <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={onClose}>
+                  <X className="size-3.5" />
+                </Button>
+              )}
+            </>
           )
         }
       />

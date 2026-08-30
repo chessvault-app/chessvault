@@ -17,8 +17,9 @@ installer. This section becomes the next version's heading.
   that cost 236 pixels of table (790 shown of the 1026 it asks for) to
   keep a column reading "No game selected" on screen. The column now
   carries a switch in its own header: kept open, it holds its place as
-  before; let go, it arrives with the game you select and leaves when you
-  clear it, and the table has every column back — 1174 of 1174, nothing
+  before; let go, it arrives with the game you select and leaves on the ×
+  beside the pin (or on Esc, which clears the selection either way), and
+  the table has every column back — 1174 of 1174, nothing
   behind a scroll. The default follows the window rather than a taste. At
   1680 and wider the panel is free (the table measures 1030 against 1030
   beside it) and stays open as it always has; below that it starts closed.

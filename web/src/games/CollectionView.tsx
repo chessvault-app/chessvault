@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -84,6 +84,12 @@ export function CollectionView() {
   // header and not in a toolbar: unpinned, there is no panel to hold it
   // until a row is clicked, and clicking a row is how it comes back.
   const showDetails = wide && (pinned || selection !== null);
+  // Closing the panel is dropping the SELECTION, and the pane owns that
+  // (its row highlight, and which tab's selection is live) — clearing
+  // only the copy held here would leave the row lit and the panel unable
+  // to come back on a click of the same row. So the close goes through
+  // the pane's own clear, which is the one Escape uses.
+  const clearSelection = useRef<(() => void) | null>(null);
 
   return (
     <PageShell
@@ -115,13 +121,18 @@ export function CollectionView() {
           showDetails && 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,23rem)]',
         )}
       >
-        <GamesBrowser table={wide} onSelect={setSelection} />
+        <GamesBrowser table={wide} onSelect={setSelection} clearRef={clearSelection} />
         {/* The details column exists only where it has a column to
             stand in — mounted by the flag, not hidden by a class, so
             a phone never resolves selections for a panel nobody can
             see. */}
         {showDetails && (
-          <GameDetailsPanel selection={selection} pinned={pinned} onTogglePin={togglePin} />
+          <GameDetailsPanel
+            selection={selection}
+            pinned={pinned}
+            onTogglePin={togglePin}
+            onClose={() => clearSelection.current?.()}
+          />
         )}
       </div>
     </PageShell>

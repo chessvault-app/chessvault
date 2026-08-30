@@ -1,5 +1,12 @@
 import { Bookmark, Pencil, Play, Plus, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+  type ReactNode,
+} from 'react';
 import { cachedCollection, forgetCollection, loadCollection } from './collection';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -94,6 +101,7 @@ export function GamesBrowser({
   table,
   inPlace = false,
   onSelect,
+  clearRef,
   className,
 }: {
   /** Dense table rows instead of cards — the wide presentation.
@@ -109,6 +117,14 @@ export function GamesBrowser({
       when nothing is selected. Re-emitted when what it describes
       changes under it (a rename, a bookmark, a reload). */
   onSelect?: (sel: DetailsSelection | null) => void;
+  /**
+   * Filled with the pane's own way to drop the selection, so a host can
+   * do what Escape does — the Games page's details column closes itself
+   * from its own header, and only this pane knows which tab's selection
+   * is the live one. A ref, and refilled every render, the way
+   * useTableNav's is: it must speak about the rows currently on screen.
+   */
+  clearRef?: MutableRefObject<(() => void) | null>;
   /** Merged onto the pane's Panel — the host owns the box. */
   className?: string;
 }) {
@@ -176,12 +192,18 @@ export function GamesBrowser({
   /** The pane's own width — see MERGED_MIN_PX. */
   const [stripRef, paneW] = useElementWidth();
   const merged = table && paneW >= MERGED_MIN_PX;
-  const setTab = (next: MainTab): void => {
-    heldTab = next;
-    setTabState(next);
+  /** Every tab's selection at once: only one is live, and a tab change
+      is the other thing that drops them all. */
+  const clearSelection = (): void => {
     setColSelKey(null);
     setDbSel(null);
     setArchSel(null);
+  };
+  if (clearRef) clearRef.current = clearSelection;
+  const setTab = (next: MainTab): void => {
+    heldTab = next;
+    setTabState(next);
+    clearSelection();
   };
 
   // A write invalidates, so `load` always goes to the server; the cached
