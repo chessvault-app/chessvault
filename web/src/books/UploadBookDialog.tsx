@@ -21,7 +21,7 @@ import { fileSize } from './BooksPage';
  * importer's: one dashed box to choose or drop the PDF into, then what
  * was picked shown back before anything is uploaded: its first page, a
  * title to keep or change, its page count and size. Nothing leaves the
- * machine until "Add to library"; a wrong file is one Cancel away.
+ * machine until "Import"; a wrong file is one Cancel away.
  *
  * Opened with a file already in hand (a PDF dropped on the shelf) it
  * skips straight to the confirmation.
@@ -116,7 +116,7 @@ export function UploadBookDialog({
         if (!open && progress === null) onClose();
       }}
     >
-      <DialogContent title={replace ? t('Replace PDF') : t('Add a book')} icon={Upload}>
+      <DialogContent title={replace ? t('Replace PDF') : t('Import a book')} icon={Upload}>
         {!file ? (
           <label
             {...drop.handlers}
@@ -227,7 +227,7 @@ export function UploadBookDialog({
             disabled={!file || !looked || progress !== null}
             onClick={() => void upload()}
           >
-            {replace ? t('Replace PDF') : t('Add to library')}
+            {replace ? t('Replace PDF') : t('Import')}
           </Button>
         </div>
       </DialogContent>

@@ -126,7 +126,15 @@ Durable constraints future work must preserve:
 
 Terminology used consistently by the product and its docs: *vault*,
 *study*, *note*, *collection*, *reference database*, *field*, *band*
-(difficulty), *fidelity tier*, *draft*, *repertoire map*.
+(difficulty), *fidelity tier*, *draft*, *repertoire map*, *import*.
+
+*Import* is the verb for bringing outside material in — a PDF, a PGN, a
+Lichess or Chess.com account — and it is in this list because it had
+drifted into three words for one act: the library said "Upload PDF",
+its dialog said "Add a book" and then "Add to library", while the puzzle
+shelf and every document in the repository said import. Upload is what
+the network does and is fine in a progress line; import is what the user
+did.
 
 ## Brand Commitments
 

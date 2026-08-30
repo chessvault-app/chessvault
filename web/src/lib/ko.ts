@@ -1707,6 +1707,7 @@ export const ko: Record<string, string> = {
   'Back to Books': '책 목록으로',
   'Carry on reading': '이어서 읽기',
   'Upload PDF': 'PDF 올리기',
+  'Import a PDF': 'PDF 가져오기',
   'Replace PDF': 'PDF 바꾸기',
   'Replace PDF…': 'PDF 바꾸기…',
   'Remove from library': '서재에서 제거',
@@ -1721,7 +1722,7 @@ export const ko: Record<string, string> = {
   'No bookmarked book matches it. Clearing the search shows every bookmark again.':
     '검색어와 맞는 즐겨찾기 책이 없습니다. 검색을 지우면 즐겨찾기 전체가 다시 보입니다.',
   'No books yet': '아직 책이 없습니다',
-  'Upload a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too.':
+  'Import a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too.':
     '체스 책을 PDF로 올리면 여기서 체스판 옆에 두고 읽을 수 있고, 인쇄된 다이어그램은 한 번의 탭으로 판에 놓입니다. 퍼즐 서가에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
   '{n} pages': '{n}쪽',
   'Page {page} of {pages}': '{pages}쪽 중 {page}쪽',

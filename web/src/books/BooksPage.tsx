@@ -337,7 +337,7 @@ export function BooksPage() {
               </Button>
               <CreateControl
                 actions={[
-                  { label: 'Upload PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
+                  { label: 'Import a PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
                   { label: 'New collection', icon: FolderIcon, onSelect: () => setNewFolder(true) },
                 ]}
               />
@@ -366,11 +366,11 @@ export function BooksPage() {
             className={cn(drop.dragging && 'ring-primary ring-2')}
             icon={BookText}
             title="No books yet"
-            body="Upload a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too."
+            body="Import a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too."
             action={
               <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
                 <Upload className="size-3.5" data-icon="inline-start" />
-                {t('Upload PDF')}
+                {t('Import a PDF')}
               </Button>
             }
           />
