@@ -4,11 +4,26 @@
 [Round "2"]
 [White "Bex, N"]
 [Black "Ueda, K"]
-[Result "0-1"]
+[Result "1-0"]
 [WhiteElo "2818"]
 [BlackElo "2963"]
-[ECO "E85"]
-[Opening "King's Indian Defense: Sämisch Variation, Orthodox Variation"]
+[ECO "E06"]
+[Opening "Catalan Opening: Closed"]
+[TimeControl "5400+30"]
 
-{King's Indian Defense: Sämisch Variation, Orthodox Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. d4 Nf6 2. c4 g6 3. f3 Bg7 4. e4 d6 5. Nc3 O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Be3 e5 7. Nge2 Nh5 8. g4 ! Nf4 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... exd4 Rb1 dxc3 {was the alternative — playable, but it hands over the initiative.}) 9. Nxf4 exf4 10. Bxf4 Nc6 11. d5 Ne5 ?! 12. Be2 f5 13. exf5 gxf5 14. g5 Ng6 15. Qd2 Qe7 16. Kf2 Bd7 17. Rae1 Rae8 18. Bd1 Qf7 19. Rxe8 Rxe8 20. h4 Qe7 21. Be3 f4 22. Bd4 Ne5 23. b3 Bf5 24. Bc2 Bxc2 25. Qxc2 Ng4+ 26. fxg4 Bxd4+ 27. Kg2 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook. The king walk is the one worked out in [[Endgames/Pawn endings - opposition]].} Bxc3 0-1
+1. Nf3 Nf6 2. c4 e6 3. d4 Be7 4. g3 d5 5. Bg2 c6 6. b3 a5
+{The king walk is the one worked out in [[Endgames/Pawn endings - opposition]].} 7. O-O b5
+8. c5 Ne4 9. Ne5 O-O 10. f3 Nf6 11. Nd3 b4 12. a3 bxa3 13. Nxa3 Nbd7
+{The kind of move that looks like a waiting move and is the whole idea: every enemy piece now has one square fewer.}
+14. Nc2 Ba6 15. Nce1 Bb5 16. Rf2 Re8 17. Bb2 h5 18. e3 h4 19. g4 Nh7 20. f4 Nhf6 21. g5
+Ne4 22. Rf3 Nf8 23. Rh3 Ng6 24. Nf3 Bxd3 25. Qxd3 f6 26. Nd2 f5 27. Qc2 Qc7 28. Ba3 Rab8
+29. Nf3 Rb7 30. Nxh4 Nxh4 31. Rxh4 Qb8 32. Bxe4 dxe4 33. b4 axb4 34. Bb2 Ra7 35. Rxa7 Qxa7
+36. Qc4 Bd8 37. Rh3 b3 38. Qxb3 Qf7 39. Bc3 Re7 40. Qb8 Re8 41. Qb2 Re7 42. Qf2 Re8 43.
+Qf1 Be7 44. Qa6 Rb8 45. Qxc6 Rb1+ 46. Kf2 Rc1 47. Bd2 Rc2 48. Ke1 Bf8 49. Qa4 Rb2 50. Bc3
+Rb7 51. Qc4 Rb8 52. Kf2 Re8 53. Kg2 Rc8 54. Rg3 Qd7 55. Kh1 Be7 56. Rg1 Ra8 57. c6 Qd5 58.
+Qxd5 exd5 59. Ra1 Rc8 60. Ra6 Kf7 61. Ba5 Kg6 62. c7+ Kh5 63. Kg2 Bf8 64. Re6 Kg4 65. h3+
+Kh5 66. Re5 Bd6 67. Rxd5 Bxc7 68. Rc5 Ra8 69. Bxc7 Ra2+ 70. Kg3 Re2 71. Rxf5 Rxe3+ 72. Kf2
+Rc3 73. Be5 Kg6 74. Rf8 Rxh3 75. d5 Rd3 76. d6 Kh5 77. Ke2 g6 78. Rg8 Kh4 79. Rxg6 Kg4 80.
+Rf6 Rb3 81. g6 Rb7 82. Rf8 Ra7 83. g7 Ra2+ 84. Ke1 Kf3 85. g8=Q Re2+ 86. Kd1 Re3 87. Qe6
+Kg2 88. Rg8+ Rg3 89. Ke2 Rxg8 90. Qxg8+ Kh3 91. d7 Kh2 92. Qg7 Kh3 93. d8=Q e3 94. Qdh8#
+1-0

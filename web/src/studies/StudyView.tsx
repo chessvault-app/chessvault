@@ -314,10 +314,13 @@ export function StudyView({
         {titleRow('stacked:hidden')}
 
         <PaneTabs className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
+        {/* The hiding goes on the panel itself. A `contents` wrapper around
+            it did the same job, but a box that generates no box of its own
+            cannot be moved — and the swipe that turns these panes moves
+            the column's children (hooks/use-pane-swipe), so Chapters was
+            the one pane in the app that swapped without sliding. */}
         {kind === 'study' && (
-          <div className={cn('contents', pane !== 'chapters' && 'max-lg:hidden')}>
-            <ChaptersPanel />
-          </div>
+          <ChaptersPanel className={cn(pane !== 'chapters' && 'max-lg:hidden')} />
         )}
         {/* Desktop keeps a floor and scrolls the column; phones drop it so
             the panel fills the slot and the move table scrolls inside. */}
@@ -496,7 +499,7 @@ function TitleEditor({
   );
 }
 
-function ChaptersPanel() {
+function ChaptersPanel({ className }: { className?: string }) {
   const chapters = useStudy((s) => s.chapters);
   const addChapter = useStudy((s) => s.addChapter);
   const [renaming, setRenaming] = useState<number | null>(null);
@@ -559,7 +562,7 @@ function ChaptersPanel() {
     // spend 12rem of it on the list and clip whatever the explorer had
     // below. The list scrolls inside either way.
     <Panel
-      className="lg:max-h-48 lg:min-h-[min(6rem,15%)] max-lg:flex-1 max-lg:min-h-0"
+      className={cn('lg:max-h-48 lg:min-h-[min(6rem,15%)] max-lg:flex-1 max-lg:min-h-0', className)}
       resizeKey="study-chapters"
     >
       <PanelHeader

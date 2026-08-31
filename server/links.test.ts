@@ -358,6 +358,36 @@ describe('links written in move comments', () => {
   });
 
   /**
+   * A display text names the writer's words, not the document.
+   *
+   * `[[Target|shown]]` rendered and opened correctly and yet counted for
+   * nothing: the mention carried the DISPLAY half as its target, that was
+   * what got resolved, and it resolved to nothing — so the document a link
+   * pointed at listed no mention of it, with no error anywhere. The two
+   * halves are separate fields now, and this is the pair of assertions
+   * that says so: the mention exists, and it still highlights the words
+   * the reader can actually see.
+   */
+  it('counts a link written with a display text', async () => {
+    study(
+      'Renamed',
+      [
+        '[Event "Renamed"]',
+        '[Result "*"]',
+        '',
+        '1. e4 { Straight into [[Poisoned Pawn|the usual mess]] here. } *',
+        '',
+      ].join('\n'),
+    );
+    const { mentions } = await get('notes', 'Poisoned Pawn');
+    const hit = mentions.find((m: { from: string }) => m.from === 'Renamed');
+    expect(hit).toBeDefined();
+    expect(hit.context).toBe('Straight into the usual mess here.');
+    // The panel marks what the sentence shows, not the id behind it.
+    expect(hit.target).toBe('the usual mess');
+  });
+
+  /**
    * What the panel quotes is the sentence a reader sees on the move, not
    * the machinery the file keeps beside it. One of these came back cut
    * mid-command before the spans were blanked.

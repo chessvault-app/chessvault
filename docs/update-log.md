@@ -7,6 +7,59 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo has a puzzle book in it, made from the book it ships.** The
+  shelf answered with an empty list and a note saying book puzzles come
+  from commercial books, so the app's most distinctive feature — a
+  position transcribed off a printed page, solved against the page it came
+  from — was the one thing a visitor could only read about. The demo draws
+  its own book, and the three positions it prints are now a puzzle book
+  beside it: the Spanish after 3.Bb5, the Lucena, and the third-rank
+  defence, each with the line the book prints, and two of them already
+  solved so the shelf has progress on it. **Read** on the book's page opens
+  the PDF they came from. The shelf is the real module now rather than a
+  stub, so what it can do is what the app can do.
+
+- **The pane swipe moves the pane.** On a phone the panels under a board
+  turn with a sideways swipe, and until now the gesture committed on
+  release and swapped instantly: up to that moment nothing on screen said
+  a finger had been understood, and at the ends of the strip — where it
+  deliberately does not wrap — an ignored swipe and one that landed looked
+  exactly alike. The panel leans with the thumb now, half of what the
+  finger travels and no further than 32px, and springs back if the drag is
+  abandoned; at the first tab or the last it gives 10px and stops, which is
+  the wall said during the gesture instead of after it. On a turn the
+  arriving pane starts 32px the other way at 55% opacity and eases home
+  over 200ms — the same distance the leaving one covered, so the handover
+  cannot come out lopsided. The strip itself stays put, being what the turn
+  is read against, and a tap on it is still instant: a tap has no
+  direction, and can jump two tabs at once. Nothing was restructured for
+  it. The panes stay separate elements at the heights every board page has
+  tuned, and the offset rides two custom properties written straight onto
+  the column, so a swipe costs no React render at all — these columns ARE
+  the board pages, and a render per touch-move would re-run a move tree, an
+  engine and an explorer sixty times a second. One pane could not move and
+  now can: a study's Chapters sat in a `display: contents` box, which
+  generates no box to transform, so the hiding moved onto the panel itself
+  and the wrapper is gone. Under `prefers-reduced-motion` the motion is
+  skipped entirely and the swap is the instant one it always was. Measured
+  with trusted touch input at 375x812, on the board page and on a study:
+  the drag caps at 32px, the wall at 10px, the arriving pane traces
+  32 → 21 → 12.9 → … → 0 over ~200ms, the strip never moves, and at rest
+  the column carries no attribute, no transform and no compositing layer.
+
+- **A link written with a display text counts as a link.** `[[Target|the
+  words you want]]` rendered its words, hid its brackets and opened the
+  right document when pressed — and the document it opened listed no
+  mention of it. What a mention carried as its target was the DISPLAY
+  half, and a backlink is derived by resolving that string, so every such
+  link resolved the writer's own words, found nothing, and was dropped in
+  silence. The two halves are separate now: what the link points at is
+  what gets resolved, what the reader sees is what a quoted sentence
+  highlights. Nothing about writing or renaming them changes — those
+  always kept the halves apart, which is why this survived: the one test
+  the form had checked that writing it preserved the writer's words, never
+  that the link counted.
+
 - **The demo shows links written on moves, which is what 0.7.0 was
   about.** The sample vault carried forty `[[links]]` and every one of
   them was in a note, so the release's own headline — a link in a move

@@ -7,8 +7,50 @@
 [Result "1/2-1/2"]
 [WhiteElo "2945"]
 [BlackElo "3033"]
-[ECO "B56"]
-[Opening "Sicilian Defense: Kupreichik Variation"]
+[ECO "B97"]
+[Opening "Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted"]
+[TimeControl "600+5"]
 
-{Sicilian Defense: Kupreichik Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Bd7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bc4 e6 7. Bb3 Be7 8. O-O ! Nc6 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... d5 Rb1 dxe4 {was the alternative — playable, but it hands over the initiative.}) 9. Be3 O-O 10. h3 Nxd4 11. Qxd4 Bc6 ?! 12. Rad1 Nd7 13. a4 Nc5 14. Qc4 Nxb3 15. cxb3 Rc8 16. Nb5 Bxb5 17. Qxb5 b6 18. Bd4 Qc7 19. Bc3 f5 20. exf5 Rxf5 21. Qe2 e5 22. f4 Rcf8 23. fxe5 dxe5 24. Rxf5 Rxf5 25. b4 Bf6 26. Qe4 Rf4 27. Qd5+ Kf8 28. a5 bxa5 29. bxa5 a6 30. Qe6 Qc4 31. Qd6+ Be7 32. Qxe5 Qc5+ 33. Qxc5 Bxc5+ 34. Kh2 Ke7 35. Bxg7 Bd6 36. Kg1 Ke6 37. Re1+ Kd5 38. Bc3 h5 39. Re8 h4 40. Rd8 Kc6 41. Rh8 Bc5+ 42. Kh2 Bd6 43. Kg1 Bc5+ 44. Kh2 Bd6 {The rest is technique, which is another way of saying it still has to be played accurately.} 45. Kg1 1/2-1/2
+1. e4 {[%clk 0:10:00]} c5 {[%clk 0:09:52]} 2. Nf3 {[%clk 0:09:52]} d6 {[%clk 0:09:27]} 3.
+d4 {[%clk 0:09:34]} cxd4 {[%clk 0:09:50]} 4. Nxd4 {[%clk 0:09:06]} Nf6 {[%clk 0:09:29]} 5.
+Nc3 {[%clk 0:08:28]} a6 {[%clk 0:08:57]} 6. Bg5 {[%clk 0:09:35]} e6 {[%clk 0:08:16]} 7. f4
+{[%clk 0:09:00]} Qb6 {[%clk 0:07:24]} 8. Qd2 {[%clk 0:08:15]} Qxb2 {[%clk 0:09:15]} 9. Rb1
+{[%clk 0:07:20]} Qa3 {[%clk 0:08:27]} 10. f5 {[%clk 0:06:15]} Nc6 {[%clk 0:07:28]} 11.
+fxe6 {[%clk 0:08:50]} fxe6 {[%clk 0:06:20]} 12. Nxc6 {[%clk 0:07:48]} bxc6
+{[%clk 0:09:26]} 13. Be2 {[%clk 0:06:36]} Be7 {[%clk 0:08:20]} 14. e5 {[%clk 0:05:14]}
+dxe5 {[%clk 0:07:05]} 15. Bxf6 {[%clk 0:09:04]} Bxf6 {[%clk 0:05:39]} 16. Bh5+
+{[%clk 0:07:45]} g6 {[%clk 0:04:04]} 17. Ne4 {[%clk 0:06:16]} O-O {[%clk 0:08:38]} 18. O-O
+{[%clk 0:04:37]} Bd8 {[%clk 0:07:05]} 19. Bg4 {[%clk 0:02:48]} Kg7 {[%clk 0:05:23]} 20. c4
+{[%clk 0:08:06]} Ra7 {[%clk 0:03:30]} 21. Rxf8 {[%clk 0:06:20]} Qxf8 {[%clk 0:01:28]} 22.
+c5 {[%clk 0:04:24]} h5 {[%clk 0:07:30]} 23. Bf3 {[%clk 0:02:18]} Be7 {[%clk 0:05:30]} 24.
+Qc3 {[%clk 0:08:51]} Rd7 {[%clk 0:03:21]} 25. Rb8 {[%clk 0:06:48]} Rd8 {[%clk 0:01:01]}
+26. h3 {[%clk 0:04:35]} Kh6 {[%clk 0:08:18]} 27. Qe3+ {[%clk 0:02:12]} Kg7
+{[%clk 0:06:02]} 28. Qc3 {[%clk 0:00:20]} Kh6 {[%clk 0:03:35]} 29. Kf2 {[%clk 0:07:40]} h4
+{[%clk 0:00:59]} 30. Ke2 {[%clk 0:05:10]} Qf4 {[%clk 0:00:20]} 31. Qe3 {[%clk 0:02:30]}
+Kh7 {[%clk 0:06:57]} 32. Ra8 {[%clk 0:00:20]} Kg8 {[%clk 0:04:14]} 33. a4 {[%clk 0:00:20]}
+Kf8 {[%clk 0:01:20]} 34. Nd6 {[%clk 0:06:09]} Bd7 {[%clk 0:00:20]} 35. Rxa6
+{[%clk 0:03:12]} Bxd6 {[%clk 0:08:17]} 36. cxd6 {[%clk 0:00:20]} Be8 {[%clk 0:05:16]} 37.
+Qxf4+ {[%clk 0:00:20]} exf4 {[%clk 0:02:06]} 38. a5 {[%clk 0:07:32]} Rxd6 {[%clk 0:00:20]}
+39. Ra8 {[%clk 0:04:18]} c5 {[%clk 0:00:20]} 40. Bb7 {[%clk 0:00:54]} Ke7 {[%clk 0:06:43]}
+41. Rxe8+ {[%clk 0:00:20]} Kxe8 {[%clk 0:03:15]} 42. a6 {[%clk 0:00:20]} c4
+{[%clk 0:00:20]} 43. a7 {[%clk 0:05:48]} Rd8 {[%clk 0:00:20]} 44. a8=Q {[%clk 0:02:07]}
+Rxa8 {[%clk 0:00:20]} 45. Bxa8 {[%clk 0:00:20]} Ke7 {[%clk 0:04:49]} 46. Kf3
+{[%clk 0:00:20]} g5 {[%clk 0:00:54]} 47. Ke4 {[%clk 0:07:42]} Kf6 {[%clk 0:00:20]} 48. Bc6
+{[%clk 0:03:44]} c3 {[%clk 0:00:20]} 49. Ba4 {[%clk 0:00:20]} e5 {[%clk 0:06:46]} 50. Bc2
+{[%clk 0:00:20]} Ke6 {[%clk 0:02:35]} 51. Bd3 {[%clk 0:00:20]} Kd6 {[%clk 0:00:20]} 52.
+Bc2 {[%clk 0:05:45]} Ke6 {[%clk 0:00:20]} 53. Bd3 {[%clk 0:01:20]} Kd6 {[%clk 0:00:20]}
+54. Bb1 {[%clk 0:00:20]} Ke6 {[%clk 0:04:39]} 55. Bc2 {[%clk 0:00:20]} g4 {[%clk 0:00:20]}
+56. hxg4 {[%clk 0:00:20]} Kf6 {[%clk 0:00:20]} 57. Bd3 {[%clk 0:03:28]} Kg6
+{[%clk 0:00:20]} 58. Bc2 {[%clk 0:00:20]} Kf6 {[%clk 0:07:08]} 59. Kf3 {[%clk 0:00:20]}
+Kg5 {[%clk 0:02:12]} 60. Be4 {[%clk 0:00:20]} Kh6 {[%clk 0:00:20]} 61. Bd3
+{[%clk 0:06:00]} Kg5 {[%clk 0:00:20]} 62. Bc2 {[%clk 0:00:51]} Kh6 {[%clk 0:00:20]} 63.
+Be4 {[%clk 0:00:20]} Kg5 {[%clk 0:04:48]} 64. Bd3 {[%clk 0:00:20]} Kf6 {[%clk 0:00:20]}
+65. Be4 {[%clk 0:00:20]} Kg5 {[%clk 0:00:20]} 66. Bd3 {[%clk 0:03:30]} Kf6
+{[%clk 0:00:20]} 67. Bc2 {[%clk 0:00:20]} Kg5 {[%clk 0:00:20]} 68. Bf5 {[%clk 0:00:20]}
+Kh6 {[%clk 0:02:08]} 69. Kf2 {[%clk 0:00:20]} Kg5 {[%clk 0:00:20]} 70. Kf3
+{[%clk 0:06:33]} Kh6 {[%clk 0:00:20]} 71. Bd3 {[%clk 0:00:40]} Kg5 {[%clk 0:00:20]} 72.
+Be4 {[%clk 0:00:20]} Kh6 {[%clk 0:05:14]} 73. Bb1 {[%clk 0:00:20]} Kg5 {[%clk 0:00:20]}
+74. Bh7 {[%clk 0:00:20]} Kh6 {[%clk 0:00:20]} 75. Bf5 {[%clk 0:03:50]} Kg5
+{[%clk 0:00:20]} 76. Bc2 {[%clk 0:00:20]} Kh6 {[%clk 0:00:20]} 77. Bf5 {[%clk 0:00:20]}
+Kg5 {[%clk 0:02:21]} 78. Bh7 {[%clk 0:00:20]} Kh6 {[%clk 0:00:20]} 79. Bb1
+{[%clk 0:00:20]} Kg5 {[%clk 0:00:20]} 80. Bh7 {[%clk 0:00:47]} 1/2-1/2

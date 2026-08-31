@@ -4,11 +4,21 @@
 [Round "8"]
 [White "Ekström, P"]
 [Black "Zahavi, O"]
-[Result "1/2-1/2"]
+[Result "0-1"]
 [WhiteElo "2978"]
 [BlackElo "2947"]
-[ECO "A27"]
-[Opening "English Opening: King's English Variation, Three Knights System"]
+[ECO "D46"]
+[Opening "Semi-Slav Defense: Chigorin Defense"]
+[TimeControl "5400+30"]
+[VaultSide "black"]
 
-{English Opening: King's English Variation, Three Knights System. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. c4 e5 2. Nc3 Nc6 3. Nf3 f5 4. g3 g6 5. d4 e4 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Nh4 Bg7 7. e3 Nf6 8. Ng2 ! d5 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... f4 Rb1 fxe3 {was the alternative — playable, but it hands over the initiative.}) 9. Nf4 Ne7 10. h4 Bh6 11. Nfxd5 Nexd5 ?! 12. cxd5 Bf8 13. a4 Bd6 14. a5 O-O 15. a6 Qe7 16. Qb3 bxa6 17. Bc4 h6 18. Qa2 Rb8 19. b3 Kg7 20. Ba3 Bb7 21. Qb2 g5 22. Ra2 Kg6 23. Qa1 Ng4 24. Qc1 Nf6 25. Kd2 Bc8 26. Bxd6 cxd6 27. Qg1 Qc7 28. Qg2 Rb4 29. hxg5 hxg5 30. Qh3 Rg8 31. Qh2 Kf7 32. Qg1 Kg6 33. Qh2 Kf7 34. Qh6 Qb8 35. Kc2 Qc7 36. Kd2 Qb8 37. Kc2 Qc7 38. g4 a5 39. gxf5 Bd7 40. Kd2 a4 41. Rc1 g4 42. Ne2 Qb6 43. Ng3 axb3 44. Ra6 b2 45. Rxb6 bxc1=Q+ 46. Kxc1 Rxc4+ 47. Kb2 axb6 48. Nh5 Nxh5 49. Qxh5+ Kf6 50. Qh6+ Kf7 51. Qh5+ Kf6 52. Qh4+ Kf7 53. Qh7+ Rg7 54. Qh5+ Kg8 55. f6 Rf7 56. Qg6+ Kf8 57. Qh6+ Kg8 58. Qg6+ Kf8 59. Qh6+ Kg8 60. Qg5+ Kh7 61. Qh5+ Kg8 62. Qg5+ Kh7 63. Kb1 Rb4+ 64. Kc1 Bb5 65. Qh5+ Kg8 66. Qg5+ Kf8 67. Qh6+ Kg8 68. Qg6+ Kf8 69. Qh6+ Kg8 70. Qg5+ Kf8 {The rest is technique, which is another way of saying it still has to be played accurately.} 71. Qh6+ 1/2-1/2
+1. d4 Nf6 2. Nf3 d5 3. c4 e6 4. Nc3 c6 5. e3 Nbd7 6. Qc2 Bd6 7. Bd3 dxc4 8. Bxc4 O-O 9.
+O-O b5 10. Bd3 Bb7 11. e4 e5 12. Bg5 exd4 13. Nxd4 Bxh2+ 14. Kxh2 Ng4+ 15. Kg3 Qxg5 16. f4
+Qd8 17. Kxg4 Nf6+ 18. Kh4 Qxd4 19. e5 g5+ 20. Kxg5 Kh8 21. Bf5 Rg8+ 22. Kh4 Qd8 23. exf6
+Qxf6+ 24. Kh5 Kg7 25. Bd3 c5 26. Ne4 Qh6+ 27. Kg4 f5+ 28. Kf3 Rae8 29. Kf2 c4 30. Ng5 Qh2
+31. Qc3+ Kg6 32. Be4 Bxe4 33. Qg3 Qxg3+ 34. Kxg3 h6 35. Nf3 b4 36. Rf2 c3 37. a3 b3 38.
+bxc3 Bc2 39. Rc1 Kf6+ 40. Kh3 Re4 41. Rh1 Re3 42. c4 Rc3 43. Kh2 b2 44. Nd2 Bd3 45. Rf3
+Rd8 46. Rh3 Rc1 47. Rxh6+ Ke7 48. Kg3 Bxc4 49. Rh7+ Bf7 50. Nb1 Rg8+ 51. Kf2 Rg7 52. Rh8
+Bd5 53. Ke3 Be4 54. R1h7 Rxh7 55. Rxh7+ Ke6 56. Nd2 Re1+ 57. Kf2 Rd1 58. Nxe4 fxe4 59. Rb7
+b1=Q 60. Rxb1 Rxb1 61. g4 Kd5 62. g5 Kd4 63. g6 e3+ 64. Ke2 Ke4 65. g7 Rb2+ 66. Ke1 Kf3
+67. Kd1 e2+ 68. Ke1 Ke3 69. g8=Q Rb1# 0-1

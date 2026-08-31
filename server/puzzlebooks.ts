@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { readJson, renameRetrying, writeAtomic, writeJson } from './atomic.ts';
-import { isLibraryBookId, libraryBookHasPdf, newBookId } from './books.ts';
+import { isLibraryBookId, libraryBookHasPdf, newBookId } from './bookIds.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
 import { cycleAttempt, reviewDueAt, type CycleWindow } from '../shared/review.ts';

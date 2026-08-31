@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { gestureAxis, paneAfterSwipe } from '@/hooks/use-pane-swipe';
+import { dragOffset, gestureAxis, paneAfterSwipe } from '@/hooks/use-pane-swipe';
 
 /**
- * The two rules the pane swipe is: which way a finished drag points, and
- * whether a drag is horizontal at all. Both are pure, which is why they
- * are separate from the hook — the hook around them is event plumbing a
- * DOM would have to be stood up to exercise, and the decisions are here.
+ * The three rules the pane swipe is: which way a finished drag points,
+ * whether a drag is horizontal at all, and how far the pane leans while it
+ * is being made. All pure, which is why they are separate from the hook —
+ * the hook around them is event plumbing and two custom properties a DOM
+ * would have to be stood up to exercise, and the decisions are here.
  */
 
 /** The board page's three panes, in the order the strip draws them. */
@@ -35,6 +36,28 @@ describe('where a swipe lands', () => {
     // Puzzles drop the Engine tab until the answer is in, and the page
     // keeps the id it was on — a swipe then has no row to move along.
     expect(paneAfterSwipe(['info', 'moves'] as const, 'engine' as 'info', -80)).toBeNull();
+  });
+});
+
+describe('how far the pane leans while the finger is down', () => {
+  it('takes half the movement, up to a stop', () => {
+    // Following the thumb, and plainly not going anywhere yet: the cap is
+    // reached at 64px, a little past the 56px that commits.
+    expect(dragOffset(20, true)).toBe(10);
+    expect(dragOffset(-20, true)).toBe(-10);
+    expect(dragOffset(-64, true)).toBe(-32);
+    expect(dragOffset(-400, true)).toBe(-32);
+  });
+
+  it('gives far less at an end of the strip', () => {
+    // The only cue that this is the first tab or the last, and it arrives
+    // during the gesture rather than after it.
+    expect(dragOffset(-20, false)).toBe(-3);
+    expect(dragOffset(-400, false)).toBe(-10);
+  });
+
+  it('leans nowhere at rest', () => {
+    expect(dragOffset(0, true)).toBe(0);
   });
 });
 

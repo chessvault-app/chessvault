@@ -4,11 +4,23 @@
 [Round "4"]
 [White "Alderman, R"]
 [Black "Pereira, V"]
-[Result "1/2-1/2"]
+[Result "1-0"]
 [WhiteElo "3041"]
 [BlackElo "3035"]
-[ECO "E51"]
-[Opening "Nimzo-Indian Defense: Normal Variation, Ragozin Variation"]
+[ECO "C65"]
+[Opening "Ruy Lopez: Berlin Defense"]
+[TimeControl "5400+30"]
 
-{Nimzo-Indian Defense: Normal Variation, Ragozin Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Bb4 5. e3 O-O {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bd2 b6 7. cxd5 exd5 8. Bd3 ! Bd6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. O-O Bb7 10. Ne5 c5 11. Nb5 Be7 ?! 12. Be1 Nc6 13. Rc1 a6 14. Nc3 Qd6 15. f4 cxd4 16. exd4 Nxd4 17. Bxh7+ Nxh7 18. Qxd4 Rfe8 19. Na4 Bd8 20. Rc3 Rc8 21. Rxc8 Bxc8 22. Bf2 Re6 23. Bg3 Qc7 24. Qc3 Bb7 25. Qxc7 Bxc7 26. Rc1 Bd8 27. Nf3 Re4 28. Nc3 Re8 29. Re1 Rxe1+ 30. Bxe1 Bc7 31. Ne2 Nf6 32. Bc3 Ne4 33. Be5 Bd8 34. Bd4 f6 35. Kf1 a5 36. Ke1 b5 37. Be3 b4 38. f5 Bc7 39. g3 Bc8 40. Nfd4 Be5 41. Nf4 Nd6 42. Nxd5 Kf7 43. Nc6 Bxb2 44. Nxa5 Nxf5 45. Bd2 Nd4 46. Nxb4 Ba3 47. Nac6 Nf3+ 48. Kd1 Nxh2 49. Kc2 Nf3 50. Be3 Ne5 51. Nxe5+ fxe5 52. Kb3 Bxb4 53. Kxb4 Kf6 54. Kc5 {The rest is technique, which is another way of saying it still has to be played accurately.} Kf5 1/2-1/2
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. d3 Bc5 5. Bxc6 dxc6 6. O-O Bg4 7. h3 Bh5 8. g4 Nxg4 9.
+hxg4 Bxg4 10. Be3 Be7 11. Kg2 f5
+{Both rooks on open files before either side has a plan for them. The plan is what the next ten moves are about.}
+12. Qe1 Bxf3+ 13. Kxf3 f4 14. Bd2 h5 15. Ke2 Qd7 16. Bc3 Bf6 17. Rh1 g5 18. f3 O-O-O 19.
+Qf2 b6 20. Nd2 g4 21. a4 g3 22. Qg2 Rdg8 23. Rag1 Qe7 24. Kf1 h4 25. Qh3+ Kb7 26. Rg2 Rh5
+27. Re2 Rgh8 28. b4 Qf8 29. Kg2 a6 30. Rb1 Qe8 31. Nc4 Bg7 32. Nb2 Qf7 33. Rc1 Bf8 34. Rd1
+Bg7 35. a5 b5 36. d4 exd4 37. Bd2 Rf8 38. Nd3 Be5 39. Rde1 Qc4 40. Kh1 Kb8 41. Qg4 Qf7 42.
+Nc5 Ka8 43. Qd7 Qg6 44. Qh3 Rg8 45. Bc1 Rg5 46. Kg2 Rh5 47. Nxa6 Bd6 48. Bb2 Kb7 49. Nc5+
+Bxc5 50. bxc5 d3 51. cxd3 Ka6 52. Rd2 Rd8 53. e5 b4 54. Re4 b3 55. e6 Re8 56. e7 Rxc5 57.
+Rde2 Qh6 58. Re6 Qh7 59. Ba3 Rd5 60. Rxc6+ Kb7 61. a6+ Kb8 62. Rc3 Rxd3 63. Rc4 Rd5 64.
+Rxf4 Qd3 65. Qe6 Ka7 66. Rxh4 Qxa6 67. Qxa6+ Kxa6 68. Rb4 c5 69. Rxb3 c4 70. Rb1 c3 71.
+Re6+ Ka5 72. Bb4+ Kb5 73. Bxc3+ Kc5 74. Bb4+ Kc4 75. Rc6+ Kb5 76. Rc2 Rd1 77. Rxd1 Kxb4
+78. Rb1+ Ka3 79. Rc7 Ka2 80. Rb6 Ra8 81. e8=Q Ra3 82. Rc2+ Ka1 83. Qe1# 1-0

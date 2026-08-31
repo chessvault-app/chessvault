@@ -6,6 +6,7 @@ import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { normaliseTraining, type Training } from '@shared/training';
 import { mountVault } from '../../../server/mountVault.ts';
+import { puzzleBooksApi } from '../../../server/puzzlebooks.ts';
 import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
 
@@ -41,6 +42,18 @@ const MYGAMES_DB = '/demo/mygames.sqlite';
  * the demo accepts.
  */
 const DEMO_BOOK_PAGES = 8;
+/**
+ * The library book the sample PDF is filed under, and the one the seeded
+ * puzzle book points at with `pdfBook`.
+ *
+ * `b` and SIXTEEN hex characters, because that is what a library book id
+ * is (server/bookIds.ts). This was one character short for as long as the
+ * library here was hand-written and nothing checked — and the moment the
+ * real puzzle-shelf module was mounted, its `pdfBook` link went quietly
+ * dead: isLibraryBookId said no, so the shelf reported a book with no PDF
+ * and hid the way through to the reader.
+ */
+const BOOK_ID = 'b5a3e1c07f2d49b8c';
 let demoBook: Uint8Array | null = null;
 let demoBookPage: number | null = null;
 const demoBookDiagrams = new Map<string, unknown>();
@@ -169,12 +182,24 @@ function buildApp(): Hono {
     return c.json({ opening: null, moves: body.moves ?? [], topGames: body.topGames ?? [] });
   });
 
-  // Book puzzles are read from commercial books and are not in the demo at
-  // all. The dashboard still draws a shelf, so this answers with the shape
-  // the real route uses when a vault holds no books — an empty list, which
-  // is the truth here. A 404 would be equally true and would crash the
-  // page, which is the difference between honest and useful.
-  app.get('/api/puzzlebooks', (c) => c.json({ books: [] }));
+  /**
+   * The puzzle shelf, answered by the real module over the seeded vault.
+   *
+   * This used to be one line returning an empty list, with a note saying
+   * book puzzles come from commercial books and so cannot be in the demo.
+   * The books cannot; a book CAN — the demo draws its own (see
+   * scripts/build-demo-book.mjs), and the three positions it prints are
+   * seeded as a puzzle book under demo-seed/puzzlebooks/. So the app's
+   * most distinctive feature — a position transcribed from a page, solved
+   * against the page it came from — is now something a visitor can do
+   * rather than read about.
+   *
+   * Mounted rather than reimplemented, which needed `server/books.ts`'s
+   * three id helpers to move into `server/bookIds.ts`: books.ts reaches
+   * for node:crypto and node:stream to move an uploaded PDF around, and
+   * this config shims neither.
+   */
+  app.route('/api', puzzleBooksApi(`${VAULT}/puzzlebooks`, `${VAULT}/books`));
 
   /**
    * The library, holding the one book the demo draws for itself.
@@ -195,7 +220,6 @@ function buildApp(): Hono {
    * scripts/build-demo-book.mjs says why there is a book at all, and why it
    * is drawn rather than borrowed.
    */
-  const BOOK_ID = 'b5a3e1c07f2d49b8';
   app.get('/api/books/bookmarks', (c) => c.json({ ids: [] }));
   app.post('/api/books/bookmarks/toggle', (c) => c.json({ ids: [] }));
   app.get('/api/books', (c) =>
@@ -328,7 +352,15 @@ export async function installDemoBackend(): Promise<void> {
     const pdf = await fetch(new URL('demo/books/sample.pdf', document.baseURI), {
       cache: 'no-cache',
     });
-    if (pdf.ok) demoBook = new Uint8Array(await pdf.arrayBuffer());
+    if (pdf.ok) {
+      demoBook = new Uint8Array(await pdf.arrayBuffer());
+      // The puzzle shelf asks the FILESYSTEM whether the library book still
+      // has its PDF, and answers "no PDF" by hiding the way through to the
+      // reader. The demo's copy is these bytes, held here because the shim
+      // stores strings — so the path it looks at gets a marker saying the
+      // book is there, which is the truth about what the demo will serve.
+      seedFile(`${VAULT}/books/${BOOK_ID}/book.pdf`, 'served from memory — see installDemoBackend', Date.now());
+    }
     else console.warn(`demo: no sample book (${pdf.status})`);
   } catch (error) {
     console.warn('demo: sample book unavailable —', error);

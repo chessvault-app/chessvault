@@ -4,11 +4,22 @@
 [Round "4"]
 [White "Jessel, A"]
 [Black "Marchetti, C"]
-[Result "0-1"]
+[Result "1/2-1/2"]
 [WhiteElo "2741"]
 [BlackElo "3001"]
-[ECO "C69"]
-[Opening "Ruy Lopez: Exchange Variation, Alapin Gambit"]
+[ECO "D35"]
+[Opening "Queen's Gambit Declined: Exchange Variation, Positional Variation"]
+[TimeControl "5400+30"]
 
-{Ruy Lopez: Exchange Variation, Alapin Gambit. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6 5. O-O Bg4 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. h3 h5 7. d3 Qf6 8. Nbd2 ! Ne7 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Bxf3 Rb1 Bxd1 {was the alternative — playable, but it hands over the initiative.}) 9. b3 Ng6 10. Bb2 Bc5 11. Rb1 O-O-O ?! 12. hxg4 hxg4 13. Nh2 Rh4 14. g3 Rdh8 15. gxh4 Rxh4 16. Ndf3 gxf3 17. Qxf3 Nf4 18. Kh1 Qh6 19. Qg3 Rh3 20. Bc1 Qh5 21. Bxf4 exf4 22. Qg1 f3 23. Rbe1 f5 24. d4 Bd6 25. e5 Be7 26. Re3 Bg5 27. Rxf3 Rxf3 28. Rd1 Rh3 29. Rd3 Rh4 30. Rg3 Bf4 31. a3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} b6 0-1
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 5. Bg5 Be7 6. e3 O-O 7. Bd3 h6 8. Bh4 c6 9. Qc2
+Re8 10. Nge2 Nbd7 11. O-O a5
+{Both rooks on open files before either side has a plan for them. The plan is what the next ten moves are about.}
+12. Rac1 Nh5 13. Bxe7 Qxe7 14. Rce1 Nf8 15. Qd2 b6 16. b3 Bd7 17. Rc1 Rab8 18. Rfe1 Qg5
+19. Qc2 Rbc8 20. Kh1 Qe7 21. Ng1 Nf6 22. Nf3 c5 23. Kg1 Ne6 24. dxc5 Rxc5 25. Qd2 Ng5 26.
+Nxg5 hxg5 27. Ne2 g4 28. Rxc5 Qxc5 29. Qb2 Qb4 30. Rc1 a4 31. Qd4 Qa3 32. Rb1 Qxa2 33. Nc3
+Qa3 34. Nxa4 Rc8 35. g3 Rc1+ 36. Rxc1 Qxc1+ 37. Kg2 Bxa4 38. bxa4 Qc6 39. Kf1 g6 40. Kg2
+Ne4 41. Bxe4 dxe4 42. Qd8+ Kg7 43. Qd1 Kf8 44. Qa1 Kg8 45. a5 bxa5 46. Qxa5 Qe6 47. Qa8+
+Kg7 48. Kf1 Qe5 49. Kg2 f5 50. Qb7+ Kf6 51. Qb1 Qe7 52. Qa1+ Kf7 53. Kf1 Qd6 54. Qa2+ Ke7
+55. Qa1 Kf7 56. Qa2+ Qe6 57. Qb1 Qc4+ 58. Kg2 Qe6 59. Kg1 Qc4 60. Qb7+ Kf6 61. Qb2+ Kf7
+62. Qb7+ Kf6 63. Qb2+ Ke7 64. Qb7+ Kd6 65. Kg2 Qe6 66. Qg7 Kc5 67. Qd4+ Kb5 68. h4 gxh3+
+69. Kxh3 Qe7 1/2-1/2

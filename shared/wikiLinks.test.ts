@@ -198,7 +198,12 @@ describe('display text and embeds', () => {
   it('treats a pipe as the separator, never part of a name', () => {
     const found = findWikiMentions('[[a|b]]');
     expect(found).toHaveLength(1);
-    expect(found[0]!.target).toBe('b');
+    // Both halves, and which is which: this used to assert the display
+    // text alone, under the name `target`, which is how a display-text
+    // link came to be resolved by the words it shows and to count as a
+    // backlink for nothing.
+    expect(found[0]!.target).toBe('a');
+    expect(found[0]!.shown).toBe('b');
   });
 
   /**

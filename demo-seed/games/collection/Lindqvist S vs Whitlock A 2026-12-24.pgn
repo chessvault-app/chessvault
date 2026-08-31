@@ -7,8 +7,13 @@
 [Result "1/2-1/2"]
 [WhiteElo "3015"]
 [BlackElo "3030"]
-[ECO "B46"]
-[Opening "Sicilian Defense: Taimanov Variation"]
+[ECO "C11"]
+[Opening "French Defense: Steinitz Variation, Boleslavsky Variation"]
+[TimeControl "5400+30"]
 
-{Sicilian Defense: Taimanov Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e6 5. Nc3 a6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Nxc6 bxc6 7. Bd3 Bb7 8. Qf3 ! d5 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... a5 Rb1 a4 {was the alternative — playable, but it hands over the initiative.}) 9. O-O Nf6 10. Re1 Be7 11. Qg3 O-O ?! 12. Bh6 Ne8 13. Bf4 Rc8 14. Rad1 Nf6 15. Bh6 Ne8 16. Bc1 g6 17. Bf1 Nf6 18. Na4 Qa5 19. b3 dxe4 20. Nb2 Nh5 21. Qe3 Nf6 22. Nc4 Qc7 23. Qh6 Ng4 24. Qf4 Qxf4 25. Bxf4 Bc5 26. Bg3 f5 27. h3 Nf6 28. Bd6 Bxd6 29. Nxd6 Rc7 30. f3 exf3 31. gxf3 Bc8 32. Nxc8 Rfxc8 33. Rxe6 Kf7 34. Bc4 Kg7 35. Rdd6 Ne8 36. Rd4 Nf6 37. Rdd6 Ne8 38. Rd4 Nf6 39. a3 a5 40. Ba6 Ra8 41. Bf1 c5 42. Rc4 Kf7 43. Rb6 Rd8 44. Rb5 Rd2 45. Rcxc5 Rcd7 46. Rxa5 Kg7 47. Bd3 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Nh5 1/2-1/2
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 cxd4 8. Nxd4 Qb6 9. Qd2
+Qxb2 10. Rb1 Qa3 11. Bb5 Nxd4 12. Bxd4 a6 13. Bxd7+ Bxd7 14. Rb3 Qe7 15. Rxb7 Qd8 16. O-O
+Qc8 17. Rb3 Bc5 18. Rf2 Qc6 19. Ne2 O-O 20. g4 Rfc8 21. f5 Bf8 22. c3 Rcb8 23. h4 Qc4 24.
+Nc1 a5 25. h5 a4 26. Rxb8 Rxb8 27. Kh2 Bb5 28. Ne2 a3 29. h6 gxh6 30. Qf4 Qc8 31. Ng3 Bd3
+32. fxe6 Qxe6 33. Nh5 Rb2 34. Nf6+ Kh8 35. Kg3 Bg7 36. Nh5 Rxf2 37. Kxf2 Bc4 38. Qg3 Qg6
+39. Qf4 Qe6 40. Qg3 Qg6 1/2-1/2

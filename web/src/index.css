@@ -1236,6 +1236,54 @@ cg-board square.check {
 }
 
 /* ---------------------------------------------------------------------------
+   The pane swipe's motion — the CSS half of hooks/use-pane-swipe.
+
+   The hook writes `--pane-dx` and `--pane-fade` straight onto the pane
+   column and switches these rules on with `data-pane-swipe`; the column's
+   children are what carry them. EVERY child, because on the layouts that
+   fold to one pane at a time only one of them is on screen anyway — and
+   the tab strip takes itself out with `data-pane-strip`, being the fixed
+   thing the turn is measured against.
+
+   Unlayered, so a pane's own utility classes cannot outrank the offset,
+   and gone entirely at rest: no attribute on the column means no
+   transform, and no compositing layer on a column that is only being read.
+
+   `clip` rather than `hidden` because these columns disagree about whether
+   they scroll — `overflow-x: hidden` forces a `visible` overflow-y to
+   `auto`, which would hand the repertoire's stacked column a scroll
+   container it has never had. `clip` leaves the other axis alone, and is
+   here so that a pane leaning past the column's edge cannot become
+   somewhere the page can be dragged sideways.
+
+   The duration is the same wait the hook clears up after (SETTLE_MS). It
+   is a property rather than a literal because the turn is drawn in two
+   places — the pane moves here, and the strip's selected pill fills in
+   components/pane-tabs — and those two are one motion. Under
+   `prefers-reduced-motion` the base block above flattens both to nothing,
+   which lands back on the instant swap this gesture had before it
+   moved at all. */
+:root {
+  --pane-turn: 200ms;
+  --pane-turn-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-pane-swipe] {
+  overflow-x: clip;
+}
+
+[data-pane-swipe] > *:not([data-pane-strip]) {
+  transform: translate3d(var(--pane-dx, 0px), 0, 0);
+  opacity: var(--pane-fade, 1);
+}
+
+[data-pane-swipe='settle'] > *:not([data-pane-strip]) {
+  transition:
+    transform var(--pane-turn) var(--pane-turn-ease),
+    opacity var(--pane-turn) ease-out;
+}
+
+/* ---------------------------------------------------------------------------
    Note editor typography. Tiptap renders semantic HTML; these give it the
    reading rhythm of a document without pulling in a typography plugin. */
 /* The board row is never wider than the board it holds plus the column
