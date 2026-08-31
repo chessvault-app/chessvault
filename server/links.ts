@@ -4,6 +4,7 @@ import { resolve, sep } from 'node:path';
 import {
   findWikiMentions,
   renameLinksIn,
+  buildAliasMap,
   resolveWikiLink,
   type AliasIndex,
   type LinkIndex,
@@ -58,8 +59,8 @@ const keyOf = (section: LinkSection, id: string): string => `${section}:${id}`;
  * the index missed would show no backlink for a link that works when
  * pressed — the exact disagreement the shared resolver exists to prevent.
  */
-function aliasesIn(dir: string, ext: string, ids: readonly string[]): Map<string, string> {
-  const map = new Map<string, string>();
+function aliasesIn(dir: string, ext: string, ids: readonly string[]): Map<string, string | null> {
+  const entries: { id: string; aliases: string[] }[] = [];
   for (const id of ids) {
     let head: string;
     try {
@@ -67,18 +68,19 @@ function aliasesIn(dir: string, ext: string, ids: readonly string[]): Map<string
     } catch {
       continue;
     }
-    const names =
-      ext === '.md'
-        ? readAliases(splitFrontMatter(head).front)
-        : splitAliasList(/^\[Aliases\s+"([^"]*)"\]/m.exec(head)?.[1] ?? '');
-    // First writer wins, so a duplicated alias cannot make the later
-    // document silently steal links from the earlier one.
-    for (const name of names) {
-      const key = name.toLowerCase();
-      if (!map.has(key)) map.set(key, id);
-    }
+    entries.push({
+      id,
+      aliases:
+        ext === '.md'
+          ? readAliases(splitFrontMatter(head).front)
+          : splitAliasList(/^\[Aliases\s+"([^"]*)"\]/m.exec(head)?.[1] ?? ''),
+    });
   }
-  return map;
+  // The collision rule is shared, not repeated: this walks a directory and
+  // the browser reads a listing sorted newest-first, so any rule that
+  // depended on which document came first would answer differently here
+  // than there. It did, until it was measured.
+  return buildAliasMap(entries);
 }
 
 /** Ids under `dir` with extension `ext`, in the app's forward-slash form. */

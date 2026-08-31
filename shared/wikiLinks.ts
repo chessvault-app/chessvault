@@ -73,7 +73,38 @@ export type LinkIndex = Readonly<Record<LinkSection, readonly string[]>>;
  * mid-sentence you write "the Najdorf". Display text solves how it READS;
  * an alias solves what you have to TYPE.
  */
-export type AliasIndex = Readonly<Record<LinkSection, ReadonlyMap<string, string>>>;
+export type AliasIndex = Readonly<Record<LinkSection, ReadonlyMap<string, string | null>>>;
+
+/**
+ * Build one section's alias map, marking any name two documents claim.
+ *
+ * Nothing stops two documents declaring the same alias, and the first
+ * version of this let the first one seen win — on both sides, over two
+ * different orderings. The server walked the directory; the browser read
+ * the listing, which is sorted newest-first. Measured on a seeded vault:
+ * clicking `[[Dup]]` opened one note while the backlink for that very link
+ * appeared on the other. Both answers were individually plausible and
+ * nothing reported a fault, which is the failure this module exists to
+ * prevent — introduced by this module.
+ *
+ * So a contested alias resolves to nothing, exactly as two documents
+ * sharing a last segment already do. Refusing to guess is the same answer
+ * on every side however each one iterates, and the writer is told: only
+ * they know which document they meant.
+ */
+export function buildAliasMap(entries: Iterable<{ id: string; aliases?: readonly string[] }>) {
+  const map = new Map<string, string | null>();
+  for (const { id, aliases } of entries) {
+    for (const name of aliases ?? []) {
+      const key = name.trim().toLowerCase();
+      if (!key) continue;
+      const held = map.get(key);
+      if (held === undefined) map.set(key, id);
+      else if (held !== id) map.set(key, null);
+    }
+  }
+  return map;
+}
 
 export const NO_ALIASES: AliasIndex = {
   notes: new Map(),
@@ -122,13 +153,17 @@ export function resolveWikiLink(
 
   // An alias is a name its document chose, so it outranks a last segment,
   // which is a name that merely happens to collide.
+  let ambiguous = false;
   for (const section of LINK_SECTIONS) {
     const named = aliases[section].get(wanted);
     if (named) return { section, id: named };
+    // Claimed by two documents in this section — see buildAliasMap. Noted
+    // and passed over rather than answered, the same as a repeated last
+    // segment: a weaker match elsewhere may still be unambiguous.
+    if (named === null) ambiguous = true;
   }
 
   // Ambiguity is only reported if nothing matched outright anywhere.
-  let ambiguous = false;
   for (const section of LINK_SECTIONS) {
     const tails = index[section].filter((id) => tail(id).toLowerCase() === wanted);
     if (tails.length === 1) return { section, id: tails[0]! };

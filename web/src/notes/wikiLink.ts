@@ -9,6 +9,7 @@ import { t } from '@/lib/i18n';
 import {
   LINK_SECTIONS,
   WIKI_RE,
+  buildAliasMap,
   parseWikiMatch,
   resolveWikiLink,
   type AliasIndex,
@@ -63,27 +64,22 @@ async function documents(): Promise<Documents> {
   const fresh = docsNow();
   if (fresh) return fresh;
   const excerpt = new Map<string, string>();
-  const aliasEntries: (readonly [LinkSection, Map<string, string>])[] = [];
+  const aliasEntries: (readonly [LinkSection, Map<string, string | null>])[] = [];
   const entries = await Promise.all(
     LINK_SECTIONS.map(async (section) => {
-      const aliases = new Map<string, string>();
-      aliasEntries.push([section, aliases]);
       try {
         const { studies } = await api<
           { studies: { id: string; excerpt?: string | null; aliases?: string[] }[] }
         >(SECTION_URL[section]);
-        for (const s of studies) {
-          if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
-          // First writer wins, matching the server's index: a duplicated
-          // alias must not let the later document steal the earlier one's
-          // links on one side and not the other.
-          for (const name of s.aliases ?? []) {
-            const key = name.toLowerCase();
-            if (!aliases.has(key)) aliases.set(key, s.id);
-          }
-        }
+        for (const s of studies) if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
+        // Built by the shared rule, not by one written here: this listing
+        // arrives sorted newest-first while the server walks a directory,
+        // so anything decided by "whichever came first" answers differently
+        // on the two sides. It did.
+        aliasEntries.push([section, buildAliasMap(studies)]);
         return [section, studies.map((s) => s.id)] as const;
       } catch {
+        aliasEntries.push([section, new Map()]);
         return [section, []] as const; // unreachable section — the others still answer
       }
     }),

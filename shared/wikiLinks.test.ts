@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  NO_ALIASES,
+  buildAliasMap,
   findWikiMentions,
   renameLinksIn,
   resolveWikiLink,
@@ -129,6 +131,41 @@ describe('aliases', () => {
       withAliases({ notes: [['twin', 'The Real One']] }),
     );
     expect(hit).toEqual({ section: 'notes', id: 'The Real One' });
+  });
+
+  it('refuses an alias two documents both claim', () => {
+    // Measured before this rule existed: the server walked the directory
+    // and the browser read a newest-first listing, both taking whichever
+    // came first, and they picked different documents — so a click opened
+    // one note while the backlink for that click landed on the other.
+    const contested = buildAliasMap([
+      { id: 'AAA dup', aliases: ['Dup'] },
+      { id: 'ZZZ dup', aliases: ['Dup'] },
+    ]);
+    expect(contested.get('dup')).toBeNull();
+    expect(
+      resolveWikiLink('Dup', index({ notes: ['AAA dup', 'ZZZ dup'] }), {
+        ...NO_ALIASES,
+        notes: contested,
+      }),
+    ).toBe('ambiguous');
+  });
+
+  it('builds the same map whichever order the documents arrive in', () => {
+    const forwards = buildAliasMap([
+      { id: 'A', aliases: ['Shared', 'OnlyA'] },
+      { id: 'B', aliases: ['Shared'] },
+    ]);
+    const backwards = buildAliasMap([
+      { id: 'B', aliases: ['Shared'] },
+      { id: 'A', aliases: ['Shared', 'OnlyA'] },
+    ]);
+    expect([...forwards].sort()).toEqual([...backwards].sort());
+  });
+
+  it('keeps an alias a document repeats to itself', () => {
+    const map = buildAliasMap([{ id: 'A', aliases: ['Dup', 'dup'] }]);
+    expect(map.get('dup')).toBe('A');
   });
 
   it('changes nothing when no document has an alias', () => {
