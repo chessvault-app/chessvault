@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo shows links written on moves, which is what 0.7.0 was
+  about.** The sample vault carried forty `[[links]]` and every one of
+  them was in a note, so the release's own headline — a link in a move
+  comment, and the backlink that opens the chapter the comment is in —
+  was invisible to anyone who did not type one themselves. Nine links now
+  sit in the seeded studies' and games' comments, in every direction the
+  feature has: a study's chapter 2 pointing at a note, a study's chapter 3
+  at a game, games at studies and at notes. Each was placed inside an
+  annotation that was already there, so the prose still reads as one
+  voice, and each was checked to resolve and to report the chapter it was
+  written in.
+
 - **The demo's database search suggests names again.** Typing a player,
   an opponent or a tournament into the search panel is meant to suggest
   from that database's own names; in the demo it suggested nothing, ever,
