@@ -98,6 +98,14 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
         json: { note: m.from, at: m.at, text: m.target, target: id.split('/').at(-1) },
       });
       setLinked((held) => new Set(held).add(at));
+      // Re-asked, not patched. Wrapping one mention adds four characters to
+      // that note, so every LATER mention in it has moved -- a second row
+      // pressed against the old offsets would fail the server's check and
+      // read as a button that does nothing. The fresh answer also moves the
+      // one just linked out of this list and into the mentions above, which
+      // is what actually happened.
+      const fresh = await api<Answer>(`/api/links/${section}/${encodeURIComponent(id)}`);
+      setAnswer({ ...NOTHING, ...fresh });
     } catch {
       // Left as it was: the row still offers, and pressing again re-asks.
     }
@@ -118,7 +126,13 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
         <Link2 className="size-3.5" />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent size="sm" title={t('Linked mentions')} className="gap-1">
+        <DialogContent size="sm" title={t('Linked mentions')}>
+          {/* The spacing goes on a wrapper, never on the card. The card's
+              sticky header reaches 14px DOWN under the content below it
+              and relies on the card's own gap-4 to put that back;
+              overriding the gap with anything smaller makes the sum
+              negative and slides the first row up under the title. */}
+          <div className="flex flex-col gap-1">
           <ul className="flex flex-col gap-0.5">
             {mentions.map((m) => (
               <li key={`${m.from}:${m.at}`}>
@@ -155,32 +169,40 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
                 {unlinked.map((m) => {
                   const at = `${m.from}:${m.at}`;
                   return (
-                    <li key={at} className="flex items-start gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOpen(false);
-                          navigate('notes', encodeURIComponent(m.from));
-                        }}
-                        className="hover:bg-accent focus-visible:ring-ring flex min-w-0 flex-1 flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left focus-visible:ring-2 focus-visible:outline-none"
-                      >
-                        <span className="flex items-center gap-1.5 text-sm font-medium">
-                          <FileText className="text-muted-foreground size-3.5 shrink-0" />
+                    /* The action sits on the TITLE line, not out at the
+                       right of a two-line row. Beside two lines of context
+                       it read as floating next to the block rather than
+                       belonging to it; on the title line it lines up with
+                       the thing it acts on. Two controls, not one row that
+                       is also a button: a button inside a button is not
+                       valid, and the name is the part worth pressing to
+                       open. */
+                    <li key={at} className="hover:bg-accent rounded-md px-2 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="text-muted-foreground size-3.5 shrink-0" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpen(false);
+                            navigate('notes', encodeURIComponent(m.from));
+                          }}
+                          className="focus-visible:ring-ring min-w-0 flex-1 truncate rounded-sm text-left text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                        >
                           {m.from.split('/').at(-1)}
-                        </span>
-                        <span className="text-muted-foreground text-xs leading-5">
-                          <Context text={m.context} mark={m.target} at={m.markAt} />
-                        </span>
-                      </button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="mt-1.5 shrink-0"
-                        disabled={linked.has(at)}
-                        onClick={() => void link(m, at)}
-                      >
-                        {linked.has(at) ? t('Linked') : t('Link')}
-                      </Button>
+                        </button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="-my-1 shrink-0"
+                          disabled={linked.has(at)}
+                          onClick={() => void link(m, at)}
+                        >
+                          {linked.has(at) ? t('Linked') : t('Link')}
+                        </Button>
+                      </div>
+                      <p className="text-muted-foreground mt-0.5 text-xs leading-5">
+                        <Context text={m.context} mark={m.target} at={m.markAt} />
+                      </p>
                     </li>
                   );
                 })}
@@ -192,6 +214,7 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
               )}
             </>
           )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

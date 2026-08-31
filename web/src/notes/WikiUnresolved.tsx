@@ -74,8 +74,13 @@ export function WikiUnresolved({ editor }: { editor: Editor | null }) {
       <DialogContent
         size="sm"
         title={why === 'ambiguous' ? t('Which one?') : t('Nothing is named this')}
-        className="gap-2"
       >
+        {/* The spacing goes on a wrapper, never on the card. The card's
+            sticky header reaches 14px DOWN under the content below it and
+            relies on the card's own gap-4 to put that back; overriding the
+            gap with anything smaller makes the sum negative and slides the
+            first line up underneath the title. */}
+        <div className="flex flex-col gap-2">
         <p className="text-muted-foreground text-sm">
           {why === 'ambiguous'
             ? t('More than one document answers to “{name}”.', { name: target })
@@ -111,6 +116,7 @@ export function WikiUnresolved({ editor }: { editor: Editor | null }) {
             {t('Write a note called “{name}”', { name: target.trim() })}
           </button>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
