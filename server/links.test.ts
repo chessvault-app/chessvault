@@ -148,3 +148,104 @@ describe('links api', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('unlinked mentions', () => {
+  let root: string;
+  let notes: string;
+  let studies: string;
+  let games: string;
+  let app: Hono;
+
+  const note = (id: string, body: string): void => writeFileSync(join(notes, `${id}.md`), body);
+
+  const get = async (section: string, id: string) => {
+    const res = await app.request(`/api/links/${section}/${encodeURIComponent(id)}`);
+    return await res.json();
+  };
+
+  beforeAll(() => {
+    root = mkdtempSync(join(tmpdir(), 'unlinked-'));
+    notes = join(root, 'notes');
+    studies = join(root, 'studies');
+    games = join(root, 'games');
+    for (const d of [notes, studies, games]) mkdirSync(d, { recursive: true });
+    writeFileSync(join(studies, 'Najdorf.pgn'), '[Aliases "B90"]\n*');
+    app = new Hono().route('/api', linksApi(notes, studies, games));
+  });
+
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  it('finds a document named in prose without being linked', async () => {
+    note('Prose', 'I keep losing the Najdorf as black.');
+    const { unlinked } = await get('studies', 'Najdorf');
+    expect(unlinked.map((m: { from: string }) => m.from)).toEqual(['Prose']);
+  });
+
+  it('does not report one that is already a link', async () => {
+    note('Prose', 'See [[Najdorf]] for this.');
+    expect((await get('studies', 'Najdorf')).unlinked).toEqual([]);
+  });
+
+  it('finds a mention of an alias', async () => {
+    note('Prose', 'Straight into B90 territory.');
+    const { unlinked } = await get('studies', 'Najdorf');
+    expect(unlinked[0].target).toBe('B90');
+  });
+
+  it('does not report a note naming itself', async () => {
+    note('Selfish', 'This note is about Selfish things.');
+    expect((await get('notes', 'Selfish')).unlinked).toEqual([]);
+  });
+
+  it('links one mention, leaving the words the writer typed', async () => {
+    note('Prose', 'I keep losing the Najdorf as black.');
+    const { unlinked } = await get('studies', 'Najdorf');
+    const hit = unlinked[0];
+    const res = await app.request('/api/links/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ note: hit.from, at: hit.at, text: hit.target, target: 'Najdorf' }),
+    });
+    expect(res.status).toBe(200);
+    expect(readFileSync(join(notes, 'Prose.md'), 'utf-8')).toBe(
+      'I keep losing the [[Najdorf]] as black.',
+    );
+  });
+
+  it('keeps the writer’s words when they differ from the target', async () => {
+    note('Prose', 'Straight into B90 territory.');
+    const { unlinked } = await get('studies', 'Najdorf');
+    const hit = unlinked[0];
+    await app.request('/api/links/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ note: hit.from, at: hit.at, text: hit.target, target: 'Najdorf' }),
+    });
+    expect(readFileSync(join(notes, 'Prose.md'), 'utf-8')).toBe(
+      'Straight into [[Najdorf|B90]] territory.',
+    );
+  });
+
+  it('refuses when the note has changed under the offset', async () => {
+    note('Prose', 'I keep losing the Najdorf as black.');
+    const { unlinked } = await get('studies', 'Najdorf');
+    const hit = unlinked[0];
+    note('Prose', 'Something else entirely now.');
+    const res = await app.request('/api/links/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ note: hit.from, at: hit.at, text: hit.target, target: 'Najdorf' }),
+    });
+    expect(res.status).toBe(409);
+    expect(readFileSync(join(notes, 'Prose.md'), 'utf-8')).toBe('Something else entirely now.');
+  });
+
+  it('refuses a request that names no note', async () => {
+    const res = await app.request('/api/links/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ at: 0, text: 'x' }),
+    });
+    expect(res.status).toBe(400);
+  });
+});

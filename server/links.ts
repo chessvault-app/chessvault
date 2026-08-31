@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import {
+  findUnlinkedMentions,
   findWikiMentions,
   renameLinksIn,
   buildAliasMap,
@@ -11,6 +12,7 @@ import {
   type LinkSection,
 } from '../shared/wikiLinks.ts';
 import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
+import { validId } from '../shared/vaultNames.ts';
 
 /**
  * What points at a document.
@@ -44,12 +46,34 @@ interface Mention {
   readonly target: string;
   /** Where in that note, so two mentions of one target stay distinct. */
   readonly at: number;
+  /** Where in `context` the matched words are, for an unlinked mention. */
+  readonly markAt?: number;
 }
 
 /** target key (`section:id`) -> what mentions it, in document order. */
 type Backlinks = Map<string, Mention[]>;
 
+/**
+ * One scan of the vault: the links found, and enough to answer the other
+ * question without a second walk.
+ *
+ * Unlinked mentions cannot be indexed the way links can. A link names one
+ * document, so it can be filed under it; an unlinked mention is a document
+ * NAME appearing in prose, and finding those for every document against
+ * every note is documents x notes. So the bodies are kept from the scan
+ * that already read them, and the hunt runs for the one document actually
+ * being asked about.
+ */
+interface Scan {
+  links: Backlinks;
+  bodies: { id: string; body: string }[];
+  aliases: AliasIndex;
+}
+
 const keyOf = (section: LinkSection, id: string): string => `${section}:${id}`;
+
+/** Most unlinked mentions worth returning for one document. */
+const UNLINKED_CAP = 50;
 
 /**
  * The aliases of every document under `dir`, lowercased -> id.
@@ -202,9 +226,9 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
     { dir: gamesDir, ext: '.pgn' },
   ];
 
-  let cached: { sig: string; links: Backlinks } | null = null;
+  let cached: { sig: string; scan: Scan } | null = null;
 
-  function build(): Backlinks {
+  function build(): Scan {
     const index: LinkIndex = {
       notes: idsIn(notesDir, '.md'),
       studies: idsIn(studiesDir, '.pgn'),
@@ -216,6 +240,7 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
       games: aliasesIn(gamesDir, '.pgn', index.games),
     };
     const links: Backlinks = new Map();
+    const bodies: { id: string; body: string }[] = [];
 
     for (const from of index.notes) {
       let body: string;
@@ -224,6 +249,7 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
       } catch {
         continue; // deleted mid-scan
       }
+      bodies.push({ id: from, body });
       for (const mention of findWikiMentions(body)) {
         const hit = resolveWikiLink(mention.target, index, aliases);
         // Broken and ambiguous links are dropped here rather than
@@ -248,13 +274,13 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
         else links.set(key, [entry]);
       }
     }
-    return links;
+    return { links, bodies, aliases };
   }
 
-  function current(): Backlinks {
+  function current(): Scan {
     const sig = signature(dirs);
-    if (!cached || cached.sig !== sig) cached = { sig, links: build() };
-    return cached.links;
+    if (!cached || cached.sig !== sig) cached = { sig, scan: build() };
+    return cached.scan;
   }
 
   /**
@@ -264,8 +290,91 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
   api.get('/links/:section{notes|studies|games}/:id{.+}', (c) => {
     const section = c.req.param('section') as LinkSection;
     const id = decodeURIComponent(c.req.param('id'));
-    const mentions = current().get(keyOf(section, id)) ?? [];
-    return c.json({ mentions });
+    const scan = current();
+    const mentions = scan.links.get(keyOf(section, id)) ?? [];
+
+    /**
+     * What this document answers to: its last segment, its full id when
+     * that is something else, and the aliases it alone claims. A contested
+     * alias is left out — suggesting a link that would resolve to nothing
+     * is worse than suggesting none.
+     */
+    const names = new Set<string>([id.split('/').at(-1)!, id]);
+    for (const [alias, ids] of scan.aliases[section]) {
+      if (ids.length === 1 && ids[0] === id) names.add(alias);
+    }
+
+    const unlinked: Mention[] = [];
+    for (const { id: from, body } of scan.bodies) {
+      // A note naming itself in its own prose is not a mention of anything
+      // the reader cannot already see.
+      if (section === 'notes' && from === id) continue;
+      for (const found of findUnlinkedMentions(body, [...names])) {
+        unlinked.push({
+          from,
+          context: found.context,
+          target: found.target,
+          at: found.at,
+          markAt: found.markAt,
+        });
+        // Capped, and the cap is reported rather than silently applied —
+        // see the response. A common word for a document name can match
+        // hundreds of times, and shipping all of them helps nobody.
+        if (unlinked.length >= UNLINKED_CAP) break;
+      }
+      if (unlinked.length >= UNLINKED_CAP) break;
+    }
+
+    return c.json({ mentions, unlinked, unlinkedCapped: unlinked.length >= UNLINKED_CAP });
+  });
+
+  /**
+   * Turn one unlinked mention into a link.
+   *
+   * This edits a note the reader is not looking at, on the strength of a
+   * suggestion, so it verifies before it writes: the text at that offset
+   * must still be exactly what was offered. A note edited between the
+   * suggestion and the press is refused rather than patched at a stale
+   * offset — the offsets came from a cached scan, and writing brackets
+   * into the middle of a sentence because the file moved under us is
+   * precisely the damage a vault of plain files cannot absorb.
+   *
+   * One occurrence, named by where it is. "Link all of them" is a
+   * different promise and would want its own confirmation.
+   */
+  api.post('/links/link', async (c) => {
+    const body = await c.req
+      .json<{ note?: string; at?: number; text?: string; target?: string }>()
+      .catch(() => null);
+    const note = body?.note;
+    const at = body?.at;
+    const text = body?.text;
+    const target = body?.target ?? text;
+    if (!note || typeof at !== 'number' || !text || !target || !validId(note)) {
+      return c.json({ error: 'note, at, text and target are required' }, 400);
+    }
+
+    const path = resolve(notesDir, `${note}.md`);
+    let source: string;
+    try {
+      source = readFileSync(path, 'utf-8');
+    } catch {
+      return c.json({ error: 'that note could not be read' }, 404);
+    }
+    if (source.slice(at, at + text.length) !== text) {
+      return c.json({ error: 'that note has changed since; reopen it and try again' }, 409);
+    }
+
+    // Written as the writer wrote it: the words they typed stay on the
+    // page, and the link carries the target only when the two differ.
+    const link = text === target ? `[[${text}]]` : `[[${target}|${text}]]`;
+    const next = `${source.slice(0, at)}${link}${source.slice(at + text.length)}`;
+    try {
+      writeFileSync(path, next);
+    } catch {
+      return c.json({ error: 'that note could not be written' }, 500);
+    }
+    return c.json({ linked: note });
   });
 
   return api;

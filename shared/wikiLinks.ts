@@ -222,6 +222,26 @@ export interface WikiMention {
   readonly at: number;
   /** The sentence it sits in, for showing the mention in context. */
   readonly context: string;
+  /**
+   * Where inside `context` the matched words start, when that is known.
+   *
+   * A context can hold the same name twice, and the reader has to be able
+   * to see which one a row is about. Absent means "find it yourself", which
+   * is right where a mention is the only one in its sentence.
+   */
+  readonly markAt?: number;
+}
+
+/** Index of the `nth` (0-based) case-insensitive occurrence, or -1. */
+function nthIndexOf(haystack: string, needle: string, nth: number): number {
+  const lower = haystack.toLowerCase();
+  const wanted = needle.toLowerCase();
+  let at = -1;
+  for (let i = 0; i <= nth; i += 1) {
+    at = lower.indexOf(wanted, at + 1);
+    if (at < 0) return -1;
+  }
+  return at;
 }
 
 /** How much text either side of a mention is worth showing. */
@@ -252,6 +272,74 @@ export function findWikiMentions(body: string): WikiMention[] {
     found.push({ target: text === target ? target : text, at, context: asProse(body.slice(from, to)) });
   }
   return found;
+}
+
+/**
+ * The shortest name worth hunting for unlinked.
+ *
+ * Two characters match far too much prose to be a suggestion: a document
+ * called "e4" would report every mention of the move. Three is enough to
+ * keep ECO codes, which are the case this vault actually wants.
+ */
+const MIN_MENTION = 3;
+
+const escapeRe = (raw: string): string => raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Where a document is NAMED in a body without being linked to.
+ *
+ * Obsidian's "unlinked mentions": the writer typed the name and did not
+ * make it a link, usually because they were writing rather than filing.
+ * Offered, never applied — the note belongs to whoever wrote it.
+ *
+ * The rules are all about not crying wolf, because this is the one feature
+ * here that can produce more noise than signal. A vault of chess notes says
+ * "Najdorf" constantly without meaning the document:
+ *
+ *  - Whole names only. `\b` is no use when a name can contain spaces and
+ *    punctuation, so the bounds are "not a letter or a number either side"
+ *    — which keeps "Najdorf" out of "Najdorfian" and finds it in "the
+ *    Najdorf, again".
+ *  - Nothing already inside a `[[link]]`, including the display half of
+ *    `[[Target|display]]`: that IS the link, and offering to link it again
+ *    would be offering to break it.
+ *  - Nothing shorter than three characters.
+ *
+ * What it deliberately does NOT do is judge whether the sentence meant the
+ * document. It cannot, and pretending otherwise is how a suggestion list
+ * becomes something people learn to dismiss unread.
+ */
+export function findUnlinkedMentions(body: string, names: readonly string[]): WikiMention[] {
+  const linked: [number, number][] = [];
+  for (const match of body.matchAll(WIKI_RE)) {
+    linked.push([match.index, match.index + match[0].length]);
+  }
+  const inLink = (at: number): boolean => linked.some(([from, to]) => at >= from && at < to);
+
+  const found: WikiMention[] = [];
+  const seen = new Set<number>();
+  for (const name of names) {
+    const wanted = name.trim();
+    if (wanted.length < MIN_MENTION) continue;
+    // Unicode letter/number classes, so the bound holds for a name in any
+    // script rather than only for ASCII.
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(wanted)}(?![\\p{L}\\p{N}])`, 'giu');
+    for (const match of body.matchAll(re)) {
+      const at = match.index;
+      if (inLink(at) || seen.has(at)) continue;
+      seen.add(at);
+      const [from, to] = sentenceAround(body, at, at + match[0].length);
+      const context = asProse(body.slice(from, to));
+      // WHICH occurrence this is, counted inside the window. A sentence
+      // naming the document twice yields two mentions with the same
+      // context, and a reader offered two identical-looking rows has to be
+      // able to see which word each one is about — otherwise linking the
+      // second appears to do nothing to the first.
+      const earlier = [...body.slice(from, at).matchAll(re)].length;
+      found.push({ target: match[0], at, context, markAt: nthIndexOf(context, match[0], earlier) });
+    }
+  }
+  return found.sort((a, b) => a.at - b.at);
 }
 
 /** Ends a sentence. A bare newline does not — see `sentenceAround`. */

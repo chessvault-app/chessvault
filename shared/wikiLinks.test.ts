@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NO_ALIASES,
   buildAliasMap,
+  findUnlinkedMentions,
   findWikiMentions,
   renameLinksIn,
   resolveWikiLink,
@@ -361,5 +362,67 @@ describe('findWikiMentions', () => {
   it('keeps the context to a window rather than the whole document', () => {
     const body = `${'x '.repeat(400)}[[Target]]${' y'.repeat(400)}`;
     expect(findWikiMentions(body)[0]!.context.length).toBeLessThan(220);
+  });
+});
+
+describe('findUnlinkedMentions', () => {
+  it('finds the name written as plain prose', () => {
+    const found = findUnlinkedMentions('I keep losing the Najdorf as black.', ['Najdorf']);
+    expect(found).toHaveLength(1);
+    expect(found[0]!.context).toBe('I keep losing the Najdorf as black.');
+  });
+
+  it('ignores the name where it is already a link', () => {
+    expect(findUnlinkedMentions('See [[Najdorf]] for this.', ['Najdorf'])).toEqual([]);
+  });
+
+  it('ignores it inside the display half of a piped link', () => {
+    // That text IS the link; offering to link it again would break it.
+    expect(findUnlinkedMentions('See [[openings/Sicilian|Najdorf]].', ['Najdorf'])).toEqual([]);
+  });
+
+  it('finds the unlinked one and skips the linked one in the same body', () => {
+    const found = findUnlinkedMentions('The Najdorf again — see [[Najdorf]].', ['Najdorf']);
+    expect(found).toHaveLength(1);
+    expect(found[0]!.at).toBe(4);
+  });
+
+  it('matches whole names only', () => {
+    expect(findUnlinkedMentions('A Najdorfian idea.', ['Najdorf'])).toEqual([]);
+    expect(findUnlinkedMentions('The Najdorf, again.', ['Najdorf'])).toHaveLength(1);
+  });
+
+  it('ignores case', () => {
+    expect(findUnlinkedMentions('the najdorf', ['Najdorf'])).toHaveLength(1);
+  });
+
+  it('finds a name containing spaces', () => {
+    expect(findUnlinkedMentions('Read Attacking the castled king twice.', ['Attacking the castled king'])).toHaveLength(1);
+  });
+
+  it('takes any of the names a document answers to', () => {
+    const found = findUnlinkedMentions('Both Najdorf and B90 here.', ['Najdorf', 'B90']);
+    expect(found.map((m) => m.target)).toEqual(['Najdorf', 'B90']);
+  });
+
+  it('reports one hit per place, even when two names overlap there', () => {
+    expect(findUnlinkedMentions('Najdorf.', ['Najdorf', 'najdorf'])).toHaveLength(1);
+  });
+
+  it('refuses a name too short to mean anything', () => {
+    expect(findUnlinkedMentions('e4 e5 e4 e4', ['e4'])).toEqual([]);
+  });
+
+  it('keeps a three-character name, which is what an ECO code is', () => {
+    expect(findUnlinkedMentions('Straight into B90 territory.', ['B90'])).toHaveLength(1);
+  });
+
+  it('does not trip over regex characters in a name', () => {
+    expect(findUnlinkedMentions('See Kasparov (1985) here.', ['Kasparov (1985)'])).toHaveLength(1);
+  });
+
+  it('reports mentions in the order they appear', () => {
+    const found = findUnlinkedMentions('B90 first, Najdorf second.', ['Najdorf', 'B90']);
+    expect(found.map((m) => m.target)).toEqual(['B90', 'Najdorf']);
   });
 });
