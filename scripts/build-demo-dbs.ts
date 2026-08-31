@@ -19,6 +19,7 @@ import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DATA_PUZZLES, REPO_ROOT } from '../server/paths.ts';
 import { demoSourceRefgames } from './lib/refgamesFiles.ts';
+import { tune } from './lib/db-tuning.ts';
 
 const arg = (flag: string, fallback: number): number => {
   const at = process.argv.indexOf(flag);
@@ -103,16 +104,30 @@ out.transaction(() => {
   }
 })();
 
-// The derived tables the dashboard and the picker read. Built here rather
-// than left to tune-dbs.ts, because a static asset has nobody to tune it.
+/**
+ * The derived tables and indexes the API reads, applied HERE because a
+ * static asset has nobody to tune it later — `npm run tune:dbs` is a thing
+ * you run against a server's own files, and there is no server.
+ *
+ * From the shared module rather than copied out of it. This block used to
+ * be a hand-written list that happened to match tune()'s, and then did not:
+ * the reference database grew `players`, `openings` and `events` lookups,
+ * the copy here did not follow, and the search panel's value suggestions —
+ * which read exactly those tables and answer `{names: []}` without them —
+ * were empty in the demo for every player, opponent and tournament, while
+ * the same names returned games in the browser beside it. A list that has
+ * to be kept in step by hand is one that will not be.
+ *
+ * What stays written out is what tune() does not know about: the two
+ * indexes and `theme_counts`, which no other database is expected to
+ * carry.
+ */
 out.exec(`
   CREATE INDEX idx_puzzles_rating ON puzzles (rating);
   CREATE INDEX idx_themes ON themes (theme, rating);
   CREATE TABLE theme_counts AS SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme;
-  CREATE TABLE rating_counts AS SELECT rating, COUNT(*) AS n FROM puzzles GROUP BY rating;
-  CREATE TABLE theme_rating_counts AS
-    SELECT theme, rating, COUNT(*) AS n FROM themes GROUP BY theme, rating;
 `);
+console.log(`demo puzzles: tuned ${tune(out).join(', ')}`);
 const putMeta = out.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
 putMeta.run('source', 'Lichess puzzle database (CC0) — curated subset for the demo');
 // The dashboard reads its headline count from here, not from COUNT(*).
@@ -171,13 +186,19 @@ if (gamesSource !== null) {
     'games',
     String(rows.length),
   );
-  to.exec('CREATE INDEX idx_games_players ON games (white, black, opening, eco); VACUUM');
   gameCount = rows.length;
   to.close();
   from.close();
   // The position index, so the demo's explorer and repertoire answer from
   // this same slice — the opening books it used to ship are gone.
   indexPositions(gamesOut, { log: console.log });
+  // Tuned AFTER the index, not before: `move_counts` is derived from the
+  // plies table, so a file tuned first would be tuned for a schema half of
+  // which did not exist yet. VACUUM last, once nothing more will be added.
+  const tuned = new Database(gamesOut);
+  console.log(`demo games:   tuned ${tune(tuned).join(', ')}`);
+  tuned.exec('VACUUM');
+  tuned.close();
 } else {
   console.warn('no reference-games database on this machine — the demo will show its empty state');
 }

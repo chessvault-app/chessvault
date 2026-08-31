@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo's database search suggests names again.** Typing a player,
+  an opponent or a tournament into the search panel is meant to suggest
+  from that database's own names; in the demo it suggested nothing, ever,
+  for any of the three — while the same name returned games in the table
+  beside it. The route reads three small lookup tables derived from the
+  games, and the demo's database was built without them: the builder's
+  list of derived tables was a hand-written copy of the shared one, made
+  before those lookups existed, and it did not follow when they were
+  added. It calls the shared tuner now, so it cannot fall behind again.
+  The two files grow by 0.3 MB each, which buys the lookups and the four
+  search indexes the copy had also missed.
+
 - **The demo's own vault is fully indexed again, and it says which build
   it is.** Two bugs in the static demo, both invisible from the source.
   Its my-games index walks the vault a slice at a time and reschedules the
