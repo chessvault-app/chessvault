@@ -1,5 +1,4 @@
 import { Hono, type Context } from 'hono';
-import { randomBytes } from 'node:crypto';
 import {
   createReadStream,
   createWriteStream,
@@ -16,6 +15,7 @@ import { Readable } from 'node:stream';
 import { finished, pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
+import { isLibraryBookId, libraryBookHasPdf, newBookId } from './bookIds.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
 
@@ -73,30 +73,12 @@ const BOOKS_DIR = resolve(VAULT, 'books');
 export const PDF_CAP = 500 * 1024 * 1024;
 
 /**
- * A book's folder: `b` and eight random bytes as hex.
- *
- * Random rather than a hash of the title, because two books may be called
- * the same thing — the shelf's own New button offers one name to every
- * book it makes — and a hash would file them both in one folder, which is
- * the collision this id exists to make impossible. Eight bytes is 2^64:
- * a vault would need billions of books before two ever met.
- *
- * The puzzle shelf mints its folders the same way, so both sides import
- * this rather than keeping a second copy of the scheme to drift from.
+ * The id scheme, and the two questions asked about one, live in
+ * `./bookIds.ts` — see its header for why they are not here. Re-exported
+ * so a caller that wants the library and its ids can take both from the
+ * library, as they always could.
  */
-export const newBookId = (): string => `b${randomBytes(8).toString('hex')}`;
-
-/** Minted here, so a folder that was never minted here is recognisable. */
-export const isLibraryBookId = (name: string): boolean => /^b[0-9a-f]{16}$/.test(name);
-
-/**
- * Whether this library book still has its file — the one question the
- * puzzle shelf asks, so a puzzle book whose PDF was removed from the
- * library simply stops offering to be read.
- */
-export function libraryBookHasPdf(id: string, dir: string = BOOKS_DIR): boolean {
-  return isLibraryBookId(id) && existsSync(resolve(dir, id, 'book.pdf'));
-}
+export { isLibraryBookId, libraryBookHasPdf, newBookId };
 
 interface BookMeta {
   title: string;
