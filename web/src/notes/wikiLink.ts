@@ -1,10 +1,17 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { t } from '@/lib/i18n';
 import { WIKI_RE, parseWikiMatch, resolveWikiLink } from '@shared/wikiLinks';
+import {
+  PENDING_LINK,
+  SUGGEST_LIMIT,
+  createSuggestStore,
+  type OwnedSuggestStore,
+  type SuggestStore,
+} from './suggestStore';
 import {
   allTargets,
   docsNow,
@@ -205,125 +212,6 @@ function affordanceFor(state: LinkState, follows: boolean): Record<string, strin
   return follows ? { title, role: 'link', tabindex: '0' } : { title };
 }
 
-/**
- * What the popup draws. Replaced whole and never mutated, so a subscriber
- * can tell one snapshot from the next by identity alone.
- */
-export interface SuggestSnapshot {
-  readonly open: boolean;
-  readonly items: readonly string[];
-  readonly index: number;
-  /** How many matched in all, so a shortened list can say it is one. */
-  readonly total: number;
-  /** Where the caret is, in viewport coordinates: the popup's anchor. */
-  readonly caret: { readonly left: number; readonly top: number; readonly bottom: number } | null;
-}
-
-const CLOSED: SuggestSnapshot = { open: false, items: [], index: 0, total: 0, caret: null };
-
-/**
- * The suggester's state, owned by the editor and read by React.
- *
- * The split follows what each side can actually do. Spotting `[[` behind
- * the caret, knowing where that caret sits on screen, and reaching the
- * arrow keys before the editor's own bindings do are things only a
- * ProseMirror plugin can do. Drawing an anchored, dismissible,
- * collision-aware layer is a thing the component library already does,
- * and did better than the hand-rolled div this replaced. So the plugin
- * keeps the knowledge and publishes it here; `WikiSuggest` subscribes.
- *
- * It lives in the extension's `storage` rather than at module scope,
- * which the DOM version used: one popup for however many editors are
- * mounted, and StrictMode alone mounts two.
- */
-export interface SuggestStore {
-  subscribe(fn: () => void): () => void;
-  snapshot(): SuggestSnapshot;
-  /** Replace the pending `[[query` with `id`, then close. */
-  pick(id: string): void;
-  close(): void;
-}
-
-/** The half the plugin drives. The component only ever sees `SuggestStore`. */
-interface OwnedSuggestStore extends SuggestStore {
-  /** Arm at the caret: from here, results for `query` may arrive. */
-  arm(
-    view: EditorView,
-    range: { from: number; to: number },
-    query: string,
-    caret: SuggestSnapshot['caret'],
-  ): void;
-  /** Results for `query`, dropped if the typist has moved past it. */
-  offer(query: string, items: string[], total: number): void;
-  move(delta: number): void;
-  /** Take the active item, if there is one; reports whether it did. */
-  commit(): boolean;
-}
-
-function createSuggestStore(): OwnedSuggestStore {
-  const listeners = new Set<() => void>();
-  let state: SuggestSnapshot = CLOSED;
-  let view: EditorView | null = null;
-  let range: { from: number; to: number } | null = null;
-  let query = '';
-
-  function set(next: SuggestSnapshot): void {
-    if (next === state) return;
-    state = next;
-    for (const fn of listeners) fn();
-  }
-
-  return {
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => {
-        listeners.delete(fn);
-      };
-    },
-    snapshot: () => state,
-    arm(nextView, nextRange, nextQuery, caret) {
-      view = nextView;
-      range = nextRange;
-      query = nextQuery;
-      // The caret keeps moving while results are in flight; anchor to
-      // where it is now, not to where the query was asked from.
-      set(state.open ? { ...state, caret } : { ...CLOSED, caret });
-    },
-    offer(forQuery, items, total) {
-      if (forQuery !== query || !range) return;
-      if (items.length === 0) return set(CLOSED);
-      set({
-        open: true,
-        items,
-        index: Math.min(state.index, items.length - 1),
-        total,
-        caret: state.caret,
-      });
-    },
-    move(delta) {
-      if (!state.open) return;
-      const n = state.items.length;
-      set({ ...state, index: (state.index + delta + n) % n });
-    },
-    commit() {
-      const id = state.items[state.index];
-      if (!id) return false;
-      this.pick(id);
-      return true;
-    },
-    pick(id) {
-      if (!view || !range) return;
-      view.dispatch(view.state.tr.insertText(`${id}]]`, range.from, range.to));
-      this.close();
-    },
-    close() {
-      range = null;
-      query = '';
-      set(CLOSED);
-    },
-  };
-}
-
 export interface WikiLinkStorage {
   suggest: OwnedSuggestStore;
 }
@@ -413,16 +301,18 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
               if (!view.editable || !view.state.selection.empty) return suggest.close();
               const { $from } = view.state.selection;
               const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
-              const match = /\[\[([^[\]]*)$/.exec(before);
+              const match = PENDING_LINK.exec(before);
               if (!match) return suggest.close();
               const query = match[1]!.toLowerCase();
               const cursor = view.state.selection.from;
-              const { left, top, bottom } = view.coordsAtPos(cursor);
+              const { left, top, right, bottom } = view.coordsAtPos(cursor);
               suggest.arm(
-                view,
+                (from, to, text) => view.dispatch(view.state.tr.insertText(text, from, to)),
                 { from: cursor - match[1]!.length, to: cursor },
                 query,
-                { left, top, bottom },
+                // The caret's own line box, opening below it: a note is a
+                // full page of prose, so the list follows the words.
+                { left, top, right, bottom, side: 'bottom' },
               );
               void allTargets().then((all) => {
                 // The count is of everything that matched, not of what is
@@ -430,7 +320,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
                 // answer, so a writer whose document is ninth concludes it
                 // is not there and stops typing.
                 const hits = all.filter((id) => id.toLowerCase().includes(query));
-                suggest.offer(query, hits.slice(0, 8), hits.length);
+                suggest.offer(query, hits.slice(0, SUGGEST_LIMIT), hits.length);
               });
             },
             destroy: () => {

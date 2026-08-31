@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useId, useMemo, useSyncExternalStore } from 'react';
-import type { Editor } from '@tiptap/react';
 import { Popover, PopoverContent } from '@/components/ui/popover';
 import { MENU_ITEM } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { wikiSuggestStore } from './wikiLink';
+import { CLOSED, type SuggestStore } from './suggestStore';
 
 /**
  * The list `[[` opens, drawn beside the caret.
@@ -27,18 +26,28 @@ import { wikiSuggestStore } from './wikiLink';
  * they have to beat the editor's own bindings to them. This side only
  * draws, and reports mouse presses.
  */
-export function WikiSuggest({ editor }: { editor: Editor | null }) {
-  const store = useMemo(() => (editor ? wikiSuggestStore(editor) : null), [editor]);
+export function WikiSuggest({
+  store,
+  host,
+}: {
+  store: SuggestStore | null;
+  /**
+   * The element that keeps focus while the list is read — the note's
+   * contenteditable, or the comment box. The list is never focused, so
+   * this is what has to carry `aria-activedescendant`.
+   */
+  host: HTMLElement | null;
+}) {
   const subscribe = useCallback(
     (fn: () => void) => store?.subscribe(fn) ?? (() => {}),
     [store],
   );
   const snapshot = useSyncExternalStore(
     subscribe,
-    () => store?.snapshot() ?? EMPTY,
-    () => EMPTY,
+    () => store?.snapshot() ?? CLOSED,
+    () => CLOSED,
   );
-  const { open, items, index, total, caret } = snapshot;
+  const { open, items, index, total, anchor: at } = snapshot;
 
   const listId = useId();
   const optionId = (i: number) => `${listId}-${i}`;
@@ -51,7 +60,7 @@ export function WikiSuggest({ editor }: { editor: Editor | null }) {
    * can see.
    */
   useEffect(() => {
-    const dom = editor?.view.dom;
+    const dom = host;
     if (!dom) return;
     if (!open) {
       dom.removeAttribute('aria-activedescendant');
@@ -64,7 +73,7 @@ export function WikiSuggest({ editor }: { editor: Editor | null }) {
       dom.removeAttribute('aria-activedescendant');
       dom.removeAttribute('aria-controls');
     };
-  }, [editor, open, index, listId]);
+  }, [host, open, index, listId]);
 
   /**
    * A caret is a point, and a positioner wants a box. Base UI takes a
@@ -74,20 +83,20 @@ export function WikiSuggest({ editor }: { editor: Editor | null }) {
    * the window.
    */
   const anchor = useMemo(() => {
-    if (!caret) return null;
-    const { left, top, bottom } = caret;
+    if (!at) return null;
+    const { left, top, right, bottom } = at;
     return {
-      getBoundingClientRect: () => new DOMRect(left, top, 0, bottom - top),
+      getBoundingClientRect: () => new DOMRect(left, top, right - left, bottom - top),
     };
-  }, [caret]);
+  }, [at]);
 
-  if (!store || !open || !anchor) return null;
+  if (!store || !open || !anchor || !at) return null;
 
   return (
     <Popover open modal={false} onOpenChange={(next) => !next && store.close()}>
       <PopoverContent
         anchor={anchor}
-        side="bottom"
+        side={at.side}
         align="start"
         sideOffset={4}
         collisionPadding={8}
@@ -129,4 +138,3 @@ export function WikiSuggest({ editor }: { editor: Editor | null }) {
   );
 }
 
-const EMPTY = { open: false, items: [], index: 0, total: 0, caret: null } as const;

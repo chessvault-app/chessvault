@@ -10,6 +10,8 @@ import { autoFocusField, isCoarsePointer } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/components/chip-row';
+import { WikiSuggest } from '@/notes/WikiSuggest';
+import { useWikiSuggest } from '@/notes/useWikiSuggest';
 import { TitleTip } from '@/components/title-tip';
 import { t } from '@/lib/i18n';
 
@@ -53,6 +55,15 @@ export function AnnotationPane({
     () => localStorage.getItem(PALETTE_KEY) !== 'closed',
   );
   const box = useRef<HTMLTextAreaElement>(null);
+  const sheetBox = useRef<HTMLTextAreaElement>(null);
+
+  // `[[` completes here exactly as it does in a note, and from the same
+  // list — a comment that names a study should be able to LINK it, which
+  // is the whole point of the vault. One per box: the sheet and the inline
+  // textarea are never both on screen, but they are two elements, and a
+  // list anchored to the wrong one hangs off nothing.
+  const inline = useWikiSuggest({ box, value: draft, onChange: setDraft });
+  const sheetSuggest = useWikiSuggest({ box: sheetBox, value: draft, onChange: setDraft });
 
   // The desktop box grows with what is written in it, from its two rows up
   // to eight, instead of staying at two and scrolling everything past the
@@ -204,7 +215,11 @@ export function AnnotationPane({
           <Textarea
             ref={box}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              inline.sync();
+            }}
+            onKeyDown={inline.onKeyDown}
             onBlur={flush}
             placeholder={placeholder}
             rows={2}
@@ -214,6 +229,7 @@ export function AnnotationPane({
           />
         )}
       </div>
+      {!coarse && <WikiSuggest store={inline.store} host={box.current} />}
       {/* The app's own window. This was a scrim and a card pinned to the
           TOP of the screen, hand-rolled here from before there was a
           shared sheet — the one window in the app that opened away from
@@ -232,12 +248,18 @@ export function AnnotationPane({
         >
           <DialogContent title={placeholder}>
             <Textarea
+              ref={sheetBox}
               autoFocus={autoFocusField()}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                sheetSuggest.sync();
+              }}
+              onKeyDown={sheetSuggest.onKeyDown}
               rows={4}
               className="w-full resize-none leading-relaxed"
             />
+            <WikiSuggest store={sheetSuggest.store} host={sheetBox.current} />
             <Button
               variant="default"
               size="sm"
