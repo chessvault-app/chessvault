@@ -5,10 +5,11 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.7.0
 
-Landed after v0.6.0 was tagged, so they are in the repository and in no
-installer. This section becomes the next version's heading.
+The workspace, with every analysis surface on one page; links written on a
+move and not only in a note; and the panes under a board that turn with a
+swipe.
 
 - **Links can be written on a move, not only in a note.** A note could
   write `[[Some Study]]` and open it; a study or a game could be named that
