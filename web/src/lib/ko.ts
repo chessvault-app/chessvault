@@ -911,6 +911,8 @@ export const ko: Record<string, string> = {
   'New password': '새 비밀번호',
   'Repeat new password': '새 비밀번호 확인',
   'Lichess token': 'Lichess 토큰',
+  '{url} (needs internet)': '{url} (인터넷 필요)',
+  'White {w}% · Draw {d}% · Black {b}%': '백 {w}% · 무 {d}% · 흑 {b}%',
   'Show token': '토큰 보기',
   'Hide token': '토큰 가리기',
   'Save line to study': '라인을 스터디로 저장',

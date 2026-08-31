@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { TitleTip } from '@/components/title-tip';
 
 interface PanelProps {
   children: ReactNode;
@@ -140,43 +141,44 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
     >
       {children}
       {resizeKey !== undefined && (
-        <div
-          title={t('Drag to resize · double-click to reset')}
-          onDoubleClick={() => {
-            drag.current = null;
-            setHeight(null);
-          }}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            drag.current = { y: e.clientY, h: ref.current?.offsetHeight ?? 0 };
-            e.currentTarget.setPointerCapture(e.pointerId);
-          }}
-          onPointerMove={(e) => {
-            // The buttons check drops stray moves delivered after release
-            // (synthetic double-clicks emit them), which would otherwise
-            // resurrect the height a reset just cleared.
-            if (!drag.current || (e.buttons & 1) === 0) return;
-            const next = drag.current.h + e.clientY - drag.current.y;
-            setHeight(Math.min(Math.max(next, DRAG_MIN_H), window.innerHeight * 0.8));
-          }}
-          onPointerUp={() => {
-            drag.current = null;
-          }}
-          className={cn(
-            // mt-auto pins the grip to the panel's bottom edge even when a
-            // dragged height leaves the panel taller than its content —
-            // otherwise it floats mid-panel right under the last row. The
-            // negative bottom margin takes back the card's own floor, the
-            // way CardFooter's `has-` rule does for a footer: the grip is
-            // the panel's edge, so it has to reach it. (No resizable panel
-            // carries a footer as well; one that did would zero the card's
-            // pb and this would then overshoot by --card-spacing.)
-            'border-border/60 hover:bg-accent mt-auto -mb-(--card-spacing) hidden h-2.5 shrink-0 touch-none',
-            'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
-          )}
-        >
-          <div className="bg-border h-[3px] w-8 rounded-full" />
-        </div>
+        <TitleTip title={t('Drag to resize · double-click to reset')}>
+          <div
+            onDoubleClick={() => {
+              drag.current = null;
+              setHeight(null);
+            }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              drag.current = { y: e.clientY, h: ref.current?.offsetHeight ?? 0 };
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              // The buttons check drops stray moves delivered after release
+              // (synthetic double-clicks emit them), which would otherwise
+              // resurrect the height a reset just cleared.
+              if (!drag.current || (e.buttons & 1) === 0) return;
+              const next = drag.current.h + e.clientY - drag.current.y;
+              setHeight(Math.min(Math.max(next, DRAG_MIN_H), window.innerHeight * 0.8));
+            }}
+            onPointerUp={() => {
+              drag.current = null;
+            }}
+            className={cn(
+              // mt-auto pins the grip to the panel's bottom edge even when a
+              // dragged height leaves the panel taller than its content —
+              // otherwise it floats mid-panel right under the last row. The
+              // negative bottom margin takes back the card's own floor, the
+              // way CardFooter's `has-` rule does for a footer: the grip is
+              // the panel's edge, so it has to reach it. (No resizable panel
+              // carries a footer as well; one that did would zero the card's
+              // pb and this would then overshoot by --card-spacing.)
+              'border-border/60 hover:bg-accent mt-auto -mb-(--card-spacing) hidden h-2.5 shrink-0 touch-none',
+              'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
+            )}
+          >
+            <div className="bg-border h-[3px] w-8 rounded-full" />
+          </div>
+        </TitleTip>
       )}
     </Card>
   );

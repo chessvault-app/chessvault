@@ -45,6 +45,7 @@ import { useDiagramJob } from './diagramJob';
 import { usePdfSearch, type PdfSearch } from './pdfSearch';
 import { PdfScroller, useBookPdf, type Rotation } from './pdfViewer';
 import { UploadBookDialog } from './UploadBookDialog';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * A book open beside a board.
@@ -889,27 +890,28 @@ function PdfPane({
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>
-        <Input
-          inputSize="sm"
-          inputMode="numeric"
-          className="w-12 text-center tabular-nums"
-          value={typed ?? String(pageNo || 1)}
-          aria-label={t('Go to page')}
-          title={t('Go to page')}
-          onFocus={(e) => e.currentTarget.select()}
-          onChange={(e) => setTyped(e.target.value)}
-          onBlur={() => {
-            if (typed !== null && typed.trim() !== '') goTo(Number(typed));
-            setTyped(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur();
-            if (e.key === 'Escape') {
+        <TitleTip title={t('Go to page')}>
+          <Input
+            inputSize="sm"
+            inputMode="numeric"
+            className="w-12 text-center tabular-nums"
+            value={typed ?? String(pageNo || 1)}
+            aria-label={t('Go to page')}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => setTyped(e.target.value)}
+            onBlur={() => {
+              if (typed !== null && typed.trim() !== '') goTo(Number(typed));
               setTyped(null);
-              e.currentTarget.blur();
-            }
-          }}
-        />
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+              if (e.key === 'Escape') {
+                setTyped(null);
+                e.currentTarget.blur();
+              }
+            }}
+          />
+        </TitleTip>
         <span className="text-muted-foreground px-1 text-sm tabular-nums">
           {pages > 0 ? `/ ${pages}` : ''}
         </span>

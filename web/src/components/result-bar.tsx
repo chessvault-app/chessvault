@@ -1,4 +1,6 @@
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * Lichess-style stacked white/draw/black percentage bar.
@@ -23,10 +25,17 @@ export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
     { value: pct(b), className: 'bg-eval-black text-on-eval-black' },
   ];
   return (
-    <div
-      className="border-border flex h-4 w-full overflow-hidden rounded-[4px] border font-mono text-[0.5625rem]"
-      title={`White ${pct(w).toFixed(1)}% · Draw ${pct(d).toFixed(1)}% · Black ${pct(b).toFixed(1)}%`}
+    // The split the bar cannot print. Through t(), which it was not: the
+    // three words were English in the source, on a bar that stands in two
+    // panels of a translated app.
+    <TitleTip
+      title={t('White {w}% · Draw {d}% · Black {b}%', {
+        w: pct(w).toFixed(1),
+        d: pct(d).toFixed(1),
+        b: pct(b).toFixed(1),
+      })}
     >
+    <div className="border-border flex h-4 w-full overflow-hidden rounded-[4px] border font-mono text-[0.5625rem]">
       {segments.map(({ value, className }, i) => (
         <span
           key={i}
@@ -37,5 +46,6 @@ export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
         </span>
       ))}
     </div>
+    </TitleTip>
   );
 }

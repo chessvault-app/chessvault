@@ -24,6 +24,7 @@ import { PromptDialog } from '@/components/prompt-dialog';
 
 import { t } from '@/lib/i18n';
 import { isCoarsePointer } from '@/lib/media';
+import { TitleTip } from '@/components/title-tip';
 
 export interface GameSummary {
   file: string;
@@ -507,16 +508,17 @@ export function GameRow({
         <span className="w-[1.375rem] shrink-0 @max-[21.5rem]/arc:hidden" aria-hidden />
       )}
       {showLink && link && (
-        <a
-          href={link}
-          target="_blank"
-          rel="noreferrer"
-          title={t('View on chess.com (needs internet)')}
-          onClick={(e) => e.stopPropagation()}
-          className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
-        >
-          <ExternalLink className="size-3.5" />
-        </a>
+        <TitleTip title={t('View on chess.com (needs internet)')}>
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
+          >
+            <ExternalLink className="size-3.5" />
+          </a>
+        </TitleTip>
       )}
     </li>
   );

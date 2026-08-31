@@ -67,6 +67,7 @@ import {
 import { consumePendingPuzzle } from './handoff';
 import { fetchSolvedToday } from './today';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import {
   judgeMove,
   positionAt,
@@ -898,12 +899,13 @@ function Trainer({
                 size="sm"
                 nativeButton={false}
                 render={
-                  <a
-                    href={puzzle.game_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={t('Opens lichess (needs internet)')}
-                  />
+                  <TitleTip title={t('Opens lichess (needs internet)')}>
+                    <a
+                      href={puzzle.game_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    />
+                  </TitleTip>
                 }
               >
                 <ExternalLink className="size-3.5" />

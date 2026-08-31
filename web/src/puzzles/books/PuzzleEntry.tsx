@@ -54,6 +54,7 @@ import {
 import { useWideLayout } from '@/lib/media';
 import { SourceCrop, SourcePane, SolutionsView, hasSolutions } from './evidence';
 import { useElementWidth } from '@/hooks/use-element-width';
+import { TitleTip } from '@/components/title-tip';
 
 /** Load the puzzle, then reuse the standard entry flow to replace it. */
 export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string }) {
@@ -507,23 +508,26 @@ function SolutionRecorder({
                       </span>
                     ) : null}
                     {isDefender ? (
-                      <button
-                        type="button"
-                        onClick={() => toggleWildcard(i)}
+                      <TitleTip
                         title={t(
                           wildcards.has(i)
                             ? 'Any move accepted here (click to require this exact move)'
                             : 'Click to accept ANY move here (the book\u2019s K~)',
                         )}
-                        className={cn(
-                          'rounded-sm px-1 transition-colors duration-100',
-                          wildcards.has(i)
-                            ? 'bg-muted text-primary'
-                            : 'hover:bg-accent',
-                        )}
                       >
-                        {wildcards.has(i) ? `${m.san.charAt(0)}~` : m.san}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleWildcard(i)}
+                          className={cn(
+                            'rounded-sm px-1 transition-colors duration-100',
+                            wildcards.has(i)
+                              ? 'bg-muted text-primary'
+                              : 'hover:bg-accent',
+                          )}
+                        >
+                          {wildcards.has(i) ? `${m.san.charAt(0)}~` : m.san}
+                        </button>
+                      </TitleTip>
                     ) : (
                       <span className="px-1">{m.san}</span>
                     )}

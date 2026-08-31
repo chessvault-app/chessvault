@@ -50,6 +50,7 @@ import { DocumentHistory } from '@/components/history-panel';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
@@ -656,7 +657,6 @@ function ChapterRow({
           type="button"
           onClick={() => selectChapter(index)}
           onDoubleClick={startRename}
-          title={t('Double-click to rename')}
           className={cn(
             // The height is the density token, not a literal: this row
             // cannot be sized by its text (it swaps in a rename input and
@@ -669,31 +669,41 @@ function ChapterRow({
           )}
         >
           {childCount > 0 ? (
-            <span
-              role="button"
-              tabIndex={-1}
+            <TitleTip
               title={
                 isFolded ? t('Unfold {n} sub-chapters', { n: childCount }) : t('Fold sub-chapters')
               }
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFold();
-              }}
-              // Touch gets a ~32px hit area; the negative margin cancels
-              // the padding so the visual layout doesn't move.
-              className="hover:text-foreground -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
             >
-              <ChevronDown
-                className={cn('size-3 transition-transform duration-100', isFolded && '-rotate-90')}
-              />
-            </span>
+              <span
+                role="button"
+                tabIndex={-1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFold();
+                }}
+                // Touch gets a ~32px hit area; the negative margin cancels
+                // the padding so the visual layout doesn't move.
+                className="hover:text-foreground -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
+              >
+                <ChevronDown
+                  className={cn('size-3 transition-transform duration-100', isFolded && '-rotate-90')}
+                />
+              </span>
+            </TitleTip>
           ) : (
             <span className="size-3 shrink-0" />
           )}
           <span className="text-muted-foreground w-4 shrink-0 text-right font-mono text-xs">
             {index + 1}
           </span>
-          <span className="truncate">{ownName}</span>
+          {/* The row's tip rides its NAME, not the button: the fold
+              chevron inside carries a tip of its own, and a tip around a
+              tip opens both at once — pointing at the chevron would put
+              "double-click to rename" up beside "fold sub-chapters". Same
+              answer openingmap/FieldRow reached, for the same reason. */}
+          <TitleTip title={t('Double-click to rename')}>
+            <span className="truncate">{ownName}</span>
+          </TitleTip>
           {isFolded && childCount > 0 && (
             <span className="text-muted-foreground shrink-0 font-mono text-xs">+{childCount}</span>
           )}

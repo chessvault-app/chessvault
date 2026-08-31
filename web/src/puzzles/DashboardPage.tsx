@@ -16,6 +16,7 @@ import { Skeleton, SkeletonRows } from '@/components/skeletons';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * Training overview: counters, results by difficulty band, and the recent
@@ -474,12 +475,15 @@ function ResetButton({ onDone }: { onDone: () => void }) {
 function Figure({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
     <>
-      <dt className="text-muted-foreground" title={title}>
-        {label}
-      </dt>
-      <dd className="text-foreground font-mono tabular-nums" title={title}>
-        {value}
-      </dd>
+      {/* One tip per element rather than one round both: dt and dd are
+          siblings under a fragment, and a tooltip needs an element to
+          stand against. Pointing at either half of the pair answers. */}
+      <TitleTip title={title}>
+        <dt className="text-muted-foreground">{label}</dt>
+      </TitleTip>
+      <TitleTip title={title}>
+        <dd className="text-foreground font-mono tabular-nums">{value}</dd>
+      </TitleTip>
     </>
   );
 }

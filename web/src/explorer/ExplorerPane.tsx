@@ -47,6 +47,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
 import { RATING_BANDS } from '@/repertoire/field';
+import { TitleTip } from '@/components/title-tip';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -1257,18 +1258,19 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
           <ul className="flex flex-col gap-px">
             {hits.map((g) => (
               <li key={g.id}>
-                <button
-                  type="button"
-                  onClick={() => void open(g)}
-                  title={t('Open on the analysis board')}
-                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-(--row-py-tight) text-left text-sm"
-                >
-                  <span className="text-foreground min-w-0 flex-1 truncate">
-                    {g.white} – {g.black}
-                  </span>
-                  <ResultBadge result={g.result} />
-                  {g.date && <span className="text-muted-foreground shrink-0 text-xs">{g.date}</span>}
-                </button>
+                <TitleTip title={t('Open on the analysis board')}>
+                  <button
+                    type="button"
+                    onClick={() => void open(g)}
+                    className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-(--row-py-tight) text-left text-sm"
+                  >
+                    <span className="text-foreground min-w-0 flex-1 truncate">
+                      {g.white} – {g.black}
+                    </span>
+                    <ResultBadge result={g.result} />
+                    {g.date && <span className="text-muted-foreground shrink-0 text-xs">{g.date}</span>}
+                  </button>
+                </TitleTip>
               </li>
             ))}
           </ul>
@@ -1374,39 +1376,41 @@ function TopGamesList({
               : `${g.white}|${g.black}|${g.date ?? ''}|${g.result}|${g.site ?? ''}`;
           return (
             <li key={key} className="flex items-center">
-              <button
-                type="button"
-                onClick={() => void open(g)}
-                title={t('Open this game')}
-                className={cn(
-                  'hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-(--row-py-tight)',
-                  'text-left text-sm transition-colors duration-100',
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate">
-                  {/* align-[1px]: an 8px dot whose bottom sits 1px above
-                      the baseline is centred on the cap height; at -1px
-                      both dots hung below the line's visual centre. */}
-                  <SideDot side="white" className="mr-1 inline-block size-2 align-[1px]" />
-                  <span className="text-foreground">{g.white}</span>
-                  <span className="text-muted-foreground font-mono text-xs"> {g.whiteElo || ''} </span>
-                  <span className="text-muted-foreground mx-0.5">vs</span>
-                  <SideDot side="black" className="mx-1 inline-block size-2 align-[1px]" />
-                  <span className="text-foreground">{g.black}</span>
-                  <span className="text-muted-foreground font-mono text-xs"> {g.blackElo || ''}</span>
-                </span>
-                <ResultBadge result={g.result} />
-              </button>
-              {gameUrl && (
-                <a
-                  href={gameUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={`${gameUrl} (needs internet)`}
-                  className="text-muted-foreground hover:text-foreground shrink-0 p-1"
+              <TitleTip title={t('Open this game')}>
+                <button
+                  type="button"
+                  onClick={() => void open(g)}
+                  className={cn(
+                    'hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-(--row-py-tight)',
+                    'text-left text-sm transition-colors duration-100',
+                  )}
                 >
-                  <ExternalLink className="size-3" />
-                </a>
+                  <span className="min-w-0 flex-1 truncate">
+                    {/* align-[1px]: an 8px dot whose bottom sits 1px above
+                        the baseline is centred on the cap height; at -1px
+                        both dots hung below the line's visual centre. */}
+                    <SideDot side="white" className="mr-1 inline-block size-2 align-[1px]" />
+                    <span className="text-foreground">{g.white}</span>
+                    <span className="text-muted-foreground font-mono text-xs"> {g.whiteElo || ''} </span>
+                    <span className="text-muted-foreground mx-0.5">vs</span>
+                    <SideDot side="black" className="mx-1 inline-block size-2 align-[1px]" />
+                    <span className="text-foreground">{g.black}</span>
+                    <span className="text-muted-foreground font-mono text-xs"> {g.blackElo || ''}</span>
+                  </span>
+                  <ResultBadge result={g.result} />
+                </button>
+              </TitleTip>
+              {gameUrl && (
+                <TitleTip title={t('{url} (needs internet)', { url: gameUrl })}>
+                  <a
+                    href={gameUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-muted-foreground hover:text-foreground shrink-0 p-1"
+                  >
+                    <ExternalLink className="size-3" />
+                  </a>
+                </TitleTip>
               )}
             </li>
           );

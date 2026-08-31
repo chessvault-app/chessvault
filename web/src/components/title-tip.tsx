@@ -31,13 +31,26 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * tip and no wrapper, the way Button and FilterChip already treat one —
  * a control that is only sometimes worth explaining says so by passing
  * undefined rather than by being written twice.
+ *
+ * Never nest one inside another. A tooltip opens on the pointer ENTERING
+ * its trigger, and entering a child is entering the parent too — so a tip
+ * inside a tip is both of them open at once, which is the thing this
+ * component exists to stop. Where a row and something inside it each have
+ * something to say, put the row's on the row's own words, beside the
+ * inner control rather than around it (openingmap/FieldRow, and the
+ * chapter rows in studies/StudyView).
  */
 export function TitleTip({ title, children }: { title?: string; children: ReactElement }) {
   if (title === undefined) return children;
   return (
     <Tooltip>
       <TooltipTrigger render={children} />
-      <TooltipContent>{title}</TooltipContent>
+      {/* A newline in a title is a line break, which is what the browser's
+          bubble did with one. Two of these carry a fact and its footnote
+          on separate lines (the puzzle tiles); everywhere else the class
+          costs nothing, since it only collapses runs of spaces the way
+          `normal` already does. */}
+      <TooltipContent className="whitespace-pre-line">{title}</TooltipContent>
     </Tooltip>
   );
 }

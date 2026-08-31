@@ -25,6 +25,7 @@ import { GameListShell } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * The details view's action pair for an archive row, with its own
@@ -962,39 +963,42 @@ export function ArchiveBrowser({
                same weight as the buttons and put Cancel wherever the text
                happened to end. */
             <>
-              <label
-                className={cn(
-                  'flex min-w-0 items-center gap-1.5',
-                  uncollected.length > 0 ? 'cursor-pointer' : 'opacity-60',
-                )}
-                // "New" can be nobody: a master checkbox that ticks
-                // nothing reads as broken unless it says why. The
-                // per-row checkboxes still take deliberate re-adds.
+              {/* "New" can be nobody: a master checkbox that ticks nothing
+                  reads as broken unless it says why. The per-row checkboxes
+                  still take deliberate re-adds. */}
+              <TitleTip
                 title={
                   uncollected.length === 0
                     ? t('Every game shown is already in the collection')
                     : undefined
                 }
               >
-                <Checkbox
-                  // Indeterminate is the honest state for a partial
-                  // selection: an unchecked box next to eight ticked rows
-                  // reads as a bug.
-                  checked={uncollected.length > 0 && picked.size === uncollected.length}
-                  indeterminate={
-                    picked.size > 0 && picked.size !== uncollected.length
-                  }
-                  disabled={uncollected.length === 0}
-                  onCheckedChange={(on) =>
-                    setPicked(on === true ? new Set(uncollected.map(gameKey)) : new Set())
-                  }
-                />
-                <span className="text-muted-foreground truncate">
-                  {uncollected.length === 0
-                    ? t('Select all new — none are new')
-                    : t('Select all new')}
-                </span>
-              </label>
+                <label
+                  className={cn(
+                    'flex min-w-0 items-center gap-1.5',
+                    uncollected.length > 0 ? 'cursor-pointer' : 'opacity-60',
+                  )}
+                >
+                  <Checkbox
+                    // Indeterminate is the honest state for a partial
+                    // selection: an unchecked box next to eight ticked rows
+                    // reads as a bug.
+                    checked={uncollected.length > 0 && picked.size === uncollected.length}
+                    indeterminate={
+                      picked.size > 0 && picked.size !== uncollected.length
+                    }
+                    disabled={uncollected.length === 0}
+                    onCheckedChange={(on) =>
+                      setPicked(on === true ? new Set(uncollected.map(gameKey)) : new Set())
+                    }
+                  />
+                  <span className="text-muted-foreground truncate">
+                    {uncollected.length === 0
+                      ? t('Select all new — none are new')
+                      : t('Select all new')}
+                  </span>
+                </label>
+              </TitleTip>
               {/* A badge, not another grey sentence: it is the one number
                   that changes as you tick rows. */}
               <span
@@ -1114,18 +1118,19 @@ export function ArchiveBrowser({
         // reads as an error rather than as a footnote about a list that is
         // longer than its box — and the reassuring half ("Select all new
         // still takes every one") was the half nobody finished reading.
-        <p
-          className="text-muted-foreground border-border flex items-center gap-1.5 border-t px-3 py-2 text-xs"
-          title={t('Showing the first {shown} of {total}. Select all new still takes every one.', {
+        <TitleTip title={t('Showing the first {shown} of {total}. Select all new still takes every one.', {
             shown: MAX_ROWS,
             total: visibleMonthGames.length,
-          })}
-        >
-          <Info className="size-3 shrink-0" />
-          <span className="truncate">
-            {t('First {shown} of {total}', { shown: MAX_ROWS, total: visibleMonthGames.length })}
-          </span>
-        </p>
+          })}>
+          <p
+            className="text-muted-foreground border-border flex items-center gap-1.5 border-t px-3 py-2 text-xs"
+          >
+            <Info className="size-3 shrink-0" />
+            <span className="truncate">
+              {t('First {shown} of {total}', { shown: MAX_ROWS, total: visibleMonthGames.length })}
+            </span>
+          </p>
+        </TitleTip>
     ) : undefined;
 
   const tail = (

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * A side pane with a drag grip on its right edge, remembering its width.
@@ -52,41 +53,42 @@ export function ResizablePane({
       <aside className={className} style={{ width: shown }}>
         {children(shown)}
       </aside>
-      <div
-        title={t('Drag to resize · double-click to reset')}
-        onDoubleClick={() => {
-          drag.current = null;
-          setWidth(defaultWidth);
-        }}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          // From the width on SCREEN, not the stored one — dragging a
-          // clamped pane must not jump to where the big monitor left it.
-          drag.current = { x: e.clientX, w: shown };
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!drag.current || (e.buttons & 1) === 0) return;
-          const next = drag.current.w + e.clientX - drag.current.x;
-          setWidth(
-            Math.min(
-              Math.max(next, minWidth),
-              Math.min(hardMax, maxWidth ?? Infinity, window.innerWidth * 0.55),
-            ),
-          );
-        }}
-        onPointerUp={() => {
-          drag.current = null;
-        }}
-        className={cn(
-          'border-border/60 hover:bg-accent flex w-2.5 shrink-0 touch-none',
-          'cursor-col-resize items-center justify-center border-l transition-colors',
-        )}
-      >
-        {/* The grip, centred on the divider line — same idiom as the
-            panels' bottom-edge resize. */}
-        <div className="bg-border h-8 w-[3px] rounded-full" />
-      </div>
+      <TitleTip title={t('Drag to resize · double-click to reset')}>
+        <div
+          onDoubleClick={() => {
+            drag.current = null;
+            setWidth(defaultWidth);
+          }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            // From the width on SCREEN, not the stored one — dragging a
+            // clamped pane must not jump to where the big monitor left it.
+            drag.current = { x: e.clientX, w: shown };
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!drag.current || (e.buttons & 1) === 0) return;
+            const next = drag.current.w + e.clientX - drag.current.x;
+            setWidth(
+              Math.min(
+                Math.max(next, minWidth),
+                Math.min(hardMax, maxWidth ?? Infinity, window.innerWidth * 0.55),
+              ),
+            );
+          }}
+          onPointerUp={() => {
+            drag.current = null;
+          }}
+          className={cn(
+            'border-border/60 hover:bg-accent flex w-2.5 shrink-0 touch-none',
+            'cursor-col-resize items-center justify-center border-l transition-colors',
+          )}
+        >
+          {/* The grip, centred on the divider line — same idiom as the
+              panels' bottom-edge resize. */}
+          <div className="bg-border h-8 w-[3px] rounded-full" />
+        </div>
+      </TitleTip>
     </div>
   );
 }

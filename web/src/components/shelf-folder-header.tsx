@@ -4,6 +4,7 @@ import { ActionMenu } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * A collection's heading on a shelf, with the two things you can do to it.
@@ -36,14 +37,15 @@ export function ShelfFolderHeader({
   return (
     <div className="group/folder flex h-6 items-center gap-1.5">
       <FolderIcon className="text-muted-foreground size-3.5 shrink-0" />
-      <button
-        type="button"
-        onDoubleClick={() => setRenaming(true)}
-        title={t('Double-click to rename')}
-        className="text-muted-foreground text-sm font-medium"
-      >
-        {folder}
-      </button>
+      <TitleTip title={t('Double-click to rename')}>
+        <button
+          type="button"
+          onDoubleClick={() => setRenaming(true)}
+          className="text-muted-foreground text-sm font-medium"
+        >
+          {folder}
+        </button>
+      </TitleTip>
       {renaming && (
         <PromptDialog
           label={t('Rename this collection')}

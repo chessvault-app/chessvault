@@ -46,6 +46,7 @@ import {
 } from './data';
 import { PuzzleList } from './PuzzleList';
 import { PuzzleEntry } from './PuzzleEntry';
+import { TitleTip } from '@/components/title-tip';
 
 // ---------------------------------------------------------------------------
 // Book page: numbered grid coloured by result, entry flow
@@ -289,19 +290,20 @@ export function BookPage({ slug }: { slug: string }) {
             />
           ) : (
             <>
-              <h1
-                onDoubleClick={() => {
-                  setTitleDraft(book?.title ?? '');
-                  setRenaming(true);
-                }}
-                title={t('Double-click to rename')}
-                className="text-foreground min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
-              >
-                {/* The slug is an id, not a name: while the title is in
-                    flight the header holds its place instead of flashing
-                    the folder name. */}
-                {book?.title ?? ' '}
-              </h1>
+              <TitleTip title={t('Double-click to rename')}>
+                <h1
+                  onDoubleClick={() => {
+                    setTitleDraft(book?.title ?? '');
+                    setRenaming(true);
+                  }}
+                  className="text-foreground min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
+                >
+                  {/* The slug is an id, not a name: while the title is in
+                      flight the header holds its place instead of flashing
+                      the folder name. */}
+                  {book?.title ?? ' '}
+                </h1>
+              </TitleTip>
             </>
           )}
           {/* No progress chip here. A scan used to announce itself in this

@@ -13,6 +13,7 @@ import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
 import { t } from '@/lib/i18n';
 
 import { OpeningTag, ResultScore, type GameSummary } from './shared';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * The dense table the wide Games pane draws — one line per game, in the
@@ -232,30 +233,31 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
                 gap between headings. Width is written to the shared
                 store, so every table's rows follow the same template
                 the moment it moves. */}
-            <span
-              title={t('Drag to resize · double-click to reset')}
-              className="hover:bg-border absolute inset-y-0 -right-2 flex w-2.5 cursor-col-resize touch-none items-center justify-center rounded-sm"
-              onPointerDown={(e) => {
-                e.preventDefault();
-                drag.current = { id: c.id, x: e.clientX, w: widthOf(c, colWidths) };
-                try {
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                } catch {
-                  /* no live pointer to capture — the move still tracks */
-                }
-              }}
-              onPointerMove={(e) => {
-                const d = drag.current;
-                if (!d || d.id !== c.id || (e.buttons & 1) === 0) return;
-                setColWidth(c.id, Math.max(c.min, d.w + e.clientX - d.x));
-              }}
-              onPointerUp={() => {
-                drag.current = null;
-              }}
-              onDoubleClick={() => setColWidth(c.id, null)}
-            >
-              <span className="bg-border/60 h-3.5 w-px" />
-            </span>
+            <TitleTip title={t('Drag to resize · double-click to reset')}>
+              <span
+                className="hover:bg-border absolute inset-y-0 -right-2 flex w-2.5 cursor-col-resize touch-none items-center justify-center rounded-sm"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  drag.current = { id: c.id, x: e.clientX, w: widthOf(c, colWidths) };
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {
+                    /* no live pointer to capture — the move still tracks */
+                  }
+                }}
+                onPointerMove={(e) => {
+                  const d = drag.current;
+                  if (!d || d.id !== c.id || (e.buttons & 1) === 0) return;
+                  setColWidth(c.id, Math.max(c.min, d.w + e.clientX - d.x));
+                }}
+                onPointerUp={() => {
+                  drag.current = null;
+                }}
+                onDoubleClick={() => setColWidth(c.id, null)}
+              >
+                <span className="bg-border/60 h-3.5 w-px" />
+              </span>
+            </TitleTip>
           </span>
           ),
         )}

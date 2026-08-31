@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select';
 import { ProgressBar } from '@/components/progress-bar';
 
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import {
   type BookDraft,
   type BookPuzzle,
@@ -59,44 +60,51 @@ export function PuzzleGrid({
                 ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
                 : null;
             const prog = progress[p.id];
+            // Two lines, so the tip needs the newline the browser's bubble
+            // used to render: TitleTip sets whitespace-pre-line for it.
             return (
-              <button
+              <TitleTip
                 key={p.id}
-                ref={current ? currentRef : undefined}
-                type="button"
-                onClick={() => go(i)}
                 title={[
                   meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
-                  prog ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries }) : t('not attempted'),
+                  prog
+                    ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
+                    : t('not attempted'),
                 ]
                   .filter(Boolean)
                   .join('\n')}
-                className={cn(
-                  'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-colors duration-100 [content-visibility:auto]',
-                  current && 'ring-primary/60 ring-2',
-                  last === 'win'
-                    ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
-                    : last === 'loss'
-                      ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                      : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
-                )}
               >
-                {p.number ?? i + 1}
-                {/* State by glyph as well as tint — the colour grammar's
-                    own rule; a tile that is only a colour is unreadable
-                    to 1 in 12 people. */}
-                {(last === 'win' || last === 'loss') && (
-                  <span className="absolute bottom-0.5 left-1 text-[0.5rem] leading-none" aria-hidden>
-                    {last === 'win' ? '✓' : '✗'}
-                  </span>
-                )}
-                {meta && (
-                  <meta.icon
-                    className={cn('absolute right-1 top-1 size-2.5', meta.iconClass)}
-                    aria-hidden
-                  />
-                )}
-              </button>
+                <button
+                  ref={current ? currentRef : undefined}
+                  type="button"
+                  onClick={() => go(i)}
+                  className={cn(
+                    'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-colors duration-100 [content-visibility:auto]',
+                    current && 'ring-primary/60 ring-2',
+                    last === 'win'
+                      ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
+                      : last === 'loss'
+                        ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
+                        : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
+                  )}
+                >
+                  {p.number ?? i + 1}
+                  {/* State by glyph as well as tint — the colour grammar's
+                      own rule; a tile that is only a colour is unreadable
+                      to 1 in 12 people. */}
+                  {(last === 'win' || last === 'loss') && (
+                    <span className="absolute bottom-0.5 left-1 text-[0.5rem] leading-none" aria-hidden>
+                      {last === 'win' ? '✓' : '✗'}
+                    </span>
+                  )}
+                  {meta && (
+                    <meta.icon
+                      className={cn('absolute right-1 top-1 size-2.5', meta.iconClass)}
+                      aria-hidden
+                    />
+                  )}
+                </button>
+              </TitleTip>
             );
           })}
         </div>
@@ -387,49 +395,58 @@ export function PuzzleList({
               ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
               : null;
           const prog = progress[p.id];
+          // Same two lines as the panel grid, and t() on both halves now:
+          // this tile spelled the second one in English in the source while
+          // the tile above said it through the dictionary. Same keys, so
+          // the ko dictionary already answers them.
           return (
-            <button
+            <TitleTip
               key={p.id}
-              type="button"
-              onClick={() => {
-                const d = draftIds.has(p.id) ? drafts.find((x) => x.id === p.id) : null;
-                if (d) onDraft(d);
-                else navigate('puzzles', 'books', slug, p.id);
-              }}
               title={[
                 meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
-                prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
+                prog
+                  ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
+                  : t('not attempted'),
               ]
                 .filter(Boolean)
                 .join('\n')}
-              className={cn(
-                // content-visibility: ~1,000 offscreen tiles skip render
-                // work entirely — phones feel it.
-                'relative flex aspect-square items-center justify-center rounded-lg font-mono text-base font-semibold ring-1 transition-colors duration-100 [content-visibility:auto]',
-                // The ring card, with the state in the ring: the colour
-                // grammar's green and red, a glyph beside each (below).
-                state === 'solved'
-                  ? 'bg-nag-good/15 ring-nag-good/40 text-nag-good'
-                  : state === 'failed'
-                    ? 'bg-nag-blunder/15 ring-nag-blunder/40 text-nag-blunder'
-                    : 'bg-card ring-foreground/10 text-muted-foreground hover:bg-accent',
-              )}
             >
-              {p.number ?? ordinalOf.get(p.id)}
-              {/* Same glyph redundancy as the panel grid: tint alone is
-                  invisible to colour-blind eyes. */}
-              {(state === 'solved' || state === 'failed') && (
-                <span className="absolute bottom-1 left-1.5 text-micro leading-none" aria-hidden>
-                  {state === 'solved' ? '✓' : '✗'}
-                </span>
-              )}
-              {meta && (
-                <meta.icon
-                  className={cn('absolute right-2 top-2 size-3', meta.iconClass)}
-                  aria-hidden
-                />
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = draftIds.has(p.id) ? drafts.find((x) => x.id === p.id) : null;
+                  if (d) onDraft(d);
+                  else navigate('puzzles', 'books', slug, p.id);
+                }}
+                className={cn(
+                  // content-visibility: ~1,000 offscreen tiles skip render
+                  // work entirely — phones feel it.
+                  'relative flex aspect-square items-center justify-center rounded-lg font-mono text-base font-semibold ring-1 transition-colors duration-100 [content-visibility:auto]',
+                  // The ring card, with the state in the ring: the colour
+                  // grammar's green and red, a glyph beside each (below).
+                  state === 'solved'
+                    ? 'bg-nag-good/15 ring-nag-good/40 text-nag-good'
+                    : state === 'failed'
+                      ? 'bg-nag-blunder/15 ring-nag-blunder/40 text-nag-blunder'
+                      : 'bg-card ring-foreground/10 text-muted-foreground hover:bg-accent',
+                )}
+              >
+                {p.number ?? ordinalOf.get(p.id)}
+                {/* Same glyph redundancy as the panel grid: tint alone is
+                    invisible to colour-blind eyes. */}
+                {(state === 'solved' || state === 'failed') && (
+                  <span className="absolute bottom-1 left-1.5 text-micro leading-none" aria-hidden>
+                    {state === 'solved' ? '✓' : '✗'}
+                  </span>
+                )}
+                {meta && (
+                  <meta.icon
+                    className={cn('absolute right-2 top-2 size-3', meta.iconClass)}
+                    aria-hidden
+                  />
+                )}
+              </button>
+            </TitleTip>
           );
         })}
         {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}
