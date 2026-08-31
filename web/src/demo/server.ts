@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { installBuffer } from './nodeShim/buffer.ts';
+import { installSetImmediate } from './nodeShim/timers.ts';
 import { seedFile } from './nodeShim/fs.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
@@ -46,8 +47,10 @@ const demoBookDiagrams = new Map<string, unknown>();
 
 function buildApp(): Hono {
   // Before the routes run: they reference Buffer free, to size a document
-  // in bytes rather than characters.
+  // in bytes rather than characters, and setImmediate free, to hand the
+  // page back its turn between slices of the my-games index walk.
   installBuffer();
+  installSetImmediate();
 
   for (const [path, content] of Object.entries(SEED)) {
     // One timestamp per file, spread so the lists have an order worth
@@ -72,7 +75,25 @@ function buildApp(): Hono {
     repertoireState: `${VAULT}/repertoire`,
   });
 
-  app.get('/api/health', (c) => c.json({ ok: true, crossOriginIsolated: false, demo: true }));
+  /**
+   * The same four fields the real route answers with.
+   *
+   * `version` and `build` were missing, and the Version card in Settings
+   * reads their absence as an answer still in flight: it holds the Built
+   * row open with a skeleton, which in the demo pulsed for as long as
+   * anybody looked at it, under a Server row reading "—". Both are known
+   * at build time (`web/vite.demo.config.ts`), so the demo can say them
+   * as plainly as a server does.
+   */
+  app.get('/api/health', (c) =>
+    c.json({
+      ok: true,
+      crossOriginIsolated: false,
+      version: __DEMO_VERSION__,
+      build: __DEMO_BUILD__,
+      demo: true,
+    }),
+  );
   /**
    * Settings is the one API written out here rather than mounted: the real
    * module reaches for node:child_process and node:crypto, which the demo
