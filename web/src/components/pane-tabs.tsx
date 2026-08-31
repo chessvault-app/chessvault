@@ -32,7 +32,16 @@ export function PaneTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <Tabs value={value} onValueChange={(id) => onChange(id as T)} className="contents">
+    <Tabs
+      value={value}
+      onValueChange={(id) => onChange(id as T)}
+      className="contents"
+      // The one child of a pane column that stays put while a swipe turns
+      // the panes under it (hooks/use-pane-swipe): the strip is what says
+      // which pane is open, so it is the thing the turn is read against,
+      // not part of what turns.
+      data-pane-strip
+    >
       <TabsList className={cn('w-auto', className)}>
         {tabs.map((tab) => {
           const Icon = tab.icon;

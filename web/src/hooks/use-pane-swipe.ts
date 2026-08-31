@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { prefersReducedMotion } from '@/lib/motion';
 
 /**
  * Past this much of a horizontal drag, letting go turns to the next pane.
@@ -25,7 +26,55 @@ const SLOP = 8;
 const EDGE_PX = 32;
 
 /**
- * The pane a finished gesture lands on, or null if it lands nowhere.
+ * How far the pane travels — both halves of the turn, one number.
+ *
+ * The pane the finger pushes aside stops here, and the pane that replaces
+ * it starts exactly this far the other way, so the handover cannot come
+ * out lopsided. Small on purpose: what shows beside a leaning pane is the
+ * page's own background rather than the next pane — they are separate
+ * elements at separate heights, see the note on the hook — so this is a
+ * panel getting out of the way, not a curtain being drawn across. Further
+ * than this and the gap reads as the column coming apart.
+ */
+const SLIDE_PX = 32;
+
+/**
+ * What share of the finger's movement the pane takes before the cap.
+ *
+ * Half, so the panel is plainly following the thumb and just as plainly
+ * not going anywhere yet: the strip above is what says where it lands.
+ */
+const FOLLOW = 0.5;
+
+/**
+ * The same two numbers at an end of the strip, where the swipe has nowhere
+ * to go.
+ *
+ * A wall the finger can still feel: the pane gives a little and stops,
+ * which is the only cue that this is the first tab or the last. It is what
+ * `paneAfterSwipe` already refuses to do, said during the gesture instead
+ * of after it — before, an end-of-strip swipe and a swipe onto the next
+ * pane looked identical right up until nothing happened.
+ */
+const WALL_FOLLOW = 0.15;
+const WALL_PX = 10;
+
+/** How long the pane takes to settle, whether it turned or sprang back. */
+const SETTLE_MS = 200;
+
+/**
+ * How dim the arriving pane starts.
+ *
+ * A pane that only slid was a panel nudging sideways; one that also fades
+ * up is a different panel. Not from nothing — the content is what the
+ * gesture was for, and starting it invisible spends the whole animation
+ * getting back to legible.
+ */
+const ENTER_OPACITY = 0.55;
+
+/**
+ * The pane on one side of the open one, or null if that side is the end of
+ * the strip.
  *
  * Dragging left pulls the NEXT pane in from the right — the panes are the
  * row the tab strip draws, and the finger moves the row. No wrapping:
@@ -33,15 +82,39 @@ const EDGE_PX = 32;
  * one end to the other would be the only thing on the page saying the row
  * is a ring.
  */
+export function paneBeside<T extends string>(
+  ids: readonly T[],
+  value: T,
+  dx: number,
+): T | null {
+  const from = ids.indexOf(value);
+  if (from < 0) return null;
+  return ids[from + (dx < 0 ? 1 : -1)] ?? null;
+}
+
+/** The pane a finished gesture lands on, or null if it lands nowhere —
+    which is either side of the threshold, or either end of the strip. */
 export function paneAfterSwipe<T extends string>(
   ids: readonly T[],
   value: T,
   dx: number,
 ): T | null {
   if (Math.abs(dx) < THRESHOLD) return null;
-  const from = ids.indexOf(value);
-  if (from < 0) return null;
-  return ids[from + (dx < 0 ? 1 : -1)] ?? null;
+  return paneBeside(ids, value, dx);
+}
+
+/**
+ * How far the pane sits from its resting place, part-way through a drag.
+ *
+ * Damped and capped in both cases, because the pane is not a track being
+ * scrolled to a destination — it is one panel leaning towards the edge it
+ * would leave by. `room` is whether there is a pane that way at all; where
+ * there is not, the same movement buys a sixth as much.
+ */
+export function dragOffset(dx: number, room: boolean): number {
+  const follow = room ? FOLLOW : WALL_FOLLOW;
+  const cap = room ? SLIDE_PX : WALL_PX;
+  return Math.sign(dx) * Math.min(Math.abs(dx) * follow, cap);
 }
 
 /**
@@ -104,12 +177,26 @@ function claimedByContent(from: EventTarget | null, root: Element): boolean {
  * Touch only. A mouse has the strip, and a horizontal mouse drag is a
  * selection.
  *
- * Nothing follows the finger. The panes are separate elements at separate
- * heights in a column whose geometry every board page has tuned (see
- * components/layout), and dragging them as one track would mean wrapping
- * them in a box that changes that geometry on the desktop too. So this
- * commits on release, which is also what makes a swipe and a tap on the
- * strip produce the identical instant swap.
+ * The pane MOVES, and it moves without the column being rebuilt around it.
+ * The panes are separate elements at separate heights in a column whose
+ * geometry every board page has tuned (see components/layout), so they
+ * cannot be gathered into one sliding track without changing that geometry
+ * on the desktop too. What travels instead is every child of the column at
+ * once, carried by two custom properties this hook writes on the column
+ * itself — `--pane-dx` and `--pane-fade`, read by the rule in index.css
+ * that `data-pane-swipe` switches on. Moving all of them is moving the one
+ * that can be seen, because on these layouts only one pane is on screen;
+ * the strip opts out with `data-pane-strip`, being the fixed thing the
+ * turning is measured against.
+ *
+ * Written straight to the node rather than held in state: these columns
+ * ARE the board pages — a move tree, an engine, an explorer — and a render
+ * per touchmove would re-run all of that sixty times a second to change
+ * one transform. useSwipeRow can afford `useState` because a row is a row.
+ *
+ * A tap on the strip stays instant. It has no direction — it can jump two
+ * tabs at once — and giving it one would be the page guessing which way
+ * the reader thinks they went.
  */
 export function usePaneSwipe<T extends string>({
   panes,
@@ -126,14 +213,72 @@ export function usePaneSwipe<T extends string>({
       not on screen, so neither is the row this gesture turns. */
   enabled?: boolean;
 }): {
-  onTouchStart: (e: React.TouchEvent) => void;
-  onTouchMove: (e: React.TouchEvent) => void;
+  // Typed to the element rather than to `Element`, because the column is
+  // what the offset is written on and only an HTMLElement has a `style`.
+  onTouchStart: (e: React.TouchEvent<HTMLElement>) => void;
+  onTouchMove: (e: React.TouchEvent<HTMLElement>) => void;
   onTouchEnd: () => void;
   onTouchCancel: () => void;
 } {
   const start = useRef<{ x: number; y: number } | null>(null);
   const axis = useRef<'x' | 'y' | null>(null);
   const dx = useRef(0);
+  /** The column the handlers are spread on, kept because the settle
+      outlives the gesture that started it. */
+  const column = useRef<HTMLElement | null>(null);
+  const settling = useRef<number | null>(null);
+  /** Which turn the pending frame belongs to. Anything that ends a turn —
+      the backstop above, a new gesture — moves it on, and a frame that
+      arrives after that has nothing left to walk home. */
+  const turn = useRef(0);
+  /** Read once per gesture rather than once per frame, and per gesture
+      rather than at mount, so a setting changed mid-session is honoured. */
+  const still = useRef(false);
+
+  const ids = panes.map((pane) => pane.id);
+
+  const stopSettling = (): void => {
+    if (settling.current === null) return;
+    clearTimeout(settling.current);
+    settling.current = null;
+  };
+
+  /** Put the column at an offset, or take the whole thing off it again: at
+      rest the column carries neither the attribute nor the properties, so
+      nothing about it belongs to this hook until a finger says so. */
+  const paint = (mode: 'drag' | 'settle' | null, offset = 0, fade = 1): void => {
+    const node = column.current;
+    if (!node) return;
+    if (mode === null) {
+      node.removeAttribute('data-pane-swipe');
+      node.style.removeProperty('--pane-dx');
+      node.style.removeProperty('--pane-fade');
+      return;
+    }
+    node.dataset.paneSwipe = mode;
+    node.style.setProperty('--pane-dx', `${offset}px`);
+    node.style.setProperty('--pane-fade', String(fade));
+  };
+
+  /** Take the column back to rest once the motion has had its time.
+      Armed the moment a pane is put off to one side, not only when the
+      transition that walks it home starts — a tab backgrounded on the
+      release frame never runs that frame, and what it left behind was a
+      panel parked 32px out and half faded until the next gesture. */
+  const clearLater = (): void => {
+    stopSettling();
+    settling.current = window.setTimeout(() => {
+      settling.current = null;
+      turn.current++;
+      paint(null);
+    }, SETTLE_MS);
+  };
+
+  /** Hand the offset to the transition, and clear up behind it. */
+  const settle = (): void => {
+    paint('settle', 0, 1);
+    clearLater();
+  };
 
   const forget = (): void => {
     start.current = null;
@@ -141,9 +286,20 @@ export function usePaneSwipe<T extends string>({
     dx.current = 0;
   };
 
+  /** A gesture that ends without turning a pane: put the panel back. */
+  const springBack = (): void => {
+    if (column.current?.hasAttribute('data-pane-swipe')) settle();
+    forget();
+  };
+
+  // A column unmounted mid-settle leaves a timer pointing at a node that is
+  // no longer on the page.
+  useEffect(() => stopSettling, []);
+
   return {
     onTouchStart: (e) => {
       forget();
+      turn.current++;
       if (!enabled) return;
       // A second finger is a pinch or a two-finger scroll, never a page
       // turn.
@@ -151,31 +307,54 @@ export function usePaneSwipe<T extends string>({
       const touch = e.touches[0]!;
       if (touch.clientX < EDGE_PX || touch.clientX > window.innerWidth - EDGE_PX) return;
       if (claimedByContent(e.target, e.currentTarget)) return;
+      column.current = e.currentTarget;
+      still.current = prefersReducedMotion();
       start.current = { x: touch.clientX, y: touch.clientY };
     },
     onTouchMove: (e) => {
       if (!start.current) return;
       // A finger added mid-gesture: whatever this is, it stopped being a
       // swipe, and abandoning it is quieter than guessing.
-      if (e.touches.length !== 1) return forget();
+      if (e.touches.length !== 1) return springBack();
       const touch = e.touches[0]!;
       const moveX = touch.clientX - start.current.x;
       const moveY = touch.clientY - start.current.y;
       axis.current ??= gestureAxis(moveX, moveY);
       if (axis.current !== 'x') return;
       dx.current = moveX;
+      if (still.current) return;
+      // The last gesture's settle must not wipe this one's offset out from
+      // under it.
+      stopSettling();
+      paint('drag', dragOffset(moveX, paneBeside(ids, value, moveX) !== null));
     },
     onTouchEnd: () => {
-      if (axis.current === 'x') {
-        const next = paneAfterSwipe(
-          panes.map((pane) => pane.id),
-          value,
-          dx.current,
-        );
-        if (next !== null && next !== value) onChange(next);
+      const next = axis.current === 'x' ? paneAfterSwipe(ids, value, dx.current) : null;
+      if (next === null || next === value) return springBack();
+      if (still.current) {
+        onChange(next);
+        return forget();
       }
+      // The turn, across two frames. The arriving pane is put where the
+      // leaving one was headed BEFORE it is asked for, so it mounts already
+      // off to one side; the next frame walks it home. Reading `offsetWidth`
+      // there is what makes that starting place a real computed style —
+      // without it the pane has never been laid out where it starts, and
+      // the browser has nothing to transition from.
+      paint('drag', dx.current < 0 ? SLIDE_PX : -SLIDE_PX, ENTER_OPACITY);
+      clearLater();
+      onChange(next);
       forget();
+      const mine = ++turn.current;
+      requestAnimationFrame(() => {
+        // A frame that arrives late enough for the backstop to have tidied
+        // up, or for another gesture to have started, is not this turn's
+        // any more.
+        if (turn.current !== mine || !column.current) return;
+        void column.current.offsetWidth;
+        settle();
+      });
     },
-    onTouchCancel: forget,
+    onTouchCancel: springBack,
   };
 }
