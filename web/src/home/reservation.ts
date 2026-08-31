@@ -7,9 +7,7 @@
  * it appears a beat after first paint and pushes everything under it down.
  * This is the hint that stops that — a paint hint and never the authority,
  * on the same bargain as the layout echo. It is wrong by at most one
- * launch, and a device that has never opened this page reserves nothing,
- * because a skeleton card that turns out to have no card behind it is a
- * worse flicker than the one it was drawn to prevent.
+ * launch, and corrected by whatever the vault says.
  *
  * Three facts rather than one count, because the phone's card and the
  * desktop's are not the same card. The board is desktop-only; the
@@ -20,9 +18,9 @@
  * replaced.
  *
  * Kept out of HomePage.tsx and free of React so it can be tested: the
- * repo's vitest runs in a node environment over `.ts` files, and the bug
- * this module exists to fix (see MAX_ROWS) was one a test would have
- * caught the day it was written.
+ * repo's vitest runs in a node environment over `.ts` files, and both bugs
+ * this module was extracted for (see MAX_ROWS and WELCOME_SHAPE) were ones
+ * a test would have caught the day they were written.
  */
 
 export interface ContinueShape {
@@ -49,28 +47,69 @@ export interface ContinueShape {
  */
 export const MAX_ROWS = 4;
 
+/**
+ * What a vault holds before anybody has done anything with it: the welcome
+ * study, whose first chapter has a position (server/welcome.ts). So a
+ * desktop draws its board and no rows, and a phone draws the one row.
+ *
+ * This is the reservation for a device with no stored hint, and it is a
+ * floor rather than a guess. The reasoning it replaced was that an unknown
+ * device should reserve nothing, since a placeholder for a card that turns
+ * out not to exist is a worse flicker than one that pops in — true enough,
+ * but it assumed the unknown case might have no card. It cannot: every
+ * vault is seeded with that study, so the card exists from a vault's first
+ * second and this shape is its minimum.
+ *
+ * Which also means the case being paid for is not the first launch of a
+ * new vault, which happens once. It is a new phone, a new browser, a
+ * private window, a cleared store — an established vault meeting a device
+ * that has never seen it, which recurs for as long as somebody uses the
+ * app. A richer vault than this is under-reserved and still moves, but by
+ * less than the whole card.
+ */
+export const WELCOME_SHAPE: ContinueShape = { rows: 1, mdRows: 0, board: true };
+
 /** A stored count as a count: a whole number of rows, capped, or none. */
 const rowCount = (v: unknown): number =>
-  typeof v === 'number' && Number.isInteger(v) && v > 0 ? Math.min(v, MAX_ROWS) : 0;
+  typeof v === 'number' && Number.isInteger(v) && v >= 0 ? Math.min(v, MAX_ROWS) : 0;
 
 /**
- * The stored hint, or nothing to reserve.
+ * The shape a device stored, or null if it stored nothing readable.
  *
- * Nothing is the answer for an absent key, junk, a shape from some future
- * version that does not parse, and a card that had no rows last launch —
- * all of which mean the same thing here: draw no placeholder.
+ * `{ rows: 0 }` is a shape and not a nothing — it is a vault that HAS been
+ * seen and had no card, which is a different answer from never having been
+ * seen, and the difference is what keeps `continueReservation` from
+ * drawing a placeholder at somebody who genuinely has no Continue card.
+ * Absent, unparseable, and a shape from some later version all read as
+ * null: nothing was learned about this device.
  */
 export function parseContinueShape(raw: string | null): ContinueShape | null {
+  if (raw === null) return null;
   let stored: unknown;
   try {
-    stored = JSON.parse(raw ?? 'null');
+    stored = JSON.parse(raw);
   } catch {
     return null;
   }
-  const value = stored as Partial<ContinueShape> | null;
-  const rows = rowCount(value?.rows);
-  if (rows === 0) return null;
-  return { rows, mdRows: Math.min(rowCount(value?.mdRows), rows), board: value?.board === true };
+  if (typeof stored !== 'object' || stored === null) return null;
+  const value = stored as Partial<ContinueShape>;
+  if (typeof value.rows !== 'number' || !Number.isInteger(value.rows) || value.rows < 0) return null;
+  const rows = Math.min(value.rows, MAX_ROWS);
+  return { rows, mdRows: Math.min(rowCount(value.mdRows), rows), board: value.board === true };
+}
+
+/**
+ * What to reserve on this launch, or nothing.
+ *
+ * The three cases the card turns on, and they are three and not two: a
+ * device that has been here reserves what it saw, a device that has been
+ * here and saw no card reserves nothing, and a device that has never been
+ * here reserves the floor every vault starts at.
+ */
+export function continueReservation(raw: string | null): ContinueShape | null {
+  const stored = parseContinueShape(raw);
+  if (stored === null) return WELCOME_SHAPE;
+  return stored.rows > 0 ? stored : null;
 }
 
 /**

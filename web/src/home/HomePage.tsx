@@ -32,7 +32,7 @@ import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
-import { parseContinueShape, shownOnDesktop, type ContinueShape } from './reservation';
+import { continueReservation, shownOnDesktop, type ContinueShape } from './reservation';
 
 // Lazy, alone among this page's imports, and for the same reason the page
 // itself is eager: Sheet brings a portal, the drag, the cover measurement
@@ -242,8 +242,17 @@ export function HomePage() {
   // space before the data returns. Without it the card popped in a beat
   // after first paint and pushed the whole page down — the most visible
   // jolt of a launch now that nothing covers loading. Wrong by at most one
-  // launch, and a fresh vault reserves nothing: no card, no jolt.
-  const [reserved] = useState(() => parseContinueShape(localStorage.getItem(CONTINUE_KEY)));
+  // launch; a device with no memory of this vault reserves the floor every
+  // vault has (reservation.ts), and only a vault that was seen to have no
+  // card reserves nothing.
+  //
+  // One case it cannot see, and it is the layout echo's blindness rather
+  // than this one's: somebody who switched Continue OFF, met on a device
+  // that has never opened the vault, gets the floor drawn and then taken
+  // away. `effective.continueCard` reads the same empty localStorage the
+  // tiles do, so that device draws the default page until the vault
+  // answers — of which this card is one part.
+  const [reserved] = useState(() => continueReservation(localStorage.getItem(CONTINUE_KEY)));
   // Hoisted out of the Continue row it labels: that row is built inside a
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
@@ -659,7 +668,9 @@ export function HomePage() {
         {/* Continue — the best retention surface on the page. A returning
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
-            skeleton rows, so the page does not jump when it fills in. */}
+            skeleton rows — or, on a device that has never opened this
+            vault, at the size every vault's welcome study makes — so the
+            page does not jump when it fills in. */}
         {effective.continueCard && data === null && reserved !== null && (
           <div
             role="status"
