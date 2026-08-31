@@ -6,6 +6,9 @@
 - The move the engine hates most.
 - Whether the opening gave me a position I understood.
 
+Three moves, not thirty. A full engine pass through a game teaches nothing
+because there is nothing to remember afterwards.
+
 ## A position to remember
 
 ```chess

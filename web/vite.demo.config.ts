@@ -72,6 +72,10 @@ export default defineConfig({
     alias: {
       '@shared': `${repo}shared`,
       '@': `${root}src`,
+      // BEFORE 'node:fs': these are prefix matches, so the shorter key
+      // would otherwise swallow this one and resolve the import to
+      // `.../fs.ts/promises`, which is not a path.
+      'node:fs/promises': `${root}src/demo/nodeShim/fsPromises.ts`,
       'node:fs': `${root}src/demo/nodeShim/fs.ts`,
       'node:path': `${root}src/demo/nodeShim/path.ts`,
       'node:url': `${root}src/demo/nodeShim/url.ts`,

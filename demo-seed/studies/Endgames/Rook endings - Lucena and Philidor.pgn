@@ -1,44 +1,54 @@
 [Event "Rook endings - Lucena and Philidor: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.01.13"]
-[Round "4"]
-[White "Alderman, R"]
-[Black "Pereira, V"]
+[ChapterName "Rook and pawn, from a real game"]
+[Date "2025.11.22"]
+[White "Magic11bot_Pro"]
+[Black "ArasanX"]
 [Result "1/2-1/2"]
-[WhiteElo "2994"]
-[BlackElo "2933"]
-[ECO "D67"]
-[Opening "Queen's Gambit Declined: Orthodox Defense, Main Line"]
+[WhiteElo "3308"]
+[BlackElo "3006"]
+[ECO "B30"]
+[Opening "Sicilian Defense: Closed, Anti-Sveshnikov Variation, with d6"]
 
-{Queen's Gambit Declined: Orthodox Defense, Main Line. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. Bg5 Be7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. e3 Nbd7 7. Bd3 O-O 8. Rc1 ! dxc4 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... c5 Ra1 cxd4 {was the alternative — playable, but it hands over the initiative.}) 9. Bxc4 Nd5 10. Bxe7 Qxe7 11. O-O b6 ?! 12. Bxd5 exd5 13. Qa4 Bb7 14. Rfd1 h6 15. Ne1 Rfc8 16. Nd3 Nf6 17. h3 Rc7 18. Qb4 Qd8 19. a4 Ba6 20. Ne5 Rac8 21. Qa3 c5 22. a5 bxa5 23. Qxa5 cxd4 24. Rxd4 Qd6 25. Nf3 Ne4 26. Rxd5 Qb6 27. Qxb6 axb6 28. Ne5 f6 29. Ng6 Nxc3 30. Rxc3 Rxc3 31. bxc3 Rxc3 32. Rd6 Rb3 33. Rc6 Bd3 34. Nf4 Bf5 35. Kh2 Rb2 36. f3 Bd7 37. Rd6 Be8 38. e4 Bf7 39. Rd8+ Kh7 40. Rd7 Kg8 41. Rd8+ Kh7 42. Rf8 Bc4 43. Rc8 Bf7 44. Rc7 Kg8 45. Rc8+ Kh7 46. Rc7 Kg8 47. h4 g5 48. Nd5 Bxd5 49. exd5 Rd2 50. hxg5 hxg5 51. Rc6 b5 52. Rxf6 Kg7 53. Rd6 Kf8 54. Rd7 Ke8 55. Rb7 Rxd5 56. f4 gxf4 57. Rh7 Rd3 58. Rg7 b4 59. Rb7 Rb3 60. Rh7 Rb2 61. Kh3 Rb1 62. Rh8+ Kd7 63. Rf8 b3 64. Rb8 b2 65. Kg4 Ke6 66. Re8+ Kd6 67. Rd8+ Ke5 68. Rb8 Kd4 69. Kf5 Kc3 70. Rc8+ Kb4 71. Rb8+ Ka3 72. Ra8+ Kb4 73. Rb8+ Kc3 74. Rc8+ Kd4 75. Rd8+ Ke3 76. Rb8 Kd3 77. Rd8+ Kc2 78. Rc8+ Kd2 79. Rd8+ Ke2 80. Rb8 Ke3 81. Rb7 Kd3 82. Rb8 Kc2 83. Rc8+ Kb3 84. Rb8+ Ka2 85. Ra8+ Kb3 86. Rb8+ Kc4 87. Rc8+ Kd3 88. Rd8+ Kc4 89. Rc8+ Kd5 90. Rd8+ Kc5 91. Rc8+ Kd5 92. Rd8+ Kc5 93. Rc8+ Kb5 94. Rh8 Ka5 95. Rb8 Ka4 96. Ra8+ Kb5 97. Rh8 Kc6 98. Rc8+ {The rest is technique, which is another way of saying it still has to be played accurately.} Kd5 1/2-1/2
+{The whole game, because the ending is not a position that appears from nowhere — it is what this middlegame was always going to become.}
+1. e4 c5 2. Nf3 Nc6 3. Nc3 e5 4. Bc4 Be7 5. d3 d6 6. a4 Nf6 7. Bg5 Nb4 8. h3 O-O 9. O-O
+Be6 10. Bd2 Qd7 11. Re1 Rad8 12. Bb5 Qc7 13. Bc4 Nxe4 14. Nxe4 d5 15. Nfg5 Bc8 16. Bb3
+dxe4 17. Qh5 Bxg5 18. Bxg5 Rde8 19. Rxe4 Bf5 20. Rc4 b6 21. a5 Nc6 22. Be3 Nd4 23. Bxd4
+exd4 24. axb6 axb6 25. Rca4 g6 26. Qf3 Be6 27. Bxe6 Rxe6 28. g3 Qe5 29. b4 b5 30. Ra7 cxb4
+31. Rd7 Rf6 32. Qe4 Re8 33. Re1 Qxe4 34. Rxe4 Rxe4 35. dxe4 Rc6 36. Rxd4 Rc4 37. Rd5 Rxe4
+38. Rxb5 Rc4 39. h4 Rxc2 40. Rxb4 Kg7 41. Ra4 Rc1+ 42. Kg2 Rc7 43. Ra2 Re7 44. Rb2 f6 45.
+g4 Rd7 46. g5 fxg5 47. hxg5 Ra7 48. Kf3 Ra8 49. Kg4 Kh8 50. Kf4 Rc8 51. f3 Ra8 52. Ke3 Rc8
+53. f4 Rg8 54. f5 gxf5 55. Kf4 Rc8 56. Kxf5 Rc7 57. Rb5 Rf7+ 58. Ke5 Rf8 59. Ra5 Rf7 60.
+Ra6 Rf8 61. g6 h6 62. Ra7 Kg8 63. Rh7 Rf3 64. Rxh6 Kg7 65. Rh2 Rd3 66. Rg2 Re3+ 67. Kd5
+Rh3 68. Rf2 Rd3+ 69. Kc6 Rg3 70. Rf7+ Kxg6 71. Rf4 Kg5 72. Rd4 Kf5 73. Kc7 Ke5 74. Rd2
+Rc3+ 75. Kb6 Rh3 76. Kc6 Ra3 77. Kd7 Re3 78. Ke7 Kf4+ 79. Kf6 Rc3 80. Rd4+ Ke3 81. Ra4 Kd2
+82. Rg4 Re3 83. Rg2+ Kc1 84. Ra2 Kb1 85. Rg2 Re1 86. Kf5 Ka1 87. Kf4 Re6 88. Kf5 Re1 89.
+Rc2 Rb1 90. Ke4 Rb7 91. Rg2 Re7+ 92. Kd3 Re5 93. Rg6 Re7 94. Kc2 Ra7 95. Rc6 Ka2 96. Rc8
+Ra5 97. Kc1 Ka3 98. Kc2 Ra6 99. Kc3 Ka2 100. Kc2 Ra5 101. Rc6 Ra7
+{The technique from here is the bridge: cut the king off, walk out, interpose on the fourth rank. Drilled in [[Endgame drills for the week]].}
+102. Rc8 Ra5 1/2-1/2
 
 [Event "Rook endings - Lucena and Philidor: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.02.14"]
-[Round "5"]
-[White "Bex, N"]
-[Black "Ueda, K"]
-[Result "1/2-1/2"]
-[WhiteElo "3022"]
-[BlackElo "2981"]
-[ECO "B53"]
-[Opening "Sicilian Defense: Chekhover Variation"]
+[ChapterName "The defence: rook active, king in front"]
+[Date "2025.11.22"]
+[White "Magic11bot_Pro"]
+[Black "Weiawaga"]
+[Result "1-0"]
+[WhiteElo "3305"]
+[BlackElo "2846"]
+[ECO "B12"]
+[Opening "Caro-Kann Defense: Advance Variation, Short Variation"]
 
-{Sicilian Defense: Chekhover Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Qxd4 Nc6 5. Bb5 Bd7 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Qd3 Nf6 7. Bg5 e6 8. Nc3 ! h6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. Bh4 a6 10. Bxc6 Bxc6 11. O-O-O Be7 ?! 12. Nd4 O-O 13. f4 Rc8 14. Rhe1 b5 15. e5 Ne8 16. Bxe7 Qxe7 17. exd6 Nxd6 18. Nxe6 fxe6 19. Qxd6 Qxd6 20. Rxd6 Rxf4 21. Rd2 Kf7 22. g3 Rf5 23. b3 h5 24. Ne4 Bxe4 25. Rxe4 e5 26. a4 Ke6 27. axb5 axb5 28. Rde2 Rc5 29. g4 Rf3 30. gxh5 Rxb3 31. Rg4 Rh3 32. Rg6+ Kd5 33. Rd2+ Ke4 34. Rxg7 Rxh5 35. Rg3 Kf4 36. Rf2+ Ke4 37. Re2+ Kd5 38. Rd2+ Ke6 39. Rgg2 e4 40. Rg8 Rce5 41. Re8+ Kf7 42. Rxe5 Rxe5 43. Kd1 Ke6 44. Rd4 Kf5 45. Rd8 Kf4 46. Ke2 Rh5 47. h4 Rxh4 48. Rf8+ Kg3 49. Ke3 b4 50. Rb8 Rh6 51. Rb7 Ra6 52. Rg7+ Kh2 53. Re7 b3 54. cxb3 Rb6 55. Kf4 Rxb3 56. Rxe4 Rb1 57. Kf5 Ra1 58. Kg4 Rb1 59. Re8 Ra1 60. Re5 Rb1 61. Rh5+ Kg1 62. Rg5 Ra1 63. Kf3+ Kf1 64. Rh5 Ra3+ 65. Kf4 Ra2 66. Rh1+ Kg2 67. Re1 Rb2 68. Re6 Rb1 69. Rg6+ Kf1 70. Kf5 Ra1 71. Ke4 Rb1 72. Rh6 Rd1 73. Rh1+ Ke2 74. Rh2+ Kf1 75. Rh1+ Ke2 76. Rh7 Rb1 77. Rg7 Ra1 78. Rh7 Rb1 79. Rg7 Ra1 80. Rh7 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook. Worth drilling until it is automatic — see [[Endgame drills for the week]].} Rb1 1/2-1/2
-
-[Event "Rook endings - Lucena and Philidor: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.03.15"]
-[Round "6"]
-[White "Castellan, J"]
-[Black "Novak, E"]
-[Result "1/2-1/2"]
-[WhiteElo "2743"]
-[BlackElo "2699"]
-[ECO "A12"]
-[Opening "Réti Opening: Anglo-Slav Variation, Capablanca Variation"]
-
-{Réti Opening: Anglo-Slav Variation, Capablanca Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. Nf3 c6 2. b3 d5 3. Bb2 Nf6 4. c4 Bg4 5. h3 Bh5 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. g4 Bg6 7. d3 e6 8. Nbd2 ! Nbd7 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... dxc4 Rb1 cxb3 {was the alternative — playable, but it hands over the initiative.}) 9. Bg2 Bc5 10. a3 a5 11. g5 Nh5 ?! 12. d4 Be7 13. h4 h6 14. e3 hxg5 15. hxg5 Bxg5 16. Nxg5 Qxg5 17. Bf3 O-O-O 18. Bc3 Nhf6 19. Rxh8 Rxh8 20. Qe2 Ne4 21. Bxe4 Bxe4 22. Nxe4 dxe4 23. O-O-O Rh2 24. c5 a4 25. bxa4 Qf5 26. Be1 Qd5 27. Kb2 f5 28. Ka1 Qb3 29. Bb4 Rxf2 30. Qxf2 Qxd1+ 31. Kb2 Nf6 32. Qg3 Qe2+ 33. Ka1 Qf1+ 34. Kb2 Qe2+ 35. Ka1 Nd5 36. Qxg7 Qd1+ 37. Kb2 Qe2+ 38. Ka1 Qf1+ 39. Kb2 Qf2+ 40. Ka1 Nxb4 41. axb4 Qe1+ 42. Ka2 Qd2+ 43. Kb3 Qxe3+ 44. Kb2 Qd2+ 45. Kb3 Qd3+ 46. Kb2 Qc4 47. Qf8+ Kd7 48. Qd6+ Ke8 49. Qb8+ Kf7 50. Qc7+ Kf6 51. Qe5+ Kg6 52. Qg3+ Kf7 53. Qc7+ Kg6 54. Qg3+ Kf7 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 55. Qc7+ 1/2-1/2
+{The other half. A rook ending a pawn down is a draw far more often than it is lost, and the drawing method is shorter than the winning one.}
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 5. Be2 Nd7 6. O-O h6 7. a4 Ne7 8. a5 c5 9. c4 dxc4
+10. Nbd2 a6 11. Nxc4 Nd5 12. Qb3 Be7 13. Nh4 Bh7 14. Qg3 Kf8 15. Nf3 Bg6 16. Ne3 Be4 17.
+Rd1 Rc8 18. h4 g6 19. Nc4 Kg7 20. h5 g5 21. dxc5 Nxc5 22. Nd4 Bh7 23. Nb6 Ne4 24. Qh3 Rc5
+25. Be3 Qe8 26. Nxd5 Rxd5 27. Nxe6+ fxe6 28. Qxe6 Rd8 29. Rac1 Rxd1+ 30. Rxd1 Qf7 31. Qb6
+Bf5 32. Bf3 Rf8 33. e6 Qxe6 34. Qxe6 Bxe6 35. Bxe4 Kf7 36. Rc1 Rc8 37. Bxb7 Rxc1+ 38. Bxc1
+Bb4 39. Bxa6 Bxa5 40. Kf1 Bd5 41. Be3 Bb4 42. Bd4 Kf8 43. Be5 Be6 44. Bd3 Bd7 45. f3 Bc6
+46. Bc4 Be8 47. g4 Bd7 48. Bd4 Be8 49. Kf2 Bd6 50. Bc3 Bc5+ 51. Ke2 Bb6 52. Bb4+ Kg7 53.
+Bc3+ Kf8 54. b4 Bc6 55. b5 Bb7 56. Bd3 Bd5 57. Bd2 Bd8 58. Kf2 Bc7 59. Bb4+ Kf7 60. Bc5
+Ke6 61. Be4 Bc4 62. b6 Be5 63. b7 Ba6 64. Ba7 Ke7 65. b8=Q Bxb8 66. Bxb8 Kf7 67. Ke3 Ke7
+68. Kd4 Bb5 69. Ke5 Bc4 70. Bd6+ Ke8 71. Bd5 Ba6 72. Kf6 Bf1 73. Kg7 Kd7 74. Be5 Ke7 75.
+Kxh6 Kf8 76. Kxg5 Bd3 77. Be4 Bxe4 78. fxe4 Kf7 79. Kf5 Ke8 80. h6 Kd7 81. Bf4 Kc6 82. h7
+Kc5 83. h8=Q Kc4 84. g5 Kb4 85. g6 Kc5 86. g7 Kd4 87. g8=Q+ Kd3 88. Qb3+ Ke2 89. Qh2+ Kf1
+90. Qb1# 1-0

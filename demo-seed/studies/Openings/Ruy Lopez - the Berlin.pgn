@@ -1,44 +1,60 @@
 [Event "Ruy Lopez - the Berlin: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.01.01"]
-[Round "1"]
-[White "Alderman, R"]
-[Black "Pereira, V"]
+[ChapterName "The endgame after 8...Nxe5"]
+[Date "2025.11.10"]
+[White "strain-on-veins"]
+[Black "pangubot"]
 [Result "1/2-1/2"]
-[WhiteElo "2956"]
-[BlackElo "2981"]
-[ECO "B45"]
-[Opening "Sicilian Defense: Taimanov Variation, Normal Variation"]
+[WhiteElo "3054"]
+[BlackElo "3077"]
+[ECO "C67"]
+[Opening "Ruy Lopez: Berlin Defense, Rio Gambit Accepted"]
 
-{Sicilian Defense: Taimanov Variation, Normal Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e6 5. Nc3 d6 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. g4 a6 7. Be3 Nge7 8. Nb3 ! b5 {The critical moment. The pieces are as good as they are going to get; something has to happen now. Everything before this is preparation, and the preparation is listed in [[Opening prep checklist]].} (8... a5 Rb1 a4 {was the alternative — playable, but it hands over the initiative.}) 9. f4 g5 10. f5 Ne5 11. Be2 h5 ?! 12. fxe6 Bxe6 13. Qd2 hxg4 14. O-O-O b4 15. Nd5 Nxd5 16. exd5 Bf5 17. Nd4 Be4 18. Nc6 Qc8 19. Nxe5 dxe5 20. Rhf1 b3 21. axb3 Rxh2 22. c4 Qb7 23. Bg1 Rg2 24. Rf6 Be7 25. Rb6 Qd7 26. Rh6 f6 27. Rh8+ Bf8 28. d6 Kf7 29. c5 Kg7 30. Rh2 Rxh2 31. Bxh2 Qc6 32. Qc3 Bf5 33. Bg1 Rd8 34. b4 g3 35. Rd2 Qg2 36. Qe3 Qc6 37. Qc3 Be4 38. Bc4 g2 39. b3 Bxd6 {The rest is technique, which is another way of saying it still has to be played accurately.} 40. cxd6 1/2-1/2
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O
+{The queens come off on move eight and the game is still theory. That is the Berlin: an endgame reached before either side has finished developing.}
+Nxe4 5. Re1 Nd6 6. Nxe5 Be7 7. Bf1 Nxe5 8. Rxe5 O-O
+{White has the better structure, Black has the two bishops, and neither is worth anything until the kings decide where to stand. Everything before this is preparation, and the preparation is listed in [[Opening prep checklist]].}
+9. d4 Bf6 10. Re2 b6 11. Re1 Bb7 12. Bf4 Nf5 13. c3 Re8 14. Nd2 Rxe1 15. Qxe1 g6 16. Ne4
+Be7 17. Rd1 d5 18. Nd2 Bd6 19. Be5 Bxe5 20. Qxe5 Nd6 21. Re1 Qe8 22. g3 f6 23. Qe7 Qf7 24.
+Qe2 Re8 25. Qd1 Rxe1 26. Qxe1 Bc8 27. Qd1 c6 28. h4 Kg7 29. Qa4 Qc7 30. Bg2 Nf5 1/2-1/2
 
 [Event "Ruy Lopez - the Berlin: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.02.02"]
-[Round "2"]
-[White "Bex, N"]
-[Black "Ueda, K"]
+[ChapterName "When Black keeps the queens on"]
+[Date "2025.11.07"]
+[White "MastacticaTeoriabot"]
+[Black "YoBot_v2"]
 [Result "1/2-1/2"]
-[WhiteElo "2978"]
-[BlackElo "2760"]
-[ECO "B41"]
-[Opening "Sicilian Defense: Kan Variation, Maróczy Bind, Réti Variation"]
+[WhiteElo "3096"]
+[BlackElo "3064"]
+[ECO "C65"]
+[Opening "Ruy Lopez: Berlin Defense"]
 
-{Sicilian Defense: Kan Variation, Maróczy Bind, Réti Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 5. c4 Nf6 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Nc3 Bb4 7. Qd3 Qc7 8. Nc2 ! Bd6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. g3 O-O 10. Bg2 Nc6 11. Qe2 Be5 ?! 12. O-O Na5 13. Ne3 b5 14. cxb5 axb5 15. Nxb5 Qb6 16. Qd3 Ba6 17. a4 Nc6 18. Bd2 Rab8 19. Nc4 Bxb5 20. axb5 Qxb5 21. Nxe5 Qxe5 22. Bc3 Qc5 23. Rfd1 h6 24. Rdc1 e5 25. Ra4 Qe7 26. Rb1 Rb3 27. Rba1 Rbb8 28. Rd1 Rfe8 29. Rb1 Rb3 30. Rba1 Rbb8 31. Bf1 Nb4 32. Qc4 d5 33. Bxb4 dxc4 34. Bxe7 Rxe7 35. Ra8 Ree8 36. Rxb8 Rxb8 37. Bxc4 Rxb2 38. Ra8+ Kh7 39. Bxf7 Nxe4 40. Bg8+ Kg6 41. Ra6+ Nf6 42. h4 h5 43. f3 Rd2 44. Kf1 Kh6 45. Bf7 Rd4 46. Ra5 Rd7 47. Be6 Rd3 48. Ke2 e4 49. g4 Rxf3 50. g5+ Kg6 51. Ra6 Rf4 52. Bd7 Rxh4 53. gxf6 gxf6 54. Ra5 Rf4 55. Ke3 Rf1 56. Kxe4 h4 57. Bf5+ Kg5 58. Bh3+ f5+ 59. Rxf5+ Rxf5 60. Bxf5 h3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 61. Bxh3 1/2-1/2
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. d3 Bc5 5. Bxc6
+{Declining the endgame costs a tempo and buys a middlegame. Whether that is a good trade depends entirely on who is happier with a closed centre.}
+dxc6 6. O-O Nd7 7. Nbd2 O-O 8. Nc4 Re8 9. a4 a5 10. Be3 Bb4 11. Bg5 f6 12. Bd2 Nf8 13. Qe1
+{The knight on the rim is not badly placed here — it is waiting for f5, and every white piece has to be arranged around stopping it.}
+Bxd2 14. Qxd2 b6 15. b3 Ne6 16. Kh1 c5 17. Ng1 c6 18. Ne2 h6 19. Ng3 Ra7 20. f3 Kh7 21.
+Ne3 Rf8 22. Rf2 b5 23. Rff1 Nf4 24. Rfb1 Qc7 25. Rd1 Ne6 26. Rf1 Nf4 27. Ngf5 Ne6 28. Qc3
+Qb6 29. Ng3 Bd7 30. Qe1 Nd4 31. f4 exf4 32. Rxf4 Be6 33. Rf1 Qc7 34. Qf2 Rd8 35. Nef5 Qe5
+36. Ne3 Rdd7 37. Kg1 Rd8 38. Rfe1 Bf7 39. Ngf1 Be6 40. Ng3 Rdd7 41. Rf1 Rdb7 42. Rfe1 Ra8
+43. Kh1 Raa7 44. Kg1 Re7 45. h3 Red7 46. Kh2 Rf7 47. Kh1 g6 48. Nef5 Nxc2 49. Qxc2 gxf5
+50. Nxf5 Bxf5 51. exf5 Qd5 52. Rac1 Rg7 53. Re2 b4 54. Qxc5 Qxb3 55. Qd6 Raf7 56. Re8 Rd7
+57. Qxc6 Rxd3 58. Qa8 Rd1+ 59. Rxd1 Qxd1+ 60. Kh2 Qd6+ 61. Kh1 Qd1+ 62. Kh2 Qd6+ 63. Kh1
+Qd1+ 1/2-1/2
 
 [Event "Ruy Lopez - the Berlin: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.03.03"]
-[Round "3"]
-[White "Castellan, J"]
-[Black "Novak, E"]
-[Result "1-0"]
-[WhiteElo "3294"]
-[BlackElo "2910"]
-[ECO "B03"]
-[Opening "Alekhine Defense"]
+[ChapterName "What the Berlin costs White"]
+[Date "2025.11.10"]
+[White "pangubot"]
+[Black "strain-on-veins"]
+[Result "1/2-1/2"]
+[WhiteElo "3077"]
+[BlackElo "3054"]
+[ECO "C67"]
+[Opening "Ruy Lopez: Berlin Defense, Berlin Wall"]
 
-{Alekhine Defense. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. e4 Nf6 2. e5 Nd5 3. d4 c5 4. dxc5 Qa5+ 5. c3 Qxc5 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nf3 f6 7. b4 Qc6 8. b5 ! Qe6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Nxc3 Nbd2 Nb1 {was the alternative — playable, but it hands over the initiative.}) 9. Bc4 Nxc3 10. Bxe6 Nxd1 11. Bb3 Nxf2 ?! 12. Kxf2 fxe5 13. Be3 d6 14. Ng5 h6 15. Ne6 Bxe6 16. Bxe6 Nd7 17. Nc3 b6 18. Nd5 Kd8 19. Rhc1 Nc5 20. Bxc5 bxc5 21. Ke2 Rb8 22. a4 g6 23. Rf1 h5 24. a5 Bh6 25. b6 a6 26. Nc7 Rb7 27. Nxa6 Bf4 28. Nc7 Rxc7 29. a6 Ra7 30. bxa7 Kc7 31. Rfb1 d5 32. Rb8 Kd6 33. Bxd5 e6 34. Be4 Re8 35. Rxe8 c4 36. a8=Q Kc5 37. Qa7+ Kb4 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 38. Qb6+ 1-0
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 5. d4 Nd6 6. Bxc6
+{Nothing has happened yet and White is already playing for two results. Some players will take that; the point of this chapter is to decide before the game, not during it.}
+dxc6 7. dxe5 Nf5 8. Qxd8+ Kxd8 9. Nc3 Bd7 10. h3 h6 11. b3 Kc8 12. Bb2 b6 13. Rad1 a5 14.
+Rd3 Be7 15. Rfd1 Be6 16. g4 Nh4 17. Nd4 Ng6 18. Nxc6 Bg5 19. Ne4 Nf4 20. Rf3 a4 21. c4
+axb3 22. axb3 Ra2 23. Bc3 Re2 24. Rd4 Rc2 25. Rd1 Re2 26. Nd2 Kb7 27. Nb4 c5 28. Nd3 Ng6
+29. Rg3 Bh4 30. Rf3 Bg5 31. Kf1 Bxd2 32. Bxd2 Re4 33. Rg3 h5 1/2-1/2

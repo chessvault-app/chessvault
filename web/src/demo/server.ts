@@ -7,6 +7,7 @@ import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { normaliseTraining, type Training } from '@shared/training';
 import { mountVault } from '../../../server/mountVault.ts';
 import { puzzleBooksApi } from '../../../server/puzzlebooks.ts';
+import { storageApi } from '../../../server/storage.ts';
 import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
 
@@ -200,6 +201,18 @@ function buildApp(): Hono {
    * this config shims neither.
    */
   app.route('/api', puzzleBooksApi(`${VAULT}/puzzlebooks`, `${VAULT}/books`));
+
+  /**
+   * What each part of the vault takes on disk.
+   *
+   * The one screen that explains what a vault IS — games, studies, notes
+   * and the rebuildable caches, each with its own size — and it was a 404
+   * here, so the card did not appear at all. The in-memory filesystem can
+   * answer it as well as a real one can; `data` is pointed at a directory
+   * that does not exist, which is the honest answer for the derived files
+   * the demo has none of.
+   */
+  app.route('/api', storageApi(VAULT, `${VAULT}/.data`));
 
   /**
    * The library, holding the one book the demo draws for itself.

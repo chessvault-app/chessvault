@@ -1,44 +1,65 @@
 [Event "Sicilian - Najdorf structures: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.04.04"]
-[Round "4"]
-[White "Doyle, F"]
-[Black "Sorokin, Y"]
-[Result "1/2-1/2"]
-[WhiteElo "2784"]
-[BlackElo "3079"]
-[ECO "C66"]
-[Opening "Ruy Lopez: Berlin Defense, Improved Steinitz Defense"]
+[ChapterName "The Poisoned Pawn"]
+[Date "2025.11.22"]
+[White "Magic11bot_Pro"]
+[Black "Weiawaga"]
+[Result "1-0"]
+[WhiteElo "3307"]
+[BlackElo "2845"]
+[ECO "B97"]
+[Opening "Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted"]
 
-{Ruy Lopez: Berlin Defense, Improved Steinitz Defense. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O d6 5. c3 Nxe4 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. d4 Bd7 7. Re1 Nf6 8. Bxc6 ! Bxc6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... e4 Nbd2 e3 {was the alternative — playable, but it hands over the initiative.}) 9. dxe5 dxe5 10. Qxd8+ Kxd8 11. Nxe5 Be8 ?! 12. Bg5 h6 13. Bxf6+ gxf6 14. Ng4 Be7 15. Ne3 c6 16. Nf5 Bf8 17. Nd2 Bd7 18. Nd4 Rg8 19. Ne4 Rg6 20. h4 h5 21. Ne2 Kc7 22. Nf4 Rh6 23. Rad1 Re8 24. Rd4 Bf5 25. Kf1 Re5 26. Ng3 Rxe1+ 27. Kxe1 Be6 28. Ngxh5 Bc5 29. Re4 Bxa2 30. g3 Bb1 31. Ra4 Bf5 32. f3 Kb6 33. Kd2 Bc8 34. g4 Bd6 35. Ke3 a5 36. Ra1 Kb5 37. b3 Be5 38. c4+ Kb4 39. Nd3+ Kxb3 40. Rxa5 Bc3 41. Ra8 Be6 42. Nc5+ Kxc4 43. Nxb7 Bd4+ 44. Ke4 f5+ 45. Kf4 c5 46. Rd8 fxg4 47. fxg4 Bb2 48. Nd6+ Kb3 49. Rb8+ Ka2 50. Nf5 Bxf5 51. Kxf5 c4 52. Nf4 Rxh4 53. Nd5 Rh2 54. g5 Rd2 55. Rb5 c3 56. Nxc3+ Bxc3 57. Rb7 Rf2+ 58. Ke4 Bd2 59. Rb5 Bc1 60. Rf5 Rxf5 61. Kxf5 Kb3 62. g6 fxg6+ {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 63. Kxg6 1/2-1/2
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4
+{Black is a pawn up and every piece is on its first square. The compensation is not an attack; it is that White has to prove something within about fifteen moves.}
+Qb6 8. Qd2 Qxb2 9. Rb1 Qa3 10. f5 b5 11. fxe6 fxe6 12. Be2 Be7 13. O-O Ra7 14. Rb3 Qa5 15.
+Bxf6
+{This is the moment the theory stops. From here both sides are counting tempi rather than remembering them.}
+Bxf6 16. Bh5+ Kd8 17. Rxf6 gxf6 18. Qf4 Re8 19. Qxf6+ Rae7 20. Bxe8 Kxe8 21. e5 dxe5 22.
+Nf3 Qb6+ 23. Kh1 Rf7 24. Qh8+ Rf8 25. Qxh7 Bb7 26. Ne4 Bxe4 27. Qxe4 Rf5 28. g4 Rf7 29.
+Nxe5 Rf1+ 30. Kg2 Qg1+ 31. Kh3 Rf6 32. Qe3 Rf2 33. Nf3 Qg2+ 34. Kh4 Rxc2 35. Qxe6+ Kd8 36.
+Rd3+ Kc7 37. h3 Qf1 38. Qe7+ Kb6 39. Rd6+ Ka5 40. Qe3 Qf2+ 41. Qxf2 Rxf2 42. Nd4 Kb4 43.
+Rd8 Kc4 44. g5 Rf4+ 45. Kh5 Rxd4 46. Rxb8 Rd2 47. Rc8+ Kb4 48. g6 Rxa2 49. Rc6 Rg2 50.
+Rxa6 Kc5 51. Ra8 b4 52. Rb8 Kc4 53. h4 Kc3 54. Kh6 b3 55. g7 b2 56. h5 Rg4 57. Rxb2 Kxb2
+58. Kh7 Rg5 59. h6 Rg2 60. g8=Q Re2 61. Qd5 Kc3 62. Qf3+ Kd2 63. Qxe2+ Kxe2 64. Kg6 Kf3
+65. Kf5 Ke3 66. h7 Kd3 67. h8=Q Kc4 68. Qe5 Kd3 69. Qc5 Ke2 70. Kf4 Kd3 71. Kf3 Kd2 72.
+Qc4 Kd1 73. Ke3 Ke1 74. Qc1# 1-0
 
 [Event "Sicilian - Najdorf structures: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.05.05"]
-[Round "5"]
-[White "Ekström, P"]
-[Black "Zahavi, O"]
-[Result "1/2-1/2"]
-[WhiteElo "2995"]
-[BlackElo "3016"]
-[ECO "A84"]
-[Opening "Dutch Defense: Classical Variation"]
+[ChapterName "The English Attack"]
+[Date "2025.11.26"]
+[White "gshxusjn"]
+[Black "ryffhrnyn"]
+[Result "0-1"]
+[WhiteElo "3507"]
+[BlackElo "3879"]
+[ECO "B90"]
+[Opening "Sicilian Defense: Najdorf Variation"]
 
-{Dutch Defense: Classical Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. c4 f5 2. d4 e6 3. Nf3 Nf6 4. g3 Be7 5. Qc2 c5 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. dxc5 Bxc5 7. Bg2 d6 8. O-O ! O-O {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker. The other continuation transposes to [[Openings/Ruy Lopez - the Berlin|the Berlin structure]].} (8... Bxf2+ Rxf2 f4 {was the alternative — playable, but it hands over the initiative.}) 9. Nc3 Nc6 10. e4 fxe4 11. Nxe4 Nxe4 ?! 12. Qxe4 h6 13. Nh4 Qb6 14. Be3 Ne5 15. Rae1 Bd7 16. Bxc5 Qxc5 17. Qxb7 Rad8 18. b3 g5 19. Rxe5 dxe5 20. Ng6 Bc8 21. Ne7+ Kh8 22. Ng6+ Kg8 23. Qe4 Rf5 24. Bh3 Re8 25. Bg2 Rd8 26. Bh3 Re8 27. b4 Qc7 28. Bg2 Rd8 29. g4 Rd4 30. Qe2 Rf6 31. Nxe5 Bb7 32. Qe3 Rff4 33. Bxb7 Qxb7 34. f3 Qxb4 35. Ng6 Qxc4 36. Qe5 Kh7 37. Nxf4 Rxf4 38. Rf2 Qd4 39. Qc7+ Kg6 40. Qc2+ Kg7 41. Kg2 Qd5 42. Qc7+ Kg6 43. Qc2+ Kg7 44. Qc7+ Kg6 45. h3 a5 46. Qc2+ Kg7 47. Qc7+ Kg8 48. Qc3 e5 49. Qc8+ Kf7 50. Qc2 Kg7 51. Qc7+ Kg8 52. Qb8+ Kf7 53. Qa7+ Kg6 54. Qb6+ Kh7 55. Qc7+ Kg8 56. Qc8+ Kg7 57. Qc3 Rc4 58. Qb2 Rf4 59. Qc3 Rc4 60. Qb2 Rb4 61. Qc3 Rf4 62. Re2 Kf6 63. Qa3 Rb4 64. Qc3 Rd4 65. Rc2 Rd3 66. Qc6+ Qxc6 67. Rxc6+ Kg7 68. Re6 Rd2+ 69. Kg3 Rxa2 70. Rxe5 a4 71. h4 gxh4+ 72. Kxh4 a3 73. Kg3 Ra1 74. Ra5 a2 75. Ra7+ Kf6 76. Kg2 Ke5 77. Ra4 Kd5 78. f4 Ke6 79. f5+ Ke5 80. Ra6 Rb1 81. Rxa2 Kf4 82. Rf2+ Kg5 83. Kf3 h5 84. gxh5 Kxf5 85. Rh2 Kf6 86. Ke4 Kg7 87. h6+ Kh8 88. h7 Rb8 89. Kd5 Kg7 90. Rh1 Rh8 91. Ke5 Rf8 92. Ke6 Rh8 93. Rg1+ Kf8 94. Rh1 Kg7 95. Rg1+ Kf8 96. Rf1+ Kg7 97. Rh1 Rf8 98. Ke7 Rc8 99. h8=Q+ Rxh8 100. Rxh8 {The rest is technique, which is another way of saying it still has to be played accurately.} Kxh8 1/2-1/2
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bd3 e5 7. Nde2 Be7 8. O-O
+{Opposite castling, and the race is on. Count the moves each attack needs before choosing which pawn to push.}
+Be6 9. f3 O-O 10. Be3 Nbd7 11. Qd2 b5 12. a3 Rc8 13. Rad1 Nb6 14. Bxb6 Qxb6+ 15. Kh1 Rfd8
+16. h3 d5 17. exd5
+{The defender who opens a file on his own king is usually lost. The exception is when he opens it to trade the attacker off, which is what happens here. A quieter way of asking the same question is [[Openings/Ruy Lopez - the Berlin|the Berlin structure]].}
+Nxd5 18. Nxd5 Bxd5 19. c3 Bb3 20. Rde1 Bc4 21. Nc1 Bxd3 22. Nxd3 Qg6 23. Rxe5 Rxd3 24. Qc1
+Bd6 25. Ree1 h6 26. Rd1 Rd8 27. Rxd3 Qxd3 28. Re1 Bg3 29. Rf1 g5 30. b4 Re8 31. Qa1 Re2
+32. Qc1 Qe3 33. Qxe3 Rxe3 34. Rc1 Kg7 35. c4 bxc4 0-1
 
 [Event "Sicilian - Najdorf structures: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.06.06"]
-[Round "6"]
-[White "Farrow, K"]
-[Black "Quinn, H"]
-[Result "0-1"]
-[WhiteElo "2905"]
-[BlackElo "2820"]
-[ECO "A14"]
-[Opening "English Opening: Agincourt Defense, Neo-Catalan Declined"]
+[ChapterName "The 6.Bg5 main lines"]
+[Date "2025.11.08"]
+[White "msksk1"]
+[Black "Alexandrya"]
+[Result "1/2-1/2"]
+[WhiteElo "3029"]
+[BlackElo "3056"]
+[ECO "B96"]
+[Opening "Sicilian Defense: Najdorf Variation"]
 
-{English Opening: Agincourt Defense, Neo-Catalan Declined. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. c4 Nf6 2. g3 e6 3. Bg2 d5 4. Nf3 Be7 5. O-O O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. d3 b6 7. cxd5 Nxd5 8. Nc3 ! Bb7 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Nxc3 Rb1 Nxb1 {was the alternative — playable, but it hands over the initiative.}) 9. Bd2 c5 10. d4 Na6 11. Rc1 Rc8 ?! 12. Qa4 Nxc3 13. Bxc3 cxd4 14. Nxd4 Bxg2 15. Kxg2 Nc5 16. Qc2 Qd5+ 17. Kg1 Bf6 18. Rfd1 Qxa2 19. Ra1 Qc4 20. Rxa7 Rfd8 21. e3 Qd5 22. Raa1 Qe4 23. Qxe4 Nxe4 24. Be1 h5 25. f3 Nc5 26. Bc3 g5 27. Kf2 g4 28. Ke2 Kg7 29. Rf1 gxf3+ 30. Rxf3 Ne4 31. Raf1 e5 32. Nf5+ Kg6 33. Nh4+ Bxh4 34. gxh4 f6 35. Rc1 Rd5 36. Rff1 Rb5 37. Rfd1 Kf5 38. Rf1+ Ke6 39. Rfd1 Rc6 40. Kf3 Kf5 41. Be1 Rbc5 42. Rxc5 Rxc5 43. Rd3 Rc2 44. Bg3 Nd2+ {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 45. Ke2 0-1
+1. e4 c5 2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4 5. Nxd4 a6 6. Bg5 e6 7. f4 Nbd7 8. Qf3 Qc7 9.
+O-O-O b5 10. g4 b4 11. Nce2
+{The d5 square is the whole argument of the Najdorf, and every trade either wins it or gives it away.}
+Bb7 12. Ng3 Be7 13. Bxf6 Bxf6 14. g5 Be7 15. Kb1 g6 16. h4 O-O-O 17. a3 bxa3 18. Qxa3 Nc5
+19. Bg2 Kb8 20. Qe3 f5 21. Nb3 Rhe8 22. Nxc5 dxc5 23. Ne2 c4 24. h5 gxh5 25. Bf3 Bc5 26.
+Qc3 fxe4 27. Bxh5 Rf8 28. Qxc4 e3 29. Qxe6 Bxh1 30. Rxh1 Qb7 31. Rf1 Qb6 32. Qe5+ Qc7 33.
+Qe4 Qb7 34. Qe5+ Qc7 35. Qe6 Rd6 36. Qe4 Ka7 37. Rh1 Rb6 38. b3 Qb7 39. Qxb7+ Rxb7 40. Bf3
+Rg7 41. Be4 Bd6 42. Rh4 1/2-1/2

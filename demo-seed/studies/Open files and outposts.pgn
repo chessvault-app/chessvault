@@ -1,44 +1,34 @@
 [Event "Open files and outposts: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.10.07"]
-[Round "7"]
-[White "Jessel, A"]
-[Black "Marchetti, C"]
+[ChapterName "Taking a file, and keeping it"]
+[Date "2025.11.17"]
+[White "vbkbswvs4"]
+[Black "vbkbswvs2"]
 [Result "1-0"]
-[WhiteElo "2915"]
-[BlackElo "2814"]
-[ECO "A94"]
-[Opening "Dutch Defense: Stonewall Variation"]
+[WhiteElo "3524"]
+[BlackElo "2866"]
+[ECO "A41"]
+[Opening "Queen's Pawn Game"]
 
-{Dutch Defense: Stonewall Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. d4 d5 2. Nf3 e6 3. g3 f5 4. c4 Nf6 5. Bg2 c6 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. O-O Be7 7. b3 O-O 8. Ba3 ! Bxa3 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... dxc4 Nbd2 cxb3 {was the alternative — playable, but it hands over the initiative.}) 9. Nxa3 Qe7 10. Qc1 Rd8 11. Nc2 b6 ?! 12. Nce1 Ba6 13. Nd3 Nbd7 14. Qe3 dxc4 15. bxc4 Bxc4 16. Nfe5 Nxe5 17. Nxe5 Bd5 18. Nxc6 Bxc6 19. Bxc6 Rac8 20. Rac1 Qd6 21. Bf3 Nd5 22. Qb3 Qd7 23. e3 g6 24. h4 Kg7 25. Kg2 h6 26. Rh1 Nf6 27. a4 g5 28. hxg5 hxg5 29. Qb5 g4 30. Bc6 Qd6 31. Bb7 Rb8 32. Qc6 Qe7 33. Ba6 Rd7 34. Bb5 Rbd8 35. Qc3 Nd5 36. Qa1 Rc7 37. Rxc7 Qxc7 38. Rc1 Qf7 39. Bc6 Nf6 40. d5 exd5 41. Qe5 Kg6 42. Bb5 d4 43. exd4 Qb3 44. Rc6 Qf7 45. Bc4 Qf8 46. Bd3 Qf7 47. Qxf5+ Kg7 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 48. Qg5+ 1-0
+1. d4 d6 2. e3 e6 3. f3 c6 4. Qd3 f6 5. b3 Be7 6. Bd2 b6 7. c3 a6 8. Be2 Bb7 9. Na3 a5 10.
+Rb1 Kf7 11. Rc1 Qd7 12. Rd1
+{Doubling on the file is not the plan. The plan is the square at the end of it, and the rooks are how you get to argue about it.}
+Ba6 13. Qc2 Bxe2 14. Kf2 Bxd1 15. Qd3 e5 16. e4 f5 17. b4 d5 18. Nb5 c5 19. a3 c4 20. Qb1
+Qxb5 21. Qb2 Qxb4 22. Qc1 Qxc3 23. Qxd1 Qxd4+ 24. Kg3 f4+ 25. Kg4 Qf2 26. Be1 Bd6 27. Bxf2
+Bc5 28. Bxc5 Ke6 29. Qxd5+ Kf6 30. Qxe5+ Kg6 31. Qf5+ Kh6 32. Qg5# 1-0
 
 [Event "Open files and outposts: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.11.08"]
-[Round "8"]
-[White "Kowal, D"]
-[Black "Rasmussen, I"]
+[ChapterName "The knight that cannot be dislodged"]
+[Date "2025.11.26"]
+[White "gshxusjn"]
+[Black "hjsjjsd"]
 [Result "1-0"]
-[WhiteElo "2750"]
-[BlackElo "2719"]
-[ECO "D70"]
-[Opening "Neo-Grünfeld Defense: with Nf3"]
+[WhiteElo "3635"]
+[BlackElo "3100"]
+[ECO "B10"]
+[Opening "Caro-Kann Defense: Two Knights Attack"]
 
-{Neo-Grünfeld Defense: with Nf3. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. d4 Nf6 2. c4 g6 3. Nf3 d5 4. cxd5 Bg7 5. Qa4+ Bd7 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Qb3 b5 7. Nc3 a5 8. a3 ! Na6 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... a4 Rb1 axb3 {was the alternative — playable, but it hands over the initiative.}) 9. e4 b4 10. axb4 axb4 11. Rxa6 Rxa6 ?! 12. Bxa6 bxc3 13. e5 cxb2 14. Bxb2 Ne4 15. O-O Bg4 16. Bb5+ Kf8 17. Re1 f5 18. Bc1 Qb8 19. Qc4 Bxf3 20. gxf3 Nc3 21. Bc6 Nb1 22. Re2 Qa7 23. Ra2 Qb6 24. Rb2 Na3 25. Rxb6 Nxc4 26. Rb7 Nxe5 27. dxe5 Bxe5 28. Rb8+ Kf7 29. Rxh8 Bxh8 30. Bf4 e5 31. dxe6+ Kxe6 32. Bxc7 g5 33. f4 g4 34. Kg2 h5 35. Bd8 Bc3 36. Be8 Bd2 37. Kg3 Kd5 38. Bxh5 Ke4 39. Bg5 Be1 40. Bg6 Bd2 41. Be8 Be1 42. Bc6+ Kd3 43. Bd7 Ke4 44. Ba4 Kd3 45. Bd1 Kd2 46. Bxg4 fxg4 47. Kxg4 Bxf2 48. f5+ Kd3 49. f6 Ke4 50. f7 Bc5 51. Bh6 Ke5 52. f8=R Bxf8 53. Bxf8 Kf6 54. Bh6 Kg6 55. Bg5 Kh7 56. h4 Kg8 57. h5 Kh7 58. Kf5 Kg8 59. Kg6 Kh8 60. h6 Kg8 61. h7+ Kf8 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 62. h8=R# 1-0
-
-[Event "Open files and outposts: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.12.09"]
-[Round "9"]
-[White "Lindqvist, S"]
-[Black "Whitlock, A"]
-[Result "0-1"]
-[WhiteElo "2688"]
-[BlackElo "2730"]
-[ECO "A68"]
-[Opening "Benoni Defense: Four Pawns Attack"]
-
-{Benoni Defense: Four Pawns Attack. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. e4 g6 7. f4 Bg7 8. Nf3 ! O-O {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... c4 Rb1 Nxe4 {was the alternative — playable, but it hands over the initiative.}) 9. Bd3 b5 10. O-O c4 11. Bc2 b4 ?! 12. Ne2 Qb6+ 13. Kh1 Re8 14. Ng3 Ng4 15. Qe1 Ba6 16. h3 c3 17. hxg4 Bxf1 18. Be3 Qc7 19. Ba4 cxb2 20. Rb1 Bd3 21. Bxe8 Qc2 22. Rxb2 Qxb2 23. e5 Na6 24. Bc6 Rf8 25. e6 Nc7 26. e7 Rc8 27. Bxa7 Qxa2 28. Bb6 Ne8 29. Ng5 b3 30. Nxf7 Qa1 31. Qxa1 Bxa1 32. Bd7 Kxf7 33. Bxc8 b2 34. Be6+ Kxe7 35. f5 b1=Q+ 36. Kh2 Be5 37. Kh3 Qxb6 38. fxg6 Qe3 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 39. Kh4 0-1
+1. e4 c6 2. Nf3 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Nxf6+ exf6 6. Bc4 Be7 7. d4 O-O 8. O-O Nd7
+9. Re1 Re8 10. c3 Nf8 11. Bf4 Bd7 12. Qb3 b6 13. Bxf7+ Kh8 14. Bxe8
+{A protected knight on the sixth is worth more than the exchange, which is a sentence worth testing rather than believing.}
+Qxe8 15. Bd6 Bxd6 16. Rxe8 Bxe8 17. Re1 Bd7 18. h3 h6 19. Qf7 a6 20. Nh4 Rb8 21. Ng6+ Nxg6
+22. Qxd7 Bf4 23. g3 Bg5 24. h4 Bxh4 25. gxh4 Nxh4 26. Re7 Ng6 27. Rxg7 1-0

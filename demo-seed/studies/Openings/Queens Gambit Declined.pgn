@@ -1,44 +1,62 @@
 [Event "Queens Gambit Declined: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.07.07"]
-[Round "7"]
-[White "Grieve, M"]
-[Black "Verhoeven, J"]
-[Result "0-1"]
-[WhiteElo "2911"]
-[BlackElo "2784"]
-[ECO "B44"]
-[Opening "Sicilian Defense: Taimanov Variation"]
+[ChapterName "The Exchange, and the minority attack"]
+[Date "2025.11.21"]
+[White "Test-Q"]
+[Black "MastacticaTeoriabot"]
+[Result "1/2-1/2"]
+[WhiteElo "3068"]
+[BlackElo "3088"]
+[ECO "D35"]
+[Opening "Queen's Gambit Declined: Exchange Variation, Positional Variation"]
 
-{Sicilian Defense: Taimanov Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nc6 5. a3 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nc3 d6 7. Be3 Be7 8. Qe2 ! Nxd4 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Nb4 Rb1 Na2 {was the alternative — playable, but it hands over the initiative.}) 9. Bxd4 e5 10. Be3 O-O 11. O-O-O Be6 ?! 12. f3 Rc8 13. Qd2 a6 14. Kb1 b5 15. g4 Nd7 16. h4 Nb6 17. g5 Nc4 18. Bxc4 Rxc4 19. Nd5 Bxd5 20. Qxd5 Qc7 21. Rh2 b4 22. a4 Rb8 23. b3 Rc3 24. Rd3 Rc8 25. Rxc3 Qxc3 26. Qd2 g6 27. Rf2 f5 28. Qxc3 bxc3 29. Ka2 Kf7 30. Re2 Ke6 31. Bb6 fxe4 32. fxe4 Rf8 33. Rf2 Rxf2 34. Bxf2 d5 35. exd5+ Kxd5 36. Be1 Bb4 37. Kb1 Ke4 38. Kc1 Kf3 39. Kd1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} e4 0-1
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 5. Bg5 Be7 6. e3 O-O 7. Bd3 h6 8. Bh4 c6 9. Qc2
+{Two pawns advancing on three, and the point is not to win a pawn but to leave one behind that cannot be defended by another.}
+Re8 10. Nge2 Nbd7 11. O-O a5 12. Rac1 Nh5 13. Bxe7 Qxe7 14. Rce1 Nf8 15. Qd2 b6 16. b3
+{The backward c-pawn is the whole plan arriving. Everything before this was preparation for a weakness that does not exist yet.}
+Bd7 17. Rc1 Rab8 18. Rfe1 Qg5 19. Qc2 Rbc8 20. Kh1 Qe7 21. Ng1 Nf6 22. Nf3 c5 23. Kg1 Ne6
+24. dxc5 Rxc5 25. Qd2 Ng5 26. Nxg5 hxg5 27. Ne2 g4 28. Rxc5 Qxc5 29. Qb2 Qb4 30. Rc1 a4
+31. Qd4 Qa3 32. Rb1 Qxa2 33. Nc3 Qa3 34. Nxa4 Rc8 35. g3 Rc1+ 36. Rxc1 Qxc1+ 37. Kg2 Bxa4
+38. bxa4 Qc6 39. Kf1 g6 40. Kg2 Ne4 41. Bxe4 dxe4 42. Qd8+ Kg7 43. Qd1 Kf8 44. Qa1 Kg8 45.
+a5 bxa5 46. Qxa5 Qe6 47. Qa8+ Kg7 48. Kf1 Qe5 49. Kg2 f5 50. Qb7+ Kf6 51. Qb1 Qe7 52. Qa1+
+Kf7 53. Kf1 Qd6 54. Qa2+ Ke7 55. Qa1 Kf7 56. Qa2+ Qe6 57. Qb1 Qc4+ 58. Kg2 Qe6 59. Kg1 Qc4
+60. Qb7+ Kf6 61. Qb2+ Kf7 62. Qb7+ Kf6 63. Qb2+ Ke7 64. Qb7+ Kd6 65. Kg2 Qe6 66. Qg7 Kc5
+67. Qd4+ Kb5 68. h4 gxh3+ 69. Kxh3 Qe7 1/2-1/2
 
 [Event "Queens Gambit Declined: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.08.08"]
-[Round "8"]
-[White "Halvorsen, T"]
-[Black "Oyelaran, B"]
-[Result "0-1"]
-[WhiteElo "2959"]
-[BlackElo "3076"]
-[ECO "D48"]
-[Opening "Semi-Slav Defense: Meran Variation, Reynolds' Variation"]
+[ChapterName "Orthodox, with the freeing break"]
+[Date "2025.11.24"]
+[White "YoBot_v2"]
+[Black "HakoAI"]
+[Result "1/2-1/2"]
+[WhiteElo "3056"]
+[BlackElo "2941"]
+[ECO "D68"]
+[Opening "Queen's Gambit Declined: Orthodox Defense, Classical Variation"]
 
-{Semi-Slav Defense: Meran Variation, Reynolds' Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. e3 Nbd7 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Bd3 dxc4 7. Bxc4 b5 8. Bd3 ! a6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... b4 Rb1 b3 {was the alternative — playable, but it hands over the initiative.}) 9. e4 c5 10. d5 c4 11. Bc2 e5 ?! 12. O-O Bd6 13. Ne2 O-O 14. b3 Nb6 15. h3 Bd7 16. Ng3 Qc7 17. Nh4 g6 18. Bg5 Ne8 19. bxc4 Nxc4 20. Bh6 Ng7 21. Qe2 Rfc8 22. Bd3 Qd8 23. Nf3 Nb6 24. Kh1 Qe7 25. Nh2 Rab8 26. Rac1 Rxc1 27. Rxc1 Rc8 28. Rxc8+ Bxc8 29. Ngf1 Ne8 30. Qe1 Qc7 31. Bd2 Na4 32. Ne3 Bc5 33. g4 Bb6 34. Kg2 Nc5 35. Bc2 Nd6 36. Qb1 Qd8 37. Nf3 f6 38. Bc1 h6 39. Nh2 h5 40. Nhf1 a5 41. gxh5 gxh5 42. Ng3 h4 43. Ngf5 Bxf5 44. exf5 Kf8 45. Bd2 Ke7 46. Kh2 Qg8 47. Qe1 Ncb7 48. Qd1 Qc8 49. Bb1 Qc5 50. Ng4 Nc4 51. Bh6 Nbd6 52. Qg1 Ne8 53. Qg2 Qd6 54. Be4 Kd8 55. Qf3 a4 56. Kg1 Qb4 57. Bd3 Ncd6 58. Bf8 Qd2 59. Qe2 Qxe2 60. Bxe2 b4 61. Bd3 e4 62. Bb1 Bd4 63. Kf1 Kd7 64. f3 exf3 65. Nh2 f2 66. Ng4 Nc7 67. Nxf2 Bxf2 68. Kxf2 Nxd5 69. Bh6 Nc3 70. Bc2 a3 71. Bb3 Nce4+ 72. Kf3 Nc5 73. Bd2 Nxb3 74. Bxb4 Nd4+ 75. Kg4 Nc2 76. Ba5 Nc4 77. Bc3 N4e3+ 78. Kxh4 Nd5 79. Bd2 Ndb4 80. Kg3 Nxa2 81. Kf3 Nd4+ 82. Ke3 Nb5 83. Kf3 Ke7 84. h4 Kf7 85. Kg2 Nac3 86. Bc1 a2 87. Bb2 Nd1 88. Ba1 Na3 89. Kf3 Nc2 90. Ke4 Nxa1 91. Kd5 Nc2 92. Ke4 a1=Q 93. Kd3 Qc3+ 94. Ke2 Nd4+ 95. Kxd1 Qc2+ 96. Ke1 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Qe2# 0-1
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. Bg5 Be7 6. e3 O-O 7. Rc1 Nbd7 8. Bd3 dxc4 9.
+Bxc4 Nd5 10. Bxe7
+{Black spends the middlegame trying to play one of two pawn moves. Stopping both is a plan; stopping neither is a lost tempo.}
+Qxe7 11. O-O Nxc3 12. Rxc3 e5 13. d5 e4 14. Nd2 cxd5 15. Bxd5 Nf6 16. Bc4 a6 17. Be2 Be6
+18. Nb3 Rfc8 19. Rxc8+ Rxc8 20. Nd4 Bd7 21. Qa1 Qc5 22. Nb3 Qc2 23. Re1 h5 24. h3 Be6 25.
+Nd4 Qc5 26. Bf1 Bd7 27. Rd1 h4 28. a3 Qg5 29. Kh1 Qc5 30. Kg1 Qg5 31. Kh1 Qc5 32. b3 Qc3
+33. Qa2 g5 34. Kg1 g4 35. Ne2 Qe5 36. Qd2 Kg7 37. b4 Ba4 38. Rc1 Rxc1 39. Qxc1 Bb5 40. Nf4
+Bxf1 41. Kxf1 gxh3 42. gxh3 Nd5 43. Nxd5 Qxd5 44. Qc3+ Kg6 45. Qc8 Qd1+ 46. Kg2 Qf3+ 47.
+Kg1 Qd1+ 48. Kh2 Kg7 49. Qxb7 Qf3 50. Kg1 Qd1+ 51. Kg2 Qf3+ 52. Kg1 Qd1+ 53. Kg2 Qf3+ 54.
+Kg1 1/2-1/2
 
 [Event "Queens Gambit Declined: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.09.09"]
-[Round "9"]
-[White "Ibarra, L"]
-[Black "Tavares, M"]
-[Result "1/2-1/2"]
-[WhiteElo "3023"]
-[BlackElo "3027"]
-[ECO "C97"]
-[Opening "Ruy Lopez: Closed, Chigorin Defense"]
+[ChapterName "The Tartakower"]
+[Date "2025.11.26"]
+[White "gshxusjn"]
+[Black "hjsjjsd"]
+[Result "1-0"]
+[WhiteElo "3571"]
+[BlackElo "3138"]
+[ECO "D37"]
+[Opening "Queen's Gambit Declined: Harrwitz Attack, Main Line"]
 
-{Ruy Lopez: Closed, Chigorin Defense. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Re1 b5 7. Bb3 O-O 8. c3 ! d6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... b4 Na3 bxa3 {was the alternative — playable, but it hands over the initiative.}) 9. h3 Na5 10. Bc2 c5 11. d4 Qc7 ?! 12. d5 Nd7 13. b3 Nb6 14. Nbd2 Bd7 15. Nf1 Nb7 16. Ng3 a5 17. Nf5 Bd8 18. g4 Bf6 19. Be3 a4 20. Qe2 Bxf5 21. gxf5 b4 22. bxa4 Nxa4 23. cxb4 cxb4 24. Bxa4 Rxa4 25. Qb5 Rfa8 26. Rec1 Qb8 27. Rab1 Nc5 28. Qxb8+ Rxb8 29. Bxc5 dxc5 30. Rxc5 g6 31. fxg6 hxg6 32. Rc4 Kg7 33. Rb2 Rb5 34. Kf1 Rb8 35. Kg2 Rb7 36. Kg3 Rb6 37. Kh2 Rb8 38. Kg1 Rb5 39. Kg2 Rb7 40. h4 Kh6 41. Kh3 Kg7 42. Kg2 Kh6 43. Kg3 Kg7 44. Kh3 Rb8 45. Kg2 Rb7 46. Kg3 Rb6 47. Nh2 Be7 48. Nf3 Rba6 49. Rc7 Bd6 50. Rb7 Ra7 51. Rb6 R7a6 52. Rb7 Ra7 53. Rb6 R7a6 54. Rc6 Rxc6 55. dxc6 Bc7 56. Kg2 Ra6 57. Rc2 Ra3 58. Rd2 Ra6 59. Rc2 Ra3 60. Ne1 Kf6 61. Kf1 Ke6 62. Ke2 Kd6 63. Nd3 b3 64. axb3 Rxb3 65. Nc5 Rb6 66. Nb7+ Ke7 67. f3 Ra6 68. Kd3 f5 69. Rc5 Kf7 70. Kc4 Ke6 71. Kb5 Rb6+ 72. Kc4 Ra6 73. Kb3 Kf7 74. Rc3 Rb6+ 75. Kc2 Ke7 76. Rc5 Ra6 77. Kb3 Rb6+ 78. Kc4 Ke6 79. Kd3 Ra6 80. Kc2 Ke7 81. Kc3 Rb6 82. Rc4 Kf7 83. Rc5 Ra6 84. Kd3 Kf6 85. Kd2 Ra4 86. Kd3 Ra6 87. Rc3 Kg7 88. exf5 gxf5 89. Rc5 Kf6 90. h5 Ra3+ 91. Rc3 e4+ 92. fxe4 {The rest is technique, which is another way of saying it still has to be played accurately.} fxe4+ 1/2-1/2
+1. d4 d5 2. c4 e6 3. Nf3 Nf6 4. Nc3 Be7 5. Bf4 O-O 6. e3 c5 7. dxc5 Bxc5 8. Qc2
+{The bishop comes out before the pawn chain closes. Simple, and it took forty years for anyone to trust it.}
+Nc6 9. Rd1 a6 10. Be2 Re8 11. O-O h6 12. h3 Qe7 13. cxd5 exd5 14. Nxd5 Nxd5 15. Rxd5 Ba7
+16. Rfd1 Be6 17. R5d2 Rad8 18. b3 Rxd2 19. Rxd2 Rd8 20. Rxd8+ Qxd8 21. Bd3 Ne7 22. Be2 Bd5
+23. e4 Bxe4 24. Qxe4 Nc6 25. Bc4 Qd7 26. Ne5 Nxe5 27. Qxe5 Qc6 28. Qf5 1-0

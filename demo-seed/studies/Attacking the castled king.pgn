@@ -1,44 +1,64 @@
 [Event "Attacking the castled king: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.10.22"]
-[Round "4"]
-[White "Jessel, A"]
-[Black "Marchetti, C"]
-[Result "1/2-1/2"]
-[WhiteElo "3042"]
-[BlackElo "3073"]
-[ECO "A34"]
-[Opening "English Opening: Symmetrical Variation"]
+[ChapterName "Opposite wings, opposite castling"]
+[Date "2025.11.26"]
+[White "MAGIC11BOT"]
+[Black "Magic11bot_Pro"]
+[Result "0-1"]
+[WhiteElo "2861"]
+[BlackElo "3288"]
+[ECO "B90"]
+[Opening "Sicilian Defense: Najdorf Variation, English Attack"]
 
-{English Opening: Symmetrical Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. Nf3 Nf6 2. c4 c5 3. Nc3 Nc6 4. g3 d5 5. d4 cxd4 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Nxd4 dxc4 7. Nxc6 Qxd1+ 8. Nxd1 ! bxc6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... c3 Rb1 cxb2 {was the alternative — playable, but it hands over the initiative.}) 9. Bg2 Nd5 10. Ne3 e6 11. Nxc4 Ba6 ?! 12. Na5 Rc8 13. Bd2 Be7 14. Rc1 c5 15. Bf1 c4 16. e4 Nb6 17. b3 Ba3 18. Rc2 cxb3 19. Rxc8+ Bxc8 20. axb3 O-O 21. Bb5 f5 22. exf5 Rxf5 23. Bd3 Rd5 24. Ke2 Re5+ 25. Kd1 Bd7 26. f4 Rh5 27. Be2 Rd5 28. Nc4 Bb4 29. Kc2 Bxd2 30. Nxd2 Rc5+ 31. Nc4 a5 32. Kc3 a4 33. bxa4 Bxa4 34. Kd4 Rd5+ 35. Ke3 Nxc4+ 36. Bxc4 Rd6 37. Ra1 Bc2 38. g4 Kf8 39. Ra2 Bd1 40. h3 h6 41. g5 hxg5 42. fxg5 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Bh5 1/2-1/2
+1. e4 c5 2. Nf3 d6 3. d4 Nf6 4. Nc3 cxd4 5. Nxd4 a6 6. Be3 e5 7. Nb3 Be6 8. f3 h5 9. Nd5
+{Both kings are going to be attacked. The only question is whose attack arrives first, and it is a question with a countable answer.}
+Bxd5 10. exd5 g6 11. Qd2 Bg7 12. O-O-O Nbd7 13. Kb1 b5 14. Na5 Nb6 15. Nc6
+{The rook lift is the move that turns a pawn storm into an attack. Everything before it was preparation nobody had to answer.}
+Qc7 16. Bxb6 Qxb6 17. Bd3 a5 18. Qe2 b4 19. g4 Qc5 20. Bb5 Kf8 21. g5 Nxd5 22. Qd3 Nc7 23.
+Ba4 d5 24. Rhe1 Re8 25. f4 e4 26. Qh3 Re6 27. Nb8 Ke7 28. Nd7 Qd6 29. Rf1 e3 30. Rde1 e2
+31. Rf2 Bd4 32. Rfxe2 Qxf4 33. a3 Rd8 34. axb4 axb4 35. Rxe6+ fxe6 36. Rf1 Qe3 37. Qxe3
+Bxe3 38. Ne5 Ra8 39. Bb3 Bxg5 40. Rg1 Bf6 41. Nxg6+ Kd6 42. Nf4 Nb5 43. Rg6 Rf8 44. Ba4
+Nd4 45. Nd3 Nf3 46. Nxb4 Nxh2 47. c3 Nf3 48. Nd3 h4 49. Bd1 Ng5 50. Bg4 h3 51. Rh6 Rh8 52.
+Rxf6 h2 53. Nf2 Ke7 54. Nh3 h1=Q+ 55. Kc2 Qe4+ 56. Kd2 Kxf6 57. c4 Qxg4 58. Nf2 Qxc4 59.
+Ke3 Rh2 60. b4 Qc1+ 61. Kd3 Rxf2 62. Kd4 Qc4+
+{The habit this drills is the second question in [[What to review after each game]]: where did it stop being comfortable?}
+63. Ke3 Re2# 0-1
 
 [Event "Attacking the castled king: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.11.23"]
-[Round "5"]
-[White "Kowal, D"]
-[Black "Rasmussen, I"]
-[Result "0-1"]
-[WhiteElo "2702"]
-[BlackElo "3037"]
-[ECO "E33"]
-[Opening "Nimzo-Indian Defense: Classical Variation, Milner-Barry Variation"]
+[ChapterName "The Greek gift, and when it is not one"]
+[Date "2025.11.09"]
+[White "Nyxite"]
+[Black "Grzechu86"]
+[Result "1/2-1/2"]
+[WhiteElo "3045"]
+[BlackElo "3132"]
+[ECO "C11"]
+[Opening "French Defense: Steinitz Variation, Boleslavsky Variation"]
 
-{Nimzo-Indian Defense: Classical Variation, Milner-Barry Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. d4 Nf6 2. c4 e6 3. Nc3 Nc6 4. Nf3 Bb4 5. Qc2 d6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. e4 O-O 7. e5 dxe5 8. dxe5 ! Ng4 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had. This is the second question in [[What to review after each game]]: the move where the discomfort started.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. a3 Bc5 10. Ne4 Nd4 11. Nxd4 Bxd4 ?! 12. Bg5 f6 13. exf6 gxf6 14. Bh4 c5 15. O-O-O Bd7 16. Qd2 Ba4 17. Re1 Qb6 18. Be2 Ne5 19. Nxf6+ Kh8 20. Kb1 Qb3 21. Bd1 Nxc4 22. Qxd4 cxd4 23. Bxb3 Bxb3 24. Nd7 Rf5 25. Bf6+ Kg8 26. Bxd4 Rd8 27. Nf6+ Kf7 28. Bc3 Rxf6 29. Bxf6 Kxf6 30. Re2 e5 31. Rc1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} a5 0-1
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 cxd4 8. Nxd4 Qb6 9. Qd2
+Qxb2 10. Rb1
+{The sacrifice needs three pieces and a tempo. Count them before playing it: a bishop, a knight to f5 or g5, and a queen that can reach h5.}
+Qa3 11. Bb5 Nxd4 12. Bxd4 a6 13. Bxd7+ Bxd7 14. Rb3 Qe7 15. Rxb7 Qd8 16. O-O Qc8 17. Rb3
+Bc5 18. Rf2 Qc6 19. Ne2 O-O 20. g4 Rfc8 21. f5 Bf8 22. c3 Rcb8 23. h4 Qc4 24. Nc1 a5 25.
+h5 a4 26. Rxb8 Rxb8 27. Kh2 Bb5 28. Ne2 a3 29. h6 gxh6 30. Qf4 Qc8 31. Ng3 Bd3 32. fxe6
+Qxe6 33. Nh5 Rb2 34. Nf6+ Kh8 35. Kg3 Bg7 36. Nh5 Rxf2 37. Kxf2 Bc4 38. Qg3 Qg6 39. Qf4
+Qe6 40. Qg3 Qg6 1/2-1/2
 
 [Event "Attacking the castled king: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.12.24"]
-[Round "6"]
-[White "Lindqvist, S"]
-[Black "Whitlock, A"]
+[ChapterName "Attacking without queens"]
+[Date "2025.11.26"]
+[White "ryffhrnyn"]
+[Black "gshxusjn"]
 [Result "1-0"]
-[WhiteElo "2748"]
-[BlackElo "2563"]
-[ECO "A79"]
-[Opening "Benoni Defense: Classical Variation, Czerniak Defense"]
+[WhiteElo "3962"]
+[BlackElo "3466"]
+[ECO "D45"]
+[Opening "Semi-Slav Defense: Normal Variation"]
 
-{Benoni Defense: Classical Variation, Czerniak Defense. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. d4 Nf6 2. c4 e6 3. Nf3 c5 4. d5 d6 5. Nc3 exd5 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. cxd5 g6 7. Nd2 Bg7 8. e4 ! O-O {The point of the whole plan. Material is level, but only one side has a target to attack. The same target, reached the same way, decided [[Halvorsen T vs Oyelaran B 2026-08-08]].} (8... c4 Rb1 Nxe4 {was the alternative — playable, but it hands over the initiative.}) 9. Be2 Re8 10. O-O Na6 11. f3 Nd7 ?! 12. Nc4 Ne5 13. Ne3 Nc7 14. a4 Rb8 15. f4 Nd7 16. Nc4 Nb6 17. Nd2 Na6 18. a5 Nd7 19. Nc4 Qe7 20. Bf3 b5 21. axb6 Nxb6 22. Na5 Nb4 23. Kh1 Ba6 24. Re1 Nd3 25. Nc6 Nf2+ 26. Kg1 Nxd1 27. Nxe7+ Rxe7 28. Rxd1 Bd4+ 29. Kh1 Bc4 30. Ra5 a6 31. Ne2 Bg7 32. Ng3 h5 33. e5 dxe5 34. d6 Rd7 35. Ne4 Rdd8 36. fxe5 Bxe5 37. Bg5 Rd7 38. Rxc5 Bb3 39. Rd3 f6 40. Bxf6 Ba2 41. Bxe5 Kf7 42. Ng5+ Kg8 43. Bc6 Rdd8 44. d7 a5 45. Bxb8 Bb1 46. Bc7 Rxd7 47. Bxd7 Bxd3 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 48. Bxb6 1-0
+1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. e3 e6 5. Nf3 Nbd7 6. cxd5 exd5 7. Bd3 Bd6 8. O-O O-O 9. h3
+Re8 10. a3 b6 11. Qc2 Bb7 12. Rd1
+{No queens and still an attack, because the king is a piece that can be surrounded as easily as it can be checkmated. The same target, reached the same way, decided [[Halvorsen T vs Oyelaran B 2026-08-08]].}
+Rc8 13. Bd2 c5 14. Rac1 cxd4 15. Nxd4 Nc5 16. b4 Nxd3 17. Qxd3 Be5 18. Nf3 g6 19. Nxe5
+Rxe5 20. Ne2 Rxc1 21. Rxc1 Bc8 22. Bc3 Re6 23. Nf4 Rd6 24. Bd4 h5 25. Qc3 Bd7 26. Be5 Qe7
+27. Bxd6 Qxd6 28. Qd4 Bf5 29. Rd1 h4 30. Nxd5 Nxd5 31. Qxd5 Qxd5 32. Rxd5 Be6 33. Rd8+ Kg7
+34. Ra8 Kf6 35. Rxa7 Bf5 36. a4 g5 37. a5 bxa5 38. bxa5 Kg6 39. a6 f6 40. Rc7 Be4 41. a7
+f5 42. Rc8 g4 43. hxg4 fxg4 44. f4 g3 45. a8=Q 1-0

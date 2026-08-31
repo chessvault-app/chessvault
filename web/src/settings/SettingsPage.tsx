@@ -123,6 +123,14 @@ export function SettingsPage() {
         {isDemo() ? (
           <>
             <DocumentsCard />
+            {/* Storage is here in the demo as well, now that the in-memory
+                vault can answer for itself: it is the one card that says
+                what a vault is MADE of — games, studies, notes, and the
+                caches that rebuild themselves — which is worth more to
+                somebody deciding whether to install than three appearance
+                dropdowns are. The cards below it are the ones that really
+                do need a server. */}
+            <StorageCard />
             <AppearanceCard />
             <SoundCard />
             <Card icon={Info} title={t('This is a demo')}>

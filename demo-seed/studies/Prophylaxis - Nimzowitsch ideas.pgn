@@ -1,44 +1,38 @@
 [Event "Prophylaxis - Nimzowitsch ideas: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.01.25"]
-[Round "7"]
-[White "Alderman, R"]
-[Black "Pereira, V"]
+[ChapterName "Stopping the move before it is played"]
+[Date "2025.11.18"]
+[White "cinder-bot"]
+[Black "Nyxite"]
 [Result "1/2-1/2"]
-[WhiteElo "2991"]
-[BlackElo "2979"]
-[ECO "D80"]
-[Opening "Grünfeld Defense"]
+[WhiteElo "3045"]
+[BlackElo "3026"]
+[ECO "E36"]
+[Opening "Nimzo-Indian Defense: Classical Variation, Noa Variation"]
 
-{Grünfeld Defense. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. e3 Bg7 5. Qb3 e6 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Qa3 a5 7. Nf3 c6 8. b3 ! Ne4 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... a4 Rb1 axb3 {was the alternative — playable, but it hands over the initiative.}) 9. Bb2 Nf6 10. Bc1 Ne4 11. Nxe4 dxe4 ?! 12. Nd2 f5 13. c5 O-O 14. Bc4 Re8 15. O-O Nd7 16. b4 a4 17. Be2 e5 18. Nc4 exd4 19. exd4 b5 20. cxb6 Nxb6 21. Nxb6 Qxb6 22. Be3 Bxd4 23. Bxd4 Qxd4 24. Rfd1 Qf6 25. b5 cxb5 26. Bxb5 Re5 27. Bxa4 Be6 28. Qb4 e3 29. fxe3 Rxe3 30. Bb5 Rxa2 31. Rxa2 Bxa2 32. Bc4+ Bxc4 33. Qxc4+ Kg7 34. Rd7+ Re7 35. Rxe7+ Qxe7 36. Qd4+ Kh6 37. Kf2 g5 38. g4 f4 39. h4 Qe6 40. Qc5 Qxg4 41. hxg5+ Qxg5 42. Qf8+ Kh5 43. Qf7+ Kg4 44. Qd7+ Kh4 45. Qxh7+ Kg4 46. Qd7+ Kh5 47. Qh7+ Kg4 48. Qd3 Qg8 49. Ke2 Qh8 50. Qd7+ Kg5 51. Qb5+ Kh6 52. Qd5 Qf8 53. Kd2 Qh8 54. Qc4 Qf8 55. Qe2 Qh8 56. Qe1 Qg8 57. Kd3 Qh8 58. Qh1+ Kg7 59. Qg1+ Kf8 60. Qc1 Qg8 61. Kc3 Qh8+ 62. Kc4 Qg8+ 63. Kd4 Qh8+ 64. Kd5 Qg8+ 65. Ke5 Qh8+ 66. Ke6 Qg8+ 67. Kf6 Qh8+ 68. Kg6 Qg8+ 69. Kh6 Qh8+ 70. Kg6 Qg8+ 71. Kh6 Qh8+ {The rest is technique, which is another way of saying it still has to be played accurately.} 72. Kg6 1/2-1/2
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2 d5 5. a3 Bxc3+ 6. Qxc3 O-O 7. Bg5 c5 8. dxc5 d4 9.
+Qg3 e5 10. O-O-O
+{The move does nothing visible. What it does is take away the one active idea the position contained, which is worth more than any of the moves that looked like progress.}
+Re8 11. e3 Nbd7 12. Nf3 Nxc5 13. exd4 exd4 14. Nxd4 Nce4 15. Qf4 Nxg5 16. Qxg5 Ne4 17. Qf4
+Bg4 18. Be2 Bxe2 19. Nxe2 Qc8 20. Rhe1 Qxc4+ 21. Nc3 Rac8 22. f3 Qb3 23. fxe4 Rxc3+ 24.
+bxc3 Qxc3+ 25. Kb1 Qb3+ 26. Ka1 Qxa3+ 27. Kb1 Qb3+ 28. Ka1 Qa3+ 29. Kb1 Qb3+ 30. Ka1 Qa3+
+1/2-1/2
 
 [Event "Prophylaxis - Nimzowitsch ideas: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.02.26"]
-[Round "8"]
-[White "Bex, N"]
-[Black "Ueda, K"]
+[ChapterName "Overprotection, and what it is for"]
+[Date "2025.11.10"]
+[White "PreMoveAndCry"]
+[Black "ArasanX"]
 [Result "0-1"]
-[WhiteElo "2518"]
-[BlackElo "2667"]
-[ECO "D42"]
-[Opening "Queen's Gambit Declined: Semi-Tarrasch Defense, Main Line"]
+[WhiteElo "3125"]
+[BlackElo "3014"]
+[ECO "C11"]
+[Opening "French Defense: Steinitz Variation, Boleslavsky Variation"]
 
-{Queen's Gambit Declined: Semi-Tarrasch Defense, Main Line. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c5 5. cxd5 Nxd5 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. e3 Nc6 7. Bd3 cxd4 8. exd4 ! Be7 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Nxc3 Rb1 Nxb1 {was the alternative — playable, but it hands over the initiative.}) 9. O-O O-O 10. Re1 Bf6 11. Be4 b6 ?! 12. Nxd5 exd5 13. Bxh7+ Kxh7 14. Qc2+ Kg8 15. Qxc6 Bg4 16. Ne5 Rc8 17. Qa4 Bf5 18. Qxa7 Rc2 19. Qa3 Re8 20. Bf4 Bxe5 21. Bxe5 Qg5 22. Qg3 Qxg3 23. Bxg3 Rxe1+ 24. Rxe1 Rxb2 25. a3 Rb3 26. Bd6 Rd3 27. f3 Rxd4 28. Re8+ Kh7 29. Rb8 Rd1+ 30. Kf2 Rb1 31. Bb4 Rb2+ 32. Kg3 Bd3 33. Rxb6 Bf1 34. Kf4 Bxg2 35. h4 Rb3 36. Kg3 Bxf3 37. Kf4 Be4 38. Rd6 f6 39. Rd7 Rf3+ 40. Kg4 Rf1 41. Kg3 f5 42. Bd6 Rf3+ 43. Kh2 f4 44. Rf7 Rf2+ 45. Kg1 Rg2+ 46. Kf1 f3 47. Be5 Bd3+ 48. Ke1 Re2+ 49. Kd1 Rxe5 50. Kd2 Be4 51. a4 Rf5 52. Rxf5 Bxf5 53. Ke3 Be4 54. a5 d4+ 55. Kxe4 f2 56. a6 f1=Q 57. Kxd4 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Qxa6 0-1
-
-[Event "Prophylaxis - Nimzowitsch ideas: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.03.27"]
-[Round "9"]
-[White "Castellan, J"]
-[Black "Novak, E"]
-[Result "1-0"]
-[WhiteElo "3046"]
-[BlackElo "2800"]
-[ECO "D50"]
-[Opening "Queen's Gambit Declined: Modern Variation"]
-
-{Queen's Gambit Declined: Modern Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 dxc4 5. e3 c5 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nf3 cxd4 7. Nxd4 Bd7 8. Bxc4 ! Be7 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... e5 Rb1 exd4 {was the alternative — playable, but it hands over the initiative.}) 9. O-O O-O 10. Rc1 h6 11. Bh4 Nc6 ?! 12. Nf3 Rc8 13. Be2 Qb6 14. Nd2 Qc7 15. Nc4 Rcd8 16. Bg3 e5 17. Nxe5 Nxe5 18. Qd4 Be6 19. Qxe5 Qb6 20. Rc2 Bd6 21. Qb5 Qxb5 22. Nxb5 Bxg3 23. hxg3 Bf5 24. Rc5 Rd2 25. Nd4 Be4 26. f3 Bg6 27. Rb5 Re8 28. Rb3 Rxd4 29. Bb5 Rdd8 30. Bxe8 Rxe8 31. Rxb7 Rxe3 32. Rxa7 Re2 33. b4 Nd5 34. b5 Bd3 35. Rc1 Ne3 36. b6 Rxg2+ 37. Kh1 Rb2 38. Ra3 Nf5 39. Rc8+ Kh7 40. Rxd3 Nxg3+ 41. Kg1 Rxb6 42. Rc2 Rb1+ 43. Kf2 Nf5 44. Rdd2 Rb4 45. a3 Ra4 46. Ra2 Nd4 47. Rdb2 Nc6 48. Kg3 g6 49. Rb6 Ne5 50. Rb4 Ra5 51. a4 Ra6 52. Rb5 Nc6 53. Rc5 Kg7 54. Rd2 Na5 55. Rd7 g5 56. Rf5 Kg6 57. Rfxf7 Nc6 58. Rg7+ Kf6 59. Rdf7+ Ke6 60. Rb7 Ne5 61. Rb4 Kd5 62. Rb5+ Kd4 63. Re7 Nc4 64. Re4+ Kd3 65. Rd5+ Kc3 66. a5 Nd6 67. Rc5+ Kb3 68. Rg4 Nf7 69. Rb5+ Ka3 70. Rd4 Nd6 71. Rd3+ Ka4 72. Rb6 Rxb6 73. axb6 Nb7 74. Rd7 Nc5 75. Rh7 h5 76. b7 Na6 77. Rxh5 Ka5 78. b8=Q Nxb8 79. Rxg5+ Kb4 80. f4 Nc6 81. f5 Kc5 82. f6+ Kd6 83. f7 Ke7 84. Rc5 Nd4 85. Rc7+ Kf8 86. Rd7 Ne6 87. Kg4 Nc5 88. Ra7 Kg7 89. Kf5 Nd3 90. f8=Q+ Kxf8 91. Kf6 Ke8 92. Ra5 Nf4 93. Rf5 Nd3 94. Rb5 Nf4 95. Kf5 Nh5 96. Kg5 Ng3 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 97. Re5+ 1-0
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 cxd4 8. Nxd4 Qb6 9. Na4
+Qa5+ 10. Nc3 Qb6 11. Qd2
+{Defending a square that is not attacked looks like a wasted move and is a freed one: every piece pointing at e5 is a piece that can leave when e5 is settled.}
+Qxb2 12. Rb1 Qa3 13. Bb5 Nxd4 14. Bxd4 a6 15. Bxd7+ Bxd7 16. Rb3 Qe7 17. Rxb7 Rc8 18. O-O
+Qd8 19. Qe3 Rc4 20. Rfb1 Be7 21. f5 Bg5 22. Qd3 O-O 23. f6 Bc6 24. Re7 h6 25. g3 h5 26. h4
+Bh6 27. Rb6 Qa8 28. a3 g6 29. Kf2 Re8 30. g4 hxg4 31. Kg3 Rxe7 32. fxe7 Be8 33. Nd1 Qa7
+34. Nb2 f5 35. Nxc4 dxc4 36. Qe2 Kf7 37. c3 Qc7 38. a4 a5 39. Qg2 Qd7 40. Rb5 Qc8 41. Rb6
+Qd7 42. Rb5 Qc8 0-1

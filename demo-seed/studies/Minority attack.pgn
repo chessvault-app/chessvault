@@ -1,44 +1,41 @@
 [Event "Minority attack: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.07.04"]
-[Round "4"]
-[White "Grieve, M"]
-[Black "Verhoeven, J"]
+[ChapterName "Two pawns against three"]
+[Date "2025.11.22"]
+[White "YoBot_v2"]
+[Black "MastacticaTeoriabot"]
 [Result "1/2-1/2"]
-[WhiteElo "2888"]
-[BlackElo "2982"]
-[ECO "A38"]
-[Opening "English Opening: Symmetrical Variation, Full Symmetry Line"]
+[WhiteElo "3056"]
+[BlackElo "3079"]
+[ECO "D35"]
+[Opening "Queen's Gambit Declined: Exchange Variation, Positional Variation"]
 
-{English Opening: Symmetrical Variation, Full Symmetry Line. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. c4 c5 2. g3 g6 3. Nf3 Bg7 4. Bg2 Nc6 5. Nc3 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. d4 cxd4 7. Nxd4 h5 8. h3 ! Nxd4 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... h4 Rb1 hxg3 {was the alternative — playable, but it hands over the initiative.}) 9. Qxd4 O-O 10. Bd2 d6 11. Rc1 a5 ?! 12. O-O a4 13. Rfd1 Bf5 14. Qe3 Qd7 15. Kh2 h4 16. gxh4 Rfc8 17. b3 Rc5 18. Nd5 Nxd5 19. Bxd5 Be5+ 20. Kg2 Bb2 21. h5 axb3 22. axb3 e6 23. Bf3 Qe7 24. Qf4 gxh5 25. Be3 Bxc1 26. Bxc1 Bc2 27. Rxd6 e5 28. Qg3+ Bg6 29. b4 Qxd6 30. bxc5 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Qe7 1/2-1/2
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 5. Bg5 c6 6. e3 h6 7. Bh4 Be7 8. Bd3 O-O 9. Nge2
+Re8 10. O-O Nbd7 11. a4
+{The advance is slow and it is not a threat. It is a promise to leave a weakness behind, and the defender has about ten moves to arrange his pieces around it.}
+Bb4 12. Qc1 Be7 13. f3 b6 14. Kh1 Bb7 15. Qd2 c5 16. Rad1 a6 17. Bc2 Rc8 18. Bf5 Ra8 19.
+Bb1 b5 20. axb5 axb5 21. Nxb5 Ba6 22. Nbc3 cxd4 23. exd4 Nb6 24. Rfe1 Nc4 25. Qc1 Qb8 26.
+Bxf6 Bxf6 27. Nxd5 Bg5 28. Qc2 g6 29. Nec3 Rxe1+ 30. Rxe1 Qxb2 31. Qxb2 Nxb2 32. f4 Bd8
+33. f5 Ba5 34. fxg6 fxg6 35. Re3 Bc4 36. Bxg6 Kh8 37. h3 Rd8 38. Ne7 Rxd4 39. Nc6 Bxc3 40.
+Rxc3 Rd6 41. Ne5 Re6 42. Re3 Nd1 43. Re1 Nc3 44. Bf5 Rf6 45. Nxc4 Rxf5 46. Re3 Nd5 47. Re5
+Rxe5 48. Nxe5 Kg7 49. g3 Kf6 50. Nd3 Kf5 51. g4+ Ke4 52. g5 hxg5 53. h4 gxh4 54. Nc1 Nf4
+55. Na2 Ke3 56. Nc1 Kf3 57. Na2 Kg3 58. Nc1 h3 59. Ne2+ Nxe2 1/2-1/2
 
 [Event "Minority attack: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.08.05"]
-[Round "5"]
-[White "Halvorsen, T"]
-[Black "Oyelaran, B"]
-[Result "1/2-1/2"]
-[WhiteElo "3029"]
-[BlackElo "3035"]
-[ECO "C92"]
-[Opening "Ruy Lopez: Closed"]
+[ChapterName "The counterplay in the centre"]
+[Date "2025.11.26"]
+[White "jfevuienj"]
+[Black "gshxusjn"]
+[Result "1-0"]
+[WhiteElo "2724"]
+[BlackElo "3438"]
+[ECO "D30"]
+[Opening "Queen's Gambit Declined"]
 
-{Ruy Lopez: Closed. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Be7 5. O-O Nf6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Re1 b5 7. Bb3 d6 8. c3 ! O-O {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... b4 Na3 bxa3 {was the alternative — playable, but it hands over the initiative.}) 9. h3 a5 10. d4 Bb7 11. Qe2 a4 ?! 12. Bc2 Ba6 13. Nbd2 b4 14. Qe3 Bb5 15. dxe5 bxc3 16. bxc3 Nxe5 17. Rb1 Bc6 18. Nd4 Bd7 19. f4 Ng6 20. c4 a3 21. N2f3 Re8 22. Nb5 c6 23. Nc3 Bf8 24. Qd3 Rb8 25. Rxb8 Qxb8 26. Be3 Qc7 27. Rd1 Qa5 28. Qd2 Bc8 29. Rb1 Nd7 30. Nd4 Ne7 31. Nb3 Qc7 32. Qc1 Ba6 33. c5 dxc5 34. Qxa3 Qc8 35. Qc1 c4 36. Nd2 Ng6 37. e5 f6 38. Nde4 fxe5 39. f5 Nf4 40. Bxf4 exf4 41. Qxf4 Qd8 42. Rd1 Qe7 43. Qf2 Nf6 44. Nxf6+ gxf6 45. Ne4 Rd8 46. Rxd8 Qxd8 47. Qa7 Bc8 48. g4 c5 49. Kf1 Qd4 50. Qa8 Qb2 51. Qd5+ Kg7 52. Qxc4 Bb7 53. a4 Bxe4 54. Qxe4 Qc3 55. Bd3 c4 56. Qxc4 Qd2 57. Qd4 Bb4 58. h4 Qd1+ 59. Kg2 Qxa4 60. g5 Qa8+ 61. Be4 Qa2+ 62. Kg3 Be7 63. h5 Qa3+ 64. Kg4 Qd6 65. h6+ Kh8 66. Qxd6 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Bxd6 1/2-1/2
-
-[Event "Minority attack: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.09.06"]
-[Round "6"]
-[White "Ibarra, L"]
-[Black "Tavares, M"]
-[Result "1/2-1/2"]
-[WhiteElo "3030"]
-[BlackElo "2902"]
-[ECO "E73"]
-[Opening "King's Indian Defense: Semi-Averbakh System"]
-
-{King's Indian Defense: Semi-Averbakh System. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Be3 Na6 7. h3 e5 8. d5 ! Nc5 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. Qc2 Ne8 10. b4 Nd7 11. Nf3 a5 ?! 12. b5 f5 13. g4 Qe7 14. Rg1 Nc5 15. O-O-O Nxe4 16. Nxe4 fxe4 17. Ng5 a4 18. h4 Bh6 19. Qd2 Bd7 20. Rg3 Nf6 21. Rh1 a3 22. h5 gxh5 23. Nxh7 Bxe3 24. Nxf6+ Qxf6 25. fxe3 h4 26. Rgh3 Kg7 27. Rxh4 Rh8 28. Rh5 Rxh5 29. gxh5 Qg5 30. c5 Kh6 31. Bc4 b6 32. cxd6 cxd6 33. Kc2 Bg4 34. Qb4 Rc8 35. Qxd6+ Kg7 36. Qxb6 Rxc4+ 37. Kb3 Rc8 38. h6+ Kh8 39. Rg1 Rg8 40. Kb4 Qe7+ 41. Qc5 Qh4 42. Rc1 Bd7 43. Qd6 Qh2 44. Qf6+ Kh7 45. Qf7+ Kh8 46. Qf6+ Kh7 47. Qe7+ Kh8 48. Rc3 Qb2+ 49. Rb3 Qd2+ 50. Kc5 Qxa2 51. Qxe5+ Kh7 52. Qxe4+ Kh8 53. Qd4+ Kh7 54. Qe4+ Kh8 55. Qe5+ Kh7 {The rest is technique, which is another way of saying it still has to be played accurately.} 56. Qe4+ 1/2-1/2
+1. d4 d5 2. c4 e6 3. cxd5 exd5 4. Nf3 Be7 5. Nc3 Nf6 6. e3 O-O 7. Bd3 Re8 8. h3 h6 9. O-O
+c6 10. Re1
+{The answer to a wing attack is a break in the centre — which is a rule, and like every rule the interesting part is the position where it does not apply.}
+Be6 11. Bd2 Nbd7 12. Qc2 Rc8 13. a3 b6 14. Ba6 Bd6 15. Bxc8 Qxc8 16. e4 Nxe4 17. Nxe4 dxe4
+18. Rxe4 Bf5 19. Rxe8+ Qxe8 20. Qxf5 Nf6 21. Rc1 Nd5 22. g3 f6 23. Kg2 a5 24. Re1 Qf7 25.
+h4 b5 26. g4 Ne7 27. Qd3 Qd5 28. h5 a4 29. Qc2 Kf8 30. Bc3 Nc8 31. Qg6 Ne7 32. Qe4 Qxe4
+33. Rxe4 Nd5 34. Nd2 Nxc3 35. bxc3 Bxa3 36. c4 b4 37. Re3 b3 38. Nxb3 axb3 39. Rxb3 Bd6
+40. c5 Bc7 41. Rb7 Bd8 42. Rb8 Ke7 43. Kf3 Ke6 44. Rxd8 1-0

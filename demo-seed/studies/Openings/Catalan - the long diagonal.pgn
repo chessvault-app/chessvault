@@ -1,44 +1,49 @@
 [Event "Catalan - the long diagonal: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.10.10"]
-[Round "1"]
-[White "Jessel, A"]
-[Black "Marchetti, C"]
-[Result "0-1"]
-[WhiteElo "2502"]
-[BlackElo "2528"]
-[ECO "D69"]
-[Opening "Queen's Gambit Declined: Orthodox Defense, Classical Variation"]
+[ChapterName "The pawn Black keeps"]
+[Date "2025.11.18"]
+[White "cinder-bot"]
+[Black "TesT-Z"]
+[Result "1/2-1/2"]
+[WhiteElo "3020"]
+[BlackElo "3061"]
+[ECO "E05"]
+[Opening "Catalan Opening: Open Defense, Classical Line"]
 
-{Queen's Gambit Declined: Orthodox Defense, Classical Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Nbd7 5. Bg5 Be7 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. e3 Ne4 7. Bxe7 Qxe7 8. Rc1 ! c6 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Nd2 Ra1 Nb1 {was the alternative — playable, but it hands over the initiative.}) 9. Bd3 Nxc3 10. Rxc3 O-O 11. O-O dxc4 ?! 12. Bxc4 e5 13. Nxe5 Nxe5 14. dxe5 Qxe5 15. f4 Qe7 16. Qc2 Be6 17. Bd3 f5 18. e4 fxe4 19. Bxe4 h6 20. Re3 Qf6 21. Rfe1 Bf7 22. g3 Rfe8 23. Bh7+ Kh8 24. Rxe8+ Rxe8 25. Rxe8+ Bxe8 26. Bf5 Qd4+ 27. Kg2 Bf7 28. Be4 Bxa2 29. Bf3 Bd5 30. Qg6 Qxb2+ 31. Kh3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Bxf3 0-1
+1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. g3 Be7 5. Bg2 O-O 6. O-O dxc4 7. Qc2
+{Black takes on c4 and holds it. The bishop on g2 is not attacking anything yet, which is exactly why the pawn is worth taking.}
+a6 8. a4 c5 9. dxc5 Bxc5 10. Nbd2 b5 11. axb5 Bb7 12. bxa6 Nxa6 13. Nxc4 Nb4 14. Rxa8
+{And here it is paid back: the pawn goes, and what is left is the diagonal it was bought with.}
+Qxa8 15. Qc3 Na2 16. Qa5 Qxa5 17. Nxa5 Ba6 18. Re1 Bxe2 19. Bd2 Bxf3 20. Bxf3 Bb4 21. Ra1
+Bxd2 22. Rxa2 Bxa5 23. Rxa5 Rc8 24. Ra8 Rxa8 25. Bxa8 Kf8 26. f4 Ke7 27. Kf1 Kd6 28. Ke2
+Kc5 29. Kd3 Kb4 30. Bf3 Kb3 31. Kd4 Kxb2 32. Ke5 Kc3 33. Kd6 Ng8 34. Kd7 g6 35. Ke8 Nh6
+36. Kf8 Kd4 37. Kg7 Nf5+ 38. Kxf7 e5 39. fxe5 1/2-1/2
 
 [Event "Catalan - the long diagonal: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.11.11"]
-[Round "2"]
-[White "Kowal, D"]
-[Black "Rasmussen, I"]
+[ChapterName "The closed Catalan"]
+[Date "2025.11.23"]
+[White "TesT-Z"]
+[Black "Nyxite"]
 [Result "1/2-1/2"]
-[WhiteElo "3058"]
-[BlackElo "3078"]
-[ECO "E54"]
-[Opening "Nimzo-Indian Defense: Normal Variation, Gligoric System, Exchange Variation"]
+[WhiteElo "3074"]
+[BlackElo "3057"]
+[ECO "E08"]
+[Opening "Catalan Opening: Closed"]
 
-{Nimzo-Indian Defense: Normal Variation, Gligoric System, Exchange Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Bb4 5. e3 O-O {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Bd3 dxc4 7. Bxc4 c5 8. O-O ! cxd4 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. exd4 b6 10. Bg5 Bb7 11. Qe2 Nbd7 ?! 12. Rac1 Bxc3 13. Rxc3 Qb8 14. h3 Rc8 15. Re1 a6 16. Bd3 Rxc3 17. bxc3 b5 18. a4 h6 19. Bxf6 Nxf6 20. axb5 axb5 21. Ne5 Ra5 22. Rb1 Qc7 23. Qc2 Nd5 24. c4 bxc4 25. Qxc4 Ra7 26. Qc5 Qxc5 27. dxc5 f6 28. Nc4 g5 29. Be4 Kg7 30. Ne3 h5 31. h4 gxh4 32. Bxd5 Bxd5 33. Nxd5 exd5 34. c6 Kg6 35. Rc1 Rc7 36. Rc5 f5 37. Rxd5 Rxc6 38. Kh2 Kg5 39. Rd8 Rc2 40. Rg8+ Kf4 41. Rh8 Rxf2 42. Rxh5 h3 43. Kxh3 Rf1 44. g4 fxg4+ 45. Kh2 g3+ 46. Kg2 Ra1 47. Rh8 Rb1 48. Rg8 Ra1 49. Rxg3 Rb1 50. Ra3 Rc1 51. Rh3 Ra1 52. Rh6 Rb1 53. Ra6 Rc1 54. Kf2 Rb1 55. Rh6 Ra1 56. Rf6+ Ke4 57. Kg2 Rb1 58. Rd6 Ra1 59. Rd8 Rb1 60. Kh3 Ra1 61. Rb8 Rc1 62. Kg2 Ra1 63. Kg3 Rc1 64. Rb2 Ra1 65. Rb4+ Kd3 66. Kf4 Rc1 67. Kg5 Ra1 68. Rb7 Rc1 69. Kf6 Ra1 70. Kg7 Rc1 71. Rd7+ Kc2 72. Rd6 Ra1 73. Kf7 Rb1 74. Rh6 Ra1 75. Kg8 Rb1 76. Kf7 Ra1 77. Rb6 Rb1 78. Rxb1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Kxb1 1/2-1/2
-
-[Event "Catalan - the long diagonal: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.12.12"]
-[Round "3"]
-[White "Lindqvist, S"]
-[Black "Whitlock, A"]
-[Result "1/2-1/2"]
-[WhiteElo "2996"]
-[BlackElo "2972"]
-[ECO "D49"]
-[Opening "Semi-Slav Defense: Meran Variation, Blumenfeld Variation"]
-
-{Semi-Slav Defense: Meran Variation, Blumenfeld Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. e3 Nbd7 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Bd3 dxc4 7. Bxc4 b5 8. Bd3 ! a6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... b4 Rb1 b3 {was the alternative — playable, but it hands over the initiative.}) 9. e4 c5 10. e5 cxd4 11. Nxb5 axb5 ?! 12. exf6 gxf6 13. O-O Qb6 14. Qe2 b4 15. Bf4 Bc5 16. Nd2 Bb7 17. a4 e5 18. Ne4 Rg8 19. a5 Qe6 20. Bg3 Be7 21. a6 Bd5 22. a7 f5 23. Ra6 Nb6 24. Nd2 Kf8 25. Bxf5 Qxf5 26. Rxb6 Rxa7 27. Rb8+ Kg7 28. Bxe5+ f6 29. Bxd4 Rd7 30. Rxg8+ Kxg8 31. Ra1 h5 32. Be3 Qg6 33. f3 Qc2 34. Qb5 Bc6 35. Qc4+ Qxc4 36. Nxc4 Kf7 37. Ra5 Rd5 38. Ra7 Rd7 39. Ra5 Rd5 40. Ra7 Rd7 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 41. Ra5 1/2-1/2
+1. d4 Nf6 2. Nf3 d5 3. c4 e6 4. g3 Bb4+ 5. Bd2 Be7 6. Bg2 c6 7. O-O O-O 8. Qc2 Nbd7 9. Bf4
+b6 10. Rd1 Bb7 11. Ne5
+{Nobody is attacking. Both sides are improving the worst piece they have, and the game will be decided by who runs out of improvements first.}
+Nh5 12. Bd2 Nhf6 13. cxd5 cxd5 14. Nc6 Qe8 15. Nxe7+ Qxe7 16. Nc3 Rfc8 17. Qd3 a5 18. a4
+Ba6 19. Qe3 Qd8 20. f3 Nb8 21. Qf2 Nc6 22. g4 Bc4 23. Bf4 Na7 24. Rd2 b5 25. e4 b4 26. Nd1
+Nc6 27. Ne3 b3 28. Nxc4 dxc4 29. Bf1 Nb4 30. Rc1 Qd7 31. Rxc4 Qxa4 32. Qe2 Qd7 33. Rxc8+
+Qxc8 34. Qb5 Qc1 35. g5 Nh5 36. Be3 Nc2 37. Qxb3 Nxe3 38. Qxe3 Qc7 39. d5 exd5 40. Rxd5
+Nf4 41. Rc5 Qd7 42. Bc4 Ne6 43. Bxe6 Qxe6 44. Qd4 Qa6 45. Kg2 Rb8 46. h4 g6 47. Kf2 a4 48.
+Rd5 Qc8 49. Kg3 Qc1 50. Rd8+ Rxd8 51. Qxd8+ Kg7 52. Qf6+ Kg8 53. Qd8+ Kg7 54. Qd4+ Kg8 55.
+e5 Qe1+ 56. Kg4 Qe2 57. Kg3 Qe1+ 58. Kg4 Qe2 59. Qd8+ Kg7 60. Qf6+ Kg8 61. Qd8+ Kg7 62.
+Qf6+ Kg8 63. e6 fxe6 64. Qd8+ Kf7 65. Qf6+ Kg8 66. Qc3 Kf7 67. Qd4 Ke7 68. Qb4+ Kd8 69.
+Qa5+ Ke7 70. Qb4+ Kd8 71. Qa5+ Ke7 72. Qc7+ Ke8 73. Qc8+ Ke7 74. Qc7+ Ke8 75. Qc8+ Ke7 76.
+Qb7+ Kd8 77. Qb8+ Ke7 78. Qb7+ Kd6 79. Qb6+ Kd5 80. Qa5+ Kd6 81. Qb4+ Kc7 82. Qc5+ Kb7 83.
+Qb4+ Kc7 84. Qa5+ Kd6 85. Qb6+ Kd5 86. Qb7+ Kc5 87. Qc7+ Kb4 88. Qb7+ Kc5 89. Qa7+ Kb4 90.
+Qb6+ Qb5 91. Qxe6 Qc4+ 92. Qxc4+ Kxc4 93. f4 Kb3 94. f5 gxf5+ 95. Kf4 Kxb2 96. h5 a3 97.
+g6 hxg6 98. hxg6 a2 99. g7 a1=Q 100. g8=Q Qf1+ 101. Ke5 Qe1+ 102. Kxf5 Qf2+ 103. Ke4 Qe2+
+104. Kd4 Qd1+ 105. Kc5 Qc2+ 106. Kb6 Qf2+ 107. Kb7 Qf3+ 108. Kc7 Qc3+ 109. Kd7 Qd4+ 110.
+Kc6 Qa4+ 111. Kb6 Qb4+ 112. Kc6 Qa4+ 113. Kb6 Qd4+ 114. Kb5 Qd7+ 115. Kb6 1/2-1/2

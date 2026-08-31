@@ -1,44 +1,37 @@
 [Event "The isolated queens pawn: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.04.01"]
-[Round "1"]
-[White "Doyle, F"]
-[Black "Sorokin, Y"]
-[Result "1/2-1/2"]
-[WhiteElo "2963"]
-[BlackElo "2956"]
-[ECO "B91"]
-[Opening "Sicilian Defense: Najdorf Variation, Zagreb Variation"]
+[ChapterName "The pawn as an asset"]
+[Date "2025.11.26"]
+[White "ryffhrnyn"]
+[Black "gshxusjn"]
+[Result "1-0"]
+[WhiteElo "3818"]
+[BlackElo "3530"]
+[ECO "D45"]
+[Opening "Semi-Slav Defense: Main Line"]
 
-{Sicilian Defense: Najdorf Variation, Zagreb Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. g3 e5 7. Nb3 Be7 8. Bg2 ! O-O {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... a5 Rb1 a4 {was the alternative — playable, but it hands over the initiative.}) 9. O-O Nbd7 10. a4 Nb6 11. Re1 Be6 ?! 12. Nd2 d5 13. Nxd5 Nbxd5 14. exd5 Bxd5 15. Rxe5 Bxg2 16. Kxg2 Re8 17. c3 Qc7 18. Nf3 Qc6 19. h3 Rad8 20. Bd2 Nd7 21. Re3 Nb6 22. b3 Nd5 23. Rd3 Qg6 24. Ne1 Nf6 25. Be3 Qe4+ 26. Kg1 Qf5 27. g4 Qc8 28. Bd4 Ne4 29. Ng2 h6 30. Qf1 Qc6 31. Ne3 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Ng5 1/2-1/2
+1. d4 d5 2. c4 c6 3. Nc3 e6 4. Nf3 Nf6 5. e3 Be7 6. Bd2 O-O 7. Bd3 Nbd7 8. O-O
+{The isolated pawn gives its owner two open files and an outpost. It is a weakness in the endgame and a set of squares in the middlegame; the whole game is about which one arrives.}
+g6 9. Re1 Kg7 10. h3 a6 11. Qc2 Bd6 12. cxd5 exd5 13. Rad1 c5 14. dxc5 Nxc5 15. Nd4 Ne6
+16. Nxe6+ Bxe6 17. Qb1 Rc8 18. Rc1 Be7 19. a3 b5 20. b4 Qd7 21. Qb3 Bd6 22. Ne2 h5 23. Nd4
+Rxc1 24. Rxc1 Rb8 25. Nc6 Qb7 26. Nxb8 Bxb8 27. Bc3 Qb6 28. Bd4 Qb7 29. Qb2 Qe7 30. Rc5
+Bf5 31. Bxf5 gxf5 32. Rc8 Bd6 33. Rc6 Kg6 34. Bxf6 Qxf6 35. Qxf6+ Kxf6 36. Rxd6+ Ke5 37.
+Rxa6 1-0
 
 [Event "The isolated queens pawn: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.05.02"]
-[Round "2"]
-[White "Ekström, P"]
-[Black "Zahavi, O"]
+[ChapterName "Trading into the weakness"]
+[Date "2025.11.26"]
+[White "ryffhrnyn"]
+[Black "gshxusjn"]
 [Result "1-0"]
-[WhiteElo "2837"]
-[BlackElo "2668"]
-[ECO "E80"]
-[Opening "King's Indian Defense: Sämisch Variation"]
+[WhiteElo "2900"]
+[BlackElo "3661"]
+[ECO "D30"]
+[Opening "Queen's Gambit Declined"]
 
-{King's Indian Defense: Sämisch Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 d6 2. e4 Nf6 3. f3 g6 4. c4 Bg7 5. Nc3 a5 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Be3 Na6 7. Qd2 h5 8. Bd3 ! c6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... a4 Rb1 a3 {was the alternative — playable, but it hands over the initiative.}) 9. Nge2 Nb4 10. Bb1 e5 11. a3 Na6 ?! 12. d5 Qc7 13. O-O O-O 14. Bc2 Rd8 15. h3 Nd7 16. b4 c5 17. Nb5 Qb8 18. bxa5 Nf6 19. Rae1 Bd7 20. f4 exf4 21. Bxf4 Bxb5 22. cxb5 Nc7 23. Bg5 Nce8 24. Nc3 Rc8 25. Na4 Nd7 26. Qf4 Bd4+ 27. Kh1 f6 28. Bh4 Rxa5 29. Qh6 Nf8 30. e5 f5 31. Bxf5 gxf5 32. Rxf5 Qc7 {The rest is technique, which is another way of saying it still has to be played accurately.} 33. Rxf8# 1-0
-
-[Event "The isolated queens pawn: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.06.03"]
-[Round "3"]
-[White "Farrow, K"]
-[Black "Quinn, H"]
-[Result "1-0"]
-[WhiteElo "3307"]
-[BlackElo "2845"]
-[ECO "B97"]
-[Opening "Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted"]
-
-{Sicilian Defense: Najdorf Variation, Poisoned Pawn Accepted. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Bg5 e6 7. f4 Qb6 8. Qd2 ! Qxb2 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... a5 Rb1 a4 {was the alternative — playable, but it hands over the initiative.}) 9. Rb1 Qa3 10. f5 b5 11. fxe6 fxe6 ?! 12. Be2 Be7 13. O-O Ra7 14. Rb3 Qa5 15. Bxf6 Bxf6 16. Bh5+ Kd8 17. Rxf6 gxf6 18. Qf4 Re8 19. Qxf6+ Rae7 20. Bxe8 Kxe8 21. e5 dxe5 22. Nf3 Qb6+ 23. Kh1 Rf7 24. Qh8+ Rf8 25. Qxh7 Bb7 26. Ne4 Bxe4 27. Qxe4 Rf5 28. g4 Rf7 29. Nxe5 Rf1+ 30. Kg2 Qg1+ 31. Kh3 Rf6 32. Qe3 Rf2 33. Nf3 Qg2+ 34. Kh4 Rxc2 35. Qxe6+ Kd8 36. Rd3+ Kc7 37. h3 Qf1 38. Qe7+ Kb6 39. Rd6+ Ka5 40. Qe3 Qf2+ 41. Qxf2 Rxf2 42. Nd4 Kb4 43. Rd8 Kc4 44. g5 Rf4+ 45. Kh5 Rxd4 46. Rxb8 Rd2 47. Rc8+ Kb4 48. g6 Rxa2 49. Rc6 Rg2 50. Rxa6 Kc5 51. Ra8 b4 52. Rb8 Kc4 53. h4 Kc3 54. Kh6 b3 55. g7 b2 56. h5 Rg4 57. Rxb2 Kxb2 58. Kh7 Rg5 59. h6 Rg2 60. g8=Q Re2 61. Qd5 Kc3 62. Qf3+ Kd2 63. Qxe2+ Kxe2 64. Kg6 Kf3 65. Kf5 Ke3 66. h7 Kd3 67. h8=Q Kc4 68. Qe5 Kd3 69. Qc5 Ke2 70. Kf4 Kd3 71. Kf3 Kd2 72. Qc4 Kd1 73. Ke3 Ke1 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 74. Qc1# 1-0
+1. d4 d5 2. c4 e6 3. cxd5 exd5 4. Nf3 Nc6 5. Nc3 Nf6 6. Bf4 Bf5 7. e3 Be7 8. Be2 O-O 9.
+Rc1 Qd7 10. O-O h6 11. h3 Bxh3 12. gxh3 Qxh3 13. Re1
+{Every trade helps the side playing against the pawn. That is the plan in one sentence, and it takes thirty moves to carry out.}
+Ng4 14. Bf1 Qh5 15. Bg2 Qg6 16. Qc2 Qxc2 17. Rxc2 Bb4 18. a3 Bxc3 19. Rxc3 Rae8 20. Bxc7
+Re6 21. Bg3 g6 22. a4 a6 23. b3 Rfe8 24. Rcc1 Nxe3 25. fxe3 Rxe3 26. Rxe3 Rxe3 27. Rb1 f6
+28. Bf2 Re7 29. b4 Nd8 30. b5 axb5 31. axb5 b6 32. Nd2 f5 33. Bxd5+ Kg7 34. Bg3 g5 35.
+Be5+ Kg6 36. Nc4 Kh5 37. Rc1 Kg6 38. Nd6 1-0

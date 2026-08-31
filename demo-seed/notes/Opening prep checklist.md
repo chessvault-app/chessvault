@@ -1,20 +1,17 @@
 # Opening prep checklist
 
-*Before a tournament*
+*Before adding a line, not after losing to it*
 
-- Know the first ten moves of everything I play, and the ideas of the eleventh.
-- One surprise weapon, prepared properly, beats three half-learned ones.
-- Check what the opponent played last time. People repeat themselves.
+- [ ] Do I know what the pawn structure is called?
+- [ ] Do I know which piece is the bad one, and the plan for it?
+- [ ] Have I played through three complete games in it, not three opening lines?
+- [ ] What is the move that ends preparation and starts thinking?
+- [ ] If I forget everything, what is the sensible move?
 
-## A position to remember
+The last question is the useful one. A line I can only play from memory is a
+line I will lose with the first time somebody deviates on move nine.
 
-```chess
-r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4
-```
+## Currently working on
 
-The board above is live — step through it, try a move, and it stays in the note.
-
-## Related
-
-See [[Attacking the castled king]] for the attacking side of this, and
-[[Endgames/Rook endings - Lucena and Philidor]] for what it becomes when it fails.
+[[Openings/Ruy Lopez - the Berlin]] as Black, which fails the third question —
+I have read the theory and played none of it.

@@ -1,20 +1,18 @@
 # Endgame drills for the week
 
-*Twenty minutes a day*
+*Twenty minutes a day, one position at a time*
 
-- Lucena and Philidor until they are automatic.
-- King and pawn versus king from every square.
-- Rook behind the passed pawn — mine and theirs.
-
-## A position to remember
+**Monday and Tuesday.** The bridge. Set it up, win it against the engine, then
+set it up a square further away and win it again.
 
 ```chess
-r2q1rk1/pp2bppp/2n1bn2/2pp4/3P4/2N1PN2/PPQ1BPPP/R1B2RK1 w - - 0 10
+3K4/3P1k2/8/8/8/8/7r/2R5 w - - 0 1
 ```
 
-The board above is live — step through it, try a move, and it stays in the note.
+**Wednesday and Thursday.** The third-rank defence, from the defending side,
+until holding it is boring.
 
-## Related
+**Friday.** Whatever went wrong in a game this week.
 
-See [[Attacking the castled king]] for the attacking side of this, and
-[[Endgames/Rook endings - Lucena and Philidor]] for what it becomes when it fails.
+The drills are the two positions in [[Endgames/Rook endings - Lucena and Philidor]],
+which is where the technique is written out move by move.

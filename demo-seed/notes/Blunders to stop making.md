@@ -2,19 +2,21 @@
 
 *The same three, forever*
 
-- Moving a piece that was holding something together.
-- Playing the plan I prepared instead of the position in front of me.
-- Taking a pawn when I was already winning.
+1. **Moving the piece that was holding something together.** Almost always a
+   knight, almost always because it looked passive.
+2. **Answering a threat that was not there.** A move that defends nothing costs
+   exactly as much as a move that loses a pawn, and feels safer.
+3. **Playing the move I had already decided on.** The position changed and the
+   plan did not.
 
-## A position to remember
+The pattern under all three is the same: I stop looking once I have a move I
+like. [[Thinking process]] is the attempt at a fix.
+
+## From this month
 
 ```chess
-8/8/8/4k3/8/4K3/4P3/8 w - - 0 1
+r4rk1/pp2ppbp/2np1np1/q7/3PP3/2N1BN2/PP2BPPP/R2Q1RK1 b - - 0 11
 ```
 
-The board above is live — step through it, try a move, and it stays in the note.
-
-## Related
-
-See [[Attacking the castled king]] for the attacking side of this, and
-[[Endgames/Rook endings - Lucena and Philidor]] for what it becomes when it fails.
+Black to move, and the queen on a5 is the piece holding the position together.
+I moved it.

@@ -1,44 +1,52 @@
 [Event "Pawn endings - opposition: Chapter 1"]
-[ChapterName "Main line"]
-[Date "2026.04.16"]
-[Round "7"]
-[White "Doyle, F"]
-[Black "Sorokin, Y"]
-[Result "1-0"]
-[WhiteElo "3305"]
-[BlackElo "2846"]
-[ECO "B12"]
-[Opening "Caro-Kann Defense: Advance Variation, Short Variation"]
+[ChapterName "Counting, not calculating"]
+[Date "2025.11.06"]
+[White "YoBot_v2"]
+[Black "Cheszter"]
+[Result "1/2-1/2"]
+[WhiteElo "3067"]
+[BlackElo "3047"]
+[ECO "D38"]
+[Opening "Queen's Gambit Declined: Ragozin Defense"]
 
-{Caro-Kann Defense: Advance Variation, Short Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 5. Be2 Nd7 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. O-O h6 7. a4 Ne7 8. a5 ! c5 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Bxc2 Ra2 Bxb1 {was the alternative — playable, but it hands over the initiative.}) 9. c4 dxc4 10. Nbd2 a6 11. Nxc4 Nd5 ?! 12. Qb3 Be7 13. Nh4 Bh7 14. Qg3 Kf8 15. Nf3 Bg6 16. Ne3 Be4 17. Rd1 Rc8 18. h4 g6 19. Nc4 Kg7 20. h5 g5 21. dxc5 Nxc5 22. Nd4 Bh7 23. Nb6 Ne4 24. Qh3 Rc5 25. Be3 Qe8 26. Nxd5 Rxd5 27. Nxe6+ fxe6 28. Qxe6 Rd8 29. Rac1 Rxd1+ 30. Rxd1 Qf7 31. Qb6 Bf5 32. Bf3 Rf8 33. e6 Qxe6 34. Qxe6 Bxe6 35. Bxe4 Kf7 36. Rc1 Rc8 37. Bxb7 Rxc1+ 38. Bxc1 Bb4 39. Bxa6 Bxa5 40. Kf1 Bd5 41. Be3 Bb4 42. Bd4 Kf8 43. Be5 Be6 44. Bd3 Bd7 45. f3 Bc6 46. Bc4 Be8 47. g4 Bd7 48. Bd4 Be8 49. Kf2 Bd6 50. Bc3 Bc5+ 51. Ke2 Bb6 52. Bb4+ Kg7 53. Bc3+ Kf8 54. b4 Bc6 55. b5 Bb7 56. Bd3 Bd5 57. Bd2 Bd8 58. Kf2 Bc7 59. Bb4+ Kf7 60. Bc5 Ke6 61. Be4 Bc4 62. b6 Be5 63. b7 Ba6 64. Ba7 Ke7 65. b8=Q Bxb8 66. Bxb8 Kf7 67. Ke3 Ke7 68. Kd4 Bb5 69. Ke5 Bc4 70. Bd6+ Ke8 71. Bd5 Ba6 72. Kf6 Bf1 73. Kg7 Kd7 74. Be5 Ke7 75. Kxh6 Kf8 76. Kxg5 Bd3 77. Be4 Bxe4 78. fxe4 Kf7 79. Kf5 Ke8 80. h6 Kd7 81. Bf4 Kc6 82. h7 Kc5 83. h8=Q Kc4 84. g5 Kb4 85. g6 Kc5 86. g7 Kd4 87. g8=Q+ Kd3 88. Qb3+ Ke2 89. Qh2+ Kf1 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 90. Qb1# 1-0
+{King and pawn endings are the one part of chess that can be answered with certainty, which is why getting one wrong is so expensive.}
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Bb4 5. Bg5 h6 6. Bxf6 Qxf6 7. e3 O-O 8. Rc1 dxc4 9.
+Bxc4 c5 10. Qb3 cxd4 11. Qxb4 Nc6 12. Ne4 Nxb4 13. Nxf6+ gxf6 14. Nxd4 e5 15. Nc2 Nxc2+
+16. Rxc2 Bf5 17. Rc1 Rfd8 18. Ke2 Kf8 19. Rhd1 Rxd1 20. Kxd1 Rd8+ 21. Ke1 Rc8 22. Rc3 Ke7
+23. Kd2 Rd8+ 24. Ke1 Rc8 25. Kd2 Rd8+ 26. Ke2 Rc8 27. a3 b6 28. g3 Bg6 29. Kd2 Rd8+ 30.
+Kc1 Rc8 31. Kd2 Rd8+ 32. Ke1 Rc8 33. Ke2 Rc6 34. f3 Rc7 35. Kd2 Rd7+ 36. Ke1 Rc7 37. f4
+Bf5 38. Be2 Rxc3 39. bxc3 Bd7 40. Kd2 Kd6 41. e4 f5 42. Ke3 f6 43. Bc4 Bc8 44. Bb3 Bd7 45.
+exf5 Bxf5 46. h4 Bg4 47. Ke4 f5+ 48. Ke3 Bh5 49. Ba2 Be8 50. fxe5+ Kxe5 51. Bb3 Bb5 52.
+Bf7 a5 53. Ba2 Bc6 54. Bf7 Bh1 55. Ba2 Bc6 56. Bg8 Bb5 57. Bf7 Bd7 58. Bc4 Ba4 59. Ba6 Bc6
+60. Bf1 Bh1 61. Ba6 Be4 62. Bc4 Bd5 63. Bxd5 Kxd5 64. Kf4 Ke6 65. g4 fxg4 66. Kxg4 Kf6 67.
+Kh5 Kg7 68. a4 Kf6 69. Kxh6 b5 70. axb5 Ke6 71. h5 a4 72. b6 Kd7 73. b7 Kc7 74. b8=Q+ Kxb8
+75. Kg5 a3 76. h6 a2 77. h7 a1=Q 78. h8=Q+ Kb7 79. Qh2 Qxc3 80. Qh1+ Kb6 81. Qb1+ Kc7 82.
+Qd1 Qe5+ 83. Kg4 Qe4+ 84. Kg3 Qe5+ 85. Kf2 Qc5+ 86. Ke1 Qc3+ 87. Kf1 Qc4+ 88. Ke1 Qh4+ 89.
+Kf1 Qh1+ 90. Ke2 Qe4+ 91. Kf1 Kc6 92. Qc1+ Kb5 93. Qd1 Qh1+ 94. Ke2 Qe4+ 95. Kf1 Qf4+ 96.
+Ke1 Qh4+ 97. Kf1 Qh1+ 98. Ke2 Qh5+ 99. Ke1 Qh4+ 100. Kf1 Qh1+ 1/2-1/2
 
 [Event "Pawn endings - opposition: Chapter 2"]
-[ChapterName "The critical sideline"]
-[Date "2026.05.17"]
-[Round "8"]
-[White "Ekström, P"]
-[Black "Zahavi, O"]
-[Result "0-1"]
-[WhiteElo "2837"]
-[BlackElo "2846"]
-[ECO "B05"]
-[Opening "Alekhine Defense: Modern Variation, Panov Variation"]
-
-{Alekhine Defense: Modern Variation, Panov Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. e4 Nf6 2. e5 Nd5 3. d4 d6 4. Nf3 Bg4 5. h3 Bxf3 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Qxf3 e6 7. Bd3 Nc6 8. exd6 ! Bxd6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Nc3 Nd2 Nb1 {was the alternative — playable, but it hands over the initiative.}) 9. c3 O-O 10. O-O Qf6 11. Nd2 Nf4 ?! 12. Bb1 Ng6 13. Qd1 Qe7 14. Re1 Rad8 15. g3 e5 16. Qg4 Kh8 17. Kg2 f5 18. Qh5 Qf7 19. Qd1 exd4 20. Qb3 Qf6 21. Nf3 f4 22. g4 dxc3 23. Bxg6 Qxg6 24. bxc3 h5 25. Re6 Qd3 26. Ba3 Na5 27. Qa4 Nc4 28. Rd1 Qxc3 29. Bxd6 Nxd6 30. Rd5 hxg4 31. hxg4 Kg8 32. Qd1 Qc4 33. Re7 Nf7 34. Rxd8 Rxd8 35. Qb1 Qc6 36. Qf5 Rf8 37. g5 Qd6 38. Rd7 Nxg5 39. Qg4 Qe6 40. Qxe6+ Nxe6 41. Re7 Rf6 42. Ne5 Kf8 43. Rd7 Ke8 44. Rd1 Rf5 45. Kf3 Ng5+ 46. Kg4 Rxe5 47. Rb1 Ne6 48. Rb5 Rxb5 49. Kf3 {The rest is technique, which is another way of saying it still has to be played accurately.} Re5 0-1
-
-[Event "Pawn endings - opposition: Chapter 3"]
-[ChapterName "A model game"]
-[Date "2026.06.18"]
-[Round "9"]
-[White "Farrow, K"]
-[Black "Quinn, H"]
+[ChapterName "When the opposition decides it"]
+[Date "2025.11.14"]
+[White "Cheszter"]
+[Black "Moment-That-Inspires"]
 [Result "1/2-1/2"]
-[WhiteElo "2696"]
-[BlackElo "2765"]
-[ECO "C73"]
-[Opening "Ruy Lopez: Morphy Defense, Modern Steinitz Defense"]
+[WhiteElo "3036"]
+[BlackElo "3074"]
+[ECO "A20"]
+[Opening "English Opening: King's English Variation"]
 
-{Ruy Lopez: Morphy Defense, Modern Steinitz Defense. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 d6 5. Bxc6+ bxc6 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. d4 f6 7. c4 g6 8. O-O ! Bg7 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... exd4 Nbd2 d3 {was the alternative — playable, but it hands over the initiative.}) 9. Be3 Ne7 10. c5 O-O 11. Qc2 Be6 ?! 12. Rd1 Qe8 13. h3 h6 14. Nc3 f5 15. dxe5 dxe5 16. exf5 gxf5 17. Re1 Qh5 18. Bf4 e4 19. Rad1 Ng6 20. Bxc7 Bf7 21. Nd4 Rac8 22. Bd6 Rfe8 23. Qe2 Qg5 24. Kh1 a5 25. Qd2 Qh5 26. f4 Kh7 27. Qe2 Qxe2 28. Rxe2 Bxd4 29. Rxd4 Red8 30. g3 Be6 31. Kh2 Ra8 32. b3 Ne7 33. Red2 Nd5 34. Nxd5 Bxd5 35. Rxd5 cxd5 36. Rxd5 Kg6 37. Kg2 Kf6 38. Kf2 a4 39. b4 Rab8 40. a3 Rb5 41. Ke3 Rg8 42. Kf2 Re8 43. Be5+ Kf7 44. Rd6 Re6 45. Rd7+ Re7 46. Rd5 Rbb7 47. c6 Ra7 48. b5 Ra5 49. c7 Re8 50. Rd8 Ra8 51. Rxa8 Rxa8 52. b6 Ra6 53. c8=Q Rxb6 54. Qc7+ Ke6 55. Qxb6+ Kd5 56. Qxh6 Kc4 57. Qg6 Kb3 58. Qxf5 Kxa3 59. Qxe4 Kb3 60. Qxa4+ Kxa4 61. g4 Kb5 62. g5 Kc6 63. g6 Kd7 64. g7 Ke7 65. g8=Q Kd7 66. Qd5+ Ke7 67. Qd6+ Kf7 68. Qf6+ Ke8 69. Qg7 Kd8 70. Ke3 Kc8 71. Ke4 Kd8 72. Kd5 Ke8 73. Kd6 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Kd8 1/2-1/2
+{Whoever has to move first loses a square, and a square here is the game. That is the whole of the opposition.}
+1. c4 e5 2. g3 Nf6 3. Bg2 c6 4. d4 e4 5. Bg5 d5 6. Bxf6 Bb4+ 7. Nc3 Qxf6 8. e3 Be6 9. Ne2
+Nd7 10. cxd5 cxd5 11. O-O Bxc3 12. bxc3 Nb6 13. f3 exf3 14. Bxf3 O-O 15. Nf4 Rac8 16. a4
+Qg5 17. a5 Nc4 18. Re1 Rfe8 19. e4 dxe4 20. Rxe4 Bf5 21. Re1 Nd6 22. Qb3 Qd8 23. Qb4 Rxe1+
+24. Rxe1 g6 25. h4 Rc4 26. Qa3 Rc8 27. h5 gxh5 28. Nd5 Be6 29. Qc1 Bxd5 30. Bxd5 Kg7 31.
+Rf1 Rc7 32. Rf3 Nb5 33. Rxf7+ Rxf7 34. Bxf7 Nxd4 35. Bxh5 Nc6 36. Qf4 Qxa5 37. Qf7+ Kh6
+38. Bf3 Qe5 39. Qf8+ Kg6 40. Qg8+ Kf6 41. Kg2 Qe7 42. Qc4 a5 43. Bxc6 bxc6 44. Qxc6+ Qe6
+45. Qf3+ Qf5 46. Qc6+ Qe6 47. Qf3+ Kg7 48. Qd3 Qc6+ 49. Kh2 Qh6+ 50. Kg1 Qb6+ 51. Kf1 Qc5
+52. Ke2 h5 53. c4 Kf6 54. Qb3 Ke5 55. Qc3+ Kd6 56. Qd3+ Kc7 57. Qc3 Kd6 58. Qb3 Kc7 59.
+Qc2 Qe7+ 60. Kd1 Qd6+ 61. Kc1 Qxg3 62. Qh7+ Kd6 63. c5+ Kxc5 64. Qxh5+ Kb4 65. Qe2 Qf4+
+66. Kb2 Qf6+ 67. Ka2 Qf7+ 68. Ka1 Qf6+ 69. Kb1 Qg6+ 70. Kb2 Qg7+ 71. Kb1 Qg1+ 72. Ka2 Qg8+
+73. Ka1 Qg1+ 74. Kb2 Qg7+ 75. Kb1 Qg1+ 76. Kb2 Qd4+ 77. Ka2 Qd5+ 78. Ka1 Qd4+ 79. Ka2 Qc4+
+80. Qxc4+ Kxc4 81. Kb1 Kc3 82. Ka2 Kb4 83. Kb2 Ka4 84. Kc3 Ka3 85. Kc2 a4 86. Kb1 Kb3 87.
+Ka1 a3 88. Kb1 Kc3 89. Ka1 Kb3 90. Kb1 1/2-1/2
