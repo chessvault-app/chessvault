@@ -10,10 +10,8 @@ import {
   House,
   LayoutGrid,
   Layers,
-  Library,
   Network,
   LayoutDashboard,
-  NotebookPen,
   Puzzle,
   Settings,
   SquareMousePointer,
@@ -32,6 +30,7 @@ import { BrandMark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { LeaveDialog } from '@/components/leave-dialog';
 import { WikiUnresolved } from '@/notes/WikiUnresolved';
+import { SECTION_ICON } from '@/lib/sectionIcon';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -78,9 +77,12 @@ const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((
 // 360px phone gives every tab about 50px to hold the longest label in
 // the app. So the phone keeps reaching it through More.
 const NAV: { section: Section; label: string; icon: typeof Folder }[] = [
-  { section: 'games', label: 'Games', icon: Folder },
-  { section: 'studies', label: 'Studies', icon: Library },
-  { section: 'notes', label: 'Notes', icon: NotebookPen },
+  // The three that a wiki link can name take their icon from the shared
+  // table, so the dialog that offers to create one draws the same picture
+  // this row does. The rest are only ever drawn here.
+  { section: 'games', label: 'Games', icon: SECTION_ICON.games },
+  { section: 'studies', label: 'Studies', icon: SECTION_ICON.studies },
+  { section: 'notes', label: 'Notes', icon: SECTION_ICON.notes },
   // Books is a collection like the three above it, so it is a sidebar
   // row; like the opening map it also appears in More, which is what
   // keeps it OFF the phone's bottom bar (see the filter note above).

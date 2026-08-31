@@ -1,11 +1,11 @@
 import { useState, useSyncExternalStore } from 'react';
-import { FileText, FolderOpen, Swords } from 'lucide-react';
 import type { LinkSection } from '@shared/wikiLinks';
 import { validId } from '@shared/vaultNames';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
+import { SECTION_ICON } from '@/lib/sectionIcon';
 import { SECTION_URL, wikiUnresolved } from './wikiDocs';
 
 /**
@@ -28,12 +28,6 @@ import { SECTION_URL, wikiUnresolved } from './wikiDocs';
  * meant, since all three can be named by a link and a comment on a move is
  * as likely to want a study as a note.
  */
-
-const ICON: Record<LinkSection, typeof FileText> = {
-  notes: FileText,
-  studies: FolderOpen,
-  games: Swords,
-};
 
 /**
  * The order the offers are made in: the app's own menu order, from the
@@ -108,7 +102,7 @@ export function WikiUnresolved() {
         {candidates.length > 0 && (
           <ul className="flex flex-col gap-0.5">
             {candidates.map(({ section, id }) => {
-              const Icon = ICON[section];
+              const Icon = SECTION_ICON[section];
               return (
                 <li key={`${section}:${id}`}>
                   <button
@@ -132,7 +126,7 @@ export function WikiUnresolved() {
             since from then on it resolves. */}
         {creatable &&
           CREATE_ORDER.map((section) => {
-            const Icon = ICON[section];
+            const Icon = SECTION_ICON[section];
             return (
               <button
                 key={section}
