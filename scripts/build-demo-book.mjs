@@ -168,27 +168,29 @@ ${page(`<p>If White retreats with 4.Ba4, the pin remains and so does the questio
  <ol><li>e4 e5</li><li>Nf3 Nc6</li><li>Bb5 a6</li><li>Ba4 Nf6</li><li>O-O Be7</li></ol>`)}
 ${page(`<h2><span class="num">CHAPTER TWO</span>Building the bridge</h2>
  <p>A rook and a pawn against a rook is the most common ending there is, and this
- is the position that decides most of them. The pawn is one square from queening
- and the king in front of it is in the way of its own promotion.</p>
- ${board('1K6/1P1k4/8/8/8/8/r7/5R2', pieces, 'White to play and win')}
+ is the position that decides most of them. The pawn is one square from queening,
+ the king in front of it is in the way of its own promotion, and the black king
+ has been cut off two files away.</p>
+ ${board('3K4/3P1k2/8/8/8/8/7r/2R5', pieces, 'White to play and win')}
  <p>The idea is to give the king a shelter made out of the rook. White plays
- Rf4, and the rook that looked idle on the first rank is suddenly a roof: when
+ Rc4, and the rook that looked idle on the first rank is suddenly a roof: when
  the checks come down the file, the rook steps across to block them.</p>`)}
-${page(`<p>The order matters more than the moves. Rf4 first, then Kc7 — the king
- walks out toward c6, the checks follow, and on the fourth or fifth of them the
- rook interposes on the fourth rank with tempo. The pawn queens because the
- checking distance ran out, not because Black played badly.</p>
+${page(`<p>The order matters more than the moves. Rc4 first, then Kc7 — the king
+ walks out toward b5, the checks follow, and on the fourth of them the rook
+ interposes on the fourth rank with tempo: 1.Rc4 Rh1 2.Kc7 Rc1+ 3.Kb6 Rb1+
+ 4.Kc6 Rc1+ 5.Kb5 Rb1+ 6.Rb4. The pawn queens because the checking distance ran
+ out, not because Black played badly.</p>
  <p>Played the other way round — king first, rook later — the same position is a
  draw. It is worth setting up and losing a few times against an engine before
  trusting it in a game.</p>`)}
 ${page(`<h2><span class="num">CHAPTER THREE</span>The third rank</h2>
  <p>The other half of rook endings is knowing when you are not lost. Here Black
- is a pawn down with the enemy king in front of it, and the position is a
+ is a pawn down with the king in front of the pawn, and the position is a
  comfortable draw — provided the rook is on the correct rank.</p>
- ${board('4k3/8/r3K3/4P3/8/8/8/4R3', pieces, 'Black to play and draw')}
- <p>The rook sits on the sixth rank, keeping the white king off the seventh. It
- stays there as long as the pawn stays put. The moment the pawn advances to e6,
- the rook drops to the first rank and checks from behind, and the white king has
+ ${board('4k3/8/r7/3KP3/8/8/4R3/8', pieces, 'Black to play and draw')}
+ <p>The rook sits on the sixth rank, keeping the white king off it. It stays
+ there as long as the pawn stays put. The moment the pawn advances to e6, the
+ rook drops to the first rank and checks from behind, and the white king has
  nowhere to hide from the checks.</p>`)}
 ${page(`<p>What loses the position is drifting: a rook that leaves the sixth rank
  before the pawn moves lets the king in, and once the king reaches the seventh
