@@ -1056,7 +1056,11 @@ function Trainer({
                 // band — and only the board itself is still missing. A whole
                 // page's skeleton dropped into a board's slot would draw a
                 // second header inside the first.
-                <Skeleton className="aspect-square w-full rounded-xl" />
+                // `board-box`, like the Board that replaces it: the box
+                // rounds its width down to a whole number of squares and
+                // centres in what is left, so a w-full square was 2px
+                // wider and started a pixel further left than the board.
+                <Skeleton className="board-box aspect-square rounded-xl" />
               )}
               {promotion.pending && (
                 <PromotionPicker

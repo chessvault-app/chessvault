@@ -793,7 +793,12 @@ export function PdfImport({
                   <li className="flex items-center gap-2 py-1.5 pl-2 pr-4">
                     <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                     <Skeleton className="h-3 w-24 shrink-0" />
-                    <Skeleton className="size-5 shrink-0 rounded-md" />
+                    {/* The eye is an icon-sm Button, which is what sets
+                        the row's height: size-7, and size-9 under a
+                        thumb. At size-5 the row stood 32px against the
+                        41 the rows above it declare as their intrinsic
+                        size. */}
+                    <Skeleton className="size-7 shrink-0 rounded-md pointer-coarse:size-9" />
                     <Skeleton className="ml-auto h-3 w-10 shrink-0" />
                   </li>
                 )}

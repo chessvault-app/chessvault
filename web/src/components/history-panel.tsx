@@ -194,7 +194,9 @@ function HistorySheet({
         )}
 
         {!unavailable && versions === null && (
-          <div className="flex flex-col gap-1.5">
+          // No gap: the list below is a plain <ul>, so the 36px rows
+          // meet. At gap-1.5 the placeholder stood 120px against 108.
+          <div className="flex flex-col">
             <Skeleton className="h-9" />
             <Skeleton className="h-9" />
             <Skeleton className="h-9" />

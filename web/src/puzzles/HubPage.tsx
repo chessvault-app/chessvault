@@ -262,10 +262,10 @@ function PuzzleCard({
  * word goes.
  *
  * The real heading's OWN classes, not a guess at its height: the strip is
- * an uppercase line at 0.6875rem, and its height comes from that line box
- * plus pt-2, pb-1.5 and the rule under it. Copying the padding but not
- * the type would leave the two a few pixels apart, which is the whole
- * defect this stands in for.
+ * a text-sm line, whose box is 20px, and its height comes from that plus
+ * pt-2, pb-1.5 and the rule under it. Copying the padding but not the
+ * type would leave the two a few pixels apart, which is the whole defect
+ * this stands in for.
  */
 function SkeletonPanelHeading({ width, className }: { width: string; className?: string }) {
   return (
@@ -304,15 +304,17 @@ function HubSkeletonBookRow() {
   return (
     <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
       <SkeletonPanelHeading width="w-20" />
-      <div className="flex w-full items-center gap-2.5 px-3 py-2">
+      {/* py from the density token, like the ListRow this stands for. */}
+      <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* The title sits on a text-sm line; the bar under it is its own
-              height, the same 6px ProgressBar draws. */}
-          <div className="flex h-4 items-center">
+          {/* The title sits on a text-sm line, whose box is 20px; the bar
+              under it is the Progress track's own h-1 — 4px, not the 6
+              this claimed ProgressBar draws. */}
+          <div className="flex h-5 items-center">
             <Skeleton className="h-2.5 w-2/3" />
           </div>
-          <Skeleton className="h-1.5 w-full rounded-full" />
+          <Skeleton className="h-1 w-full rounded-full" />
         </div>
         <Skeleton className="h-2.5 w-8 shrink-0" />
         <Skeleton className="size-3.5 shrink-0 rounded-sm" />

@@ -314,8 +314,9 @@ export function SkeletonThemeGroups({
     <Loading className={className}>
       {Array.from({ length: groups }, (_, g) => (
         <section key={g} className="mb-4">
-          {/* The group heading, on its own uppercase 16px line. */}
-          <div className="mb-2 flex h-4 items-center">
+          {/* The group heading: an h2 at text-sm, whose line box is 20px
+              — measured. It was drawn on a 16px line. */}
+          <div className="mb-2 flex h-5 items-center">
             <Skeleton className="h-2.5 w-28" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">

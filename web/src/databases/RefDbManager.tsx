@@ -519,6 +519,11 @@ export function RefDbManager({
  * row, divided list — so nothing moves when the real one lands. Governed
  * by useSlowLoad at the call site: on a local server this never appears,
  * which is the point.
+ *
+ * Every control here grows under a coarse pointer, because the ones it
+ * stands for do: Segmented is h-8/h-9, the search field is an sm input,
+ * and both trailing squares are icon-sm buttons. Measured without that,
+ * a row stayed 41px on a phone where the real one is 48.
  */
 export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
   return (
@@ -533,19 +538,19 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
       >
         {/* The switch: one box the size the segmented control settles at. */}
         <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
-          <Skeleton className="h-8 w-52 rounded-xl" />
+          <Skeleton className="h-8 w-52 rounded-xl pointer-coarse:h-9" />
         </div>
         {/* The search row, and the upload icon beside it. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
-          <Skeleton className="h-7 min-w-0 flex-1" />
-          <Skeleton className="size-7 shrink-0" />
+          <Skeleton className="h-7 min-w-0 flex-1 pointer-coarse:h-9" />
+          <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
         </div>
         <ul className="divide-border min-h-0 flex-1 divide-y overflow-hidden">
           {Array.from({ length: rows }, (_, i) => (
             <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-3">
               <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
               <Skeleton className="ml-auto h-2.5 w-24 shrink-0" />
-              <Skeleton className="size-7 shrink-0" />
+              <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
             </li>
           ))}
         </ul>

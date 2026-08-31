@@ -176,10 +176,20 @@ export function CompareDialog({
           )}
         </div>
         {rows === null ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-9" />
-            <Skeleton className="h-9" />
-            <Skeleton className="h-9" />
+          // The rows are two lines — a move line over a sentence, at
+          // px-2 py-1.5 in a gap-px column — so three of them are 164px,
+          // not the 124 three h-9 bars at gap-2 came to.
+          <div className="flex flex-col gap-px" role="status" aria-label={t('Loading')}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex flex-col gap-0.5 px-2 py-1.5">
+                <div className="flex h-5 items-center">
+                  <Skeleton className="h-2.5 w-2/5" />
+                </div>
+                <div className="flex h-5 items-center">
+                  <Skeleton className="h-2 w-4/5" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">

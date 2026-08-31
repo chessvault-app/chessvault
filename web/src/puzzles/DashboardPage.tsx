@@ -260,16 +260,20 @@ export function DashboardPage() {
                 {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
-                    className="border-border flex items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
+                    className="border-border flex items-center gap-2.5 border-b px-3 py-(--row-py) last:border-b-0"
                   >
-                    {/* A row of text-sm, whose line box is 16px. */}
-                    <div className="flex h-4 min-w-0 flex-1 items-center">
+                    {/* A row of text-sm, whose line box is 20px — and the
+                        padding is the density token, because the ListRow
+                        this stands for reads it. Both were wrong in
+                        opposite directions: 33px against the real 36. */}
+                    <div className="flex h-5 min-w-0 flex-1 items-center">
                       <Skeleton className="h-2.5 w-2/5" />
                     </div>
-                    <div className="flex h-4 shrink-0 items-center">
+                    <div className="flex h-5 shrink-0 items-center">
                       <Skeleton className="h-2.5 w-10" />
                     </div>
-                    <Skeleton className="h-1.5 w-24 shrink-0 rounded-full" />
+                    {/* The Progress track is h-1. */}
+                    <Skeleton className="h-1 w-24 shrink-0 rounded-full" />
                     <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                   </div>
                 ))}
