@@ -28,7 +28,14 @@ import {
  * anywhere reporting a fault.
  */
 
-const SECTION_URL: Record<LinkSection, string> = {
+/**
+ * Where each kind of document is listed — and, being the same plain-file
+ * CRUD mounted three times, where a new one is POSTed to as well. One
+ * table: the dialog that offers to CREATE the document a broken link names
+ * needs exactly these paths, and a second copy of them is a second thing
+ * to get wrong when a route moves.
+ */
+export const SECTION_URL: Record<LinkSection, string> = {
   notes: '/api/notes',
   studies: '/api/studies',
   games: '/api/games/docs',
