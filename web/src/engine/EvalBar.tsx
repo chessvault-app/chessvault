@@ -30,6 +30,19 @@ interface EvalBarProps {
 const EVAL_BAR_W = 'w-7';
 
 /**
+ * That same lane in PIXELS — the bar's `w-7` plus the board row's `gap-2` —
+ * for the one host that has to lay the lane out in JavaScript.
+ *
+ * Every other board page is a centred column and lets CSS discover the
+ * width. The workspace's board is a column among peers whose width IS its
+ * height budget, computed and handed over as a number, so a lane it cannot
+ * see is a lane it cannot pay for. Same rule as EVAL_BAR_W above, in the
+ * other unit: a number that disagrees with the class moves the board by
+ * the difference.
+ */
+export const EVAL_LANE_PX = 36;
+
+/**
  * The horizontal bar's height, WITH a number in it and without.
  *
  * 20px is the number's room — a 10px line and its 1px borders, with enough
@@ -68,8 +81,25 @@ const EVAL_BAR_H = { withScore: 'h-5', bare: 'h-3' };
  * (BOARD_LANE_ALLOWANCE in boardSize.ts), so the board is the same size
  * either way — it only moves, by the 18px that centring board-plus-bar
  * costs against centring the board alone.
+ *
+ * `reserve={false}` is `roomy`'s bargain taken to `wide`, and the
+ * workspace is the one host that can strike it: its board column is sized
+ * in JavaScript, so it can widen the column by the lane instead of taking
+ * the lane out of the board (EVAL_LANE_PX, WorkspaceView). Nothing is held
+ * open there — an empty lane beside the board, and the same indent under
+ * both player bars, was 36px of nothing on a page whose board is already
+ * the smallest thing on it (lanph3re). Every centred board page keeps the
+ * default: a page that cannot widen its column has only the board to pay
+ * with, and paying on toggle is the resize the reservation exists to stop.
  */
-export function EvalBarSlot({ drawn = false }: { drawn?: boolean } = {}) {
+export function EvalBarSlot({
+  drawn = false,
+  reserve = true,
+}: { drawn?: boolean; reserve?: boolean } = {}) {
+  // Nothing to hold open and nothing to line up with: no element, so the
+  // row's gap-2 goes with it rather than being drawn against the board's
+  // edge.
+  if (!reserve && !drawn) return null;
   return (
     <div
       className={cn('hidden shrink-0 wide:block', drawn && 'roomy:block', EVAL_BAR_W)}
@@ -104,17 +134,20 @@ export function EvalBarSlot({ drawn = false }: { drawn?: boolean } = {}) {
  */
 export function BoardLane({
   bar = false,
+  reserve = true,
   className,
   children,
 }: {
   /** Whether a bar is drawn beside the board — see `EvalBarSlot`'s `drawn`. */
   bar?: boolean;
+  /** Whether the lane is held open while no bar is in it — see `EvalBarSlot`. */
+  reserve?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <div className={cn('flex w-full gap-2', className)}>
-      <EvalBarSlot drawn={bar} />
+      <EvalBarSlot drawn={bar} reserve={reserve} />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );

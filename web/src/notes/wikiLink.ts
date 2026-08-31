@@ -190,6 +190,9 @@ type LinkState = 'ok' | 'broken' | 'ambiguous' | 'unknown';
 /** Transaction meta saying "the index landed, draw the links again". */
 const RE_INDEX = 'wikiLink:reindex';
 
+/** Transaction meta carrying the view's editability into plugin state. */
+const EDITABLE = 'wikiLink:editable';
+
 function stateOf(target: string, docs: Documents | null): LinkState {
   if (!docs) return 'unknown';
   const hit = resolveWikiLink(target, docs.index, docs.aliases);
@@ -279,8 +282,10 @@ function decorate(
   doc: PmNode,
   docs: Documents | null,
   unresolved: UnresolvedStore,
+  editable: boolean,
 ): DecorationSet {
   const decorations: Decoration[] = [];
+  const follows = !editable;
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
     for (const match of node.text.matchAll(WIKI_RE)) {
@@ -300,6 +305,10 @@ function decorate(
             .join(' '),
           'data-target': target,
           'data-link-state': state,
+          // What the link OFFERS travels with it, rather than being written
+          // onto the DOM after the fact — see `affordanceFor` for what
+          // "after the fact" cost.
+          ...affordanceFor(state, follows),
         }),
         Decoration.inline(from, open, { class: SYNTAX }),
         Decoration.inline(to - 2, to, { class: SYNTAX }),
@@ -324,44 +333,47 @@ function decorate(
 }
 
 /**
- * What a link OFFERS depends on which mode the note is in, and the
- * decorations above cannot say: they are built from the document, and
- * editability belongs to the view. So the two attributes that differ are
- * set here, after every render, from `view.editable` itself.
+ * What a link offers, from what it resolves to and which mode the note is
+ * in.
  *
- * Reading mode gets `role="link"` and a tab stop, which is the only way
- * to reach the wiki link without a mouse — the cross-link is the thing
- * the vault is FOR, and it was reachable by pointer alone. It gets the
- * global `:focus-visible` ring for free by being focusable at all.
- * Editing mode gets neither: a focusable span inside a contenteditable
- * puts every link in the editor's own tab order and drags the caret
- * around with it. That split matches the click contract already in
- * `handleClick` — a plain click follows only where a plain Tab does.
+ * This used to be applied to the DOM after every view update, walking the
+ * links and writing title/role/tabindex onto them. That is inside the
+ * editor's contenteditable, which ProseMirror keeps a MutationObserver
+ * over, so the write re-normalised the DOM selection, the browser fired
+ * `selectionchange`, PM flushed and updated the view, and it ran again:
+ * measured at 332,000 view updates from one keystroke, with the tab
+ * unresponsive. Writing only on a change was not enough — the cycle is
+ * driven by touching that DOM at all — and skipping the walk unless the
+ * doc or mode moved broke reading mode instead, because the plugin view
+ * exists before the decorations reach the DOM. Carrying it in the
+ * decoration is what removes the question: ProseMirror renders it, and
+ * nothing reaches in.
+ *
+ * Reading mode gets `role="link"` and a tab stop, the only way to reach a
+ * wiki link without a mouse — the cross-link is the thing the vault is FOR,
+ * and it was reachable by pointer alone. It gets the global
+ * `:focus-visible` ring for free by being focusable at all. Editing mode
+ * gets neither: a focusable span inside a contenteditable puts every link
+ * in the editor's own tab order and drags the caret around with it. That
+ * split matches the click contract in `handleClick` — a plain click
+ * follows only where a plain Tab does.
+ *
+ * A link that names nothing says so on hover and is offered as a link in
+ * NEITHER mode: there is nothing to open, and announcing it as a link
+ * would be a promise the press cannot keep.
  */
-function syncLinkAffordance(view: EditorView): void {
-  const follows = !view.editable;
-  const opens = t(follows ? 'Click to open' : 'Ctrl+click to open');
-  for (const el of view.dom.querySelectorAll<HTMLElement>('.wiki-link')) {
-    const state = (el.dataset.linkState ?? 'unknown') as LinkState;
-    // A link that names nothing says so on hover, and is NOT offered as a
-    // link: no role, no tab stop, because there is nothing to open and
-    // announcing it as a link would be a promise the press cannot keep.
-    const resolves = state === 'ok' || state === 'unknown';
-    el.title = resolves
-      ? opens
-      : t(
-          state === 'broken'
-            ? 'Nothing in the vault is named this'
-            : 'More than one document is named this',
-        );
-    if (follows && resolves) {
-      el.setAttribute('role', 'link');
-      el.tabIndex = 0;
-    } else {
-      el.removeAttribute('role');
-      el.removeAttribute('tabindex');
-    }
+function affordanceFor(state: LinkState, follows: boolean): Record<string, string> {
+  if (state !== 'ok' && state !== 'unknown') {
+    return {
+      title: t(
+        state === 'broken'
+          ? 'Nothing in the vault is named this'
+          : 'More than one document is named this',
+      ),
+    };
   }
+  const title = t(follows ? 'Click to open' : 'Ctrl+click to open');
+  return follows ? { title, role: 'link', tabindex: '0' } : { title };
 }
 
 // --- [[ autocomplete -------------------------------------------------------
@@ -522,20 +534,32 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
   addProseMirrorPlugins() {
     const suggest = this.storage.suggest;
     const unresolved = this.storage.unresolved;
+    const key = new PluginKey<{ set: DecorationSet; editable: boolean }>('wikiLink');
     return [
       new Plugin({
-        key: new PluginKey('wikiLink'),
+        key,
         state: {
-          init: (_config, state) => decorate(state.doc, docsNow(), unresolved),
+          // Editability lives in the VIEW, not in the state, and the
+          // decorations now carry what it decides — so it arrives here as a
+          // meta the view dispatches when it CHANGES. That is a transaction
+          // per mode switch, where writing the attributes on afterwards was
+          // a DOM write per update and a loop with the selection observer.
+          init: (_config, state) => ({
+            set: decorate(state.doc, docsNow(), unresolved, false),
+            editable: false,
+          }),
           // `reindex` is the arrival of the document index. Without it the
           // first paint's decorations — drawn before any fetch could
           // land — would stand until the next keystroke, so a note opened
           // and read without being touched would never show a broken link.
-          apply: (tr, old) =>
-            tr.docChanged || tr.getMeta(RE_INDEX) ? decorate(tr.doc, docsNow(), unresolved) : old,
+          apply: (tr, old) => {
+            const next = tr.getMeta(EDITABLE) as boolean | undefined;
+            const editable = next ?? old.editable;
+            if (!tr.docChanged && !tr.getMeta(RE_INDEX) && editable === old.editable) return old;
+            return { set: decorate(tr.doc, docsNow(), unresolved, editable), editable };
+          },
         },
         view: (view) => {
-          syncLinkAffordance(view);
           /**
            * Draw the links once the index is known.
            *
@@ -549,7 +573,13 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
           });
           return {
             update: (view) => {
-              syncLinkAffordance(view);
+              // Only when it actually changed: a dispatch per update would
+              // be a transaction per update, which is the loop this design
+              // exists to avoid.
+              const held = key.getState(view.state)?.editable;
+              if (held !== undefined && held !== view.editable) {
+                view.dispatch(view.state.tr.setMeta(EDITABLE, view.editable));
+              }
               if (!view.editable || !view.state.selection.empty) return suggest.close();
               const { $from } = view.state.selection;
               const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
@@ -581,7 +611,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
         },
         props: {
           decorations(state) {
-            return this.getState(state);
+            return this.getState(state)?.set;
           },
           /* Enter follows the focused link, which is what Enter on a link
              does everywhere else.
