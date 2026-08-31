@@ -4,11 +4,23 @@
 [Round "9"]
 [White "Farrow, K"]
 [Black "Quinn, H"]
-[Result "1/2-1/2"]
+[Result "0-1"]
 [WhiteElo "3045"]
 [BlackElo "3132"]
-[ECO "C11"]
-[Opening "French Defense: Steinitz Variation, Boleslavsky Variation"]
+[ECO "B13"]
+[Opening "Caro-Kann Defense: Exchange Variation"]
+[TimeControl "5400+30"]
 
-{French Defense: Steinitz Variation, Boleslavsky Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Nf3 Nc6 7. Be3 cxd4 8. Nxd4 ! Qb6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. Qd2 Qxb2 10. Rb1 Qa3 11. Bb5 Nxd4 ?! 12. Bxd4 a6 13. Bxd7+ Bxd7 14. Rb3 Qe7 15. Rxb7 Qd8 16. O-O Qc8 17. Rb3 Bc5 18. Rf2 Qc6 19. Ne2 O-O 20. g4 Rfc8 21. f5 Bf8 22. c3 Rcb8 23. h4 Qc4 24. Nc1 a5 25. h5 a4 26. Rxb8 Rxb8 27. Kh2 Bb5 28. Ne2 a3 29. h6 gxh6 30. Qf4 Qc8 31. Ng3 Bd3 32. fxe6 Qxe6 33. Nh5 Rb2 34. Nf6+ Kh8 35. Kg3 Bg7 36. Nh5 Rxf2 37. Kxf2 Bc4 38. Qg3 Qg6 39. Qf4 Qe6 40. Qg3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Qg6 1/2-1/2
+1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Nf3 Nc6 5. Bb5 Qa5+ 6. Nc3 Bg4 7. Bd2 Rc8 8. h3 Bxf3 9.
+Qxf3 e6 10. O-O-O Nf6 11. Qg3 Qb6 12. Rhe1 a6 13. Ba4 Qc7 14. Qxc7 Rxc7 15. Ne2 b5 16. Bf4
+Rb7 17. Bb3 Be7 18. Kb1 O-O 19. c3 Ne4 20. f3 Nd6 21. Nc1 Rc8 22. Nd3 Nc4 23. a3 a5 24.
+Ka2 h6 25. Re2 Nb6 26. Nc5 Ra7 27. Bg3 h5 28. Bf2 b4 29. Bc2 bxc3 30. bxc3 a4 31. Rb1 Nd7
+32. Nxd7 Rxd7 33. Be1 Na5 34. Bd3 Bd6 35. Rb6 Nb3 36. Rc2 Bf4 37. Kb1 Ra7 38. Bf2 Raa8 39.
+Rb4 Bd6 40. Ka2 g5 41. Rb5 Bf4 42. Bf1 Nd2 43. Bd3 Nc4 44. Bxc4 Rxc4 45. Rb4 Bd6 46. Rb6
+Rd8 47. Be1 Kg7 48. Rcb2 h4 49. R6b5 Re8 50. Ra5 Bg3 51. Bd2 Bf4 52. Be1 f6 53. Re2 Bg3
+54. Bd2 Kf7 55. Rb5 Rec8 56. Kb1 R8c6 57. Kb2 Kg6 58. Kb1 Kf5 59. Ka2 Ra6 60. Kb1 Rcc6 61.
+Kc2 Bd6 62. Kd3 Bxa3 63. Be3 Bd6 64. Ra2 a3 65. Kc2 Rcb6 66. Rxb6 Rxb6 67. Bc1 e5 68. Bd2
+exd4 69. cxd4 Rb8 70. Kd3 Rb1 71. Kc3 Ke6 72. Be3 Kd7 73. Kc2 Re1 74. Bf2 Re8 75. Kc3 Kc6
+76. Rc2 Rb8 77. f4 Bxf4 78. Kd3+ Kd7 79. Kc3 Ke6 80. Re2+ Kf5 81. Bg1 Bc1 82. Rf2+ Kg6 83.
+Ra2 Bb2+ 84. Kd2 f5 85. Bf2 f4 86. Be1 Kf5 87. Bf2 Ke4 88. Bg1 Rb3 89. Bf2 f3 90. g4 Bxd4
+91. Bxd4 Kxd4 92. Ke1 Ke3 93. Re2+ Kf4 94. Rc2 Rb2 0-1

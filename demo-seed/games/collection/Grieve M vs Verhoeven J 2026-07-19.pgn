@@ -7,8 +7,20 @@
 [Result "0-1"]
 [WhiteElo "2504"]
 [BlackElo "2557"]
-[ECO "D62"]
-[Opening "Queen's Gambit Declined: Orthodox Defense, Rubinstein Variation, Flohr Line"]
+[ECO "C54"]
+[Opening "Italian Game: Classical Variation, Giuoco Pianissimo"]
+[TimeControl "5400+30"]
 
-{Queen's Gambit Declined: Orthodox Defense, Rubinstein Variation, Flohr Line. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Be7 5. Bg5 O-O {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. e3 Nbd7 7. Qc2 c5 8. cxd5 ! Nxd5 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... c4 Rb1 exd5 {was the alternative — playable, but it hands over the initiative.}) 9. Bxe7 Nxe7 10. Be2 b6 11. O-O Bb7 ?! 12. Rfd1 Nd5 13. Nxd5 exd5 14. dxc5 Nxc5 15. Qf5 Qd6 16. b4 Ne6 17. e4 Qxb4 18. exd5 Nf4 19. Bf1 Qd6 20. Ng5 g6 21. Qg4 h6 22. Ne4 Qe5 23. Re1 f5 24. Nf6+ Rxf6 25. Qg3 Qd6 26. Re6 Rxe6 27. dxe6 Bxg2 28. Bc4 Bb7 29. e7+ Kg7 30. Re1 Re8 31. h4 Qc6 32. Qc3+ Kh7 33. f3 Qxf3 34. Qxf3 Bxf3 35. Bb5 Rc8 36. e8=Q Rxe8 37. Bxe8 Be4 38. Re3 g5 39. hxg5 hxg5 40. Ra3 a5 41. Rb3 Ne2+ 42. Kf2 Nc1 43. Rxb6 Nxa2 44. Ra6 Nc3 45. Rxa5 Kg7 46. Ra6 Nd5 47. Rg6+ Kf8 48. Bc6 Nf4 49. Rh6 Nd3+ 50. Ke3 Ne5 51. Rf6+ Ke7 52. Bxe4 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Ng4+ 0-1
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 5. Nbd2 O-O 6. O-O d6 7. c3 a5 8. h3 h6 9. Re1
+Be6 10. Bb5 Qb8 11. Nf1 Qa7 12. d4 exd4 13. Bxc6 dxc3
+{The kind of move that looks like a waiting move and is the whole idea: every enemy piece now has one square fewer.}
+14. Ba4 Bxf2+ 15. Kh2 Bxe1 16. Qxe1 Qc5 17. bxc3 d5 18. e5 Ne4 19. Bb2 Ra6 20. Rc1 f5 21.
+Bc2 a4 22. Ne3 Ng5 23. Nxg5 hxg5 24. Qe2 a3 25. Ba1 Rf7 26. Rd1 f4 27. Ng4 f3 28. gxf3
+Bxg4 29. hxg4 Rh6+ 30. Kg2 g6 31. Rh1 Rxh1 32. Kxh1 Qc4 33. Qd1 Rh7+ 34. Kg1 Kf8 35. Bxg6
+Rh3 36. Kg2 Rh6 37. Qc2 Qf4 38. Qf5+ Ke7 39. Qxf4 gxf4 40. Bf5 c5 41. c4 d4 42. e6 Rh8 43.
+Be4 Rb8 44. Bd3 Kxe6 45. Bf5+ Kf6 46. Bd7 Kg5 47. Ba4 Ra8 48. Bc2 Re8 49. Kf2 Re3 50. Bd1
+Re6 51. Bb3 Rb6 52. Kf1 Rb4 53. Ke2 Kf6 54. Bc2 Ke5 55. Kd3 Rb6 56. Kd2 Rh6 57. Bd1 Rh2+
+58. Be2 Rh1 59. Bd1 Rh2+ 60. Be2 Rh1 61. Bd1 Rg1 62. Kc1 Rg2 63. Kb1 Rf2 64. g5 Rg2 65. g6
+Rxg6 66. Kc2 Rg2+ 67. Kb3 Rf2 68. Bxd4+ Kxd4 69. Kxa3 Rf1 70. Bc2 Rxf3+ 71. Kb2 Rf2 72.
+Kb3 Rf1 73. Bf5 f3 74. Kc2 Rh1 75. Kd2 Rh2+ 76. Kd1 Ke3 77. Bg4 Rh1+ 78. Kc2 f2 79. Be2
+Kxe2 80. a3 f1=Q 81. Kb3 Qb1+ 82. Ka4 Rh6 83. Ka5 Ra6# 0-1

@@ -7,8 +7,16 @@
 [Result "0-1"]
 [WhiteElo "2736"]
 [BlackElo "2902"]
-[ECO "E41"]
-[Opening "Nimzo-Indian Defense: Rubinstein System"]
+[ECO "C66"]
+[Opening "Ruy Lopez: Berlin Defense, Improved Steinitz Defense"]
+[TimeControl "5400+30"]
 
-{Nimzo-Indian Defense: Rubinstein System. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 c5 5. Nf3 O-O {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bd2 cxd4 7. Nxd4 a6 8. Qc2 ! Qc7 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. a3 Be7 10. Be2 b6 11. Bf3 Bb7 ?! 12. Bxb7 Qxb7 13. O-O Rc8 14. Qd3 Nc6 15. Nxc6 Rxc6 16. b3 Rd8 17. e4 d6 18. h3 Nd7 19. Qe2 Rdc8 20. a4 Bf6 21. Rac1 Nc5 22. Rb1 R6c7 23. Rfe1 g6 24. Na2 d5 25. e5 Be7 26. cxd5 exd5 27. Nb4 Ne6 28. Qxa6 Qxa6 29. Nxa6 Rc2 30. Red1 d4 31. Bb4 Bh4 32. g3 Bg5 33. Bd6 h5 34. h4 Bh6 35. Nb4 Re2 36. Kf1 Rd2 37. Rxd2 Bxd2 38. Nd5 Rc2 39. Nxb6 d3 40. Nc4 Bc3 41. Rd1 Bd4 42. Rd2 Rc3 43. a5 Rxb3 44. a6 Rc3 45. Na5 Rc1+ 46. Kg2 Ra1 47. Bb4 Bc5 48. Bxc5 Rxa5 49. Bb4 Rxa6 50. Rxd3 Ra8 51. Re3 Rd8 52. Bd6 Re8 53. Re4 Ng7 54. g4 hxg4 55. Rxg4 Nf5 56. h5 Kh7 57. hxg6+ fxg6 58. Rc4 Kg7 59. Rc7+ Kg8 60. Kf3 Nd4+ 61. Kf4 Ne6+ 62. Kg4 Nxc7 63. Bxc7 Kf7 64. Bd6 Ke6 65. f4 Rg8 66. Kg5 Rg7 67. Kh6 Rg8 68. Kh7 Ra8 69. Kxg6 Rg8+ 70. Kh5 Rg1 71. Kh4 Kf5 72. Kh5 {The rest is technique, which is another way of saying it still has to be played accurately.} Rh1# 0-1
+1. e4 e5 2. Nf3 Nc6 3. Bb5 d6 4. O-O Nf6 5. d3 Be7 6. c4 O-O 7. Nc3 Bg4 8. Be3 a6 9. Bxc6
+bxc6 10. h3 Bh5 11. Qe2 Qd7 12. Rfd1 Rae8 13. Nb1 Bg6 14. Nbd2 Nh5 15. Nh2 f5 16. exf5
+Qxf5
+{Here the clock decided more than the position did — the move played is not the best one, only the fastest to see.}
+17. g4 Nf4 18. gxf5 Nxe2+ 19. Kf1 Bh5 20. Ng4 Nf4 21. Bxf4 exf4 22. Re1 Rxf5 23. Nf3 Rff8
+24. Nd4 Bf7 25. Nxc6 Bh4 26. b4 h5 27. Nh2 Bf6 28. Rab1 Be6 29. Kg2 d5 30. c5 Bf5 31. Rxe8
+Rxe8 32. Rd1 g5 33. Nf3 g4 34. hxg4 hxg4 35. Nfd4 Bd7 36. a4 Kf7 37. b5 axb5 38. axb5 Bxc6
+39. Nxc6 Re2 40. Kf1 f3 41. Rb1 Rc2 42. b6 cxb6 43. cxb6 Rxc6 44. b7 Be5 45. d4 Bf4 46.
+b8=Q Bxb8 47. Rxb8 Rc1# 0-1

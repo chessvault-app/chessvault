@@ -4,11 +4,35 @@
 [Round "7"]
 [White "Grieve, M"]
 [Black "Verhoeven, J"]
-[Result "1/2-1/2"]
+[Result "0-1"]
 [WhiteElo "3001"]
 [BlackElo "2963"]
-[ECO "A31"]
-[Opening "English Opening: Symmetrical Variation, Anti-Benoni Variation"]
+[ECO "C11"]
+[Opening "French Defense: Steinitz Variation, Boleslavsky Variation"]
+[TimeControl "600+5"]
+[VaultSide "black"]
 
-{English Opening: Symmetrical Variation, Anti-Benoni Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. c4 c5 2. Nf3 Nf6 3. d4 cxd4 4. Nxd4 g6 5. g3 h5 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. h3 d5 7. Bg2 e5 8. Nb3 ! Bb4+ {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... dxc4 N1d2 cxb3 {was the alternative — playable, but it hands over the initiative.}) 9. Bd2 Nc6 10. cxd5 Nxd5 11. Bxb4 Ndxb4 ?! 12. Nc3 Bf5 13. O-O Qxd1 14. Rfxd1 Bc2 15. Rd2 Bxb3 16. axb3 Rd8 17. Bxc6+ Nxc6 18. Rxd8+ Kxd8 19. b4 Nxb4 20. Rxa7 Kc7 21. Ra5 Nc6 22. Rb5 Ra8 23. Nd5+ Kd6 24. Ne3 Kc7 25. Nd5+ Kd6 26. Nc3 Kc7 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 27. Nd5+ 1/2-1/2
+1. e4 {[%clk 0:10:00]} e6 {[%clk 0:09:52]} 2. d4 {[%clk 0:09:52]} d5 {[%clk 0:09:27]} 3.
+Nc3 {[%clk 0:09:34]} Nf6 {[%clk 0:09:50]} 4. e5 {[%clk 0:09:06]} Nfd7 {[%clk 0:09:29]} 5.
+f4 {[%clk 0:08:28]} c5 {[%clk 0:08:57]} 6. Nf3 {[%clk 0:09:35]} Nc6 {[%clk 0:08:16]} 7.
+Be3 {[%clk 0:09:00]} cxd4 {[%clk 0:07:24]} 8. Nxd4 {[%clk 0:08:15]} Qb6
+{[%clk 0:09:15] A pawn is not the point. The point is that after this trade one bishop has squares and the other has none.}
+9. Na4 {[%clk 0:07:20]} Qa5+ {[%clk 0:08:27]} 10. Nc3 {[%clk 0:06:15]} Qb6
+{[%clk 0:07:28]} 11. Qd2 {[%clk 0:08:50]} Qxb2 {[%clk 0:06:20]} 12. Rb1 {[%clk 0:07:48]}
+Qa3 {[%clk 0:09:26]} 13. Bb5 {[%clk 0:06:36]} Nxd4 {[%clk 0:08:20]} 14. Bxd4
+{[%clk 0:05:14]} a6 {[%clk 0:07:05]} 15. Bxd7+ {[%clk 0:09:04]} Bxd7 {[%clk 0:05:39]} 16.
+Rb3 {[%clk 0:07:45]} Qe7 {[%clk 0:04:04]} 17. Rxb7 {[%clk 0:06:16]} Rc8 {[%clk 0:08:38]}
+18. O-O {[%clk 0:04:37]} Qd8 {[%clk 0:07:05]} 19. Qe3 {[%clk 0:02:48]} Rc4
+{[%clk 0:05:23]} 20. Rfb1 {[%clk 0:08:06]} Be7 {[%clk 0:03:30]} 21. f5 {[%clk 0:06:20]}
+Bg5 {[%clk 0:01:28]} 22. Qd3 {[%clk 0:04:24]} O-O {[%clk 0:07:30]} 23. f6 {[%clk 0:02:18]}
+Bc6 {[%clk 0:05:30]} 24. Re7 {[%clk 0:08:51]} h6 {[%clk 0:03:21]} 25. g3 {[%clk 0:06:48]}
+h5 {[%clk 0:01:01]} 26. h4 {[%clk 0:04:35]} Bh6 {[%clk 0:08:18]} 27. Rb6 {[%clk 0:02:12]}
+Qa8 {[%clk 0:06:02]} 28. a3 {[%clk 0:00:20]} g6 {[%clk 0:03:35]} 29. Kf2 {[%clk 0:07:40]}
+Re8 {[%clk 0:00:59]} 30. g4 {[%clk 0:05:10]} hxg4 {[%clk 0:00:20]} 31. Kg3
+{[%clk 0:02:30]} Rxe7 {[%clk 0:06:57]} 32. fxe7 {[%clk 0:00:20]} Be8 {[%clk 0:04:14]} 33.
+Nd1 {[%clk 0:00:20]} Qa7 {[%clk 0:01:20]} 34. Nb2 {[%clk 0:06:09]} f5 {[%clk 0:00:20]} 35.
+Nxc4 {[%clk 0:03:12]} dxc4 {[%clk 0:08:17]} 36. Qe2 {[%clk 0:00:20]} Kf7 {[%clk 0:05:16]}
+37. c3 {[%clk 0:00:20]} Qc7 {[%clk 0:02:06]} 38. a4 {[%clk 0:07:32]} a5 {[%clk 0:00:20]}
+39. Qg2 {[%clk 0:04:18]} Qd7 {[%clk 0:00:20]} 40. Rb5 {[%clk 0:00:54]} Qc8
+{[%clk 0:06:43]} 41. Rb6 {[%clk 0:00:20]} Qd7 {[%clk 0:03:15]} 42. Rb5 {[%clk 0:00:20]}
+Qc8 {[%clk 0:00:20]} 0-1

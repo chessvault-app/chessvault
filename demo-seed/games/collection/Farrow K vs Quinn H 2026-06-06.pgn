@@ -4,11 +4,23 @@
 [Round "6"]
 [White "Farrow, K"]
 [Black "Quinn, H"]
-[Result "1/2-1/2"]
+[Result "0-1"]
 [WhiteElo "2521"]
 [BlackElo "3049"]
-[ECO "D51"]
-[Opening "Queen's Gambit Declined: Modern Variation, Knight Defense"]
+[ECO "E28"]
+[Opening "Nimzo-Indian Defense: Sämisch Variation"]
+[TimeControl "5400+30"]
+[VaultSide "white"]
 
-{Queen's Gambit Declined: Modern Variation, Knight Defense. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. d4 d5 2. Bg5 Nd7 3. e3 Ngf6 4. c4 e6 5. Nc3 Be7 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. cxd5 exd5 7. Bd3 O-O 8. Qc2 ! c6 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Ne4 Rb1 Nd2 {was the alternative — playable, but it hands over the initiative.}) 9. Nge2 Re8 10. O-O Nf8 11. Rae1 g6 ?! 12. f3 Ne6 13. Bh4 Ng7 14. e4 dxe4 15. fxe4 Ng4 16. Bxe7 Qxe7 17. Qd2 Bd7 18. Qf4 f5 19. exf5 gxf5 20. h3 Nf6 21. Ng3 Qxe1 22. Rxe1 Rxe1+ 23. Kf2 Rae8 24. Nxf5 Nxf5 25. Bxf5 Bxf5 26. Qxf5 R8e6 27. d5 cxd5 28. Nxd5 R1e2+ 29. Kf1 Re1+ 30. Kf2 R1e2+ 31. Kf1 Re1+ {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 32. Kf2 1/2-1/2
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 O-O 5. a3 Bxc3+
+{The opening is a way of reaching a position worth thinking about, and this one arrives by move ten.}
+6. bxc3 d6 7. Ne2 c5 8. Ng3 Nc6 9. d5 Na5 10. Bd3 b6 11. O-O Ba6 12. Qe2 exd5 13. cxd5
+Bxd3 14. Qxd3 c4 15. Qf5 g6 16. Qc2 Nxd5 17. e4 Nb3 18. Rb1 Nxc1 19. Qxc1 Nc7 20. f4 Qh4
+21. Qe3 Rae8 22. Qf3 d5 23. exd5 Qe7 24. Rfd1 Rd8 25. f5 Qc5+ 26. Rd4 Nb5 27. Rxb5 Qxb5
+28. h4 Rfe8 29. h5 Re5 30. fxg6 hxg6 31. Qf6 Rdxd5 32. h6 Re1+ 33. Kh2 Rh5+ 34. Nxh5 Qxh5+
+35. Rh4 Qe5+ 36. Qxe5 Rxe5 37. h7+ Kh8 38. Rxc4 Ra5 39. Rc7 Kxh7 40. Rxf7+ Kh6 41. c4 Rxa3
+42. Rc7 Ra5 43. g3 Kg5 44. Kh3 Kf5 45. Kh4 Ke5 46. Rg7 Kd4 47. Rxg6 Kxc4 48. g4 b5 49.
+Rc6+ Kd4 50. Rf6 b4 51. g5 Rb5 52. Rf4+ Kc3 53. g6 Rb8 54. Rf3+ Kc4 55. Rf4+ Kb3 56. Kg5
+a5 57. Rf1 a4 58. g7 Rg8 59. Kg6 Ka2 60. Rf2+ Ka3 61. Kf7 Rxg7+ 62. Kxg7 b3 63. Rf3 Ka2
+64. Rf4 a3 65. Kf6 b2 66. Rf2 Ka1 67. Rg2 b1=Q 68. Rg4 Qb7 69. Kg6 a2 70. Kg5 Kb2 71. Rh4
+a1=Q 72. Rh2+ Kb1 73. Re2 Qag7+ 74. Kf4 Qf6+ 75. Ke3 Qb3+ 76. Kd2 Qfc3# 0-1

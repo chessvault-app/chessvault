@@ -7,8 +7,13 @@
 [Result "1/2-1/2"]
 [WhiteElo "2960"]
 [BlackElo "2969"]
-[ECO "C39"]
-[Opening "King's Gambit Accepted: Kieseritzky Gambit, Berlin Defense"]
+[ECO "E36"]
+[Opening "Nimzo-Indian Defense: Classical Variation, Noa Variation"]
+[TimeControl "5400+30"]
 
-{King's Gambit Accepted: Kieseritzky Gambit, Berlin Defense. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. e4 e5 2. f4 exf4 3. Nf3 g5 4. h4 g4 5. Ne5 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nxg4 Nc6 7. Nc3 Nd4 8. Nxf6+ ! Qxf6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Ke7 Rb1 Nxc2+ {was the alternative — playable, but it hands over the initiative.}) 9. d3 c6 10. Ne2 Ne6 11. Qd2 d5 ?! 12. Nxf4 dxe4 13. dxe4 Rg8 14. Nd3 Rg4 15. Qf2 Rxe4+ 16. Be2 Be7 17. Qxf6 Bxf6 18. Nf2 Rxh4 19. Rxh4 Bxh4 20. Be3 Nc7 21. O-O-O Bf5 22. Rh1 Bf6 23. Bf3 a6 24. Ne4 Be7 25. Bf4 O-O-O 26. Bg5 Bxg5+ 27. Nxg5 f6 28. Be4 Bg6 29. Bxg6 hxg6 30. Nf7 Rg8 31. Nd6+ Kb8 32. Rh7 f5 33. Rf7 Rd8 34. Nc4 Nd5 35. Rg7 Nf4 36. b3 b5 37. Ne5 Rd6 38. Rg8+ Kc7 39. Rg7+ Kc8 40. Rg8+ Rd8 41. Rg7 Rd6 42. Rg8+ Kc7 43. Rg7+ {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Kb8 1/2-1/2
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2 d5 5. a3 Bxc3+ 6. Qxc3 O-O 7. Bg5 c5 8. dxc5 d4 9.
+Qg3 e5 10. O-O-O Re8 11. e3 Nbd7 12. Nf3 Nxc5 13. exd4 exd4
+{The kind of move that looks like a waiting move and is the whole idea: every enemy piece now has one square fewer.}
+14. Nxd4 Nce4 15. Qf4 Nxg5 16. Qxg5 Ne4 17. Qf4 Bg4 18. Be2 Bxe2 19. Nxe2 Qc8 20. Rhe1
+Qxc4+ 21. Nc3 Rac8 22. f3 Qb3 23. fxe4 Rxc3+ 24. bxc3 Qxc3+ 25. Kb1 Qb3+ 26. Ka1 Qxa3+ 27.
+Kb1 Qb3+ 28. Ka1 Qa3+ 29. Kb1 Qb3+ 30. Ka1 Qa3+ 1/2-1/2
