@@ -7,6 +7,21 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo's sample vault is written rather than generated.** Its
+  studies were twelve copies of one shape — three chapters called “Main
+  line”, “The critical sideline” and “A model game”, none of them about
+  the title above them — its notes were five documents copied four times
+  each, and its thirty games shared two comments, one variation and a 60%
+  draw rate between them. The chapters are real games chosen to match
+  their study, the notes are eleven different notes, and the games are
+  real games with a result spread across 23 opening codes. Clocks and time
+  controls arrive with them, so the clock on a player's nameplate appears
+  for the first time; half the collection says which side is yours, so
+  “my games” selects something; a third of it is unannotated, so “with
+  notes” is a filter rather than a description. Bookmarks, a repertoire
+  drill history and the Storage card — everything that showed an empty
+  state because the demo had never done anything — arrive too.
+
 - **The demo has a puzzle book in it, made from the book it ships.** The
   shelf answered with an empty list and a note saying book puzzles come
   from commercial books, so the app's most distinctive feature — a
