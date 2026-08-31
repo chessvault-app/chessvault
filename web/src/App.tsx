@@ -34,6 +34,7 @@ import { LeaveDialog } from '@/components/leave-dialog';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { TitleTip } from '@/components/title-tip';
 import { t, useLang } from '@/lib/i18n';
 import { useWorkspaceViewport } from '@/lib/media';
 import { isDemo } from '@/lib/demo';
@@ -390,7 +391,10 @@ function SubNavItem({
     <NavLink
       href={href}
       onActivate={onClick}
-      title={t(label)}
+      // aria-label, not title — the top-level rows' rule, and for their
+      // reason: the label is written beside the icon at lg, so a tip only
+      // repeats what is already on screen.
+      aria-label={t(label)}
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
@@ -417,24 +421,35 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         'w-[4.25rem] lg:w-52',
       )}
     >
-      <button
-        type="button"
-        onClick={() => navigate('home')}
-        title={t('Home')}
-        // justify-center in the collapsed rail: the icons below centre
-        // themselves in the 68px column (their buttons are justify-center
-        // inside p-2), so a left-aligned logo under px-4 sat 6px to their
-        // left. At lg the wordmark returns and the row left-aligns again.
-        className="hover:bg-accent flex h-14 items-center justify-center gap-2.5 px-4 text-left transition-colors duration-100 lg:justify-start"
-      >
-        {/* Bare, in the text's own ink — the same treatment as the home
-            header. The filled tile it used to sit on read as a button
-            distinct from the wordmark beside it. */}
-        <BrandMark className="size-6 shrink-0" />
-        <span className="hidden truncate text-base font-semibold tracking-tight lg:block">
-          {t('Chess Vault')}
-        </span>
-      </button>
+      {/* A tip and not the aria-label the rows below take: those repeat the
+          label already printed beside their icon, and this one does not —
+          the wordmark says whose app this is and the tip says where the
+          press goes. */}
+      <TitleTip title={t('Home')}>
+        <button
+          type="button"
+          onClick={() => navigate('home')}
+          // justify-center in the collapsed rail: the icons below centre
+          // themselves in the 68px column (their buttons are justify-center
+          // inside p-2), so a left-aligned logo under px-4 sat 6px to their
+          // left. At lg the wordmark returns and the row left-aligns again.
+          className="hover:bg-accent flex h-14 items-center justify-center gap-2.5 px-4 text-left transition-colors duration-100 lg:justify-start"
+        >
+          {/* Bare, in the text's own ink — the same treatment as the home
+              header. The filled tile it used to sit on read as a button
+              distinct from the wordmark beside it. */}
+          <BrandMark className="size-6 shrink-0" />
+          {/* The name the mark alone cannot give. `hidden` below lg is
+              display:none, so the wordmark is out of the accessibility tree
+              exactly where it is the only thing naming this button — which
+              the `title` used to cover as its last-resort name, and a tip
+              does not. Absolute, so it costs the row no width and no gap. */}
+          <span className="sr-only lg:hidden">{t('Chess Vault')}</span>
+          <span className="hidden truncate text-base font-semibold tracking-tight lg:block">
+            {t('Chess Vault')}
+          </span>
+        </button>
+      </TitleTip>
 
       <div className="flex flex-1 flex-col gap-0.5 p-2">
         {NAV.map(({ section, label, icon: Icon }) => {
@@ -507,7 +522,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         <NavLink
           href={sectionHref('board')}
           onActivate={() => navigate('board')}
-          title={t('Tools')}
+          aria-label={t('Tools')}
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
@@ -534,7 +549,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         <NavLink
           href={sectionHref('databases')}
           onActivate={() => navigate('databases')}
-          title={t('Databases')}
+          aria-label={t('Databases')}
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
@@ -551,20 +566,27 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
       <div className="border-border flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
         <ConnectionLabel />
         <div className="flex flex-col items-center gap-1 lg:flex-row">
-          <NavLink
-            href={sectionHref('settings')}
-            onActivate={() => navigate('settings')}
-            title={t('Settings')}
-            aria-current={active === 'settings' ? 'page' : undefined}
-            className={cn(
-              'grid size-9 place-items-center rounded-lg transition-colors duration-100',
-              active === 'settings'
-                ? 'bg-muted text-primary'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-            )}
-          >
-            <Settings className="size-[1.15rem]" strokeWidth={2} />
-          </NavLink>
+          {/* A tip, where the rows above take an aria-label instead: those
+              print their label beside the icon at lg and this one never
+              does, at any width. It also stands next to ThemeToggle, which
+              is a Button and has always shown the themed chip — two 36px
+              icons, a pixel apart, answering a hover differently. */}
+          <TitleTip title={t('Settings')}>
+            <NavLink
+              href={sectionHref('settings')}
+              onActivate={() => navigate('settings')}
+              aria-label={t('Settings')}
+              aria-current={active === 'settings' ? 'page' : undefined}
+              className={cn(
+                'grid size-9 place-items-center rounded-lg transition-colors duration-100',
+                active === 'settings'
+                  ? 'bg-muted text-primary'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              <Settings className="size-[1.15rem]" strokeWidth={2} />
+            </NavLink>
+          </TitleTip>
           <ThemeToggle />
         </div>
       </div>
@@ -683,19 +705,19 @@ function MobileNav({ active }: { active: Section }) {
           </button>
         );
       })}
-      <button
-        type="button"
-        onClick={() => navigate('more')}
-        aria-current={inMore ? 'page' : undefined}
-        className={cn(
-          'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
-          'transition-colors duration-150',
-          inMore ? 'text-primary' : 'text-muted-foreground',
-        )}
-      >
-        <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
-        {t('More')}
-      </button>
+        <button
+          type="button"
+          onClick={() => navigate('more')}
+          aria-current={inMore ? 'page' : undefined}
+          className={cn(
+            'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
+            'transition-colors duration-150',
+            inMore ? 'text-primary' : 'text-muted-foreground',
+          )}
+        >
+          <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
+          {t('More')}
+        </button>
     </nav>
   );
 }
