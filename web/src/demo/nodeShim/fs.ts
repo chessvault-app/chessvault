@@ -17,6 +17,17 @@
 interface Entry {
   /** Directories hold no bytes; files hold exactly these. */
   content?: string;
+  /**
+   * A file that is not text.
+   *
+   * The vault is PGN, markdown and JSON, so this shim stored strings and
+   * nothing else — and that is why a book puzzle in the demo could not
+   * carry the page it was printed on. An evidence image is read with
+   * `new Uint8Array(readFileSync(path))`, and a string put through that
+   * comes out empty: a broken image rather than an error, which is the
+   * worst way for it to fail. Bytes now go in and come back out as bytes.
+   */
+  bytes?: Uint8Array;
   mtimeMs: number;
 }
 
@@ -37,14 +48,21 @@ const parentOf = (path: string): string => norm(path).split('/').slice(0, -1).jo
 
 export function seedFile(path: string, content: string, mtimeMs: number): void {
   const key = norm(path);
-  for (
-    let dir = parentOf(key);
-    dir !== '/' && !files.has(dir);
-    dir = parentOf(dir)
-  ) {
+  makeParents(key, mtimeMs);
+  files.set(key, { content, mtimeMs });
+}
+
+/** The same, for a file that is not text — see `Entry.bytes`. */
+export function seedBytes(path: string, bytes: Uint8Array, mtimeMs: number): void {
+  const key = norm(path);
+  makeParents(key, mtimeMs);
+  files.set(key, { bytes, mtimeMs });
+}
+
+function makeParents(key: string, mtimeMs: number): void {
+  for (let dir = parentOf(key); dir !== '/' && !files.has(dir); dir = parentOf(dir)) {
     files.set(dir, { mtimeMs });
   }
-  files.set(key, { content, mtimeMs });
 }
 
 export function existsSync(path: string): boolean {
@@ -62,8 +80,17 @@ export function mkdirSync(path: string, _options?: unknown): void {
   }
 }
 
-export function readFileSync(path: string, _encoding?: unknown): string {
+/**
+ * Node returns a Buffer when no encoding is given and a string when one
+ * is, and this follows that for the files it has bytes for: the routes
+ * that read an image ask for no encoding, and every route that reads a
+ * document asks for utf-8.
+ */
+export function readFileSync(path: string, encoding?: unknown): string {
   const entry = files.get(norm(path));
+  if (entry?.bytes !== undefined && !encoding) {
+    return entry.bytes as unknown as string;
+  }
   if (entry?.content === undefined) {
     const error = new Error(`ENOENT: no such file, open '${path}'`) as Error & { code: string };
     error.code = 'ENOENT';
@@ -95,8 +122,9 @@ export function readdirSync(
     const entry = files.get(norm(`${prefix}${name}`));
     return {
       name,
-      isFile: () => entry?.content !== undefined,
-      isDirectory: () => entry !== undefined && entry.content === undefined,
+      isFile: () => entry?.content !== undefined || entry?.bytes !== undefined,
+      isDirectory: () =>
+        entry !== undefined && entry.content === undefined && entry.bytes === undefined,
     };
   });
 }
@@ -116,10 +144,12 @@ export function statSync(path: string): {
     throw error;
   }
   return {
-    isFile: () => entry.content !== undefined,
-    isDirectory: () => entry.content === undefined,
+    isFile: () => entry.content !== undefined || entry.bytes !== undefined,
+    isDirectory: () => entry.content === undefined && entry.bytes === undefined,
     // Bytes, not characters: a multi-byte comment must not under-report.
-    size: entry.content === undefined ? 0 : new TextEncoder().encode(entry.content).length,
+    size:
+      entry.bytes?.byteLength ??
+      (entry.content === undefined ? 0 : new TextEncoder().encode(entry.content).length),
     mtime: new Date(entry.mtimeMs),
     mtimeMs: entry.mtimeMs,
   };

@@ -18,6 +18,7 @@ import {
   isValidTemplate,
   type Template,
 } from '../ocr/classify';
+import { localDiagram } from './localDiagrams.ts';
 
 export interface BookSummary {
   slug: string;
@@ -205,8 +206,15 @@ export async function loadPlacements(slug: string): Promise<Placement[]> {
   }
 }
 
+/**
+ * Where a book's diagram image lives.
+ *
+ * An `<img src>` is a resource load, not a fetch, so a backend that lives
+ * inside the page cannot answer one — see localDiagrams.ts for the one
+ * caller that puts images there instead.
+ */
 export const diagramUrl = (slug: string, file: string): string =>
-  `/api/puzzlebooks/${encodeURIComponent(slug)}/diagrams/${file}`;
+  localDiagram(slug, file) ?? `/api/puzzlebooks/${encodeURIComponent(slug)}/diagrams/${file}`;
 
 /**
  * One book detail per slug, shared by the shelf page, the solver and the

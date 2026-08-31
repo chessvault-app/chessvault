@@ -18,7 +18,16 @@
     ],
     "added": "2026-08-24T09:00:00.000Z",
     "provenance": "corrected",
-    "number": 1
+    "number": 1,
+    "evidence": {
+      "page": "page003.jpg",
+      "rect": {
+        "x": 0.2136,
+        "y": 0.3061,
+        "w": 0.5727,
+        "h": 0.3706
+      }
+    }
   },
   {
     "id": "n2",
@@ -51,7 +60,16 @@
     ],
     "added": "2026-08-24T09:00:00.000Z",
     "provenance": "corrected",
-    "number": 2
+    "number": 2,
+    "evidence": {
+      "page": "page005.jpg",
+      "rect": {
+        "x": 0.2136,
+        "y": 0.3061,
+        "w": 0.5727,
+        "h": 0.3706
+      }
+    }
   },
   {
     "id": "n3",
@@ -68,6 +86,15 @@
     ],
     "added": "2026-08-24T09:00:00.000Z",
     "provenance": "corrected",
-    "number": 3
+    "number": 3,
+    "evidence": {
+      "page": "page007.jpg",
+      "rect": {
+        "x": 0.2136,
+        "y": 0.2801,
+        "w": 0.5727,
+        "h": 0.3706
+      }
+    }
   }
 ]
