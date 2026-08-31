@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { LeaveDialog } from '@/components/leave-dialog';
+import { WikiUnresolved } from '@/notes/WikiUnresolved';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -268,6 +269,11 @@ function Shell() {
           which does not know which view is up, and a sheet owned by the
           view being left would have to outlive it. */}
       <LeaveDialog />
+      {/* And this one for a third version of it: a link that named nothing
+          can be pressed in a note, in a move comment, or anywhere a comment
+          is read, so the dialog cannot belong to the editor it used to hang
+          off. It is a modal, so there is only ever one to mount. */}
+      <WikiUnresolved />
       </div>
     </div>
   );

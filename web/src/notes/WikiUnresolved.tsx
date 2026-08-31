@@ -1,13 +1,12 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { FileText, FolderOpen, Plus, Swords } from 'lucide-react';
-import type { Editor } from '@tiptap/react';
 import type { LinkSection } from '@shared/wikiLinks';
 import { validId } from '@shared/vaultNames';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
-import { wikiUnresolvedStore } from './wikiLink';
+import { wikiUnresolved } from './wikiDocs';
 
 /**
  * What to do about a link that named nothing.
@@ -34,17 +33,12 @@ const ICON: Record<LinkSection, typeof FileText> = {
   games: Swords,
 };
 
-export function WikiUnresolved({ editor }: { editor: Editor | null }) {
-  const store = useMemo(() => (editor ? wikiUnresolvedStore(editor) : null), [editor]);
-  const subscribe = useCallback((fn: () => void) => store?.subscribe(fn) ?? (() => {}), [store]);
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    () => store?.snapshot() ?? null,
-    () => null,
-  );
+export function WikiUnresolved() {
+  const store = wikiUnresolved;
+  const snapshot = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const [creating, setCreating] = useState(false);
 
-  if (!store || !snapshot) return null;
+  if (!snapshot) return null;
   const { target, why, candidates } = snapshot;
 
   const open = (section: LinkSection, id: string): void => {
