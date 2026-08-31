@@ -5,7 +5,47 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.7.1
+
+The demo, which now carries a written vault, a puzzle book made from the
+book it ships, and the safety net it could previously only describe; every
+loading placeholder sized from what is about to replace it; and a desktop
+update that says what it is doing while it does it.
+
+- **A loading placeholder reserves what actually arrives.** The app draws
+  one wherever it is waiting on data, and most of them had been sized from
+  a memory of the thing they stand in for rather than from that thing's
+  own rule — so the wait looked settled and the arrival moved the page
+  under the reader. The games list was the worst of them: measured at
+  1200px in table mode, six placeholder rows came to 509px against the
+  204px of rows that replaced them, so everything below dropped 305px the
+  moment the games arrived. The Continue card stood 192px and settled at
+  156 — upwards, because a desktop was reserving the phone's rows — and a
+  device that had never opened the vault reserved nothing at all for a
+  card that exists from a vault's first second, so a new phone, a private
+  window or a cleared store took the whole 156px every time. The puzzle
+  dashboard's rows stood 75px too tall for the entire wait, that panel
+  being drawn from the first paint rather than behind a delay. The book
+  page held a place for its tile grid and none for the Cycles panel above
+  it, so the grid landed 144px below where it had been drawn. Each of
+  these is read off the element it replaces now: the games list from
+  GameTable's own row geometry, the board column from the shell constant
+  it had been copying by hand, panel headers from PanelHeader's
+  `min-h-11`, the pane switcher from the registry's TabsList, and the
+  three placeholders standing in for bordered cards from a border rather
+  than a ring — 2px short is small, and it is every card on a shelf at
+  once. Rows that grow under a coarse pointer grow in the placeholder too,
+  which is where every phone had been a button short, and rows that follow
+  the density knob follow it in the placeholder as well. Continue's stored
+  hint is a shape — phone rows, desktop rows, a board — in one key rather
+  than a count and a flag in two; it clamps a count it cannot believe
+  instead of falling silent and reserving nothing, and it announces itself
+  to a screen reader the way the app's other placeholders do. Measured
+  after, each against the thing it stands in for: 204 against 204 on the
+  games list, 156 against 156 on Continue, 33 against 33 per dashboard
+  row, 150 against 150 on a study's chapters, 65 against 65 on a note's
+  header, and 44, 36, 32, 122 and 58 on the panel headers, the coarse
+  title rows, the switcher and the two bordered cards.
 
 - **The demo can show the safety net now.** Earlier versions of a
   document, and bringing back a deleted one, are read out of the vault's
@@ -58,7 +98,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the wall said during the gesture instead of after it. On a turn the
   arriving pane starts 32px the other way at 55% opacity and eases home
   over 200ms — the same distance the leaving one covered, so the handover
-  cannot come out lopsided. The strip itself stays put, being what the turn
+  cannot come out lopsided. The pill under the tab fills on the pane's own
+  curve rather than Tailwind's default: the two durations already matched
+  to within a frame, but at 80ms the pane was 60% home and the pill 17%
+  filled, and that gap is what read as the strip lagging. Both are written
+  from one custom property, a motion drawn in two files being two numbers
+  that drift. The strip itself stays put, being what the turn
   is read against, and a tap on it is still instant: a tap has no
   direction, and can jump two tabs at once. Nothing was restructured for
   it. The panes stay separate elements at the heights every board page has
