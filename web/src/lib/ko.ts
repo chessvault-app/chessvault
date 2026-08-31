@@ -229,7 +229,11 @@ export const ko: Record<string, string> = {
   'Nothing is named this': '이 이름을 가진 항목이 없습니다',
   'More than one document answers to “{name}”.': '“{name}”에 해당하는 문서가 둘 이상입니다.',
   'Nothing in the vault answers to “{name}”.': '보관함에 “{name}”에 해당하는 항목이 없습니다.',
+  'Start a game called “{name}”': '“{name}” 게임 만들기',
+  'Start a study called “{name}”': '“{name}” 스터디 만들기',
   'Write a note called “{name}”': '“{name}” 노트 만들기',
+  'That name cannot be a document name, so there is nothing to create.':
+    '그 이름은 문서 이름으로 쓸 수 없어서 만들 수 있는 것이 없습니다.',
   'Other names for this note': '이 노트의 다른 이름',
   Names: '이름',
   'Najdorf, B90': '나이도르프, B90',

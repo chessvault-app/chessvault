@@ -1,23 +1,27 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
-import { navigate } from '@/lib/router';
-import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { WIKI_RE, parseWikiMatch, resolveWikiLink } from '@shared/wikiLinks';
 import {
-  LINK_SECTIONS,
-  WIKI_RE,
-  buildAliasMap,
-  parseWikiMatch,
-  resolveWikiLink,
-  wikiLinkCandidates,
-  type ResolvedLink,
-  type AliasIndex,
-  type LinkIndex,
-  type LinkSection,
-} from '@shared/wikiLinks';
+  PENDING_LINK,
+  SUGGEST_LIMIT,
+  createSuggestStore,
+  type OwnedSuggestStore,
+  type SuggestStore,
+} from './suggestStore';
+import {
+  allTargets,
+  docsNow,
+  documents,
+  resolveAndOpen,
+  stateOf,
+  subscribeDocs,
+  type Documents,
+  type LinkState,
+} from './wikiDocs';
 
 /**
  * Obsidian-style wiki links: `[[Najdorf Mainlines]]` in a note is styled
@@ -30,174 +34,11 @@ import {
  * across notes → studies → games. Case-insensitive.
  */
 
-const SECTION_URL: Record<LinkSection, string> = {
-  notes: '/api/notes',
-  studies: '/api/studies',
-  games: '/api/games/docs',
-};
-
-/**
- * Every document id, cached.
- *
- * One cache, three readers: the suggester's list, the click that follows a
- * link, and the decoration that says whether a link resolves at all. They
- * were two caches for a while — a flat list for the popup and a fresh
- * fetch per click — which is three chances to disagree about what the
- * vault contains while showing all three answers on one screen.
- */
-interface Documents {
-  readonly index: LinkIndex;
-  /** The other names documents answer to. */
-  readonly aliases: AliasIndex;
-  /**
-   * The aliases as their documents spelled them.
-   *
-   * `aliases` is keyed lowercase because that is how a link is matched;
-   * completing from those keys offered "b90" to somebody who had named it
-   * "B90" and wrote that into their note. What is suggested has to be what
-   * was chosen.
-   */
-  readonly aliasNames: readonly string[];
-  /** `section:id` -> the document's first written line, for an embed. */
-  readonly excerpt: ReadonlyMap<string, string>;
-}
-
-let cache: { at: number; docs: Documents } | null = null;
-const CACHE_MS = 30_000;
-
-/** What is already here, for the synchronous decoration pass. */
-const docsNow = (): Documents | null =>
-  cache && Date.now() - cache.at < CACHE_MS ? cache.docs : null;
-
-
-
-async function documents(): Promise<Documents> {
-  const fresh = docsNow();
-  if (fresh) return fresh;
-  const excerpt = new Map<string, string>();
-  const spelled: string[] = [];
-  const aliasEntries: (readonly [LinkSection, Map<string, string[]>])[] = [];
-  const entries = await Promise.all(
-    LINK_SECTIONS.map(async (section) => {
-      try {
-        const { studies } = await api<
-          { studies: { id: string; excerpt?: string | null; aliases?: string[] }[] }
-        >(SECTION_URL[section]);
-        for (const s of studies) {
-          if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
-          for (const name of s.aliases ?? []) spelled.push(name);
-        }
-        // Built by the shared rule, not by one written here: this listing
-        // arrives sorted newest-first while the server walks a directory,
-        // so anything decided by "whichever came first" answers differently
-        // on the two sides. It did.
-        aliasEntries.push([section, buildAliasMap(studies)]);
-        return [section, studies.map((s) => s.id)] as const;
-      } catch {
-        aliasEntries.push([section, new Map()]);
-        return [section, []] as const; // unreachable section — the others still answer
-      }
-    }),
-  );
-  const aliases = Object.fromEntries(aliasEntries) as unknown as AliasIndex;
-  const docs = {
-    index: Object.fromEntries(entries) as unknown as LinkIndex,
-    aliases,
-    // Only the names one document alone claims: completing a contested
-    // alias would write a link that resolves to nothing.
-    aliasNames: [
-      ...new Set(
-        spelled.filter((name) =>
-          LINK_SECTIONS.some((sec) => aliases[sec].get(name.trim().toLowerCase())?.length === 1),
-        ),
-      ),
-    ],
-    excerpt,
-  };
-  cache = { at: Date.now(), docs };
-  return docs;
-}
-
-/**
- * Follow a link.
- *
- * The rule for WHICH document a target names is `resolveWikiLink`, shared
- * with the server's backlink index. It was written out longhand here once,
- * which was fine while this was the only side asking; the moment something
- * else had to answer the same question, one of the two was going to drift
- * and neither would report a fault. See shared/wikiLinks.
- */
-async function resolveAndOpen(target: string, unresolved: UnresolvedStore): Promise<void> {
-  const docs = await documents();
-  const hit = resolveWikiLink(target, docs.index, docs.aliases);
-  if (typeof hit === 'string') {
-    // A link that names nothing used to do nothing at all when pressed, and
-    // say so only to the console. Pressing something and getting silence is
-    // a dead end; both failures have an answer the reader can act on, so
-    // they are asked rather than ignored — which document did you mean, or
-    // shall this note be made.
-    unresolved.show(target, hit, wikiLinkCandidates(target, docs.index, docs.aliases));
-    return;
-  }
-  navigate(hit.section, encodeURIComponent(hit.id));
-}
-
-/** What the unresolved-link dialog draws. Replaced whole, never mutated. */
-export interface UnresolvedSnapshot {
-  readonly target: string;
-  readonly why: 'broken' | 'ambiguous';
-  readonly candidates: readonly ResolvedLink[];
-}
-
-export interface UnresolvedStore {
-  subscribe(fn: () => void): () => void;
-  snapshot(): UnresolvedSnapshot | null;
-  show(target: string, why: 'broken' | 'ambiguous', candidates: ResolvedLink[]): void;
-  close(): void;
-}
-
-function createUnresolvedStore(): UnresolvedStore {
-  const listeners = new Set<() => void>();
-  let state: UnresolvedSnapshot | null = null;
-  const emit = (next: UnresolvedSnapshot | null): void => {
-    state = next;
-    for (const fn of listeners) fn();
-  };
-  return {
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => {
-        listeners.delete(fn);
-      };
-    },
-    snapshot: () => state,
-    show: (target, why, candidates) => emit({ target, why, candidates }),
-    close: () => emit(null),
-  };
-}
-
-/**
- * What a link is: a document, or one of the two ways of naming none.
- *
- * `unknown` is not a failure — it is "the index has not arrived yet", and
- * it renders as an ordinary link. The alternative is every link in the
- * document flashing as broken for as long as the first fetch takes, which
- * would train the reader to ignore the colour that is supposed to mean
- * something.
- */
-type LinkState = 'ok' | 'broken' | 'ambiguous' | 'unknown';
-
 /** Transaction meta saying "the index landed, draw the links again". */
 const RE_INDEX = 'wikiLink:reindex';
 
 /** Transaction meta carrying the view's editability into plugin state. */
 const EDITABLE = 'wikiLink:editable';
-
-function stateOf(target: string, docs: Documents | null): LinkState {
-  if (!docs) return 'unknown';
-  const hit = resolveWikiLink(target, docs.index, docs.aliases);
-  return typeof hit === 'string' ? hit : 'ok';
-}
 
 /**
  * The syntax read mode hides, so `[[Target|display]]` reads as `display`.
@@ -225,7 +66,7 @@ const SYNTAX = 'wiki-syntax';
  * root per embed to render two lines of text would put a second reconciler
  * inside the editor for no gain.
  */
-function embedCard(target: string, state: LinkState, unresolved: UnresolvedStore): HTMLElement {
+function embedCard(target: string, state: LinkState): HTMLElement {
   const card = document.createElement('span');
   card.className = 'wiki-embed';
   card.setAttribute('role', 'button');
@@ -267,7 +108,7 @@ function embedCard(target: string, state: LinkState, unresolved: UnresolvedStore
       ? t({ notes: 'Note', studies: 'Study', games: 'Game' }[hit.section])
       : '');
   if (line.textContent) card.append(line);
-  const open = (): void => void resolveAndOpen(target, unresolved);
+  const open = (): void => void resolveAndOpen(target);
   card.addEventListener('click', open);
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -278,12 +119,7 @@ function embedCard(target: string, state: LinkState, unresolved: UnresolvedStore
   return card;
 }
 
-function decorate(
-  doc: PmNode,
-  docs: Documents | null,
-  unresolved: UnresolvedStore,
-  editable: boolean,
-): DecorationSet {
+function decorate(doc: PmNode, docs: Documents | null, editable: boolean): DecorationSet {
   const decorations: Decoration[] = [];
   const follows = !editable;
   doc.descendants((node, pos) => {
@@ -324,7 +160,7 @@ function decorate(
       // `editable` belongs to the view and this is built from the doc.
       if (embed) {
         decorations.push(
-          Decoration.widget(to, () => embedCard(target, state, unresolved), { side: 1 }),
+          Decoration.widget(to, () => embedCard(target, state), { side: 1 }),
         );
       }
     }
@@ -376,147 +212,8 @@ function affordanceFor(state: LinkState, follows: boolean): Record<string, strin
   return follows ? { title, role: 'link', tabindex: '0' } : { title };
 }
 
-// --- [[ autocomplete -------------------------------------------------------
-
-/** Every name a link can be written as, in resolution order. */
-async function allTargets(): Promise<string[]> {
-  const docs = await documents();
-  // Ids first, then the names documents chose for themselves. An alias is
-  // typed as itself and resolves as itself, so it belongs in the list that
-  // completes what is being typed — otherwise the one name a writer is
-  // most likely to reach for is the one the suggester cannot offer. A
-  // contested alias is left out: completing it would write a link that
-  // resolves to nothing.
-  return [...LINK_SECTIONS.flatMap((section) => docs.index[section]), ...docs.aliasNames];
-}
-
-/**
- * What the popup draws. Replaced whole and never mutated, so a subscriber
- * can tell one snapshot from the next by identity alone.
- */
-export interface SuggestSnapshot {
-  readonly open: boolean;
-  readonly items: readonly string[];
-  readonly index: number;
-  /** How many matched in all, so a shortened list can say it is one. */
-  readonly total: number;
-  /** Where the caret is, in viewport coordinates: the popup's anchor. */
-  readonly caret: { readonly left: number; readonly top: number; readonly bottom: number } | null;
-}
-
-const CLOSED: SuggestSnapshot = { open: false, items: [], index: 0, total: 0, caret: null };
-
-/**
- * The suggester's state, owned by the editor and read by React.
- *
- * The split follows what each side can actually do. Spotting `[[` behind
- * the caret, knowing where that caret sits on screen, and reaching the
- * arrow keys before the editor's own bindings do are things only a
- * ProseMirror plugin can do. Drawing an anchored, dismissible,
- * collision-aware layer is a thing the component library already does,
- * and did better than the hand-rolled div this replaced. So the plugin
- * keeps the knowledge and publishes it here; `WikiSuggest` subscribes.
- *
- * It lives in the extension's `storage` rather than at module scope,
- * which the DOM version used: one popup for however many editors are
- * mounted, and StrictMode alone mounts two.
- */
-export interface SuggestStore {
-  subscribe(fn: () => void): () => void;
-  snapshot(): SuggestSnapshot;
-  /** Replace the pending `[[query` with `id`, then close. */
-  pick(id: string): void;
-  close(): void;
-}
-
-/** The half the plugin drives. The component only ever sees `SuggestStore`. */
-interface OwnedSuggestStore extends SuggestStore {
-  /** Arm at the caret: from here, results for `query` may arrive. */
-  arm(
-    view: EditorView,
-    range: { from: number; to: number },
-    query: string,
-    caret: SuggestSnapshot['caret'],
-  ): void;
-  /** Results for `query`, dropped if the typist has moved past it. */
-  offer(query: string, items: string[], total: number): void;
-  move(delta: number): void;
-  /** Take the active item, if there is one; reports whether it did. */
-  commit(): boolean;
-}
-
-function createSuggestStore(): OwnedSuggestStore {
-  const listeners = new Set<() => void>();
-  let state: SuggestSnapshot = CLOSED;
-  let view: EditorView | null = null;
-  let range: { from: number; to: number } | null = null;
-  let query = '';
-
-  function set(next: SuggestSnapshot): void {
-    if (next === state) return;
-    state = next;
-    for (const fn of listeners) fn();
-  }
-
-  return {
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => {
-        listeners.delete(fn);
-      };
-    },
-    snapshot: () => state,
-    arm(nextView, nextRange, nextQuery, caret) {
-      view = nextView;
-      range = nextRange;
-      query = nextQuery;
-      // The caret keeps moving while results are in flight; anchor to
-      // where it is now, not to where the query was asked from.
-      set(state.open ? { ...state, caret } : { ...CLOSED, caret });
-    },
-    offer(forQuery, items, total) {
-      if (forQuery !== query || !range) return;
-      if (items.length === 0) return set(CLOSED);
-      set({
-        open: true,
-        items,
-        index: Math.min(state.index, items.length - 1),
-        total,
-        caret: state.caret,
-      });
-    },
-    move(delta) {
-      if (!state.open) return;
-      const n = state.items.length;
-      set({ ...state, index: (state.index + delta + n) % n });
-    },
-    commit() {
-      const id = state.items[state.index];
-      if (!id) return false;
-      this.pick(id);
-      return true;
-    },
-    pick(id) {
-      if (!view || !range) return;
-      view.dispatch(view.state.tr.insertText(`${id}]]`, range.from, range.to));
-      this.close();
-    },
-    close() {
-      range = null;
-      query = '';
-      set(CLOSED);
-    },
-  };
-}
-
 export interface WikiLinkStorage {
   suggest: OwnedSuggestStore;
-  unresolved: UnresolvedStore;
-}
-
-/** The unresolved-link dialog's state for `editor`. */
-export function wikiUnresolvedStore(editor: Editor): UnresolvedStore {
-  return (editor.storage as unknown as { wikiLink: WikiLinkStorage }).wikiLink.unresolved;
 }
 
 /** The suggester behind `editor`, for the component that draws it. */
@@ -528,12 +225,11 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
   name: 'wikiLink',
 
   addStorage() {
-    return { suggest: createSuggestStore(), unresolved: createUnresolvedStore() };
+    return { suggest: createSuggestStore() };
   },
 
   addProseMirrorPlugins() {
     const suggest = this.storage.suggest;
-    const unresolved = this.storage.unresolved;
     const key = new PluginKey<{ set: DecorationSet; editable: boolean }>('wikiLink');
     return [
       new Plugin({
@@ -545,7 +241,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
           // per mode switch, where writing the attributes on afterwards was
           // a DOM write per update and a loop with the selection observer.
           init: (_config, state) => ({
-            set: decorate(state.doc, docsNow(), unresolved, false),
+            set: decorate(state.doc, docsNow(), false),
             editable: false,
           }),
           // `reindex` is the arrival of the document index. Without it the
@@ -556,7 +252,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
             const next = tr.getMeta(EDITABLE) as boolean | undefined;
             const editable = next ?? old.editable;
             if (!tr.docChanged && !tr.getMeta(RE_INDEX) && editable === old.editable) return old;
-            return { set: decorate(tr.doc, docsNow(), unresolved, editable), editable };
+            return { set: decorate(tr.doc, docsNow(), editable), editable };
           },
         },
         view: (view) => {
@@ -571,8 +267,30 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
           void documents().then(() => {
             if (alive) view.dispatch(view.state.tr.setMeta(RE_INDEX, true));
           });
+          /**
+           * And again whenever it is rebuilt, by whoever rebuilt it.
+           *
+           * The index is cached for thirty seconds. A note left open past
+           * that has a COLD cache, which decorates as `unknown` — every
+           * link on the page provisional, the broken ones no longer saying
+           * so — and the one dispatch above has already been and gone, so
+           * nothing asks again. That was invisible while the editor was
+           * the only reader. It is not now: a comment refreshes itself, so
+           * the same link could be dotted in the move list and plain in
+           * the note beside it. The reload below is what makes the cache
+           * cold-start again; the subscription is how this view hears
+           * about it, whether it asked or a comment did.
+           */
+          const heard = subscribeDocs(() => {
+            if (alive) view.dispatch(view.state.tr.setMeta(RE_INDEX, true));
+          });
           return {
             update: (view) => {
+              // A cold cache is reloaded here rather than inside `decorate`,
+              // which builds decorations from a document and must stay a
+              // function of it. Deduped by the promise in wikiDocs, so the
+              // keystrokes that follow do not each start a fetch.
+              if (!docsNow()) void documents();
               // Only when it actually changed: a dispatch per update would
               // be a transaction per update, which is the loop this design
               // exists to avoid.
@@ -583,16 +301,18 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
               if (!view.editable || !view.state.selection.empty) return suggest.close();
               const { $from } = view.state.selection;
               const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
-              const match = /\[\[([^[\]]*)$/.exec(before);
+              const match = PENDING_LINK.exec(before);
               if (!match) return suggest.close();
               const query = match[1]!.toLowerCase();
               const cursor = view.state.selection.from;
-              const { left, top, bottom } = view.coordsAtPos(cursor);
+              const { left, top, right, bottom } = view.coordsAtPos(cursor);
               suggest.arm(
-                view,
+                (from, to, text) => view.dispatch(view.state.tr.insertText(text, from, to)),
                 { from: cursor - match[1]!.length, to: cursor },
                 query,
-                { left, top, bottom },
+                // The caret's own line box, opening below it: a note is a
+                // full page of prose, so the list follows the words.
+                { left, top, right, bottom, side: 'bottom' },
               );
               void allTargets().then((all) => {
                 // The count is of everything that matched, not of what is
@@ -600,11 +320,12 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
                 // answer, so a writer whose document is ninth concludes it
                 // is not there and stops typing.
                 const hits = all.filter((id) => id.toLowerCase().includes(query));
-                suggest.offer(query, hits.slice(0, 8), hits.length);
+                suggest.offer(query, hits.slice(0, SUGGEST_LIMIT), hits.length);
               });
             },
             destroy: () => {
               alive = false;
+              heard();
               suggest.close();
             },
           };
@@ -631,7 +352,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
               const target = el.dataset.target;
               if (!target) return false;
               event.preventDefault();
-              void resolveAndOpen(target, unresolved);
+              void resolveAndOpen(target);
               return true;
             },
           },
@@ -657,7 +378,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
             if (view.editable && !event.ctrlKey && !event.metaKey) return false;
             const el = (event.target as HTMLElement).closest?.('.wiki-link');
             if (!(el instanceof HTMLElement) || !el.dataset.target) return false;
-            void resolveAndOpen(el.dataset.target, unresolved);
+            void resolveAndOpen(el.dataset.target);
             return true;
           },
         },

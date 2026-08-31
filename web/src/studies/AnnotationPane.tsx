@@ -12,6 +12,8 @@ import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/components/chip-row';
+import { WikiSuggest } from '@/notes/WikiSuggest';
+import { useWikiSuggest } from '@/notes/useWikiSuggest';
 import { TitleTip } from '@/components/title-tip';
 import { t } from '@/lib/i18n';
 
@@ -73,7 +75,22 @@ export function AnnotationPane({
     () => localStorage.getItem(PALETTE_KEY) !== 'closed',
   );
   const box = useRef<HTMLTextAreaElement>(null);
+  const sheetBox = useRef<HTMLTextAreaElement>(null);
   const caret = useRef<number | null>(null);
+
+  // `[[` completes here exactly as it does in a note, and from the same
+  // list — a comment that names a study should be able to LINK it, which
+  // is the whole point of the vault. One per box: the sheet and the inline
+  // textarea are never both on screen, but they are two elements, and a
+  // list anchored to the wrong one hangs off nothing.
+  // Through `safeCommentText` like every other way text reaches this box:
+  // completing a name is the one path that writes without passing a
+  // keystroke through `edit`, and a document whose name holds a brace would
+  // otherwise put back exactly what the file cannot keep. Idempotent on
+  // text that is already safe, which every id in practice is.
+  const put = useCallback((next: string) => setDraft(safeCommentText(next)), []);
+  const inline = useWikiSuggest({ box, value: draft, onChange: put });
+  const sheetSuggest = useWikiSuggest({ box: sheetBox, value: draft, onChange: put });
 
   // The desktop box grows with what is written in it, from its two rows up
   // to eight, instead of staying at two and scrolling everything past the
@@ -282,7 +299,11 @@ export function AnnotationPane({
           <Textarea
             ref={box}
             value={draft}
-            onChange={(e) => edit(e.target)}
+            onChange={(e) => {
+              edit(e.target);
+              inline.sync();
+            }}
+            onKeyDown={inline.onKeyDown}
             onBlur={flush}
             placeholder={placeholder}
             rows={2}
@@ -292,6 +313,7 @@ export function AnnotationPane({
           />
         )}
       </div>
+      {!coarse && <WikiSuggest store={inline.store} host={box.current} />}
       {!sheet && notice}
       {/* The app's own window. This was a scrim and a card pinned to the
           TOP of the screen, hand-rolled here from before there was a
@@ -311,12 +333,18 @@ export function AnnotationPane({
         >
           <DialogContent title={placeholder}>
             <Textarea
+              ref={sheetBox}
               autoFocus={autoFocusField()}
               value={draft}
-              onChange={(e) => edit(e.target)}
+              onChange={(e) => {
+                edit(e.target);
+                sheetSuggest.sync();
+              }}
+              onKeyDown={sheetSuggest.onKeyDown}
               rows={4}
               className="w-full resize-none leading-relaxed"
             />
+            <WikiSuggest store={sheetSuggest.store} host={sheetBox.current} />
             {notice}
             <Button
               variant="default"

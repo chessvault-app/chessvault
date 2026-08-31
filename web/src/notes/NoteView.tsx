@@ -14,7 +14,7 @@ import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { WikiSuggest } from './WikiSuggest';
-import { WikiUnresolved } from './WikiUnresolved';
+import { wikiSuggestStore } from './wikiLink';
 import { LinkedMentions } from './LinkedMentions';
 import { AliasEditor } from './AliasEditor';
 import { readAliases, writeAliases } from '@shared/frontMatter';
@@ -433,8 +433,7 @@ function NoteEditor({
       </div>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
-      <WikiSuggest editor={editor} />
-      <WikiUnresolved editor={editor} />
+      <WikiSuggest store={editor ? wikiSuggestStore(editor) : null} host={editor?.view.dom ?? null} />
 
       {recovery && editor && (
         <RecoveryDialog

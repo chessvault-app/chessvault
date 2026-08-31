@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { WikiText } from '@/notes/WikiText';
 import { ArrowUpToLine, BookOpen, ChevronUp, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
@@ -289,7 +290,7 @@ export function MainlineTable({
         key="root-comment"
         className={commentRow(annotation.mainline)}
       >
-        {rootComment}
+        <WikiText text={rootComment} />
       </p>,
     );
   }
@@ -363,7 +364,7 @@ export function MainlineTable({
             // that used to live on this line.
             className={commentRow(annotation.mainline)}
           >
-            {child.comment}
+            <WikiText text={child.comment} />
           </p>,
         );
       }
@@ -561,7 +562,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
             annotation.variation,
           )}
         >
-          {child.comment}
+          <WikiText text={child.comment} />
         </p>,
       );
       flowInterrupted = true;
@@ -652,7 +653,7 @@ function VariationBranch({
             annotation.variation,
           )}
         >
-          {node.comment}
+          <WikiText text={node.comment} />
         </p>
       )}
       <Line

@@ -10,6 +10,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The Games browser leads with your own games.** The tab strip ran
+  Databases · Collection · Chess.com · Lichess, while the pane opened on
+  Collection whenever the collection held anything — so the default was
+  the second tab, and every visit looked like something had been skipped
+  past. The strip is now Collection · Databases · Chess.com · Lichess:
+  the same four tabs, ordered by how close the games are to the reader —
+  yours, then the reference databases, then the two online archives.
+  Nothing else moved; the default was already the collection, and it is
+  now also where the strip starts. An empty collection still opens on
+  Databases, which is the one case where the opening tab is not the
+  leading one, and there the leading one has nothing to show.
 - **A comment says what it cannot keep, while it is still being typed.**
   Two things typed into a move's comment used to be eaten between the box
   and the file, and neither said so. A `}` was deleted outright, because a

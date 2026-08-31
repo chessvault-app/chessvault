@@ -1,13 +1,12 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
-import { FileText, FolderOpen, Plus, Swords } from 'lucide-react';
-import type { Editor } from '@tiptap/react';
+import { useState, useSyncExternalStore } from 'react';
 import type { LinkSection } from '@shared/wikiLinks';
 import { validId } from '@shared/vaultNames';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
-import { wikiUnresolvedStore } from './wikiLink';
+import { SECTION_ICON } from '@/lib/sectionIcon';
+import { SECTION_URL, wikiUnresolved } from './wikiDocs';
 
 /**
  * What to do about a link that named nothing.
@@ -23,28 +22,37 @@ import { wikiUnresolvedStore } from './wikiLink';
  * an edit to the note and this is a reader's dialog. The writer disam-
  * biguates by typing a longer name, which the suggester will complete.
  *
- * Broken means nothing answers to it, which in a vault of notes is most
- * often a note not written yet — writing the link before the note is a
- * normal way to work. So the offer is to make it.
+ * Broken means nothing answers to it, which is most often a document not
+ * made yet — writing the link before the thing it names is a normal way to
+ * work. So the offer is to make it, in whichever of the three kinds was
+ * meant, since all three can be named by a link and a comment on a move is
+ * as likely to want a study as a note.
  */
 
-const ICON: Record<LinkSection, typeof FileText> = {
-  notes: FileText,
-  studies: FolderOpen,
-  games: Swords,
+/**
+ * The order the offers are made in: the app's own menu order, from the
+ * sidebar in App.tsx.
+ *
+ * Deliberately NOT the resolution order, which runs notes, studies, games
+ * and is about which document a name would find first. Nothing is being
+ * resolved here — nothing answers to the name at all — so the only order
+ * that means anything to the reader is the one they already navigate by.
+ */
+const CREATE_ORDER = ['games', 'studies', 'notes'] as const;
+
+/** What each kind of document is called when it does not exist yet. */
+const CREATE_LABEL: Record<LinkSection, string> = {
+  games: 'Start a game called “{name}”',
+  studies: 'Start a study called “{name}”',
+  notes: 'Write a note called “{name}”',
 };
 
-export function WikiUnresolved({ editor }: { editor: Editor | null }) {
-  const store = useMemo(() => (editor ? wikiUnresolvedStore(editor) : null), [editor]);
-  const subscribe = useCallback((fn: () => void) => store?.subscribe(fn) ?? (() => {}), [store]);
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    () => store?.snapshot() ?? null,
-    () => null,
-  );
+export function WikiUnresolved() {
+  const store = wikiUnresolved;
+  const snapshot = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const [creating, setCreating] = useState(false);
 
-  if (!store || !snapshot) return null;
+  if (!snapshot) return null;
   const { target, why, candidates } = snapshot;
 
   const open = (section: LinkSection, id: string): void => {
@@ -56,13 +64,18 @@ export function WikiUnresolved({ editor }: { editor: Editor | null }) {
   // either — the same rule the server enforces, asked before offering.
   const creatable = why === 'broken' && validId(target.trim());
 
-  const create = async (): Promise<void> => {
+  const create = async (section: LinkSection): Promise<void> => {
     const name = target.trim();
     setCreating(true);
     try {
-      await api('/api/notes', { method: 'POST', json: { name, pgn: `# ${name}\n` } });
+      // Name only: what a fresh document of each kind holds is the server's
+      // answer — a heading for a note, one empty chapter for a study or a
+      // game — and it was spelled out here as well, which is two places to
+      // disagree about what "new" means. The copy here also got a nested
+      // name wrong, heading a note `a/b` where the server heads it `b`.
+      await api(SECTION_URL[section], { method: 'POST', json: { name } });
       store.close();
-      navigate('notes', encodeURIComponent(name));
+      navigate(section, encodeURIComponent(name));
     } catch {
       // Left open, so the press is not silently swallowed a second time.
       setCreating(false);
@@ -89,7 +102,7 @@ export function WikiUnresolved({ editor }: { editor: Editor | null }) {
         {candidates.length > 0 && (
           <ul className="flex flex-col gap-0.5">
             {candidates.map(({ section, id }) => {
-              const Icon = ICON[section];
+              const Icon = SECTION_ICON[section];
               return (
                 <li key={`${section}:${id}`}>
                   <button
@@ -105,16 +118,41 @@ export function WikiUnresolved({ editor }: { editor: Editor | null }) {
             })}
           </ul>
         )}
-        {creatable && (
-          <button
-            type="button"
-            disabled={creating}
-            onClick={() => void create()}
-            className="hover:bg-accent focus-visible:ring-ring flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
-          >
-            <Plus className="text-muted-foreground size-3.5 shrink-0" />
-            {t('Write a note called “{name}”', { name: target.trim() })}
-          </button>
+        {/* All three, because all three can be linked. Offering only a note
+            was right while a note was the only thing that could HOLD a
+            link; now a comment on a move can name a study nobody has
+            started, and answering that with "shall I make a note?" resolves
+            the link to the wrong kind of document — quietly, and for good,
+            since from then on it resolves. */}
+        {creatable &&
+          CREATE_ORDER.map((section) => {
+            const Icon = SECTION_ICON[section];
+            return (
+              <button
+                key={section}
+                type="button"
+                disabled={creating}
+                onClick={() => void create(section)}
+                className="hover:bg-accent focus-visible:ring-ring flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+              >
+                {/* The section's own icon rather than three identical
+                    plusses: which of the three this row makes is the whole
+                    difference between them, and it is what the sentence
+                    ends up saying twice otherwise. */}
+                <Icon className="text-muted-foreground size-3.5 shrink-0" />
+                {t(CREATE_LABEL[section], { name: target.trim() })}
+              </button>
+            );
+          })}
+        {/* Why there is nothing to press. This window exists to end a dead
+            end, and a name the vault cannot hold — a colon, a reserved
+            word, something far too long — reached it and got the sentence
+            above with no offer at all: the same empty window, by a
+            different route. */}
+        {why === 'broken' && !creatable && (
+          <p className="text-muted-foreground text-sm">
+            {t('That name cannot be a document name, so there is nothing to create.')}
+          </p>
         )}
         </div>
       </DialogContent>

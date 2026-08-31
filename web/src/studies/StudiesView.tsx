@@ -33,7 +33,16 @@ import { t } from '@/lib/i18n';
 /** Router shell for the Studies section: list, or one open study. */
 export function StudiesView({ params }: { params: string[] }) {
   const id = params[0] ? decodeURIComponent(params[0]) : null;
-  return id ? <StudyView id={id} /> : <StudyList />;
+  // `#/studies/<id>/<chapter>` — which chapter to open at, counted from 0.
+  // A backlink from a comment on a move in chapter four should land there
+  // rather than at chapter one, and putting it in the address rather than
+  // in a handoff means the link survives a reload and a Back.
+  const chapter = params[1] ? Number(params[1]) : undefined;
+  return id ? (
+    <StudyView id={id} chapter={Number.isInteger(chapter) ? chapter : undefined} />
+  ) : (
+    <StudyList />
+  );
 }
 
 function StudyList() {
