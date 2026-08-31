@@ -11,6 +11,7 @@ import {
   documents,
   resolveAndOpen,
   stateOf,
+  subscribeDocs,
   type Documents,
   type LinkState,
 } from './wikiDocs';
@@ -378,8 +379,30 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
           void documents().then(() => {
             if (alive) view.dispatch(view.state.tr.setMeta(RE_INDEX, true));
           });
+          /**
+           * And again whenever it is rebuilt, by whoever rebuilt it.
+           *
+           * The index is cached for thirty seconds. A note left open past
+           * that has a COLD cache, which decorates as `unknown` — every
+           * link on the page provisional, the broken ones no longer saying
+           * so — and the one dispatch above has already been and gone, so
+           * nothing asks again. That was invisible while the editor was
+           * the only reader. It is not now: a comment refreshes itself, so
+           * the same link could be dotted in the move list and plain in
+           * the note beside it. The reload below is what makes the cache
+           * cold-start again; the subscription is how this view hears
+           * about it, whether it asked or a comment did.
+           */
+          const heard = subscribeDocs(() => {
+            if (alive) view.dispatch(view.state.tr.setMeta(RE_INDEX, true));
+          });
           return {
             update: (view) => {
+              // A cold cache is reloaded here rather than inside `decorate`,
+              // which builds decorations from a document and must stay a
+              // function of it. Deduped by the promise in wikiDocs, so the
+              // keystrokes that follow do not each start a fetch.
+              if (!docsNow()) void documents();
               // Only when it actually changed: a dispatch per update would
               // be a transaction per update, which is the loop this design
               // exists to avoid.
@@ -412,6 +435,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
             },
             destroy: () => {
               alive = false;
+              heard();
               suggest.close();
             },
           };
