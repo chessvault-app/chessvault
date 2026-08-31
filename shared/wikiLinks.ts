@@ -232,8 +232,26 @@ export function wikiLinkCandidates(
 }
 
 export interface WikiMention {
-  /** The raw text inside the brackets, as written. */
+  /**
+   * The document the link names — what resolution is given.
+   *
+   * NOT what the reader sees: `[[Target|display]]` shows `display` and
+   * points at `Target`, and this field is the second of those. It used to
+   * be the first, and the consequence was silent: a backlink is derived by
+   * resolving this string, so every display-text link resolved the
+   * writer's words instead of the document, found nothing, and was dropped
+   * — the target listed no mention of a link that opened it perfectly well
+   * when pressed. `shown` is the other half, for whoever needs it.
+   */
   readonly target: string;
+  /**
+   * The words as the reader sees them, brackets and pipe gone.
+   *
+   * What a context highlight marks, and what the offer to wrap an unlinked
+   * mention writes back. Equal to `target` for a plain link, which is why
+   * one field passed for both until a display text told them apart.
+   */
+  readonly shown: string;
   /** Character offset of the `[[` within the document body. */
   readonly at: number;
   /** The sentence it sits in, for showing the mention in context. */
@@ -301,10 +319,9 @@ export function findWikiMentions(body: string): WikiMention[] {
     const end = at + match[0].length;
     const [from, to] = sentenceAround(body, at, end);
     const { target, text } = parseWikiMatch(match);
-    // The mention carries the words the LINK matched by, which is what the
-    // backlink picks out. Where a display text was given, the context reads
-    // as the note reads, so the target is what to highlight in it only if
-    // it is what is actually shown.
+    // Both halves, kept apart: the context reads as the note reads, so the
+    // highlight follows the display text, while resolution has to follow
+    // the target or a display-text link points nowhere.
     const shown = text === target ? target : text;
     const context = asProse(body.slice(from, to));
     // WHICH of them, when a sentence links the same document twice. Without
@@ -312,7 +329,7 @@ export function findWikiMentions(body: string): WikiMention[] {
     // the unlinked side learned this first, and the linked side had exactly
     // the same fault for exactly as long.
     const earlier = countShown(body.slice(from, at), shown);
-    found.push({ target: shown, at, context, markAt: nthIndexOf(context, shown, earlier) });
+    found.push({ target, shown, at, context, markAt: nthIndexOf(context, shown, earlier) });
   }
   return found;
 }
@@ -379,7 +396,10 @@ export function findUnlinkedMentions(body: string, names: readonly string[]): Wi
       // able to see which word each one is about — otherwise linking the
       // second appears to do nothing to the first.
       const earlier = [...body.slice(from, at).matchAll(re)].length;
-      found.push({ target: match[0], at, context, markAt: nthIndexOf(context, match[0], earlier) });
+      // A name found in prose is both at once: there are no brackets to
+      // hold a display text apart from what it points at.
+      const words = match[0];
+      found.push({ target: words, shown: words, at, context, markAt: nthIndexOf(context, words, earlier) });
     }
   }
   return found.sort((a, b) => a.at - b.at);
