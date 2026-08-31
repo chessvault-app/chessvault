@@ -5,6 +5,25 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+Landed after v0.7.1 was tagged, so it is in the repository and in no
+installer. This section becomes the next version's heading.
+
+- **A game's result stops fading into the row it sits in.** The result
+  chip is tinted from your own point of view where the game says which
+  side is yours — green won, red lost — and the tint was a wash of the
+  text colour, so the games row's own fill arrived under it whenever the
+  pointer was on the row. Measured on the games list, the digits fell to
+  3.58:1 in light and 3.02:1 in dark against the 4.5:1 small text needs.
+  An old fault that nothing could see until this release's sample games
+  carried a side to win or lose from. Moving the colours does not reach
+  it — light needs to darken nine points before hover clears the floor,
+  and dark never clears it at all, because what moves under the pointer
+  is the fill and not the text — so both tints are opaque now, at the 10%
+  every other tint in the app already used. Rest and hover measure the
+  same, from 4.65:1 upwards, in all three schemes.
+
 ## 0.7.1
 
 The demo, which now carries a written vault, a puzzle book made from the

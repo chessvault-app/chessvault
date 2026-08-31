@@ -200,6 +200,17 @@ rather than `mountVault`, because the demo shares that list and has
 neither git nor `node:child_process`; every route answers
 `{ available: false }` where there is no history to read.
 
+The questions do not move when the answers do. `vaultHistoryApi` takes an
+optional `run` and `available` beside its `commitNow`, defaulting to the
+history repo — which is the only answer a server has, so the server passes
+neither and is unchanged. The static demo passes its own pair: its
+filesystem shim sees every write, so it keeps the versions itself (one per
+write, deduplicated, twelve per path) and answers those same five git
+commands from them, in the shapes this file already parses. A sixth
+command asked there fails loudly rather than returning something
+plausible. That seam is why the demo shows Earlier versions and Deleted
+documents at all, and why showing them cost this module nothing.
+
 ## Shared code
 
 `shared/` holds the move-tree and PGN codec used by both server and web:
