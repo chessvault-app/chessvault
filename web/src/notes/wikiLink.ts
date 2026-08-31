@@ -20,6 +20,9 @@ import { t } from '@/lib/i18n';
 
 const WIKI_RE = /\[\[([^[\]]+)\]\]/g;
 
+/** Transaction meta carrying the view's editability into plugin state. */
+const EDITABLE = 'wikiLink:editable';
+
 async function resolveAndOpen(target: string): Promise<void> {
   const wanted = target.trim().toLowerCase();
   const sections = [
@@ -48,8 +51,20 @@ async function resolveAndOpen(target: string): Promise<void> {
   console.warn(`[wiki-link] no note, study or game named "${target}"`);
 }
 
-function decorate(doc: PmNode): DecorationSet {
+function decorate(doc: PmNode, editable: boolean): DecorationSet {
   const decorations: Decoration[] = [];
+  // Reading mode gets `role="link"` and a tab stop, which is the only way
+  // to reach a wiki link without a mouse — the cross-link is the thing the
+  // vault is FOR, and it was reachable by pointer alone. It gets the global
+  // `:focus-visible` ring for free by being focusable at all. Editing mode
+  // gets neither: a focusable span inside a contenteditable puts every link
+  // in the editor's own tab order and drags the caret around with it. That
+  // split matches the click contract in `handleClick` — a plain click
+  // follows only where a plain Tab does.
+  const follows = !editable;
+  const affordance = follows
+    ? { title: t('Click to open'), role: 'link', tabindex: '0' }
+    : { title: t('Ctrl+click to open') };
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
     for (const match of node.text.matchAll(WIKI_RE)) {
@@ -58,6 +73,7 @@ function decorate(doc: PmNode): DecorationSet {
         Decoration.inline(from, from + match[0].length, {
           class: 'wiki-link',
           'data-target': match[1]!,
+          ...affordance,
         }),
         // The brackets get their own spans so read mode can hide them.
         Decoration.inline(from, from + 2, { class: 'wiki-bracket' }),
@@ -68,36 +84,6 @@ function decorate(doc: PmNode): DecorationSet {
     }
   });
   return DecorationSet.create(doc, decorations);
-}
-
-/**
- * What a link OFFERS depends on which mode the note is in, and the
- * decorations above cannot say: they are built from the document, and
- * editability belongs to the view. So the two attributes that differ are
- * set here, after every render, from `view.editable` itself.
- *
- * Reading mode gets `role="link"` and a tab stop, which is the only way
- * to reach the wiki link without a mouse — the cross-link is the thing
- * the vault is FOR, and it was reachable by pointer alone. It gets the
- * global `:focus-visible` ring for free by being focusable at all.
- * Editing mode gets neither: a focusable span inside a contenteditable
- * puts every link in the editor's own tab order and drags the caret
- * around with it. That split matches the click contract already in
- * `handleClick` — a plain click follows only where a plain Tab does.
- */
-function syncLinkAffordance(view: EditorView): void {
-  const follows = !view.editable;
-  const title = t(follows ? 'Click to open' : 'Ctrl+click to open');
-  for (const el of view.dom.querySelectorAll<HTMLElement>('.wiki-link')) {
-    el.title = title;
-    if (follows) {
-      el.setAttribute('role', 'link');
-      el.tabIndex = 0;
-    } else {
-      el.removeAttribute('role');
-      el.removeAttribute('tabindex');
-    }
-  }
 }
 
 // --- [[ autocomplete -------------------------------------------------------
@@ -252,18 +238,34 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
 
   addProseMirrorPlugins() {
     const suggest = this.storage.suggest;
+    const key = new PluginKey<{ set: DecorationSet; editable: boolean }>('wikiLink');
     return [
       new Plugin({
-        key: new PluginKey('wikiLink'),
+        key,
         state: {
-          init: (_config, state) => decorate(state.doc),
-          apply: (tr, old) => (tr.docChanged ? decorate(tr.doc) : old),
+          // Editability lives in the VIEW, not in the state, so it arrives
+          // here as a meta the view dispatches when it changes — see below.
+          // Holding it in plugin state is what lets the decorations carry
+          // the affordance, which is what keeps anything from having to
+          // reach into the editor's DOM and write to it afterwards.
+          init: (_config, state) => ({ set: decorate(state.doc, false), editable: false }),
+          apply: (tr, old) => {
+            const next = tr.getMeta(EDITABLE) as boolean | undefined;
+            const editable = next ?? old.editable;
+            if (!tr.docChanged && editable === old.editable) return old;
+            return { set: decorate(tr.doc, editable), editable };
+          },
         },
-        view: (view) => {
-          syncLinkAffordance(view);
+        view: () => {
           return {
             update: (view) => {
-              syncLinkAffordance(view);
+              // Only when it actually changed. A dispatch per update would
+              // be a transaction per update, which is the loop this design
+              // exists to avoid.
+              const held = (key.getState(view.state) as { editable: boolean } | undefined)?.editable;
+              if (held !== undefined && held !== view.editable) {
+                view.dispatch(view.state.tr.setMeta(EDITABLE, view.editable));
+              }
               if (!view.editable || !view.state.selection.empty) return suggest.close();
               const { $from } = view.state.selection;
               const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
@@ -290,7 +292,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
         },
         props: {
           decorations(state) {
-            return this.getState(state);
+            return this.getState(state)?.set;
           },
           /* Enter follows the focused link, which is what Enter on a link
              does everywhere else.
