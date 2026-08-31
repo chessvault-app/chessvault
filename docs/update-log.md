@@ -5,10 +5,12 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.7.1
 
-Landed after v0.7.1 was tagged, so it is in the repository and in no
-installer. This section becomes the next version's heading.
+The demo, which now carries a written vault, a puzzle book made from the
+book it ships, and the safety net it could previously only describe; every
+loading placeholder sized from what is about to replace it; and a desktop
+update that says what it is doing while it does it.
 
 - **A game's result stops fading into the row it sits in.** The result
   chip is tinted from your own point of view where the game says which
@@ -23,13 +25,6 @@ installer. This section becomes the next version's heading.
   is the fill and not the text — so both tints are opaque now, at the 10%
   every other tint in the app already used. Rest and hover measure the
   same, from 4.65:1 upwards, in all three schemes.
-
-## 0.7.1
-
-The demo, which now carries a written vault, a puzzle book made from the
-book it ships, and the safety net it could previously only describe; every
-loading placeholder sized from what is about to replace it; and a desktop
-update that says what it is doing while it does it.
 
 - **A loading placeholder reserves what actually arrives.** The app draws
   one wherever it is waiting on data, and most of them had been sized from
