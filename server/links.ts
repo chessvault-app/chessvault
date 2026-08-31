@@ -59,7 +59,7 @@ const keyOf = (section: LinkSection, id: string): string => `${section}:${id}`;
  * the index missed would show no backlink for a link that works when
  * pressed — the exact disagreement the shared resolver exists to prevent.
  */
-function aliasesIn(dir: string, ext: string, ids: readonly string[]): Map<string, string | null> {
+function aliasesIn(dir: string, ext: string, ids: readonly string[]): Map<string, string[]> {
   const entries: { id: string; aliases: string[] }[] = [];
   for (const id of ids) {
     let head: string;

@@ -12,6 +12,8 @@ import {
   buildAliasMap,
   parseWikiMatch,
   resolveWikiLink,
+  wikiLinkCandidates,
+  type ResolvedLink,
   type AliasIndex,
   type LinkIndex,
   type LinkSection,
@@ -47,6 +49,15 @@ interface Documents {
   readonly index: LinkIndex;
   /** The other names documents answer to. */
   readonly aliases: AliasIndex;
+  /**
+   * The aliases as their documents spelled them.
+   *
+   * `aliases` is keyed lowercase because that is how a link is matched;
+   * completing from those keys offered "b90" to somebody who had named it
+   * "B90" and wrote that into their note. What is suggested has to be what
+   * was chosen.
+   */
+  readonly aliasNames: readonly string[];
   /** `section:id` -> the document's first written line, for an embed. */
   readonly excerpt: ReadonlyMap<string, string>;
 }
@@ -64,14 +75,18 @@ async function documents(): Promise<Documents> {
   const fresh = docsNow();
   if (fresh) return fresh;
   const excerpt = new Map<string, string>();
-  const aliasEntries: (readonly [LinkSection, Map<string, string | null>])[] = [];
+  const spelled: string[] = [];
+  const aliasEntries: (readonly [LinkSection, Map<string, string[]>])[] = [];
   const entries = await Promise.all(
     LINK_SECTIONS.map(async (section) => {
       try {
         const { studies } = await api<
           { studies: { id: string; excerpt?: string | null; aliases?: string[] }[] }
         >(SECTION_URL[section]);
-        for (const s of studies) if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
+        for (const s of studies) {
+          if (s.excerpt) excerpt.set(`${section}:${s.id}`, s.excerpt);
+          for (const name of s.aliases ?? []) spelled.push(name);
+        }
         // Built by the shared rule, not by one written here: this listing
         // arrives sorted newest-first while the server walks a directory,
         // so anything decided by "whichever came first" answers differently
@@ -84,9 +99,19 @@ async function documents(): Promise<Documents> {
       }
     }),
   );
+  const aliases = Object.fromEntries(aliasEntries) as unknown as AliasIndex;
   const docs = {
     index: Object.fromEntries(entries) as unknown as LinkIndex,
-    aliases: Object.fromEntries(aliasEntries) as unknown as AliasIndex,
+    aliases,
+    // Only the names one document alone claims: completing a contested
+    // alias would write a link that resolves to nothing.
+    aliasNames: [
+      ...new Set(
+        spelled.filter((name) =>
+          LINK_SECTIONS.some((sec) => aliases[sec].get(name.trim().toLowerCase())?.length === 1),
+        ),
+      ),
+    ],
     excerpt,
   };
   cache = { at: Date.now(), docs };
@@ -102,17 +127,53 @@ async function documents(): Promise<Documents> {
  * else had to answer the same question, one of the two was going to drift
  * and neither would report a fault. See shared/wikiLinks.
  */
-async function resolveAndOpen(target: string): Promise<void> {
+async function resolveAndOpen(target: string, unresolved: UnresolvedStore): Promise<void> {
   const docs = await documents();
   const hit = resolveWikiLink(target, docs.index, docs.aliases);
   if (typeof hit === 'string') {
-    // Still only a console warning: an unresolved link looks exactly like a
-    // working one in the document, which is a real gap, but the fix belongs
-    // on the decoration rather than here.
-    console.warn(`[wiki-link] "${target}" is ${hit}`);
+    // A link that names nothing used to do nothing at all when pressed, and
+    // say so only to the console. Pressing something and getting silence is
+    // a dead end; both failures have an answer the reader can act on, so
+    // they are asked rather than ignored — which document did you mean, or
+    // shall this note be made.
+    unresolved.show(target, hit, wikiLinkCandidates(target, docs.index, docs.aliases));
     return;
   }
   navigate(hit.section, encodeURIComponent(hit.id));
+}
+
+/** What the unresolved-link dialog draws. Replaced whole, never mutated. */
+export interface UnresolvedSnapshot {
+  readonly target: string;
+  readonly why: 'broken' | 'ambiguous';
+  readonly candidates: readonly ResolvedLink[];
+}
+
+export interface UnresolvedStore {
+  subscribe(fn: () => void): () => void;
+  snapshot(): UnresolvedSnapshot | null;
+  show(target: string, why: 'broken' | 'ambiguous', candidates: ResolvedLink[]): void;
+  close(): void;
+}
+
+function createUnresolvedStore(): UnresolvedStore {
+  const listeners = new Set<() => void>();
+  let state: UnresolvedSnapshot | null = null;
+  const emit = (next: UnresolvedSnapshot | null): void => {
+    state = next;
+    for (const fn of listeners) fn();
+  };
+  return {
+    subscribe(fn) {
+      listeners.add(fn);
+      return () => {
+        listeners.delete(fn);
+      };
+    },
+    snapshot: () => state,
+    show: (target, why, candidates) => emit({ target, why, candidates }),
+    close: () => emit(null),
+  };
 }
 
 /**
@@ -161,7 +222,7 @@ const SYNTAX = 'wiki-syntax';
  * root per embed to render two lines of text would put a second reconciler
  * inside the editor for no gain.
  */
-function embedCard(target: string, state: LinkState): HTMLElement {
+function embedCard(target: string, state: LinkState, unresolved: UnresolvedStore): HTMLElement {
   const card = document.createElement('span');
   card.className = 'wiki-embed';
   card.setAttribute('role', 'button');
@@ -203,7 +264,7 @@ function embedCard(target: string, state: LinkState): HTMLElement {
       ? t({ notes: 'Note', studies: 'Study', games: 'Game' }[hit.section])
       : '');
   if (line.textContent) card.append(line);
-  const open = (): void => void resolveAndOpen(target);
+  const open = (): void => void resolveAndOpen(target, unresolved);
   card.addEventListener('click', open);
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -214,7 +275,11 @@ function embedCard(target: string, state: LinkState): HTMLElement {
   return card;
 }
 
-function decorate(doc: PmNode, docs: Documents | null): DecorationSet {
+function decorate(
+  doc: PmNode,
+  docs: Documents | null,
+  unresolved: UnresolvedStore,
+): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((node, pos) => {
     if (!node.isText || !node.text) return;
@@ -250,7 +315,7 @@ function decorate(doc: PmNode, docs: Documents | null): DecorationSet {
       // `editable` belongs to the view and this is built from the doc.
       if (embed) {
         decorations.push(
-          Decoration.widget(to, () => embedCard(target, state), { side: 1 }),
+          Decoration.widget(to, () => embedCard(target, state, unresolved), { side: 1 }),
         );
       }
     }
@@ -301,10 +366,16 @@ function syncLinkAffordance(view: EditorView): void {
 
 // --- [[ autocomplete -------------------------------------------------------
 
-/** Every id as one list, in resolution order, for the suggester. */
+/** Every name a link can be written as, in resolution order. */
 async function allTargets(): Promise<string[]> {
-  const index = (await documents()).index;
-  return LINK_SECTIONS.flatMap((section) => index[section]);
+  const docs = await documents();
+  // Ids first, then the names documents chose for themselves. An alias is
+  // typed as itself and resolves as itself, so it belongs in the list that
+  // completes what is being typed — otherwise the one name a writer is
+  // most likely to reach for is the one the suggester cannot offer. A
+  // contested alias is left out: completing it would write a link that
+  // resolves to nothing.
+  return [...LINK_SECTIONS.flatMap((section) => docs.index[section]), ...docs.aliasNames];
 }
 
 /**
@@ -315,11 +386,13 @@ export interface SuggestSnapshot {
   readonly open: boolean;
   readonly items: readonly string[];
   readonly index: number;
+  /** How many matched in all, so a shortened list can say it is one. */
+  readonly total: number;
   /** Where the caret is, in viewport coordinates: the popup's anchor. */
   readonly caret: { readonly left: number; readonly top: number; readonly bottom: number } | null;
 }
 
-const CLOSED: SuggestSnapshot = { open: false, items: [], index: 0, caret: null };
+const CLOSED: SuggestSnapshot = { open: false, items: [], index: 0, total: 0, caret: null };
 
 /**
  * The suggester's state, owned by the editor and read by React.
@@ -354,7 +427,7 @@ interface OwnedSuggestStore extends SuggestStore {
     caret: SuggestSnapshot['caret'],
   ): void;
   /** Results for `query`, dropped if the typist has moved past it. */
-  offer(query: string, items: string[]): void;
+  offer(query: string, items: string[], total: number): void;
   move(delta: number): void;
   /** Take the active item, if there is one; reports whether it did. */
   commit(): boolean;
@@ -389,13 +462,14 @@ function createSuggestStore(): OwnedSuggestStore {
       // where it is now, not to where the query was asked from.
       set(state.open ? { ...state, caret } : { ...CLOSED, caret });
     },
-    offer(forQuery, items) {
+    offer(forQuery, items, total) {
       if (forQuery !== query || !range) return;
       if (items.length === 0) return set(CLOSED);
       set({
         open: true,
         items,
         index: Math.min(state.index, items.length - 1),
+        total,
         caret: state.caret,
       });
     },
@@ -425,6 +499,12 @@ function createSuggestStore(): OwnedSuggestStore {
 
 export interface WikiLinkStorage {
   suggest: OwnedSuggestStore;
+  unresolved: UnresolvedStore;
+}
+
+/** The unresolved-link dialog's state for `editor`. */
+export function wikiUnresolvedStore(editor: Editor): UnresolvedStore {
+  return (editor.storage as unknown as { wikiLink: WikiLinkStorage }).wikiLink.unresolved;
 }
 
 /** The suggester behind `editor`, for the component that draws it. */
@@ -436,22 +516,23 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
   name: 'wikiLink',
 
   addStorage() {
-    return { suggest: createSuggestStore() };
+    return { suggest: createSuggestStore(), unresolved: createUnresolvedStore() };
   },
 
   addProseMirrorPlugins() {
     const suggest = this.storage.suggest;
+    const unresolved = this.storage.unresolved;
     return [
       new Plugin({
         key: new PluginKey('wikiLink'),
         state: {
-          init: (_config, state) => decorate(state.doc, docsNow()),
+          init: (_config, state) => decorate(state.doc, docsNow(), unresolved),
           // `reindex` is the arrival of the document index. Without it the
           // first paint's decorations — drawn before any fetch could
           // land — would stand until the next keystroke, so a note opened
           // and read without being touched would never show a broken link.
           apply: (tr, old) =>
-            tr.docChanged || tr.getMeta(RE_INDEX) ? decorate(tr.doc, docsNow()) : old,
+            tr.docChanged || tr.getMeta(RE_INDEX) ? decorate(tr.doc, docsNow(), unresolved) : old,
         },
         view: (view) => {
           syncLinkAffordance(view);
@@ -484,10 +565,12 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
                 { left, top, bottom },
               );
               void allTargets().then((all) => {
-                suggest.offer(
-                  query,
-                  all.filter((id) => id.toLowerCase().includes(query)).slice(0, 8),
-                );
+                // The count is of everything that matched, not of what is
+                // shown: a list silently cut at eight looks like the whole
+                // answer, so a writer whose document is ninth concludes it
+                // is not there and stops typing.
+                const hits = all.filter((id) => id.toLowerCase().includes(query));
+                suggest.offer(query, hits.slice(0, 8), hits.length);
               });
             },
             destroy: () => {
@@ -518,7 +601,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
               const target = el.dataset.target;
               if (!target) return false;
               event.preventDefault();
-              void resolveAndOpen(target);
+              void resolveAndOpen(target, unresolved);
               return true;
             },
           },
@@ -544,7 +627,7 @@ export const WikiLink = Extension.create<Record<string, never>, WikiLinkStorage>
             if (view.editable && !event.ctrlKey && !event.metaKey) return false;
             const el = (event.target as HTMLElement).closest?.('.wiki-link');
             if (!(el instanceof HTMLElement) || !el.dataset.target) return false;
-            void resolveAndOpen(el.dataset.target);
+            void resolveAndOpen(el.dataset.target, unresolved);
             return true;
           },
         },

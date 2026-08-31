@@ -81,7 +81,7 @@ describe('resolveWikiLink', () => {
 });
 
 describe('aliases', () => {
-  const withAliases = (over: Partial<Record<string, [string, string][]>>) => ({
+  const withAliases = (over: Partial<Record<string, [string, string[]][]>>) => ({
     notes: new Map(over.notes ?? []),
     studies: new Map(over.studies ?? []),
     games: new Map(over.games ?? []),
@@ -91,7 +91,7 @@ describe('aliases', () => {
     const hit = resolveWikiLink(
       'Najdorf',
       index({ studies: ['Openings/Sicilian Defence'] }),
-      withAliases({ studies: [['najdorf', 'Openings/Sicilian Defence']] }),
+      withAliases({ studies: [['najdorf', ['Openings/Sicilian Defence']]] }),
     );
     expect(hit).toEqual({ section: 'studies', id: 'Openings/Sicilian Defence' });
   });
@@ -100,7 +100,7 @@ describe('aliases', () => {
     const hit = resolveWikiLink(
       'B90',
       index({ studies: ['Openings/Najdorf'] }),
-      withAliases({ studies: [['b90', 'Openings/Najdorf']] }),
+      withAliases({ studies: [['b90', ['Openings/Najdorf']]] }),
     );
     expect(hit).toEqual({ section: 'studies', id: 'Openings/Najdorf' });
   });
@@ -110,7 +110,7 @@ describe('aliases', () => {
     const hit = resolveWikiLink(
       'Najdorf',
       index({ notes: ['Other'], games: ['Najdorf'] }),
-      withAliases({ notes: [['najdorf', 'Other']] }),
+      withAliases({ notes: [['najdorf', ['Other']]] }),
     );
     expect(hit).toEqual({ section: 'games', id: 'Najdorf' });
   });
@@ -119,7 +119,7 @@ describe('aliases', () => {
     const hit = resolveWikiLink(
       'Najdorf',
       index({ notes: ['Chosen'], studies: ['openings/Najdorf'] }),
-      withAliases({ notes: [['najdorf', 'Chosen']] }),
+      withAliases({ notes: [['najdorf', ['Chosen']]] }),
     );
     expect(hit).toEqual({ section: 'notes', id: 'Chosen' });
   });
@@ -128,7 +128,7 @@ describe('aliases', () => {
     const hit = resolveWikiLink(
       'Twin',
       index({ studies: ['a/Twin', 'b/Twin'] }),
-      withAliases({ notes: [['twin', 'The Real One']] }),
+      withAliases({ notes: [['twin', ['The Real One']]] }),
     );
     expect(hit).toEqual({ section: 'notes', id: 'The Real One' });
   });
@@ -142,7 +142,7 @@ describe('aliases', () => {
       { id: 'AAA dup', aliases: ['Dup'] },
       { id: 'ZZZ dup', aliases: ['Dup'] },
     ]);
-    expect(contested.get('dup')).toBeNull();
+    expect(contested.get('dup')).toEqual(['AAA dup', 'ZZZ dup']);
     expect(
       resolveWikiLink('Dup', index({ notes: ['AAA dup', 'ZZZ dup'] }), {
         ...NO_ALIASES,
@@ -165,7 +165,7 @@ describe('aliases', () => {
 
   it('keeps an alias a document repeats to itself', () => {
     const map = buildAliasMap([{ id: 'A', aliases: ['Dup', 'dup'] }]);
-    expect(map.get('dup')).toBe('A');
+    expect(map.get('dup')).toEqual(['A']);
   });
 
   it('changes nothing when no document has an alias', () => {

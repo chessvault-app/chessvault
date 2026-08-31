@@ -38,7 +38,7 @@ export function WikiSuggest({ editor }: { editor: Editor | null }) {
     () => store?.snapshot() ?? EMPTY,
     () => EMPTY,
   );
-  const { open, items, index, caret } = snapshot;
+  const { open, items, index, total, caret } = snapshot;
 
   const listId = useId();
   const optionId = (i: number) => `${listId}-${i}`;
@@ -119,9 +119,14 @@ export function WikiSuggest({ editor }: { editor: Editor | null }) {
             {id}
           </div>
         ))}
+        {total > items.length && (
+          <div className="text-muted-foreground px-2 py-1 text-xs">
+            {t('{n} more — keep typing', { n: total - items.length })}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
 }
 
-const EMPTY = { open: false, items: [], index: 0, caret: null } as const;
+const EMPTY = { open: false, items: [], index: 0, total: 0, caret: null } as const;

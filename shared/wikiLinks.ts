@@ -73,7 +73,7 @@ export type LinkIndex = Readonly<Record<LinkSection, readonly string[]>>;
  * mid-sentence you write "the Najdorf". Display text solves how it READS;
  * an alias solves what you have to TYPE.
  */
-export type AliasIndex = Readonly<Record<LinkSection, ReadonlyMap<string, string | null>>>;
+export type AliasIndex = Readonly<Record<LinkSection, ReadonlyMap<string, readonly string[]>>>;
 
 /**
  * Build one section's alias map, marking any name two documents claim.
@@ -92,17 +92,25 @@ export type AliasIndex = Readonly<Record<LinkSection, ReadonlyMap<string, string
  * on every side however each one iterates, and the writer is told: only
  * they know which document they meant.
  */
-export function buildAliasMap(entries: Iterable<{ id: string; aliases?: readonly string[] }>) {
-  const map = new Map<string, string | null>();
+export function buildAliasMap(
+  entries: Iterable<{ id: string; aliases?: readonly string[] }>,
+): Map<string, string[]> {
+  const map = new Map<string, string[]>();
   for (const { id, aliases } of entries) {
     for (const name of aliases ?? []) {
       const key = name.trim().toLowerCase();
       if (!key) continue;
       const held = map.get(key);
-      if (held === undefined) map.set(key, id);
-      else if (held !== id) map.set(key, null);
+      if (!held) map.set(key, [id]);
+      // Every claimant is kept, not just the count: a contested alias has
+      // to be able to say WHICH documents claimed it, because the writer
+      // is going to be asked which one they meant.
+      else if (!held.includes(id)) held.push(id);
     }
   }
+  // Sorted so the answer does not depend on which side built it — the
+  // whole point of this being one function.
+  for (const ids of map.values()) ids.sort();
   return map;
 }
 
@@ -155,12 +163,12 @@ export function resolveWikiLink(
   // which is a name that merely happens to collide.
   let ambiguous = false;
   for (const section of LINK_SECTIONS) {
-    const named = aliases[section].get(wanted);
-    if (named) return { section, id: named };
+    const named = aliases[section].get(wanted) ?? [];
+    if (named.length === 1) return { section, id: named[0]! };
     // Claimed by two documents in this section — see buildAliasMap. Noted
     // and passed over rather than answered, the same as a repeated last
     // segment: a weaker match elsewhere may still be unambiguous.
-    if (named === null) ambiguous = true;
+    if (named.length > 1) ambiguous = true;
   }
 
   // Ambiguity is only reported if nothing matched outright anywhere.
@@ -171,6 +179,40 @@ export function resolveWikiLink(
   }
 
   return ambiguous ? 'ambiguous' : 'broken';
+}
+
+/**
+ * Every document a target could have meant, strongest match first.
+ *
+ * For when resolution declined to answer. `resolveWikiLink` returning
+ * 'ambiguous' is the right call — guessing between two documents is worse
+ * than not guessing — but it left the reader with a link that did nothing
+ * at all when pressed, which is a dead end rather than a decision. These
+ * are the candidates to offer them.
+ */
+export function wikiLinkCandidates(
+  target: string,
+  index: LinkIndex,
+  aliases: AliasIndex = NO_ALIASES,
+): ResolvedLink[] {
+  const wanted = target.trim().toLowerCase();
+  const found: ResolvedLink[] = [];
+  if (!wanted) return found;
+  const add = (section: LinkSection, id: string): void => {
+    if (!found.some((f) => f.section === section && f.id === id)) found.push({ section, id });
+  };
+  // Same three passes, in the same order, so the list reads as the
+  // resolver's own reasoning rather than a second opinion about it.
+  for (const section of LINK_SECTIONS) {
+    for (const id of index[section]) if (id.toLowerCase() === wanted) add(section, id);
+  }
+  for (const section of LINK_SECTIONS) {
+    for (const id of aliases[section].get(wanted) ?? []) add(section, id);
+  }
+  for (const section of LINK_SECTIONS) {
+    for (const id of index[section]) if (tail(id).toLowerCase() === wanted) add(section, id);
+  }
+  return found;
 }
 
 export interface WikiMention {
