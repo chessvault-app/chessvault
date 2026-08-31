@@ -32,6 +32,7 @@ import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
+import { parseContinueShape, shownOnDesktop, type ContinueShape } from './reservation';
 
 // Lazy, alone among this page's imports, and for the same reason the page
 // itself is eager: Sheet brings a portal, the drag, the cover measurement
@@ -140,18 +141,19 @@ interface HomeData {
  * a release or two from now, along with the branch that reads it.
  */
 const CHECKLIST_KEY = 'vault:home-checklist-dismissed';
-/** Last launch's Continue-row count — the layout reservation, see below. */
-const CONTINUE_ROWS_KEY = 'vault:home-continue-rows';
-/** And whether it led with a board, which is the taller half of that
-    reservation. Same trick, same reason: the card must not resize under
-    the reader when the data lands. */
-const CONTINUE_BOARD_KEY = 'vault:home-continue-board';
+/** Last launch's Continue card, as a shape — the layout reservation. See
+    home/reservation.ts for what is in it and why it is not one number. */
+const CONTINUE_KEY = 'vault:home-continue';
+/** The two keys that shape replaced, one count and one flag. Paint hints
+    with no authority over anything, so they are simply dropped rather
+    than migrated; the launch that drops them writes the shape itself. */
+const CONTINUE_LEGACY_KEYS = ['vault:home-continue-rows', 'vault:home-continue-board'];
 /**
  * The last layout this device saw, kept only so the first paint draws the
  * page you actually have rather than the default one.
  *
  * A paint hint and never the authority — the same bargain, and the same
- * honesty, as CONTINUE_ROWS_KEY: the vault decides, this is overwritten by
+ * honesty, as CONTINUE_KEY: the vault decides, this is overwritten by
  * whatever it says, and a device that has never opened this vault shows
  * the defaults until the answer arrives.
  */
@@ -236,19 +238,12 @@ export function HomePage() {
   const confirmed = useRef<HomeLayout | null>(null);
   /** Which save is the current one, so a slow failure cannot undo a newer press. */
   const attempt = useRef(0);
-  // How many Continue rows LAST launch ended up with, so this launch can
-  // reserve the card's space before the data returns. Without it the card
-  // popped in a beat after first paint and pushed the whole page down —
-  // the most visible jolt of a launch now that nothing covers loading.
-  // Wrong by at most one launch, and a fresh vault stores 0: no card, no
-  // reservation, no jolt.
-  const [expectedRows] = useState(() => {
-    const n = Number(localStorage.getItem(CONTINUE_ROWS_KEY));
-    return Number.isInteger(n) && n > 0 && n <= 3 ? n : 0;
-  });
-  /** And whether it led with a board — the same reservation, for the
-      taller thing above the rows. */
-  const [expectedBoard] = useState(() => localStorage.getItem(CONTINUE_BOARD_KEY) === '1');
+  // What the Continue card was LAST launch, so this launch can reserve its
+  // space before the data returns. Without it the card popped in a beat
+  // after first paint and pushed the whole page down — the most visible
+  // jolt of a launch now that nothing covers loading. Wrong by at most one
+  // launch, and a fresh vault reserves nothing: no card, no jolt.
+  const [reserved] = useState(() => parseContinueShape(localStorage.getItem(CONTINUE_KEY)));
   // Hoisted out of the Continue row it labels: that row is built inside a
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
@@ -468,10 +463,18 @@ export function HomePage() {
     label: string;
     detail: string;
     go: () => void;
-    /** Where the row is drawn. Only the repertoire reminder sets it: the
-        desktop carries that in the Training panel, and a phone has no
-        Training panel to carry it. */
-    className?: string;
+    /**
+     * Drawn on a phone and not on a desktop, which has somewhere better
+     * to say the same thing: the repertoire reminder lives in the Training
+     * panel, and the last study is the board above these rows.
+     *
+     * A flag rather than the `md:hidden` it used to be written as, because
+     * two things now read it — the class on the row, and the count of rows
+     * a desktop actually draws, which is what the next launch reserves.
+     * Spelling the class by hand made that count unknowable without
+     * matching on a string.
+     */
+    phoneOnly?: boolean;
   }[] =
     data === null
       ? []
@@ -485,7 +488,7 @@ export function HomePage() {
                   go: () => navigate('studies', encodeURIComponent(data.lastStudy!.id)),
                   // The board above says this on any screen wide enough to
                   // draw it, so the row would be the same study twice.
-                  ...(data.lastStudy.fen ? { className: 'md:hidden' } : {}),
+                  ...(data.lastStudy.fen ? { phoneOnly: true } : {}),
                 },
               ]
             : []),
@@ -520,7 +523,7 @@ export function HomePage() {
                   label: t('Repertoire review'),
                   detail: t('{n} due', { n: data.repertoire.due }),
                   go: () => navigate('repertoire'),
-                  className: 'md:hidden',
+                  phoneOnly: true,
                 },
               ]
             : []),
@@ -531,13 +534,21 @@ export function HomePage() {
       only implies it. */
   const boardStudy = data?.lastStudy?.fen ? data.lastStudy : null;
 
+  /** The card this launch settled on, as the next launch has to reserve
+      it: what a phone draws, what a desktop draws, and whether there is a
+      board on top. */
+  const shape: ContinueShape = {
+    rows: continueRows.length,
+    mdRows: continueRows.filter((row) => !row.phoneOnly).length,
+    board: boardStudy !== null,
+  };
+
   // Remembered for the NEXT launch's reservation, above.
   useEffect(() => {
-    if (data !== null) localStorage.setItem(CONTINUE_ROWS_KEY, String(continueRows.length));
-    if (data !== null) {
-      localStorage.setItem(CONTINUE_BOARD_KEY, data.lastStudy?.fen ? '1' : '0');
-    }
-    // continueRows is derived from data; keying on data is keying on it.
+    if (data === null) return;
+    localStorage.setItem(CONTINUE_KEY, JSON.stringify(shape));
+    for (const key of CONTINUE_LEGACY_KEYS) localStorage.removeItem(key);
+    // `shape` is derived from data; keying on data is keying on it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
@@ -649,12 +660,24 @@ export function HomePage() {
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
             skeleton rows, so the page does not jump when it fills in. */}
-        {effective.continueCard && data === null && expectedRows > 0 && (
-          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+        {effective.continueCard && data === null && reserved !== null && (
+          <div
+            role="status"
+            aria-label={t('Loading')}
+            aria-live="polite"
+            className={cn(
+              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10',
+              // Nothing but phone-only rows: a heading over an empty box
+              // at this width, so the desktop reserves none of it. Decided
+              // in CSS rather than from a JS breakpoint, so a window
+              // dragged across `md` mid-load cannot leave one behind.
+              !shownOnDesktop(reserved) && 'md:hidden',
+            )}
+          >
             <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
-            {expectedBoard && (
+            {reserved.board && (
               <div className="border-border hidden items-center gap-3 border-b px-3 py-3 md:flex">
                 <Skeleton className="size-24 shrink-0 rounded-sm" />
                 <span className="min-w-0 flex-1">
@@ -663,10 +686,25 @@ export function HomePage() {
                 </span>
               </div>
             )}
-            {Array.from({ length: expectedRows }, (_, i) => (
+            {Array.from({ length: reserved.rows }, (_, i) => (
               <div
                 key={i}
-                className="border-border flex w-full items-center gap-2.5 border-b px-3 py-2 text-sm last:border-b-0"
+                className={cn(
+                  'border-border flex w-full items-center gap-2.5 border-b px-3 text-sm last:border-b-0',
+                  // ListRow's own rhythm, read from the density token
+                  // rather than written as the py-2 it resolves to at the
+                  // comfortable rung. A compact vault draws these rows
+                  // 6px shorter than a literal py-2, so the placeholder
+                  // stood taller than the card it stood for and the page
+                  // settled upwards by that much per row as it landed.
+                  'py-(--row-py)',
+                  // The rows a desktop will not draw. Which of them carry
+                  // the class does not matter — every placeholder here is
+                  // the same — only how many, so the trailing ones take
+                  // it. Real card, real mechanism: these are `md:hidden`
+                  // there too.
+                  i >= reserved.mdRows && 'md:hidden',
+                )}
               >
                 <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                 {/* The row's height comes from an INVISIBLE real text line,
@@ -684,7 +722,15 @@ export function HomePage() {
           </div>
         )}
         {effective.continueCard && continueRows.length > 0 && (
-          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+          <div
+            className={cn(
+              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10',
+              // The same rule the placeholder above is drawn under, so the
+              // two agree: a card of nothing but phone-only rows is a
+              // "Continue" heading over an empty box on a desktop.
+              !shownOnDesktop(shape) && 'md:hidden',
+            )}
+          >
             <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
@@ -719,8 +765,13 @@ export function HomePage() {
                 <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
               </button>
             )}
-            {continueRows.map(({ icon: Icon, label, detail, go, className }) => (
-              <ListRow key={label + detail} divided onClick={go} className={cn('text-sm', className)}>
+            {continueRows.map(({ icon: Icon, label, detail, go, phoneOnly }) => (
+              <ListRow
+                key={label + detail}
+                divided
+                onClick={go}
+                className={cn('text-sm', phoneOnly && 'md:hidden')}
+              >
                 <Icon className="text-muted-foreground size-3.5 shrink-0" />
                 <span className="text-foreground min-w-0 flex-1 truncate font-medium">{label}</span>
                 <span className="text-muted-foreground shrink-0">{detail}</span>
