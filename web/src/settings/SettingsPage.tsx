@@ -19,6 +19,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Progress, ProgressIndicator } from '@/components/ui/progress';
 import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
@@ -248,6 +249,24 @@ interface UpdateResult {
 }
 
 /**
+ * The download, as it happens.
+ *
+ * The shell downloads an installer of some eighty megabytes in the
+ * background and said nothing at all while it did — a slow connection and
+ * a stalled one looked the same — then finished in a native message box
+ * whose "Later" dismissed the offer to restart for the rest of the run.
+ * Both halves are on this card instead.
+ */
+interface UpdateStatus {
+  phase: 'idle' | 'downloading' | 'ready' | 'failed';
+  version?: string;
+  transferred?: number;
+  total?: number;
+  percent?: number;
+  error?: string;
+}
+
+/**
  * What is running, and whether it is current.
  *
  * The server's version always shows. The desktop shell's own version and
@@ -308,6 +327,7 @@ function VersionCard() {
   const [build, setBuild] = useState<string | null>(null);
   const [app, setApp] = useState<string | null>(null);
   const [update, setUpdate] = useState<UpdateResult | null>(null);
+  const [status, setStatus] = useState<UpdateStatus>({ phase: 'idle' });
   const [checking, setChecking] = useState(false);
   const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
 
@@ -321,12 +341,47 @@ function VersionCard() {
     void shell?.appInfo?.().then((info) => setApp(info?.version ?? null));
   }, [shell]);
 
+  // Asked for as well as listened to: the check runs at launch, so by the
+  // time this page exists the download may already be half done, and a
+  // subscription alone would show nothing until the next byte arrives.
+  useEffect(() => {
+    if (!shell?.onUpdateStatus) return;
+    void shell.updateStatus?.().then((s) => s && setStatus(s));
+    return shell.onUpdateStatus(setStatus);
+  }, [shell]);
+
   const check = async (): Promise<void> => {
     if (!shell?.checkForUpdates) return;
+    // A download that broke is answered by the check that follows it, not
+    // left standing in front of it.
+    setStatus((s) => (s.phase === 'failed' ? { phase: 'idle' } : s));
     setChecking(true);
     setUpdate(await shell.checkForUpdates());
     setChecking(false);
   };
+
+  const percent = Math.min(100, Math.round(status.percent ?? 0));
+  /**
+   * What the download itself has to say, which outranks the answer the
+   * check button got: "it installs when you quit" is no longer the whole
+   * truth once bytes are moving, and is wrong once they have all arrived.
+   */
+  const live =
+    status.phase === 'downloading'
+      ? status.total
+        ? t('Downloading {version} — {done} of {total}', {
+            version: status.version ?? '',
+            done: size(status.transferred ?? 0),
+            total: size(status.total),
+          })
+        : t('Starting the download…')
+      : status.phase === 'ready'
+        ? t('{version} is ready — restart to install it.', { version: status.version ?? '' })
+        : status.phase === 'failed'
+          ? // The reason is one of updateFailure()'s sentences, which ko.ts
+            // carries — it arrives as English from the shell either way.
+            t('Could not update: {reason}', { reason: t(status.error ?? 'no answer') })
+          : null;
 
   return (
     <Card icon={Info} title={t('Version')}>
@@ -369,26 +424,60 @@ function VersionCard() {
           sentence, and on a narrow card it used to run out past the panel's
           edge instead of onto a second line. */}
       {shell?.checkForUpdates && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" disabled={checking} onClick={() => void check()}>
-            {checking ? t('Checking…') : t('Check for updates')}
-          </Button>
-          {update && (
-            <span
-              className={cn(
-                'min-w-0 flex-1 break-words text-sm',
-                update.state === 'failed' ? 'text-destructive' : 'text-muted-foreground',
-              )}
-            >
-              {update.state === 'available'
-                ? t('{version} is available — it installs when you quit.', { version: update.version ?? '' })
-                : update.state === 'current'
-                  ? t('This is the newest build.')
-                  : update.state === 'dev'
-                    ? t('Not a packaged build.')
-                    : t('Could not check: {reason}', { reason: update.error ?? t('no answer') })}
-            </span>
-          )}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" disabled={checking} onClick={() => void check()}>
+              {checking ? t('Checking…') : t('Check for updates')}
+            </Button>
+            {/* The restart the native dialog used to ask for. It stays on
+                the card rather than arriving once and vanishing, so an
+                update that finished while the reader was mid-game can
+                still be taken whenever they are ready for it. */}
+            {status.phase === 'ready' && shell.restartToUpdate && (
+              <Button variant="default" size="sm" onClick={() => void shell.restartToUpdate!()}>
+                {t('Restart now')}
+              </Button>
+            )}
+            {live ? (
+              <span
+                className={cn(
+                  'min-w-0 flex-1 break-words text-sm',
+                  status.phase === 'failed' ? 'text-destructive' : 'text-muted-foreground',
+                )}
+              >
+                {live}
+              </span>
+            ) : (
+              update && (
+                <span
+                  className={cn(
+                    'min-w-0 flex-1 break-words text-sm',
+                    update.state === 'failed' ? 'text-destructive' : 'text-muted-foreground',
+                  )}
+                >
+                  {update.state === 'available'
+                    ? t('{version} is available — it installs when you quit.', { version: update.version ?? '' })
+                    : update.state === 'current'
+                      ? t('This is the newest build.')
+                      : update.state === 'dev'
+                        ? t('Not a packaged build.')
+                        : t('Could not check: {reason}', { reason: t(update.error ?? 'no answer') })}
+                </span>
+              )
+            )}
+          </div>
+          {/* Indeterminate until the first chunk lands: a feed that answers
+              slowly would otherwise show a bar pinned at zero, which reads
+              as a download that has stalled rather than one not yet begun. */}
+          {status.phase === 'downloading' && status.total ? (
+            <Progress value={percent} aria-label={t('Download progress')}>
+              {/* The fill states its own width, as the solved/failed bar
+                  does: the primitive's default indicator is `flex-1`, which
+                  grows to the whole track whatever the value says, so a
+                  16% download drew a full bar. */}
+              <ProgressIndicator className="bg-primary" style={{ width: `${percent}%` }} />
+            </Progress>
+          ) : null}
         </div>
       )}
       {/* The source link is not decoration: pirouetti's pieces are AGPLv3,
@@ -441,6 +530,9 @@ interface VaultShell {
   switchVault?: () => Promise<void>;
   appInfo?: () => Promise<{ version?: string } | undefined>;
   checkForUpdates?: () => Promise<UpdateResult>;
+  updateStatus?: () => Promise<UpdateStatus>;
+  onUpdateStatus?: (fn: (state: UpdateStatus) => void) => () => void;
+  restartToUpdate?: () => Promise<boolean>;
 }
 
 function DesktopCard() {

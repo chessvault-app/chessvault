@@ -838,6 +838,12 @@ export const ko: Record<string, string> = {
   '{version} is available — it installs when you quit.':
     '{version}을(를) 받을 수 있습니다 — 앱을 종료하면 설치됩니다.',
   'Could not check: {reason}': '확인하지 못했습니다: {reason}',
+  'Starting the download…': '내려받기를 시작하는 중…',
+  'Downloading {version} — {done} of {total}': '{version} 내려받는 중 — {total} 중 {done}',
+  'Download progress': '내려받기 진행률',
+  '{version} is ready — restart to install it.': '{version} 준비 완료 — 다시 시작하면 설치됩니다.',
+  'Restart now': '지금 다시 시작',
+  'Could not update: {reason}': '업데이트하지 못했습니다: {reason}',
   'no answer': '응답 없음',
   'no published release to update to yet': '아직 공개된 릴리스가 없습니다',
   'no internet connection': '인터넷에 연결되어 있지 않습니다',

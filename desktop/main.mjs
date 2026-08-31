@@ -292,6 +292,67 @@ async function updater() {
   return found;
 }
 
+/**
+ * What the update is doing right now, in the app rather than in a console.
+ *
+ * A download of an eighty-megabyte installer used to be entirely silent:
+ * the shell said "it installs when you quit" and then nothing for however
+ * long the transfer took, so a slow connection and a stalled one looked
+ * identical. The renderer gets every step of it, and asks for the current
+ * one on mount because the launch check starts before any page has loaded.
+ */
+let updateState = { phase: 'idle' };
+let updaterWired = false;
+
+// Every open window, not the one that happened to exist when the updater
+// was wired: macOS closes the last window without quitting and builds a new
+// one on activate, and a captured reference would have gone quiet there
+// while the download carried on.
+function publishUpdate(next) {
+  updateState = next;
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (!w.isDestroyed()) w.webContents.send('app:update-status', next);
+  }
+}
+
+/**
+ * The autoUpdater with its events attached exactly once — both the launch
+ * check and the Settings button come through here, and a second set of
+ * listeners would report every byte twice.
+ */
+async function wiredUpdater() {
+  const autoUpdater = await updater();
+  if (updaterWired) return autoUpdater;
+  updaterWired = true;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', (info) => {
+    publishUpdate({ phase: 'downloading', version: info?.version, transferred: 0, total: 0, percent: 0 });
+  });
+  autoUpdater.on('download-progress', (p) => {
+    publishUpdate({
+      phase: 'downloading',
+      version: updateState.version,
+      transferred: p?.transferred ?? 0,
+      total: p?.total ?? 0,
+      percent: p?.percent ?? 0,
+    });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    publishUpdate({ phase: 'ready', version: info?.version });
+  });
+  autoUpdater.on('error', (err) => {
+    console.error('[updater]', err?.message ?? err);
+    // Only a download that broke gets said out loud. The launch check
+    // fails routinely — offline, or no release published yet — and putting
+    // that on the Settings card would make "could not update" the resting
+    // state of every machine that starts up without a connection. Asking
+    // with the button is what reports a check.
+    if (updateState.phase === 'downloading') publishUpdate({ phase: 'failed', error: updateFailure(err) });
+  });
+  return autoUpdater;
+}
+
 app.whenReady().then(async () => {
   const win = createWindow();
 
@@ -330,7 +391,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('app:check-updates', async () => {
     if (!app.isPackaged) return { state: 'dev' };
     try {
-      const autoUpdater = await updater();
+      const autoUpdater = await wiredUpdater();
       const result = await autoUpdater.checkForUpdates();
       const found = result?.updateInfo?.version;
       if (!found || found === app.getVersion()) return { state: 'current', version: app.getVersion() };
@@ -338,6 +399,19 @@ app.whenReady().then(async () => {
     } catch (err) {
       return { state: 'failed', error: updateFailure(err) };
     }
+  });
+
+  // Where the download has got to. Asked for on mount, because the launch
+  // check runs before the app's own page exists to be sent anything.
+  ipcMain.handle('app:update-status', () => updateState);
+
+  // The restart the native dialog used to ask for, as a button on the page
+  // that reported the download.
+  ipcMain.handle('app:restart-to-update', async () => {
+    if (updateState.phase !== 'ready') return false;
+    const autoUpdater = await wiredUpdater();
+    autoUpdater.quitAndInstall();
+    return true;
   });
 
   // The same thing the Vault menu does, reachable from the app's settings.
@@ -385,37 +459,25 @@ app.whenReady().then(async () => {
   );
 
   await openApp(win);
-  void checkForUpdates(win);
+  void checkForUpdates();
 });
 
 /**
  * Auto-update the shell from GitHub releases (electron-updater reads the
- * `build.publish` config). Silent by design: download in the background and
- * install on the next quit, so it never interrupts. Dev runs and unsigned
- * builds simply no-op. Publish a release with `npm run desktop:release`.
+ * `build.publish` config). It downloads in the background and installs on
+ * the next quit, so it never interrupts; what it is doing goes to the app's
+ * own Settings page rather than to a modal.
+ *
+ * It used to end in a native message box, which arrives over whatever the
+ * reader is in the middle of, is not in the app's language, and cannot be
+ * got back once dismissed — so "Later" meant the offer to restart was gone
+ * for the rest of the run. Dev runs and unsigned builds simply no-op.
+ * Publish a release with `npm run desktop:release`.
  */
-async function checkForUpdates(win) {
+async function checkForUpdates() {
   if (!app.isPackaged) return;
   try {
-    const autoUpdater = await updater();
-    autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
-    autoUpdater.on('update-downloaded', (info) => {
-      // Let the user finish now instead of waiting for a quit, if they want.
-      void dialog
-        .showMessageBox(win, {
-          type: 'info',
-          buttons: ['Restart now', 'Later'],
-          defaultId: 0,
-          title: 'Update ready',
-          message: `Chess Vault ${info.version} is ready to install.`,
-          detail: 'It will install automatically when you quit, or restart now.',
-        })
-        .then((r) => {
-          if (r.response === 0) autoUpdater.quitAndInstall();
-        });
-    });
-    autoUpdater.on('error', (err) => console.error('[updater]', err?.message ?? err));
+    const autoUpdater = await wiredUpdater();
     await autoUpdater.checkForUpdates();
   } catch (err) {
     console.error('[updater] disabled:', err?.message ?? err);

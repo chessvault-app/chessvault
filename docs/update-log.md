@@ -5,6 +5,24 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The desktop app says what an update is doing, and offers the restart
+  itself.** It downloads an installer of some eighty megabytes in the
+  background and said nothing at all while it did, so a slow connection and
+  a stalled one looked identical; then it finished in a native message box,
+  which arrives over whatever you were in the middle of, is not in the
+  app's language, and whose “Later” took the offer to restart away for the
+  rest of the run. Settings → Version now reports the download as it runs —
+  “Downloading {version} — {done} of {total}”, with a bar — and when it is
+  complete keeps “{version} is ready — restart to install it.” and a
+  **Restart now** button on the card until you take them. Nothing is
+  interrupted, and nothing is lost by not looking. Quitting still installs
+  it, as before. A check that simply fails — offline, or no release
+  published yet — stays where it was, behind the **Check for updates**
+  button; only a download that broke says so on the card, and its reason is
+  translated now rather than handed back in English.
+
 ## 0.7.0
 
 The workspace, with every analysis surface on one page; links written on a

@@ -11,4 +11,14 @@ contextBridge.exposeInMainWorld('vaultShell', {
   // used to go to a console nobody opens.
   appInfo: () => ipcRenderer.invoke('app:info'),
   checkForUpdates: () => ipcRenderer.invoke('app:check-updates'),
+  // A download used to say nothing at all while it ran, and finish in a
+  // native dialog. Both now belong to the page: it asks where the download
+  // has got to, listens for the rest of it, and offers the restart itself.
+  updateStatus: () => ipcRenderer.invoke('app:update-status'),
+  onUpdateStatus: (fn) => {
+    const listener = (_e, state) => fn(state);
+    ipcRenderer.on('app:update-status', listener);
+    return () => ipcRenderer.removeListener('app:update-status', listener);
+  },
+  restartToUpdate: () => ipcRenderer.invoke('app:restart-to-update'),
 });
