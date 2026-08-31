@@ -59,7 +59,14 @@ const FOLLOW = 0.5;
 const WALL_FOLLOW = 0.15;
 const WALL_PX = 10;
 
-/** How long the pane takes to settle, whether it turned or sprang back. */
+/**
+ * How long the pane takes to settle, whether it turned or sprang back.
+ *
+ * The JS half of `--pane-turn` in index.css, which is what actually times
+ * the motion — this is only how long the column is left carrying it. It
+ * must not be the shorter of the two, or the offset is taken away
+ * mid-transition and the pane jumps the rest of the way.
+ */
 const SETTLE_MS = 200;
 
 /**

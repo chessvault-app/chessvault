@@ -1256,10 +1256,18 @@ cg-board square.check {
    here so that a pane leaning past the column's edge cannot become
    somewhere the page can be dragged sideways.
 
-   The 200ms is the same wait the hook clears up after. Under
-   `prefers-reduced-motion` the base block above flattens it to nothing,
+   The duration is the same wait the hook clears up after (SETTLE_MS). It
+   is a property rather than a literal because the turn is drawn in two
+   places — the pane moves here, and the strip's selected pill fills in
+   components/pane-tabs — and those two are one motion. Under
+   `prefers-reduced-motion` the base block above flattens both to nothing,
    which lands back on the instant swap this gesture had before it
    moved at all. */
+:root {
+  --pane-turn: 200ms;
+  --pane-turn-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 [data-pane-swipe] {
   overflow-x: clip;
 }
@@ -1271,8 +1279,8 @@ cg-board square.check {
 
 [data-pane-swipe='settle'] > *:not([data-pane-strip]) {
   transition:
-    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 200ms ease-out;
+    transform var(--pane-turn) var(--pane-turn-ease),
+    opacity var(--pane-turn) ease-out;
 }
 
 /* ---------------------------------------------------------------------------
