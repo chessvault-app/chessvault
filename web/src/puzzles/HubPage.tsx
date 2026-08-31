@@ -345,7 +345,10 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
   return (
     <div
       className={cn(
-        'bg-card flex w-full items-stretch gap-3 rounded-xl ring-1 ring-foreground/10 px-2.5 py-1.5',
+        // border, not ring: PuzzleCard's own geometry is `border
+        // px-2.5 py-1.5`, and a ring costs no layout — so each slot
+        // stood 2px short of the card that replaced it.
+        'bg-card border-border flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
         fill && 'min-h-0 flex-1',
       )}
     >

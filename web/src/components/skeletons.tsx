@@ -184,9 +184,12 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
   return (
     <Loading className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', className)}>
       {Array.from({ length: cards }, (_, i) => (
+        // border, not ring: BookCard is `border p-3` on both shelves, and
+        // a ring is a box-shadow that costs no layout — so the placeholder
+        // measured 120px against the card’s 122.
         <div
           key={i}
-          className="bg-card flex w-full items-stretch gap-3 rounded-xl ring-1 ring-foreground/10 p-3"
+          className="bg-card border-border flex w-full items-stretch gap-3 rounded-xl border p-3"
         >
           {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
               the size it will be rather than the size it looks like. */}
@@ -194,7 +197,9 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
           <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
             <Skeleton className="h-3.5 w-4/5" />
             <Skeleton className="h-2.5 w-1/3" />
-            <Skeleton className="mt-auto h-1.5 w-full rounded-full" />
+            {/* The Progress track’s own h-1, like SkeletonTiles — not the
+                h-1.5 this guessed. */}
+            <Skeleton className="mt-auto h-1 w-full rounded-full" />
           </div>
         </div>
       ))}
@@ -269,14 +274,16 @@ export function SkeletonTiles({
  *
  * Not SkeletonRows, which is what this page used to draw — a stack of
  * full-width bars for a page whose content is a 2-to-4 column grid of
- * 54px cards. The bars were both the wrong shape and the wrong height,
+ * 58px cards. The bars were both the wrong shape and the wrong height,
  * so the page rearranged completely as the themes landed.
  */
 export function SkeletonThemeCard({ className }: { className?: string }) {
   return (
     <div
+      // border, not ring — ThemeCard is `border px-3 py-2.5`, so this
+      // stood 56px against its 58.
       className={cn(
-        'bg-card flex items-center gap-2.5 rounded-xl ring-1 ring-foreground/10 px-3 py-2.5',
+        'bg-card border-border flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
         className,
       )}
     >
