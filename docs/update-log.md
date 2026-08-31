@@ -7,6 +7,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo's own vault is fully indexed again, and it says which build
+  it is.** Two bugs in the static demo, both invisible from the source.
+  Its my-games index walks the vault a slice at a time and reschedules the
+  rest with `setImmediate`, which a browser has not got: the first walk
+  threw after one slice and, having already set its own in-progress flag,
+  was never rescheduled — so the index froze at 9 of the 30 sample games
+  and the explorer went on reporting confidently on a third of the vault,
+  with nothing to say it was partial. The opening map's compare panel,
+  which asks that route directly, simply failed. A shim supplies
+  `setImmediate` as a real yield to the page rather than a microtask, and
+  all 30 games (1,638 positions) are indexed. Separately, the demo's
+  health route omitted the version and the build stamp, and Settings →
+  Version reads their absence as an answer still in flight: the Built row
+  held a loading placeholder that pulsed for as long as anybody watched
+  it. Both are known when the demo is built, and it now answers with them.
+
 - **The desktop app says what an update is doing, and offers the restart
   itself.** It downloads an installer of some eighty megabytes in the
   background and said nothing at all while it did, so a slow connection and

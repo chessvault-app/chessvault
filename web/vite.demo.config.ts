@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { cpSync } from 'node:fs';
+import { cpSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { licenses } from './vite.licenses.ts';
 
@@ -29,6 +29,20 @@ function demoAssets(): Plugin {
 }
 
 /**
+ * What the demo's /api/health says it is.
+ *
+ * The real server reads the version out of package.json and stamps the
+ * build from `dist/index.html`'s mtime; neither file is reachable from a
+ * page, so both are settled here, at the moment that mtime would be
+ * written anyway. The format matches the server's to the second, because
+ * the Settings card prints whichever it is given without knowing which
+ * deployment answered.
+ */
+const APP_VERSION = (JSON.parse(readFileSync(`${repo}package.json`, 'utf-8')) as { version: string })
+  .version;
+const BUILD_STAMP = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+/**
  * The static demo build: the whole app as files, with no server behind it.
  *
  * The trick is the aliases below. `server/studies.ts` and friends import
@@ -51,6 +65,8 @@ export default defineConfig({
     // are none, and an undefined `process` would throw at import.
     'process.env': '{}',
     __DEMO__: 'true',
+    __DEMO_VERSION__: JSON.stringify(APP_VERSION),
+    __DEMO_BUILD__: JSON.stringify(BUILD_STAMP),
   },
   resolve: {
     alias: {
