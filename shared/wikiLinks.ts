@@ -232,6 +232,26 @@ export interface WikiMention {
   readonly markAt?: number;
 }
 
+/**
+ * How many times `shown` already appears in a window, as the CONTEXT will
+ * read it rather than as the markdown spells it.
+ *
+ * The window still holds its brackets and pipes; the context has had them
+ * taken out. Counting the raw text would miss that `[[Target|Najdorf]]`
+ * contributes one "Najdorf" to what the reader sees, so the window is put
+ * through the same reading first.
+ */
+function countShown(window: string, shown: string): number {
+  const prose = asProse(window).toLowerCase();
+  const wanted = shown.toLowerCase();
+  if (!wanted) return 0;
+  let count = 0;
+  for (let at = prose.indexOf(wanted); at >= 0; at = prose.indexOf(wanted, at + wanted.length)) {
+    count += 1;
+  }
+  return count;
+}
+
 /** Index of the `nth` (0-based) case-insensitive occurrence, or -1. */
 function nthIndexOf(haystack: string, needle: string, nth: number): number {
   const lower = haystack.toLowerCase();
@@ -269,7 +289,14 @@ export function findWikiMentions(body: string): WikiMention[] {
     // backlink picks out. Where a display text was given, the context reads
     // as the note reads, so the target is what to highlight in it only if
     // it is what is actually shown.
-    found.push({ target: text === target ? target : text, at, context: asProse(body.slice(from, to)) });
+    const shown = text === target ? target : text;
+    const context = asProse(body.slice(from, to));
+    // WHICH of them, when a sentence links the same document twice. Without
+    // this both rows marked the first occurrence and looked identical —
+    // the unlinked side learned this first, and the linked side had exactly
+    // the same fault for exactly as long.
+    const earlier = countShown(body.slice(from, at), shown);
+    found.push({ target: shown, at, context, markAt: nthIndexOf(context, shown, earlier) });
   }
   return found;
 }

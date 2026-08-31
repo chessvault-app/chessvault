@@ -286,6 +286,21 @@ describe('findWikiMentions', () => {
     expect(found[0]!.context).toBe('The rook lift I keep missing shows up in Najdorf again.');
   });
 
+  it('says which occurrence, when one sentence links a document twice', () => {
+    // Both rows marked the first one before this, and looked identical.
+    const found = findWikiMentions('[[Same]] here and [[Same]] again.');
+    expect(found).toHaveLength(2);
+    expect(found[0]!.markAt).toBe(0);
+    expect(found[1]!.markAt).toBe('Same here and '.length);
+  });
+
+  it('counts the words the reader sees, not the markdown', () => {
+    // The first link SHOWS "Same" through its display text, so the second
+    // is the reader's second — even though the raw text differs.
+    const found = findWikiMentions('[[Other|Same]] here and [[Same]] again.');
+    expect(found[1]!.markAt).toBe('Same here and '.length);
+  });
+
   it('finds several in one body', () => {
     const found = findWikiMentions('See [[One]] and also [[Two]].');
     expect(found.map((m) => m.target)).toEqual(['One', 'Two']);

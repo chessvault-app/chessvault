@@ -237,7 +237,14 @@ function Context({ text, mark, at }: { text: string; mark: string; at?: number }
   return (
     <>
       {text.slice(0, found)}
-      <span className="text-primary">{text.slice(found, found + wanted.length)}</span>
+      {/* A block, not a colour. Coloured text asks the reader to compare two
+          shades of grey across a line to find the words that matched; a
+          filled ground says it at a glance, and reads as what it is — the
+          selection the row is about. `mark` because that is what the
+          element means, with its own yellow taken off. */}
+      <mark className="bg-primary/20 text-foreground rounded-sm px-0.5">
+        {text.slice(found, found + wanted.length)}
+      </mark>
       {text.slice(found + wanted.length)}
     </>
   );

@@ -269,6 +269,7 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
           context: mention.context,
           target: mention.target,
           at: mention.at,
+          markAt: mention.markAt,
         };
         if (list) list.push(entry);
         else links.set(key, [entry]);
