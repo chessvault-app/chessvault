@@ -453,9 +453,10 @@ function PvRow({
           nesting them in one would be invalid. The hover tint stays HERE
           rather than moving up to the li, because the zebra stripe is set
           on the li by a parent selector that would outrank it. */}
-      {/* No `title` any more. It existed because the row truncated and hid
-          the rest of the line — which hovering now shows in full, and the
-          global title tooltip would have opened over the preview board. */}
+      {/* No tip any more. It existed because the row truncated and hid the
+          rest of the line — which hovering now shows in full, and a tip
+          would have opened over the preview board this row's hover puts
+          up beside it. */}
       <div
         className={cn(
           'group hover:bg-accent flex w-full items-baseline gap-2 px-3 py-1 text-left',

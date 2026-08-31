@@ -15,6 +15,7 @@ import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import { useMediaQuery } from '@/lib/media';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
@@ -1310,12 +1311,11 @@ function NodePanel({
                       is the ordinary case, and a badge on every row is a
                       column, not a badge. */}
                   {d.collection && (
-                    <span
-                      className="bg-muted text-muted-foreground shrink-0 rounded-sm px-1.5 py-0.5 text-xs"
-                      title={t('In your collection')}
-                    >
-                      {t('Kept')}
-                    </span>
+                    <TitleTip title={t('In your collection')}>
+                      <span className="bg-muted text-muted-foreground shrink-0 rounded-sm px-1.5 py-0.5 text-xs">
+                        {t('Kept')}
+                      </span>
+                    </TitleTip>
                   )}
                   {/* Fixed columns, so four rows read as a table: results
                       right-aligned in one width, moves left-aligned in
@@ -1329,15 +1329,22 @@ function NodePanel({
                   <span className="flex w-11 shrink-0 justify-end">
                     <ResultBadge result={d.result} />
                   </span>
-                  <span
-                    className={cn(
-                      'min-w-11 shrink-0 text-sm font-medium',
-                      d.userDeviated ? 'text-warn' : 'text-muted-foreground',
-                    )}
-                    title={d.userDeviated ? t('You left the book with this move') : t('They left the book with this move')}
+                  <TitleTip
+                    title={
+                      d.userDeviated
+                        ? t('You left the book with this move')
+                        : t('They left the book with this move')
+                    }
                   >
-                    {san}
-                  </span>
+                    <span
+                      className={cn(
+                        'min-w-11 shrink-0 text-sm font-medium',
+                        d.userDeviated ? 'text-warn' : 'text-muted-foreground',
+                      )}
+                    >
+                      {san}
+                    </span>
+                  </TitleTip>
                   {!charted ? (
                     <Button
                       variant="ghost"

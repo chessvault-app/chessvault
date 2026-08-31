@@ -54,6 +54,7 @@ import { movePasses, releaseAdjudicator } from '@/engine/adjudicate';
 import { AnswerPanel } from '../AnswerPanel';
 
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import {
   type BookDetail,
   type CycleWindow,
@@ -531,9 +532,15 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           (() => {
             const meta = PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META];
             return (
-              <span title={`${t(meta.label)} — ${t(meta.title)}`} className="shrink-0 cursor-help">
-                <meta.icon className={cn('size-3.5', meta.iconClass)} aria-hidden />
-              </span>
+              <TitleTip title={`${t(meta.label)} — ${t(meta.title)}`}>
+                <span
+                  role="img"
+                  aria-label={`${t(meta.label)} — ${t(meta.title)}`}
+                  className="shrink-0 cursor-help"
+                >
+                  <meta.icon className={cn('size-3.5', meta.iconClass)} aria-hidden />
+                </span>
+              </TitleTip>
             );
           })()}
       </span>

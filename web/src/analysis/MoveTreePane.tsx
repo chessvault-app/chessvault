@@ -11,6 +11,7 @@ import { useReview } from '@/store/review';
 import { ANNOTATION_CLASS, usePrefs } from '@/store/prefs';
 import { useBookTags } from '@/lib/opening';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 import { figurine, NAG_GLYPH } from './notation';
 
@@ -449,9 +450,11 @@ function MoveCell({
         </span>
       )}
       {bookIds.has(id) && (
-        <span className="self-center" title={t('Book move')}>
-          <BookOpen className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')} />
-        </span>
+        <TitleTip title={t('Book move')}>
+          <span role="img" aria-label={t('Book move')} className="self-center">
+            <BookOpen className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')} />
+          </span>
+        </TitleTip>
       )}
     </button>
   );
@@ -699,20 +702,25 @@ function MoveChip({ id, label, number, nags, hasComment, active, book = false, o
           </span>
         )}
         {book && (
-          <span className="ml-1 inline-block align-middle" title={t('Book move')}>
-            <BookOpen
-              className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')}
-            />
-          </span>
+          <TitleTip title={t('Book move')}>
+            <span role="img" aria-label={t('Book move')} className="ml-1 inline-block align-middle">
+              <BookOpen
+                className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')}
+              />
+            </span>
+          </TitleTip>
         )}
         {hasComment && (
-          <span
-            className={cn(
-              'ml-1 inline-block size-1 rounded-full align-middle',
-              active ? 'bg-primary-foreground/70' : 'bg-info',
-            )}
-            title={t('Has a comment')}
-          />
+          <TitleTip title={t('Has a comment')}>
+            <span
+              role="img"
+              aria-label={t('Has a comment')}
+              className={cn(
+                'ml-1 inline-block size-1 rounded-full align-middle',
+                active ? 'bg-primary-foreground/70' : 'bg-info',
+              )}
+            />
+          </TitleTip>
         )}
       </button>
     </span>

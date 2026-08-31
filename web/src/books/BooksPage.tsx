@@ -19,6 +19,7 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { api, apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 
@@ -542,14 +543,14 @@ function BookCard({
                   : t('Read')}
               {book.puzzleBook && !reading && (
                 // Read into the puzzle shelf: the same mark that shelf wears,
-                // so the two halves of one book recognise each other.
-                <span
-                  className="text-foreground/80 ml-auto inline-flex items-center gap-1"
-                  title={t('Puzzle book: {title}', { title: book.puzzleBook.title })}
-                >
-                  <BookMarked className="size-3 shrink-0" />
-                  {t('Puzzle book')}
-                </span>
+                // so the two halves of one book recognise each other. The
+                // mark says THAT there is one; the tip says which.
+                <TitleTip title={t('Puzzle book: {title}', { title: book.puzzleBook.title })}>
+                  <span className="text-foreground/80 ml-auto inline-flex items-center gap-1">
+                    <BookMarked className="size-3 shrink-0" />
+                    {t('Puzzle book')}
+                  </span>
+                </TitleTip>
               )}
             </span>
           </span>

@@ -42,9 +42,13 @@ export function ResultBadge({
         : winner === 'white'
           ? 'bg-eval-white text-on-eval-white'
           : 'bg-eval-black text-on-eval-black';
+  // No tip: it said `fmt(result)`, which is exactly the four characters
+  // printed inside it. A tooltip that repeats its own trigger is a hover
+  // that answers nothing — and this chip sits inside row buttons that
+  // carry a title of their own, so pointing at it now falls through to
+  // the row's, which is the tip that had something to add.
   return (
     <span
-      title={fmt(result)}
       className={cn(
         'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-semibold',
         'tabular-nums leading-4',

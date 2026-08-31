@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import { useEngine } from '@/store/engine';
 import { formatScore, formatScoreCompact, toWhitePov, winningChances } from './uci.ts';
 
@@ -101,55 +102,55 @@ export function EvalBarSlot({
   // edge.
   if (!reserve && !drawn) return null;
   return (
-    <div
-      className={cn('hidden shrink-0 wide:block', drawn && 'roomy:block', EVAL_BAR_W)}
-      aria-hidden
-    />
-  );
-}
-
-/**
- * A row laid over the BOARD, not over the board's column.
- *
- * The column is this bar's lane plus the board, so a `w-full` row above or
- * below the board starts a bar's width and a gap to the LEFT of the board it
- * describes — a player's colour swatch lining up with nothing (lanph3re).
- * This is the board row's own geometry, reused: the same reservation on the
- * left (`EvalBarSlot`, hidden exactly where the bar is), the same `flex-1`
- * cell, and the child then carries `.board-box` so it rounds down to the
- * pixel grid and centres in that cell exactly as the board does. The cell
- * alone is not enough: the board box is up to a square-quantum narrower
- * than the cell and centres in what is left, so a row that filled the cell
- * still started a couple of pixels left of the a-file (2px at 1280x800,
- * and it moves with the window).
- *
- * The gap costs nothing when stacked: the slot is `display: none` there, so
- * it is not a flex item and there is no gap to draw either side of it.
- *
- * Every row that stands over a board wears one, and they are not all
- * players: the repertoire's two side slots, which exist so its board sits
- * where the Board tab's does, and the line the book trainer's entry board
- * prints under itself. A row that skips it is a row that says it belongs to
- * the board and then starts somewhere else.
- */
-export function BoardLane({
-  bar = false,
-  reserve = true,
-  className,
-  children,
-}: {
-  /** Whether a bar is drawn beside the board — see `EvalBarSlot`'s `drawn`. */
-  bar?: boolean;
-  /** Whether the lane is held open while no bar is in it — see `EvalBarSlot`. */
-  reserve?: boolean;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={cn('flex w-full gap-2', className)}>
-      <EvalBarSlot drawn={bar} reserve={reserve} />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+      <div
+        className={cn('hidden shrink-0 wide:block', drawn && 'roomy:block', EVAL_BAR_W)}
+        aria-hidden
+      />
+    );
+  }
+  
+  /**
+   * A row laid over the BOARD, not over the board's column.
+   *
+   * The column is this bar's lane plus the board, so a `w-full` row above or
+   * below the board starts a bar's width and a gap to the LEFT of the board it
+   * describes — a player's colour swatch lining up with nothing (lanph3re).
+   * This is the board row's own geometry, reused: the same reservation on the
+   * left (`EvalBarSlot`, hidden exactly where the bar is), the same `flex-1`
+   * cell, and the child then carries `.board-box` so it rounds down to the
+   * pixel grid and centres in that cell exactly as the board does. The cell
+   * alone is not enough: the board box is up to a square-quantum narrower
+   * than the cell and centres in what is left, so a row that filled the cell
+   * still started a couple of pixels left of the a-file (2px at 1280x800,
+   * and it moves with the window).
+   *
+   * The gap costs nothing when stacked: the slot is `display: none` there, so
+   * it is not a flex item and there is no gap to draw either side of it.
+   *
+   * Every row that stands over a board wears one, and they are not all
+   * players: the repertoire's two side slots, which exist so its board sits
+   * where the Board tab's does, and the line the book trainer's entry board
+   * prints under itself. A row that skips it is a row that says it belongs to
+   * the board and then starts somewhere else.
+   */
+  export function BoardLane({
+    bar = false,
+    reserve = true,
+    className,
+    children,
+  }: {
+    /** Whether a bar is drawn beside the board — see `EvalBarSlot`'s `drawn`. */
+    bar?: boolean;
+    /** Whether the lane is held open while no bar is in it — see `EvalBarSlot`. */
+    reserve?: boolean;
+    className?: string;
+    children: ReactNode;
+  }) {
+    return (
+      <div className={cn('flex w-full gap-2', className)}>
+        <EvalBarSlot drawn={bar} reserve={reserve} />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
   );
 }
 
@@ -240,66 +241,70 @@ export function EvalBar({
   const whiteAhead = fraction >= 0.5;
 
   return (
-    <div
-      className={cn(
-        // The explicit border keeps the dark half readable against a dark
-        // panel background (and the light half against a light one).
-        // Square, not the pill it was (lanph3re's call): the ends are
-        // where the number is printed, and `rounded-full` on a 28px bar is
-        // a 14px radius — the whole of the row the digits sit in.
-        'bg-eval-black border-eval-border relative overflow-hidden border',
-        // No width of its own when horizontal: the caller says how wide,
-        // because the two of them want different answers — the board's own
-        // rectangle above a phone's board, the rest of a row in the
-        // repertoire's assessment — and a `w-full` here would beat either
-        // (utilities layer over components).
-        orientation === 'vertical'
-          ? cn('h-full', EVAL_BAR_W)
-          : showScore
-            ? EVAL_BAR_H.withScore
-            : EVAL_BAR_H.bare,
-        className,
-      )}
-      role="meter"
-      aria-valuemin={0}
-      aria-valuemax={1}
-      aria-valuenow={fraction}
-      aria-label={t('Evaluation {score}', { score: label })}
-      title={t("{score} (White's point of view)", { score: label })}
-    >
+    // The bar is the only thing on the board that says which side the
+    // number is FOR, and it says it on hover — so the tip carries real
+    // information and stays. `role="meter"` keeps its own name.
+    <TitleTip title={t("{score} (White's point of view)", { score: label })}>
       <div
-        className="bg-eval-white absolute transition-[height,width] duration-300 ease-out"
-        style={
+        className={cn(
+          // The explicit border keeps the dark half readable against a dark
+          // panel background (and the light half against a light one).
+          // Square, not the pill it was (lanph3re's call): the ends are
+          // where the number is printed, and `rounded-full` on a 28px bar is
+          // a 14px radius — the whole of the row the digits sit in.
+          'bg-eval-black border-eval-border relative overflow-hidden border',
+          // No width of its own when horizontal: the caller says how wide,
+          // because the two of them want different answers — the board's own
+          // rectangle above a phone's board, the rest of a row in the
+          // repertoire's assessment — and a `w-full` here would beat either
+          // (utilities layer over components).
           orientation === 'vertical'
-            ? { bottom: 0, left: 0, right: 0, height: percent }
-            : { top: 0, bottom: 0, left: 0, width: percent }
-        }
-      />
-      {/* No midpoint marker. There was one — 3px of red across the middle,
-          twice re-coloured to keep it legible on both halves — and it was
-          the answer to a bar that could only be read by eye: within a
-          couple of pixels of even, the eye needs something to measure the
-          split against. The number says it now, so the line was one more
-          thing drawn across a 28px bar that already carries digits, a fill
-          edge and a border (lanph3re's call to drop it). */}
-      {/* The score itself, at the leading side's end and in that side's
-          own text colour — the same pairing the result bars use. Drawn
-          over both halves; unsigned, because where it is and what colour
-          it is already say whose advantage it is (formatScoreCompact). */}
-      {readout && (
-        <span
-          className={cn(
-            'absolute font-mono text-micro leading-none tabular-nums',
+            ? cn('h-full', EVAL_BAR_W)
+            : showScore
+              ? EVAL_BAR_H.withScore
+              : EVAL_BAR_H.bare,
+          className,
+        )}
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={1}
+        aria-valuenow={fraction}
+        aria-label={t('Evaluation {score}', { score: label })}
+      >
+        <div
+          className="bg-eval-white absolute transition-[height,width] duration-300 ease-out"
+          style={
             orientation === 'vertical'
-              ? cn('inset-x-0 text-center', whiteAhead ? 'bottom-0.5' : 'top-0.5')
-              : cn('top-1/2 -translate-y-1/2', whiteAhead ? 'left-1' : 'right-1'),
-            whiteAhead ? 'text-on-eval-white' : 'text-on-eval-black',
-          )}
-          aria-hidden
-        >
-          {readout}
-        </span>
-      )}
-    </div>
+              ? { bottom: 0, left: 0, right: 0, height: percent }
+              : { top: 0, bottom: 0, left: 0, width: percent }
+          }
+        />
+        {/* No midpoint marker. There was one — 3px of red across the middle,
+            twice re-coloured to keep it legible on both halves — and it was
+            the answer to a bar that could only be read by eye: within a
+            couple of pixels of even, the eye needs something to measure the
+            split against. The number says it now, so the line was one more
+            thing drawn across a 28px bar that already carries digits, a fill
+            edge and a border (lanph3re's call to drop it). */}
+        {/* The score itself, at the leading side's end and in that side's
+            own text colour — the same pairing the result bars use. Drawn
+            over both halves; unsigned, because where it is and what colour
+            it is already say whose advantage it is (formatScoreCompact). */}
+        {readout && (
+          <span
+            className={cn(
+              'absolute font-mono text-micro leading-none tabular-nums',
+              orientation === 'vertical'
+                ? cn('inset-x-0 text-center', whiteAhead ? 'bottom-0.5' : 'top-0.5')
+                : cn('top-1/2 -translate-y-1/2', whiteAhead ? 'left-1' : 'right-1'),
+              whiteAhead ? 'text-on-eval-white' : 'text-on-eval-black',
+            )}
+            aria-hidden
+          >
+            {readout}
+          </span>
+        )}
+      </div>
+    </TitleTip>
   );
 }

@@ -27,9 +27,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * under a coarse pointer — wants `aria-label` and no tip at all, since
  * neither kind opens on touch.
  *
- * The caller translates, as Button's callers do.
+ * The caller translates, as Button's callers do. An undefined title is no
+ * tip and no wrapper, the way Button and FilterChip already treat one —
+ * a control that is only sometimes worth explaining says so by passing
+ * undefined rather than by being written twice.
  */
-export function TitleTip({ title, children }: { title: string; children: ReactElement }) {
+export function TitleTip({ title, children }: { title?: string; children: ReactElement }) {
+  if (title === undefined) return children;
   return (
     <Tooltip>
       <TooltipTrigger render={children} />

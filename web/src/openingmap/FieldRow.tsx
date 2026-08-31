@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 import type { FieldMove } from '@/repertoire/field';
 import { ResultBar } from '@/components/result-bar';
 
@@ -55,36 +56,38 @@ export function MoveCell({
 }) {
   return (
     <span className="flex shrink-0 items-center gap-1">
-      <span
-        // The tip belongs to the WORDS, not to the button around them.
-        // On the button it was an ancestor title, and an ancestor title
-        // is what the browser falls back to while our own tooltip shows
-        // for the mark inside it: two tips at once, one native and one
-        // themed, overlapping.
-        title={linked ? t('Show on the map') : undefined}
-        className={cn(
-          // inline-block/truncate, or the width is a suggestion: in the
-          // panel this sits inside the button that jumps to the node,
-          // where it is not a flex item and an inline box ignores a
-          // width outright.
-          'font-moves truncate text-sm font-semibold',
-          // The app's link colour, because the row IS a link when the
-          // move is charted — pressing it goes to that node. It said so
-          // in a tooltip and nowhere else, which is a thing you find by
-          // accident or never.
-          linked ? 'text-primary' : 'text-foreground',
-          // The fill lights the MOVE, not the cell: on the button it
-          // reached across the mark beside it, and the mark is a fact
-          // about the move rather than part of the link. `group-hover`
-          // so pointing anywhere on the control still lights it, and
-          // negative margins so the padding it needs to look like a pill
-          // costs the row no width.
-          linked &&
-            'group-hover:bg-muted -mx-1 rounded-sm px-1 transition-colors duration-100',
-        )}
-      >
-        {moveNumberLabel(ply)} {san}
-      </span>
+      {/* The tip belongs to the WORDS, not to the button around them: on
+          the button it was an ancestor title, and an ancestor title is
+          what the browser falls back to while a themed tooltip shows for
+          the mark inside it — two tips at once, one native and one
+          themed, overlapping. It is a themed tip on both now, so they
+          answer a hover the same way, four pixels apart. */}
+      <TitleTip title={linked ? t('Show on the map') : undefined}>
+        <span
+          className={cn(
+            // inline-block/truncate, or the width is a suggestion: in the
+            // panel this sits inside the button that jumps to the node,
+            // where it is not a flex item and an inline box ignores a
+            // width outright.
+            'font-moves truncate text-sm font-semibold',
+            // The app's link colour, because the row IS a link when the
+            // move is charted — pressing it goes to that node. It said so
+            // in a tooltip and nowhere else, which is a thing you find by
+            // accident or never.
+            linked ? 'text-primary' : 'text-foreground',
+            // The fill lights the MOVE, not the cell: on the button it
+            // reached across the mark beside it, and the mark is a fact
+            // about the move rather than part of the link. `group-hover`
+            // so pointing anywhere on the control still lights it, and
+            // negative margins so the padding it needs to look like a pill
+            // costs the row no width.
+            linked &&
+              'group-hover:bg-muted -mx-1 rounded-sm px-1 transition-colors duration-100',
+          )}
+        >
+          {moveNumberLabel(ply)} {san}
+        </span>
+      </TitleTip>
       {gap && (
         <Mark
           label={t('The field plays it and the studies do not answer')}
@@ -104,16 +107,19 @@ export function MoveCell({
 /**
  * An icon that says what it means when you point at it.
  *
- * The title goes on a SPAN around the glyph, not on the glyph: the
- * app's tooltips are delegated from `[title]` and skip anything that is
- * not an HTMLElement, and an `<svg>` is not one — which is how these
- * marks arrived with no tip at all. It doubles as the accessible name.
+ * The tip and the name both go on a SPAN around the glyph, never on the
+ * glyph itself: `role="img"` plus a label is what makes a picture speak,
+ * and an `<svg>` is not the element to hang either on. That span is also
+ * what the tooltip needs — a real element to position against and to
+ * describe.
  */
 function Mark({ label, icon }: { label: string; icon: ReactNode }) {
   return (
-    <span role="img" aria-label={label} title={label} className="flex shrink-0">
-      {icon}
-    </span>
+    <TitleTip title={label}>
+      <span role="img" aria-label={label} className="flex shrink-0">
+        {icon}
+      </span>
+    </TitleTip>
   );
 }
 

@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { SideDot } from '@/components/side-dot';
 import type { SideSummary } from './review';
 import { t } from '@/lib/i18n';
+import { TitleTip } from '@/components/title-tip';
 
 /**
  * Trigger for the engine review — lives in the Moves panel header, costs
@@ -398,16 +399,21 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
         {summary.acpl} acpl
       </span>
       <span className="text-muted-foreground ml-auto flex gap-2 font-mono text-xs tabular-nums">
-        <span
-          title={t('Book moves — known opening theory, not judged')}
-          className={cn(
-            'flex items-center gap-0.5',
-            summary.bookMoves === 0 ? 'text-muted-foreground/50' : 'text-muted-foreground',
-          )}
-        >
-          {summary.bookMoves}
-          <BookOpen className="size-3" />
-        </span>
+        {/* No aria-label over the count: the number IS what this reads out,
+            and Button's rule holds here too — a visible label is already
+            the accessible name and must stay it. The sentence is what the
+            hover adds. */}
+        <TitleTip title={t('Book moves — known opening theory, not judged')}>
+          <span
+            className={cn(
+              'flex items-center gap-0.5',
+              summary.bookMoves === 0 ? 'text-muted-foreground/50' : 'text-muted-foreground',
+            )}
+          >
+            {summary.bookMoves}
+            <BookOpen className="size-3" />
+          </span>
+        </TitleTip>
         <Judged count={summary.brilliancies} glyph="!!" className="text-nag-brilliant" />
         <Judged count={summary.inaccuracies} glyph="?!" className="text-nag-dubious" />
         <Judged count={summary.mistakes} glyph="?" className="text-nag-mistake" />

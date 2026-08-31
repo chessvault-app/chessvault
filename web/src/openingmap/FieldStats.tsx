@@ -143,17 +143,18 @@ export function FieldStats({
        * nothing else fits beside.
        */
       hint={
-        <span
-          className="text-muted-foreground text-xs"
+        <TitleTip
           title={
             gaps
               ? t('Games whose reply your map charts or a linked study prepares.')
               : t('{n} games in the field here', { n: exact.format(games) })
           }
         >
-          {t('{n} games', { n: compact.format(games) })}
-          {gaps ? ` · ${t('{pct}% met', { pct: Math.round(gaps.metShare * 100) })}` : ''}
-        </span>
+          <span className="text-muted-foreground text-xs">
+            {t('{n} games', { n: compact.format(games) })}
+            {gaps ? ` · ${t('{pct}% met', { pct: Math.round(gaps.metShare * 100) })}` : ''}
+          </span>
+        </TitleTip>
       }
     >
       {/* No gap between the rows, because they are striped: a stripe
