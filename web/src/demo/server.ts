@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 import { installBuffer } from './nodeShim/buffer.ts';
 import { installSetImmediate } from './nodeShim/timers.ts';
-import { seedFile } from './nodeShim/fs.ts';
+import { seedBytes, seedFile } from './nodeShim/fs.ts';
+import { registerDiagram } from '../puzzles/books/localDiagrams.ts';
+import { haveVersions, runHistory, setHistoryRoot } from './nodeShim/history.ts';
+import { vaultHistoryApi } from '../../../server/vaultHistory.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { normaliseTraining, type Training } from '@shared/training';
@@ -55,6 +58,8 @@ const DEMO_BOOK_PAGES = 8;
  * and hid the way through to the reader.
  */
 const BOOK_ID = 'b5a3e1c07f2d49b8c';
+/** The puzzle book seeded from it — demo-seed/puzzlebooks/. */
+const PUZZLE_BOOK = 'b7d4c1e93a06f52bd';
 let demoBook: Uint8Array | null = null;
 let demoBookPage: number | null = null;
 const demoBookDiagrams = new Map<string, unknown>();
@@ -213,6 +218,23 @@ function buildApp(): Hono {
    * the demo has none of.
    */
   app.route('/api', storageApi(VAULT, `${VAULT}/.data`));
+
+  /**
+   * Earlier versions, and restoring a deleted document.
+   *
+   * The app's safety net, and the demo could not show it: it is read out
+   * of `vault/.history.git` with five git commands, and a page has no git.
+   * What a page does have is every write the visitor makes, because they
+   * all go through the filesystem shim — so the shim keeps the versions
+   * and answers those five questions from them (nodeShim/history.ts). The
+   * questions are still asked by the real module; only the source moves.
+   *
+   * So the demo's history is honest: it is the visitor's own editing, not
+   * a fabricated past. It starts empty and fills as they work, which is
+   * also what the card says it is for.
+   */
+  setHistoryRoot(VAULT);
+  app.route('/api', vaultHistoryApi(VAULT, { run: runHistory, available: haveVersions }));
 
   /**
    * The library, holding the one book the demo draws for itself.
@@ -377,6 +399,31 @@ export async function installDemoBackend(): Promise<void> {
     else console.warn(`demo: no sample book (${pdf.status})`);
   } catch (error) {
     console.warn('demo: sample book unavailable —', error);
+  }
+
+  /**
+   * The pages the seeded puzzle book's positions were printed on.
+   *
+   * Evidence is the part of a book puzzle that says where it came from,
+   * and the shelf serves it out of the book's own `diagrams/` folder —
+   * so the images go into the in-memory vault at exactly that path, as
+   * bytes (see the fs shim's `Entry.bytes`). Drawn by
+   * scripts/build-demo-book.mjs from the same sheets it makes the PDF
+   * from, so the crop a puzzle shows is the page it is actually on.
+   * Not fatal: without them the source pane simply has nothing to show.
+   */
+  try {
+    for (const page of ['page003.jpg', 'page005.jpg', 'page007.jpg']) {
+      const res = await fetch(new URL(`demo/book-pages/${page}`, document.baseURI));
+      if (!res.ok) continue;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      seedBytes(`${VAULT}/puzzlebooks/${PUZZLE_BOOK}/diagrams/${page}`, bytes, Date.now());
+      // And again as an object URL, because the pane that shows a page uses
+      // an <img src> — a resource load, which a patched fetch never sees.
+      registerDiagram(PUZZLE_BOOK, page, URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' })));
+    }
+  } catch (error) {
+    console.warn('demo: book pages unavailable —', error);
   }
 
   try {

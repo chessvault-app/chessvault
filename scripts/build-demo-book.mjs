@@ -38,6 +38,8 @@ import { fileURLToPath } from 'node:url';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = resolve(REPO, 'web/demo-assets/books/sample.pdf');
+/** Page images and their diagram boxes — the puzzle book's evidence. */
+const PAGES = resolve(REPO, 'web/demo-assets/book-pages');
 
 /**
  * cburnett, as chessground ships it: one rule per piece, the SVG inlined
@@ -207,5 +209,56 @@ const page = await browser.newPage();
 await page.setContent(html(cburnett()), { waitUntil: 'load' });
 mkdirSync(dirname(OUT), { recursive: true });
 await page.pdf({ path: OUT, width: '5.5in', height: '8.5in', printBackground: true });
+
+/**
+ * The pages that carry a diagram, as images, and where on each page the
+ * diagram sits.
+ *
+ * This is the EVIDENCE a book puzzle is supposed to carry — the page it
+ * was printed on and its place on that page — and the demo's puzzle book
+ * had none, because it had nowhere to get one. Every `.page` here is
+ * exactly one PDF page (`page-break-after: always`, and the sheet is the
+ * PDF's own size), so a box measured against the page element is the box
+ * on the printed page, and `pageNNN.jpg` numbers what it is a picture of.
+ *
+ * Written beside the PDF and fetched by the demo at boot, the way its
+ * databases and its ECO tables are.
+ */
+mkdirSync(PAGES, { recursive: true });
+const evidence = await page.$$eval('.page', (pages) =>
+  pages.flatMap((sheet, index) => {
+    const board = sheet.querySelector('.board');
+    if (!board) return [];
+    const sheetBox = sheet.getBoundingClientRect();
+    const boardBox = board.getBoundingClientRect();
+    return [
+      {
+        page: index + 1,
+        rect: {
+          x: (boardBox.x - sheetBox.x) / sheetBox.width,
+          y: (boardBox.y - sheetBox.y) / sheetBox.height,
+          w: boardBox.width / sheetBox.width,
+          h: boardBox.height / sheetBox.height,
+        },
+      },
+    ];
+  }),
+);
+const sheets = await page.$$('.page');
+for (const { page: number } of evidence) {
+  await sheets[number - 1].screenshot({
+    path: resolve(PAGES, `page${String(number).padStart(3, '0')}.jpg`),
+    quality: 72,
+    type: 'jpeg',
+  });
+}
+writeFileSync(resolve(PAGES, 'evidence.json'), `${JSON.stringify(evidence, null, 2)}
+`);
+
 await browser.close();
 console.log(`${OUT}  ${(statSync(OUT).size / 1024).toFixed(0)} KB`);
+for (const { page: number, rect } of evidence) {
+  const at = resolve(PAGES, `page${String(number).padStart(3, '0')}.jpg`);
+  const box = [rect.x, rect.y, rect.w, rect.h].map((v) => v.toFixed(3)).join(' ');
+  console.log(`  page ${number}: ${(statSync(at).size / 1024).toFixed(0)} KB  rect ${box}`);
+}
