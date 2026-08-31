@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TitleTip } from '@/components/title-tip';
 import { t } from '@/lib/i18n';
 
 /**
@@ -34,33 +35,34 @@ export function ClearButton({
   className?: string;
 }) {
   return (
-    <button
-      type="button"
-      title={t(label)}
-      aria-label={t(label)}
-      // The press must not take the focus off the field being cleared.
-      onPointerDown={(e) => e.preventDefault()}
-      onClick={onClear}
-      className={cn(
-        'text-muted-foreground hover:text-foreground hover:bg-foreground/10 absolute top-1/2 grid -translate-y-1/2',
-        'size-5 place-items-center rounded-full transition-colors duration-100',
-        // 20px of disc, which a thumb misses — and misses expensively,
-        // since the field it lands on instead reopens the keyboard. The
-        // disc cannot grow: the field reserves exactly its width in
-        // padding (pr-7), so a bigger circle sits on the text. So the
-        // FINGER gets the bigger target instead, the way Switch does it.
-        //
-        // -inset-2 and not the -inset-3 used elsewhere. That reaches 36px,
-        // which is what an icon-sm Button already becomes under a thumb,
-        // and every millimetre past it is taken from the text beside it —
-        // where a mis-tap does not merely press the wrong thing, it
-        // empties the field. A destructive button is the wrong one to
-        // make greedy.
-        'pointer-coarse:before:absolute pointer-coarse:before:-inset-2 pointer-coarse:before:content-[""]',
-        className,
-      )}
-    >
-      <X className="size-3.5 shrink-0" />
-    </button>
+    <TitleTip title={t(label)}>
+      <button
+        type="button"
+        aria-label={t(label)}
+        // The press must not take the focus off the field being cleared.
+        onPointerDown={(e) => e.preventDefault()}
+        onClick={onClear}
+        className={cn(
+          'text-muted-foreground hover:text-foreground hover:bg-foreground/10 absolute top-1/2 grid -translate-y-1/2',
+          'size-5 place-items-center rounded-full transition-colors duration-100',
+          // 20px of disc, which a thumb misses — and misses expensively,
+          // since the field it lands on instead reopens the keyboard. The
+          // disc cannot grow: the field reserves exactly its width in
+          // padding (pr-7), so a bigger circle sits on the text. So the
+          // FINGER gets the bigger target instead, the way Switch does it.
+          //
+          // -inset-2 and not the -inset-3 used elsewhere. That reaches 36px,
+          // which is what an icon-sm Button already becomes under a thumb,
+          // and every millimetre past it is taken from the text beside it —
+          // where a mis-tap does not merely press the wrong thing, it
+          // empties the field. A destructive button is the wrong one to
+          // make greedy.
+          'pointer-coarse:before:absolute pointer-coarse:before:-inset-2 pointer-coarse:before:content-[""]',
+          className,
+        )}
+      >
+        <X className="size-3.5 shrink-0" />
+      </button>
+    </TitleTip>
   );
 }

@@ -169,9 +169,12 @@ export function Fab({
           </button>
         ))}
 
+      {/* aria-label and no tip: every call site draws this `md:hidden`, so
+          the only pointer that reaches it is a thumb — and no tooltip in
+          this app opens on touch. The title beside it could not be shown
+          to anyone. */}
       <button
         type="button"
-        title={single ? t(single.label) : t(label)}
         aria-label={single ? t(single.label) : t(label)}
         aria-expanded={single ? undefined : open}
         onClick={() => (single ? single.onSelect() : setOpen((v) => !v))}

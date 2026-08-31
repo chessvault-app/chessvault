@@ -241,9 +241,13 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
       }}
       className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9"
     >
+      {/* aria-label and no tip: a fine pointer answers this hover with the
+          scan crop below, which is the whole point of the eye, and a tip
+          would be a second floating box over the first. A coarse one taps
+          the crop open and never hovers at all. */}
       <button
         type="button"
-        title={t('Peek at the book scan')}
+        aria-label={t('Peek at the book scan')}
         onClick={(e) => {
           if (!fine()) {
             e.stopPropagation();

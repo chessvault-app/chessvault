@@ -490,11 +490,14 @@ function PvRow({
             deliberate here, so a row pushing the next one down is the
             answer to a press rather than something that happened while a
             thumb was on its way somewhere else. */}
+        {/* aria-label and no tip: this button is `display:none` under a
+            fine pointer, and neither kind of tooltip opens on touch — so
+            the title it used to carry could not be shown to anyone. */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          title={t(open ? 'Show one line' : 'Show the whole variation')}
+          aria-label={t(open ? 'Show one line' : 'Show the whole variation')}
           className={cn(
             'text-muted-foreground hover:text-foreground -me-1 hidden size-6 shrink-0',
             'place-items-center rounded-md pointer-coarse:grid',

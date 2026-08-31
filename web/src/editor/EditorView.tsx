@@ -25,6 +25,7 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Field } from '@/components/ui/field';
+import { TitleTip } from '@/components/title-tip';
 import { Select } from '@/components/ui/select';
 import { Segmented } from '@/components/segmented';
 import { Input } from '@/components/ui/input';
@@ -1148,33 +1149,33 @@ function PiecePalette({
             {ROLES.map((role) => {
               const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
               return (
-                <button
-                  key={role}
-                  type="button"
-                  aria-label={placeLabel(color, role)}
-                  title={placeLabel(color, role)}
-                  onClick={() => onPick({ kind: 'piece', role, color })}
-                  // A drag is chessground's from the first pixel; a clean
-                  // click (no movement, so no drop) still arms the tool.
-                  onMouseDown={(e) => onDragStart?.(color, role, e.nativeEvent)}
-                  onTouchStart={(e) => onDragStart?.(color, role, e.nativeEvent)}
-                  className={cn(
-                    // A board-square backdrop: --board-light is tuned per theme
-                    // to keep BOTH piece colours legible, which the page
-                    // background is not (black pieces vanish on dark).
-                    // touch-none: a touch on a palette piece starts a drag,
-                    // never a page scroll.
-                    'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
-                    'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
-                    active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
-                  )}
-                >
-                  {/* Same sprite-reuse trick as the promotion picker. */}
-                  <span
-                    className="block size-full"
-                    dangerouslySetInnerHTML={{ __html: `<piece class="${role} ${color}"></piece>` }}
-                  />
-                </button>
+                <TitleTip key={role} title={placeLabel(color, role)}>
+                  <button
+                    type="button"
+                    aria-label={placeLabel(color, role)}
+                    onClick={() => onPick({ kind: 'piece', role, color })}
+                    // A drag is chessground's from the first pixel; a clean
+                    // click (no movement, so no drop) still arms the tool.
+                    onMouseDown={(e) => onDragStart?.(color, role, e.nativeEvent)}
+                    onTouchStart={(e) => onDragStart?.(color, role, e.nativeEvent)}
+                    className={cn(
+                      // A board-square backdrop: --board-light is tuned per theme
+                      // to keep BOTH piece colours legible, which the page
+                      // background is not (black pieces vanish on dark).
+                      // touch-none: a touch on a palette piece starts a drag,
+                      // never a page scroll.
+                      'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
+                      'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
+                      active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
+                    )}
+                  >
+                    {/* Same sprite-reuse trick as the promotion picker. */}
+                    <span
+                      className="block size-full"
+                      dangerouslySetInnerHTML={{ __html: `<piece class="${role} ${color}"></piece>` }}
+                    />
+                  </button>
+                </TitleTip>
               );
             })}
           </div>

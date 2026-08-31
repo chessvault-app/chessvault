@@ -6,6 +6,7 @@ import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { Field } from '@/components/ui/field';
 import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
+import { TitleTip } from '@/components/title-tip';
 import type { NodeCoverage } from './coverage';
 import { LIST, MoveCell, MoveResult, ROW, RowTail } from './FieldRow';
 import { GAP_SHARE, type NodeGaps } from './gaps';
@@ -213,24 +214,26 @@ export function FieldStats({
                 {childId ? (
                   <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
                 ) : (
-                  <button
-                    type="button"
-                    title={t('Chart it on the map')}
-                    onClick={() => onAdd(move.san)}
-                    // The glyph was the whole target: 14px, which a thumb
-                    // misses. RowTail's slot is w-3.5 and has to stay that
-                    // width — it is what stops the percentage column
-                    // zigzagging — so the mark keeps its size and the
-                    // FINGER gets a bigger one, the way Switch does it. An
-                    // invisible inset takes the target to 38px on a coarse
-                    // pointer and moves nothing.
-                    className={cn(
-                      'text-muted-foreground hover:text-foreground relative shrink-0',
-                      'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
-                    )}
-                  >
-                    <Plus className="size-3.5" />
-                  </button>
+                  <TitleTip title={t('Chart it on the map')}>
+                    <button
+                      type="button"
+                      aria-label={t('Chart it on the map')}
+                      onClick={() => onAdd(move.san)}
+                      // The glyph was the whole target: 14px, which a thumb
+                      // misses. RowTail's slot is w-3.5 and has to stay that
+                      // width — it is what stops the percentage column
+                      // zigzagging — so the mark keeps its size and the
+                      // FINGER gets a bigger one, the way Switch does it. An
+                      // invisible inset takes the target to 38px on a coarse
+                      // pointer and moves nothing.
+                      className={cn(
+                        'text-muted-foreground hover:text-foreground relative shrink-0',
+                        'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
+                      )}
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                  </TitleTip>
                 )}
               </RowTail>
             </div>

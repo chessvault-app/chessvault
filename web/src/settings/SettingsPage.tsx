@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Disclosure } from '@/components/disclosure';
 import { SettingRow } from '@/components/setting-row';
+import { TitleTip } from '@/components/title-tip';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -1187,14 +1188,16 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
             value={token}
             onChange={(e) => setToken(e.target.value)}
           />
-          <button
-            type="button"
-            onClick={() => setShow((v) => !v)}
-            title={show ? 'Hide token' : 'Show token'}
-            className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 grid w-9 place-items-center"
-          >
-            {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-          </button>
+          <TitleTip title={t(show ? 'Hide token' : 'Show token')}>
+            <button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              aria-label={t(show ? 'Hide token' : 'Show token')}
+              className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 grid w-9 place-items-center"
+            >
+              {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </TitleTip>
         </div>
         <Button variant="default" disabled={token.trim() === ''} onClick={() => void save()}>{t('Save')}</Button>
         {settings.lichess.configured && (

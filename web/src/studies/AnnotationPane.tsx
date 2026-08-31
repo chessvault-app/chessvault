@@ -10,6 +10,7 @@ import { autoFocusField, isCoarsePointer } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/components/chip-row';
+import { TitleTip } from '@/components/title-tip';
 import { t } from '@/lib/i18n';
 
 /** Move-quality NAGs — one of these at most, like Lichess. */
@@ -152,20 +153,22 @@ export function AnnotationPane({
   // measure itself and keep its scroll arrows. The glyphs a move carries
   // are already on the move in the tree, so the toggle stays a toggle.
   const toggle = (
-    <button
-      type="button"
-      aria-expanded={paletteOpen}
-      title={t(paletteOpen ? 'Hide glyphs' : 'Show glyphs')}
-      onClick={() => setPaletteOpen((open) => !open)}
-      className={cn(
-        'text-muted-foreground hover:bg-accent hover:text-foreground flex shrink-0 items-center self-stretch',
-        'rounded-sm px-1 transition-colors duration-100',
-      )}
-    >
-      <ChevronDown
-        className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
-      />
-    </button>
+    <TitleTip title={t(paletteOpen ? 'Hide glyphs' : 'Show glyphs')}>
+      <button
+        type="button"
+        aria-expanded={paletteOpen}
+        aria-label={t(paletteOpen ? 'Hide glyphs' : 'Show glyphs')}
+        onClick={() => setPaletteOpen((open) => !open)}
+        className={cn(
+          'text-muted-foreground hover:bg-accent hover:text-foreground flex shrink-0 items-center self-stretch',
+          'rounded-sm px-1 transition-colors duration-100',
+        )}
+      >
+        <ChevronDown
+          className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
+        />
+      </button>
+    </TitleTip>
   );
 
   const placeholder = atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`;
