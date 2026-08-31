@@ -249,3 +249,128 @@ describe('unlinked mentions', () => {
     expect(res.status).toBe(400);
   });
 });
+
+/**
+ * A study or a game as the SOURCE of a link, not just its target.
+ *
+ * A PGN holds prose only inside its `{...}` comments, so this is as much
+ * about what is NOT read — movetext, headers — as about what is.
+ */
+describe('links written in move comments', () => {
+  let root: string;
+  let notes: string;
+  let studies: string;
+  let games: string;
+  let app: Hono;
+
+  const study = (id: string, pgn: string): void => writeFileSync(join(studies, `${id}.pgn`), pgn);
+
+  const get = async (section: string, id: string) => {
+    const res = await app.request(`/api/links/${section}/${encodeURIComponent(id)}`);
+    expect(res.status).toBe(200);
+    return await res.json();
+  };
+
+  beforeAll(() => {
+    root = mkdtempSync(join(tmpdir(), 'links-pgn-'));
+    notes = join(root, 'notes');
+    studies = join(root, 'studies');
+    games = join(root, 'games');
+    for (const d of [notes, studies, games]) mkdirSync(d, { recursive: true });
+
+    writeFileSync(join(notes, 'Poisoned Pawn.md'), '# Poisoned Pawn\n');
+    // Two chapters, so the reported chapter is not trivially zero.
+    study(
+      'Najdorf Files',
+      [
+        '[Event "Najdorf Files: Chapter 1"]',
+        '[Result "*"]',
+        '',
+        '1. e4 c5 *',
+        '',
+        '[Event "Najdorf Files: Chapter 2"]',
+        '[Result "*"]',
+        '',
+        '1. e4 { The point is [[Poisoned Pawn]] here. } c5 *',
+        '',
+      ].join('\n'),
+    );
+    app = new Hono().route('/api', linksApi(notes, studies, games));
+  });
+
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  it('reports a study that links a note from a move comment', async () => {
+    const { mentions } = await get('notes', 'Poisoned Pawn');
+    expect(mentions).toHaveLength(1);
+    expect(mentions[0]!.from).toBe('Najdorf Files');
+    expect(mentions[0]!.fromSection).toBe('studies');
+  });
+
+  it('says which chapter the comment was in', async () => {
+    const { mentions } = await get('notes', 'Poisoned Pawn');
+    expect(mentions[0]!.chapter).toBe(1);
+  });
+
+  it('reports an offset that still points at the link in the file', async () => {
+    const { mentions } = await get('notes', 'Poisoned Pawn');
+    const file = readFileSync(join(studies, 'Najdorf Files.pgn'), 'utf-8');
+    expect(file.slice(mentions[0]!.at)).toMatch(/^\[\[Poisoned Pawn\]\]/);
+  });
+
+  /**
+   * The reason a PGN is read by comment and not whole. Every move in the
+   * file is a chance for a document named after one to match.
+   */
+  it('never finds an unlinked mention in movetext', async () => {
+    writeFileSync(join(notes, 'e4.md'), '# e4\n');
+    writeFileSync(join(notes, 'Najdorf Files.md'), '# Najdorf Files\n');
+    const move = await get('notes', 'e4');
+    expect(move.unlinked).toEqual([]);
+    // And not in a header either, where the study's own name is written.
+    const header = await get('notes', 'Najdorf Files');
+    expect(header.unlinked).toEqual([]);
+  });
+
+  it('turns an unlinked mention in a comment into a link, in place', async () => {
+    study(
+      'Loose',
+      ['[Event "Loose"]', '[Result "*"]', '', '1. e4 { Compare Poisoned Pawn. } *', ''].join('\n'),
+    );
+    const { unlinked } = await get('notes', 'Poisoned Pawn');
+    const hit = unlinked.find((m: { from: string }) => m.from === 'Loose');
+    expect(hit).toBeDefined();
+    const res = await app.request('/api/links/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        section: 'studies',
+        note: hit.from,
+        at: hit.at,
+        text: hit.target,
+        target: 'Poisoned Pawn',
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(readFileSync(join(studies, 'Loose.pgn'), 'utf-8')).toContain(
+      '1. e4 { Compare [[Poisoned Pawn]]. } *',
+    );
+  });
+
+  it('rewrites a link inside a comment when its target is renamed', () => {
+    study(
+      'Renamed',
+      ['[Event "Renamed"]', '[Result "*"]', '', '1. e4 { See [[Poisoned Pawn]]. } c5 *', ''].join(
+        '\n',
+      ),
+    );
+    renameSync(join(notes, 'Poisoned Pawn.md'), join(notes, 'Poisoned Pawn Variation.md'));
+    linkRenamer(notes, studies, games).moved('Poisoned Pawn', 'Poisoned Pawn Variation');
+    const file = readFileSync(join(studies, 'Renamed.pgn'), 'utf-8');
+    expect(file).toContain('{ See [[Poisoned Pawn Variation]]. }');
+    // The moves either side of the comment are untouched — the rewrite is
+    // confined to the comment spans, never applied to the file at large.
+    expect(file).toContain('1. e4 {');
+    expect(file).toContain('} c5 *');
+  });
+});

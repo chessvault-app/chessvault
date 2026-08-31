@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parsePgn, parseComment, walk, type PgnNodeData } from 'chessops/pgn';
-import { chaptersToPgn, gameToTree, pgnToChapters, studyNameFromPgn, treeToPgn } from './pgn.ts';
+import {
+  chaptersToPgn,
+  commentSpans,
+  gameToTree,
+  pgnToChapters,
+  studyNameFromPgn,
+  treeToPgn,
+} from './pgn.ts';
 import { addSan, collectSubtree, createTree, getNode, updateNode } from './tree.ts';
 import type { MoveTree } from './types.ts';
 
@@ -269,5 +276,57 @@ describe('studyNameFromPgn', () => {
     expect(studyNameFromPgn(mixed)).toBeNull();
     expect(studyNameFromPgn('[Event "?"]\n\n1. e4 *\n')).toBeNull();
     expect(studyNameFromPgn('1. e4 e5 *\n')).toBeNull();
+  });
+});
+
+describe('commentSpans', () => {
+  const file = [
+    '[Event "One"]',
+    '[Result "*"]',
+    '',
+    '1. e4 { first note } e5 { second note } *',
+    '',
+    '[Event "Two"]',
+    '[Result "*"]',
+    '',
+    '1. d4 { third note, in chapter two } *',
+    '',
+  ].join('\n');
+
+  it('finds every comment with the offset it sits at', () => {
+    const spans = commentSpans(file);
+    expect(spans.map((s) => s.text)).toEqual([
+      ' first note ',
+      ' second note ',
+      ' third note, in chapter two ',
+    ]);
+    // The offset is what the backlink index reports and what the
+    // link-this-mention button writes at, so it has to be exact.
+    for (const span of spans) expect(file.slice(span.at, span.at + span.text.length)).toBe(span.text);
+  });
+
+  it('says which game each comment came from', () => {
+    expect(commentSpans(file).map((s) => s.chapter)).toEqual([0, 0, 1]);
+  });
+
+  /**
+   * The reason this scans comments and not the file. A study named after a
+   * move would otherwise match every game in the vault, and the panel that
+   * suggests linking mentions would fill with movetext.
+   */
+  it('never reports movetext', () => {
+    const text = commentSpans(file)
+      .map((s) => s.text)
+      .join(' ');
+    expect(text).not.toContain('e4');
+    expect(text).not.toContain('Event');
+  });
+
+  it('ignores an unterminated comment rather than running to the end', () => {
+    expect(commentSpans('1. e4 { never closed')).toEqual([]);
+  });
+
+  it('gives a comment before any Event tag to the first game', () => {
+    expect(commentSpans('{ prelude } 1. e4 *')[0]!.chapter).toBe(0);
   });
 });

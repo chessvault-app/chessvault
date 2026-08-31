@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { FileText, Link } from 'lucide-react';
+import { Link } from 'lucide-react';
 import type { LinkSection } from '@shared/wikiLinks';
+import { SECTION_ICON } from '@/lib/sectionIcon';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
@@ -12,9 +13,8 @@ import { t } from '@/lib/i18n';
  *
  * Links point one way on disk — a note writes `[[Some Game]]` and the game
  * knows nothing about it — so this asks the server, which derives the
- * reverse by reading the notes. Only notes can hold a link today, studies
- * and games being PGN with no markdown body, so a document is a target
- * here and never a source.
+ * reverse by reading every document. All three can be a source now: a note
+ * anywhere in its markdown, a study or a game inside a move comment.
  *
  * Placement took three tries and each was wrong for a reason worth
  * keeping. A section at the foot of the moves panel looked natural and was
@@ -39,6 +39,15 @@ import { t } from '@/lib/i18n';
 
 interface Mention {
   from: string;
+  /**
+   * Which kind of document it was written in. A mention could only come
+   * from a note when this was built, so the row navigated to `notes`
+   * without asking; a comment on a move can hold a link now, and a
+   * backlink that opens the wrong section is worse than none.
+   */
+  fromSection: LinkSection;
+  /** Which chapter of a study, so the row opens the one that mentions it. */
+  chapter?: number;
   context: string;
   target: string;
   at: number;
@@ -95,7 +104,13 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
     try {
       await api('/api/links/link', {
         method: 'POST',
-        json: { note: m.from, at: m.at, text: m.target, target: id.split('/').at(-1) },
+        json: {
+          section: m.fromSection,
+          note: m.from,
+          at: m.at,
+          text: m.target,
+          target: id.split('/').at(-1),
+        },
       });
       setLinked((held) => new Set(held).add(at));
       // Re-asked, not patched. Wrapping one mention adds four characters to
@@ -109,6 +124,20 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
     } catch {
       // Left as it was: the row still offers, and pressing again re-asks.
     }
+  };
+
+  /**
+   * Open the document a mention was written in — and, for a study, the
+   * chapter it was written in. A study is several games in one file, so
+   * landing on the first means hunting for what the backlink promised.
+   * The chapter comes from the server, recomputed per request, so it
+   * cannot point at the wrong one after a reorder.
+   */
+  const openSource = (m: Mention): void => {
+    setOpen(false);
+    const id = encodeURIComponent(m.from);
+    if (m.chapter !== undefined) navigate(m.fromSection, id, String(m.chapter));
+    else navigate(m.fromSection, id);
   };
 
   if (mentions.length === 0 && unlinked.length === 0) return null;
@@ -142,14 +171,11 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
               <li key={`${m.from}:${m.at}`}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    navigate('notes', encodeURIComponent(m.from));
-                  }}
+                  onClick={() => openSource(m)}
                   className="hover:bg-accent focus-visible:ring-ring flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <span className="flex items-center gap-1.5 text-sm font-medium">
-                    <FileText className="text-muted-foreground size-3.5 shrink-0" />
+                    <SourceIcon m={m} className="text-muted-foreground size-3.5 shrink-0" />
                     {m.from.split('/').at(-1)}
                   </span>
                   <span className="text-muted-foreground text-xs leading-5">
@@ -188,14 +214,11 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
                        button and neither edge lined up with anything. A
                        column ends the text where the button starts. */
                     <li key={at} className="hover:bg-accent flex items-start gap-2 rounded-md px-2 py-2">
-                      <FileText className="text-muted-foreground mt-1 size-3.5 shrink-0" />
+                      <SourceIcon m={m} className="text-muted-foreground mt-1 size-3.5 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <button
                           type="button"
-                          onClick={() => {
-                            setOpen(false);
-                            navigate('notes', encodeURIComponent(m.from));
-                          }}
+                          onClick={() => openSource(m)}
                           className="focus-visible:ring-ring block max-w-full truncate rounded-sm text-left text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
                         >
                           {m.from.split('/').at(-1)}
@@ -229,6 +252,20 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
       </Dialog>
     </>
   );
+}
+
+/**
+ * Which kind of document this mention was written in.
+ *
+ * It was a page icon on every row, back when every row was a note. Three
+ * kinds can hold a link now, and which one a row came from is the first
+ * thing a reader needs — a name alone does not say whether pressing it
+ * opens a note or jumps into the middle of a study. The pictures are the
+ * app's own, from the sidebar.
+ */
+function SourceIcon({ m, className }: { m: Mention; className?: string }) {
+  const Icon = SECTION_ICON[m.fromSection];
+  return <Icon className={className} />;
 }
 
 /**

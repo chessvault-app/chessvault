@@ -108,6 +108,62 @@ function joinComment(node: MoveNode): string[] {
   return trimmed.length > 0 ? [trimmed] : [];
 }
 
+/** One `{...}` comment in a PGN file, and where in the file it starts. */
+export interface CommentSpan {
+  /** Offset of the first character INSIDE the braces. */
+  readonly at: number;
+  readonly text: string;
+  /** Which game of a multi-game file it belongs to, counted from 0. */
+  readonly chapter: number;
+}
+
+/**
+ * Every comment in a PGN file, with the offsets they sit at.
+ *
+ * This exists so links written in an annotation can be indexed the way
+ * links in a note are, and it scans the raw file rather than a parsed
+ * game because the OFFSETS are the point: a backlink has to say which
+ * occurrence it found, and the button that turns a mention into a link
+ * writes at that exact position and verifies the text is still there.
+ * Parsing gives structure and loses position.
+ *
+ * Comments only, never movetext, and that is not a detail. A document
+ * called `Nf3` hunted for across a whole PGN would match every move in
+ * every game in the vault — the unlinked-mention panel would fill with
+ * one game's moves and the real mentions would be somewhere past the cap.
+ *
+ * A comment cannot contain `}`: the PGN writer strips it on the way out
+ * (measured — see the note on `commentText`), which is what makes a
+ * non-greedy scan for the closing brace exact rather than approximate.
+ *
+ * `;` to end of line is also a comment in the PGN standard. It is not
+ * scanned, because nothing in this app writes one; a link inside one, in
+ * an imported file, is simply not indexed rather than wrongly indexed.
+ */
+export function commentSpans(pgn: string): CommentSpan[] {
+  const spans: CommentSpan[] = [];
+  // A game begins at its `[Event ...]` tag, which the standard's seven-tag
+  // roster requires and puts first. That one rule replaced a scan that
+  // tracked runs of header lines to spot the boundary — the same answer,
+  // arrived at by something a reader can check against the format.
+  let chapter = -1;
+  for (let i = 0; i < pgn.length; i += 1) {
+    const atLineStart = i === 0 || pgn[i - 1] === '\n';
+    if (atLineStart && pgn.startsWith('[Event ', i)) {
+      chapter += 1;
+      continue;
+    }
+    if (pgn[i] !== '{') continue;
+    const end = pgn.indexOf('}', i + 1);
+    if (end < 0) break; // unterminated — the rest of the file is not a comment
+    // `Math.max`: a comment before any Event tag belongs to the first game,
+    // which is what a file that opens with movetext means.
+    spans.push({ at: i + 1, text: pgn.slice(i + 1, end), chapter: Math.max(0, chapter) });
+    i = end;
+  }
+  return spans;
+}
+
 /** Convert one parsed PGN game into a `MoveTree`. */
 export function gameToTree(game: Game<PgnNodeData>): MoveTree {
   const posResult = startingPosition(game.headers);

@@ -54,7 +54,21 @@ import { TitleTip } from '@/components/title-tip';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
-export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' | 'game' }) {
+export function StudyView({
+  id,
+  kind = 'study',
+  chapter,
+}: {
+  id: string;
+  kind?: 'study' | 'game';
+  /**
+   * Which chapter to open at, from the address. Applied once, on the way
+   * in — it says where to START, not which chapter is showing, so changing
+   * chapters afterwards does not rewrite the URL and coming back to this
+   * one does not fight the reader for the selection.
+   */
+  chapter?: number;
+}) {
   const openId = useStudy((s) => s.openId);
   const pending = useSlowLoad(openId !== id);
   const open = useStudy((s) => s.open);
@@ -107,6 +121,15 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     useReview.getState().clear();
     void open(id, base).then((ok) => {
       if (!cancelled) setFailed(!ok);
+      // The address may name a chapter — a backlink into the one that
+      // mentions this document. Out of range is ignored rather than
+      // clamped: a chapter that is not there is a link from before it was
+      // deleted, and chapter one is not a better answer than the one the
+      // reader already has.
+      if (ok && !cancelled && chapter !== undefined) {
+        const { chapters, selectChapter } = useStudy.getState();
+        if (chapter > 0 && chapter < chapters.length) selectChapter(chapter);
+      }
       // The opening map (or any other sender) may have asked to land on a
       // position. Consumed exactly once; a plain open sees nothing, and a
       // target the study does not contain falls through silently.
@@ -131,7 +154,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       cancelled = true;
       void close();
     };
-  }, [id, base, open, close]);
+  }, [id, base, chapter, open, close]);
 
   // A game review left running would walk the whole game on background
   // threads with no visible sign anywhere else in the app — abort it on
