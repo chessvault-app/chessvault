@@ -363,8 +363,15 @@ export function SkeletonDocument({ className }: { className?: string }) {
     >
       {/* The header the note keeps at the top of its column: a 28px row of
           back, name, edit and save, over the rule under it. */}
-      <div className="border-border -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 md:-mx-6 md:px-6 md:pt-6">
-        <div className="flex h-7 shrink-0 items-center gap-2">
+      {/* pb-3, not the pb-1.5 the header wears while the formatting
+          palette is showing: a note opens READ-ONLY, and that is the state
+          this stands in for. Measured at 59px against the real 65. */}
+      <div className="border-border -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6">
+        {/* pointer-coarse:h-9, like every control the row holds: the back
+            chevron and the edit button are icon-sm and sm, which grow to
+            36px under a thumb. Pinned at h-7 the row was a button short on
+            every phone. */}
+        <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9">
           <Skeleton className="size-7 shrink-0 rounded-md" />
           <Skeleton className="h-3.5 min-w-0 flex-1" />
           <Skeleton className="size-7 shrink-0 rounded-md" />
@@ -569,8 +576,13 @@ export function SkeletonBoard({
 export function SkeletonForm({ groups = 3, className }: { groups?: number; className?: string }) {
   return (
     <Loading className={cn('flex flex-col gap-4', className)}>
-      {/* The page title is text-xl, whose line box is 28px. */}
-      <div className="flex h-7 items-center">
+      {/* The page title is text-xl, whose line box is 28px — and that is
+          the whole header only where the header is only the title. Every
+          page that draws this passes PageHeader a `back`, whose chevron is
+          `md:hidden` and icon-sm: below md, under a coarse pointer, it is
+          36px and the header takes its height from it. Measured on a
+          420px phone: 28px of placeholder against a 36px header. */}
+      <div className="flex h-7 items-center max-md:pointer-coarse:h-9">
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (
@@ -594,8 +606,10 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
                     <Skeleton className="h-2 w-44" />
                   </div>
                 </div>
-                {/* Where a Switch stands: h-5 w-9, its own size. */}
-                <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
+                {/* Where a Switch stands, at the size the registry draws
+                    one: 18.4 x 32 (components/ui/switch), not the h-5 w-9
+                    this claimed was "its own size". */}
+                <Skeleton className="h-[18.4px] w-8 shrink-0 rounded-full" />
               </div>
             ))}
           </div>
