@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo has a puzzle book in it, made from the book it ships.** The
+  shelf answered with an empty list and a note saying book puzzles come
+  from commercial books, so the app's most distinctive feature — a
+  position transcribed off a printed page, solved against the page it came
+  from — was the one thing a visitor could only read about. The demo draws
+  its own book, and the three positions it prints are now a puzzle book
+  beside it: the Spanish after 3.Bb5, the Lucena, and the third-rank
+  defence, each with the line the book prints, and two of them already
+  solved so the shelf has progress on it. **Read** on the book's page opens
+  the PDF they came from. The shelf is the real module now rather than a
+  stub, so what it can do is what the app can do.
+
 - **The pane swipe moves the pane.** On a phone the panels under a board
   turn with a sideways swipe, and until now the gesture committed on
   release and swapped instantly: up to that moment nothing on screen said
