@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, Link2 } from 'lucide-react';
+import { FileText, Link } from 'lucide-react';
 import type { LinkSection } from '@shared/wikiLinks';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -123,7 +123,7 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
         active={open}
         onClick={() => setOpen(true)}
       >
-        <Link2 className="size-3.5" />
+        <Link className="size-3.5" />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent size="sm" title={t('Linked mentions')}>
