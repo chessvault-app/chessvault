@@ -200,6 +200,22 @@ describe('display text and embeds', () => {
     expect(found).toHaveLength(1);
     expect(found[0]!.target).toBe('b');
   });
+
+  /**
+   * A target of nothing but spaces is not a link.
+   *
+   * It resolves to nothing, has no candidates to choose between, and
+   * cannot be created either, since spaces are not a valid document name —
+   * so pressing it opened a window that said nothing answered to " " and
+   * offered nothing to do about it. `[[]]` was always plain text, having
+   * no character to match at all; these now say the same.
+   */
+  it.each(['[[]]', '[[ ]]', '[[   ]]', '![[ ]]', '[[ |reads like a link]]'])(
+    'leaves %s as text rather than making a link out of a space',
+    (source) => {
+      expect(findWikiMentions(source)).toHaveLength(0);
+    },
+  );
 });
 
 describe('renameLinksIn', () => {

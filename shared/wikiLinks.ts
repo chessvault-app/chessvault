@@ -30,8 +30,24 @@
  * The target excludes `|` as well as the brackets, so the pipe can only be
  * the separator and never part of a name — which matches Obsidian, and
  * means an id containing a pipe is unaddressable rather than ambiguous.
+ *
+ * The target must also hold something that is not a space, which is what
+ * the lookahead is for. `[[]]` was never a link — the target needs at
+ * least one character — but `[[ ]]` was, and a link made out of a space
+ * resolves to nothing, has no candidates to choose between, and cannot be
+ * created either, since spaces are not a valid document name. Pressing it
+ * opened a window that said nothing answered to " " and offered nothing to
+ * do about it: a dead end, which is the one thing that window exists to
+ * remove. `[[ |like this]]` was the worse half, reading as an ordinary
+ * link and opening that empty window. Both are now what `[[]]` always was.
+ *
+ * The lookahead repeats the target's own exclusions rather than saying
+ * `\S`, which is what it said first and why this needed measuring: `\S` is
+ * satisfied by the closing `]`, because the `*` in front of it stops at
+ * the space and the very next character is a bracket. `[[ ]]` went on
+ * matching, and the test that was supposed to prove the fix caught it.
  */
-export const WIKI_RE = /(!?)\[\[([^[\]|]+)(?:\|([^[\]]*))?\]\]/g;
+export const WIKI_RE = /(!?)\[\[(?=[^[\]|]*[^\s[\]|])([^[\]|]+)(?:\|([^[\]]*))?\]\]/g;
 
 /** One parsed link, however it was written. */
 export interface ParsedWikiLink {
