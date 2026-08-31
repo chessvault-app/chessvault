@@ -199,8 +199,13 @@ export function GameListShell({
               )}
             >
               {listLoading ? (
+                // The SAME `dense` the intrinsic size above reads. A list
+                // in table mode draws one-line rows, and the placeholder
+                // drew the card's three whatever was coming: measured at
+                // 1200px, six placeholders came to 509px against the 204px
+                // of table rows that replaced them.
                 <li>
-                  <SkeletonGameRows rows={6} />
+                  <SkeletonGameRows rows={6} dense={dense} />
                 </li>
               ) : (
                 list

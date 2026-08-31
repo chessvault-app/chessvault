@@ -556,19 +556,56 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
  * icon a game row does not have and is a line shorter — so the list
  * resized under you when the games landed.
  */
-export function SkeletonGameRows({ rows = 6, className }: { rows?: number; className?: string }) {
+export function SkeletonGameRows({
+  rows = 6,
+  dense = false,
+  className,
+}: {
+  rows?: number;
+  /**
+   * The table's one-line row, not the card's three.
+   *
+   * The same list draws either shape — GameListShell already carries this
+   * as a prop, and already uses it to set the virtualisation's intrinsic
+   * size — but its loading branch drew the card row whatever was coming.
+   * Measured on the games page in table mode: six placeholders at 85px
+   * against six rows at 34, so everything below the list dropped 305px
+   * the moment the games arrived. The row is GameTable's own geometry
+   * (`min-h-[2.125rem] py-1`, its GRID's px-3), which is where the 34
+   * comes from.
+   */
+  dense?: boolean;
+  className?: string;
+}) {
   const names = ['w-2/5', 'w-1/2', 'w-1/3', 'w-5/12', 'w-2/5', 'w-1/2'];
+  if (dense)
+    return (
+      <Loading className={cn('divide-border divide-y', className)}>
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="flex min-h-[2.125rem] items-center gap-2 px-3 py-1">
+            <Skeleton className={cn('h-2.5', names[i % names.length])} />
+            <Skeleton className="ml-auto h-2.5 w-10 shrink-0" />
+            <Skeleton className="h-2.5 w-8 shrink-0" />
+          </div>
+        ))}
+      </Loading>
+    );
   return (
     <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-3 px-3 py-2">
+        <div key={i} className="flex items-center gap-3 px-3 py-(--row-py)">
           {/* The real row stacks three <p>s with no gap between them: two
-              players at text-base, whose line box is 20px, and the opening
-              and date at text-sm, whose box is 16px. This was a gap-1
-              stack of bare bars — 40px of text against the row's 56, so a
-              list of eight stood about 128px short and everything below it
+              players at text-base, whose line box is 24px, and the opening
+              and date at text-sm, whose box is 20px. This was a gap-1
+              stack of bare bars — 40px of text against the row's 68, so a
+              list of eight stood about 200px short and everything below it
               jumped when the games landed. The bars stay thin; each is
               centred in a box of its line's real height.
+
+              The padding is the density token, not the py-2 it resolves to
+              at the comfortable rung: this row is every game list in the
+              app, which is the list a density knob is for, and a literal
+              stood 6px per row taller than the rows on a compact vault.
 
               Two players, each behind their side's dot. */}
           <div className="flex min-w-0 flex-1 flex-col">
