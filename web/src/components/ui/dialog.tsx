@@ -232,6 +232,43 @@ function useCloseWatcher(onClose: () => void, active: boolean): void {
  */
 const NOT_A_DRAG = 'input, textarea, select, [contenteditable="true"], canvas';
 
+/**
+ * The two things a window may claim only while it is actually OPEN: the
+ * count `dialogOpen()` answers from, and the CloseWatcher that makes
+ * Android's Back close it.
+ *
+ * Mounted from INSIDE the portal, which the primitive renders nothing of
+ * while the root is closed — and that is the whole point. DialogContent
+ * itself is mounted by its CALLER, open or not: Base UI's Root renders
+ * its children either way, and only the portal is gated on `open`. So an
+ * effect written in DialogContent's body runs for a window nobody has
+ * opened, and a caller that renders `<Dialog open={x}><DialogContent/>`
+ * unconditionally — a perfectly ordinary shape, and the one the notes
+ * header's aliases and linked mentions both use — took the lock the
+ * moment it drew and held it for as long as it was on screen. Every
+ * other caller happens to guard with `{open && …}`, which is why this
+ * stood for as long as it did.
+ *
+ * What it cost: `dialogOpen()` answered yes on a page with no window on
+ * it, so the board's arrow keys (AnalysisBoard asks it before stepping
+ * the game) were dead on every study and game page — lanph3re's report.
+ * The CloseWatcher was the same mistake wearing different clothes: a
+ * window that was not open claimed Escape and the platform's Back.
+ *
+ * `shut` still has to be read here, not just relied on: a window mounted
+ * `hidden`, or parked under a page it opened, IS inside the portal.
+ */
+function DialogOpenEffects({ shut, request }: { shut: boolean; request: () => void }) {
+  useCloseWatcher(request, !shut);
+  // The board's arrow keys listen on the window and must not step the game
+  // behind an open window's scrim; this is how they ask (dialogOpen()).
+  React.useEffect(() => {
+    if (shut) return;
+    return registerOpenDialog();
+  }, [shut]);
+  return null;
+}
+
 export interface DialogContentProps extends Omit<DialogPrimitive.Popup.Props, 'render'> {
   /**
    * The window's name, drawn in the title row every window shares — one
@@ -339,7 +376,6 @@ function DialogContent({
   // What Escape and Android's Back mean here: for a small window on its
   // second page, "back to the first"; for everything else, close.
   const request = small ? (onBack ?? close) : close;
-  useCloseWatcher(request, !shut);
 
   // The dismissal routing the Root's onOpenChange consults (see the top).
   React.useEffect(() => {
@@ -376,13 +412,6 @@ function DialogContent({
       guards.current = null;
     };
   });
-
-  // The board's arrow keys listen on the window and must not step the game
-  // behind an open window's scrim; this is how they ask (dialogOpen()).
-  React.useEffect(() => {
-    if (shut) return;
-    return registerOpenDialog();
-  }, [shut]);
 
   // Whatever had the focus when this window opened — read on the FIRST
   // RENDER, before anything inside has mounted, and not left to the
@@ -537,6 +566,7 @@ function DialogContent({
   if (phone) {
     return (
       <DialogPortal>
+        <DialogOpenEffects shut={shut} request={request} />
         {/* display:contents, events only: React bubbles through portals,
             and a press inside this layer must not reach what the layer was
             written inside — a card or a row that opens on click would open
@@ -632,6 +662,7 @@ function DialogContent({
 
   return (
     <DialogPortal>
+      <DialogOpenEffects shut={shut} request={request} />
       <DialogOverlay
         // `optical-center`, not `items-center`: the card sits a little
         // above the geometric middle (see the utility in index.css) — the
