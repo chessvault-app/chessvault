@@ -97,11 +97,28 @@ const UNAVAILABLE = { available: false as const };
 
 export function vaultHistoryApi(
   vaultDir: string = VAULT,
-  options: { commitNow?: () => Promise<void> } = {},
+  options: {
+    commitNow?: () => Promise<void>;
+    /**
+     * Who answers the five git questions below, and whether there is
+     * anything to ask.
+     *
+     * The default is the history repo, which is the only answer a server
+     * has. The static demo has no git and no child processes, and it does
+     * have a record of every write the visitor has made — so it passes its
+     * own pair, and these routes read that record instead. The QUESTIONS
+     * stay here, in one place, which is the part that must not be written
+     * twice; only where the answers come from moves.
+     */
+    run?: (args: string[]) => Promise<string>;
+    available?: () => boolean;
+  } = {},
 ): Hono {
   const api = new Hono();
-  const run = (args: string[]): Promise<string> => git(historyGitDir(vaultDir), vaultDir, args);
-  const haveHistory = (): boolean => existsSync(historyGitDir(vaultDir));
+  const run =
+    options.run ?? ((args: string[]): Promise<string> => git(historyGitDir(vaultDir), vaultDir, args));
+  const haveHistory = (): boolean =>
+    options.available ? options.available() : existsSync(historyGitDir(vaultDir));
 
   /** Whether this deployment can offer recovery at all. The UI asks first. */
   api.get('/history', async (c) => {

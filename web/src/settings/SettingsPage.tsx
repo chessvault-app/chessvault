@@ -131,6 +131,12 @@ export function SettingsPage() {
                 dropdowns are. The cards below it are the ones that really
                 do need a server. */}
             <StorageCard />
+            {/* And recovery: the demo keeps its own versions of whatever
+                you edit in the tab (web/src/demo/nodeShim/history.ts), so
+                the card is real here too — it starts empty, and fills as
+                you work, which is the honest demonstration of a safety
+                net. Delete a note and it turns up in this list. */}
+            <RecoveryCard />
             <AppearanceCard />
             <SoundCard />
             <Card icon={Info} title={t('This is a demo')}>

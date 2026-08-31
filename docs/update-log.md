@@ -7,6 +7,19 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The demo can show the safety net now.** Earlier versions of a
+  document, and bringing back a deleted one, are read out of the vault's
+  history repository with git — which a browser tab has not got, so both
+  Settings cards were missing from the demo and the one thing the app
+  does at the worst moment could only be described. A page does have
+  something better than an imitation: it sees every write, because they
+  all go through its filesystem. So it keeps the versions itself and
+  answers the same five questions from them. Edit a note in the demo and
+  the clock in its header offers what it said before; delete one and it
+  turns up under Deleted documents with a button to put it back. The
+  history is the visitor's own editing rather than a fabricated past, and
+  the questions are still asked by the same module a server uses.
+
 - **The demo's sample vault is written rather than generated.** Its
   studies were twelve copies of one shape — three chapters called “Main
   line”, “The critical sideline” and “A model game”, none of them about

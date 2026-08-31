@@ -3,6 +3,8 @@ import { installBuffer } from './nodeShim/buffer.ts';
 import { installSetImmediate } from './nodeShim/timers.ts';
 import { seedBytes, seedFile } from './nodeShim/fs.ts';
 import { registerDiagram } from '../puzzles/books/localDiagrams.ts';
+import { haveVersions, runHistory, setHistoryRoot } from './nodeShim/history.ts';
+import { vaultHistoryApi } from '../../../server/vaultHistory.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { normaliseTraining, type Training } from '@shared/training';
@@ -216,6 +218,23 @@ function buildApp(): Hono {
    * the demo has none of.
    */
   app.route('/api', storageApi(VAULT, `${VAULT}/.data`));
+
+  /**
+   * Earlier versions, and restoring a deleted document.
+   *
+   * The app's safety net, and the demo could not show it: it is read out
+   * of `vault/.history.git` with five git commands, and a page has no git.
+   * What a page does have is every write the visitor makes, because they
+   * all go through the filesystem shim — so the shim keeps the versions
+   * and answers those five questions from them (nodeShim/history.ts). The
+   * questions are still asked by the real module; only the source moves.
+   *
+   * So the demo's history is honest: it is the visitor's own editing, not
+   * a fabricated past. It starts empty and fills as they work, which is
+   * also what the card says it is for.
+   */
+  setHistoryRoot(VAULT);
+  app.route('/api', vaultHistoryApi(VAULT, { run: runHistory, available: haveVersions }));
 
   /**
    * The library, holding the one book the demo draws for itself.

@@ -14,6 +14,8 @@
  * why the demo needs no quotas, no reset timer and no server to attack.
  */
 
+import { recordVersion } from './history.ts';
+
 interface Entry {
   /** Directories hold no bytes; files hold exactly these. */
   content?: string;
@@ -50,6 +52,12 @@ export function seedFile(path: string, content: string, mtimeMs: number): void {
   const key = norm(path);
   makeParents(key, mtimeMs);
   files.set(key, { content, mtimeMs });
+  // The seed is a version too, stamped with the file's own time. A real
+  // vault's first autosave commits it as it stands, and without that here
+  // a document deleted before it was ever edited had nothing to restore:
+  // the deleted-documents card would offer it back and have no content to
+  // put there.
+  recordVersion(key, content, mtimeMs);
 }
 
 /** The same, for a file that is not text — see `Entry.bytes`. */
@@ -102,6 +110,10 @@ export function readFileSync(path: string, encoding?: unknown): string {
 export function writeFileSync(path: string, content: string, _options?: unknown): void {
   mkdirSync(parentOf(path));
   files.set(norm(path), { content: String(content), mtimeMs: Date.now() });
+  // Every vault write is a version. See nodeShim/history.ts: this is where
+  // the demo's "earlier versions" card gets its material, because a page
+  // has no git repository to read one out of.
+  recordVersion(norm(path), String(content));
 }
 
 export function readdirSync(
@@ -162,7 +174,14 @@ export function renameSync(from: string, to: string): void {
   for (const [key, entry] of [...files]) {
     if (key !== source && !key.startsWith(`${source}/`)) continue;
     files.delete(key);
-    files.set(target + key.slice(source.length), entry);
+    const moved = target + key.slice(source.length);
+    files.set(moved, entry);
+    // A rename is a delete and a write, which is what the history repo
+    // records too — so a renamed document keeps a trail under both names.
+    if (entry.content !== undefined) {
+      recordVersion(key, null);
+      recordVersion(moved, entry.content);
+    }
   }
 }
 
@@ -174,7 +193,12 @@ export function rmSync(path: string, options?: { recursive?: boolean; force?: bo
     throw error;
   }
   for (const existing of [...files.keys()]) {
-    if (existing === key || existing.startsWith(`${key}/`)) files.delete(existing);
+    if (existing === key || existing.startsWith(`${key}/`)) {
+      files.delete(existing);
+      // A delete is a version too — the one the deleted-documents card
+      // finds a document by.
+      recordVersion(existing, null);
+    }
   }
 }
 
