@@ -1,12 +1,14 @@
 import { INPUT_BASE } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronDown } from 'lucide-react';
+import { AlertCircle, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
+import { safeCommentText } from '@shared/pgn';
 import { NAG_GLYPH } from '@/analysis/notation';
 import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { autoFocusField, isCoarsePointer } from '@/lib/media';
+import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/components/chip-row';
@@ -22,6 +24,21 @@ const ASSESSMENT_NAGS = [14, 16, 18, 10, 13, 15, 17, 19];
 
 /** Whether the glyph palette is unfolded — a preference, so it persists. */
 const PALETTE_KEY = 'vault:nag-palette';
+
+/**
+ * Said when `safeCommentText` has just changed something under the caret.
+ *
+ * A function holding the literal, not a `const` string handed to `t()`:
+ * check-repo's translation sweep only sees literals written inside a `t(`
+ * call, and a message parked in a const is exactly the blind spot its own
+ * header apologises for. Worded around brackets and commas for the same
+ * reason — that sweep counts delimiters without knowing it is inside a
+ * string, so a message naming the characters it is about would break it.
+ */
+const rewriteNotice = (): string =>
+  t('Braces and annotation commands cannot be saved in a comment; the text was rewritten.');
+/** Long enough to read one short line without it outliving the edit. */
+const NOTICE_MS = 6000;
 
 /**
  * Comment + NAG editor for the cursor node. The textarea is local state
@@ -49,6 +66,9 @@ export function AnnotationPane({
   const atRoot = node.parentId === null;
 
   const [draft, setDraft] = useState(node.comment ?? '');
+  // Counts rewrites rather than flagging one, so a second `}` restarts the
+  // timer below instead of being swallowed by an unchanged `true`.
+  const [rewrites, setRewrites] = useState(0);
   const [coarse] = useState(isCoarsePointer);
   const [sheet, setSheet] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(
@@ -56,14 +76,21 @@ export function AnnotationPane({
   );
   const box = useRef<HTMLTextAreaElement>(null);
   const sheetBox = useRef<HTMLTextAreaElement>(null);
+  const caret = useRef<number | null>(null);
 
   // `[[` completes here exactly as it does in a note, and from the same
   // list — a comment that names a study should be able to LINK it, which
   // is the whole point of the vault. One per box: the sheet and the inline
   // textarea are never both on screen, but they are two elements, and a
   // list anchored to the wrong one hangs off nothing.
-  const inline = useWikiSuggest({ box, value: draft, onChange: setDraft });
-  const sheetSuggest = useWikiSuggest({ box: sheetBox, value: draft, onChange: setDraft });
+  // Through `safeCommentText` like every other way text reaches this box:
+  // completing a name is the one path that writes without passing a
+  // keystroke through `edit`, and a document whose name holds a brace would
+  // otherwise put back exactly what the file cannot keep. Idempotent on
+  // text that is already safe, which every id in practice is.
+  const put = useCallback((next: string) => setDraft(safeCommentText(next)), []);
+  const inline = useWikiSuggest({ box, value: draft, onChange: put });
+  const sheetSuggest = useWikiSuggest({ box: sheetBox, value: draft, onChange: put });
 
   // The desktop box grows with what is written in it, from its two rows up
   // to eight, instead of staying at two and scrolling everything past the
@@ -119,6 +146,34 @@ export function AnnotationPane({
     const timer = setTimeout(() => setComment(cursorId, draft), 500);
     return () => clearTimeout(timer);
   }, [draft, node.comment, cursorId, setComment]);
+
+  // Putting the caret back after a rewrite. React writes a value the DOM
+  // does not have, which sends the caret to the end of the box; sanitising
+  // the text BEFORE it gives its new offset exactly, however many characters
+  // the rewrite moved. Layout effect, so it lands before paint rather than
+  // showing a frame with the caret at the end.
+  useLayoutEffect(() => {
+    const at = caret.current;
+    if (at === null) return;
+    caret.current = null;
+    // activeElement, not `box`: the same handler serves the phone sheet's
+    // textarea, which is the focused one while that is open.
+    const el = document.activeElement;
+    if (el instanceof HTMLTextAreaElement) el.setSelectionRange(at, at);
+  }, [draft]);
+
+  // The notice goes away on its own — it reports one keystroke, and left up
+  // it would still be sitting there over a note typed minutes later.
+  useEffect(() => {
+    if (rewrites === 0) return;
+    // Only the first of a burst is spoken; the timer restarts on each.
+    if (rewrites === 1) announce(rewriteNotice());
+    const timer = setTimeout(() => setRewrites(0), NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [rewrites]);
+
+  // A cursor move is a different comment, so it is not what the notice was about.
+  useEffect(() => setRewrites(0), [cursorId]);
 
   const toggleNag = (nag: number, group: number[]): void => {
     const has = node.nags.includes(nag);
@@ -187,6 +242,35 @@ export function AnnotationPane({
     if (draft !== (node.comment ?? '')) setComment(cursorId, draft);
   };
 
+  // Where the two silent losses are made visible. Rewriting on the way IN
+  // rather than letting the save eat it is the whole of the fix: a comment
+  // stripped by `makePgn` is discovered on the next reload, if ever, whereas
+  // this changes under the caret while the writer is still looking at it.
+  const edit = (el: HTMLTextAreaElement): void => {
+    const clean = safeCommentText(el.value);
+    setDraft(clean);
+    if (clean === el.value) return;
+    const before = el.value.slice(0, el.selectionStart ?? el.value.length);
+    caret.current = safeCommentText(before).length;
+    setRewrites((n) => n + 1);
+  };
+
+  // Beside the text it is about, not a toast in the corner: the writer is
+  // already looking here, which is the only reason to say it now at all.
+  // The editor's own warning row, in the shape it wears there — one size
+  // down, because this pane counts its rows and a text-sm line of this
+  // costs three of them in a column that narrow. The icon is what makes it
+  // read as a warning before it is read at all, so that stays.
+  const notice =
+    rewrites > 0 ? (
+      <p className="text-warn flex items-start gap-1.5 text-xs leading-4">
+        {/* mt-px: text-xs's 16px line around a 14px icon, centred on the
+            first line the way EditorView centres its own. */}
+        <AlertCircle className="mt-px size-3.5 shrink-0" />
+        {rewriteNotice()}
+      </p>
+    ) : null;
+
   return (
     <div className={cn('border-border flex shrink-0 flex-col gap-1.5 border-t px-3 py-2', className)}>
       {!atRoot && paletteOpen && palette}
@@ -216,7 +300,7 @@ export function AnnotationPane({
             ref={box}
             value={draft}
             onChange={(e) => {
-              setDraft(e.target.value);
+              edit(e.target);
               inline.sync();
             }}
             onKeyDown={inline.onKeyDown}
@@ -230,6 +314,7 @@ export function AnnotationPane({
         )}
       </div>
       {!coarse && <WikiSuggest store={inline.store} host={box.current} />}
+      {!sheet && notice}
       {/* The app's own window. This was a scrim and a card pinned to the
           TOP of the screen, hand-rolled here from before there was a
           shared sheet — the one window in the app that opened away from
@@ -252,7 +337,7 @@ export function AnnotationPane({
               autoFocus={autoFocusField()}
               value={draft}
               onChange={(e) => {
-                setDraft(e.target.value);
+                edit(e.target);
                 sheetSuggest.sync();
               }}
               onKeyDown={sheetSuggest.onKeyDown}
@@ -260,6 +345,7 @@ export function AnnotationPane({
               className="w-full resize-none leading-relaxed"
             />
             <WikiSuggest store={sheetSuggest.store} host={sheetBox.current} />
+            {notice}
             <Button
               variant="default"
               size="sm"

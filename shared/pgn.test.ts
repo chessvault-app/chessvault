@@ -7,6 +7,7 @@ import {
   commentSpans,
   gameToTree,
   pgnToChapters,
+  safeCommentText,
   studyNameFromPgn,
   treeToPgn,
 } from './pgn.ts';
@@ -221,6 +222,92 @@ describe('PGN codec round-trip', () => {
     const out = treeToPgn(tree, {});
     expect(out).not.toContain('timestamp');
     expect(out).not.toContain('c_effect');
+  });
+});
+
+/**
+ * What a writer types into the annotation box, and what comes back.
+ *
+ * Two characters used to be eaten between the box and the file, silently
+ * and in different ways: `makePgn` deletes `}` because a brace comment has
+ * no escape, and `[%...]` is either stripped as an unread command or —
+ * worse — READ, so prose becomes an evaluation or an arrow. Both are now
+ * rewritten as they are typed, and this is the proof that what survives
+ * the rewrite survives the file too.
+ */
+describe('safeCommentText', () => {
+  /** Comment in, comment out, through the real codec. */
+  function roundTrip(comment: string): { text?: string; shapes: number; hasEval: boolean } {
+    const start = createTree();
+    const added = addSan(start, start.rootId, 'e4')!;
+    const tree = updateNode(added.tree, added.nodeId, { comment });
+    const back = pgnToChapters(treeToPgn(tree, { Event: 'x' }))[0]!.tree;
+    const node = getNode(back, getNode(back, back.rootId).children[0]!);
+    return { text: node.comment, shapes: node.shapes.length, hasEval: node.eval !== undefined };
+  }
+
+  it('leaves a comment that was never at risk exactly as it was', () => {
+    const plain = 'The rook belongs behind the pawn — see chapter 3 (Lucena).';
+    expect(safeCommentText(plain)).toBe(plain);
+    expect(roundTrip(plain).text).toBe(plain);
+  });
+
+  it('rewrites the brace that makePgn would otherwise delete', () => {
+    // Unrewritten this reaches the file as "{ Bad  here }" and reads back
+    // as "Bad here" — the character gone and the double space with it.
+    expect(roundTrip('Bad } here').text).toBe('Bad here');
+    expect(safeCommentText('Bad } here')).toBe('Bad ) here');
+    expect(roundTrip(safeCommentText('Bad } here')).text).toBe('Bad ) here');
+  });
+
+  it('rewrites a typed command that would otherwise become data', () => {
+    // The failure this exists for: prose is not analysis. Unrewritten, the
+    // text is gone and the move carries a +9.9 nobody assessed.
+    const evaluation = roundTrip('[%eval 9.9] surely winning');
+    expect(evaluation.text).toBe('surely winning');
+    expect(evaluation.hasEval).toBe(true);
+
+    const safe = roundTrip(safeCommentText('[%eval 9.9] surely winning'));
+    expect(safe.text).toBe('[ %eval 9.9] surely winning');
+    expect(safe.hasEval).toBe(false);
+  });
+
+  it('rewrites a typed shape command, which would otherwise draw an arrow', () => {
+    expect(roundTrip('[%cal Ra1a8] the open file').shapes).toBe(1);
+    const safe = roundTrip(safeCommentText('[%cal Ra1a8] the open file'));
+    expect(safe.text).toBe('[ %cal Ra1a8] the open file');
+    expect(safe.shapes).toBe(0);
+  });
+
+  it('leaves a lone { alone, because it is not lost', () => {
+    // Measured: chessops reads to the first `}`, and there is no longer one
+    // to find, so an opening brace is just a character both ways.
+    expect(safeCommentText('a { b')).toBe('a { b');
+    expect(roundTrip('a { b').text).toBe('a { b');
+  });
+
+  it('is idempotent — retyping in a box that already holds a rewrite', () => {
+    // The handler runs over the WHOLE box on every keystroke, so a rewrite
+    // from the previous one must not be rewritten again into `[  %`.
+    const once = safeCommentText('} and [%clk 0:01:00]');
+    expect(safeCommentText(once)).toBe(once);
+  });
+
+  it('keeps the real commands our own writer emits', () => {
+    // The rewrite belongs to what is TYPED. Shapes and evaluations still
+    // reach the file as commands, because joinComment builds those.
+    const start = createTree();
+    const added = addSan(start, start.rootId, 'e4')!;
+    const tree = updateNode(added.tree, added.nodeId, {
+      comment: safeCommentText('winning'),
+      eval: { cp: 990, depth: 20 },
+      shapes: [{ color: 'red', from: 0, to: 56 }],
+    });
+    const back = pgnToChapters(treeToPgn(tree, { Event: 'x' }))[0]!.tree;
+    const node = getNode(back, getNode(back, back.rootId).children[0]!);
+    expect(node.comment).toBe('winning');
+    expect(node.eval?.cp).toBe(990);
+    expect(node.shapes).toHaveLength(1);
   });
 });
 

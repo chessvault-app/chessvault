@@ -48,6 +48,29 @@ export function commentText(text: string): string {
   return text.replace(UNREAD_COMMAND, ' ').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * The two shapes a typed comment cannot keep, rewritten so that it can.
+ *
+ * A brace comment has no escape in PGN — `}` simply ends it — so chessops'
+ * `makePgn` DELETES every `}` on the way out. That is the right thing to do,
+ * since the alternative is a comment breaking out into movetext; it is only
+ * wrong about *when*, happening at save time, long after the writer stopped
+ * looking at what they typed.
+ *
+ * `[%...]` is worse than deleted. `UNREAD_COMMAND` above strips the commands
+ * nothing reads, and `parseComment` turns the four it does know into fields,
+ * so prose reading `[%eval 9.9]` comes back as a +9.9 evaluation on the move
+ * and `[%cal Ra1a8]` as an arrow nobody drew — measured, both.
+ *
+ * The editor therefore rewrites both AS THEY ARE TYPED, where the change is
+ * visible and one keystroke old: `}` becomes `)`, and a single space breaks
+ * the command shape while keeping every character. A lone `{` is left alone,
+ * because it is not lost — with the `}` gone it round-trips intact.
+ */
+export function safeCommentText(text: string): string {
+  return text.replace(/\}/g, ')').replace(/\[%/g, '[ %');
+}
+
 /** Split one chessops comment string into our structured fields. */
 function splitComment(raw: string[] | undefined): {
   text?: string;

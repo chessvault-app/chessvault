@@ -550,6 +550,8 @@ export const ko: Record<string, string> = {
     '변경하는 즉시 볼트에 씁니다. 끄면 저장할 때까지 기다립니다.',
   'Add a chapter': '챕터 추가',
   'Click to accept ANY move here (the book’s K~)': '여기서는 아무 수나 받도록 클릭 (책의 K~)',
+  'Braces and annotation commands cannot be saved in a comment; the text was rewritten.':
+    '중괄호와 주석 명령은 코멘트에 저장할 수 없어 텍스트를 고쳐 썼습니다.',
   'Hide glyphs': '기호 숨기기',
   'Show glyphs': '기호 보기',
   'All games': '모든 게임',

@@ -42,17 +42,19 @@ import { type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
 
-/** The browser's tabs, at EVERY width: the reference databases lead —
-    since the search work they are the strongest surface — the
-    collection beside them, and the two online archives each as their
+/** The browser's tabs, at EVERY width, ordered by how close the games
+    are to the reader: the collection leads — it is the reader's own,
+    and it is what the pane opens on whenever there is anything in it,
+    so leading with it stops the default from landing one tab in — then
+    the reference databases, then the two online archives each as their
     own tab (one tab per site keeps the archive's toolbar as short as
     the others'; the strip is the provider choice). Width changes the
     dressing, not the structure: `table` adds the dense rows, and the
     Games page adds its details column beside this whole pane. */
 type MainTab = 'databases' | 'collection' | 'chesscom' | 'lichess';
 const TABS: { id: MainTab; label: string }[] = [
-  { id: 'databases', label: 'Databases' },
   { id: 'collection', label: 'Collection' },
+  { id: 'databases', label: 'Databases' },
   // Site names, not sentences — they stay untranslated on purpose.
   // Capitalised like its neighbours: a lowercase word in a row of
   // capitalised tabs read as a typo, not as branding.
@@ -186,7 +188,12 @@ export function GamesBrowser({
       rather than of the person clicking. A section called Games, in a
       product whose whole claim is that the files are yours, opened on
       several thousand strangers' engine games while the reader's own
-      thirty sat one tab to the right.
+      thirty sat in another tab. The strip now leads with the collection
+      for the same reason, so the usual default is also the first tab
+      and nothing looks skipped over; an empty collection still falls
+      through to Databases, which is the one case where the opening tab
+      is not the leading one, and there the leading one has nothing to
+      show.
 
       `cachedCollection()` answers synchronously on every visit after the
       first, so the choice is normally made before the first paint and
