@@ -959,6 +959,21 @@
               at the root it becomes the chapter introduction. Arrows and circles are not here:
               <a href="#shortcuts">they are drawn on the board itself</a>.
             </p>
+            <p data-ko="코멘트에 <code>[[</code>를 치면 <a href='#notes'>위키링크</a> 목록이 상자 위에 뜹니다 — 노트에서와 같은 목록, 같은 키(<kbd>↑</kbd><kbd>↓</kbd> 고르기, <kbd>Enter</kbd>/<kbd>Tab</kbd> 받기, <kbd>Esc</kbd> 무르기). 이렇게 적은 링크는 수 목록에서 링크로 읽히고, 가리킨 문서의 «Linked mentions»에도 올라갑니다. 휴대폰에서는 코멘트 시트 안에서도 됩니다.">
+              Typing <code>[[</code> in the comment opens the <a href="#notes">wiki-link</a> list
+              above the box — the same list a note gets, and the same keys
+              (<kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>Enter</kbd>/<kbd>Tab</kbd> accept,
+              <kbd>Esc</kbd> dismiss). A link written here reads as a link in the move list and
+              shows up under the named document's “Linked mentions”. On a phone it works inside
+              the comment sheet too.
+            </p>
+            <p data-ko="두 가지는 코멘트가 담을 수 없어서 치는 동안 고쳐 씁니다. `}`는 `)`가 됩니다 — PGN 코멘트는 `}`에서 끝나고 벗어날 방법이 없습니다 — 그리고 `[%eval 9.9]` 모양은 공백 하나로 끊어 놓습니다. 그러지 않으면 산문이 그 수의 평가나 아무도 그리지 않은 화살표가 됩니다. 상자 아래 한 줄이 그렇게 했다고 알리고 스스로 사라집니다.">
+              Two things a comment cannot keep are rewritten as you type them. A <code>}</code>
+              becomes a <code>)</code> — a PGN comment ends at one and has no way to escape it —
+              and anything shaped like <code>[%eval 9.9]</code> gets one space through it, or the
+              prose would come back as an evaluation on the move, or an arrow nobody drew. A line
+              under the box says so and clears itself.
+            </p>
 
             <h2 data-ko="포지션 불러오기">Loading a position</h2>
             <p data-ko="<strong>Load a position</strong> 대화 상자는 세 가지를 받습니다: 입력란에 붙여 넣는 <strong>FEN</strong> 또는 <strong>PGN</strong>(<kbd>Enter</kbd>로 실행, 비어 있을 때는 구석의 «Paste» 버튼이 클립보드를 읽습니다), 그리고 점선 상자에 놓는 <strong>그림</strong> — «click to choose, drop a file, or paste an image». 그림은 스크린샷이나 스캔이 가장 잘 읽히고, 네 손잡이를 도해의 모서리에 맞춘 뒤 <strong>Read position</strong>을 누릅니다. 아래쪽이 흑이면 «Black at the bottom»을 켭니다.">
@@ -1468,6 +1483,28 @@
               a study, the study links a game, the game links back to the note where you worked out
               what went wrong — the material becomes one connected body of work. The syntax is
               Obsidian's, so the links read there too.
+            </p>
+            <p data-ko="링크는 노트만의 것이 아닙니다. 수의 코멘트에서도 <code>[[</code>가 같은 목록을 엽니다 — <a href='#board'>주석 달기</a>를 보세요.">
+              Links are not only a Notes thing: <code>[[</code> opens the same list in a move's
+              comment — see <a href="#board">annotating</a>.
+            </p>
+            <p data-ko="<code>[[대상|보일 글]]</code>은 <em>보일 글</em>로 읽히면서 <em>대상</em>으로 이어지고, <code>![[대상]]</code>은 노트 안에서 카드로 펼쳐집니다(코멘트 안에서는 평범한 링크로 읽힙니다 — 수 목록의 한 줄에 카드가 끼어들면 수가 벌어집니다). 문서에 <strong>다른 이름</strong>을 붙여 두면 그 이름으로도 이어집니다. 두 문서가 같은 이름을 주장하면 앱은 고르지 않고 어느 쪽인지 묻습니다. 가리키는 것이 없는 링크는 회색 점선이고, 누르면 그 이름의 기보·스터디·노트를 만들어 주겠다고 합니다.">
+              <code>[[Target|shown]]</code> reads as <em>shown</em> and opens <em>Target</em>;
+              <code>![[Target]]</code> unfolds as a card inside a note (inside a comment it reads
+              as a plain link — a card wedged into a row of moves would push the moves apart).
+              Give a document <strong>other names</strong> and it answers to those too. Where two
+              documents claim one name the app refuses to guess and asks which you meant. A link
+              with nothing behind it is grey and dotted, and pressing it offers to make the game,
+              study or note it names.
+            </p>
+            <h2 data-ko="무엇이 여기를 가리키는가">What links here</h2>
+            <p data-ko="문서의 제목줄에 있는 고리 아이콘(«Linked mentions»)이 그 문서를 가리키는 것들을 보여 줍니다 — 노트, 스터디, 기보 어디에서 왔든, 아이콘이 어느 쪽인지 말해 줍니다. 누르면 그 자리가 열립니다. 스터디라면 그 코멘트가 있는 챕터가 열립니다. 아래쪽 «Unlinked mentions»는 대괄호 없이 이 문서의 이름을 적어 둔 곳들입니다 — 곁의 <strong>Link</strong>가 그 한 자리에만 대괄호를 씌워 줍니다. 가리키는 것이 하나도 없으면 아이콘 자체가 나오지 않습니다.">
+              The link icon in a document's title row (“Linked mentions”) shows what points at it —
+              from a note, a study or a game, with the icon saying which. Pressing one opens it, and
+              for a study it opens the chapter the comment is in. Below, “Unlinked mentions” are
+              places that write this document's name in prose without brackets; the
+              <strong>Link</strong> beside one wraps that single occurrence. A document nothing
+              points at carries no icon at all.
             </p>
             <p data-ko="선반은 스터디의 것과 같은 문법입니다 — 검색, 정렬, 북마크, 컬렉션, 그리고 만들기 메뉴의 <strong>New note</strong> / <strong>New collection</strong>.">
               The shelf speaks the studies shelf's grammar — search, sorting, bookmarks,

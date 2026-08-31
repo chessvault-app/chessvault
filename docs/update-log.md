@@ -10,6 +10,49 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **Links can be written on a move, not only in a note.** A note could
+  write `[[Some Study]]` and open it; a study or a game could be named that
+  way and never name anything back, because a link had to be typed into
+  markdown and a study is a PGN. Move comments are prose too, and now hold
+  links: typing `[[` in the comment box opens the same list a note gets,
+  drawn above the box rather than at the caret, and the same keys drive it
+  (<kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>Enter</kbd>/<kbd>Tab</kbd> accept,
+  <kbd>Esc</kbd> dismiss). It works in the phone's comment sheet too. In
+  the move list a link reads as a link — brackets hidden, the display text
+  of `[[Target|shown]]` shown — and opens what it names. And they count:
+  the document a link points at lists it under “Linked mentions”, so a note
+  can now see that a study's twelfth move is what refers to it. A backlink
+  from a study opens the chapter the comment is in, not the study's first;
+  the chapter is worked out fresh each time the list is opened, so
+  reordering or deleting chapters cannot leave it pointing at the wrong
+  one. Renaming a document rewrites the links in comments exactly as it
+  already rewrote the ones in notes — without that a rename would break
+  every link written on a move, silently, which is the failure that rewrite
+  exists to prevent. The hunt for a document's name written in prose
+  without brackets reads comments too, and the **Link** button beside one
+  writes the brackets into the comment. What it deliberately does not read
+  is the moves: only the text inside `{...}` is scanned, because a study
+  called `Nf3` searched across whole game files would be “mentioned” by
+  every game in the vault. Nor does it quote the machinery a comment
+  carries beside the words — `[%eval]`, `[%clk]`, an import's leftovers —
+  so the sentence shown is the sentence the move shows.
+- **A link that names nothing offers to make it, in any of the three
+  kinds.** Pressing a link with nothing behind it opened a window offering
+  one thing: write a NOTE by that name. That was right while a note was the
+  only document that could hold a link, and wrong the moment a comment on a
+  move could name a study nobody had started — answering that with “shall I
+  make a note?” resolves the link to the wrong kind of document quietly and
+  for good, since from then on it resolves. The window now offers a game, a
+  study or a note, in the order the sidebar already uses, each with the
+  icon that section is known by. Two smaller dead ends went with it. A name
+  the vault cannot hold — one with a colon in it, a reserved word, one far
+  too long — used to get the sentence and no offer at all, an empty window;
+  it now says why there is nothing to make. And `[[ ]]`, a link made out of
+  a space, is no longer a link: it resolved to nothing, had nothing to
+  choose between and could not be created either, so pressing it opened a
+  window with nothing in it. It reads as the text it is, which is what
+  `[[]]` always did.
+
 - **The Games browser leads with your own games.** The tab strip ran
   Databases · Collection · Chess.com · Lichess, while the pane opened on
   Collection whenever the collection held anything — so the default was
