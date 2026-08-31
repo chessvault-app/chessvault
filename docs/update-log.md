@@ -35,6 +35,19 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   32 → 21 → 12.9 → … → 0 over ~200ms, the strip never moves, and at rest
   the column carries no attribute, no transform and no compositing layer.
 
+- **A link written with a display text counts as a link.** `[[Target|the
+  words you want]]` rendered its words, hid its brackets and opened the
+  right document when pressed — and the document it opened listed no
+  mention of it. What a mention carried as its target was the DISPLAY
+  half, and a backlink is derived by resolving that string, so every such
+  link resolved the writer's own words, found nothing, and was dropped in
+  silence. The two halves are separate now: what the link points at is
+  what gets resolved, what the reader sees is what a quoted sentence
+  highlights. Nothing about writing or renaming them changes — those
+  always kept the halves apart, which is why this survived: the one test
+  the form had checked that writing it preserved the writer's words, never
+  that the link counted.
+
 - **The demo shows links written on moves, which is what 0.7.0 was
   about.** The sample vault carried forty `[[links]]` and every one of
   them was in a note, so the release's own headline — a link in a move

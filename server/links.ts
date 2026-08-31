@@ -375,7 +375,11 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
                 ? { chapter: span.chapter }
                 : {}),
               context: mention.context,
-              target: mention.target,
+              // What the reader sees, not what it resolved to: this is the
+              // string the panel highlights inside `context`, and the one
+              // the offer to link writes back. `mention.target` is the
+              // document, and it was used a few lines above.
+              target: mention.shown,
               // Span-relative out of `findWikiMentions`, file-relative
               // here: everything downstream — the panel's identity for a
               // row, and the offset the server verifies before writing —
