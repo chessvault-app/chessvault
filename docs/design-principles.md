@@ -60,6 +60,16 @@ before anyone measured the third and fourth. Small text needs 4.5:1 on
 all of them. When a tier darkens to reach it, the tier above darkens
 too — two quiet greys that meet at the same lightness are one grey.
 
+A tint a row can shine through is not one background but two. The result
+chip was `bg-good/15 text-good`, and the games rows it sits in fill with
+`--accent` under the pointer: the wash let that fill through, so the chip
+was measured at 3.58:1 in light and 3.02:1 in dark on hover. Moving the
+token does not reach it — light needs 43% before hover clears the floor,
+and dark never clears it at all, because what moved was the fill and not
+the text. Outcome tints are opaque tokens now (`--good-tint`,
+`--destructive-tint`, mixed at the 10% every other tint in the app already
+used), so a chip measures the same at rest as under the pointer.
+
 ## Icons
 
 A glyph names the thing, not what it evokes. Games wore crossed swords,

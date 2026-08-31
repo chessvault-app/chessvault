@@ -350,7 +350,13 @@
      themes, compositing each background down to the page, found this and
      nothing else. The others fail only against a fill that appears while
      a control is pressed, which that scan cannot render. Theory, until
-     someone catches one. */
+     someone catches one.
+
+     Someone caught one: the result chip, `bg-good/15 text-good` over rows
+     that fill on hover, failed in both tones once the demo's games
+     carried a side to win or lose from. The answer was not to move these
+     tokens — they cannot reach the floor through a wash that is itself
+     moving. See --good-tint below. */
   --destructive: oklch(calc(52.5% + (48% - 52.5%) * var(--ui-contrast)) 0.245 27.3);
   --warn: oklch(calc(53% + (49% - 53%) * var(--ui-contrast)) 0.112 75);
   --info: oklch(calc(51% + (48% - 51%) * var(--ui-contrast)) 0.102 230);
@@ -370,6 +376,32 @@
      make. Chroma goes with it; a tinted white is not white. */
   --warn-foreground: oklch(calc(22% + (100% - 22%) * var(--ui-contrast))
     calc(0.04 * (1 - var(--ui-contrast))) 75);
+  /* An outcome tint that a row cannot shine through.
+
+     `bg-good/15 text-good` on the result chip was two variables at once:
+     the tint over whatever the row was painted, and the row's own
+     `--accent` arriving under it on hover. Measured on the games list,
+     the chip fell to 3.58:1 in light and 3.02:1 in dark under the
+     pointer — and the token comment above had called this exact case
+     theory ("a fill that appears while a control is pressed"), because
+     until the demo's games carried a side to win or lose from, nothing
+     rendered it where the check could see it.
+
+     Moving --good and --destructive does not fix it. Swept against the
+     real chip: light needs 43% before hover clears 4.5:1, four to nine
+     points below where those tokens were measured, and dark never clears
+     it at all — 86% still reads 3.83:1, because the fill under the wash
+     is what moved, not the text.
+
+     Opaque is the fix, and 10% is the app's own tint everywhere else
+     (`bg-destructive/10` on the delete button, the destructive badge,
+     the danger menu row); this chip was the one 15%. Composited rather
+     than layered, hover and rest are the same measurement — 4.65:1 and
+     4.78:1 in light, 6.71 and 5.48 in dark, 7.94 and 6.41 in high
+     contrast. Mixed against --card, which is what every list that draws
+     one sits on. */
+  --good-tint: color-mix(in oklch, var(--good) 10%, var(--card));
+  --destructive-tint: color-mix(in oklch, var(--destructive) 10%, var(--card));
   /**
    * The ECO tag: one hue per opening family (A–E), two lightnesses per
    * theme.
@@ -658,6 +690,8 @@
   /* The colour grammar (docs/design-principles.md): green, amber and blue
      each mean one thing; destructive above is the red. */
   --color-good: var(--good);
+  --color-good-tint: var(--good-tint);
+  --color-destructive-tint: var(--destructive-tint);
   --color-warn: var(--warn);
   --color-warn-foreground: var(--warn-foreground);
   --color-info: var(--info);

@@ -9,7 +9,12 @@ const fmt = (result: string): string => result.replaceAll('1/2', '½');
  * recent games, the opening map's deviations. Tinted from the player's
  * own point of view where there is one (green won, red lost — a win
  * and a loss are not the same fact); games without a known side just
- * brighten the winner. It used to be two vocabularies: the explorer
+ * brighten the winner. Both tints are OPAQUE tokens rather than a wash
+ * of the text colour: these chips sit in rows that fill under the
+ * pointer, and a translucent chip let that fill through and took the
+ * pair below the contrast floor — see --good-tint in index.css.
+ *
+ * It used to be two vocabularies: the explorer
  * wore the eval bar's white/black scheme while the games lists wore
  * this one, and the same result read as two different chips one pane
  * apart.
@@ -37,8 +42,8 @@ export function ResultBadge({
       ? 'bg-accent text-muted-foreground'
       : userSide
         ? userSide === winner
-          ? 'bg-good/15 text-good'
-          : 'bg-destructive/15 text-destructive'
+          ? 'bg-good-tint text-good'
+          : 'bg-destructive-tint text-destructive'
         : winner === 'white'
           ? 'bg-eval-white text-on-eval-white'
           : 'bg-eval-black text-on-eval-black';
