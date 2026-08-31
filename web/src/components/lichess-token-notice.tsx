@@ -103,7 +103,7 @@ export function forgetLichessToken(): void {
  * nothing is urgent; a setting is missing.
  *
  * The invisible inset is the app's own answer to a small target on a
- * touch screen (InfoTip and the statistics table's + do the same): the
+ * touch screen (the statistics table's + does the same): the
  * words keep their size and the thumb gets 40-odd px.
  *
  * `break-keep` on the sentence because Korean breaks between SYLLABLES

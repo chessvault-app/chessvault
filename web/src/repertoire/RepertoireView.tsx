@@ -48,7 +48,6 @@ import { rememberDrill, rememberedDrill } from '@/lib/training';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Field } from '@/components/ui/field';
-import { InfoTip } from '@/components/info-tip';
 import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { KingIcon } from '@/components/king-icon';
 import { Segmented } from '@/components/segmented';
@@ -1098,19 +1097,7 @@ export function RepertoireView() {
   };
 
   const header = (
-    <>
-      <h1 className="text-foreground text-base font-semibold">{t('Repertoire')}</h1>
-      {/* What sparring is, behind a ? instead of a paragraph the idle
-          panel made every visit re-read (lanph3re's call). */}
-      <InfoTip label="Repertoire">
-        {t(
-          'Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.',
-        )}{' '}
-        {t(
-          'Drilling one of your studies holds you to your preparation: a move off the study is named and rolled back, replies come from real games among the lines you cover, and common replies you have no answer to are recorded as gaps. Missed positions come back for review.',
-        )}
-      </InfoTip>
-    </>
+    <h1 className="text-foreground text-base font-semibold">{t('Repertoire')}</h1>
   );
 
 
@@ -1632,9 +1619,7 @@ export function RepertoireView() {
       {phase === 'ended' && <FinalAssessment fen={getNode(tree, tipId).fen} />}
       {/* What the page IS, in the words home and More already use for it
           — one line, under what it would play and above the button that
-          plays it. The long version stays behind the ? in the header: a
-          paragraph the panel made every visit re-read is exactly what
-          that InfoTip was cut out of. */}
+          plays it. */}
       {phase === 'idle' && (
         <p className="text-muted-foreground text-sm leading-relaxed">
           {t('Practise an opening against real games')}
