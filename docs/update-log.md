@@ -10,6 +10,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.6.0 was tagged, so they are in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **A comment says what it cannot keep, while it is still being typed.**
+  Two things typed into a move's comment used to be eaten between the box
+  and the file, and neither said so. A `}` was deleted outright, because a
+  PGN comment ends at one and has no way to escape it: `Bad } here` was
+  saved as `Bad here`. Anything shaped like `[%eval 9.9]` was worse than
+  deleted — the four commands PGN uses for machine annotation are READ, so
+  prose came back as a +9.9 evaluation on the move, and `[%cal Ra1a8]` as
+  a red arrow nobody had drawn. Both are now rewritten as they are typed,
+  under the caret and in front of whoever typed them: a `}` becomes a `)`,
+  and one space breaks the command shape while keeping every character. A
+  line under the box says why, and goes away by itself. Neither was ever a
+  way out of the comment and into the moves — ten payloads, braces and
+  parentheses through `1-0` and a full `[Event "x"]` line, left the move
+  list untouched — so this is about a note surviving intact, not about
+  safety. What was rewritten now round-trips byte for byte: what the box
+  holds is what the file holds is what opens again.
 - **The panes under a board turn with a swipe.** On a phone the panels
   beside a board are one pane at a time behind a strip of tabs — Moves,
   Engine, Explorer, a study's Chapters, a trainer's Puzzle — and reaching
