@@ -242,7 +242,11 @@ function Context({ text, mark, at }: { text: string; mark: string; at?: number }
           filled ground says it at a glance, and reads as what it is — the
           selection the row is about. `mark` because that is what the
           element means, with its own yellow taken off. */}
-      <mark className="bg-primary/20 text-foreground rounded-sm px-0.5">
+      {/* Square, deliberately. A rounded ground reads as a chip — a small
+          object sitting in the sentence — where this is a run of the
+          sentence that has been picked out. That is what a text selection
+          looks like, and it is what this means. */}
+      <mark className="bg-primary/20 text-foreground px-0.5">
         {text.slice(found, found + wanted.length)}
       </mark>
       {text.slice(found + wanted.length)}
