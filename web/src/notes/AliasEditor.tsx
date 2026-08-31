@@ -3,7 +3,7 @@ import { Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { ClearableInput } from '@/components/text-fields';
 import { t } from '@/lib/i18n';
 
 /**
@@ -71,7 +71,7 @@ export function AliasEditor({
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="note-aliases">{t('Names')}</FieldLabel>
-              <Input
+              <ClearableInput
                 id="note-aliases"
                 value={text}
                 autoFocus

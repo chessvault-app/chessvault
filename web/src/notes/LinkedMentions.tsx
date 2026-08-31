@@ -132,7 +132,11 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
               and relies on the card's own gap-4 to put that back;
               overriding the gap with anything smaller makes the sum
               negative and slides the first row up under the title. */}
-          <div className="flex flex-col gap-1">
+          {/* -mx-2 against the rows' px-2: the padding is the hover
+              ground's breathing room, and without pulling it back the text
+              sat 8px further in than the window's own title. The ground
+              reaches into the card's padding; the words line up. */}
+          <div className="-mx-2 flex flex-col gap-1">
           <ul className="flex flex-col gap-0.5">
             {mentions.map((m) => (
               <li key={`${m.from}:${m.at}`}>
@@ -177,32 +181,38 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
                        is also a button: a button inside a button is not
                        valid, and the name is the part worth pressing to
                        open. */
-                    <li key={at} className="hover:bg-accent rounded-md px-2 py-2">
-                      <div className="flex items-center gap-1.5">
-                        <FileText className="text-muted-foreground size-3.5 shrink-0" />
+                    /* The action is its own COLUMN, beside the name and the
+                       excerpt rather than above the excerpt. On the title
+                       line alone it was level with the name but the excerpt
+                       ran on underneath it, so the text passed behind the
+                       button and neither edge lined up with anything. A
+                       column ends the text where the button starts. */
+                    <li key={at} className="hover:bg-accent flex items-start gap-2 rounded-md px-2 py-2">
+                      <FileText className="text-muted-foreground mt-1 size-3.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
                         <button
                           type="button"
                           onClick={() => {
                             setOpen(false);
                             navigate('notes', encodeURIComponent(m.from));
                           }}
-                          className="focus-visible:ring-ring min-w-0 flex-1 truncate rounded-sm text-left text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                          className="focus-visible:ring-ring block max-w-full truncate rounded-sm text-left text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
                         >
                           {m.from.split('/').at(-1)}
                         </button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="-my-1 shrink-0"
-                          disabled={linked.has(at)}
-                          onClick={() => void link(m, at)}
-                        >
-                          {linked.has(at) ? t('Linked') : t('Link')}
-                        </Button>
+                        <p className="text-muted-foreground mt-0.5 text-xs leading-5">
+                          <Context text={m.context} mark={m.target} at={m.markAt} />
+                        </p>
                       </div>
-                      <p className="text-muted-foreground mt-0.5 text-xs leading-5">
-                        <Context text={m.context} mark={m.target} at={m.markAt} />
-                      </p>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="shrink-0"
+                        disabled={linked.has(at)}
+                        onClick={() => void link(m, at)}
+                      >
+                        {linked.has(at) ? t('Linked') : t('Link')}
+                      </Button>
                     </li>
                   );
                 })}
