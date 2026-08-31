@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
-import { BOARD_WIDE_COLUMN, BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { t } from '@/lib/i18n';
 
 /**
@@ -360,9 +360,13 @@ export function SkeletonDocument({ className }: { className?: string }) {
  * column that is not where the page puts one. Every element on it moved
  * when the document arrived.
  *
- * BOARD_WIDE_SHELL, BOARD_MAX_W and BOARD_WIDE_SIDE are the three rules
+ * BOARD_HELD_SHELL, BOARD_MAX_W and BOARD_WIDE_SIDE are the three rules
  * the real pages compose, so sharing them is what keeps the two in the
- * same places. A copy would drift the first time one of them moved.
+ * same places. A copy would drift the first time one of them moved — and
+ * it had: the shell was written out by hand here with
+ * `stacked:overflow-hidden` where the constant says
+ * `stacked:overflow-y-auto`, so a window short enough to make the page
+ * scroll clipped the placeholder instead.
  */
 export function SkeletonBoard({
   players = false,
@@ -408,14 +412,15 @@ export function SkeletonBoard({
     </BoardLane>
   );
   return (
-    <Loading
-      className={cn(
-        'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden',
-        BOARD_WIDE_SHELL,
-        className,
-      )}
-    >
-      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:hidden">{titleRow}</div>
+    // BOARD_HELD_SHELL itself, not a copy of it. The copy differed in one
+    // class — stacked:overflow-hidden where the constant says
+    // stacked:overflow-y-auto — so a window short enough to make the real
+    // page scroll clipped the placeholder instead. Sharing the string is
+    // what the constant exists for; see components/layout.
+    <Loading className={cn(BOARD_HELD_SHELL, className)}>
+      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:hidden pointer-coarse:h-9">
+        {titleRow}
+      </div>
 
       {/* The board's column, and inside it the one width budget every view
           that shows a board shares. */}
@@ -439,29 +444,52 @@ export function SkeletonBoard({
       </div>
 
       {/* The side column, at the share of the row the real one takes. */}
-      <div className={cn('flex min-h-0 flex-1 flex-col gap-3', BOARD_WIDE_SIDE)}>
+      {/* stacked:gap-2 and the column’s floor, both of which the real
+          columns carry (StudyView, BookTrainer): at gap-3 the placeholder
+          spaced its children 4px wider apart than the page does. */}
+      <div
+        className={cn(
+          'flex min-h-0 flex-1 flex-col gap-3 stacked:min-h-40 stacked:gap-2',
+          BOARD_WIDE_SIDE,
+        )}
+      >
         <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden">{titleRow}</div>
-        {/* What a phone has instead of the panels: the pane switcher. */}
-        <div className="bg-muted border-border flex shrink-0 gap-0.5 rounded-lg border p-px lg:hidden">
+        {/* What a phone has instead of the panels: the pane switcher.
+            TabsList's own box — h-8 and p-[3px] on the muted track, no
+            border and no gap — rather than something that looks like it.
+            Measured at 28px against the strip's 32. */}
+        <div className="bg-muted flex h-8 shrink-0 rounded-lg p-[3px] lg:hidden">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-6 flex-1 rounded-md" />
+            <Skeleton key={i} className="h-full flex-1 rounded-md" />
           ))}
         </div>
         {/* The panels below are the wide layout's: a phone shows one pane
             at a time behind the tabs above, and that one is the panel that
-            fills the column. Measured on a study at 1920 — chapters 92px
-            (a 40px header, its rows, and the 10px grip that resizes it),
-            explorer 42px collapsed to its header — because the column
-            without them started its main panel 104px too high and ended
-            it 42px too low. */}
+            fills the column.
+
+            Both headers are min-h-11 — a PanelHeader's own floor, measured
+            at 44px on every panel in the app — and not the h-10 they were
+            drawn at. And the chapters block carries the real panel's own
+            floor and ceiling rather than standing at one row: measured on
+            a three-chapter study, 90px of placeholder against a 150px
+            panel, so the explorer and the moves below it started 60px too
+            high. */}
         {chapters && (
-          <div className="bg-card flex shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
-            <div className="border-border flex h-10 shrink-0 items-center border-b px-3">
+          <div className="bg-card flex max-h-48 min-h-[min(6rem,15%)] shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
+            <div className="border-border flex min-h-11 shrink-0 items-center border-b px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-20" />
             </div>
-            <div className="flex h-10 items-center px-2">
-              <Skeleton className="h-3 w-2/3" />
+            {/* px-1 and no gap, like the real list: its rows are --row-h
+                tall and meet. With a gap and a padding of its own the
+                block came out 166px against the panel's 150. */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-1">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex h-(--row-h) shrink-0 items-center px-2">
+                  <Skeleton className={cn('h-3', i === 0 ? 'w-2/3' : 'w-1/2')} />
+                </div>
+              ))}
             </div>
+            {/* The grip that resizes it, which is part of the panel. */}
             <div className="bg-muted h-2.5 shrink-0" />
           </div>
         )}
@@ -473,9 +501,12 @@ export function SkeletonBoard({
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
+        {/* Folded to its header, which is where a board page opens it:
+            `enabled` is session state and starts off (store/explorer), so a
+            load never finds the 300px open panel. Same min-h-11 header. */}
         {explorer && (
           <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
-            <div className="flex h-10 items-center px-3">
+            <div className="flex min-h-11 items-center px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-16" />
             </div>
           </div>
