@@ -65,14 +65,32 @@ function Loading({ children, className }: { children: React.ReactNode; className
   );
 }
 
-/** A stack of list-row placeholders: title line + shorter detail line. */
+/**
+ * A stack of one-line list rows: a mark, a name, a figure at the end.
+ *
+ * It used to be a title bar over a detail bar in a padded, gapped box —
+ * 40px of placeholder for rows that are 33. Every list that draws this is
+ * a single line: the dashboard's attempts and the hub's are `ListRow
+ * dense` at `text-sm`, and the map's field table is a subgrid row of the
+ * same height. Measured on the dashboard: five placeholders came to 240px
+ * against the 165px of rows that replaced them, and the panel — which is
+ * drawn from the first paint precisely because these rows ARE its height
+ * — stood 75px too tall for the whole wait and then collapsed.
+ *
+ * So: the dense rung from the density token, one `text-sm` line box, and
+ * the hairline between rows that two of the three callers draw. No
+ * padding of its own — none of the three lists has any.
+ */
 export function SkeletonRows({ rows = 6, className }: { rows?: number; className?: string }) {
   return (
-    <Loading className={cn('flex flex-col gap-1 p-3', className)}>
+    <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex flex-col gap-1.5 py-1.5">
-          <Skeleton className="h-3 w-2/3" />
-          <Skeleton className="h-2.5 w-1/3" />
+        <div key={i} className="flex items-center gap-2.5 px-3 py-(--row-py-dense)">
+          <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+          <div className="flex h-5 min-w-0 flex-1 items-center">
+            <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+          </div>
+          <Skeleton className="h-2.5 w-10 shrink-0" />
         </div>
       ))}
     </Loading>

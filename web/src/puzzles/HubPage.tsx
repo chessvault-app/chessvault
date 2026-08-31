@@ -286,7 +286,7 @@ function HubSkeletonHistoryPanel() {
     <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
       <SkeletonPanelHeading width="w-24" className="shrink-0" />
       <div className="min-h-0 flex-1">
-        <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
+        <SkeletonRows rows={3} />
       </div>
     </div>
   );
