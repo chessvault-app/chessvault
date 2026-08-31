@@ -407,7 +407,13 @@ export function BookPage({ slug }: { slug: string }) {
           // the count arrives with the data, and the wait this covers is
           // the RENDER after it. Forty-eight is the guess for the fetch
           // itself, which is the only part that happens blind.
-          detailPending ? <SkeletonTiles tiles={Math.min(book?.puzzles.length ?? 48, 48)} /> : null
+          // `cycles` holds the Cycles panel's place. It is drawn below for
+          // every book that has puzzles — the same condition that makes a
+          // grid worth standing in for — so without it the whole grid
+          // dropped by the panel's height as the book landed.
+          detailPending ? (
+            <SkeletonTiles cycles tiles={Math.min(book?.puzzles.length ?? 48, 48)} />
+          ) : null
         ) : scan ? (
           // The scan owns the panel while it runs. On an empty book it
           // stands alone — the "nothing in this book yet" copy was a lie

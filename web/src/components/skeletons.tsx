@@ -207,9 +207,45 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
  * the grid, then the grid itself — same columns, gap and tile shape as the
  * real one, so nothing moves when the puzzles arrive.
  */
-export function SkeletonTiles({ tiles = 48, className }: { tiles?: number; className?: string }) {
+export function SkeletonTiles({
+  tiles = 48,
+  cycles = false,
+  className,
+}: {
+  tiles?: number;
+  /**
+   * Hold the place of the Cycles panel above the grid.
+   *
+   * That panel is drawn for any book with puzzles in it — which is the
+   * same book this grid is worth drawing for — and it is a whole Panel:
+   * a header, the pass's own copy, and the card's floor. Measured on the
+   * demo's book at 900px, the grid started at y=153 while this was
+   * showing and at y=297 once the book landed, so every tile dropped
+   * 144px the moment it did.
+   */
+  cycles?: boolean;
+  className?: string;
+}) {
   return (
     <Loading className={className}>
+      {cycles && (
+        // The Panel's own box: pt-0 and a --card-spacing floor (ui/card),
+        // a min-h-11 header with no rule under it, then the paragraph the
+        // panel opens with at text-sm/relaxed.
+        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 pb-(--card-spacing)">
+          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-spacing) pointer-coarse:min-h-13">
+            <Skeleton className="h-2.5 w-16" />
+            <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
+          </div>
+          <div className="flex flex-col gap-1 px-(--card-spacing)">
+            {['w-full', 'w-11/12', 'w-2/3'].map((w) => (
+              <div key={w} className="flex h-[1.4375rem] items-center">
+                <Skeleton className={cn('h-2', w)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* The Progress track's own h-1, not the h-1.5 it used to guess. */}
       <Skeleton className="mb-3 h-1 w-full rounded-full" />
       {/* Two Select triggers, not the five filter chips the page stopped
