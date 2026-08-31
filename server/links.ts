@@ -12,7 +12,7 @@ import {
   type LinkIndex,
   type LinkSection,
 } from '../shared/wikiLinks.ts';
-import { commentSpans } from '../shared/pgn.ts';
+import { blankCommands, commentSpans } from '../shared/pgn.ts';
 import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
 import { validId } from '../shared/vaultNames.ts';
 
@@ -337,10 +337,16 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
         // A note is prose end to end; a PGN is prose only inside its
         // comments. Both hand back offsets into the FILE, which is what
         // the link-this-mention button writes at.
+        // Blanked, not stripped: `[%eval 0.34]` inside a comment is
+        // machinery, and it was showing up in the sentence a backlink
+        // quotes — one of them cut mid-command, since the window around a
+        // mention knows nothing about them. Equal-length spaces take it out
+        // of the sentence while leaving every offset after it exactly where
+        // it was, which is what the write-back verifies against.
         const spans: Prose['spans'] =
           ext === '.md'
             ? [{ at: 0, text: file }]
-            : commentSpans(file);
+            : commentSpans(file).map((span) => ({ ...span, text: blankCommands(span.text) }));
         prose.push({ section, id: from, spans });
 
         for (const span of spans) {

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parsePgn, parseComment, walk, type PgnNodeData } from 'chessops/pgn';
 import {
+  blankCommands,
   chaptersToPgn,
   commentSpans,
   gameToTree,
@@ -415,5 +416,17 @@ describe('commentSpans', () => {
 
   it('gives a comment before any Event tag to the first game', () => {
     expect(commentSpans('{ prelude } 1. e4 *')[0]!.chapter).toBe(0);
+  });
+
+  /**
+   * Blanking rather than stripping is what lets the backlink index quote a
+   * sentence AND write at an offset in the same pass.
+   */
+  it('blanks annotation commands without moving anything after them', () => {
+    const text = '[%eval 0.34] The point is here.';
+    const blanked = blankCommands(text);
+    expect(blanked).toHaveLength(text.length);
+    expect(blanked).not.toContain('[%');
+    expect(blanked.indexOf('point')).toBe(text.indexOf('point'));
   });
 });

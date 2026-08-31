@@ -357,6 +357,31 @@ describe('links written in move comments', () => {
     );
   });
 
+  /**
+   * What the panel quotes is the sentence a reader sees on the move, not
+   * the machinery the file keeps beside it. One of these came back cut
+   * mid-command before the spans were blanked.
+   */
+  it('quotes the comment without the annotation commands in it', async () => {
+    study(
+      'Timed',
+      [
+        '[Event "Timed"]',
+        '[Result "*"]',
+        '',
+        '1. e4 { [%eval 0.34] [%clk 0:29:55] The point is [[Poisoned Pawn]] here. } *',
+        '',
+      ].join('\n'),
+    );
+    const { mentions } = await get('notes', 'Poisoned Pawn');
+    const hit = mentions.find((m: { from: string }) => m.from === 'Timed');
+    expect(hit.context).toBe('The point is Poisoned Pawn here.');
+    // And the offset still lands on the link, blanking having changed no
+    // position in the file.
+    const file = readFileSync(join(studies, 'Timed.pgn'), 'utf-8');
+    expect(file.slice(hit.at)).toMatch(/^\[\[Poisoned Pawn\]\]/);
+  });
+
   it('rewrites a link inside a comment when its target is renamed', () => {
     study(
       'Renamed',

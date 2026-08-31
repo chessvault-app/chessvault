@@ -49,6 +49,24 @@ export function commentText(text: string): string {
 }
 
 /**
+ * The same commands blanked out, leaving the text exactly as long.
+ *
+ * `commentText` is for READING a comment and shortens it, which loses every
+ * position after the first command. The backlink index needs both halves:
+ * a sentence to show, and an offset into the FILE that it can verify and
+ * write at. Spaces of equal length give it both — the machinery stops
+ * appearing in the sentence, and nothing after it moves.
+ *
+ * It also stops a document from being mentioned by a command's innards. A
+ * study called `clk` is three characters, which is the shortest an unlinked
+ * mention is hunted at, and every timed game in the vault carries `[%clk]`
+ * on every move.
+ */
+export function blankCommands(text: string): string {
+  return text.replace(UNREAD_COMMAND, (match) => ' '.repeat(match.length));
+}
+
+/**
  * The two shapes a typed comment cannot keep, rewritten so that it can.
  *
  * A brace comment has no escape in PGN — `}` simply ends it — so chessops'
