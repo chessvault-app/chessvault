@@ -71,6 +71,13 @@ const TABS: { id: MainTab; label: string }[] = [
 let heldTab: MainTab | null = null;
 
 /**
+ * Whether this device last saw the collection holding games — what the
+ * cold-start guess below opens on, in place of module memory that dies
+ * with the page. '1', '0' or absent, absent reading as never-seen.
+ */
+const HAS_GAMES_KEY = 'vault:games-has-collection';
+
+/**
  * The narrowest pane the one-row chrome honestly fits — the English
  * labels' worst case with slack. The fold is TIERED on the measured
  * pane, never free-wrapped: a wrapping flex row between the tiers put
@@ -197,8 +204,15 @@ export function GamesBrowser({
 
       `cachedCollection()` answers synchronously on every visit after the
       first, so the choice is normally made before the first paint and
-      nothing moves. Only a cold start with no cache has to guess, and
-      the effect below corrects that once — see `guessedTab`. */
+      nothing moves. But that cache is module memory: every reload, new
+      tab and cold start began with nothing, guessed Databases, and
+      swapped whole panes when the load came back holding games — for
+      anyone with a collection, the wrong opening on every single visit.
+      What this device saw last time is remembered under HAS_GAMES_KEY
+      on the home page's bargain: a paint hint, never the authority,
+      wrong by at most one visit, corrected below — see `guessedTab`.
+      A device that has never seen the vault guesses Databases, which is
+      what a seeded vault's empty collection would choose anyway. */
   const guessedTab = useRef(false);
   const [tab, setTabState] = useState<MainTab>(() => {
     if (positionHuntPending()) return 'databases';
@@ -206,7 +220,7 @@ export function GamesBrowser({
     const cached = cachedCollection();
     if (cached) return cached.length > 0 ? 'collection' : 'databases';
     guessedTab.current = true;
-    return 'databases';
+    return localStorage.getItem(HAS_GAMES_KEY) === '1' ? 'collection' : 'databases';
   });
   /** The emitted selection's subject, per tab: the collection remembers
       a KEY and re-resolves it against the live array (load() replaces
@@ -261,16 +275,19 @@ export function GamesBrowser({
       .catch(() => {});
   }, [load]);
 
-  /* The one correction the synchronous guess above cannot make.
-     With no cached collection there is nothing to ask at mount, so the
-     pane opens on Databases and moves to the collection when the load
-     comes back holding games. It fires at most once per mount, and only
-     while `heldTab` is still null — a tab the reader chose in the
-     meantime sets it, and their choice outranks this. */
+  /* The one correction the synchronous guess above cannot make: the
+     load has come back, so put the pane on the tab the answer chooses —
+     in either direction, since the stored hint can also have guessed
+     Collection at a vault that emptied it. Fires at most once per
+     mount, and only while `heldTab` is still null — a tab the reader
+     chose in the meantime sets it, and their choice outranks this. The
+     answer is also what the next visit's guess is remembered from. */
   useEffect(() => {
-    if (!guessedTab.current || !loaded) return;
+    if (!loaded) return;
+    localStorage.setItem(HAS_GAMES_KEY, games.length > 0 ? '1' : '0');
+    if (!guessedTab.current) return;
     guessedTab.current = false;
-    if (heldTab === null && games.length > 0) setTabState('collection');
+    if (heldTab === null) setTabState(games.length > 0 ? 'collection' : 'databases');
   }, [loaded, games.length]);
 
   const toggleBookmark = async (game: GameSummary): Promise<void> => {
