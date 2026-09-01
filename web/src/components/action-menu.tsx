@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { t } from '@/lib/i18n';
-import { useMediaQuery } from '@/lib/media';
+import { isCoarsePointer, useMediaQuery } from '@/lib/media';
 
 export interface MenuAction {
   label: string;
@@ -175,7 +175,15 @@ export function ActionContextMenu({
    */
   beforeOpen?: (event: React.MouseEvent) => boolean;
 }) {
-  const wide = useMediaQuery(WIDE);
+  // The width is only half the question here, unlike the ⋯ menu above,
+  // where it is the whole of it. The branch below is a RIGHT-CLICK menu,
+  // and a thumb has no right click — it has the long press, which the
+  // narrow branch answers with the app's own sheet. Read on width alone, a
+  // phone held sideways is 812px and got the desktop popup: the wrong
+  // shape for a thumb, and Base UI's trigger brings touch handlers of its
+  // own that swallowed the touchstart, which left the pane swipe dead on
+  // the one pane that has this menu in it (hooks/use-pane-swipe).
+  const wide = useMediaQuery(WIDE) && !isCoarsePointer();
   const [open, setOpen] = useState(false);
 
   if (disabled) return children;

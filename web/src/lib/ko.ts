@@ -965,6 +965,7 @@ export const ko: Record<string, string> = {
   'Nothing cached yet.': '아직 저장된 것이 없습니다.',
   '{n} months': '{n}개월',
   '{size} in total': '모두 {size}',
+  "Clear this player's months": '이 선수의 저장된 달 지우기',
   'Clear all': '모두 지우기',
   'Wipe all data': '모든 데이터 삭제',
   'Wipe the entire vault?': '보관함 전체를 삭제할까요?',

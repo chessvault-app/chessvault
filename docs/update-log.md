@@ -140,6 +140,33 @@ other people.
   leaves the machine. The demo does not probe at all: a page that
   reaches a third party the moment somebody drags the pieces into an
   ending is not a demo of this app.
+- **Checkmate no longer reads as a dead-level position.** With the engine
+  on, a board that was already mated drew the eval bar split exactly down
+  the middle with a dash for a score — the one position on the board whose
+  value is not in doubt, shown as the one value it cannot have. Stockfish
+  says nothing about a finished position (it answers `bestmove (none)` and
+  no variation), and the bar was waiting for an answer that never comes,
+  while the Engine panel beside it had known to score such a position by
+  rule since it was written. The bar now does the same, and it names a
+  finished game the way a scoresheet does: a mate falls all the way to the
+  winning side and prints `1-0` or `0-1`, with the hover saying which side
+  won in words. A draw keeps its number — `0.0`, which is what a draw is
+  worth and what the bar already prints for any dead-level position. A mate
+  still to be PLAYED is untouched at `#1`, and can no longer be read as one
+  that has already been delivered. The repertoire's end-of-line assessment,
+  which prints its own number beside its own bar, now says the same thing
+  in the same words: a drill or a spar that finished in mate is headed
+  `1-0` or `0-1` rather than `-#1`.
+
+- **A browsed player can be cleared on its own.** Settings → Browsed games
+  listed every player whose months are cached, with one button that took
+  all of them. That was the wrong shape for the list it sat under: the
+  handle you browse every week is in it beside the half dozen you looked
+  up once, and clearing the lot to be rid of the curiosities re-downloaded
+  the months actually in use. Each row now carries its own bin (“Clear this
+  player's months”), and Clear all still takes everything. Deleting from
+  the page also makes Storage used below re-read, which had been showing
+  the size it loaded with — a card apart, two answers for the same thing.
 
 ## 0.7.2
 

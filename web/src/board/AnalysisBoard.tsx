@@ -22,8 +22,7 @@ import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
-import { BoardLane, EvalBar, EvalBarRow, EvalBarSlot } from '@/engine/EvalBar';
-import { toWhitePov } from '@/engine/uci';
+import { BoardLane, EvalBar, EvalBarRow, EvalBarSlot, useEvalReadout } from '@/engine/EvalBar';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useReview } from '@/store/review';
@@ -161,8 +160,12 @@ export function AnalysisBoard({
   // a late message paints the previous position's arrow and eval.
   const engineFresh = engineOn && engineFen === node.fen;
   const topLine = engineFresh ? engineLines[0] : undefined;
-  const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
-  const evalScore = topLine ? toWhitePov({ cp: topLine.cp, mate: topLine.mate }, turn) : null;
+  // The bar's own hook, not a second derivation from `topLine`: this one is
+  // beside the board and the stacked one is above it (EvalBarRow), and the
+  // two disagreeing is two answers to one position. The arrow below keeps
+  // reading `topLine` directly — a finished position has no best move to
+  // draw, which is the whole of what the two want differently.
+  const { score: evalScore, result: evalResult } = useEvalReadout(node.fen);
 
   // Keyed on the best move STRING: topLine.moves is a fresh array per info
   // line, so an identity-keyed memo never hit.
@@ -341,7 +344,11 @@ export function AnalysisBoard({
               when it went, so switching the engine on stole 20px from the
               board and stepped the whole thing sideways under the thumb. */}
           {engineOn ? (
-            <EvalBar score={evalScore} className="hidden shrink-0 wide:block roomy:block" />
+            <EvalBar
+              score={evalScore}
+              result={evalResult}
+              className="hidden shrink-0 wide:block roomy:block"
+            />
           ) : (
             <EvalBarSlot reserve={reserveEvalLane} />
           )}

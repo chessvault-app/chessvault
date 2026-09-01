@@ -75,6 +75,9 @@ const reauth = (): void => {
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  /** Bumped whenever something on this page frees space, so the storage
+      card re-reads instead of standing on the figures it loaded with. */
+  const [storageStamp, setStorageStamp] = useState(0);
   const pending = useSlowLoad(settings === null && loadError === null);
 
   const refresh = async (): Promise<void> => {
@@ -172,8 +175,13 @@ export function SettingsPage() {
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
             <TablebaseCard settings={settings} onChanged={refresh} />
-            <BrowsedGamesCard />
-            <StorageCard />
+            {/* Clearing a cached player changes a row of the card below
+                — and left it saying the size it read at mount, so the
+                page carried two different answers for "Browsed games"
+                a card apart. It was reachable before this too, by
+                Clear all; a button per row is what made it ordinary. */}
+            <BrowsedGamesCard onCleared={() => setStorageStamp((n) => n + 1)} />
+            <StorageCard reload={storageStamp} />
             <RecoveryCard />
             <DesktopCard />
             <AppearanceCard />
@@ -1827,9 +1835,9 @@ function size(bytes: number): string {
  * a dozen players out of curiosity and the vault is quietly holding a
  * dozen players' entire histories, none of it in the collection and none
  * of it mentioned anywhere in the app. This is the mention, and the
- * button.
+ * buttons: one per player, and one for the lot.
  */
-function BrowsedGamesCard() {
+function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
   const [players, setPlayers] = useState<CachedPlayer[] | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -1845,17 +1853,27 @@ function BrowsedGamesCard() {
     void refresh();
   }, []);
 
-  // All of it. The list is here to SAY what is being held — whose history,
-  // how much — not to be picked through: choosing which player to keep is
-  // a question nobody has about data that costs one fetch to get back.
-  const clear = async (): Promise<void> => {
+  // A failed delete needs no note of its own: the refresh right after
+  // shows what is (still) being held, which is the honest report. Both
+  // buttons are disabled while either runs, so a second press cannot
+  // race the refresh that is about to redraw the list under it.
+  const drop = async (query: string): Promise<void> => {
     setBusy(true);
-    // A failed delete needs no note of its own: the refresh right after
-    // shows what is (still) being held, which is the honest report.
-    await api('/api/games/cache', { method: 'DELETE' }).catch(() => {});
+    await api(`/api/games/cache${query}`, { method: 'DELETE' }).catch(() => {});
     await refresh();
     setBusy(false);
+    // Even when the delete failed: what the storage card is showing came
+    // from before it was tried either way, and re-reading is one request.
+    onCleared();
   };
+
+  // One row's worth. The list was always here to SAY what is being held —
+  // whose history, how much — and once it says it, the size column is the
+  // reason to take one player and not the rest: the handle browsed every
+  // week sits in it beside the ones looked up once, and clearing the lot
+  // to be rid of those re-downloads the months actually in use.
+  const clearOne = (p: CachedPlayer): Promise<void> =>
+    drop(`?provider=${encodeURIComponent(p.provider)}&user=${encodeURIComponent(p.user)}`);
 
   const total = (players ?? []).reduce((sum, p) => sum + p.bytes, 0);
 
@@ -1877,15 +1895,20 @@ function BrowsedGamesCard() {
            flash-or-shove. */
         <>
           <div className="divide-border border-border divide-y rounded-lg border">
-            <div className="flex items-center gap-2 px-3 py-2">
-              {/* h-6, not h-5: the name is text-base, whose line box is
-                  24px, and the row takes its height from it. */}
-              <div className="flex h-6 min-w-0 flex-1 items-center">
+            <div className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
+              {/* h-7, matching the row's clear button — the tallest thing
+                  in it, and so what the row takes its height from. The
+                  name's own line box is 24px and the size's 20px, which
+                  is what these stood at while the row was text only. */}
+              <div className="flex h-7 min-w-0 flex-1 items-center pointer-coarse:h-9">
                 <Skeleton className="h-3 w-24" />
               </div>
-              <div className="flex h-5 shrink-0 items-center">
+              <div className="flex h-7 shrink-0 items-center pointer-coarse:h-9">
                 <Skeleton className="h-2.5 w-40" />
               </div>
+              {/* icon-sm's own size-7, and its size-9 under a coarse
+                  pointer (ui/button) — the footer's trick, per row. */}
+              <Skeleton className="size-7 shrink-0 rounded-[min(var(--radius-md),12px)] pointer-coarse:size-9" />
             </div>
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -1903,18 +1926,36 @@ function BrowsedGamesCard() {
         <>
           <ul className="divide-border border-border divide-y rounded-lg border">
             {players.map((p) => (
-              <li key={`${p.provider}/${p.user}`} className="flex items-baseline gap-2 px-3 py-2">
-                <p className="min-w-0 flex-1 truncate text-base">{p.user}</p>
-                <p className="text-muted-foreground shrink-0 text-sm">
-                  {PROVIDER_NAME[p.provider] ?? p.provider} · {t('{n} months', { n: p.months })} ·{' '}
-                  {size(p.bytes)}
-                </p>
+              <li key={`${p.provider}/${p.user}`} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
+                {/* The name and its sizes keep the baseline they shared
+                    when they were the whole row; only the button, which
+                    has no text to sit on, is centred against them. */}
+                <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                  <p className="min-w-0 flex-1 truncate text-base">{p.user}</p>
+                  <p className="text-muted-foreground shrink-0 text-sm">
+                    {PROVIDER_NAME[p.provider] ?? p.provider} · {t('{n} months', { n: p.months })} ·{' '}
+                    {size(p.bytes)}
+                  </p>
+                </div>
+                {/* No confirmation: this is a cache, and the button that
+                    takes ALL of it does not ask either — a question in
+                    front of the smaller action would be the louder one. */}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  disabled={busy}
+                  title={t("Clear this player's months")}
+                  onClick={() => void clearOne(p)}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
               </li>
             ))}
           </ul>
           <div className="flex items-center justify-between gap-2">
             <span className="text-muted-foreground text-sm">{t('{size} in total', { size: size(total) })}</span>
-            <Button variant="ghost" disabled={busy} onClick={() => void clear()}>
+            <Button variant="ghost" disabled={busy} onClick={() => void drop('')}>
               {t('Clear all')}
             </Button>
           </div>
@@ -1952,15 +1993,18 @@ const STORAGE_AREAS: { key: string; label: string; section?: Section }[] = [
  * can be emptied has its own place (the library, the browsed-games card,
  * the databases page), and a list of sizes is not the place to lose data.
  */
-function StorageCard() {
+function StorageCard({ reload = 0 }: { reload?: number }) {
   const [areas, setAreas] = useState<Record<string, { bytes: number; files: number }> | null>(null);
+  // `reload` counts the clearings done on this page — a re-read, not a
+  // poll, and the reason the card keeps its last figures until the new
+  // ones arrive rather than falling back to skeletons.
   useEffect(() => {
     void api<{ areas: { key: string; bytes: number; files: number }[] }>('/api/storage')
       .then((body) =>
         setAreas(Object.fromEntries(body.areas.map((a) => [a.key, { bytes: a.bytes, files: a.files }]))),
       )
       .catch(() => setAreas({}));
-  }, []);
+  }, [reload]);
   const total = Object.values(areas ?? {}).reduce((sum, a) => sum + a.bytes, 0);
   return (
     <Card icon={HardDrive} title={t('Storage used')}>

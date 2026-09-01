@@ -240,8 +240,19 @@ export function StudyView({
 
   // Rendered twice — at the page top on stacked layouts, in the side column
   // on wide ones — because CSS cannot reparent. Only one is ever visible.
-  const titleRow = (className: string) => (
-    <div className={cn('flex shrink-0 items-center gap-2 wide:h-9', className)}>
+  // `inColumn` marks the copy that stands in the pane column as furniture
+  // the swipe measures against rather than a pane it can turn
+  // (hooks/use-pane-swipe). It has to say so because `wide` starts at 44rem
+  // in landscape while the panes stay tabbed to 64rem — a phone held
+  // sideways shows this row AND the tab strip, and a column with two boxes
+  // down it is not a row the gesture will touch. Only that copy: the marker
+  // on the page-top one would be inert, but it is also the only handle the
+  // column has for finding its own furniture.
+  const titleRow = (className: string, inColumn = false) => (
+    <div
+      className={cn('flex shrink-0 items-center gap-2 wide:h-9', className)}
+      data-pane-strip={inColumn ? '' : undefined}
+    >
       <Button
         variant="ghost"
         size="icon-sm"
@@ -311,7 +322,7 @@ export function StudyView({
         className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
         {...paneSwipe.column}
       >
-        {titleRow('stacked:hidden')}
+        {titleRow('stacked:hidden', true)}
 
         <PaneTabs className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
         {/* The hiding goes on the panel itself. A `contents` wrapper around

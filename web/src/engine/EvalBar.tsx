@@ -1,13 +1,27 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
 import { useEngine } from '@/store/engine';
+import { terminalResult, terminalScore } from './terminal.ts';
 import { formatScore, formatScoreCompact, toWhitePov, winningChances } from './uci.ts';
 
 interface EvalBarProps {
   /** Score from White's point of view, or null when there is no evaluation. */
   score: { cp?: number; mate?: number } | null;
+  /**
+   * The result of a game that is already over, printed in place of the
+   * score — the way every board site writes a finished game, and the way a
+   * scoresheet does. Only a DECISIVE end has one: a draw keeps its number,
+   * which is `0.0` and says the same thing (see `terminalResult`).
+   *
+   * A caller with no finished game passes nothing. `useEvalReadout` works
+   * it out for the bars that stand beside a board; the repertoire's
+   * assessment passes it too, and prints it in its own number's slot —
+   * there the bar shows nothing (`showScore={false}`), but the label and
+   * the tip are still the bar's to name.
+   */
+  result?: '1-0' | '0-1' | null;
   /** Vertical bar beside the board, or horizontal above a pane. */
   orientation?: 'vertical' | 'horizontal';
   /**
@@ -155,18 +169,45 @@ export function EvalBarSlot({
 }
 
 /**
- * The engine's evaluation of the position on the board, from White's point
- * of view, or null when the engine is off or is still answering about the
- * position before this one. One rule, because a bar showing the last
- * position's score is worse than a bar showing nothing.
+ * What the bar is showing: the position's evaluation from White's point of
+ * view, and — when the game on the board is already over and was won — the
+ * result to print instead of it. Both null when the engine is off or is
+ * still answering about the position before this one. One rule, because a
+ * bar showing the last position's score is worse than a bar showing nothing.
+ *
+ * A FINISHED position is answered by rule and the engine is not consulted at
+ * all. It cannot be: Stockfish replies to a mated board with `bestmove
+ * (none)` and one PV-less `info` line, which parseInfo drops for carrying no
+ * variation, so the search ends with zero lines and never says anything
+ * about the position again (see terminal.ts). Waiting on `lines[0]` there is
+ * waiting for something that is not coming — and the bar's own answer to
+ * "no evaluation" is the halfway mark, so a checkmate drew as dead level
+ * with a dash for a score. Every other reader of a terminal position already
+ * had its own copy of this (EnginePane, FinalAssessment, review); the bar
+ * was the one still asking the engine.
  */
-export function useEvalScore(fen: string): { cp?: number; mate?: number } | null {
+export function useEvalReadout(fen: string): {
+  score: { cp?: number; mate?: number } | null;
+  result: '1-0' | '0-1' | null;
+} {
   const enabled = useEngine((s) => s.enabled);
   const lines = useEngine((s) => s.lines);
   const resultFen = useEngine((s) => s.resultFen);
+  const settled = useMemo(() => terminalScore(fen), [fen]);
   const top = enabled && resultFen === fen ? lines[0] : undefined;
   const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
-  return top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
+  if (!enabled) return { score: null, result: null };
+  if (settled) {
+    // Only a decisive end is written as a result, and a draw keeps its
+    // number — see terminalResult. `#1` on a board that has ALREADY been
+    // mated reads as a mate still to be played, which is the thing this
+    // bar must not say (lanph3re).
+    return { score: settled, result: terminalResult(settled) };
+  }
+  return {
+    score: top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null,
+    result: null,
+  };
 }
 
 /**
@@ -196,7 +237,7 @@ export function useEvalScore(fen: string): { cp?: number; mate?: number } | null
  */
 export function EvalBarRow({ fen }: { fen: string }) {
   const enabled = useEngine((s) => s.enabled);
-  const score = useEvalScore(fen);
+  const { score, result } = useEvalReadout(fen);
   if (!enabled) return null;
   return (
     // items-end, not items-center: the row is the name's, but the bar is
@@ -212,7 +253,7 @@ export function EvalBarRow({ fen }: { fen: string }) {
           is left, so a bar drawn to the column overhung it by a pixel or
           two either side. Same class as the board, so the two cannot
           disagree. */}
-      <EvalBar score={score} orientation="horizontal" className="board-box" />
+      <EvalBar score={score} result={result} orientation="horizontal" className="board-box" />
     </div>
   );
 }
@@ -226,25 +267,40 @@ export function EvalBarRow({ fen }: { fen: string }) {
  */
 export function EvalBar({
   score,
+  result = null,
   orientation = 'vertical',
   showScore = true,
   className,
 }: EvalBarProps) {
   const fraction = score ? winningChances(score) : 0.5;
   const percent = `${(fraction * 100).toFixed(1)}%`;
-  const label = score ? formatScore(score) : '—';
+  // A finished game is named by its result and not by a score, everywhere
+  // the bar names it: `-#1` is a mate in one, and the board it would be
+  // printed on has already been mated.
+  const label = result ?? (score ? formatScore(score) : '—');
   // Which end of the bar the readout sits at, and therefore which of the two
   // halves it is printed on. At or above the midpoint the White block is at
   // least half the bar, so that end is inside it; below, the Black block
-  // holds the other end by the same arithmetic. No score, nothing to print.
-  const readout = score && showScore ? formatScoreCompact(score) : '';
+  // holds the other end by the same arithmetic. No score, nothing to print —
+  // and nothing either where the caller prints the number itself.
+  const readout = showScore ? (result ?? (score ? formatScoreCompact(score) : '')) : '';
   const whiteAhead = fraction >= 0.5;
 
   return (
     // The bar is the only thing on the board that says which side the
     // number is FOR, and it says it on hover — so the tip carries real
-    // information and stays. `role="meter"` keeps its own name.
-    <TitleTip title={t("{score} (White's point of view)", { score: label })}>
+    // information and stays. A result is already absolute, so there is no
+    // point of view to name; the tip says in words what the notation says
+    // in figures. `role="meter"` keeps its own name.
+    <TitleTip
+      title={
+        result
+          ? result === '1-0'
+            ? t('White won')
+            : t('Black won')
+          : t("{score} (White's point of view)", { score: label })
+      }
+    >
       <div
         className={cn(
           // The explicit border keeps the dark half readable against a dark
