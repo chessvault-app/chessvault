@@ -161,14 +161,19 @@ export function SkeletonCards({
           <Skeleton className="h-2 w-1/5" />
         </div>
         {grid && (
-          // ONE line of excerpt, though the card clamps at two.
-          // Measured on a real shelf, a grid card is 88-90px: the
-          // 64px board governs where there is one, and where there
-          // is not the text does — 24 + 16 + 4 + 22. Two lines put
-          // the text at 83 and the card at 109, which is why the
-          // placeholder stood a fifth taller than what replaced it.
-          <div className="mt-1 flex h-[1.35rem] items-center">
-            <Skeleton className="h-2 w-full" />
+          // TWO lines of excerpt, the card's own line-clamp-2. This was
+          // one line on the strength of an 88-90px measurement that has
+          // gone stale: measured again on the demo's studies shelf at
+          // 1280px, the settled card is 111px with a 43px excerpt block
+          // — the clamp fills both lines in practice — and the one-line
+          // reservation stood 21.5px short per card row. Wrapped lines
+          // meet, so the two boxes carry no gap.
+          <div className="mt-1">
+            {['w-full', 'w-2/3'].map((w) => (
+              <div key={w} className="flex h-[1.35rem] items-center">
+                <Skeleton className={cn('h-2', w)} />
+              </div>
+            ))}
           </div>
         )}
       </div>
