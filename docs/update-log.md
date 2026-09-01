@@ -10,6 +10,46 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.7.1 was tagged, so it is in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The pane swipe carries both panels now.** Turning the panels under a
+  board on a phone was a lean and a swap: the open panel followed half of
+  what the thumb travelled, stopped at 32px, and the next one appeared on
+  release. What the gesture asks for is the next panel, and the next panel
+  was the one thing not on screen while it was being asked for — so the
+  32px was a panel nodding at you, and the turn itself happened after the
+  hand had let go. Both panels travel together now, a 12px gutter apart,
+  one to one with the finger across the full width of the column: the panel
+  being left goes out as the arriving one comes in, and letting go pulls in
+  only the gap that is left. It turns at a third of the way across or on a
+  flick — 0.5px/ms over the last 100ms of the path, because the gesture
+  people actually use to page is fast, and a fast gesture is a short one.
+  Both walls read the same way: at the first tab or the last, and past the
+  arriving panel, the row gives a fifth of the movement up to 24px and
+  stops, so an end of the strip still says so during the gesture and one
+  swipe can never turn two panels. The tab's pill fills on the release
+  frame rather than when the motion ends, because the turn completes by
+  RE-ANCHORING and not by moving: the arriving panel is made the open one
+  where it already stands and the offset is restated from its point of
+  view, which changes nothing on screen and leaves only the gap to
+  animate. The panels are still separate elements at the heights every
+  board page has tuned — the arriving one is lifted out of the column's
+  flow into the open panel's own measured box, so a column that has never
+  laid out two panels at once still does not — and the offsets are still
+  written straight onto the column, so the whole gesture costs two React
+  renders: one to put the neighbour on screen, one to take it off again.
+  Which panel is which is read from what was on screen before the
+  neighbour arrived, never from the DOM order: the trainers render their
+  panes in a different order from their strip, and an order read twice is
+  an order that drifts. The control row at the column's floor stopped
+  travelling with the panels — it is furniture the turn is measured
+  against, like the tab strip above. Under `prefers-reduced-motion` the
+  swap is still the instant one it always was. Measured with trusted touch
+  input at 390x844, on the board page, on a study and on the puzzle
+  trainer — which mounts its neighbour rather than unhiding it: a 366px
+  column gives a 378px trip, a 220px drag puts the two panels at -208 and
+  +170 with 12px between them and both at the full 311px height, the strip
+  fills on release while the row slides the last 64px home, and at rest the
+  column carries no attribute, no custom property and no compositing layer.
+
 - **The Games toolbar stopped rearranging itself while the list loaded.**
   The filter controls are drawn only when there are games to filter, and
   that condition cannot tell a list still arriving from one that is empty.

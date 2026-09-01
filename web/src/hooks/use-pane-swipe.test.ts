@@ -3,61 +3,89 @@ import { dragOffset, gestureAxis, paneAfterSwipe } from '@/hooks/use-pane-swipe'
 
 /**
  * The three rules the pane swipe is: which way a finished drag points,
- * whether a drag is horizontal at all, and how far the pane leans while it
- * is being made. All pure, which is why they are separate from the hook —
- * the hook around them is event plumbing and two custom properties a DOM
- * would have to be stood up to exercise, and the decisions are here.
+ * whether a drag is horizontal at all, and where the row of panes sits
+ * while it is being made. All pure, which is why they are separate from the
+ * hook — the hook around them is event plumbing, two marked nodes and a
+ * handful of custom properties a DOM would have to be stood up to
+ * exercise, and the decisions are here.
  */
 
 /** The board page's three panes, in the order the strip draws them. */
 const PANES = ['moves', 'engine', 'explorer'] as const;
 
+/** A pane's whole trip on a phone: a 348px column plus the 12px gutter the
+    next pane waits beyond. */
+const SPAN = 360;
+
 describe('where a swipe lands', () => {
   it('turns left to the next pane and right to the previous', () => {
-    expect(paneAfterSwipe(PANES, 'moves', -80)).toBe('engine');
-    expect(paneAfterSwipe(PANES, 'engine', 80)).toBe('moves');
+    expect(paneAfterSwipe(PANES, 'moves', -200, SPAN)).toBe('engine');
+    expect(paneAfterSwipe(PANES, 'engine', 200, SPAN)).toBe('moves');
   });
 
-  it('ignores a drag too short to mean it', () => {
-    // A tap that slid a little, or the start of a scroll that never
-    // committed: 55px is under the threshold, 56 is the threshold.
-    expect(paneAfterSwipe(PANES, 'moves', -55)).toBeNull();
-    expect(paneAfterSwipe(PANES, 'moves', -56)).toBe('engine');
+  it('ignores a drag that did not get a third of the way across', () => {
+    // A share of the trip rather than a fixed distance: the panes travel
+    // the width of the column now, so what counts as most of the way is a
+    // property of the column.
+    expect(paneAfterSwipe(PANES, 'moves', -107, SPAN)).toBeNull();
+    expect(paneAfterSwipe(PANES, 'moves', -108, SPAN)).toBe('engine');
+  });
+
+  it('turns on a flick that never got there', () => {
+    // The gesture people actually use to page is fast, and a fast gesture
+    // is a short one — without this the threshold refuses it.
+    expect(paneAfterSwipe(PANES, 'moves', -20, SPAN, -0.6)).toBe('engine');
+    expect(paneAfterSwipe(PANES, 'moves', -20, SPAN, -0.4)).toBeNull();
+  });
+
+  it('refuses a flick that was already on its way back', () => {
+    // Dragged left, then thrown right: the finger left going the other
+    // way, and turning left is not what it last asked for.
+    expect(paneAfterSwipe(PANES, 'moves', -20, SPAN, 0.9)).toBeNull();
+  });
+
+  it('ignores a flick too small to be a gesture at all', () => {
+    // Under the slop it is a tap that shifted, however fast.
+    expect(paneAfterSwipe(PANES, 'moves', -7, SPAN, -2)).toBeNull();
   });
 
   it('stops at both ends rather than wrapping', () => {
     // The strip has a first tab and a last one; nothing on the page says
     // the row is a ring, so neither does this.
-    expect(paneAfterSwipe(PANES, 'moves', 200)).toBeNull();
-    expect(paneAfterSwipe(PANES, 'explorer', -200)).toBeNull();
+    expect(paneAfterSwipe(PANES, 'moves', 300, SPAN)).toBeNull();
+    expect(paneAfterSwipe(PANES, 'explorer', -300, SPAN)).toBeNull();
   });
 
   it('lands nowhere when the open pane is not in the strip', () => {
     // Puzzles drop the Engine tab until the answer is in, and the page
     // keeps the id it was on — a swipe then has no row to move along.
-    expect(paneAfterSwipe(['info', 'moves'] as const, 'engine' as 'info', -80)).toBeNull();
+    expect(paneAfterSwipe(['info', 'moves'] as const, 'engine' as 'info', -200, SPAN)).toBeNull();
   });
 });
 
-describe('how far the pane leans while the finger is down', () => {
-  it('takes half the movement, up to a stop', () => {
-    // Following the thumb, and plainly not going anywhere yet: the cap is
-    // reached at 64px, a little past the 56px that commits.
-    expect(dragOffset(20, true)).toBe(10);
-    expect(dragOffset(-20, true)).toBe(-10);
-    expect(dragOffset(-64, true)).toBe(-32);
-    expect(dragOffset(-400, true)).toBe(-32);
+describe('where the row sits while the finger is down', () => {
+  it('follows the finger one for one', () => {
+    // The two panes are a row being held, so the offset IS the movement:
+    // letting go only pulls in the gap that is left.
+    expect(dragOffset(20, SPAN)).toBe(20);
+    expect(dragOffset(-200, SPAN)).toBe(-200);
+  });
+
+  it('damps an overshoot past the arriving pane', () => {
+    // Which is what stops one gesture turning two panes.
+    expect(dragOffset(-400, SPAN)).toBe(-368);
+    expect(dragOffset(-500, SPAN)).toBe(-384);
   });
 
   it('gives far less at an end of the strip', () => {
     // The only cue that this is the first tab or the last, and it arrives
     // during the gesture rather than after it.
-    expect(dragOffset(-20, false)).toBe(-3);
-    expect(dragOffset(-400, false)).toBe(-10);
+    expect(dragOffset(-20, 0)).toBe(-4);
+    expect(dragOffset(-400, 0)).toBe(-24);
   });
 
   it('leans nowhere at rest', () => {
-    expect(dragOffset(0, true)).toBe(0);
+    expect(dragOffset(0, SPAN)).toBe(0);
   });
 });
 

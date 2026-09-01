@@ -1272,12 +1272,24 @@ cg-board square.check {
 /* ---------------------------------------------------------------------------
    The pane swipe's motion — the CSS half of hooks/use-pane-swipe.
 
-   The hook writes `--pane-dx` and `--pane-fade` straight onto the pane
-   column and switches these rules on with `data-pane-swipe`; the column's
-   children are what carry them. EVERY child, because on the layouts that
-   fold to one pane at a time only one of them is on screen anyway — and
-   the tab strip takes itself out with `data-pane-strip`, being the fixed
-   thing the turn is measured against.
+   A turn moves TWO panes: the one being left and the one arriving, held a
+   gutter apart and dragged as a row. The hook marks them `data-pane-open`
+   and `data-pane-peek`, switches these rules on with `data-pane-swipe` on
+   the column, and carries every number the pair needs as custom properties
+   there — `--pane-dx` is where the finger has the row, `--pane-span` is the
+   whole trip (a pane's width plus the gutter) and `--pane-side` is which
+   side of the open pane the arriving one stands on.
+
+   Only those two move. Everything else in the column is fixed furniture the
+   turn is measured against — the tab strip, the control row at the floor —
+   and it says so with `data-pane-strip`, which is also how the hook knows
+   what is a pane when it goes looking for the one that just arrived.
+
+   The arriving pane is taken out of the column's flow and stood at the open
+   pane's own box, because these columns have never laid out two panes at
+   once and a second one in flow would push the first down the page. The box
+   is measured by the hook: a pane's height here is whatever the layout gave
+   it, not something CSS can restate.
 
    Unlayered, so a pane's own utility classes cannot outrank the offset,
    and gone entirely at rest: no attribute on the column means no
@@ -1287,12 +1299,12 @@ cg-board square.check {
    they scroll — `overflow-x: hidden` forces a `visible` overflow-y to
    `auto`, which would hand the repertoire's stacked column a scroll
    container it has never had. `clip` leaves the other axis alone, and is
-   here so that a pane leaning past the column's edge cannot become
+   what keeps the pane waiting off the column's edge from becoming
    somewhere the page can be dragged sideways.
 
    The duration is the same wait the hook clears up after (SETTLE_MS). It
    is a property rather than a literal because the turn is drawn in two
-   places — the pane moves here, and the strip's selected pill fills in
+   places — the panes move here, and the strip's selected pill fills in
    components/pane-tabs — and those two are one motion. Under
    `prefers-reduced-motion` the base block above flattens both to nothing,
    which lands back on the instant swap this gesture had before it
@@ -1304,17 +1316,30 @@ cg-board square.check {
 
 [data-pane-swipe] {
   overflow-x: clip;
+  position: relative;
 }
 
-[data-pane-swipe] > *:not([data-pane-strip]) {
+[data-pane-swipe] > [data-pane-open] {
   transform: translate3d(var(--pane-dx, 0px), 0, 0);
-  opacity: var(--pane-fade, 1);
 }
 
-[data-pane-swipe='settle'] > *:not([data-pane-strip]) {
-  transition:
-    transform var(--pane-turn) var(--pane-turn-ease),
-    opacity var(--pane-turn) ease-out;
+[data-pane-swipe] > [data-pane-peek] {
+  position: absolute;
+  top: var(--pane-top, 0px);
+  left: var(--pane-left, 0px);
+  width: var(--pane-width, 100%);
+  height: var(--pane-height, auto);
+  margin: 0;
+  transform: translate3d(
+    calc(var(--pane-dx, 0px) + var(--pane-side, 1) * var(--pane-span, 0px)),
+    0,
+    0
+  );
+}
+
+[data-pane-swipe='settle'] > [data-pane-open],
+[data-pane-swipe='settle'] > [data-pane-peek] {
+  transition: transform var(--pane-turn) var(--pane-turn-ease);
 }
 
 /* ---------------------------------------------------------------------------

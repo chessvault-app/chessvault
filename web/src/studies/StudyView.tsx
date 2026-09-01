@@ -309,7 +309,7 @@ export function StudyView({
           height under the board and scrolls internally (see AnalysisView). */}
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
-        {...paneSwipe}
+        {...paneSwipe.column}
       >
         {titleRow('stacked:hidden')}
 
@@ -320,7 +320,7 @@ export function StudyView({
             the column's children (hooks/use-pane-swipe), so Chapters was
             the one pane in the app that swapped without sliding. */}
         {kind === 'study' && (
-          <ChaptersPanel className={cn(pane !== 'chapters' && 'max-lg:hidden')} />
+          <ChaptersPanel className={cn(!paneSwipe.shows('chapters') && 'max-lg:hidden')} />
         )}
         {/* Desktop keeps a floor and scrolls the column; phones drop it so
             the panel fills the slot and the move table scrolls inside. */}
@@ -345,7 +345,7 @@ export function StudyView({
             // above lg and hits this harder than a phone, because the
             // engine block is only rendered there.
             'overflow-y-auto scrollbar-hidden',
-            pane !== 'moves' && 'max-lg:hidden',
+            !paneSwipe.shows('moves') && 'max-lg:hidden',
           )}
         >
           {/* Docked on desktop; its own tab on phones (below). */}
@@ -398,14 +398,16 @@ export function StudyView({
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
           />
         </Panel>
-        <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
+        <Panel
+          className={cn('flex-1 min-h-0 lg:hidden', !paneSwipe.shows('engine') && 'max-lg:hidden')}
+        >
           <EngineBlock standalone />
         </Panel>
         <ExplorerPane
           resizeKey="study-explorer"
           className={cn(
             'max-lg:min-h-0 max-lg:flex-1 lg:max-h-[35%]',
-            pane !== 'explorer' && 'max-lg:hidden',
+            !paneSwipe.shows('explorer') && 'max-lg:hidden',
           )}
         />
         <ColumnControls className="lg:hidden" />

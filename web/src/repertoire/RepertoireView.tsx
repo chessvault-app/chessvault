@@ -1808,7 +1808,7 @@ export function RepertoireView() {
           and the panels end in a footer band now, which is a finish. */}
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}
-        {...paneSwipe}
+        {...paneSwipe.column}
       >
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
@@ -1839,13 +1839,13 @@ export function RepertoireView() {
             {/* Moves above the game on a desktop; one pane at a time on a
                 phone, the engine chosen for you when the line ends. */}
             {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
-            {(wide || shownPane === 'moves') && movesPanel}
-            {!wide && analysing && shownPane === 'engine' && (
+            {(wide || paneSwipe.shows('moves')) && movesPanel}
+            {!wide && analysing && paneSwipe.shows('engine') && (
               <Panel className="min-h-0 flex-1">
                 <EngineBlock standalone />
               </Panel>
             )}
-            {(wide || shownPane === 'info') && gamePanel}
+            {(wide || paneSwipe.shows('info')) && gamePanel}
             {/* Only while analysing: a drill is driven by this component's
                 own cursor, not the analysis store — see the puzzle
                 trainer's copy. */}
