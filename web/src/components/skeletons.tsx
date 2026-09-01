@@ -220,31 +220,69 @@ export function SkeletonCards({
 }
 
 /** The puzzle shelf: a cover, a title, a count and a progress bar. */
-export function SkeletonBookCards({ cards = 4, className }: { cards?: number; className?: string }) {
-  return (
-    <Loading className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', className)}>
-      {Array.from({ length: cards }, (_, i) => (
-        // border, not ring: BookCard is `border p-3` on both shelves, and
-        // a ring is a box-shadow that costs no layout — so the placeholder
-        // measured 120px against the card’s 122.
-        <div
-          key={i}
-          className="bg-card border-border flex w-full items-stretch gap-3 rounded-xl border p-3"
-        >
-          {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
-              the size it will be rather than the size it looks like. */}
-          <Skeleton className="h-24 w-[4.5rem] shrink-0 rounded-md" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
-            <Skeleton className="h-3.5 w-4/5" />
-            <Skeleton className="h-2.5 w-1/3" />
-            {/* The Progress track’s own h-1, like SkeletonTiles — not the
-                h-1.5 this guessed. */}
-            <Skeleton className="mt-auto h-1 w-full rounded-full" />
-          </div>
-        </div>
-      ))}
-    </Loading>
+export function SkeletonBookCards({
+  cards = 4,
+  groups,
+  className,
+}: {
+  cards?: number;
+  /** The library's grouped shape, where the caller stored one — same
+      contract as SkeletonCards' `groups`. Without it, a flat grid. */
+  groups?: { root: number; folders: number[] };
+  className?: string;
+}) {
+  const card = (i: number) => (
+    // border, not ring: BookCard is `border p-3` on both shelves, and
+    // a ring is a box-shadow that costs no layout — so the placeholder
+    // measured 120px against the card’s 122.
+    <div
+      key={i}
+      className="bg-card border-border flex w-full items-stretch gap-3 rounded-xl border p-3"
+    >
+      {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
+          the size it will be rather than the size it looks like. */}
+      <Skeleton className="h-24 w-[4.5rem] shrink-0 rounded-md" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+        <Skeleton className="h-3.5 w-4/5" />
+        <Skeleton className="h-2.5 w-1/3" />
+        {/* The Progress track’s own h-1, like SkeletonTiles — not the
+            h-1.5 this guessed. */}
+        <Skeleton className="mt-auto h-1 w-full rounded-full" />
+      </div>
+    </div>
   );
+  const stack = (n: number, offset = 0) => (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {Array.from({ length: n }, (_, i) => card(i + offset))}
+    </div>
+  );
+  if (groups)
+    return (
+      // The library's grouped frame, exactly as SkeletonCards draws the
+      // studies shelf's: headerless root cards, then each collection
+      // under the 24px header row — or its one-line note when empty.
+      <Loading className={className}>
+        <div className="flex flex-col gap-4">
+          {groups.root > 0 && <section className="flex flex-col gap-2">{stack(groups.root)}</section>}
+          {groups.folders.map((n, f) => (
+            <section key={f} className="flex flex-col gap-2">
+              <div className="flex h-6 items-center gap-1.5">
+                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                <Skeleton className="h-2.5 w-24" />
+              </div>
+              {n === 0 ? (
+                <div className="flex h-5 items-center px-1">
+                  <Skeleton className="h-2.5 w-28" />
+                </div>
+              ) : (
+                stack(n, groups.root + f)
+              )}
+            </section>
+          ))}
+        </div>
+      </Loading>
+    );
+  return <Loading className={className}>{stack(cards)}</Loading>;
 }
 
 /**

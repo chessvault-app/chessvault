@@ -10,6 +10,13 @@ import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
+import {
+  EMPTY_SHELF,
+  parseShelfShape,
+  shelfHasShape,
+  shelfShapeFromCollections,
+  storedShelfShape,
+} from '@/components/shelf-reservation';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { SearchInput } from '@/components/text-fields';
 import { Button } from '@/components/ui/button';
@@ -116,6 +123,9 @@ export function fileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** See `reservedShelf` below: the library's grouped shape, last visit. */
+const LIBRARY_SHELF_KEY = 'vault:library-shelf';
+
 export function BooksPage() {
   const [books, setBooks] = useState<LibraryBook[] | null>(libraryMemory.books);
   const [folders, setFolders] = useState<string[]>(libraryMemory.folders);
@@ -127,6 +137,22 @@ export function BooksPage() {
   // should not flash a skeleton on its way in.
   const pending = useSlowLoad(books === null);
   const view = useLibrarySort();
+  // The grouped shape this shelf had last visit, per device
+  // (components/shelf-reservation). The floor is EMPTY_SHELF, not the
+  // welcome one: nothing seeds a book, so a device that has never seen
+  // the vault reserves nothing here.
+  const [reservedShelf] = useState(() =>
+    parseShelfShape(localStorage.getItem(LIBRARY_SHELF_KEY), EMPTY_SHELF),
+  );
+  // Remembered for the NEXT visit's reservation — the settled answer
+  // only, never an error's empty list.
+  useEffect(() => {
+    if (books === null || error !== null) return;
+    localStorage.setItem(
+      LIBRARY_SHELF_KEY,
+      storedShelfShape(shelfShapeFromCollections(books.map((b) => b.collection), folders)),
+    );
+  }, [books, folders, error]);
 
   // Bookmarks, kept in the vault beside the books — the same store and the
   // same reasoning as the other shelves.
@@ -360,7 +386,11 @@ export function BooksPage() {
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
       {books === null ? (
-        pending ? <SkeletonBookCards cards={4} /> : null
+        // A vault seen without books (or never seen — nothing seeds one)
+        // reserves nothing: its settle is the EmptyState.
+        pending && shelfHasShape(reservedShelf) ? (
+          <SkeletonBookCards groups={reservedShelf} />
+        ) : null
       ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
         books.length === 0 ? (
           <EmptyState

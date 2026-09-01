@@ -44,6 +44,14 @@ export const MAX_SHELF_FOLDERS = 8;
  */
 export const WELCOME_SHELF: ShelfShape = { root: 1, folders: [] };
 
+/**
+ * The floor for a shelf nothing seeds — the book library. A device that
+ * has never seen the vault reserves nothing there, because a fresh
+ * vault certainly has no books and inventing cards for the many to save
+ * a jump for the few is the checklist floor's mistake.
+ */
+export const EMPTY_SHELF: ShelfShape = { root: 0, folders: [] };
+
 const clampCount = (v: unknown): number | null =>
   typeof v === 'number' && Number.isInteger(v) && v >= 0 ? Math.min(v, MAX_SHELF_CARDS) : null;
 
@@ -53,18 +61,18 @@ const clampCount = (v: unknown): number | null =>
  * a vault seen genuinely empty settles into the shelf's EmptyState, and
  * the caller reserves nothing for it rather than inventing cards.
  */
-export function parseShelfShape(raw: string | null): ShelfShape {
-  if (raw === null) return WELCOME_SHELF;
+export function parseShelfShape(raw: string | null, floor: ShelfShape = WELCOME_SHELF): ShelfShape {
+  if (raw === null) return floor;
   let stored: unknown;
   try {
     stored = JSON.parse(raw);
   } catch {
-    return WELCOME_SHELF;
+    return floor;
   }
-  if (typeof stored !== 'object' || stored === null) return WELCOME_SHELF;
+  if (typeof stored !== 'object' || stored === null) return floor;
   const value = stored as Partial<ShelfShape>;
   const root = clampCount(value.root);
-  if (root === null || !Array.isArray(value.folders)) return WELCOME_SHELF;
+  if (root === null || !Array.isArray(value.folders)) return floor;
   return {
     root,
     folders: value.folders
@@ -86,16 +94,29 @@ export const shelfHasShape = (shape: ShelfShape): boolean =>
  * so a later version can raise it without stale data holding it down.
  */
 export function shelfShapeOf(ids: string[], folders: string[]): ShelfShape {
+  return shelfShapeFromCollections(
+    ids.map((id) => {
+      const slash = id.lastIndexOf('/');
+      return slash === -1 ? null : id.slice(0, slash);
+    }),
+    folders,
+  );
+}
+
+/**
+ * The same shape from documents that name their collection outright
+ * (the book library's `collection` field) rather than in their id.
+ */
+export function shelfShapeFromCollections(
+  collections: (string | null | undefined)[],
+  folders: string[],
+): ShelfShape {
   const groups = new Map<string, number>();
   for (const folder of folders) if (folder) groups.set(folder, 0);
   let root = 0;
-  for (const id of ids) {
-    const slash = id.lastIndexOf('/');
-    if (slash === -1) root += 1;
-    else {
-      const folder = id.slice(0, slash);
-      groups.set(folder, (groups.get(folder) ?? 0) + 1);
-    }
+  for (const collection of collections) {
+    if (!collection) root += 1;
+    else groups.set(collection, (groups.get(collection) ?? 0) + 1);
   }
   return {
     root,

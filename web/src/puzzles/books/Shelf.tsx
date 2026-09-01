@@ -6,6 +6,11 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
+import {
+  EMPTY_SHELF,
+  parseShelfShape,
+  storedShelfShape,
+} from '@/components/shelf-reservation';
 import { navigate } from '@/lib/router';
 
 import { ActionMenu } from '@/components/action-menu';
@@ -121,6 +126,9 @@ async function sweepCheckpoints(fresh: BookSummary[]): Promise<void> {
   }
 }
 
+/** See `reservedCards` below: how many book cards, last visit. */
+const PUZZLE_SHELF_KEY = 'vault:puzzle-shelf';
+
 export function Shelf() {
   // Seeded from the last visit, so coming back from a book shows the shelf
   // as you left it. Without this the component remounts empty, flashes its
@@ -133,6 +141,20 @@ export function Shelf() {
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
   const shelfPending = useSlowLoad(books === null);
+  // How many cards this shelf had last visit, per device — the shelf is
+  // flat, so only `root` of the stored shape is meaningful. The floor is
+  // EMPTY_SHELF: nothing seeds a puzzle book, so a device that has
+  // never seen the vault reserves nothing (its settle is the
+  // EmptyState), and the fixed four-card guess this replaces stood
+  // 500px of cards at every such vault.
+  const [reservedCards] = useState(
+    () => parseShelfShape(localStorage.getItem(PUZZLE_SHELF_KEY), EMPTY_SHELF).root,
+  );
+  // Remembered for the NEXT visit's reservation — settled answers only.
+  useEffect(() => {
+    if (books === null || error !== null) return;
+    localStorage.setItem(PUZZLE_SHELF_KEY, storedShelfShape({ root: books.length, folders: [] }));
+  }, [books, error]);
 
   // Shown from cache immediately, refreshed underneath: a book's counts
   // change as you solve, so the list is never trusted to stay right — only
@@ -365,7 +387,7 @@ export function Shelf() {
         {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
         {books === null ? (
-          shelfPending ? <SkeletonBookCards cards={4} /> : null
+          shelfPending && reservedCards > 0 ? <SkeletonBookCards cards={reservedCards} /> : null
         ) : visibleBooks.length === 0 ? (
           <EmptyState
             icon={BookMarked}
