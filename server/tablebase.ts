@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
 import { makeFen, parseFen } from 'chessops/fen';
-import { DATA_TABLEBASE_CACHE } from './paths.ts';
+import { DATA_TABLEBASE_CACHE, VAULT_CONFIG } from './paths.ts';
 
 /**
  * Exact endgame verdicts — what the engine's number stops being able to
@@ -16,11 +16,20 @@ import { DATA_TABLEBASE_CACHE } from './paths.ts';
  * the table knows the result and how far away it is.
  *
  * Answers come through a `TablebaseProbe` rather than out of `fetch`
- * here, because the source is the part expected to change: today it is
- * Lichess's public Syzygy server (7 pieces, no token, and the only way
- * to have the tables without carrying 150 GB of them), and the day this
- * app probes local .rtbz files that prober implements the same interface
- * — the route, the cache and the client do not move.
+ * here, because the source is the part expected to change. Two sources
+ * exist already and are the same code: Lichess's public server (7
+ * pieces, no token, and the only way to have the tables without
+ * carrying 150 GB of them) and whatever `tablebaseUrl` in this vault's
+ * config names — lila-tablebase is open source, so a vault with its own
+ * copy of the tables runs the same server over them and is answered by
+ * its own machine. The day this app reads `.rtbz` files in process, that
+ * prober takes the same interface and the route, the cache and the
+ * client do not move.
+ *
+ * Each source keeps its OWN corner of the cache, because they do not
+ * hold the same tables: a five-piece server at home must not be able to
+ * answer "nothing here" into the slot where the seven-piece one has
+ * already said "win".
  *
  * Every answer is cached on disk FOREVER. The explorer's cache has a TTL
  * because game statistics drift daily; a tablebase result is a fact
@@ -199,17 +208,78 @@ export function normalizeTablebase(body: LichessTablebaseResponse): TablebaseAns
   };
 }
 
-const LICHESS_TABLEBASE = 'https://tablebase.lichess.ovh/standard';
+/** Where the answers come from unless this vault says otherwise. */
+export const DEFAULT_TABLEBASE = 'https://tablebase.lichess.ovh/standard';
 
 /**
- * The public Syzygy server. No token — unlike the opening explorer, this
- * one answers anonymous requests, so nothing here reads config.json.
+ * A configured endpoint, or null.
+ *
+ * Deliberately no check that the host is reachable, or public, or
+ * anywhere in particular: the whole point of the setting is a server on
+ * localhost or on the LAN, so an SSRF-style block on private addresses
+ * would forbid exactly the case it exists for. What IS enforced is the
+ * scheme — http or https, so a `file:` URL in a hand-edited config
+ * cannot turn a position lookup into a file read — and a length, so the
+ * cache path derived from it stays a path.
+ *
+ * Shared with the settings route, which validates what it is given with
+ * this and nothing else: two definitions of "a usable URL" would mean a
+ * value the settings page accepts and the prober silently ignores.
  */
-export function lichessTablebase(fetcher: typeof fetch = fetch): TablebaseProbe {
+export function normaliseTablebaseUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const text = raw.trim();
+  if (text === '' || text.length > 300) return null;
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    // The query is the FEN this appends; anything already there would be
+    // dropped, so it is refused rather than half-honoured.
+    if (url.search !== '') return null;
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What names this endpoint's corner of the cache.
+ *
+ * The default keeps the name it has always had, so an upgrade does not
+ * strand a cache full of answers. Anything else is named for its host
+ * and port, which is the part that decides WHICH tables answered — two
+ * endpoints differing only in path are the same machine's, and sharing
+ * a folder is right for them. Sanitised because this becomes a
+ * directory name: lowercased by the URL parser already, with the colon
+ * of a port and anything else unexpected reduced to a dash.
+ */
+export function cacheSource(url: string): string {
+  if (url === DEFAULT_TABLEBASE) return 'lichess';
+  try {
+    return new URL(url).host.replace(/[^a-z0-9.-]/g, '-') || 'custom';
+  } catch {
+    return 'custom';
+  }
+}
+
+/**
+ * A Syzygy server speaking lila-tablebase's protocol.
+ *
+ * That is one implementation for both cases the app supports, because
+ * they are one case: tablebase.lichess.ovh RUNS lila-tablebase, and it
+ * is open source, so somebody who wants their own tables runs the same
+ * server over their own files and points this at it. No token either
+ * way — unlike the opening explorer, this protocol answers anonymous
+ * requests.
+ */
+export function syzygyServer(
+  url: string = DEFAULT_TABLEBASE,
+  fetcher: typeof fetch = fetch,
+): TablebaseProbe {
   return {
-    source: 'lichess',
+    source: cacheSource(url),
     async probe(fen: string): Promise<TablebaseAnswer | null> {
-      const res = await fetcher(`${LICHESS_TABLEBASE}?fen=${encodeURIComponent(fen)}`, {
+      const res = await fetcher(`${url}?fen=${encodeURIComponent(fen)}`, {
         signal: AbortSignal.timeout(12_000),
       });
       if (!res.ok) throw new Error(`tablebase answered ${res.status}`);
@@ -221,6 +291,18 @@ export function lichessTablebase(fetcher: typeof fetch = fetch): TablebaseProbe 
       return answer.category === 'unknown' ? null : answer;
     },
   };
+}
+
+/** The endpoint this vault is pointed at, read per request so that
+    saving one in Settings takes effect without a restart — the same
+    thing the explorer proxy does with its token. */
+function configuredUrl(configPath: string): string {
+  try {
+    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as { tablebaseUrl?: unknown };
+    return normaliseTablebaseUrl(config.tablebaseUrl) ?? DEFAULT_TABLEBASE;
+  } catch {
+    return DEFAULT_TABLEBASE;
+  }
 }
 
 /**
@@ -258,11 +340,20 @@ export function cachePath(dir: string, source: string, fen: string): string {
 
 export function tablebaseApi(
   cacheDir: string = DATA_TABLEBASE_CACHE,
-  prober: TablebaseProbe = lichessTablebase(),
+  /**
+   * The prober, or how to pick one. A function is the normal case — the
+   * endpoint is a vault setting, so it is read per request rather than
+   * frozen at boot — and the tests pass a fixed prober instead.
+   */
+  probeSource: TablebaseProbe | (() => TablebaseProbe) = () =>
+    syzygyServer(configuredUrl(VAULT_CONFIG)),
 ): Hono {
   const api = new Hono();
+  const proberFor = (): TablebaseProbe =>
+    typeof probeSource === 'function' ? probeSource() : probeSource;
 
   api.get('/tablebase', async (c) => {
+    const prober = proberFor();
     const fen = c.req.query('fen');
     if (!fen) return c.json({ error: 'missing ?fen=' }, 400);
 

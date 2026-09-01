@@ -6,9 +6,12 @@ import { dirname, join } from 'node:path';
 import { INITIAL_FEN } from 'chessops/fen';
 import {
   cachePath,
-  lichessTablebase,
+  cacheSource,
+  DEFAULT_TABLEBASE,
+  normaliseTablebaseUrl,
   normalizeTablebase,
   rankMoves,
+  syzygyServer,
   tablebaseApi,
   tablebaseFen,
   type LichessTablebaseResponse,
@@ -126,7 +129,42 @@ describe('rankMoves', () => {
   });
 });
 
-describe('the Lichess prober', () => {
+describe('normaliseTablebaseUrl', () => {
+  it('takes an address a lookup can be appended to', () => {
+    expect(normaliseTablebaseUrl('http://localhost:7788/standard')).toBe(
+      'http://localhost:7788/standard',
+    );
+    expect(normaliseTablebaseUrl('  https://tb.example.net/standard/  ')).toBe(
+      'https://tb.example.net/standard',
+    );
+  });
+
+  it('refuses what would not be one', () => {
+    expect(normaliseTablebaseUrl('')).toBeNull();
+    expect(normaliseTablebaseUrl('tablebase.example.net')).toBeNull(); // no scheme
+    // A `file:` URL in a hand-edited config would turn a position lookup
+    // into a file read.
+    expect(normaliseTablebaseUrl('file:///etc/passwd')).toBeNull();
+    // The query is where the FEN goes; one already there would be lost.
+    expect(normaliseTablebaseUrl('https://tb.example.net/standard?fen=x')).toBeNull();
+    expect(normaliseTablebaseUrl(42)).toBeNull();
+  });
+});
+
+describe('cacheSource', () => {
+  it('keeps the name the public server has always had', () => {
+    // An upgrade must not strand a cache full of answers.
+    expect(cacheSource(DEFAULT_TABLEBASE)).toBe('lichess');
+  });
+
+  it('names another server for the machine that answers, as a folder can', () => {
+    expect(cacheSource('http://localhost:7788/standard')).toBe('localhost-7788');
+    // Same machine, different path: the same tables, so the same corner.
+    expect(cacheSource('http://localhost:7788/tb/standard')).toBe('localhost-7788');
+  });
+});
+
+describe('the Syzygy prober', () => {
   const answering = (body: unknown, status = 200): typeof fetch =>
     (async () =>
       new Response(JSON.stringify(body), {
@@ -137,14 +175,25 @@ describe('the Lichess prober', () => {
   it('reads a shrug as holding nothing', async () => {
     // What the server actually sends for a position past its tables: 200,
     // every legal move, and `unknown` throughout.
-    const probe = lichessTablebase(
+    const probe = syzygyServer(
+      DEFAULT_TABLEBASE,
       answering({ category: 'unknown', moves: [{ uci: 'a2a3', san: 'a3', category: 'unknown' }] }),
     );
     expect(await probe.probe(KQK)).toBeNull();
   });
 
   it('throws when the server refuses, so nothing is cached', async () => {
-    await expect(lichessTablebase(answering({}, 429)).probe(KQK)).rejects.toThrow();
+    await expect(syzygyServer(DEFAULT_TABLEBASE, answering({}, 429)).probe(KQK)).rejects.toThrow();
+  });
+
+  it('asks whatever endpoint it was given, with the position appended', async () => {
+    const asked: string[] = [];
+    const record = (async (url: string) => {
+      asked.push(url);
+      return new Response(JSON.stringify({ category: 'draw' }), { status: 200 });
+    }) as unknown as typeof fetch;
+    await syzygyServer('http://localhost:7788/standard', record).probe(KQK);
+    expect(asked[0]).toBe(`http://localhost:7788/standard?fen=${encodeURIComponent(KQK)}`);
   });
 });
 
@@ -234,6 +283,24 @@ describe('tablebase route', () => {
     expect((await res.json()) as { category: string }).toMatchObject({ category: 'win' });
     // The stub throws if it is asked at all, so this is doubly stated.
     expect(prober.calls).toBe(0);
+  });
+
+  it('re-reads which source to ask on every request', async () => {
+    // The endpoint is a vault setting, so saving one in Settings has to
+    // take effect without restarting the server — which it only does if
+    // the prober is picked per request rather than frozen at boot.
+    const cacheDir = dir();
+    const probers = [
+      { ...stub(ANSWER), source: 'first' },
+      { ...stub(null), source: 'second' },
+    ];
+    let at = 0;
+    const app = new Hono().route('/api', tablebaseApi(cacheDir, () => probers[at++]!));
+    const url = `/api/tablebase?fen=${encodeURIComponent(KQK)}`;
+    expect(await (await app.request(url)).json()).toMatchObject({ source: 'first' });
+    // The second source has its own corner of the cache, so it answers
+    // for itself rather than inheriting the first one's verdict.
+    expect(await (await app.request(url)).json()).toEqual({ available: false });
   });
 
   it('calls an unreachable source an outage, not a fault', async () => {

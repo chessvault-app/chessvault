@@ -9,6 +9,7 @@ import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseHomeLayout } from '../shared/homeLayout.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
+import { DEFAULT_TABLEBASE, normaliseTablebaseUrl } from './tablebase.ts';
 
 /**
  * Settings live in vault/config.json — the one vault file that is
@@ -28,6 +29,10 @@ interface Config {
   appPassword?: string;
   totpSecret?: string;
   lichessToken?: string;
+  /** A Syzygy server of this vault's own, replacing the public one.
+      Absent means the default — see server/tablebase.ts. Not a secret,
+      so unlike the token it is echoed back to the page. */
+  tablebaseUrl?: string;
   profile?: Profile;
   /** How this vault's home page is arranged — see shared/homeLayout.ts.
       Absent means nobody has ever said, which is not the same as having
@@ -80,6 +85,13 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       gate: !!config.appPassword?.trim(),
       totp: !!config.totpSecret?.trim(),
       lichess: { configured: token !== '', last4: token === '' ? null : token.slice(-4) },
+      // Both halves: what this vault is pointed at (null while nobody has
+      // said) and what that means when nobody has, so the page can show
+      // the default as a placeholder without knowing the URL itself.
+      tablebase: {
+        url: normaliseTablebaseUrl(config.tablebaseUrl),
+        fallback: DEFAULT_TABLEBASE,
+      },
       // Normalised on the way out as well as in: a config edited by hand
       // must not be able to hand the page something it cannot draw.
       home: normaliseHomeLayout(config.home),
@@ -190,6 +202,36 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       config.lichessToken = token;
     });
     return c.json({ ok: true });
+  });
+
+  /**
+   * Point this vault at a Syzygy server of its own, or back at the
+   * public one.
+   *
+   * One route rather than a PUT and a DELETE: the control is a text box,
+   * and emptying a text box IS how you say "go back to the default", so
+   * an empty string removes the key instead of erroring. What it will
+   * not do is store something the prober would then ignore — the
+   * validation is tablebase.ts's own, so what this accepts is exactly
+   * what will be asked.
+   */
+  api.put('/settings/tablebase', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { url?: unknown };
+    const raw = typeof body.url === 'string' ? body.url.trim() : '';
+    if (raw === '') {
+      writeConfig((config) => {
+        delete config.tablebaseUrl;
+      });
+      return c.json({ ok: true, url: null });
+    }
+    const url = normaliseTablebaseUrl(raw);
+    if (!url) {
+      return c.json({ error: 'that is not a tablebase address — http:// or https://, with no query' }, 400);
+    }
+    writeConfig((config) => {
+      config.tablebaseUrl = url;
+    });
+    return c.json({ ok: true, url });
   });
 
   api.delete('/settings/lichess', (c) => {

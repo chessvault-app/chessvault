@@ -227,6 +227,35 @@ describe('lichess token', () => {
   });
 });
 
+describe('tablebase endpoint', () => {
+  it('sets, reports, and empties back to the default', async () => {
+    // Not a secret, so unlike the token it is read back — the page shows
+    // what this vault is pointed at.
+    expect((await (await json('GET', '/api/settings')).json()).tablebase).toEqual({
+      url: null,
+      fallback: 'https://tablebase.lichess.ovh/standard',
+    });
+
+    expect((await json('PUT', '/api/settings/tablebase', { url: 'nonsense' })).status).toBe(400);
+    expect((await json('PUT', '/api/settings/tablebase', { url: 'file:///etc/passwd' })).status)
+      .toBe(400);
+    expect(config().tablebaseUrl).toBeUndefined();
+
+    expect(
+      (await json('PUT', '/api/settings/tablebase', { url: ' http://localhost:7788/standard ' }))
+        .status,
+    ).toBe(200);
+    expect(config().tablebaseUrl).toBe('http://localhost:7788/standard');
+    expect((await (await json('GET', '/api/settings')).json()).tablebase.url).toBe(
+      'http://localhost:7788/standard',
+    );
+
+    // Emptying the box is how a text field says "back to the default".
+    expect((await json('PUT', '/api/settings/tablebase', { url: '' })).status).toBe(200);
+    expect(config().tablebaseUrl).toBeUndefined();
+  });
+});
+
 describe('2fa', () => {
   it('enrols only through a verified live code, disables the same way', async () => {
     const start = await (await json('POST', '/api/settings/2fa/start')).json();
