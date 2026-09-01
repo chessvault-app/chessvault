@@ -120,7 +120,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     return (
       <div className="fixed inset-0 z-50 grid place-items-center p-8">
         <div className="bg-scrim absolute inset-0" />
-        <div ref={card} className="bg-card relative w-64 max-w-[80vw] rounded-xl ring-1 ring-foreground/10 p-1.5 shadow-lg">
+        <div ref={card} className="bg-card relative w-64 max-w-[80vw] rounded-xl ring-1 ring-border p-1.5 shadow-lg">
           <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
         </div>
       </div>
@@ -130,7 +130,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     <div
       ref={card}
       style={{ top: preview.top, left: preview.left }}
-      className="bg-popover ring-foreground/10 pointer-events-none fixed z-50 w-44 rounded-lg p-1 shadow-lg ring-1"
+      className="bg-popover ring-border pointer-events-none fixed z-50 w-44 rounded-lg p-1 shadow-lg ring-1"
     >
       <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-sm" />
     </div>

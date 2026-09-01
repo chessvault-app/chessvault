@@ -103,7 +103,7 @@ export function ShelfCard({
         {...swipe.handlers}
         className={cn(
           'bg-card border-border group relative flex h-full cursor-pointer gap-3',
-          'overflow-hidden rounded-xl ring-1 ring-foreground/10',
+          'overflow-hidden rounded-xl ring-1 ring-border',
           // Lifts a little under the pointer, and the border comes up with
           // it. A card that only changed its border read as selected; one
           // that rises reads as reachable.

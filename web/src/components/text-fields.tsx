@@ -305,7 +305,7 @@ export function SearchInput({
           // takes its colour from whatever it sits on, with a hairline of
           // light along the edge. backdrop-blur is what makes it read as
           // glass rather than as a grey pill.
-          'bg-foreground/8 hover:bg-foreground/14 ring-foreground/10 ring-1 ring-inset backdrop-blur-md',
+          'bg-foreground/8 hover:bg-foreground/14 ring-border ring-1 ring-inset backdrop-blur-md',
           'transition-[max-width,margin,padding,opacity] duration-150',
           cancelSizes[inputSize ?? 'md'],
           focused ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',

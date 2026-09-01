@@ -42,7 +42,7 @@ const NAG_CLASS: Record<number, string> = {
  */
 const commentRow = (size: string): string =>
   cn(
-    'border-border/60 bg-muted/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-(--row-py-dense)',
+    'border-border bg-muted/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-(--row-py-dense)',
     size,
     'leading-relaxed',
   );
@@ -304,9 +304,9 @@ export function MainlineTable({
     out.push(
       <div
         key={`row-${number}-${typeof white === 'object' && white ? white.id : 'w'}-${typeof black === 'object' && black ? black.id : 'b'}`}
-        className="border-border/60 grid grid-cols-[2rem_1fr_1fr] border-b"
+        className="border-border grid grid-cols-[2rem_1fr_1fr] border-b"
       >
-        <span className="bg-muted/60 border-border/60 text-muted-foreground flex items-center justify-center border-r font-mono text-xs">
+        <span className="bg-muted/60 border-border text-muted-foreground flex items-center justify-center border-r font-mono text-xs">
           {number}
         </span>
         <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
@@ -383,7 +383,7 @@ export function MainlineTable({
             // second number to keep in step. The continuing vertical runs
             // to the row's bottom, which is the next sibling's top.
             className={cn(
-              'border-border/60 relative border-b py-(--row-py-tight) pr-2 pl-7',
+              'border-border relative border-b py-(--row-py-tight) pr-2 pl-7',
               BRANCH_ELBOW,
               'before:left-3 before:h-(--move-elbow-h)',
               !last && BRANCH_CONTINUES,

@@ -10,6 +10,26 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.7.1 was tagged, so it is in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **Light mode's panel edges became visible again.** In light the page,
+  the cards and the panels are all the same white — deliberately — so the
+  only thing separating a panel from the page is a one-pixel line, and
+  that line was too faint to survive a phone screen: the default border
+  measured 1.26:1 against the page, the card ring 1.25:1, and on the board
+  pages the bottom panel and the move bar read as one unbroken sheet. Dark
+  mode never had the problem, because its surface ladder separates panels
+  by fill and the border is only the second cue. Three moves, all in the
+  tokens: the light border rests at 88% now instead of the registry's
+  92.2% (1.44:1 on white, measured), border-strong steps down with it to
+  82% to stay a distinct rung, and the card ring is drawn in the border
+  colour rather than a fixed 10% wash of the foreground. That last one
+  also repairs the High contrast scheme, which moves every border through
+  the contrast knob and could never reach the old ring — the one scheme
+  chosen for legibility left every card edge at 1.3:1. It now takes them
+  to 3.6:1 with everything else. The third text tier moved a step darker
+  with them (51.5% from 53%): measured on the selected-row fill it sat at
+  4.25:1, under the 4.5:1 floor small text needs, and the comment beside
+  the old value claimed a clearance the arithmetic never supported.
+
 - **The Games toolbar stopped rearranging itself while the list loaded.**
   The filter controls are drawn only when there are games to filter, and
   that condition cannot tell a list still arriving from one that is empty.
