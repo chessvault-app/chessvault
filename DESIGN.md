@@ -14,15 +14,15 @@ colors:
   surface-3-dark: "oklch(32% 0 0)"
   surface-inset: "oklch(98.5% 0 0)"
   surface-inset-dark: "oklch(23% 0 0)"
-  border: "oklch(92.2% 0 0)"
+  border: "oklch(88% 0 0)"
   border-dark: "oklch(29% 0 0)"
-  border-strong: "oklch(85% 0 0)"
+  border-strong: "oklch(82% 0 0)"
   border-strong-dark: "oklch(40% 0 0)"
   foreground: "oklch(14.5% 0 0)"
   foreground-dark: "oklch(98.5% 0 0)"
   muted-foreground: "oklch(48% 0 0)"
   muted-foreground-dark: "oklch(74% 0 0)"
-  text-subtle: "oklch(53% 0 0)"
+  text-subtle: "oklch(51.5% 0 0)"
   text-subtle-dark: "oklch(68% 0 0)"
   primary: "oklch(20.5% 0 0)"
   primary-dark: "oklch(92.2% 0 0)"
@@ -221,14 +221,17 @@ what you grep for.
   its surroundings in light and 6% in dark, and could not be seen.
 - **surface-inset** (`oklch(98.5% 0 0)` / `oklch(23% 0 0)`): a well —
   something recessed into a panel rather than sitting on it.
-- **border** (`oklch(92.2% 0 0)` / `oklch(29% 0 0)`): the default hairline,
-  and the input stroke.
-- **border-strong** (`oklch(85% 0 0)` / `oklch(40% 0 0)`): a divider that
+- **border** (`oklch(88% 0 0)` / `oklch(29% 0 0)`): the default hairline,
+  and the input stroke. 88% is a measured move off the registry's 92.2%,
+  which was 1.26:1 on the white page — in light the page and every panel
+  are the same white, so this line is the only structure there is, and
+  on a phone it was not visible at all.
+- **border-strong** (`oklch(82% 0 0)` / `oklch(40% 0 0)`): a divider that
   has to survive a busy surface.
 - **foreground** (`oklch(14.5% 0 0)` / `oklch(98.5% 0 0)`): body text.
 - **muted-foreground** (`oklch(48% 0 0)` / `oklch(74% 0 0)`): the second
   text tier — labels, secondary values.
-- **text-subtle** (`oklch(53% 0 0)` / `oklch(68% 0 0)`): the third tier,
+- **text-subtle** (`oklch(51.5% 0 0)` / `oklch(68% 0 0)`): the third tier,
   for text that is present but not being read.
 - **ring** (`oklch(70.8% 0 0)` / `oklch(55.6% 0 0)`): the focus ring, at 50% alpha.
 
@@ -426,9 +429,12 @@ orientation plus a floor, never from width alone. Portrait always stacks.
 
 **The system is flat.** Depth is a rung on the surface ladder plus a
 hairline ring, and almost never a shadow. Cards carry no shadow at all:
-they are `ring-1 ring-foreground/10`, which is what makes a white surface
+they are `ring-1 ring-border`, which is what makes a white surface
 read on a white page in light mode where card and background are the same
-value. Across the whole app there are **five** shadow usages in total.
+value. The ring used to be `ring-foreground/10`, a fixed alpha the
+contrast knob could never reach — High contrast, the one scheme chosen
+for legibility, moved every border and left card edges at 1.3:1. On the
+border token the knob reaches them. Across the whole app there are **five** shadow usages in total.
 
 Three shadow tokens exist for the cases that genuinely float, and all
 three are cast in `--shadow-color`, which follows the theme's hue —
@@ -520,7 +526,7 @@ hit areas, `title` as a tooltip. Composites live in
 ### Cards
 
 - **Corner:** `xl`. **Background:** surface. **Border:** none — a
-  `ring-1 ring-foreground/10` hairline instead. **Shadow:** none.
+  `ring-1 ring-border` hairline instead. **Shadow:** none.
 - **Padding:** `--card-spacing`, initialised from the density token
   `--card-pad` (1rem default, 0.75rem compact), used for both the vertical
   padding and the gap between slots.

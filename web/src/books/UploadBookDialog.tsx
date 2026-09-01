@@ -155,7 +155,10 @@ export function UploadBookDialog({
                 className="border-border h-40 w-[7.5rem] shrink-0 rounded-md border object-cover object-top"
               />
             ) : (
-              <span className="bg-muted/50 border-border grid h-40 w-[7.5rem] shrink-0 place-items-center rounded-md border">
+              <span
+                data-decorative-stroke
+                className="bg-muted/50 border-border grid h-40 w-[7.5rem] shrink-0 place-items-center rounded-md border"
+              >
                 {looked ? (
                   <BookText className="text-muted-foreground size-6" />
                 ) : (

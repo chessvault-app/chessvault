@@ -72,7 +72,7 @@ export function DatabasesPage() {
         // What is mounted, and why there is nothing to press. Only the
         // count: this mount has no name to show, and its size cannot be
         // measured through the demo's in-memory filesystem.
-        <div className="bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-foreground/10 p-4 text-sm">
+        <div className="bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-border p-4 text-sm">
           {meta.ready ? (
             <>
               <p className="text-foreground font-medium">

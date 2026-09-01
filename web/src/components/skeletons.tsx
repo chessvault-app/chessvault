@@ -142,7 +142,7 @@ export function SkeletonCards({
           <div
             key={i}
             className={cn(
-              'bg-card flex gap-3 rounded-xl ring-1 ring-foreground/10',
+              'bg-card flex gap-3 rounded-xl ring-1 ring-border',
               grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
             )}
           >
@@ -237,7 +237,7 @@ export function SkeletonTiles({
         // The Panel's own box: pt-0 and a --card-spacing floor (ui/card),
         // a min-h-11 header with no rule under it, then the paragraph the
         // panel opens with at text-sm/relaxed.
-        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 pb-(--card-spacing)">
+        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-border pb-(--card-spacing)">
           <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-spacing) pointer-coarse:min-h-13">
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
@@ -526,7 +526,7 @@ export function SkeletonBoard({
             panel, so the explorer and the moves below it started 60px too
             high. */}
         {chapters && (
-          <div className="bg-card flex max-h-48 min-h-[min(6rem,15%)] shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
+          <div className="bg-card flex max-h-48 min-h-[min(6rem,15%)] shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-border max-lg:hidden">
             <div className="border-border flex min-h-11 shrink-0 items-center border-b px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-20" />
             </div>
@@ -547,7 +547,7 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-foreground/10 p-3">
+        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-border p-3">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
@@ -556,7 +556,7 @@ export function SkeletonBoard({
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
         {explorer && (
-          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
+          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border max-lg:hidden">
             <div className="flex min-h-11 items-center px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-16" />
             </div>
@@ -594,7 +594,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (
-        <div key={g} className="bg-card rounded-xl ring-1 ring-foreground/10 p-4">
+        <div key={g} className="bg-card rounded-xl ring-1 ring-border p-4">
           {/* The card's heading: an icon beside a title, on a 24px line. */}
           <div className="mb-3 flex h-6 items-center gap-2">
             <Skeleton className="size-4 shrink-0 rounded-sm" />

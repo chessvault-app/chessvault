@@ -283,7 +283,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
 /** The log's own shape, held while the attempts are still coming. */
 function HubSkeletonHistoryPanel() {
   return (
-    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-border">
       <SkeletonPanelHeading width="w-24" className="shrink-0" />
       <div className="min-h-0 flex-1">
         <SkeletonRows rows={3} />
@@ -302,7 +302,7 @@ function HubSkeletonHistoryPanel() {
  */
 function HubSkeletonBookRow() {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
       <SkeletonPanelHeading width="w-20" />
       {/* py from the density token, like the ListRow this stands for. */}
       <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
@@ -463,7 +463,7 @@ function EmptySlot({
  */
 function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
       <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Worth practising')}
       </p>
@@ -494,7 +494,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
       <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Recently read')}
       </p>
@@ -559,7 +559,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // vault happens to hold, so a first session and a hundredth one put
     // every target in the same place. A section that appears only once it
     // has content also teaches nobody that it is there.
-    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-border">
       <p className="text-muted-foreground border-border shrink-0 border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Puzzle history')}
       </p>
@@ -1148,7 +1148,7 @@ function Hub() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-foreground/10"
+                className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-border"
               >
                 <Skeleton className="size-5 rounded-sm" />
                 <Skeleton className="h-2.5 w-12" />

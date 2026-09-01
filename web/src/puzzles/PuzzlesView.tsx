@@ -1037,7 +1037,7 @@ function Trainer({
               ) : error && metaAnswered ? (
                 // What happened, and a way to go again — a dead end here
                 // used to need a full page reload to recover from.
-                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-foreground/10">
+                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-border">
                   <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
                     <p className="text-muted-foreground text-sm">{error}</p>
                     <Button

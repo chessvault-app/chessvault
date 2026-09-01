@@ -646,7 +646,7 @@ function MorePage() {
               type="button"
               onClick={() => (param ? navigate(section, param) : navigate(section))}
               className={cn(
-                'bg-card flex items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left',
+                'bg-card flex items-center gap-3 rounded-xl ring-1 ring-border p-3.5 text-left',
                 'active:bg-accent transition-colors duration-100',
               )}
             >
