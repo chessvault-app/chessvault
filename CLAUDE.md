@@ -176,6 +176,10 @@ cutting a version renames that heading, gives it a lede, and adds
 whatever went in without being written up. A release that finds no such
 heading starts one the same way. Anything left under `Unreleased` after
 a release is a claim that it is in no installer, so it has to be true.
+That heading and its lede are also what the GitHub release's body is
+written from — `docs/release-notes.md` has the shape, what survives the
+tightening, and the order the draft is filled and published in. The body
+is never left empty.
 
 **Check the licence inventory.** The npm side is generated at build time
 (`web/vite.licenses.ts` walks `node_modules` into `licenses/index.html` and
