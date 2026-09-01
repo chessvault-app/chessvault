@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
+import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
@@ -860,6 +861,25 @@ function TablebaseCard({
     await onChanged();
   };
 
+  const forget = async (): Promise<void> => {
+    let forgotten: number;
+    try {
+      ({ forgotten } = await api<{ forgotten: number }>('/api/tablebase/cache', {
+        method: 'DELETE',
+      }));
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      return;
+    }
+    // The tab remembers this session's answers too, and a cleared server
+    // with a full page memo would be a button that only half worked.
+    forgetTablebaseAnswers();
+    setNote({
+      kind: 'ok',
+      text: forgotten === 0 ? t('Nothing was cached.') : t('Forgot {n} cached answers.', { n: forgotten }),
+    });
+  };
+
   return (
     <Card icon={Crown} title={t('Tablebase')}>
       <SettingRow
@@ -904,6 +924,23 @@ function TablebaseCard({
           {t('Save')}
         </Button>
       </div>
+      {/* The cache never expires, which is right for a fact and wrong for
+          a server that has since learned something: add the six-piece
+          tables to the machine above and every six-piece ending you had
+          already looked at still answers "nothing here", because nothing
+          asks it again. This is how you ask again — and it is the way to
+          take the disk back, and to stop keeping a record of which
+          endings you studied. */}
+      <SettingRow
+        title={t('Cached answers')}
+        blurb={t(
+          'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.',
+        )}
+      >
+        <Button variant="secondary" onClick={() => void forget()}>
+          {t('Forget')}
+        </Button>
+      </SettingRow>
       <Feedback note={note} />
     </Card>
   );

@@ -62,6 +62,17 @@ other people.
   Tablebase label, as a tooltip rather than as printed text — one word
   and a hostname would push the verdict itself off the end of the strip.
 
+- **And a way to forget them.** A cache with no expiry is right for a
+  fact and wrong for a source that has since LEARNED something: point a
+  vault at a server holding the five-piece tables, look at a six-piece
+  ending, and "no table holds this" is on disk for good — adding the
+  six-piece tables afterwards changes nothing, because nothing asks
+  again. Settings → Tablebase now has the way to ask again, and says how
+  many answers it dropped. It clears the tab's own memory of them too,
+  or the button would only half work. The other two reasons to press it
+  are wanting the disk back and not wanting a record of which endings
+  you studied.
+
 - **Settings → Tablebase turns it off.** It is the one lookup the app
   makes without being asked for one — no source to select, no button to
   press, just a position small enough — so it says plainly where the

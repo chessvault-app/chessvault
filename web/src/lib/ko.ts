@@ -1305,6 +1305,12 @@ export const ko: Record<string, string> = {
   'Tablebase server': '테이블베이스 서버',
   'Tablebase server saved.': '테이블베이스 서버를 저장했습니다.',
   'Back to the public tablebase.': '공개 테이블베이스로 되돌렸습니다.',
+  'Cached answers': '캐시된 답',
+  'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.':
+    '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다. 다시 묻게 하려면 잊게 하세요 — 예를 들어 직접 띄운 서버에 테이블을 추가한 뒤에.',
+  Forget: '잊기',
+  'Forgot {n} cached answers.': '캐시된 답 {n}개를 잊었습니다.',
+  'Nothing was cached.': '캐시된 것이 없습니다.',
   Checkmate: '체크메이트',
   Stalemate: '스테일메이트',
   Win: '승리',

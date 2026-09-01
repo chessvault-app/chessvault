@@ -77,6 +77,18 @@ export function inTablebaseRange(fen: string): boolean {
     "no table holds this", which is as much an answer as the others. */
 const seen = new Map<string, TablebaseAnswer | null>();
 
+/**
+ * Drop what this tab remembers, for Settings' "forget cached answers".
+ *
+ * Without it the button is half true: the server's cache would be empty
+ * and the pane would go on showing the verdicts it had already been
+ * told, for every position visited since the tab opened. Exported and
+ * called from the settings card, exactly as forgetLichessToken is.
+ */
+export function forgetTablebaseAnswers(): void {
+  seen.clear();
+}
+
 interface Probe {
   answer: TablebaseAnswer | null;
   loading: boolean;

@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { INITIAL_FEN } from 'chessops/fen';
@@ -301,6 +301,33 @@ describe('tablebase route', () => {
     // The second source has its own corner of the cache, so it answers
     // for itself rather than inheriting the first one's verdict.
     expect(await (await app.request(url)).json()).toEqual({ available: false });
+  });
+
+  it('forgets every source on request, and asks again afterwards', async () => {
+    // The reason this route exists: a "nothing here" is on disk for good,
+    // so a server that has since GAINED tables would never be re-asked.
+    const cacheDir = dir();
+    const prober = stub(null);
+    const app = new Hono().route('/api', tablebaseApi(cacheDir, prober));
+    const url = `/api/tablebase?fen=${encodeURIComponent(KQK)}`;
+    await app.request(url);
+    await app.request(url);
+    expect(prober.calls).toBe(1);
+
+    const cleared = await app.request('/api/tablebase/cache', { method: 'DELETE' });
+    expect(cleared.status).toBe(200);
+    expect(await cleared.json()).toEqual({ ok: true, forgotten: 1 });
+    expect(existsSync(cachePath(cacheDir, 'stub', tablebaseFen(KQK)!))).toBe(false);
+
+    await app.request(url);
+    expect(prober.calls).toBe(2);
+  });
+
+  it('treats an empty cache as the state being asked for', async () => {
+    const app = new Hono().route('/api', tablebaseApi(join(tmpdir(), 'tablebase-never-written')));
+    const res = await app.request('/api/tablebase/cache', { method: 'DELETE' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, forgotten: 0 });
   });
 
   it('calls an unreachable source an outage, not a fault', async () => {

@@ -2349,7 +2349,7 @@
                   </tr>
                   <tr>
                     <td>Tablebase</td>
-                    <td data-ko="스위치 하나 — <strong>Endgame tablebase</strong>. «Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.» 기본은 켜짐이며, 이 기기에만 적용됩니다. 끄면 조회가 아예 나가지 않습니다. 그 아래는 물어볼 서버입니다 — «Or answer from your own tables: run lila-tablebase over them and give its address here. Empty means the public one.» 기기가 아니라 금고의 설정이고, 저장하면 다시 띄우지 않아도 적용되며, 서버마다 캐시가 따로 쌓입니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다.">
+                    <td data-ko="스위치 하나 — <strong>Endgame tablebase</strong>. «Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.» 기본은 켜짐이며, 이 기기에만 적용됩니다. 끄면 조회가 아예 나가지 않습니다. 그 아래는 물어볼 서버입니다 — «Or answer from your own tables: run lila-tablebase over them and give its address here. Empty means the public one.» 기기가 아니라 금고의 설정이고, 저장하면 다시 띄우지 않아도 적용되며, 서버마다 캐시가 따로 쌓입니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다. <strong>Cached answers</strong> → <strong>Forget</strong>은 캐시를 모두 버리고 몇 개였는지 알려 줍니다. 직접 띄운 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다 — 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
                       One switch, <strong>Endgame tablebase</strong>: “Show the exact result for
                       positions of seven pieces or fewer, in the explorer. The position is sent to
                       Lichess’s public tablebase, and every answer is kept on this vault’s disk —
@@ -2359,7 +2359,10 @@
                       address here. Empty means the public one.” — a vault setting rather than a
                       per-device one, saved without a restart, and each server's answers cached
                       apart from the other's. What they take is the “Tablebase cache” row of
-                      Storage used, below.
+                      Storage used, below. <strong>Cached answers</strong> →
+                      <strong>Forget</strong> drops them all and says how many, which is what to
+                      press after adding tables to your own server: answers never expire, so an
+                      ending already answered “nothing here” would never be asked again.
                     </td>
                   </tr>
                   <tr>

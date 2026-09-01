@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
@@ -394,5 +394,43 @@ export function tablebaseApi(
     }
   });
 
+  /**
+   * Throw the cached answers away.
+   *
+   * Needed because the cache deliberately never expires, which is right
+   * for a fact and wrong for a source that has LEARNED something: point
+   * this vault at a server holding the five-piece tables, look at a
+   * six-piece ending, and "no table holds this" is on disk for good —
+   * adding the six-piece tables to that same server afterwards changes
+   * nothing, because nothing asks it again. This is the way to ask
+   * again, and it is in the app because a shell is not an answer
+   * (CLAUDE.md).
+   *
+   * Everything, not just the endpoint in use: the other two reasons to
+   * press it are wanting the disk back and not wanting a record of which
+   * endings were studied, and neither is about one server. What it costs
+   * is one request per position the next time each is looked at.
+   */
+  api.delete('/tablebase/cache', (c) => {
+    let forgotten = 0;
+    for (const source of readdirSafe(cacheDir)) {
+      for (const file of readdirSafe(resolve(cacheDir, source))) {
+        if (file.endsWith('.json')) forgotten += 1;
+      }
+    }
+    // force: an already-absent cache is the state this asks for, not an
+    // error; recursive: the per-source directories go with it.
+    rmSync(cacheDir, { recursive: true, force: true });
+    return c.json({ ok: true, forgotten });
+  });
+
   return api;
 }
+
+const readdirSafe = (path: string): string[] => {
+  try {
+    return readdirSync(path);
+  } catch {
+    return [];
+  }
+};
