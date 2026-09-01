@@ -14,8 +14,8 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <!-- Match the app background so the OS chrome (status bar area, Android
          task switcher) blends with the page instead of flashing brand blue. -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9fafc" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#090c12" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Chess Vault" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -97,8 +97,12 @@
       /* The page's own ground, inline because it must exist before any
          stylesheet. Whatever shows between the OS startup image going and
          the app's first styled frame — module chunks still loading, a
-         first install on a cold cache — is this colour, so no path to
-         the app is ever white. The media query follows the OS for the
+         first install on a cold cache — is this colour, never the
+         unstyled document's own white. These two are --background
+         resolved by hand, so they move when it does: under the default
+         scheme (shadcn's neutral, both tints 0) the light ground IS
+         #ffffff, which is the app's colour rather than the absence of
+         one. The media query follows the OS for the
          no-JS case; the theme script below then pins the STORED
          preference inline, which wins, so an app set to light on a dark
          phone gets light, not the OS's guess.
@@ -113,9 +117,9 @@
          splash after the OS's own is a second handover, and every
          handover is a seam. The OS startup image (head links above) and
          a quiet app-coloured ground have no seam to show. */
-      html { background-color: #f9fafc; }
+      html { background-color: #ffffff; }
       @media (prefers-color-scheme: dark) {
-        html { background-color: #090c12; }
+        html { background-color: #0a0a0a; }
       }
       /* No mark drawn by the PAGE, ever. The startup images carry one
          (scripts/render-icons.mjs) and it fades out as iOS dissolves the
@@ -139,7 +143,7 @@
           // Pin the page's ground to the RESOLVED theme (inline style beats
           // the media query above): the stored preference can disagree with
           // the OS, and the ground must be the app's colour, not the OS's.
-          document.documentElement.style.backgroundColor = dark ? '#090c12' : '#f9fafc';
+          document.documentElement.style.backgroundColor = dark ? '#0a0a0a' : '#ffffff';
         } catch (e) {
           /* first run, or storage blocked — fall through to light */
         }
