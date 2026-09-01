@@ -24,6 +24,29 @@
  * skipped, not guessed at — the board is drawn that way, and so are the
  * piece sets. Anything `aria-hidden` is skipped because it is not text to
  * a reader. And it only knows the states it is told to force, below.
+ *
+ * STROKES ARE MEASURED TOO, because the defect this file certified its
+ * way past was never text: in light mode the page, the card and the
+ * panel are all the same white, so the only structure is a 1px border or
+ * ring — and every one of them measured 1.02–1.26:1, which on a phone is
+ * no line at all. Text passed everywhere while the board pages' bottom
+ * panel and bar read as one sheet. So every visible border and every
+ * ring-like box-shadow is composited over what is behind it and held to
+ * a floor. The floor is per-theme and comes from measurement, not from
+ * WCAG: 1.4.11's 3:1 is for boundaries that identify a control, not for
+ * a flat design's hairlines, and the WCAG ratio compresses near black —
+ * dark's dividers have always sat around 1.27–1.40 and read clearly
+ * (an edge lighter than its surface on an emissive display), while in
+ * light the shipped-invisible class was 1.02–1.26 and the retuned
+ * hairlines measure 1.32–1.44. 1.3 splits the light classes; 1.2 keeps
+ * dark honest without failing values that were never the complaint. A
+ * stroke on an element whose own fill already clears the floor against
+ * its surroundings is exempt — the fill is the separator there, and the
+ * stroke is decoration (a dark chip does not need its border seen).
+ *
+ * AND THE PHONE WIDTH, because the chrome that only exists on a phone —
+ * the bottom bar, the pane tabs — was exactly where the invisible
+ * boundary shipped, and a 1280px walk never renders it.
  */
 import { chromium, type Page } from 'playwright';
 import { createServer, type Server } from 'node:http';
@@ -60,23 +83,42 @@ const ROUTES = [
  * strips it races the app and silently measures a mix of both themes.
  */
 const THEMES = [
-  { name: 'light', prefs: { preference: 'light' } },
-  { name: 'dark', prefs: { preference: 'dark' } },
+  { name: 'light', prefs: { preference: 'light' }, strokeFloor: 1.3 },
+  { name: 'dark', prefs: { preference: 'dark' }, strokeFloor: 1.2 },
   // High contrast is a scheme, not a theme, and it moves every surface —
   // which is exactly the case that was broken. Walked in dark, where its
   // ladder is furthest from the default.
-  { name: 'dark + high contrast', prefs: { preference: 'dark' }, scheme: 'high-contrast' },
+  {
+    name: 'dark + high contrast',
+    prefs: { preference: 'dark' },
+    scheme: 'high-contrast',
+    strokeFloor: 1.2,
+  },
+];
+
+/**
+ * Both widths, because the app's phone chrome is different chrome. The
+ * bottom bar, the pane tabs and the sheets exist only under the stacked
+ * layout, and the invisible panel boundary shipped in exactly that
+ * chrome while a desktop-width walk stayed green.
+ */
+const VIEWPORTS = [
+  { name: 'desktop', width: 1280, height: 900 },
+  { name: 'phone', width: 375, height: 812 },
 ];
 
 interface Finding {
   route: string;
   theme: string;
   state: string;
+  /** For a stroke finding this is the element, not its words. */
   text: string;
   ratio: number;
   needs: number;
   color: string;
+  /** 0 marks a stroke finding; text has a real size. */
   fontPx: number;
+  kind: 'text' | 'stroke';
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +225,132 @@ const SCAN = `(() => {
 })()`;
 
 /**
+ * Every boundary stroke, composited over what is actually behind it.
+ *
+ * A stroke is a border side, or a box-shadow segment shaped like a ring
+ * (a spread of at least 1px with no more than 1px of blur — which is
+ * what `ring-1` compiles to, and also catches an inset hairline, while
+ * leaving the three real shadows alone: they all carry blur). It is
+ * scored against the background OUTSIDE the element, because that is
+ * the edge it exists to draw.
+ *
+ * The exemption: if the element's own fill already clears the floor
+ * against that same background, its stroke is decoration on a boundary
+ * the fill has drawn — the side-to-move chip is a near-black square on
+ * white, and nobody needs its border. Without this the check drowns in
+ * exactly those chips.
+ *
+ * Two escapes, both narrow. A stroke under 8% alpha is skipped as a
+ * wash rather than a line — forcing every hover and focus rule at once
+ * leaves 3%-alpha ring fragments on buttons that no real state shows,
+ * while the defect class this scan exists for was 10% and up. And an
+ * element marked data-decorative-stroke is skipped by declaration: a
+ * frame that decorates rather than separates — the book list's empty
+ * cover placeholder around its icon — where neither fill nor stroke is
+ * doing boundary work and the content inside is the identity. The
+ * attribute is deliberately greppable; every use is a claim to audit.
+ */
+const STROKE_SCAN = (floor: number) => `(() => {
+  const floor = ${floor};
+  const cv = document.createElement('canvas'); cv.width = cv.height = 4;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const paint = (css, under) => {
+    ctx.clearRect(0,0,4,4); ctx.fillStyle = under; ctx.fillRect(0,0,4,4);
+    ctx.fillStyle = css; ctx.fillRect(0,0,4,4);
+    const d = ctx.getImageData(2,2,1,1).data; return [d[0], d[1], d[2]];
+  };
+  const layer = (css) => {
+    const b = paint(css, '#000'), w = paint(css, '#fff');
+    return { a: Math.max(0, Math.min(1, 1 - (w[0] - b[0]) / 255)), pre: b };
+  };
+  const over = (top, bottom) => top.pre.map((c, i) => c + bottom[i] * (1 - top.a));
+  const rel = (c) => {
+    const [r,g,b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v/12.92 : ((v+0.055)/1.055) ** 2.4; });
+    return 0.2126*r + 0.7152*g + 0.0722*b;
+  };
+  const ratio = (a, b) => { const [hi, lo] = a > b ? [a, b] : [b, a]; return (hi + 0.05) / (lo + 0.05); };
+  const bgOf = (el) => {
+    const stack = [];
+    for (let n = el; n; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if (s.backgroundImage && s.backgroundImage !== 'none') return null;
+      const l = layer(s.backgroundColor);
+      if (l.a > 0.001) stack.push(l);
+      if (l.a > 0.999) break;
+    }
+    let acc = layer(getComputedStyle(document.body).backgroundColor).pre;
+    for (const l of stack.reverse()) acc = over(l, acc);
+    return acc;
+  };
+  // Top-level commas only: a shadow list nests commas inside its colours.
+  const splitShadows = (s) => {
+    const out = []; let d = 0, cur = '';
+    for (const ch of s) {
+      if (ch === '(') d++; if (ch === ')') d--;
+      if (ch === ',' && d === 0) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur);
+    return out;
+  };
+  const colorOf = (seg) => {
+    const m = seg.match(/(rgba?|oklab|oklch|hsla?|color)\\([^)]*\\)|#[0-9a-f]{3,8}/i);
+    return m ? m[0] : null;
+  };
+  const ident = (el) => {
+    let s = el.tagName.toLowerCase();
+    if (el.id) s += '#' + el.id.slice(0, 24);
+    const ds = el.getAttribute('data-slot'); if (ds) s += '[data-slot=' + ds + ']';
+    const c = typeof el.className === 'string'
+      ? el.className.split(/\\s+/).filter(Boolean).slice(0, 4).join('.') : '';
+    return (c ? s + ' .' + c : s).slice(0, 90);
+  };
+  const out = [];
+  for (const el of document.querySelectorAll('*')) {
+    if (el.closest('.cg-wrap')) continue;          // the board draws its own world
+    if (el.closest('[data-decorative-stroke]')) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.1) continue;
+    if (!el.getClientRects().length) continue;
+    const outside = el.parentElement ? bgOf(el.parentElement) : bgOf(el);
+    if (!outside) continue;
+    // The exemption: a fill that clears the floor is the real boundary.
+    const own = layer(cs.backgroundColor);
+    if (own.a > 0.02) {
+      const comp = over(own, outside);
+      if (ratio(rel(comp), rel(outside)) >= floor) continue;
+    }
+    const score = (colorCss) => {
+      const l = layer(colorCss);
+      if (l.a < 0.08) return;                      // under 8% alpha it is a wash, not a line
+      const comp = over(l, outside);
+      const rr = ratio(rel(comp), rel(outside));
+      if (rr < floor) out.push({ text: ident(el), ratio: +rr.toFixed(2), needs: floor, color: colorCss, fontPx: 0 });
+    };
+    const seen = new Set();
+    for (const [w, st, col] of [
+      [cs.borderTopWidth, cs.borderTopStyle, cs.borderTopColor],
+      [cs.borderBottomWidth, cs.borderBottomStyle, cs.borderBottomColor],
+      [cs.borderLeftWidth, cs.borderLeftStyle, cs.borderLeftColor],
+      [cs.borderRightWidth, cs.borderRightStyle, cs.borderRightColor],
+    ]) {
+      if (parseFloat(w) > 0 && st !== 'none' && !seen.has(col)) { seen.add(col); score(col); }
+    }
+    if (cs.boxShadow && cs.boxShadow !== 'none') {
+      for (const seg of splitShadows(cs.boxShadow)) {
+        const col = colorOf(seg);
+        if (!col) continue;
+        const nums = seg.replace(col, '').trim().split(/\\s+/).map(parseFloat).filter((n) => !isNaN(n));
+        const [, , blur = 0, spread = 0] = nums;
+        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col); }
+      }
+    }
+  }
+  return out;
+})()`;
+
+/**
  * Turn every hover and active rule on at once.
  *
  * Not just the backgrounds: the app's usual pattern is
@@ -247,13 +415,19 @@ const STATIC_SCHEMES = ['light', 'dark'] as const;
 
 async function walkStatic(page: Page, base: string, scheme: 'light' | 'dark'): Promise<Finding[]> {
   const found: Finding[] = [];
+  const floor = scheme === 'light' ? 1.3 : 1.2;
   const scan = async (route: string) => {
     for (const state of ['rest', 'hover + focus'] as const) {
       if (state !== 'rest') await page.evaluate(FORCE_STATES);
       await page.waitForTimeout(80);
-      const hits = (await page.evaluate(SCAN)) as Omit<Finding, 'route' | 'theme' | 'state'>[];
+      const hits = (await page.evaluate(SCAN)) as Omit<Finding, 'route' | 'theme' | 'state' | 'kind'>[];
+      const strokes = (await page.evaluate(STROKE_SCAN(floor))) as Omit<
+        Finding,
+        'route' | 'theme' | 'state' | 'kind'
+      >[];
       if (state !== 'rest') await page.evaluate(UNFORCE);
-      for (const h of hits) found.push({ ...h, route, theme: scheme, state });
+      for (const h of hits) found.push({ ...h, kind: 'text', route, theme: scheme, state });
+      for (const h of strokes) found.push({ ...h, kind: 'stroke', route, theme: scheme, state });
     }
   };
 
@@ -280,8 +454,14 @@ async function walkStatic(page: Page, base: string, scheme: 'light' | 'dark'): P
   return found;
 }
 
-async function walk(page: Page, base: string, theme: (typeof THEMES)[number]): Promise<Finding[]> {
+async function walk(
+  page: Page,
+  base: string,
+  theme: (typeof THEMES)[number],
+  viewport: (typeof VIEWPORTS)[number],
+): Promise<Finding[]> {
   const found: Finding[] = [];
+  const at = viewport.name === 'desktop' ? '' : ` @${viewport.name}`;
   for (const route of ROUTES) {
     await page.goto(`${base}/${route}`, { waitUntil: 'networkidle' });
     // Routes are lazy chunks and most fetch before they have anything to
@@ -291,9 +471,19 @@ async function walk(page: Page, base: string, theme: (typeof THEMES)[number]): P
     for (const state of ['rest', 'hover + focus'] as const) {
       if (state !== 'rest') await page.evaluate(FORCE_STATES);
       await page.waitForTimeout(150);
-      const hits = (await page.evaluate(SCAN)) as Omit<Finding, 'route' | 'theme' | 'state'>[];
+      const hits = (await page.evaluate(SCAN)) as Omit<
+        Finding,
+        'route' | 'theme' | 'state' | 'kind'
+      >[];
+      const strokes = (await page.evaluate(STROKE_SCAN(theme.strokeFloor))) as Omit<
+        Finding,
+        'route' | 'theme' | 'state' | 'kind'
+      >[];
       if (state !== 'rest') await page.evaluate(UNFORCE);
-      for (const h of hits) found.push({ ...h, route, theme: theme.name, state });
+      for (const h of hits)
+        found.push({ ...h, kind: 'text', route: route + at, theme: theme.name, state });
+      for (const h of strokes)
+        found.push({ ...h, kind: 'stroke', route: route + at, theme: theme.name, state });
     }
   }
   return found;
@@ -318,24 +508,31 @@ const browser = await chromium.launch();
 const findings: Finding[] = [];
 try {
   for (const theme of THEMES) {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-    // The preference goes in before the app's first line runs, so the
-    // first paint is already the scheme being measured.
-    await context.addInitScript(
-      ([prefs, schemeId]) => {
-        localStorage.setItem('chess-vault:theme', JSON.stringify({ state: prefs, version: 0 }));
-        // schemeId, not the scheme itself: the store re-reads the preset
-        // from the list on rehydrate, because the list is what a preset
-        // MEANS and it has changed before.
-        if (schemeId) {
-          localStorage.setItem('chess-vault:prefs', JSON.stringify({ state: { schemeId }, version: 0 }));
-        }
-      },
-      [theme.prefs, theme.scheme ?? null] as const,
-    );
-    const page = await context.newPage();
-    findings.push(...(await walk(page, base, theme)));
-    await context.close();
+    for (const viewport of VIEWPORTS) {
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+      });
+      // The preference goes in before the app's first line runs, so the
+      // first paint is already the scheme being measured.
+      await context.addInitScript(
+        ([prefs, schemeId]) => {
+          localStorage.setItem('chess-vault:theme', JSON.stringify({ state: prefs, version: 0 }));
+          // schemeId, not the scheme itself: the store re-reads the preset
+          // from the list on rehydrate, because the list is what a preset
+          // MEANS and it has changed before.
+          if (schemeId) {
+            localStorage.setItem(
+              'chess-vault:prefs',
+              JSON.stringify({ state: { schemeId }, version: 0 }),
+            );
+          }
+        },
+        [theme.prefs, theme.scheme ?? null] as const,
+      );
+      const page = await context.newPage();
+      findings.push(...(await walk(page, base, theme, viewport)));
+      await context.close();
+    }
   }
 
   // The two static pages, from source, on their own port. Skipped when
@@ -367,7 +564,7 @@ try {
 // ---------------------------------------------------------------------------
 if (!findings.length) {
   console.log(
-    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
+    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text and strokes, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
   );
   process.exit(0);
 }
@@ -383,7 +580,7 @@ if (!findings.length) {
  */
 const groups = new Map<string, { worst: Finding; where: Set<string> }>();
 for (const f of findings) {
-  const key = `${f.color}|${f.fontPx}|${f.text}`;
+  const key = `${f.kind}|${f.color}|${f.fontPx}|${f.text}`;
   const g = groups.get(key);
   if (!g) groups.set(key, { worst: f, where: new Set([`${f.route} (${f.theme}, ${f.state})`]) });
   else {
@@ -397,7 +594,7 @@ for (const { worst, where } of ordered) {
   const seen = [...where];
   const shown = seen.slice(0, 3).join(', ');
   console.error(
-    `${worst.ratio.toFixed(2)}:1 (needs ${worst.needs})  ${worst.fontPx}px  ${worst.color}\n` +
+    `${worst.ratio.toFixed(2)}:1 (needs ${worst.needs})  ${worst.kind === 'stroke' ? 'stroke' : `${worst.fontPx}px`}  ${worst.color}\n` +
       `    "${worst.text}"\n` +
       `    ${shown}${seen.length > 3 ? ` and ${seen.length - 3} more` : ''}`,
   );
