@@ -5,6 +5,21 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The workspace stopped growing sideways when the engine came on.** The
+  eval bar's 36px lane is added to the board's column rather than taken
+  out of the board, and the page's one width cap — which is what keeps the
+  top row and the games band under it lined up as one block — was counting
+  the lane as part of the board it allows for. On a window with slack the
+  moves and explorer columns absorbed it, as intended; on a full-size
+  desktop, where both columns are already at their caps, there was no
+  slack and the cap itself grew instead. Measured at 1920x1080: 1643 →
+  1679px, moving the whole page 18px left the moment the engine was
+  switched on. The cap now counts the board without the lane, so the two
+  columns pay for the bar at every width — measured at 1920, the page and
+  the board both hold still and the explorer gives up 34px.
+
 ## 0.7.1
 
 The demo, which now carries a written vault, a puzzle book made from the

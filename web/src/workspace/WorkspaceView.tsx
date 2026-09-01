@@ -206,8 +206,19 @@ function Workspace() {
   // it is switched: the row's height is the board's, and the games band
   // below is measured from it. What pays is the row — the moves and
   // explorer columns are flex-1 between a floor and a cap, so the 36px
-  // comes off their share, 18 each, and only while a bar is actually
-  // drawn.
+  // comes off their share, and only while a bar is actually drawn.
+  //
+  // "The row pays" is a claim about the PAGE's width holding still, and
+  // it only held while the row had slack to give. The page's one width
+  // cap below is board + both column caps, and it was reading a
+  // `boardColW` the lane was already inside — so on the window where the
+  // columns are AT their caps, which is every full-size desktop, there
+  // was no slack and the cap itself grew instead. Measured at 1920x1080:
+  // the cap went 1643 → 1679px the moment the engine was switched on,
+  // and mx-auto moved the whole page — row, games band and all — 18px
+  // left. Which is why the cap takes the board's width WITHOUT the lane
+  // (see below); the row is then the only thing that can pay, as this
+  // paragraph always said it was.
   const engineOn = useEngine((s) => s.enabled);
   const laneW = engineOn ? EVAL_LANE_PX : 0;
 
@@ -328,7 +339,17 @@ function Workspace() {
         ref={capRef}
         style={
           budget > 0
-            ? { maxWidth: boardColW + MOVES_MAX_PX + EXPLORER_MAX_PX + REGION_GAPS_PX }
+            ? {
+                // `boardColW - laneW` is the BOARD's own width in every
+                // branch above — the lane is added to the column after
+                // the clamp, and after the ceiling too. The cap counts
+                // the board and not the pair on purpose: the bar is paid
+                // for out of the two columns beside it (see laneW), and a
+                // cap that allowed for the bar as well moved the page
+                // instead of the columns.
+                maxWidth:
+                  boardColW - laneW + MOVES_MAX_PX + EXPLORER_MAX_PX + REGION_GAPS_PX,
+              }
             : undefined
         }
         className="mx-auto flex min-h-0 w-full flex-1 flex-col gap-3"
