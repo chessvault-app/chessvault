@@ -1768,10 +1768,12 @@
             </p>
             <h2 data-ko="만들기">Building one</h2>
             <ol>
-              <li data-ko="<strong>업로드.</strong> PGN collections 쪽의 넓은 드롭 영역에 <code>.pgn</code> 파일을 놓습니다(«Choose .pgn files» / «Or drop them anywhere in this box»). 다른 확장자는 거절합니다: «Only .pgn files can be uploaded here».">
-                <strong>Upload.</strong> Drop <code>.pgn</code> files on the PGN collections view's
-                big target (“Choose .pgn files” / “Or drop them anywhere in this box”). Anything
-                else is refused: “Only .pgn files can be uploaded here”.
+              <li data-ko="<strong>업로드.</strong> PGN collections 쪽의 <strong>Upload PGN collections</strong>가 같은 이름의 창을 열고, 그 안의 넓은 영역에 <code>.pgn</code> 파일을 놓습니다(«Choose .pgn files» / «Or drop them anywhere in this box»). 다른 확장자는 거절합니다: «Only .pgn files can be uploaded here».">
+                <strong>Upload.</strong> The PGN collections view's
+                <strong>Upload PGN collections</strong> opens a window of that name; drop
+                <code>.pgn</code> files on the big target inside it (“Choose .pgn files” / “Or
+                drop them anywhere in this box”). Anything else is refused: “Only .pgn files can
+                be uploaded here”.
               </li>
               <li data-ko="<strong>골라서 빌드.</strong> 모음들을 체크하면 바닥에 «{n} selected» 막대가 떠오르고, <strong>Build</strong>가 «Build a database» 창을 엽니다 — 이름 하나만 물으며, «Indexing {n} collections into one searchable database of whole games.» 빌드는 페이지를 떠나도 계속됩니다.">
                 <strong>Tick and build.</strong> Ticking collections raises a “{n} selected” bar at
@@ -1779,9 +1781,10 @@
                 to give, and “Indexing {n} collections into one searchable database of whole
                 games.” Building keeps going if you leave the page.
               </li>
-              <li data-ko="<strong>키우기.</strong> 데이터베이스 줄의 <strong>+</strong>(«Add games to {name}»)가 모음을 더합니다 — «Only the games it does not already hold are indexed.» 같은 이름으로 다시 빌드하면 <strong>Replace</strong>와 <strong>Add to it</strong> 중에 고릅니다.">
-                <strong>Grow it.</strong> A row's <strong>+</strong> (“Add games to {name}”)
-                feeds it more collections — “Only the games it does not already hold are indexed.”
+              <li data-ko="<strong>키우기.</strong> 데이터베이스 줄의 <strong>+</strong>(«Add games to this database»)가 «Add games to {name}» 창을 열어 모음을 더합니다 — «Only the games it does not already hold are indexed.» 같은 이름으로 다시 빌드하면 <strong>Replace</strong>와 <strong>Add to it</strong> 중에 고릅니다.">
+                <strong>Grow it.</strong> A row's <strong>+</strong> (“Add games to this
+                database”) opens the “Add games to {name}” window and feeds it more collections —
+                “Only the games it does not already hold are indexed.”
                 Building over an existing name asks: <strong>Replace</strong> or
                 <strong>Add to it</strong>.
               </li>
@@ -2300,23 +2303,27 @@
                   </tr>
                   <tr>
                     <td>Security</td>
-                    <td data-ko="<strong>Set an app password</strong>(잠금 화면을 켭니다 — 없으면 «anyone who can reach this server sees everything») · <strong>Two-factor authentication</strong>(«Set up 2FA» → QR 코드와 수동 키 → «Verify &amp; enable»; 끄기도 현재 코드가 필요) · <strong>Sign out</strong>(«Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.»). 자격이 바뀌면 잠금 화면으로 돌아갑니다.">
+                    <td data-ko="<strong>Set an app password</strong>(잠금 화면을 켭니다 — 없으면 «anyone who can reach this server sees everything») · <strong>Two-factor authentication</strong>(«Set up 2FA» → QR 코드와 수동 키 → «Verify &amp; enable»; 끄기도 현재 코드가 필요)  — 그리고 암호를 걸어 둔 뒤에만, <strong>Sign out</strong>(«Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.»): 암호가 없으면 끝낼 세션도 없으므로 이 줄 자체가 나오지 않습니다. 자격이 바뀌면 잠금 화면으로 돌아갑니다.">
                       <strong>Set an app password</strong> (turns the lock screen on — without
                       one, “anyone who can reach this server sees everything”) ·
                       <strong>Two-factor authentication</strong> (“Set up 2FA” → a QR code and
                       manual key → “Verify &amp; enable”; turning it off asks for a current code) ·
-                      <strong>Sign out</strong> (“Ends this device’s session on the server, so a copy of its
-                      cookie stops working too. Other devices stay signed in.”). Any credential change signs you back out.
+                      and then, only once a password is set, <strong>Sign out</strong> (“Ends
+                      this device’s session on the server, so a copy of its cookie stops working
+                      too. Other devices stay signed in.”) — with no password there is no session
+                      to end, so the row is not drawn at all. Any credential change signs you back
+                      out.
                     </td>
                   </tr>
                   <tr>
                     <td>Lichess token</td>
-                    <td data-ko="«Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.» 레퍼토리 트레이너의 Lichess 출처와 스터디 가져오기도 이 토큰입니다(비공개 스터디는 <code>study:read</code>). 저장되면 «A token ending in {last4} is configured.»만 남습니다.">
+                    <td data-ko="«Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.» 레퍼토리 트레이너의 Lichess 출처와 스터디 가져오기도 이 토큰입니다(비공개 스터디는 <code>study:read</code>). 입력 중에는 곁의 눈(«Show token»)이 붙여 넣은 것을 확인시켜 주고, 저장되면 «A token ending in {last4} is configured.»만 남습니다.">
                       “Powers the online opening explorer and your Lichess puzzle history. Create
                       one with no scopes, then paste it here — it is stored in the vault and never
                       shown again.” The repertoire trainer's Lichess source and study import ride
-                      the same token (<code>study:read</code> for private studies). Once saved,
-                      only “A token ending in {last4} is configured.” remains.
+                      the same token (<code>study:read</code> for private studies). The eye
+                      beside the box (“Show token”) checks what you pasted; once saved, only
+                      “A token ending in {last4} is configured.” remains.
                     </td>
                   </tr>
                   <tr>
@@ -2379,18 +2386,21 @@
                   </tr>
                   <tr>
                     <td>Danger zone</td>
-                    <td data-ko="보관함 전체 비우기 — 변경 이력까지. «The app password, 2FA and tokens survive. There is no undo…» 확인 문구를 입력해 무장하고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
+                    <td data-ko="보관함 전체 비우기 — 변경 이력까지. «The app password, 2FA and tokens survive. There is no undo…» 칸이 요구하는 무장 문구 — Type “wipe everything” to arm — 를 입력해야 <strong>Wipe all data</strong>가 눌리고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
                       Wiping the vault — change history included. “The app password, 2FA and
-                      tokens survive. There is no undo…” Typing the arming phrase unlocks the
-                      button, and the confirm asks for the app password when one is set.
+                      tokens survive. There is no undo…” Typing the arming phrase the field asks
+                      for — Type “wipe everything” to arm — unlocks <strong>Wipe all data</strong>,
+                      and the confirm asks for the app password when one is set.
                     </td>
                   </tr>
                   <tr>
                     <td>Version</td>
-                    <td data-ko="서버·빌드·데스크톱 버전, <strong>Check for updates</strong>(«{version} is available — it installs when you quit.» / «This is the newest build.»). 설치본을 받는 동안에는 받은 양을 막대 그래프와 함께 알려 주고(«Downloading {version} — {done} of {total}»), 다 받으면 «{version} is ready — restart to install it.»와 <strong>Restart now</strong> 버튼이 그 자리에 남습니다. 그 아래로 «Free software under the GPL-3.0.», 소스 코드와 라이선스 링크.">
-                      Server, build and desktop versions, <strong>Check for updates</strong>
+                    <td data-ko="서버와 빌드 버전 — 그리고 데스크톱 앱 안에서만, 데스크톱 버전과 <strong>Check for updates</strong>(브라우저로 서버에 접속했다면 업데이트할 껍데기가 없으므로 둘 다 나오지 않습니다)(«{version} is available — it installs when you quit.» / «This is the newest build.»). 설치본을 받는 동안에는 받은 양을 막대 그래프와 함께 알려 주고(«Downloading {version} — {done} of {total}»), 다 받으면 «{version} is ready — restart to install it.»와 <strong>Restart now</strong> 버튼이 그 자리에 남습니다. 그 아래로 «Free software under the GPL-3.0.», 소스 코드와 라이선스 링크.">
+                      Server and build versions — and, inside the desktop app only, the desktop
+                      version and <strong>Check for updates</strong>
                       (“{version} is available — it installs when you quit.” / “This is the newest
-                      build.”). While an installer downloads, the card reports how much of it has
+                      build.”); reached through a browser there is no shell to update, and neither
+                      is drawn. While an installer downloads, the card reports how much of it has
                       arrived, with a bar (“Downloading {version} — {done} of {total}”); when it is
                       complete, “{version} is ready — restart to install it.” and a
                       <strong>Restart now</strong> button stay on the card until you take them.
