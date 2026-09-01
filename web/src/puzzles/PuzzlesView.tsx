@@ -53,7 +53,10 @@ import { Skeleton } from '@/components/skeletons';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { HubPage } from './HubPage';
-import { PuzzleDbSetup } from './PuzzleDbSetup';
+import { PuzzleDbSetup, PuzzleDbSetupPlaceholder } from './PuzzleDbSetup';
+
+/** See dbWasReady below: '1', '0' or absent, absent as "no database". */
+const DB_READY_KEY = 'vault:puzzle-db-ready';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
 import {
@@ -217,11 +220,27 @@ function Trainer({
    * one answer away from showing the real thing.
    */
   const [metaAnswered, setMetaAnswered] = useState(false);
+  /**
+   * Whether this device last saw the vault WITH a puzzle database — which
+   * of the two entirely different pages the wait for meta stands before.
+   * The trainer used to be drawn for everyone, and a vault without the
+   * database (the dump is a 300 MB opt-in; nothing seeds it) watched the
+   * board, the panels and the action bar be replaced wholesale by the
+   * centred setup card on every visit until the build was run. The same
+   * bargain as the home reservations: a paint hint, never the authority,
+   * corrected by the answer one beat later. A device that has never met
+   * the vault reads absent as "no database", for the checklist floor's
+   * reason — that is certain for a fresh vault, and the ready bit flips
+   * once and never back.
+   */
+  const [dbWasReady] = useState(() => localStorage.getItem(DB_READY_KEY) === '1');
   const refreshMeta = useCallback(async () => {
     // Meta is decoration around the trainer (counts, the setup gate); if
     // the server is away, loadNext will say so where it can be acted on.
     try {
-      setMeta(await api<Meta>('/api/puzzles/meta'));
+      const next = await api<Meta>('/api/puzzles/meta');
+      setMeta(next);
+      localStorage.setItem(DB_READY_KEY, next.ready ? '1' : '0');
     } catch {
       /* the puzzle fetch reports the outage, with a retry */
     } finally {
@@ -627,6 +646,11 @@ function Trainer({
     onChange: setPane,
     enabled: !wide,
   });
+
+  // The setup card's place while meta is in the air, where the stored
+  // hint says that is the page coming — see dbWasReady. `metaAnswered`
+  // keeps a FAILED meta on the trainer path, whose retry can act.
+  if (meta === null && !metaAnswered && !dbWasReady) return <PuzzleDbSetupPlaceholder />;
 
   if (meta && !meta.ready) {
     return (

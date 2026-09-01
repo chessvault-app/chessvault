@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/skeletons';
 
 /**
  * Getting the puzzle database, from inside the app.
@@ -32,6 +33,52 @@ interface BuildStatus {
 }
 
 const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
+
+/**
+ * The card's own words, named once: the placeholder below holds their
+ * place by rendering them invisibly, and two copies would wrap apart
+ * the day one was edited.
+ */
+const SETUP_TITLE = 'No puzzle database yet';
+const SETUP_BLURB =
+  'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.';
+
+/**
+ * The setup screen's place while /api/puzzles/meta is in the air, for a
+ * device whose stored hint says this vault has no database yet.
+ *
+ * Without it the wait fell through to the TRAINER — board, panels,
+ * action bar — and a vault without the database watched that whole page
+ * be replaced by this centred card on every visit until the download
+ * was run. The cold card's shape is the floor: a build already running
+ * draws more, and the answer corrects this in one beat.
+ */
+export function PuzzleDbSetupPlaceholder() {
+  return (
+    <div
+      role="status"
+      aria-label={t('Loading')}
+      aria-live="polite"
+      className="optical-center h-full overflow-y-auto p-6"
+    >
+      <div className="flex w-full max-w-md flex-col gap-3 text-center">
+        <p className="relative text-base font-semibold">
+          <span className="invisible">{t(SETUP_TITLE)}</span>
+          <Skeleton className="absolute inset-y-0.5 left-1/2 w-48 max-w-full -translate-x-1/2" />
+        </p>
+        <p className="relative text-sm leading-relaxed">
+          <span className="invisible">{t(SETUP_BLURB)}</span>
+          <Skeleton className="absolute inset-x-0 inset-y-1" />
+        </p>
+        <div className="flex justify-center">
+          {/* The default button's box (h-8, h-9 under a coarse pointer),
+              at about the width its label makes it. */}
+          <Skeleton className="h-8 w-44 rounded-lg pointer-coarse:h-9" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
   const [status, setStatus] = useState<BuildStatus | null>(null);
@@ -88,7 +135,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
   return (
     <div className="optical-center h-full overflow-y-auto p-6">
       <div className="flex w-full max-w-md flex-col gap-3 text-center">
-        <p className="text-foreground text-base font-semibold">{t('No puzzle database yet')}</p>
+        <p className="text-foreground text-base font-semibold">{t(SETUP_TITLE)}</p>
 
         {running ? (
           <>
@@ -131,11 +178,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
           </>
         ) : (
           <>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              {t(
-                'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.',
-              )}
-            </p>
+            <p className="text-muted-foreground text-sm leading-relaxed">{t(SETUP_BLURB)}</p>
 
             {failed && (
               <p className="text-warn flex items-start gap-2 text-left text-sm leading-relaxed">
