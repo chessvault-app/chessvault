@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { EvalBar } from '@/engine/EvalBar';
-import { terminalScore } from '@/engine/terminal';
+import { terminalResult, terminalScore } from '@/engine/terminal';
 import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
 import { t } from '@/lib/i18n';
@@ -107,6 +107,18 @@ export function FinalAssessment({
         )
       : null;
   const score = verdict ?? settled ?? live;
+  /**
+   * A line that ended in mate is named by its result, not by a distance to
+   * one. `-#1` is a mate in one, and this panel only ever shows it on a
+   * board where that mate has already been played — the same two readings
+   * of the same three glyphs the eval bar beside it stopped making. A draw
+   * keeps its number here too (terminalResult).
+   *
+   * Guarded on the score actually BEING the settled one: an engine verdict
+   * cannot exist for a position the engine was never asked about, but the
+   * number and the word for it must come from one place either way.
+   */
+  const result = settled && score === settled ? terminalResult(settled) : null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -125,12 +137,21 @@ export function FinalAssessment({
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2">
           <span className="text-foreground flex min-w-[3.75rem] items-center font-mono text-xl font-semibold tabular-nums">
-            {score ? formatScore(score) : <Spinner className="text-muted-foreground size-4" />}
+            {result ??
+              (score ? formatScore(score) : <Spinner className="text-muted-foreground size-4" />)}
           </span>
           {/* showScore off: the number is already beside it, at text-xl
               and signed. Twice is two numbers to reconcile, not one read
-              twice. */}
-          <EvalBar score={score} orientation="horizontal" showScore={false} className="flex-1" />
+              twice. The result still goes in: the bar prints nothing, but
+              its label and its tip name the position, and those must not
+              go on calling a finished game a mate in one. */}
+          <EvalBar
+            score={score}
+            result={result}
+            orientation="horizontal"
+            showScore={false}
+            className="flex-1"
+          />
         </div>
         <p className="text-muted-foreground min-h-[0.875rem] text-xs leading-none">
           {verdict || settled ? '' : t('Evaluating the position…')}

@@ -32,3 +32,23 @@ export function terminalScore(fen: string): { cp?: number; mate?: number } | nul
   if (!pos.isEnd()) return null;
   return pos.isCheckmate() ? { mate: pos.turn === 'white' ? -1 : 1 } : { cp: 0 };
 }
+
+/**
+ * How a finished position is written on a scoresheet, or null when nobody
+ * won it.
+ *
+ * Takes a score `terminalScore` RETURNED, and nothing else. `{ mate: 1 }`
+ * from an engine is a mate still to be played and has to keep printing
+ * `#1`; handing one to this turns "mates next move" into "has already
+ * mated", which is the single confusion the result notation exists to
+ * stop. Every caller therefore reads it off the settled score inside the
+ * branch that already knows the game is over.
+ *
+ * A draw gets no result here. `0.0` is what a draw is worth and what a bar
+ * or a readout already prints for one, so it keeps its number rather than
+ * spending four glyphs on ½-½ to say the same thing.
+ */
+export function terminalResult(settled: { cp?: number; mate?: number }): '1-0' | '0-1' | null {
+  if (settled.mate === undefined) return null;
+  return settled.mate > 0 ? '1-0' : '0-1';
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { terminalScore } from './terminal';
+import { terminalResult, terminalScore } from './terminal';
 
 describe('terminalScore', () => {
   it('is null for a position with moves left', () => {
@@ -27,5 +27,22 @@ describe('terminalScore', () => {
     // A render path calls this; a bad position must not take the page down.
     expect(terminalScore('not a fen')).toBeNull();
     expect(terminalScore('8/8/8/8/8/8/8/8 w - - 0 1')).toBeNull(); // no kings
+  });
+});
+
+describe('terminalResult', () => {
+  it('writes a won game the way a scoresheet does', () => {
+    // Read off the settled score, which is how every caller reaches it.
+    expect(terminalResult(terminalScore('7k/5KQ1/8/8/8/8/8/8 b - - 0 1')!)).toBe('1-0');
+    expect(
+      terminalResult(terminalScore('rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3')!),
+    ).toBe('0-1');
+  });
+
+  it('leaves a draw its number', () => {
+    // 0.0 is what a draw is worth and what the readout already prints for
+    // one, so there is no result to swap in over the top of it.
+    expect(terminalResult(terminalScore('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')!)).toBeNull();
+    expect(terminalResult(terminalScore('7k/8/6K1/8/8/8/8/8 w - - 0 1')!)).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
 import { useEngine } from '@/store/engine';
-import { terminalScore } from './terminal.ts';
+import { terminalResult, terminalScore } from './terminal.ts';
 import { formatScore, formatScoreCompact, toWhitePov, winningChances } from './uci.ts';
 
 interface EvalBarProps {
@@ -13,11 +13,13 @@ interface EvalBarProps {
    * The result of a game that is already over, printed in place of the
    * score — the way every board site writes a finished game, and the way a
    * scoresheet does. Only a DECISIVE end has one: a draw keeps its number,
-   * which is `0.0` and says the same thing (see `useEvalReadout`).
+   * which is `0.0` and says the same thing (see `terminalResult`).
    *
-   * A caller that has no finished game passes nothing. `useEvalReadout`
-   * works it out for the bars that stand beside a board; the repertoire's
-   * assessment prints its own number and does not use this.
+   * A caller with no finished game passes nothing. `useEvalReadout` works
+   * it out for the bars that stand beside a board; the repertoire's
+   * assessment passes it too, and prints it in its own number's slot —
+   * there the bar shows nothing (`showScore={false}`), but the label and
+   * the tip are still the bar's to name.
    */
   result?: '1-0' | '0-1' | null;
   /** Vertical bar beside the board, or horizontal above a pane. */
@@ -196,17 +198,11 @@ export function useEvalReadout(fen: string): {
   const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
   if (!enabled) return { score: null, result: null };
   if (settled) {
-    return {
-      score: settled,
-      // Only a decisive end is written as a result. A draw keeps its
-      // number: 0.0 is what a draw is worth, it is what every bar prints
-      // for one, and ½-½ would be four glyphs in a 28px lane saying what
-      // the number beside them already says. A won game has no such
-      // number to keep — `#1` on a board that has ALREADY been mated
-      // reads as a mate still to be played, which is the thing this bar
-      // must not say (lanph3re).
-      result: settled.mate === undefined ? null : settled.mate > 0 ? '1-0' : '0-1',
-    };
+    // Only a decisive end is written as a result, and a draw keeps its
+    // number — see terminalResult. `#1` on a board that has ALREADY been
+    // mated reads as a mate still to be played, which is the thing this
+    // bar must not say (lanph3re).
+    return { score: settled, result: terminalResult(settled) };
   }
   return {
     score: top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null,

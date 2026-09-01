@@ -20,7 +20,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   won in words. A draw keeps its number — `0.0`, which is what a draw is
   worth and what the bar already prints for any dead-level position. A mate
   still to be PLAYED is untouched at `#1`, and can no longer be read as one
-  that has already been delivered.
+  that has already been delivered. The repertoire's end-of-line assessment,
+  which prints its own number beside its own bar, now says the same thing
+  in the same words: a drill or a spar that finished in mate is headed
+  `1-0` or `0-1` rather than `-#1`.
 
 - **A browsed player can be cleared on its own.** Settings → Browsed games
   listed every player whose months are cached, with one button that took
