@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
+import { collectionWasNonEmpty } from './collection';
 
 import { t } from '@/lib/i18n';
 import {
@@ -378,12 +379,42 @@ export function CollectionList({
     ? { key: gameKey(details), summary: details, loadPgn: loadGamePgn(details) }
     : null;
 
+  /**
+   * Whether to draw the filter controls at all.
+   *
+   * Loaded, that is just whether there is anything to filter. Still
+   * loading, only the TABLE toolbar draws them: card mode has a filter
+   * band of its own and `filtersLoading` below reserves it with a
+   * skeleton, so drawing these too would be two filter rows.
+   *
+   * The table toolbar has no such band — the controls sit in the
+   * toolbar itself, and nothing was holding their place. Gated on
+   * `games.length` alone they appeared only when the load landed, and
+   * the search box beside them went from 1078.5px to 731.1px as they
+   * arrived: a 347px lurch, measured, in the row the eye is already on.
+   *
+   * They stand in for their own space rather than skeletons doing it,
+   * because their width is their LABELS' width and that changes with
+   * the language — the three of them measure 106/93.9/93.9px in Korean
+   * against 144.4/104.4/102.6px in English, so one set of bars cannot
+   * be right in both, and a bar list would have to be re-measured every
+   * time a label was reworded. Nothing here reads the games: all three
+   * are fixed option sets, so they draw the same before the load as
+   * after, exactly as the search box beside them already does.
+   *
+   * `collectionWasNonEmpty()` is what says to expect them — the same
+   * remembered bit that picks the opening tab (see collection.ts). A
+   * vault known to be empty draws nothing and stays that way; one that
+   * has emptied since draws them once and self-heals on the next load.
+   */
+  const showFilters = loaded ? games.length > 0 : merged && collectionWasNonEmpty();
+
   // The shared filter row's contents (GameFilters): side is YOUR side,
   // so it matches only the games you played; reference games (no side of
   // yours) answer to the other two. Where they STAND depends on density
   // — see the shell props below.
   const filterControls =
-    games.length > 0 ? (
+    showFilters ? (
       <>
         <OwnershipSelect
           value={ownFilter}
