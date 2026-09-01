@@ -143,6 +143,7 @@ usage moved up a rung instead:
 
 | Tier | Class | Size |
 | --- | --- | --- |
+| the last rung, below type | `text-micro` | 10px |
 | captions | `text-xs` | 12px |
 | body, list rows, panel text | `text-sm` | 14px |
 | titles, setting rows | `text-base` | 16px |
@@ -160,11 +161,16 @@ this loud appears more than once on a page, the page has stopped ranking
 its own content.
 
 A magic `text-[…]` literal means a tier exists that nobody named: 81 of
-the 89 in the app were the same value, retyped at every call site. Five
-remain in app code — two tile-corner glyphs sized to a board square, the
-heat map's cell labels, the result bar's digits, the PV peek's moves —
-each sized to the thing it sits on and not to type, which is the only
-excuse a literal has.
+the 89 in the app were the same value, retyped at every call site. That
+is where `text-micro` came from — the 10px rung the table opens with,
+named once and used by the eval bar, the PV peek and the puzzle-book
+tiles, none of which are type in the sense the other rungs mean. Four
+literals remain in app code — the tile-corner glyphs sized to a board
+square, the heat map's cell labels, the result bar's digits, and the
+11px variation text the annotation-size setting needs to keep its
+bottom rung apart — each sized to the thing it sits on and not to type,
+which is the only excuse a literal has. `web/src/components/ui/` has
+its own, which are the registry's and not ours to name.
 
 Placeholders are what a scale change breaks. A skeleton line box must
 equal the real line-height, and line-heights do not all move together —
@@ -414,13 +420,23 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   30 ms moves nothing; a panel that appears after 180 ms pushes
   everything under it down.
 - **A placeholder is the size of what replaces it, and the size is
-  measured.** Not guessed from the class names: a shelf card is 88–90 px
-  because the excerpt is one line and the 64 px board is what governs, a
-  game row is 72 px because its three lines are 20 + 20 + 16. Compose the
+  measured.** Not guessed from the class names: a list shelf card is
+  88–90 px because the 64 px board is what governs, a grid one 111 px
+  because it also carries a 43 px excerpt, a game row 72 px because its
+  three lines are 20 + 20 + 16. Compose the
   real thing's own layout constants where they exist — `SkeletonBoard`
   builds from `BOARD_WIDE_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
   rather than from something that looks like them, because a copy drifts
   the first time one of them moves.
+
+  And a measurement is itself a copy. The grid card's excerpt was
+  reserved at one line on the strength of the 88–90 px above, which was
+  taken when the excerpt WAS one line; the clamp went to two and the
+  number stayed, so every card row in the grid stood 21.5 px short until
+  it was measured again. A figure in a comment is only true of the
+  element it was taken from on the day it was taken. Re-measure when the
+  element changes, and say in the comment what was measured and where —
+  the reservation modules do, which is how this one was caught.
 - **A block with nothing in it yet is not a block with nothing to show.**
   An empty array reads the same whether the answer said "none" or has not
   arrived, and a panel that announces "nothing solved yet" to somebody
@@ -579,7 +595,9 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius
-  ladder, focus rings, the inverted tooltip, the ring-hairline card) and
+  ladder, focus rings, the inverted tooltip, the card that is a ring
+  rather than a border — drawn in `--border` here, not the registry's
+  fixed `foreground/10`, so the contrast schemes can reach it) and
   carrying this app's physics on top: every window a bottom sheet on a
   phone, dragged away from anywhere on itself; the page/layer distinction
   and the back chevron; the keyboard band; the sole-text-field focus;
@@ -626,14 +644,23 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   values are written as the app's OKLCH ladder in `index.css` with the
   hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
   tinting them (Blue is the app's previous look) and there is no second
-  palette. Two roles depart from the registry's numbers, both measured:
-  `--accent` (the pressed, selected and highlighted fill) is a rung above
-  `--muted` (the hover fill) instead of the same rung, because a pressed
-  toggle on a card was 3% of lightness from its surroundings in the light
-  and 6% in the dark and could not be seen — 92.8% and 37% now — and the
-  dark `--input` is shadcn's own translucent white, which the chosen tab's
-  pill (`dark:bg-input/30 dark:border-input`) depends on: over the muted
-  track an opaque grey at 30% was the track's own colour. The primary's lightness follows the accent knob: grey is the
+  palette. Several roles depart from the registry's numbers, every one of
+  them measured. `--accent` (the pressed, selected and highlighted fill)
+  is a rung above `--muted` (the hover fill) instead of the same rung,
+  because a pressed toggle on a card was 3% of lightness from its
+  surroundings in the light and 6% in the dark and could not be seen —
+  92.8% and 37% now. The dark `--input` is shadcn's own translucent
+  white, which the chosen tab's pill (`dark:bg-input/30
+  dark:border-input`) depends on: over the muted track an opaque grey at
+  30% was the track's own colour. And in light the structural strokes
+  moved as a set, because that scheme paints the page, the cards and the
+  panels all the same white and the hairline is therefore the only
+  structure there is: `--border` rests at 88% rather than 92.2% (1.26:1
+  on the page was not visible on a phone at all; 1.44:1 now),
+  `--border-strong` follows to 82% to stay a distinct rung, and
+  `--text-subtle` to 51.5% from 53%, which had measured 4.25:1 on
+  `--surface-3` under a comment claiming a clearance the arithmetic
+  never supported. The primary's lightness follows the accent knob: grey is the
   registry's near-black, a coloured accent sits mid-scale. Settings offers
   the schemes as one dropdown in three groups — shadcn's five base colours
   (Neutral, Stone, Zinc, Gray, Slate), the app's tinted ones, and High

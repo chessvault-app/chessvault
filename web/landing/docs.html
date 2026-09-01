@@ -103,6 +103,15 @@
           --card: oklch(20.5% 0 0);
           --muted: oklch(26.9% 0 0);
           --muted-foreground: oklch(74% 0 0);
+          /* THE DARK HALF STAYS TRANSLUCENT, and does not follow the app
+             the way the light half does. The app's opaque 29% border is
+             right there because its hairlines sit on --card over the
+             page; here the figure plinths ARE --muted (26.9%), and 29%
+             on 26.9% measures 1.07:1 — no line at all. White at 10%
+             composites against whatever it is over, which is what a page
+             with three surface rungs needs. check:contrast covers every
+             page here in dark and fails at the floor if this is
+             "fixed". */
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);

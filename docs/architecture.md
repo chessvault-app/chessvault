@@ -141,10 +141,10 @@ flowchart LR
   the analysis board — the landing page must not pay for the engine, the
   explorer and the PGN parsers to draw a launcher — which is also why the
   home page's customise dialog is the one thing on it that is lazy. It
-  currently loads 637 kB of JS in Korean — 542 kB of shell across 45
-  chunks (the 240 kB entry, 132 kB of the component layer, 63 kB of
-  dialog) and 95 kB of dictionary — and 542 kB in English; measured on
-  the post-0.6.0 build. The shell was 217 kB before the component layer
+  currently loads 662 kB of JS in Korean — 563 kB of shell across 49
+  chunks (the 248 kB entry, 133 kB of the component layer, 63 kB of
+  dialog) and 99 kB of dictionary — and 563 kB in English; measured on
+  the 0.7.2 build. The shell was 217 kB before the component layer
   came in, and the Base UI port grew the layer's and the dialog's chunks
   again. New UI strings usually cost the dictionary and nothing else —
   0.5.0 added the Databases vocabulary, the level bands, the deep search
@@ -153,12 +153,20 @@ flowchart LR
   dictionary grew 96 → 102 kB as expected, and the shell grew 503 → 516
   kB with it, because the query language, the density knob and the
   editor's paged chain are code the launcher loads rather than words it
-  looks up. Since 0.6.0 the two have moved in opposite directions: the
+  looks up. Through 0.7.0 the two moved in opposite directions: the
   dictionary fell 102 → 95 kB when 138 dead entries were swept out of it,
   while the shell grew 516 → 542 kB — the workspace, the extracted games
   browser and the eval bar's own panel are all code, and the entry took
   233 → 240 kB of it. The component layer and the dialog chunk moved by
-  about 2 kB each.
+  about 2 kB each. 0.7.2 put both back on the same direction, and it is
+  the release that says what a chunk count is for: the shell grew 542 →
+  563 kB across four more chunks and the dictionary 95 → 99 kB, because
+  the work of that release was placeholders that reserve what is coming
+  — three reservation modules, a rewritten pane swipe, a skeleton file
+  half again its old size — and every one of those is code the launcher
+  loads to draw the first paint. The entry took 240 → 248 kB of it. A
+  release that spends itself on what happens BEFORE the answer arrives
+  pays for it in the chunk that has to be there first.
 
 ## Deployment model
 
