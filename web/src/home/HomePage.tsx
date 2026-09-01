@@ -308,7 +308,7 @@ const CHECKLIST_LABELS = [
  */
 function PlaceholderChecklist() {
   return (
-    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
       <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
         <p className="text-muted-foreground flex-1 text-sm font-medium">{t('Set up your vault')}</p>
         <span aria-hidden className="-my-1 -mr-1.5 size-7 shrink-0 pointer-coarse:size-9" />
@@ -363,7 +363,7 @@ function PlaceholderPanel({
   icon?: boolean;
 }) {
   return (
-    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
       <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {title}
       </p>
@@ -884,7 +884,7 @@ export function HomePage() {
             aria-label={t('Loading')}
             aria-live="polite"
             className={cn(
-              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10',
+              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border',
               // Nothing but phone-only rows: a heading over an empty box
               // at this width, so the desktop reserves none of it. Decided
               // in CSS rather than from a JS breakpoint, so a window
@@ -942,7 +942,7 @@ export function HomePage() {
         {effective.continueCard && continueRows.length > 0 && (
           <div
             className={cn(
-              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10',
+              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border',
               // The same rule the placeholder above is drawn under, so the
               // two agree: a card of nothing but phone-only rows is a
               // "Continue" heading over an empty box on a desktop.
@@ -1012,7 +1012,7 @@ export function HomePage() {
         )}
 
         {showChecklist && (
-          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border">
             <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
               <p className="text-muted-foreground flex-1 text-sm font-medium">
                 {t('Set up your vault')}
@@ -1099,7 +1099,7 @@ export function HomePage() {
               key={id}
               type="button"
               onClick={() => navigate(...nav)}
-              className="bg-card hover:-strong hover:bg-accent group flex flex-col items-start gap-2 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left transition-colors duration-100"
+              className="bg-card hover:bg-accent group flex flex-col items-start gap-2 rounded-xl ring-1 ring-border p-3.5 text-left transition-colors duration-100"
             >
               <Icon className="text-muted-foreground group-hover:text-primary size-4.5 transition-colors" />
               <span>
@@ -1172,7 +1172,7 @@ export function HomePage() {
         {data !== null && dash !== null && (
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
             {showTraining && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Training')}
                 </p>
@@ -1226,7 +1226,7 @@ export function HomePage() {
             )}
 
             {dash.recentGames.length > 0 && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
                   <p className="text-muted-foreground flex-1 text-sm font-medium">
                     {t('Recent games')}
@@ -1261,7 +1261,7 @@ export function HomePage() {
             )}
 
             {data.books.length > 0 && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Puzzle books')}
                 </p>
@@ -1300,7 +1300,7 @@ export function HomePage() {
             )}
 
             {data.recentDocs.length > 0 && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Recent work')}
                 </p>
@@ -1334,7 +1334,7 @@ export function HomePage() {
               dash.recentGames.length === 0 &&
               data.books.length === 0 &&
               data.recentDocs.length === 0 && (
-                <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10 lg:col-span-2">
+                <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border lg:col-span-2">
                   <EmptyState
                     icon={Folder}
                     title="Nothing to show yet"

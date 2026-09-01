@@ -281,20 +281,34 @@
   --surface-3: oklch(calc(92.8% + (90% - 92.8%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
   --surface-inset: oklch(calc(98.5% + (97% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(calc(92.2% + (62% - 92.2%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
-  --border-strong: oklch(calc(85% + (35% - 85%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
+  /* The registry ships 92.2%, which is 1.26:1 against the white page —
+     and in light the page, the card and the panel are all the same
+     white, so a 1px line at 1.26:1 is the ONLY thing separating them.
+     Measured on a phone that line is not there: the board pages' bottom
+     panel and bar read as one unbroken sheet. 88% is 1.44:1 on white and
+     1.32:1 on the muted rung — still a hairline, but one that survives
+     a small bright screen. Dark never had the problem, because there
+     the surface ladder separates panels by fill and the border is a
+     second cue; its values stay the registry's. */
+  --border: oklch(calc(88% + (62% - 88%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  /* A rung below --border, kept a real step apart now that --border
+     itself has darkened: 82% is 1.75:1 on white. */
+  --border-strong: oklch(calc(82% + (35% - 82%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
 
   --foreground: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
   --muted-foreground: oklch(calc(48% + (24% - 48%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
-  /* Both quiet tiers were measured against --surface and --background only,
-     and passed there: subtle at 55% is 4.85:1 on white and 4.63:1 on the
-     page. They are also used on --surface-2 and --surface-3, the raised
-     and inset panels, where 55% falls to 4.48:1 and 4.12:1 — under what
-     small text needs. 52.5% clears 4.5:1 on all four. Muted moved with it
-     (52% -> 46%) because at 52.5% the two tiers would have been the same
-     colour; the ramp is wider now, not narrower. (Grey-on-grey maths: for
-     neutrals, OKLCH L approximates Y^(1/3), so contrast = 1.05/(L³+0.05).) */
-  --text-subtle: oklch(calc(53% + (30% - 53%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  /* The quiet tiers answer to the Four Backgrounds Rule: 4.5:1 on the
+     page, the card, the muted rung AND --surface-3, because the gap is
+     smallest on the pressed/selected fill and that is where a caption
+     fails first. 53% measured 4.25:1 on --surface-3 (92.8%) — under the
+     floor small text needs — and the note that used to sit here claimed
+     52.5% clears all four, which the maths below says it never did
+     (that needs 51.7% or less). 51.5% clears it at 4.55:1 and is 5.6:1
+     on white. Muted at 48% already clears all four (5.3:1 worst case)
+     and stays put; the tiers remain 3.5 points apart. (Grey-on-grey
+     maths: for neutrals, OKLCH L approximates Y^(1/3), so contrast =
+     1.05/(L³+0.05).) */
+  --text-subtle: oklch(calc(51.5% + (30% - 51.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
 
   /* shadcn's neutral primary is near-black on white and near-white on
      dark — a grey button, which is what the accent knob at 0 means here.
@@ -1272,12 +1286,24 @@ cg-board square.check {
 /* ---------------------------------------------------------------------------
    The pane swipe's motion — the CSS half of hooks/use-pane-swipe.
 
-   The hook writes `--pane-dx` and `--pane-fade` straight onto the pane
-   column and switches these rules on with `data-pane-swipe`; the column's
-   children are what carry them. EVERY child, because on the layouts that
-   fold to one pane at a time only one of them is on screen anyway — and
-   the tab strip takes itself out with `data-pane-strip`, being the fixed
-   thing the turn is measured against.
+   A turn moves TWO panes: the one being left and the one arriving, held a
+   gutter apart and dragged as a row. The hook marks them `data-pane-open`
+   and `data-pane-peek`, switches these rules on with `data-pane-swipe` on
+   the column, and carries every number the pair needs as custom properties
+   there — `--pane-dx` is where the finger has the row, `--pane-span` is the
+   whole trip (a pane's width plus the gutter) and `--pane-side` is which
+   side of the open pane the arriving one stands on.
+
+   Only those two move. Everything else in the column is fixed furniture the
+   turn is measured against — the tab strip, the control row at the floor —
+   and it says so with `data-pane-strip`, which is also how the hook knows
+   what is a pane when it goes looking for the one that just arrived.
+
+   The arriving pane is taken out of the column's flow and stood at the open
+   pane's own box, because these columns have never laid out two panes at
+   once and a second one in flow would push the first down the page. The box
+   is measured by the hook: a pane's height here is whatever the layout gave
+   it, not something CSS can restate.
 
    Unlayered, so a pane's own utility classes cannot outrank the offset,
    and gone entirely at rest: no attribute on the column means no
@@ -1287,12 +1313,12 @@ cg-board square.check {
    they scroll — `overflow-x: hidden` forces a `visible` overflow-y to
    `auto`, which would hand the repertoire's stacked column a scroll
    container it has never had. `clip` leaves the other axis alone, and is
-   here so that a pane leaning past the column's edge cannot become
+   what keeps the pane waiting off the column's edge from becoming
    somewhere the page can be dragged sideways.
 
    The duration is the same wait the hook clears up after (SETTLE_MS). It
    is a property rather than a literal because the turn is drawn in two
-   places — the pane moves here, and the strip's selected pill fills in
+   places — the panes move here, and the strip's selected pill fills in
    components/pane-tabs — and those two are one motion. Under
    `prefers-reduced-motion` the base block above flattens both to nothing,
    which lands back on the instant swap this gesture had before it
@@ -1304,17 +1330,30 @@ cg-board square.check {
 
 [data-pane-swipe] {
   overflow-x: clip;
+  position: relative;
 }
 
-[data-pane-swipe] > *:not([data-pane-strip]) {
+[data-pane-swipe] > [data-pane-open] {
   transform: translate3d(var(--pane-dx, 0px), 0, 0);
-  opacity: var(--pane-fade, 1);
 }
 
-[data-pane-swipe='settle'] > *:not([data-pane-strip]) {
-  transition:
-    transform var(--pane-turn) var(--pane-turn-ease),
-    opacity var(--pane-turn) ease-out;
+[data-pane-swipe] > [data-pane-peek] {
+  position: absolute;
+  top: var(--pane-top, 0px);
+  left: var(--pane-left, 0px);
+  width: var(--pane-width, 100%);
+  height: var(--pane-height, auto);
+  margin: 0;
+  transform: translate3d(
+    calc(var(--pane-dx, 0px) + var(--pane-side, 1) * var(--pane-span, 0px)),
+    0,
+    0
+  );
+}
+
+[data-pane-swipe='settle'] > [data-pane-open],
+[data-pane-swipe='settle'] > [data-pane-peek] {
+  transition: transform var(--pane-turn) var(--pane-turn-ease);
 }
 
 /* ---------------------------------------------------------------------------

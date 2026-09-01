@@ -493,7 +493,7 @@ export function BookPage({ slug }: { slug: string }) {
             )}
           </>
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
-          <div className="bg-card rounded-xl ring-1 ring-foreground/10 p-6 text-center">
+          <div className="bg-card rounded-xl ring-1 ring-border p-6 text-center">
             {/*
               The import goes FIRST. An empty book used to name only "Add
               puzzle" — the by-hand route — which reads as though a book

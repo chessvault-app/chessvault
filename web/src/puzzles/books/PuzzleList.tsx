@@ -428,7 +428,7 @@ export function PuzzleList({
                     ? 'bg-nag-good/15 ring-nag-good/40 text-nag-good'
                     : state === 'failed'
                       ? 'bg-nag-blunder/15 ring-nag-blunder/40 text-nag-blunder'
-                      : 'bg-card ring-foreground/10 text-muted-foreground hover:bg-accent',
+                      : 'bg-card ring-border text-muted-foreground hover:bg-accent',
                 )}
               >
                 {p.number ?? ordinalOf.get(p.id)}

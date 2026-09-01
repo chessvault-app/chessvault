@@ -85,14 +85,15 @@
            grep of this file would have produced. 48% measures 6.58:1 and
            6.04:1 on the same two surfaces. */
         --muted-foreground: oklch(48% 0 0);
-        --border: oklch(92.2% 0 0);
+        --border: oklch(88% 0 0);
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
         --ring: oklch(70.8% 0 0);
-        /* The hairline: ring-foreground/10, not the border colour — the
-           registry's nova card is a ring, and it is what makes a white
+        /* The hairline: the border colour, as in the app, where the card
+           ring moved off a fixed foreground alpha and onto --border so
+           the contrast schemes reach it. It is what makes a white
            surface read on a white page. */
-        --hairline: oklch(14.5% 0 0 / 10%);
+        --hairline: oklch(88% 0 0);
         /* One radius, and the ladder it implies: lg is the radius (buttons,
            inputs), xl is a step up (panels), md a step down (the pills). */
         --radius: 0.625rem;

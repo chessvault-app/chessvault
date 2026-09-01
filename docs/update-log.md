@@ -30,10 +30,8 @@ installer. This section becomes the next version's heading.
   never trust it past one answer — now covers four more waits. The
   puzzles page remembers whether the vault has a puzzle database, so a
   vault without one waits on the setup card's own shape instead of
-  drawing the whole trainer and replacing it wholesale. The Games pane
-  remembers whether the collection had games, so a reload opens on your
-  games instead of opening on Databases and swapping panes when the
-  answer lands. The theme wall remembers its histogram — the most stable
+  drawing the whole trainer and replacing it wholesale. The theme wall
+  remembers its histogram — the most stable
   shape in the app — and now reserves its exact sections and cards
   (measured: pixel-identical through the swap, where the old guess stood
   3 sections for 9). And the puzzles hub reserves the "Solved today"
@@ -56,6 +54,107 @@ installer. This section becomes the next version's heading.
   of a 48-tile guess. The floors follow each page's own facts: a shelf
   something is seeded onto floors at one card, one nothing seeds at
   none.
+
+- **The pane swipe carries both panels now.** Turning the panels under a
+  board on a phone was a lean and a swap: the open panel followed half of
+  what the thumb travelled, stopped at 32px, and the next one appeared on
+  release. What the gesture asks for is the next panel, and the next panel
+  was the one thing not on screen while it was being asked for — so the
+  32px was a panel nodding at you, and the turn itself happened after the
+  hand had let go. Both panels travel together now, a 12px gutter apart,
+  one to one with the finger across the full width of the column: the panel
+  being left goes out as the arriving one comes in, and letting go pulls in
+  only the gap that is left. It turns at a third of the way across or on a
+  flick — 0.5px/ms over the last 100ms of the path, because the gesture
+  people actually use to page is fast, and a fast gesture is a short one.
+  Both walls read the same way: at the first tab or the last, and past the
+  arriving panel, the row gives a fifth of the movement up to 24px and
+  stops, so an end of the strip still says so during the gesture and one
+  swipe can never turn two panels. The tab's pill fills on the release
+  frame rather than when the motion ends, because the turn completes by
+  RE-ANCHORING and not by moving: the arriving panel is made the open one
+  where it already stands and the offset is restated from its point of
+  view, which changes nothing on screen and leaves only the gap to
+  animate. The panels are still separate elements at the heights every
+  board page has tuned — the arriving one is lifted out of the column's
+  flow into the open panel's own measured box, so a column that has never
+  laid out two panels at once still does not — and the offsets are still
+  written straight onto the column, so the whole gesture costs two React
+  renders: one to put the neighbour on screen, one to take it off again.
+  Which panel is which is read from what was on screen before the
+  neighbour arrived, never from the DOM order: the trainers render their
+  panes in a different order from their strip, and an order read twice is
+  an order that drifts. The control row at the column's floor stopped
+  travelling with the panels — it is furniture the turn is measured
+  against, like the tab strip above. Under `prefers-reduced-motion` the
+  swap is still the instant one it always was. Measured with trusted touch
+  input at 390x844, on the board page, on a study and on the puzzle
+  trainer — which mounts its neighbour rather than unhiding it: a 366px
+  column gives a 378px trip, a 220px drag puts the two panels at -208 and
+  +170 with 12px between them and both at the full 311px height, the strip
+  fills on release while the row slides the last 64px home, and at rest the
+  column carries no attribute, no custom property and no compositing layer.
+
+- **Light mode's panel edges became visible again.** In light the page,
+  the cards and the panels are all the same white — deliberately — so the
+  only thing separating a panel from the page is a one-pixel line, and
+  that line was too faint to survive a phone screen: the default border
+  measured 1.26:1 against the page, the card ring 1.25:1, and on the board
+  pages the bottom panel and the move bar read as one unbroken sheet. Dark
+  mode never had the problem, because its surface ladder separates panels
+  by fill and the border is only the second cue. Three moves, all in the
+  tokens: the light border rests at 88% now instead of the registry's
+  92.2% (1.44:1 on white, measured), border-strong steps down with it to
+  82% to stay a distinct rung, and the card ring is drawn in the border
+  colour rather than a fixed 10% wash of the foreground. That last one
+  also repairs the High contrast scheme, which moves every border through
+  the contrast knob and could never reach the old ring — the one scheme
+  chosen for legibility left every card edge at 1.3:1. It now takes them
+  to 3.6:1 with everything else. The third text tier moved a step darker
+  with them (51.5% from 53%): measured on the selected-row fill it sat at
+  4.25:1, under the 4.5:1 floor small text needs, and the comment beside
+  the old value claimed a clearance the arithmetic never supported.
+
+- **The Games toolbar stopped rearranging itself while the list loaded.**
+  The filter controls are drawn only when there are games to filter, and
+  that condition cannot tell a list still arriving from one that is empty.
+  At table density they sit in the toolbar itself with no band holding
+  their place, so they appeared the moment the load landed and shoved the
+  search box from 1078.5px to 731.1px — a 347px lurch in the row the eye
+  is already on. They now draw from the first paint: all three are fixed
+  option sets that read nothing from the games, so they look the same
+  before the answer as after, exactly as the search box beside them
+  already did. Placeholder bars could not have done this job, because a
+  control is as wide as its label and a label moves with the language —
+  106/93.9/93.9px in Korean against 144.4/104.4/102.6px in English, so no
+  one set of bars is right in both. The count beside them has stopped
+  lying too: it read "0 games" next to six loading rows and then jumped to
+  the real number, and it is now a bar of its own size, measured at 65.5px
+  in Korean and 71.9px in English. The same measurement now reads 1.5px,
+  which is that bar landing and nothing else; the Import button does not
+  move at all. A vault that had games and is empty now holds the space
+  once, drops it when the empty list arrives, and opens elsewhere from the
+  next launch.
+
+- **Games opened on the reference databases instead of on your own games.**
+  Which tab the page opens on is decided before the first paint, and the
+  only thing it could ask was a copy of the collection that lives for one
+  session. That copy holds whole games, so it is empty at every launch,
+  and a cold start therefore guessed the databases every time — then moved
+  to the collection once the real list arrived. Measured over three cold
+  launches against a warm local server, the wrong tab was up for about
+  85ms each time, and 280ms against a server still warming up. It was long
+  enough to finish: the reference list was showing its full count before
+  the swap — 3,436 games in the vault this was measured against — which is
+  why it read as somebody else's games appearing rather than as loading,
+  and two requests for those games were made and thrown away. The page now
+  remembers the one thing it needs — whether the collection had anything
+  in it — so it opens on your games directly and asks for nothing it will
+  not show. A device that has never opened the
+  vault, or last saw it empty, still takes the old path once and is right
+  from the next launch. The correction only ever moves toward your
+  collection: a collection emptied since the last visit opens on its own
+  empty state rather than having real rows swapped out from under it.
 
 - **Two panels that moved the page while it loaded.** The home page's
   Continue card has been reserved to the pixel for two releases, and it

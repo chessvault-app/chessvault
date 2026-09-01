@@ -875,7 +875,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
-        {...paneSwipe}
+        {...paneSwipe.column}
       >
         {/* The same h-9 band every other board page opens its column with:
             h-9 plus the column's gap-3 equals the board's h-10 strip plus
@@ -889,13 +889,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             moment it is over. One at a time on a phone, behind the
             switcher. */}
         {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
-        {(wide || shownPane === 'moves') && movesPanel}
-        {!wide && analysing && shownPane === 'engine' && (
+        {(wide || paneSwipe.shows('moves')) && movesPanel}
+        {!wide && analysing && paneSwipe.shows('engine') && (
           <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
           </Panel>
         )}
-        {(wide || shownPane === 'info') && puzzlePanel}
+        {(wide || paneSwipe.shows('info')) && puzzlePanel}
         {/* Once the puzzle is over — see the puzzle trainer's copy. */}
         {analysing && <ColumnControls className="wide:hidden" />}
 

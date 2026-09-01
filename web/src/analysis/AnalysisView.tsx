@@ -127,7 +127,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           scrolls instead — see BOARD_HELD_SHELL. */}
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
-        {...paneSwipe}
+        {...paneSwipe.column}
       >
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
@@ -150,7 +150,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           className={cn(
             'flex-1 max-lg:min-h-0',
             engineOn ? 'lg:min-h-[min(28rem,55%)]' : 'lg:min-h-[min(22rem,45%)]',
-            pane !== 'moves' && 'max-lg:hidden',
+            !paneSwipe.shows('moves') && 'max-lg:hidden',
           )}
         >
           {/* Engine docks in the Moves panel on desktop; on phones it is its
@@ -191,7 +191,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
-        <Panel className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
+        <Panel
+          className={cn('flex-1 min-h-0 lg:hidden', !paneSwipe.shows('engine') && 'max-lg:hidden')}
+        >
           <EngineBlock standalone />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of
@@ -200,7 +202,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           resizeKey="analysis-explorer"
           className={cn(
             'max-lg:min-h-0 max-lg:flex-1 lg:max-h-[45%]',
-            pane !== 'explorer' && 'max-lg:hidden',
+            !paneSwipe.shows('explorer') && 'max-lg:hidden',
           )}
         />
         {/* One strip for the whole column, at its floor, whichever tab is

@@ -1061,7 +1061,7 @@ function Trainer({
               ) : error && metaAnswered ? (
                 // What happened, and a way to go again — a dead end here
                 // used to need a full page reload to recover from.
-                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-foreground/10">
+                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-border">
                   <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
                     <p className="text-muted-foreground text-sm">{error}</p>
                     <Button
@@ -1109,7 +1109,7 @@ function Trainer({
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
-        {...paneSwipe}
+        {...paneSwipe.column}
       >
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
@@ -1147,13 +1147,13 @@ function Trainer({
             analysing used to replace the page, and going back for the
             puzzle's own text meant leaving the analysis. */}
         {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
-        {(wide || shownPane === 'moves') && movesPanel}
-        {!wide && analysing && shownPane === 'engine' && (
+        {(wide || paneSwipe.shows('moves')) && movesPanel}
+        {!wide && analysing && paneSwipe.shows('engine') && (
           <Panel className="min-h-0 flex-1">
             <EngineBlock standalone />
           </Panel>
         )}
-        {(wide || shownPane === 'info') && puzzlePanel}
+        {(wide || paneSwipe.shows('info')) && puzzlePanel}
         {/* One strip at the column's floor while the panes are tabs, and
             only once the puzzle is over: until then the board is this
             component's own tree, not the analysis store these buttons

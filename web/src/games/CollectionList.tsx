@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
+import { Skeleton } from '@/components/skeletons';
+import { collectionWasNonEmpty } from './collection';
 
 import { t } from '@/lib/i18n';
 import {
@@ -377,12 +379,42 @@ export function CollectionList({
     ? { key: gameKey(details), summary: details, loadPgn: loadGamePgn(details) }
     : null;
 
+  /**
+   * Whether to draw the filter controls at all.
+   *
+   * Loaded, that is just whether there is anything to filter. Still
+   * loading, only the TABLE toolbar draws them: card mode has a filter
+   * band of its own and `filtersLoading` below reserves it with a
+   * skeleton, so drawing these too would be two filter rows.
+   *
+   * The table toolbar has no such band — the controls sit in the
+   * toolbar itself, and nothing was holding their place. Gated on
+   * `games.length` alone they appeared only when the load landed, and
+   * the search box beside them went from 1078.5px to 731.1px as they
+   * arrived: a 347px lurch, measured, in the row the eye is already on.
+   *
+   * They stand in for their own space rather than skeletons doing it,
+   * because their width is their LABELS' width and that changes with
+   * the language — the three of them measure 106/93.9/93.9px in Korean
+   * against 144.4/104.4/102.6px in English, so one set of bars cannot
+   * be right in both, and a bar list would have to be re-measured every
+   * time a label was reworded. Nothing here reads the games: all three
+   * are fixed option sets, so they draw the same before the load as
+   * after, exactly as the search box beside them already does.
+   *
+   * `collectionWasNonEmpty()` is what says to expect them — the same
+   * remembered bit that picks the opening tab (see collection.ts). A
+   * vault known to be empty draws nothing and stays that way; one that
+   * has emptied since draws them once and self-heals on the next load.
+   */
+  const showFilters = loaded ? games.length > 0 : merged && collectionWasNonEmpty();
+
   // The shared filter row's contents (GameFilters): side is YOUR side,
   // so it matches only the games you played; reference games (no side of
   // yours) answer to the other two. Where they STAND depends on density
   // — see the shell props below.
   const filterControls =
-    games.length > 0 ? (
+    showFilters ? (
       <>
         <OwnershipSelect
           value={ownFilter}
@@ -447,6 +479,44 @@ export function CollectionList({
       </>
     ) : undefined;
 
+  /**
+   * The tally, or a bar of its size while the list is still loading.
+   *
+   * `visible.length` is 0 until the load lands, so this used to read
+   * "0 games" beside six skeleton rows and then jump to the real number
+   * — a count that was never true, stated in the same voice as the one
+   * that is. It was invisible before the Games pane learned to open on
+   * this tab (see collection.ts): a cold start spent the whole load on
+   * the Databases tab, so nobody saw the collection's own wait.
+   *
+   * A bar rather than nothing, because blanking it would collapse the
+   * space and slide the row as the number arrived — the flicker one
+   * step over. Only one edge can move at all: in the toolbar the count
+   * sits in an `ml-auto` group, so Import stays put and the count's own
+   * left edge takes the difference; in the count band the span is
+   * flex-1 and nothing moves whatever this measures.
+   *
+   * w-16 is measured, not guessed. A three-digit tally renders 65.5px
+   * in Korean and 71.9px in English at this size and weight, so 4rem
+   * lands 1.5px under the first and 8px under the second — the measured
+   * travel of that left edge, with Import unmoved at both. Smaller and
+   * larger collections were measured too — 47.9/54.3px at one digit,
+   * 78.7/85.1px at four — and no single width can suit them all; this
+   * one is nearest the counts a collection actually holds.
+   *
+   * Not behind `useSlowLoad`, though it shows for about 20ms on a warm
+   * server, which is squarely the flash that hook exists to suppress:
+   * it tracks `loaded`, the same flag the rows below it use, and those
+   * are deliberately drawn at once (see `listLoading`). Delayed alone
+   * it would be a hole in a loading state its neighbours are already
+   * drawing — one skeleton arriving late reads worse than one brief.
+   */
+  const tally = loaded ? (
+    t('{n} games', { n: visible.length.toLocaleString() })
+  ) : (
+    <Skeleton className="h-2.5 w-16" />
+  );
+
   return (
     <>
     <GameListShell
@@ -467,7 +537,7 @@ export function CollectionList({
                 {filterControls}
                 <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
                   <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
-                    {t('{n} games', { n: visible.length.toLocaleString() })}
+                    {tally}
                   </span>
                   {importButton}
                 </span>
@@ -485,7 +555,7 @@ export function CollectionList({
       countBand={
         merged ? undefined : (
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-            {t('{n} games', { n: visible.length.toLocaleString() })}
+            {tally}
           </span>
         )
       }

@@ -688,7 +688,17 @@ export function PaneControls({ className }: { className?: string }) {
  * carrying its own.
  */
 export function ColumnControls({ className }: { className?: string }) {
-  return <BoardControls className={cn('mt-auto shrink-0 max-md:hidden', className)} />;
+  return (
+    <BoardControls
+      className={cn('mt-auto shrink-0 max-md:hidden', className)}
+      // The column's other fixed thing, beside the tab strip: these
+      // buttons stand at the floor whatever pane is open, so a swipe that
+      // turns the panes must not take them with it (hooks/use-pane-swipe).
+      // It is also how the swipe tells furniture from panes when it goes
+      // looking for the pane that has just arrived.
+      data-pane-strip
+    />
+  );
 }
 
 /**
@@ -698,7 +708,10 @@ export function ColumnControls({ className }: { className?: string }) {
  * stopped being rendered on desktop layouts, which is how every board
  * page lost its arrows at once.
  */
-export function BoardControls({ className }: { className?: string }) {
+export function BoardControls({
+  className,
+  ...rest
+}: { className?: string } & React.ComponentProps<'div'>) {
   const goToStart = useAnalysis((s) => s.goToStart);
   const goBack = useAnalysis((s) => s.goBack);
   const goForward = useAnalysis((s) => s.goForward);
@@ -710,7 +723,10 @@ export function BoardControls({ className }: { className?: string }) {
   const repeatForward = useRepeat(goForward);
 
   return (
-    <div className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}>
+    <div
+      className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}
+      {...rest}
+    >
       <Button variant="ghost" size="icon" onClick={goToStart} title={t('Start (↑)')}>
         <ChevronFirst className="size-[1.1rem]" />
       </Button>

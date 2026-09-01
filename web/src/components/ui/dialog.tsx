@@ -549,7 +549,7 @@ function DialogContent({
   // arbitration: the drag is the sheet's only once this scroller is at
   // its top).
   const cardClass = cn(
-    'bg-popover text-popover-foreground ring-foreground/10 flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
+    'bg-popover text-popover-foreground ring-border flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
     title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
     className,
   );
