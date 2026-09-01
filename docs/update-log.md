@@ -10,6 +10,47 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.7.1 was tagged, so it is in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **The Games toolbar stopped rearranging itself while the list loaded.**
+  The filter controls are drawn only when there are games to filter, and
+  that condition cannot tell a list still arriving from one that is empty.
+  At table density they sit in the toolbar itself with no band holding
+  their place, so they appeared the moment the load landed and shoved the
+  search box from 1078.5px to 731.1px — a 347px lurch in the row the eye
+  is already on. They now draw from the first paint: all three are fixed
+  option sets that read nothing from the games, so they look the same
+  before the answer as after, exactly as the search box beside them
+  already did. Placeholder bars could not have done this job, because a
+  control is as wide as its label and a label moves with the language —
+  106/93.9/93.9px in Korean against 144.4/104.4/102.6px in English, so no
+  one set of bars is right in both. The count beside them has stopped
+  lying too: it read "0 games" next to six loading rows and then jumped to
+  the real number, and it is now a bar of its own size, measured at 65.5px
+  in Korean and 71.9px in English. The same measurement now reads 1.5px,
+  which is that bar landing and nothing else; the Import button does not
+  move at all. A vault that had games and is empty now holds the space
+  once, drops it when the empty list arrives, and opens elsewhere from the
+  next launch.
+
+- **Games opened on the reference databases instead of on your own games.**
+  Which tab the page opens on is decided before the first paint, and the
+  only thing it could ask was a copy of the collection that lives for one
+  session. That copy holds whole games, so it is empty at every launch,
+  and a cold start therefore guessed the databases every time — then moved
+  to the collection once the real list arrived. Measured over three cold
+  launches against a warm local server, the wrong tab was up for about
+  85ms each time, and 280ms against a server still warming up. It was long
+  enough to finish: the reference list was showing its full count before
+  the swap — 3,436 games in the vault this was measured against — which is
+  why it read as somebody else's games appearing rather than as loading,
+  and two requests for those games were made and thrown away. The page now
+  remembers the one thing it needs — whether the collection had anything
+  in it — so it opens on your games directly and asks for nothing it will
+  not show. A device that has never opened the
+  vault, or last saw it empty, still takes the old path once and is right
+  from the next launch. The correction only ever moves toward your
+  collection: a collection emptied since the last visit opens on its own
+  empty state rather than having real rows swapped out from under it.
+
 - **Two panels that moved the page while it loaded.** The home page's
   Continue card has been reserved to the pixel for two releases, and it
   still jumped on every launch — because the page is CENTRED, and the two
