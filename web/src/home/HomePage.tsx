@@ -257,10 +257,21 @@ function LauncherButton({ entry }: { entry: Destination }) {
  * nothing about the height and everything about whether the placeholder
  * reads as the row it is standing in for.
  */
-function PlaceholderRow({ width, trailing }: { width: string; trailing?: boolean }) {
+function PlaceholderRow({
+  width,
+  trailing,
+  icon = true,
+}: {
+  width: string;
+  trailing?: boolean;
+  /** The leading glyph most rows carry. Recent games' rows do not — they
+      open straight on the players — so their placeholder should not
+      either. Same height both ways; this is about reading as the row. */
+  icon?: boolean;
+}) {
   return (
     <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0">
-      <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+      {icon && <Skeleton className="size-3.5 shrink-0 rounded-sm" />}
       <span className="relative min-w-0 flex-1 font-medium">
         <span className="invisible">&nbsp;</span>
         <Skeleton className={cn('absolute inset-y-0.5 left-0 max-w-full', width)} />
@@ -272,6 +283,54 @@ function PlaceholderRow({ width, trailing }: { width: string; trailing?: boolean
 
 /** Ragged widths, so a column of placeholders does not read as a barcode. */
 const ROW_WIDTHS = ['w-36', 'w-44', 'w-28', 'w-40', 'w-32'];
+
+/**
+ * The setup checklist's three steps, named once. The placeholder below
+ * holds each row's place by rendering the same words invisibly — these
+ * labels are sentences that do NOT truncate, so on a phone they wrap to
+ * two lines and the row is as tall as the words make it. A single-line
+ * placeholder (the dashboard rows' shape, whose labels all truncate) was
+ * ~20px short per wrapped row, on the one page that is centred — half of
+ * every shortfall moved everything on screen.
+ */
+const CHECKLIST_LABELS = [
+  'Add your Lichess or Chess.com username — the Games page fills itself from it',
+  'Fetch the puzzle database — the trainer runs offline from it',
+  'Import a scanned tactics book — its diagrams become solvable puzzles',
+] as const;
+
+/**
+ * The checklist's place while the answer is in the air, at the real
+ * card's own geometry: the header holds the dismiss button's box
+ * invisibly (icon-sm grows from 28 to 36px under a coarse pointer, and
+ * pinned to its text line the header was 8px short on every phone), and
+ * each row wraps exactly where its own words will.
+ */
+function PlaceholderChecklist() {
+  return (
+    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+      <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
+        <p className="text-muted-foreground flex-1 text-sm font-medium">{t('Set up your vault')}</p>
+        <span aria-hidden className="-my-1 -mr-1.5 size-7 shrink-0 pointer-coarse:size-9" />
+      </div>
+      {CHECKLIST_LABELS.map((label) => (
+        <div
+          key={label}
+          className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0"
+        >
+          <span className="size-3.5 shrink-0" />
+          <span className="relative min-w-0 flex-1">
+            <span className="invisible">{t(label)}</span>
+            <Skeleton className="absolute inset-y-0.5 left-0 w-full" />
+          </span>
+          {/* The chevron a pending step ends with — part of the width the
+              words wrap inside. */}
+          <span className="size-3.5 shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * One placeholder panel of the desktop dashboard: the heading it will
@@ -292,6 +351,7 @@ function PlaceholderPanel({
   rows,
   books = false,
   trailing = true,
+  icon = true,
 }: {
   title: string;
   rows: number;
@@ -299,6 +359,8 @@ function PlaceholderPanel({
   /** The date, tally or count column the dashboard's rows end with. The
       checklist's rows have none — only a tick and a chevron. */
   trailing?: boolean;
+  /** See PlaceholderRow: the games panel's rows carry no leading glyph. */
+  icon?: boolean;
 }) {
   return (
     <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
@@ -319,7 +381,12 @@ function PlaceholderPanel({
             <Skeleton className="h-2.5 w-8 shrink-0" />
           </div>
         ) : (
-          <PlaceholderRow key={i} width={ROW_WIDTHS[i % ROW_WIDTHS.length]!} trailing={trailing} />
+          <PlaceholderRow
+            key={i}
+            width={ROW_WIDTHS[i % ROW_WIDTHS.length]!}
+            trailing={trailing}
+            icon={icon}
+          />
         ),
       )}
     </div>
@@ -678,17 +745,17 @@ export function HomePage() {
       ? []
       : [
           {
-            label: t('Add your Lichess or Chess.com username — the Games page fills itself from it'),
+            label: t(CHECKLIST_LABELS[0]),
             done: data.hasProfile,
             go: () => navigate('settings'),
           },
           {
-            label: t('Fetch the puzzle database — the trainer runs offline from it'),
+            label: t(CHECKLIST_LABELS[1]),
             done: data.puzzleDbReady,
             go: () => navigate('puzzles'),
           },
           {
-            label: t('Import a scanned tactics book — its diagrams become solvable puzzles'),
+            label: t(CHECKLIST_LABELS[2]),
             done: data.hasPuzzleBook,
             go: () => navigate('puzzles', 'books'),
           },
@@ -940,7 +1007,7 @@ export function HomePage() {
             with for good (reservation.ts). */}
         {data === null && reservedChecklist && (
           <div role="status" aria-label={t('Loading')} aria-live="polite" className="mb-4">
-            <PlaceholderPanel title={t('Set up your vault')} rows={3} trailing={false} />
+            <PlaceholderChecklist />
           </div>
         )}
 
@@ -1084,7 +1151,7 @@ export function HomePage() {
               <PlaceholderPanel title={t('Training')} rows={reservedDash.training} />
             )}
             {reservedDash.games > 0 && (
-              <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} />
+              <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} />
             )}
             {reservedDash.books > 0 && (
               <PlaceholderPanel title={t('Puzzle books')} rows={reservedDash.books} books />
