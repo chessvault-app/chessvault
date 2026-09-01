@@ -110,14 +110,18 @@ grows eventually, kept off until a use case actually asks for them —
   — under a tablebase a move is a blunder when it changes the RESULT,
   by any distance. Worth building when reviewing an ending against the
   engine's numbers is what stops being good enough.
-- **Local Syzygy tables** — probing `.rtbz` files on disk instead of
-  asking Lichess. The prober is already an interface (`TablebaseProbe`)
-  precisely so a local one can take its place without the route, the
-  cache or the pane moving; what is missing is not the code but the
-  tables — about a gigabyte for five pieces and far more past that —
-  and therefore a downloader, somewhere to put them, and a check that
-  what arrived is what was asked for. Worth it for someone genuinely
-  offline, or who would rather no position left the machine at all.
+- **Probing `.rtbz` files in process** — reading the tables directly
+  rather than over HTTP. Note what this is NOT waiting for any more:
+  answering from your own tables is supported, because lila-tablebase
+  is open source and Settings takes its address (`tablebaseUrl`), so
+  anybody with the files can already keep every lookup on their own
+  machine. What is left is doing it without a second process — one
+  fewer thing to run and to keep running, at the cost of a Syzygy
+  reader in this codebase and the tables in a place the app owns
+  (a gigabyte for five pieces, far more past that: a downloader,
+  somewhere to put them, and a check that what arrived is what was
+  asked for). Worth doing only when running one small server beside
+  the app is the thing people will not do.
 - **Multi-engine support** — installing and switching between engines
   beyond the bundled one; worth adding when someone actually wants a
   second opinion, or needs an engine the app does not ship.

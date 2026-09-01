@@ -44,6 +44,24 @@ other people.
   underneath, because an ending nobody could look up is a smaller loss
   than an ending nobody can explore.
 
+- **Or answer from your own tables.** The server Lichess runs is open
+  source, so Settings → Tablebase takes an address as well as a switch:
+  run lila-tablebase over a copy of the tables and point this vault at
+  it, and no position leaves your network. It is a vault setting, not a
+  device one — which tables this vault trusts is the same question from
+  a phone — read per request, so saving one takes effect without a
+  restart, and validated in one place, so what the page accepts is
+  exactly what will be asked (http or https, no query, since the query
+  is where the position goes).
+
+  Each server keeps its own corner of the cache, because they need not
+  hold the same tables: a five-piece server at home must not be able to
+  write "nothing here" into the slot where the seven-piece one has
+  already said "win". The public server keeps the name it had, so
+  nothing already cached is stranded. Which one answered is on the
+  Tablebase label, as a tooltip rather than as printed text — one word
+  and a hostname would push the verdict itself off the end of the strip.
+
 - **Settings → Tablebase turns it off.** It is the one lookup the app
   makes without being asked for one — no source to select, no button to
   press, just a position small enough — so it says plainly where the

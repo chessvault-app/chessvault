@@ -91,10 +91,12 @@ flowchart LR
   게이트(비밀번호 + 인증 앱 2FA/TOTP, `server/auth.ts` + `server/totp.ts`),
   설정 API(`server/settings.ts`), 그리고 Lichess 탐색기와 스터디 내보내기
   엔드포인트로 나가는 프록시(`server/lichess.ts`), 그리고 엔드게임
-  테이블베이스로 나가는 프록시(`server/tablebase.ts` — 네트워크 조회기를
-  로컬 Syzygy 조회기로 갈아 끼울 수 있도록 `TablebaseProbe` 인터페이스
-  뒤에 둡니다)를 소유합니다. 두 프록시 모두 `CHESS_VAULT_DATA` 아래
-  디스크에 캐시하며, 탐색기 쪽은 만료가 있고 테이블베이스 쪽은 없습니다.
+  테이블베이스로 나가는 프록시(`server/tablebase.ts` — `TablebaseProbe`
+  인터페이스 뒤에 있고, 금고의 `tablebaseUrl`이 Lichess의 공개 Syzygy
+  서버나 직접 띄운 서버를 가리킵니다)를 소유합니다. 두 프록시 모두
+  `CHESS_VAULT_DATA` 아래 디스크에 캐시하며, 탐색기 쪽은 만료가 있고
+  테이블베이스 쪽은 없습니다. 테이블베이스는 엔드포인트마다 하위 폴더를
+  따로 쓰는데, 두 서버가 같은 표를 가지고 있으리라는 법이 없기 때문입니다.
   브라우저의
   Stockfish가 스레드를 쓸 수 있도록 COOP/COEP를 설정합니다.
   `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`로 보관함과 데이터 위치를 바꿀 수

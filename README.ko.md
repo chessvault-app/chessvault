@@ -506,6 +506,19 @@ Lichess 퍼즐 기록 가져오기에는 `puzzle:read`를 추가). 설정 페이
 { "lichessToken": "lip_..." }
 ```
 
+엔드게임 테이블베이스에는 토큰이 아예 필요 없습니다. 다만 포지션을 밖으로
+보내고 싶지 않다면 주소를 지정할 수 있습니다. Lichess의 테이블베이스 서버는
+오픈 소스이므로([lila-tablebase](https://github.com/lichess-org/lila-tablebase)),
+직접 가진 Syzygy 파일 위에 띄운 뒤 설정 → Tablebase에서, 또는 손으로 적어
+가리키면 됩니다:
+
+```json
+{ "tablebaseUrl": "http://localhost:7788/standard" }
+```
+
+없으면 공개 서버가 답합니다. 엔드포인트마다 답은 `data/tablebase-cache`
+아래에 따로 캐시됩니다.
+
 `config.json`은 잠금 화면이 켜져 있을 때 `appPassword`와 2FA의
 `totpSecret`도 담습니다. 설정 페이지가 이 셋을 모두 관리하며, 보관함의
 히스토리 저장소는 비밀이 절대 들어가지 않도록 이 파일을 일부러 제외합니다.

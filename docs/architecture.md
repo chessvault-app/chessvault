@@ -93,10 +93,12 @@ flowchart LR
   `server/auth.ts` + `server/totp.ts`), the settings API
   (`server/settings.ts`), and outbound proxies to the Lichess explorer
   and study-export endpoints (`server/lichess.ts`) and to the endgame
-  tablebase (`server/tablebase.ts`, behind a `TablebaseProbe` interface
-  so a local Syzygy prober can replace the network one). Both proxies
-  cache to disk under `CHESS_VAULT_DATA`; the explorer's entries expire
-  and the tablebase's never do. Sets COOP/COEP so the
+  tablebase (`server/tablebase.ts`, behind a `TablebaseProbe` interface,
+  pointed by the vault's `tablebaseUrl` at Lichess's public Syzygy
+  server or at one of your own). Both proxies cache to disk under
+  `CHESS_VAULT_DATA`; the explorer's entries expire, the tablebase's
+  never do, and each tablebase endpoint gets its own subdirectory since
+  two servers need not hold the same tables. Sets COOP/COEP so the
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
   override the vault/data locations; the server creates the vault
   skeleton on boot, so pointing it at an empty folder works.

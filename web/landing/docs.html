@@ -1177,11 +1177,13 @@
               <strong>Clicking a row plays that move.</strong> A position that can still castle is
               in no table, so the block does not appear for one.
             </p>
-            <p data-ko="답은 Lichess의 공개 테이블베이스에 물어 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «Try again»이 그 자리에 서고, 탐색기 자신의 답은 그대로 남습니다. 통째로 끄려면 설정 → Tablebase입니다.">
-              Answers come from Lichess's public tablebase and are cached by your server for good,
-              so an ending you have looked at once is answered offline afterwards. Out of reach and
-              not yet cached, the block becomes one amber line and “Try again”, and the explorer's
-              own answer stays below it. Settings → Tablebase switches the whole thing off.
+            <p data-ko="답은 Lichess의 공개 테이블베이스에서(또는 설정에서 지정한 내 서버에서) 오고 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 어느 쪽이 답했는지는 «Tablebase» 낱말에 마우스를 올리면 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «Try again»이 그 자리에 서고, 탐색기 자신의 답은 그대로 남습니다. 통째로 끄거나 서버를 바꾸려면 설정 → Tablebase입니다.">
+              Answers come from Lichess's public tablebase — or from your own server, if you have
+              set one in Settings — and are cached by your server for good, so an ending you have
+              looked at once is answered offline afterwards. Which one answered is on the word
+              “Tablebase”, under the pointer. Out of reach and not yet cached, the block becomes
+              one amber line and “Try again”, and the explorer's own answer stays below it.
+              Settings → Tablebase switches the whole thing off, or points it elsewhere.
             </p>
             <h2 data-ko="필터">The filters</h2>
             <ul>
@@ -2347,13 +2349,17 @@
                   </tr>
                   <tr>
                     <td>Tablebase</td>
-                    <td data-ko="스위치 하나 — <strong>Endgame tablebase</strong>. «Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.» 기본은 켜짐이며, 이 기기에만 적용됩니다. 끄면 조회가 아예 나가지 않습니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다.">
+                    <td data-ko="스위치 하나 — <strong>Endgame tablebase</strong>. «Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.» 기본은 켜짐이며, 이 기기에만 적용됩니다. 끄면 조회가 아예 나가지 않습니다. 그 아래는 물어볼 서버입니다 — «Or answer from your own tables: run lila-tablebase over them and give its address here. Empty means the public one.» 기기가 아니라 금고의 설정이고, 저장하면 다시 띄우지 않아도 적용되며, 서버마다 캐시가 따로 쌓입니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다.">
                       One switch, <strong>Endgame tablebase</strong>: “Show the exact result for
                       positions of seven pieces or fewer, in the explorer. The position is sent to
                       Lichess’s public tablebase, and every answer is kept on this vault’s disk —
                       so an ending looked up once is answered offline afterwards.” On by default,
-                      and per device; off, nothing is asked at all. What the answers take is the
-                      “Tablebase cache” row of Storage used, below.
+                      and per device; off, nothing is asked at all. Below it, the server to ask:
+                      “Or answer from your own tables: run lila-tablebase over them and give its
+                      address here. Empty means the public one.” — a vault setting rather than a
+                      per-device one, saved without a restart, and each server's answers cached
+                      apart from the other's. What they take is the “Tablebase cache” row of
+                      Storage used, below.
                     </td>
                   </tr>
                   <tr>

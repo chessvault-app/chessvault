@@ -535,6 +535,19 @@ Settings page, or put it in `vault/config.json` (gitignored):
 { "lichessToken": "lip_..." }
 ```
 
+The endgame tablebase needs no token at all — but it does take an
+address, if you would rather not send positions anywhere. Lichess's
+tablebase server is open source ([lila-tablebase](https://github.com/lichess-org/lila-tablebase));
+run it over your own copy of the Syzygy files and name it in Settings →
+Tablebase, or by hand:
+
+```json
+{ "tablebaseUrl": "http://localhost:7788/standard" }
+```
+
+Absent, the public server answers. Each endpoint's answers are cached
+separately, under `data/tablebase-cache`.
+
 `config.json` also holds `appPassword` and the 2FA `totpSecret` when the
 lock screen is on — the Settings page manages all three, and the vault's
 history repo deliberately excludes the file so secrets never enter it.
