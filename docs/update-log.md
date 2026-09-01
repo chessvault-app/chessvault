@@ -7,6 +7,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+Landed after v0.7.1 was tagged, so it is in the repository and in no
+installer. This section becomes the next version's heading.
+
 - **Two panels that moved the page while it loaded.** The home page's
   Continue card has been reserved to the pixel for two releases, and it
   still jumped on every launch — because the page is CENTRED, and the two
@@ -39,6 +42,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   switched on. The cap now counts the board without the lane, so the two
   columns pay for the bar at every width — measured at 1920, the page and
   the board both hold still and the explorer gives up 34px.
+
+- **The demo's players have ratings a human could have.** The sample games
+  were rebuilt on real chess last release and kept their old numbers: sixty
+  ratings running from 2504 to 3661, thirty-seven of them at 2900 or above,
+  and one two hundred points beyond anything ever achieved. They also moved
+  by hundreds of points between two games of the same player a fortnight
+  apart, because each game had been given its own number rather than each
+  player. Every player now has one rating — 2581 to 2789, which is a strong
+  invented circuit — and it drifts by a dozen points across their games,
+  the way a rating moves over a season. Nothing else about the games
+  changes.
 
 ## 0.7.1
 
