@@ -1164,6 +1164,25 @@
               games, which lists newest first) — a row opens that game, and one with an https
               source also carries an external link (“needs internet”).
             </p>
+            <h2 data-ko="테이블베이스">The tablebase</h2>
+            <p data-ko="기물이 7개 이하로 남으면 수 테이블 위에 <strong>Tablebase</strong> 칸이 섭니다. 통계가 아니라 사실입니다. 둘 차례 쪽의 판정(«Win» · «Draw» · «Loss», 50수 규칙이 무승부로 만드는 승리는 «Cursed win»), «White to play» 또는 «Black to play», 그리고 «DTM {n}»(메이트까지) 또는 «DTZ {n}»(다음 기물 교환·폰 이동까지) — 둘 다 반수 단위입니다. 아래로 모든 합법 수가 각자의 판정과 함께 섭니다. 이기는 수가 먼저·짧은 것부터, 지는 수는 마지막·긴 것부터입니다. <strong>줄을 클릭하면 그 수가 두어집니다.</strong> 캐슬링 권리가 남아 있는 포지션은 어떤 표에도 없으므로 칸이 나타나지 않습니다.">
+              Once seven pieces or fewer are left, a <strong>Tablebase</strong> block appears above
+              the move table — not statistics but the result. It gives the verdict for the side to
+              play (“Win” · “Draw” · “Loss”, and “Cursed win” for a win the fifty-move rule turns
+              into a draw), “White to play” or “Black to play”, and the distance as “DTM {n}” (to
+              mate) or “DTZ {n}” (to the next capture or pawn move), both counted in half-moves.
+              Under it, every legal move with its own verdict: winning moves first and shortest
+              first, losing ones last and longest first — when nothing saves the game, the best
+              move is the one that gives your opponent the most chances to go wrong.
+              <strong>Clicking a row plays that move.</strong> A position that can still castle is
+              in no table, so the block does not appear for one.
+            </p>
+            <p data-ko="답은 Lichess의 공개 테이블베이스에 물어 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «Try again»이 그 자리에 서고, 탐색기 자신의 답은 그대로 남습니다. 통째로 끄려면 설정 → Tablebase입니다.">
+              Answers come from Lichess's public tablebase and are cached by your server for good,
+              so an ending you have looked at once is answered offline afterwards. Out of reach and
+              not yet cached, the block becomes one amber line and “Try again”, and the explorer's
+              own answer stays below it. Settings → Tablebase switches the whole thing off.
+            </p>
             <h2 data-ko="필터">The filters</h2>
             <ul>
               <li data-ko="<strong>My games</strong> — Side(Any/White/Black), Result(All/Won/Drew/Lost), Time control(Bullet/Blitz/Rapid/Classical, 복수 선택), «Kept only»(모음에 담은 게임만 — 아카이브 전체가 아니라), Played between(기간). 실황 카운트가 아래 줄에 섭니다.">
@@ -2317,6 +2336,17 @@
                       shown again.” The repertoire trainer's Lichess source and study import ride
                       the same token (<code>study:read</code> for private studies). Once saved,
                       only “A token ending in {last4} is configured.” remains.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Tablebase</td>
+                    <td data-ko="스위치 하나 — <strong>Endgame tablebase</strong>. «Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.» 기본은 켜짐이며, 이 기기에만 적용됩니다. 끄면 조회가 아예 나가지 않습니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다.">
+                      One switch, <strong>Endgame tablebase</strong>: “Show the exact result for
+                      positions of seven pieces or fewer, in the explorer. The position is sent to
+                      Lichess’s public tablebase, and every answer is kept on this vault’s disk —
+                      so an ending looked up once is answered offline afterwards.” On by default,
+                      and per device; off, nothing is asked at all. What the answers take is the
+                      “Tablebase cache” row of Storage used, below.
                     </td>
                   </tr>
                   <tr>

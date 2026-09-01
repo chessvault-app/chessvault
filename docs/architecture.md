@@ -92,7 +92,11 @@ flowchart LR
   owns the optional auth gate (password + authenticator 2FA/TOTP,
   `server/auth.ts` + `server/totp.ts`), the settings API
   (`server/settings.ts`), and outbound proxies to the Lichess explorer
-  and study-export endpoints (`server/lichess.ts`). Sets COOP/COEP so the
+  and study-export endpoints (`server/lichess.ts`) and to the endgame
+  tablebase (`server/tablebase.ts`, behind a `TablebaseProbe` interface
+  so a local Syzygy prober can replace the network one). Both proxies
+  cache to disk under `CHESS_VAULT_DATA`; the explorer's entries expire
+  and the tablebase's never do. Sets COOP/COEP so the
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
   override the vault/data locations; the server creates the vault
   skeleton on boot, so pointing it at an empty folder works.

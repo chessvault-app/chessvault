@@ -98,10 +98,26 @@ grows eventually, kept off until a use case actually asks for them —
   material — Scid's ladder), which answer most of the same questions at
   a fraction of the UI; revisit only when the ladder plus motifs fail a
   question someone actually asked.
-- **Tablebase support** — Syzygy probing for exact few-piece endgame
-  verdicts; worth adding when engine evaluation of an ending stops
-  being good enough — grading endgame play against perfection, or
-  settling a drawn-or-won question the engine hedges on.
+- **Tablebase-graded endgame review** — the engine review judging
+  endgame moves against the table rather than against Stockfish's
+  eval. This is the half of the old "tablebase support" entry that has
+  not fired: the verdicts themselves shipped (the explorer probes any
+  position of seven pieces or fewer through the server, which caches
+  every answer for good — `server/tablebase.ts`), which settles the
+  drawn-or-won question that entry's second trigger named. Grading play
+  against perfection is a different job: a probe for every position of
+  a walked mainline, and a mistake rule that is not the eval-swing one
+  — under a tablebase a move is a blunder when it changes the RESULT,
+  by any distance. Worth building when reviewing an ending against the
+  engine's numbers is what stops being good enough.
+- **Local Syzygy tables** — probing `.rtbz` files on disk instead of
+  asking Lichess. The prober is already an interface (`TablebaseProbe`)
+  precisely so a local one can take its place without the route, the
+  cache or the pane moving; what is missing is not the code but the
+  tables — about a gigabyte for five pieces and far more past that —
+  and therefore a downloader, somewhere to put them, and a check that
+  what arrived is what was asked for. Worth it for someone genuinely
+  offline, or who would rather no position left the machine at all.
 - **Multi-engine support** — installing and switching between engines
   beyond the bundled one; worth adding when someone actually wants a
   second opinion, or needs an engine the app does not ship.

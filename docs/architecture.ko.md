@@ -90,7 +90,12 @@ flowchart LR
   웹 앱의 정적 서빙을 담당합니다. 단순한 보관함 입출력 외에 선택적 인증
   게이트(비밀번호 + 인증 앱 2FA/TOTP, `server/auth.ts` + `server/totp.ts`),
   설정 API(`server/settings.ts`), 그리고 Lichess 탐색기와 스터디 내보내기
-  엔드포인트로 나가는 프록시(`server/lichess.ts`)를 소유합니다. 브라우저의
+  엔드포인트로 나가는 프록시(`server/lichess.ts`), 그리고 엔드게임
+  테이블베이스로 나가는 프록시(`server/tablebase.ts` — 네트워크 조회기를
+  로컬 Syzygy 조회기로 갈아 끼울 수 있도록 `TablebaseProbe` 인터페이스
+  뒤에 둡니다)를 소유합니다. 두 프록시 모두 `CHESS_VAULT_DATA` 아래
+  디스크에 캐시하며, 탐색기 쪽은 만료가 있고 테이블베이스 쪽은 없습니다.
+  브라우저의
   Stockfish가 스레드를 쓸 수 있도록 COOP/COEP를 설정합니다.
   `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`로 보관함과 데이터 위치를 바꿀 수
   있고, 서버가 부팅할 때 보관함 뼈대를 만들어 주므로 빈 폴더를 가리켜도

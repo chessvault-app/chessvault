@@ -5,6 +5,53 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+The explorer stops guessing once the pieces run out: under seven of them
+it says what the position IS — won, drawn, lost, and how far away — with
+every legal move ranked by the truth rather than by what happened to
+other people.
+
+- **Exact endgame verdicts, above the game statistics.** Any position of
+  seven pieces or fewer now carries a Tablebase block at the top of the
+  explorer: the verdict for the side to play, the distance, and every
+  legal move with its own verdict, playable with a click. Winning moves
+  come first and shortest first; losing ones come last and LONGEST
+  first, because when nothing saves the game the best move is the one
+  that gives the opponent the most chances to go wrong. The fifty-move
+  rule's own two categories are kept rather than flattened — a "cursed
+  win" is a win the rule draws, and it wears the draw's colour, since
+  that is what the game ends in.
+
+  It sits above the statistics rather than replacing them: under seven
+  pieces a database usually has nothing to say, and the two are
+  different questions anyway. Measured at the explorer's default height,
+  six rows and their header took 209 of its 300 pixels and left the
+  statistics five and a clipped sentence — so the block is capped at
+  just over half the panel and scrolls inside its own share.
+
+- **Asked once, kept for good.** The server probes Lichess's public
+  Syzygy tables (no token, unlike the opening explorer) and writes every
+  answer to `data/tablebase-cache`, with no expiry: game statistics
+  drift daily, a tablebase result is a fact about a position. An ending
+  looked at once is answered offline afterwards, including the answer
+  "no table holds this", so a miss costs one request ever. The Storage
+  card's "Tablebase cache" row has been listing that folder since the
+  card existed; it now has something in it.
+
+  Out of reach and not yet cached is one amber line and a Try again,
+  under the word Tablebase — the pane's own answer stays on screen
+  underneath, because an ending nobody could look up is a smaller loss
+  than an ending nobody can explore.
+
+- **Settings → Tablebase turns it off.** It is the one lookup the app
+  makes without being asked for one — no source to select, no button to
+  press, just a position small enough — so it says plainly where the
+  position goes and what is kept, and a switch answers no. Off, nothing
+  leaves the machine. The demo does not probe at all: a page that
+  reaches a third party the moment somebody drags the pieces into an
+  ending is not a demo of this app.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

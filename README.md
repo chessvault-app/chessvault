@@ -46,7 +46,9 @@ is one connected body of work, and the links are what make it that.
 - **Board** — free analysis with Stockfish 18 (WASM, multi-threaded),
   full move trees with variations, comments, NAGs (`!`, `?!` and the
   rest of the annotation glyphs) and arrows, an
-  opening explorer (local databases + Lichess), game review with accuracy
+  opening explorer (local databases + Lichess) that adds the endgame
+  tablebase's exact verdict under seven pieces — the result, and every
+  move ranked by it — game review with accuracy
   and honest brilliancy detection, and position loading from FEN, PGN,
   or a *photo/screenshot* of any board.
 - **Editor** — set up any position; drag pieces from the palette, or
