@@ -34,6 +34,19 @@ interface PanelProps {
 
 const storageKey = (key: string): string => `vault:panel-h:${key}`;
 
+/**
+ * The height a dragged panel was left at, for a placeholder to reserve.
+ *
+ * The app already remembers every dragged panel here — it is what the
+ * panel itself reads on mount — so a skeleton that ignores it is ignoring
+ * a measurement this device has already made. Same reading as the mount:
+ * a finite positive number or nothing.
+ */
+export const panelStoredHeight = (key: string): number | null => {
+  const stored = Number(localStorage.getItem(storageKey(key)));
+  return Number.isFinite(stored) && stored > 0 ? stored : null;
+};
+
 /** The smallest height the grip will drag a panel to — a header and a row. */
 const DRAG_MIN_H = 100;
 

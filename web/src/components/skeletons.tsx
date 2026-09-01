@@ -4,6 +4,7 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { panelStoredHeight } from '@/components/panel';
 import { t } from '@/lib/i18n';
 
 /**
@@ -242,7 +243,12 @@ export function SkeletonTiles({
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
           </div>
-          <div className="flex flex-col gap-1 px-(--card-spacing)">
+          {/* No gap between the line boxes: the three bars are the wrapped
+              lines of ONE paragraph, and wrapped lines meet — the panel's
+              own gap-2 is between its children, of which the cold state
+              has one. With gap-1 the body stood 8px taller than the prose
+              that replaced it. */}
+          <div className="flex flex-col px-(--card-spacing)">
             {['w-full', 'w-11/12', 'w-2/3'].map((w) => (
               <div key={w} className="flex h-[1.4375rem] items-center">
                 <Skeleton className={cn('h-2', w)} />
@@ -386,7 +392,10 @@ export function SkeletonDocument({ className }: { className?: string }) {
           <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
         </div>
       </div>
-      <div className="text-base min-h-0 flex-1">
+      {/* min-h-[60vh] is .note-editor's own floor (index.css): a short
+          note is still 60vh of editable box, so the column's scroll
+          extent starts there rather than wherever the bars run out. */}
+      <div className="text-base min-h-[60vh] flex-1">
         <div className="mt-[1.5em] flex h-[2.55em] items-center">
           <Skeleton className="h-5 w-2/5" />
         </div>
@@ -439,6 +448,10 @@ export function SkeletonBoard({
   explorer?: boolean;
   className?: string;
 }) {
+  // What this device dragged the chapters list to, if it ever has —
+  // read per render like everything else here; the wait it stands
+  // through cannot change it.
+  const chapterH = chapters ? panelStoredHeight('study-chapters') : null;
   const titleRow = (
     // A way back, the name, the edit toggle and the save state. Drawn at
     // the top of the page on a phone and in the side column on a wide
@@ -495,12 +508,18 @@ export function SkeletonBoard({
       </div>
 
       {/* The side column, at the share of the row the real one takes. */}
-      {/* stacked:gap-2 and the column’s floor, both of which the real
-          columns carry (StudyView, BookTrainer): at gap-3 the placeholder
-          spaced its children 4px wider apart than the page does. */}
+      {/* stacked:gap-2, which every real column carries: at gap-3 the
+          placeholder spaced its children 4px wider apart than the page
+          does. `overflow-y-auto scrollbar-hidden` likewise — all three
+          real columns scroll themselves (StudyView, BookTrainer,
+          PuzzlesView), and without it a window short enough to make the
+          page scroll clipped the placeholder instead. The stacked
+          10rem floor is StudyView's alone — the trainers do not carry
+          it, and imposed on them it held their column open 160px. */}
       <div
         className={cn(
-          'flex min-h-0 flex-1 flex-col gap-3 stacked:min-h-40 stacked:gap-2',
+          'flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2',
+          (players || chapters) && 'stacked:min-h-40',
           BOARD_WIDE_SIDE,
         )}
       >
@@ -526,7 +545,24 @@ export function SkeletonBoard({
             panel, so the explorer and the moves below it started 60px too
             high. */}
         {chapters && (
-          <div className="bg-card flex max-h-48 min-h-[min(6rem,15%)] shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
+          <div
+            className={cn(
+              'bg-card flex shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden',
+              // The panel's floor and ceiling, for a device that has
+              // never dragged it. One that has stores the height it chose
+              // (vault:panel-h, applied by Panel on every mount at lg and
+              // up), and the placeholder reads the same number — a
+              // dragged 320px list stood at the 192px ceiling here and
+              // the whole side column re-laid when the study opened. The
+              // stored case shrinks like the panel does (`0 1 auto`, not
+              // shrink-0): an exact height that refuses to shrink is
+              // clipped by a short column, which is the bug Panel's own
+              // comment walks through. Below lg both are moot — the
+              // block is hidden.
+              chapterH === null && 'max-h-48 min-h-[min(6rem,15%)]',
+            )}
+            style={chapterH === null ? undefined : { height: chapterH, flex: '0 1 auto' }}
+          >
             <div className="border-border flex min-h-11 shrink-0 items-center border-b px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-20" />
             </div>
