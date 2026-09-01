@@ -24,6 +24,12 @@ import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
+import {
+  parseShelfShape,
+  shelfHasShape,
+  shelfShapeOf,
+  storedShelfShape,
+} from '@/components/shelf-reservation';
 import { EmptyState } from '@/components/empty-state';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { StudyView } from './StudyView';
@@ -45,6 +51,9 @@ export function StudiesView({ params }: { params: string[] }) {
   );
 }
 
+/** See `reservedShelf` below: the shelf's grouped shape, last visit. */
+const STUDIES_SHELF_KEY = 'vault:studies-shelf';
+
 function StudyList() {
   const studies = useStudy((s) => s.studies);
   const folders = useStudy((s) => s.folders);
@@ -56,6 +65,20 @@ function StudyList() {
   const [query, setQuery] = useState('');
   const pending = useSlowLoad(!listLoaded);
   const view = useShelfView('studies');
+  // The grouped shape this shelf had last visit, per device — cards at
+  // the root, cards per collection — so the wait reserves the list that
+  // is coming instead of a flat five-card guess
+  // (components/shelf-reservation, on home's paint-hint bargain).
+  const [reservedShelf] = useState(() => parseShelfShape(localStorage.getItem(STUDIES_SHELF_KEY)));
+  // Remembered for the NEXT visit's reservation — the settled answer
+  // only, never an error's empty list.
+  useEffect(() => {
+    if (!listLoaded || error !== null) return;
+    localStorage.setItem(
+      STUDIES_SHELF_KEY,
+      storedShelfShape(shelfShapeOf(studies.map((s) => s.id), folders)),
+    );
+  }, [listLoaded, error, studies, folders]);
   // Bookmarks, kept in the vault exactly as the games shelf keeps its
   // own — a mark belongs to the shelf, not to a browser.
   const [markedIds, setMarked] = useState<Set<string>>(new Set());
@@ -140,8 +163,12 @@ function StudyList() {
 
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
-        // that fills in — but only once the wait is long enough to notice.
-        pending ? <SkeletonCards cards={5} layout={view.layout} /> : null
+        // that fills in — but only once the wait is long enough to
+        // notice. A vault seen empty reserves nothing: its settle is the
+        // EmptyState, and invented cards would be the jump the other way.
+        pending && shelfHasShape(reservedShelf) ? (
+          <SkeletonCards layout={view.layout} groups={reservedShelf} />
+        ) : null
       ) : /* Nothing in the vault at all — no study at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
              only empty collections is NOT this: it has something to show,

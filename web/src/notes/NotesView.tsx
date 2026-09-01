@@ -22,6 +22,12 @@ import { MoveToDialog } from '@/components/move-to-dialog';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
+import {
+  parseShelfShape,
+  shelfHasShape,
+  shelfShapeOf,
+  storedShelfShape,
+} from '@/components/shelf-reservation';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { t } from '@/lib/i18n';
@@ -92,6 +98,9 @@ async function newUntitledNote(
   return null;
 }
 
+/** See `reservedShelf` below: the shelf's grouped shape, last visit. */
+const NOTES_SHELF_KEY = 'vault:notes-shelf';
+
 function NoteList() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
@@ -102,6 +111,18 @@ function NoteList() {
   const [error, setError] = useState<string | null>(null);
   const pending = useSlowLoad(!loaded);
   const view = useShelfView('notes');
+  // The grouped shape this shelf had last visit, per device, exactly as
+  // the studies shelf keeps its own — see components/shelf-reservation.
+  const [reservedShelf] = useState(() => parseShelfShape(localStorage.getItem(NOTES_SHELF_KEY)));
+  // Remembered for the NEXT visit's reservation — the settled answer
+  // only, never an error's empty list.
+  useEffect(() => {
+    if (!loaded || error !== null) return;
+    localStorage.setItem(
+      NOTES_SHELF_KEY,
+      storedShelfShape(shelfShapeOf(notes.map((n) => n.id), folders)),
+    );
+  }, [loaded, error, notes, folders]);
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
@@ -209,10 +230,12 @@ function NoteList() {
       {error && <p className="text-destructive text-sm">{error}</p>}
 
       {!loaded ? (
-        pending ? (
+        // A vault seen empty reserves nothing: its settle is the
+        // EmptyState, and invented cards would be the jump the other way.
+        pending && shelfHasShape(reservedShelf) ? (
           <SkeletonCards
-            cards={5}
             layout={view.layout}
+            groups={reservedShelf}
             gridClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
           />
         ) : null

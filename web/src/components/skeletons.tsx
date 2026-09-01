@@ -110,9 +110,19 @@ export function SkeletonCards({
   cards = 5,
   layout = 'list',
   gridClassName = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3',
+  groups,
   className,
 }: {
   cards?: number;
+  /**
+   * The shelf's grouped shape, where the caller stored one last visit
+   * (components/shelf-reservation): root cards with nothing above them,
+   * then one section per collection — its 24px header, and its cards or
+   * the one-line "Empty collection." note. Without it the flat `cards`
+   * stack is drawn, which is right only for a shelf nothing is known
+   * about.
+   */
+  groups?: { root: number; folders: number[] };
   /**
    * The shelf's own arrangement, which it knows before the documents
    * arrive — it is a stored preference, not something the answer decides.
@@ -130,52 +140,81 @@ export function SkeletonCards({
   className?: string;
 }) {
   const grid = layout === 'grid';
+  const card = (i: number) => (
+    <div
+      key={i}
+      className={cn(
+        'bg-card flex gap-3 rounded-xl ring-1 ring-foreground/10',
+        grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
+      )}
+    >
+      {/* The first board, where the document has one. Its 64px is
+          shorter than the text beside it, so a document without one
+          makes no difference to the height. */}
+      <Skeleton className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded-sm')} />
+      <div className="min-w-0 flex-1">
+        {/* Title on a 24px line, then the quiet stat line on 16. */}
+        <div className="flex h-6 items-center">
+          <Skeleton className={cn('h-3.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+        </div>
+        <div className="flex h-4 items-center">
+          <Skeleton className="h-2 w-1/5" />
+        </div>
+        {grid && (
+          // ONE line of excerpt, though the card clamps at two.
+          // Measured on a real shelf, a grid card is 88-90px: the
+          // 64px board governs where there is one, and where there
+          // is not the text does — 24 + 16 + 4 + 22. Two lines put
+          // the text at 83 and the card at 109, which is why the
+          // placeholder stood a fifth taller than what replaced it.
+          <div className="mt-1 flex h-[1.35rem] items-center">
+            <Skeleton className="h-2 w-full" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  const stack = (n: number, offset = 0) => (
+    <div className={grid ? gridClassName : 'flex flex-col gap-1.5'}>
+      {Array.from({ length: n }, (_, i) => card(i + offset))}
+    </div>
+  );
+  if (groups)
+    return (
+      // The grouped list's own frame (gap-4 of gap-2 sections), the
+      // root's cards headerless the way the root draws them, and each
+      // collection under ShelfFolderHeader's fixed 24px row — or, at
+      // zero, its one-line "Empty collection." note.
+      <Loading className={className}>
+        <div className="flex flex-col gap-4">
+          {groups.root > 0 && <section className="flex flex-col gap-2">{stack(groups.root)}</section>}
+          {groups.folders.map((n, f) => (
+            <section key={f} className="flex flex-col gap-2">
+              <div className="flex h-6 items-center gap-1.5">
+                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                <Skeleton className="h-2.5 w-24" />
+              </div>
+              {n === 0 ? (
+                <div className="flex h-5 items-center px-1">
+                  <Skeleton className="h-2.5 w-28" />
+                </div>
+              ) : (
+                stack(n, groups.root + f)
+              )}
+            </section>
+          ))}
+        </div>
+      </Loading>
+    );
   return (
     <Loading className={className}>
-      {/* No heading bar. Documents ARE grouped under a collection name,
-          but only a named one draws a header — the root group, which is
-          where a shelf's documents sit unless somebody has filed them,
-          renders its cards with nothing above them. So the bar stood for
-          something that usually is not there, and the cards jumped up its
-          height as the shelf landed. */}
-      <div className={grid ? gridClassName : 'flex flex-col gap-1.5'}>
-        {Array.from({ length: cards }, (_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'bg-card flex gap-3 rounded-xl ring-1 ring-foreground/10',
-              grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
-            )}
-          >
-            {/* The first board, where the document has one. Its 64px is
-                shorter than the text beside it, so a document without one
-                makes no difference to the height. */}
-            <Skeleton
-              className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded-sm')}
-            />
-            <div className="min-w-0 flex-1">
-              {/* Title on a 24px line, then the quiet stat line on 16. */}
-              <div className="flex h-6 items-center">
-                <Skeleton className={cn('h-3.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
-              </div>
-              <div className="flex h-4 items-center">
-                <Skeleton className="h-2 w-1/5" />
-              </div>
-              {grid && (
-                // ONE line of excerpt, though the card clamps at two.
-                // Measured on a real shelf, a grid card is 88-90px: the
-                // 64px board governs where there is one, and where there
-                // is not the text does — 24 + 16 + 4 + 22. Two lines put
-                // the text at 83 and the card at 109, which is why the
-                // placeholder stood a fifth taller than what replaced it.
-                <div className="mt-1 flex h-[1.35rem] items-center">
-                  <Skeleton className="h-2 w-full" />
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* No heading bar over the flat stack. Documents ARE grouped under
+          a collection name, but only a named one draws a header — the
+          root group, where a shelf's documents sit unless somebody has
+          filed them, renders its cards with nothing above them. A shelf
+          that DOES file things stores its grouped shape and passes
+          `groups` above. */}
+      {stack(cards)}
     </Loading>
   );
 }
