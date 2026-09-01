@@ -5,20 +5,30 @@
     <title>Chess Vault</title>
     <style>
       /* Mirrors the app's dark theme tokens (web/src/index.css .dark) so the
-         chooser reads as page one of the same product. */
+         chooser reads as page one of the same product. Those tokens are
+         written as three numbers — a neutral hue, an accent hue and how far
+         each leans — with a contrast knob on top; this window runs before
+         any vault or settings exist, so it can only be the DEFAULT scheme,
+         resolved by hand. That default is shadcn's neutral (prefs.ts,
+         SCHEME_PRESETS[0]): both tints are 0, so every chroma multiplies
+         away and the whole window is grey — --bad excepted, being semantic
+         and off the tint knobs. Do NOT resolve these from what index.css
+         :root declares; those fallbacks are tint 1, which is the Blue
+         preset, not what the app boots as. Re-resolve when either moves. */
       :root {
         color-scheme: dark;
-        --app-bg: oklch(17.5% 0.014 266);
-        --surface: oklch(21.5% 0.017 266);
-        --surface-2: oklch(25% 0.018 266);
-        --border: oklch(31% 0.02 266);
-        --border-strong: oklch(40% 0.024 266);
-        --text: oklch(96% 0.005 266);
-        --text-muted: oklch(70% 0.016 266);
-        --text-subtle: oklch(57% 0.017 266);
-        --primary: oklch(73% 0.135 235);
-        --primary-fg: oklch(16% 0.025 235);
-        --bad: oklch(68% 0.19 25);
+        --app-bg: oklch(14.5% 0 0);
+        --surface: oklch(20.5% 0 0);
+        --surface-2: oklch(26.9% 0 0);
+        --surface-inset: oklch(23% 0 0);
+        --border: oklch(29% 0 0);
+        --border-strong: oklch(40% 0 0);
+        --text: oklch(98.5% 0 0);
+        --text-muted: oklch(74% 0 0);
+        --text-subtle: oklch(68% 0 0);
+        --primary: oklch(92.2% 0 0);
+        --primary-fg: oklch(20.5% 0 0);
+        --bad: oklch(70.4% 0.191 22.2);
       }
       * {
         box-sizing: border-box;
@@ -149,7 +159,7 @@
         padding: 0.6rem 0.8rem;
         border-radius: 0.6rem;
         border: 1px solid var(--border);
-        background: oklch(19% 0.016 266);
+        background: var(--surface-inset);
         color: inherit;
         font: inherit;
         font-size: 0.85rem;

@@ -180,7 +180,7 @@ function createWindow() {
     // the floor keeps the window out of degenerate shapes.
     minWidth: 480,
     minHeight: 560,
-    backgroundColor: '#14161d',
+    backgroundColor: '#0a0a0a',
     autoHideMenuBar: true,
     icon: join(here, 'icon.png'),
     // Chromium's defaults already isolate and sandbox, but the window that
