@@ -230,8 +230,25 @@ function safeResolve(dir: string, rel: string): string | null {
   return abs.startsWith(dir + sep) && abs.endsWith('.pgn') ? abs : null;
 }
 
-/** The two archives browsing caches under. */
+/** The two archives browsing caches under, and the only directories a
+    cache delete is allowed to name. */
 const CACHE_PROVIDERS = ['chesscom', 'lichess'] as const;
+
+/**
+ * The directory a named cached player lives in, or null if that name
+ * could not have come from the cache listing.
+ *
+ * safeResolve's twin for the browsing cache: a known provider, and a
+ * single segment under it — a name carrying a separator or climbing out
+ * is refused rather than resolved.
+ */
+function cacheUserDir(dir: string, provider: string, user: string): string | null {
+  if (!(CACHE_PROVIDERS as readonly string[]).includes(provider)) return null;
+  const providerDir = resolve(dir, provider);
+  const abs = resolve(providerDir, user);
+  const rel = relative(providerDir, abs);
+  return rel && !rel.startsWith('..') && !rel.includes(sep) ? abs : null;
+}
 
 /** A cached player's size, counting the months and not the meta dotfile
     beside them — the same bytes the listing reports. */
@@ -846,18 +863,40 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
   });
 
   /**
-   * Drop the whole browsing cache.
+   * Drop the browsing cache — one player, or all of it.
    *
-   * All of it, not one player at a time: this is housekeeping, and a list
-   * of players each with its own button asked whose history to keep — a
-   * question nobody has, about data that costs one fetch to get back.
+   * `?provider=&user=` names a single player and takes only that player's
+   * months; without them it is the whole cache. One player at a time was
+   * once refused here on the grounds that nobody asks whose history to
+   * keep — but they do, and for a reason the size column makes plain: the
+   * handle someone browses every week sits in the same list as the half
+   * dozen looked up once out of curiosity, and clearing the lot to be rid
+   * of the curiosities re-downloads the months actually in use.
    *
-   * Safe by construction: it only ever removes months that can be fetched
-   * again, and the collection is a different directory altogether — a
-   * game someone kept was COPIED into it, so clearing the cache cannot
-   * take anything that was chosen.
+   * Safe by construction, either way: it only ever removes months that can
+   * be fetched again, and the collection is a different directory
+   * altogether — a game someone kept was COPIED into it, so clearing the
+   * cache cannot take anything that was chosen.
    */
   api.delete('/games/cache', (c) => {
+    // Named apart from the loop's own `provider`/`user` below, which walk
+    // everything when no player was asked for.
+    const onlyProvider = c.req.query('provider');
+    const onlyUser = c.req.query('user');
+    if (onlyProvider !== undefined || onlyUser !== undefined) {
+      if (!onlyProvider || !onlyUser) return c.json({ error: 'need provider and user' }, 400);
+      // A cached player is a DIRECTORY NAME the listing above handed out,
+      // so the only names accepted are the ones that could have come from
+      // it: a known provider, and a single segment directly under it.
+      // Anything else — a traversal, a nested path — is refused rather
+      // than resolved, since what it would delete is outside the cache.
+      const userDir = cacheUserDir(dir, onlyProvider, onlyUser);
+      if (!userDir) return c.json({ error: 'invalid player' }, 400);
+      if (!existsSync(userDir) || !statSync(userDir).isDirectory()) return c.json({ bytes: 0 });
+      const bytes = cachedBytes(userDir);
+      rmSync(userDir, { recursive: true, force: true });
+      return c.json({ bytes });
+    }
     let bytes = 0;
     for (const provider of CACHE_PROVIDERS) {
       const providerDir = resolve(dir, provider);

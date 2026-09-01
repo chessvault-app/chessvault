@@ -5,6 +5,18 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **A browsed player can be cleared on its own.** Settings → Browsed games
+  listed every player whose months are cached, with one button that took
+  all of them. That was the wrong shape for the list it sat under: the
+  handle you browse every week is in it beside the half dozen you looked
+  up once, and clearing the lot to be rid of the curiosities re-downloaded
+  the months actually in use. Each row now carries its own bin (“Clear this
+  player's months”), and Clear all still takes everything. Deleting from
+  the page also makes Storage used below re-read, which had been showing
+  the size it loaded with — a card apart, two answers for the same thing.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

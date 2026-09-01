@@ -409,6 +409,73 @@ describe('archive cache', () => {
  * yours. Boot heals them from the profile — and leaves alone the one
  * stamp it cannot re-derive, a hand-imported game's own word.
  */
+/**
+ * Taking one browsed player and leaving the rest.
+ *
+ * Its own vault rather than a case inside the archive-cache suite above,
+ * whose last test clears the lot: a delete test that runs before that one
+ * would be asserting against whatever it had already taken away.
+ */
+describe('dropping one cached player', () => {
+  let dir: string;
+  let app: Hono;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'games-cache-one-'));
+    for (const [provider, user] of [
+      ['chesscom', 'lanph3re'],
+      ['chesscom', 'curious'],
+      ['lichess', 'someone'],
+    ] as const) {
+      mkdirSync(join(dir, provider, user), { recursive: true });
+      writeFileSync(join(dir, provider, user, '2026-07.pgn'), MONTH_PGN);
+    }
+    // The meta dotfile the month fetch leaves beside the games: it goes
+    // with them, but it is not what the freed bytes are counted from.
+    writeFileSync(join(dir, 'chesscom', 'curious', '.cache.json'), '{"months":{}}');
+    app = new Hono().route('/api', gamesApi(dir));
+  });
+
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('takes the named player and nothing else', async () => {
+    const res = await app.request('/api/games/cache?provider=chesscom&user=curious', {
+      method: 'DELETE',
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).bytes).toBe(MONTH_PGN.length);
+    expect(existsSync(join(dir, 'chesscom', 'curious'))).toBe(false);
+
+    const body = await (await app.request('/api/games/cache')).json();
+    expect(body.users.map((u: { user: string }) => u.user).sort()).toEqual(['lanph3re', 'someone']);
+  });
+
+  it('says nothing was freed for a player it is not holding', async () => {
+    const res = await app.request('/api/games/cache?provider=lichess&user=nobodyhere', {
+      method: 'DELETE',
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).bytes).toBe(0);
+  });
+
+  it('refuses a name that could not have come from the listing', async () => {
+    // A provider the cache does not use, half a player, and a name
+    // climbing out of the provider directory — each refused rather than
+    // resolved, since resolving it is how the vault above loses a
+    // directory nobody asked about.
+    for (const query of [
+      '?provider=collection&user=lanph3re',
+      '?provider=chesscom',
+      '?user=lanph3re',
+      '?provider=chesscom&user=..',
+      '?provider=chesscom&user=../../collection',
+    ]) {
+      expect((await app.request(`/api/games/cache${query}`, { method: 'DELETE' })).status).toBe(400);
+    }
+    expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(true);
+  });
+});
+
 describe('healing VaultSide at boot', () => {
   let dir: string;
   let app: Hono;
