@@ -53,19 +53,16 @@
         align-items: center;
         gap: 0.6rem;
       }
+      /* Bare, in the page's own ink, at the lock screen's size — the app
+         wears the mark that way everywhere it is drawn by a PAGE (sidebar,
+         lock screen, home header, favicon). A ground survives only on the
+         icons an OS composites onto grounds the image cannot see, which
+         this is not. The filled tile that used to be here read as a button
+         standing above the two that actually are. */
       .logo {
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: 1rem;
-        background: var(--primary);
-        color: var(--primary-fg);
-        display: grid;
-        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
         margin-bottom: 0.25rem;
-      }
-      .logo svg {
-        width: 2.2rem;
-        height: 2.2rem;
       }
       h1 {
         font-size: 1.15rem;
@@ -187,12 +184,16 @@
   </head>
   <body>
     <div class="card" id="step1">
-      <div class="logo">
-        <!-- The cburnett knight — same mark as the app. -->
-        <svg viewBox="4.5 5 36 36" fill="currentColor" aria-hidden>
-          <path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 Z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 Z" />
-        </svg>
-      </div>
+      <!-- The app's mark: a hexagon outline with one wedge filled. The same
+           drawing as web/src/components/brand-mark.tsx and
+           web/public/favicon.svg — copied because this window loads no
+           bundle. The knight that used to be here was the mark the app
+           retired in a015079e; where the app means "chess" rather than
+           itself it still draws a knight, but this is the brand. -->
+      <svg class="logo" viewBox="20 20 80 80" fill="currentColor" aria-hidden>
+        <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" />
+        <path d="M60 60 L60 24 L91 42 Z" />
+      </svg>
       <h1>Chess Vault</h1>
       <p class="sub">Where does your vault live?</p>
       <p class="error" id="error"></p>
