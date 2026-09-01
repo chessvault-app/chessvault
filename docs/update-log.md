@@ -5,10 +5,13 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.7.2
 
-Landed after v0.7.1 was tagged, so it is in the repository and in no
-installer. This section becomes the next version's heading.
+A phone swipe that brings the panel you asked for along with your thumb
+instead of nodding at you and swapping once you let go; light mode's panel
+edges visible again on a screen held at arm's length; and pages that hold
+still while they load — the Games pane opening on your own games, the home
+page no longer sliding half a screen as its panels arrive.
 
 - **Another round against placeholders that lied about their size.** Nine
   more stand-ins were re-read against the elements they stand for and
