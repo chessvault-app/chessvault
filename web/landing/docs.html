@@ -1411,10 +1411,12 @@
               </table>
             </div>
             <h2 data-ko="스터디 안에서">Inside a study</h2>
-            <p data-ko="머리, 왼쪽부터: 뒤로(«All studies») · 제목(두 번 클릭해 이름 바꾸기) · 시계(«Earlier versions» — <a href='#vault'>보관함</a> 참조) · <strong>Edit</strong> 토글(«Show NAGs, comments and move tools» / «Hide the editing tools») · 저장 표시. 기물은 읽는 중에도 움직입니다 — Edit는 주석 도구를 꺼내는 스위치일 뿐이라, 그냥 따라 읽을 때는 보드가 어지럽지 않습니다.">
+            <p data-ko="머리, 왼쪽부터: 뒤로(«All studies») · 제목(두 번 클릭해 이름 바꾸기) · 이름표(«Other names for this study» — 쉼표로 나눈 별칭, <a href='#notes'>위키링크</a> 참조) · 고리(«Linked mentions», 가리키는 것이 있을 때만) · 시계(«Earlier versions» — <a href='#vault'>보관함</a> 참조) · <strong>Edit</strong> 토글(«Show NAGs, comments and move tools» / «Hide the editing tools») · 저장 표시. 기물은 읽는 중에도 움직입니다 — Edit는 주석 도구를 꺼내는 스위치일 뿐이라, 그냥 따라 읽을 때는 보드가 어지럽지 않습니다.">
               The header, left to right: back (“All studies”) · the title (double-click to rename)
-              · the clock (“Earlier versions” — see <a href="#vault">The vault</a>) · the
-              <strong>Edit</strong> toggle (“Show NAGs, comments and move tools” / “Hide the
+              · the tag (“Other names for this study” — the comma-separated aliases, see
+              <a href="#notes">Wiki-links</a>) · the link (“Linked mentions”, only where something
+              points here) · the clock (“Earlier versions” — see <a href="#vault">The vault</a>) ·
+              the <strong>Edit</strong> toggle (“Show NAGs, comments and move tools” / “Hide the
               editing tools”) · the save control. The pieces move whether you are reading or
               editing — Edit only brings out the annotation tools, so the board stays uncluttered
               when you are just stepping through.
@@ -1464,12 +1466,13 @@
               </picture>
             </figure>
             <h2 data-ko="읽기와 쓰기">Reading and writing</h2>
-            <p data-ko="노트는 읽기 모드로 열립니다 — 링크는 바로 따라가지고, 도구 막대는 없습니다. 머리의 <strong>Edit</strong>(«Edit this note»)가 편집으로 바꾸고, 같은 자리가 <strong>Done</strong>(«Back to reading»)이 됩니다. 머리의 나머지는 다른 문서와 같습니다: 뒤로, 제목(두 번 클릭해 이름 바꾸기), 시계(«Earlier versions»), 저장 표시.">
+            <p data-ko="노트는 읽기 모드로 열립니다 — 링크는 바로 따라가지고, 도구 막대는 없습니다. 머리의 <strong>Edit</strong>(«Edit this note»)가 편집으로 바꾸고, 같은 자리가 <strong>Done</strong>(«Back to reading»)이 됩니다. 머리의 나머지는 다른 문서와 같습니다: 뒤로, 제목(두 번 클릭해 이름 바꾸기), 이름표(«Other names for this note»), 고리(«Linked mentions», 가리키는 것이 있을 때만), 시계(«Earlier versions»), 저장 표시.">
               A note opens read-only — links follow on a click, and there is no toolbar. The
               header's <strong>Edit</strong> (“Edit this note”) switches to writing; the same spot
               becomes <strong>Done</strong> (“Back to reading”). The rest of the header matches
-              every document: back, the title (double-click to rename), the clock (“Earlier
-              versions”), the save control.
+              every document: back, the title (double-click to rename), the tag (“Other names for
+              this note”), the link (“Linked mentions”, only where something points here), the
+              clock (“Earlier versions”), the save control.
             </p>
             <h3 data-ko="서식 도구 막대">The formatting toolbar</h3>
             <p data-ko="편집 중에만, 노트 위에 고정되어. 열 개의 버튼, 순서대로:">
@@ -1498,11 +1501,13 @@
               Links are not only a Notes thing: <code>[[</code> opens the same list in a move's
               comment — see <a href="#board">annotating</a>.
             </p>
-            <p data-ko="<code>[[대상|보일 글]]</code>은 <em>보일 글</em>로 읽히면서 <em>대상</em>으로 이어지고, <code>![[대상]]</code>은 노트 안에서 카드로 펼쳐집니다(코멘트 안에서는 평범한 링크로 읽힙니다 — 수 목록의 한 줄에 카드가 끼어들면 수가 벌어집니다). 문서에 <strong>다른 이름</strong>을 붙여 두면 그 이름으로도 이어집니다. 두 문서가 같은 이름을 주장하면 앱은 고르지 않고 어느 쪽인지 묻습니다. 가리키는 것이 없는 링크는 회색 점선이고, 누르면 그 이름의 기보·스터디·노트를 만들어 주겠다고 합니다.">
+            <p data-ko="<code>[[대상|보일 글]]</code>은 <em>보일 글</em>로 읽히면서 <em>대상</em>으로 이어지고, <code>![[대상]]</code>은 노트 안에서 카드로 펼쳐집니다(코멘트 안에서는 평범한 링크로 읽힙니다 — 수 목록의 한 줄에 카드가 끼어들면 수가 벌어집니다). 문서 머리의 이름표(«Other names for this study» / «Other names for this note»)가 <strong>다른 이름</strong>을 쉼표로 나누어 받고, 그 이름으로도 이어집니다. 두 문서가 같은 이름을 주장하면 앱은 고르지 않고 어느 쪽인지 묻습니다. 가리키는 것이 없는 링크는 회색 점선이고, 누르면 그 이름의 기보·스터디·노트를 만들어 주겠다고 합니다.">
               <code>[[Target|shown]]</code> reads as <em>shown</em> and opens <em>Target</em>;
               <code>![[Target]]</code> unfolds as a card inside a note (inside a comment it reads
               as a plain link — a card wedged into a row of moves would push the moves apart).
-              Give a document <strong>other names</strong> and it answers to those too. Where two
+              The tag in a document's header (“Other names for this study” / “Other names for this
+              note”) takes <strong>other names</strong>, separated by commas, and the document
+              answers to those too. Where two
               documents claim one name the app refuses to guess and asks which you meant. A link
               with nothing behind it is grey and dotted, and pressing it offers to make the game,
               study or note it names.
@@ -1556,15 +1561,18 @@
             </figure>
             <h2 data-ko="모음">The collection</h2>
             <ul>
-              <li data-ko="검색(«Search collection…»)과 북마크 필터가 위에, 그 아래로 필터 줄: <strong>Whose games</strong>(Anyone's games · My games · Mine as White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong>(All games / With notes), 그리고 «More filters». 검색 상자는 Databases 탭과 같은 질의 언어를 씁니다 — <a href='#db-search'>데이터베이스 검색</a> 참조. 줄의 동작: <strong>Open the game · Rename · Bookmark · Remove from the collection</strong>(잠깐 실행 취소 가능) · <strong>View online</strong>(출처가 있으면). 오른쪽 클릭이 같은 메뉴를 엽니다.">
+              <li data-ko="검색(«Search collection…»)과 북마크 필터가 위에, 그 아래로 필터 줄: <strong>Whose games</strong>(Anyone's games · My games · Mine as White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong>(All games / With notes), 그리고 «More filters». 검색 상자는 Databases 탭과 같은 질의 언어를 씁니다 — <a href='#db-search'>데이터베이스 검색</a> 참조. 줄을 오른쪽 클릭하면 <strong>Bookmark · Rename · Remove</strong>(잠깐 실행 취소 가능)가 나오고, 출처가 있으면 <strong>View online</strong>이 함께 옵니다. 기보를 여는 것은 이 메뉴가 아니라 더블 클릭입니다. 카드 줄로 그려지는 좁은 화면에서는 같은 메뉴가 줄의 ⋯에 있고, <strong>Preview the board</strong>와 <strong>Game details</strong>가 앞에 붙습니다 — 넓은 화면에서 곁의 패널이 하는 일입니다.">
                 Search (“Search collection…”) and the bookmark filter on top, and a filter row
                 under them: <strong>Whose games</strong> (Anyone's games · My games · Mine as
                 White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong> (All
                 games / With notes), then “More filters”. The box speaks the same query language
-                as the Databases tab — see <a href="#db-search">Searching the databases</a>. Per
-                row: <strong>Open the game · Rename · Bookmark · Remove from the collection</strong>
-                (undoable for a moment) · <strong>View online</strong> where a source exists. A
-                right-click opens the same menu.
+                as the Databases tab — see <a href="#db-search">Searching the databases</a>. A
+                right-click on a row gives <strong>Bookmark · Rename · Remove</strong> (undoable
+                for a moment), with <strong>View online</strong> where a source exists; opening a
+                game is the double click, not a menu item. Where rows are cards rather than a
+                table, the same menu sits under the row's ⋯ and gains
+                <strong>Preview the board</strong> and <strong>Game details</strong> in front —
+                the work the panel beside a wide table does.
               </li>
               <li data-ko="<strong>Import a game</strong> — PGN을 붙여 넣습니다: «Paste a PGN — or just moves: 1. e4 e5 2. Nf3 …». 헤더가 있으면 아래 칸들(White/Black, 레이팅, 날짜, 이벤트)이 저절로 채워지고, Result는 <strong>Auto · 1-0 · 0-1 · ½-½</strong>에서 고릅니다. 제출은 <strong>Add to collection</strong>.">
                 <strong>Import a game</strong> — paste a PGN: “Paste a PGN — or just moves: 1. e4
@@ -1839,13 +1847,15 @@
               <figcaption data-ko="도해 버튼: 책 속 포지션이 곁의 보드로.">A diagram button carrying the printed position to the board.</figcaption>
             </figure>
             <h2 data-ko="선반">The shelf</h2>
-            <p data-ko="<strong>Import a PDF</strong>(«Import a book» — PDF를 놓고 제목과 컬렉션을 정한 뒤 «Import»), 검색, 정렬(Title · Added · Last read · Size), 북마크 필터. 책 카드에는 «{n} pages»와 «Page {page} of {pages}» — 읽던 자리가 책마다 기억됩니다. 카드 메뉴: <strong>Read · Rename · Move to a collection · Replace PDF… · Remove from library</strong> — PDF를 바꿔도 읽던 페이지는 유지되고, 지울 때는 «any puzzle book read from it is kept»라고 미리 말해 줍니다.">
-              <strong>Import a PDF</strong> (“Import a book” — drop the PDF, set a title and collection,
-              “Import”), search, sorting (Title · Added · Last read · Size), the bookmark
-              filter. A card shows “{n} pages” and “Page {page} of {pages}” — your place is kept
-              per book. Its menu: <strong>Read · Rename · Move to a collection · Replace PDF… ·
-              Remove from library</strong> — replacing the PDF keeps your page, and removing warns
-              “any puzzle book read from it is kept”.
+            <p data-ko="만들기 메뉴의 <strong>Import a PDF</strong>(«Import a book» 창 — PDF를 놓고 제목과 컬렉션을 정한 뒤 «Import»)와 <strong>New collection</strong>, 그리고 검색, 정렬(Title · Added · Size · Last read), 북마크 필터. 책 카드에는 «{n} pages»와 «Page {page} of {pages}» — 읽던 자리가 책마다 기억됩니다. 카드 메뉴: <strong>Read · Bookmark · Rename · Move to a collection · Read diagrams · Replace PDF… · Remove from library</strong> — PDF를 바꿔도 읽던 페이지는 유지되고, 지울 때는 «any puzzle book read from it is kept»라고 미리 말해 줍니다.">
+              The create menu holds <strong>Import a PDF</strong> (the “Import a book” window —
+              drop the PDF, set a title and collection, “Import”) and
+              <strong>New collection</strong>; beside it, search, sorting (Title · Added · Size ·
+              Last read) and the bookmark filter. A card shows “{n} pages” and “Page {page} of
+              {pages}” — your place is kept per book. Its menu: <strong>Read · Bookmark · Rename ·
+              Move to a collection · Read diagrams · Replace PDF… · Remove from library</strong> —
+              replacing the PDF keeps your page, and removing warns “any puzzle book read from it
+              is kept”.
             </p>
             <h2 data-ko="리더의 도구 막대">The reader's toolbar</h2>
             <div class="scroll-x">
@@ -1876,11 +1886,12 @@
               standing empty on Edit, so the global navigation cannot return under a half-placed
               position.
             </p>
-            <p data-ko="전술책이라면 여기서 한 걸음 더: <a href='#puzzle-books'>퍼즐 책</a>으로 읽어 들이면 도해들이 풀 수 있는 퍼즐이 됩니다. 이미 읽어 들인 책의 카드에는 <strong>Read diagrams</strong>와 <strong>Open the puzzle book</strong>이 함께 붙습니다.">
+            <p data-ko="전술책이라면 여기서 한 걸음 더: <a href='#puzzle-books'>퍼즐 책</a>으로 읽어 들이면 도해들이 풀 수 있는 퍼즐이 됩니다. 카드의 <strong>Read diagrams</strong>는 어느 책에나 있고(읽는 중이 아닐 때), 퍼즐 책이 딸린 책에는 <strong>Open the puzzle book</strong>이 하나 더 붙습니다.">
               A tactics book can go a step further: import it as a
-              <a href="#puzzle-books">puzzle book</a> and its diagrams become solvable puzzles — a
-              book that has one gains <strong>Read diagrams</strong> and <strong>Open the puzzle
-              book</strong> on its card.
+              <a href="#puzzle-books">puzzle book</a> and its diagrams become solvable puzzles.
+              <strong>Read diagrams</strong> is on every book's card (whenever a read is not
+              already running); a book that has a puzzle book gains <strong>Open the puzzle
+              book</strong> besides.
             </p>
           </div>
         </section>
