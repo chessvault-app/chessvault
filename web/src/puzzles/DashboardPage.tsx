@@ -1,5 +1,14 @@
 import { BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
+import { parseDashboardShape, storedDashboardShape } from './reservation';
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
@@ -51,6 +60,18 @@ interface BookSummary {
 
 
 
+/** See `reserved` below: the page's three variable blocks, last visit. */
+const DASH_SHAPE_KEY = 'vault:puzzle-dash-shape';
+
+/**
+ * The empty Books panel's words, named once: the placeholder holds the
+ * EmptyState's place by rendering the same words invisibly, and two
+ * copies would wrap apart the day one was edited.
+ */
+const BOOKS_EMPTY_TITLE = 'No puzzle books yet';
+const BOOKS_EMPTY_BODY =
+  'Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.';
+
 type ResultFilter = 'all' | 'solved' | 'review';
 type BandFilter = 'any' | (typeof BANDS)[number]['id'];
 
@@ -64,6 +85,12 @@ export function DashboardPage() {
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
+
+  // What this device reserves for the three blocks whose shape the
+  // answers decide, from what it saw last visit (puzzles/reservation.ts)
+  // — a paint hint on home's bargain, corrected below. Read once; the
+  // wait it stands through cannot change it.
+  const [reserved] = useState(() => parseDashboardShape(localStorage.getItem(DASH_SHAPE_KEY)));
 
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(() => {
@@ -121,6 +148,24 @@ export function DashboardPage() {
     }
     return true;
   });
+
+  // Remembered for the NEXT visit's reservation, above — only once all
+  // three answers are in and none failed: an outage empties `history`
+  // too, and recording that would hand next visit the floor at a vault
+  // that has plenty. The attempts count is the unfiltered list's.
+  useEffect(() => {
+    if (error !== null || user === null || history === null || books === null) return;
+    localStorage.setItem(
+      DASH_SHAPE_KEY,
+      storedDashboardShape({
+        review: due > 0 || failed > 0 ? 'button' : nextDue ? 'note' : 'none',
+        books: books.length,
+        attempts: latestById.size,
+      }),
+    );
+    // latestById is derived from history; keying on it is keying on it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error, user, history, books, due, failed, nextDue]);
 
   return (
     // `block`: this page spaces its sections with their own margins, not
@@ -182,10 +227,21 @@ export function DashboardPage() {
             Its place is held instead. A vault with nothing failed gives
             the place up, which is the one case nothing can predict. */}
         {user === null ? (
-          // The default button's own h-8 — h-9 only under a coarse
-          // pointer, where the real button grows too. It held 36px
-          // against a 32px button, so the page rose 4px as it landed.
-          <Skeleton className="mb-4 h-8 w-full rounded-lg pointer-coarse:h-9" />
+          // The slot settles as one of four shapes, and the place held
+          // is the one this device saw last visit: the button's box for
+          // a vault with reviews waiting (h-8, h-9 under a coarse
+          // pointer, where the real button grows too — it once held
+          // 36px against 32), the note's one 20px line for a schedule
+          // with nothing due, and nothing for a vault that has never
+          // trained, which reserved the button for everyone and gave it
+          // back.
+          reserved.review === 'button' ? (
+            <Skeleton className="mb-4 h-8 w-full rounded-lg pointer-coarse:h-9" />
+          ) : reserved.review === 'note' ? (
+            <div className="mb-4 flex h-5 items-center justify-center">
+              <Skeleton className="h-2.5 w-64 max-w-full" />
+            </div>
+          ) : null
         ) : due > 0 ? (
           // The schedule has something waiting: lead with the due count,
           // which is the number that asks to be acted on today.
@@ -257,26 +313,55 @@ export function DashboardPage() {
                   title={t('Books')}
                   actions={<Skeleton className="h-7 w-16 rounded-md pointer-coarse:h-9" />}
                 />
-                {Array.from({ length: 3 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="border-border flex items-center gap-2.5 border-b px-3 py-(--row-py) last:border-b-0"
-                  >
-                    {/* A row of text-sm, whose line box is 20px — and the
-                        padding is the density token, because the ListRow
-                        this stands for reads it. Both were wrong in
-                        opposite directions: 33px against the real 36. */}
-                    <div className="flex h-5 min-w-0 flex-1 items-center">
-                      <Skeleton className="h-2.5 w-2/5" />
+                {/* One row per book this device saw last visit — and for
+                    a vault that had none (or has never been seen), the
+                    EmptyState's own shape, built from its primitives
+                    with the real words drawn invisibly: the empty panel
+                    is TALLER than the three rows this used to reserve
+                    for everyone, so the commonest case moved in the
+                    wrong direction when the answer came. */}
+                {reserved.books === 0 ? (
+                  <Empty className="py-8">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Skeleton className="size-4 rounded-sm" />
+                      </EmptyMedia>
+                      <EmptyTitle className="relative w-full">
+                        <span className="invisible">{t(BOOKS_EMPTY_TITLE)}</span>
+                        <Skeleton className="absolute inset-y-0.5 left-1/2 w-32 max-w-full -translate-x-1/2" />
+                      </EmptyTitle>
+                      <EmptyDescription className="relative w-full">
+                        <span className="invisible">{t(BOOKS_EMPTY_BODY)}</span>
+                        <Skeleton className="absolute inset-x-0 inset-y-1" />
+                      </EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent>
+                      {/* The sm button's box, at about its label's width. */}
+                      <Skeleton className="h-7 w-36 rounded-md pointer-coarse:h-9" />
+                    </EmptyContent>
+                  </Empty>
+                ) : (
+                  Array.from({ length: reserved.books }, (_, i) => (
+                    <div
+                      key={i}
+                      className="border-border flex items-center gap-2.5 border-b px-3 py-(--row-py) last:border-b-0"
+                    >
+                      {/* A row of text-sm, whose line box is 20px — and the
+                          padding is the density token, because the ListRow
+                          this stands for reads it. Both were wrong in
+                          opposite directions: 33px against the real 36. */}
+                      <div className="flex h-5 min-w-0 flex-1 items-center">
+                        <Skeleton className="h-2.5 w-2/5" />
+                      </div>
+                      <div className="flex h-5 shrink-0 items-center">
+                        <Skeleton className="h-2.5 w-10" />
+                      </div>
+                      {/* The Progress track is h-1. */}
+                      <Skeleton className="h-1 w-24 shrink-0 rounded-full" />
+                      <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                     </div>
-                    <div className="flex h-5 shrink-0 items-center">
-                      <Skeleton className="h-2.5 w-10" />
-                    </div>
-                    {/* The Progress track is h-1. */}
-                    <Skeleton className="h-1 w-24 shrink-0 rounded-full" />
-                    <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-                  </div>
-                ))}
+                  ))
+                )}
               </Panel>
             )
           : (
@@ -299,8 +384,8 @@ export function DashboardPage() {
               <EmptyState
                 className="py-8"
                 icon={BookMarked}
-                title="No puzzle books yet"
-                body="Import a scanned tactics book and its diagrams become a solvable, progress-tracked set."
+                title={BOOKS_EMPTY_TITLE}
+                body={BOOKS_EMPTY_BODY}
                 action={
                   <Button variant="default" size="sm" onClick={() => navigate('puzzles', 'books')}>
                     <BookMarked className="size-3.5" data-icon="inline-start" />
@@ -394,7 +479,22 @@ export function DashboardPage() {
               The threshold is for content that can appear without moving
               anything, which this is not. */}
           {history === null ? (
-            <SkeletonRows rows={5} />
+            // As many rows as this device saw, inside the list's own
+            // 384px ceiling so a full vault's reservation cannot stand
+            // taller than the scroller it reserves — and the one-line
+            // note's box for a vault that had no attempts, where five
+            // invented rows were the jump in the other direction.
+            reserved.attempts === 0 ? (
+              <div className="px-3 py-3">
+                <div className="flex h-5 items-center">
+                  <Skeleton className="h-2.5 w-56 max-w-full" />
+                </div>
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-hidden">
+                <SkeletonRows rows={reserved.attempts} />
+              </div>
+            )
           ) : puzzles.length === 0 ? (
             <p className="text-muted-foreground px-3 py-3 text-sm">
               {t(
