@@ -293,6 +293,7 @@ export function SkeletonBookCards({
 export function SkeletonTiles({
   tiles = 48,
   cycles = false,
+  cyclesOpen = false,
   className,
 }: {
   tiles?: number;
@@ -307,6 +308,13 @@ export function SkeletonTiles({
    * 144px the moment it did.
    */
   cycles?: boolean;
+  /**
+   * Whether a pass was OPEN in that panel last time this device saw it.
+   * A never-started book's panel opens on three lines of prose; a
+   * mid-cycle book — the one a returning reader actually opens — draws
+   * a single status line, ~37px shorter. The caller stores which.
+   */
+  cyclesOpen?: boolean;
   className?: string;
 }) {
   return (
@@ -325,13 +333,20 @@ export function SkeletonTiles({
               own gap-2 is between its children, of which the cold state
               has one. With gap-1 the body stood 8px taller than the prose
               that replaced it. */}
-          <div className="flex flex-col px-(--card-spacing)">
-            {['w-full', 'w-11/12', 'w-2/3'].map((w) => (
-              <div key={w} className="flex h-[1.4375rem] items-center">
-                <Skeleton className={cn('h-2', w)} />
-              </div>
-            ))}
-          </div>
+          {cyclesOpen ? (
+            // The open pass's single status line (text-sm, 20px).
+            <div className="flex h-5 items-center px-(--card-spacing)">
+              <Skeleton className="h-2.5 w-40" />
+            </div>
+          ) : (
+            <div className="flex flex-col px-(--card-spacing)">
+              {['w-full', 'w-11/12', 'w-2/3'].map((w) => (
+                <div key={w} className="flex h-[1.4375rem] items-center">
+                  <Skeleton className={cn('h-2', w)} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {/* The Progress track's own h-1, not the h-1.5 it used to guess. */}

@@ -51,8 +51,46 @@ import { TitleTip } from '@/components/title-tip';
 // ---------------------------------------------------------------------------
 // Book page: numbered grid coloured by result, entry flow
 
+/** This book's shape last visit, per slug — see `reservedBook` below. */
+const bookShapeKey = (slug: string): string => `vault:book-shape:${slug}`;
+
+/**
+ * The stored shape as a shape: a whole tile count clamped to the grid
+ * guess's own 48 (the cap is the fold, not a data fact), and whether a
+ * pass was open. Unreadable reads as null: nothing was learned, and the
+ * blind 48-tile guess stands as it always has.
+ */
+function parseBookShape(raw: string | null): { tiles: number; open: boolean } | null {
+  if (raw === null) return null;
+  let stored: unknown;
+  try {
+    stored = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof stored !== 'object' || stored === null) return null;
+  const value = stored as { tiles?: unknown; open?: unknown };
+  if (typeof value.tiles !== 'number' || !Number.isInteger(value.tiles) || value.tiles < 0)
+    return null;
+  return { tiles: Math.min(value.tiles, 48), open: value.open === true };
+}
+
 export function BookPage({ slug }: { slug: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
+  // What this device reserves for THIS book while the fetch is blind:
+  // its own tile count and its cycles panel's state, from last visit —
+  // a paint hint on home's bargain. A book seen empty reserves nothing
+  // (its settle is the empty-book card), and a book never seen keeps
+  // the 48-tile guess.
+  const [reservedBook] = useState(() => parseBookShape(localStorage.getItem(bookShapeKey(slug))));
+  // Remembered for the NEXT visit's reservation, above.
+  useEffect(() => {
+    if (book === null) return;
+    localStorage.setItem(
+      bookShapeKey(slug),
+      JSON.stringify({ tiles: book.puzzles.length, open: Boolean(openCycle(book)) }),
+    );
+  }, [book, slug]);
   /**
    * The wait on a big book is not the fetch, it is the render.
    *
@@ -405,14 +443,27 @@ export function BookPage({ slug }: { slug: string }) {
         {book === null || !gridReady ? (
           // As many tiles as the book actually has, once that is known:
           // the count arrives with the data, and the wait this covers is
-          // the RENDER after it. Forty-eight is the guess for the fetch
-          // itself, which is the only part that happens blind.
-          // `cycles` holds the Cycles panel's place. It is drawn below for
-          // every book that has puzzles — the same condition that makes a
-          // grid worth standing in for — so without it the whole grid
-          // dropped by the panel's height as the book landed.
+          // the RENDER after it. The fetch itself is blind, and there
+          // the reservation is what this device stored about THIS book
+          // last visit — tile count, and whether its Cycles panel was
+          // mid-pass (a single status line) or cold (three lines of
+          // prose). A book seen empty reserves nothing, because its
+          // settle is the empty-book card, and 48 invented tiles over a
+          // Cycles panel it will never draw was the jump the other way.
+          // Only a book this device has never opened keeps the blind
+          // 48-tile guess.
           detailPending ? (
-            <SkeletonTiles cycles tiles={Math.min(book?.puzzles.length ?? 48, 48)} />
+            book !== null ? (
+              <SkeletonTiles
+                cycles={book.puzzles.length > 0}
+                cyclesOpen={Boolean(openCycle(book))}
+                tiles={Math.min(book.puzzles.length, 48)}
+              />
+            ) : reservedBook === null ? (
+              <SkeletonTiles cycles tiles={48} />
+            ) : reservedBook.tiles > 0 ? (
+              <SkeletonTiles cycles cyclesOpen={reservedBook.open} tiles={reservedBook.tiles} />
+            ) : null
           ) : null
         ) : scan ? (
           // The scan owns the panel while it runs. On an empty book it
