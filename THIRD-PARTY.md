@@ -39,6 +39,17 @@ installer is Electron, so it is listed too. electron-builder places
 `LICENSE.electron.txt` and `LICENSES.chromium.html` at the root of the
 installed app.
 
+**Where this table and the generated list disagree, on purpose: Stockfish.**
+The generated list prints `GPL-3.0` for it, because that is the SPDX id in
+the `stockfish` npm package's own metadata, and the walk reports what a
+package declares. The row above says GPL-3.0-**or-later**, which is what
+Stockfish itself says: its source files carry "either version 3 of the
+License, or (at your option) any later version", and what ships here is a
+WASM build of that engine, not a separate work. The row is the one to
+believe; the note is here so the next reader who compares the two files
+stops where this audit did. Either reading is compatible with this app's
+GPL-3.0-only licence.
+
 The Rust crates are cargo's, and no npm walk can see them — the blind spot
 that left the shadcn/ui sources unlisted for a release. Their notices are
 generated from `native/Cargo.lock` into `licenses/rust-crates.txt` by
