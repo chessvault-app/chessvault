@@ -888,7 +888,7 @@ function TablebaseCard({
           ? t('Back to asking a server.')
           : local
             ? t('Answering from your own tables.')
-            : t('Saved, but not answering from it — the native binary is not built.'),
+            : t('Saved, but not answering from it — the native binary is not built. The server below still answers.'),
     });
     await onChanged();
   };
@@ -933,40 +933,15 @@ function TablebaseCard({
           A vault setting rather than a device one — it describes which
           tables this vault trusts, and a phone opening it should ask the
           same server. */}
-      <p className="text-muted-foreground text-sm">
-        {t(
-          'Or answer from your own tables: run lila-tablebase over them and give its address here. Empty means the public one.',
-        )}
-      </p>
-      <div className="flex items-center gap-2">
-        <ClearableInput
-          inputSize="lg"
-          className="flex-1"
-          autoComplete="off"
-          placeholder={settings.tablebase.fallback}
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          aria-label={t('Tablebase server')}
-        />
-        <Button
-          variant="default"
-          disabled={url.trim() === (settings.tablebase.url ?? '')}
-          onClick={() => void save()}
-        >
-          {t('Save')}
-        </Button>
-      </div>
-      {/* One step further than a server of your own: the files
-          themselves. With the native binary built, a directory of
-          Syzygy tables here is read directly and no server is involved
-          at all — which is why this sits below the address rather than
-          beside it, as the answer for someone who read that line and
-          wanted to go further. */}
+      {/* The files themselves, first: it is the simplest thing that
+          works for anyone who has them, and it needs nothing else
+          running. The server address below is the fallback for the
+          cases this box cannot cover. */}
       <p className="text-muted-foreground text-sm">
         {settings.tablebase.local
           ? t('Answering from the tables in this folder — no server involved.')
           : t(
-              'Or from the table files directly: give a folder of Syzygy files on the server. Needs the native binary; without it this is saved and the server above still answers.',
+              'Answer from the table files themselves: a folder of Syzygy files on this server, read directly with nothing else running. Needs the native binary.',
             )}
       </p>
       <div className="flex items-center gap-2">
@@ -983,6 +958,34 @@ function TablebaseCard({
           variant="default"
           disabled={dir.trim() === (settings.tablebase.dir ?? '')}
           onClick={() => void saveDir()}
+        >
+          {t('Save')}
+        </Button>
+      </div>
+      {/* Still worth its place with the folder above: tables on ANOTHER
+          machine cannot be named by a path, a build with no native
+          binary has nothing to read them with, and a lila-tablebase
+          carrying more than Syzygy can answer with distances this
+          reader has no data for. */}
+      <p className="text-muted-foreground text-sm">
+        {t(
+          'Or name a tablebase server: for tables on another machine, or when this one has no native binary to read them with. Empty means Lichess’s public one.',
+        )}
+      </p>
+      <div className="flex items-center gap-2">
+        <ClearableInput
+          inputSize="lg"
+          className="flex-1"
+          autoComplete="off"
+          placeholder={settings.tablebase.fallback}
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          aria-label={t('Tablebase server')}
+        />
+        <Button
+          variant="default"
+          disabled={url.trim() === (settings.tablebase.url ?? '')}
+          onClick={() => void save()}
         >
           {t('Save')}
         </Button>
