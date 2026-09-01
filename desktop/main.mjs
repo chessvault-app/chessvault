@@ -421,9 +421,13 @@ app.whenReady().then(async () => {
     serverProc = null;
     await win.loadFile(join(here, 'chooser.html'));
   });
-  ipcMain.handle('vault:pick-folder', async () => {
+  // The title is the caller's, because this dialog is asked for by two
+  // different questions now — where the vault lives, and where a folder
+  // of Syzygy tables is. An older bridge passes nothing and gets the
+  // vault wording, which is what it always said.
+  ipcMain.handle('vault:pick-folder', async (_e, title) => {
     const picked = await dialog.showOpenDialog(win, {
-      title: 'Open vault folder',
+      title: typeof title === 'string' && title.trim() ? title : 'Open vault folder',
       properties: ['openDirectory', 'createDirectory'],
     });
     return picked.canceled ? null : (picked.filePaths[0] ?? null);

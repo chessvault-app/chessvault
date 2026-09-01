@@ -1311,6 +1311,8 @@ export const ko: Record<string, string> = {
   'A tablebase server of your own': '직접 운영하는 테이블베이스 서버',
   'Table files on the server': '서버에 있는 테이블 파일',
   'Forget cached answers': '캐시된 답 잊기',
+  'Choose…': '고르기…',
+  'Choose the folder of Syzygy tables': 'Syzygy 테이블이 든 폴더 고르기',
   'Off on this device — no endgame lookups are made from here.':
     '이 기기에서는 꺼져 있습니다 — 여기서는 엔드게임 조회를 하지 않습니다.',
   'Answering from the table files on the server — nothing else involved.':

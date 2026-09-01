@@ -560,6 +560,12 @@ function VersionCard() {
  */
 interface VaultShell {
   switchVault?: () => Promise<void>;
+  /** The shell's native directory dialog, which is the only way to turn
+      a folder into a PATH — no browser API yields one (a directory input
+      gives relative names, the File System Access API an opaque handle).
+      Optional, and absent in every browser, so a caller feature-detects
+      and falls back to the text box. */
+  pickFolder?: (title?: string) => Promise<string | null>;
   appInfo?: () => Promise<{ version?: string } | undefined>;
   checkForUpdates?: () => Promise<UpdateResult>;
   updateStatus?: () => Promise<UpdateStatus>;
@@ -861,6 +867,26 @@ function TablebaseCard({
   const [dir, setDir] = useState(settings.tablebase.dir ?? '');
   const [note, setNote] = useState<Note>(null);
   const source = settings.tablebase.source;
+  const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
+
+  /**
+   * Follow the server when it changes under us.
+   *
+   * These boxes are local state seeded from the settings, and `useState`
+   * seeds ONCE — so a card that mounted before an answer arrived, or
+   * while a value was unset, kept showing the stale one after every
+   * refresh. That is not just a wrong-looking box: the Save beside it
+   * compares against the SERVER's value, so an empty box next to a
+   * configured folder is an enabled Save that would delete the folder.
+   * The settings only move as a result of this card's own saves, so
+   * following them costs no typing.
+   */
+  useEffect(() => {
+    setUrl(settings.tablebase.url ?? '');
+  }, [settings.tablebase.url]);
+  useEffect(() => {
+    setDir(settings.tablebase.dir ?? '');
+  }, [settings.tablebase.dir]);
 
   const pick = async (next: 'lichess' | 'server' | 'files'): Promise<void> => {
     try {
@@ -1018,13 +1044,34 @@ function TablebaseCard({
               <div className="flex items-center gap-2">
                 <ClearableInput
                   inputSize="lg"
-                  className="flex-1"
+                  className="min-w-0 flex-1"
                   autoComplete="off"
                   placeholder={t('A folder of .rtbw and .rtbz files')}
                   value={dir}
                   onChange={(e) => setDir(e.target.value)}
                   aria-label={t('Tablebase files')}
                 />
+                {/* Only in the desktop shell, which is the only place a
+                    folder can become a path: browsers hand out relative
+                    names or opaque handles, never something a server can
+                    open. Absent elsewhere rather than present and
+                    broken, the way DesktopCard treats the same bridge.
+                    It fills the box; Save still commits, so picking by
+                    mistake costs nothing. */}
+                {shell?.pickFolder && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void shell.pickFolder?.(t('Choose the folder of Syzygy tables')).then(
+                        (picked) => {
+                          if (picked) setDir(picked);
+                        },
+                      );
+                    }}
+                  >
+                    {t('Choose…')}
+                  </Button>
+                )}
                 <Button
                   variant="default"
                   disabled={dir.trim() === (settings.tablebase.dir ?? '')}
