@@ -92,11 +92,15 @@ other people.
   in TypeScript, so both sources go through one normaliser instead of
   two that could drift.
 
-  Ours is the one of the three sources we wrote, so it is held to the
-  other two. `npm run check:tablebase` walks random endings, asks the
-  native prober and the reference server about each, and compares every
-  verdict — the position's and every legal move's. Measured before this
-  shipped: 120 positions, no disagreement. Distances read DTZ rather
+  The reading itself is not ours and neither is the trust in it: the
+  same Rust crate does the decoding here and inside lila-tablebase, so
+  what this release added is the wrapper around it — the piece-count
+  gate, walking the legal moves, and reporting each from the right side
+  of the board. `npm run check:tablebase` holds that wrapper to the
+  reference server, walking random endings and comparing every verdict,
+  the position's and every legal move's: 120 positions, no disagreement.
+  What it cannot catch, and says so, is the shared decoder being wrong —
+  both sides would be wrong together. Distances read DTZ rather
   than DTM, because Syzygy holds no distance to mate; the pane already
   says which it is showing.
 

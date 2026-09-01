@@ -29,10 +29,13 @@ import { nativeTablebase } from './tablebaseNative.ts';
  *    (`server/tablebaseNative.ts`). No server, no network.
  *
  * Local tables win where they exist, because that answer needs nothing
- * and tells nobody. Ours is the one of the three we wrote, so it is
- * held to the other two: `scripts/tablebase-parity.ts` replays random
- * endings through the native prober and the reference server and
- * compares every verdict, position and move alike.
+ * and tells nobody. The Syzygy reading underneath is the same crate in
+ * every case — lila-tablebase is built on it too — so what is ours is
+ * only the wrapper the third one needs, and that is what
+ * `scripts/tablebase-parity.ts` holds to the others: it replays random
+ * endings through both and compares every verdict, position and move
+ * alike. A shared decoder means a shared blind spot, which that script
+ * says out loud.
  *
  * Each source keeps its OWN corner of the cache, because they do not
  * hold the same tables: a five-piece server at home must not be able to

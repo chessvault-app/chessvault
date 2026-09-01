@@ -73,7 +73,10 @@ machine and the same data.
 
 The tablebase command has no JS twin to be pinned to, so it is pinned to
 the reference implementation instead — the same rule, a different
-yardstick:
+yardstick. Note what is actually being checked: `shakmaty-syzygy` does
+the decoding, and lila-tablebase is built on the same crate, so the part
+that is ours is the wrapper — the piece-count gate, the walk over legal
+moves, and reporting each from the right side of the board:
 
 ```bash
 npm run check:tablebase -- --tables <dir> --positions 200
@@ -82,8 +85,13 @@ npm run check:tablebase -- --tables <dir> --positions 200
 It walks random legal endings, asks this binary and
 tablebase.lichess.ovh about each, and compares the verdict for the
 position and for every legal move. The failure it exists to catch is the
-same one: not a crash, but a confident wrong answer. 120 positions
-agreed when the command was written.
+same one: not a crash, but a confident wrong answer — an inverted point
+of view would report every winning move as losing and say nothing. 120
+positions agreed when the command was written.
+
+It cannot catch a bug in the decoder, since both sides share it and
+would be wrong together. That trust is the crate's, and is the trade
+taken when it was chosen over writing a Syzygy reader here.
 
 ## Filters are negotiated, not assumed
 
@@ -122,7 +130,7 @@ place, and a binary from an older commit answering beside newer
 JavaScript is exactly the failure the fixtures above exist to prevent. A
 build that fails deletes the stale binary rather than keeping it.
 
-The crate's 47 dependencies are conveyed with the installer, so their
+The crate's 55 dependencies are conveyed with the installer, so their
 notices are too — generated from `Cargo.lock` into
 `licenses/rust-crates.txt` by `scripts/collect-crate-licenses.ts`, and
 `npm run check:repo` fails if the two disagree. No npm dependency walk
@@ -141,6 +149,7 @@ src/scan_match.rs  the relaxation ladder and material search (shared/scanMatch.t
 src/scan_pack.rs   the packed scan-index blob (shared/scanPack.ts)
 src/key_index.rs   the inverted key index exact search answers from (shared/keyIndex.ts)
 src/sql.rs       SQL mirrored from the TS side, each constant naming its source
+src/tablebase.rs Syzygy probing (no TS mirror — server/tablebaseNative.ts owns it)
 ```
 
 Every file that mirrors something names it. Keep that pairing — it is

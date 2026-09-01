@@ -7,8 +7,23 @@
  * The app can take its endgame verdicts from three places now — the
  * public server, a lila-tablebase of your own, or the native prober
  * reading `.rtbz` files directly — and a user is entitled to assume all
- * three say the same thing. Two of them are somebody else's code; the
- * third is ours, and this is how it earns the same trust.
+ * three say the same thing.
+ *
+ * Be precise about what that means here, because it decides what this
+ * script can and cannot prove. The Syzygy reading is `shakmaty-syzygy`
+ * in ALL THREE cases: lila-tablebase is built on the same crate, so
+ * asking Lichess and asking our binary asks the same decoder. What is
+ * ours is the wrapper around it — the piece-count gate, walking the
+ * legal moves, probing each child position, and reporting the result
+ * from the right side of the board. That last one is why this exists: a
+ * point of view inverted by mistake would report every winning move as
+ * losing, with no crash and nothing in a log.
+ *
+ * So this catches a wrapper that mishandles what the decoder said. It
+ * CANNOT catch the decoder being wrong, because both sides would be
+ * wrong identically and agree. That trust sits with the crate, and is
+ * the trade taken when it was chosen over writing a prober from
+ * scratch.
  *
  * It walks random legal endings, asks the native prober and
  * tablebase.lichess.ovh about each, and compares the verdict for the
