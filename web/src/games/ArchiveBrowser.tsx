@@ -1139,9 +1139,16 @@ export function ArchiveBrowser({
           the prompt vanished, the panel collapsed to its bar, and the
           results arrived somewhere below the fold. Rows in the same box
           instead, so the panel keeps its size and its place. */}
+      {/* dense and the column header follow the density the list will
+          settle at — this wait ends in a month auto-selected and drawn,
+          and at table density that is one-line rows under the sticky
+          header band: card-shaped placeholders here stood 509px against
+          204 of rows (SkeletonGameRows' own measurement), and the 28px
+          band popped in on top. */}
       {!month && loading === 'months' && (
-        <div className="border-border min-h-0 flex-1 border-t">
-          <SkeletonGameRows rows={6} />
+        <div className="border-border min-h-0 flex-1 border-t" style={table ? tableVars : undefined}>
+          {table && <GameTableHeader withStanding={selecting} />}
+          <SkeletonGameRows rows={6} dense={table} />
         </div>
       )}
 
