@@ -10,6 +10,36 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 Landed after v0.7.1 was tagged, so it is in the repository and in no
 installer. This section becomes the next version's heading.
 
+- **Another round against placeholders that lied about their size.** Nine
+  more stand-ins were re-read against the elements they stand for and
+  fixed: the Settings recovery card reserved 112px for a card that
+  measures 146 (it now draws the card's own heading and its paragraph's
+  real words, invisibly, so it wraps right at every width — measured 146
+  against 146); the home checklist reserved one line per step where its
+  sentences wrap to two on a phone and its header had no room for the
+  dismiss button a thumb gets (measured at 375px: placeholder and card
+  both 213px, row for row); and smaller cases of the same defect in the
+  opening map's tag list and field table, the grow dialog, the archive's
+  lookup rows (which now dress for table density, header included), the
+  cycles panel's line spacing, the note placeholder's scroll floor, and
+  the board pages' side column, which now scrolls where the real ones do
+  and reads the chapters height this device already dragged the panel to.
+
+- **More pages remember their own shape.** The reservation idea the home
+  page shipped with — size the wait from what this device saw last time,
+  never trust it past one answer — now covers four more waits. The
+  puzzles page remembers whether the vault has a puzzle database, so a
+  vault without one waits on the setup card's own shape instead of
+  drawing the whole trainer and replacing it wholesale. The Games pane
+  remembers whether the collection had games, so a reload opens on your
+  games instead of opening on Databases and swapping panes when the
+  answer lands. The theme wall remembers its histogram — the most stable
+  shape in the app — and now reserves its exact sections and cards
+  (measured: pixel-identical through the swap, where the old guess stood
+  3 sections for 9). And the puzzles hub reserves the "Solved today"
+  line on the days it was actually there, dated so yesterday's training
+  cannot invent a line this morning.
+
 - **Two panels that moved the page while it loaded.** The home page's
   Continue card has been reserved to the pixel for two releases, and it
   still jumped on every launch — because the page is CENTRED, and the two
