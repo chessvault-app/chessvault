@@ -17,6 +17,7 @@ const USAGE: &str = "usage:
   chessvault-core index <name> [--append] --data <dir>
   chessvault-core optimize <name> --data <dir>
   chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec>) [--filters <json>] --data <dir>
+  chessvault-core tablebase --tables <dir>
   chessvault-core capabilities";
 
 fn valid_name(name: &str) -> bool {
@@ -37,6 +38,7 @@ struct Args {
     filters: Option<String>,
     match_mode: Option<String>,
     material: Option<String>,
+    tables: Option<PathBuf>,
 }
 
 fn parse(args: &[String]) -> Result<Args, String> {
@@ -49,6 +51,7 @@ fn parse(args: &[String]) -> Result<Args, String> {
         filters: None,
         match_mode: None,
         material: None,
+        tables: None,
     };
     let mut i = 0;
     while i < args.len() {
@@ -73,6 +76,10 @@ fn parse(args: &[String]) -> Result<Args, String> {
             "--match" => {
                 i += 1;
                 out.match_mode = Some(args.get(i).ok_or("--match needs a value")?.clone());
+            }
+            "--tables" => {
+                i += 1;
+                out.tables = Some(PathBuf::from(args.get(i).ok_or("--tables needs a value")?));
             }
             "--material" => {
                 i += 1;
@@ -114,6 +121,30 @@ fn main() -> ExitCode {
             })
         );
         return ExitCode::SUCCESS;
+    }
+
+    // Before the --data check, like `capabilities`: this mode reads
+    // tables, not a database, and it is the one command that STAYS —
+    // stdin is a queue of positions and the process lives as long as the
+    // server wants answers (see native/src/tablebase.rs).
+    if command == "tablebase" {
+        let Some(dir) = args.tables.clone() else {
+            eprintln!("--tables <dir> is required");
+            return ExitCode::from(2);
+        };
+        let stdin = std::io::stdin();
+        let stdout = std::io::stdout();
+        return match chessvault_core::tablebase::run_tablebase(
+            &dir,
+            stdin.lock(),
+            stdout.lock(),
+        ) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("{error}");
+                ExitCode::FAILURE
+            }
+        };
     }
 
     let Some(data) = args.data.clone() else {

@@ -6,6 +6,18 @@ here has a JavaScript twin under `scripts/` and `server/`; if this crate
 is never built, the app runs those instead and behaves identically, only
 slower.
 
+There is a fifth command, and it breaks two of those sentences on
+purpose. `chessvault-core tablebase --tables <dir>` reads Syzygy endgame
+files and answers positions from them; it has no JavaScript twin (the
+app asks a tablebase server instead when this is not available), and it
+does not start, work and exit like a job — it STAYS, holding its tables
+memory-mapped and answering questions on stdin until the server is done
+with it. Probing wants a warm mapping: a process per lookup would spend
+tens of milliseconds starting up to read a few hundred bytes. So its
+shape is `server/scanWorker.ts`'s — one owner of one structure, with
+requests queued into it — not this binary's spawn-per-job shape, and
+`server/tablebaseNative.ts` is the half that owns its lifetime.
+
 ```bash
 npm run build:native      # cargo build --release, from the repo root
 npm run test:native       # the parity fixtures below
@@ -58,6 +70,20 @@ version has to stay readable.
 `CHESS_NATIVE=0` makes the server ignore the binary and spawn the
 JavaScript children. That is how the two are compared on the same
 machine and the same data.
+
+The tablebase command has no JS twin to be pinned to, so it is pinned to
+the reference implementation instead — the same rule, a different
+yardstick:
+
+```bash
+npm run check:tablebase -- --tables <dir> --positions 200
+```
+
+It walks random legal endings, asks this binary and
+tablebase.lichess.ovh about each, and compares the verdict for the
+position and for every legal move. The failure it exists to catch is the
+same one: not a crash, but a confident wrong answer. 120 positions
+agreed when the command was written.
 
 ## Filters are negotiated, not assumed
 

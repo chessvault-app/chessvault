@@ -35,6 +35,7 @@
     "tune:dbs": "tsx scripts/tune-dbs.ts",
     "build:native": "cargo build --release --manifest-path native/Cargo.toml",
     "test:native": "cargo test --manifest-path native/Cargo.toml",
+    "check:tablebase": "tsx scripts/tablebase-parity.ts",
     "build:native-goldens": "tsx scripts/export-native-goldens.ts",
     "desktop": "electron desktop/main.mjs",
     "desktop:package": "node desktop/build-server.mjs && npm run build && electron-builder --win nsis",

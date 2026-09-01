@@ -31,7 +31,7 @@ Anything here travels with the app to whoever installs or visits it.
 | Reference games | `data/refgames/`, demo subset | CC0-1.0, derived from the Lichess database |
 | ~160 other npm packages (the build regenerates the exact list) | bundled or shipped beside the server | MIT, ISC, BSD-2-Clause, Apache-2.0, Python-2.0, BlueOak-1.0.0 |
 | Electron, and with it Chromium and Node | desktop installer only | MIT, plus 773 components listed in `LICENSES.chromium.html` |
-| The native core's 47 Rust crates (`chessvault-core`, built from `native/`) | desktop installer only, beside the server bundle | mostly MIT/Apache-2.0; `shakmaty` and `pgn-reader` are GPL-3.0-or-later, plus one Zlib and one Unicode-3.0 component |
+| The native core's 55 Rust crates (`chessvault-core`, built from `native/`) | desktop installer only, beside the server bundle | mostly MIT/Apache-2.0; `shakmaty`, `shakmaty-syzygy` and `pgn-reader` are GPL-3.0-or-later, plus one Zlib and one Unicode-3.0 component |
 
 The npm list is generated from `node_modules` at build time, so it cannot go
 stale. Electron is a devDependency — nothing imports it — but the desktop
