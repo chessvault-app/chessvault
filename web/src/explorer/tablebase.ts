@@ -41,6 +41,11 @@ export interface TablebaseMove {
 }
 
 export interface TablebaseAnswer {
+  /** Which server answered — `lichess`, or the host of this vault's own.
+      Worth showing, quietly, because a vault CAN be pointed at its own
+      tables (Settings > Tablebase) and then "who says so" has more than
+      one answer. */
+  source?: string;
   category: Category;
   dtz: number | null;
   dtm: number | null;

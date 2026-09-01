@@ -43,6 +43,9 @@ interface Settings {
   gate: boolean;
   totp: boolean;
   lichess: { configured: boolean; last4: string | null };
+  /** The Syzygy server this vault asks, and what it falls back to when
+      nobody has said — see server/tablebase.ts. */
+  tablebase: { url: string | null; fallback: string };
   vaultPath: string;
   version: string;
 }
@@ -154,7 +157,7 @@ export function SettingsPage() {
             <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
-            <TablebaseCard />
+            <TablebaseCard settings={settings} onChanged={refresh} />
             <BrowsedGamesCard />
             <StorageCard />
             <RecoveryCard />
@@ -831,9 +834,31 @@ function DocumentsCard() {
  * Beside the token card rather than under Documents: both cards are
  * about what this vault says to somebody else's server.
  */
-function TablebaseCard() {
+function TablebaseCard({
+  settings,
+  onChanged,
+}: {
+  settings: Settings;
+  onChanged: () => Promise<void>;
+}) {
   const tablebase = usePrefs((p) => p.tablebase);
   const setTablebase = usePrefs((p) => p.setTablebase);
+  const [url, setUrl] = useState(settings.tablebase.url ?? '');
+  const [note, setNote] = useState<Note>(null);
+
+  const save = async (): Promise<void> => {
+    try {
+      await api('/api/settings/tablebase', { method: 'PUT', json: { url } });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      return;
+    }
+    setNote({
+      kind: 'ok',
+      text: url.trim() === '' ? t('Back to the public tablebase.') : t('Tablebase server saved.'),
+    });
+    await onChanged();
+  };
 
   return (
     <Card icon={Crown} title={t('Tablebase')}>
@@ -849,6 +874,37 @@ function TablebaseCard() {
           aria-label={t('Endgame tablebase')}
         />
       </SettingRow>
+      {/* The switch above decides WHETHER to ask; this decides WHOM. It is
+          the answer for anyone the sentence above puts off: run Lichess's
+          own tablebase server (it is open source) over your own copy of
+          the tables, point this at it, and nothing leaves your network.
+          A vault setting rather than a device one — it describes which
+          tables this vault trusts, and a phone opening it should ask the
+          same server. */}
+      <p className="text-muted-foreground text-sm">
+        {t(
+          'Or answer from your own tables: run lila-tablebase over them and give its address here. Empty means the public one.',
+        )}
+      </p>
+      <div className="flex items-center gap-2">
+        <ClearableInput
+          inputSize="lg"
+          className="flex-1"
+          autoComplete="off"
+          placeholder={settings.tablebase.fallback}
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          aria-label={t('Tablebase server')}
+        />
+        <Button
+          variant="default"
+          disabled={url.trim() === (settings.tablebase.url ?? '')}
+          onClick={() => void save()}
+        >
+          {t('Save')}
+        </Button>
+      </div>
+      <Feedback note={note} />
     </Card>
   );
 }

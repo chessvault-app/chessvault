@@ -78,9 +78,15 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
     // when the panel is dragged taller.
     <div className="border-border flex max-h-[55%] shrink-0 flex-col border-b">
       <div className="flex h-8 shrink-0 items-center gap-2 px-3">
-        <span className="text-muted-foreground shrink-0 text-xs font-semibold">
-          {t('Tablebase')}
-        </span>
+        {/* The label carries who answered, because a vault can be pointed
+            at its own server and then that is a real question. Nothing is
+            printed for it: one word plus a hostname in a 8px-tall strip
+            would push the verdict itself off the end. */}
+        <TitleTip title={answer?.source ? t('Answered by {source}', { source: answer.source }) : undefined}>
+          <span className="text-muted-foreground shrink-0 text-xs font-semibold">
+            {t('Tablebase')}
+          </span>
+        </TitleTip>
         {answer && (
           <>
             <TitleTip title={categoryLabel(answer.category)}>

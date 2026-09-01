@@ -137,6 +137,11 @@ function buildApp(): Hono {
       gate: false,
       totp: false,
       lichess: { configured: false, last4: null },
+      // Shaped like the real answer even though the demo draws no
+      // Tablebase card (it never probes): a page that reads a field the
+      // route does not send is one refresh away from a crash, and the
+      // cost of not lying about the shape is one line.
+      tablebase: { url: null, fallback: 'https://tablebase.lichess.ovh/standard' },
       home,
       training,
       vaultPath: 'demo',

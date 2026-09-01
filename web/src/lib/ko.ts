@@ -1299,6 +1299,12 @@ export const ko: Record<string, string> = {
     '기물이 7개 이하인 포지션의 정확한 결과를 탐색기에 표시합니다. 포지션은 Lichess의 공개 테이블베이스로 전송되며, 모든 답은 이 금고의 디스크에 보관됩니다 — 한 번 조회한 엔드게임은 이후 오프라인에서도 답을 얻습니다.',
   'The tablebase is out of reach, and this position is not cached.':
     '테이블베이스에 연결할 수 없고, 이 포지션은 캐시에 없습니다.',
+  'Answered by {source}': '{source}이(가) 답했습니다',
+  'Or answer from your own tables: run lila-tablebase over them and give its address here. Empty means the public one.':
+    '직접 가진 테이블로 답하게 할 수도 있습니다. 그 위에 lila-tablebase를 띄우고 주소를 여기에 적으세요. 비워 두면 공개 서버를 씁니다.',
+  'Tablebase server': '테이블베이스 서버',
+  'Tablebase server saved.': '테이블베이스 서버를 저장했습니다.',
+  'Back to the public tablebase.': '공개 테이블베이스로 되돌렸습니다.',
   Checkmate: '체크메이트',
   Stalemate: '스테일메이트',
   Win: '승리',
