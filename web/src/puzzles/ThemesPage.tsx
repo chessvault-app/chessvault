@@ -110,6 +110,46 @@ export function themeLabel(theme: string): string {
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
+/** Every theme a GROUPS section claims — what tells a leftover apart. */
+const KNOWN = new Set(GROUPS.flatMap((g) => g.themes));
+
+/**
+ * The page's shape last visit, per device: cards per drawn section, the
+ * "More" group last. The real counts come from the vault's puzzle
+ * database, so 3×6 was wrong in both directions — a full Lichess dump
+ * draws ~9 sections and ~70 cards, and a vault with no database draws
+ * nothing at all. The histogram does not move once the database is
+ * built, which makes it the most stable shape in the app to remember.
+ * Same bargain as home/reservation.ts: a paint hint, never the
+ * authority, corrected by the answer. Only a successful answer writes
+ * it — an outage sets `themes` to [] too, and recording that would
+ * reserve nothing at a vault that has plenty.
+ */
+const SHAPE_KEY = 'vault:puzzle-themes-shape';
+
+/**
+ * The stored shape as counts: positive whole numbers, clamped the way
+ * reservation.ts clamps — a count past any real group's size is rounded
+ * down, not thrown away, because dropping it would take the reservation
+ * from the fullest vault. [] is a vault seen WITHOUT a database (reserve
+ * nothing); null is a device that has never been here (guess the
+ * default).
+ */
+function parseShape(raw: string | null): number[] | null {
+  if (raw === null) return null;
+  let stored: unknown;
+  try {
+    stored = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(stored)) return null;
+  return stored
+    .filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n > 0)
+    .slice(0, GROUPS.length + 1)
+    .map((n) => Math.min(n, 24));
+}
+
 interface ThemeCount {
   theme: string;
   count: number;
@@ -121,13 +161,27 @@ export function ThemesPage() {
   const [total, setTotal] = useState(0);
   const [failed, setFailed] = useState(0);
 
+  // What this device reserves while the answer is in the air — read once;
+  // the wait it stands through cannot change it.
+  const [reserved] = useState(() => parseShape(localStorage.getItem(SHAPE_KEY)));
+
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     void api<{ themes?: ThemeCount[]; puzzles?: number; failed?: number }>('/api/puzzles/meta')
       .then((d) => {
-        setThemes(d.themes ?? []);
+        const list = d.themes ?? [];
+        setThemes(list);
         setTotal(d.puzzles ?? 0);
         setFailed(d.failed ?? 0);
+        // Remembered for the next visit's reservation, above. Query
+        // filtering plays no part: this is the page's whole histogram.
+        const present = new Set(list.map((t) => t.theme));
+        const counts = GROUPS.map((g) => g.themes.filter((th) => present.has(th)).length).filter(
+          (n) => n > 0,
+        );
+        const extra = list.filter((t) => !KNOWN.has(t.theme)).length;
+        if (extra > 0) counts.push(extra);
+        localStorage.setItem(SHAPE_KEY, JSON.stringify(counts));
       })
       // An empty page under an error line, never an immortal skeleton.
       .catch((e: unknown) => {
@@ -144,8 +198,7 @@ export function ThemesPage() {
     query.trim() === '' || themeLabel(theme).toLowerCase().includes(query.trim().toLowerCase());
 
   const byName = new Map((themes ?? []).map((t) => [t.theme, t.count]));
-  const known = new Set(GROUPS.flatMap((g) => g.themes));
-  const leftovers = (themes ?? []).filter((t) => !known.has(t.theme) && matches(t.theme));
+  const leftovers = (themes ?? []).filter((t) => !KNOWN.has(t.theme) && matches(t.theme));
 
   return (
     // `block`: this page spaces its sections with their own margins, not
@@ -199,7 +252,18 @@ export function ThemesPage() {
         </ChipRow>
 
         {themes === null ? (
-          pending ? <SkeletonThemeGroups /> : null
+          pending ? (
+            // The shape this vault drew last visit; the 3×6 guess only
+            // for a device that has never been here; nothing at all for
+            // a vault seen without a database — its settled page is
+            // empty, and a wall of invented groups would be the jump in
+            // the other direction.
+            reserved === null ? (
+              <SkeletonThemeGroups />
+            ) : reserved.length > 0 ? (
+              <SkeletonThemeGroups counts={reserved} />
+            ) : null
+          ) : null
         ) : (
           <>
             {GROUPS.map((group) => {

@@ -310,15 +310,23 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
 export function SkeletonThemeGroups({
   groups = 3,
   cards = 6,
+  counts,
   className,
 }: {
   groups?: number;
   cards?: number;
+  /**
+   * Cards per group, where the caller knows better than the 3×6 guess —
+   * the themes page stores the histogram its vault drew last visit,
+   * which does not move once the puzzle database is built.
+   */
+  counts?: number[];
   className?: string;
 }) {
+  const shape = counts ?? Array.from({ length: groups }, () => cards);
   return (
     <Loading className={className}>
-      {Array.from({ length: groups }, (_, g) => (
+      {shape.map((n, g) => (
         <section key={g} className="mb-4">
           {/* The group heading: an h2 at text-sm, whose line box is 20px
               — measured. It was drawn on a 16px line. */}
@@ -326,7 +334,7 @@ export function SkeletonThemeGroups({
             <Skeleton className="h-2.5 w-28" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: cards }, (_, i) => (
+            {Array.from({ length: n }, (_, i) => (
               <SkeletonThemeCard key={i} />
             ))}
           </div>
