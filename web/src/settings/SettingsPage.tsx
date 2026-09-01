@@ -1318,6 +1318,15 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
 // --- Deleted documents -------------------------------------------------------
 
 /**
+ * What the card says about itself, named once: the placeholder below
+ * holds the paragraph's place by rendering the same words invisibly, and
+ * two copies of the sentence would wrap differently the day one of them
+ * was edited.
+ */
+const RECOVERY_BLURB =
+  'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.';
+
+/**
  * Bringing back something that is no longer there.
  *
  * The history panel on a document answers "this got wrecked"; it cannot
@@ -1391,16 +1400,35 @@ function RecoveryCard() {
     }
   };
 
-  if (available === null) return pending ? <Skeleton className="h-28 rounded-xl" /> : null;
+  if (available === null)
+    return pending ? (
+      /* The card's own shape, not the bare h-28 this stood at — 112px
+         against a card that is its p-4, a heading, this paragraph at
+         3 lines on a desktop and 5-6 on a phone, and at least the
+         "Nothing is missing." line: ~168px at 768px wide, more below it.
+         Everything under this card took the difference when it landed.
+         The heading is real — it is the one thing about the card the
+         device already knows (the home panels' argument) — and the
+         paragraph is the real words drawn invisibly, so it wraps where
+         they will at every width instead of standing at a guessed line
+         count. */
+      <div role="status" aria-label={t('Loading')} aria-live="polite">
+        <Card icon={History} title={t('Deleted documents')}>
+          <p className="relative text-sm leading-relaxed">
+            <span className="invisible">{t(RECOVERY_BLURB)}</span>
+            <Skeleton className="absolute inset-x-0 inset-y-1" />
+          </p>
+          <div className="flex h-5 items-center">
+            <Skeleton className="h-2.5 w-28" />
+          </div>
+        </Card>
+      </div>
+    ) : null;
   if (!available) return null;
 
   return (
     <Card icon={History} title={t('Deleted documents')}>
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        {t(
-          'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.',
-        )}
-      </p>
+      <p className="text-muted-foreground text-sm leading-relaxed">{t(RECOVERY_BLURB)}</p>
 
       {gone?.length === 0 && (
         <p className="text-muted-foreground text-sm">{t('Nothing is missing.')}</p>
@@ -1538,7 +1566,9 @@ function BrowsedGamesCard() {
         <>
           <div className="divide-border border-border divide-y rounded-lg border">
             <div className="flex items-center gap-2 px-3 py-2">
-              <div className="flex h-5 min-w-0 flex-1 items-center">
+              {/* h-6, not h-5: the name is text-base, whose line box is
+                  24px, and the row takes its height from it. */}
+              <div className="flex h-6 min-w-0 flex-1 items-center">
                 <Skeleton className="h-3 w-24" />
               </div>
               <div className="flex h-5 shrink-0 items-center">
@@ -1548,7 +1578,9 @@ function BrowsedGamesCard() {
           </div>
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-2.5 w-24" />
-            <Skeleton className="h-9 w-20 rounded-lg" />
+            {/* The default button's own h-8 — h-9 only under a coarse
+                pointer (ui/button), the dashboard's fix over again. */}
+            <Skeleton className="h-8 w-20 rounded-lg pointer-coarse:h-9" />
           </div>
         </>
       )}
