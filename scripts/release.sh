@@ -123,6 +123,7 @@ if [ "$PUBLISH" = true ]; then
   echo "release: ${TAG} published with: ${ASSETS}"
 else
   echo "  watch:   gh run watch \$(gh run list --workflow=desktop --limit 1 --json databaseId -q '.[0].databaseId')"
+  echo "  notes:   docs/release-notes.md — the body comes from the update log, and is never empty"
   echo "  publish: gh release view ${TAG} --web"
   echo
   echo "  Publish only AFTER that build finishes: electron-builder fills a DRAFT"
