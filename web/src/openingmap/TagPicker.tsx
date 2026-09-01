@@ -160,7 +160,17 @@ export function TagPicker({
                 // same 36px row the real ones keep so the list does not
                 // re-space itself as it lands.
                 listPending ? (
-                  <div role="status" aria-label={t('Loading')} aria-live="polite">
+                  // flex + the list's own gap-1: this wrapper is ONE item
+                  // of the gapped column, so without a gap of its own the
+                  // six rows stood 20px shorter than the six that replace
+                  // them, and the list re-spaced itself as it landed —
+                  // the exact move the matched row heights exist to stop.
+                  <div
+                    role="status"
+                    aria-label={t('Loading')}
+                    aria-live="polite"
+                    className="flex flex-col gap-1"
+                  >
                     {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => (
                       <div key={i} className="flex min-h-9 items-center gap-1">
                         <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">

@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n';
 import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { Field } from '@/components/ui/field';
-import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
+import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { TitleTip } from '@/components/title-tip';
 import type { NodeCoverage } from './coverage';
 import { LIST, MoveCell, MoveResult, ROW, RowTail } from './FieldRow';
@@ -110,7 +110,31 @@ export function FieldStats({
   if (pending) {
     return (
       <Field label="Against the field">
-        <SkeletonRows rows={4} />
+        {/* The table's own rows, not SkeletonRows: these rows are the
+            subgrid ROW in a bordered rounded box with the even-row
+            stripe, no dividers and no leading glyph — the generic list
+            row drew dividers, px-3 and an icon over rows that have none
+            of the three, so the table re-spaced as it landed. */}
+        <div className={LIST} role="status" aria-label={t('Loading')} aria-live="polite">
+          {[0, 1, 2, 3].map((at) => (
+            <div
+              key={at}
+              className={cn(
+                ROW,
+                'rounded-lg border border-transparent px-2 py-1.5',
+                at % 2 === 1 && 'bg-muted/50',
+              )}
+            >
+              <div className="flex h-5 items-center">
+                <Skeleton className={cn('h-2.5', at % 2 ? 'w-10' : 'w-12')} />
+              </div>
+              <Skeleton className="h-1.5 w-full rounded-full" />
+              <div className="flex h-5 items-center justify-end">
+                <Skeleton className="h-2.5 w-8" />
+              </div>
+            </div>
+          ))}
+        </div>
       </Field>
     );
   }

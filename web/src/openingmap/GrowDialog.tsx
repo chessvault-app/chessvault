@@ -190,9 +190,25 @@ export function GrowDialog({
           </div>
         </div>
         {lines === null ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-4" />
-            <Skeleton className="h-4" />
+          /* `contents`, so the two blocks sit in the dialog's own flow
+             with its real gap between them — a wrapper box of its own
+             put a made-up gap where the dialog has one already. The
+             blocks are the settled shape's: the heading line, then tips
+             at the list's own gap-0.5. Both on 20px line boxes — the
+             text is text-sm, and the bare h-4 bars stood 16. The tip
+             COUNT is per-position and cannot be known here; two is a
+             stand-in, not a claim. */
+          <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
+            <div className="flex h-5 items-center">
+              <Skeleton className="h-2.5 w-2/5" />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {['w-3/5', 'w-1/2'].map((w) => (
+                <div key={w} className="flex h-5 items-center">
+                  <Skeleton className={`h-2.5 ${w}`} />
+                </div>
+              ))}
+            </div>
           </div>
         ) : lines.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
