@@ -2359,19 +2359,20 @@
                   </tr>
                   <tr>
                     <td>Tablebase</td>
-                    <td data-ko="스위치 하나 — <strong>Endgame tablebase</strong>. «Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.» 기본은 켜짐이며, 이 기기에만 적용됩니다. 끄면 조회가 아예 나가지 않습니다. 그 아래는 답이 어디서 오는지를, 간단한 것부터 놓았습니다. 먼저 이 서버에 있는 Syzygy 파일 폴더 — 네이티브 코어가 다른 것을 띄우지 않고 그대로 읽습니다(«Answering from the tables in this folder — no server involved.»). 그다음이 테이블베이스 서버로, «tables on another machine, or when this one has no native binary to read them with»를 위한 것이며 비워 두면 Lichess의 것을 씁니다. 둘 다 기기가 아니라 금고의 설정이고, 저장하면 다시 띄우지 않아도 적용되며, 출처마다 캐시가 따로 쌓입니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다. <strong>Cached answers</strong> → <strong>Forget</strong>은 캐시를 모두 버리고 몇 개였는지 알려 줍니다. 직접 띄운 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다 — 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
-                      One switch, <strong>Endgame tablebase</strong>: “Show the exact result for
-                      positions of seven pieces or fewer, in the explorer. The position is sent to
-                      Lichess’s public tablebase, and every answer is kept on this vault’s disk —
-                      so an ending looked up once is answered offline afterwards.” On by default,
-                      and per device; off, nothing is asked at all. Below it, where the answers
-                      come from, simplest first: a folder of Syzygy files on this server, read
-                      directly with the native core and nothing else running (“Answering from the
-                      tables in this folder — no server involved.”); then a tablebase server, for
-                      “tables on another machine, or when this one has no native binary to read
-                      them with” — empty means Lichess's. Both are vault settings rather than
-                      per-device ones, saved without a restart, and each source's answers are
-                      cached apart from the others'. What they take is the “Tablebase cache” row of
+                    <td data-ko="<strong>Use the tablebase</strong> 스위치는 이 기기만의 것입니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «Answers come from»은 금고의 설정으로, <strong>Lichess</strong> · <strong>Your server</strong> · <strong>Table files</strong> 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타나고, 지금 어디가 답하고 있는지는 한 줄로 적힙니다(«Answering from Lichess’s public tablebase.»). 저장하면 다시 띄우지 않아도 적용되며, 출처마다 캐시가 따로 쌓입니다. <strong>Table files</strong>는 앱과 서버가 같은 컴퓨터일 때만 나타납니다 — 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이라, 다른 곳의 서버라면 그 서버의 금고 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다. <strong>Cached answers</strong> → <strong>Forget</strong>은 캐시를 모두 버리고 몇 개였는지 알려 줍니다. 직접 띄운 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다 — 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
+                      <strong>Use the tablebase</strong> is the switch, and it is this device's
+                      alone: off, nothing is asked from here at all. Under it,
+                      <strong>Answers come from</strong> — the vault's own setting, one choice of
+                      <strong>Lichess</strong>, <strong>Your server</strong> or
+                      <strong>Table files</strong>, with only the field that choice needs shown
+                      beneath it, and a line saying which is answering right now (“Answering from
+                      Lichess’s public tablebase.”). Saved without a restart, and each source's
+                      answers are cached apart from the others'.
+
+                      <strong>Table files</strong> appears only when the app and the server are the
+                      same computer — a path on a disk you cannot see is not a question worth
+                      asking, so on a server elsewhere the panel points at
+                      <code>tablebaseDir</code> in that server's vault config instead. What they take is the “Tablebase cache” row of
                       Storage used, below. <strong>Cached answers</strong> →
                       <strong>Forget</strong> drops them all and says how many, which is what to
                       press after adding tables to your own server: answers never expire, so an

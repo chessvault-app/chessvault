@@ -1,15 +1,15 @@
 import { execFile } from 'node:child_process';
 import { writeAtomic } from './atomic.ts';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
-import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
+import {APP_VERSION, LOOPBACK_ONLY, VAULT, VAULT_CONFIG} from './paths.ts';
 import { revokeAllSessions } from './auth.ts';
 import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseHomeLayout } from '../shared/homeLayout.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
-import { DEFAULT_TABLEBASE, normaliseTablebaseUrl } from './tablebase.ts';
+import { DEFAULT_TABLEBASE, normaliseTablebaseUrl, readTablebaseConfig } from './tablebase.ts';
 import { nativeTablebase } from './tablebaseNative.ts';
 
 /**
@@ -38,6 +38,8 @@ interface Config {
       and with the native binary built, it answers instead of any server
       — see server/tablebaseNative.ts. */
   tablebaseDir?: string;
+  /** Which of the three sources answers — see server/tablebase.ts. */
+  tablebaseSource?: string;
   profile?: Profile;
   /** How this vault's home page is arranged — see shared/homeLayout.ts.
       Absent means nobody has ever said, which is not the same as having
@@ -93,16 +95,26 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       // Both halves: what this vault is pointed at (null while nobody has
       // said) and what that means when nobody has, so the page can show
       // the default as a placeholder without knowing the URL itself.
-      tablebase: {
-        url: normaliseTablebaseUrl(config.tablebaseUrl),
-        fallback: DEFAULT_TABLEBASE,
-        // The directory as configured, and whether it can actually
-        // answer right now: a path that has gone missing, or a build
-        // with no native binary, silently falls back to the server, and
-        // a page that did not say so would be lying by omission.
-        dir: typeof config.tablebaseDir === 'string' ? config.tablebaseDir : null,
-        local: typeof config.tablebaseDir === 'string' && nativeTablebase(config.tablebaseDir) !== null,
-      },
+      tablebase: (() => {
+        const chosen = readTablebaseConfig(configPath);
+        return {
+          // The named choice, and both fields, whichever is live — the
+          // page shows the one its choice needs and keeps the other.
+          source: chosen.source,
+          url: normaliseTablebaseUrl(config.tablebaseUrl),
+          fallback: DEFAULT_TABLEBASE,
+          dir: chosen.dir,
+          // Whether the chosen source can actually answer right now. A
+          // folder that has gone, or a build with no native binary,
+          // falls back to a server; a page that did not say so would be
+          // lying by omission.
+          local: chosen.source === 'files' && chosen.dir !== null && nativeTablebase(chosen.dir) !== null,
+          // Whether asking for a filesystem path is a fair question at
+          // all: on a server in another room the person reading this is
+          // not the person who can see its disks (server/paths.ts).
+          sameMachine: LOOPBACK_ONLY,
+        };
+      })(),
       // Normalised on the way out as well as in: a config edited by hand
       // must not be able to hand the page something it cannot draw.
       home: normaliseHomeLayout(config.home),
@@ -229,29 +241,50 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   /**
    * The directory of table files, or none.
    *
-   * Only checked for being a directory that exists — its CONTENTS are
-   * the prober's business, and a directory holding three of the 145
-   * files is a legitimate setup (the small endings are the ones people
-   * actually own). Saving a path that cannot answer is allowed and
-   * reported back rather than refused, because the honest failure is
-   * visible in Settings, not hidden behind a rejected form.
+   * Deliberately incurious about what is there. It does not check that
+   * the path exists, which it used to and should not have: answering
+   * 400 for "no such directory" and 200 otherwise turned this route
+   * into a way to ask which paths exist on the server, and a vault with
+   * no password has nothing in front of it. What is there is the
+   * prober's business anyway — a folder holding three of the 145 files
+   * is a legitimate setup — and whether it actually answers comes back
+   * as `local`, which is the useful signal and not an existence oracle,
+   * since a false also means "no native binary".
    */
   api.put('/settings/tablebase-dir', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { dir?: unknown };
     const dir = typeof body.dir === 'string' ? body.dir.trim() : '';
-    if (dir === '') {
-      writeConfig((config) => {
-        delete config.tablebaseDir;
-      });
-      return c.json({ ok: true, dir: null, local: false });
-    }
-    if (dir.length > 4096 || !existsSync(dir) || !statSync(dir).isDirectory()) {
-      return c.json({ error: 'no such directory on the server' }, 400);
+    if (dir.length > 4096) return c.json({ error: 'that path is too long' }, 400);
+    writeConfig((config) => {
+      if (dir === '') delete config.tablebaseDir;
+      else config.tablebaseDir = dir;
+    });
+    return c.json({ ok: true, dir: dir || null, local: dir !== '' && nativeTablebase(dir) !== null });
+  });
+
+  /**
+   * Which of the three answers this vault's endgames.
+   *
+   * Stored rather than inferred from which field holds something: that
+   * inference WAS the panel's confusion — three controls implying a
+   * precedence nobody could see, and no way back to the public server
+   * except by emptying boxes.
+   */
+  api.put('/settings/tablebase-source', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { source?: unknown };
+    const source = body.source;
+    if (source !== 'lichess' && source !== 'server' && source !== 'files') {
+      return c.json({ error: 'unknown tablebase source' }, 400);
     }
     writeConfig((config) => {
-      config.tablebaseDir = dir;
+      config.tablebaseSource = source;
     });
-    return c.json({ ok: true, dir, local: nativeTablebase(dir) !== null });
+    const chosen = readTablebaseConfig(configPath);
+    return c.json({
+      ok: true,
+      source,
+      local: source === 'files' && chosen.dir !== null && nativeTablebase(chosen.dir) !== null,
+    });
   });
 
   api.put('/settings/tablebase', async (c) => {

@@ -304,40 +304,6 @@ export function syzygyServer(
   };
 }
 
-/** What this vault says about tablebases, read per request so that
-    saving in Settings takes effect without a restart — the same thing
-    the explorer proxy does with its token. */
-function configured(configPath: string): { url: string; dir: string | null } {
-  try {
-    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as {
-      tablebaseUrl?: unknown;
-      tablebaseDir?: unknown;
-    };
-    return {
-      url: normaliseTablebaseUrl(config.tablebaseUrl) ?? DEFAULT_TABLEBASE,
-      dir: typeof config.tablebaseDir === 'string' && config.tablebaseDir.trim() !== ''
-        ? config.tablebaseDir.trim()
-        : null,
-    };
-  } catch {
-    return { url: DEFAULT_TABLEBASE, dir: null };
-  }
-}
-
-/**
- * Which source answers: this machine's own tables where it has them,
- * the network otherwise.
- *
- * Local first, and not as an optimisation — it is the answer that needs
- * nothing and tells nobody. It steps aside silently when the tables are
- * not there or the binary was never built (`nativeTablebase` returns
- * null), because a vault whose table directory has gone missing should
- * fall back to working, not to failing.
- */
-function proberFor(configPath: string): TablebaseProbe {
-  const { url, dir } = configured(configPath);
-  return (dir && nativeTablebase(dir)) || syzygyServer(url);
-}
 
 /**
  * The position as both the cache key and the upstream question, or null
@@ -370,6 +336,72 @@ export function tablebaseFen(fen: string): string | null {
 export function cachePath(dir: string, source: string, fen: string): string {
   const key = createHash('sha256').update(fen).digest('hex').slice(0, 32);
   return resolve(dir, source, `${key}.json`);
+}
+
+/** Which of the three a vault has chosen. Absent in a config written
+    before the choice was explicit, which is read below as whichever
+    field was filled — the precedence the panel used to only imply. */
+export type TablebaseSource = 'lichess' | 'server' | 'files';
+
+export interface TablebaseConfig {
+  source: TablebaseSource;
+  url: string;
+  dir: string | null;
+}
+
+/**
+ * What this vault says about tablebases, read per request so that saving
+ * in Settings takes effect without a restart — the same thing the
+ * explorer proxy does with its token.
+ *
+ * The choice is STORED rather than inferred. It used to be inferred from
+ * which field held something, which made the panel's three controls one
+ * hidden precedence rule that nobody could see: picking your own server
+ * while a folder was set did nothing, and there was no way to go back to
+ * the public one without emptying boxes. A named choice means the fields
+ * keep their values and the source is the source.
+ */
+export function readTablebaseConfig(configPath: string): TablebaseConfig {
+  let raw: { tablebaseUrl?: unknown; tablebaseDir?: unknown; tablebaseSource?: unknown } = {};
+  try {
+    raw = JSON.parse(readFileSync(configPath, 'utf-8')) as typeof raw;
+  } catch {
+    // No config, or an unreadable one: the public server, as always.
+  }
+  const url = normaliseTablebaseUrl(raw.tablebaseUrl) ?? DEFAULT_TABLEBASE;
+  const dir =
+    typeof raw.tablebaseDir === 'string' && raw.tablebaseDir.trim() !== ''
+      ? raw.tablebaseDir.trim()
+      : null;
+  const stated = raw.tablebaseSource;
+  const source: TablebaseSource =
+    stated === 'lichess' || stated === 'server' || stated === 'files'
+      ? stated
+      : // The old inference, kept for configs written before the choice
+        // was named: a folder beat an address beat the public server.
+        dir
+        ? 'files'
+        : normaliseTablebaseUrl(raw.tablebaseUrl)
+          ? 'server'
+          : 'lichess';
+  return { source, url, dir };
+}
+
+/**
+ * The prober for that choice.
+ *
+ * `files` falls back rather than failing: a folder that has gone, or a
+ * build with no native binary, should leave endgames working through a
+ * server rather than stop answering. Settings says when that is
+ * happening, so the fallback is visible instead of silent.
+ */
+function proberFor(configPath: string): TablebaseProbe {
+  const { source, url, dir } = readTablebaseConfig(configPath);
+  if (source === 'files' && dir) {
+    const local = nativeTablebase(dir);
+    if (local) return local;
+  }
+  return syzygyServer(source === 'server' ? url : DEFAULT_TABLEBASE);
 }
 
 export function tablebaseApi(

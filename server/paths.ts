@@ -26,6 +26,19 @@ export const VAULT_CONFIG = resolve(VAULT, 'config.json');
     config.json: never committed, excluded from the history repo. */
 export const VAULT_SESSIONS = resolve(VAULT, 'sessions.json');
 
+/**
+ * Which interfaces the server answers on, and whether that means the
+ * only client that can reach it is this machine.
+ *
+ * The desktop app's LOCAL mode sets `CHESS_BIND=127.0.0.1`, so loopback
+ * is a reliable "the server and whoever is looking at it are the same
+ * computer". Settings needs to know: a text box asking for a FILESYSTEM
+ * PATH is a fair question there and an unanswerable one from a phone
+ * pointed at a server in another room.
+ */
+export const BIND = process.env.CHESS_BIND?.trim() || undefined;
+export const LOOPBACK_ONLY = BIND === '127.0.0.1' || BIND === 'localhost' || BIND === '::1';
+
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');

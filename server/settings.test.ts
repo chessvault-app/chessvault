@@ -232,12 +232,17 @@ describe('tablebase endpoint', () => {
     // Not a secret, so unlike the token it is read back — the page shows
     // what this vault is pointed at.
     expect((await (await json('GET', '/api/settings')).json()).tablebase).toEqual({
+      // A vault that has never said anything asks the public server.
+      source: 'lichess',
       url: null,
       fallback: 'https://tablebase.lichess.ovh/standard',
       // Nobody has named a folder of table files, so nothing local can
       // answer and the page says so rather than implying it might.
       dir: null,
       local: false,
+      // Tests run without CHESS_BIND, which is not loopback-only — so
+      // the page would not offer to take a filesystem path.
+      sameMachine: false,
     });
 
     expect((await json('PUT', '/api/settings/tablebase', { url: 'nonsense' })).status).toBe(400);
@@ -261,21 +266,53 @@ describe('tablebase endpoint', () => {
 });
 
 describe('tablebase files', () => {
-  it('takes a directory that exists and nothing else', async () => {
+  it('takes any path and reports whether it answers, never whether it exists', async () => {
+    // Deliberately NOT a 400: answering "no such directory" for one path
+    // and 200 for another turned this route into a way to ask which
+    // paths exist on the server, which a vault with no password has
+    // nothing in front of.
     expect((await json('PUT', '/api/settings/tablebase-dir', { dir: 'nowhere-at-all' })).status)
-      .toBe(400);
-    expect(config().tablebaseDir).toBeUndefined();
+      .toBe(200);
+    expect(config().tablebaseDir).toBe('nowhere-at-all');
+    // What comes back is whether it can actually answer — false here for
+    // either of two reasons, which is what makes it not an oracle.
+    expect((await (await json('GET', '/api/settings')).json()).tablebase.local).toBe(false);
 
-    // The vault directory itself will do: the route checks that a path is
-    // a directory, deliberately NOT that it holds tables — three of the
-    // 145 files is a legitimate setup, and the prober is what knows.
     expect((await json('PUT', '/api/settings/tablebase-dir', { dir: vault })).status).toBe(200);
     expect(config().tablebaseDir).toBe(vault);
-    const read = await (await json('GET', '/api/settings')).json();
-    expect(read.tablebase.dir).toBe(vault);
 
     expect((await json('PUT', '/api/settings/tablebase-dir', { dir: '' })).status).toBe(200);
     expect(config().tablebaseDir).toBeUndefined();
+  });
+});
+
+describe('tablebase source', () => {
+  it('stores the choice rather than inferring it from the fields', async () => {
+    expect((await json('PUT', '/api/settings/tablebase-source', { source: 'nonsense' })).status)
+      .toBe(400);
+
+    // A named choice means a filled field no longer decides: pointing at
+    // a folder AND choosing the public server is a coherent state, and
+    // the folder keeps its value for when the choice comes back.
+    await json('PUT', '/api/settings/tablebase-dir', { dir: vault });
+    expect((await json('PUT', '/api/settings/tablebase-source', { source: 'lichess' })).status)
+      .toBe(200);
+    const read = await (await json('GET', '/api/settings')).json();
+    expect(read.tablebase.source).toBe('lichess');
+    expect(read.tablebase.dir).toBe(vault);
+    expect(read.tablebase.local).toBe(false); // not chosen, so not answering
+  });
+
+  it('reads a config written before the choice was named', async () => {
+    // The old precedence, kept so an existing vault keeps behaving:
+    // a folder beat an address beat the public server.
+    writeFileSync(
+      join(vault, 'config.json'),
+      JSON.stringify({ tablebaseUrl: 'http://localhost:7788/standard' }),
+    );
+    expect((await (await json('GET', '/api/settings')).json()).tablebase.source).toBe('server');
+    writeFileSync(join(vault, 'config.json'), JSON.stringify({ tablebaseDir: vault }));
+    expect((await (await json('GET', '/api/settings')).json()).tablebase.source).toBe('files');
   });
 });
 

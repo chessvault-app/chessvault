@@ -22,7 +22,7 @@ import { tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
-import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
+import { APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -35,8 +35,7 @@ const PORT = Number(process.env.PORT ?? 8787);
  * has no password: without it, opening the app on a café network put an
  * unauthenticated vault on that network.
  */
-const BIND = process.env.CHESS_BIND?.trim() || undefined;
-const LOOPBACK_BIND = BIND === '127.0.0.1' || BIND === 'localhost' || BIND === '::1';
+
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
 // up front so every listing endpoint finds its directory.
@@ -153,7 +152,7 @@ app.use('/*', async (c, next) => {
 // vault has no session for the cookie-based gate to protect, so without
 // this any web page open in the user's own browser could reach the API on
 // loopback — including /api/settings/wipe. See server/crossSite.ts.
-app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_BIND }));
+app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_ONLY }));
 
 // Cap request bodies before any handler buffers them: the vault-write
 // routes (studies, notes, draft images) otherwise accept unbounded input.

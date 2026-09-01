@@ -25,6 +25,7 @@ import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Disclosure } from '@/components/disclosure';
+import { Segmented } from '@/components/segmented';
 import { SettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { Switch } from '@/components/ui/switch';
@@ -47,8 +48,13 @@ interface Settings {
   /** The Syzygy server this vault asks, and what it falls back to when
       nobody has said — see server/tablebase.ts. */
   tablebase: {
+    /** Which of the three answers — stored, not inferred. */
+    source: 'lichess' | 'server' | 'files';
     url: string | null;
     fallback: string;
+    /** Whether the client and the server are the same computer, which
+        decides whether asking for a filesystem path is a fair question. */
+    sameMachine: boolean;
     /** A directory of Syzygy files on the server, and whether it can
         actually answer — a path that has gone missing, or a build with
         no native binary, falls back to the server silently. */
@@ -855,41 +861,27 @@ function TablebaseCard({
   const [url, setUrl] = useState(settings.tablebase.url ?? '');
   const [dir, setDir] = useState(settings.tablebase.dir ?? '');
   const [note, setNote] = useState<Note>(null);
+  const source = settings.tablebase.source;
 
-  const save = async (): Promise<void> => {
+  const pick = async (next: 'lichess' | 'server' | 'files'): Promise<void> => {
     try {
-      await api('/api/settings/tablebase', { method: 'PUT', json: { url } });
+      await api('/api/settings/tablebase-source', { method: 'PUT', json: { source: next } });
     } catch (e) {
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
-    setNote({
-      kind: 'ok',
-      text: url.trim() === '' ? t('Back to the public tablebase.') : t('Tablebase server saved.'),
-    });
+    setNote(null);
     await onChanged();
   };
 
-  const saveDir = async (): Promise<void> => {
-    let local: boolean;
+  const save = async (path: string, json: unknown): Promise<void> => {
     try {
-      ({ local } = await api<{ local: boolean }>('/api/settings/tablebase-dir', {
-        method: 'PUT',
-        json: { dir },
-      }));
+      await api(path, { method: 'PUT', json });
     } catch (e) {
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
-    setNote({
-      kind: 'ok',
-      text:
-        dir.trim() === ''
-          ? t('Back to asking a server.')
-          : local
-            ? t('Answering from your own tables.')
-            : t('Saved, but not answering from it — the native binary is not built. The server below still answers.'),
-    });
+    setNote({ kind: 'ok', text: t('Saved.') });
     await onChanged();
   };
 
@@ -912,101 +904,160 @@ function TablebaseCard({
     });
   };
 
+  /**
+   * What is answering, said outright.
+   *
+   * The panel used to make you work this out: three controls with a
+   * precedence between them that was never written down, so "am I on
+   * Lichess or my own tables, and does the switch matter?" had no answer
+   * on the screen. One sentence, always present, and every control below
+   * it only changes what this says.
+   */
+  const answering = !tablebase
+    ? t('Off on this device — no endgame lookups are made from here.')
+    : source === 'files'
+      ? settings.tablebase.local
+        ? t('Answering from the table files on the server — nothing else involved.')
+        : t('Set to your own table files, but they cannot be read — Lichess’s public server is answering instead.')
+      : source === 'server'
+        ? t('Answering from the tablebase server you named.')
+        : t('Answering from Lichess’s public tablebase.');
+
   return (
     <Card icon={Crown} title={t('Tablebase')}>
       <SettingRow
-        title={t('Endgame tablebase')}
+        title={t('Use the tablebase')}
         blurb={t(
-          'Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.',
+          'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — the vault’s own setting is where the answers come from, below.',
         )}
       >
         <Switch
           checked={tablebase}
           onCheckedChange={() => setTablebase(!tablebase)}
-          aria-label={t('Endgame tablebase')}
+          aria-label={t('Use the tablebase')}
         />
       </SettingRow>
-      {/* The switch above decides WHETHER to ask; this decides WHOM. It is
-          the answer for anyone the sentence above puts off: run Lichess's
-          own tablebase server (it is open source) over your own copy of
-          the tables, point this at it, and nothing leaves your network.
-          A vault setting rather than a device one — it describes which
-          tables this vault trusts, and a phone opening it should ask the
-          same server. */}
-      {/* The files themselves, first: it is the simplest thing that
-          works for anyone who has them, and it needs nothing else
-          running. The server address below is the fallback for the
-          cases this box cannot cover. */}
-      <p className="text-muted-foreground text-sm">
-        {settings.tablebase.local
-          ? t('Answering from the tables in this folder — no server involved.')
-          : t(
-              'Answer from the table files themselves: a folder of Syzygy files on this server, read directly with nothing else running. Needs the native binary.',
+
+      {tablebase && (
+        <>
+          {/* One choice, not three controls with a hidden order between
+              them. The field a choice needs appears under it and nothing
+              else does; the others keep whatever was typed in them, since
+              the choice is stored rather than inferred from which box is
+              full (server/tablebase.ts). */}
+          <div className="flex flex-col gap-2">
+            <p className="text-foreground text-sm font-medium">{t('Answers come from')}</p>
+            <Segmented
+              value={source}
+              onChange={(next) => void pick(next)}
+              ariaLabel={t('Answers come from')}
+              even
+              // All three offered wherever you are looking from. Only the
+              // PATH BOX below is a question a remote client cannot
+              // answer; the choice itself is the vault's, and a server
+              // that holds the tables is a perfectly ordinary setup that
+              // its owner must be able to see and change from a phone.
+              segments={[
+                { value: 'lichess' as const, label: t('Lichess') },
+                { value: 'server' as const, label: t('Your server') },
+                { value: 'files' as const, label: t('Table files') },
+              ]}
+            />
+            <p className="text-muted-foreground text-sm">{answering}</p>
+          </div>
+
+          {source === 'server' && (
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground text-sm">
+                {t(
+                  'A tablebase server of your own — lila-tablebase over your own copy of the tables, or any address that speaks its protocol. Empty falls back to Lichess’s.',
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <ClearableInput
+                  inputSize="lg"
+                  className="flex-1"
+                  autoComplete="off"
+                  placeholder={settings.tablebase.fallback}
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  aria-label={t('Tablebase server')}
+                />
+                <Button
+                  variant="default"
+                  disabled={url.trim() === (settings.tablebase.url ?? '')}
+                  onClick={() => void save('/api/settings/tablebase', { url })}
+                >
+                  {t('Save')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {source === 'files' && settings.tablebase.sameMachine && (
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground text-sm">
+                {t(
+                  'A folder of Syzygy files on this machine, read directly with nothing else running. Needs the native core built.',
+                )}
+              </p>
+              <div className="flex items-center gap-2">
+                <ClearableInput
+                  inputSize="lg"
+                  className="flex-1"
+                  autoComplete="off"
+                  placeholder={t('A folder of .rtbw and .rtbz files')}
+                  value={dir}
+                  onChange={(e) => setDir(e.target.value)}
+                  aria-label={t('Tablebase files')}
+                />
+                <Button
+                  variant="default"
+                  disabled={dir.trim() === (settings.tablebase.dir ?? '')}
+                  onClick={() => void save('/api/settings/tablebase-dir', { dir })}
+                >
+                  {t('Save')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Not offered from a phone pointed at a server in another
+              room: a text box asking for a path on a disk you cannot see
+              is a question nobody can answer, and one that used to tell
+              anybody who asked which paths existed there. It is a
+              deployment setting in that case, and says so. */}
+          {source === 'files' && !settings.tablebase.sameMachine && (
+            <p className="text-muted-foreground text-sm">
+              {settings.tablebase.dir
+                ? t('This server also has table files at {dir}, set in its vault config.', {
+                    dir: settings.tablebase.dir,
+                  })
+                : t(
+                    'To answer from table files on the server itself, set “tablebaseDir” in its vault config — a path is not a thing to type from another machine.',
+                  )}
+            </p>
+          )}
+
+          {/* The cache never expires, which is right for a fact and wrong
+              for a source that has since learned something: add the
+              six-piece tables to the machine above and every six-piece
+              ending you had already looked at still answers "nothing
+              here", because nothing asks it again. This is how you ask
+              again — and the way to take the disk back, and to stop
+              keeping a record of which endings you studied. */}
+          <SettingRow
+            title={t('Cached answers')}
+            blurb={t(
+              'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.',
             )}
-      </p>
-      <div className="flex items-center gap-2">
-        <ClearableInput
-          inputSize="lg"
-          className="flex-1"
-          autoComplete="off"
-          placeholder={t('A folder of .rtbw and .rtbz files')}
-          value={dir}
-          onChange={(e) => setDir(e.target.value)}
-          aria-label={t('Tablebase files')}
-        />
-        <Button
-          variant="default"
-          disabled={dir.trim() === (settings.tablebase.dir ?? '')}
-          onClick={() => void saveDir()}
-        >
-          {t('Save')}
-        </Button>
-      </div>
-      {/* Still worth its place with the folder above: tables on ANOTHER
-          machine cannot be named by a path, a build with no native
-          binary has nothing to read them with, and a lila-tablebase
-          carrying more than Syzygy can answer with distances this
-          reader has no data for. */}
-      <p className="text-muted-foreground text-sm">
-        {t(
-          'Or name a tablebase server: for tables on another machine, or when this one has no native binary to read them with. Empty means Lichess’s public one.',
-        )}
-      </p>
-      <div className="flex items-center gap-2">
-        <ClearableInput
-          inputSize="lg"
-          className="flex-1"
-          autoComplete="off"
-          placeholder={settings.tablebase.fallback}
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          aria-label={t('Tablebase server')}
-        />
-        <Button
-          variant="default"
-          disabled={url.trim() === (settings.tablebase.url ?? '')}
-          onClick={() => void save()}
-        >
-          {t('Save')}
-        </Button>
-      </div>
-      {/* The cache never expires, which is right for a fact and wrong for
-          a server that has since learned something: add the six-piece
-          tables to the machine above and every six-piece ending you had
-          already looked at still answers "nothing here", because nothing
-          asks it again. This is how you ask again — and it is the way to
-          take the disk back, and to stop keeping a record of which
-          endings you studied. */}
-      <SettingRow
-        title={t('Cached answers')}
-        blurb={t(
-          'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.',
-        )}
-      >
-        <Button variant="secondary" onClick={() => void forget()}>
-          {t('Forget')}
-        </Button>
-      </SettingRow>
+          >
+            <Button variant="secondary" onClick={() => void forget()}>
+              {t('Forget')}
+            </Button>
+          </SettingRow>
+        </>
+      )}
       <Feedback note={note} />
     </Card>
   );

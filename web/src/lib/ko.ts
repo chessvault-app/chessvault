@@ -1294,27 +1294,36 @@ export const ko: Record<string, string> = {
   // lines are not here: other sections already carry them, and one key may
   // only be translated once.
   Tablebase: '테이블베이스',
-  'Endgame tablebase': '엔드게임 테이블베이스',
-  'Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.':
-    '기물이 7개 이하인 포지션의 정확한 결과를 탐색기에 표시합니다. 포지션은 Lichess의 공개 테이블베이스로 전송되며, 모든 답은 이 금고의 디스크에 보관됩니다 — 한 번 조회한 엔드게임은 이후 오프라인에서도 답을 얻습니다.',
+  
   'The tablebase is out of reach, and this position is not cached.':
     '테이블베이스에 연결할 수 없고, 이 포지션은 캐시에 없습니다.',
   'Answered by {source}': '{source}이(가) 답했습니다',
-  'Or name a tablebase server: for tables on another machine, or when this one has no native binary to read them with. Empty means Lichess’s public one.':
-    '테이블베이스 서버를 지정할 수도 있습니다. 테이블이 다른 기기에 있거나, 이 기기에 그것을 읽을 네이티브 바이너리가 없을 때 쓰세요. 비워 두면 Lichess의 공개 서버를 씁니다.',
   'Tablebase server': '테이블베이스 서버',
-  'Tablebase server saved.': '테이블베이스 서버를 저장했습니다.',
-  'Back to the public tablebase.': '공개 테이블베이스로 되돌렸습니다.',
-  'Answering from the tables in this folder — no server involved.':
-    '이 폴더의 테이블로 답하고 있습니다 — 서버를 거치지 않습니다.',
-  'Answer from the table files themselves: a folder of Syzygy files on this server, read directly with nothing else running. Needs the native binary.':
-    '테이블 파일에서 바로 답합니다. 이 서버에 있는 Syzygy 파일 폴더를 적으면 다른 것을 띄우지 않고 그대로 읽습니다. 네이티브 바이너리가 필요합니다.',
   'A folder of .rtbw and .rtbz files': '.rtbw와 .rtbz 파일이 있는 폴더',
   'Tablebase files': '테이블베이스 파일',
-  'Back to asking a server.': '다시 서버에 묻습니다.',
-  'Answering from your own tables.': '직접 가진 테이블로 답합니다.',
-  'Saved, but not answering from it — the native binary is not built. The server below still answers.':
-    '저장했지만 여기서 답하지는 않습니다 — 네이티브 바이너리가 빌드되지 않았습니다. 아래의 서버가 계속 답합니다.',
+  'Use the tablebase': '테이블베이스 사용',
+  'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — the vault’s own setting is where the answers come from, below.':
+    '기물이 7개 이하인 포지션의 정확한 결과를 탐색기와 엔진 리뷰에 표시합니다. 이 기기에만 적용되며, 답이 어디서 오는지는 아래의 금고 설정입니다.',
+  'Answers come from': '답이 오는 곳',
+  Lichess: 'Lichess',
+  'Your server': '내 서버',
+  'Table files': '테이블 파일',
+  'Off on this device — no endgame lookups are made from here.':
+    '이 기기에서는 꺼져 있습니다 — 여기서는 엔드게임 조회를 하지 않습니다.',
+  'Answering from the table files on the server — nothing else involved.':
+    '서버의 테이블 파일로 답하고 있습니다 — 다른 것은 거치지 않습니다.',
+  'Set to your own table files, but they cannot be read — Lichess’s public server is answering instead.':
+    '직접 가진 테이블 파일로 설정되어 있지만 읽을 수 없습니다 — 대신 Lichess의 공개 서버가 답하고 있습니다.',
+  'Answering from the tablebase server you named.': '지정한 테이블베이스 서버로 답하고 있습니다.',
+  'Answering from Lichess’s public tablebase.': 'Lichess의 공개 테이블베이스로 답하고 있습니다.',
+  'A tablebase server of your own — lila-tablebase over your own copy of the tables, or any address that speaks its protocol. Empty falls back to Lichess’s.':
+    '직접 운영하는 테이블베이스 서버입니다. 내가 가진 테이블 위에 띄운 lila-tablebase, 또는 같은 프로토콜을 쓰는 주소면 됩니다. 비워 두면 Lichess의 것으로 되돌아갑니다.',
+  'A folder of Syzygy files on this machine, read directly with nothing else running. Needs the native core built.':
+    '이 기기에 있는 Syzygy 파일 폴더입니다. 다른 것을 띄우지 않고 그대로 읽으며, 네이티브 코어가 빌드되어 있어야 합니다.',
+  'This server also has table files at {dir}, set in its vault config.':
+    '이 서버에는 {dir}에 테이블 파일도 설정되어 있습니다(금고 설정 파일).',
+  'To answer from table files on the server itself, set “tablebaseDir” in its vault config — a path is not a thing to type from another machine.':
+    '서버에 있는 테이블 파일로 답하게 하려면 금고 설정 파일에 «tablebaseDir»을 적으세요. 경로는 다른 기기에서 입력할 만한 것이 아닙니다.',
   'Cached answers': '캐시된 답',
   'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.':
     '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다. 다시 묻게 하려면 잊게 하세요 — 예를 들어 직접 띄운 서버에 테이블을 추가한 뒤에.',
