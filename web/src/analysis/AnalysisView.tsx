@@ -132,7 +132,14 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
-        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
+        {/* Furniture, like the tab strip and the control row: it stands
+            still while a swipe turns the panes under it, so it opts out of
+            being counted as one (hooks/use-pane-swipe). It has to say so
+            because `wide` starts at 44rem in landscape while the panes stay
+            tabbed to 64rem — a phone held sideways shows this band AND the
+            strip, and a column with two boxes in it is not a row the
+            gesture will touch. */}
+        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex" data-pane-strip>
           <h1 className="text-foreground text-base font-semibold">
             {wantExplorer ? t('Explorer') : t('Board')}
           </h1>
