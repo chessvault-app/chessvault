@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
 import { makeFen, parseFen } from 'chessops/fen';
 import { DATA_TABLEBASE_CACHE, VAULT_CONFIG } from './paths.ts';
+import { nativeTablebase } from './tablebaseNative.ts';
 
 /**
  * Exact endgame verdicts — what the engine's number stops being able to
@@ -16,15 +17,22 @@ import { DATA_TABLEBASE_CACHE, VAULT_CONFIG } from './paths.ts';
  * the table knows the result and how far away it is.
  *
  * Answers come through a `TablebaseProbe` rather than out of `fetch`
- * here, because the source is the part expected to change. Two sources
- * exist already and are the same code: Lichess's public server (7
- * pieces, no token, and the only way to have the tables without
- * carrying 150 GB of them) and whatever `tablebaseUrl` in this vault's
- * config names — lila-tablebase is open source, so a vault with its own
- * copy of the tables runs the same server over them and is answered by
- * its own machine. The day this app reads `.rtbz` files in process, that
- * prober takes the same interface and the route, the cache and the
- * client do not move.
+ * here, because the source is the part that varies. Three of them exist
+ * and the route cannot tell them apart:
+ *
+ *  - Lichess's public server (7 pieces, no token, and the only way to
+ *    have the tables without carrying 150 GB of them);
+ *  - a lila-tablebase of this vault's own, named by `tablebaseUrl` —
+ *    that server is open source, so anyone with the files can run it;
+ *  - the files THEMSELVES, read by the native binary's resident
+ *    tablebase mode, when `tablebaseDir` names a directory of them
+ *    (`server/tablebaseNative.ts`). No server, no network.
+ *
+ * Local tables win where they exist, because that answer needs nothing
+ * and tells nobody. Ours is the one of the three we wrote, so it is
+ * held to the other two: `scripts/tablebase-parity.ts` replays random
+ * endings through the native prober and the reference server and
+ * compares every verdict, position and move alike.
  *
  * Each source keeps its OWN corner of the cache, because they do not
  * hold the same tables: a five-piece server at home must not be able to
@@ -293,16 +301,39 @@ export function syzygyServer(
   };
 }
 
-/** The endpoint this vault is pointed at, read per request so that
-    saving one in Settings takes effect without a restart — the same
-    thing the explorer proxy does with its token. */
-function configuredUrl(configPath: string): string {
+/** What this vault says about tablebases, read per request so that
+    saving in Settings takes effect without a restart — the same thing
+    the explorer proxy does with its token. */
+function configured(configPath: string): { url: string; dir: string | null } {
   try {
-    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as { tablebaseUrl?: unknown };
-    return normaliseTablebaseUrl(config.tablebaseUrl) ?? DEFAULT_TABLEBASE;
+    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as {
+      tablebaseUrl?: unknown;
+      tablebaseDir?: unknown;
+    };
+    return {
+      url: normaliseTablebaseUrl(config.tablebaseUrl) ?? DEFAULT_TABLEBASE,
+      dir: typeof config.tablebaseDir === 'string' && config.tablebaseDir.trim() !== ''
+        ? config.tablebaseDir.trim()
+        : null,
+    };
   } catch {
-    return DEFAULT_TABLEBASE;
+    return { url: DEFAULT_TABLEBASE, dir: null };
   }
+}
+
+/**
+ * Which source answers: this machine's own tables where it has them,
+ * the network otherwise.
+ *
+ * Local first, and not as an optimisation — it is the answer that needs
+ * nothing and tells nobody. It steps aside silently when the tables are
+ * not there or the binary was never built (`nativeTablebase` returns
+ * null), because a vault whose table directory has gone missing should
+ * fall back to working, not to failing.
+ */
+function proberFor(configPath: string): TablebaseProbe {
+  const { url, dir } = configured(configPath);
+  return (dir && nativeTablebase(dir)) || syzygyServer(url);
 }
 
 /**
@@ -345,8 +376,7 @@ export function tablebaseApi(
    * endpoint is a vault setting, so it is read per request rather than
    * frozen at boot — and the tests pass a fixed prober instead.
    */
-  probeSource: TablebaseProbe | (() => TablebaseProbe) = () =>
-    syzygyServer(configuredUrl(VAULT_CONFIG)),
+  probeSource: TablebaseProbe | (() => TablebaseProbe) = () => proberFor(VAULT_CONFIG),
 ): Hono {
   const api = new Hono();
   const proberFor = (): TablebaseProbe =>

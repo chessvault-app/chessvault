@@ -1305,6 +1305,16 @@ export const ko: Record<string, string> = {
   'Tablebase server': '테이블베이스 서버',
   'Tablebase server saved.': '테이블베이스 서버를 저장했습니다.',
   'Back to the public tablebase.': '공개 테이블베이스로 되돌렸습니다.',
+  'Answering from the tables in this folder — no server involved.':
+    '이 폴더의 테이블로 답하고 있습니다 — 서버를 거치지 않습니다.',
+  'Or from the table files directly: give a folder of Syzygy files on the server. Needs the native binary; without it this is saved and the server above still answers.':
+    '테이블 파일에서 바로 답하게 할 수도 있습니다. 서버에 있는 Syzygy 파일 폴더를 적으세요. 네이티브 바이너리가 필요하며, 없으면 저장은 되지만 위의 서버가 계속 답합니다.',
+  'A folder of .rtbw and .rtbz files': '.rtbw와 .rtbz 파일이 있는 폴더',
+  'Tablebase files': '테이블베이스 파일',
+  'Back to asking a server.': '다시 서버에 묻습니다.',
+  'Answering from your own tables.': '직접 가진 테이블로 답합니다.',
+  'Saved, but not answering from it — the native binary is not built.':
+    '저장했지만 여기서 답하지는 않습니다 — 네이티브 바이너리가 빌드되지 않았습니다.',
   'Cached answers': '캐시된 답',
   'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.':
     '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다. 다시 묻게 하려면 잊게 하세요 — 예를 들어 직접 띄운 서버에 테이블을 추가한 뒤에.',

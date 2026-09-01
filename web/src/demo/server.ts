@@ -141,7 +141,7 @@ function buildApp(): Hono {
       // Tablebase card (it never probes): a page that reads a field the
       // route does not send is one refresh away from a crash, and the
       // cost of not lying about the shape is one line.
-      tablebase: { url: null, fallback: 'https://tablebase.lichess.ovh/standard' },
+      tablebase: { url: null, fallback: 'https://tablebase.lichess.ovh/standard', dir: null, local: false },
       home,
       training,
       vaultPath: 'demo',

@@ -46,7 +46,15 @@ interface Settings {
   lichess: { configured: boolean; last4: string | null };
   /** The Syzygy server this vault asks, and what it falls back to when
       nobody has said — see server/tablebase.ts. */
-  tablebase: { url: string | null; fallback: string };
+  tablebase: {
+    url: string | null;
+    fallback: string;
+    /** A directory of Syzygy files on the server, and whether it can
+        actually answer — a path that has gone missing, or a build with
+        no native binary, falls back to the server silently. */
+    dir: string | null;
+    local: boolean;
+  };
   vaultPath: string;
   version: string;
 }
@@ -845,6 +853,7 @@ function TablebaseCard({
   const tablebase = usePrefs((p) => p.tablebase);
   const setTablebase = usePrefs((p) => p.setTablebase);
   const [url, setUrl] = useState(settings.tablebase.url ?? '');
+  const [dir, setDir] = useState(settings.tablebase.dir ?? '');
   const [note, setNote] = useState<Note>(null);
 
   const save = async (): Promise<void> => {
@@ -857,6 +866,29 @@ function TablebaseCard({
     setNote({
       kind: 'ok',
       text: url.trim() === '' ? t('Back to the public tablebase.') : t('Tablebase server saved.'),
+    });
+    await onChanged();
+  };
+
+  const saveDir = async (): Promise<void> => {
+    let local: boolean;
+    try {
+      ({ local } = await api<{ local: boolean }>('/api/settings/tablebase-dir', {
+        method: 'PUT',
+        json: { dir },
+      }));
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      return;
+    }
+    setNote({
+      kind: 'ok',
+      text:
+        dir.trim() === ''
+          ? t('Back to asking a server.')
+          : local
+            ? t('Answering from your own tables.')
+            : t('Saved, but not answering from it — the native binary is not built.'),
     });
     await onChanged();
   };
@@ -920,6 +952,37 @@ function TablebaseCard({
           variant="default"
           disabled={url.trim() === (settings.tablebase.url ?? '')}
           onClick={() => void save()}
+        >
+          {t('Save')}
+        </Button>
+      </div>
+      {/* One step further than a server of your own: the files
+          themselves. With the native binary built, a directory of
+          Syzygy tables here is read directly and no server is involved
+          at all — which is why this sits below the address rather than
+          beside it, as the answer for someone who read that line and
+          wanted to go further. */}
+      <p className="text-muted-foreground text-sm">
+        {settings.tablebase.local
+          ? t('Answering from the tables in this folder — no server involved.')
+          : t(
+              'Or from the table files directly: give a folder of Syzygy files on the server. Needs the native binary; without it this is saved and the server above still answers.',
+            )}
+      </p>
+      <div className="flex items-center gap-2">
+        <ClearableInput
+          inputSize="lg"
+          className="flex-1"
+          autoComplete="off"
+          placeholder={t('A folder of .rtbw and .rtbz files')}
+          value={dir}
+          onChange={(e) => setDir(e.target.value)}
+          aria-label={t('Tablebase files')}
+        />
+        <Button
+          variant="default"
+          disabled={dir.trim() === (settings.tablebase.dir ?? '')}
+          onClick={() => void saveDir()}
         >
           {t('Save')}
         </Button>

@@ -234,6 +234,10 @@ describe('tablebase endpoint', () => {
     expect((await (await json('GET', '/api/settings')).json()).tablebase).toEqual({
       url: null,
       fallback: 'https://tablebase.lichess.ovh/standard',
+      // Nobody has named a folder of table files, so nothing local can
+      // answer and the page says so rather than implying it might.
+      dir: null,
+      local: false,
     });
 
     expect((await json('PUT', '/api/settings/tablebase', { url: 'nonsense' })).status).toBe(400);
@@ -253,6 +257,25 @@ describe('tablebase endpoint', () => {
     // Emptying the box is how a text field says "back to the default".
     expect((await json('PUT', '/api/settings/tablebase', { url: '' })).status).toBe(200);
     expect(config().tablebaseUrl).toBeUndefined();
+  });
+});
+
+describe('tablebase files', () => {
+  it('takes a directory that exists and nothing else', async () => {
+    expect((await json('PUT', '/api/settings/tablebase-dir', { dir: 'nowhere-at-all' })).status)
+      .toBe(400);
+    expect(config().tablebaseDir).toBeUndefined();
+
+    // The vault directory itself will do: the route checks that a path is
+    // a directory, deliberately NOT that it holds tables — three of the
+    // 145 files is a legitimate setup, and the prober is what knows.
+    expect((await json('PUT', '/api/settings/tablebase-dir', { dir: vault })).status).toBe(200);
+    expect(config().tablebaseDir).toBe(vault);
+    const read = await (await json('GET', '/api/settings')).json();
+    expect(read.tablebase.dir).toBe(vault);
+
+    expect((await json('PUT', '/api/settings/tablebase-dir', { dir: '' })).status).toBe(200);
+    expect(config().tablebaseDir).toBeUndefined();
   });
 });
 

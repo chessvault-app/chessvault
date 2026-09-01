@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { writeAtomic } from './atomic.ts';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
@@ -10,6 +10,7 @@ import { normaliseHomeLayout } from '../shared/homeLayout.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 import { DEFAULT_TABLEBASE, normaliseTablebaseUrl } from './tablebase.ts';
+import { nativeTablebase } from './tablebaseNative.ts';
 
 /**
  * Settings live in vault/config.json — the one vault file that is
@@ -33,6 +34,10 @@ interface Config {
       Absent means the default — see server/tablebase.ts. Not a secret,
       so unlike the token it is echoed back to the page. */
   tablebaseUrl?: string;
+  /** A directory of Syzygy `.rtbw`/`.rtbz` files on this machine. Set,
+      and with the native binary built, it answers instead of any server
+      — see server/tablebaseNative.ts. */
+  tablebaseDir?: string;
   profile?: Profile;
   /** How this vault's home page is arranged — see shared/homeLayout.ts.
       Absent means nobody has ever said, which is not the same as having
@@ -91,6 +96,12 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       tablebase: {
         url: normaliseTablebaseUrl(config.tablebaseUrl),
         fallback: DEFAULT_TABLEBASE,
+        // The directory as configured, and whether it can actually
+        // answer right now: a path that has gone missing, or a build
+        // with no native binary, silently falls back to the server, and
+        // a page that did not say so would be lying by omission.
+        dir: typeof config.tablebaseDir === 'string' ? config.tablebaseDir : null,
+        local: typeof config.tablebaseDir === 'string' && nativeTablebase(config.tablebaseDir) !== null,
       },
       // Normalised on the way out as well as in: a config edited by hand
       // must not be able to hand the page something it cannot draw.
@@ -215,6 +226,34 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
    * validation is tablebase.ts's own, so what this accepts is exactly
    * what will be asked.
    */
+  /**
+   * The directory of table files, or none.
+   *
+   * Only checked for being a directory that exists — its CONTENTS are
+   * the prober's business, and a directory holding three of the 145
+   * files is a legitimate setup (the small endings are the ones people
+   * actually own). Saving a path that cannot answer is allowed and
+   * reported back rather than refused, because the honest failure is
+   * visible in Settings, not hidden behind a rejected form.
+   */
+  api.put('/settings/tablebase-dir', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { dir?: unknown };
+    const dir = typeof body.dir === 'string' ? body.dir.trim() : '';
+    if (dir === '') {
+      writeConfig((config) => {
+        delete config.tablebaseDir;
+      });
+      return c.json({ ok: true, dir: null, local: false });
+    }
+    if (dir.length > 4096 || !existsSync(dir) || !statSync(dir).isDirectory()) {
+      return c.json({ error: 'no such directory on the server' }, 400);
+    }
+    writeConfig((config) => {
+      config.tablebaseDir = dir;
+    });
+    return c.json({ ok: true, dir, local: nativeTablebase(dir) !== null });
+  });
+
   api.put('/settings/tablebase', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { url?: unknown };
     const raw = typeof body.url === 'string' ? body.url.trim() : '';
