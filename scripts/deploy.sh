@@ -8,15 +8,22 @@
 #   CHESS_VAULT_HOST=ubuntu@<host>     # e.g. a Tailscale tailnet address
 #   CHESS_VAULT_KEY=~/.ssh/<key>.pem   # SSH key (optional; omit to use agent)
 #   CHESS_APP_DIR=/srv/chess-vault-app # checkout on the server
-#   CHESS_SERVICE=chess-vault          # systemd unit to restart
+#   CHESS_SERVICE=chess-vault          # service to restart (see below)
+#   CHESS_REMOTE_PATH=/opt/node/bin    # prepended to PATH on the server
 #
-# The last two default to the layout the README describes, so an unmodified
-# copy of that layout needs neither. They are variables rather than constants
-# because a hardcoded directory and unit name made this one machine's script
-# — everything else here is general.
+# APP_DIR and SERVICE default to the layout the README describes, so an
+# unmodified copy of that layout needs neither. They are variables rather than
+# constants because a hardcoded directory and unit name made this one
+# machine's script — everything else here is general.
 #
-# Assumed on the server: systemd, and sudo without a password prompt for the
-# restart. Anything else is a one-line edit at the bottom.
+# Two server layouts are supported, chosen by `uname` at the bottom: a Linux
+# box running a systemd unit (restarted with sudo, so that host needs sudo
+# without a password prompt), or a macOS box running a per-user LaunchAgent,
+# where SERVICE is the plist's Label and no privilege is needed at all.
+#
+# CHESS_REMOTE_PATH exists because the deploy's shell is non-interactive and
+# reads no profile: a node installed anywhere but a system directory is simply
+# absent, and `npm ci` fails on a box where node works fine when you log in.
 set -euo pipefail
 
 [ -f "$(dirname "$0")/deploy.env" ] && . "$(dirname "$0")/deploy.env"
@@ -24,6 +31,7 @@ HOST="${CHESS_VAULT_HOST:?set CHESS_VAULT_HOST=user@host (see scripts/deploy.env
 KEY="${CHESS_VAULT_KEY:-}"
 APP_DIR="${CHESS_APP_DIR:-/srv/chess-vault-app}"
 SERVICE="${CHESS_SERVICE:-chess-vault}"
+REMOTE_PATH="${CHESS_REMOTE_PATH:-}"
 SSH_KEY=(); [ -n "$KEY" ] && SSH_KEY=(-i "$KEY")
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -43,8 +51,9 @@ rm -f "$BUNDLE" "$DIST"
 # The heredoc is quoted, so nothing expands here; the two settings arrive as
 # environment on the remote command line instead. Interpolating them into the
 # script text would put local quoting rules in charge of a remote path.
-ssh "${SSH_KEY[@]}" "$HOST" "APP_DIR='$APP_DIR' SERVICE='$SERVICE' bash -s" <<'REMOTE'
+ssh "${SSH_KEY[@]}" "$HOST"   "APP_DIR='$APP_DIR' SERVICE='$SERVICE' REMOTE_PATH='$REMOTE_PATH' bash -s" <<'REMOTE'
 set -e
+if [ -n "${REMOTE_PATH:-}" ]; then PATH="$REMOTE_PATH:$PATH"; fi
 cd "$APP_DIR"
 git fetch /tmp/deploy.bundle HEAD
 git reset --hard FETCH_HEAD
@@ -80,8 +89,20 @@ if [ -x "$HOME/.cargo/bin/cargo" ] || command -v cargo >/dev/null 2>&1; then
   fi
 fi
 
-sudo systemctl restart "$SERVICE"
-sleep 3
-systemctl is-active "$SERVICE"
+# Restart, then prove it came back — a deploy that leaves the service down
+# and says "deployed" is the worst of the failure modes.
+if [ "$(uname)" = "Darwin" ]; then
+  # A per-user LaunchAgent: no sudo, and none available — a Mac does not
+  # have passwordless sudo unless somebody went and configured it, so a
+  # `sudo` here would hang the deploy on a password prompt instead of
+  # failing. `kickstart -k` stops the job and starts it again.
+  launchctl kickstart -k "gui/$(id -u)/$SERVICE"
+  sleep 3
+  launchctl print "gui/$(id -u)/$SERVICE" | grep -qE '^[[:space:]]*(state = running|pid = [0-9]+)'
+else
+  sudo systemctl restart "$SERVICE"
+  sleep 3
+  systemctl is-active "$SERVICE"
+fi
 REMOTE
 echo "deployed to $HOST"

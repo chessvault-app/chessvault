@@ -264,6 +264,49 @@ WantedBy=multi-user.target
 sudo systemctl enable --now chess-vault
 ```
 
+On **macOS** the same job is a per-user LaunchAgent, and `deploy.sh` picks
+that path by `uname`. `CHESS_SERVICE` is then the plist's `Label`, and
+nothing needs root — a Mac has no passwordless sudo unless somebody set one
+up, so the systemd branch would stall a deploy at a password prompt. There
+is no `/srv` to clone into either (the system volume is read-only), so
+`CHESS_APP_DIR` has to point somewhere in your home or `/opt`.
+
+launchd expands nothing — no `~`, no `$HOME` — so every path in the plist
+has to be absolute. Let the shell fill them in as it writes the file, which
+is also why the heredoc below is unquoted:
+
+```bash
+cat > ~/Library/LaunchAgents/app.chessvault.server.plist <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>Label</key>              <string>app.chessvault.server</string>
+  <key>ProgramArguments</key>   <array>
+    <string>$(command -v npm)</string><string>run</string><string>start</string>
+  </array>
+  <key>WorkingDirectory</key>   <string>$HOME/chess-vault-app</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>CHESS_VAULT_DIR</key>  <string>$HOME/chess-vault</string>
+    <key>NODE_ENV</key>         <string>production</string>
+    <key>PATH</key>             <string>$(dirname "$(command -v node)"):/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key>    <string>$HOME/Library/Logs/chess-vault.log</string>
+  <key>StandardErrorPath</key>  <string>$HOME/Library/Logs/chess-vault.err</string>
+</dict></plist>
+PLIST
+
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/app.chessvault.server.plist
+```
+
+Two things bite here. A LaunchAgent runs only while that user is logged in
+— for a Mac that reboots unattended, either turn on automatic login or make
+it a `LaunchDaemon` under `/Library/LaunchDaemons` instead. And the deploy's
+shell is non-interactive, so it reads no profile: a node installed outside a
+system directory (nvm, a plain tarball, `~/.local`) is invisible to it and
+`npm ci` fails on a box where node works fine when you log in. Point
+`CHESS_REMOTE_PATH` at its `bin` directory.
+
 One port serves the built app and the HTTP API together. Then:
 
 1. **Put HTTPS in front.** A reverse proxy is not optional in practice:
@@ -279,7 +322,8 @@ One port serves the built app and the HTTP API together. Then:
 
    A [Tailscale](https://tailscale.com) tailnet is the other way — it
    gives the machine an HTTPS name without exposing it to the internet at
-   all, which is what the reference deployment uses.
+   all, which is what the reference deployment uses: `tailscale serve --bg
+   8787` and the tailnet name answers over HTTPS with no proxy of your own.
 2. **Turn on the lock screen.** Set an app password in Settings (or
    `appPassword` in `vault/config.json`), and add authenticator 2FA
    while you are there. Anything reachable from the internet needs this.

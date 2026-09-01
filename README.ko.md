@@ -252,6 +252,49 @@ WantedBy=multi-user.target
 sudo systemctl enable --now chess-vault
 ```
 
+**macOS**에서는 같은 일을 사용자 LaunchAgent가 맡고, `deploy.sh`가 `uname`으로
+그 경로를 고릅니다. 이때 `CHESS_SERVICE`는 plist의 `Label`이며 root 권한은
+전혀 필요 없습니다 — 맥에는 따로 설정하지 않는 한 무비밀번호 sudo가 없어서,
+systemd 쪽 분기를 타면 배포가 비밀번호 프롬프트에서 멈춥니다. 클론할 `/srv`도
+없으므로(시스템 볼륨이 읽기 전용입니다) `CHESS_APP_DIR`은 홈 디렉터리나 `/opt`
+아래를 가리켜야 합니다.
+
+launchd expands nothing — no `~`, no `$HOME` — so every path in the plist
+has to be absolute. Let the shell fill them in as it writes the file, which
+is also why the heredoc below is unquoted:
+
+```bash
+cat > ~/Library/LaunchAgents/app.chessvault.server.plist <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>Label</key>              <string>app.chessvault.server</string>
+  <key>ProgramArguments</key>   <array>
+    <string>$(command -v npm)</string><string>run</string><string>start</string>
+  </array>
+  <key>WorkingDirectory</key>   <string>$HOME/chess-vault-app</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>CHESS_VAULT_DIR</key>  <string>$HOME/chess-vault</string>
+    <key>NODE_ENV</key>         <string>production</string>
+    <key>PATH</key>             <string>$(dirname "$(command -v node)"):/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key>    <string>$HOME/Library/Logs/chess-vault.log</string>
+  <key>StandardErrorPath</key>  <string>$HOME/Library/Logs/chess-vault.err</string>
+</dict></plist>
+PLIST
+
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/app.chessvault.server.plist
+```
+
+여기서 걸리는 것이 둘 있습니다. LaunchAgent는 그 사용자가 로그인해 있는
+동안에만 돕니다 — 무인 재부팅이 있는 맥이라면 자동 로그인을 켜거나
+`/Library/LaunchDaemons`의 `LaunchDaemon`으로 만드세요. 그리고 배포가 쓰는
+셸은 비대화형이라 프로파일을 읽지 않습니다. 시스템 디렉터리 밖에 설치한
+node(nvm, 압축 해제본, `~/.local`)는 보이지 않아, 로그인해서 쓰면 멀쩡한
+장비에서 `npm ci`가 실패합니다. `CHESS_REMOTE_PATH`를 그 `bin` 디렉터리로
+맞춰 주세요.
+
 한 포트가 빌드된 앱과 HTTP API를 함께 서빙합니다. 그다음:
 
 1. **앞에 HTTPS를 두세요.** 리버스 프록시는 사실상 필수입니다. PWA 설치와
@@ -267,6 +310,8 @@ sudo systemctl enable --now chess-vault
 
    [Tailscale](https://tailscale.com) 테일넷은 다른 길입니다. 인터넷에
    노출하지 않고도 HTTPS 이름을 갖게 해 주며, 참조 배포가 쓰는 방식입니다.
+   `tailscale serve --bg 8787` 한 줄이면 직접 세운 프록시 없이 테일넷
+   이름이 HTTPS로 응답합니다.
 2. **잠금 화면을 켜세요.** 설정에서 앱 비밀번호를 정하고(또는
    `vault/config.json`의 `appPassword`), 인증 앱 2단계 인증도 함께 켜세요.
    인터넷에서 닿는 것이라면 반드시 필요합니다.
