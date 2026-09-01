@@ -11,6 +11,9 @@ import { detectSacrifices } from '@/engine/sacrifice';
 import { terminalScore } from '@/engine/terminal';
 import { toWhitePov, winningChances } from '@/engine/uci';
 import { isBookPosition, NAMED_PLIES } from '@/lib/opening';
+import { isDemo } from '@/lib/demo';
+import { inTablebaseRange, probeTablebase, type Category } from '@/explorer/tablebase';
+import { usePrefs } from './prefs';
 import { useAnalysis } from './analysis';
 import { useEngine } from './engine';
 
@@ -20,6 +23,14 @@ import { useEngine } from './engine';
  * lichess criteria (see engine/review.ts), quality NAGs are stamped into
  * the tree (persisted by the study autosave where one is running), and
  * per-side accuracy/ACPL land here for the summary strip.
+ *
+ * Where the pieces run out the engine stops being the judge. Any
+ * position of seven pieces or fewer is also looked up in the tablebase,
+ * and a move with tables on both sides of it is judged on the RESULT it
+ * left behind rather than on the score it moved — the two disagree
+ * exactly where it matters, and the table is the one that is right.
+ * Switched off in Settings, or unreachable, this is simply not done and
+ * the engine judges the whole game as it always did.
  */
 
 const REVIEW_DEPTH = 14;
@@ -119,6 +130,25 @@ export const useReview = create<ReviewState>()((set, get) => ({
       if (get().status !== 'running') return;
 
       const scores: Score[] = [];
+      /**
+       * The tables' verdict per position, where one covers it.
+       *
+       * Gathered inside the engine's own walk rather than in a second
+       * pass: the walk is already sequential and already slow (a search
+       * per position), so the round trips hide inside it and cost the
+       * user nothing extra. Sequential also keeps the app polite — a
+       * burst of thirty concurrent lookups at somebody else's server is
+       * how you earn a 429 — and every answer is cached on this vault's
+       * disk for good, so a second review of the same ending asks
+       * nothing at all.
+       */
+      const tablebase: (Category | null)[] = [];
+      // One failure ends the asking. Thirty round trips spent learning
+      // that the network is down is thirty times slower than learning it
+      // once, and the engine's own judgment is still there to fall back
+      // on — a review that stalls on a tablebase is worse than a review
+      // without one.
+      let probing = usePrefs.getState().tablebase && !isDemo();
       for (let i = 0; i < ids.length; i++) {
         const fen = fens[i]!;
         const update = await new Promise<SearchUpdate>((resolve, reject) => {
@@ -138,6 +168,17 @@ export const useReview = create<ReviewState>()((set, get) => ({
           // blunder. A draw is the answer for anything else that got here.
           scores.push(terminalScore(fen) ?? { cp: 0 });
         }
+
+        if (probing && inTablebaseRange(fen)) {
+          try {
+            tablebase.push((await probeTablebase(fen))?.category ?? null);
+          } catch {
+            probing = false;
+            tablebase.push(null);
+          }
+        } else {
+          tablebase.push(null);
+        }
         set({ progress: (i + 1) / ids.length });
       }
 
@@ -148,7 +189,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
       // search — not what the opponent happened to take (see
       // engine/sacrifice.ts for why that was wrong twice over).
       const sacrifices = detectSacrifices(fens);
-      const verdicts = judgeLine(scores, rootTurn, sacrifices, bookPlies);
+      const verdicts = judgeLine(scores, rootTurn, sacrifices, bookPlies, tablebase);
 
       // The review owns quality NAGs (1..6) on the mainline, like lichess
       // server analysis: judged moves get theirs, unjudged moves lose any

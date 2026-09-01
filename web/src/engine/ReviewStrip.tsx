@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, Microscope, X } from 'lucide-react';
+import { BookOpen, ChevronDown, Crown, Microscope, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
@@ -414,6 +414,19 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
             <BookOpen className="size-3" />
           </span>
         </TitleTip>
+        {/* Beside the book count, and for the same reason: both say that
+            some of these moves were not the engine's to judge. Drawn only
+            when there were any — an endgame under seven pieces is the
+            exception, and a permanent 0 with a crown beside it would be a
+            counter of nothing in every middlegame. */}
+        {summary.tablebaseMoves > 0 && (
+          <TitleTip title={t('Endgame moves judged against the tablebase, not the engine')}>
+            <span className="text-muted-foreground flex items-center gap-0.5">
+              {summary.tablebaseMoves}
+              <Crown className="size-3" />
+            </span>
+          </TitleTip>
+        )}
         <Judged count={summary.brilliancies} glyph="!!" className="text-nag-brilliant" />
         <Judged count={summary.inaccuracies} glyph="?!" className="text-nag-dubious" />
         <Judged count={summary.mistakes} glyph="?" className="text-nag-mistake" />

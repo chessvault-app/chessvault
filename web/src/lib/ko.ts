@@ -1311,6 +1311,8 @@ export const ko: Record<string, string> = {
   Forget: '잊기',
   'Forgot {n} cached answers.': '캐시된 답 {n}개를 잊었습니다.',
   'Nothing was cached.': '캐시된 것이 없습니다.',
+  'Endgame moves judged against the tablebase, not the engine':
+    '엔진이 아니라 테이블베이스로 판정한 엔드게임 수',
   Checkmate: '체크메이트',
   Stalemate: '스테일메이트',
   Win: '승리',

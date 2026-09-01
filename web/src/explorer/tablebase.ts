@@ -89,6 +89,33 @@ export function forgetTablebaseAnswers(): void {
   seen.clear();
 }
 
+/**
+ * One position, answered or not — the plain-async half of the hook.
+ *
+ * Exported because the engine review asks the same question of every
+ * endgame position on the mainline, and it must ask it through the same
+ * memo: reviewing a rook ending and then walking it on the board should
+ * cost one round trip per position, not two. Null means no table covers
+ * it; it THROWS when the source could not be reached, so a caller can
+ * tell "no answer" from "no connection" — the review stops asking on the
+ * first failure rather than spending thirty round trips learning that
+ * the network is down.
+ */
+export async function probeTablebase(
+  fen: string,
+  signal?: AbortSignal,
+): Promise<TablebaseAnswer | null> {
+  if (seen.has(fen)) return seen.get(fen) ?? null;
+  if (!inTablebaseRange(fen)) return null;
+  const body = await api<{ available?: boolean } & Partial<TablebaseAnswer>>(
+    `/api/tablebase?fen=${encodeURIComponent(fen)}`,
+    { signal },
+  );
+  const answer = body.available ? (body as TablebaseAnswer) : null;
+  seen.set(fen, answer);
+  return answer;
+}
+
 interface Probe {
   answer: TablebaseAnswer | null;
   loading: boolean;
@@ -127,12 +154,7 @@ export function useTablebase(fen: string, enabled: boolean): Probe {
       void (async () => {
         setState({ answer: null, loading: true, error: null });
         try {
-          const body = await api<{ available?: boolean } & Partial<TablebaseAnswer>>(
-            `/api/tablebase?fen=${encodeURIComponent(fen)}`,
-            { signal: controller.signal },
-          );
-          const answer = body.available ? (body as TablebaseAnswer) : null;
-          seen.set(fen, answer);
+          const answer = await probeTablebase(fen, controller.signal);
           if (!controller.signal.aborted) setState({ answer, loading: false, error: null });
         } catch (error) {
           // A superseded request is not a failure — the same rule the

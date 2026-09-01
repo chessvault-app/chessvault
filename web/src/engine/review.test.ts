@@ -1,5 +1,100 @@
 import { describe, expect, it } from 'vitest';
-import { cpOf, judgeLine, judgeNag, moveAccuracy, moverChances, summarise } from './review';
+import {
+  cpOf,
+  judgeLine,
+  judgeNag,
+  judgeTablebase,
+  moveAccuracy,
+  moverChances,
+  outcomeOf,
+  summarise,
+  type Score,
+} from './review';
+
+describe('judging against the tables instead of the engine', () => {
+  it('reads the fifty-move pair as the draw they end in', () => {
+    expect(outcomeOf('win')).toBe('win');
+    expect(outcomeOf('loss')).toBe('loss');
+    expect(outcomeOf('draw')).toBe('draw');
+    // A win the rule draws IS a draw, and its mirror likewise.
+    expect(outcomeOf('cursed-win')).toBe('draw');
+    expect(outcomeOf('blessed-loss')).toBe('draw');
+    // Not sure is not a verdict to stamp a blunder on.
+    expect(outcomeOf('maybe-win')).toBeNull();
+    expect(outcomeOf('unknown')).toBeNull();
+    expect(outcomeOf(null)).toBeNull();
+  });
+
+  it('blunders only on a changed result, and turns the reply round', () => {
+    // The verdict after a move belongs to the OPPONENT: their loss is the
+    // mover's win, so this one held everything.
+    expect(judgeTablebase('win', 'loss')).toBeNull();
+    // Won, then drawn: the whole point thrown away.
+    expect(judgeTablebase('win', 'draw')).toBe(4);
+    // Drawn, then lost.
+    expect(judgeTablebase('draw', 'win')).toBe(4);
+    // Already lost: there is nothing left to lose.
+    expect(judgeTablebase('loss', 'win')).toBeNull();
+    // Distance is not the point — a win is a win however far away.
+    expect(judgeTablebase('win', 'loss')).toBeNull();
+    // Nothing to compare against.
+    expect(judgeTablebase('win', 'unknown')).toBeNull();
+    expect(judgeTablebase(null, 'draw')).toBeNull();
+  });
+
+  it('lets the table overrule the engine in both directions', () => {
+    // A collapse in evaluation that changed nothing: +9.0 to +3.0 is a
+    // blunder by winning chances and is not a mistake at all in a won
+    // ending. White to move both times, so the reply reads `loss`.
+    const held = judgeLine([{ cp: 900 }, { cp: 300 }], 'white', undefined, 0, ['win', 'loss']);
+    expect(judgeNag(moverChances({ cp: 900 }, 'white') - moverChances({ cp: 300 }, 'white'))).toBe(4);
+    expect(held[0]!.nag).toBeNull();
+    expect(held[0]!.tablebase).toBe(true);
+
+    // And the other way: an evaluation that barely moved, over a move
+    // that threw the win away.
+    const thrown = judgeLine([{ cp: 300 }, { cp: 250 }], 'white', undefined, 0, ['win', 'draw']);
+    expect(judgeNag(moverChances({ cp: 300 }, 'white') - moverChances({ cp: 250 }, 'white'))).toBeNull();
+    expect(thrown[0]!.nag).toBe(4);
+  });
+
+  it('keeps measuring what it stops judging', () => {
+    // The book rule's principle, applied here: withholding a verdict is
+    // not the same as faking a figure, so accuracy and cp-loss stay the
+    // engine's even where the NAG is the table's.
+    const [move] = judgeLine([{ cp: 900 }, { cp: 300 }], 'white', undefined, 0, ['win', 'loss']);
+    expect(move!.nag).toBeNull();
+    expect(move!.accuracy).toBeLessThan(100);
+    expect(move!.cpLoss).toBe(600);
+  });
+
+  it('judges by engine where the tables do not cover both ends', () => {
+    const half = judgeLine([{ cp: 900 }, { cp: 300 }], 'white', undefined, 0, ['win', null]);
+    expect(half[0]!.tablebase).toBe(false);
+    expect(half[0]!.nag).toBe(4); // the engine's rule, unchanged
+  });
+
+  it('counts the covered moves per side', () => {
+    // Three plies: white, black, white — the last two inside the tables.
+    const verdicts = judgeLine(
+      [{ cp: 10 }, { cp: 10 }, { cp: 10 }, { cp: 10 }],
+      'white',
+      undefined,
+      0,
+      [null, 'draw', 'draw', 'draw'],
+    );
+    expect(summarise(verdicts, 'white').tablebaseMoves).toBe(1);
+    expect(summarise(verdicts, 'black').tablebaseMoves).toBe(1);
+  });
+
+  it('awards no brilliancy where the result is known', () => {
+    // The same move that earns "!!" out of the tables earns nothing in
+    // them: with the result settled there are no chances to offer.
+    const scores: Score[] = [{ cp: 100 }, { cp: 100 }];
+    expect(judgeLine(scores, 'white', [true], 0)[0]!.nag).toBe(3);
+    expect(judgeLine(scores, 'white', [true], 0, ['win', 'loss'])[0]!.nag).toBeNull();
+  });
+});
 
 describe('review judgments (lichess criteria)', () => {
   it('maps winning-chance drops to NAGs at the lila thresholds', () => {
