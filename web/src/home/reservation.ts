@@ -122,3 +122,148 @@ export function continueReservation(raw: string | null): ContinueShape | null {
  */
 export const shownOnDesktop = (shape: Pick<ContinueShape, 'mdRows' | 'board'>): boolean =>
   shape.board || shape.mdRows > 0;
+
+/**
+ * What the DESKTOP dashboard looked like last launch, on exactly the
+ * bargain the Continue card above is reserved on: a paint hint, never the
+ * authority, wrong by at most one launch and corrected by whatever the
+ * vault says.
+ *
+ * The dashboard used to reserve nothing, and the argument for that was
+ * written down: it waits for both answer batches so the grid lands once
+ * instead of reflowing panel by panel, and the single re-centre this costs
+ * is the beat the phone already absorbs for Continue. The first half is
+ * still true and is why there is one shape here and not one per batch. The
+ * second half was finally measured and is not true. The launcher is
+ * CENTRED in its column, so an unreserved grid does not push the page
+ * down — it moves everything on the page by half the grid's height, and
+ * what moved furthest was the Continue card, the one thing here that had
+ * been reserved to the pixel. Measured at 1920x1080 against the demo
+ * vault: the block grew 274 → 885px as the grid landed and the Continue
+ * card jumped 306px UP the screen. A reservation that is undone by the
+ * panel below it is not a reservation.
+ *
+ * Four counts and not one total, because the panels are conditional and a
+ * total cannot say which of them to draw: three Training rows and three
+ * Recent work rows are not the same three, and the panels sit in a
+ * two-column grid whose row heights come from which panel is beside
+ * which.
+ */
+export interface DashShape {
+  /** Rows the Training panel drew: solved today, review due, repertoire due. */
+  training: number;
+  /** Rows the Recent games panel drew. */
+  games: number;
+  /** Rows the Puzzle books panel drew — the tall ones, each with a cover. */
+  books: number;
+  /** Rows the Recent work panel drew. */
+  docs: number;
+}
+
+/**
+ * The most rows each panel can hold — the Training panel's three
+ * conditions, and the `slice` each of the other three lists is cut to in
+ * HomePage. Same purpose as MAX_ROWS above: a stored count past the end is
+ * clamped to something roughly right rather than dropped for being wrong,
+ * because dropping it takes the reservation away from the fullest vault,
+ * which is the one that needs it most.
+ */
+export const DASH_MAX: DashShape = { training: 3, games: 5, books: 3, docs: 5 };
+
+/** The panels, in the order the grid lays them out. */
+export const DASH_PANELS = ['training', 'games', 'books', 'docs'] as const;
+
+/** Total rows in a shape — what tells a drawn dashboard from an empty one. */
+export const dashRows = (shape: DashShape): number =>
+  DASH_PANELS.reduce((n, panel) => n + shape[panel], 0);
+
+/**
+ * What a vault holds before anybody has done anything with it, as this
+ * grid draws it: the welcome study is a recent document, and nothing else
+ * on this page exists yet — no games, no books, and a trainer that has
+ * never been opened says nothing.
+ *
+ * A floor rather than a guess, and paid for by the same case WELCOME_SHAPE
+ * is: not the first launch of a new vault, which happens once, but an
+ * established vault meeting a device that has never seen it — a new phone,
+ * a new browser, a private window, a cleared store. A richer vault than
+ * this is under-reserved and still moves, by less than the whole grid.
+ */
+export const WELCOME_DASH: DashShape = { training: 0, games: 0, books: 0, docs: 1 };
+
+/** A stored count as a count: a whole number of rows, clamped, or none. */
+const dashCount = (v: unknown, max: number): number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= 0 ? Math.min(v, max) : 0;
+
+/**
+ * The dashboard shape a device stored, or null if it stored nothing
+ * readable.
+ *
+ * "Readable" is at least one of the four counts being a number. An object
+ * with none of them is a shape from some other version of this page and
+ * says nothing about this one — the same reading as `{}` for the card
+ * above, and the difference that keeps a device which has genuinely never
+ * been here from being mistaken for one whose dashboard was empty.
+ */
+export function parseDashShape(raw: string | null): DashShape | null {
+  if (raw === null) return null;
+  let stored: unknown;
+  try {
+    stored = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof stored !== 'object' || stored === null) return null;
+  const value = stored as Partial<DashShape>;
+  if (!DASH_PANELS.some((panel) => typeof value[panel] === 'number')) return null;
+  return {
+    training: dashCount(value.training, DASH_MAX.training),
+    games: dashCount(value.games, DASH_MAX.games),
+    books: dashCount(value.books, DASH_MAX.books),
+    docs: dashCount(value.docs, DASH_MAX.docs),
+  };
+}
+
+/**
+ * What this launch reserves for the dashboard, or nothing.
+ *
+ * The same three cases as `continueReservation`, for the same reasons: a
+ * device that has been here reserves what it saw, a device that was here
+ * and saw an empty dashboard reserves nothing — the "nothing to show yet"
+ * card is a single panel of prose, not a grid, and reserving four panels
+ * for it would be the jump in the other direction — and a device that has
+ * never been here reserves the floor every vault starts at.
+ */
+export function dashReservation(raw: string | null): DashShape | null {
+  const stored = parseDashShape(raw);
+  if (stored === null) return WELCOME_DASH;
+  return dashRows(stored) > 0 ? stored : null;
+}
+
+/**
+ * Whether the setup checklist was on screen last launch.
+ *
+ * The third and last thing on this page that arrives with the vault's
+ * answer and used to arrive unreserved. It is a boolean and not a count
+ * because the list is three fixed steps: it is drawn whole or not at all.
+ * Measured at 1920x1080: 161px with its margin, which on a centred page is
+ * 81px of movement for everything else.
+ *
+ * A device that has never been here reserves NOTHING, and this is the one
+ * place that deliberately disagrees with WELCOME_DASH above. That floor is
+ * a floor because every vault is seeded with the welcome study, so the
+ * shape it reserves is one the vault certainly has. The checklist is the
+ * opposite: it exists only until the three steps are done and then never
+ * again, so on the case these floors are chosen for — an established vault
+ * meeting a new phone, a new browser, a private window — it is far more
+ * likely absent than present. Reserving it there would invent a card for
+ * the many to save a jump for the few.
+ *
+ * Unreadable reads the same as absent, on the same bargain as everything
+ * else here: this is a paint hint, and the launch it is wrong about
+ * overwrites it.
+ */
+export const checklistReservation = (raw: string | null): boolean => raw === '1';
+
+/** What a launch stores for the reader above. */
+export const storedChecklist = (shown: boolean): string => (shown ? '1' : '0');

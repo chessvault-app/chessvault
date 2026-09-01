@@ -32,7 +32,15 @@ import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
-import { continueReservation, shownOnDesktop, type ContinueShape } from './reservation';
+import {
+  checklistReservation,
+  continueReservation,
+  dashReservation,
+  shownOnDesktop,
+  storedChecklist,
+  type ContinueShape,
+  type DashShape,
+} from './reservation';
 
 // Lazy, alone among this page's imports, and for the same reason the page
 // itself is eager: Sheet brings a portal, the drag, the cover measurement
@@ -148,6 +156,12 @@ const CONTINUE_KEY = 'vault:home-continue';
     with no authority over anything, so they are simply dropped rather
     than migrated; the launch that drops them writes the shape itself. */
 const CONTINUE_LEGACY_KEYS = ['vault:home-continue-rows', 'vault:home-continue-board'];
+/** Last launch's desktop dashboard, as a shape — the same reservation one
+    panel down. See home/reservation.ts for why the grid now has one. */
+const DASH_KEY = 'vault:home-dash';
+/** Whether last launch drew the setup checklist — the third reservation,
+    and the only one on this page that a phone reserves too. */
+const CHECKLIST_SHOWN_KEY = 'vault:home-checklist-shown';
 /**
  * The last layout this device saw, kept only so the first paint draws the
  * page you actually have rather than the default one.
@@ -227,6 +241,91 @@ function LauncherButton({ entry }: { entry: Destination }) {
   );
 }
 
+/**
+ * One placeholder row of a panel, at ListRow's own rhythm.
+ *
+ * The rhythm is read from the density token rather than written as the
+ * `py-2` it resolves to at the comfortable rung: a compact vault draws
+ * these rows 6px shorter, so a literal would stand taller than the row it
+ * stands for and the centred page would settle by that much per row.
+ *
+ * The height comes from an INVISIBLE REAL TEXT LINE and not from a
+ * fixed-height bar, for the reason the Continue card found it: iOS sizes
+ * this line 1pt shorter than desktop engines do, and an `h-4` bar was that
+ * 1pt taller per row. The bars just paint over it. `trailing` is the
+ * date, tally or count column the dashboard's rows end with — it changes
+ * nothing about the height and everything about whether the placeholder
+ * reads as the row it is standing in for.
+ */
+function PlaceholderRow({ width, trailing }: { width: string; trailing?: boolean }) {
+  return (
+    <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0">
+      <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+      <span className="relative min-w-0 flex-1 font-medium">
+        <span className="invisible">&nbsp;</span>
+        <Skeleton className={cn('absolute inset-y-0.5 left-0 max-w-full', width)} />
+      </span>
+      {trailing && <Skeleton className="h-2.5 w-10 shrink-0" />}
+    </div>
+  );
+}
+
+/** Ragged widths, so a column of placeholders does not read as a barcode. */
+const ROW_WIDTHS = ['w-36', 'w-44', 'w-28', 'w-40', 'w-32'];
+
+/**
+ * One placeholder panel of the desktop dashboard: the heading it will
+ * open with, then its rows.
+ *
+ * The heading is the REAL heading and not a bar, because it is the one
+ * thing about the panel this device already knows — it names which panel
+ * is coming rather than making the reader wait to find out — and drawing
+ * it from the panel's own classes is what keeps the 35px it measures in
+ * step with the panel's.
+ *
+ * `books` swaps the row: a puzzle book's row is built round a 40px cover
+ * and measures 56px against the others' 37, so a book panel reserved with
+ * ordinary rows would be 19px short per book.
+ */
+function PlaceholderPanel({
+  title,
+  rows,
+  books = false,
+  trailing = true,
+}: {
+  title: string;
+  rows: number;
+  books?: boolean;
+  /** The date, tally or count column the dashboard's rows end with. The
+      checklist's rows have none — only a tick and a chevron. */
+  trailing?: boolean;
+}) {
+  return (
+    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+      <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+        {title}
+      </p>
+      {Array.from({ length: rows }, (_, i) =>
+        books ? (
+          <div
+            key={i}
+            className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0"
+          >
+            <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <Skeleton className="h-3.5 w-32 max-w-full" />
+              <Skeleton className="h-2 w-full" />
+            </span>
+            <Skeleton className="h-2.5 w-8 shrink-0" />
+          </div>
+        ) : (
+          <PlaceholderRow key={i} width={ROW_WIDTHS[i % ROW_WIDTHS.length]!} trailing={trailing} />
+        ),
+      )}
+    </div>
+  );
+}
+
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
   // What the vault says the page looks like; null until it has ever been
@@ -253,6 +352,13 @@ export function HomePage() {
   // tiles do, so that device draws the default page until the vault
   // answers — of which this card is one part.
   const [reserved] = useState(() => continueReservation(localStorage.getItem(CONTINUE_KEY)));
+  // And what the dashboard grid below was, on the same terms. Read once at
+  // mount like the card's: a reservation that changed while the answer was
+  // in flight would be a second jump rather than none.
+  const [reservedDash] = useState(() => dashReservation(localStorage.getItem(DASH_KEY)));
+  const [reservedChecklist] = useState(() =>
+    checklistReservation(localStorage.getItem(CHECKLIST_SHOWN_KEY)),
+  );
   // Hoisted out of the Continue row it labels: that row is built inside a
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
@@ -556,6 +662,10 @@ export function HomePage() {
   useEffect(() => {
     if (data === null) return;
     localStorage.setItem(CONTINUE_KEY, JSON.stringify(shape));
+    // Beside it, because the checklist is known from this same answer and
+    // is drawn at every width — the dashboard's shape below has to wait
+    // for a second batch a phone never asks for.
+    localStorage.setItem(CHECKLIST_SHOWN_KEY, storedChecklist(showChecklist));
     for (const key of CONTINUE_LEGACY_KEYS) localStorage.removeItem(key);
     // `shape` is derived from data; keying on data is keying on it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -595,15 +705,41 @@ export function HomePage() {
     data !== null &&
     data.repertoire.attempted > 0 &&
     (data.repertoire.due > 0 || data.repertoire.nextDue !== null);
-  // The Training panel's rows, named once and read twice: by the panel,
-  // and by the "nothing at all" card that is the negation of every
-  // panel's condition. They were written inline in the JSX, where the
-  // note above could only ask that they not be copied.
+  // The Training panel's rows, named once and read three times: by the
+  // panel, by the "nothing at all" card that is the negation of every
+  // panel's condition, and by the shape the next launch reserves from.
+  // They were written inline in the JSX, and a reservation that counted
+  // them a second time would be exactly the drift the note above warns
+  // about — a placeholder and a panel disagreeing about how many rows are
+  // coming is worse than no placeholder, because it moves the page in a
+  // direction the reader cannot predict.
   const showSolvedToday =
     data !== null && dash !== null && data.puzzleDbReady && dash.solvedToday !== null;
   const showDue =
     data !== null && data.puzzleDbReady && (data.due > 0 || data.nextDue !== null);
   const showTraining = showSolvedToday || showDue || showRepertoireDue;
+
+  /** The dashboard this launch settled on, as the next launch has to
+      reserve it: one count per panel, each read off the condition the
+      panel itself is drawn under rather than counted again here. */
+  const dashShape: DashShape = {
+    training: Number(showSolvedToday) + Number(showDue) + Number(showRepertoireDue),
+    games: dash?.recentGames.length ?? 0,
+    books: data?.books.length ?? 0,
+    docs: data?.recentDocs.length ?? 0,
+  };
+
+  // Written only once BOTH batches are in, because that is when the grid
+  // is drawn: storing it on `data` alone would record a dashboard with no
+  // games in it every launch, and reserve one short from then on.
+  useEffect(() => {
+    if (data === null || dash === null) return;
+    localStorage.setItem(DASH_KEY, JSON.stringify(dashShape));
+    // `dashShape` is derived from the two answers; keying on them is
+    // keying on it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, dash]);
+
 
   return (
     // grid-cols-[minmax(0,1fr)] is load-bearing, not tidiness: a grid's
@@ -796,6 +932,18 @@ export function HomePage() {
           </div>
         )}
 
+        {/* The checklist's place while the answer is in the air. Three
+            fixed steps, so there is nothing to count — either last launch
+            drew this card or it did not. A device that has never been here
+            reserves nothing: unlike Continue and the grid, this card is
+            the one thing on the page that a settled vault has finished
+            with for good (reservation.ts). */}
+        {data === null && reservedChecklist && (
+          <div role="status" aria-label={t('Loading')} aria-live="polite" className="mb-4">
+            <PlaceholderPanel title={t('Set up your vault')} rows={3} trailing={false} />
+          </div>
+        )}
+
         {showChecklist && (
           <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
             <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
@@ -910,15 +1058,50 @@ export function HomePage() {
           ))}
         </div>
 
+        {/* The dashboard's place, held while the two batches are in the
+            air, at the size last launch's grid came to (reservation.ts).
+            Both the panels and their row counts are reserved, because the
+            grid is two columns and a row of it is as tall as the taller
+            panel in it — a total would have reserved the right number of
+            rows in the wrong column and been wrong by the difference.
+
+            The wait this covers is one round trip against a warm vault,
+            which is what the argument for reserving nothing rested on.
+            What that argument missed is that this page is CENTRED: an
+            unreserved grid does not push the page down, it moves every
+            other thing on it by half the grid, and the thing it moved
+            furthest was the Continue card above — the one element here
+            that was already reserved to the pixel. Measured at 1920x1080:
+            306px, upwards, on every launch. */}
+        {(data === null || dash === null) && reservedDash !== null && (
+          <div
+            role="status"
+            aria-label={t('Loading')}
+            aria-live="polite"
+            className="grid gap-3 max-md:hidden lg:grid-cols-2"
+          >
+            {reservedDash.training > 0 && (
+              <PlaceholderPanel title={t('Training')} rows={reservedDash.training} />
+            )}
+            {reservedDash.games > 0 && (
+              <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} />
+            )}
+            {reservedDash.books > 0 && (
+              <PlaceholderPanel title={t('Puzzle books')} rows={reservedDash.books} books />
+            )}
+            {reservedDash.docs > 0 && (
+              <PlaceholderPanel title={t('Recent work')} rows={reservedDash.docs} />
+            )}
+          </div>
+        )}
+
         {/* The dashboard — what is happening in the vault, drawn only
             where the sidebar already does the navigating. It waits for
             both answer batches so the grid lands once instead of
-            reflowing panel by panel, and no skeleton holds its place:
-            against a warm vault the wait is one round trip, and the one
-            re-centre it costs when the grid lands is the same beat the
-            phone already absorbs for Continue. A panel with nothing to
-            say is not drawn — an empty box is a question, not a fact —
-            and a vault with nothing at all says so once, in one card. */}
+            reflowing panel by panel; what holds its place until then is
+            the placeholder above. A panel with nothing to say is not
+            drawn — an empty box is a question, not a fact — and a vault
+            with nothing at all says so once, in one card. */}
         {data !== null && dash !== null && (
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
             {showTraining && (

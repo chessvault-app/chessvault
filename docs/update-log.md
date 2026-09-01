@@ -7,6 +7,26 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Two panels that moved the page while it loaded.** The home page's
+  Continue card has been reserved to the pixel for two releases, and it
+  still jumped on every launch — because the page is CENTRED, and the two
+  things below it were not reserved at all. An unreserved panel on a
+  centred page does not push what is under it down; it moves everything by
+  half its own height, including whatever was carefully held still above
+  it. Measured at 1920x1080 against the demo vault: the dashboard grid and
+  the setup checklist arrived worth 611px between them, and the Continue
+  card travelled 306px up the screen as they landed. Both now reserve
+  their place from what this device saw last launch, the same paint hint
+  the card itself uses — four row counts for the dashboard, because its
+  panels sit two to a row and a row is as tall as the taller panel in it,
+  and one flag for the checklist, which is three fixed steps or nothing.
+  A launch that was wrong about either is corrected by the vault, as
+  before. The same measurement now reads 0px: the block is 885px tall
+  before the answer and 885px after it, and nothing on the page moves.
+  A device that has never opened the vault reserves the floor every vault
+  starts at — for the checklist that floor is nothing, since it is the one
+  card here a settled vault has finished with for good.
+
 - **The workspace stopped growing sideways when the engine came on.** The
   eval bar's 36px lane is added to the board's column rather than taken
   out of the board, and the page's one width cap — which is what keeps the
