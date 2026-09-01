@@ -1302,12 +1302,15 @@ export const ko: Record<string, string> = {
   'A folder of .rtbw and .rtbz files': '.rtbw와 .rtbz 파일이 있는 폴더',
   'Tablebase files': '테이블베이스 파일',
   'Use the tablebase': '테이블베이스 사용',
-  'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — the vault’s own setting is where the answers come from, below.':
+  'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — where the answers come from is the vault’s own setting, below.':
     '기물이 7개 이하인 포지션의 정확한 결과를 탐색기와 엔진 리뷰에 표시합니다. 이 기기에만 적용되며, 답이 어디서 오는지는 아래의 금고 설정입니다.',
+  'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only.':
+    '기물이 7개 이하인 포지션의 정확한 결과를 탐색기와 엔진 리뷰에 표시합니다. 이 기기에만 적용됩니다.',
   'Answers come from': '답이 오는 곳',
-  Lichess: 'Lichess',
-  'Your server': '내 서버',
-  'Table files': '테이블 파일',
+  'Lichess’s public tablebase': 'Lichess의 공개 테이블베이스',
+  'A tablebase server of your own': '직접 운영하는 테이블베이스 서버',
+  'Table files on the server': '서버에 있는 테이블 파일',
+  'Forget cached answers': '캐시된 답 잊기',
   'Off on this device — no endgame lookups are made from here.':
     '이 기기에서는 꺼져 있습니다 — 여기서는 엔드게임 조회를 하지 않습니다.',
   'Answering from the table files on the server — nothing else involved.':

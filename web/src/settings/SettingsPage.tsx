@@ -25,7 +25,6 @@ import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Disclosure } from '@/components/disclosure';
-import { Segmented } from '@/components/segmented';
 import { SettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { Switch } from '@/components/ui/switch';
@@ -927,9 +926,16 @@ function TablebaseCard({
     <Card icon={Crown} title={t('Tablebase')}>
       <SettingRow
         title={t('Use the tablebase')}
-        blurb={t(
-          'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — the vault’s own setting is where the answers come from, below.',
-        )}
+        blurb={
+          tablebase
+            ? t(
+                'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — where the answers come from is the vault’s own setting, below.',
+              )
+            : // Nothing is below while this is off, so it does not promise one.
+              t(
+                'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only.',
+              )
+        }
       >
         <Switch
           checked={tablebase}
@@ -946,23 +952,31 @@ function TablebaseCard({
               the choice is stored rather than inferred from which box is
               full (server/tablebase.ts). */}
           <div className="flex flex-col gap-2">
-            <p className="text-foreground text-sm font-medium">{t('Answers come from')}</p>
-            <Segmented
-              value={source}
-              onChange={(next) => void pick(next)}
-              ariaLabel={t('Answers come from')}
-              even
-              // All three offered wherever you are looking from. Only the
-              // PATH BOX below is a question a remote client cannot
-              // answer; the choice itself is the vault's, and a server
-              // that holds the tables is a perfectly ordinary setup that
-              // its owner must be able to see and change from a phone.
-              segments={[
-                { value: 'lichess' as const, label: t('Lichess') },
-                { value: 'server' as const, label: t('Your server') },
-                { value: 'files' as const, label: t('Table files') },
-              ]}
-            />
+            {/* A Field and a Select, because that is what a choice looks
+                like on this page — App theme, Density, Colour, Board,
+                Pieces, Castling and both sounds are all this shape, and
+                a segmented strip here would have been the only one of
+                its kind on the page. All three options are offered
+                wherever you are looking from: only the PATH BOX below is
+                a question a remote client cannot answer, and a server
+                that holds the tables is an ordinary setup its owner must
+                be able to see and change from a phone. */}
+            <Field label={t('Answers come from')}>
+              <Select
+                value={source}
+                onValueChange={(v) => void pick(v as 'lichess' | 'server' | 'files')}
+                ariaLabel={t('Answers come from')}
+                groups={[
+                  {
+                    options: [
+                      { value: 'lichess', label: t('Lichess’s public tablebase') },
+                      { value: 'server', label: t('A tablebase server of your own') },
+                      { value: 'files', label: t('Table files on the server') },
+                    ],
+                  },
+                ]}
+              />
+            </Field>
             <p className="text-muted-foreground text-sm">{answering}</p>
           </div>
 
@@ -1046,16 +1060,21 @@ function TablebaseCard({
               here", because nothing asks it again. This is how you ask
               again — and the way to take the disk back, and to stop
               keeping a record of which endings you studied. */}
-          <SettingRow
-            title={t('Cached answers')}
-            blurb={t(
+          {/* Shaped like Browsed games' "Clear all" two cards below, which
+              is the page's way of offering to empty a cache: a sentence,
+              then a ghost button on its own line. It was a boxed
+              SettingRow with a filled button, which made throwing answers
+              away look like the weightiest control on the card. */}
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {t(
               'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.',
             )}
-          >
-            <Button variant="secondary" onClick={() => void forget()}>
-              {t('Forget')}
+          </p>
+          <div className="flex items-center justify-end">
+            <Button variant="ghost" onClick={() => void forget()}>
+              {t('Forget cached answers')}
             </Button>
-          </SettingRow>
+          </div>
         </>
       )}
       <Feedback note={note} />
