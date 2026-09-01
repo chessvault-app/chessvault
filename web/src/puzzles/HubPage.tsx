@@ -148,6 +148,19 @@ const SHELF_ROWS = 1;
  */
 const SLOT_FILLED_KEY = 'vault:puzzle-hub-slot';
 
+/**
+ * The local day the "Solved today" line was last on screen — the same
+ * bargain as SLOT_FILLED_KEY below, with a date on it because this is
+ * the one shape here that expires on its own: solving five puzzles
+ * tonight says nothing about tomorrow's launch, and a bit without the
+ * date reserved a line every morning that the answer then took away.
+ * Within a day it is exactly right, which is when the hub is revisited.
+ */
+const SOLVED_TODAY_KEY = 'vault:puzzle-hub-solved';
+
+/** The reservation's calendar day. Local, like the line it stands for. */
+const localDay = (): string => new Date().toDateString();
+
 /** How much history to fetch. More than fits, deliberately: the panel
     stretches to whatever the page has spare and scrolls its own rows, so
     the number that fits is a property of the phone, not of this file. */
@@ -285,7 +298,10 @@ function HubSkeletonHistoryPanel() {
   return (
     <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
       <SkeletonPanelHeading width="w-24" className="shrink-0" />
-      <div className="min-h-0 flex-1">
+      {/* overflow-y-auto like the list it stands for: the panel is
+          overflow-hidden, so on a screen short enough the real rows
+          scroll where these were simply clipped. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <SkeletonRows rows={3} />
       </div>
     </div>
@@ -718,6 +734,7 @@ function Hub() {
   const [booksIn, setBooksIn] = useState(false);
   const [metaIn, setMetaIn] = useState(false);
   const [slotWasFilled] = useState(() => localStorage.getItem(SLOT_FILLED_KEY) === '1');
+  const [solvedLineToday] = useState(() => localStorage.getItem(SOLVED_TODAY_KEY) === localDay());
 
   useEffect(() => {
     /**
@@ -938,6 +955,11 @@ function Hub() {
     if (slot === 'pending') return;
     localStorage.setItem(SLOT_FILLED_KEY, slot === 'none' ? '0' : '1');
   }, [slot]);
+  useEffect(() => {
+    if (!settled || solvedToday === null) return;
+    if (solvedToday > 0) localStorage.setItem(SOLVED_TODAY_KEY, localDay());
+    else localStorage.removeItem(SOLVED_TODAY_KEY);
+  }, [settled, solvedToday]);
 
   // Subscribed rather than read once: the trainer writes it and coming back
   // here re-mounts, which used to be the whole story — but the vault owns
@@ -1016,7 +1038,22 @@ function Hub() {
           historyBlock ? 'shrink-0' : 'flex-1',
         )}
       >
-        {skeleton && <HubSkeletonCards fill={!historyBlock} />}
+        {skeleton && (
+          <>
+            {/* The "Solved today" line's 20px, reserved on the days it
+                was there — it renders only once settled, and the column
+                is pinned to the bottom edge, so a line from nothing
+                moved every board above it up by itself plus the gap:
+                the exact move the ANSWERS gate was built to stop, on
+                any day with training in it. */}
+            {solvedLineToday && (
+              <div className="flex h-5 items-center px-1">
+                <Skeleton className="h-2.5 w-28" />
+              </div>
+            )}
+            <HubSkeletonCards fill={!historyBlock} />
+          </>
+        )}
 
         {settled && solvedToday !== null && solvedToday > 0 && (
           <p className="text-muted-foreground px-1 text-sm font-medium">
