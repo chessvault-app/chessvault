@@ -341,6 +341,18 @@ interface PrefsState {
    * fails the right way.
    */
   autosave: boolean;
+  /**
+   * Whether the explorer looks up exact endgame verdicts (Settings >
+   * Tablebase).
+   *
+   * Per-device for the same reason autosave is, plus one of its own: it
+   * is the one lookup in the app that leaves the machine WITHOUT being
+   * asked for — no source to select, no button to press, just a position
+   * small enough. Somebody on a metered connection, or who would rather
+   * their endgames stayed theirs, needs a way to say no, and it has to
+   * be a way that does not also switch off the explorer.
+   */
+  tablebase: boolean;
   /** Which preset is selected. */
   schemeId: string;
   scheme: Scheme;
@@ -360,6 +372,7 @@ interface PrefsState {
   setAnnotationSize: (size: AnnotationSize) => void;
   setHaptics: (on: boolean) => void;
   setAutosave: (on: boolean) => void;
+  setTablebase: (on: boolean) => void;
 }
 
 const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
@@ -421,6 +434,11 @@ export const usePrefs = create<PrefsState>()(
       annotationSize: 'medium',
       haptics: true,
       autosave: false,
+      // On: an endgame verdict is the answer the engine cannot give, and
+      // a feature nobody finds is a feature nobody has. It costs one
+      // request per position under seven pieces, cached for good, and
+      // Settings > Tablebase turns it off.
+      tablebase: true,
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
       radius: 'default',
@@ -442,6 +460,7 @@ export const usePrefs = create<PrefsState>()(
       setAnnotationSize: (annotationSize) => set({ annotationSize }),
       setHaptics: (haptics) => set({ haptics }),
       setAutosave: (autosave) => set({ autosave }),
+      setTablebase: (tablebase) => set({ tablebase }),
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
         const scheme = preset ? preset.scheme : get().scheme;

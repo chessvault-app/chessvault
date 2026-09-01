@@ -40,6 +40,7 @@ import { ClearableInput } from '@/components/text-fields';
 import { DatePicker } from '@/components/date-picker';
 import { FilterChip } from '@/components/filter-chip';
 import { Panel, PanelHeader } from '@/components/panel';
+import { TablebaseSection } from './TablebaseSection';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SideDot } from '@/components/side-dot';
 import { Switch } from '@/components/ui/switch';
@@ -356,6 +357,11 @@ export function ExplorerPane({
             </span>
           </div>
 
+          {/* Outside the statistics block below, and above it: the exact
+              answer does not belong under a list of what happened to
+              other people, and it must still be there when the chosen
+              source is the one that failed. */}
+          <TablebaseSection fen={node.fen} onPlay={playUci} />
 
           {error ? (
             /* The online databases go through the server's Lichess

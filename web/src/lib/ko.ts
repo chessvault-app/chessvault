@@ -1287,6 +1287,38 @@ export const ko: Record<string, string> = {
   'Show all {n} moves': '{n}개 수 모두 보기',
   Delete: '삭제',
 
+  // --- tablebase -----------------------------------------------------------
+  // 저주받은 승리 / 축복받은 패배: the fifty-move pair, named in Korean the
+  // way Syzygy names them in English — the outcome is the draw, and the
+  // label says which side it was taken from. `Draw` and the two "to play"
+  // lines are not here: other sections already carry them, and one key may
+  // only be translated once.
+  Tablebase: '테이블베이스',
+  'Endgame tablebase': '엔드게임 테이블베이스',
+  'Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.':
+    '기물이 7개 이하인 포지션의 정확한 결과를 탐색기에 표시합니다. 포지션은 Lichess의 공개 테이블베이스로 전송되며, 모든 답은 이 금고의 디스크에 보관됩니다 — 한 번 조회한 엔드게임은 이후 오프라인에서도 답을 얻습니다.',
+  'The tablebase is out of reach, and this position is not cached.':
+    '테이블베이스에 연결할 수 없고, 이 포지션은 캐시에 없습니다.',
+  Checkmate: '체크메이트',
+  Stalemate: '스테일메이트',
+  Win: '승리',
+  Loss: '패배',
+  Unknown: '알 수 없음',
+  'Cursed win': '저주받은 승리',
+  'Blessed loss': '축복받은 패배',
+  'Probably win': '승리 가능성',
+  'Probably loss': '패배 가능성',
+  'Win, drawn by the fifty-move rule': '승리이지만 50수 규칙으로 무승부',
+  'Win, unless the fifty-move rule intervenes': '50수 규칙이 걸리지 않는 한 승리',
+  'Loss, drawn by the fifty-move rule': '패배이지만 50수 규칙으로 무승부',
+  'Loss, unless the fifty-move rule saves it': '50수 규칙이 구해주지 않는 한 패배',
+  'DTM {n}': 'DTM {n}',
+  'DTZ {n}': 'DTZ {n}',
+  'Distance to mate, in half-moves, with best play from both sides.':
+    '양쪽이 최선을 다했을 때 메이트까지 남은 반수(half-move)입니다.',
+  'Distance to the next capture or pawn move, in half-moves — what the fifty-move rule counts.':
+    '다음 기물 교환이나 폰 이동까지 남은 반수(half-move) — 50수 규칙이 세는 수입니다.',
+
   // --- games ---------------------------------------------------------------
   Added: '추가됨',
   'Change password': '비밀번호 변경',

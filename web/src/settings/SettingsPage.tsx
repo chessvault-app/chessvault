@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { PageHeader } from '@/components/page-header';
@@ -154,6 +154,7 @@ export function SettingsPage() {
             <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
+            <TablebaseCard />
             <BrowsedGamesCard />
             <StorageCard />
             <RecoveryCard />
@@ -811,6 +812,41 @@ function DocumentsCard() {
           checked={autosave}
           onCheckedChange={() => setAutosave(!autosave)}
           aria-label={t('Auto-save')}
+        />
+      </SettingRow>
+    </Card>
+  );
+}
+
+/**
+ * The one lookup the app makes without being asked for it.
+ *
+ * Every other online source in the app is chosen — the explorer's
+ * Lichess databases are picked from a switcher and need a token of your
+ * own. The tablebase is not picked: it answers whenever the position is
+ * small enough, which is what makes it useful and what makes this switch
+ * necessary. The blurb says where the position goes and what is kept,
+ * because a setting that hides its cost is not a choice.
+ *
+ * Beside the token card rather than under Documents: both cards are
+ * about what this vault says to somebody else's server.
+ */
+function TablebaseCard() {
+  const tablebase = usePrefs((p) => p.tablebase);
+  const setTablebase = usePrefs((p) => p.setTablebase);
+
+  return (
+    <Card icon={Crown} title={t('Tablebase')}>
+      <SettingRow
+        title={t('Endgame tablebase')}
+        blurb={t(
+          'Show the exact result for positions of seven pieces or fewer, in the explorer. The position is sent to Lichess’s public tablebase, and every answer is kept on this vault’s disk — so an ending looked up once is answered offline afterwards.',
+        )}
+      >
+        <Switch
+          checked={tablebase}
+          onCheckedChange={() => setTablebase(!tablebase)}
+          aria-label={t('Endgame tablebase')}
         />
       </SettingRow>
     </Card>
