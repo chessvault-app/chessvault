@@ -76,6 +76,30 @@ other people.
   learn is cached like any other lookup. Switched off in Settings, the
   review judges the whole game the way it always did.
 
+- **Or from the table files themselves, with no server at all.** Point
+  Settings → Tablebase at a folder of Syzygy `.rtbw`/`.rtbz` files and
+  the native core reads them directly: no second program to install, no
+  network, nothing leaving the machine. It is the binary's first
+  RESIDENT mode — every other job it does starts, burns CPU and exits,
+  where this one holds its tables memory-mapped and answers questions
+  for as long as it is wanted, because a probe from a warm mapping is
+  microseconds and starting a process to make one is tens of
+  milliseconds. The native counterpart of the resident scan worker, and
+  the same shape for the same reason.
+  
+  It answers in Lichess's own format rather than the app's, on purpose:
+  the point-of-view flipping and the move ordering stay in one place,
+  in TypeScript, so both sources go through one normaliser instead of
+  two that could drift.
+
+  Ours is the one of the three sources we wrote, so it is held to the
+  other two. `npm run check:tablebase` walks random endings, asks the
+  native prober and the reference server about each, and compares every
+  verdict — the position's and every legal move's. Measured before this
+  shipped: 120 positions, no disagreement. Distances read DTZ rather
+  than DTM, because Syzygy holds no distance to mate; the pane already
+  says which it is showing.
+
 - **Or answer from your own tables.** The server Lichess runs is open
   source, so Settings → Tablebase takes an address as well as a switch:
   run lila-tablebase over a copy of the tables and point this vault at

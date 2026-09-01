@@ -545,8 +545,19 @@ Tablebase, or by hand:
 { "tablebaseUrl": "http://localhost:7788/standard" }
 ```
 
-Absent, the public server answers. Each endpoint's answers are cached
-separately, under `data/tablebase-cache`.
+Or skip the server entirely. With the native core built
+(`npm run build:native`), name a folder of Syzygy files and they are read
+directly — no second process to install, no network:
+
+```json
+{ "tablebaseDir": "/srv/syzygy/3-4-5" }
+```
+
+Local tables win where they are readable; otherwise the server above
+answers. Each source's answers are cached separately, under
+`data/tablebase-cache`, because two sources need not hold the same
+tables. `npm run check:tablebase -- --tables <dir>` compares your tables
+against the reference server, position by position and move by move.
 
 `config.json` also holds `appPassword` and the 2FA `totpSecret` when the
 lock screen is on — the Settings page manages all three, and the vault's

@@ -95,7 +95,10 @@ flowchart LR
   and study-export endpoints (`server/lichess.ts`) and to the endgame
   tablebase (`server/tablebase.ts`, behind a `TablebaseProbe` interface,
   pointed by the vault's `tablebaseUrl` at Lichess's public Syzygy
-  server or at one of your own). Both proxies cache to disk under
+  server or at one of your own — or answered with no server at all,
+  where `tablebaseDir` names a folder of Syzygy files and the native
+  core's resident tablebase mode reads them,
+  `server/tablebaseNative.ts`). Both proxies cache to disk under
   `CHESS_VAULT_DATA`; the explorer's entries expire, the tablebase's
   never do, and each tablebase endpoint gets its own subdirectory since
   two servers need not hold the same tables. Sets COOP/COEP so the
@@ -114,7 +117,8 @@ flowchart LR
   frontier (desktop, PWA, phone) a thin client. On phones a contextual
   bottom bar (`web/src/components/mobile-action-bar.tsx`) hands the open
   page its own controls in place of the global tabs.
-- **Job children** (spawned by the server, never in-process): the heavy
+- **Job children** (spawned by the server, never in-process — with two
+  deliberate exceptions, both below): the heavy
   database work — building a reference database, indexing its positions,
   optimizing it, scanning every game for a position — runs as a child so
   the API stays answerable, with one job slot and the child's stdout as
@@ -132,7 +136,11 @@ flowchart LR
   database, requests queueing into it, evicted after 30 idle minutes —
   because its whole point is state that outlives a request, which a
   spawned-per-job child cannot keep. `docs/databases.md`, "How the
-  search answers", has the shape.
+  search answers", has the shape. The second exception is the same shape
+  in the other language: `chessvault-core tablebase` is a RESIDENT child
+  holding memory-mapped Syzygy files, spawned once and kept, because a
+  process started per lookup would spend tens of milliseconds to read a
+  few hundred bytes (`server/tablebaseNative.ts`, `native/README.md`).
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,

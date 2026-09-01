@@ -516,8 +516,19 @@ Lichess 퍼즐 기록 가져오기에는 `puzzle:read`를 추가). 설정 페이
 { "tablebaseUrl": "http://localhost:7788/standard" }
 ```
 
-없으면 공개 서버가 답합니다. 엔드포인트마다 답은 `data/tablebase-cache`
-아래에 따로 캐시됩니다.
+서버를 아예 건너뛸 수도 있습니다. 네이티브 코어를 빌드해 두면
+(`npm run build:native`) Syzygy 파일이 든 폴더를 적는 것만으로 그 파일을
+직접 읽습니다. 설치할 프로세스도, 네트워크도 필요 없습니다:
+
+```json
+{ "tablebaseDir": "/srv/syzygy/3-4-5" }
+```
+
+읽을 수 있는 로컬 테이블이 있으면 그쪽이 우선하고, 아니면 위의 서버가
+답합니다. 출처마다 답은 `data/tablebase-cache` 아래에 따로 캐시됩니다.
+두 출처가 같은 표를 가지고 있으리라는 법이 없기 때문입니다.
+`npm run check:tablebase -- --tables <dir>`로 내 테이블을 기준 서버와
+포지션 단위·수 단위로 대조할 수 있습니다.
 
 `config.json`은 잠금 화면이 켜져 있을 때 `appPassword`와 2FA의
 `totpSecret`도 담습니다. 설정 페이지가 이 셋을 모두 관리하며, 보관함의

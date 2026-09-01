@@ -109,18 +109,18 @@ grows eventually, kept off until a use case actually asks for them —
   ranked move list and the cache keeps it. What it needs is a rule for
   what counts (one winning move out of thirty is not the same as one out
   of two) and a NAG that does not lie about being Stockfish's.
-- **Probing `.rtbz` files in process** — reading the tables directly
-  rather than over HTTP. Note what this is NOT waiting for any more:
-  answering from your own tables is supported, because lila-tablebase
-  is open source and Settings takes its address (`tablebaseUrl`), so
-  anybody with the files can already keep every lookup on their own
-  machine. What is left is doing it without a second process — one
-  fewer thing to run and to keep running, at the cost of a Syzygy
-  reader in this codebase and the tables in a place the app owns
-  (a gigabyte for five pieces, far more past that: a downloader,
-  somewhere to put them, and a check that what arrived is what was
-  asked for). Worth doing only when running one small server beside
-  the app is the thing people will not do.
+- **Getting the tables for you** — the app downloading a Syzygy set and
+  keeping it, instead of asking for a folder that already holds one.
+  Reading the files shipped (`chessvault-core tablebase`, pointed at by
+  `tablebaseDir`), so the only thing between a vault and a fully local
+  tablebase is now the data: about a gigabyte for three-to-five pieces,
+  and far more past that. What a downloader needs beyond a progress bar
+  is the awkward part — somewhere to put ~150 files that is not the
+  vault (they are neither the user's data nor derived from it), a
+  resumable fetch, and a check that what arrived is what was asked for,
+  since a corrupt table is a confidently wrong verdict rather than an
+  error. Worth building when people are asking for the feature and
+  stopping at the download.
 - **Multi-engine support** — installing and switching between engines
   beyond the bundled one; worth adding when someone actually wants a
   second opinion, or needs an engine the app does not ship.
