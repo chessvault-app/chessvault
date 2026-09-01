@@ -595,11 +595,15 @@ export function HomePage() {
     data !== null &&
     data.repertoire.attempted > 0 &&
     (data.repertoire.due > 0 || data.repertoire.nextDue !== null);
-  const showTraining =
-    data !== null &&
-    ((data.puzzleDbReady &&
-      ((dash !== null && dash.solvedToday !== null) || data.due > 0 || data.nextDue !== null)) ||
-      showRepertoireDue);
+  // The Training panel's rows, named once and read twice: by the panel,
+  // and by the "nothing at all" card that is the negation of every
+  // panel's condition. They were written inline in the JSX, where the
+  // note above could only ask that they not be copied.
+  const showSolvedToday =
+    data !== null && dash !== null && data.puzzleDbReady && dash.solvedToday !== null;
+  const showDue =
+    data !== null && data.puzzleDbReady && (data.due > 0 || data.nextDue !== null);
+  const showTraining = showSolvedToday || showDue || showRepertoireDue;
 
   return (
     // grid-cols-[minmax(0,1fr)] is load-bearing, not tidiness: a grid's
@@ -925,16 +929,18 @@ export function HomePage() {
                 {/* Today's count is skipped when the history endpoint did
                     not answer: a nought that is really an error would say
                     you have not trained when you may well have. */}
-                {data.puzzleDbReady && dash.solvedToday !== null && (
+                {showSolvedToday && (
                   <ListRow divided onClick={() => navigate('puzzles')} className="text-sm">
                     <Puzzle className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
-                      {t('Solved today: {n}', { n: dash.solvedToday })}
+                      {/* Non-null by showSolvedToday, which is the
+                          condition this row is drawn under. */}
+                      {t('Solved today: {n}', { n: dash.solvedToday! })}
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>
                 )}
-                {data.puzzleDbReady && (data.due > 0 || data.nextDue !== null) && (
+                {showDue && (
                   <ListRow divided onClick={() => navigate('puzzles')} className="text-sm">
                     <RotateCcw className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
