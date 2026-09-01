@@ -98,18 +98,17 @@ grows eventually, kept off until a use case actually asks for them —
   material — Scid's ladder), which answer most of the same questions at
   a fraction of the UI; revisit only when the ladder plus motifs fail a
   question someone actually asked.
-- **Tablebase-graded endgame review** — the engine review judging
-  endgame moves against the table rather than against Stockfish's
-  eval. This is the half of the old "tablebase support" entry that has
-  not fired: the verdicts themselves shipped (the explorer probes any
-  position of seven pieces or fewer through the server, which caches
-  every answer for good — `server/tablebase.ts`), which settles the
-  drawn-or-won question that entry's second trigger named. Grading play
-  against perfection is a different job: a probe for every position of
-  a walked mainline, and a mistake rule that is not the eval-swing one
-  — under a tablebase a move is a blunder when it changes the RESULT,
-  by any distance. Worth building when reviewing an ending against the
-  engine's numbers is what stops being good enough.
+- **"Only move" in an endgame** — saying that a move was the single one
+  that held the result, which is the one thing a table can call
+  brilliant and the review currently cannot. Grading against the tables
+  shipped, and with it the decision that no move under them earns "!!":
+  brilliancy is measured in winning chances offered against material,
+  and where the result is known there are no chances — every move that
+  holds the win is just the method. Sole-move is the honest replacement,
+  and the data is already in hand, since a probe carries the whole
+  ranked move list and the cache keeps it. What it needs is a rule for
+  what counts (one winning move out of thirty is not the same as one out
+  of two) and a NAG that does not lie about being Stockfish's.
 - **Probing `.rtbz` files in process** — reading the tables directly
   rather than over HTTP. Note what this is NOT waiting for any more:
   answering from your own tables is supported, because lila-tablebase

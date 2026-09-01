@@ -44,6 +44,38 @@ other people.
   underneath, because an ending nobody could look up is a smaller loss
   than an ending nobody can explore.
 
+- **The review stops guessing about endings too.** Engine review now
+  judges a move under seven pieces on the RESULT it left behind, not on
+  the score it moved: a blunder is a move that turns a win into a draw
+  or a draw into a loss, by any distance. Mate in 5 to mate in 40 throws
+  away nothing and is no longer a mistake; a quiet king move that
+  concedes the draw is one however small the evaluation swing. There are
+  no endgame inaccuracies any more, because there is no such thing as
+  slightly losing a won ending.
+
+  The fifty-move rule is part of it, which is the case that proves the
+  rule is really the table's: the same king move, in the same position,
+  is a blunder with a fresh counter and no mistake at all ninety-nine
+  plies later — by then the win was already cursed, so nothing was
+  thrown away. Cursed wins and blessed losses count as the draws they
+  end in, here exactly as in the explorer's colours.
+
+  What it does NOT do is fake a number. Accuracy and centipawn loss stay
+  the engine's measurement, for the same reason a book move keeps its
+  own: withholding a verdict is not the same as inventing a figure, and
+  an accuracy that jumped to 100 the move the pieces ran out would be a
+  number about nothing. The summary counts how many moves the tables
+  judged, beside the count of book moves — both saying the same thing,
+  that some of these were not the engine's to judge. No move under the
+  tables is called brilliant: "!!" is chances offered against material,
+  and where the result is known there are none.
+
+  The probes ride the walk the review already makes, so they cost
+  nothing extra, they stop at the first failure rather than spending
+  thirty round trips learning the network is down, and everything they
+  learn is cached like any other lookup. Switched off in Settings, the
+  review judges the whole game the way it always did.
+
 - **Or answer from your own tables.** The server Lichess runs is open
   source, so Settings → Tablebase takes an address as well as a switch:
   run lila-tablebase over a copy of the tables and point this vault at
