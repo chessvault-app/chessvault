@@ -40,6 +40,23 @@ installer. This section becomes the next version's heading.
   line on the days it was actually there, dated so yesterday's training
   cannot invent a line this morning.
 
+  A second batch takes it to the rest of the app. The puzzle dashboard
+  reserves its three variable blocks — the review slot's four possible
+  shapes, the Books panel down to the EmptyState an unbooked vault
+  actually settles into (taller than the rows it used to invent), and
+  the attempts list inside its own 384px ceiling; measured, every panel
+  holds its exact place through the swap. The studies, notes and book
+  shelves reserve their own grouped shape — cards at the root, cards
+  per collection under its 24px header, which was never reserved at all
+  — and the grid card's excerpt reservation catches up with its
+  two-line clamp, which a stale measurement had pinned at one; the
+  studies shelf now measures pixel-identical through the swap. And each
+  puzzle book's page remembers that book's own tile count and whether a
+  cycle was open, so a twelve-puzzle book no longer collapses four rows
+  of a 48-tile guess. The floors follow each page's own facts: a shelf
+  something is seeded onto floors at one card, one nothing seeds at
+  none.
+
 - **Two panels that moved the page while it loaded.** The home page's
   Continue card has been reserved to the pixel for two releases, and it
   still jumped on every launch — because the page is CENTRED, and the two
