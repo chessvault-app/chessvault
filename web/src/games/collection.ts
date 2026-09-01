@@ -24,6 +24,37 @@ export function forgetCollection(): void {
   cache = null;
 }
 
+/**
+ * The one bit of the list that has to survive the session: whether it
+ * had anything in it. The cache above is per session by design — it
+ * holds whole game objects — so it is null at every cold start, and the
+ * Games pane's opening tab, which needs an answer BEFORE the first
+ * paint, had nothing to read. It opened on Databases every launch, drew
+ * that tab's rows, and flipped to the collection once `/api/games`
+ * landed: a measured 85ms of the wrong tab against a warm local server,
+ * 280ms against a cold one, and two `/api/refgames` round trips thrown
+ * away with it. A bit is small enough to keep, so it is kept.
+ *
+ * Written on every load rather than only when it changes, and never
+ * cleared by `forgetCollection` — that drops the session's copy of the
+ * list, not the record of what the list last was.
+ */
+const NONEMPTY_KEY = 'vault:games-collection-nonempty';
+
+/**
+ * Whether the collection held games the last time it was read on this
+ * device. False when it was empty, and equally when nothing has ever
+ * read it or there is no storage to read: all three are "no reason to
+ * believe there are games", which is the only question the caller asks.
+ */
+export function collectionWasNonEmpty(): boolean {
+  try {
+    return localStorage.getItem(NONEMPTY_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export async function loadCollection(): Promise<GameSummary[]> {
   // One request even when both panes of the page ask at the same moment.
   // api() throws on failure, so the rejection reaches every caller's own
@@ -31,6 +62,11 @@ export async function loadCollection(): Promise<GameSummary[]> {
   inFlight ??= api<{ games: GameSummary[] }>('/api/games')
     .then(({ games }) => {
       cache = games;
+      try {
+        localStorage.setItem(NONEMPTY_KEY, games.length > 0 ? '1' : '0');
+      } catch {
+        /* the session still has the list; only the next cold start loses it */
+      }
       return games;
     })
     .finally(() => {

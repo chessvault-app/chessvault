@@ -7,7 +7,12 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from 'react';
-import { cachedCollection, forgetCollection, loadCollection } from './collection';
+import {
+  cachedCollection,
+  collectionWasNonEmpty,
+  forgetCollection,
+  loadCollection,
+} from './collection';
 
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -195,18 +200,29 @@ export function GamesBrowser({
       is not the leading one, and there the leading one has nothing to
       show.
 
-      `cachedCollection()` answers synchronously on every visit after the
-      first, so the choice is normally made before the first paint and
-      nothing moves. Only a cold start with no cache has to guess, and
-      the effect below corrects that once — see `guessedTab`. */
+      Both answers are synchronous, so the choice is made before the
+      first paint and nothing moves. `cachedCollection()` is exact but
+      per session; `collectionWasNonEmpty()` is one remembered bit and
+      is what a COLD start reads, which used to have nothing to read at
+      all — the pane opened on Databases every launch, drew that tab's
+      rows, and flipped to the collection when `/api/games` landed. See
+      collection.ts for what that cost, measured.
+
+      A remembered bit can be out of date, so the effect below still
+      corrects — but only upward, to the collection. Downward it does
+      not: a collection emptied since the last visit opens on its own
+      empty state, which is the honest thing to show and self-heals on
+      the next load, whereas correcting it would replace real rows with
+      an empty state, the same flicker in its worst direction. */
   const guessedTab = useRef(false);
   const [tab, setTabState] = useState<MainTab>(() => {
     if (positionHuntPending()) return 'databases';
     if (heldTab) return heldTab;
     const cached = cachedCollection();
     if (cached) return cached.length > 0 ? 'collection' : 'databases';
+    // Remembered, not known: the correction stays armed either way.
     guessedTab.current = true;
-    return 'databases';
+    return collectionWasNonEmpty() ? 'collection' : 'databases';
   });
   /** The emitted selection's subject, per tab: the collection remembers
       a KEY and re-resolves it against the live array (load() replaces
@@ -261,11 +277,12 @@ export function GamesBrowser({
       .catch(() => {});
   }, [load]);
 
-  /* The one correction the synchronous guess above cannot make.
-     With no cached collection there is nothing to ask at mount, so the
-     pane opens on Databases and moves to the collection when the load
-     comes back holding games. It fires at most once per mount, and only
-     while `heldTab` is still null — a tab the reader chose in the
+  /* The correction the remembered bit above cannot make itself: a
+     device that has never read the collection, or last read it empty
+     and has games now, opens on Databases and moves across when the
+     load comes back holding some. Normally a no-op now — the bit
+     usually had the answer — and it fires at most once per mount, only
+     while `heldTab` is still null: a tab the reader chose in the
      meantime sets it, and their choice outranks this. */
   useEffect(() => {
     if (!guessedTab.current || !loaded) return;
