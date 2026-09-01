@@ -230,6 +230,17 @@ function safeResolve(dir: string, rel: string): string | null {
   return abs.startsWith(dir + sep) && abs.endsWith('.pgn') ? abs : null;
 }
 
+/** The two archives browsing caches under. */
+const CACHE_PROVIDERS = ['chesscom', 'lichess'] as const;
+
+/** A cached player's size, counting the months and not the meta dotfile
+    beside them — the same bytes the listing reports. */
+function cachedBytes(userDir: string): number {
+  return readdirSync(userDir)
+    .filter((f) => f.endsWith('.pgn'))
+    .reduce((sum, f) => sum + statSync(resolve(userDir, f)).size, 0);
+}
+
 function monthPath(dir: string, user: string, month: string): string {
   return resolve(dir, 'chesscom', user.toLowerCase(), `${month}.pgn`);
 }
@@ -819,7 +830,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
    */
   api.get('/games/cache', (c) => {
     const users: { provider: string; user: string; months: number; bytes: number }[] = [];
-    for (const provider of ['chesscom', 'lichess'] as const) {
+    for (const provider of CACHE_PROVIDERS) {
       const providerDir = resolve(dir, provider);
       if (!existsSync(providerDir)) continue;
       for (const user of readdirSync(providerDir)) {
@@ -827,12 +838,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
         if (!statSync(userDir).isDirectory()) continue;
         const files = readdirSync(userDir).filter((f) => f.endsWith('.pgn'));
         if (!files.length) continue;
-        users.push({
-          provider,
-          user,
-          months: files.length,
-          bytes: files.reduce((sum, f) => sum + statSync(resolve(userDir, f)).size, 0),
-        });
+        users.push({ provider, user, months: files.length, bytes: cachedBytes(userDir) });
       }
     }
     users.sort((a, b) => b.bytes - a.bytes || a.user.localeCompare(b.user));
@@ -853,15 +859,13 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
    */
   api.delete('/games/cache', (c) => {
     let bytes = 0;
-    for (const provider of ['chesscom', 'lichess']) {
+    for (const provider of CACHE_PROVIDERS) {
       const providerDir = resolve(dir, provider);
       if (!existsSync(providerDir)) continue;
       for (const user of readdirSync(providerDir)) {
         const userDir = resolve(providerDir, user);
         if (!statSync(userDir).isDirectory()) continue;
-        for (const f of readdirSync(userDir)) {
-          if (f.endsWith('.pgn')) bytes += statSync(resolve(userDir, f)).size;
-        }
+        bytes += cachedBytes(userDir);
         rmSync(userDir, { recursive: true, force: true });
       }
     }
