@@ -33,6 +33,9 @@ export const DATA_OPENINGS = resolve(DATA, 'openings.json');
 /** The live index over the vault's own games (see server/myGames.ts). */
 export const DATA_MYGAMES = resolve(DATA, 'mygames.sqlite');
 export const DATA_EXPLORER_CACHE = resolve(DATA, 'explorer-cache');
+/** Endgame verdicts, kept for good — see server/tablebase.ts on why this
+    one has no expiry. */
+export const DATA_TABLEBASE_CACHE = resolve(DATA, 'tablebase-cache');
 
 /**
  * Desktop update artefacts — `latest.yml` and the installers it names.

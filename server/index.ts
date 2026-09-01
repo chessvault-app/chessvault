@@ -18,6 +18,7 @@ import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
+import { tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
@@ -208,6 +209,7 @@ app.route(
 );
 
 app.route('/api', lichessExplorerApi());
+app.route('/api', tablebaseApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', booksApi());
 app.route('/api', storageApi());

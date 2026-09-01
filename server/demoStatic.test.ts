@@ -47,6 +47,12 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
     'answers /api/books with an empty shelf (see server.ts) and nothing to upload into',
   storageApi: 'a disk inventory of a vault the demo does not have; Settings shows the demo card instead',
   lichessExplorerApi: 'proxying the explorer needs the deployment\'s Lichess token',
+  tablebaseApi:
+    'the tablebase needs no token and would work here, and is still left out: ' +
+    'a demo page that reaches a third party the moment somebody drags the ' +
+    'pieces into an ending is not a demo of this app. The explorer pane hides ' +
+    'the section in the demo (web/src/explorer/tablebase.ts), so nothing asks ' +
+    'for a route that is not there',
   lichessStudiesApi: 'importing a study needs that same token',
   vaultHistoryApi:
     'recovery reads vault/.history.git through git; the demo vault lives in ' +
