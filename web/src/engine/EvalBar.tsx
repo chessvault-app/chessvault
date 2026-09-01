@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
 import { useEngine } from '@/store/engine';
+import { terminalScore } from './terminal.ts';
 import { formatScore, formatScoreCompact, toWhitePov, winningChances } from './uci.ts';
 
 interface EvalBarProps {
@@ -155,17 +156,31 @@ export function EvalBarSlot({
 }
 
 /**
- * The engine's evaluation of the position on the board, from White's point
- * of view, or null when the engine is off or is still answering about the
+ * What the bar is showing: the position's evaluation from White's point of
+ * view, or null when the engine is off or is still answering about the
  * position before this one. One rule, because a bar showing the last
  * position's score is worse than a bar showing nothing.
+ *
+ * A FINISHED position is answered by rule and the engine is not consulted at
+ * all. It cannot be: Stockfish replies to a mated board with `bestmove
+ * (none)` and one PV-less `info` line, which parseInfo drops for carrying no
+ * variation, so the search ends with zero lines and never says anything
+ * about the position again (see terminal.ts). Waiting on `lines[0]` there is
+ * waiting for something that is not coming — and the bar's own answer to
+ * "no evaluation" is the halfway mark, so a checkmate drew as dead level
+ * with a dash for a score. Every other reader of a terminal position already
+ * had its own copy of this (EnginePane, FinalAssessment, review); the bar
+ * was the one still asking the engine.
  */
 export function useEvalScore(fen: string): { cp?: number; mate?: number } | null {
   const enabled = useEngine((s) => s.enabled);
   const lines = useEngine((s) => s.lines);
   const resultFen = useEngine((s) => s.resultFen);
+  const settled = useMemo(() => terminalScore(fen), [fen]);
   const top = enabled && resultFen === fen ? lines[0] : undefined;
   const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  if (!enabled) return null;
+  if (settled) return settled;
   return top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
 }
 

@@ -7,6 +7,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Checkmate no longer reads as a dead-level position.** With the engine
+  on, a board that was already mated drew the eval bar split exactly down
+  the middle with a dash for a score — the one position on the board whose
+  value is not in doubt, shown as the one value it cannot have. Stockfish
+  says nothing about a finished position (it answers `bestmove (none)` and
+  no variation), and the bar was waiting for an answer that never comes,
+  while the Engine panel beside it had known to score such a position by
+  rule since it was written. The bar now does the same: a mate falls all
+  the way to the mating side and prints `#1`, and a stalemate or a dead
+  draw reads `0.00` — still even, but said rather than left blank.
+
 - **A browsed player can be cleared on its own.** Settings → Browsed games
   listed every player whose months are cached, with one button that took
   all of them. That was the wrong shape for the list it sat under: the
