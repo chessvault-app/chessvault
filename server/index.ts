@@ -5,6 +5,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
@@ -25,6 +26,33 @@ import { seedWelcomeDocs } from './welcome.ts';
 import { APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
+
+/**
+ * How long one address gets before the next one is tried.
+ *
+ * Node connects to a hostname the way RFC 8305 describes: resolve it to
+ * every address it has, try them in turn, and start on the next if the
+ * one in hand has not answered within a delay. Node's delay is 250 ms —
+ * and unlike a browser, which leaves the slow attempt running alongside
+ * the new one, Node ABANDONS it. So an address that needs longer than
+ * 250 ms to complete a TCP handshake is never reached at all, and when
+ * the list runs out `fetch` rejects with an AggregateError of ETIMEDOUT.
+ *
+ * That is a plain outage for anything the server fetches on the user's
+ * behalf — the opening explorer and the tablebase, both hosted in
+ * Europe. Measured on a host a continent away from them: the handshake
+ * takes ~340 ms and the AAAA record's route is dead, so every probe
+ * failed in ~300 ms while `curl` from the same shell answered 200. The
+ * pane reported "the tablebase is out of reach" and it was not; nothing
+ * was ever cached, so it stayed that way.
+ *
+ * Two seconds is chosen to be longer than an intercontinental handshake
+ * and short enough to still be a fallback. It is not a per-request
+ * budget — a reachable address answers in its own time, and the wait is
+ * only ever paid where a family is a black hole, once per connection.
+ * The route's own 12 s timeout is what bounds a request.
+ */
+setDefaultAutoSelectFamilyAttemptTimeout(2_000);
 
 /**
  * Which interfaces to answer on.
