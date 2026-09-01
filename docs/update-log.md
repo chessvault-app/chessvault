@@ -14,9 +14,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   says nothing about a finished position (it answers `bestmove (none)` and
   no variation), and the bar was waiting for an answer that never comes,
   while the Engine panel beside it had known to score such a position by
-  rule since it was written. The bar now does the same: a mate falls all
-  the way to the mating side and prints `#1`, and a stalemate or a dead
-  draw reads `0.00` — still even, but said rather than left blank.
+  rule since it was written. The bar now does the same, and it names a
+  finished game the way a scoresheet does: a mate falls all the way to the
+  winning side and prints `1-0` or `0-1`, with the hover saying which side
+  won in words. A draw keeps its number — `0.0`, which is what a draw is
+  worth and what the bar already prints for any dead-level position. A mate
+  still to be PLAYED is untouched at `#1`, and can no longer be read as one
+  that has already been delivered.
 
 - **A browsed player can be cleared on its own.** Settings → Browsed games
   listed every player whose months are cached, with one button that took
