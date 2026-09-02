@@ -316,6 +316,21 @@ other people.
   the dictionary, in any `t()` literal and in a server error string, so
   it cannot creep back one string at a time.
 
+- **One word per thing, in both languages.** An audit of every UI string
+  found concepts going by several names. The shelf folders were
+  "collections" like the Games collection; uploaded .pgn files were "PGN
+  collections" on one page and "PGN sources" on another; the Books page
+  had a "library" where every other page has a shelf; and Korean had
+  four words for a shelf, five for a line of moves, and the vault's word
+  standing in for the collection in four sentences. Folders are now
+  folders, uploads are PGN files, every browse page is a shelf, the
+  competition is the Event everywhere, the local computer is a device,
+  an open filter reads "Any …", and the Korean dictionary uses one word
+  each for line (라인), player (플레이어), board (보드), delete (삭제),
+  remove (제거) and clear (지우기). "Optimize" is spelt like the rest of
+  the app. `check:repo` now rejects the retired Korean words, and 보관함
+  anywhere its English does not say vault.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
