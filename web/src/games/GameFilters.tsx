@@ -407,7 +407,7 @@ export function StructuredFiltersWindow({
         </Field>
 
         {showEvent && (
-          <Field label="Tournament">
+          <Field label="Event">
             <ClearableInput
               inputSize="sm"
               value={draft.event}
@@ -494,8 +494,8 @@ const QUERY_OPS: {
   {
     key: 'event',
     sample: 'event:"name"',
-    desc: 'Tournament name contains, in quotes if it has spaces',
-    valueHint: 'Type a tournament name',
+    desc: 'Event name contains, in quotes if it has spaces',
+    valueHint: 'Type an event name',
   },
   {
     key: 'result',

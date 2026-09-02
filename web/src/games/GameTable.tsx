@@ -56,7 +56,7 @@ const COLUMNS: GameColumn[] = [
   { id: 'result', label: 'Result', width: 48, min: 44, align: 'center' },
   { id: 'moves', label: 'Moves', width: 44, min: 36, align: 'right' },
   { id: 'eco', label: 'ECO', width: 40, min: 34 },
-  { id: 'event', label: 'Tournament', width: 110, min: 60, fr: 1 },
+  { id: 'event', label: 'Event', width: 110, min: 60, fr: 1 },
   { id: 'date', label: 'Date', width: 80, min: 64 },
   { id: 'notation', label: 'Notation', width: 220, min: 80, fr: 1.8 },
 ];
