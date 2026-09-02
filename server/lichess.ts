@@ -403,7 +403,7 @@ export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fe
       return c.json({ error: `pick between 1 and ${MAX_IMPORTS} studies` }, 400);
     }
     const folder = body?.folder?.trim() ?? '';
-    if (folder && !validFolder(folder)) return c.json({ error: 'invalid collection name' }, 400);
+    if (folder && !validFolder(folder)) return c.json({ error: 'invalid folder name' }, 400);
 
     const token = readToken();
     const dir = folder ? resolve(studiesDir, folder) : studiesDir;

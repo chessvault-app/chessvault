@@ -462,7 +462,7 @@ export function studiesApi(
   api.post(`/${base}/folders`, async (c) => {
     const body = await c.req.json<{ name?: string }>().catch(() => null);
     const name = body?.name?.trim();
-    if (!name || !validId(name)) return c.json({ error: 'invalid collection name' }, 400);
+    if (!name || !validId(name)) return c.json({ error: 'invalid folder name' }, 400);
     mkdirSync(resolve(dir, name), { recursive: true });
     return c.json({ folder: name });
   });
@@ -508,14 +508,14 @@ export function studiesApi(
     const from = body?.from?.trim();
     const to = body?.to?.trim();
     if (!from || !to || !validId(from) || !validId(to)) {
-      return c.json({ error: 'invalid collection name' }, 400);
+      return c.json({ error: 'invalid folder name' }, 400);
     }
     const fromPath = resolve(dir, from);
     if (!existsSync(fromPath) || !statSync(fromPath).isDirectory()) {
-      return c.json({ error: 'no such collection' }, 404);
+      return c.json({ error: 'no such folder' }, 404);
     }
     const toPath = resolve(dir, to);
-    if (existsSync(toPath)) return c.json({ error: 'a collection with that name exists' }, 409);
+    if (existsSync(toPath)) return c.json({ error: 'a folder with that name exists' }, 409);
     mkdirSync(resolve(toPath, '..'), { recursive: true });
     // A directory, which atomic.ts singles out as MORE exposed than a
     // file: anything holding one study inside it open holds the folder.
@@ -530,10 +530,10 @@ export function studiesApi(
 
   api.delete(`/${base}/folders/:name{.+}`, (c) => {
     const name = c.req.param('name');
-    if (!validId(name)) return c.json({ error: 'invalid collection name' }, 400);
+    if (!validId(name)) return c.json({ error: 'invalid folder name' }, 400);
     const path = resolve(dir, name);
     if (!existsSync(path) || !statSync(path).isDirectory()) {
-      return c.json({ error: 'no such collection' }, 404);
+      return c.json({ error: 'no such folder' }, 404);
     }
     // Never delete studies by side effect: a folder must be emptied first.
     // Parked copies do not count towards "not empty" — they belong to
@@ -542,7 +542,7 @@ export function studiesApi(
     // it can never be removed from inside the app.
     const left = readdirSync(path);
     if (left.some((f) => !f.endsWith('.swp'))) {
-      return c.json({ error: 'collection is not empty, move or delete its studies first' }, 409);
+      return c.json({ error: 'folder is not empty, move or delete its studies first' }, 409);
     }
     for (const orphan of left) rmSync(resolve(path, orphan));
     rmdirSync(path);
@@ -572,7 +572,7 @@ export function studiesApi(
     const name = body?.name?.trim();
     if (!name || !validId(name)) {
       return c.json(
-        { error: 'study name must be letters, digits, spaces, _ . - (use / for a collection)' },
+        { error: 'study name must be letters, digits, spaces, _ . - (use / for a folder)' },
         400,
       );
     }

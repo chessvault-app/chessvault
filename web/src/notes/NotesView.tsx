@@ -354,7 +354,7 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
       <CreateControl
         actions={[
           { label: 'New note', icon: NotebookPen, onSelect: () => void createNote() },
-          { label: 'New collection', icon: FolderIcon, onSelect: () => setMode('folder') },
+          { label: 'New folder', icon: FolderIcon, onSelect: () => setMode('folder') },
         ]}
       />
 
@@ -363,7 +363,7 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
           the same question was two things to learn. */}
       {mode && (
         <PromptDialog
-          label={t('New collection')}
+          label={t('New folder')}
           initial=""
           submitLabel={t('Create')}
           closeOnSubmit={false}
@@ -442,7 +442,7 @@ function GroupedNotes({
             />
           )}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-muted-foreground px-1 text-sm">{t('Empty collection.')}</p>
+            <p className="text-muted-foreground px-1 text-sm">{t('Empty folder.')}</p>
           ) : (
             <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((note) => (
@@ -533,7 +533,7 @@ function NoteCard({
           onSelect: onToggleMark,
         },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-        { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+        { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
         { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
       ]}
     >

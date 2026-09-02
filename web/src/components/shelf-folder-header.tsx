@@ -48,7 +48,7 @@ export function ShelfFolderHeader({
       </TitleTip>
       {renaming && (
         <PromptDialog
-          label={t('Rename this collection')}
+          label={t('Rename this folder')}
           initial={folder}
           onSubmit={(value) => {
             setRenaming(false);
@@ -66,7 +66,7 @@ export function ShelfFolderHeader({
           ...(empty
             ? [
                 {
-                  label: 'Delete this collection',
+                  label: 'Delete this folder',
                   icon: Trash2,
                   danger: true,
                   onSelect: () => {
@@ -88,7 +88,7 @@ export function ShelfFolderHeader({
           // sheet showed the note 12px right of its own heading).
           !empty && (
             <p className="text-muted-foreground pb-2 text-sm">
-              {t('Only empty collections can be deleted')}
+              {t('Only empty folders can be deleted')}
             </p>
           )
         }

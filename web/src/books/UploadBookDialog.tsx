@@ -185,11 +185,11 @@ export function UploadBookDialog({
                   <Select
                     value={collection}
                     onValueChange={setCollection}
-                    ariaLabel={t('Target collection')}
+                    ariaLabel={t('Target folder')}
                     groups={[
                       {
                         options: [
-                          { value: '', label: t('(no collection)') },
+                          { value: '', label: t('(no folder)') },
                           ...folders.map((f) => ({ value: f, label: f })),
                         ],
                       },

@@ -55,7 +55,7 @@ export function MoveToDialog({
               )}
             >
               <FolderIcon className="text-muted-foreground size-3.5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{target || t('(no collection)')}</span>
+              <span className="min-w-0 flex-1 truncate">{target || t('(no folder)')}</span>
               {/* These rows read as a list of places, not as a list of things
                   to press. The chevron says the row goes somewhere, and it
                   sharpens under the pointer rather than appearing from
@@ -74,7 +74,7 @@ export function MoveToDialog({
           <ClearableInput
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={t('New collection…')}
+            placeholder={t('New folder…')}
             className="min-w-0 flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter') pickNew();
@@ -84,7 +84,7 @@ export function MoveToDialog({
           <Button
             variant="secondary"
             size="sm"
-            title={t('Move into this new collection')}
+            title={t('Move into this new folder')}
             disabled={!draft.trim()}
             onClick={pickNew}
           >

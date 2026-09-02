@@ -298,7 +298,7 @@ export function BooksPage() {
       <div {...drop.handlers} className="contents">
       {newFolder && (
         <PromptDialog
-          label={t('New collection')}
+          label={t('New folder')}
           initial=""
           submitLabel="Create"
           onSubmit={(value) => {
@@ -365,7 +365,7 @@ export function BooksPage() {
               <CreateControl
                 actions={[
                   { label: 'Import a PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
-                  { label: 'New collection', icon: FolderIcon, onSelect: () => setNewFolder(true) },
+                  { label: 'New folder', icon: FolderIcon, onSelect: () => setNewFolder(true) },
                 ]}
               />
             </>
@@ -453,7 +453,7 @@ export function BooksPage() {
                 />
               )}
               {groups.get(folder)!.length === 0 ? (
-                <p className="text-muted-foreground px-1 text-sm">{t('Empty collection.')}</p>
+                <p className="text-muted-foreground px-1 text-sm">{t('Empty folder.')}</p>
               ) : (
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">{cardsOf(groups.get(folder)!)}</ul>
               )}
@@ -610,7 +610,7 @@ function BookCard({
               onSelect: onToggleMark,
             },
             { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-            { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+            { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
             ...(job.status !== 'running'
               ? [
                   {

@@ -336,7 +336,7 @@ export function booksApi(
   api.post('/books/folders', async (c) => {
     const body = await c.req.json<{ name?: string }>().catch(() => null);
     const name = body?.name?.trim().normalize('NFC');
-    if (!name || !validId(name)) return c.json({ error: 'invalid collection name' }, 400);
+    if (!name || !validId(name)) return c.json({ error: 'invalid folder name' }, 400);
     writeFolders([...readFolders(), name]);
     return c.json({ folder: name });
   });
@@ -346,10 +346,10 @@ export function booksApi(
     const from = body?.from?.trim().normalize('NFC');
     const to = body?.to?.trim().normalize('NFC');
     if (!from || !to || !validId(from) || !validId(to)) {
-      return c.json({ error: 'invalid collection name' }, 400);
+      return c.json({ error: 'invalid folder name' }, 400);
     }
-    if (!allFolders().includes(from)) return c.json({ error: 'no such collection' }, 404);
-    if (allFolders().includes(to)) return c.json({ error: 'a collection with that name exists' }, 409);
+    if (!allFolders().includes(from)) return c.json({ error: 'no such folder' }, 404);
+    if (allFolders().includes(to)) return c.json({ error: 'a folder with that name exists' }, 409);
     for (const id of bookIds()) {
       if (collectionOf(id) !== from) continue;
       const meta = readJson<Partial<BookMeta>>(metaPath(id), {});
@@ -361,10 +361,10 @@ export function booksApi(
 
   api.delete('/books/folders/:name{.+}', (c) => {
     const name = c.req.param('name').normalize('NFC');
-    if (!validId(name)) return c.json({ error: 'invalid collection name' }, 400);
-    if (!allFolders().includes(name)) return c.json({ error: 'no such collection' }, 404);
+    if (!validId(name)) return c.json({ error: 'invalid folder name' }, 400);
+    if (!allFolders().includes(name)) return c.json({ error: 'no such folder' }, 404);
     if (bookIds().some((id) => collectionOf(id) === name)) {
-      return c.json({ error: 'collection is not empty, move or remove its books first' }, 409);
+      return c.json({ error: 'folder is not empty, move or remove its books first' }, 409);
     }
     writeFolders(readFolders().filter((f) => f !== name));
     return c.json({ deleted: name });
@@ -488,7 +488,7 @@ export function booksApi(
       if (body.collection === null || body.collection === '') delete next.collection;
       else {
         const collection = body.collection.trim().normalize('NFC');
-        if (!validId(collection)) return c.json({ error: 'invalid collection name' }, 400);
+        if (!validId(collection)) return c.json({ error: 'invalid folder name' }, 400);
         next.collection = collection;
         writeFolders([...readFolders(), collection]);
       }

@@ -380,7 +380,7 @@ function CreateMenu() {
       <CreateControl
         actions={[
           { label: 'New study', icon: Library, onSelect: () => void createStudy() },
-          { label: 'New collection', icon: FolderIcon, onSelect: () => setMode('folder') },
+          { label: 'New folder', icon: FolderIcon, onSelect: () => setMode('folder') },
           { label: 'Import PGN', icon: FileUp, onSelect: () => setMode('import') },
           { label: 'From Lichess', icon: CloudDownload, onSelect: () => setMode('lichess') },
         ]}
@@ -407,7 +407,7 @@ function CreateMenu() {
           picker and a chapter count — that is a window. */}
       {mode === 'folder' && (
         <PromptDialog
-          label={t('New collection')}
+          label={t('New folder')}
           initial=""
           submitLabel={t('Create')}
           closeOnSubmit={false}
@@ -450,11 +450,11 @@ function CreateMenu() {
                 <Select
                   value={folder}
                   onValueChange={setFolder}
-                  ariaLabel={t('Target collection')}
+                  ariaLabel={t('Target folder')}
                   groups={[
                     {
                       options: [
-                        { value: '', label: t('(no collection)') },
+                        { value: '', label: t('(no folder)') },
                         ...folders.map((f) => ({ value: f, label: f })),
                       ],
                     },
@@ -685,11 +685,11 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               <Select
                 value={folder}
                 onValueChange={setFolder}
-                ariaLabel={t('Target collection')}
+                ariaLabel={t('Target folder')}
                 groups={[
                   {
                     options: [
-                      { value: '', label: t('(no collection)') },
+                      { value: '', label: t('(no folder)') },
                       ...folders.map((f) => ({ value: f, label: f })),
                     ],
                   },
@@ -759,7 +759,7 @@ function GroupedStudies({
         <section key={folder || '(root)'} className="flex flex-col gap-2">
           {folder && <FolderHeader folder={folder} empty={groups.get(folder)!.length === 0} />}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-muted-foreground px-1 text-sm">{t('Empty collection.')}</p>
+            <p className="text-muted-foreground px-1 text-sm">{t('Empty folder.')}</p>
           ) : (
             // Up to three abreast: two from sm, three from xl, one on a
             // phone. The cards are a fixed height and read left to right,
@@ -873,7 +873,7 @@ function StudyCard({
           onSelect: onToggleMark,
         },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-        { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+        { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
         { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
       ]}
     >
