@@ -342,6 +342,88 @@ other people.
   the manual's Korean «quotes» are checked the way its English ones are,
   and the READMEs' Korean gains the passages its English had and it lacked.
 
+- **The board has a keyboard.** chessground is pointer-only, so a
+  keyboard or switch user could step through every game and never make
+  a move in one. A move box now sits at the foot of every Moves panel
+  and under all three trainers: type a move in any spelling (SAN, UCI,
+  figurines, 0-0, e8Q), Enter plays it, and a puzzle judges a typed move
+  exactly as a dragged one. A move that is not legal stays in the box
+  and says so under it. The board itself is named for a screen reader
+  with whose move it is and what just moved.
+
+- **Every control answers the keyboard, and every result reaches a
+  screen reader.** Game rows, explorer moves, chapter folds, the pane
+  and column grips (arrow keys resize, Enter resets), the review strip's
+  slider and the opening map's tree were mouse-only; each now has a
+  keyboard path with the role it claims. A skip link jumps past the
+  section list, the two navigation bars and the asides are named, hover-
+  only trays also show on focus, and the manual's phone drawer leaves
+  the tab order when it closes. Errors carry a live role (32 places),
+  searches and imports announce their result once, and every input has
+  a name rather than a placeholder that vanishes when you type.
+
+- **The bookmark is a glyph now.** It was a 2px amber edge and nothing
+  else: amber means caution everywhere else in the app, and an edge with
+  no shape is colour alone. The edge is in the accent and a small filled
+  bookmark sits on the card's meta line and the game row. The outcome
+  colours also clear the app's own 4.5:1 floor on a hovered or selected
+  row, which four of them had missed by a few hundredths (light good and
+  warn 4.36, destructive 4.48; dark text-subtle 4.40, destructive 4.39),
+  and the ECO tag follows High contrast the way they do. The contrast
+  walk now covers light plus High contrast, the one combination it did
+  not, and passes on 11 routes, 4 schemes and 2 widths.
+
+- **36px is the touch floor, and it is written down.** Pane tabs were
+  24px tall on a phone; switches, checkboxes and radios reached 34; the
+  engine's thumb-only chevron 24, a link 22, the disclosure toggle 20.
+  Each reaches 36 on a coarse pointer with the desktop look untouched,
+  and DESIGN.md states the floor. A portrait window of 1024px or more
+  stacks in every view now: the JavaScript side of the layout rule had
+  kept a branch the stylesheet had removed, and a test holds the two
+  equal. Nothing scrolls sideways at 320px.
+
+- **The solve rate is gone.** It had been "win rate", renamed because
+  nothing there is won, and the rename kept the score. A percentage of
+  your own attempts is still a verdict handed back to the person who
+  made them, which the app's rule on ratings exists to prevent. Solved
+  and Failed say the same thing as counts.
+
+- **Faster where it was measured.** The reference-database list re-
+  rendered every row on every parent render; it uses the same memoised
+  row the other lists had, and entering it is one 55ms task where it
+  was 162. The annotation editor forced two layouts per keystroke;
+  typing shows no long task now. The eval bar and the progress bars
+  animate a transform instead of their width, the phone bars are opaque
+  instead of blurring what is under them, the Latin font subset is
+  preloaded, and the editor stack is split out of the Notes chunk (644
+  KB to 114 plus a 530 KB editor chunk, loaded when a note opens).
+
+- **Things put where the eye goes first.** After a puzzle the two
+  actions sat under the fold of their own panel with the engine on; the
+  engine block now waits behind a toggle on the panel header when a
+  puzzle finishes, and the actions fit. Settings starts with Appearance
+  instead of a thirteen-row storage table. Repertoire's title is the
+  shared page header. The opening map opens on the root at the zoom
+  where its labels are legible instead of a constellation at half size.
+
+- **The design record is true again, with tripwires.** DESIGN.md said
+  five shadow usages and never Tailwind's black ones; the tree had 31.
+  The utilities now resolve to the app's three hue-matched shadow
+  tokens, so the rule holds by construction. The fitted text and radius
+  literals are three and three, each saying in place what it is fitted
+  to, and `check:repo` refuses a new one without that sentence.
+  Switching the theme in Settings now moves the page's ground too: the
+  boot-time pin that stopped the white flash was never released, so the
+  root stayed the old colour under iOS overscroll.
+
+- **Korean.** The games table showed two headers reading 수순; Notation
+  is 기보. "Solution shown" reads 정답을 봄. Six strings that had bypassed
+  the dictionary (the promotion picker's buttons, "Starting position",
+  "Solution · N plies", the "White vs Black" tooltips, the note editor's
+  empty hint) go through it, and the empty note's hint, which a CSS rule
+  had carried in English and never shown, is now a real placeholder in
+  the reader's language.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
