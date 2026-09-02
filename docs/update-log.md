@@ -168,6 +168,38 @@ other people.
   the page also makes Storage used below re-read, which had been showing
   the size it loaded with — a card apart, two answers for the same thing.
 
+- **A six-hour job with nothing to say for the last three.** Building a
+  database's position index printed a line every 25,000 games and then
+  went quiet. The three passes after the replay — the index over the
+  positions, the per-move sums, the key inversion — each ran as one long
+  database statement that announced itself and then said nothing at all
+  until it returned. At the size this was written for the gap is
+  invisible: an Elite month indexes in 80 seconds end to end. On the
+  largest reference database built here, 10,355,488 games and
+  309,324,101 positions, the pass took 6 hours 11 minutes, of which the
+  per-move sum alone was over an hour of silence — and the Databases
+  page, which shows the newest line the job printed, sat on "summing per
+  move" with nothing to separate that from a crash.
+
+  Each phase now names itself as it starts and says where in the WHOLE
+  job it is, which is what the page draws: a bar weighted by phase
+  rather than by games. The games count is the thing that misled. It
+  fills as the replay ends and then holds at the finish through hours of
+  work still to come. The key inversion — the one late phase that walks
+  rows this side has already counted — reports real progress as it goes.
+
+  The other two are single database statements with nothing able to see
+  inside them, so rather than invent a heartbeat the page reports the
+  silence: past two minutes without a line it says the step is one
+  operation that reports nothing until it finishes, and how long that
+  has been.
+
+  While there, the explorer's offer to index a database it finds without
+  one has stopped promising "a minute or two". That was true of the
+  corpus it was written for and wrong by two orders of magnitude at the
+  sizes a reference database now reaches; it says a small database takes
+  a minute and millions of games can take hours.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
