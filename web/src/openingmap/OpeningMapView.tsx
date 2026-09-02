@@ -613,7 +613,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             >
               <span className="text-foreground block truncate text-base font-medium">
                 {selectedFacts.parentId === null
-                  ? t('Start position')
+                  ? t('Starting position')
                   : `${moveNumberLabel(selectedFacts.ply)} ${selectedFacts.mapNode.san ?? ''}`}
               </span>
               <span className="text-muted-foreground block truncate text-sm">
@@ -967,7 +967,7 @@ function NodePanel({
   const [makeError, setMakeError] = useState<string | null>(null);
   const node = facts.mapNode;
   const isRoot = facts.parentId === null;
-  const title = isRoot ? t('Start position') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
+  const title = isRoot ? t('Starting position') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
 
   // The line's deepest opening name — what a player calls where they are.
   const lineFens = useMemo(() => {

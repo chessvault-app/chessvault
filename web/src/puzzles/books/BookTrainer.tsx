@@ -665,7 +665,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           </p>
         ) : (
           <p className="text-foreground text-2xl font-bold tracking-tight">
-            {solverSide === 'white' ? t('White to play') : t('Black to play')}
+            {solverSide === 'white' ? t('White to move') : t('Black to move')}
           </p>
         )}
         <p className="text-muted-foreground text-sm leading-relaxed">
@@ -713,7 +713,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           <>
             <Button variant="secondary" size="sm" onClick={retry}>
               <RotateCcw className="size-3.5" data-icon="inline-start" />
-              {t('Retry')}
+              {t('Try again')}
             </Button>
             {cycle && cycleNext ? (
               // Mid-pass, the pass IS the walk: one primary action, the
@@ -923,7 +923,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           <Button variant="ghost" size="icon" disabled={node.children.length === 0} onClick={() => goTo(node.children[0])} title={t('Forward')}>
             <ChevronRight className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={cursorId === tipId} onClick={() => goTo(tipId)} title={t('Latest')}>
+          <Button variant="ghost" size="icon" disabled={cursorId === tipId} onClick={() => goTo(tipId)} title={t('Go to the end')}>
             <ChevronLast className="size-[1.1rem]" />
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>

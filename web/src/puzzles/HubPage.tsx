@@ -240,7 +240,7 @@ function PuzzleCard({
             text, the king takes the baseline like a letter does. */}
         <span className="text-muted-foreground text-sm">
           <KingIcon side={side} className="mr-1.5" />
-          {side === 'white' ? t('White to play') : t('Black to play')}
+          {side === 'white' ? t('White to move') : t('Black to move')}
         </span>
       </span>
       <ChevronRight className="text-muted-foreground size-4 shrink-0 self-center" />

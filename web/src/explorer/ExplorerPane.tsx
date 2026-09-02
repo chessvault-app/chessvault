@@ -937,7 +937,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
           itself. */}
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
-          'Your collection plus every chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
+          'Your collection plus every Chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
         )}
       </p>
       <FilterGroup label="Side">

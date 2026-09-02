@@ -859,7 +859,7 @@ function Trainer({
         <div className="flex flex-col gap-0.5">
           {puzzle && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
-              {solverSide === 'white' ? t('White to play') : t('Black to play')}
+              {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
           ) : phase === 'loading' ? (
             // The side-to-play line's own box (text-2xl is a 32px line)
@@ -935,7 +935,7 @@ function Trainer({
                 size="sm"
                 nativeButton={false}
                 render={
-                  <TitleTip title={t('Opens lichess (needs internet)')}>
+                  <TitleTip title={t('Opens Lichess (needs internet)')}>
                     <a
                       href={puzzle.game_url}
                       target="_blank"
@@ -951,7 +951,7 @@ function Trainer({
             {/* Practice, not a second attempt — see retry(). */}
             <Button variant="secondary" size="sm" onClick={retry}>
               <RotateCcw className="size-3.5" data-icon="inline-start" />
-              {t('Retry')}
+              {t('Try again')}
             </Button>
             <Button
               variant="default"
@@ -1203,7 +1203,7 @@ function Trainer({
           <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly((review ?? plies) + 1)} title={t('Forward')}>
             <ChevronRight className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title={t('Latest')}>
+          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title={t('Go to the end')}>
             <ChevronLast className="size-[1.1rem]" />
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>

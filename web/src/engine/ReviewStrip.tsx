@@ -108,7 +108,7 @@ export function ReviewStrip({
           <Button
             variant="ghost"
             size="icon-sm"
-            title={t('Dismiss')}
+            title={t('Close')}
             onClick={() => setOfferDismissed(gameHeaders)}
           >
             <X className="size-3" />
@@ -170,7 +170,7 @@ export function ReviewStrip({
       ) : status === 'error' ? (
         <div className="flex shrink-0 items-center gap-2 px-3 py-2">
           <span className="text-destructive min-w-0 flex-1 truncate text-sm">{error}</span>
-          <Button variant="ghost" size="icon-sm" title={t('Dismiss')} onClick={clear}>
+          <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={clear}>
             <X className="size-3" />
           </Button>
         </div>
@@ -198,7 +198,7 @@ export function ReviewStrip({
               </Button>
             )}
             {!panel && (
-              <Button variant="ghost" size="icon-sm" title={t('Dismiss review')} onClick={clear}>
+              <Button variant="ghost" size="icon-sm" title={t('Close the review')} onClick={clear}>
                 <X className="size-3" />
               </Button>
             )}

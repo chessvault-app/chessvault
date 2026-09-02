@@ -1056,7 +1056,7 @@ export function ArchiveBrowser({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && username.trim()) void loadMonths();
             }}
-            placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
+            placeholder={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
             className={cn('min-w-0 flex-1', merged && 'basis-72')}
             inputSize="sm"
           />
@@ -1171,7 +1171,7 @@ export function ArchiveBrowser({
           <p className="text-muted-foreground max-w-xs text-base leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.',
-              { site: provider === 'chesscom' ? 'chess.com' : 'Lichess' },
+              { site: provider === 'chesscom' ? 'Chess.com' : 'Lichess' },
             )}
           </p>
         </div>

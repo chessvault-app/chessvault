@@ -508,7 +508,7 @@ export function GameRow({
         <span className="w-[1.375rem] shrink-0 @max-[21.5rem]/arc:hidden" aria-hidden />
       )}
       {showLink && link && (
-        <TitleTip title={t('View on chess.com (needs internet)')}>
+        <TitleTip title={t('View on Chess.com (needs internet)')}>
           <a
             href={link}
             target="_blank"

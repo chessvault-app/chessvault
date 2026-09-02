@@ -105,8 +105,8 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
                 : answer.stalemate
                   ? t('Stalemate')
                   : whiteToPlay
-                    ? t('White to play')
-                    : t('Black to play')}
+                    ? t('White to move')
+                    : t('Black to move')}
             </span>
             {verdict && (
               <TitleTip title={verdict.tip}>

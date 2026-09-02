@@ -1,7 +1,7 @@
 [
   {
     "id": "pawn",
-    "label": "Pawn endings",
+    "label": "Pawn endgame",
     "spec": {
       "white": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [0, 0] },
       "black": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [0, 0] }
@@ -9,7 +9,7 @@
   },
   {
     "id": "knight",
-    "label": "Knight endings",
+    "label": "Knight endgame",
     "spec": {
       "white": { "n": [1, 2], "b": [0, 0], "r": [0, 0], "q": [0, 0] },
       "black": { "n": [1, 2], "b": [0, 0], "r": [0, 0], "q": [0, 0] }
@@ -17,7 +17,7 @@
   },
   {
     "id": "bishop",
-    "label": "Bishop endings",
+    "label": "Bishop endgame",
     "spec": {
       "white": { "n": [0, 0], "b": [1, 2], "r": [0, 0], "q": [0, 0] },
       "black": { "n": [0, 0], "b": [1, 2], "r": [0, 0], "q": [0, 0] }
@@ -25,7 +25,7 @@
   },
   {
     "id": "bishop-vs-knight",
-    "label": "Bishop v knight",
+    "label": "Bishop vs knight",
     "spec": {
       "white": { "n": [0, 1], "b": [0, 1], "r": [0, 0], "q": [0, 0] },
       "black": { "n": [0, 1], "b": [0, 1], "r": [0, 0], "q": [0, 0] },
@@ -34,7 +34,7 @@
   },
   {
     "id": "rook",
-    "label": "Rook endings",
+    "label": "Rook endgame",
     "spec": {
       "white": { "n": [0, 0], "b": [0, 0], "r": [1, 2], "q": [0, 0] },
       "black": { "n": [0, 0], "b": [0, 0], "r": [1, 2], "q": [0, 0] }
@@ -42,7 +42,7 @@
   },
   {
     "id": "queen",
-    "label": "Queen endings",
+    "label": "Queen endgame",
     "spec": {
       "white": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [1, 1] },
       "black": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [1, 1] }
@@ -64,7 +64,7 @@
   },
   {
     "id": "two-minors-vs-rook",
-    "label": "Two minors v rook",
+    "label": "Two minors vs rook",
     "spec": { "diff": { "minor": [2, 2], "major": [-1, -1] } }
   },
   {

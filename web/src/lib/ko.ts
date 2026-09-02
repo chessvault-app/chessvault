@@ -50,7 +50,6 @@ export const ko: Record<string, string> = {
   Back: '뒤로',
   Forward: '앞으로',
   Start: '시작',
-  Latest: '최신',
   Cancel: '취소',
   Save: '저장',
   Load: '불러오기',
@@ -59,7 +58,6 @@ export const ko: Record<string, string> = {
   Remove: '제거',
   Reset: '초기화',
   Close: '닫기',
-  Retry: '다시 시도',
   'Try again': '다시 시도',
   Done: '완료',
   Paste: '붙여넣기',
@@ -131,7 +129,7 @@ export const ko: Record<string, string> = {
   'Side to move': '차례',
   'Castling rights': '캐슬링 권리',
   'En passant target': '앙파상 대상',
-  'Halfmove clock': '하프무브 카운터',
+  'Halfmove clock': '반수 카운터',
   'Move number': '수 번호',
   'Legal position': '합법적인 포지션',
   'Move: drag pieces around the board': '이동: 기물을 끌어 옮깁니다',
@@ -158,8 +156,7 @@ export const ko: Record<string, string> = {
   'Book moves: known opening theory, not judged':
     '북 무브: 알려진 오프닝 이론이므로 평가하지 않습니다',
   'Book move': '북 무브',
-  Dismiss: '닫기',
-  'Dismiss review': '리뷰 닫기',
+  'Close the review': '리뷰 닫기',
   'Review game': '게임 리뷰',
   'See accuracy, mistakes and the evaluation graph.': '정확도와 실수, 평가 그래프를 봅니다.',
   'Evaluation graph. Click to jump to a move.': '평가 그래프. 클릭하면 그 수로 이동합니다.',
@@ -180,7 +177,7 @@ export const ko: Record<string, string> = {
   'Browse this player': '이 플레이어 둘러보기',
   'Archive month': '보관된 달',
   Annotated: '주석 있음',
-  'View on chess.com (needs internet)': 'chess.com에서 보기 (인터넷 필요)',
+  'View on Chess.com (needs internet)': 'Chess.com에서 보기 (인터넷 필요)',
   'Import a game': '게임 가져오기',
   'Online archives': '온라인 기보',
   Recent: '최근',
@@ -398,15 +395,10 @@ export const ko: Record<string, string> = {
   'The server could not finish the search.': '서버가 검색을 끝내지 못했습니다.',
   'No game in this database contains what you searched for, under the filters above.':
     '위의 필터 아래에서, 검색한 내용을 담은 게임이 이 데이터베이스에 없습니다.',
-  'Pawn endings': '폰 엔드게임',
-  'Knight endings': '나이트 엔드게임',
-  'Bishop endings': '비숍 엔드게임',
-  'Bishop v knight': '비숍 대 나이트',
-  'Rook endings': '룩 엔드게임',
-  'Queen endings': '퀸 엔드게임',
+  'Bishop vs knight': '비숍 대 나이트',
   'Queenless middlegame': '퀸 없는 미들게임',
   'Exchange up': '익스체인지 우위',
-  'Two minors v rook': '마이너 둘 대 룩',
+  'Two minors vs rook': '마이너 둘 대 룩',
   'A queen up': '퀸 하나 우위',
   'Custom…': '직접 지정…',
   'Custom material': '기물 구성 직접 지정',
@@ -721,7 +713,7 @@ export const ko: Record<string, string> = {
   'Move details': '수 상세',
   'Not a legal move in this position': '이 포지션에서 둘 수 없는 수입니다',
   'Not a legal move here': '여기서 둘 수 없는 수',
-  'Prepared {plies} plies deep, {lines} lines': '{plies}플라이 깊이 · {lines}개 라인 준비됨',
+  'Prepared {plies} plies deep, {lines} lines': '{plies}반수 깊이 · {lines}개 라인 준비됨',
   Name: '이름',
   'Named from the opening catalogue': '오프닝 카탈로그에서 자동으로 이름이 붙습니다',
   'Intended depth': '목표 깊이',
@@ -830,9 +822,9 @@ export const ko: Record<string, string> = {
   Profile: '프로필',
   'Display name': '표시 이름',
   'How the app greets you': '앱이 당신을 부르는 이름',
-  'chess.com username': 'chess.com 사용자명',
-  'your chess.com handle': 'chess.com 아이디',
-  'your Lichess handle': 'Lichess 아이디',
+  'Chess.com username': 'chess.com 사용자명',
+  'your Chess.com username': 'Chess.com 사용자명',
+  'your Lichess username': 'Lichess 사용자명',
   Version: '버전',
   'Check for updates': '업데이트 확인',
   'Checking…': '확인 중…',
@@ -1039,7 +1031,6 @@ export const ko: Record<string, string> = {
   'Password, 2FA, themes, tokens': '비밀번호, 2단계 인증, 테마, 토큰',
 
   // --- opponent strength (repertoire) -------------------------------------
-  'Start position': '시작 포지션',
   Details: '자세히',
   'Tap for details': '눌러서 자세히 보기',
   'Clear selection': '선택 해제',
@@ -1109,7 +1100,7 @@ export const ko: Record<string, string> = {
     '잘라낸 다이어그램, 페이지 이미지, 정답은 모두 보관함에만 남고 어디에도 공개되지 않습니다. 그래도 저작권은 출판사에 있으며, 사는 곳에 따라 복제나 공유가 허용되지 않을 수 있습니다.',
   'Choose the book’s PDF': '책의 PDF 선택',
   'From this game': '이 게임에서',
-  'Opens lichess (needs internet)': 'lichess에서 열림 (인터넷 필요)',
+  'Opens Lichess (needs internet)': 'Lichess에서 열림 (인터넷 필요)',
   'Set an app password first.': '먼저 앱 비밀번호를 설정하세요.',
   Offline: '오프라인',
   'This device': '이 기기',
@@ -1167,9 +1158,9 @@ export const ko: Record<string, string> = {
     '아직 없는 게임만 색인됩니다.',
   'No PGN files are ticked. Pick them on the PGN files tab first.':
     '선택된 PGN 파일이 없습니다. 먼저 PGN 파일 탭에서 선택하세요.',
-  Optimize: '최적화',
-  'Optimize this database': '이 데이터베이스 최적화',
-  'Optimize “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.':
+  Optimise: '최적화',
+  'Optimise this database': '이 데이터베이스 최적화',
+  'Optimise “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.':
     '“{name}”을(를) 최적화할까요? 완전히 같은 게임을 제거하고, 파생 테이블을 새로 만들고, 파일을 압축합니다. 시간이 걸릴 수 있습니다.',
   'index behind': '색인이 뒤처짐',
   'Replace: build this database again from the picked files.':
@@ -1240,7 +1231,7 @@ export const ko: Record<string, string> = {
   'Set up your vault': '보관함 준비하기',
   'Hide this checklist': '이 목록 숨기기',
   'Add your Lichess or Chess.com username and the Games page fills itself':
-    'Lichess 또는 Chess.com 아이디를 등록하면 게임 페이지가 자동으로 채워집니다',
+    'Lichess 또는 Chess.com 사용자명을 등록하면 게임 페이지가 자동으로 채워집니다',
   'Fetch the puzzle database so the trainer runs offline':
     '퍼즐 데이터베이스를 받으면 트레이너가 오프라인으로 동작합니다',
   'Import a scanned tactics book and its diagrams become puzzles':
@@ -1297,7 +1288,7 @@ export const ko: Record<string, string> = {
   // --- tablebase -----------------------------------------------------------
   // 저주받은 승리 / 축복받은 패배: the fifty-move pair, named in Korean the
   // way Syzygy names them in English — the outcome is the draw, and the
-  // label says which side it was taken from. `Draw` and the two "to play"
+  // label says which side it was taken from. `Draw` and the two "to move"
   // lines are not here: other sections already carry them, and one key may
   // only be translated once.
   Tablebase: '테이블베이스',
@@ -1692,11 +1683,9 @@ export const ko: Record<string, string> = {
   "Zugzwang": "추크츠방",
 
   // --- nav, puzzle prompts, board and editor labels ------------------------
-  "White to play": "백 차례",
-  "Black to play": "흑 차례",
   "Find the best move. The difficulty and themes stay hidden until you finish.": "최선의 수를 찾으세요. 난이도와 테마는 끝낼 때까지 숨겨집니다.",
   "New": "새로운",
-  "Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.": "내 게임을 살펴봅니다. 위에 {site} 사용자 이름을 입력하고 월을 고른 다음, 남길 만한 게임을 모음에 추가하세요.",
+  "Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.": "내 게임을 살펴봅니다. 위에 {site} 사용자명을 입력하고 월을 고른 다음, 남길 만한 게임을 모음에 추가하세요.",
   "Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …": "PGN 또는 수순만 붙여넣으세요: 1. e4 e5 2. Nf3 …",
   "needs internet": "인터넷 필요",
 
@@ -1704,8 +1693,8 @@ export const ko: Record<string, string> = {
   "Explorer source": "탐색기 소스",
   "Your vault": "내 보관함",
   "My games": "내 게임",
-  'Your collection plus every chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.':
-    '모음과 함께, 둘러본 모든 chess.com·Lichess 월 기보에서 답합니다. 한 번 본 달은 계속 집계에 남습니다. "보관한 것만"은 모음으로 좁힙니다.',
+  'Your collection plus every Chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.':
+    '모음과 함께, 둘러본 모든 Chess.com·Lichess 월 기보에서 답합니다. 한 번 본 달은 계속 집계에 남습니다. "보관한 것만"은 모음으로 좁힙니다.',
   "Won": "승",
   "Drew": "무",
   "Lost": "패",

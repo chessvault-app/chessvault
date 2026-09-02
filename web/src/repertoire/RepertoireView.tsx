@@ -1866,7 +1866,7 @@ export function RepertoireView() {
             <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(cursorIndex + 1)} title={t('Forward')}>
               <ChevronRight className="size-[1.1rem]" />
             </Button>
-            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(line.length - 1)} title={t('Latest')}>
+            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(line.length - 1)} title={t('Go to the end')}>
               <ChevronLast className="size-[1.1rem]" />
             </Button>
             <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>

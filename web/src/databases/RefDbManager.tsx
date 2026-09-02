@@ -691,7 +691,7 @@ function DbRow({
   // the same question about the same database, and two copies of a
   // sentence this long are two sentences to keep in step.
   const optimizeQuestion = t(
-    'Optimize “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.',
+    'Optimise “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.',
     { name: d.name },
   );
   const deleteQuestion = t('Delete “{name}”? The PGN files it was built from are kept.', {
@@ -827,10 +827,10 @@ function DbRow({
               // and a red dialog said this deletes your database.
               tone="default"
               triggerTitle={
-                optimizeDisabled ? 'Wait for the running job to finish' : 'Optimize this database'
+                optimizeDisabled ? 'Wait for the running job to finish' : 'Optimise this database'
               }
               question={optimizeQuestion}
-              confirmLabel="Optimize"
+              confirmLabel="Optimise"
               onConfirm={() => onOptimize(d.name)}
             />
             {/* Asked in a window rather than warned about in a tooltip: a
@@ -875,7 +875,7 @@ function DbRow({
             onSelect: () => onAddTo(d.name),
           },
           {
-            label: 'Optimize this database',
+            label: 'Optimise this database',
             icon: Hammer,
             disabled: optimizeDisabled,
             onSelect: () => setAsking('optimize'),
@@ -913,7 +913,7 @@ function DbRow({
         open={asking === 'optimize'}
         onOpenChange={(next) => setAsking(next ? 'optimize' : null)}
         question={optimizeQuestion}
-        confirmLabel="Optimize"
+        confirmLabel="Optimise"
         onConfirm={() => onOptimize(d.name)}
       />
       <ConfirmDialog

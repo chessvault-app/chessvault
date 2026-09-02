@@ -212,7 +212,7 @@ export function CompareDialog({
               >
                 <span className="flex w-full items-baseline gap-2">
                   <span className="text-foreground font-moves min-w-0 flex-1 truncate text-sm font-medium">
-                    {row.sans.length === 0 ? t('Start position') : line(row.sans)}
+                    {row.sans.length === 0 ? t('Starting position') : line(row.sans)}
                   </span>
                   {row.games > 1 && (
                     <span className="text-muted-foreground shrink-0 text-sm tabular-nums">

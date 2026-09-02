@@ -20,7 +20,7 @@ export interface OpeningTemplate {
 // A spread of the major openings, each seeded to the point where it earns its
 // name. "Free" starts at move one. ECO codes are the opening's root.
 export const TEMPLATES: OpeningTemplate[] = [
-  { eco: '', name: 'Start position', sans: [] },
+  { eco: '', name: 'Starting position', sans: [] },
   { eco: 'B20', name: 'Sicilian Defence', sans: ['e4', 'c5'] },
   { eco: 'C00', name: 'French Defence', sans: ['e4', 'e6'] },
   { eco: 'B10', name: 'Caro-Kann Defence', sans: ['e4', 'c6'] },

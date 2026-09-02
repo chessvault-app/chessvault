@@ -274,11 +274,11 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
         <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('How the app greets you')} />
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="chess.com username">
-          <ClearableInput inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder={t('your chess.com handle')} autoCapitalize="none" />
+        <Field label="Chess.com username">
+          <ClearableInput inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder={t('your Chess.com username')} autoCapitalize="none" />
         </Field>
         <Field label="Lichess username">
-          <ClearableInput inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess handle')} autoCapitalize="none" />
+          <ClearableInput inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess username')} autoCapitalize="none" />
         </Field>
       </div>
       <p className="text-muted-foreground text-sm">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
@@ -1888,7 +1888,7 @@ interface CachedPlayer {
   bytes: number;
 }
 
-const PROVIDER_NAME: Record<string, string> = { chesscom: 'chess.com', lichess: 'Lichess' };
+const PROVIDER_NAME: Record<string, string> = { chesscom: 'Chess.com', lichess: 'Lichess' };
 
 /** Bytes as something readable; a cache of a few megabytes should not be
     reported in seven digits. */
