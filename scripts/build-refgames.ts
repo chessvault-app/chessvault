@@ -192,13 +192,19 @@ const handleGame = (game: Game<PgnNodeData>, err: Error | undefined): void => {
 };
 
 db.exec('BEGIN');
-const parser = new PgnParser(handleGame, () => new Map());
+// One parser per source, finished at the end of each file. A streaming
+// parser closes a game only at a blank line or at the end of its input,
+// so one parser fed every file in turn would take a file ending on its
+// last result line and read the next file's headers as the tail of that
+// game — its first game then lands with no headers at all. The binary
+// reads each file on its own, and the two must store the same rows.
 for (const source of sources) {
   console.log(`indexing ${basename(source)}…`);
+  const parser = new PgnParser(handleGame, () => new Map());
   const stream = createReadStream(source, { encoding: 'utf-8' });
   for await (const chunk of stream) parser.parse(chunk as string, { stream: true });
+  parser.parse(''); // finish this file's stream
 }
-parser.parse(''); // finish the stream
 db.exec('COMMIT');
 
 console.log('indexing…');
