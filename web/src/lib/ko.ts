@@ -484,8 +484,8 @@ export const ko: Record<string, string> = {
   'Mine as Black': '내가 흑으로',
   "Searched player's side and result": '검색한 플레이어의 색과 결과',
   'Index positions': '포지션 색인 만들기',
-  '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.':
-    '“{name}”에는 아직 포지션 색인이 없습니다. 색인은 이미 들어 있는 기보를 읽어 만들며 — 올릴 것은 없습니다 — 1~2분 걸립니다.',
+  '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload. A small database takes a minute; millions of games can take hours.':
+    '“{name}”에는 아직 포지션 색인이 없습니다. 색인은 이미 들어 있는 기보를 읽어 만듭니다 — 올릴 것은 없습니다. 작은 데이터베이스는 1분, 수백만 판이면 몇 시간이 걸릴 수도 있습니다.',
   'indexing failed — see the Databases page': '색인 실패 — 데이터베이스 페이지를 확인하세요',
   'Nothing matches those filters': '필터에 맞는 게임이 없습니다',
   'No game in your collection gets through the filters above. Clearing them shows the whole collection again.':
@@ -1192,6 +1192,9 @@ export const ko: Record<string, string> = {
     '모음 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name — “{name}” if blank': '이름 — 비우면 “{name}”',
   'The build failed.': '만들기에 실패했습니다.',
+  'Build progress': '만들기 진행 상황',
+  'Nothing new for {minutes} minutes. This step is a single database operation and reports nothing until it finishes — on a large database that can take an hour.':
+    '{minutes}분간 새 소식이 없습니다. 이 단계는 데이터베이스 작업 하나로, 끝나기 전까지는 아무것도 알리지 않습니다 — 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',
   'a build is reading the collections right now': '지금 만들기가 이 모음들을 읽고 있습니다',
   'Reference database': '참고 데이터베이스',
   'Manage reference databases': '참고 데이터베이스 관리',

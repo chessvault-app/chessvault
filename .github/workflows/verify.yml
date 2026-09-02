@@ -20,6 +20,18 @@
 # to type is the state that let those four ship. It is a separate job so
 # the fast gate above still fails fast, and it builds the demo because
 # that is the one vault that is the same for everyone.
+#
+# The third job is the native core's parity, which was in the same
+# state. Everything in native/ has a TypeScript twin and the two must
+# answer identically — a disagreement is silent wrong rows, not a crash
+# (native/README.md) — and they are held together by fixtures exported
+# from the JS side and by a fuzz that compares the two live
+# implementations on a seeded random corpus. None of it ran anywhere
+# but on a developer's machine, when remembered, which is how the Rust
+# SQL sat two commits behind the TypeScript it mirrors. The fixtures can
+# be regenerated to bless a change on both sides; the fuzz cannot, and
+# that is why it is here and not only `cargo test`. Its own job because
+# it needs a toolchain and a release build that `verify` does not.
 name: verify
 
 on:
@@ -69,3 +81,45 @@ jobs:
       - run: npm run build:demo
 
       - run: npm run check:contrast
+
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # No toolchain action, as in desktop.yml: the runner image ships
+      # rustup and stable Rust. Cached by the lockfile so a push that
+      # changed no crate reuses the whole compile, test and release
+      # profiles both.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: native-verify-${{ runner.os }}-${{ hashFiles('native/Cargo.lock') }}
+          restore-keys: native-verify-${{ runner.os }}-
+
+      - name: Hold the crate to the fixtures the JS side exported
+        run: |
+          rustc --version && cargo --version
+          npm run test:native
+
+      - name: Build the release binary the fuzz spawns
+        run: npm run build:native
+
+      # Two seeds: one fixed, so a failure reproduces from the log on any
+      # machine with the same command; one that moves with the run, so
+      # the corpus is never the same twice across the history. Either
+      # divergence fails the push and prints the seed to replay it.
+      - name: Fuzz the two implementations against each other
+        run: |
+          npm run fuzz:parity -- 200 1
+          npm run fuzz:parity -- 200 ${{ github.run_number }}

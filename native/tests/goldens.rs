@@ -26,6 +26,46 @@ struct Goldens {
     signatures: Vec<SignatureGolden>,
     #[serde(rename = "materialSpecs")]
     material_specs: Vec<MaterialSpecGolden>,
+    sql: SqlGolden,
+    constants: ConstantsGolden,
+}
+
+/// The TS pipeline's own SQL, one string per constant `src/sql.rs`
+/// mirrors by hand. Held whitespace-collapsed: the two sides indent
+/// differently and SQLite does not care, but a column, an index or a
+/// whole lookup table one side has and the other lacks is exactly the
+/// drift the table-by-table diff cannot see.
+#[derive(Deserialize)]
+struct SqlGolden {
+    #[serde(rename = "gamesSchema")]
+    games_schema: String,
+    #[serde(rename = "pliesSchema")]
+    plies_schema: String,
+    #[serde(rename = "scanPackSchema")]
+    scan_pack_schema: String,
+    #[serde(rename = "keyIndexSchema")]
+    key_index_schema: String,
+    #[serde(rename = "moveCounts")]
+    move_counts: String,
+    #[serde(rename = "refgamesIndexes")]
+    refgames_indexes: String,
+    #[serde(rename = "refgamesLookups")]
+    refgames_lookups: String,
+}
+
+/// Numbers and meta keys both sides carry as literals.
+#[derive(Deserialize)]
+struct ConstantsGolden {
+    #[serde(rename = "scanPackVersion")]
+    scan_pack_version: u32,
+    #[serde(rename = "scanPackMeta")]
+    scan_pack_meta: String,
+    #[serde(rename = "keyIndexVersion")]
+    key_index_version: u32,
+    #[serde(rename = "keyIndexMeta")]
+    key_index_meta: String,
+    #[serde(rename = "deepSearchCap")]
+    deep_search_cap: u64,
 }
 
 #[derive(Deserialize)]
@@ -131,7 +171,7 @@ fn load() -> Goldens {
     let text = std::fs::read_to_string(path)
         .expect("goldens.json exists — run scripts/export-native-goldens.ts");
     let goldens: Goldens = serde_json::from_str(&text).expect("goldens.json parses");
-    assert_eq!(goldens.schema, 1, "unknown goldens schema");
+    assert_eq!(goldens.schema, 2, "unknown goldens schema");
     goldens
 }
 
@@ -308,4 +348,61 @@ fn game_replays_match() {
             game.why
         );
     }
+}
+
+/// Whitespace-collapsed: the two sides indent their SQL differently and
+/// SQLite reads both the same; anything else that differs is a real
+/// difference in what the file is created with.
+fn collapse(sql: &str) -> String {
+    sql.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+#[test]
+fn sql_matches_the_ts_source() {
+    let goldens = load();
+    use chessvault_core::sql;
+    for (name, ours, theirs) in [
+        ("GAMES_SCHEMA", sql::GAMES_SCHEMA.to_owned(), &goldens.sql.games_schema),
+        (
+            "PLIES_TABLE + PLIES_INDEX",
+            format!("{}\n{}", sql::PLIES_TABLE, sql::PLIES_INDEX),
+            &goldens.sql.plies_schema,
+        ),
+        ("SCAN_PACK_TABLE", sql::SCAN_PACK_TABLE.to_owned(), &goldens.sql.scan_pack_schema),
+        ("KEY_INDEX_TABLE", sql::KEY_INDEX_TABLE.to_owned(), &goldens.sql.key_index_schema),
+        (
+            "MOVE_COUNTS_SUMS + _THIN + _INDEX",
+            format!(
+                "{}{}{}",
+                sql::MOVE_COUNTS_SUMS,
+                sql::MOVE_COUNTS_THIN,
+                sql::MOVE_COUNTS_INDEX
+            ),
+            &goldens.sql.move_counts,
+        ),
+        ("REFGAMES_INDEXES", sql::REFGAMES_INDEXES.to_owned(), &goldens.sql.refgames_indexes),
+        ("REFGAMES_LOOKUPS", sql::REFGAMES_LOOKUPS.to_owned(), &goldens.sql.refgames_lookups),
+    ] {
+        assert_eq!(
+            collapse(&ours),
+            collapse(theirs),
+            "sql::{name} differs from the TS text it mirrors — edit src/sql.rs to match, never the fixture"
+        );
+    }
+}
+
+#[test]
+fn literal_constants_match() {
+    let goldens = load();
+    assert_eq!(
+        chessvault_core::scan_pack::SCAN_PACK_VERSION,
+        goldens.constants.scan_pack_version
+    );
+    assert_eq!(chessvault_core::scan_pack::SCAN_PACK_META, goldens.constants.scan_pack_meta);
+    assert_eq!(
+        chessvault_core::key_index::KEY_INDEX_VERSION,
+        goldens.constants.key_index_version
+    );
+    assert_eq!(chessvault_core::key_index::KEY_INDEX_META, goldens.constants.key_index_meta);
+    assert_eq!(chessvault_core::deep::DEEP_SEARCH_CAP, goldens.constants.deep_search_cap);
 }

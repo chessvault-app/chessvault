@@ -60,6 +60,10 @@ import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
 const REFGAMES_DIR = resolve(DATA, 'refgames');
 const PAGE = 50;
+/** The most games one deep search streams before it stops — every scan
+    path stops here, and native/src/deep.rs carries the same number (the
+    goldens hold the two together). */
+export const DEEP_SEARCH_CAP = 200;
 
 /**
  * The native pipeline binary, when one is present — the heavy jobs and
@@ -95,19 +99,25 @@ export const SCAN_KEYS = ['match', 'material'] as const;
 export interface NativeCapabilities {
   filters: ReadonlySet<string>;
   scan: ReadonlySet<string>;
+  /** What deep-search writes to stdout. `'hits'` is the one contract
+      this server speaks (id and ply per game, the frame composed here);
+      null is a build from before it declared one, which streamed whole
+      game frames and is not spawned for deep search any more. */
+  deep: string | null;
 }
 
 /**
  * The binary's capabilities output, parsed: the gamesWhere filter keys
- * and scan keys that build of the crate understands. A missing `scan`
- * field is an older declaration, not a broken one — it means none.
- * Null for anything that is not a declaration — garbage, a non-array,
+ * and scan keys that build of the crate understands, and its deep-search
+ * output contract. A missing `scan` field is an older declaration, not
+ * a broken one — it means none; so is a missing `deep`. Null for
+ * anything that is not a declaration — garbage, a non-array,
  * non-strings — because a binary that cannot state its contract must
  * not be trusted with any of it.
  */
 export function parseNativeCapabilities(stdout: string): NativeCapabilities | null {
   try {
-    const body = JSON.parse(stdout) as { filters?: unknown; scan?: unknown };
+    const body = JSON.parse(stdout) as { filters?: unknown; scan?: unknown; deep?: unknown };
     const strings = (value: unknown): string[] | null =>
       Array.isArray(value) && value.every((entry) => typeof entry === 'string')
         ? (value as string[])
@@ -116,11 +126,15 @@ export function parseNativeCapabilities(stdout: string): NativeCapabilities | nu
     if (!filters) return null;
     const scan = body.scan === undefined ? [] : strings(body.scan);
     if (!scan) return null;
-    return { filters: new Set(filters), scan: new Set(scan) };
+    if (body.deep !== undefined && typeof body.deep !== 'string') return null;
+    return { filters: new Set(filters), scan: new Set(scan), deep: body.deep ?? null };
   } catch {
     return null;
   }
 }
+
+/** The deep-search output contract this server composes frames from. */
+export const NATIVE_DEEP_CONTRACT = 'hits';
 
 /**
  * The request keys this search uses that the binary did not declare —
@@ -198,6 +212,13 @@ function askCapabilities(binary: string): Promise<NativeCapabilities | null> {
       clearTimeout(timer);
       if (declared === null) {
         console.error(`refgames: ${binary} gave no capabilities${why ? `: ${why}` : ''} — deep search stays on the JS path`);
+      } else if (declared.deep !== NATIVE_DEEP_CONTRACT) {
+        // Once per build (this answer is cached by mtime): a binary from
+        // before the hit-frame contract is used for the other jobs and
+        // not for this one, and an operator should be able to see why.
+        console.error(
+          `refgames: ${binary} declares deep-search output ${declared.deep === null ? 'nothing' : `"${declared.deep}"`}, this server needs "${NATIVE_DEEP_CONTRACT}" — deep search stays on the JS path until it is rebuilt`,
+        );
       }
       done(declared);
     };
@@ -730,6 +751,12 @@ interface BuildJob {
   running: boolean;
   exitCode: number | null;
   log: string[];
+  /** When the log last grew. The index pass has phases that are one SQL
+      statement each — nothing can report from inside one — so how long
+      the job has been quiet is the only liveness there is to offer, and
+      the page needs it to tell "an hour into the per-move sum, which is
+      what an hour into it looks like" from a hang. */
+  lineAt: number;
 }
 let job: BuildJob | null = null;
 
@@ -911,7 +938,10 @@ export function refGamesApi(
       }
       const append = (chunk: Buffer): void => {
         for (const line of chunk.toString().split('\n')) {
-          if (line.trim()) current.log.push(line);
+          if (line.trim()) {
+            current.log.push(line);
+            current.lineAt = Date.now();
+          }
         }
         if (current.log.length > 100) current.log.splice(0, current.log.length - 100);
       };
@@ -925,7 +955,14 @@ export function refGamesApi(
     };
 
     const startBuild = (name: string, sources: string[], append: boolean): void => {
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      const current: BuildJob = {
+        name,
+        startedAt: Date.now(),
+        running: true,
+        exitCode: null,
+        log: [],
+        lineAt: Date.now(),
+      };
       // An append works on the live file: closing our readonly handle
       // first keeps Windows happy about the WAL sidecars, and there is no
       // rename to finish afterwards.
@@ -1008,7 +1045,14 @@ export function refGamesApi(
       if (!name || !NAME_RE.test(name) || !names().includes(name)) {
         return c.json({ error: 'no such database' }, 400);
       }
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      const current: BuildJob = {
+        name,
+        startedAt: Date.now(),
+        running: true,
+        exitCode: null,
+        log: [],
+        lineAt: Date.now(),
+      };
       close(name); // the job rewrites the live file
       spawnJob(
         current,
@@ -1035,7 +1079,14 @@ export function refGamesApi(
       if (!name || !NAME_RE.test(name) || !names().includes(name)) {
         return c.json({ error: 'no such database' }, 400);
       }
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      const current: BuildJob = {
+        name,
+        startedAt: Date.now(),
+        running: true,
+        exitCode: null,
+        log: [],
+        lineAt: Date.now(),
+      };
       spawnJob(
         current,
         'index-refgames-positions.mjs',
@@ -1047,8 +1098,29 @@ export function refGamesApi(
       return c.json({ started: true, name });
     });
 
+    /**
+     * The newest phase line the index pass printed — "positions: 66%
+     * summing per move…" (the shape is documented on PhaseLog in
+     * server/refgamesIndex.ts, and the native twin prints it too).
+     *
+     * The percentage is of the whole pass, weighted by phase, which is
+     * the only fraction worth drawing: the games count below reaches its
+     * total at the end of the replay loop and then has hours of index,
+     * sum and invert left to run behind it.
+     */
+    const PHASE_RE = /positions: (\d+)% ([^—…]+?)\s*(?:—|…)/;
+    const phaseOf = (log: string[]): { label: string; percent: number } | null => {
+      for (let i = log.length - 1; i >= 0; i -= 1) {
+        const m = PHASE_RE.exec(log[i]!);
+        if (m) return { label: m[2]!, percent: Number(m[1]!) };
+      }
+      return null;
+    };
+
     /** The newest "N of M games" line the indexer printed, as numbers —
-        the fraction a progress bar wants, without scraping log text. */
+        the fraction a progress bar wants, without scraping log text. Kept
+        beside the phase percentage above: it is the replay loop's own
+        count, and the phases after it report in other units. */
     const PROGRESS_RE = /([\d,]+) of ([\d,]+) games/;
     const progressOf = (log: string[]): { done: number; total: number } | null => {
       for (let i = log.length - 1; i >= 0; i -= 1) {
@@ -1072,6 +1144,13 @@ export function refGamesApi(
               exitCode: job.exitCode,
               seconds: (Date.now() - job.startedAt) / 1000,
               progress: progressOf(job.log),
+              phase: phaseOf(job.log),
+              // How long since the log moved. Two of the index pass's
+              // phases are one statement each and print nothing until
+              // they return — over an hour, on a gigabase — so the page
+              // says so rather than leaving a still bar to be read as a
+              // hang.
+              quietSeconds: (Date.now() - job.lineAt) / 1000,
               log: job.log.slice(-15),
             }
           : { running: false },
@@ -1293,8 +1372,7 @@ export function refGamesApi(
    * lookup tables simply offers nothing; openings and ECO come from
    * the vendored catalogue (/api/openings), not from here — the
    * language's names should not depend on which database is picked —
-   * and events have no lookup table, so suggesting them would scan
-   * the games themselves.
+   * and tournaments answer from the events lookup below.
    */
   api.get('/refgames/suggest', (c) => {
     const found = fromQuery(c);
@@ -1692,7 +1770,6 @@ export function refGamesApi(
    * The scan yields to the event loop between batches, so the server
    * keeps answering while it runs.
    */
-  const DEEP_SEARCH_CAP = 200;
   api.get('/refgames/deep-search', async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
@@ -1872,6 +1949,11 @@ export function refGamesApi(
          FROM games WHERE id = ?`,
       );
       c.header('Content-Type', 'application/x-ndjson');
+      // Which of the four scan paths answered — invisible to the frames,
+      // which must be identical whichever it was, and what a test or an
+      // operator reads to know the fast path was actually taken rather
+      // than silently fallen through.
+      c.header('X-Scan-Path', 'key-index');
       return stream(c, async (out) => {
         let matched = 0;
         let scanned = 0;
@@ -1966,6 +2048,7 @@ export function refGamesApi(
          FROM games WHERE id = ?`,
       );
       c.header('Content-Type', 'application/x-ndjson');
+      c.header('X-Scan-Path', 'resident');
       return stream(c, async (out) => {
         // Worker messages land between awaits; the queue keeps id
         // order, and the loop drains it into frames. Hits arrive
@@ -2057,7 +2140,12 @@ export function refGamesApi(
     const binary = dir === REFGAMES_DIR ? nativeBinary() : null;
     const declared = binary ? await nativeFilters(binary) : null;
     const native =
-      binary && declared && undeclaredFilters(declared, getFilter).length === 0 ? binary : null;
+      binary &&
+      declared &&
+      declared.deep === NATIVE_DEEP_CONTRACT &&
+      undeclaredFilters(declared, getFilter).length === 0
+        ? binary
+        : null;
     if (native) {
       const filters: Record<string, string> = {};
       for (const key of GAMES_WHERE_KEYS) {
@@ -2072,7 +2160,12 @@ export function refGamesApi(
         argv.push('--fen', fen!);
         if (mode !== 'exact') argv.push('--match', mode);
       }
+      const headerStmt = db.prepare(
+        `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
+         FROM games WHERE id = ?`,
+      );
       c.header('Content-Type', 'application/x-ndjson');
+      c.header('X-Scan-Path', 'native');
       return stream(c, (out) =>
         new Promise<void>((done) => {
           // Windows throws synchronously for an unrunnable binary;
@@ -2092,8 +2185,94 @@ export function refGamesApi(
           };
           c.req.raw.signal?.addEventListener('abort', kill);
           out.onAbort(kill);
+
+          /**
+           * The binary streams HITS — `{type:'hit', id, ply}` — never
+           * game frames. The frame the client sees is composed here from
+           * the header row, by the same lines the other three paths use,
+           * so its shape exists once. And every hit is re-checked before
+           * it is streamed: the reference replay runs over that one game
+           * and only what IT says goes out. The Rust and JS replay loops
+           * were the one pair with no tether at runtime — a confident
+           * wrong hit from the binary, the failure the goldens exist to
+           * prevent, would have been a wrong row on screen; now it is a
+           * logged, overruled hit. The cost is bounded by the cap: at
+           * most DEEP_SEARCH_CAP replays a request, each a fraction of a
+           * millisecond beside a scan measured in seconds. What this
+           * cannot catch is a game the binary MISSED; that stays with
+           * the fuzz (scripts/fuzz-parity.ts), which compares whole
+           * answers.
+           */
+          let matched = 0;
+          let overruled = 0;
+          let buffered = '';
+          let chain: Promise<void> = Promise.resolve();
+          const frame = async (line: string): Promise<void> => {
+            let f: {
+              type?: string;
+              id?: number;
+              ply?: number;
+              scanned?: number;
+              total?: number;
+              exhaustive?: boolean;
+            };
+            try {
+              f = JSON.parse(line) as typeof f;
+            } catch {
+              console.error(`deep-search (${found.name}): unparseable frame from ${native}: ${line.slice(0, 120)}`);
+              return;
+            }
+            if (f.type === 'hit') {
+              if (matched >= DEEP_SEARCH_CAP) return;
+              const row = headerStmt.get(f.id) as (RefGameRow & { moves: string }) | undefined;
+              if (!row) {
+                overruled += 1;
+                console.error(`deep-search (${found.name}): native hit on a game that is not there: ${f.id}`);
+                return;
+              }
+              const hitPly = spec
+                ? replayMaterialHit(row.moves, spec)
+                : replayPositionHit(row.moves, target!);
+              if (hitPly !== f.ply) {
+                overruled += 1;
+                console.error(
+                  `deep-search (${found.name}): native and the reference replay disagree on game ${f.id}: native ply ${f.ply}, replay ${hitPly ?? 'no hit'} — streaming the replay's answer`,
+                );
+              }
+              if (hitPly === null) return;
+              matched += 1;
+              const { moves, ...headers } = row;
+              await out.writeln(
+                JSON.stringify({ type: 'game', ply: hitPly, ...headers, ...movesPreview(moves) }),
+              );
+            } else if (f.type === 'progress') {
+              await out.writeln(
+                JSON.stringify({ type: 'progress', scanned: f.scanned, total: f.total, matched }),
+              );
+            } else if (f.type === 'done') {
+              // Exhaustive is the binary's to say — it either ran out
+              // of games or stopped at its own cap, and an overruled
+              // hit changes neither. Matched is this side's count.
+              await out.writeln(
+                JSON.stringify({
+                  type: 'done',
+                  scanned: f.scanned,
+                  total: f.total,
+                  matched,
+                  exhaustive: f.exhaustive,
+                }),
+              );
+            }
+          };
+          // Frames are handled in order, one at a time: a chunk may end
+          // mid-line, and a write must finish before the next begins.
           child.stdout!.on('data', (chunk: Buffer) => {
-            void out.write(chunk).catch(kill);
+            buffered += chunk.toString();
+            const lines = buffered.split('\n');
+            buffered = lines.pop()!;
+            for (const line of lines) {
+              if (line) chain = chain.then(() => frame(line)).catch(kill);
+            }
           });
           // The binary's own diagnostic would otherwise be discarded.
           child.stderr!.on('data', (chunk: Buffer) => {
@@ -2108,7 +2287,19 @@ export function refGamesApi(
             if (code !== 0 && code !== null && !out.aborted) {
               console.error(`deep-search (${found.name}): exited with code ${code}`);
             }
-            done();
+            // Whatever is still queued streams before the response
+            // ends — the `done` frame is usually in that queue.
+            void chain
+              .then(() => (buffered.trim() ? frame(buffered.trim()) : undefined))
+              .catch(() => {})
+              .then(() => {
+                if (overruled > 0) {
+                  console.error(
+                    `deep-search (${found.name}): ${overruled} native hit(s) overruled by the reference replay — the binary and the JS scanner disagree; run npm run fuzz:parity`,
+                  );
+                }
+                done();
+              });
           };
           child.on('error', (error) => {
             console.error(`deep-search (${found.name}): could not start ${native}: ${error.message}`);
@@ -2132,6 +2323,7 @@ export function refGamesApi(
     );
 
     c.header('Content-Type', 'application/x-ndjson');
+    c.header('X-Scan-Path', 'replay');
     return stream(c, async (out) => {
       let lastId = 0;
       let scanned = 0;

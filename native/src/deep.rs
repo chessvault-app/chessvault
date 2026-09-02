@@ -1,9 +1,14 @@
 //! Port of the `/refgames/deep-search` route's scan loop
 //! (`server/refgames.ts`): search the whole database for a position, any
-//! depth, ndjson frames on stdout identical to the JS route's. Spawned
-//! per request by the server, which pipes stdout into the response
-//! stream — a closed pipe (client gone, child killed) ends the scan by
-//! construction.
+//! depth. Spawned per request by the server, which reads the ndjson on
+//! stdout — `hit` frames (game id and ply), `progress` and `done` — and
+//! composes the game frames the client sees itself, after replaying
+//! each hit through its own reference scanner. So this binary answers
+//! WHICH games, never what a frame looks like: the frame's shape exists
+//! once, on the JS side, and a wrong hit here is overruled and logged
+//! rather than streamed. The `capabilities` command declares this as
+//! `"deep": "hits"`; the server spawns nothing that does not. A closed
+//! pipe (client gone, child killed) ends the scan by construction.
 
 use std::io::Write;
 use std::path::Path;
@@ -306,37 +311,18 @@ pub fn run_deep_search(
         |r| r.get(0),
     )?;
 
+    // Only what the scan tests. The route composes the frame the client
+    // sees from the header row itself, so no header column is read here
+    // and nothing here can disagree with the JS side about a frame.
     let mut page = conn.prepare(&format!(
-        "SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
-         FROM games
+        "SELECT id, moves FROM games
          WHERE id > ?{men_where}{sql_and}
          ORDER BY id LIMIT 1000"
     ))?;
 
     struct Row {
         id: i64,
-        white: String,
-        black: String,
-        white_elo: f64,
-        black_elo: f64,
-        result: String,
-        date: Option<String>,
-        event: Option<String>,
-        eco: Option<String>,
-        opening: Option<String>,
         moves: String,
-    }
-
-    // Mirrors movesPreview in server/refgames.ts — the JS scan emits the
-    // same two fields, and the two implementations must answer identically.
-    const SAN_PREFIX_PLIES: usize = 24;
-    fn moves_preview(moves: &str) -> (u64, Option<String>) {
-        if moves.is_empty() {
-            return (0, None);
-        }
-        let sans: Vec<&str> = moves.split(' ').collect();
-        let prefix = sans[..sans.len().min(SAN_PREFIX_PLIES)].join(" ");
-        (sans.len() as u64, Some(prefix))
     }
 
     let stdout = std::io::stdout();
@@ -366,16 +352,7 @@ pub fn run_deep_search(
             let rows = page.query_map(binds.as_slice(), |r| {
                 Ok(Row {
                     id: r.get(0)?,
-                    white: r.get(1)?,
-                    black: r.get(2)?,
-                    white_elo: r.get(3)?,
-                    black_elo: r.get(4)?,
-                    result: r.get(5)?,
-                    date: r.get(6)?,
-                    event: r.get(7)?,
-                    eco: r.get(8)?,
-                    opening: r.get(9)?,
-                    moves: r.get(10)?,
+                    moves: r.get(1)?,
                 })
             })?;
             rows.collect::<Result<_, _>>()?
@@ -396,30 +373,7 @@ pub fn run_deep_search(
             };
             if let Some(hit_ply) = hit {
                 matched += 1;
-                let elo = |v: f64| {
-                    if v.fract() == 0.0 {
-                        json!(v as i64)
-                    } else {
-                        json!(v)
-                    }
-                };
-                let (ply_count, san_prefix) = moves_preview(&row.moves);
-                emit!(json!({
-                    "type": "game",
-                    "ply": hit_ply,
-                    "id": row.id,
-                    "white": row.white,
-                    "black": row.black,
-                    "white_elo": elo(row.white_elo),
-                    "black_elo": elo(row.black_elo),
-                    "result": row.result,
-                    "date": row.date,
-                    "event": row.event,
-                    "eco": row.eco,
-                    "opening": row.opening,
-                    "plyCount": ply_count,
-                    "sanPrefix": san_prefix,
-                }));
+                emit!(json!({ "type": "hit", "id": row.id, "ply": hit_ply }));
             }
             if matched >= DEEP_SEARCH_CAP {
                 break;

@@ -1,5 +1,5 @@
 {
- "schema": 1,
+ "schema": 2,
  "generator": "scripts/export-native-goldens.ts",
  "refMaxPly": 30,
  "fens": [
@@ -8375,5 +8375,21 @@
     }
    ]
   }
- ]
+ ],
+ "sql": {
+  "gamesSchema": "\n  CREATE TABLE IF NOT EXISTS games (\n    id INTEGER PRIMARY KEY,\n    white TEXT NOT NULL COLLATE NOCASE,\n    black TEXT NOT NULL COLLATE NOCASE,\n    white_elo INTEGER NOT NULL,\n    black_elo INTEGER NOT NULL,\n    result TEXT NOT NULL,\n    date TEXT,\n    event TEXT,\n    eco TEXT,\n    opening TEXT,\n    moves TEXT NOT NULL,\n    ply_count INTEGER,\n    final_wmen INTEGER,\n    final_bmen INTEGER\n  );\n  CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);\n",
+  "pliesSchema": "\n  CREATE TABLE IF NOT EXISTS plies (\n    pos INTEGER NOT NULL,\n    uci TEXT NOT NULL,\n    game_id INTEGER NOT NULL,\n    ply INTEGER NOT NULL,\n    r INTEGER NOT NULL,\n    eb INTEGER NOT NULL\n  );\n  CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);\n",
+  "scanPackSchema": "\n  CREATE TABLE IF NOT EXISTS scan_pack (\n    game_id INTEGER PRIMARY KEY,\n    pack BLOB NOT NULL\n  );\n",
+  "keyIndexSchema": "\n  CREATE TABLE IF NOT EXISTS key_index (\n    bucket INTEGER PRIMARY KEY,\n    entries BLOB NOT NULL\n  );\n",
+  "moveCounts": "\n  CREATE TABLE IF NOT EXISTS move_counts AS\n    SELECT pos, uci, eb,\n           SUM(r = 0) AS w,\n           SUM(r = 1) AS d,\n           SUM(r = 2) AS b\n    FROM plies\n    GROUP BY pos, uci, eb;\n  CREATE TEMP TABLE mc_thin AS\n    SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < 5;\n  DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);\n  DROP TABLE mc_thin;\n  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);\n",
+  "refgamesIndexes": "\n  CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);\n  CREATE INDEX IF NOT EXISTS idx_games_black ON games (black);\n  CREATE INDEX IF NOT EXISTS idx_games_opening ON games (opening);\n  CREATE INDEX IF NOT EXISTS idx_games_eco ON games (eco);\n",
+  "refgamesLookups": "\n  CREATE TABLE IF NOT EXISTS players AS\n    SELECT name, COUNT(*) AS games, SUM(w) AS as_white, SUM(b) AS as_black, MAX(elo) AS max_elo\n    FROM (\n      SELECT white AS name, 1 AS w, 0 AS b, white_elo AS elo FROM games\n      UNION ALL\n      SELECT black AS name, 0 AS w, 1 AS b, black_elo AS elo FROM games\n    )\n    GROUP BY name;\n  CREATE UNIQUE INDEX IF NOT EXISTS idx_players_name ON players (name);\n  CREATE TABLE IF NOT EXISTS openings AS\n    SELECT opening, eco, COUNT(*) AS games FROM games\n    WHERE opening IS NOT NULL OR eco IS NOT NULL\n    GROUP BY opening, eco;\n  CREATE TABLE IF NOT EXISTS events AS\n    SELECT event, COUNT(*) AS games FROM games\n    WHERE event IS NOT NULL\n    GROUP BY event;\n"
+ },
+ "constants": {
+  "scanPackVersion": 1,
+  "scanPackMeta": "scan_pack",
+  "keyIndexVersion": 1,
+  "keyIndexMeta": "key_index",
+  "deepSearchCap": 200
+ }
 }

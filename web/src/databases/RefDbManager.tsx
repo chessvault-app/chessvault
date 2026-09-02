@@ -14,6 +14,7 @@ import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Progress, ProgressIndicator } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { Panel } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
@@ -74,6 +75,25 @@ const fmtBytes = (bytes: number): string => {
   return `${v >= 10 ? Math.round(v).toLocaleString() : v.toFixed(1)} ${unit}`;
 };
 
+/**
+ * What /api/refgames/build/status answers (server/refgames.ts).
+ *
+ * `phase` is the index pass's own weighted position — the pass names
+ * each phase as it starts and prints the percentage of the WHOLE pass,
+ * because the games count in `progress` finishes at the end of the
+ * replay loop with hours of indexing still to run behind it. Everything
+ * past `running` is optional: the single-file mounts have no build
+ * routes, and an older server answers without the newer fields.
+ */
+export interface BuildStatus {
+  running: boolean;
+  exitCode?: number | null;
+  log?: string[];
+  phase?: { label: string; percent: number } | null;
+  /** Seconds since the job last printed anything. */
+  quietSeconds?: number;
+}
+
 export function RefDbManager({
   databases,
   onChanged,
@@ -94,11 +114,7 @@ export function RefDbManager({
       source picker, so growing a database is one press and some ticks —
       not a trip to the other tab and back (lanph3re's report, twice). */
   const [addTo, setAddTo] = useState<string | null>(null);
-  const [status, setStatus] = useState<{
-    running: boolean;
-    exitCode?: number | null;
-    log?: string[];
-  } | null>(null);
+  const [status, setStatus] = useState<BuildStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wasRunning = useRef(false);
 
@@ -120,11 +136,7 @@ export function RefDbManager({
   useEffect(() => {
     const tick = async (): Promise<void> => {
       try {
-        const s = await api<{
-          running: boolean;
-          exitCode?: number | null;
-          log?: string[];
-        }>('/api/refgames/build/status');
+        const s = await api<BuildStatus>('/api/refgames/build/status');
         setStatus(s);
         if (s.running) {
           wasRunning.current = true;
@@ -146,6 +158,12 @@ export function RefDbManager({
 
   const running = status?.running === true;
   const failed = !running && status?.exitCode != null && status.exitCode !== 0;
+  // The replay loop prints every 25,000 games, which on the biggest
+  // corpus built here was ~26 s apart. Two minutes of silence therefore
+  // means the job is in one of the phases that cannot report, and saying
+  // so is the difference between a slow step and a hung one.
+  const quietMinutes = Math.floor((status?.quietSeconds ?? 0) / 60);
+  const quiet = running && quietMinutes >= 2;
 
   // One at a time as a raw body, which streams — these files run to
   // hundreds of megabytes, and FormData would buffer the whole thing in
@@ -422,10 +440,34 @@ export function RefDbManager({
             thing here that takes minutes, so it says so from the top
             rather than from under whichever tab started it. */}
         {running && (
-          <p className="border-border text-muted-foreground flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
-            <Spinner className="size-3.5 shrink-0" />
-            <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
-          </p>
+          <div className="border-border flex shrink-0 flex-col gap-2 border-b px-3 py-2">
+            <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
+              <Spinner className="size-3.5 shrink-0" />
+              <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
+            </p>
+            {/* Weighted by phase, not by games: the games count reaches
+                its total when the replay ends, and on a large corpus
+                there are hours of indexing, summing and inverting behind
+                it. A bar that sat at 100% for those hours was the reason
+                this exists. */}
+            {status?.phase != null && (
+              <Progress value={status.phase.percent} aria-label={t('Build progress')}>
+                {/* The fill states its own width, as the download bar in
+                    Settings does: the primitive's default indicator is
+                    `flex-1`, which grows to the whole track whatever the
+                    value says. */}
+                <ProgressIndicator className="bg-primary" style={{ width: `${status.phase.percent}%` }} />
+              </Progress>
+            )}
+            {quiet && (
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {t(
+                  'Nothing new for {minutes} minutes. This step is a single database operation and reports nothing until it finishes — on a large database that can take an hour.',
+                  { minutes: quietMinutes },
+                )}
+              </p>
+            )}
+          </div>
         )}
         {failed && (
           <p className="border-border text-destructive shrink-0 border-b px-3 py-2 font-mono text-xs">
