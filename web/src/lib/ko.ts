@@ -144,10 +144,10 @@ export const ko: Record<string, string> = {
   // --- engine, review ------------------------------------------------------
   'Engine settings': '엔진 설정',
   'Show the whole variation': '변화수 전체 보기',
-  'Show one line': '한 줄만 보기',
+  'Show one line': '라인 하나만 보기',
   'Engine on/off': '엔진 켜기/끄기',
   Threads: '스레드',
-  Lines: '변화 수',
+  Lines: '라인 수',
   Depth: '깊이',
   'Time limit': '시간 제한',
   off: '없음',
@@ -274,7 +274,7 @@ export const ko: Record<string, string> = {
   'Your move.': '둘 차례입니다.',
   'Reviewing an earlier move. Step to the end to keep playing.':
     '이전 수를 보는 중입니다. 계속 두려면 끝으로 이동하세요.',
-  'Leave this line and set up a new game': '이 변화수를 떠나 새 게임 시작하기',
+  'Leave this line and set up a new game': '이 라인을 떠나 새 게임 시작하기',
 
   // --- licences ------------------------------------------------------------
   'Everything this app is built from, and the terms it is used under.':
@@ -863,7 +863,7 @@ export const ko: Record<string, string> = {
   'Find the best move. The difficulty stays hidden until you finish.':
     '최선의 수를 찾으세요. 난이도는 끝날 때까지 숨겨집니다.',
   'This line has run past the database. You are on your own now.':
-    '이 수순은 데이터베이스를 벗어났습니다. 여기부터는 스스로입니다.',
+    '이 라인은 데이터베이스를 벗어났습니다. 여기부터는 스스로입니다.',
   'Evaluating the position…': '포지션 평가 중…',
   // Pausing a book scan.
   Pause: '일시정지',
@@ -899,8 +899,8 @@ export const ko: Record<string, string> = {
   'No opening matches that.': '그 검색어에 맞는 오프닝이 없습니다.',
   '{count} more, type to narrow.': '{count}개 더 있습니다. 입력해서 좁혀 보세요.',
   // The moves panel's reading mode.
-  'Show the current line only': '현재 수순만 보기',
-  'Showing the current line only': '현재 수순만 보는 중',
+  'Show the current line only': '현재 라인만 보기',
+  'Showing the current line only': '현재 라인만 보는 중',
   Appearance: '모양',
   'App theme': '앱 테마',
   Colours: '색',
@@ -1428,14 +1428,14 @@ export const ko: Record<string, string> = {
   'Back to dashboard': '대시보드로',
   Review: '복습',
   'That is the book line. Retry it without hints to count it.':
-    '책의 변화가 맞습니다. 힌트 없이 다시 풀어야 인정됩니다.',
+    '책의 라인이 맞습니다. 힌트 없이 다시 풀어야 인정됩니다.',
   'Off the book at the end, but the engine approves.':
     '끝에서 책과 갈라졌지만 엔진이 인정합니다.',
   'Exactly as the book has it.': '책과 정확히 같습니다.',
   'The marked move is where the line goes wrong.':
-    '표시된 수에서 변화가 어긋납니다.',
+    '표시된 수에서 라인이 어긋납니다.',
   'Correct so far, but the book line goes further.':
-    '여기까진 맞지만, 책의 변화는 더 이어집니다.',
+    '여기까진 맞지만, 책의 라인은 더 이어집니다.',
   'Explore freely. Only the mainline is judged on submit.':
     '자유롭게 살펴보세요. 제출할 때 채점되는 것은 메인 라인뿐입니다.',
   'Engine agrees': '엔진도 동의',
@@ -1458,10 +1458,10 @@ export const ko: Record<string, string> = {
   'Engine solution, corroborated by the book text': '책의 글이 뒷받침하는 엔진 정답',
   'Engine solution': '엔진 정답',
   'Engine solution (decisive line, no text corroboration)':
-    '엔진 정답 (결정적인 변화, 글의 뒷받침은 없음)',
+    '엔진 정답 (결정적인 라인, 글의 뒷받침은 없음)',
   'Engine guess': '엔진 추측',
   'Engine best line only, nothing decisive found. Check the source if it feels off.':
-    '엔진의 최선 변화뿐이며, 결정적인 것을 찾지 못했습니다. 이상하면 원본을 확인하세요.',
+    '엔진의 최선 라인뿐이며, 결정적인 것을 찾지 못했습니다. 이상하면 원본을 확인하세요.',
   'Imported diagram awaiting a solution. Open it to enter one.':
     '정답을 기다리는 가져온 다이어그램입니다. 열어서 입력하세요.',
   'Record solution': '정답 기록하기',
