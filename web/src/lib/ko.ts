@@ -632,7 +632,7 @@ export const ko: Record<string, string> = {
   'By difficulty': '난이도별',
   'All puzzle books': '모든 퍼즐 책',
   'Preview the position': '포지션 미리 보기',
-  Shelf: '책장',
+  Shelf: '목록',
   'Import a book': '책 가져오기',
   Difficulty: '난이도',
   'First press marks the piece, second the move (not counted as a fail)':
@@ -1798,13 +1798,12 @@ export const ko: Record<string, string> = {
 
   // --- books: the library and the reader -----------------------------------
   'Upload cancelled': '업로드가 취소되었습니다',
-  'The PDF could not be kept in the library: {reason}':
-    'PDF를 서재에 보관하지 못했습니다: {reason}',
+  'The PDF could not be kept on the shelf: {reason}':
+    'PDF를 목록에 보관하지 못했습니다: {reason}',
   'that PDF is too big (500 MB cap)': 'PDF가 너무 큽니다 (최대 500 MB)',
   'that file is not a PDF': 'PDF 파일이 아닙니다',
   'no such page': '그런 페이지가 없습니다',
-  'not a library book': '서재의 책이 아닙니다',
-  Library: '서재',
+  'not a book on the shelf': '목록의 책이 아닙니다',
   Book: '책',
   Read: '읽기',
   'Read the book': '책 읽기',
@@ -1815,9 +1814,9 @@ export const ko: Record<string, string> = {
   'Import a PDF': 'PDF 가져오기',
   'Replace PDF': 'PDF 바꾸기',
   'Replace PDF…': 'PDF 바꾸기…',
-  'Remove from library': '서재에서 제거',
-  'Remove “{title}” from the library? The PDF is deleted; any puzzle book read from it is kept.':
-    '“{title}”을(를) 서재에서 제거할까요? PDF는 삭제되고, 이 책에서 읽어 낸 퍼즐 책은 그대로 남습니다.',
+  'Remove from the shelf': '목록에서 제거',
+  'Remove “{title}” from the shelf? The PDF is deleted; any puzzle book read from it is kept.':
+    '“{title}”을(를) 목록에서 제거할까요? PDF는 삭제되고, 이 책에서 읽어 낸 퍼즐 책은 그대로 남습니다.',
   'Drop a PDF here.': 'PDF 파일을 여기에 놓으세요.',
   'That PDF is too big. The limit is {mb} MB.': 'PDF가 너무 큽니다. 최대 {mb} MB입니다.',
   'Uploading…': '올리는 중…',
@@ -1828,7 +1827,7 @@ export const ko: Record<string, string> = {
     '검색어와 맞는 즐겨찾기 책이 없습니다. 검색을 지우면 즐겨찾기 전체가 다시 보입니다.',
   'No books yet': '아직 책이 없습니다',
   'Import a chess book as a PDF and read it beside a board. Any printed diagram can be set up with a tap. Puzzle books imported on the puzzle shelf are filed here too.':
-    '체스 책을 PDF로 가져와 보드 옆에서 읽으세요. 인쇄된 다이어그램은 한 번의 탭으로 보드에 놓입니다. 퍼즐 서가에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
+    '체스 책을 PDF로 가져와 보드 옆에서 읽으세요. 인쇄된 다이어그램은 한 번의 탭으로 보드에 놓입니다. 퍼즐 목록에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
   '{n} pages': '{n}쪽',
   'Page {page} of {pages}': '{pages}쪽 중 {page}쪽',
   'of {n}': '/ {n}',
@@ -1846,7 +1845,7 @@ export const ko: Record<string, string> = {
   'Fit the width': '너비에 맞추기',
   'Fit the whole page': '쪽 전체 보기',
   'Add a book': '책 추가',
-  'Add to library': '서재에 추가',
+  'Add to the shelf': '목록에 추가',
   'Choose another': '다른 파일 선택',
   'any chess book, kept in your vault and read here beside a board':
     '어떤 체스 책이든, 보관함에 보관되고 여기서 보드 옆에 두고 읽습니다',
@@ -1875,8 +1874,8 @@ export const ko: Record<string, string> = {
   'Who is to move?': '차례',
   'Reading diagrams, page {page} of {pages}': '다이어그램 읽는 중, {pages}쪽 중 {page}쪽',
   'Black to move': '흑 차례',
-  'That book is not in the library': '서재에 없는 책입니다',
-  'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 서재에서 남아 있는 책을 확인하세요.',
+  'That book is not on the shelf': '목록에 없는 책입니다',
+  'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 목록에서 남아 있는 책을 확인하세요.',
   'The PDF could not be opened': 'PDF를 열 수 없습니다',
   'Storage used': '저장 공간 사용량',
   'What each part of the app keeps on disk. Your documents are at the top. The caches and reference data below are rebuilt or refetched when cleared from their own pages.':

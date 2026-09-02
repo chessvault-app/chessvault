@@ -216,7 +216,7 @@ export function PdfImport({
         if (useImportJob.getState().slug === slug) useImportJob.getState().fileDiagramsIn(id);
       } catch (e) {
         setLibraryNote(
-          t('The PDF could not be kept in the library: {reason}', {
+          t('The PDF could not be kept on the shelf: {reason}', {
             reason: apiErrorMessage(e),
           }),
         );

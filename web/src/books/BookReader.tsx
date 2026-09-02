@@ -368,7 +368,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         <ReaderHeader title={t('Books')} onBack={() => up('books')} />
         <EmptyState
           icon={BookX}
-          title={t('That book is not in the library')}
+          title={t('That book is not on the shelf')}
           body={t('It may have been removed. The shelf has what is there.')}
           action={<Button onClick={() => navigate('books')}>{t('Back to Books')}</Button>}
         />
@@ -621,12 +621,12 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
       </Button>
       <ConfirmDialog
         icon={Trash2}
-        triggerTitle={t('Remove from library')}
+        triggerTitle={t('Remove from the shelf')}
         // The bin in the destructive colour: it is the one thing in this
         // header that loses something, and it should look it.
         triggerClassName="text-destructive hover:text-destructive"
 
-        question={t('Remove “{title}” from the library? The PDF is deleted; any puzzle book read from it is kept.', {
+        question={t('Remove “{title}” from the shelf? The PDF is deleted; any puzzle book read from it is kept.', {
           title: book.title,
         })}
         confirmLabel={t('Remove')}

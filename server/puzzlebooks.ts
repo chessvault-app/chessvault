@@ -543,7 +543,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     if (body.pdfBook === null) pdfBook = undefined;
     else if (body.pdfBook !== undefined) {
       if (typeof body.pdfBook !== 'string' || !isLibraryBookId(body.pdfBook)) {
-        return c.json({ error: 'not a library book' }, 400);
+        return c.json({ error: 'not a book on the shelf' }, 400);
       }
       pdfBook = body.pdfBook;
     }

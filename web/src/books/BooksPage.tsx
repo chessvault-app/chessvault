@@ -621,7 +621,7 @@ function BookCard({
                 ]
               : []),
             { label: 'Replace PDF…', icon: FileUp, onSelect: () => setReplacing(true) },
-            { label: 'Remove from library', icon: Trash2, danger: true, onSelect: onRemove },
+            { label: 'Remove from the shelf', icon: Trash2, danger: true, onSelect: onRemove },
           ]}
         >
           <Button
