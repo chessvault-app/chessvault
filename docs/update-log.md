@@ -249,6 +249,22 @@ other people.
   together. On a fast connection nothing looks different, which is where
   the wait was invisible to begin with.
 
+- **A progress bar that ignored the number it was given.** The shared bar
+  filled its whole track whatever its value said — 16% and 100% drew the
+  same thing. No bar on screen showed it: the solved/failed bar draws its
+  own two fills for its own reason, and Settings' download bar had been
+  made to draw its own after the trap caught it there. What was wrong was
+  what the next caller would get, so the third time it came up it was
+  fixed at the source rather than worked around again. The cause is a
+  leftover: the fill used to be positioned by sliding a track-wide block
+  into view, which needs a rule saying grow to the track; when it changed
+  to stating its own width, that rule stayed, and grow beats width.
+  Measured on a 256px track, bars at 0, 16, 30, 73.5 and 100% each drew
+  100% before and now draw exactly what they say. Settings' download bar
+  drops its workaround and is the plain bar again; the solved/failed bar
+  keeps its two fills, which it has for its own reason, and measures 30%
+  and 20% either way.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
