@@ -49,9 +49,13 @@ pub const SCAN_PACK_TABLE: &str = "
 
 pub const PLIES_INDEX: &str = "CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);";
 
-/// `server/refgamesIndex.ts` REFGAMES_MOVE_COUNTS — per-(pos, uci, eb)
-/// result sums, thin positions (< MOVE_COUNT_MIN_GAMES) dropped.
-pub const MOVE_COUNTS: &str = "
+/// `server/refgamesIndex.ts` MOVE_COUNTS_SUMS / _THIN / _INDEX — the
+/// per-(pos, uci, eb) result sums, thin positions (< MOVE_COUNT_MIN_GAMES)
+/// dropped, and the index over what is left. Three constants rather than
+/// one batch because the index pass names each step as it starts: as one
+/// statement run they were one log line and then an hour of silence on a
+/// gigabase. Same SQL, same order.
+pub const MOVE_COUNTS_SUMS: &str = "
   CREATE TABLE IF NOT EXISTS move_counts AS
     SELECT pos, uci, eb,
            SUM(r = 0) AS w,
@@ -59,10 +63,18 @@ pub const MOVE_COUNTS: &str = "
            SUM(r = 2) AS b
     FROM plies
     GROUP BY pos, uci, eb;
+";
+
+/// The temp table stays with its DELETE: they are one step, and there is
+/// nothing to report between them.
+pub const MOVE_COUNTS_THIN: &str = "
   CREATE TEMP TABLE mc_thin AS
     SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < 5;
   DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);
   DROP TABLE mc_thin;
+";
+
+pub const MOVE_COUNTS_INDEX: &str = "
   CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
 ";
 

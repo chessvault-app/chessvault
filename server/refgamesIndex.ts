@@ -37,6 +37,100 @@ import { endianness } from 'node:os';
  */
 export const REF_MAX_PLY = 30;
 
+/**
+ * The pass's phases, and the share of its wall clock each one takes.
+ *
+ * The replay loop reported every 25,000 games; everything after it ran
+ * as one long statement that logged on entry and then said nothing
+ * until it returned. At Elite-month scale (80 s for the whole pass)
+ * that gap is invisible. At gigabase scale it is hours: measured on
+ * Lumbra's Gigabase OTB (10,355,488 games, 309,324,101 plies) the pass
+ * took 6h11m, of which the replay was roughly the first half and the
+ * per-move sum alone over an hour with nothing printed — and the
+ * Databases page, which shows the newest line, sat on "summing per
+ * move…" looking hung. The weights below are that build's shape,
+ * rounded. They are an estimate and will be wrong on a database shaped
+ * differently; a bar that is approximately right still beats one pinned
+ * at 100% for three hours.
+ *
+ * Two of these phases are single statements SQLite gives no way to
+ * observe from inside (better-sqlite3 exposes no progress handler, and
+ * the pass is synchronous anyway) — for those the phase line is all
+ * there is, which is why the status endpoint also reports how long the
+ * log has been quiet.
+ */
+const PHASES = [
+  { key: 'replay', label: 'replaying', weight: 50 },
+  { key: 'plies-index', label: 'indexing plies', weight: 14 },
+  { key: 'sums', label: 'summing per move', weight: 20 },
+  { key: 'thin', label: 'dropping thin positions', weight: 4 },
+  { key: 'sums-index', label: 'indexing the sums', weight: 2 },
+  // The key index is three JS loops over known row counts, so it is the
+  // one late phase that can report real progress: a weight slot each.
+  { key: 'keys-count', label: 'inverting keys', weight: 3 },
+  { key: 'keys-fill', label: 'inverting keys', weight: 4 },
+  { key: 'keys-write', label: 'inverting keys', weight: 3 },
+] as const;
+
+type PhaseKey = (typeof PHASES)[number]['key'];
+
+/**
+ * The progress lines this pass prints, in the one shape the server
+ * parses (`PHASE_RE` and `PROGRESS_RE` in server/refgames.ts) and the
+ * native twin mirrors (native/src/phases.rs):
+ *
+ *     positions: 12% replaying — 1,250,000 of 10,355,488 games…
+ *     positions: 66% summing per move…
+ *
+ * The percentage is of the WHOLE pass, so it never goes backwards
+ * between phases and never reads 100% before the pass returns.
+ */
+export interface PhaseLog {
+  /** Start `key`, printing its line at once — a phase that reports
+      nothing else at least says it began, and where in the pass it is. */
+  enter(key: PhaseKey, note?: string): void;
+  /** Within the current phase: `done` of `total` `unit`s. */
+  step(done: number, total: number, unit: string): void;
+}
+
+function phaseLog(log: (line: string) => void, skip: ReadonlySet<string>): PhaseLog {
+  const phases = PHASES.filter((p) => !skip.has(p.key));
+  const whole = phases.reduce((sum, p) => sum + p.weight, 0) || 1;
+  let at = 0;
+  let before = 0;
+  let lastAt = 0;
+  const line = (within: number, tail: string): void => {
+    const phase = phases[at];
+    if (!phase) return;
+    lastAt = Date.now();
+    // Capped below 100: the pass is not done until it returns, and a bar
+    // that reaches the end and then waits is the failure being fixed.
+    const pct = Math.min(99, Math.round(((before + phase.weight * within) / whole) * 100));
+    log(`  positions: ${pct}% ${phase.label}${tail}…`);
+  };
+  return {
+    enter(key, note) {
+      const found = phases.findIndex((p) => p.key === key);
+      if (found < 0) return;
+      at = found;
+      before = phases.slice(0, found).reduce((sum, p) => sum + p.weight, 0);
+      line(0, note === undefined ? '' : ` — ${note}`);
+    },
+    step(done, total, unit) {
+      // A second between lines. The callers count in fixed strides —
+      // 25,000 games, 4,096 buckets — which is the right cadence on a
+      // gigabase and a dozen lines a millisecond apart on a small
+      // database. The last stride of a phase always prints, so a
+      // completed count is never the one that gets swallowed.
+      if (done !== total && Date.now() - lastAt < 1000) return;
+      line(
+        total > 0 ? done / total : 0,
+        ` — ${done.toLocaleString()} of ${total.toLocaleString()} ${unit}`,
+      );
+    },
+  };
+}
+
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS plies (
     pos INTEGER NOT NULL,
@@ -67,6 +161,11 @@ const KEY_INDEX_SCHEMA = `
   );
 `;
 
+/** How often the key-index passes print a line — every 500,000 games is
+    ~21 lines per pass on a gigabase and none at all on an Elite month,
+    which is the right amount in both cases. */
+const KEY_INDEX_REPORT_EVERY = 500_000;
+
 /**
  * Invert the packs into the key index — a pure derivation, rebuilt
  * whole whenever the packs change (appends included: merging sorted
@@ -77,11 +176,22 @@ const KEY_INDEX_SCHEMA = `
  * Memory is eight bytes per position — an Elite month is ~180 MB, a
  * Gigabase ~6.5 GB — held only for the duration of this pass.
  */
-function buildKeyIndex(db: InstanceType<typeof Database>, log: (line: string) => void): void {
+function buildKeyIndex(
+  db: InstanceType<typeof Database>,
+  log: (line: string) => void,
+  phase: PhaseLog,
+): void {
   db.exec('DROP TABLE IF EXISTS key_index;');
   db.exec(KEY_INDEX_SCHEMA);
+  // Three loops over counts this side already knows, so unlike the two
+  // SQL phases before it this one can say where it is. One COUNT(*) on
+  // a rowid table to have a denominator; the reports themselves are a
+  // modulo in a loop that was already running.
+  const packs = (db.prepare('SELECT COUNT(*) AS n FROM scan_pack').get() as { n: number }).n;
   const counts = new Uint32Array(65536);
   let total = 0;
+  let seen = 0;
+  phase.enter('keys-count');
   for (const row of db.prepare('SELECT pack FROM scan_pack').iterate() as IterableIterator<{
     pack: Buffer;
   }>) {
@@ -92,6 +202,8 @@ function buildKeyIndex(db: InstanceType<typeof Database>, log: (line: string) =>
       counts[pack[o + 2]! | (pack[o + 3]! << 8)]! += 1;
     }
     total += npos;
+    seen += 1;
+    if (seen % KEY_INDEX_REPORT_EVERY === 0) phase.step(seen, packs, 'games');
   }
   const starts = new Float64Array(65537);
   for (let bucket = 0; bucket < 65536; bucket += 1) {
@@ -99,6 +211,8 @@ function buildKeyIndex(db: InstanceType<typeof Database>, log: (line: string) =>
   }
   const entries = new BigUint64Array(total);
   const cursor = starts.slice(0, 65536);
+  seen = 0;
+  phase.enter('keys-fill');
   for (const row of db
     .prepare('SELECT game_id, pack FROM scan_pack')
     .iterate() as IterableIterator<{ game_id: number; pack: Buffer }>) {
@@ -112,11 +226,15 @@ function buildKeyIndex(db: InstanceType<typeof Database>, log: (line: string) =>
       entries[cursor[bucket]!] = keyEntry(key32, row.game_id, at);
       cursor[bucket] = cursor[bucket]! + 1;
     }
+    seen += 1;
+    if (seen % KEY_INDEX_REPORT_EVERY === 0) phase.step(seen, packs, 'games');
   }
   const insert = db.prepare('INSERT INTO key_index (bucket, entries) VALUES (?, ?)');
   const littleEndian = endianness() === 'LE';
+  phase.enter('keys-write');
   db.exec('BEGIN');
   for (let bucket = 0; bucket < 65536; bucket += 1) {
+    if (bucket % 4096 === 0 && bucket > 0) phase.step(bucket, 65536, 'buckets');
     const from = starts[bucket]!;
     const count = counts[bucket]!;
     if (count === 0) continue;
@@ -208,20 +326,38 @@ export const finalMen = (moves: string): { w: number; b: number } => {
  * variant when the plies table predates the result column).
  */
 export const MOVE_COUNT_MIN_GAMES = 5;
-export const REFGAMES_MOVE_COUNTS = `
-  CREATE TABLE IF NOT EXISTS move_counts AS
+
+/**
+ * The three steps of that derivation, separately, because the index
+ * pass runs them one at a time and names each one as it starts: run as
+ * a single batch they were one log line and then an hour of silence on
+ * a gigabase (see PHASES). Splitting the exec changes no SQL and no
+ * order — the pieces below concatenate to exactly the batch that was
+ * there before, which REFGAMES_MOVE_COUNTS still is for every caller
+ * that wants the whole thing (scripts/lib/db-tuning.ts, and the LEGACY
+ * variant derived from it).
+ *
+ * The temp table stays inside one exec: TEMP lives for the connection,
+ * so splitting it from its DELETE would work, but the three statements
+ * are one step and there is nothing to report between them.
+ */
+export const MOVE_COUNTS_SUMS = `  CREATE TABLE IF NOT EXISTS move_counts AS
     SELECT pos, uci, eb,
            SUM(r = 0) AS w,
            SUM(r = 1) AS d,
            SUM(r = 2) AS b
     FROM plies
     GROUP BY pos, uci, eb;
-  CREATE TEMP TABLE mc_thin AS
+`;
+export const MOVE_COUNTS_THIN = `  CREATE TEMP TABLE mc_thin AS
     SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < ${MOVE_COUNT_MIN_GAMES};
   DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);
   DROP TABLE mc_thin;
-  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
 `;
+export const MOVE_COUNTS_INDEX = `  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
+`;
+export const REFGAMES_MOVE_COUNTS = `
+${MOVE_COUNTS_SUMS}${MOVE_COUNTS_THIN}${MOVE_COUNTS_INDEX}`;
 
 /** The same table for a database whose plies predate the result and
     bucket columns — scripts/tune-dbs.ts only; fresh index passes always
@@ -382,6 +518,12 @@ export function indexPositions(
     const total = (
       db.prepare('SELECT COUNT(*) AS n FROM games WHERE id > ?').get(sinceId) as { n: number }
     ).n;
+    // A pass that is not packing never inverts keys, so those phases must
+    // not hold weight in its bar — it would stall at 90% and finish.
+    const phase = phaseLog(
+      log,
+      packing ? new Set<string>() : new Set(['keys-count', 'keys-fill', 'keys-write']),
+    );
     let games = 0;
     let plies = 0;
 
@@ -393,6 +535,7 @@ export function indexPositions(
       'SELECT id, moves, result, white_elo, black_elo, ply_count FROM games WHERE id > ? ORDER BY id LIMIT 5000',
     );
     let lastId = sinceId;
+    phase.enter('replay', `${total.toLocaleString()} games`);
     for (;;) {
       const batch = page.all(lastId) as {
         id: number;
@@ -432,17 +575,31 @@ export function indexPositions(
       db.exec('COMMIT');
       lastId = batch.at(-1)!.id;
       if (games % 25_000 === 0 || games === total) {
-        log(`  positions: ${games.toLocaleString()} of ${total.toLocaleString()} games…`);
+        phase.step(games, total, 'games');
       }
     }
 
-    log('  positions: indexing…');
+    // Each of these names itself before it starts and then says nothing
+    // until it returns — they are single statements, and there is no way
+    // to see inside one from the thread running it. Naming them is what
+    // turns "the bar reached 100% and stopped" into "it is building the
+    // index over 309 million rows"; the status endpoint reports the
+    // silence itself as elapsed time beside the phase.
+    //
+    // The whole table's size, not this pass's share — an append rebuilds
+    // the index over everything, and that is the number whose scale
+    // explains the wait.
+    const rows = append ? (Number(readMeta('plies')) || 0) + plies : plies;
+    phase.enter('plies-index', `${rows.toLocaleString()} rows`);
     db.exec(SCHEMA); // now the index, over the finished table
-    log('  positions: summing per move…');
-    db.exec(REFGAMES_MOVE_COUNTS);
+    phase.enter('sums');
+    db.exec(MOVE_COUNTS_SUMS);
+    phase.enter('thin');
+    db.exec(MOVE_COUNTS_THIN);
+    phase.enter('sums-index');
+    db.exec(MOVE_COUNTS_INDEX);
     if (packing) {
-      log('  positions: inverting keys…');
-      buildKeyIndex(db, log);
+      buildKeyIndex(db, log, phase);
     }
 
     const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');

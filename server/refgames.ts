@@ -730,6 +730,12 @@ interface BuildJob {
   running: boolean;
   exitCode: number | null;
   log: string[];
+  /** When the log last grew. The index pass has phases that are one SQL
+      statement each — nothing can report from inside one — so how long
+      the job has been quiet is the only liveness there is to offer, and
+      the page needs it to tell "an hour into the per-move sum, which is
+      what an hour into it looks like" from a hang. */
+  lineAt: number;
 }
 let job: BuildJob | null = null;
 
@@ -911,7 +917,10 @@ export function refGamesApi(
       }
       const append = (chunk: Buffer): void => {
         for (const line of chunk.toString().split('\n')) {
-          if (line.trim()) current.log.push(line);
+          if (line.trim()) {
+            current.log.push(line);
+            current.lineAt = Date.now();
+          }
         }
         if (current.log.length > 100) current.log.splice(0, current.log.length - 100);
       };
@@ -925,7 +934,14 @@ export function refGamesApi(
     };
 
     const startBuild = (name: string, sources: string[], append: boolean): void => {
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      const current: BuildJob = {
+        name,
+        startedAt: Date.now(),
+        running: true,
+        exitCode: null,
+        log: [],
+        lineAt: Date.now(),
+      };
       // An append works on the live file: closing our readonly handle
       // first keeps Windows happy about the WAL sidecars, and there is no
       // rename to finish afterwards.
@@ -1008,7 +1024,14 @@ export function refGamesApi(
       if (!name || !NAME_RE.test(name) || !names().includes(name)) {
         return c.json({ error: 'no such database' }, 400);
       }
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      const current: BuildJob = {
+        name,
+        startedAt: Date.now(),
+        running: true,
+        exitCode: null,
+        log: [],
+        lineAt: Date.now(),
+      };
       close(name); // the job rewrites the live file
       spawnJob(
         current,
@@ -1035,7 +1058,14 @@ export function refGamesApi(
       if (!name || !NAME_RE.test(name) || !names().includes(name)) {
         return c.json({ error: 'no such database' }, 400);
       }
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      const current: BuildJob = {
+        name,
+        startedAt: Date.now(),
+        running: true,
+        exitCode: null,
+        log: [],
+        lineAt: Date.now(),
+      };
       spawnJob(
         current,
         'index-refgames-positions.mjs',
@@ -1047,8 +1077,29 @@ export function refGamesApi(
       return c.json({ started: true, name });
     });
 
+    /**
+     * The newest phase line the index pass printed — "positions: 66%
+     * summing per move…" (the shape is documented on PhaseLog in
+     * server/refgamesIndex.ts, and the native twin prints it too).
+     *
+     * The percentage is of the whole pass, weighted by phase, which is
+     * the only fraction worth drawing: the games count below reaches its
+     * total at the end of the replay loop and then has hours of index,
+     * sum and invert left to run behind it.
+     */
+    const PHASE_RE = /positions: (\d+)% ([^—…]+?)\s*(?:—|…)/;
+    const phaseOf = (log: string[]): { label: string; percent: number } | null => {
+      for (let i = log.length - 1; i >= 0; i -= 1) {
+        const m = PHASE_RE.exec(log[i]!);
+        if (m) return { label: m[2]!, percent: Number(m[1]!) };
+      }
+      return null;
+    };
+
     /** The newest "N of M games" line the indexer printed, as numbers —
-        the fraction a progress bar wants, without scraping log text. */
+        the fraction a progress bar wants, without scraping log text. Kept
+        beside the phase percentage above: it is the replay loop's own
+        count, and the phases after it report in other units. */
     const PROGRESS_RE = /([\d,]+) of ([\d,]+) games/;
     const progressOf = (log: string[]): { done: number; total: number } | null => {
       for (let i = log.length - 1; i >= 0; i -= 1) {
@@ -1072,6 +1123,13 @@ export function refGamesApi(
               exitCode: job.exitCode,
               seconds: (Date.now() - job.startedAt) / 1000,
               progress: progressOf(job.log),
+              phase: phaseOf(job.log),
+              // How long since the log moved. Two of the index pass's
+              // phases are one statement each and print nothing until
+              // they return — over an hour, on a gigabase — so the page
+              // says so rather than leaving a still bar to be read as a
+              // hang.
+              quietSeconds: (Date.now() - job.lineAt) / 1000,
               log: job.log.slice(-15),
             }
           : { running: false },

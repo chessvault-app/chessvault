@@ -1192,6 +1192,9 @@ export const ko: Record<string, string> = {
     '모음 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name — “{name}” if blank': '이름 — 비우면 “{name}”',
   'The build failed.': '만들기에 실패했습니다.',
+  'Build progress': '만들기 진행 상황',
+  'Nothing new for {minutes} minutes. This step is a single database operation and reports nothing until it finishes — on a large database that can take an hour.':
+    '{minutes}분간 새 소식이 없습니다. 이 단계는 데이터베이스 작업 하나로, 끝나기 전까지는 아무것도 알리지 않습니다 — 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',
   'a build is reading the collections right now': '지금 만들기가 이 모음들을 읽고 있습니다',
   'Reference database': '참고 데이터베이스',
   'Manage reference databases': '참고 데이터베이스 관리',
