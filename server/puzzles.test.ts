@@ -75,6 +75,12 @@ describe('puzzles api', () => {
     expect(all.attempts).toHaveLength(1);
     const two = await (await app.request('/api/puzzles/history?limit=2')).json();
     expect(two.attempts).toHaveLength(2);
+    // Newest first, each with its puzzle's tags joined in by id, so the
+    // dashboard can name a row by its motif rather than by "#bbb".
+    expect(two.attempts.map((a: { themes?: string[] }) => a.themes)).toEqual([
+      ['fork', 'short'],
+      ['endgame', 'short'],
+    ]);
     // The counters the tests below start from are the defaults.
     await app.request('/api/puzzles/reset', { method: 'POST' });
   });

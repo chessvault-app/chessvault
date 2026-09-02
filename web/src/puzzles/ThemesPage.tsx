@@ -108,6 +108,33 @@ export function themeLabel(theme: string): string {
   return t(spaced.charAt(0).toUpperCase() + spaced.slice(1));
 }
 
+/**
+ * The one theme that names a puzzle to the person who solved it.
+ *
+ * Lichess tags carry six kinds of fact at once, and half of them say
+ * nothing about the position: "short", "advantage", "middlegame" is
+ * every second puzzle. A row that has one word for a puzzle wants the
+ * motif first (a fork is what you remember), then the mate, then the
+ * attack or the special move, then the phase; the goal, the length and
+ * the source never. Null when the tags hold nothing of the kind, so the
+ * caller can fall back to what it had.
+ */
+const DESCRIBES = ['Tactical motifs', 'Checkmates', 'Attacks', 'Special moves', 'Game phase'];
+export function describeTheme(themes: readonly string[]): string | null {
+  for (const title of DESCRIBES) {
+    const group = GROUPS.find((g) => g.title === title);
+    if (!group) continue;
+    // "Mate" heads its group and every mate puzzle carries it; the named
+    // one beside it ("Mate in 2", "Back rank mate") says more, so it goes
+    // first and the bare tag is the last resort.
+    const hit =
+      group.themes.find((th) => th !== 'mate' && themes.includes(th)) ??
+      (themes.includes('mate') && group.themes.includes('mate') ? 'mate' : undefined);
+    if (hit) return themeLabel(hit);
+  }
+  return null;
+}
+
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 /** Every theme a GROUPS section claims — what tells a leftover apart. */

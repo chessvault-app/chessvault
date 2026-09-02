@@ -430,6 +430,11 @@ other people.
   the button carries a count. The demo banner says one line there and
   unfolds on tap. The trainer's Skip, Hint and Solution take the 44px
   rung on a thumb, and the undo offer's button reaches the 36px floor.
+  Its two smaller notes are settled too: the dashboard's history names
+  each attempt by its motif ("Fork", "Back rank mate"; the tags come
+  from the puzzle table by id, and the id stays in the row's title where
+  Replay quotes it), and the board's file letters are lowercase, as
+  chess prints them and as the moves panel already had them.
 
 - **Korean.** The games table showed two headers reading 수순; Notation
   is 기보. "Solution shown" reads 정답을 봄. Six strings that had bypassed

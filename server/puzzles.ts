@@ -891,7 +891,30 @@ export function puzzlesApi(
     // is `slice(1)`, which handed back the whole file past the 500 cap.
     const asked = Math.round(Number(c.req.query('limit') || 50));
     const limit = Number.isFinite(asked) ? Math.min(500, Math.max(1, asked)) : 50;
-    return c.json({ attempts: historyEntries().slice(-limit).reverse() });
+    const attempts = historyEntries().slice(-limit).reverse();
+    // The dashboard's history listed each attempt by its id ("#p8wNm"),
+    // which means nothing to the person who solved it. An attempt carries
+    // no themes of its own, so they come from the puzzle table by primary
+    // key, in one query per 500 ids (see weakestTheme for why the themes
+    // table is the wrong place to ask). Without a database the rows go
+    // out as they were, and the page falls back to the id.
+    const db = puzzleDb();
+    if (db) {
+      const ids = [...new Set(attempts.map((a) => a.id))];
+      const themesById = new Map<string, string[]>();
+      for (let i = 0; i < ids.length; i += 500) {
+        const slice = ids.slice(i, i + 500);
+        const rows = db
+          .prepare(`SELECT id, themes FROM puzzles WHERE id IN (${slice.map(() => '?').join(',')})`)
+          .all(...slice) as { id: string; themes: string }[];
+        for (const row of rows) themesById.set(row.id, row.themes.split(' ').filter(Boolean));
+      }
+      for (const a of attempts) {
+        const themes = themesById.get(a.id);
+        if (themes) a.themes = themes;
+      }
+    }
+    return c.json({ attempts });
   });
 
   return Object.assign(api, { closeDb });

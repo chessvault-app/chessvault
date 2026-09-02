@@ -24,6 +24,7 @@ import { ProgressBar } from '@/components/progress-bar';
 import { Skeleton, SkeletonRows } from '@/components/skeletons';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
+import { describeTheme } from './ThemesPage';
 import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
 
@@ -40,6 +41,8 @@ interface HistoryEntry {
   counted?: boolean;
   puzzleRating: number;
   at: string;
+  /** The puzzle's tags, joined in by the server when it has the database. */
+  themes?: string[];
 }
 
 interface MetaUser {
@@ -524,7 +527,15 @@ export function DashboardPage() {
                     ) : (
                       <X className="text-destructive size-3.5 shrink-0" aria-label={t('failed')} />
                     )}
-                    <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
+                    {/* The puzzle's name is its motif ("Fork", "Back rank
+                        mate"), which is what a solver remembers; the id
+                        meant nothing to anyone and now lives in the row's
+                        title, where Replay still quotes it. The id stays
+                        on screen only when the database is not there to
+                        answer for the themes. */}
+                    <span className="text-foreground w-28 shrink-0 truncate">
+                      {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
+                    </span>
                     <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
                     {/* ml-auto is this list's own layout, not the eye's. */}
                     <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
