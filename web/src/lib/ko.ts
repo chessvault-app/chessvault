@@ -426,6 +426,10 @@ export const ko: Record<string, string> = {
     '빠른 검색 켜짐 — 스캔 색인이 서버 메모리에 올라가 있습니다',
   'Fast search: hold the scan index in server memory':
     '빠른 검색: 스캔 색인을 서버 메모리에 올려 둡니다',
+  // The same toggle as a verb, for the phone row's ⋯ menu, where the
+  // sentences above are the tooltip of an icon there is no room for.
+  'Turn on fast search': '빠른 검색 켜기',
+  'Turn off fast search': '빠른 검색 끄기',
   'Any rating': '모든 레이팅',
   'More filters': '필터 더 보기',
   'Filter games': '게임 거르기',
@@ -1148,6 +1152,7 @@ export const ko: Record<string, string> = {
   'no position index': '포지션 색인 없음',
   'Reference games': '참고 게임',
   'Delete this database': '이 데이터베이스 삭제',
+  'What can be done with this database': '이 데이터베이스로 할 수 있는 것',
   'Delete “{name}”? The collections it was built from are kept.':
     '“{name}”을(를) 지울까요? 이것을 만든 모음은 그대로 둡니다.',
   // Not 'Delete this collection' — that one is a folder of your own games.
