@@ -578,7 +578,12 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                 be the last entry — adding one after it left Dashboard,
                 Books and Themes indented under the newcomer, reading as
                 its children. Order in NAV is now free. */}
+            {/* Open only while Puzzles is the section: the desktop list
+                showed seventeen destinations flat, every sub-list open on
+                every page, while the phone chunks the same app into six
+                tabs and More. The row itself is the way in. */}
             {section === 'puzzles' &&
+              active === 'puzzles' &&
               PUZZLE_SUBNAV.map(({ param, label: sub, icon: SubIcon }) => (
                 <SubNavItem
                   key={param}
@@ -623,7 +628,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <SquareMousePointer className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
           <span className="hidden lg:block">{t('Tools')}</span>
         </NavLink>
-        {tools.map(({ key, label, icon: Icon, nav, active: isActive }) => (
+        {/* As above: the five tools unfold under their row only while one
+            of them is open. The Tools row lands on the Board. */}
+        {inTools(active) &&
+          tools.map(({ key, label, icon: Icon, nav, active: isActive }) => (
           <SubNavItem
             key={key}
             label={label}

@@ -364,9 +364,9 @@ function PlaceholderPanel({
 }) {
   return (
     <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
-      <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+      <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {title}
-      </p>
+      </h2>
       {Array.from({ length: rows }, (_, i) =>
         books ? (
           <div
@@ -892,9 +892,9 @@ export function HomePage() {
               !shownOnDesktop(reserved) && 'md:hidden',
             )}
           >
-            <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+            <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
-            </p>
+            </h2>
             {reserved.board && (
               <div className="border-border hidden items-center gap-3 border-b px-3 py-3 md:flex">
                 <Skeleton className="size-24 shrink-0 rounded-sm" />
@@ -949,9 +949,9 @@ export function HomePage() {
               !shownOnDesktop(shape) && 'md:hidden',
             )}
           >
-            <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+            <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
-            </p>
+            </h2>
             {/* The one place on this page that shows chess.
                 Home was five panels of identical chevron rows — a vault
                 holding thirty annotated games and a dozen studies showed
@@ -1173,9 +1173,9 @@ export function HomePage() {
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
             {showTraining && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
-                <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Training')}
-                </p>
+                </h2>
                 {/* Today's count is skipped when the history endpoint did
                     not answer: a nought that is really an error would say
                     you have not trained when you may well have. */}
@@ -1262,9 +1262,9 @@ export function HomePage() {
 
             {data.books.length > 0 && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
-                <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Puzzle books')}
-                </p>
+                </h2>
                 {/* The puzzles hub's book row, so a book reads the same on
                     both pages: cover, title, the solved-against-failed bar
                     (no rate, no rating), and the tally. */}
@@ -1301,9 +1301,9 @@ export function HomePage() {
 
             {data.recentDocs.length > 0 && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
-                <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
+                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Recent work')}
-                </p>
+                </h2>
                 {data.recentDocs.map((d) => (
                   <ListRow
                     key={d.kind + d.id}

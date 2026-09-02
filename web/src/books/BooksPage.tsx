@@ -363,6 +363,9 @@ export function BooksPage() {
                 )}
               </Button>
               <CreateControl
+                // Import, not Create: a book is brought in, never made
+                // here, and the empty state beside this already said so.
+                label="Import"
                 actions={[
                   { label: 'Import a PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
                   { label: 'New folder', icon: FolderIcon, onSelect: () => setNewFolder(true) },

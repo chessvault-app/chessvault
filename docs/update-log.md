@@ -448,6 +448,22 @@ other people.
   the manual's Settings page in a new tab: the manual is written card by
   card, and nothing in the app had pointed at it.
 
+- **The third critique's list.** Rerun once more, the review scored 32
+  of 40 and found what the earlier runs had not looked at. The ECO chip
+  took five hues for five opening families, two of them the green and
+  amber that mean solved and caution everywhere else, so a D36 chip sat
+  two cells from a green "1-0"; the chip is one hue now and the family
+  steps it along the lightness ladder, the letter carrying the name as
+  it always did. A wrong puzzle move was drawn only for the 650ms of
+  the rollback; the line now stays, as a fact rather than a scold, until
+  the puzzle ends. The desktop sidebar showed seventeen destinations
+  flat; the Puzzles and Tools sub-rows unfold only while that section
+  is open, the way the phone already chunks it. Home's section captions
+  are headings, so a screen reader's outline of the page is six items
+  rather than one. Every list row is at least 44px on a thumb. The
+  Books shelf's toolbar says Import, as its empty state did. A study
+  card's title takes two lines before it cuts.
+
 - **Korean.** The games table showed two headers reading 수순; Notation
   is 기보. "Solution shown" reads 정답을 봄. Six strings that had bypassed
   the dictionary (the promotion picker's buttons, "Starting position",

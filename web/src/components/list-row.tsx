@@ -53,7 +53,10 @@ export function ListRow({
     <button
       type={type}
       className={cn(
-        'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100',
+        // The coarse floor: Home's Continue rows measured 37px on a phone,
+        // the first thing a thumb reaches for and the smallest target on
+        // the page. A row is a control and takes the icon rung.
+        'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100 pointer-coarse:min-h-11',
         'enabled:hover:bg-accent disabled:opacity-60',
         divided && 'border-border border-b last:border-b-0',
         dense ? 'py-(--row-py-dense)' : 'py-(--row-py)',

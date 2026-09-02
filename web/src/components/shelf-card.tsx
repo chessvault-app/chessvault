@@ -162,8 +162,13 @@ export function ShelfCard({
             <p
               title={title}
               className={cn(
-                'text-foreground truncate font-semibold',
-                layout === 'grid' ? 'text-base leading-6' : 'text-base',
+                'text-foreground font-semibold',
+                // Two lines on a card, one on a list row: at three columns
+                // the title box is 219px and eight of the demo's twelve
+                // titles needed more, so a card gives the name a second
+                // line before it cuts it; the 64px board beside it is two
+                // lines tall anyway.
+                layout === 'grid' ? 'line-clamp-2 text-base leading-6' : 'truncate text-base',
                 onToggleMark ? 'pr-14 pointer-coarse:pr-9' : 'pr-7 pointer-coarse:pr-9',
               )}
             >
