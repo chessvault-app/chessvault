@@ -594,7 +594,7 @@ function DesktopCard() {
     <Card icon={MonitorSmartphone} title={t('Desktop app')}>
       <SettingRow
         title={t('Vault')}
-        blurb={t('Point this window at a server, or host a folder on this machine.')}
+        blurb={t('Point this window at a server, or host a folder on this device.')}
       >
         <Button variant="secondary" size="sm" onClick={() => void shell.switchVault!()}>
           {t('Switch…')}
@@ -1085,7 +1085,7 @@ function TablebaseCard({
             <div className="flex flex-col gap-2">
               <p className="text-muted-foreground text-sm">
                 {t(
-                  'A folder of Syzygy files on this machine, read directly with nothing else running. Needs the native core built.',
+                  'A folder of Syzygy files on this device, read directly with nothing else running. Needs the native core built.',
                 )}
               </p>
               <div className="flex items-center gap-2">
@@ -1142,7 +1142,7 @@ function TablebaseCard({
                     dir: settings.tablebase.dir,
                   })
                 : t(
-                    'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another machine.',
+                    'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another device.',
                   )}
             </p>
           )}

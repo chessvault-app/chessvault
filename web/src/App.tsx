@@ -312,7 +312,7 @@ function ConnectionLabel() {
   const local = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
   return (
     <span className="text-muted-foreground hidden truncate text-sm lg:block" title={location.origin}>
-      {!online ? t('Offline') : local ? t('This machine') : host}
+      {!online ? t('Offline') : local ? t('This device') : host}
     </span>
   );
 }

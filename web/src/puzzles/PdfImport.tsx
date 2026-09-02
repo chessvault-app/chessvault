@@ -506,7 +506,7 @@ export function PdfImport({
               <span className="text-muted-foreground text-base">
                 {t('Choose the book’s PDF')}
               <span className="text-muted-foreground block text-sm">
-                  {t('every page is scanned for diagrams; nothing leaves this machine, and you can keep using the app while it runs')}
+                  {t('every page is scanned for diagrams; nothing leaves this device, and you can keep using the app while it runs')}
                 </span>
               </span>
             </label>

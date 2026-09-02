@@ -93,7 +93,7 @@ export const ko: Record<string, string> = {
   Filters: '필터',
   'This book already holds {n} puzzles. What should the import do with them?':
     '이 책에는 이미 퍼즐 {n}개가 있습니다. 가져오기에서 어떻게 할까요?',
-  'every page is scanned for diagrams; nothing leaves this machine, and you can keep using the app while it runs':
+  'every page is scanned for diagrams; nothing leaves this device, and you can keep using the app while it runs':
     '모든 페이지에서 다이어그램을 찾습니다. 이 기기 밖으로는 아무것도 나가지 않으며, 도는 동안에도 앱을 계속 쓸 수 있습니다',
   'Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so back up first.':
     '보관함의 모든 게임, 스터디, 노트, 퍼즐, 가져온 책을 변경 이력까지 지웁니다. 비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 백업하세요.',
@@ -937,7 +937,7 @@ export const ko: Record<string, string> = {
   'Danger zone': '보관함 내 데이터 초기화',
   Server: '서버',
   Vault: '보관함',
-  'Point this window at a server, or host a folder on this machine.':
+  'Point this window at a server, or host a folder on this device.':
     '이 창을 서버에 연결하거나, 이 기기의 폴더를 사용하세요.',
   'Switch…': '전환…',
   'Usernames pre-fill the archive browser on the Games page.':
@@ -1113,7 +1113,7 @@ export const ko: Record<string, string> = {
   'Opens lichess (needs internet)': 'lichess에서 열림 (인터넷 필요)',
   'Set an app password first.': '먼저 앱 비밀번호를 설정하세요.',
   Offline: '오프라인',
-  'This machine': '이 기기',
+  'This device': '이 기기',
   'Set an app password': '앱 비밀번호 설정',
   'Change app password': '앱 비밀번호 변경',
   Copy: '복사',
@@ -1326,11 +1326,11 @@ export const ko: Record<string, string> = {
     '직접 가진 테이블 파일로 설정되어 있지만 읽을 수 없습니다. 대신 Lichess의 공개 서버가 답하고 있습니다.',
   'A tablebase server of your own: lila-tablebase over your own tables, or any address that speaks its protocol. Empty falls back to Lichess.':
     '직접 운영하는 테이블베이스 서버입니다. 내 테이블 위에 띄운 lila-tablebase, 또는 같은 프로토콜을 쓰는 주소면 됩니다. 비워 두면 Lichess로 되돌아갑니다.',
-  'A folder of Syzygy files on this machine, read directly with nothing else running. Needs the native core built.':
+  'A folder of Syzygy files on this device, read directly with nothing else running. Needs the native core built.':
     '이 기기에 있는 Syzygy 파일 폴더입니다. 다른 것을 띄우지 않고 그대로 읽으며, 네이티브 코어가 빌드되어 있어야 합니다.',
   'This server also has table files at {dir}, set in its vault config.':
     '이 서버에는 {dir}에 테이블 파일도 설정되어 있습니다(보관함 설정 파일).',
-  'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another machine.':
+  'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another device.':
     '서버에 있는 테이블 파일로 답하게 하려면 보관함 설정 파일에 «tablebaseDir»을 적으세요. 경로는 다른 기기에서 입력할 수 없습니다.',
   'Cached answers': '캐시된 답',
   'Answers are kept for good, so each ending is asked about once.':
