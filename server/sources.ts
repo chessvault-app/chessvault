@@ -152,7 +152,7 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
     if (resolve(target, '..') !== resolve(dir)) return c.json({ error: 'invalid name' }, 400);
     if (!existsSync(target)) return c.json({ error: 'no such file' }, 404);
     if (options.busy?.()) {
-      return c.json({ error: 'a build is reading the collections right now' }, 409);
+      return c.json({ error: 'a build is reading the files right now' }, 409);
     }
     try {
       rmSync(target);

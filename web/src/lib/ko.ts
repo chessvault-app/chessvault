@@ -1136,75 +1136,75 @@ export const ko: Record<string, string> = {
   'not parseable': '읽을 수 없음',
   'that PGN parses into zero chapters': '이 PGN에서 챕터를 하나도 읽지 못했습니다',
   'Uploading {name}…': '{name} 올리는 중…',
-  'Upload PGN collections and index them into searchable databases of whole games.':
-    'PGN 모음을 올리고, 게임 전체를 검색할 수 있는 데이터베이스로 색인하세요.',
+  'Upload PGN files and index them into searchable databases of whole games.':
+    'PGN 파일을 올리고, 게임 전체를 검색할 수 있는 데이터베이스로 색인하세요.',
   'This server has no reference games database.': '이 서버에는 참고 게임 데이터베이스가 없습니다.',
-  'This database is read-only. Uploading collections and building databases need the installed app.':
-    '이 데이터베이스는 읽기 전용입니다. 모음을 올리고 데이터베이스를 만들려면 설치형 앱이 필요합니다.',
+  'This database is read-only. Uploading files and building databases need the installed app.':
+    '이 데이터베이스는 읽기 전용입니다. 파일을 올리고 데이터베이스를 만들려면 설치형 앱이 필요합니다.',
   Databases: '데이터베이스',
   'Reference game databases, built from uploaded PGNs': '올린 PGN으로 만드는 참고 게임 데이터베이스',
-  'Nothing uploaded yet. A collection is any .pgn of games, such as a Lichess Elite month or a Lumbra export.':
-    '아직 올린 파일이 없습니다. 모음은 Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다.',
-  'A reference database is built from uploaded PGN collections. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.':
-    '참고 데이터베이스는 올린 PGN 모음으로 만듭니다. 게임 페이지의 데이터베이스 브라우저에는 전체 기보를, 탐색기와 레퍼토리 훈련에는 필터가 있는 포지션 색인을 제공합니다.',
+  'Nothing uploaded yet. Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export.':
+    '아직 올린 파일이 없습니다. Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다.',
+  'A reference database is built from uploaded PGN files. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.':
+    '참고 데이터베이스는 올린 PGN 파일로 만듭니다. 게임 페이지의 데이터베이스 브라우저에는 전체 기보를, 탐색기와 레퍼토리 훈련에는 필터가 있는 포지션 색인을 제공합니다.',
   'Could not read the reference database.': '참고 데이터베이스를 읽지 못했습니다.',
   'The demo database holds a curated slice of games.': '데모 데이터베이스에는 엄선한 일부 게임만 담겨 있습니다.',
   'no position index': '포지션 색인 없음',
   'Reference games': '참고 게임',
   'Delete this database': '이 데이터베이스 삭제',
   'What can be done with this database': '이 데이터베이스로 할 수 있는 것',
-  'Delete “{name}”? The collections it was built from are kept.':
-    '“{name}”을(를) 지울까요? 이것을 만든 모음은 그대로 둡니다.',
+  'Delete “{name}”? The PGN files it was built from are kept.':
+    '“{name}”을(를) 지울까요? 이것을 만든 PGN 파일은 그대로 둡니다.',
   // Not 'Delete this folder' — that one is a folder on a shelf.
-  'Delete this PGN collection': '이 PGN 모음 삭제',
+  'Delete this PGN file': '이 PGN 파일 삭제',
   'Delete “{name}”? Databases already built from it are not affected.':
     '“{name}”을(를) 지울까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
   'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
   'Add games to this database': '이 데이터베이스에 게임 추가',
   'Add games to “{name}”': '“{name}”에 게임 추가',
-  'No PGN collections uploaded yet. Upload the games to add first.':
-    '아직 올린 PGN 모음이 없습니다. 추가할 게임을 먼저 올리세요.',
+  'No PGN files uploaded yet. Upload the games to add first.':
+    '아직 올린 PGN 파일이 없습니다. 추가할 게임을 먼저 올리세요.',
   'Only the games it does not already hold are indexed.':
     '아직 없는 게임만 색인됩니다.',
-  'No PGN collections are ticked. Pick them on the PGN collections tab first.':
-    '선택된 PGN 모음이 없습니다. 먼저 PGN 모음 탭에서 선택하세요.',
+  'No PGN files are ticked. Pick them on the PGN files tab first.':
+    '선택된 PGN 파일이 없습니다. 먼저 PGN 파일 탭에서 선택하세요.',
   Optimize: '최적화',
   'Optimize this database': '이 데이터베이스 최적화',
   'Optimize “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.':
     '“{name}”을(를) 최적화할까요? 완전히 같은 게임을 제거하고, 파생 테이블을 새로 만들고, 파일을 압축합니다. 시간이 걸릴 수 있습니다.',
   'index behind': '색인이 뒤처짐',
-  'Replace: build this database again from the picked collections.':
-    '교체: 선택한 모음으로 이 데이터베이스를 다시 만듭니다.',
+  'Replace: build this database again from the picked files.':
+    '교체: 선택한 파일로 이 데이터베이스를 다시 만듭니다.',
   'Add to it: index only the games it does not already hold.':
     '추가: 아직 없는 게임만 색인합니다.',
   'Building keeps going if you leave the page.': '페이지를 떠나도 만들기는 계속됩니다.',
-  'PGN collections': 'PGN 모음',
-  'Upload PGN collections': 'PGN 모음 올리기',
+  'PGN files': 'PGN 파일',
+  'Upload PGN files': 'PGN 파일 올리기',
   'What to manage': '무엇을 관리할지',
   Search: '검색',
   'No database matches that.': '그 조건에 맞는 데이터베이스가 없습니다.',
-  'No collection matches that.': '그 조건에 맞는 모음이 없습니다.',
-  'No databases yet. Upload a PGN collection and build one.':
-    '아직 데이터베이스가 없습니다. PGN 모음을 올려 하나 만들어 보세요.',
+  'No file matches that.': '그 조건에 맞는 파일이 없습니다.',
+  'No databases yet. Upload a PGN file and build one.':
+    '아직 데이터베이스가 없습니다. PGN 파일을 올려 하나 만들어 보세요.',
   'Go to Databases': '데이터베이스로 가기',
   'Choose .pgn files': '.pgn 파일 고르기',
   'Or drop them anywhere in this box': '이 상자 안 아무 곳에나 놓아도 됩니다',
-  'A collection is any .pgn of games, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.':
-    '모음은 Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다. 업로드는 스트리밍이라 큰 파일도 보고 있는 동안 계속 올라갑니다.',
+  'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.':
+    'Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다. 업로드는 스트리밍이라 큰 파일도 보고 있는 동안 계속 올라갑니다.',
   'Build a database': '데이터베이스 만들기',
-  'Indexing {n} collections into one searchable database of whole games.':
-    '모음 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
+  'Indexing {n} files into one searchable database of whole games.':
+    '파일 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name, or leave blank for “{name}”': '이름, 비우면 “{name}”',
   'The build failed.': '만들기에 실패했습니다.',
   'Build progress': '만들기 진행 상황',
   'Nothing new for {minutes} minutes. This step is one database operation and reports nothing until it finishes. On a large database that can take an hour.':
     '{minutes}분간 새 소식이 없습니다. 이 단계는 데이터베이스 작업 하나라서 끝나기 전까지는 아무것도 알리지 않습니다. 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',
-  'a build is reading the collections right now': '지금 만들기가 이 모음들을 읽고 있습니다',
+  'a build is reading the files right now': '지금 만들기가 이 파일들을 읽고 있습니다',
   'Reference database': '참고 데이터베이스',
   'Manage reference databases': '참고 데이터베이스 관리',
   'Reference databases': '참고 데이터베이스',
-  'no PGN collections to index': '색인할 PGN 모음이 없습니다',
+  'no PGN files to index': '색인할 PGN 파일이 없습니다',
   'that database is being built right now': '그 데이터베이스는 지금 만들어지는 중입니다',
   'no such database': '그런 데이터베이스가 없습니다',
   'invalid database name': '데이터베이스 이름이 올바르지 않습니다',
@@ -1882,7 +1882,7 @@ export const ko: Record<string, string> = {
   'What each part of the app keeps on disk. Your documents are at the top. The caches and reference data below are rebuilt or refetched when cleared from their own pages.':
     '앱의 각 영역이 디스크에 차지하는 크기입니다. 직접 만든 문서가 위에 있습니다. 아래의 캐시와 참고 자료는 각자의 페이지에서 지워도 다시 만들어지거나 내려받습니다.',
   'Puzzle progress': '퍼즐 진행 기록',
-  'PGN sources': 'PGN 원본',
+  'PGN files': 'PGN 파일',
   'Document history': '문서 기록',
   'Explorer cache': '탐색기 캐시',
   'Tablebase cache': '테이블베이스 캐시',

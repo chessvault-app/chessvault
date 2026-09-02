@@ -1006,7 +1006,7 @@ export function refGamesApi(
             return [];
           }
         })();
-      if (ids.length === 0) return c.json({ error: 'no PGN collections to index' }, 400);
+      if (ids.length === 0) return c.json({ error: 'no PGN files to index' }, 400);
 
       const sources: string[] = [];
       for (const id of ids) {

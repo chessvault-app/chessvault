@@ -354,15 +354,15 @@ export function RefDbManager({
   const empty =
     tab === 'databases'
       ? databases.length === 0
-        ? t('No databases yet. Upload a PGN collection and build one.')
+        ? t('No databases yet. Upload a PGN file and build one.')
         : t('No database matches that.')
       : sources === null
         ? null
         : sources.length === 0
           ? t(
-              'Nothing uploaded yet. A collection is any .pgn of games, such as a Lichess Elite month or a Lumbra export.',
+              'Nothing uploaded yet. Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export.',
             )
-          : t('No collection matches that.');
+          : t('No file matches that.');
 
   const shownCount = tab === 'databases' ? shownDbs.length : shownSources.length;
 
@@ -404,7 +404,7 @@ export function RefDbManager({
                   label: (
                     <>
                       <FileText className="size-3.5 shrink-0" />
-                      {t('PGN collections')}
+                      {t('PGN files')}
                     </>
                   ),
                 },
@@ -430,7 +430,7 @@ export function RefDbManager({
             variant="secondary"
             size="icon-sm"
             className="shrink-0"
-            title={t('Upload PGN collections')}
+            title={t('Upload PGN files')}
             aria-haspopup="dialog"
             onClick={() => setShowUpload(true)}
           >
@@ -694,7 +694,7 @@ function DbRow({
     'Optimize “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.',
     { name: d.name },
   );
-  const deleteQuestion = t('Delete “{name}”? The collections it was built from are kept.', {
+  const deleteQuestion = t('Delete “{name}”? The PGN files it was built from are kept.', {
     name: d.name,
   });
 
@@ -984,7 +984,7 @@ function SourceList({
             triggerClassName="shrink-0"
             disabled={deleteDisabled}
             triggerTitle={
-              deleteDisabled ? 'Wait for the build to finish' : 'Delete this PGN collection'
+              deleteDisabled ? 'Wait for the build to finish' : 'Delete this PGN file'
             }
             question={t('Delete “{name}”? Databases already built from it are not affected.', {
               name: s.name,
@@ -1032,7 +1032,7 @@ function AddToWindow({
       <DialogContent title={t('Add games to “{name}”', { name: db })} icon={Plus}>
         {list.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('No PGN collections uploaded yet. Upload the games to add first.')}
+            {t('No PGN files uploaded yet. Upload the games to add first.')}
           </p>
         ) : (
           <>
@@ -1117,7 +1117,7 @@ function UploadWindow({
         if (!open) onClose();
       }}
     >
-      <DialogContent title="Upload PGN collections" icon={Upload}>
+      <DialogContent title="Upload PGN files" icon={Upload}>
         <label
           {...drop.handlers}
           className={cn(
@@ -1159,7 +1159,7 @@ function UploadWindow({
         </label>
         <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
-            'A collection is any .pgn of games, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.',
+            'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.',
           )}
         </p>
       </DialogContent>
@@ -1210,10 +1210,10 @@ function BuildWindow({
       <DialogContent title="Build a database" icon={Database}>
         <p className="text-muted-foreground text-sm leading-relaxed">
           {count > 0
-            ? t('Indexing {n} collections into one searchable database of whole games.', {
+            ? t('Indexing {n} files into one searchable database of whole games.', {
                 n: count,
               })
-            : t('No PGN collections are ticked. Pick them on the PGN collections tab first.')}
+            : t('No PGN files are ticked. Pick them on the PGN files tab first.')}
         </p>
         <ClearableInput
           inputSize="sm"
@@ -1228,7 +1228,7 @@ function BuildWindow({
             <Field orientation="horizontal">
               <RadioGroupItem value="replace" id="build-replace" />
               <FieldLabel htmlFor="build-replace" className="font-normal">
-                {t('Replace: build this database again from the picked collections.')}
+                {t('Replace: build this database again from the picked files.')}
               </FieldLabel>
             </Field>
             <Field orientation="horizontal">

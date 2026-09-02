@@ -2048,7 +2048,7 @@ const STORAGE_AREAS: { key: string; label: string; section?: Section }[] = [
   { key: 'puzzlebooks', label: 'Puzzle books' },
   { key: 'puzzles', label: 'Puzzle progress' },
   { key: 'repertoire', label: 'Repertoire' },
-  { key: 'sources', label: 'PGN sources' },
+  { key: 'sources', label: 'PGN files' },
   { key: 'gamesCache', label: 'Browsed games' },
   { key: 'history', label: 'Document history' },
   { key: 'refgames', label: 'Reference databases' },

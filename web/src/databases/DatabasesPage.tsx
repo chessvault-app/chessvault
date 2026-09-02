@@ -93,7 +93,7 @@ export function DatabasesPage() {
         title={t('Databases')}
         back={() => navigate('more')}
         description={t(
-          'A reference database is built from uploaded PGN collections. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.',
+          'A reference database is built from uploaded PGN files. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.',
         )}
       />
 
@@ -119,7 +119,7 @@ export function DatabasesPage() {
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 {t(
-                  'This database is read-only. Uploading collections and building databases need the installed app.',
+                  'This database is read-only. Uploading files and building databases need the installed app.',
                 )}
               </p>
             </>

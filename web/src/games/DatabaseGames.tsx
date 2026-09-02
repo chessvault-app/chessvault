@@ -960,7 +960,7 @@ export function DatabaseGames({
         title="No reference games yet"
         body={
           meta.databases
-            ? 'Upload PGN collections and index them into searchable databases of whole games.'
+            ? 'Upload PGN files and index them into searchable databases of whole games.'
             : 'This server has no reference games database.'
         }
         action={
