@@ -51,6 +51,22 @@ So the crate is pinned to the JavaScript pipeline's own output:
 - `tests/parity.pgn` and `parity-extra.pgn` are corpora for whole-file
   diffing: build them with both pipelines and every table must match row
   for row, fresh and appended.
+- The same fixture carries the TS side's own SQL — every string
+  `src/sql.rs` mirrors by hand — and the literals both sides keep (the
+  pack and key-index versions and meta keys, the deep-search cap), and
+  `tests/goldens.rs` holds each Rust constant to its source, whitespace
+  aside. A diff of the data tables cannot see an index or a lookup
+  table that one side lacks, which is how `sql.rs` sat two commits
+  behind `scripts/lib/db-tuning.ts`; this check exists for exactly
+  that shape.
+- `npm run fuzz:parity` compares the two live implementations on a
+  seeded random corpus — tables, schema, and deep hunts three ways —
+  with no fixture in between, so it cannot be blessed by regenerating.
+
+All of it runs in CI: the `native` job of `.github/workflows/verify.yml`
+builds the crate, runs the fixtures and fuzzes two seeds on every push
+and pull request, one seed fixed so a failure reproduces anywhere and
+one that moves with the run.
 
 **If you change anything either side computes** — the hash scheme, the
 schema, `finalMen`, the result or level codes, the replay loop's stopping
@@ -93,14 +109,33 @@ It cannot catch a bug in the decoder, since both sides share it and
 would be wrong together. That trust is the crate's, and is the trade
 taken when it was chosen over writing a Syzygy reader here.
 
+## Deep search answers WHICH games, not what a frame looks like
+
+`deep-search` writes `{"type":"hit","id":…,"ply":…}` lines, plus
+`progress` and `done`. The server composes the game frame the client
+sees from its own header row, with the same lines its other three scan
+paths use, so the frame's shape exists in one place. And before it
+streams a hit it replays that one game through its reference scanner
+and streams what THAT says: a hit the two disagree on is logged and
+overruled, never shown. That is the runtime tether the replay pair
+lacked — a confident wrong hit becomes a log line naming the game and
+both plies, at the cost of at most 200 replays per request, each a
+fraction of a millisecond beside a scan measured in seconds. What it
+cannot see is a game this binary MISSED; `npm run fuzz:parity` compares
+whole answers for that. The `capabilities` line declares the contract
+as `"deep":"hits"`, and a build that declares no `deep`, or another
+one, is not spawned for deep search at all — it streamed whole game
+frames the server no longer composes from.
+
 ## Filters are negotiated, not assumed
 
 The deep-search request keys are the one place the two sides are
 allowed to differ — by declaration, never silently. `chessvault-core
 capabilities` prints what this build understands (one JSON line,
-`{"filters":[...],"scan":[...]}`): the `games_where` filter keys, and
-the scan modes — `match` (the relaxation rung) and `material` (the
-material-spec hunt), both in `src/scan_match.rs`. The server asks once
+`{"filters":[...],"scan":[...],"deep":"hits"}`): the `games_where`
+filter keys, the scan modes — `match` (the relaxation rung) and
+`material` (the material-spec hunt), both in `src/scan_match.rs` — and
+the deep-search output contract above. The server asks once
 per build of the binary (cached by path and mtime, so a rebuild is
 re-asked). A request using any key the binary did not declare runs on
 the server's JS scan instead — slower, never wrong — which is how the

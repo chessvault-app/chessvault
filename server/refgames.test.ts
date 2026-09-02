@@ -1162,16 +1162,26 @@ describe('native filter negotiation', () => {
     expect(parseNativeCapabilities('{"filters":["result","player"]}\n')).toEqual({
       filters: new Set(['result', 'player']),
       scan: new Set(),
+      deep: null,
     });
     expect(parseNativeCapabilities('{"filters":[],"scan":["match","material"]}')).toEqual({
       filters: new Set(),
       scan: new Set(['match', 'material']),
+      deep: null,
+    });
+    // The deep-search output contract rides the same declaration; a
+    // build from before it declared one parses, with none.
+    expect(parseNativeCapabilities('{"filters":[],"scan":[],"deep":"hits"}')).toEqual({
+      filters: new Set(),
+      scan: new Set(),
+      deep: 'hits',
     });
     expect(parseNativeCapabilities('')).toBeNull();
     expect(parseNativeCapabilities('not json')).toBeNull();
     expect(parseNativeCapabilities('{"filters":"result"}')).toBeNull();
     expect(parseNativeCapabilities('{"filters":[1,2]}')).toBeNull();
     expect(parseNativeCapabilities('{"filters":[],"scan":"match"}')).toBeNull();
+    expect(parseNativeCapabilities('{"filters":[],"deep":["hits"]}')).toBeNull();
     expect(parseNativeCapabilities('{}')).toBeNull();
   });
 
@@ -1179,6 +1189,7 @@ describe('native filter negotiation', () => {
     const declared = {
       filters: new Set(GAMES_WHERE_KEYS.filter((k) => k !== 'opening')),
       scan: new Set(['match']),
+      deep: 'hits',
     };
     const query = (q: Record<string, string>) => (k: string) => q[k];
     // Nothing asked, nothing undeclared — the unfiltered scan is native.
@@ -1193,7 +1204,7 @@ describe('native filter negotiation', () => {
     ]);
     // Scan keys negotiate in their own field: a binary from before the
     // ladder declared no scan at all, so match/material stay JS.
-    const preLadder = { filters: declared.filters, scan: new Set<string>() };
+    const preLadder = { filters: declared.filters, scan: new Set<string>(), deep: null };
     expect(undeclaredFilters(preLadder, query({ match: 'pawns' }))).toEqual(['match']);
     expect(undeclaredFilters(preLadder, query({ material: '{}' }))).toEqual(['material']);
     // Present-but-empty still counts: both sides may ignore it today,
@@ -1201,7 +1212,7 @@ describe('native filter negotiation', () => {
     expect(undeclaredFilters(declared, query({ opening: '' }))).toEqual(['opening']);
     // A key that is not in the vocabulary never counts.
     expect(
-      undeclaredFilters({ filters: new Set(), scan: new Set() }, query({ fen: 'x', db: 'y' })),
+      undeclaredFilters({ filters: new Set(), scan: new Set(), deep: null }, query({ fen: 'x', db: 'y' })),
     ).toEqual([]);
   });
 });
