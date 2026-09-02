@@ -1032,7 +1032,10 @@ function Trainer({
               <Button
                 variant="ghost"
                 size="sm"
-                className="me-auto"
+                // The icon rung on a thumb: these three end a puzzle, and
+                // Solution and Skip are adjacent, irreversible and one tap
+                // each, so they get 44px rather than the 36px floor.
+                className="me-auto pointer-coarse:h-11"
                 onClick={() => void loadNext(theme, difficulty)}
               >
                 <X className="size-3.5" data-icon="inline-start" />
@@ -1042,6 +1045,7 @@ function Trainer({
             <Button
               variant="ghost"
               size="sm"
+              className="pointer-coarse:h-11"
               disabled={phase !== 'solving'}
               onClick={() => setHint((h) => Math.min(h + 1, 2))}
               title={t('First press marks the piece, second the move (not counted as a fail)')}
@@ -1052,6 +1056,7 @@ function Trainer({
             <Button
               variant="ghost"
               size="sm"
+              className="pointer-coarse:h-11"
               disabled={phase !== 'solving'}
               onClick={viewSolution}
               title={t('Counts as a failed attempt')}

@@ -217,8 +217,39 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
   // has to say the width a keystroke just set.
   const stored = useColWidths();
   const drag = useRef<{ id: string; x: number; w: number } | null>(null);
+  // The grips are reached through one door, not ten. With every handle
+  // in the tab order, ten Tabs from the Collection tab landed on "Resize
+  // the Black column" and never on a game (measured): the handles are a
+  // rare want and the rows are the page. So the handles are focusable
+  // but not tabbable, and one control in front of them, unseen until it
+  // has focus, opens the set; Up and Down walk it, Escape comes back.
+  const entry = useRef<HTMLButtonElement | null>(null);
+  const grips = useRef<(HTMLSpanElement | null)[]>([]);
+  let gripIndex = 0;
   return (
-    <div className="border-border border-t">
+    <div className="border-border relative border-t">
+      <button
+        ref={entry}
+        type="button"
+        className={cn(
+          'sr-only focus:not-sr-only focus:absolute focus:top-1 focus:left-2 focus:z-10',
+          'bg-card text-foreground border-border rounded-md border px-2 py-0.5 text-xs',
+          'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+        )}
+        onClick={() => grips.current.find(Boolean)?.focus()}
+        // Enter by hand: useTableNav listens on the window and prevents
+        // Enter's default (it opens the selected game), which is what
+        // would have turned the key into this button's click. Stopping
+        // propagation here keeps that listener out of it.
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          e.stopPropagation();
+          grips.current.find(Boolean)?.focus();
+        }}
+      >
+        {t('Column widths')}
+      </button>
       <div
         className={cn(GRID, 'text-muted-foreground min-h-7 py-1 text-xs font-medium')}
       >
@@ -257,8 +288,25 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
                 aria-valuenow={widthOf(c, stored)}
                 aria-valuemin={c.min}
                 aria-valuemax={COL_MAX}
-                tabIndex={0}
+                tabIndex={-1}
+                ref={((i: number) => (el: HTMLSpanElement | null) => {
+                  grips.current[i] = el;
+                })(gripIndex++)}
                 onKeyDown={(e) => {
+                  const live = grips.current.filter(Boolean) as HTMLSpanElement[];
+                  const at = live.indexOf(e.currentTarget);
+                  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    live[(at + (e.key === 'ArrowDown' ? 1 : live.length - 1)) % live.length]?.focus();
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    entry.current?.focus();
+                    return;
+                  }
                   const action = separatorKey(e, 'vertical', widthOf(c, stored), c.min, COL_MAX);
                   if (!action) return;
                   e.preventDefault();

@@ -42,6 +42,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: 'cn-toast',
+          // The undo offer's button measured 46x24 on a phone, under the
+          // 36px coarse floor every other control keeps, for the one
+          // press that has 4.5 seconds to land.
+          actionButton: 'pointer-coarse:min-h-9 pointer-coarse:px-3',
         },
       }}
       {...props}

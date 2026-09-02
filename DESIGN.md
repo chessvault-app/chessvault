@@ -523,7 +523,9 @@ hit areas, `title` as a tooltip. Composites live in
   xs and sm sizes.
 - **Sizes:** default 32px high with 10px of side padding; xs 24px, sm
   28px, lg 36px; icon buttons square at each. Coarse pointers bump
-  default and sm to 36px and icon to 44px.
+  default and sm to 36px and icon to 44px; the trainer's three
+  end-of-puzzle actions (Skip, Hint, Solution) also take 44, because two
+  of them are adjacent, irreversible and one tap each.
 - **The coarse-pointer floor:** 36px is the smallest hit area any control
   may have under a coarse pointer, and icon buttons and the bottom bar
   take 44px. This is the rung `pointer-coarse:` reaches for everywhere

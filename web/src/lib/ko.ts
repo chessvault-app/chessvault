@@ -1973,6 +1973,7 @@ export const ko: Record<string, string> = {
   Notifications: '알림',
   'Indexing finished.': '색인이 끝났습니다.',
   'Import finished. {n} diagrams found.': '가져오기가 끝났습니다. 다이어그램 {n}개를 찾았습니다.',
+  'Column widths': '열 너비',
   'Write a note. Markdown shortcuts work: # for a heading, - for a list.':
     '노트를 쓰세요. 마크다운 단축 입력이 됩니다: 제목은 #, 목록은 -.',
 };
