@@ -9,9 +9,11 @@
  *
  * Seeded and deterministic per (games, seed): capture- and
  * promotion-hungry self-play becomes a PGN corpus, both pipelines
- * build the first two thirds of it fresh and append the rest (the
- * append path re-derives the lookup tables, and a table it forgets to
- * drop survives stale), every table is byte-compared (games, plies,
+ * build the first two thirds of it fresh from two source files (a
+ * file boundary is where a shared parser loses the next file's
+ * headers) and append the rest (the append path re-derives the
+ * lookup tables, and a table it forgets to drop survives stale),
+ * every table is byte-compared (games, plies,
  * move_counts, scan_pack, key_index, players, openings, events), each
  * lookup table is checked against the games table it summarises, and
  * a spread of deep hunts — positions sampled from the corpus at
@@ -107,29 +109,34 @@ async function main(): Promise<void> {
   );
   const dir = mkdtempSync(join(tmpdir(), 'fuzz-parity-'));
   try {
-    // Two files: the first is built fresh, the second appended, so the
-    // append path — dedup, index extension, lookup re-derivation — is
-    // exercised on both sides, not just the fresh build.
+    // Three files: the first two are built fresh in one pass (each
+    // ends on its last result line with no blank line after it, the
+    // shape that made one parser swallow the next file's headers), the
+    // third appended, so the append path — dedup, index extension,
+    // lookup re-derivation — is exercised on both sides too.
     const pgns = corpus.map((m, at) => pgnOf(m, at));
-    const split = Math.max(1, Math.floor((pgns.length * 2) / 3));
-    const fresh = join(dir, 'fuzz.pgn');
-    const extra = join(dir, 'fuzz-extra.pgn');
-    writeFileSync(fresh, pgns.slice(0, split).join('\n'));
-    writeFileSync(extra, pgns.slice(split).join('\n'));
+    const third = Math.max(1, Math.floor(pgns.length / 3));
+    const files = [
+      [join(dir, 'fuzz-a.pgn'), pgns.slice(0, third)],
+      [join(dir, 'fuzz-b.pgn'), pgns.slice(third, third * 2)],
+      [join(dir, 'fuzz-extra.pgn'), pgns.slice(third * 2)],
+    ] as const;
+    for (const [path, games] of files) writeFileSync(path, games.join('\n'));
+    const [a, b, extra] = files.map(([path]) => path) as [string, string, string];
     for (const side of ['js', 'rs']) {
       const dataDir = join(dir, side);
-      for (const [pgn, flags] of [
-        [fresh, []],
-        [extra, ['--append']],
+      for (const [sources, flags] of [
+        [[a, b], []],
+        [[extra], ['--append']],
       ] as const) {
         if (side === 'js') {
           execFileSync(
             process.platform === 'win32' ? 'npx.cmd' : 'npx',
-            ['tsx', 'scripts/build-refgames.ts', pgn, '--name', 'fuzz', ...flags],
+            ['tsx', 'scripts/build-refgames.ts', ...sources, '--name', 'fuzz', ...flags],
             { cwd: REPO_ROOT, env: { ...process.env, CHESS_VAULT_DATA: dataDir }, shell: true, stdio: 'ignore' },
           );
         } else {
-          execFileSync(binary!, ['build', pgn, '--name', 'fuzz', ...flags, '--data', dataDir], {
+          execFileSync(binary!, ['build', ...sources, '--name', 'fuzz', ...flags, '--data', dataDir], {
             stdio: 'ignore',
           });
         }
