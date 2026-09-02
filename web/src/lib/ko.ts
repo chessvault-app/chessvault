@@ -34,7 +34,7 @@ export const ko: Record<string, string> = {
   Analysis: '분석',
   'Analysis on/off': '분석 켜기/끄기',
   'Hide the analysis': '분석 숨기기',
-  'Show the analysis': '분석 표시',
+  'Show the analysis': '분석 보기',
   'Play moves or load a game, then run an engine review.':
     '수를 두거나 게임을 불러온 뒤 엔진 리뷰를 실행하세요.',
   'The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.':
@@ -928,7 +928,7 @@ export const ko: Record<string, string> = {
   '{url} (needs internet)': '{url} (인터넷 필요)',
   'White {w}% · Draw {d}% · Black {b}%': '백 {w}% · 무 {d}% · 흑 {b}%',
   'Show token': '토큰 보기',
-  'Hide token': '토큰 가리기',
+  'Hide token': '토큰 숨기기',
   'Save line to study': '라인을 스터디로 저장',
   'Go to study': '스터디로 가기',
   '{n} moves': '{n}수',
@@ -1870,7 +1870,7 @@ export const ko: Record<string, string> = {
   'White to move': '백 차례',
   'Opening the book…': '책을 여는 중…',
   'Hide the diagram buttons': '다이어그램 버튼 숨기기',
-  'Show the diagram buttons': '다이어그램 버튼 보이기',
+  'Show the diagram buttons': '다이어그램 버튼 보기',
   'Who is to move?': '차례',
   'Reading diagrams, page {page} of {pages}': '다이어그램 읽는 중, {pages}쪽 중 {page}쪽',
   'Black to move': '흑 차례',
