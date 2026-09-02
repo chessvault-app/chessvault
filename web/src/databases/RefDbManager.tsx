@@ -947,14 +947,31 @@ function SourceList({
         <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-3 text-sm">
           {/* The label covers the tick, the name and the size, and
               nothing else: a button inside it would toggle the tick on
-              its way to being pressed. */}
-          <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+              its way to being pressed.
+
+              Below md it also covers the row's full HEIGHT. It used to be
+              a 20px band in a 49px row — 14px of dead row above it and 15
+              below, measured — so on a phone two taps in three aimed at a
+              row that looks tappable landed on nothing. The negative
+              margin is what reaches the row's edges: `py-1.5` alone stops
+              at the list padding rather than covering it. Wide only in
+              reverse — a mouse hits a 20px band, and leaving the desktop
+              box alone keeps this row provably where it was. */}
+          <label className="-my-1.5 flex min-w-0 flex-1 cursor-pointer items-center gap-2 py-1.5 md:my-0 md:py-0">
             <Checkbox
               checked={picked?.has(s.name) ?? false}
               onCheckedChange={(on) => onToggle(s.name, on === true)}
             />
-            <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
-            <span className="text-muted-foreground shrink-0">{fmtBytes(s.bytes)}</span>
+            {/* Name over size below md, one line from md up, the same
+                `contents` trick as the databases row beside it — and for
+                the same reason twice over: it buys the name 251px instead
+                of 203, and the two lists share one panel and one tab
+                strip, so a row that changes height when the strip is
+                pressed reads as two templates rather than two lists. */}
+            <div className="flex min-w-0 flex-1 flex-col gap-1 md:contents">
+              <span className="text-foreground min-w-0 truncate md:flex-1">{s.name}</span>
+              <span className="text-muted-foreground shrink-0">{fmtBytes(s.bytes)}</span>
+            </div>
           </label>
           {/* Uploading is how a phone gets a file onto the server, so
               deleting one has to be possible there too — the app was the
