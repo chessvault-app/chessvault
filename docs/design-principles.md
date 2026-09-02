@@ -442,6 +442,13 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   arrived, and a panel that announces "nothing solved yet" to somebody
   with a hundred solves is worse than one that waits. Track the ANSWER
   arriving, per block, and hold each one's own placeholder until it does.
+- **A panel that a fetch has to finish before it exists must not own a
+  second fetch.** Whatever it asks for on mount cannot start until the
+  first answer is back, so two independent questions are asked one after
+  the other. The page that owns the first one owns them both, side by
+  side. The Databases page had its collections listed by the panel the
+  databases list mounts: on an emulated 200 ms link they landed 242 ms
+  apart, and asked together they land together.
 - **Cover the wait that actually exists.** Data arriving is not the same
   as content appearing: a big book's list answers in 48 ms and then takes
   most of a second to build, so the skeleton is keyed on the grid being on
@@ -450,8 +457,19 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   than laying out cards and filling them in one at a time — bounded, and
   skipped once cached, because a cover is a nicety and must never be
   something a page waits on.
-- Suspense is used for CODE (route chunks), never for data; its fallback
-  stays blank because a chunk usually beats the next paint.
+- Route chunks are not loaded through Suspense, and data never is. A
+  boundary that has committed a fallback cannot reveal what replaces it
+  for 300 ms — React's reveal throttle, there to stop a spinner flashing
+  past — and `React.lazy` always commits one, because it calls its loader
+  during the render it is being drawn in. Measured on a cold launch, that
+  was 285 ms in which the page was fully rendered, its chunk long since
+  arrived, and it could not so much as ask for its own contents. So
+  `lib/lazyRoute` fetches the chunk itself and holds the same blank box as
+  ordinary state, replaced the moment the module lands. Holding the FIRST
+  RENDER for the chunk instead was tried and rejected: on a throttled
+  1.6 Mbps link the extra download pushed the webfonts behind it and first
+  contentful paint went from 3.1 s to 4.5 s. Draw the app's own frame on
+  time; fill it as soon as there is something to fill it with.
 
 ## Dialog policy
 

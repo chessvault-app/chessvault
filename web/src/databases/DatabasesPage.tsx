@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
-import { RefDbManager, RefDbManagerSkeleton, type RefDb } from './RefDbManager';
+import { RefDbManager, RefDbManagerSkeleton, type RefDb, type Source } from './RefDbManager';
 import { useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 
@@ -41,9 +41,42 @@ export function DatabasesPage() {
       .then(setMeta)
       .catch(() => setMeta(null));
   }, []);
+
+  /**
+   * The uploaded PGN collections, loaded HERE rather than inside the
+   * panel that lists them.
+   *
+   * The panel is only mounted once /api/refgames has answered, so a
+   * listing it asked for itself could not start until that round trip
+   * was over — two in series for two questions that have nothing to do
+   * with each other. Measured against an emulated 200 ms link, the
+   * collections landed 242 ms after the databases did; asked side by
+   * side they land together.
+   *
+   * Asked even on a mount with no panel to show them (a single-database
+   * server, the static demo): which mount this is only becomes known
+   * with the answer this is racing, and it is one small GET — on the
+   * demo it never leaves the page.
+   */
+  const [sources, setSources] = useState<Source[] | null>(null);
+  const loadSources = useCallback(async (): Promise<void> => {
+    try {
+      const body = await api<{ sources: Source[] }>('/api/sources');
+      setSources(body.sources);
+    } catch {
+      setSources([]);
+    }
+  }, []);
+  /** The row leaves when the server says the file is gone — see the
+      panel's delSource, which owns that rule and now asks for it. */
+  const dropSource = useCallback((name: string) => {
+    setSources((prev) => prev && prev.filter((s) => s.name !== name));
+  }, []);
+
   useEffect(() => {
     loadMeta();
-  }, [loadMeta]);
+    void loadSources();
+  }, [loadMeta, loadSources]);
 
   // The panel used to pop in: nothing was drawn until /api/refgames
   // answered. It has the panel's own shape now, and only once the wait is
@@ -67,7 +100,13 @@ export function DatabasesPage() {
       {meta === null ? (
         slow && <RefDbManagerSkeleton />
       ) : meta.databases ? (
-        <RefDbManager databases={meta.databases} onChanged={loadMeta} />
+        <RefDbManager
+          databases={meta.databases}
+          onChanged={loadMeta}
+          sources={sources}
+          onSourcesChanged={loadSources}
+          onSourceRemoved={dropSource}
+        />
       ) : (
         // What is mounted, and why there is nothing to press. Only the
         // count: this mount has no name to show, and its size cannot be

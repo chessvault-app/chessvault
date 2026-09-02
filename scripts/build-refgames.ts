@@ -28,7 +28,7 @@ import { basename, isAbsolute, resolve } from 'node:path';
 import { PgnParser, type Game, type PgnNodeData } from 'chessops/pgn';
 import { DATA, VAULT_SOURCES } from '../server/paths.ts';
 import { finalMen, indexPositions } from '../server/refgamesIndex.ts';
-import { REFGAMES_INDEXES, REFGAMES_LOOKUPS } from './lib/db-tuning.ts';
+import { REFGAMES_GAMES_SCHEMA, REFGAMES_INDEXES, REFGAMES_LOOKUPS } from './lib/db-tuning.ts';
 
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
@@ -86,25 +86,7 @@ db.pragma('journal_mode = ' + (appendMode ? 'WAL' : 'OFF'));
 db.pragma('synchronous = ' + (appendMode ? 'NORMAL' : 'OFF'));
 if (appendMode) db.pragma('busy_timeout = 30000');
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS games (
-    id INTEGER PRIMARY KEY,
-    white TEXT NOT NULL COLLATE NOCASE,
-    black TEXT NOT NULL COLLATE NOCASE,
-    white_elo INTEGER NOT NULL,
-    black_elo INTEGER NOT NULL,
-    result TEXT NOT NULL,
-    date TEXT,
-    event TEXT,
-    eco TEXT,
-    opening TEXT,
-    moves TEXT NOT NULL,
-    ply_count INTEGER,
-    final_wmen INTEGER,
-    final_bmen INTEGER
-  );
-  CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-`);
+db.exec(REFGAMES_GAMES_SCHEMA);
 // An append into a database built before deep search's reachability
 // columns: add them, empty — the index pass backfills.
 if (appendMode) {
@@ -192,20 +174,26 @@ const handleGame = (game: Game<PgnNodeData>, err: Error | undefined): void => {
 };
 
 db.exec('BEGIN');
-const parser = new PgnParser(handleGame, () => new Map());
+// One parser per source, finished at the end of each file. A streaming
+// parser closes a game only at a blank line or at the end of its input,
+// so one parser fed every file in turn would take a file ending on its
+// last result line and read the next file's headers as the tail of that
+// game — its first game then lands with no headers at all. The binary
+// reads each file on its own, and the two must store the same rows.
 for (const source of sources) {
   console.log(`indexing ${basename(source)}…`);
+  const parser = new PgnParser(handleGame, () => new Map());
   const stream = createReadStream(source, { encoding: 'utf-8' });
   for await (const chunk of stream) parser.parse(chunk as string, { stream: true });
+  parser.parse(''); // finish this file's stream
 }
-parser.parse(''); // finish the stream
 db.exec('COMMIT');
 
 console.log('indexing…');
 db.exec(REFGAMES_INDEXES);
 // The lookup tables summarise the whole games table, so an append
 // re-derives them (0.8 s measured on an Elite month) rather than merging.
-if (appendMode) db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings;');
+if (appendMode) db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings; DROP TABLE IF EXISTS events;');
 db.exec(REFGAMES_LOOKUPS);
 
 const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');

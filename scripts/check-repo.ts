@@ -64,6 +64,17 @@
  *    string added in one language renders perfectly, and silently, in
  *    the wrong one. Thirty were in that state when this was added. Only
  *    literals are visible here; `t(variable)` resolves at runtime.
+ *
+ * 9. Every native source names the TypeScript it mirrors, and names a
+ *    file that exists. native/ is a second implementation of jobs that
+ *    live in TypeScript, and keeping the two from drifting starts with
+ *    being able to FIND the pair: each `.rs` header says which `.ts` it
+ *    ports (native/README.md: "every file that mirrors something names
+ *    it"), and the README's layout table lists every file. A rename on
+ *    the TypeScript side leaves a header pointing at nothing, and a new
+ *    `.rs` with no row makes the table a coverage claim that is not
+ *    true — both one line a grep can see. The crate's own plumbing
+ *    (lib, main, util) mirrors nothing and is exempt from naming one.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -511,6 +522,57 @@ if (existsSync(DICTIONARY)) {
         line: code.slice(0, index).split('\n').length,
         text: text.slice(0, 120),
         why: 'a t() string with no entry in web/src/lib/ko.ts — it renders as English to a Korean reader',
+      });
+    }
+  }
+}
+
+/**
+ * The native core's mirror pairs: a source's leading `//!` block, the
+ * `.ts` paths it names, and the README's layout table.
+ */
+const NATIVE_PLUMBING = new Set(['native/src/lib.rs', 'native/src/main.rs', 'native/src/util.rs']);
+const NATIVE_README = 'native/README.md';
+const TS_PATH = /[\w./-]+\.ts\b/g;
+{
+  const trackedSet = new Set(tracked);
+  const layout = existsSync(NATIVE_README) ? readFileSync(NATIVE_README, 'utf-8') : null;
+  for (const file of tracked) {
+    if (!/^native\/src\/[^/]+\.rs$/.test(file)) continue;
+    const lines = readFileSync(file, 'utf-8').split('\n');
+    let named = 0;
+    for (let i = 0; i < lines.length && lines[i]!.startsWith('//!'); i += 1) {
+      for (const match of lines[i]!.matchAll(TS_PATH)) {
+        named += 1;
+        if (!trackedSet.has(match[0])) {
+          findings.push({
+            file,
+            line: i + 1,
+            text: match[0],
+            why: 'the header names a TypeScript file that is not in the repo — its mirror pair was renamed or removed, and the pairing is how a disagreement is found',
+          });
+        }
+      }
+    }
+    if (named === 0 && !NATIVE_PLUMBING.has(file)) {
+      findings.push({
+        file,
+        line: 1,
+        text: (lines[0] ?? '').trim().slice(0, 120),
+        why: 'a native source whose header names no TypeScript twin — say which file it mirrors, or list it as plumbing in check-repo.ts',
+      });
+    }
+    const row = file.slice('native/'.length);
+    if (
+      layout !== null &&
+      !NATIVE_PLUMBING.has(file) &&
+      !new RegExp(`^${row.replace(/\./g, '\\.')}\\s`, 'm').test(layout)
+    ) {
+      findings.push({
+        file,
+        line: 1,
+        text: row,
+        why: `not in ${NATIVE_README}'s layout table — add the row, or the table is a coverage claim that is not true`,
       });
     }
   }

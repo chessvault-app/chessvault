@@ -44,7 +44,9 @@ import { TablebaseSection } from './TablebaseSection';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SideDot } from '@/components/side-dot';
 import { Switch } from '@/components/ui/switch';
+import { Progress, ProgressIndicator } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
+import type { BuildStatus } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
 import { RATING_BANDS } from '@/repertoire/field';
@@ -793,19 +795,17 @@ function LichessFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void }) {
   const [state, setState] = useState<'idle' | 'running' | 'failed'>('idle');
   const [line, setLine] = useState<string | null>(null);
+  const [percent, setPercent] = useState<number | null>(null);
 
   useEffect(() => {
     if (state !== 'running') return;
     let live = true;
     const tick = async (): Promise<void> => {
       try {
-        const s = await api<{
-          running: boolean;
-          exitCode?: number | null;
-          log?: string[];
-        }>('/api/refgames/build/status');
+        const s = await api<BuildStatus>('/api/refgames/build/status');
         if (!live) return;
         setLine(s.log?.at(-1) ?? null);
+        setPercent(s.phase?.percent ?? null);
         if (!s.running) {
           if ((s.exitCode ?? 1) === 0) onDone();
           else setState('failed');
@@ -825,6 +825,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
   const start = async (): Promise<void> => {
     setState('running');
     setLine(null);
+    setPercent(null);
     try {
       await api('/api/refgames/index-positions', { method: 'POST', json: { db: name } });
     } catch {
@@ -838,15 +839,32 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
     <div className="flex flex-col gap-2 px-3 py-3">
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
-          '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.',
+          // Not "a minute or two": that was true of the Elite month it was
+          // written for (80 s) and a lie at the size a reference corpus now
+          // reaches — Lumbra's Gigabase OTB indexed in 6h11m. The wait
+          // scales with the games in the file, so the copy says so rather
+          // than naming one number that is wrong at every other size.
+          '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload. A small database takes a minute; millions of games can take hours.',
           { name: bookLabel(name) },
         )}
       </p>
       {state === 'running' ? (
-        <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
-          <Spinner className="size-3.5 shrink-0" />
-          <span className="min-w-0 truncate">{line ?? '…'}</span>
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
+            <Spinner className="size-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{line ?? '…'}</span>
+          </p>
+          {/* Weighted by phase — see BuildStatus. The Databases page is
+              where a stalled job is diagnosed; this only has to keep the
+              wait from reading as nothing happening. */}
+          {percent !== null && (
+            <Progress value={percent} aria-label={t('Build progress')}>
+              {/* The fill states its own width — the primitive's default
+                  indicator is `flex-1` and grows to the whole track. */}
+              <ProgressIndicator className="bg-primary" style={{ width: `${percent}%` }} />
+            </Progress>
+          )}
+        </div>
       ) : (
         <div className="flex items-center gap-2">
           <Button variant="default" size="sm" onClick={() => void start()}>

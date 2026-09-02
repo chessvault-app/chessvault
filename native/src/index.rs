@@ -11,6 +11,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use shakmaty::{san::SanPlus, CastlingMode, Chess, Position};
 
 use crate::key_index::{build_key_index, KEY_INDEX_META, KEY_INDEX_VERSION};
+use crate::phases::Phases;
 use crate::scan_pack::{encode_scan_pack, SCAN_PACK_META, SCAN_PACK_VERSION};
 use crate::sql;
 use crate::util::{commas, iso_now};
@@ -191,6 +192,14 @@ pub fn index_positions(
         [since_id],
         |r| r.get::<_, i64>(0),
     )? as u64;
+    // A pass that is not packing never inverts keys, so those phases must
+    // not hold weight in its bar — it would stall at 90% and finish.
+    let skip: &[&str] = if packing {
+        &[]
+    } else {
+        &["keys-count", "keys-fill", "keys-write"]
+    };
+    let mut phase = Phases::new(log, skip);
     let mut games: u64 = 0;
     let mut plies: u64 = 0;
 
@@ -207,6 +216,7 @@ pub fn index_positions(
     // TS pass (better-sqlite3 refuses writes under an open cursor; here
     // it keeps one statement borrow at a time).
     let mut last_id = since_id;
+    phase.enter("replay", Some(&format!("{} games", commas(total))));
     loop {
         let batch: Vec<GameRow> = {
             let mut page = conn.prepare_cached(
@@ -277,23 +287,17 @@ pub fn index_positions(
         conn.execute_batch("COMMIT")?;
         last_id = batch.last().expect("non-empty batch").id;
         if games % 25_000 == 0 || games == total {
-            log(&format!(
-                "  positions: {} of {} games…",
-                commas(games),
-                commas(total)
-            ));
+            phase.step(games, total, "games");
         }
     }
 
-    log("  positions: indexing…");
-    conn.execute_batch(sql::PLIES_INDEX)?;
-    log("  positions: summing per move…");
-    conn.execute_batch(sql::MOVE_COUNTS)?;
-    if packing {
-        log("  positions: inverting keys…");
-        build_key_index(&conn, log)?;
-    }
-
+    // Each of these names itself before it starts and then says nothing
+    // until it returns — they are single statements, and nothing can
+    // report from inside one. See the TS twin.
+    // The whole table's size, not this pass's share — an append rebuilds
+    // the index over everything, and that is the number whose scale
+    // explains the wait. Read here because the meta row is overwritten
+    // with the new total further down.
     let prev_plies: u64 = if append {
         read_meta(&conn, "plies")
             .and_then(|v| v.parse().ok())
@@ -301,6 +305,21 @@ pub fn index_positions(
     } else {
         0
     };
+    phase.enter(
+        "plies-index",
+        Some(&format!("{} rows", commas(prev_plies + plies))),
+    );
+    conn.execute_batch(sql::PLIES_INDEX)?;
+    phase.enter("sums", None);
+    conn.execute_batch(sql::MOVE_COUNTS_SUMS)?;
+    phase.enter("thin", None);
+    conn.execute_batch(sql::MOVE_COUNTS_THIN)?;
+    phase.enter("sums-index", None);
+    conn.execute_batch(sql::MOVE_COUNTS_INDEX)?;
+    if packing {
+        build_key_index(&conn, &mut phase)?;
+    }
+
     let indexed_through: i64 = conn
         .query_row("SELECT MAX(id) AS n FROM games", [], |r| r.get(0))
         .optional()?

@@ -168,6 +168,87 @@ other people.
   the page also makes Storage used below re-read, which had been showing
   the size it loaded with — a card apart, two answers for the same thing.
 
+- **The native core is held to its TypeScript twin by more than
+  fixtures.** `native/` re-implements four database jobs, and when the
+  two sides disagree the result is silently wrong rows, never an error.
+  Three things now hold them together that did not. The SQL every table
+  is created with, and the constants both sides carry as literals, are
+  pinned to the goldens — and the first run found the Rust build two
+  commits behind, three indexes and the `events` lookup table missing,
+  invisible to a diff of the data tables, so a database built by the
+  binary now has what the JavaScript build has. The fuzz that compares
+  the two live implementations on a random corpus runs in CI on every
+  push beside the fixtures, two seeds, one fixed so a failure
+  reproduces anywhere. And deep search's native scan now reports only
+  WHICH games hit: the server composes every frame itself and replays
+  each hit through its reference scanner before streaming it, so a
+  wrong hit becomes a log line instead of a row on screen. Measured
+  with a binary built to misreport: nine hits overruled, the frames
+  streamed identical to the JavaScript path's. A repo check keeps every
+  Rust file naming the TypeScript it mirrors.
+
+- **A six-hour job with nothing to say for the last three.** Building a
+  database's position index printed a line every 25,000 games and then
+  went quiet. The three passes after the replay — the index over the
+  positions, the per-move sums, the key inversion — each ran as one long
+  database statement that announced itself and then said nothing at all
+  until it returned. At the size this was written for the gap is
+  invisible: an Elite month indexes in 80 seconds end to end. On the
+  largest reference database built here, 10,355,488 games and
+  309,324,101 positions, the pass took 6 hours 11 minutes, of which the
+  per-move sum alone was over an hour of silence — and the Databases
+  page, which shows the newest line the job printed, sat on "summing per
+  move" with nothing to separate that from a crash.
+
+  Each phase now names itself as it starts and says where in the WHOLE
+  job it is, which is what the page draws: a bar weighted by phase
+  rather than by games. The games count is the thing that misled. It
+  fills as the replay ends and then holds at the finish through hours of
+  work still to come. The key inversion — the one late phase that walks
+  rows this side has already counted — reports real progress as it goes.
+
+  The other two are single database statements with nothing able to see
+  inside them, so rather than invent a heartbeat the page reports the
+  silence: past two minutes without a line it says the step is one
+  operation that reports nothing until it finishes, and how long that
+  has been.
+
+  While there, the explorer's offer to index a database it finds without
+  one has stopped promising "a minute or two". That was true of the
+  corpus it was written for and wrong by two orders of magnitude at the
+  sizes a reference database now reaches; it says a small database takes
+  a minute and millions of games can take hours.
+
+- **A page you launch into no longer waits a third of a second before it
+  asks for its data.** Every section but Home loads as its own chunk, and
+  React suspends the first time it draws one — which commits the blank
+  fallback, and once a fallback has been committed React holds what
+  replaces it back for 300 ms so that a spinner cannot flash past. On a
+  launch there is no spinner to protect: the page was ready and simply sat
+  there. Measured on a cold launch against a local server, the Databases
+  page rendered at 171 ms and did not appear — or fetch its own contents —
+  until 453 ms, with its chunk in hand since 139 ms and nothing running in
+  between. Sections are now loaded without that boundary: the same blank
+  box is held as ordinary state and replaced the moment the chunk lands.
+  The same cold launch makes its first request at 165 ms instead of
+  447 ms and has the list on screen at 215 ms instead of 956 ms; Board,
+  Games, Notes and Puzzles were measured and gain the same 250–290 ms.
+  First paint is unchanged, deliberately: holding the first render for the
+  chunk was tried, and on a 1.6 Mbps link it pushed the fonts behind the
+  download and cost 1.4 s of blank screen to save 300 ms. On a link that
+  slow the throttle never cost anything anyway — the download outlasts
+  it — so this is a straight gain on a fast connection and neutral on a
+  slow one.
+
+- **The Databases page asks for both of its lists at once.** The uploaded
+  PGN collections were listed by the panel that the databases list brings
+  on screen, so the request for them could not start until the databases
+  had answered — two round trips in a row for two questions with nothing
+  to do with each other. Measured against an emulated 200 ms link, the
+  collections landed 242 ms after the databases did; they now land
+  together. On a fast connection nothing looks different, which is where
+  the wait was invisible to begin with.
+
 - **A progress bar that ignored the number it was given.** The shared bar
   filled its whole track whatever its value said — 16% and 100% drew the
   same thing. No bar on screen showed it: the solved/failed bar draws its
@@ -179,10 +260,10 @@ other people.
   into view, which needs a rule saying grow to the track; when it changed
   to stating its own width, that rule stayed, and grow beats width.
   Measured on a 256px track, bars at 0, 16, 30, 73.5 and 100% each drew
-  100% before and now draw exactly what they say.
-  Settings' download bar drops its workaround and is the plain bar again;
-  the solved/failed bar keeps its two fills, which it has for its own
-  reason, and measures 30% and 20% either way.
+  100% before and now draw exactly what they say. Settings' download bar
+  drops its workaround and is the plain bar again; the solved/failed bar
+  keeps its two fills, which it has for its own reason, and measures 30%
+  and 20% either way.
 
 ## 0.7.2
 

@@ -219,7 +219,7 @@ pub fn run_build(
     // The lookup tables summarise the whole games table, so an append
     // re-derives them rather than merging.
     if append {
-        conn.execute_batch("DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings;")?;
+        conn.execute_batch("DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings; DROP TABLE IF EXISTS events;")?;
     }
     conn.execute_batch(sql::REFGAMES_LOOKUPS)?;
 

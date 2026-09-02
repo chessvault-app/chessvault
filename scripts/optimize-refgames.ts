@@ -8,7 +8,7 @@
  *   key the append path deduplicates by, applied here to files built
  *   before it existed or from overlapping sources. Real DELETEs: SQLite
  *   needs no flag-and-compact model, and VACUUM returns the space.
- * - The derived tables (players, openings, position index, move sums)
+ * - The derived tables (players, openings, events, position index, move sums)
  *   are re-derived whenever the sweep removed anything, so nothing keeps
  *   counting games that are gone.
  *
@@ -57,7 +57,7 @@ console.log(`  ${swept.toLocaleString()} duplicate games removed`);
 
 if (swept > 0) {
   // Every derived table summarised games that are gone.
-  db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings;');
+  db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings; DROP TABLE IF EXISTS events;');
   db.exec(REFGAMES_LOOKUPS);
   db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(
     'games',
