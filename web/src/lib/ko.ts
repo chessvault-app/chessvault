@@ -326,7 +326,7 @@ export const ko: Record<string, string> = {
   'Show bookmarked only': '즐겨찾기만 보기',
   Layout: '보기 방식',
   // Games: the row toolbar and the archive panel.
-  'Preview the board': '보드 미리보기',
+  'Preview the board': '보드 미리 보기',
   // Games: the three empty states, each ending on the press that fixes it.
   'Your collection is empty': '모음이 비어 있습니다',
   'The games worth keeping, each annotatable like a study. Import one, or add games from your online archive.':
@@ -1321,7 +1321,7 @@ export const ko: Record<string, string> = {
   'This server also has table files at {dir}, set in its vault config.':
     '이 서버에는 {dir}에 테이블 파일도 설정되어 있습니다(보관함 설정 파일).',
   'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another device.':
-    '서버에 있는 테이블 파일로 답하게 하려면 보관함 설정 파일에 «tablebaseDir»을 적으세요. 경로는 다른 기기에서 입력할 수 없습니다.',
+    '서버에 있는 테이블 파일로 답하게 하려면 보관함 설정 파일에 “tablebaseDir”을 적으세요. 경로는 다른 기기에서 입력할 수 없습니다.',
   'Cached answers': '캐시된 답',
   'Answers are kept for good, so each ending is asked about once.':
     '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다.',
@@ -1347,7 +1347,7 @@ export const ko: Record<string, string> = {
   'Distance to mate, in half-moves, with best play from both sides.':
     '양쪽이 최선을 다했을 때 메이트까지 남은 반수(half-move)입니다.',
   'Distance to the next capture or pawn move, in half-moves. This is what the fifty-move rule counts.':
-    '다음 기물 교환이나 폰 이동까지 남은 반수(half-move)입니다. 50수 규칙이 세는 수입니다.',
+    '다음 기물 잡기나 폰 이동까지 남은 반수(half-move)입니다. 50수 규칙이 세는 수입니다.',
 
   // --- games ---------------------------------------------------------------
   Added: '추가됨',
@@ -1625,7 +1625,7 @@ export const ko: Record<string, string> = {
   "Collinear move": "일직선 수",
   "Corner mate": "코너 메이트",
   "Crushing": "결정적 우세",
-  "Defensive move": "수비수",
+  "Defensive move": "방어 수",
   "Deflection": "유인 이탈",
   "Discovered attack": "열린 공격",
   "Discovered check": "열린 체크",
@@ -1930,6 +1930,6 @@ export const ko: Record<string, string> = {
   'Every game shown is already in the collection': '표시된 게임이 모두 이미 모음에 있습니다',
 
   // The Databases page's fast-search toggle.
-  'Loading the scan index…': '스캔 인덱스 불러오는 중…',
-  'Releasing the scan index…': '스캔 인덱스 해제 중…',
+  'Loading the scan index…': '스캔 색인 불러오는 중…',
+  'Releasing the scan index…': '스캔 색인 해제 중…',
 };
