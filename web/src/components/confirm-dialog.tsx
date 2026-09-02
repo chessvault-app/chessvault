@@ -41,19 +41,28 @@ import { t } from '@/lib/i18n';
  * Callers interpolating a name still call t() themselves; translating an
  * already-translated string is a no-op.
  */
-export function ConfirmDialog({
-  icon: Icon,
-  label,
-  triggerTitle,
-  triggerClassName,
-  triggerTone = 'quiet',
-  tone = 'danger',
-  question,
-  confirmLabel,
-  disabled = false,
-  onConfirm,
-}: {
+/** What the question is about, whoever asked it. */
+interface ConfirmDialogQuestion {
   icon: LucideIcon;
+  /**
+   * What the QUESTION is about. `danger` (the default) draws the red
+   * tile and the destructive action — deletes, resets. `default` keeps
+   * the same stop-and-ask shape in the app's ordinary colours, for
+   * actions that are heavy but not destructive (Optimize).
+   */
+  tone?: 'danger' | 'default';
+  question: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+}
+
+/**
+ * The usual shape: the dialog owns a trigger and its own open state.
+ * `open` and `onOpenChange` are spelled out as never so that supplying
+ * one of them is a type error here rather than a trigger that silently
+ * does nothing.
+ */
+interface ConfirmDialogOwnTrigger {
   /** Optional trigger text next to the icon (icon-only when omitted). */
   label?: string;
   triggerTitle: string;
@@ -68,39 +77,63 @@ export function ConfirmDialog({
    * colour is the warning and there is nothing for it to shout over.
    */
   triggerTone?: 'quiet' | 'danger';
-  /**
-   * What the QUESTION is about. `danger` (the default) draws the red
-   * tile and the destructive action — deletes, resets. `default` keeps
-   * the same stop-and-ask shape in the app's ordinary colours, for
-   * actions that are heavy but not destructive (Optimize).
-   */
-  tone?: 'danger' | 'default';
-  question: string;
-  confirmLabel: string;
   disabled?: boolean;
-  onConfirm: () => void;
-}) {
-  const [open, setOpen] = useState(false);
+  open?: never;
+  onOpenChange?: never;
+}
+
+/**
+ * Held open by whatever asked for it, with no trigger of its own — a row
+ * whose verbs live in a ⋯ menu, where the thing pressed is a menu item
+ * that is gone by the time the question appears.
+ *
+ * Opt-in and all-or-nothing: pass the pair and the trigger props stop
+ * being accepted, because there is no button left for them to describe.
+ * Every existing call site passes neither and is untouched.
+ */
+interface ConfirmDialogHeldOpen {
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
+  label?: never;
+  triggerTitle?: never;
+  triggerClassName?: never;
+  triggerTone?: never;
+  disabled?: never;
+}
+
+export function ConfirmDialog(
+  props: ConfirmDialogQuestion & (ConfirmDialogOwnTrigger | ConfirmDialogHeldOpen),
+) {
+  const { icon: Icon, tone = 'danger', question, confirmLabel, onConfirm } = props;
+  const [own, setOwn] = useState(false);
+  const held = props.open !== undefined;
+  const open = props.open ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    props.onOpenChange?.(next);
+  };
 
   return (
     <>
-      <Button
-        variant={triggerTone === 'danger' ? 'destructive' : 'ghost'}
-        size={label ? 'sm' : 'icon-sm'}
-        title={t(triggerTitle)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        disabled={disabled}
-        // A hover-revealed trigger must not fade away while its question is up.
-        className={cn(triggerClassName, open && 'opacity-100')}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(true);
-        }}
-      >
-        <Icon className="size-3.5" data-icon="inline-start" />
-        {label && t(label)}
-      </Button>
+      {!held && (
+        <Button
+          variant={props.triggerTone === 'danger' ? 'destructive' : 'ghost'}
+          size={props.label ? 'sm' : 'icon-sm'}
+          title={t(props.triggerTitle!)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          disabled={props.disabled ?? false}
+          // A hover-revealed trigger must not fade away while its question is up.
+          className={cn(props.triggerClassName, open && 'opacity-100')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          <Icon className="size-3.5" data-icon="inline-start" />
+          {props.label && t(props.label)}
+        </Button>
+      )}
 
       {/* The registry's destructive alert dialog: the verb as the title, the
           question as the description, Cancel and the tinted destructive
@@ -109,8 +142,8 @@ export function ConfirmDialog({
       {open && (
         <AlertDialog
           open
-          onOpenChange={(open) => {
-            if (!open) setOpen(false);
+          onOpenChange={(next) => {
+            if (!next) setOpen(false);
           }}
         >
           <AlertDialogContent>
@@ -134,7 +167,13 @@ export function ConfirmDialog({
               <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 variant={tone === 'danger' ? 'destructive' : 'default'}
-                onClick={onConfirm}
+                onClick={() => {
+                  // Held open, the caller's state is what keeps it up, so
+                  // the answer has to close it — an uncontrolled dialog
+                  // closes itself on the action and never needed this.
+                  setOpen(false);
+                  onConfirm();
+                }}
               >
                 {t(confirmLabel)}
               </AlertDialogAction>
