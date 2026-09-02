@@ -177,7 +177,7 @@ export const ko: Record<string, string> = {
   'Preview the final position': '최종 포지션 미리 보기',
   'Search collection…': '모음 검색…',
   'Game actions': '게임 동작',
-  'Browse this player': '이 선수 둘러보기',
+  'Browse this player': '이 플레이어 둘러보기',
   'Archive month': '보관된 달',
   Annotated: '주석 있음',
   'View on chess.com (needs internet)': 'chess.com에서 보기 (인터넷 필요)',
@@ -756,9 +756,9 @@ export const ko: Record<string, string> = {
   'Compare my moves with a database': '내 수를 데이터베이스와 비교',
   'Compare with a database': '데이터베이스와 비교',
   'Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.':
-    '백으로 둔 최근 게임을 이 데이터베이스 선수들의 응수와 대조합니다. 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
+    '백으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
   'Your recent games as Black, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.':
-    '흑으로 둔 최근 게임을 이 데이터베이스 선수들의 응수와 대조합니다. 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
+    '흑으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
   'At level': '레벨',
   'You play {mine} ({mineShare}), they answer {top} ({topShare} of {total})':
     '나는 {mine} ({mineShare}), 그들은 {top} ({topShare}, {total}판 중)',
@@ -969,7 +969,7 @@ export const ko: Record<string, string> = {
   'Nothing cached yet.': '아직 저장된 것이 없습니다.',
   '{n} months': '{n}개월',
   '{size} in total': '모두 {size}',
-  "Clear this player's months": '이 선수의 저장된 달 지우기',
+  "Clear this player's months": '이 플레이어의 저장된 달 지우기',
   'Clear all': '모두 지우기',
   'Wipe all data': '모든 데이터 삭제',
   'Wipe the entire vault?': '보관함 전체를 삭제할까요?',
@@ -1105,7 +1105,7 @@ export const ko: Record<string, string> = {
     '팁: 상대의 수를 클릭하면 “아무 수나”로 표시됩니다 (책의 ~ 표기).',
   "Training attempts only. Review sessions are not counted, so this can differ from the review pool.":
     '훈련 시도만 셉니다. 복습은 포함되지 않으므로 복습 대상 수와 다를 수 있습니다.',
-  "Browse this player's online archive": '이 선수의 온라인 기보 보기',
+  "Browse this player's online archive": '이 플레이어의 온라인 기보 보기',
   'Import only a book you own.': '직접 가진 책만 가져오세요.',
   'Crops, page images and solutions stay in your vault and are never published. They remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.':
     '잘라낸 다이어그램, 페이지 이미지, 정답은 모두 보관함에만 남고 어디에도 공개되지 않습니다. 그래도 저작권은 출판사에 있으며, 사는 곳에 따라 복제나 공유가 허용되지 않을 수 있습니다.',
@@ -1901,7 +1901,7 @@ export const ko: Record<string, string> = {
   'Keep the panel open': '패널 계속 열어두기',
   'Keeping the panel open': '패널을 계속 열어둠',
   'Select a game from the list to see it here: its players, its opening, and the game itself, move by move.':
-    '목록에서 게임을 선택하면 여기에 표시됩니다. 두 기사와 오프닝, 그리고 게임 자체를 한 수씩.',
+    '목록에서 게임을 선택하면 여기에 표시됩니다. 두 플레이어와 오프닝, 그리고 게임 자체를 한 수씩.',
   'Open the game': '게임 열기',
   'Open on the board': '보드에서 열기',
   'Game details': '게임 정보',
