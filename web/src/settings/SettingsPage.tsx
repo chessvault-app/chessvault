@@ -20,7 +20,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Progress, ProgressIndicator } from '@/components/ui/progress';
+import { Progress } from '@/components/ui/progress';
 import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
@@ -510,13 +510,7 @@ function VersionCard() {
               slowly would otherwise show a bar pinned at zero, which reads
               as a download that has stalled rather than one not yet begun. */}
           {status.phase === 'downloading' && status.total ? (
-            <Progress value={percent} aria-label={t('Download progress')}>
-              {/* The fill states its own width, as the solved/failed bar
-                  does: the primitive's default indicator is `flex-1`, which
-                  grows to the whole track whatever the value says, so a
-                  16% download drew a full bar. */}
-              <ProgressIndicator className="bg-primary" style={{ width: `${percent}%` }} />
-            </Progress>
+            <Progress value={percent} aria-label={t('Download progress')} />
           ) : null}
         </div>
       )}

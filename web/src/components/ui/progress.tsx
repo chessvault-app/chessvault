@@ -18,7 +18,12 @@ function Progress({ className, value, children, ...props }: ProgressPrimitive.Ro
       className={cn('bg-muted relative flex h-1 w-full items-center overflow-x-hidden rounded-full', className)}
       {...props}
     >
-      {children ?? <ProgressIndicator className="bg-primary size-full flex-1" style={{ width: `${value || 0}%` }} />}
+      {/* No `flex-1` on the default fill, though the registry writes one:
+          the registry's nova indicator is positioned by `translateX` on a
+          full-width block, where growing to the track is the point. This
+          one states a `width` instead, and flex-grow on a flex track beats
+          that width every time — a bar at any value drew itself full. */}
+      {children ?? <ProgressIndicator className="bg-primary size-full" style={{ width: `${value || 0}%` }} />}
     </ProgressPrimitive.Root>
   );
 }
