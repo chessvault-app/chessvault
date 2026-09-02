@@ -428,7 +428,7 @@ export function GameDetailsSheet({
       }}
     >
       <DialogContent
-        title={`${selection.summary.white} vs ${selection.summary.black}`}
+        title={t('{white} vs {black}', { white: selection.summary.white, black: selection.summary.black })}
         className="max-sm:h-[88%] sm:max-w-[26rem]"
         size="full"
       >

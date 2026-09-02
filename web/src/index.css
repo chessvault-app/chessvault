@@ -1539,9 +1539,10 @@ cg-board square.check {
   border-top: 1px solid var(--border);
   margin: 1.2em 0;
 }
-/* The caret placeholder line Tiptap needs for empty docs. */
+/* The hint on an empty note; the words come from the Placeholder
+   extension in notes/markdown.ts, so they follow the language. */
 .note-editor p.is-editor-empty:first-child::before {
-  content: 'Write… (# heading, - list, **bold** — markdown shortcuts work)';
+  content: attr(data-placeholder);
   color: var(--text-subtle);
   float: left;
   height: 0;

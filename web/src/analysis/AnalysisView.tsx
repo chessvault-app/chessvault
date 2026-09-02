@@ -169,7 +169,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             // panel in the app could have been called. It updates as you
             // play and is looked up by position, so transpositions arrive
             // at the right name.
-            title={openingName ?? 'Starting position'}
+            title={openingName ?? t('Starting position')}
             actions={
               <>
                 <SidelinesToggle />

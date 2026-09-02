@@ -484,7 +484,7 @@ function SolutionRecorder({
               for a thing Start over on the footer already does, was a
               second control for the line outside the row that holds the
               others. */}
-          <PanelHeader title={`Solution · ${line.length} plies`} />
+          <PanelHeader title={t('Solution · {n} plies', { n: line.length })} />
           {/* What the panel is for, in the panel rather than in a header
               above it: a title bar with a back arrow made this read as its
               own page, which it is not — it is one step of the entry that

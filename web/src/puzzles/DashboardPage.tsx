@@ -120,7 +120,6 @@ export function DashboardPage() {
   useEffect(() => refresh(), [refresh]);
 
   const counted = (history ?? []).filter((h) => h.counted !== false);
-  const winRate = user && user.attempts > 0 ? Math.round((100 * user.wins) / user.attempts) : null;
 
   // The puzzle list shows each puzzle ONCE, judged by its latest attempt
   // (history arrives newest-first). Filters cut by outcome and rating band.
@@ -210,9 +209,12 @@ export function DashboardPage() {
               value={user ? String(user.attempts) : '…'}
             />
             <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
-            {/* "Solve rate", not "win rate": nothing here is won, and the
-                app's own nouns for the two outcomes are solved and failed. */}
-            <Figure label={t('Solve rate')} value={winRate === null ? '—' : `${winRate}%`} />
+            {/* No solve rate. It was "win rate" once, renamed because
+                nothing here is won, and then dropped because a percentage
+                of your own attempts is still a score handed back to the
+                person who made them, which the app does not do (see
+                docs/design-principles.md on ratings). Solved and Failed
+                say the same thing as counts. */}
             <Figure
               label={t('Failed')}
               title={t('Puzzles whose latest attempt failed. This is the review pool.')}

@@ -624,7 +624,6 @@ export const ko: Record<string, string> = {
   'Record the solution, every move for both sides.': '양쪽의 모든 수로 정답을 기록하세요.',
   Solved: '해결',
   Attempts: '시도',
-  'Solve rate': '해결률',
   Failed: '실패',
   solved: '해결',
   failed: '실패',
@@ -1420,7 +1419,7 @@ export const ko: Record<string, string> = {
   'Play a move on the board.': '보드에서 수를 두세요.',
   'Solved with help': '힌트를 보고 해결',
   'Solved after a wrong try': '틀린 뒤에 해결',
-  'Solution shown': '정답 봄',
+  'Solution shown': '정답을 봄',
   'Not solved': '해결하지 못함',
   'Checking your answer…': '답을 확인하는 중…',
   'Wrong move. The board rolls back.': '틀린 수입니다. 보드를 되돌립니다.',
@@ -1888,7 +1887,9 @@ export const ko: Record<string, string> = {
   // have entries above.)
   Elo: 'Elo',
   ECO: 'ECO',
-  Notation: '수순',
+  // 기보, not 수순: the table already has a Moves column (수순) beside
+  // it, and two headers reading 수순 named nothing.
+  Notation: '기보',
   End: '끝',
   'What the pane is showing': '이 창이 보여주는 것',
   'No game selected': '선택된 게임 없음',
@@ -1959,8 +1960,19 @@ export const ko: Record<string, string> = {
   Distance: '거리',
   'Chess board, {turn}': '체스 보드, {turn}',
   'Chess board, {turn}, last move {from} to {to}': '체스 보드, {turn}, 마지막 수 {from}에서 {to}로',
+
+  // --- strings that had bypassed the dictionary ------------------------------
+  'Solution · {n} plies': '정답 · {n}반수',
+  'Promote to a queen': '퀸으로 승격',
+  'Promote to a knight': '나이트로 승격',
+  'Promote to a rook': '룩으로 승격',
+  'Promote to a bishop': '비숍으로 승격',
+  '{white} vs {black}': '{white} 대 {black}',
+
   // --- what a screen reader is told when a long job ends --------------------
   Notifications: '알림',
   'Indexing finished.': '색인이 끝났습니다.',
   'Import finished. {n} diagrams found.': '가져오기가 끝났습니다. 다이어그램 {n}개를 찾았습니다.',
+  'Write a note. Markdown shortcuts work: # for a heading, - for a list.':
+    '노트를 쓰세요. 마크다운 단축 입력이 됩니다: 제목은 #, 목록은 -.',
 };

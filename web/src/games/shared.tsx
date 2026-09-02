@@ -279,7 +279,7 @@ export function GameRow({
   // The ⋯ menu and the right-click menu are one list of verbs; the
   // right-click keeps the items the ⋯ hides as duplicates of the tray,
   // since a menu opened at the pointer has no tray beside it.
-  const title = customName ?? `${game.white} vs ${game.black}`;
+  const title = customName ?? t('{white} vs {black}', { white: game.white, black: game.black });
   const menuActions: MenuAction[] = [
     // The preview the eye gives a mouse, for a finger — and ONLY for a
     // finger: on a desktop the eye is on the row, two centimetres from
@@ -432,7 +432,7 @@ export function GameRow({
             ) : null}
             {(game.opening || game.eco) && ' · '}
             {game.date}
-            {customName ? ` · ${game.white} vs ${game.black}` : ''}
+            {customName ? ` · ${t('{white} vs {black}', { white: game.white, black: game.black })}` : ''}
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
           </span>
         </button>

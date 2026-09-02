@@ -338,7 +338,7 @@ export function GameTableRow({
       <button
         type="button"
         data-table-row
-        aria-label={`${game.white} vs ${game.black}`}
+        aria-label={t('{white} vs {black}', { white: game.white, black: game.black })}
         aria-current={selected ? 'true' : undefined}
         className={cn(className, 'text-left')}
         onClick={(e) => {
@@ -361,7 +361,7 @@ export function GameTableRow({
       // takes it. The shell's zebra rule reads it here; the button
       // inside carries aria-current for what a screen reader hears.
       data-selected={selected || undefined}
-      title={`${game.white} vs ${game.black}`}
+      title={t('{white} vs {black}', { white: game.white, black: game.black })}
       className={cn(
         GRID,
         'group hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
@@ -409,7 +409,7 @@ export function GameTableRow({
 
   if (!menu || menu.length === 0) return item;
   return (
-    <ActionContextMenu title={`${game.white} vs ${game.black}`} actions={menu}>
+    <ActionContextMenu title={t('{white} vs {black}', { white: game.white, black: game.black })} actions={menu}>
       {item}
     </ActionContextMenu>
   );

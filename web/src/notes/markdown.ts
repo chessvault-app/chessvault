@@ -1,6 +1,8 @@
 import { getSchema } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import { Placeholder } from '@tiptap/extensions';
 import MarkdownIt from 'markdown-it';
+import { t } from '@/lib/i18n';
 import {
   MarkdownParser,
   MarkdownSerializer,
@@ -35,6 +37,15 @@ export const noteExtensions = [
   }),
   ChessBlock,
   WikiLink,
+  // The hint on an empty note. It had been a CSS `content:` string, in
+  // English with an em-dash, that nothing ever switched on: the class it
+  // waited for is this extension's. Read at render time, so it follows
+  // the language, and only while editing, since a read-only empty note
+  // is not asking for anything.
+  Placeholder.configure({
+    placeholder: () => t('Write a note. Markdown shortcuts work: # for a heading, - for a list.'),
+    showOnlyWhenEditable: true,
+  }),
 ];
 
 const noteSchema: Schema = getSchema(noteExtensions);

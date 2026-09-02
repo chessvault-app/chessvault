@@ -7,6 +7,14 @@ import { useDialogFocus } from '@/hooks/dialog-focus';
 
 const CHOICES: Role[] = ['queen', 'knight', 'rook', 'bishop'];
 
+/** The button's name, whole sentences so each has its own Korean. */
+const CHOICE_LABEL: Partial<Record<Role, string>> = {
+  queen: 'Promote to a queen',
+  knight: 'Promote to a knight',
+  rook: 'Promote to a rook',
+  bishop: 'Promote to a bishop',
+};
+
 interface PromotionPickerProps {
   color: Color;
   /** Destination square, e.g. `e8` — used to align the picker over that file. */
@@ -77,7 +85,7 @@ export function PromotionPicker({
           <button
             key={role}
             type="button"
-            aria-label={`Promote to ${role}`}
+            aria-label={t(CHOICE_LABEL[role] ?? 'Promote to a queen')}
             onClick={(e) => {
               e.stopPropagation();
               onSelect(role);
