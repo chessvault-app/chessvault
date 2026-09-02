@@ -1808,7 +1808,7 @@ export const ko: Record<string, string> = {
   Book: '책',
   Read: '읽기',
   'Read the book': '책 읽기',
-  'Read your chess books beside a board': '체스판 옆에서 체스 책을 읽습니다',
+  'Read your chess books beside a board': '보드 옆에서 체스 책을 읽습니다',
   'Back to Books': '책 목록으로',
   'Carry on reading': '이어서 읽기',
   'Upload PDF': 'PDF 올리기',
@@ -1828,7 +1828,7 @@ export const ko: Record<string, string> = {
     '검색어와 맞는 즐겨찾기 책이 없습니다. 검색을 지우면 즐겨찾기 전체가 다시 보입니다.',
   'No books yet': '아직 책이 없습니다',
   'Import a chess book as a PDF and read it beside a board. Any printed diagram can be set up with a tap. Puzzle books imported on the puzzle shelf are filed here too.':
-    '체스 책을 PDF로 가져와 체스판 옆에서 읽으세요. 인쇄된 다이어그램은 한 번의 탭으로 판에 놓입니다. 퍼즐 서가에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
+    '체스 책을 PDF로 가져와 보드 옆에서 읽으세요. 인쇄된 다이어그램은 한 번의 탭으로 보드에 놓입니다. 퍼즐 서가에서 가져온 퍼즐 책도 여기에 함께 보관됩니다.',
   '{n} pages': '{n}쪽',
   'Page {page} of {pages}': '{pages}쪽 중 {page}쪽',
   'of {n}': '/ {n}',
@@ -1836,11 +1836,11 @@ export const ko: Record<string, string> = {
   'Previous page': '이전 쪽',
   'Next page': '다음 쪽',
   'Reset zoom': '확대 초기화',
-  'Open on the board page': '체스판 페이지에서 열기',
+  'Open on the board page': '보드 페이지에서 열기',
   'Edit position…': '포지션 편집…',
   'Edit position': '포지션 편집',
   'Fix this position in the editor': '편집기에서 이 포지션 고치기',
-  'Use on the board': '체스판에 올리기',
+  'Use on the board': '보드에 올리기',
   'Go to page': '쪽으로 이동',
   Go: '이동',
   'Fit the width': '너비에 맞추기',
@@ -1849,7 +1849,7 @@ export const ko: Record<string, string> = {
   'Add to library': '서재에 추가',
   'Choose another': '다른 파일 선택',
   'any chess book, kept in your vault and read here beside a board':
-    '어떤 체스 책이든, 보관함에 보관되고 여기서 체스판 옆에 두고 읽습니다',
+    '어떤 체스 책이든, 보관함에 보관되고 여기서 보드 옆에 두고 읽습니다',
   'That file could not be read as a PDF.': 'PDF로 읽을 수 없는 파일입니다.',
   'a better file behind “{title}”. The old one is replaced and your page is kept':
     '“{title}”의 더 나은 파일. 이전 파일은 바뀌고, 읽던 쪽은 그대로입니다',
@@ -1867,7 +1867,7 @@ export const ko: Record<string, string> = {
   '{k} of {n}': '{n}개 중 {k}번째',
   '{n} found, reading page {page}…': '{n}개 찾음, {page}쪽 읽는 중…',
   'Book title': '책 제목',
-  'Set up this position': '이 포지션을 판에 놓기',
+  'Set up this position': '이 포지션을 보드에 놓기',
   'White to move': '백 차례',
   'Opening the book…': '책을 여는 중…',
   'Hide the diagram buttons': '다이어그램 버튼 숨기기',
@@ -1894,7 +1894,7 @@ export const ko: Record<string, string> = {
   ECO: 'ECO',
   Notation: '기보',
   End: '끝',
-  'What the pane is showing': '이 판이 보여주는 것',
+  'What the pane is showing': '이 창이 보여주는 것',
   'No game selected': '선택된 게임 없음',
   // The details column's pin: on, it holds its place with nothing
   // selected; off, it arrives with a selected game and leaves with it.
@@ -1903,7 +1903,7 @@ export const ko: Record<string, string> = {
   'Select a game from the list to see it here: its players, its opening, and the game itself, move by move.':
     '목록에서 게임을 선택하면 여기에 표시됩니다. 두 기사와 오프닝, 그리고 게임 자체를 한 수씩.',
   'Open the game': '게임 열기',
-  'Open on the board': '체스판에서 열기',
+  'Open on the board': '보드에서 열기',
   'Game details': '게임 정보',
   Bookmarked: '즐겨찾음',
   'Remove from the collection': '모음에서 제거',
