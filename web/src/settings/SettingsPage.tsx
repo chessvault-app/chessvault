@@ -841,7 +841,7 @@ function AppearanceCard() {
           them, and the keyboard's only way onto the board. */}
       <SettingRow
         title={t('Move box')}
-        blurb={t('A field under the moves list where a move can be typed.')}
+        blurb={t('Play moves from the keyboard.')}
       >
         <Switch
           checked={moveBox}

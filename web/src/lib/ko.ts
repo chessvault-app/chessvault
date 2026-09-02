@@ -956,7 +956,7 @@ export const ko: Record<string, string> = {
   'Board coordinates': '보드 좌표',
   'File and rank labels on the board edge.': '보드 가장자리의 파일·랭크 표시입니다.',
   'Move box': '수 입력 상자',
-  'A field under the moves list where a move can be typed.': '수 목록 아래에서 수를 쳐서 둘 수 있는 상자입니다.',
+  'Play moves from the keyboard.': '키보드로 수를 입력해 둘 수 있습니다.',
   'Two-factor authentication': '2단계 인증',
   'Turning it off needs a current code from your authenticator app.':
     '끄려면 인증 앱의 현재 코드가 필요합니다.',
