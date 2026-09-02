@@ -882,8 +882,31 @@ function TablebaseCard({
   const [url, setUrl] = useState(settings.tablebase.url ?? '');
   const [dir, setDir] = useState(settings.tablebase.dir ?? '');
   const [note, setNote] = useState<Note>(null);
+  /** null while it is being read, 'unknown' if the read failed. */
+  const [cache, setCache] = useState<{ answers: number; bytes: number } | 'unknown' | null>(null);
+  /** Counts this card's own clearings — a re-read, not a poll. */
+  const [cacheStamp, setCacheStamp] = useState(0);
   const source = settings.tablebase.source;
   const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
+
+  /**
+   * What the cache holds, which is what the button is about to throw
+   * away. Nothing else on this card needs the server, so it is read
+   * apart from the settings that drew the page; a failure leaves the
+   * figures unsaid rather than the card broken.
+   */
+  useEffect(() => {
+    // Nothing shows the figures while the switch is off, so nothing asks
+    // for them; turning it on is what sends the request.
+    if (!tablebase) return;
+    void api<{ answers: number; bytes: number }>('/api/tablebase/cache')
+      .then((held) => setCache({ answers: held.answers, bytes: held.bytes }))
+      // Not back to null, which is the skeleton: a card that cannot read
+      // the figures would have sat on a placeholder for good. An em dash
+      // is what Storage used shows for an area it could not measure, and
+      // the button stays live, because "we do not know" is not "empty".
+      .catch(() => setCache('unknown'));
+  }, [cacheStamp, tablebase]);
 
   /**
    * Follow the server when it changes under us.
@@ -927,47 +950,50 @@ function TablebaseCard({
   };
 
   const forget = async (): Promise<void> => {
-    let forgotten: number;
     try {
-      ({ forgotten } = await api<{ forgotten: number }>('/api/tablebase/cache', {
-        method: 'DELETE',
-      }));
+      await api('/api/tablebase/cache', { method: 'DELETE' });
     } catch (e) {
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
-      // Told anyway, the way Browsed games tells it: the delete walks a
-      // folder and can fail part way through it, so a failure is not a
-      // promise that the size is unchanged.
+      // Both re-read anyway, the way Browsed games re-reads: the delete
+      // walks a folder and can fail part way through it, so a failure is
+      // not a promise that the figures are unchanged.
       onCleared();
+      setCacheStamp((n) => n + 1);
       return;
     }
     // The tab remembers this session's answers too, and a cleared server
     // with a full page memo would be a button that only half worked.
     forgetTablebaseAnswers();
     onCleared();
-    setNote({
-      kind: 'ok',
-      text: forgotten === 0 ? t('Nothing was cached.') : t('Forgot {n} cached answers.', { n: forgotten }),
-    });
+    // No line of green saying how many went. It was the app's SUCCESS
+    // colour on a discard, it never cleared, and it grew the card by 32px
+    // — measured — so Browsed games and Storage used both jumped down as
+    // you read it. The row's own figures falling to nothing say the same
+    // thing in the place you were already looking, and cost no height.
+    setCacheStamp((n) => n + 1);
   };
 
   /**
-   * What is answering, said outright.
+   * What is answering, where the select does not already say it.
    *
    * The panel used to make you work this out: three controls with a
    * precedence between them that was never written down, so "am I on
    * Lichess or my own tables, and does the switch matter?" had no answer
-   * on the screen. One sentence, always present, and every control below
-   * it only changes what this says.
+   * on the screen. One sentence settled it — and then two of its three
+   * cases became the select's own value in a full sentence, because the
+   * three controls became one. "Lichess's public tablebase" over
+   * "Answering from Lichess's public tablebase." is a paragraph of grey
+   * saying what the control above it already says.
+   *
+   * Table files keep it, and are the reason it exists at all: they are
+   * the one choice that can be SET and not be answering, because a path
+   * that has gone missing or a build with no native binary falls back to
+   * Lichess in silence. There the line is the only thing on the card
+   * that can tell working from fallen back.
    */
-  const answering = !tablebase
-    ? t('Off on this device — no endgame lookups are made from here.')
-    : source === 'files'
-      ? settings.tablebase.local
-        ? t('Answering from the table files on the server — nothing else involved.')
-        : t('Set to your own table files, but they cannot be read — Lichess’s public server is answering instead.')
-      : source === 'server'
-        ? t('Answering from the tablebase server you named.')
-        : t('Answering from Lichess’s public tablebase.');
+  const answering = settings.tablebase.local
+    ? t('Answering from the table files on the server — nothing else involved.')
+    : t('Set to your own table files, but they cannot be read — Lichess’s public server is answering instead.');
 
   return (
     <Card icon={Crown} title={t('Tablebase')}>
@@ -1024,7 +1050,7 @@ function TablebaseCard({
                 ]}
               />
             </Field>
-            <p className="text-muted-foreground text-sm">{answering}</p>
+            {source === 'files' && <p className="text-muted-foreground text-sm">{answering}</p>}
           </div>
 
           {source === 'server' && (
@@ -1128,20 +1154,53 @@ function TablebaseCard({
               here", because nothing asks it again. This is how you ask
               again — and the way to take the disk back, and to stop
               keeping a record of which endings you studied. */}
-          {/* Shaped like Browsed games' "Clear all" two cards below, which
-              is the page's way of offering to empty a cache: a sentence,
-              then a ghost button on its own line. It was a boxed
-              SettingRow with a filled button, which made throwing answers
-              away look like the weightiest control on the card. */}
+          {/* Shaped like a row of Browsed games and of Storage used, which
+              is how this page says "here is something you are holding":
+              named on the left, measured on the right, emptied by the bin
+              at the end. It was a sentence and a ghost button reading
+              "Forget cached answers" — the only cache control on the page
+              not called Clear, and one that never said what it was about
+              to throw away, so the size had to be read off the Storage
+              used card two below. That is also the shape the manual has
+              been describing all along. */}
           <p className="text-muted-foreground text-sm leading-relaxed">
-            {t(
-              'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.',
-            )}
+            {t('Answers are kept for good, so an ending is asked about once.')}
           </p>
-          <div className="flex items-center justify-end">
-            <Button variant="ghost" onClick={() => void forget()}>
-              {t('Forget cached answers')}
-            </Button>
+          <div className="border-border rounded-lg border">
+            <div className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
+              <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                <p className="min-w-0 flex-1 truncate text-base">{t('Cached answers')}</p>
+                {/* h-5: the line box the figures stand in, held while they
+                    are unknown so the row does not change height when they
+                    arrive — the trick the Browsed games rows use. */}
+                {cache === null ? (
+                  <span className="flex h-5 shrink-0 items-center">
+                    <Skeleton className="h-2.5 w-24" />
+                  </span>
+                ) : (
+                  <p className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                    {cache === 'unknown'
+                      ? '—'
+                      : cache.answers === 0
+                        ? t('Nothing cached')
+                        : `${cache.answers.toLocaleString()} · ${size(cache.bytes)}`}
+                  </p>
+                )}
+              </div>
+              {/* No confirmation, the same reasoning as the bins below:
+                  this is a cache, and what it costs to be wrong is one
+                  request per position the next time each is looked at. */}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0"
+                disabled={cache !== null && cache !== 'unknown' && cache.answers === 0}
+                title={t('Clear cached answers')}
+                onClick={() => void forget()}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
           </div>
         </>
       )}

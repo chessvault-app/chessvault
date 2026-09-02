@@ -330,6 +330,39 @@ describe('tablebase route', () => {
     expect(await res.json()).toEqual({ ok: true, forgotten: 0 });
   });
 
+  it('reports what is cached, across sources and before anything is', async () => {
+    // Settings prints these two beside the button that empties them, so
+    // the count has to be the one the DELETE would report forgetting.
+    const cacheDir = dir();
+    const empty = new Hono().route('/api', tablebaseApi(cacheDir, stub(null)));
+    expect(await (await empty.request('/api/tablebase/cache')).json()).toEqual({
+      ok: true,
+      answers: 0,
+      bytes: 0,
+    });
+
+    const probers = [
+      { ...stub(ANSWER), source: 'first' },
+      { ...stub(null), source: 'second' },
+    ];
+    let at = 0;
+    const app = new Hono().route('/api', tablebaseApi(cacheDir, () => probers[at++]!));
+    const url = `/api/tablebase?fen=${encodeURIComponent(KQK)}`;
+    await app.request(url);
+    await app.request(url);
+
+    const held = (await (await app.request('/api/tablebase/cache')).json()) as {
+      answers: number;
+      bytes: number;
+    };
+    // One per source: the same position, cached apart.
+    expect(held.answers).toBe(2);
+    expect(held.bytes).toBeGreaterThan(0);
+
+    const cleared = await app.request('/api/tablebase/cache', { method: 'DELETE' });
+    expect(await cleared.json()).toEqual({ ok: true, forgotten: held.answers });
+  });
+
   it('calls an unreachable source an outage, not a fault', async () => {
     const app = new Hono().route('/api', tablebaseApi(dir(), stub('throw')));
     const res = await app.request(`/api/tablebase?fen=${encodeURIComponent(KQK)}`);

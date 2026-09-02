@@ -2359,24 +2359,29 @@
                   </tr>
                   <tr>
                     <td>Tablebase</td>
-                    <td data-ko="<strong>Use the tablebase</strong> 스위치는 이 기기만의 것입니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «Answers come from»은 금고의 설정으로, <strong>Lichess</strong> · <strong>Your server</strong> · <strong>Table files</strong> 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타나고, 지금 어디가 답하고 있는지는 한 줄로 적힙니다(«Answering from Lichess’s public tablebase.»). 저장하면 다시 띄우지 않아도 적용되며, 출처마다 캐시가 따로 쌓입니다. <strong>Table files</strong>는 앱과 서버가 같은 컴퓨터일 때만 나타납니다 — 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이라, 다른 곳의 서버라면 그 서버의 금고 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 캐시 크기는 아래 Storage used의 «Tablebase cache» 줄에 있습니다. <strong>Cached answers</strong> → <strong>Forget</strong>은 캐시를 모두 버리고 몇 개였는지 알려 줍니다. 직접 띄운 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다 — 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
+                    <td data-ko="<strong>Use the tablebase</strong> 스위치는 이 기기만의 것입니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «Answers come from»은 금고의 설정으로, <strong>Lichess</strong> · <strong>Your server</strong> · <strong>Table files</strong> 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타납니다. 저장하면 다시 띄우지 않아도 적용되며, 출처마다 캐시가 따로 쌓입니다. <strong>Table files</strong>는 앱과 서버가 같은 컴퓨터일 때만 나타납니다 — 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이라, 다른 곳의 서버라면 그 서버의 금고 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 설정해 두고도 답하지 않을 수 있는 유일한 선택이기도 합니다 — 폴더가 사라졌거나 네이티브 코어가 없는 빌드면 조용히 Lichess로 되돌아가므로, 둘 중 어느 쪽인지를 그 아래 한 줄이 알려 줍니다. <strong>Cached answers</strong>는 몇 개를 가지고 있고 디스크를 얼마나 쓰는지이며, 옆의 휴지통(«Clear cached answers»)이 그것을 모두 버립니다. 줄은 «Nothing cached»으로 바뀌고 아래 Storage used의 숫자도 함께 갱신됩니다. 직접 띄운 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다 — 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
                       <strong>Use the tablebase</strong> is the switch, and it is this device's
                       alone: off, nothing is asked from here at all. Under it,
                       <strong>Answers come from</strong> — the vault's own setting, one choice of
                       <strong>Lichess</strong>, <strong>Your server</strong> or
                       <strong>Table files</strong>, with only the field that choice needs shown
-                      beneath it, and a line saying which is answering right now (“Answering from
-                      Lichess’s public tablebase.”). Saved without a restart, and each source's
-                      answers are cached apart from the others'.
+                      beneath it. Saved without a restart, and each source's answers are cached
+                      apart from the others'.
 
                       <strong>Table files</strong> appears only when the app and the server are the
                       same computer — a path on a disk you cannot see is not a question worth
                       asking, so on a server elsewhere the panel points at
-                      <code>tablebaseDir</code> in that server's vault config instead. What they take is the “Tablebase cache” row of
-                      Storage used, below. <strong>Cached answers</strong> →
-                      <strong>Forget</strong> drops them all and says how many, which is what to
-                      press after adding tables to your own server: answers never expire, so an
-                      ending already answered “nothing here” would never be asked again.
+                      <code>tablebaseDir</code> in that server's vault config instead. It is also
+                      the one choice that can be set and not be answering — a folder that has gone
+                      missing, or a build with no native core, falls back to Lichess in silence —
+                      so a line beneath it says which of the two is happening.
+
+                      <strong>Cached answers</strong> is how many are held and what they take on
+                      disk, with a bin beside it (“Clear cached answers”) that drops the lot: the
+                      row falls to “Nothing cached” and the Storage used figure below moves with
+                      it. That is the button to press after adding tables to your own server —
+                      answers never expire, so an ending already answered “nothing here” would
+                      never be asked again.
                     </td>
                   </tr>
                   <tr>

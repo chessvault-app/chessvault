@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
@@ -477,19 +477,52 @@ export function tablebaseApi(
    * is one request per position the next time each is looked at.
    */
   api.delete('/tablebase/cache', (c) => {
-    let forgotten = 0;
-    for (const source of readdirSafe(cacheDir)) {
-      for (const file of readdirSafe(resolve(cacheDir, source))) {
-        if (file.endsWith('.json')) forgotten += 1;
-      }
-    }
+    const { answers } = measure(cacheDir);
     // force: an already-absent cache is the state this asks for, not an
     // error; recursive: the per-source directories go with it.
     rmSync(cacheDir, { recursive: true, force: true });
-    return c.json({ ok: true, forgotten });
+    return c.json({ ok: true, forgotten: answers });
   });
 
+  /**
+   * What that button is about to throw away.
+   *
+   * Settings shows it beside the button, so the card can say what it
+   * holds instead of sending the reader to Storage used two cards down
+   * for the figure. /api/storage knows it too — one file per answer, so
+   * its file count IS the answer count — but that endpoint walks the
+   * whole vault, reference databases and change history included, and
+   * this is two shallow readdirs over a folder of flat JSON.
+   */
+  api.get('/tablebase/cache', (c) => c.json({ ok: true, ...measure(cacheDir) }));
+
   return api;
+}
+
+/**
+ * How many answers are cached and what they take, in one walk.
+ *
+ * Two levels deep and no deeper, because that is the shape the cache is
+ * written in: a directory per source, flat files of `<key>.json` inside
+ * it (`cachePath`). Counted the same way for the GET and the DELETE, so
+ * the figure the card shows and the figure it reports having thrown away
+ * cannot disagree.
+ */
+function measure(cacheDir: string): { answers: number; bytes: number } {
+  let answers = 0;
+  let bytes = 0;
+  for (const source of readdirSafe(cacheDir)) {
+    for (const file of readdirSafe(resolve(cacheDir, source))) {
+      if (!file.endsWith('.json')) continue;
+      answers += 1;
+      try {
+        bytes += statSync(resolve(cacheDir, source, file)).size;
+      } catch {
+        // Raced with a delete; it is a cache, and the next call is right.
+      }
+    }
+  }
+  return { answers, bytes };
 }
 
 const readdirSafe = (path: string): string[] => {
