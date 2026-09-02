@@ -15,7 +15,7 @@
  * runs of this script produce identical files, so regenerating after a
  * contract change shows exactly the rows that changed.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Chess, normalizeMove } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
@@ -30,8 +30,20 @@ import {
   materialSatisfied,
   parseMaterialSpec,
 } from '../shared/scanMatch.ts';
-import { encodeScanPack } from '../shared/scanPack.ts';
-import { REF_MAX_PLY, eloBucket, finalMen, resultCode } from '../server/refgamesIndex.ts';
+import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack } from '../shared/scanPack.ts';
+import { KEY_INDEX_META, KEY_INDEX_VERSION } from '../shared/keyIndex.ts';
+import {
+  KEY_INDEX_SCHEMA,
+  PLIES_SCHEMA,
+  REFGAMES_MOVE_COUNTS,
+  REF_MAX_PLY,
+  SCAN_PACK_SCHEMA,
+  eloBucket,
+  finalMen,
+  resultCode,
+} from '../server/refgamesIndex.ts';
+import { REFGAMES_GAMES_SCHEMA, REFGAMES_INDEXES, REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
+import { DEEP_SEARCH_CAP } from '../server/refgames.ts';
 
 const OUT_DIR = resolve(import.meta.dirname, '..', 'native', 'tests');
 mkdirSync(OUT_DIR, { recursive: true });
@@ -465,8 +477,41 @@ if (!materialSpecs.some((s) => s.cases.some((c) => c.satisfied) && s.cases.some(
 
 // ---------------------------------------------------------------------------
 
+// The text the two pipelines share by copying, not by computing: the
+// SQL every table is created with, and the constants both sides carry
+// as literals. `native/src/sql.rs` mirrors the strings by hand and the
+// whole-file diff cannot see an index or a lookup table it lacks — that
+// is how it fell behind db-tuning.ts twice — so the Rust tests compare
+// each constant to the text here, whitespace collapsed. Each key names
+// the Rust constant it is held against.
+const sql = {
+  /** sql::GAMES_SCHEMA */
+  gamesSchema: REFGAMES_GAMES_SCHEMA,
+  /** sql::PLIES_TABLE followed by sql::PLIES_INDEX — the TS side keeps
+      them in one string, the Rust side runs the index after the fill. */
+  pliesSchema: PLIES_SCHEMA,
+  /** sql::SCAN_PACK_TABLE */
+  scanPackSchema: SCAN_PACK_SCHEMA,
+  /** sql::KEY_INDEX_TABLE */
+  keyIndexSchema: KEY_INDEX_SCHEMA,
+  /** sql::MOVE_COUNTS — MOVE_COUNT_MIN_GAMES is interpolated, so it
+      rides along. */
+  moveCounts: REFGAMES_MOVE_COUNTS,
+  /** sql::REFGAMES_INDEXES */
+  refgamesIndexes: REFGAMES_INDEXES,
+  /** sql::REFGAMES_LOOKUPS */
+  refgamesLookups: REFGAMES_LOOKUPS,
+};
+const constants = {
+  scanPackVersion: SCAN_PACK_VERSION,
+  scanPackMeta: SCAN_PACK_META,
+  keyIndexVersion: KEY_INDEX_VERSION,
+  keyIndexMeta: KEY_INDEX_META,
+  deepSearchCap: DEEP_SEARCH_CAP,
+};
+
 const goldens = {
-  schema: 1,
+  schema: 2,
   generator: 'scripts/export-native-goldens.ts',
   refMaxPly: REF_MAX_PLY,
   fens,
@@ -476,16 +521,65 @@ const goldens = {
   games,
   signatures,
   materialSpecs,
+  sql,
+  constants,
 };
 
-writeFileSync(resolve(OUT_DIR, 'goldens.json'), `${JSON.stringify(goldens, null, 1)}\n`);
-writeFileSync(resolve(OUT_DIR, 'parity.pgn'), `${pgnGames.join('\n')}`);
-writeFileSync(resolve(OUT_DIR, 'parity-extra.pgn'), `${extraGames.join('\n')}`);
+/**
+ * Write a fixture and say what moved. Regenerating records the JS side's
+ * CURRENT behaviour, so a run that changes a committed fixture is a
+ * behaviour change on the JS side — one to be named in the commit, not
+ * discovered in its diff — and a run that changes nothing is the proof
+ * that a refactor was neutral. Per top-level section for the JSON, so
+ * the report says WHICH contract moved (keys, packs, SQL…) rather than
+ * that a 400 KB file differs somewhere.
+ */
+function writeReporting(name: string, next: string): void {
+  const path = resolve(OUT_DIR, name);
+  const previous = existsSync(path) ? readFileSync(path, 'utf-8') : null;
+  writeFileSync(path, next);
+  if (previous === null) {
+    console.log(`  ${name}: new`);
+    return;
+  }
+  if (previous === next) {
+    console.log(`  ${name}: unchanged`);
+    return;
+  }
+  if (!name.endsWith('.json')) {
+    console.log(`  ${name}: CHANGED`);
+    return;
+  }
+  const before = JSON.parse(previous) as Record<string, unknown>;
+  const after = JSON.parse(next) as Record<string, unknown>;
+  const moved: string[] = [];
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const a = before[key];
+    const b = after[key];
+    if (JSON.stringify(a) === JSON.stringify(b)) continue;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      const differing = b.filter((entry, i) => JSON.stringify(entry) !== JSON.stringify(a[i])).length;
+      moved.push(`${key} (${differing + Math.max(0, a.length - b.length)} of ${b.length} entries)`);
+    } else if (a === undefined) {
+      moved.push(`${key} (new)`);
+    } else if (b === undefined) {
+      moved.push(`${key} (removed)`);
+    } else {
+      moved.push(key);
+    }
+  }
+  console.log(`  ${name}: CHANGED — ${moved.join(', ')}`);
+}
 
 const totalPlies = games.reduce((n, g) => n + g.plies.length, 0);
 console.log(
   `goldens: ${fens.length} fens, ${games.length} games (${totalPlies} plies), ` +
-    `${menCases.length} finalMen cases → native/tests/goldens.json`,
+    `${menCases.length} finalMen cases, ${Object.keys(sql).length} SQL texts → native/tests/`,
 );
-console.log(`parity corpus: ${pgnGames.length} PGN games → native/tests/parity.pgn`);
-console.log(`append corpus: ${extraGames.length} PGN games → native/tests/parity-extra.pgn`);
+writeReporting('goldens.json', `${JSON.stringify(goldens, null, 1)}\n`);
+writeReporting('parity.pgn', `${pgnGames.join('\n')}`);
+writeReporting('parity-extra.pgn', `${extraGames.join('\n')}`);
+console.log(
+  'A changed fixture is a JS-side behaviour change; it proves nothing about the Rust side\n' +
+    'until `npm run test:native` and `npm run fuzz:parity` pass against it.',
+);

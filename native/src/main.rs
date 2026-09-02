@@ -109,15 +109,18 @@ fn main() -> ExitCode {
 
     // What the server asks before trusting this binary with a filtered
     // deep search: which gamesWhere filters and scan modes this build
-    // understands. One JSON line, no --data, no side effects — a
-    // request using anything not declared here runs on the server's JS
-    // path instead.
+    // understands, and what deep-search writes to stdout (`hits` — see
+    // deep.rs; a build that says nothing here predates the contract and
+    // is not spawned for deep search at all). One JSON line, no --data,
+    // no side effects — a request using anything not declared here runs
+    // on the server's JS path instead.
     if command == "capabilities" {
         println!(
             "{}",
             serde_json::json!({
                 "filters": chessvault_core::filters::SUPPORTED_FILTERS,
                 "scan": chessvault_core::scan_match::SUPPORTED_SCAN,
+                "deep": "hits",
             })
         );
         return ExitCode::SUCCESS;

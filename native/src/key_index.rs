@@ -15,10 +15,8 @@ pub fn build_key_index(
     conn: &Connection,
     log: &mut dyn FnMut(&str),
 ) -> Result<(), Box<dyn std::error::Error>> {
-    conn.execute_batch(
-        "DROP TABLE IF EXISTS key_index; \
-         CREATE TABLE key_index (bucket INTEGER PRIMARY KEY, entries BLOB NOT NULL);",
-    )?;
+    conn.execute_batch("DROP TABLE IF EXISTS key_index;")?;
+    conn.execute_batch(crate::sql::KEY_INDEX_TABLE)?;
     let mut counts = vec![0u32; 65536];
     let mut total: usize = 0;
     {

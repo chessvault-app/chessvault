@@ -11,6 +11,32 @@ import { REFGAMES_MOVE_COUNTS, REFGAMES_MOVE_COUNTS_LEGACY } from '../../server/
 type Db = InstanceType<typeof Database>;
 
 /**
+ * The reference-games file itself: the games table and its meta table,
+ * as `scripts/build-refgames.ts` creates them. Here rather than inline
+ * in that script so the native build can be held to the same text —
+ * `native/src/sql.rs` mirrors it, and the goldens compare the two.
+ */
+export const REFGAMES_GAMES_SCHEMA = `
+  CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY,
+    white TEXT NOT NULL COLLATE NOCASE,
+    black TEXT NOT NULL COLLATE NOCASE,
+    white_elo INTEGER NOT NULL,
+    black_elo INTEGER NOT NULL,
+    result TEXT NOT NULL,
+    date TEXT,
+    event TEXT,
+    eco TEXT,
+    opening TEXT,
+    moves TEXT NOT NULL,
+    ply_count INTEGER,
+    final_wmen INTEGER,
+    final_bmen INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+`;
+
+/**
  * Per-rating row counts. `LIMIT 1 OFFSET n` makes SQLite walk and discard n
  * index entries; over 6.1 M puzzles a mid-table draw spent ~90 ms on that
  * alone. With these, the server resolves a random offset to a rating and
