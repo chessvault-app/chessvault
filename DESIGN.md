@@ -23,7 +23,7 @@ colors:
   muted-foreground: "oklch(48% 0 0)"
   muted-foreground-dark: "oklch(74% 0 0)"
   text-subtle: "oklch(51.5% 0 0)"
-  text-subtle-dark: "oklch(68% 0 0)"
+  text-subtle-dark: "oklch(69.5% 0 0)"
   primary: "oklch(20.5% 0 0)"
   primary-dark: "oklch(92.2% 0 0)"
   primary-foreground: "oklch(98.5% 0 0)"
@@ -32,14 +32,14 @@ colors:
   primary-soft-dark: "oklch(30% 0 0)"
   ring: "oklch(70.8% 0 0)"
   ring-dark: "oklch(55.6% 0 0)"
-  good: "oklch(51% 0.141 150)"
+  good: "oklch(50% 0.141 150)"
   good-dark: "oklch(72% 0.16 152)"
-  warn: "oklch(53% 0.112 75)"
+  warn: "oklch(52% 0.112 75)"
   warn-dark: "oklch(80% 0.15 80)"
   info: "oklch(51% 0.102 230)"
   info-dark: "oklch(72% 0.13 232)"
-  destructive: "oklch(52.5% 0.245 27.3)"
-  destructive-dark: "oklch(70.4% 0.191 22.2)"
+  destructive: "oklch(52% 0.245 27.3)"
+  destructive-dark: "oklch(72% 0.191 22.2)"
   board-light: "oklch(91% 0.035 84)"
   board-dark: "oklch(62% 0.072 52)"
   eval-white: "oklch(97% 0 0)"
@@ -115,7 +115,7 @@ components:
     height: "2rem"
     padding: "0 0.625rem"
   button-destructive:
-    backgroundColor: "color-mix(in oklch, oklch(52.5% 0.245 27.3) 10%, transparent)"
+    backgroundColor: "color-mix(in oklch, oklch(52% 0.245 27.3) 10%, transparent)"
     textColor: "{colors.destructive}"
     rounded: "{rounded.lg}"
     height: "2rem"
@@ -231,7 +231,7 @@ what you grep for.
 - **foreground** (`oklch(14.5% 0 0)` / `oklch(98.5% 0 0)`): body text.
 - **muted-foreground** (`oklch(48% 0 0)` / `oklch(74% 0 0)`): the second
   text tier — labels, secondary values.
-- **text-subtle** (`oklch(51.5% 0 0)` / `oklch(68% 0 0)`): the third tier,
+- **text-subtle** (`oklch(51.5% 0 0)` / `oklch(69.5% 0 0)`): the third tier,
   for text that is present but not being read.
 - **ring** (`oklch(70.8% 0 0)` / `oklch(55.6% 0 0)`): the focus ring, at 50% alpha.
 
@@ -248,10 +248,10 @@ chosen for legibility — closed the gap on exactly the colours carrying
 the meaning. Hue and chroma stay put; only the lightness lerps, and only
 in light mode, where the gap closes. In dark it already opens.
 
-- **good** (`oklch(51% 0.141 150)` / `oklch(72% 0.16 152)`): outcome — solved, won.
-- **destructive** (`oklch(52.5% 0.245 27.3)` / `oklch(70.4% 0.191 22.2)`):
+- **good** (`oklch(50% 0.141 150)` / `oklch(72% 0.16 152)`): outcome — solved, won.
+- **destructive** (`oklch(52% 0.245 27.3)` / `oklch(72% 0.191 22.2)`):
   outcome — failed, lost; and destructive actions.
-- **warn** (`oklch(53% 0.112 75)` / `oklch(80% 0.15 80)`): caution — the
+- **warn** (`oklch(52% 0.112 75)` / `oklch(80% 0.15 80)`): caution — the
   engine-guess fidelity tier, offline notices.
 - **info** (`oklch(51% 0.102 230)` / `oklch(72% 0.13 232)`): trusted or
   informational — the book-solution tier, the annotated-game pen.
@@ -584,7 +584,7 @@ hit areas, `title` as a tooltip. Composites live in
 ### Signature: the board and its overlays
 
 The board is chessground, framed by `--board-frame`, with ten selectable
-square palettes and nine piece sets. Everything drawn on top of it —
+square palettes and ten piece sets. Everything drawn on top of it —
 last-move, selection, destination and check washes, arrows, square badges,
 the heat map — derives its square geometry from one place
 (`board/square-overlay.tsx`). Duplicated geometry here is a bug waiting

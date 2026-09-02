@@ -117,8 +117,9 @@ is one connected body of work, and the links are what make it that.
   </picture>
 
 - **Tools** — the interactive boards, grouped: the analysis **Board**,
-  the position **Editor**, a shortcut into the opening **Explorer**, and
-  a **Repertoire** trainer that plays an opening against the field — the
+  the position **Editor**, a shortcut into the opening **Explorer**, the
+  **Workspace** (every analysis pane at once, on a screen wide enough to
+  hold them), and a **Repertoire** trainer that plays an opening against the field — the
   Lichess database filtered to a rating band, or any local reference database,
   the bundled one included, so it works offline (weighted-random replies,
   seamless hand-off to the engine when the line leaves book) — or drills
@@ -642,7 +643,7 @@ the same import can be driven from `scripts/ml/`, which buys you two
 things the app does not have: reads and engine answers cached to disk, so
 a second run over a book you have already imported is seconds, and
 `--jobs N` to shard the page reads across more than the six workers the
-app uses.
+app's pool tops out at.
 
 A first import is not dramatically faster — 204 s against the app's 314 s
 for the 1,033 diagrams of a 1,001-puzzle book on a 12-core machine, since
