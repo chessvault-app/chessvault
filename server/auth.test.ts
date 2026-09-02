@@ -211,6 +211,89 @@ describe('auth gate', () => {
     expect(blocked.status).toBe(429);
   });
 
+  it('ignores a client-written forwarded-for when the request came in directly', async () => {
+    const app = makeApp('hunter2');
+    // No proxy: the socket peer is the client, and the header is whatever
+    // it chose to send. Rotating it must not rotate the bucket.
+    const direct = { incoming: { socket: { remoteAddress: '203.0.113.9' } } };
+    for (let i = 0; i < 10; i++) {
+      const r = await app.request(
+        '/api/auth/login',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-forwarded-for': `${i}.${i}.${i}.${i}` },
+          body: JSON.stringify({ password: 'wrong' }),
+        },
+        direct,
+      );
+      expect(r.status).toBe(401);
+    }
+    const blocked = await app.request(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': 'fresh.spoof' },
+        body: JSON.stringify({ password: 'hunter2' }),
+      },
+      direct,
+    );
+    expect(blocked.status).toBe(429);
+    // A different peer is a different client.
+    const other = await app.request(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'hunter2' }),
+      },
+      { incoming: { socket: { remoteAddress: '203.0.113.10' } } },
+    );
+    expect(other.status).toBe(200);
+  });
+
+  it('believes the forwarded-for from a proxy on this machine', async () => {
+    const app = makeApp('hunter2');
+    // Caddy or tailscale serve on the same host: every request arrives
+    // from loopback, and the header is the only thing that tells clients
+    // apart. The bucket has to follow it, or one stranger locks out all.
+    const viaProxy = { incoming: { socket: { remoteAddress: '::ffff:127.0.0.1' } } };
+    for (let i = 0; i < 10; i++) {
+      expect(
+        (
+          await app.request(
+            '/api/auth/login',
+            {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-forwarded-for': '198.51.100.7' },
+              body: JSON.stringify({ password: 'wrong' }),
+            },
+            viaProxy,
+          )
+        ).status,
+      ).toBe(401);
+    }
+    const stranger = await app.request(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '198.51.100.7' },
+        body: JSON.stringify({ password: 'hunter2' }),
+      },
+      viaProxy,
+    );
+    expect(stranger.status).toBe(429);
+    const owner = await app.request(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '198.51.100.8' },
+        body: JSON.stringify({ password: 'hunter2' }),
+      },
+      viaProxy,
+    );
+    expect(owner.status).toBe(200);
+  });
+
   it('a successful login does not consume the failure budget', async () => {
     const app = makeApp('hunter2');
     for (let i = 0; i < 9; i++) expect((await login(app, 'wrong', '4.4.4.4')).status).toBe(401);

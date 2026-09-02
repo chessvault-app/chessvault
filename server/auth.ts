@@ -2,7 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { writeAtomic } from './atomic.ts';
-import { VAULT_CONFIG, VAULT_SESSIONS } from './paths.ts';
+import { TRUSTED_PROXY, VAULT_CONFIG, VAULT_SESSIONS } from './paths.ts';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { verifyTotp } from './totp.ts';
 
@@ -99,6 +99,12 @@ function readAuthConfig(): AuthConfig {
 
 function configPassword(): string | null {
   return readAuthConfig().password;
+}
+
+/** Whether /api is behind the password at all. An unreadable config
+    counts as gated: it denies everything, which is not "open". */
+export function isGated(): boolean {
+  return configPassword() !== null;
 }
 
 function configTotp(): string | null {
@@ -231,15 +237,40 @@ export function revokeAllSessions(sessionsPath: string = VAULT_SESSIONS): void {
 }
 
 /**
- * The rate-limit key. X-Forwarded-For is a comma list the client can prepend
- * to; behind exactly one trusted proxy (Caddy) the real client IP is the
- * LAST entry, which the proxy appends and the client cannot forge. No header
- * (direct/dev) falls back to a constant — acceptable for a single-user vault.
+ * The rate-limit key.
+ *
+ * X-Forwarded-For is a comma list the client can prepend to; behind
+ * exactly one trusted proxy (Caddy, `tailscale serve`) the real client
+ * IP is the LAST entry, which the proxy appends and the client cannot
+ * forge. But the header is only worth reading when a proxy wrote it. A
+ * server reached DIRECTLY gets the header from the client itself, and
+ * this used to believe it: a fresh made-up address per request was a
+ * fresh bucket per request, so the ten-attempt limit never triggered
+ * and every guess still cost a synchronous scrypt on the event loop.
+ *
+ * So the peer address decides. A peer on loopback is a proxy on this
+ * host, and its header is believed; `CHESS_TRUSTED_PROXY=1` says the
+ * same of a proxy elsewhere. Any other peer IS the client, whatever the
+ * header says. No peer known (a test harness, an adapter without
+ * sockets) keeps the old reading, and no header at all falls back to
+ * the peer, or to a constant when there is none.
  */
-function clientIp(xff: string | undefined): string {
-  if (!xff) return 'local';
-  const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
-  return parts.at(-1) ?? 'local';
+const LOOPBACK_PEER = /^(?:::1|::ffff:127\.\d+\.\d+\.\d+|127\.\d+\.\d+\.\d+)$/;
+
+function clientIp(peer: string | undefined, xff: string | undefined, trustProxy = TRUSTED_PROXY): string {
+  const believeHeader = peer === undefined || trustProxy || LOOPBACK_PEER.test(peer);
+  if (believeHeader && xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    const last = parts.at(-1);
+    if (last) return last;
+  }
+  return peer ?? 'local';
+}
+
+/** The socket this request arrived on, where the adapter says. */
+function peerAddress(env: unknown): string | undefined {
+  const bindings = env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined;
+  return bindings?.incoming?.socket?.remoteAddress ?? undefined;
 }
 
 function cookieToken(header: string | undefined): string | null {
@@ -312,7 +343,7 @@ export function authApi(
     // sentinel itself be a submittable password).
     if (configured === UNREADABLE) return c.json({ error: 'vault configuration error' }, 503);
 
-    const ip = clientIp(c.req.header('x-forwarded-for'));
+    const ip = clientIp(peerAddress(c.env), c.req.header('x-forwarded-for'));
     if (isThrottled(ip)) return c.json({ error: 'too many attempts, try again later' }, 429);
 
     const body = (await c.req.json().catch(() => ({}))) as { password?: string; code?: string };

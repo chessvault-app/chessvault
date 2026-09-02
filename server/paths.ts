@@ -39,6 +39,19 @@ export const VAULT_SESSIONS = resolve(VAULT, 'sessions.json');
 export const BIND = process.env.CHESS_BIND?.trim() || undefined;
 export const LOOPBACK_ONLY = BIND === '127.0.0.1' || BIND === 'localhost' || BIND === '::1';
 
+/**
+ * Whether X-Forwarded-For is believed from a peer that is not on this
+ * machine.
+ *
+ * A proxy on the same host (Caddy, `tailscale serve`) connects from
+ * loopback, and that is recognised without being told. A proxy on
+ * ANOTHER host looks like any client on the network, and the login
+ * throttle must not take its word for who the client is unless the
+ * deployment says so here, because a client reaching the server
+ * directly can write that header itself (see clientIp in auth.ts).
+ */
+export const TRUSTED_PROXY = process.env.CHESS_TRUSTED_PROXY?.trim() === '1';
+
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
