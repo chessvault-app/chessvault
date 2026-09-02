@@ -60,7 +60,9 @@ const bookShapeKey = (slug: string): string => `vault:book-shape:${slug}`;
  * pass was open. Unreadable reads as null: nothing was learned, and the
  * blind 48-tile guess stands as it always has.
  */
-function parseBookShape(raw: string | null): { tiles: number; open: boolean } | null {
+function parseBookShape(
+  raw: string | null,
+): { tiles: number; open: boolean; nudge: boolean } | null {
   if (raw === null) return null;
   let stored: unknown;
   try {
@@ -69,10 +71,22 @@ function parseBookShape(raw: string | null): { tiles: number; open: boolean } | 
     return null;
   }
   if (typeof stored !== 'object' || stored === null) return null;
-  const value = stored as { tiles?: unknown; open?: unknown };
+  const value = stored as { tiles?: unknown; open?: unknown; nudge?: unknown };
   if (typeof value.tiles !== 'number' || !Number.isInteger(value.tiles) || value.tiles < 0)
     return null;
-  return { tiles: Math.min(value.tiles, 48), open: value.open === true };
+  return { tiles: Math.min(value.tiles, 48), open: value.open === true, nudge: value.nudge === true };
+}
+
+/**
+ * What the cold Cycles panel says — the invitation, and for someone
+ * already solving outside any pass, the nudge that no pass is scoring
+ * them (nothing else on the page says so). One function because the
+ * panel's placeholder lays the same words out invisibly to reserve
+ * exactly their height; two copies of the strings would wrap apart.
+ */
+function cyclesProse(nudge: boolean): string {
+  const invite = t('Work the whole book in passes. Every puzzle once per cycle, scored by first attempts, and each pass should come out faster and cleaner.');
+  return nudge ? `${invite} ${t('You are solving already. A cycle gives each pass its own score.')}` : invite;
 }
 
 export function BookPage({ slug }: { slug: string }) {
@@ -88,7 +102,11 @@ export function BookPage({ slug }: { slug: string }) {
     if (book === null) return;
     localStorage.setItem(
       bookShapeKey(slug),
-      JSON.stringify({ tiles: book.puzzles.length, open: Boolean(openCycle(book)) }),
+      JSON.stringify({
+        tiles: book.puzzles.length,
+        open: Boolean(openCycle(book)),
+        nudge: Object.keys(book.progress).length > 0,
+      }),
     );
   }, [book, slug]);
   /**
@@ -457,12 +475,18 @@ export function BookPage({ slug }: { slug: string }) {
               <SkeletonTiles
                 cycles={book.puzzles.length > 0}
                 cyclesOpen={Boolean(openCycle(book))}
+                cyclesProse={cyclesProse(Object.keys(book.progress).length > 0)}
                 tiles={Math.min(book.puzzles.length, 48)}
               />
             ) : reservedBook === null ? (
-              <SkeletonTiles cycles tiles={48} />
+              <SkeletonTiles cycles cyclesProse={cyclesProse(false)} tiles={48} />
             ) : reservedBook.tiles > 0 ? (
-              <SkeletonTiles cycles cyclesOpen={reservedBook.open} tiles={reservedBook.tiles} />
+              <SkeletonTiles
+                cycles
+                cyclesOpen={reservedBook.open}
+                cyclesProse={cyclesProse(reservedBook.nudge)}
+                tiles={reservedBook.tiles}
+              />
             ) : null
           ) : null
         ) : scan ? (
@@ -627,13 +651,7 @@ function CyclesPanel({
       <div className="flex flex-col gap-2 px-(--card-spacing)">
         {!open && finished.length === 0 && (
           <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('Work the whole book in passes. Every puzzle once per cycle, scored by first attempts, and each pass should come out faster and cleaner.')}
-            {/* The nudge for someone already solving outside any pass:
-                their attempts are real but no pass is scoring them, and
-                nothing else on the page says so. */}
-            {Object.keys(book.progress).length > 0 && (
-              <> {t('You are solving already. A cycle gives each pass its own score.')}</>
-            )}
+            {cyclesProse(Object.keys(book.progress).length > 0)}
           </p>
         )}
         {/* One grammar for every pass, open or done: attempts against

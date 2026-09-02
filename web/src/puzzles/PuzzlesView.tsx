@@ -705,7 +705,12 @@ function Trainer({
       onFlip={() => setFlipped((f) => !f)}
     />
   ) : (
-    <Panel className="shrink-0">
+    // The same box the move list takes once there is one — `min-h-32
+    // flex-1 shrink`, not `shrink-0`. Folded to its one line while the
+    // puzzle was found, this panel stood 100px against the list's 374 at
+    // 1280×800 (measured on the demo), so the Puzzle panel and its Skip,
+    // Hint and Answer buttons dropped 274px the moment the puzzle landed.
+    <Panel className="min-h-32 flex-1 shrink">
       <PanelHeader title={t('Moves')} />
       <p className="text-muted-foreground px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
     </Panel>
@@ -852,11 +857,18 @@ function Trainer({
         </>
       ) : (
         <div className="flex flex-col gap-0.5">
-          {puzzle && phase !== 'loading' && (
+          {puzzle && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
               {solverSide === 'white' ? t('White to play') : t('Black to play')}
             </p>
-          )}
+          ) : phase === 'loading' ? (
+            // The side-to-play line's own box (text-2xl is a 32px line)
+            // while the puzzle is found, so the prose under it and the
+            // actions below do not step down when the heading lands.
+            <div className="flex h-8 items-center">
+              <Skeleton className="h-4 w-28" />
+            </div>
+          ) : null}
           <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-destructive' : 'text-muted-foreground')}>
             {phase === 'wrong'
               ? t('Wrong move. The board rolls back.')
