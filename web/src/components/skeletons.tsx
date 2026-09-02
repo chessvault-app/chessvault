@@ -299,6 +299,7 @@ export function SkeletonTiles({
   tiles = 48,
   cycles = false,
   cyclesOpen = false,
+  cyclesProse,
   className,
 }: {
   tiles?: number;
@@ -320,6 +321,17 @@ export function SkeletonTiles({
    * a single status line, ~37px shorter. The caller stores which.
    */
   cyclesOpen?: boolean;
+  /**
+   * The paragraph the cold panel opens with — the caller's own words,
+   * because how many lines they take is decided by the column's width
+   * and the language, not by anything a placeholder can know. Measured
+   * on the demo: the three lines guessed here were two on a 1280px
+   * desktop in Korean and four on a 390px phone, so the grid below
+   * landed 7px higher on the one and 41px lower on the other. Laid out
+   * invisibly at the paragraph's own type, the reservation is exact at
+   * any width; the bars are painted over it and clipped to its height.
+   */
+  cyclesProse?: string;
   className?: string;
 }) {
   return (
@@ -328,8 +340,12 @@ export function SkeletonTiles({
         // The Panel's own box: pt-0 and a --card-spacing floor (ui/card),
         // a min-h-11 header with no rule under it, then the paragraph the
         // panel opens with at text-sm/relaxed.
-        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-border pb-(--card-spacing)">
-          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-spacing) pointer-coarse:min-h-13">
+        // `--card-pad`, not `--card-spacing`: the latter exists only on a
+        // Card (ui/card sets it from --card-pad on the root), so outside
+        // one it is nothing — measured, the header bar sat on the column's
+        // edge and the panel had no floor, 16px short of the Panel's.
+        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-border pb-(--card-pad)">
+          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad) pointer-coarse:min-h-13">
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
           </div>
@@ -340,11 +356,28 @@ export function SkeletonTiles({
               that replaced it. */}
           {cyclesOpen ? (
             // The open pass's single status line (text-sm, 20px).
-            <div className="flex h-5 items-center px-(--card-spacing)">
+            <div className="flex h-5 items-center px-(--card-pad)">
               <Skeleton className="h-2.5 w-40" />
             </div>
+          ) : cyclesProse ? (
+            // The paragraph itself, invisible, at the panel's own
+            // text-sm/relaxed; the bars sit over it in 23px boxes and the
+            // wrapper clips them to its height, so exactly as many bars
+            // show as there are lines (the box is a quarter-pixel taller
+            // than the line, which puts the first bar past the text at
+            // any count under thirty).
+            <div className="relative overflow-hidden px-(--card-pad)">
+              <p className="invisible text-sm leading-relaxed">{cyclesProse}</p>
+              <div className="absolute inset-x-(--card-pad) inset-y-0 flex flex-col" aria-hidden>
+                {['w-full', 'w-11/12', 'w-full', 'w-2/3', 'w-full', 'w-10/12', 'w-full', 'w-1/2'].map((w, i) => (
+                  <div key={i} className="flex h-[1.4375rem] shrink-0 items-center">
+                    <Skeleton className={cn('h-2', w)} />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col px-(--card-spacing)">
+            <div className="flex flex-col px-(--card-pad)">
               {['w-full', 'w-11/12', 'w-2/3'].map((w) => (
                 <div key={w} className="flex h-[1.4375rem] items-center">
                   <Skeleton className={cn('h-2', w)} />

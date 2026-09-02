@@ -1,5 +1,5 @@
 ﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Trash2, Upload, Zap } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -60,7 +60,7 @@ export interface RefDb {
   resident?: boolean;
 }
 
-interface Source {
+export interface Source {
   name: string;
   bytes: number;
 }
@@ -98,13 +98,21 @@ export interface BuildStatus {
 export function RefDbManager({
   databases,
   onChanged,
+  sources,
+  onSourcesChanged,
+  onSourceRemoved,
 }: {
   databases: RefDb[];
   onChanged: () => void;
+  /** Loaded by the page, not here: this panel does not exist until
+      /api/refgames has answered, and a listing asked for from inside it
+      would queue behind that round trip for no reason. Null = not yet. */
+  sources: Source[] | null;
+  onSourcesChanged: () => Promise<void>;
+  onSourceRemoved: (name: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>('databases');
   const [query, setQuery] = useState('');
-  const [sources, setSources] = useState<Source[] | null>(null);
   // null until the first listing arrives, so "tick everything" happens
   // once and a user's unticking is never overwritten by a refresh.
   const [picked, setPicked] = useState<Set<string> | null>(null);
@@ -119,19 +127,12 @@ export function RefDbManager({
   const [error, setError] = useState<string | null>(null);
   const wasRunning = useRef(false);
 
-  const refreshSources = useCallback(async (): Promise<void> => {
-    try {
-      const body = await api<{ sources: Source[] }>('/api/sources');
-      setSources(body.sources);
-      setPicked((p) => p ?? new Set(body.sources.map((s) => s.name)));
-    } catch {
-      setSources([]);
-    }
-  }, []);
-
+  // Everything ticked when the first listing lands, and never again:
+  // `picked` stops being null there, so a later refresh cannot undo an
+  // unticking. Same rule as before, moved with the listing it reads.
   useEffect(() => {
-    void refreshSources();
-  }, [refreshSources]);
+    if (sources) setPicked((p) => p ?? new Set(sources.map((s) => s.name)));
+  }, [sources]);
 
   // Poll the build while one runs; refresh the lists when it finishes.
   useEffect(() => {
@@ -202,7 +203,7 @@ export function RefDbManager({
       setShowUpload(false);
       setTab('sources');
     }
-    await refreshSources();
+    await onSourcesChanged();
   };
 
   const build = async (
@@ -289,7 +290,7 @@ export function RefDbManager({
       // link read as the delete lagging. The rule stands: the row leaves
       // because the file did, not because it was pressed — the DELETE's
       // own answer is the server saying so.
-      setSources((prev) => prev && prev.filter((s) => s.name !== sourceName));
+      onSourceRemoved(sourceName);
       setPicked((p) => {
         if (!p?.has(sourceName)) return p;
         const next = new Set(p);
@@ -301,7 +302,7 @@ export function RefDbManager({
     }
     // Either way the listing reconciles with the server's — behind the
     // row's departure on success, and to bring back the truth on refusal.
-    await refreshSources();
+    await onSourcesChanged();
   };
 
   // The search narrows the list that is showing. Substring, case-folded:

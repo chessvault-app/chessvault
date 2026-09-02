@@ -205,14 +205,18 @@ function Shell() {
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
         {/*
-          This Suspense is for CODE, not data: it covers the moment a
-          section's chunk is being fetched. Data loading is plain fetch in
-          effects, so each page draws its own skeleton — React only suspends
-          on promises it is given, which ours are not.
+          A safety net, no longer the route loader. Sections are fetched by
+          lib/lazyRoute, which draws its own blank box while the chunk is on
+          its way rather than suspending — a boundary that has committed a
+          fallback cannot reveal what replaces it for 300 ms, and on a
+          launch that was the launch. This still catches anything INSIDE a
+          page that suspends, and its fallback stays blank for the reason
+          the routes' does: a chunk usually beats the next paint, so a
+          skeleton here would flash on every navigation.
 
-          The fallback is deliberately blank. A chunk is a few tens of KB
-          over a local network and usually arrives before a paint; a
-          skeleton here would flash on every single navigation.
+          Data loading is plain fetch in effects, so each page draws its own
+          skeleton — React only suspends on promises it is given, which ours
+          are not.
         */}
         <RouteErrorBoundary key={section}>
         <Suspense fallback={<div className="h-full" />}>

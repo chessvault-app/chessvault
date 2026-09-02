@@ -219,6 +219,75 @@ other people.
   sizes a reference database now reaches; it says a small database takes
   a minute and millions of games can take hours.
 
+- **A page you launch into no longer waits a third of a second before it
+  asks for its data.** Every section but Home loads as its own chunk, and
+  React suspends the first time it draws one — which commits the blank
+  fallback, and once a fallback has been committed React holds what
+  replaces it back for 300 ms so that a spinner cannot flash past. On a
+  launch there is no spinner to protect: the page was ready and simply sat
+  there. Measured on a cold launch against a local server, the Databases
+  page rendered at 171 ms and did not appear — or fetch its own contents —
+  until 453 ms, with its chunk in hand since 139 ms and nothing running in
+  between. Sections are now loaded without that boundary: the same blank
+  box is held as ordinary state and replaced the moment the chunk lands.
+  The same cold launch makes its first request at 165 ms instead of
+  447 ms and has the list on screen at 215 ms instead of 956 ms; Board,
+  Games, Notes and Puzzles were measured and gain the same 250–290 ms.
+  First paint is unchanged, deliberately: holding the first render for the
+  chunk was tried, and on a 1.6 Mbps link it pushed the fonts behind the
+  download and cost 1.4 s of blank screen to save 300 ms. On a link that
+  slow the throttle never cost anything anyway — the download outlasts
+  it — so this is a straight gain on a fast connection and neutral on a
+  slow one.
+
+- **The Databases page asks for both of its lists at once.** The uploaded
+  PGN collections were listed by the panel that the databases list brings
+  on screen, so the request for them could not start until the databases
+  had answered — two round trips in a row for two questions with nothing
+  to do with each other. Measured against an emulated 200 ms link, the
+  collections landed 242 ms after the databases did; they now land
+  together. On a fast connection nothing looks different, which is where
+  the wait was invisible to begin with.
+
+- **A progress bar that ignored the number it was given.** The shared bar
+  filled its whole track whatever its value said — 16% and 100% drew the
+  same thing. No bar on screen showed it: the solved/failed bar draws its
+  own two fills for its own reason, and Settings' download bar had been
+  made to draw its own after the trap caught it there. What was wrong was
+  what the next caller would get, so the third time it came up it was
+  fixed at the source rather than worked around again. The cause is a
+  leftover: the fill used to be positioned by sliding a track-wide block
+  into view, which needs a rule saying grow to the track; when it changed
+  to stating its own width, that rule stayed, and grow beats width.
+  Measured on a 256px track, bars at 0, 16, 30, 73.5 and 100% each drew
+  100% before and now draw exactly what they say. Settings' download bar
+  drops its workaround and is the plain bar again; the solved/failed bar
+  keeps its two fills, which it has for its own reason, and measures 30%
+  and 20% either way.
+
+- **Four loading placeholders now hold the screen they stand in for.**
+  Every wait in the app was measured against the page that replaces it,
+  at 1280 px and on a 390 px phone, with the vault's answers held back
+  long enough to catch the placeholder. Eighteen screens already held
+  still; four did not. The puzzle trainer's Moves panel folded to one
+  line while a puzzle was found and then filled the column, so the
+  Puzzle panel and its Skip, Hint and Answer buttons dropped 274 px the
+  moment it landed. A puzzle book's Cycles panel was drawn without its
+  padding — the variable it borrowed exists only on a real card — and
+  with three lines of prose where the column's width and the language
+  decide how many there are (two on the desktop, four on the phone), so
+  the grid stepped 7 px one way and 41 px the other. A study made from a
+  game draws its two player bars, which the placeholder reserved for a
+  game only, so on a phone the board landed 34 px below where it had
+  been drawn. And the book reader's opening page was a 3:4 guess in a
+  padded box — which in fact stretched to the pane's height whatever it
+  claimed — 12 px below where the page lands, with the toolbar stepping
+  8 px sideways when the page count arrived. Each now takes its true
+  shape: the Moves panel keeps the move list's box, the Cycles panel
+  lays its own paragraph out invisibly and paints the bars over it, and
+  a document's players and a book's page shape and count are remembered
+  on the device from the last open, the way a shelf's shape already was.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
