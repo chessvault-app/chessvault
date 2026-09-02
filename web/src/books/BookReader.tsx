@@ -995,7 +995,7 @@ function PdfPane({
       {reading && (
         <div className="text-muted-foreground flex h-7 shrink-0 items-center justify-center gap-1.5 text-xs">
           <Spinner className="size-3 shrink-0" />
-          {t('Reading diagrams — page {page} of {pages}', { page: reading.page, pages: reading.pages })}
+          {t('Reading diagrams, page {page} of {pages}', { page: reading.page, pages: reading.pages })}
         </div>
       )}
       {error ? (
@@ -1131,7 +1131,7 @@ function SearchPopover({
           </Button>
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm tabular-nums">
             {search.scanning !== null
-              ? t('{n} found — reading page {page}…', { n: search.hits.length, page: search.scanning })
+              ? t('{n} found, reading page {page}…', { n: search.hits.length, page: search.scanning })
               : active
                 ? search.hits.length > 0
                   ? t('{k} of {n}', { k: search.current + 1, n: search.hits.length })

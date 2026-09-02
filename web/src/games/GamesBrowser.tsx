@@ -782,7 +782,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           onFocus={scrollFocusIntoView}
           rows={6}
           spellCheck={false}
-          placeholder={t('Paste a PGN — or just moves: 1. e4 e5 2. Nf3 …')}
+          placeholder={t('Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …')}
           className="w-full resize-none font-mono placeholder:font-sans"
         />
 

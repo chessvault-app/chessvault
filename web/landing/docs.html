@@ -712,8 +712,7 @@
                     <td data-ko="«Training»(오늘 푼 수, 그리고 퍼즐과 레퍼토리 각각의 복습 예정 — 두 트레이너가 같은 일정표를 쓰므로 한 패널에 같이 섭니다), «Recent games», «Puzzle books»(진행 막대와 함께), «Recent work»(최근 스터디·노트).">
                       “Training” — solved today, and what each trainer has due: the puzzles
                       (“{n} due for review”) and the repertoire drill
-                      (“{n} repertoire positions due”, or “Repertoire — the next position comes
-                      back {when}”). They share one schedule, so they share one panel. Then
+                      (“{n} repertoire positions due”, or “Repertoire: the next position comes back {when}”). They share one schedule, so they share one panel. Then
                       “Recent games”, “Puzzle books” (with progress bars), and “Recent work”
                       (latest studies and notes).
                     </td>
@@ -948,7 +947,7 @@
                   <tr><td>Show the current line only</td><td data-ko="가지 갈래를 접고 지금 줄만 봅니다. 트리에 갈래가 없으면 아예 나타나지 않습니다.">Folds the branches away to read one line. Absent while the tree has no branches at all.</td></tr>
                   <tr><td>Engine review</td><td data-ko="게임 전체를 판정합니다 — 아래 «게임 리뷰» 참조.">Judges the whole game — see Game review below.</td></tr>
                   <tr><td>Add this game to the collection</td><td data-ko="불러온 게임을 모음에 담습니다. 담기면 «In the collection»(초록 체크)으로 바뀝니다. Board 페이지에서, 헤더가 있는 게임이 실려 있을 때만 나타납니다.">Puts a loaded game into your collection; turns into “In the collection” (a green check). Board page only, and only with a real game loaded.</td></tr>
-                  <tr><td>Load a position — FEN, PGN, or image</td><td data-ko="아래 «포지션 불러오기» 참조.">See Loading a position below.</td></tr>
+                  <tr><td>Load a position from FEN, PGN or an image</td><td data-ko="아래 «포지션 불러오기» 참조.">See Loading a position below.</td></tr>
                   <tr><td>Delete this move and everything after it</td><td data-ko="휴지통 아이콘. 실행 취소 토스트가 잠깐 떠 있습니다.">The trash icon; undoable via a toast for a moment.</td></tr>
                   <tr><td>Clear all moves · Clear the board</td><td data-ko="트리 비우기, 그리고 (허용된 곳에서) 보드까지 비우기.">Empty the tree — and, where allowed, the board too.</td></tr>
                   <tr><td>More (⋯)</td><td data-ko="좁은 화면에서 밀려난 것들이 모이는 메뉴 — 그리고 <strong>Copy FEN</strong>과 <strong>Copy PGN</strong>이 여기 삽니다.">The overflow menu for whatever the width pushed out — and the home of <strong>Copy FEN</strong> and <strong>Copy PGN</strong>.</td></tr>
@@ -1083,9 +1082,9 @@
                 <strong>Clicking any move plays the line into the tree</strong>; hovering one (on a
                 desktop) pops a mini-board preview of that point.
               </li>
-              <li data-ko="아직 답이 없으면 «Thinking…», 더 검색할 것이 없는 끝 포지션이면 «Checkmate — there is nothing left to search.» 같은 정직한 문장이 옵니다.">
+              <li data-ko="아직 답이 없으면 «Thinking…», 더 검색할 것이 없는 끝 포지션이면 «Checkmate. There is nothing left to search.» 같은 정직한 문장이 옵니다.">
                 While it has nothing yet: “Thinking…”. A terminal position says so honestly —
-                “Checkmate — there is nothing left to search.”
+                “Checkmate. There is nothing left to search.”
               </li>
               <li data-ko="오류는 경고 삼각형과 함께 그대로 표시됩니다 — 엔진이 스스로 꺼졌을 때도 이유는 남습니다.">
                 Errors show with a warning triangle — even when the engine has switched itself
@@ -1295,10 +1294,10 @@
                 </tbody>
               </table>
             </div>
-            <p data-ko="패널 바닥에는 합법성 표시(초록 체크 «Legal position», 문제가 있으면 호박색 줄과 이유), 전체 FEN, <strong>Copy</strong>가 있습니다. 여기서도 <strong>Load a position — FEN, PGN, or image</strong>로 불러올 수 있습니다 — 사진에서 읽어 와 손보는 것이 도해 옮기기의 가장 빠른 길입니다. 휴대폰의 시트는 <strong>Apply</strong>로만 반영됩니다 — 다른 길로 닫으면 되돌아갑니다.">
+            <p data-ko="패널 바닥에는 합법성 표시(초록 체크 «Legal position», 문제가 있으면 호박색 줄과 이유), 전체 FEN, <strong>Copy</strong>가 있습니다. 여기서도 <strong>Load a position from FEN, PGN or an image</strong>로 불러올 수 있습니다 — 사진에서 읽어 와 손보는 것이 도해 옮기기의 가장 빠른 길입니다. 휴대폰의 시트는 <strong>Apply</strong>로만 반영됩니다 — 다른 길로 닫으면 되돌아갑니다.">
               The panel's foot holds the legality line (a green “Legal position” check, or an amber
               line naming the problem), the full FEN, and <strong>Copy</strong>. Loading works here
-              too — <strong>Load a position — FEN, PGN, or image</strong> — and reading a photo
+              too — <strong>Load a position from FEN, PGN or an image</strong> — and reading a photo
               then fixing it up is the fastest way to copy a diagram. On a phone the details sheet
               commits only through <strong>Apply</strong>; closing it any other way reverts.
             </p>
@@ -1340,11 +1339,9 @@
               </picture>
             </figure>
             <h2 data-ko="넓은 화면 전용">Wide screens only</h2>
-            <p data-ko="이 페이지의 존재 이유는 동시성이므로, 여러 창을 담을 수 없는 창에서는 스스로 물러납니다. 좁은 창에서 열면 안내 카드가 대신 섭니다 — “The workspace shows the board, the moves, the explorer and the games browser side by side, and needs a window wide enough to hold them all. On this screen its panes are pages of their own.” — 그리고 사이드바의 Workspace 항목도 그런 창에서는 아예 그려지지 않습니다. 창을 다시 넓히면 모든 것이 그대로 돌아옵니다: 상태는 페이지가 아니라 앱이 들고 있습니다.">
+            <p data-ko="이 페이지의 존재 이유는 동시성이므로, 여러 창을 담을 수 없는 창에서는 스스로 물러납니다. 좁은 창에서 열면 안내 카드가 대신 섭니다 — “The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.” — 그리고 사이드바의 Workspace 항목도 그런 창에서는 아예 그려지지 않습니다. 창을 다시 넓히면 모든 것이 그대로 돌아옵니다: 상태는 페이지가 아니라 앱이 들고 있습니다.">
               The page's whole premise is simultaneity, so on a window that cannot hold its panes
-              it steps aside: a card explains — “The workspace shows the board, the moves, the
-              explorer and the games browser side by side, and needs a window wide enough to hold
-              them all. On this screen its panes are pages of their own.” — and the sidebar's
+              it steps aside: a card explains — “The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.” — and the sidebar's
               Workspace row is not drawn there at all. Widen the window and everything returns as
               it was: the state belongs to the app, not the page.
             </p>
@@ -1436,7 +1433,7 @@
                 <tbody>
                   <tr><td>New study</td><td data-ko="빈 스터디 하나.">A fresh study.</td></tr>
                   <tr><td>New collection</td><td data-ko="스터디를 묶는 폴더.">A folder to group studies.</td></tr>
-                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «a Lichess study export imports with all its chapters, comments and arrows» — 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 컬렉션을 정합니다.">Paste a PGN or choose a file — “a Lichess study export imports with all its chapters, comments and arrows.” Set the title and target collection.</td></tr>
+                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «A Lichess study export brings its chapters, comments and arrows.» 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 컬렉션을 정합니다.">Paste a PGN or choose a file. “A Lichess study export brings its chapters, comments and arrows.” Set the title and target collection.</td></tr>
                   <tr><td>From Lichess</td><td data-ko="사용자명을 넣고 «List this account's studies» → 가져올 것을 체크 → Import. 비공개 스터디는 <code>study:read</code> 스코프의 토큰이 필요합니다.">Enter a username, “List this account's studies”, tick what to bring, Import. Private studies need a token with the <code>study:read</code> scope.</td></tr>
                 </tbody>
               </table>
@@ -1605,9 +1602,8 @@
                 <strong>Preview the board</strong> and <strong>Game details</strong> in front —
                 the work the panel beside a wide table does.
               </li>
-              <li data-ko="<strong>Import a game</strong> — PGN을 붙여 넣습니다: «Paste a PGN — or just moves: 1. e4 e5 2. Nf3 …». 헤더가 있으면 아래 칸들(White/Black, 레이팅, 날짜, 이벤트)이 저절로 채워지고, Result는 <strong>Auto · 1-0 · 0-1 · ½-½</strong>에서 고릅니다. 제출은 <strong>Add to collection</strong>.">
-                <strong>Import a game</strong> — paste a PGN: “Paste a PGN — or just moves: 1. e4
-                e5 2. Nf3 …”. Headers fill the detail fields (players, ratings, date, event) by
+              <li data-ko="<strong>Import a game</strong> — PGN을 붙여 넣습니다: «Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …». 헤더가 있으면 아래 칸들(White/Black, 레이팅, 날짜, 이벤트)이 저절로 채워지고, Result는 <strong>Auto · 1-0 · 0-1 · ½-½</strong>에서 고릅니다. 제출은 <strong>Add to collection</strong>.">
+                <strong>Import a game</strong> — paste a PGN: “Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …”. Headers fill the detail fields (players, ratings, date, event) by
                 themselves; Result is a segmented <strong>Auto · 1-0 · 0-1 · ½-½</strong>. Submit
                 is <strong>Add to collection</strong>.
               </li>
@@ -1627,9 +1623,8 @@
                 then <strong>Add selected</strong> for the lot (“Adding {done}/{total}…”). A fully
                 collected month says so: “Every game shown is already in the collection”.
               </li>
-              <li data-ko="열어 본 달은 디스크에 캐시됩니다 — 다음에는 즉시, 오프라인에서도 열립니다(«offline — cached months only»). 캐시 목록과 비우기는 설정 → Browsed games에.">
-                Browsed months are cached on disk — instant next time, and open offline (“offline
-                — cached months only”). The inventory and its clear-all live in Settings → Browsed
+              <li data-ko="열어 본 달은 디스크에 캐시됩니다 — 다음에는 즉시, 오프라인에서도 열립니다(«offline, cached months only»). 캐시 목록과 비우기는 설정 → Browsed games에.">
+                Browsed months are cached on disk — instant next time, and open offline (“offline, cached months only”). The inventory and its clear-all live in Settings → Browsed
                 games.
               </li>
             </ul>
@@ -1775,10 +1770,10 @@
                 and run many times faster when the database's <strong>Fast search</strong> is on
                 (<a href="#databases">Managing databases</a>).
               </li>
-              <li data-ko="찾은 게임은 <a href='#games'>기보 테이블</a> 그대로입니다: <strong>Open on the board · Add to collection · Game details</strong>. 결과가 넘치면 정직하게 멈춥니다: «{n}+ games found — the list stops here».">
+              <li data-ko="찾은 게임은 <a href='#games'>기보 테이블</a> 그대로입니다: <strong>Open on the board · Add to collection · Game details</strong>. 결과가 넘치면 정직하게 멈춥니다: «{n}+ games found. The list stops here.».">
                 Found games land in <a href="#games">the same game table</a>: <strong>Open on the
                 board · Add to collection · Game details</strong>. An overflowing result stops
-                honestly: “{n}+ games found — the list stops here”.
+                honestly: “{n}+ games found. The list stops here.”.
               </li>
               <li data-ko="<a href='#explorer'>탐색기</a>의 «Find this position in the databases browser»가 바로 이 탭으로, 포지션을 미리 채워 데려옵니다.">
                 The <a href="#explorer">explorer</a>'s “Find this position in the databases
@@ -1966,9 +1961,9 @@
               keeps running if you leave the page. It takes a few minutes.” — it does.
             </p>
             <h2 data-ko="풀기">Solving</h2>
-            <p data-ko="«White to play» / «Black to play»와 «Find the best move.» — 이길 수를 찾아 둡니다. 맞으면 상대가 응수하고(«Opponent is moving…»), 틀리면 «Wrong move — the board rolls back.» 난이도와 테마는 끝날 때까지 숨겨져 있습니다. 패널의 버튼:">
+            <p data-ko="«White to play» / «Black to play»와 «Find the best move.» — 이길 수를 찾아 둡니다. 맞으면 상대가 응수하고(«Opponent is moving…»), 틀리면 «Wrong move. The board rolls back.» 난이도와 테마는 끝날 때까지 숨겨져 있습니다. 패널의 버튼:">
               “White to play” / “Black to play”, and “Find the best move.” A right move brings the
-              reply (“Opponent is moving…”); a wrong one, “Wrong move — the board rolls back.”
+              reply (“Opponent is moving…”); a wrong one, “Wrong move. The board rolls back.”
               Difficulty and themes stay hidden until you finish. The panel's buttons:
             </p>
             <div class="scroll-x">
@@ -1995,10 +1990,9 @@
               single theme.
             </p>
             <h2 data-ko="복습 사다리">The review ladder</h2>
-            <p data-ko="놓친 퍼즐은 하루 뒤에 돌아오고, 그다음은 3일, 7일, 21일 — 매 단계를 깨끗이 풀면 은퇴합니다. 복습 배너가 스스로 설명합니다: «Reviewing — not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.»">
+            <p data-ko="놓친 퍼즐은 하루 뒤에 돌아오고, 그다음은 3일, 7일, 21일 — 매 단계를 깨끗이 풀면 은퇴합니다. 복습 배너가 스스로 설명합니다: «Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.»">
               What you miss comes back after a day, then 3, 7 and 21 — and retires after a clean
-              solve at every step. The review banner explains itself: “Reviewing — not counted.
-              Each clean solve spaces the puzzle further out, and enough in a row retire it.”
+              solve at every step. The review banner explains itself: “Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.”
             </p>
             <h2 data-ko="대시보드">The dashboard</h2>
             <p data-ko="Puzzles → Dashboard: <strong>Attempts · Solved · Failed · Solve rate</strong>, 난이도별 분해(«By difficulty»), 책 진행, 그리고 모든 시도의 이력 — 결과와 난이도로 걸러서(«Filter by outcome» / «Filter by difficulty»), 어느 퍼즐이든 «Replay puzzle #{id}»로 다시. 복습 입구(«Review puzzles · {n} due»)와, 퍼즐 진행을 지우는 «Reset»도 여기 있습니다. 휴대폰에는 별도의 허브 화면이 있어 «Next puzzle», 복습, 책의 다음 퍼즐, 풀이 이력을 한눈에 잇습니다.">
@@ -2048,15 +2042,14 @@
                 Two options up front — “Ask the engine where the book cannot be read” and “Try
                 harder on boards that fail” — and one request: “Import only a book you own.”
               </li>
-              <li data-ko="진행이 페이지 단위로 보입니다: «page {page}/{pages} — {n} diagrams so far» — «nothing leaves this machine — and you can keep using the app while it runs». <strong>Pause</strong>는 잃는 것이 없고(«Paused at page {page} of {pages}. Nothing is lost.»), 다음에 열면 «Carry on from page {page}»가 이어받습니다.">
-                Progress reports page by page: “page {page}/{pages} — {n} diagrams so far” —
-                “nothing leaves this machine — and you can keep using the app while it runs”.
+              <li data-ko="진행이 페이지 단위로 보입니다: «page {page}/{pages}, {n} diagrams so far» — «nothing leaves this machine, and you can keep using the app while it runs». <strong>Pause</strong>는 잃는 것이 없고(«Paused at page {page} of {pages}. Nothing is lost.»), 다음에 열면 «Carry on from page {page}»가 이어받습니다.">
+                Progress reports page by page: “page {page}/{pages}, {n} diagrams so far” —
+                “nothing leaves this machine, and you can keep using the app while it runs”.
                 <strong>Pause</strong> loses nothing (“Paused at page {page} of {pages}. Nothing is
                 lost.”); the next visit offers “Carry on from page {page}”.
               </li>
-              <li data-ko="검토 단계: «{n} diagrams found — untick any false positives, then add the rest as drafts.» 도해마다 «Keep this diagram»과 «Show the scan»이 있고, <strong>Add {n} as drafts</strong>로 마칩니다.">
-                The review step: “{n} diagrams found — untick any false positives, then add the
-                rest as drafts.” Each has “Keep this diagram” and “Show the scan”;
+              <li data-ko="검토 단계: «{n} diagrams found. Untick any false positives, then add the rest as drafts.» 도해마다 «Keep this diagram»과 «Show the scan»이 있고, <strong>Add {n} as drafts</strong>로 마칩니다.">
+                The review step: “{n} diagrams found. Untick any false positives, then add the rest as drafts.” Each has “Keep this diagram” and “Show the scan”;
                 <strong>Add {n} as drafts</strong> finishes.
               </li>
               <li data-ko="결과 보고는 신뢰 등급별로 정직합니다: «{n} puzzles imported with their solutions» · «{n} numbered diagrams had no solution we could read.» · «{n} had a square misread, found by the book's own solution.» 해답이 안 읽힌 것도 버려지지 않습니다 — 증거(원본 페이지 스캔)가 붙은 <strong>초안</strong>으로 남아, 스캔과 대조해 손으로 마무리합니다. 어림짐작으로 들어오는 것은 없습니다.">
@@ -2073,9 +2066,8 @@
             </p>
             <h2 data-ko="책으로 훈련하기">Training from a book</h2>
             <ul>
-              <li data-ko="책 트레이너는 자유 탐색 후 제출입니다: «Explore freely — only the mainline is judged on submit.» 판정은 책의 정답과 대조하되 공정합니다 — «Exactly as the book has it.» / «Correct so far, but the book line goes further.» / <strong>«Off the book at the end, but the engine approves.»</strong> / «The marked move is where the line goes wrong.»">
-                The book trainer is explore-then-submit: “Explore freely — only the mainline is
-                judged on submit.” The verdicts judge against the book's answer, fairly — “Exactly
+              <li data-ko="책 트레이너는 자유 탐색 후 제출입니다: «Explore freely. Only the mainline is judged on submit.» 판정은 책의 정답과 대조하되 공정합니다 — «Exactly as the book has it.» / «Correct so far, but the book line goes further.» / <strong>«Off the book at the end, but the engine approves.»</strong> / «The marked move is where the line goes wrong.»">
+                The book trainer is explore-then-submit: “Explore freely. Only the mainline is judged on submit.” The verdicts judge against the book's answer, fairly — “Exactly
                 as the book has it.” / “Correct so far, but the book line goes further.” /
                 <strong>“Off the book at the end, but the engine approves.”</strong> / “The marked
                 move is where the line goes wrong.”
@@ -2086,10 +2078,9 @@
                 in passes, every puzzle once per pass, scored by first attempts, “Cycle {n}” and
                 past passes kept.
               </li>
-              <li data-ko="<strong>Add a puzzle</strong>가 손 입력을 엽니다 — Diagram / Board / Solutions 세 탭: 도해에 맞게 보드를 차리고, «Record the solution — every move, both sides.» 상대 수를 클릭해 «any move»(책의 ~)로 표시할 수 있고, <strong>Verify</strong>가 «Ask Stockfish whether every solver move really wins»를 해 줍니다. 잘못 읽힌 퍼즐은 «Correct this puzzle against the book scan»으로 바로잡습니다.">
+              <li data-ko="<strong>Add a puzzle</strong>가 손 입력을 엽니다 — Diagram / Board / Solutions 세 탭: 도해에 맞게 보드를 차리고, «Record the solution, every move for both sides.» 상대 수를 클릭해 «any move»(책의 ~)로 표시할 수 있고, <strong>Verify</strong>가 «Ask Stockfish whether every solver move really wins»를 해 줍니다. 잘못 읽힌 퍼즐은 «Correct this puzzle against the book scan»으로 바로잡습니다.">
                 <strong>Add a puzzle</strong> opens manual entry — three tabs, Diagram / Board /
-                Solutions: make the board match the diagram, then “Record the solution — every
-                move, both sides.” An opponent move clicked becomes “any move” (the book's ~), and
+                Solutions: make the board match the diagram, then “Record the solution, every move for both sides.” An opponent move clicked becomes “any move” (the book's ~), and
                 <strong>Verify</strong> will “Ask Stockfish whether every solver move really
                 wins”. A misread puzzle is fixed via “Correct this puzzle against the book scan”.
               </li>
@@ -2146,16 +2137,12 @@
             </div>
             <h2 data-ko="치는 동안, 그리고 끝">During, and after</h2>
             <ul>
-              <li data-ko="상태 줄이 이끕니다: «Your move.» → «Your opponent is replying…». 앞수를 되짚는 중이면 «Reviewing an earlier move — step to the end to keep playing.»">
+              <li data-ko="상태 줄이 이끕니다: «Your move.» → «Your opponent is replying…». 앞수를 되짚는 중이면 «Reviewing an earlier move. Step to the end to keep playing.»">
                 The status line leads: “Your move.” → “Your opponent is replying…”. Stepping back
-                mid-game: “Reviewing an earlier move — step to the end to keep playing.”
+                mid-game: “Reviewing an earlier move. Step to the end to keep playing.”
               </li>
-              <li data-ko="<strong>드릴</strong>에서는 스터디에 없는 수가 거부됩니다: «Your study plays {moves} here — try it again.» 세션은 셋 중 하나로 끝납니다 — «End of your prepared line — every move matched the study.», 갭(«The field answered {san} — {pct}% of games here — and your study holds no reply.»), 또는 «This line has run past the database — you are on your own now.»">
-                In a <strong>drill</strong>, a move your study does not play is refused: “Your
-                study plays {moves} here — try it again.” A session ends one of three ways — “End
-                of your prepared line — every move matched the study.”, a gap (“The field answered
-                {san} — {pct}% of games here — and your study holds no reply.”), or “This line has
-                run past the database — you are on your own now.”
+              <li data-ko="<strong>드릴</strong>에서는 스터디에 없는 수가 거부됩니다: «Your study plays {moves} here. Try again.» 세션은 셋 중 하나로 끝납니다 — «End of your prepared line. Every move matched the study.», 갭(«The field answered {san}, played in {pct}% of games here, and your study holds no reply.»), 또는 «This line has run past the database. You are on your own now.»">
+                In a <strong>drill</strong>, a move your study does not play is refused: “Your study plays {moves} here. Try again.” A session ends one of three ways — “End of your prepared line. Every move matched the study.”, a gap (“The field answered {san}, played in {pct}% of games here, and your study holds no reply.”), or “This line has run past the database. You are on your own now.”
               </li>
               <li data-ko="<strong>Free play</strong>에서 라인이 북을 벗어나면 엔진이 상대를 이어받아 게임이 계속됩니다.">
                 In <strong>free play</strong>, when the line leaves book the engine takes over the
@@ -2168,11 +2155,10 @@
               </li>
             </ul>
             <h2 data-ko="기록">The record</h2>
-            <p data-ko="더듬은 포지션은 퍼즐 트레이너와 같은 간격 반복 일정으로 돌아옵니다 — 내일, 그다음 회상마다 3일·7일·21일 뒤, 그리고 졸업. 대기 화면이 «{n} positions due for review»를 세고, 오늘 볼 것이 없으면 «Nothing due — the next position comes back {when}»이라고 알려 주며, <strong>Drill a position due for review</strong>가 밀린 것부터 냅니다. 방금 더듬은 포지션은 아직 기한이 아니어도 «{n} positions to review»로 바로 다시 드릴할 수 있습니다. 갭은 드릴이 아니라 스터디를 고쳐서 메우는 것 — 그래서 곁에 «{n} replies with no answer yet»으로 보고만 됩니다. 기록 전체는 «Forget the drill record» 확인을 거쳐 지웁니다.">
+            <p data-ko="더듬은 포지션은 퍼즐 트레이너와 같은 간격 반복 일정으로 돌아옵니다 — 내일, 그다음 회상마다 3일·7일·21일 뒤, 그리고 졸업. 대기 화면이 «{n} positions due for review»를 세고, 오늘 볼 것이 없으면 «Nothing due. The next position comes back {when}»이라고 알려 주며, <strong>Drill a position due for review</strong>가 밀린 것부터 냅니다. 방금 더듬은 포지션은 아직 기한이 아니어도 «{n} positions to review»로 바로 다시 드릴할 수 있습니다. 갭은 드릴이 아니라 스터디를 고쳐서 메우는 것 — 그래서 곁에 «{n} replies with no answer yet»으로 보고만 됩니다. 기록 전체는 «Forget the drill record» 확인을 거쳐 지웁니다.">
               What you fumble comes back on the puzzle trainer’s own schedule — tomorrow, then
               3, 7 and 21 days out after each clean recall, then graduated. The idle panel counts
-              “{n} positions due for review”, says “Nothing due — the next position comes back
-              {when}” when today is clear, and <strong>Drill a position due for review</strong>
+              “{n} positions due for review”, says “Nothing due. The next position comes back {when}” when today is clear, and <strong>Drill a position due for review</strong>
               deals the most overdue first. A position fumbled minutes ago is drillable before its
               date comes round — the panel counts those as “{n} positions to review”. A gap is
               fixed by editing the study, not by drilling — so it is reported beside the pool as
@@ -2223,7 +2209,7 @@
                   <tr><td>Show the constellation / Show the tree</td><td data-ko="같은 수들의 두 배치. 기기가 어느 쪽을 썼는지 기억합니다.">Two arrangements of the same moves; the device remembers which.</td></tr>
                   <tr><td>Switch to the black map / … white map</td><td data-ko="색마다 맵 하나.">One map per colour.</td></tr>
                   <tr><td>Check coverage against…</td><td data-ko="필드 고르기 — 아래 참조.">Picking the field — below.</td></tr>
-                  <tr><td>Compare my moves with a database</td><td data-ko="당신이 두는 수와 데이터베이스의 흐름을 나란히: «You play {mine} ({mineShare}) — they answer {top} ({topShare} of {total})». 문제없으면 그렇게 말합니다: «Nothing to flag…»">Your habits against a database's: “You play {mine} ({mineShare}) — they answer {top} ({topShare} of {total})”. When nothing stands out it says so: “Nothing to flag…”</td></tr>
+                  <tr><td>Compare my moves with a database</td><td data-ko="당신이 두는 수와 데이터베이스의 흐름을 나란히: «You play {mine} ({mineShare}), they answer {top} ({topShare} of {total})». 문제없으면 그렇게 말합니다: «Nothing to flag…»">Your habits against a database's: “You play {mine} ({mineShare}), they answer {top} ({topShare} of {total})”. When nothing stands out it says so: “Nothing to flag…”</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2233,8 +2219,8 @@
             </p>
             <h2 data-ko="수 놓기">Charting moves</h2>
             <ul>
-              <li data-ko="<strong>Add</strong> — 이 포지션에서 «Every reply the field plays here — tap one to chart it», 또는 직접 치기(«Type a move…»).">
-                <strong>Add</strong> — “Every reply the field plays here — tap one to chart it”,
+              <li data-ko="<strong>Add</strong> — 이 포지션에서 «Every reply the field plays here. Tap one to chart it», 또는 직접 치기(«Type a move…»).">
+                <strong>Add</strong> — “Every reply the field plays here. Tap one to chart it”,
                 or type your own (“Type a move…”).
               </li>
               <li data-ko="<strong>Grow</strong>(«Chart what your games already play from here») — 어떤 게임에서(«From which games»: 시간 제한, «Kept only»), 몇 판 이상 나온 수를(«Chart moves seen in at least» + 개수) 미리 보여 주고(«{n} moves to chart, ending in {k} lines») 한꺼번에 올립니다.">
@@ -2272,9 +2258,9 @@
               it:
             </p>
             <ul>
-              <li data-ko="<strong>준비 깊이</strong> — «Prepared {plies} plies deep, {lines} lines» / «Prepared to move {reached} — target {target}» — 연결된 스터디에서 실시간으로 계산됩니다. <strong>Intended depth</strong>(1–40 풀무브)가 목표를 정합니다.">
+              <li data-ko="<strong>준비 깊이</strong> — «Prepared {plies} plies deep, {lines} lines» / «Prepared to move {reached}, target {target}» — 연결된 스터디에서 실시간으로 계산됩니다. <strong>Intended depth</strong>(1–40 풀무브)가 목표를 정합니다.">
                 <strong>Preparation depth</strong> — “Prepared {plies} plies deep, {lines} lines” /
-                “Prepared to move {reached} — target {target}” — derived live from the linked
+                “Prepared to move {reached}, target {target}” — derived live from the linked
                 studies. <strong>Intended depth</strong> (1–40 full moves) sets the target.
               </li>
               <li data-ko="<strong>Linked games, studies and notes</strong> — «Link a game, study or note»로 잇고(챕터 하나만도 가능), «New study from this line»으로 새로 시작합니다. 준비 여부를 말할 수 있는 것은 스터디뿐 — 노트는 읽는 사람을 위한 참고입니다.">
@@ -2282,9 +2268,8 @@
                 or note” (one chapter alone works too), or started fresh with “New study from this
                 line”. Only studies get to say what is prepared; notes come along for the reader.
               </li>
-              <li data-ko="<strong>드릴 건강</strong> — «{n} fumbled in drills — drill from here» · «{n} drill gaps — the studies lack an answer».">
-                <strong>Drill health</strong> — “{n} fumbled in drills — drill from here” · “{n}
-                drill gaps — the studies lack an answer”.
+              <li data-ko="<strong>드릴 건강</strong> — «{n} fumbled in drills, drill from here» · «{n} drill gaps, the studies lack an answer».">
+                <strong>Drill health</strong> — “{n} fumbled in drills, drill from here” · “{n} drill gaps, the studies lack an answer”.
               </li>
               <li data-ko="<strong>Games that left here</strong> — 이 포지션에서 북을 벗어난 당신의 게임들: 벗어난 수(«You left the book with this move» / «They left …»), «Chart it on the map», «Analyse to the deviation».">
                 <strong>Games that left here</strong> — your games that left book at this
@@ -2296,9 +2281,9 @@
                 the map does not chart yet; a tap charts one.
               </li>
             </ul>
-            <p data-ko="패널 바닥의 동작 줄, 순서대로: <strong>Add · Grow · Drill</strong>(스터디가 연결되어야 — «Link a study first — a drill needs prepared moves») <strong>· Prune</strong>(«Show only this line», 트리에서) <strong>· Analyse · Delete</strong>(«Delete this move and everything after it? Linked studies are untouched.»).">
+            <p data-ko="패널 바닥의 동작 줄, 순서대로: <strong>Add · Grow · Drill</strong>(스터디가 연결되어야 — «Link a study first. A drill needs prepared moves.») <strong>· Prune</strong>(«Show only this line», 트리에서) <strong>· Analyse · Delete</strong>(«Delete this move and everything after it? Linked studies are untouched.»).">
               The action row at the panel's foot, in order: <strong>Add · Grow · Drill</strong>
-              (needs a linked study — “Link a study first — a drill needs prepared moves”)
+              (needs a linked study — “Link a study first. A drill needs prepared moves.”)
               <strong>· Prune</strong> (“Show only this line”, in the tree) <strong>· Analyse ·
               Delete</strong> (“Delete this move and everything after it? Linked studies are
               untouched.”).
@@ -2348,10 +2333,8 @@
                   </tr>
                   <tr>
                     <td>Lichess token</td>
-                    <td data-ko="«Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.» 레퍼토리 트레이너의 Lichess 출처와 스터디 가져오기도 이 토큰입니다(비공개 스터디는 <code>study:read</code>). 입력 중에는 곁의 눈(«Show token»)이 붙여 넣은 것을 확인시켜 주고, 저장되면 «A token ending in {last4} is configured.»만 남습니다.">
-                      “Powers the online opening explorer and your Lichess puzzle history. Create
-                      one with no scopes, then paste it here — it is stored in the vault and never
-                      shown again.” The repertoire trainer's Lichess source and study import ride
+                    <td data-ko="«Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes and paste it here. It is stored in the vault and never shown again.» 레퍼토리 트레이너의 Lichess 출처와 스터디 가져오기도 이 토큰입니다(비공개 스터디는 <code>study:read</code>). 입력 중에는 곁의 눈(«Show token»)이 붙여 넣은 것을 확인시켜 주고, 저장되면 «A token ending in {last4} is configured.»만 남습니다.">
+                      “Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes and paste it here. It is stored in the vault and never shown again.” The repertoire trainer's Lichess source and study import ride
                       the same token (<code>study:read</code> for private studies). The eye
                       beside the box (“Show token”) checks what you pasted; once saved, only
                       “A token ending in {last4} is configured.” remains.
@@ -2385,7 +2368,7 @@
                       The cached archive months — sizes per player, “{size} in total”. The bin on
                       each row (“Clear this player's months”) takes that player alone;
                       <strong>Clear all</strong> below takes the lot. Either way the Storage used
-                      figures below re-read. “Nothing here is in your collection…” — it is
+                      figures below re-read. “Games you kept are copies and stay in your collection.” It is
                       only a cache.
                     </td>
                   </tr>
@@ -2441,8 +2424,8 @@
                   </tr>
                   <tr>
                     <td>Danger zone</td>
-                    <td data-ko="보관함 전체 비우기 — 변경 이력까지. «The app password, 2FA and tokens survive. There is no undo…» 칸이 요구하는 무장 문구 — Type “wipe everything” to arm — 를 입력해야 <strong>Wipe all data</strong>가 눌리고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
-                      Wiping the vault — change history included. “The app password, 2FA and
+                    <td data-ko="보관함 전체 비우기 — 변경 이력까지. «The password, 2FA and tokens survive. There is no undo…» 칸이 요구하는 무장 문구 — Type “wipe everything” to arm — 를 입력해야 <strong>Wipe all data</strong>가 눌리고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
+                      Wiping the vault — change history included. “The password, 2FA and
                       tokens survive. There is no undo…” Typing the arming phrase the field asks
                       for — Type “wipe everything” to arm — unlocks <strong>Wipe all data</strong>,
                       and the confirm asks for the app password when one is set.
@@ -2450,14 +2433,14 @@
                   </tr>
                   <tr>
                     <td>Version</td>
-                    <td data-ko="서버와 빌드 버전 — 그리고 데스크톱 앱 안에서만, 데스크톱 버전과 <strong>Check for updates</strong>(브라우저로 서버에 접속했다면 업데이트할 껍데기가 없으므로 둘 다 나오지 않습니다)(«{version} is available — it installs when you quit.» / «This is the newest build.»). 설치본을 받는 동안에는 받은 양을 막대 그래프와 함께 알려 주고(«Downloading {version} — {done} of {total}»), 다 받으면 «{version} is ready — restart to install it.»와 <strong>Restart now</strong> 버튼이 그 자리에 남습니다. 그 아래로 «Free software under the GPL-3.0.», 소스 코드와 라이선스 링크.">
+                    <td data-ko="서버와 빌드 버전 — 그리고 데스크톱 앱 안에서만, 데스크톱 버전과 <strong>Check for updates</strong>(브라우저로 서버에 접속했다면 업데이트할 껍데기가 없으므로 둘 다 나오지 않습니다)(«{version} is available. It installs when you quit.» / «This is the newest build.»). 설치본을 받는 동안에는 받은 양을 막대 그래프와 함께 알려 주고(«Downloading {version}, {done} of {total}»), 다 받으면 «{version} is ready. Restart to install it.»와 <strong>Restart now</strong> 버튼이 그 자리에 남습니다. 그 아래로 «Free software under the GPL-3.0.», 소스 코드와 라이선스 링크.">
                       Server and build versions — and, inside the desktop app only, the desktop
                       version and <strong>Check for updates</strong>
-                      (“{version} is available — it installs when you quit.” / “This is the newest
+                      (“{version} is available. It installs when you quit.” / “This is the newest
                       build.”); reached through a browser there is no shell to update, and neither
                       is drawn. While an installer downloads, the card reports how much of it has
-                      arrived, with a bar (“Downloading {version} — {done} of {total}”); when it is
-                      complete, “{version} is ready — restart to install it.” and a
+                      arrived, with a bar (“Downloading {version}, {done} of {total}”); when it is
+                      complete, “{version} is ready. Restart to install it.” and a
                       <strong>Restart now</strong> button stay on the card until you take them.
                       Below that, “Free software under the GPL-3.0.”, and the source-code and
                       licences links.
@@ -2466,9 +2449,8 @@
                 </tbody>
               </table>
             </div>
-            <p data-ko="페이지 바닥의 한 줄이 요약입니다: Vault: {path} «— every game, study and puzzle lives there as plain files. Display settings live on this device.»">
-              The page's last line is the summary: Vault: {path} “— every game, study and puzzle lives
-              there as plain files. Display settings live on this device.”
+            <p data-ko="페이지 바닥의 한 줄이 요약입니다: Vault: {path} «Every game, study and puzzle lives there as plain files. Display settings live on this device.»">
+              The page's last line is the summary: Vault: {path} “Every game, study and puzzle lives there as plain files. Display settings live on this device.”
             </p>
           </div>
         </section>
@@ -2532,10 +2514,9 @@
             <h1 data-ko="자주 묻는 것들">Common questions</h1>
 
             <h2 data-ko="데모는 진짜 앱과 뭐가 다른가요?">What is different in the demo?</h2>
-            <p data-ko="데모는 진짜 앱이 브라우저 탭 안의 샘플 보관함 위에서 도는 것입니다 — 배너가 말하듯: «Demo — this is a sample vault of your own. Edit anything; a reload puts it back.» 서버가 있어야 하는 것들은 빠져 있습니다: 프로필, 비밀번호와 2FA, Lichess 토큰(따라서 Lichess에서 가져오기), 그리고 데이터베이스와 책 만들기 — 참고 데이터베이스와 예시 책은 읽기 전용으로 함께 실려 있습니다. 퍼즐 책 하나가 그 예시 책에서 만들어져 함께 들어 있습니다. 앱을 설치하거나 호스팅하면 그 자리들이 진짜가 됩니다.">
+            <p data-ko="데모는 진짜 앱이 브라우저 탭 안의 샘플 보관함 위에서 도는 것입니다 — 배너가 말하듯: «Demo: a sample vault of your own. Edit anything, and a reload puts it back.» 서버가 있어야 하는 것들은 빠져 있습니다: 프로필, 비밀번호와 2FA, Lichess 토큰(따라서 Lichess에서 가져오기), 그리고 데이터베이스와 책 만들기 — 참고 데이터베이스와 예시 책은 읽기 전용으로 함께 실려 있습니다. 퍼즐 책 하나가 그 예시 책에서 만들어져 함께 들어 있습니다. 앱을 설치하거나 호스팅하면 그 자리들이 진짜가 됩니다.">
               The demo is the real app running on a sample vault inside your browser tab — as its
-              banner says: “Demo — this is a sample vault of your own. Edit anything; a reload puts
-              it back.” What needs a server of your own is absent: profile, password and 2FA, the
+              banner says: “Demo: a sample vault of your own. Edit anything, and a reload puts it back.” What needs a server of your own is absent: profile, password and 2FA, the
               Lichess token (and so importing from Lichess), and building databases or uploading books — the
               reference database and the sample book ship read-only instead. A puzzle book made from
               that sample book ships with it. Install or host the app and those places become real.

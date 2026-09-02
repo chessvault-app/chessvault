@@ -401,7 +401,7 @@ function Trainer({
   // The verdicts are drawn over the board and printed in the panel; a
   // screen reader saw neither. Announced at the two moments that matter.
   useEffect(() => {
-    if (phase === 'wrong') announce(t('Wrong move — the board rolls back.'));
+    if (phase === 'wrong') announce(t('Wrong move. The board rolls back.'));
     else if (phase === 'done') {
       announce(revealed ? t('Solution shown') : failed ? t('Solved after a wrong try') : t('Solved'));
     }
@@ -723,9 +723,9 @@ function Trainer({
    */
   const modeNote =
     mode === 'failed'
-      ? t('Reviewing — not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.')
+      ? t('Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.')
       : mode === 'single'
-        ? t('Replaying puzzle #{id} — not counted; a clean solve still retires it from the review list.', {
+        ? t('Replaying puzzle #{id}, not counted. A clean solve still retires it from the review list.', {
             id: puzzleId ?? '',
           })
         : null;
@@ -859,7 +859,7 @@ function Trainer({
           )}
           <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-destructive' : 'text-muted-foreground')}>
             {phase === 'wrong'
-              ? t('Wrong move — the board rolls back.')
+              ? t('Wrong move. The board rolls back.')
               : phase === 'setup' || phase === 'opponent'
               ? t('Opponent is moving…')
               : phase === 'loading'

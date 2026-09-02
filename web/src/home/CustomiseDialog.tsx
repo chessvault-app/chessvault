@@ -102,7 +102,7 @@ export function CustomiseDialog({
     >
       <DialogContent size="sm" title={t('Customise home')}>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          {t('Switch a destination off to keep it as a button under the grid, or hide it to take it off home altogether. The sidebar still reaches everything.')}
+          {t('Off keeps a destination as a button under the grid. Hidden takes it off home. The sidebar still reaches everything.')}
         </p>
 
         <ToggleRow
@@ -126,7 +126,7 @@ export function CustomiseDialog({
             list in a tall sheet was scrolling in a box while the sheet
             around it had room to spare. */}
         <div className="flex flex-col gap-1">
-          <Group label={t('On the grid')} empty={t('Nothing — every destination is a button below.')} count={tiles.length}>
+          <Group label={t('On the grid')} empty={t('Nothing. Every destination is a button below.')} count={tiles.length}>
             {tiles.map((entry, i) => (
               // Keyed by id, not position: React then MOVES the row that
               // moved, and the focus ring travels with it — keyed by index,
@@ -157,7 +157,7 @@ export function CustomiseDialog({
             ))}
           </Group>
 
-          <Group label={t('In the row below')} empty={t('Nothing — every destination is a tile.')} count={launchers.length}>
+          <Group label={t('In the row below')} empty={t('Nothing. Every destination is a tile.')} count={launchers.length}>
             {launchers.map((entry) => (
               <Row key={entry.id} entry={entry} checked={false} onToggle={() => promote(entry)}>
                 <HideButton entry={entry} onHide={() => hide(entry)} />
@@ -167,7 +167,7 @@ export function CustomiseDialog({
 
           <Group
             label={t('Off the page')}
-            empty={t('Nothing — every destination is on home.')}
+            empty={t('Nothing. Every destination is on home.')}
             count={hidden.length}
           >
             {hidden.map((entry) => (

@@ -148,7 +148,7 @@ export function validate(state: EditorState, fen = toFen(state)): Validity {
       legal: false,
       reason:
         message === 'ERR_OPPOSITE_CHECK'
-          ? 'The side not to move is in check — switch whose turn it is.'
+          ? 'The side not to move is in check. Switch whose turn it is.'
           : message.replace(/^ERR_/, '').toLowerCase().replace(/_/g, ' '),
     };
   }

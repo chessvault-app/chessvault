@@ -354,8 +354,8 @@ export function Shelf() {
                 size="icon-sm"
                 title={
                   view.dir === 'asc'
-                    ? t('Ascending — press for descending')
-                    : t('Descending — press for ascending')
+                    ? t('Ascending. Press for descending.')
+                    : t('Descending. Press for ascending.')
                 }
                 className="hidden shrink-0 sm:inline-flex"
                 onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
@@ -392,7 +392,7 @@ export function Shelf() {
           <EmptyState
             icon={BookMarked}
             title="No puzzle books yet"
-            body="Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book."
+            body="One per paper book. Enter its puzzles from the board or import the book's own PDF. Solutions and progress live here, not in the back of the book."
             action={
               /* The empty state ends on the press that fills it, like every
                  other shelf's. */
@@ -552,8 +552,8 @@ function BookCard({
                 )}
                 <span className={cn('truncate text-sm', scan.live ? 'text-primary' : 'text-warn')}>
                   {scan.live
-                    ? t('reading — page {page} of {pages}', { page: scan.page, pages: scan.pages })
-                    : t('unfinished — {page} of {pages} pages, tap to carry on', {
+                    ? t('reading, page {page} of {pages}', { page: scan.page, pages: scan.pages })
+                    : t('unfinished, {page} of {pages} pages, tap to carry on', {
                         page: scan.page,
                         pages: scan.pages,
                       })}

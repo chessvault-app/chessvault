@@ -580,7 +580,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           <EmptyState
             icon={Network}
             title="No moves yet"
-            body="Start with your first move for this colour — the rest of the tree grows from it."
+            body="Start with your first move for this colour. The rest of the tree grows from it."
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="default" size="sm" onClick={() => setAddTo(map.root.id)}>
@@ -718,7 +718,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 length is the user's own is a dropdown; a fixed set of
                 kinds is not. */}
             {[
-              { label: null, options: [{ value: '', label: t('Nothing — hide gaps') }] },
+              { label: null, options: [{ value: '', label: t('None, hide gaps') }] },
               // Your own games: the field you have actually been facing.
               { label: null, options: [{ value: MY_GAMES_SOURCE, label: t('My games') }] },
               ...(isDemo()
@@ -1104,7 +1104,7 @@ function NodePanel({
                   : 'text-muted-foreground text-sm'
               }
             >
-              {t('Prepared to move {reached} — target {target}', {
+              {t('Prepared to move {reached}, target {target}', {
                 reached: reachedMove(facts.ply, coverage.preparedPlies),
                 target: node.depth,
               })}
@@ -1112,12 +1112,12 @@ function NodePanel({
           )}
           {(coverage?.reviewCount ?? 0) > 0 && (
             <p className="text-warn text-sm">
-              {t('{n} fumbled in drills — drill from here', { n: coverage!.reviewCount })}
+              {t('{n} fumbled in drills, drill from here', { n: coverage!.reviewCount })}
             </p>
           )}
           {(coverage?.gapCount ?? 0) > 0 && (
             <p className="text-destructive text-sm">
-              {t('{n} drill gaps — the studies lack an answer', { n: coverage!.gapCount })}
+              {t('{n} drill gaps, the studies lack an answer', { n: coverage!.gapCount })}
             </p>
           )}
           {facts.fen === null && !isRoot && (
@@ -1488,7 +1488,7 @@ function NodePanel({
           title={
             coverage?.covered
               ? 'Drill from here'
-              : 'Link a study first — a drill needs prepared moves'
+              : 'Link a study first. A drill needs prepared moves.'
           }
           disabled={!coverage?.covered}
           onSelect={() => {

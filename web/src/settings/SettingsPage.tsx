@@ -162,7 +162,7 @@ export function SettingsPage() {
             <Card icon={Info} title={t('This is a demo')}>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {t(
-                  'Everything you change here lives in this browser tab and disappears when you reload. Your profile, password, two-factor authentication, the Lichess token and the vault itself need a server of your own — install the app or host it, and this page becomes the real thing.',
+                  'Changes here live in this browser tab and are gone on reload. Profile, password, two-factor authentication, the Lichess token and the vault itself need your own server. Install the app or host it, and this page becomes real.',
                 )}
               </p>
             </Card>
@@ -200,8 +200,8 @@ export function SettingsPage() {
                 page cut it. Measured at 320px: the span ended 32px past the
                 viewport. It is width and path length together, so it breaks
                 rather than waiting for a breakpoint. */}
-            {t('Vault:')} <span className="font-mono break-all">{settings.vaultPath}</span>{' '}
-            {t('— every game, study and puzzle lives there as plain files. Display settings live on this device.')}
+            {t('Vault:')} <span className="font-mono break-all">{settings.vaultPath}</span>{'. '}
+            {t('Every game, study and puzzle lives there as plain files. Display settings live on this device.')}
           </p>
         )}
     </PageShell>
@@ -409,14 +409,14 @@ function VersionCard() {
   const live =
     status.phase === 'downloading'
       ? status.total
-        ? t('Downloading {version} — {done} of {total}', {
+        ? t('Downloading {version}, {done} of {total}', {
             version: status.version ?? '',
             done: size(status.transferred ?? 0),
             total: size(status.total),
           })
         : t('Starting the download…')
       : status.phase === 'ready'
-        ? t('{version} is ready — restart to install it.', { version: status.version ?? '' })
+        ? t('{version} is ready. Restart to install it.', { version: status.version ?? '' })
         : status.phase === 'failed'
           ? // The reason is one of updateFailure()'s sentences, which ko.ts
             // carries — it arrives as English from the shell either way.
@@ -496,7 +496,7 @@ function VersionCard() {
                   )}
                 >
                   {update.state === 'available'
-                    ? t('{version} is available — it installs when you quit.', { version: update.version ?? '' })
+                    ? t('{version} is available. It installs when you quit.', { version: update.version ?? '' })
                     : update.state === 'current'
                       ? t('This is the newest build.')
                       : update.state === 'dev'
@@ -941,11 +941,11 @@ function TablebaseCard({
    * it only changes what this says.
    */
   const answering = !tablebase
-    ? t('Off on this device — no endgame lookups are made from here.')
+    ? t('Off on this device. No endgame lookups are made from here.')
     : source === 'files'
       ? settings.tablebase.local
-        ? t('Answering from the table files on the server — nothing else involved.')
-        : t('Set to your own table files, but they cannot be read — Lichess’s public server is answering instead.')
+        ? t('Answering from the table files on the server, nothing else involved.')
+        : t('Set to your own table files, but they cannot be read. Lichess’s public server is answering instead.')
       : source === 'server'
         ? t('Answering from the tablebase server you named.')
         : t('Answering from Lichess’s public tablebase.');
@@ -957,7 +957,7 @@ function TablebaseCard({
         blurb={
           tablebase
             ? t(
-                'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only — where the answers come from is the vault’s own setting, below.',
+                'Show the exact result for positions of seven pieces or fewer in the explorer and the engine review. This device only. The source is the vault setting below.',
               )
             : // Nothing is below while this is off, so it does not promise one.
               t(
@@ -1012,7 +1012,7 @@ function TablebaseCard({
             <div className="flex flex-col gap-2">
               <p className="text-muted-foreground text-sm">
                 {t(
-                  'A tablebase server of your own — lila-tablebase over your own copy of the tables, or any address that speaks its protocol. Empty falls back to Lichess’s.',
+                  'A tablebase server of your own: lila-tablebase over your own tables, or any address that speaks its protocol. Empty falls back to Lichess.',
                 )}
               </p>
               <div className="flex items-center gap-2">
@@ -1097,7 +1097,7 @@ function TablebaseCard({
                     dir: settings.tablebase.dir,
                   })
                 : t(
-                    'To answer from table files on the server itself, set “tablebaseDir” in its vault config — a path is not a thing to type from another machine.',
+                    'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another machine.',
                   )}
             </p>
           )}
@@ -1116,7 +1116,7 @@ function TablebaseCard({
               away look like the weightiest control on the card. */}
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t(
-              'Answers are kept for good, so an ending is asked about once. Forget them to ask again — after adding tables to your own server, say.',
+              'Answers are kept for good, so each ending is asked about once. Forget them to ask again, for example after adding tables to your own server.',
             )}
           </p>
           <div className="flex items-center justify-end">
@@ -1341,7 +1341,7 @@ function SignOutBlock() {
     }
     // Deliberately still busy: the button must not invite a second press
     // during the beat before the reload.
-    setNote({ kind: 'ok', text: t('Signed out — back to the lock screen…') });
+    setNote({ kind: 'ok', text: t('Signed out. Back to the lock screen…') });
     reauth();
   };
 
@@ -1380,7 +1380,7 @@ function PasswordBlock({ gate }: { gate: boolean }) {
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
-    setNote({ kind: 'ok', text: t('Password changed — signing you out to the lock screen…') });
+    setNote({ kind: 'ok', text: t('Password changed. Signing you out to the lock screen…') });
     reauth();
   };
 
@@ -1389,7 +1389,7 @@ function PasswordBlock({ gate }: { gate: boolean }) {
       <span className="text-base font-medium">{gate ? t('Change app password') : t('Set an app password')}</span>
       {!gate && (
         <p className="text-muted-foreground text-sm">
-          {t('No password is set — anyone who can reach this server sees everything. Setting one turns the lock screen on.')}
+          {t('No password is set, so anyone who can reach this server sees everything. Setting one turns the lock screen on.')}
         </p>
       )}
       {gate && (
@@ -1449,7 +1449,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       return;
     }
     setEnroll(null);
-    setNote({ kind: 'ok', text: t('2FA is on — signing you out to the lock screen…') });
+    setNote({ kind: 'ok', text: t('2FA is on. Signing you out to the lock screen…') });
     await onChanged();
     reauth();
   };
@@ -1461,7 +1461,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
-    setNote({ kind: 'ok', text: t('2FA is off — signing you out to the lock screen…') });
+    setNote({ kind: 'ok', text: t('2FA is off. Signing you out to the lock screen…') });
     await onChanged();
     reauth();
   };
@@ -1580,7 +1580,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
           tail in English while the head was Korean, and no translator can
           fix a sentence that is three fragments in the source. */}
       <p className="text-muted-foreground text-sm">
-        {t('Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.')}
+        {t('Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes and paste it here. It is stored in the vault and never shown again.')}
       </p>
       <a
         className="text-primary text-sm underline underline-offset-2"
@@ -1638,7 +1638,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
  * was edited.
  */
 const RECOVERY_BLURB =
-  'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.';
+  'Every version of every document is kept automatically. Anything deleted can be brought back here. An open document keeps its earlier versions under the clock in its header.';
 
 /**
  * Bringing back something that is no longer there.
@@ -1875,7 +1875,7 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
     <Card icon={HardDrive} title={t('Browsed games')}>
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
-          'Months you have browsed are kept so they open again instantly and work offline. Nothing here is in your collection — a game you kept was copied — so clearing this only means downloading a month again next time you look at it.',
+          'Months you have browsed are kept so they open instantly and work offline. Clearing them only means downloading a month again next time. Games you kept are copies and stay in your collection.',
         )}
       </p>
       {players === null && (
@@ -2004,7 +2004,7 @@ function StorageCard({ reload = 0 }: { reload?: number }) {
     <Card icon={HardDrive} title={t('Storage used')}>
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
-          'What each part of the app keeps on disk. Your own documents are at the top; the caches and reference data below are rebuilt or refetched when cleared from their own pages.',
+          'What each part of the app keeps on disk. Your documents are at the top. The caches and reference data below are rebuilt or refetched when cleared from their own pages.',
         )}
       </p>
       <ul className="divide-border border-border divide-y rounded-lg border">
@@ -2052,7 +2052,7 @@ function DangerCard({ gate }: { gate: boolean }) {
   return (
     <Card icon={Trash2} title={t('Danger zone')}>
       <p className="text-muted-foreground text-sm leading-relaxed">
-        {t('Wipe every game, study, note, puzzle and imported book from the vault — including its change history. The app password, 2FA and tokens survive. There is no undo; if the vault matters, back it up first.')}
+        {t('Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so back up first.')}
       </p>
       <div className="flex items-center gap-2">
         <ClearableInput
@@ -2091,7 +2091,7 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
       setBusy(false);
       return;
     }
-    setNote({ kind: 'ok', text: t('Vault wiped — reloading…') });
+    setNote({ kind: 'ok', text: t('Vault wiped. Reloading…') });
     setTimeout(() => window.location.reload(), 900);
   };
 

@@ -298,7 +298,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     }
     const url = normaliseTablebaseUrl(raw);
     if (!url) {
-      return c.json({ error: 'that is not a tablebase address — http:// or https://, with no query' }, 400);
+      return c.json({ error: 'that is not a tablebase address. Use http:// or https://, with no query' }, 400);
     }
     writeConfig((config) => {
       config.tablebaseUrl = url;
@@ -321,7 +321,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   api.post('/settings/2fa/start', (c) => {
     const config = readConfig();
     if (!config.appPassword?.trim()) {
-      return c.json({ error: 'set an app password first — 2FA guards the password gate' }, 400);
+      return c.json({ error: 'set an app password first, 2FA guards the password gate' }, 400);
     }
     const secret = generateTotpSecret();
     return c.json({ secret, otpauth: otpauthUrl(secret) });
@@ -342,7 +342,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     const secret = body.secret?.trim() ?? '';
     if (!/^[A-Z2-7]{16,}$/.test(secret)) return c.json({ error: 'invalid secret' }, 400);
     if (!verifyTotp(secret, body.code ?? '')) {
-      return c.json({ error: 'that code does not match — scan the QR again and retype' }, 403);
+      return c.json({ error: 'that code does not match, scan the QR again and retype' }, 403);
     }
     writeConfig((config) => {
       config.totpSecret = secret;

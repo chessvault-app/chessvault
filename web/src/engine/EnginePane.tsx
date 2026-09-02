@@ -237,8 +237,8 @@ export function EngineBlock({
             {terminal ? (
               <li className="text-muted-foreground px-3 py-1 text-sm">
                 {terminal.mate !== undefined
-                  ? t('Checkmate — there is nothing left to search.')
-                  : t('The game ends here — there is nothing left to search.')}
+                  ? t('Checkmate. There is nothing left to search.')
+                  : t('The game ends here. There is nothing left to search.')}
               </li>
             ) : visibleLines.length === 0 ? (
               <li className="text-muted-foreground px-3 py-1 text-sm">{t('Thinking…')}</li>

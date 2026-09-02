@@ -265,6 +265,21 @@ other people.
   keeps its two fills, which it has for its own reason, and measures 30%
   and 20% either way.
 
+- **Plainer sentences everywhere.** One UI string in ten carried an
+  em-dash, doing the work a full stop, a comma or a colon does in any
+  other app, and the Korean had inherited it where the language has no
+  use for the character at all. Every one is gone: 160 dictionary
+  entries, the strings the server sends back as errors, the desktop
+  chooser and the landing page, in both languages. The longest
+  descriptions were cut to the same shape at the same time, the
+  control's effect first and the reasoning left to the manual. Counted
+  in the dictionary, 34 strings ran past 120 characters and 28 do now,
+  the longest fell from 268 to 224, and the demo's Settings banner is
+  the clearest case. The lone dash a table shows for "no value" stays,
+  since it is not a sentence. `check:repo` now rejects the character in
+  the dictionary, in any `t()` literal and in a server error string, so
+  it cannot creep back one string at a time.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

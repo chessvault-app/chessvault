@@ -51,7 +51,7 @@ function distance(m: Pick<TablebaseMove, 'dtz' | 'dtm'>): { text: string; tip: s
   if (m.dtz !== null) {
     return {
       text: t('DTZ {n}', { n: m.dtz }),
-      tip: t('Distance to the next capture or pawn move, in half-moves — what the fifty-move rule counts.'),
+      tip: t('Distance to the next capture or pawn move, in half-moves. This is what the fifty-move rule counts.'),
     };
   }
   return null;

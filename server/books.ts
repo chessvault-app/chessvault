@@ -364,7 +364,7 @@ export function booksApi(
     if (!validId(name)) return c.json({ error: 'invalid collection name' }, 400);
     if (!allFolders().includes(name)) return c.json({ error: 'no such collection' }, 404);
     if (bookIds().some((id) => collectionOf(id) === name)) {
-      return c.json({ error: 'collection is not empty — move or remove its books first' }, 409);
+      return c.json({ error: 'collection is not empty, move or remove its books first' }, 409);
     }
     writeFolders(readFolders().filter((f) => f !== name));
     return c.json({ deleted: name });

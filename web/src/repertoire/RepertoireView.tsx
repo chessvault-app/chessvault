@@ -682,7 +682,7 @@ export function RepertoireView() {
               }
               if (relevant) {
                 note = t(
-                  'Gap noted — the field also plays {san} ({pct}% of games), and your study has no answer to it.',
+                  'Gap noted. The field also plays {san} in {pct}% of games, and your study has no answer to it.',
                   { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
                 );
                 if (!drill.gapNoted.has(key)) {
@@ -728,7 +728,7 @@ export function RepertoireView() {
               played: san,
             });
             setGapMsg(
-              t('The field answered {san} — {pct}% of games here — and your study holds no reply.', {
+              t('The field answered {san}, played in {pct}% of games here, and your study holds no reply.', {
                 san,
                 pct,
               }),
@@ -780,7 +780,7 @@ export function RepertoireView() {
           recordDrill({ key, result: 'miss', path: sansTo(tree, cursorId), expected, played: san });
         }
         setDrillNotice(
-          t('Your study plays {moves} here — try it again.', { moves: expected.join(' / ') }),
+          t('Your study plays {moves} here. Try again.', { moves: expected.join(' / ') }),
         );
         // The tree never takes the move, but chessground has already
         // played it on screen. Let it stand for a beat, then snap the
@@ -1221,7 +1221,7 @@ export function RepertoireView() {
       ) : mode === 'drill' ? (
         studyList !== null && studyList.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('No studies yet — create one in Studies, or save a line you played first.')}
+            {t('No studies yet. Create one in Studies, or save a line you played.')}
           </p>
         ) : (
           <>
@@ -1296,8 +1296,8 @@ export function RepertoireView() {
       {mode === 'drill' && drillChapter && !drillReady && (
         <p className="text-muted-foreground text-sm leading-relaxed">
           {wholeStudy
-            ? t('This study has no moves yet — nothing to drill.')
-            : t('This chapter has no moves yet — nothing to drill.')}
+            ? t('This study has no moves yet, so there is nothing to drill.')
+            : t('This chapter has no moves yet, so there is nothing to drill.')}
         </p>
       )}
       {/* What the record holds against this chapter, a way to work
@@ -1320,7 +1320,7 @@ export function RepertoireView() {
               : summary.review.length > 0
                 ? t('{n} positions to review', { n: summary.review.length })
                 : summary.scheduled > 0 && summary.nextDue !== null
-                  ? t('Nothing due — the next position comes back {when}', {
+                  ? t('Nothing due. The next position comes back {when}', {
                       when: formatUntil(summary.nextDue),
                     })
                   : ''}
@@ -1335,7 +1335,7 @@ export function RepertoireView() {
           </p>
           <ConfirmDialog
             icon={Eraser}
-            triggerTitle="Forget the drill record — misses, gaps and recalls in every study"
+            triggerTitle="Forget the drill record: misses, gaps and recalls in every study"
             question="Forget the whole drill record, across all studies?"
             confirmLabel={t('Forget everything')}
             onConfirm={() => {
@@ -1418,8 +1418,8 @@ export function RepertoireView() {
         : !drillStudy
           ? t('No study chosen yet.')
           : wholeStudy
-            ? `${drillStudy} — ${t('Whole study')}`
-            : `${drillStudy}${drillChapter ? ` — ${drillChapter.name}` : ''}`
+            ? `${drillStudy}: ${t('Whole study')}`
+            : `${drillStudy}${drillChapter ? `: ${drillChapter.name}` : ''}`
       : template.eco
         ? `${template.eco}  ${template.name}`
         : t(template.name);
@@ -1585,8 +1585,8 @@ export function RepertoireView() {
             ? endKind === 'gap'
               ? gapMsg
               : endKind === 'line'
-                ? t('End of your prepared line — every move matched the study.')
-                : t('This line has run past the database — you are on your own now.')
+                ? t('End of your prepared line. Every move matched the study.')
+                : t('This line has run past the database. You are on your own now.')
             : error
               ? error
               : drillNotice
@@ -1595,7 +1595,7 @@ export function RepertoireView() {
                   ? t('Your opponent is replying…')
                   : pos.turn === userColor && atTip
                     ? t('Your move.')
-                    : t('Reviewing an earlier move — step to the end to keep playing.')}
+                    : t('Reviewing an earlier move. Step to the end to keep playing.')}
         </p>
       )}
       {gapNote && phase !== 'ended' && (
@@ -1910,7 +1910,7 @@ export function RepertoireView() {
       {saveOpen && (
         <PromptDialog
           label={t('Save line to study')}
-          initial={`${t(template.name)} — ${new Date().toISOString().slice(0, 10)}`}
+          initial={`${t(template.name)} ${new Date().toISOString().slice(0, 10)}`}
           submitLabel="Save"
           error={saveError}
           closeOnSubmit={false}

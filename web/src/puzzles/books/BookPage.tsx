@@ -505,7 +505,7 @@ export function BookPage({ slug }: { slug: string }) {
             */}
             <p className="text-foreground text-base font-medium">{t('Nothing in this book yet.')}</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm leading-relaxed">
-              {t('Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.')}
+              {t('Import the book’s PDF and the reader takes the diagrams and printed solutions off its pages, pausing and resuming as you like. Or set a position up by hand and record the full solution.')}
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               <Button variant="default" size="sm" onClick={() => setImporting(true)}>
@@ -627,12 +627,12 @@ function CyclesPanel({
       <div className="flex flex-col gap-2 px-(--card-spacing)">
         {!open && finished.length === 0 && (
           <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('Work the whole book in passes — every puzzle once per cycle, scored by first attempts. Each pass should come out faster and cleaner than the one before.')}
+            {t('Work the whole book in passes. Every puzzle once per cycle, scored by first attempts, and each pass should come out faster and cleaner.')}
             {/* The nudge for someone already solving outside any pass:
                 their attempts are real but no pass is scoring them, and
                 nothing else on the page says so. */}
             {Object.keys(book.progress).length > 0 && (
-              <> {t('You are solving already — a cycle gives each pass its own score.')}</>
+              <> {t('You are solving already. A cycle gives each pass its own score.')}</>
             )}
           </p>
         )}

@@ -229,7 +229,7 @@ function CustomMaterialWindow({
               onValueChange={(v) =>
                 setDraft((d) => ({ ...d, [side]: { ...d[side], [letter]: v } }))
               }
-              ariaLabel={`${t(label)} — ${t(piece)}`}
+              ariaLabel={`${t(label)}, ${t(piece)}`}
               size="sm"
               className="w-full"
               groups={[
@@ -988,7 +988,7 @@ export function DatabaseGames({
         ? t('The search failed.')
         : huntExhaustive
           ? t('{n} games found', { n: (huntRows?.length ?? 0).toLocaleString() })
-          : t('{n}+ games found — the list stops here', {
+          : t('{n}+ games found. The list stops here.', {
               n: (huntRows?.length ?? 0).toLocaleString(),
             })
     : loading && rows.length === 0
@@ -1427,7 +1427,7 @@ export function DatabaseGames({
             title={huntFailed ? 'The search failed' : 'No games found'}
             body={
               huntFailed === 'bad-fen'
-                ? 'That is not a position — paste a FEN, like the one Copy FEN puts on the clipboard.'
+                ? 'That is not a position. Paste a FEN, like the one Copy FEN puts on the clipboard.'
                 : huntFailed
                   ? 'The server could not finish the search.'
                   : 'No game in this database contains what you searched for, under the filters above.'

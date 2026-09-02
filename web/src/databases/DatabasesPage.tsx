@@ -93,7 +93,7 @@ export function DatabasesPage() {
         title={t('Databases')}
         back={() => navigate('more')}
         description={t(
-          'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Databases browser on the Games page, and a position index the explorer and the repertoire trainer draw from — with filters.',
+          'A reference database is built from uploaded PGN collections. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.',
         )}
       />
 

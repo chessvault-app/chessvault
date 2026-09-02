@@ -155,8 +155,8 @@ export function AddMoveDialog({
           )}
           <p className="text-muted-foreground text-sm leading-relaxed">
             {source
-              ? t('Every reply the field plays here — tap one to chart it.')
-              : t('What the studies prepare here — pick a field source to see statistics.')}
+              ? t('Every reply the field plays here. Tap one to chart it.')
+              : t('What the studies prepare here. Pick a field source to see statistics.')}
           </p>
         </div>
         {/* Grows into the sheet, which is as tall as the one it opened
@@ -176,7 +176,7 @@ export function AddMoveDialog({
             </div>
           ) : rows.length === 0 ? (
             <p className="text-muted-foreground col-span-3 px-2 py-4 text-center text-sm">
-              {t('Nothing to offer — type the move instead.')}
+              {t('Nothing to offer. Type the move instead.')}
             </p>
           ) : (
             rows.map((row, at) => (

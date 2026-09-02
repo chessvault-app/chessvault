@@ -41,7 +41,7 @@ const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
  */
 const SETUP_TITLE = 'No puzzle database yet';
 const SETUP_BLURB =
-  'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.';
+  'The trainer runs on the Lichess puzzle database, 6.1 million puzzles, free to use. The app fetches and builds it: about 300 MB to download, around 2.5 GB once built.';
 
 /**
  * The setup screen's place while /api/puzzles/meta is in the air, for a

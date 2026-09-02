@@ -77,7 +77,7 @@ export function LoadPositionButton({
         size="icon-sm"
         active={open}
         className={triggerClassName}
-        title={t('Load a position — FEN, PGN, or image')}
+        title={t('Load a position from FEN, PGN or an image')}
         onClick={() => setOpen(true)}
       >
         <FolderInput className="size-3.5" />

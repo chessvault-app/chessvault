@@ -693,7 +693,7 @@ export const useStudy = create<StudyState>()((set, get) => {
         error:
           e instanceof ApiError && e.status !== 0
             ? e.message
-            : 'vault server unreachable — changes not saved',
+            : 'vault server unreachable, changes not saved',
       });
     }
   }

@@ -506,7 +506,7 @@ function TitleEditor({
       >
         {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}
-        {failure ? ` — ${failure}` : ''}
+        {failure ? `: ${failure}` : ''}
       </h1>
     </>
   );

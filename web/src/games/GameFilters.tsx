@@ -442,7 +442,7 @@ export function StructuredFiltersWindow({
 
         {contradictory && (
           <p className="text-warn text-sm">
-            {t('That outcome and that result can never happen in the same game — no game will match.')}
+            {t('That outcome and that result can never happen in the same game, so no game will match.')}
           </p>
         )}
 
@@ -490,11 +490,11 @@ const QUERY_OPS: {
   { key: 'white', sample: 'white:name', desc: 'This player as White', valueHint: 'Type a player name' },
   { key: 'black', sample: 'black:name', desc: 'This player as Black', valueHint: 'Type a player name' },
   { key: 'opening', sample: 'opening:name', desc: 'Opening name contains', valueHint: 'Type an opening name' },
-  { key: 'eco', sample: 'eco:code', desc: 'ECO code starts with', valueHint: 'Type an ECO code — B90, C6…' },
+  { key: 'eco', sample: 'eco:code', desc: 'ECO code starts with', valueHint: 'Type an ECO code, like B90 or C6' },
   {
     key: 'event',
     sample: 'event:"name"',
-    desc: 'Tournament name contains — quotes hold spaces',
+    desc: 'Tournament name contains, in quotes if it has spaces',
     valueHint: 'Type a tournament name',
   },
   {
@@ -511,13 +511,13 @@ const QUERY_OPS: {
     key: 'year',
     sample: 'year:when',
     desc: 'A year, or a span of years',
-    valueHint: 'Type a year, or a span — 2014, 2010-2015',
+    valueHint: 'Type a year or a span, like 2014 or 2010-2015',
   },
   {
     key: 'elo',
     sample: 'elo:floor',
-    desc: 'Both players at least — or a band',
-    valueHint: 'Type a floor, or a band — 2500, 2400-2600',
+    desc: 'Both players at least, or a band',
+    valueHint: 'Type a floor or a band, like 2500 or 2400-2600',
   },
 ];
 
@@ -1022,19 +1022,19 @@ export function SearchQueryIssues({
             <IssueLine
               key={i}
               badge={issue.value ?? ''}
-              message={t('is not a result — 1-0, 0-1 or draw')}
+              message={t('is not a result. Use 1-0, 0-1 or draw')}
             />
           ) : issue.kind === 'bad-year' ? (
             <IssueLine
               key={i}
               badge={issue.value ?? ''}
-              message={t('is not a year or a span — 2014, 2010-2015')}
+              message={t('is not a year or a span. Use 2014 or 2010-2015')}
             />
           ) : issue.kind === 'bad-elo' ? (
             <IssueLine
               key={i}
               badge={issue.value ?? ''}
-              message={t('is not an Elo floor or band — 2500, 2400-2600')}
+              message={t('is not an Elo floor or band. Use 2500 or 2400-2600')}
             />
           ) : (
             <IssueLine

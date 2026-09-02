@@ -64,7 +64,7 @@ function WorkspaceGate() {
         <h1 className="text-xl font-semibold tracking-tight">{t('Workspace')}</h1>
         <p className="text-muted-foreground text-base leading-relaxed">
           {t(
-            'The workspace shows the board, the moves, the explorer and the games browser side by side, and needs a window wide enough to hold them all. On this screen its panes are pages of their own.',
+            'The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.',
           )}
         </p>
         {/* Both secondary: the error card this borrowed from RECOMMENDS

@@ -120,7 +120,7 @@ export function PhotoImport({
       settle();
       // Same line the other ways in use for their failures — the file was
       // chosen, so silence would read as the app having ignored it.
-      setPasteHint(t('That image could not be read — it may be corrupt or an unsupported format.'));
+      setPasteHint(t('That image could not be read. It may be corrupt or an unsupported format.'));
     };
     image.src = url;
   }, []);
@@ -156,9 +156,9 @@ export function PhotoImport({
           return;
         }
       }
-      setPasteHint(t('No image in the clipboard — copy or snip one first.'));
+      setPasteHint(t('No image in the clipboard. Copy or snip one first.'));
     } catch {
-      setPasteHint('Clipboard access was blocked — press Ctrl+V instead.');
+      setPasteHint('Clipboard access was blocked. Press Ctrl+V instead.');
     }
   };
 
@@ -351,7 +351,7 @@ export function PhotoImport({
                 <ClipboardPaste className="size-3.5" data-icon="inline-start" />
                 {t('Paste image')}
               </Button>
-              <span className="text-muted-foreground text-sm">{t('or press Ctrl+V — dropping a file here works too')}</span>
+              <span className="text-muted-foreground text-sm">{t('or press Ctrl+V, or drop a file here')}</span>
             </div>
             {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
           </>
@@ -393,8 +393,8 @@ export function PhotoImport({
           >
             {reading.fen === null ? (
               <p className="text-muted-foreground">
-                First diagram of this book — nothing to match against yet. Set
-                the position up by hand; confirming it teaches the app this
+                First diagram of this book, so there is nothing to match against yet.
+                Set the position up by hand. Confirming it teaches the app this
                 book&rsquo;s piece font, and the next images will read themselves.
               </p>
             ) : (

@@ -401,7 +401,7 @@ export function GameDetailsPanel({
           className="min-h-0 flex-1"
           icon={MousePointerClick}
           title="No game selected"
-          body="Select a game from the list to see it here — its players, its opening, and the game itself, move by move."
+          body="Select a game from the list to see it here: its players, its opening, and the game itself, move by move."
         />
       )}
     </Panel>

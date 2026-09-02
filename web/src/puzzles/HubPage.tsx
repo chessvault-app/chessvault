@@ -582,7 +582,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
       <div className="min-h-0 flex-1 overflow-y-auto">
       {attempts.length === 0 && (
         <p className="text-muted-foreground px-3 py-2.5 text-sm">
-          {t('Nothing solved yet — the puzzles you attempt turn up here.')}
+          {t('Nothing solved yet. The puzzles you attempt turn up here.')}
         </p>
       )}
       {attempts.map((h) => (
@@ -1122,7 +1122,7 @@ function Hub() {
               // An empty queue with a schedule behind it is earned, not
               // gone — say when it comes back.
               meta?.nextDue
-                ? t('Nothing due — the next review lands {when}', {
+                ? t('Nothing due. The next review lands {when}', {
                     when: formatUntil(meta.nextDue),
                   })
                 : t('Puzzles you get wrong come back here.')

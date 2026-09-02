@@ -1195,7 +1195,7 @@ export function refGamesApi(
     if (body.on && meta[SCAN_PACK_META] !== String(SCAN_PACK_VERSION)) {
       // No packs, no fast search: the fix is one index pass away, and
       // saying so beats loading nothing.
-      return c.json({ error: 'this database has no scan index yet — re-run Index positions' }, 409);
+      return c.json({ error: 'this database has no scan index yet, re-run Index positions' }, 409);
     }
     const writer = new Database(path);
     try {

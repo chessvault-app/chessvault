@@ -92,7 +92,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       return;
     }
     if (res.status === 429) {
-      setError(t('Too many attempts — wait a few minutes.'));
+      setError(t('Too many attempts. Wait a few minutes.'));
       return;
     }
     if (body.error === 'wrong authenticator code') {
@@ -214,7 +214,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
           )}
         </form>
         <p className="text-muted-foreground mt-6 text-center text-sm">
-          {t('Private instance — every game, study and puzzle here lives in plain files on its owner’s server.')}
+          {t('Private instance. Every game, study and puzzle here lives in plain files on its owner’s server.')}
         </p>
       </div>
     </div>

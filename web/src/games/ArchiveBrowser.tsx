@@ -902,7 +902,7 @@ export function ArchiveBrowser({
     (offline && months.length > 0) || error ? (
       <>
         {offline && months.length > 0 && (
-          <span className="text-warn text-sm">{t('offline — cached months only')}</span>
+          <span className="text-warn text-sm">{t('offline, cached months only')}</span>
         )}
         {error && <span className="text-destructive text-sm">{error}</span>}
       </>
@@ -994,7 +994,7 @@ export function ArchiveBrowser({
                   />
                   <span className="text-muted-foreground truncate">
                     {uncollected.length === 0
-                      ? t('Select all new — none are new')
+                      ? t('Select all new: none are new')
                       : t('Select all new')}
                   </span>
                 </label>
@@ -1170,7 +1170,7 @@ export function ArchiveBrowser({
           <CloudBoardArt className="w-20 shrink-0" />
           <p className="text-muted-foreground max-w-xs text-base leading-relaxed">
             {t(
-              'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
+              'Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.',
               { site: provider === 'chesscom' ? 'chess.com' : 'Lichess' },
             )}
           </p>

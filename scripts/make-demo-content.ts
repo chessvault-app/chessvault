@@ -169,7 +169,7 @@ function annotate(row: Row, index: number): { pgn: string; plies: number } | nul
   const date = `2026.${String(1 + (index % 12)).padStart(2, '0')}.${String(1 + (index % 27)).padStart(2, '0')}`;
   const headers = [
     ['Event', pick(EVENTS, index)],
-    ['Site', 'Chess Vault demo (sample data — invented players)'],
+    ['Site', 'Chess Vault demo (sample data, invented players)'],
     ['Date', date],
     ['Round', String(1 + (index % 9))],
     ['White', white],

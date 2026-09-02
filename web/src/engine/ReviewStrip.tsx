@@ -26,7 +26,7 @@ export function ReviewButton() {
       variant="ghost"
       size="icon-sm"
       disabled={status === 'running'}
-      title={t('Engine review — judge every move (?!/?/??) and measure accuracy')}
+      title={t('Engine review: judge every move (?!/?/??) and measure accuracy')}
       onClick={() => void run()}
     >
       {status === 'running' ? (
@@ -298,7 +298,7 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
         }}
         onPointerLeave={() => setHover(null)}
         role="slider"
-        aria-label={t('Evaluation graph — click to jump to a move')}
+        aria-label={t('Evaluation graph. Click to jump to a move.')}
       >
         <path d={area} fill="var(--color-eval-white)" opacity="0.85" />
         {/* Thin line joining the move dots along the curve. */}
@@ -403,7 +403,7 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
             and Button's rule holds here too — a visible label is already
             the accessible name and must stay it. The sentence is what the
             hover adds. */}
-        <TitleTip title={t('Book moves — known opening theory, not judged')}>
+        <TitleTip title={t('Book moves: known opening theory, not judged')}>
           <span
             className={cn(
               'flex items-center gap-0.5',

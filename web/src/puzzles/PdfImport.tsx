@@ -160,7 +160,7 @@ export function PdfImport({
     setSaveError(null);
     if (file.size > MAX_PDF_BYTES) {
       setSaveError(
-        t('That PDF is too big to read in the browser — the limit is {mb} MB.', {
+        t('That PDF is too big to read in the browser. The limit is {mb} MB.', {
           mb: MAX_PDF_BYTES / (1024 * 1024),
         }),
       );
@@ -182,7 +182,7 @@ export function PdfImport({
       // the book and then imported nothing. The update path used to skip
       // the probe and discover the same thing only inside a started job.
       if (!(await canReadPdf(file))) {
-        setSaveError(t('That file could not be read as a PDF — the book was left untouched.'));
+        setSaveError(t('That file could not be read as a PDF. The book was left untouched.'));
         return;
       }
       if (existing > 0 && mode === 'rebuild') {
@@ -458,7 +458,7 @@ export function PdfImport({
                 {t('Ask the engine where the book cannot be read')}
                 <span className="text-muted-foreground block">
                   {t(
-                    'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds a few seconds per hundred.',
+                    'Searches positions whose printed solution would not replay, and imports them labelled by how much is known. Adds a few seconds per hundred.',
                   )}
                 </span>
               </span>
@@ -476,7 +476,7 @@ export function PdfImport({
                 {t('Try harder on boards that fail')}
                 <span className="text-muted-foreground block">
                   {t(
-                    'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles, and the import may take longer.',
+                    'Re-reads each position whose printed solution would not replay, looking for one misread square. Recovered about 26 more puzzles on a 1,000-puzzle book, and takes longer.',
                   )}
                 </span>
               </span>
@@ -506,7 +506,7 @@ export function PdfImport({
               <span className="text-muted-foreground text-base">
                 {t('Choose the book’s PDF')}
               <span className="text-muted-foreground block text-sm">
-                  {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
+                  {t('every page is scanned for diagrams; nothing leaves this machine, and you can keep using the app while it runs')}
                 </span>
               </span>
             </label>
@@ -523,7 +523,7 @@ export function PdfImport({
             <p className="border-border bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
               <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
               {t(
-                'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
+                'Crops, page images and solutions stay in your vault and are never published. They remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
               )}
             </p>
           )}
@@ -541,7 +541,7 @@ export function PdfImport({
               <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-base">
                 <Spinner className="size-4 shrink-0" />
                 <span className="truncate">
-                  {t('page {page}/{pages} — {n} diagrams so far', {
+                  {t('page {page}/{pages}, {n} diagrams so far', {
                     page: job.page,
                     pages: job.pages || '…',
                     n: found.length,
@@ -600,14 +600,14 @@ export function PdfImport({
                 {solve.confident
                   ? t('Each one replays the move the book prints, from the position on the page.')
                   : t(
-                      'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.',
+                      'Too few solutions replayed for this to be trusted. Treat these as a starting point and check them.',
                     )}
                 {solve.repaired > 0 &&
                   ` ${t('{n} had a square misread, found by the book’s own solution.', { n: solve.repaired })}`}
                 {solve.unresolved > 0 &&
                   ` ${t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })}`}
                 {solve.saveFailed > 0 &&
-                  ` ${t('{n} solved puzzles could not be saved — they are kept below as drafts.', { n: solve.saveFailed })}`}
+                  ` ${t('{n} solved puzzles could not be saved. They are kept below as drafts.', { n: solve.saveFailed })}`}
               </p>
               {solve.engine && solve.engine.corroborated + solve.engine.only + solve.engine.unverified > 0 && (
                 <p className="text-muted-foreground pt-1">
@@ -619,7 +619,7 @@ export function PdfImport({
                     },
                   )}{' '}
                   {t(
-                    '{corroborated} of those play to the squares the book printed, {only} were solved with nothing legible to check against, and {unverified} are a position and a side with no winning line found.',
+                    '{corroborated} play to the squares the book printed, {only} were solved with nothing legible to check against, and {unverified} have no winning line found.',
                     {
                       corroborated: solve.engine.corroborated,
                       only: solve.engine.only,
@@ -647,7 +647,7 @@ export function PdfImport({
           {found.length > 0 && (
             <>
               <p className="text-muted-foreground text-sm">
-                {t('{n} diagrams found — untick any false positives, then add the rest as drafts.', {
+                {t('{n} diagrams found. Untick any false positives, then add the rest as drafts.', {
                   n: found.length,
                 })}
                 {found.every((f) => f.fen === null) &&
@@ -816,7 +816,7 @@ export function PdfImport({
             {found.length > 0 && (
               <span className="text-muted-foreground mr-auto text-sm">
                 {t('{n} selected', { n: selectedCount })}
-                {scanning ? t(' — still scanning') : ''}
+                {scanning ? t(', still scanning') : ''}
               </span>
             )}
             <Button

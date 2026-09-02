@@ -353,13 +353,13 @@ export function RefDbManager({
   const empty =
     tab === 'databases'
       ? databases.length === 0
-        ? t('No databases yet — upload a PGN collection and build one.')
+        ? t('No databases yet. Upload a PGN collection and build one.')
         : t('No database matches that.')
       : sources === null
         ? null
         : sources.length === 0
           ? t(
-              'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.',
+              'Nothing uploaded yet. A collection is any .pgn of games, such as a Lichess Elite month or a Lumbra export.',
             )
           : t('No collection matches that.');
 
@@ -463,7 +463,7 @@ export function RefDbManager({
             {quiet && (
               <p className="text-muted-foreground text-xs leading-relaxed">
                 {t(
-                  'Nothing new for {minutes} minutes. This step is a single database operation and reports nothing until it finishes — on a large database that can take an hour.',
+                  'Nothing new for {minutes} minutes. This step is one database operation and reports nothing until it finishes. On a large database that can take an hour.',
                   { minutes: quietMinutes },
                 )}
               </p>
@@ -688,7 +688,7 @@ function DbList({
                 className="shrink-0"
                 title={
                   d.fastScan === true
-                    ? t('Fast search is on — the scan index is held in server memory')
+                    ? t('Fast search is on. The scan index is held in server memory.')
                     : t('Fast search: hold the scan index in server memory')
                 }
                 onClick={() => onFastScan(d.name, d.fastScan !== true)}
@@ -732,7 +732,7 @@ function DbList({
               optimizeDisabled ? 'Wait for the running job to finish' : 'Optimize this database'
             }
             question={t(
-              'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.',
+              'Optimize “{name}”? Removes exact duplicates, refreshes the derived tables and compacts the file. This can take a while.',
               { name: d.name },
             )}
             confirmLabel="Optimize"
@@ -844,7 +844,7 @@ function AddToWindow({
       <DialogContent title={t('Add games to “{name}”', { name: db })} icon={Plus}>
         {list.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('No PGN collections uploaded yet — upload the games to add first.')}
+            {t('No PGN collections uploaded yet. Upload the games to add first.')}
           </p>
         ) : (
           <>
@@ -971,7 +971,7 @@ function UploadWindow({
         </label>
         <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
-            'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.',
+            'A collection is any .pgn of games, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.',
           )}
         </p>
       </DialogContent>
@@ -1025,7 +1025,7 @@ function BuildWindow({
             ? t('Indexing {n} collections into one searchable database of whole games.', {
                 n: count,
               })
-            : t('No PGN collections are ticked — pick them on the PGN collections tab first.')}
+            : t('No PGN collections are ticked. Pick them on the PGN collections tab first.')}
         </p>
         <ClearableInput
           inputSize="sm"
@@ -1033,20 +1033,20 @@ function BuildWindow({
           autoFocus
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && go()}
-          placeholder={t('Name — “{name}” if blank', { name: derived })}
+          placeholder={t('Name, or leave blank for “{name}”', { name: derived })}
         />
         {taken ? (
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as 'replace' | 'append')}>
             <Field orientation="horizontal">
               <RadioGroupItem value="replace" id="build-replace" />
               <FieldLabel htmlFor="build-replace" className="font-normal">
-                {t('Replace — build this database again from the picked collections.')}
+                {t('Replace: build this database again from the picked collections.')}
               </FieldLabel>
             </Field>
             <Field orientation="horizontal">
               <RadioGroupItem value="append" id="build-append" />
               <FieldLabel htmlFor="build-append" className="font-normal">
-                {t('Add to it — index only the games it does not already hold.')}
+                {t('Add to it: index only the games it does not already hold.')}
               </FieldLabel>
             </Field>
           </RadioGroup>
