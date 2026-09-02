@@ -653,6 +653,11 @@ const RETIRED_KO: { pattern: RegExp; why: string; unless?: Set<string> }[] = [
   { pattern: /정석/, why: 'the opening book is 북' },
   // 색 is a theme colour (Colours, Coloured 색상, Neutrals 중성색); a side is 진영.
   { pattern: /(?<![검탐성])색(?![인상])/, why: 'a side is 진영 (색 is only a theme colour)', unless: new Set(['Colours']) },
+  { pattern: /당신/, why: 'Korean UI drops the pronoun or says 내' },
+  { pattern: /거르/, why: 'a filter is 필터, as a noun' },
+  { pattern: /회차/, why: 'a cycle is 사이클' },
+  { pattern: /아카이브/, why: 'the online archive is 온라인 기보' },
+  { pattern: /북마크|에디터|선반|이벤트|국면/, why: 'bookmark 즐겨찾기, editor 편집기, shelf 목록, event 대회, position 포지션' },
   { pattern: /(?<!풀이 )실력/, why: "a player's strength is 기력 (풀이 실력, the solver's own skill, is not a player)" },
 ];
 // 보관함 is the vault. The one English key without "vault" that may say it is

@@ -29,7 +29,7 @@ export const ko: Record<string, string> = {
   ...UNTITLED_NAMES.ko,
   // --- shell, navigation ---------------------------------------------------
   'Chess Vault': 'Chess Vault',
-  'Your chess, in plain files.': '당신의 체스를, 평범한 파일로.',
+  'Your chess, in plain files.': '내 체스를, 평범한 파일로.',
   Home: '홈',
   Games: '게임',
   Studies: '스터디',
@@ -103,7 +103,7 @@ export const ko: Record<string, string> = {
   'This book already holds {n} puzzles. What should the import do with them?':
     '이 책에는 이미 퍼즐 {n}개가 있습니다. 가져오기에서 어떻게 할까요?',
   'every page is scanned for diagrams; nothing leaves this device, and you can keep using the app while it runs':
-    '모든 페이지에서 다이어그램을 찾습니다. 이 기기 밖으로는 아무것도 나가지 않으며, 도는 동안에도 앱을 계속 쓸 수 있습니다',
+    '모든 페이지에서 다이어그램을 찾습니다. 이 기기 밖으로는 아무것도 나가지 않으며, 진행되는 동안에도 앱을 계속 쓸 수 있습니다',
   'Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so back up first.':
     '보관함의 모든 게임, 스터디, 노트, 퍼즐, 가져온 책을 변경 이력까지 지웁니다. 비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 백업하세요.',
   'Wiping…': '지우는 중…',
@@ -163,7 +163,7 @@ export const ko: Record<string, string> = {
   Hash: '해시',
   'Thinking…': '생각하는 중…',
   'Engine review: judge every move (?!/?/??) and measure accuracy':
-    '엔진 리뷰: 모든 수를 평가하고 (?!/?/??) 정확도를 측정합니다',
+    '엔진 리뷰: 모든 수를 평가(?!/?/??)하고 정확도를 측정합니다',
   'Book moves: known opening theory, not judged':
     '북 무브: 알려진 오프닝 이론이므로 평가하지 않습니다',
   'Book move': '북 무브',
@@ -184,9 +184,9 @@ export const ko: Record<string, string> = {
   'Open on the analysis board': '분석 보드에서 열기',
   'Preview the final position': '최종 포지션 미리 보기',
   'Search collection…': '모음 검색…',
-  'Game actions': '게임 동작',
+  'Game actions': '게임 메뉴',
   'Browse this player': '이 플레이어 둘러보기',
-  'Archive month': '보관된 달',
+  'Archive month': '달 선택',
   Annotated: '주석 있음',
   'View on Chess.com (needs internet)': 'Chess.com에서 보기 (인터넷 필요)',
   'Import a game': '게임 가져오기',
@@ -213,13 +213,13 @@ export const ko: Record<string, string> = {
   'Select all new': '새 게임 전체 선택',
   'Any date': '모든 날짜',
   'Showing the first {shown} of {total}. Select all new still takes every one.':
-    '{total}개 중 처음 {shown}개만 표시합니다. 새 게임 전체 선택은 그래도 전부 선택합니다.',
+    '{total}개 중 처음 {shown}개만 표시합니다. 새 게임 전체 선택은 표시되지 않은 게임까지 모두 선택합니다.',
   'Select…': '선택…',
   Stop: '중지',
   'Select this game': '이 게임 선택',
   '{n} selected': '{n}개 선택됨',
   ', still scanning': ', 아직 스캔 중',
-  'The scan keeps running': '스캔은 계속 돌아갑니다',
+  'The scan keeps running': '스캔은 계속 진행됩니다',
   'Add selected': '선택한 게임 추가',
   'Adding…': '추가하는 중…',
 
@@ -241,7 +241,7 @@ export const ko: Record<string, string> = {
   'Start a study called “{name}”': '“{name}” 스터디 만들기',
   'Write a note called “{name}”': '“{name}” 노트 만들기',
   'That name cannot be a document name, so there is nothing to create.':
-    '그 이름은 문서 이름으로 쓸 수 없어서 만들 수 있는 것이 없습니다.',
+    '그 이름은 문서 이름으로 쓸 수 없습니다.',
   'Other names for this note': '이 노트의 다른 이름',
   Names: '이름',
   'Najdorf, B90': '나이도르프, B90',
@@ -382,7 +382,7 @@ export const ko: Record<string, string> = {
   'Search by': '검색 기준',
   Material: '기물 구성',
   'Paste a FEN': 'FEN 붙여넣기',
-  'How closely to match': '어느 정도로 일치',
+  'How closely to match': '일치 기준',
   'Both sides need a king.': '양쪽 모두 킹이 필요합니다.',
   'Each side can only have one king.': '킹은 진영당 하나만 놓을 수 있습니다.',
   'Pawns cannot stand on the first or last rank.': '폰은 첫 랭크나 마지막 랭크에 설 수 없습니다.',
@@ -402,10 +402,10 @@ export const ko: Record<string, string> = {
   'No games found': '발견한 게임이 없습니다',
   'The search failed': '검색이 실패했습니다',
   'That is not a position. Paste a FEN, like the one Copy FEN puts on the clipboard.':
-    '포지션이 아닙니다. FEN 복사가 클립보드에 넣어 주는 것 같은 FEN을 붙여넣으세요.',
+    '포지션이 아닙니다. FEN 복사로 얻은 것과 같은 FEN을 붙여넣으세요.',
   'The server could not finish the search.': '서버가 검색을 끝내지 못했습니다.',
   'No game in this database contains what you searched for, under the filters above.':
-    '위의 필터 아래에서, 검색한 내용을 담은 게임이 이 데이터베이스에 없습니다.',
+    '위 필터 조건에서는 검색한 내용에 맞는 게임이 이 데이터베이스에 없습니다.',
   'Bishop vs knight': '비숍 대 나이트',
   'Queenless middlegame': '퀸 없는 미들게임',
   'Exchange up': '익스체인지 우위',
@@ -414,8 +414,8 @@ export const ko: Record<string, string> = {
   'Custom…': '직접 지정…',
   'Custom material': '기물 구성 직접 지정',
   'Edit the custom material': '직접 지정한 기물 구성 편집',
-  'White has': '백이 가진 것',
-  'Black has': '흑이 가진 것',
+  'White has': '백의 기물',
+  'Black has': '흑의 기물',
   Pawns: '폰',
   Knights: '나이트',
   Bishops: '비숍',
@@ -435,7 +435,7 @@ export const ko: Record<string, string> = {
   'Turn off fast search': '빠른 검색 끄기',
   'Any rating': '모든 레이팅',
   'More filters': '필터 더 보기',
-  'Filter games': '게임 거르기',
+  'Filter games': '게임 필터',
   Player: '플레이어',
   'Any player': '모든 플레이어',
   'Any outcome': '모든 승패',
@@ -465,14 +465,14 @@ export const ko: Record<string, string> = {
   'Drill a position due for review': '복습할 때가 된 포지션 드릴',
   'Every drilled position stands recalled.': '드릴한 모든 포지션을 기억하고 있습니다.',
   'Forget the drill record: misses, gaps and recalls in every study':
-    '드릴 기록 지우기: 모든 스터디의 미스, 갭, 회상 기록',
+    '드릴 기록 지우기: 모든 스터디의 실수, 갭, 복습 기록',
   'Forget the whole drill record, across all studies?':
     '모든 스터디의 드릴 기록 전체를 지울까요?',
   'Forget everything': '전부 지우기',
   'This chapter has no moves yet, so there is nothing to drill.':
     '이 챕터에는 아직 수가 없습니다. 드릴할 것이 없습니다.',
   'Your study plays {moves} here. Try again.':
-    '여기서 스터디는 {moves}입니다. 다시 시도해 보세요.',
+    '여기서 스터디의 수는 {moves}입니다. 다시 시도해 보세요.',
   'Gap noted. The field also plays {san} in {pct}% of games, and your study has no answer to it.':
     '갭 발견. 필드는 게임의 {pct}%에서 {san}도 두는데, 스터디에 아직 준비된 답이 없습니다.',
   'The field answered {san}, played in {pct}% of games here, and your study holds no reply.':
@@ -555,7 +555,7 @@ export const ko: Record<string, string> = {
   'Write changes to the vault as you make them. Off, they wait for you to save.':
     '변경하는 즉시 보관함에 씁니다. 끄면 저장할 때까지 기다립니다.',
   'Add a chapter': '챕터 추가',
-  'Click to accept ANY move here (the book’s K~)': '여기서는 아무 수나 받도록 클릭 (책의 K~)',
+  'Click to accept ANY move here (the book’s K~)': '클릭하면 여기서 아무 수나 인정합니다 (책의 K~)',
   'Braces and annotation commands cannot be saved in a comment; the text was rewritten.':
     '중괄호와 주석 명령은 주석에 저장할 수 없어 텍스트를 고쳐 썼습니다.',
   'Hide glyphs': '기호 숨기기',
@@ -576,7 +576,7 @@ export const ko: Record<string, string> = {
   'Checkmate. There is nothing left to search.':
     '체크메이트. 더 탐색할 것이 없습니다.',
   'The game ends here. There is nothing left to search.':
-    '여기서 대국이 끝납니다. 더 탐색할 것이 없습니다.',
+    '여기서 게임이 끝납니다. 더 탐색할 것이 없습니다.',
   'Back to the book': '책으로',
   'Back to the board': '보드로',
   'Back to the diagram': '다이어그램으로',
@@ -584,7 +584,7 @@ export const ko: Record<string, string> = {
   'All themes': '모든 테마',
   'All puzzles in this book': '이 책의 모든 퍼즐',
   'Puzzle settings': '퍼즐 설정',
-  'Solved today: {n}': '오늘 푼 문제: {n}',
+  'Solved today: {n}': '오늘 푼 퍼즐: {n}',
   'Puzzle books': '퍼즐 책',
   'Search books…': '책 검색…',
   'Puzzle dashboard': '퍼즐 대시보드',
@@ -597,7 +597,7 @@ export const ko: Record<string, string> = {
   'Read diagrams': '다이어그램 읽기',
   'Re-run recognition on every draft with the learned font':
     '학습한 글꼴로 모든 초안을 다시 인식',
-  'Peek at the book scan': '책 스캔 살짝 보기',
+  'Peek at the book scan': '책 스캔 잠깐 보기',
   'Zoom out': '축소',
   'Zoom in': '확대',
   'Show the whole page': '페이지 전체 보기',
@@ -618,7 +618,7 @@ export const ko: Record<string, string> = {
   "One per paper book. Enter its puzzles from the board or import the book's own PDF. Solutions and progress live here, not in the back of the book.":
     '종이 책 한 권마다 하나씩 만드세요. 보드에서 퍼즐을 입력하거나 책의 PDF를 가져옵니다. 정답과 진행 상황은 책 뒤가 아니라 여기에 남습니다.',
   'Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.':
-    '스캔한 전술 책을 가져오면 다이어그램이 풀 수 있는 문제가 되고, 진행 상황도 함께 기록됩니다.',
+    '스캔한 전술 책을 가져오면 다이어그램이 풀 수 있는 퍼즐이 되고, 진행 상황도 함께 기록됩니다.',
   'Nothing matches these filters.': '이 조건에 맞는 것이 없습니다.',
   'Play the solution, every move for both sides.': '양쪽의 모든 수로 정답을 두세요.',
   'Record the solution, every move for both sides.': '양쪽의 모든 수로 정답을 기록하세요.',
@@ -661,9 +661,9 @@ export const ko: Record<string, string> = {
   '{n} solved': '{n}개 해결',
   '{n} past cycles': '지난 사이클 {n}개',
   'You are solving already. A cycle gives each pass its own score.':
-    '이미 풀고 있습니다. 사이클을 시작하면 회차마다 점수가 따로 기록됩니다.',
+    '이미 풀고 있습니다. 사이클을 시작하면 사이클마다 점수가 따로 기록됩니다.',
   'Work the whole book in passes. Every puzzle once per cycle, scored by first attempts, and each pass should come out faster and cleaner.':
-    '책 전체를 회차로 반복합니다. 사이클마다 모든 퍼즐을 한 번씩 풀고 첫 시도로 점수를 매기며, 회차를 거듭할수록 더 빠르고 깔끔해지는 것이 목표입니다.',
+    '책 전체를 사이클로 반복합니다. 사이클마다 모든 퍼즐을 한 번씩 풀고 첫 시도로 점수를 매기며, 사이클을 거듭할수록 더 빠르고 깔끔해지는 것이 목표입니다.',
   'Review puzzles · {n} due': '퍼즐 복습 · 복습할 때가 된 {n}개',
   'Nothing due. The next review lands {when}': '지금은 복습할 것이 없습니다. 다음 복습은 {when}',
   'Nothing solved yet. The puzzles you attempt turn up here.':
@@ -671,7 +671,7 @@ export const ko: Record<string, string> = {
   'No puzzle to review': '복습할 퍼즐 없음',
   'Puzzles you get wrong come back here.': '틀린 퍼즐은 여기로 돌아옵니다.',
   'The trainer runs on the Lichess puzzle database, 6.1 million puzzles, free to use. The app fetches and builds it: about 300 MB to download, around 2.5 GB once built.':
-    '트레이너는 Lichess 퍼즐 데이터베이스로 돌아갑니다. 자유롭게 쓸 수 있는 610만 개의 퍼즐입니다. 앱이 대신 내려받아 만듭니다. 내려받기는 약 300MB, 다 만들면 약 2.5GB를 씁니다.',
+    '트레이너는 Lichess 퍼즐 데이터베이스를 사용합니다. 자유롭게 쓸 수 있는 610만 개의 퍼즐입니다. 앱이 대신 내려받아 만듭니다. 내려받기는 약 300MB, 다 만들면 약 2.5GB를 씁니다.',
   'Download and build': '내려받아 만들기',
   'Downloading the puzzle dump': '퍼즐 덤프를 내려받는 중',
   'Building the database': '데이터베이스를 만드는 중',
@@ -685,7 +685,7 @@ export const ko: Record<string, string> = {
   Theme: '테마',
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',
-  'Try harder on boards that fail': '실패한 보드에 더 공을 들이기',
+  'Try harder on boards that fail': '읽기 실패한 보드는 더 정밀하게 읽기',
   'That PDF is too big to read in the browser. The limit is {mb} MB.':
     '그 PDF는 브라우저에서 읽기에 너무 큽니다. 한도는 {mb} MB입니다.',
   'checking the PDF': 'PDF를 확인하는 중',
@@ -700,7 +700,7 @@ export const ko: Record<string, string> = {
     '{corroborated}개는 책이 인쇄한 칸으로 이어지고, {only}개는 대조할 글자가 없는 채로 풀렸으며, {unverified}개는 이기는 수를 찾지 못했습니다.',
   'Position from an image': '이미지에서 포지션 읽기',
   'Choose an image of the diagram': '다이어그램 이미지 선택',
-  'a screenshot or scan works best': '스크린샷이나 스캔이 가장 잘 됩니다',
+  'a screenshot or scan works best': '스크린샷이나 스캔 이미지가 가장 잘 읽힙니다',
   'Paste image': '이미지 붙여넣기',
   'Drop the image': '이미지를 놓으세요',
   'or press Ctrl+V, or drop a file here':
@@ -753,14 +753,14 @@ export const ko: Record<string, string> = {
   'Switch to the white map': '백 맵으로 전환',
   'Check coverage against…': '커버리지 비교 대상…',
   'The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.':
-    '맵이 자신을 비교하는 필드입니다: 갭 배지, 점 크기, 통계표가 모두 여기서 읽습니다.',
+    '맵을 비교하는 기준 필드입니다. 갭 배지, 점 크기, 통계표가 모두 이 필드를 기준으로 합니다.',
   'Check coverage against': '커버리지 비교 대상',
   'Compare my moves with a database': '내 수를 데이터베이스와 비교',
   'Compare with a database': '데이터베이스와 비교',
   'Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.':
-    '백으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
+    '백으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 그들이 거의 두지 않는 수를 내가 둔 포지션을, 가장 자주 나온 것부터 보여 줍니다.',
   'Your recent games as Black, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.':
-    '흑으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 내 수가 그들이 좀처럼 고르지 않는 수인 포지션을, 가장 잦은 습관부터 보여 줍니다.',
+    '흑으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 그들이 거의 두지 않는 수를 내가 둔 포지션을, 가장 자주 나온 것부터 보여 줍니다.',
   'At level': '레벨',
   'You play {mine} ({mineShare}), they answer {top} ({topShare} of {total})':
     '나는 {mine} ({mineShare}), 그들은 {top} ({topShare}, {total}판 중)',
@@ -775,10 +775,10 @@ export const ko: Record<string, string> = {
   '{pct}% met': '{pct}% 대응됨',
   'Games whose reply your map charts or a linked study prepares.':
     '맵에 있거나 연결된 스터디가 준비한 수로 이어진 게임의 비율입니다.',
-  '{n} games in the field here': '이 위치의 필드 게임 {n}판',
+  '{n} games in the field here': '이 포지션의 필드 게임 {n}판',
   '{pct}% of games': '게임의 {pct}%',
   'Every reply over {pct}% runs into your preparation.':
-    '{pct}% 이상 나오는 응수는 모두 준비에 걸립니다.',
+    '{pct}% 이상 나오는 응수는 모두 대비되어 있습니다.',
   'and {n} rarer moves': '외 드문 수 {n}개',
   'Chart it on the map': '맵에 추가',
   'Prepared to move {reached}, target {target}': '{reached}수까지 준비됨, 목표 {target}수',
@@ -832,7 +832,7 @@ export const ko: Record<string, string> = {
   // --- settings ------------------------------------------------------------
   Profile: '프로필',
   'Display name': '표시 이름',
-  'How the app greets you': '앱이 당신을 부르는 이름',
+  'How the app greets you': '앱이 부르는 내 이름',
   'Chess.com username': 'Chess.com 사용자명',
   'your Chess.com username': 'Chess.com 사용자명',
   'your Lichess username': 'Lichess 사용자명',
@@ -865,7 +865,7 @@ export const ko: Record<string, string> = {
   'Find the best move. The difficulty stays hidden until you finish.':
     '최선의 수를 찾으세요. 난이도는 끝날 때까지 숨겨집니다.',
   'This line has run past the database. You are on your own now.':
-    '이 라인은 데이터베이스를 벗어났습니다. 여기부터는 스스로입니다.',
+    '이 라인은 데이터베이스를 벗어났습니다. 여기부터는 직접 판단해야 합니다.',
   'Evaluating the position…': '포지션 평가 중…',
   // Pausing a book scan.
   Pause: '일시정지',
@@ -892,10 +892,10 @@ export const ko: Record<string, string> = {
   // The puzzle filters, as menus.
   Status: '상태',
   Fidelity: '신뢰도',
-  'Filter by outcome': '결과로 거르기',
-  'Filter by difficulty': '난이도로 거르기',
-  'Filter by state': '상태로 거르기',
-  'Filter by how the puzzle was verified': '검증 방식으로 거르기',
+  'Filter by outcome': '결과별 필터',
+  'Filter by difficulty': '난이도별 필터',
+  'Filter by state': '상태별 필터',
+  'Filter by how the puzzle was verified': '검증 방식별 필터',
   // The repertoire's opening picker.
   'Reading the catalogue…': '목록을 읽는 중…',
   'No opening matches that.': '그 검색어에 맞는 오프닝이 없습니다.',
@@ -1032,7 +1032,7 @@ export const ko: Record<string, string> = {
   'Free board with engine and explorer': '엔진과 탐색기가 있는 자유 보드',
   'Set up any position': '원하는 포지션 만들기',
   'Openings and ideas, in chapters': '오프닝과 아이디어를, 챕터로',
-  'Markdown with live boards': '살아 있는 보드가 있는 마크다운',
+  'Markdown with live boards': '움직이는 보드가 들어간 마크다운',
   'Your collection, annotated': '주석이 달린 나의 모음',
   'Train tactics offline': '오프라인으로 전술 훈련',
   'Analyse any position with the engine': '엔진으로 어떤 포지션이든 분석',
@@ -1146,7 +1146,7 @@ export const ko: Record<string, string> = {
   'Nothing uploaded yet. Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export.':
     '아직 올린 파일이 없습니다. Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다.',
   'A reference database is built from uploaded PGN files. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.':
-    '참고 데이터베이스는 올린 PGN 파일로 만듭니다. 게임 페이지의 데이터베이스 브라우저에는 전체 기보를, 탐색기와 레퍼토리 훈련에는 필터가 있는 포지션 색인을 제공합니다.',
+    '참고 데이터베이스는 올린 PGN 파일로 만듭니다. 게임 페이지의 데이터베이스 브라우저에는 전체 기보를, 탐색기와 레퍼토리 트레이너에는 필터가 있는 포지션 색인을 제공합니다.',
   'Could not read the reference database.': '참고 데이터베이스를 읽지 못했습니다.',
   'The demo database holds a curated slice of games.': '데모 데이터베이스에는 엄선한 일부 게임만 담겨 있습니다.',
   'no position index': '포지션 색인 없음',
@@ -1199,7 +1199,7 @@ export const ko: Record<string, string> = {
   'The build failed.': '만들기에 실패했습니다.',
   'Build progress': '만들기 진행 상황',
   'Nothing new for {minutes} minutes. This step is one database operation and reports nothing until it finishes. On a large database that can take an hour.':
-    '{minutes}분간 새 소식이 없습니다. 이 단계는 데이터베이스 작업 하나라서 끝나기 전까지는 아무것도 알리지 않습니다. 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',
+    '{minutes}분간 변화가 없습니다. 이 단계는 데이터베이스 작업 하나라서 끝나기 전까지는 아무것도 알리지 않습니다. 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',
   'a build is reading the files right now': '지금 만들기가 이 파일들을 읽고 있습니다',
   'Reference database': '참고 데이터베이스',
   'Manage reference databases': '참고 데이터베이스 관리',
@@ -1315,7 +1315,7 @@ export const ko: Record<string, string> = {
     '기물이 7개 이하인 포지션의 정확한 결과를 탐색기와 엔진 리뷰에 표시합니다. 이 기기에만 적용됩니다. 답의 출처는 아래의 보관함 설정입니다.',
   'Show the exact result for positions of seven pieces or fewer, in the explorer and the engine review. This device only.':
     '기물이 7개 이하인 포지션의 정확한 결과를 탐색기와 엔진 리뷰에 표시합니다. 이 기기에만 적용됩니다.',
-  'Answers come from': '답이 오는 곳',
+  'Answers come from': '답의 출처',
   'Lichess’s public tablebase': 'Lichess의 공개 테이블베이스',
   'A tablebase server of your own': '직접 운영하는 테이블베이스 서버',
   'Table files on the server': '서버에 있는 테이블 파일',
@@ -1391,8 +1391,8 @@ export const ko: Record<string, string> = {
   'Remove this book and its progress': '이 책과 진행 상황 제거',
   'New note': '새 노트',
   'None of your games are indexed yet. Collect some on the Games page, from an online archive or a PGN, and this will have something to read.':
-    '아직 색인된 게임이 없습니다. 게임 페이지에서 온라인 아카이브나 PGN으로 게임을 모으면, 여기서 읽을 것이 생깁니다.',
-  'None of your games reach this position.': '이 위치에 도달한 게임이 없습니다.',
+    '아직 색인된 게임이 없습니다. 게임 페이지에서 온라인 기보나 PGN으로 게임을 모으면, 여기서 읽을 것이 생깁니다.',
+  'None of your games reach this position.': '이 포지션에 도달한 게임이 없습니다.',
   'From which games': '어떤 게임에서',
   Prune: '가지치기',
   'Show only this line': '이 라인만 보기',
@@ -1420,7 +1420,7 @@ export const ko: Record<string, string> = {
   'Play a move on the board.': '보드에서 수를 두세요.',
   'Solved with help': '힌트를 보고 해결',
   'Solved after a wrong try': '틀린 뒤에 해결',
-  'Solution shown': '정답 확인',
+  'Solution shown': '정답 봄',
   'Not solved': '해결하지 못함',
   'Checking your answer…': '답을 확인하는 중…',
   'Wrong move. The board rolls back.': '틀린 수입니다. 보드를 되돌립니다.',
@@ -1463,7 +1463,7 @@ export const ko: Record<string, string> = {
   'Engine best line only, nothing decisive found. Check the source if it feels off.':
     '엔진의 최선 라인뿐이며, 결정적인 것을 찾지 못했습니다. 이상하면 원본을 확인하세요.',
   'Imported diagram awaiting a solution. Open it to enter one.':
-    '정답을 기다리는 가져온 다이어그램입니다. 열어서 입력하세요.',
+    '가져온 다이어그램이며 아직 정답이 없습니다. 열어서 입력하세요.',
   'Record solution': '정답 기록하기',
   Fix: '고치기',
   'could not create the book': '책을 만들지 못했습니다',
@@ -1482,7 +1482,7 @@ export const ko: Record<string, string> = {
   'Positions are unread for now: confirming the first draft teaches this book’s font.':
     '아직 포지션을 읽지 못했습니다. 첫 초안을 확인해 주면 이 책의 글꼴을 배웁니다.',
   'Re-reads each position whose printed solution would not replay, looking for one misread square. Recovered about 26 more puzzles on a 1,000-puzzle book, and takes longer.':
-    '인쇄된 정답이 재생되지 않는 포지션마다 잘못 읽은 칸 하나를 찾아 다시 읽습니다. 퍼즐 1,000개짜리 책에서 26개를 더 건졌으며, 시간은 더 걸립니다.',
+    '인쇄된 정답이 재생되지 않는 포지션마다 잘못 읽은 칸 하나를 찾아 다시 읽습니다. 퍼즐 1,000개짜리 책에서 26개를 더 찾아냈으며, 시간은 더 걸립니다.',
   'page {page}/{pages}, {n} diagrams so far': '{page}/{pages}쪽, 지금까지 다이어그램 {n}개',
   '{n} puzzles imported with their solutions': '정답과 함께 퍼즐 {n}개를 가져왔습니다',
   '{n} had a square misread, found by the book’s own solution.': 
@@ -1509,8 +1509,8 @@ export const ko: Record<string, string> = {
 
   // --- position from an image ----------------------------------------------
   'No image in the clipboard. Copy or snip one first.':
-    '클립보드에 이미지가 없습니다. 먼저 복사하거나 잘라 두세요.',
-  'That drop had no image file.': '놓은 것에 이미지 파일이 없습니다.',
+    '클립보드에 이미지가 없습니다. 먼저 복사하거나 캡처해 두세요.',
+  'That drop had no image file.': '놓은 파일 중에 이미지가 없습니다.',
   'Set up by hand': '직접 만들기',
   'Load into the editor': '편집기로 불러오기',
 
@@ -1527,10 +1527,10 @@ export const ko: Record<string, string> = {
   // --- demo ----------------------------------------------------------------
   'This is a demo': '이것은 데모입니다',
   'Changes here live in this browser tab and are gone on reload. Profile, password, two-factor authentication, the Lichess token and the vault itself need your own server. Install the app or host it, and this page becomes real.':
-    '여기서 바꾼 것은 이 브라우저 탭에만 남고 새로고침하면 사라집니다. 프로필, 비밀번호, 2단계 인증, Lichess 토큰, 그리고 보관함 자체는 당신의 서버가 있어야 합니다. 앱을 설치하거나 직접 호스팅하면 이 페이지가 진짜가 됩니다.',
+    '여기서 바꾼 것은 이 브라우저 탭에만 남고 새로고침하면 사라집니다. 프로필, 비밀번호, 2단계 인증, Lichess 토큰, 그리고 보관함 자체는 직접 운영하는 서버가 필요합니다. 앱을 설치하거나 직접 호스팅하면 이 페이지가 진짜가 됩니다.',
   'No games from this position in “{book}”.': '“{book}”에는 이 포지션의 기보가 없습니다.',
   'Demo: a sample vault of your own. Edit anything, and a reload puts it back.':
-    '데모: 당신만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.',
+    '데모: 나만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.',
 
   // --- status and error messages -------------------------------------------
   'reading the book’s solutions': '책의 정답을 읽는 중', 
@@ -1539,10 +1539,10 @@ export const ko: Record<string, string> = {
   "Saved.": "저장했습니다.",
   "Could not save.": "저장하지 못했습니다.",
   "New passwords do not match.": "새 비밀번호가 서로 다릅니다.",
-  "Password changed. Signing you out to the lock screen…": "비밀번호를 바꿨습니다. 잠금 화면으로 보냅니다…",
+  "Password changed. Signing you out to the lock screen…": "비밀번호를 바꿨습니다. 잠금 화면으로 이동합니다…",
   "Could not start 2FA enrolment.": "2단계 인증 등록을 시작하지 못했습니다.",
-  "2FA is on. Signing you out to the lock screen…": "2단계 인증을 켰습니다. 잠금 화면으로 보냅니다…",
-  "2FA is off. Signing you out to the lock screen…": "2단계 인증을 껐습니다. 잠금 화면으로 보냅니다…",
+  "2FA is on. Signing you out to the lock screen…": "2단계 인증을 켰습니다. 잠금 화면으로 이동합니다…",
+  "2FA is off. Signing you out to the lock screen…": "2단계 인증을 껐습니다. 잠금 화면으로 이동합니다…",
   "Sign out": "로그아웃",
   "Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.":
     "이 기기의 세션을 서버에서 끝내므로 쿠키 사본도 더는 쓸 수 없습니다. 다른 기기는 로그인 상태로 남습니다.",
@@ -1615,8 +1615,8 @@ export const ko: Record<string, string> = {
   "Note": "노트",
   "Study": "스터디",
   "(no folder)": "(폴더 없음)",
-  "{n} games": "{n}개 게임",
-  "{n}+ games": "{n}개 이상 게임",
+  "{n} games": "게임 {n}개",
+  "{n}+ games": "게임 {n}개 이상",
   "depth": "깊이",
   "…or read the position from a picture": "…또는 사진에서 포지션을 읽어 옵니다",
   "Pick an opening or ECO code": "오프닝 또는 ECO 코드 선택",
@@ -1696,7 +1696,7 @@ export const ko: Record<string, string> = {
   // --- nav, puzzle prompts, board and editor labels ------------------------
   "Find the best move. The difficulty and themes stay hidden until you finish.": "최선의 수를 찾으세요. 난이도와 테마는 끝낼 때까지 숨겨집니다.",
   "New": "새로운",
-  "Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.": "내 게임을 살펴봅니다. 위에 {site} 사용자명을 입력하고 월을 고른 다음, 남길 만한 게임을 모음에 추가하세요.",
+  "Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.": "내 게임을 살펴봅니다. 위에 {site} 사용자명을 입력하고 달을 고른 다음, 남길 만한 게임을 모음에 추가하세요.",
   "Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …": "PGN 또는 수순만 붙여넣으세요: 1. e4 e5 2. Nf3 …",
   "needs internet": "인터넷 필요",
 
@@ -1705,7 +1705,7 @@ export const ko: Record<string, string> = {
   "Your vault": "내 보관함",
   "My games": "내 게임",
   'Your collection plus every Chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.':
-    '모음과 함께, 둘러본 모든 Chess.com·Lichess 월 기보에서 답합니다. 한 번 본 달은 계속 집계에 남습니다. "보관한 것만"은 모음으로 좁힙니다.',
+    '모음과 함께, 둘러본 모든 Chess.com·Lichess 달의 기보에서 답합니다. 한 번 본 달은 계속 집계에 남습니다. "담아 둔 것만"은 모음으로 좁힙니다.',
   "Won": "승",
   "Drew": "무",
   "Lost": "패",
@@ -1713,7 +1713,7 @@ export const ko: Record<string, string> = {
   "Blitz": "블리츠",
   "Rapid": "래피드",
   "Classical": "클래시컬",
-  "Kept only": "보관한 것만",
+  "Kept only": "담아 둔 것만",
   // The badge on a deviation row; "Kept only" above is the filter that
   // narrows to the same games, so they share the word.
   "Kept": "모음에 있음",
@@ -1730,7 +1730,7 @@ export const ko: Record<string, string> = {
   "Time control": "시간제",
   "Played between": "대국 기간",
   "Clear filters": "필터 지우기",
-  "{n} games indexed": "{n}개 게임 색인됨",
+  "{n} games indexed": "게임 {n}개 색인됨",
   "{n} of {total} games match": "{total}개 중 {n}개 일치",
   "Recent games": "최근 게임",
   "None of your games reached this position.": "이 포지션에 도달한 내 게임이 없습니다.",
@@ -1797,11 +1797,11 @@ export const ko: Record<string, string> = {
   // --- books: the library and the reader -----------------------------------
   'Upload cancelled': '업로드가 취소되었습니다',
   'The PDF could not be kept on the shelf: {reason}':
-    'PDF를 목록에 보관하지 못했습니다: {reason}',
+    'PDF를 저장하지 못했습니다: {reason}',
   'that PDF is too big (500 MB cap)': 'PDF가 너무 큽니다 (최대 500 MB)',
   'that file is not a PDF': 'PDF 파일이 아닙니다',
   'no such page': '그런 페이지가 없습니다',
-  'not a book on the shelf': '목록의 책이 아닙니다',
+  'not a book on the shelf': '목록에 없는 책입니다',
   Book: '책',
   Read: '읽기',
   'Read the book': '책 읽기',
@@ -1849,7 +1849,7 @@ export const ko: Record<string, string> = {
     '어떤 체스 책이든, 보관함에 보관되고 여기서 보드 옆에 두고 읽습니다',
   'That file could not be read as a PDF.': 'PDF로 읽을 수 없는 파일입니다.',
   'a better file behind “{title}”. The old one is replaced and your page is kept':
-    '“{title}”의 더 나은 파일. 이전 파일은 바뀌고, 읽던 쪽은 그대로입니다',
+    '“{title}”의 파일을 교체합니다. 읽던 쪽은 그대로입니다',
   'Opening…': '여는 중…',
   'Last read': '최근 읽은 순',
   'Puzzle book': '퍼즐 책',
@@ -1888,7 +1888,7 @@ export const ko: Record<string, string> = {
   // have entries above.)
   Elo: 'Elo',
   ECO: 'ECO',
-  Notation: '기보',
+  Notation: '수순',
   End: '끝',
   'What the pane is showing': '이 창이 보여주는 것',
   'No game selected': '선택된 게임 없음',
@@ -1922,14 +1922,14 @@ export const ko: Record<string, string> = {
   'is not a year or a span. Use 2014 or 2010-2015': '은(는) 연도나 범위가 아닙니다. 2014나 2010-2015처럼 쓰세요',
   'cannot all hold in one game': '은(는) 한 게임에서 동시에 성립할 수 없습니다',
   'cannot hold with the active filters': '은(는) 현재 필터와 동시에 성립할 수 없습니다',
-  'Both players at least, or a band': '두 플레이어 모두 이상, 또는 범위',
+  'Both players at least, or a band': '두 플레이어 모두 이 값 이상, 또는 범위',
   'Type a floor or a band, like 2500 or 2400-2600': '2500이나 2400-2600처럼 하한 또는 범위를 입력하세요',
   'is not a rating floor or band. Use 2500 or 2400-2600':
     '은(는) 레이팅 하한이나 범위가 아닙니다. 2500이나 2400-2600처럼 쓰세요',
   'This player as White': '이 플레이어가 백인 게임',
   'This player as Black': '이 플레이어가 흑인 게임',
   'Opening name contains': '오프닝 이름에 포함',
-  'ECO code starts with': 'ECO 코드가 이걸로 시작',
+  'ECO code starts with': 'ECO 코드의 앞부분',
   'Event name contains, in quotes if it has spaces': '대회 이름에 포함, 띄어쓰기가 있으면 따옴표로',
   'A year, or a span of years': '연도 하나, 또는 연도 범위',
   'That outcome and that result can never happen in the same game, so no game will match.':
