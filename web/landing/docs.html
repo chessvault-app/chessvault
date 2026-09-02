@@ -1439,7 +1439,7 @@
                 <tbody>
                   <tr><td>New study</td><td data-ko="빈 스터디 하나.">A fresh study.</td></tr>
                   <tr><td>New folder</td><td data-ko="스터디를 묶는 폴더.">A folder to group studies.</td></tr>
-                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «A Lichess study export brings its chapters, comments and arrows.» 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 폴더를 정합니다.">Paste a PGN or choose a file. “A Lichess study export brings its chapters, comments and arrows.” Set the title and target collection.</td></tr>
+                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «A Lichess study export brings its chapters, comments and arrows.» 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 폴더를 정합니다.">Paste a PGN or choose a file. “A Lichess study export brings its chapters, comments and arrows.” Set the title and target folder.</td></tr>
                   <tr><td>From Lichess</td><td data-ko="사용자명을 넣고 «List this account's studies» → 가져올 것을 체크 → Import. 비공개 스터디는 <code>study:read</code> 스코프의 토큰이 필요합니다.">Enter a username, “List this account's studies”, tick what to bring, Import. Private studies need a token with the <code>study:read</code> scope.</td></tr>
                 </tbody>
               </table>
@@ -1763,7 +1763,7 @@
             </p>
             <h2 data-ko="기물 구성으로">By material</h2>
             <p data-ko="<strong>Material</strong>은 폰 엔딩부터 «A queen up»까지의 엔드게임 프리셋, 또는 <strong>Custom…</strong> — 진영·기물별 개수(«0–1», «1–2», «2+»)를 직접 정합니다. 아무 조건도 없으면 앱이 막습니다: «Pick at least one count, or every game matches.»">
-              <strong>Material</strong> offers endgame presets from pawn endings to “A queen up”,
+              <strong>Material</strong> offers endgame presets from the pawn endgame to “A queen up”,
               or <strong>Custom…</strong> — per-side, per-piece counts (“0–1”, “1–2”, “2+”). With
               no constraint at all the app objects: “Pick at least one count, or every game
               matches.”
@@ -2134,7 +2134,7 @@
                 <tbody>
                   <tr><td>Mode</td><td data-ko="<strong>Free play</strong>(자유 대국) 또는 <strong>Drill a study</strong>(스터디 암송).">Two ways to train: <strong>Free play</strong>, or <strong>Drill a study</strong>.</td></tr>
                   <tr><td>Play as</td><td>White / Black</td></tr>
-                  <tr><td>Source</td><td data-ko="«Where replies come from»: <strong>Lichess database</strong>(온라인, 토큰 필요. 옆의 <strong>Rating</strong>으로 상대 기력대를 고릅니다) 또는 아무 <strong>참고 데이터베이스</strong>(동봉된 것 포함, 오프라인으로 동작합니다).">“Where replies come from”: the <strong>Lichess database</strong> (online, token needed — an <strong>Rating</strong> select picks the opponent band) or any <strong>reference database</strong>, the bundled one included, offline.</td></tr>
+                  <tr><td>Source</td><td data-ko="«Where replies come from»: <strong>Lichess database</strong>(온라인, 토큰 필요. 옆의 <strong>Rating</strong>으로 상대 기력대를 고릅니다) 또는 아무 <strong>참고 데이터베이스</strong>(동봉된 것 포함, 오프라인으로 동작합니다).">“Where replies come from”: the <strong>Lichess database</strong> (online, token needed — a <strong>Rating</strong> select picks the opponent band) or any <strong>reference database</strong>, the bundled one included, offline.</td></tr>
                   <tr><td>Opening <small>(Free play)</small></td><td data-ko="이름이나 ECO 코드로 약 3,800개 중에서 검색합니다: «Search any opening or ECO code…».">Searchable by name or ECO code, about 3,800 of them — “Search any opening or ECO code…”.</td></tr>
                   <tr><td>Study · Chapter <small>(Drill)</small></td><td data-ko="암송할 스터디와 범위. «Whole study» 또는 챕터 하나입니다. 오프닝 맵에서 보내온 드릴이면 «From the opening map» 블록이 그 범위를 설명합니다.">What to recite and how much — “Whole study” or one chapter. A drill sent from the opening map shows a “From the opening map” block naming its scope.</td></tr>
                   <tr><td>Start</td><td data-ko="시작. 그 아래, 기록이 쌓이면 <strong>Drill a position due for review</strong>(기한이 아직이면 <strong>Drill a missed position</strong>)도 표시됩니다.">Begins. Below it, once a record exists, <strong>Drill a position due for review</strong> — or <strong>Drill a missed position</strong> while nothing is due yet.</td></tr>
@@ -2352,8 +2352,8 @@
                       <strong>Use the tablebase</strong> is the switch, and it is this device's
                       alone: off, nothing is asked from here at all. Under it,
                       <strong>Answers come from</strong> — the vault's own setting, one choice of
-                      <strong>Lichess</strong>, <strong>Your server</strong> or
-                      <strong>Table files</strong>, with only the field that choice needs shown
+                      <strong>Lichess’s public tablebase</strong>, <strong>A tablebase server of your own</strong> or
+                      <strong>Table files on the server</strong>, with only the field that choice needs shown
                       beneath it. Saved without a restart, and each source's answers are cached
                       apart from the others'.
 
@@ -2404,7 +2404,7 @@
                     <td>Storage used</td>
                     <td data-ko="영역별 저장 공간: Games, Studies, Notes, Books, Puzzle books, Puzzle progress, Repertoire, PGN sources, Browsed games, Document history, Reference databases, 캐시, 그리고 합계. 읽기 전용이고, 앞의 넷은 각자의 페이지로 이어집니다.">
                       Storage by area — Games, Studies, Notes, Books, Puzzle books, Puzzle
-                      progress, Repertoire, PGN sources, Browsed games, Document history, Reference
+                      progress, Repertoire, PGN files, Browsed games, Document history, Reference
                       databases, the caches — and a total. Read-only; the first four link to their
                       pages.
                     </td>
