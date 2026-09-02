@@ -258,9 +258,15 @@ function createWindow() {
     // shell's OWN chooser page. `file://` as a whole was allowed here,
     // which would have let a page navigate the bridge-carrying window to
     // any local file; only the chooser needs it.
-    const chooser = pathToFileURL(join(here, 'chooser.html')).href;
-    const allowed = isOwnOrigin(url) || url.split('?')[0] === chooser;
+    const allowed = isOwnOrigin(url) || url.split('?')[0] === CHOOSER_URL;
     if (!allowed) event.preventDefault();
+  });
+  // The same rule for a redirect: will-navigate does not fire for a
+  // server-side redirect of the shell's own loadURL, so an https server
+  // that answered with a 302 to http:// landed a plaintext page in the
+  // window that carries the bridge.
+  win.webContents.on('will-redirect', (event, url) => {
+    if (!isOwnOrigin(url)) event.preventDefault();
   });
   return win;
 }
@@ -415,10 +421,10 @@ app.whenReady().then(async () => {
       return { error: `Could not reach that server (${err?.code ?? err?.message ?? 'no answer'}).` };
     }
   });
-  ipcMain.handle('app:info', () => ({
-    version: app.getVersion(),
-    feed: readSettings().mode === null ? null : process.env.CHESS_UPDATE_URL ?? null,
-  }));
+  // The version, and nothing about this machine: the feed address used
+  // to ride along, read from the environment, and the page asking is
+  // whatever the chosen server serves.
+  ipcMain.handle('app:info', () => ({ version: app.getVersion() }));
 
   /**
    * Ask the feed, and ANSWER — the automatic check on launch reports only
@@ -463,8 +469,12 @@ app.whenReady().then(async () => {
   // of Syzygy tables is. An older bridge passes nothing and gets the
   // vault wording, which is what it always said.
   ipcMain.handle('vault:pick-folder', async (_e, title) => {
+    // One short line: the page names the question, and the page may be
+    // a remote server's, so it does not get a paragraph of its own in a
+    // native dialog's title bar.
+    const asked = typeof title === 'string' ? title.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
     const picked = await dialog.showOpenDialog(win, {
-      title: typeof title === 'string' && title.trim() ? title : 'Open vault folder',
+      title: asked || 'Open vault folder',
       properties: ['openDirectory', 'createDirectory'],
     });
     return picked.canceled ? null : (picked.filePaths[0] ?? null);
