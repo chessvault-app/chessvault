@@ -2,6 +2,7 @@ import { Database, ExternalLink, RotateCw, ScanSearch, SearchCheck, SlidersHoriz
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { api } from '@/lib/api';
+import { useLineOpening } from '@/lib/opening';
 import { navigate, navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
 import { cn } from '@/lib/utils';
@@ -170,6 +171,19 @@ export function ExplorerPane({
     if (enabled) lookup(node.fen);
   }, [node.fen, enabled, book, lookup]);
 
+  // Every position from the root to the cursor, which is what naming a line
+  // takes: the catalogue is keyed by position, and the deepest named one
+  // along the way is the line's name.
+  const lineFens = useMemo(
+    () => pathTo(tree, cursorId).map((id) => getNode(tree, id).fen),
+    [tree, cursorId],
+  );
+  // Asked of the shared opening cache, not only of what this pane has
+  // explored. `openingsSeen` fills as the user steps forward, so switching
+  // the explorer on in the middle of a game found nothing behind the cursor
+  // and said "Out of book" about a position still in theory.
+  const named = useLineOpening(lineFens);
+
   // The name shown is the deepest *named* position on the current line: deep
   // middlegames keep their opening's name rather than dropping to nothing.
   const lineOpening = useMemo((): Opening | null => {
@@ -178,8 +192,8 @@ export function ExplorerPane({
       const seen = openingsSeen[getNode(tree, id).fen];
       if (seen) return seen;
     }
-    return null;
-  }, [opening, resultFen, node.fen, tree, cursorId, openingsSeen]);
+    return named;
+  }, [opening, resultFen, node.fen, tree, cursorId, openingsSeen, named]);
 
   const fresh = resultFen === node.fen;
 
