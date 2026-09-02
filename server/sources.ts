@@ -16,8 +16,15 @@ import { VAULT_SOURCES } from './paths.ts';
  * 300 MB Elite month onto the server at all.
  */
 
-/** No slashes, no dots-only names — upload names map straight to files. */
-const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+/** No slashes, no dots-only names — upload names map straight to files.
+    Bounded, because a name past the filesystem's limit failed inside the
+    open and the error it threw named the vault's whole path. */
+const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,119}$/;
+
+/** Names with an upload in flight. A second upload of the same name used
+    to pass the exists check (the first had not renamed yet), open the same
+    .part, and interleave its bytes with the first's. */
+const inFlight = new Set<string>();
 
 export interface SourcesOptions {
   /**
@@ -70,8 +77,11 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
     if (resolve(target, '..') !== resolve(dir)) {
       return c.json({ error: 'invalid name' }, 400);
     }
-    if (existsSync(target)) return c.json({ error: 'a file with that name is already here' }, 409);
+    if (existsSync(target) || inFlight.has(target)) {
+      return c.json({ error: 'a file with that name is already here' }, 409);
+    }
     if (!c.req.raw.body) return c.json({ error: 'empty upload' }, 400);
+    inFlight.add(target);
 
     // This route is exempt from the API-wide 32 MB body cap (which would
     // buffer or refuse exactly the uploads it exists for), so it carries
@@ -131,7 +141,12 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
       if ((error as Error).message === 'source file too large') {
         return c.json({ error: 'source file too large (2 GB cap)' }, 413);
       }
-      return c.json({ error: `upload failed: ${(error as Error).message}` }, 500);
+      // The reason goes to the log, not the reply: a filesystem error
+      // names the file it failed on, absolute path and all.
+      console.error(`sources: upload of ${name} failed: ${(error as Error).message}`);
+      return c.json({ error: 'upload failed' }, 500);
+    } finally {
+      inFlight.delete(target);
     }
     return c.json({ name, bytes: statSync(target).size });
   });
@@ -157,8 +172,10 @@ export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions 
     try {
       rmSync(target);
     } catch (error) {
-      // Something else has the file open — say so rather than 500.
-      return c.json({ error: `could not delete it: ${(error as Error).message}` }, 500);
+      // Something else has the file open — say so rather than 500, and
+      // say it without the path the error carries.
+      console.error(`sources: could not delete ${name}: ${(error as Error).message}`);
+      return c.json({ error: 'could not delete it: something else has the file open' }, 500);
     }
     return c.json({ deleted: name });
   });

@@ -1239,7 +1239,9 @@ export function refGamesApi(
         const { games, bytes } = await ensureResident(path);
         return c.json({ on: true, resident: { games, bytes } });
       } catch (error) {
-        return c.json({ error: `could not load the index: ${(error as Error).message}` }, 500);
+        // Logged, not replied: the message names the database file.
+        console.error(`refgames: could not load the index for ${name}: ${(error as Error).message}`);
+        return c.json({ error: 'could not load the index' }, 500);
       }
     }
     evictResident(path);

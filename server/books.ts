@@ -235,6 +235,10 @@ export function booksApi(
     if (Number.isFinite(declared) && declared > PDF_CAP) {
       return c.json({ error: 'that PDF is too big (500 MB cap)' }, 413);
     }
+    // One upload per book at a time: two at once shared one .part and
+    // interleaved, and whichever renamed last won with the other's bytes.
+    if (receiving.has(id)) return c.json({ error: 'that book is already being uploaded' }, 409);
+    receiving.add(id);
     mkdirSync(bookDir(id), { recursive: true });
     const target = pdfPath(id);
     const part = `${target}.part`;
@@ -276,10 +280,15 @@ export function booksApi(
       const why = (error as Error).message;
       if (why === 'too big') return c.json({ error: 'that PDF is too big (500 MB cap)' }, 413);
       if (why === 'not a pdf') return c.json({ error: 'that file is not a PDF' }, 400);
-      return c.json({ error: `upload failed: ${why}` }, 500);
+      // Logged, not replied: a filesystem error names the file, path and all.
+      console.error(`books: upload for ${id} failed: ${why}`);
+      return c.json({ error: 'upload failed' }, 500);
+    } finally {
+      receiving.delete(id);
     }
     return null;
   }
+  const receiving = new Set<string>();
 
   const lastPage = (id: string): number | null => {
     const reading = readJson<Partial<Reading>>(readingPath(id), {});

@@ -409,7 +409,9 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
    */
   api.get('/links/:section{notes|studies|games}/:id{.+}', (c) => {
     const section = c.req.param('section') as LinkSection;
-    const id = decodeURIComponent(c.req.param('id'));
+    // Hono has already decoded the segment; decoding it again threw on a
+    // document named with a percent sign, which validId allows.
+    const id = c.req.param('id');
     const scan = current();
     const mentions = scan.links.get(keyOf(section, id)) ?? [];
 
