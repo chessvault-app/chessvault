@@ -691,24 +691,56 @@
            pixel. If a capture ever makes them differ, the ratio here is
            wrong in one scheme and the attributes have to move onto the
            <source> elements. -->
+<!-- The first picture on the page is the vault, not a screenshot of
+           the app: the folder is the claim nobody else can make, and for a
+           long time it was the one thing the page did not show. The names
+           are the demo vault's own files (demo-seed/), so what is listed
+           here is what "Try the demo" opens. The analysis board moved to
+           the gallery's last plate. -->
       <div class="wrap shot">
-        <picture>
-          <source
-            media="(prefers-color-scheme: dark)"
-            srcset="shots/board-dark-960.png 960w, shots/board-dark-1280.png 1280w, shots/board-dark.png 1904w"
-            sizes="(min-width: 62rem) 960px, calc(100vw - 2rem)"
-          />
-          <img
-            src="shots/board.png"
-            srcset="shots/board-960.png 960w, shots/board-1280.png 1280w, shots/board.png 1904w"
-            sizes="(min-width: 62rem) 960px, calc(100vw - 2rem)"
-            width="1904"
-            height="993"
-            fetchpriority="high"
-            alt="The analysis board with the engine and opening explorer"
-            data-ko-alt="엔진과 오프닝 탐색기를 함께 띄운 분석 보드"
-          />
-        </picture>
+        <figure class="vault">
+          <span class="root">~/chess-vault/</span>
+          <ul>
+            <li>
+              <span class="path"><span class="tick">├ </span>studies/</span>
+              <span class="gloss" data-ko="스터디 하나가 PGN 파일 하나, 챕터는 그 안에">one study per PGN file, chapters inside it</span>
+            </li>
+            <li><span class="path"><span class="tick">│  ├ </span>Attacking the castled king.pgn</span></li>
+            <li><span class="path"><span class="tick">│  ├ </span>Minority attack.pgn</span></li>
+            <li><span class="path"><span class="tick">│  └ </span>Openings/</span></li>
+            <li>
+              <span class="path"><span class="tick">├ </span>notes/</span>
+              <span class="gloss" data-ko="마크다운, 본문에 보드를">markdown, boards in the text</span>
+            </li>
+            <li><span class="path"><span class="tick">│  ├ </span>Notes on the Catalan.md</span></li>
+            <li><span class="path"><span class="tick">│  └ </span>Opening prep checklist.md</span></li>
+            <li>
+              <span class="path"><span class="tick">├ </span>games/collection/</span>
+              <span class="gloss" data-ko="게임 하나가 PGN 하나">one PGN per game</span>
+            </li>
+            <li><span class="path"><span class="tick">│  └ </span>Bex N vs Ueda K 2026-02-02.pgn</span></li>
+            <li>
+              <span class="path"><span class="tick">├ </span>puzzles/history.jsonl</span>
+              <span class="gloss" data-ko="모든 시도, 한 줄에 하나">every attempt, one line each</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">├ </span>repertoire/map.json</span>
+              <span class="gloss" data-ko="오프닝 맵">the opening map</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">├ </span>config.json</span>
+              <span class="gloss" data-ko="설정과 토큰, 커밋되지 않음">settings and tokens, never committed</span>
+            </li>
+            <li>
+              <span class="path"><span class="tick">└ </span>.history.git</span>
+              <span class="gloss" data-ko="모든 변경을 되돌릴 수 있게">every change, undoable</span>
+            </li>
+          </ul>
+          <figcaption data-ko="어떤 편집기나 백업 도구가 보는 그대로의 파일들입니다. 나머지는 전부 앱이 이 파일들에서 만들어 내고, 지워도 다시 만듭니다.">
+            The files, as any editor or backup tool sees them. Everything else the app derives
+            from these, and rebuilds if deleted.
+          </figcaption>
+        </figure>
       </div>
 
       <section class="wrap" id="what">
@@ -938,6 +970,40 @@
                   it instead and everything else becomes a client: a phone's home screen as a PWA,
                   or the same desktop app pointed at it. Same games, same progress, whichever device
                   you opened.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article class="plate flip">
+            <span class="n" data-ko="그림 6">fig. 6</span>
+            <div class="body">
+              <figure>
+                <picture>
+                  <source
+                    media="(prefers-color-scheme: dark)"
+                    srcset="shots/board-dark-960.png 960w, shots/board-dark-1280.png 1280w, shots/board-dark.png 1904w"
+                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
+                  />
+                  <img
+                    src="shots/board.png"
+                    srcset="shots/board-960.png 960w, shots/board-1280.png 1280w, shots/board.png 1904w"
+                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
+                    width="1904"
+                    height="993"
+                    loading="lazy"
+                    decoding="async"
+                    alt="The analysis board with the engine and opening explorer"
+                    data-ko-alt="엔진과 오프닝 탐색기를 함께 띄운 분석 보드"
+                  />
+                </picture>
+              </figure>
+              <div>
+                <h3 data-ko="분석 보드">The analysis board</h3>
+                <p data-ko="브라우저 안의 Stockfish 18이 오프닝 탐색기 옆에 있습니다. 엔진의 라인, 필드의 응수, 그리고 지금까지 둔 수의 트리가 한 화면에 있고, 한 수를 두면 패널 제목이 그 오프닝의 이름으로 바뀝니다.">
+                  Stockfish 18 in the browser, beside the opening explorer: the engine's lines, the
+                  field's replies and the tree of what you played on one screen, and the panel takes
+                  the opening's name the moment you make a move.
                 </p>
               </div>
             </div>
