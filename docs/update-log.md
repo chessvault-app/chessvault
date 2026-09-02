@@ -331,6 +331,17 @@ other people.
   the app. `check:repo` now rejects the retired Korean words, and 보관함
   anywhere its English does not say vault.
 
+- **A side is 진영, and the docs follow the app.** The Korean dictionary
+  said 색 (a colour) for a side in five strings and 진영 in one; the manual
+  said 진영 throughout, which is what players say. 진영 wins, and 색 is
+  left to the Appearance colours. Some forty Korean sentences that read as
+  translated are rewritten as Korean: no more 당신, 거르기 for a filter,
+  or "여기부터는 스스로입니다". The manual's Korean side, the landing page
+  and every README and doc now use the app's words (folders, PGN files,
+  shelf, Event, device, Chess.com, 목록, 플레이어, 색인, 반수, 온라인 기보),
+  the manual's Korean «quotes» are checked the way its English ones are,
+  and the READMEs' Korean gains the passages its English had and it lacked.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
