@@ -179,8 +179,9 @@ trainer's bargain exactly — the schedule decides the order and the
 count, the pool decides what may be served. **Drill a position due for
 review** replays a recorded path to start a session at one of them,
 most overdue first, falling back to the start if the study no longer
-contains the line. Evidence comes from the newest *miss* under a
-position, because a recall is recorded bare. In a whole-study drill the
+contains the line. The path it replays is the newest *miss* recorded
+under the position — the entry the server keeps as the evidence a
+re-drill is rebuilt from. In a whole-study drill the
 record still files under the chapter the position belongs to, so
 chapter-scoped counts stay meaningful, and `/api/repertoire/meta`
 answers the same schedule across every study at once — which is what

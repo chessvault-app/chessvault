@@ -194,14 +194,16 @@ flowchart LR
 
 ## Deployment model
 
-Target: a small Linux box running the server; every device —
+Target: a small always-on box (Linux under systemd, or a Mac under
+launchd) running the server; every device —
 desktop app in remote mode, phone PWA — is a client. The current Windows
 dev box is temporary; nothing may depend on it. Cross-platform paths and
 LF endings are policy.
 
-Ship with `scripts/deploy.sh` (git-bundle push → `npm ci` → build →
-`systemctl restart chess-vault`), which also runs `tune-dbs.ts` so the
-prepared databases keep their indexes. SSH runs over a Tailscale tailnet
+Ship with `scripts/deploy.sh` (build locally → git-bundle push → `npm ci`
+→ restart the service, `systemctl` on Linux and `launchctl` on macOS),
+which also runs `tune-dbs.ts` so the prepared databases keep their
+indexes and rebuilds the native binary where a Rust toolchain is found. SSH runs over a Tailscale tailnet
 with public port 22 closed at the firewall.
 
 How the app itself is reached is a deployment choice, not an architectural

@@ -74,7 +74,7 @@ and fixed in step 4.
 ```json
 {
   "slug": "<slug>",
-  "title": "<the book's title, which is also its folder name>",
+  "title": "<the book's title, which is how its vault book is found>",
   "pages": [5, 105],
   "solutionsAfterPage": 100,
   "maxNumber": 1001,
@@ -161,8 +161,8 @@ does internally.
   Otherwise a measure run takes the cached reads and only re-validates,
   which is exactly what you want after a parser change and exactly what
   you do not want after a model change.
-- **The folder is named by `title`, not `slug`.** Two configs with the
-  same title write to the same book.
+- **The book is found by `title`, not `slug`.** Two configs with the
+  same title write to the same book; the folder itself is a generated id.
 - **The engine cache lives beside the report** as
   `<report>-engine-cache.json`. Delete it to re-search positions.
 - **Nothing here is a user-facing route.** If you find yourself wanting a

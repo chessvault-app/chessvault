@@ -72,7 +72,7 @@ as a badge; the panel shows the full statistics table — every
 continuation with its share of games and the W/D/L split as a bar,
 charted rows jumping to their node, unmet ones charting in a tap,
 popular unmet ones framed in warning — and reports how much of the
-field the node meets ("62% of games met"). The check is off until a
+field the node meets ("62% met"). The check is off until a
 source is chosen — from the map's own controls, which also switch the
 colour: icon buttons in the page's top-right corner on a pointer
 device, the floating button on a phone — and the choice is device-local; answers are cached per

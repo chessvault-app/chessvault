@@ -237,16 +237,18 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
 
 ## Layout rules
 
-- **A page belongs to one of three families**, listed in `components/layout.ts`.
+- **A page belongs to one of four families**, listed in `components/layout.ts`:
+  the scrolling column, the board page, the canvas and the workspace.
   The family says what the page *is*; only the first has widths to pick
-  from. A page that fits none of the three is a fourth family to be
+  from. A page that fits none of the four is a fifth family to be
   named there, not markup written inline — the opening map spent its
   first release off-template that way.
-- **Scrolling pages sit in `PageShell`, on one of three named
-  widths**: `wide` (72rem) for pages that split into columns or card
-  grids (Games, Studies, Notes), `medium` (48rem) for one column read
-  top to bottom (Puzzles, Databases), `narrow` (42rem) for forms
-  (Settings). A width is a statement about the kind of content, so
+- **Scrolling pages sit in `PageShell`, on one of four named
+  widths**: `xwide` (96rem) for a data table beside a details column
+  (the games collection), `wide` (72rem) for pages that split into
+  columns or card grids (Studies, Notes), `medium` (48rem) for one
+  column read top to bottom (Puzzles, Databases), `narrow` (42rem) for
+  forms (Settings). A width is a statement about the kind of content, so
   pages of the same kind must agree — a page picks a tier, never a
   number. One gutter scale (1rem, 1.5rem from `md`, where the sidebar
   appears) and one safe-area-aware bottom inset come with it.
@@ -613,7 +615,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
   RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
   Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
-  Spinner, Skeleton, Empty, Card, Separator, Calendar, Sonner —
+  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Sonner —
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius

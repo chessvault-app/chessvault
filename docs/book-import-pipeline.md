@@ -10,7 +10,8 @@ tiers. Everything runs locally; only the resulting vault files matter.
 
 **In the app** is the normal way: open a puzzle book, import its PDF, and
 the browser does the whole thing — renders each page, finds the diagrams,
-reads them with CellNet across a pool of workers as wide as the machine,
+reads them with CellNet across a pool of up to six workers (one core
+left free),
 reads the page's text layer, pairs numbers to diagrams, works out how the
 book writes its answers, saves what replays as numbered puzzles, asks the
 engine about the boards whose printed answer would not replay, and
