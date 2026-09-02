@@ -138,6 +138,15 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
         // the game statistics off the bottom of the panel.
         <div className="min-h-0 overflow-y-auto">
           <table className="w-full text-sm">
+            {/* Headed for a screen reader only, like the statistics table
+                below it: the strip above is the visible heading. */}
+            <thead className="sr-only">
+              <tr>
+                <th scope="col">{t('Next move')}</th>
+                <th scope="col">{t('Outcome')}</th>
+                <th scope="col">{t('Distance')}</th>
+              </tr>
+            </thead>
             <tbody>
               {(all ? answer.moves : answer.moves.slice(0, MOVE_LIMIT)).map((move, at) => (
                 <MoveRow
@@ -186,7 +195,17 @@ function MoveRow({
       title={categoryLabel(move.category)}
     >
       <td className="text-foreground font-moves w-14 py-(--row-py-tight) pl-3 pr-1 font-semibold">
-        {move.san}
+        {/* The move is the row's button (see ExplorerPane's MoveRow). */}
+        <button
+          type="button"
+          className="text-left"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay();
+          }}
+        >
+          {move.san}
+        </button>
       </td>
       <td className="py-(--row-py-tight) pr-2">
         <span

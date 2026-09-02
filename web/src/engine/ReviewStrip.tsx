@@ -297,8 +297,39 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
           else setHover(indexAt(e));
         }}
         onPointerLeave={() => setHover(null)}
+        // A slider in fact, not only in name: focusable, its value the
+        // cursor's index along the points, and the arrows step it.
         role="slider"
+        tabIndex={0}
         aria-label={t('Evaluation graph. Click to jump to a move.')}
+        aria-valuemin={0}
+        aria-valuemax={points.length - 1}
+        aria-valuenow={Math.max(0, cursorIndex)}
+        aria-valuetext={t('Position {n} of {total}', {
+          n: Math.max(0, cursorIndex) + 1,
+          total: points.length,
+        })}
+        onKeyDown={(e) => {
+          const from = Math.max(0, cursorIndex);
+          const last = points.length - 1;
+          const to =
+            e.key === 'ArrowLeft' || e.key === 'ArrowDown'
+              ? from - 1
+              : e.key === 'ArrowRight' || e.key === 'ArrowUp'
+                ? from + 1
+                : e.key === 'Home'
+                  ? 0
+                  : e.key === 'End'
+                    ? last
+                    : null;
+          if (to === null) return;
+          // Handled here and nowhere else: the board's arrow keys listen
+          // on the window and would step the game a second time.
+          e.preventDefault();
+          e.stopPropagation();
+          const target = points[Math.min(last, Math.max(0, to))];
+          if (target && nodes[target.id]) setCursor(target.id);
+        }}
       >
         <path d={area} fill="var(--color-eval-white)" opacity="0.85" />
         {/* Thin line joining the move dots along the curve. */}

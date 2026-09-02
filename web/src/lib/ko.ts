@@ -1942,4 +1942,19 @@ export const ko: Record<string, string> = {
   // The Databases page's fast-search toggle.
   'Loading the scan index…': '스캔 색인 불러오는 중…',
   'Releasing the scan index…': '스캔 색인 해제 중…',
+
+  // --- keyboard path: landmarks, separators, the board's name ----------------
+  'Skip to content': '본문으로 건너뛰기',
+  Sections: '섹션',
+  'Page controls': '페이지 컨트롤',
+  'Resize pane': '창 크기 조절',
+  'Resize panel': '패널 크기 조절',
+  'Resize column': '열 크기 조절',
+  'Resize the {column} column': '{column} 열 크기 조절',
+  'Book pages': '책 페이지',
+  'Book diagram': '책 다이어그램',
+  'Position {n} of {total}': '{total}개 중 {n}번째 위치',
+  'Next move': '다음 수',
+  Results: '결과',
+  Distance: '거리',
 };

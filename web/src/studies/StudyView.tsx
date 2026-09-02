@@ -727,6 +727,19 @@ function ChapterRow({
           type="button"
           onClick={() => selectChapter(index)}
           onDoubleClick={startRename}
+          // The fold's keyboard: the chevron inside is a mouse target
+          // only (a button cannot hold a button), so the row itself folds
+          // on ← and unfolds on →, the way a tree row does, and says
+          // which way it stands through aria-expanded.
+          aria-expanded={childCount > 0 ? !isFolded : undefined}
+          onKeyDown={(e) => {
+            if (childCount === 0) return;
+            if ((e.key === 'ArrowLeft' && !isFolded) || (e.key === 'ArrowRight' && isFolded)) {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFold();
+            }
+          }}
           className={cn(
             // The height is the density token, not a literal: this row
             // cannot be sized by its text (it swaps in a rename input and
@@ -745,8 +758,9 @@ function ChapterRow({
               }
             >
               <span
-                role="button"
-                tabIndex={-1}
+                // A mouse target inside the row's button, not a control
+                // of its own: the keyboard folds through the row (above).
+                aria-hidden
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleFold();
@@ -780,7 +794,7 @@ function ChapterRow({
         </button>
       )}
       {renaming !== index && (
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100">
           {!sub && (
             <Button
               variant="ghost"

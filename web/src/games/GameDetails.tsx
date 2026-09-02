@@ -24,6 +24,7 @@ import { EmptyState } from '@/components/empty-state';
 import { SideDot } from '@/components/side-dot';
 
 import { t } from '@/lib/i18n';
+import { dialogOpen } from '@/hooks/dialog-focus';
 import {
   ResultScore,
   OpeningTag,
@@ -115,6 +116,9 @@ function GameDetailsContent({
       // unless the keys were meant for a field.
       const target = e.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      // An open window owns the keyboard: this listens on the window and
+      // cannot see a scrim (same rule as the analysis board).
+      if (dialogOpen()) return;
       const last = replay.plies.length;
       const jump = (next: number): void => {
         e.preventDefault();

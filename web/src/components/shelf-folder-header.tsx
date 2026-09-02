@@ -98,7 +98,7 @@ export function ShelfFolderHeader({
           size="icon-sm"
           title={t('More')}
           active={menuOpen}
-          className="opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100"
+          className="opacity-0 transition-opacity group-hover/folder:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
         >
           <MoreHorizontal className="size-3" />
         </Button>

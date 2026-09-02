@@ -4,6 +4,7 @@ import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { TitleTip } from '@/components/title-tip';
+import { separatorKey } from '@/components/separator-keys';
 
 interface PanelProps {
   children: ReactNode;
@@ -156,6 +157,25 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
       {resizeKey !== undefined && (
         <TitleTip title={t('Drag to resize · double-click to reset')}>
           <div
+            // A separator the keyboard can reach (see resizable-pane): a
+            // horizontal line between two rows, so it answers Up and Down.
+            // The value is the height on screen, whether dragged or default.
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label={t('Resize panel')}
+            aria-valuenow={Math.round(height ?? defaultHeight ?? 0)}
+            aria-valuemin={DRAG_MIN_H}
+            aria-valuemax={Math.round(window.innerHeight * 0.8)}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              const current = height ?? ref.current?.offsetHeight ?? 0;
+              const action = separatorKey(e, 'horizontal', current, DRAG_MIN_H, window.innerHeight * 0.8);
+              if (!action) return;
+              e.preventDefault();
+              e.stopPropagation();
+              drag.current = null;
+              setHeight(action.kind === 'reset' ? null : action.to);
+            }}
             onDoubleClick={() => {
               drag.current = null;
               setHeight(null);
@@ -187,6 +207,7 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
               // pb and this would then overshoot by --card-spacing.)
               'border-border/60 hover:bg-accent mt-auto -mb-(--card-spacing) hidden h-2.5 shrink-0 touch-none',
               'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
+              'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
             )}
           >
             <div className="bg-border h-[3px] w-8 rounded-full" />

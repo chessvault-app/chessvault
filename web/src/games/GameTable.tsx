@@ -10,6 +10,7 @@ import {
 
 import { cn } from '@/lib/utils';
 import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
+import { separatorKey } from '@/components/separator-keys';
 import { t } from '@/lib/i18n';
 
 import { OpeningTag, ResultScore, type GameSummary } from './shared';
@@ -105,6 +106,9 @@ function useColWidths(): Record<string, number> {
 }
 const widthOf = (c: GameColumn, stored: Record<string, number>): number =>
   Math.max(c.min, stored[c.id] ?? c.width);
+/** Where the keyboard stops widening a column. A drag has no ceiling;
+    a separator has to state one. */
+const COL_MAX = 800;
 
 /**
  * The pane's half of the contract: put this on GameListShell's
@@ -167,7 +171,10 @@ export interface TableNav {
  * page-level keys, because the rows are not focusable (a thousand tab
  * stops is not navigation). Keys aimed at a field, a control, or an
  * open window pass by untouched; ←/→ stay with the details panel's
- * board (GameDetails).
+ * board (GameDetails). The one control the keys do speak over is a
+ * row's own button (the white player's name, data-table-row): a Tab
+ * that lands on a row and an ↓ that then does nothing would be the
+ * worse surprise.
  */
 export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null> {
   const nav = useRef<TableNav | null>(null);
@@ -178,6 +185,7 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
       if (!n) return;
       const target = e.target as HTMLElement | null;
       if (
+        !target?.closest('[data-table-row]') &&
         target?.closest(
           'input, textarea, select, button, a, [contenteditable="true"], [role="menuitem"], [role="tab"], [role="option"]',
         )
@@ -204,9 +212,10 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
 }
 
 export function GameTableHeader({ withStanding = false }: { withStanding?: boolean }) {
-  // No width subscription needed here: the cells' widths arrive through
-  // the grid template variable the pane sets; the drag reads the live
-  // store when it starts.
+  // The cells' widths arrive through the grid template variable the pane
+  // sets; the subscription here is for the handles' aria-valuenow, which
+  // has to say the width a keystroke just set.
+  const stored = useColWidths();
   const drag = useRef<{ id: string; x: number; w: number } | null>(null);
   return (
     <div className="border-border border-t">
@@ -236,6 +245,26 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
             <TitleTip title={t('Drag to resize · double-click to reset')}>
               <span
                 className="hover:bg-border absolute inset-y-0 -right-2 flex w-2.5 cursor-col-resize touch-none items-center justify-center rounded-sm"
+                // The keyboard half, the rule the pane and panel grips
+                // share: arrows along the edge step it, Enter resets it.
+                role="separator"
+                aria-orientation="vertical"
+                aria-label={
+                  c.label
+                    ? t('Resize the {column} column', { column: t(c.label) })
+                    : t('Resize column')
+                }
+                aria-valuenow={widthOf(c, stored)}
+                aria-valuemin={c.min}
+                aria-valuemax={COL_MAX}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  const action = separatorKey(e, 'vertical', widthOf(c, stored), c.min, COL_MAX);
+                  if (!action) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setColWidth(c.id, action.kind === 'reset' ? null : action.to);
+                }}
                 onPointerDown={(e) => {
                   e.preventDefault();
                   drag.current = { id: c.id, x: e.clientX, w: widthOf(c, colWidths) };
@@ -288,32 +317,56 @@ export function GameTableRow({
   /** The archive's leading column: the select checkbox and Add. */
   standing?: ReactNode;
 }) {
-  const name = (player: string, side: 'white' | 'black') => (
-    <span
-      className={cn(
-        'min-w-0 truncate text-sm font-medium',
-        game.userSide === side && 'text-primary',
-      )}
-    >
-      {player}
-      {side === 'white' && game.annotated && (
-        <NotebookPen className="text-info ml-1 inline size-3" aria-label={t('Annotated')} />
-      )}
-    </span>
-  );
+  const name = (player: string, side: 'white' | 'black') => {
+    const className = cn(
+      'min-w-0 truncate text-sm font-medium',
+      game.userSide === side && 'text-primary',
+    );
+    const content = (
+      <>
+        {player}
+        {side === 'white' && game.annotated && (
+          <NotebookPen className="text-info ml-1 inline size-3" aria-label={t('Annotated')} />
+        )}
+      </>
+    );
+    // The white name is the row's button: the one focusable thing per
+    // line (the row itself stays a plain li, see useTableNav). A press
+    // selects like a press on the row; the keys are useTableNav's,
+    // which lets this button through by its data attribute.
+    return side === 'white' ? (
+      <button
+        type="button"
+        data-table-row
+        aria-label={`${game.white} vs ${game.black}`}
+        aria-current={selected ? 'true' : undefined}
+        className={cn(className, 'text-left')}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+      >
+        {content}
+      </button>
+    ) : (
+      <span className={className}>{content}</span>
+    );
+  };
   const quiet = 'text-muted-foreground truncate text-xs';
   const item = (
     <li
       onClick={onSelect}
       onDoubleClick={onOpen}
-      aria-selected={selected}
+      // A data attribute, not aria-selected: a plain li has no role that
+      // takes it. The shell's zebra rule reads it here; the button
+      // inside carries aria-current for what a screen reader hears.
+      data-selected={selected || undefined}
       title={`${game.white} vs ${game.black}`}
       className={cn(
         GRID,
         'group hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
-        // Selection over zebra: aria-selected because the row IS a
-        // selection, and the accent wash because the details panel is
-        // describing this exact line.
+        // Selection over zebra: the accent wash because the details
+        // panel is describing this exact line.
         selected && 'bg-accent',
         // The kept-game mark the card rows carry, unchanged: a warm edge
         // down the left that costs no width (painted, not bordered — see

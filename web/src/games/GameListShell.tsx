@@ -168,7 +168,7 @@ export function GameListShell({
                 // than the row's own hover:bg-accent and bg-accent, so
                 // without the :not guards every even row swallowed both —
                 // half the list answered a pointer with nothing.
-                '[&>li:nth-child(even):not(:hover):not([aria-selected=true])]:bg-foreground/[0.022]',
+                '[&>li:nth-child(even):not(:hover):not([data-selected])]:bg-foreground/[0.022]',
                 // The virtualization the shell bought, in its cheapest form:
                 // offscreen rows skip render and layout entirely, onscreen
                 // ones pay as before. A deep scroll through a big database

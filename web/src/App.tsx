@@ -196,6 +196,25 @@ function Shell() {
         'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
       )}
     >
+      {/* The first thing Tab reaches: a jump past the section list into
+          the page, unseen until it has focus. The ring is the app's one
+          focus ring; the box is a card so it reads over any page. The
+          press moves focus itself: routes live in the hash, so a plain
+          `#main` jump would be read as a section and land on Home. */}
+      <a
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+        className={cn(
+          'sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50',
+          'bg-card text-foreground border-border rounded-lg border px-3 py-1.5 text-sm font-medium',
+          'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+        )}
+      >
+        {t('Skip to content')}
+      </a>
       <DemoBanner />
       {/* The sidebar/main row. Separated from the shell so a full-width
           strip (the demo notice) can sit above BOTH rather than becoming a
@@ -203,7 +222,7 @@ function Shell() {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
       <Sidebar active={section} params={params} />
 
-      <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
+      <main id="main" tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-hidden outline-none">
         {/*
           A safety net, no longer the route loader. Sections are fetched by
           lib/lazyRoute, which draws its own blank box while the chunk is on
@@ -428,6 +447,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
   const tools = TOOLS_SUBNAV.filter(({ key }) => key !== 'workspace' || roomy);
   return (
     <nav
+      aria-label={t('Sections')}
       className={cn(
         'bg-card border-border hidden shrink-0 flex-col border-r md:flex',
         'w-[4.25rem] lg:w-52',
@@ -680,6 +700,7 @@ function MobileNav({ active }: { active: Section }) {
 
   return (
     <nav
+      aria-label={t('Page controls')}
       className={cn(
         'bg-card/85 border-border flex shrink-0 items-stretch border-t backdrop-blur-xl md:hidden',
         // Clear the iOS home indicator.

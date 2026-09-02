@@ -146,6 +146,25 @@ export function MapCanvas({
     [root, arrangement, stacked],
   );
   const at = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
+  /** Each dot's children in drawing order, for the keyboard: the tree the
+      svg's role promises, walked with arrows (→ a child, ← the parent,
+      ↑/↓ the siblings). */
+  const kids = useMemo(() => {
+    const out = new Map<string, string[]>();
+    for (const { from, to } of graph.edges) {
+      const list = out.get(from);
+      if (list) list.push(to);
+      else out.set(from, [to]);
+    }
+    return out;
+  }, [graph]);
+  /** The one dot in the tab order: the selection, or the root before
+      anything is selected. A map of three hundred dots is not three
+      hundred tab stops. */
+  const tabStop = useMemo(() => {
+    if (selectedId && at.has(selectedId)) return selectedId;
+    return graph.nodes.find((n) => resolved.nodes.get(n.id)?.parentId === null)?.id ?? null;
+  }, [selectedId, at, graph, resolved]);
 
   const host = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
@@ -978,6 +997,45 @@ export function MapCanvas({
                 transform={`translate(${x} ${y})`}
                 className="cursor-pointer"
                 opacity={dimOf(id)}
+                // The tree item the svg's role promises. One tab stop
+                // (see tabStop), the arrows walk the tree from it, and
+                // Enter or Space selects the way a press does.
+                role="treeitem"
+                tabIndex={id === tabStop ? 0 : -1}
+                aria-selected={selected}
+                aria-label={caption ? `${move} ${caption}` : move}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelect(id);
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    onSelect(null);
+                    return;
+                  }
+                  const parent = facts.parentId;
+                  const siblings = parent ? (kids.get(parent) ?? []) : [];
+                  const idx = siblings.indexOf(id);
+                  const next =
+                    e.key === 'ArrowRight'
+                      ? kids.get(id)?.[0]
+                      : e.key === 'ArrowLeft'
+                        ? (parent ?? undefined)
+                        : e.key === 'ArrowDown'
+                          ? siblings[idx + 1]
+                          : e.key === 'ArrowUp'
+                            ? siblings[idx - 1]
+                            : undefined;
+                  if (next === undefined) return;
+                  // Handled here and nowhere else: the board's arrow keys
+                  // listen on the window and would step a game under it.
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onSelect(next);
+                  nodeEls.current.get(next)?.focus();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (suppressClick.current) {

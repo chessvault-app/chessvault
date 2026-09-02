@@ -458,6 +458,16 @@ export function ExplorerPane({
               ) : (
                 <>
                   <table className="w-full text-sm">
+                    {/* Headed for a screen reader only: the pane's own
+                        line above the table is its visible heading, and
+                        a bar needs no word over it for a sighted eye. */}
+                    <thead className="sr-only">
+                      <tr>
+                        <th scope="col">{t('Next move')}</th>
+                        <th scope="col">{t('Games')}</th>
+                        <th scope="col">{t('Results')}</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {(allMoves ? moves : moves.slice(0, MOVE_LIMIT)).map((m, at) => (
                         <MoveRow
@@ -1080,10 +1090,24 @@ function MoveRow({
         alt && 'bg-muted/50',
       )}
     >
-      <td className="text-foreground font-moves w-14 py-(--row-py-tight) pl-3 pr-1 font-semibold">{move.san}</td>
+      {/* The move itself is the button, so the keyboard reaches what the
+          whole row answers to a mouse; the row keeps its onClick for the
+          surface, and the button stops its press from reaching it too. */}
+      <td className="text-foreground font-moves w-14 py-(--row-py-tight) pl-3 pr-1 font-semibold">
+        <button
+          type="button"
+          className="text-left"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay();
+          }}
+        >
+          {move.san}
+        </button>
+      </td>
       <td
         className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums"
-        title={`${exact.format(move.total)} games`}
+        title={t('{n} games', { n: exact.format(move.total) })}
       >
         {compact.format(move.total)}
       </td>

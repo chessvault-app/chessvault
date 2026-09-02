@@ -241,7 +241,10 @@ export function PuzzleEntry({
               maxWidth={wideRowW > 0 ? Math.max(280, wideRowW - 640) : undefined}
             />
           ) : draft ? (
-            <aside className="border-border flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+            <aside
+              aria-label={t('Book diagram')}
+              className="border-border flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4"
+            >
               <img src={draft.imageUrl} alt={t('book diagram')} className="border-border rounded-md border" />
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {t('The diagram from the book. Make the board match it, then record the solution.')}

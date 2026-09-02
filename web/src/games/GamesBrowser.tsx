@@ -680,13 +680,9 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
     setTimeout(() => field.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120);
   };
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  // No Escape listener of its own: the Dialog below answers the platform's
+  // close request through the one stack (hooks/dialog-focus), so a Select
+  // or a confirm sheet over this window takes the press, not this window.
 
   /**
    * A pasted PGN already says who played, when, and how it ended — so the

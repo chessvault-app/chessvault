@@ -317,14 +317,9 @@ function LoadDialog({
   /** Pages opened out of this one — see the picture flow at the caller. */
   children?: ReactNode;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
+  // No Escape listener of its own: the Dialog answers the platform's close
+  // request through the one stack (hooks/dialog-focus), so a page opened
+  // out of this one takes the press first.
   return (
     <Dialog
       open

@@ -354,16 +354,28 @@ export function GameRow({
             onClose={() => onRename?.('')}
           />
         )}
-        <div className="min-w-0 flex-1">
+        {/* The row's primary action is a real button on the names, so the
+            keyboard reaches what the whole surface answers to a mouse;
+            the li keeps its own onClick for the surface, and this stops
+            the press from reaching it twice. A button holds phrasing
+            content only, so the lines are spans, not p. */}
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen();
+          }}
+        >
           {customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
-            <p className="text-foreground truncate text-base font-semibold">
+            <span className="text-foreground block truncate text-base font-semibold">
               {customName}
               {game.annotated && (
                 <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
               )}
-            </p>
+            </span>
           ) : (
             // One line per player: names never fight each other for width,
             // so narrow screens truncate each side independently.
@@ -373,7 +385,7 @@ export function GameRow({
                   came last — so an archive of long handles showed two
                   names and no ratings at all. The name is the only part
                   that gives way. */}
-              <p className="text-foreground flex items-baseline gap-1.5 text-base">
+              <span className="text-foreground flex items-baseline gap-1.5 text-base">
                 <SideDot side="white" className="shrink-0 translate-y-[-1px]" />
                 <span
                   className={cn(
@@ -389,8 +401,8 @@ export function GameRow({
                 {game.annotated && (
                   <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
                 )}
-              </p>
-              <p className="text-foreground flex items-baseline gap-1.5 text-base">
+              </span>
+              <span className="text-foreground flex items-baseline gap-1.5 text-base">
                 <SideDot side="black" className="shrink-0 translate-y-[-1px]" />
                 <span
                   className={cn(
@@ -403,7 +415,7 @@ export function GameRow({
                 {game.blackElo ? (
                   <span className="text-muted-foreground shrink-0 font-mono text-sm">{game.blackElo}</span>
                 ) : null}
-              </p>
+              </span>
             </>
           )}
           {/* The opening leads the detail line, because the code is what a
@@ -412,7 +424,7 @@ export function GameRow({
           {/* Opening first, date, then who played — the order every plain
               row leads with (players are its title lines), so a renamed
               game's detail reads the same left to right. */}
-          <p className="text-muted-foreground truncate text-sm" title={openingLabel}>
+          <span className="text-muted-foreground block truncate text-sm" title={openingLabel}>
             {game.opening ? (
               <OpeningTag eco={game.opening.eco} name={game.opening.name} />
             ) : game.eco ? (
@@ -422,8 +434,8 @@ export function GameRow({
             {game.date}
             {customName ? ` · ${game.white} vs ${game.black}` : ''}
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
-          </p>
-        </div>
+          </span>
+        </button>
         <ResultScore result={game.result} userSide={game.userSide} />
       </div>
 
@@ -438,7 +450,7 @@ export function GameRow({
           // ml-auto so it stays against the right edge on the line it
           // wraps to, rather than following the text it left behind.
           'ml-auto flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
-          'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+          'opacity-0 group-hover:opacity-100 focus-within:opacity-100 group-focus-within:opacity-100',
           'group-hover:bg-accent/70 pointer-coarse:opacity-100',
         )}
       >
@@ -514,7 +526,7 @@ export function GameRow({
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
+            className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
           >
             <ExternalLink className="size-3.5" />
           </a>
