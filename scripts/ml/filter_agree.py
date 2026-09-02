@@ -25,7 +25,7 @@ def main():
     ckpt, in_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = CellNet().to(device)
-    model.load_state_dict(torch.load(ckpt, map_location=device))
+    model.load_state_dict(torch.load(ckpt, map_location=device, weights_only=True))
     model.eval()
 
     blob = np.load(in_path)

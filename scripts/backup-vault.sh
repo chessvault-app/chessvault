@@ -22,7 +22,9 @@ SSH_KEY=(); [ -n "$KEY" ] && SSH_KEY=(-i "$KEY")
 DEST="${1:-vault-backups/$(date +%F)}"
 
 mkdir -p "$DEST"
-ssh "${SSH_KEY[@]}" "$HOST" "VAULT='$VAULT' bash -s" <<'REMOTE' \
+# printf %q: the path is one value on the remote command line whatever it
+# holds, where a hand-written quote pair ended at the first quote inside it.
+ssh "${SSH_KEY[@]}" "$HOST" "VAULT=$(printf %q "$VAULT") bash -s" <<'REMOTE' \
   | tar xzf - -C "$DEST" --strip-components=1
 set -e
 # COPYFILE_DISABLE and --no-xattrs are for a macOS server: bsdtar otherwise

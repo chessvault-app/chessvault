@@ -45,20 +45,28 @@ BUNDLE=$(mktemp)
 DIST=$(mktemp)
 git -C "$ROOT" bundle create "$BUNDLE" HEAD
 tar czf "$DIST" -C "$ROOT" dist
-scp "${SSH_KEY[@]}" "$BUNDLE" "$HOST":/tmp/deploy.bundle
-scp "${SSH_KEY[@]}" "$DIST" "$HOST":/tmp/deploy-dist.tar.gz
+# Staged in a directory the remote makes fresh for this deploy, not at a
+# fixed name under /tmp: a fixed name is one any other account on the box
+# can create first (as a symlink scp would follow) or swap between the copy
+# and the fetch, and the service would then run that account's commit.
+STAGE=$(ssh "${SSH_KEY[@]}" "$HOST" 'mktemp -d')
+scp "${SSH_KEY[@]}" "$BUNDLE" "$HOST":"$STAGE/deploy.bundle"
+scp "${SSH_KEY[@]}" "$DIST" "$HOST":"$STAGE/deploy-dist.tar.gz"
 rm -f "$BUNDLE" "$DIST"
-# The heredoc is quoted, so nothing expands here; the two settings arrive as
-# environment on the remote command line instead. Interpolating them into the
-# script text would put local quoting rules in charge of a remote path.
-ssh "${SSH_KEY[@]}" "$HOST"   "APP_DIR='$APP_DIR' SERVICE='$SERVICE' REMOTE_PATH='$REMOTE_PATH' bash -s" <<'REMOTE'
+# The heredoc is quoted, so nothing expands here; the settings arrive as
+# environment on the remote command line instead, each one quoted for the
+# remote shell by printf %q, so a path holding a quote or a space is still
+# one value there. Interpolating them into the script text would put local
+# quoting rules in charge of a remote path.
+REMOTE_ENV="APP_DIR=$(printf %q "$APP_DIR") SERVICE=$(printf %q "$SERVICE") REMOTE_PATH=$(printf %q "$REMOTE_PATH") STAGE=$(printf %q "$STAGE")"
+ssh "${SSH_KEY[@]}" "$HOST" "$REMOTE_ENV bash -s" <<'REMOTE'
 set -e
 if [ -n "${REMOTE_PATH:-}" ]; then PATH="$REMOTE_PATH:$PATH"; fi
 cd "$APP_DIR"
-git fetch /tmp/deploy.bundle HEAD
+git fetch "$STAGE/deploy.bundle" HEAD
 git reset --hard FETCH_HEAD
 npm ci --no-audit --no-fund >/dev/null
-rm -rf dist && tar xzf /tmp/deploy-dist.tar.gz && rm /tmp/deploy-dist.tar.gz
+rm -rf dist && tar xzf "$STAGE/deploy-dist.tar.gz" && rm -rf "$STAGE"
 # Derived tables and indexes the API relies on. Idempotent and a no-op in
 # milliseconds once applied, so it is cheaper to run every deploy than to
 # remember which databases predate which optimisation.

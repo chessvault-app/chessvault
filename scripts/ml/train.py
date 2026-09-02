@@ -183,7 +183,7 @@ def main():
 
     model = CellNet().to(DEVICE)
     if args.init:
-        model.load_state_dict(torch.load(os.path.join(DATA, args.init), map_location=DEVICE))
+        model.load_state_dict(torch.load(os.path.join(DATA, args.init), map_location=DEVICE, weights_only=True))
         print(f'warm-started from {args.init}')
     print(sum(p.numel() for p in model.parameters()), 'parameters')
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
