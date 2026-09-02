@@ -21,10 +21,8 @@ pub fn build_key_index(
     conn: &Connection,
     phase: &mut Phases,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    conn.execute_batch(
-        "DROP TABLE IF EXISTS key_index; \
-         CREATE TABLE key_index (bucket INTEGER PRIMARY KEY, entries BLOB NOT NULL);",
-    )?;
+    conn.execute_batch("DROP TABLE IF EXISTS key_index;")?;
+    conn.execute_batch(crate::sql::KEY_INDEX_TABLE)?;
     // Three loops over counts this side already knows, so unlike the two
     // SQL phases before it this one can say where it is. One COUNT(*) on
     // a rowid table to have a denominator; the reports themselves are a

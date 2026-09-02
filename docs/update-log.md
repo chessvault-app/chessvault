@@ -168,6 +168,25 @@ other people.
   the page also makes Storage used below re-read, which had been showing
   the size it loaded with — a card apart, two answers for the same thing.
 
+- **The native core is held to its TypeScript twin by more than
+  fixtures.** `native/` re-implements four database jobs, and when the
+  two sides disagree the result is silently wrong rows, never an error.
+  Three things now hold them together that did not. The SQL every table
+  is created with, and the constants both sides carry as literals, are
+  pinned to the goldens — and the first run found the Rust build two
+  commits behind, three indexes and the `events` lookup table missing,
+  invisible to a diff of the data tables, so a database built by the
+  binary now has what the JavaScript build has. The fuzz that compares
+  the two live implementations on a random corpus runs in CI on every
+  push beside the fixtures, two seeds, one fixed so a failure
+  reproduces anywhere. And deep search's native scan now reports only
+  WHICH games hit: the server composes every frame itself and replays
+  each hit through its reference scanner before streaming it, so a
+  wrong hit becomes a log line instead of a row on screen. Measured
+  with a binary built to misreport: nine hits overruled, the frames
+  streamed identical to the JavaScript path's. A repo check keeps every
+  Rust file naming the TypeScript it mirrors.
+
 - **A six-hour job with nothing to say for the last three.** Building a
   database's position index printed a line every 25,000 games and then
   went quiet. The three passes after the replay — the index over the

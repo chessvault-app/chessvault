@@ -1,8 +1,13 @@
 //! SQL mirrored from the TS pipeline, verbatim — each constant names its
 //! source of truth. Rust cannot import the TS strings, so this file is
-//! the one deliberate duplication in the crate; the whole-file parity
-//! test (JS-built vs Rust-built database diffed table by table) is the
-//! guard against drift. Edit only together with the TS side.
+//! the one deliberate duplication in the crate. The whole-file parity
+//! test (JS-built vs Rust-built database diffed table by table) cannot
+//! see all of it — an index or a lookup table the TS side grew is
+//! invisible to a diff of the data tables, which is how this file fell
+//! two commits behind `scripts/lib/db-tuning.ts` — so the goldens now
+//! carry the TS strings themselves and `tests/goldens.rs` compares each
+//! constant here to its source, whitespace aside. Edit only together
+//! with the TS side, then regenerate.
 
 /// `scripts/build-refgames.ts` — the games and meta tables.
 pub const GAMES_SCHEMA: &str = "
@@ -49,12 +54,22 @@ pub const SCAN_PACK_TABLE: &str = "
 
 pub const PLIES_INDEX: &str = "CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);";
 
+/// `server/refgamesIndex.ts` KEY_INDEX_SCHEMA — the inverted key index
+/// (spec in shared/keyIndex.ts), derived whole from the packs.
+pub const KEY_INDEX_TABLE: &str = "
+  CREATE TABLE IF NOT EXISTS key_index (
+    bucket INTEGER PRIMARY KEY,
+    entries BLOB NOT NULL
+  );
+";
+
 /// `server/refgamesIndex.ts` MOVE_COUNTS_SUMS / _THIN / _INDEX — the
 /// per-(pos, uci, eb) result sums, thin positions (< MOVE_COUNT_MIN_GAMES)
 /// dropped, and the index over what is left. Three constants rather than
-/// one batch because the index pass names each step as it starts: as one
-/// statement run they were one log line and then an hour of silence on a
-/// gigabase. Same SQL, same order.
+/// one batch because the index pass names each step as it starts: run as
+/// one statement they were a single log line and then an hour of silence
+/// on a gigabase. Same SQL, same order — and the goldens hold the three
+/// concatenated against the TS REFGAMES_MOVE_COUNTS they add up to.
 pub const MOVE_COUNTS_SUMS: &str = "
   CREATE TABLE IF NOT EXISTS move_counts AS
     SELECT pos, uci, eb,
@@ -81,6 +96,9 @@ pub const MOVE_COUNTS_INDEX: &str = "
 /// `scripts/lib/db-tuning.ts` REFGAMES_INDEXES.
 pub const REFGAMES_INDEXES: &str = "
   CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);
+  CREATE INDEX IF NOT EXISTS idx_games_black ON games (black);
+  CREATE INDEX IF NOT EXISTS idx_games_opening ON games (opening);
+  CREATE INDEX IF NOT EXISTS idx_games_eco ON games (eco);
 ";
 
 /// `scripts/lib/db-tuning.ts` REFGAMES_LOOKUPS.
@@ -98,4 +116,8 @@ pub const REFGAMES_LOOKUPS: &str = "
     SELECT opening, eco, COUNT(*) AS games FROM games
     WHERE opening IS NOT NULL OR eco IS NOT NULL
     GROUP BY opening, eco;
+  CREATE TABLE IF NOT EXISTS events AS
+    SELECT event, COUNT(*) AS games FROM games
+    WHERE event IS NOT NULL
+    GROUP BY event;
 ";
