@@ -59,7 +59,14 @@ rm -f "$BUNDLE" "$DIST"
 # one value there. Interpolating them into the script text would put local
 # quoting rules in charge of a remote path.
 REMOTE_ENV="APP_DIR=$(printf %q "$APP_DIR") SERVICE=$(printf %q "$SERVICE") REMOTE_PATH=$(printf %q "$REMOTE_PATH") STAGE=$(printf %q "$STAGE")"
-ssh "${SSH_KEY[@]}" "$HOST" "$REMOTE_ENV bash -s" <<'REMOTE'
+# Git Bash on Windows rewrites any argument that looks like a POSIX path
+# before a Windows program sees it, and the remote command below starts
+# with one: APP_DIR=/Users/... arrived at the server as
+# C:/Program Files/Git/Users/..., and the deploy died in the remote cd.
+# This tells MSYS to leave arguments with that prefix alone; every other
+# shell ignores the variable. Only this call needs it: the mktemp call
+# carries no path and scp's remote args carry a host in front.
+MSYS2_ARG_CONV_EXCL="APP_DIR=" ssh "${SSH_KEY[@]}" "$HOST" "$REMOTE_ENV bash -s" <<'REMOTE'
 set -e
 if [ -n "${REMOTE_PATH:-}" ]; then PATH="$REMOTE_PATH:$PATH"; fi
 cd "$APP_DIR"
