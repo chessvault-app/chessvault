@@ -81,7 +81,11 @@ survives a rebuild.
 switched in the games-page Databases browser. The Databases page uploads PGN collections
 (the same `vault/sources/` uploads), indexes any selection of them under a
 name, and deletes either kind — the built database or the upload it was
-built from. A database **grows from its own row**: the + on it opens
+built from. Every verb below belongs to a database's own row, and the
+row has two shapes: on a wide screen the verbs are the icons named here,
+and on a phone they are the same verbs written out in the row's **⋯**
+menu, because a name and four icons will not both fit a phone's width.
+A database **grows from its own row**: the + on it opens
 one window that lists the uploaded collections with their own ticks
 (and an Upload button, for games not on the server yet) — press Add
 games and only the games the database does not already hold are indexed

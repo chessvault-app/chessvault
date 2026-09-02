@@ -205,7 +205,7 @@ function HistorySheet({
 
         {versions?.length === 0 && (
           <p className="text-muted-foreground text-sm">
-            {t('This is the only version so far — nothing has changed since it was created.')}
+            {t('This is the only version so far. Nothing has changed since it was created.')}
           </p>
         )}
 

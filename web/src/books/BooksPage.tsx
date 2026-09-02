@@ -350,8 +350,8 @@ export function BooksPage() {
                 size="icon-sm"
                 title={
                   view.dir === 'asc'
-                    ? t('Ascending — press for descending')
-                    : t('Descending — press for ascending')
+                    ? t('Ascending. Press for descending.')
+                    : t('Descending. Press for ascending.')
                 }
                 className="hidden shrink-0 sm:inline-flex"
                 onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
@@ -397,7 +397,7 @@ export function BooksPage() {
             className={cn(drop.dragging && 'ring-primary ring-2')}
             icon={BookText}
             title="No books yet"
-            body="Import a chess book as a PDF and read it here beside a board — any printed diagram can be set up with a tap. A puzzle book imported on the puzzle shelf is filed here too."
+            body="Import a chess book as a PDF and read it beside a board. Any printed diagram can be set up with a tap. Puzzle books imported on the puzzle shelf are filed here too."
             action={
               <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
                 <Upload className="size-3.5" data-icon="inline-start" />
@@ -570,7 +570,7 @@ function BookCard({
                 <BookOpen className="size-3 shrink-0" />
               )}
               {reading
-                ? t('Reading diagrams — page {page} of {pages}', { page: job.page, pages: job.pages })
+                ? t('Reading diagrams, page {page} of {pages}', { page: job.page, pages: job.pages })
                 : book.lastPage
                   ? t('Carry on reading')
                   : t('Read')}

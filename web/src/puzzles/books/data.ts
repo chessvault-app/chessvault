@@ -393,7 +393,7 @@ export function patchCycles(slug: string, cycles: CycleWindow[]): BookDetail | n
  */
 const BOOK_TIER = {
   label: 'Book solution',
-  title: "The book's exact solution — parsed and verified, or entered by hand",
+  title: "The book's exact solution, parsed and verified or entered by hand",
   icon: BookOpenCheck,
   iconClass: 'text-info',
 } as const;
@@ -415,7 +415,7 @@ export const PROVENANCE_META = {
   },
   'engine-unverified': {
     label: 'Engine guess',
-    title: 'Engine best line only — nothing decisive found; check the source if it feels off',
+    title: 'Engine best line only, nothing decisive found. Check the source if it feels off.',
     icon: CircleHelp,
     iconClass: 'text-warn',
   },
@@ -423,7 +423,7 @@ export const PROVENANCE_META = {
   // one goes to the draft editor, not the solver.
   draft: {
     label: 'Draft',
-    title: 'Imported diagram awaiting a solution — open it to enter one',
+    title: 'Imported diagram awaiting a solution. Open it to enter one.',
     icon: Pencil,
     iconClass: 'text-muted-foreground',
   },

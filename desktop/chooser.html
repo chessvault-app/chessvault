@@ -204,7 +204,7 @@
         </svg>
         <span>
           <span class="title">On this computer</span>
-          <span class="desc">Self-hosted — everything runs and stays locally</span>
+          <span class="desc">Self-hosted. Everything runs and stays locally</span>
         </span>
       </button>
 
@@ -253,7 +253,7 @@
         </svg>
       </div>
       <h1>Open your vault</h1>
-      <p class="sub">A vault is just a folder of plain files — pick one, or start fresh with an app-managed folder</p>
+      <p class="sub">A vault is a folder of plain files. Pick one, or start fresh with an app-managed folder</p>
       <button class="option" id="pickFolder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
           <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
@@ -282,7 +282,7 @@
         const log = params.get('log');
         document.getElementById('error').textContent = log
           ? `The local server did not start. What it said is in ${log}`
-          : 'The local server did not start — check the terminal output.';
+          : 'The local server did not start. Check the terminal output.';
       }
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');

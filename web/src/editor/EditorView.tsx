@@ -657,7 +657,7 @@ export function EditorView({
           <Button
             variant="ghost"
             size="icon-sm"
-            title={t('Load a position — FEN, PGN, or image')}
+            title={t('Load a position from FEN, PGN or an image')}
             onClick={() => setLoadPage(true)}
           >
             <FolderInput className="size-3.5" />
@@ -941,7 +941,7 @@ export function EditorView({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title={t('Load a position — FEN, PGN, or image')}
+                  title={t('Load a position from FEN, PGN or an image')}
                   onClick={() => goto('load')}
                 >
                   <FolderInput className="size-3.5" />

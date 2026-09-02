@@ -202,7 +202,7 @@ export function DashboardPage() {
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
             <Figure
               label={t('Attempts')}
-              title={t("Training attempts only — review sessions don't count here, which is why this can differ from the review pool")}
+              title={t("Training attempts only. Review sessions are not counted, so this can differ from the review pool.")}
               value={user ? String(user.attempts) : '…'}
             />
             <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
@@ -211,7 +211,7 @@ export function DashboardPage() {
             <Figure label={t('Solve rate')} value={winRate === null ? '—' : `${winRate}%`} />
             <Figure
               label={t('Failed')}
-              title={t('Distinct puzzles whose latest attempt failed — always the review pool')}
+              title={t('Puzzles whose latest attempt failed. This is the review pool.')}
               value={String(failed)}
             />
           </dl>
@@ -268,7 +268,7 @@ export function DashboardPage() {
           // Nothing to press, but the schedule is not empty: say when it
           // comes back, so an empty queue reads as earned rather than gone.
           <p className="text-muted-foreground mb-4 text-center text-sm">
-            {t('Nothing due — the next review lands {when}', { when: formatUntil(nextDue) })}
+            {t('Nothing due. The next review lands {when}', { when: formatUntil(nextDue) })}
           </p>
         ) : null}
 
@@ -499,7 +499,7 @@ export function DashboardPage() {
             <p className="text-muted-foreground px-3 py-3 text-sm">
               {t(
                 history.length === 0
-                  ? 'No attempts yet — go solve something.'
+                  ? 'No attempts yet. Go solve something.'
                   : 'Nothing matches this filter.',
               )}
             </p>

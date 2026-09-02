@@ -198,7 +198,7 @@ export function ShelfToolbar({
             <Button
               variant="secondary"
               size="icon-sm"
-              title={dir === 'asc' ? t('Ascending — press for descending') : t('Descending — press for ascending')}
+              title={dir === 'asc' ? t('Ascending. Press for descending.') : t('Descending. Press for ascending.')}
               className="hidden shrink-0 sm:inline-flex"
               onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
             >

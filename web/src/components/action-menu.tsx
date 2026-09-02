@@ -29,6 +29,15 @@ export interface MenuAction {
   /** Destructive items are tinted and sit last, away from the thumb. */
   danger?: boolean;
   /**
+   * Offered but not available yet — a verb whose job is already running.
+   *
+   * Opt-in, because the alternative a caller reaches for otherwise is
+   * dropping the item from the list, and a menu whose contents change
+   * under you is a menu you have to read twice. The verb stays where it
+   * was, dimmed, and says so by being unpressable.
+   */
+  disabled?: boolean;
+  /**
    * On the item itself — for one that only belongs on some devices.
    *
    * A row whose icons are visible on a desktop should not list those same
@@ -230,10 +239,15 @@ export function ActionContextMenu({
 }
 
 function MenuRow({ action, kind }: { action: MenuAction; kind: 'dropdown' | 'context' }) {
-  const { label, icon: Icon, danger, className, onSelect } = action;
+  const { label, icon: Icon, danger, disabled, className, onSelect } = action;
   const Item = kind === 'dropdown' ? DropdownMenuItem : ContextMenuItem;
   return (
-    <Item variant={danger ? 'destructive' : 'default'} className={className} onClick={() => onSelect()}>
+    <Item
+      variant={danger ? 'destructive' : 'default'}
+      disabled={disabled}
+      className={className}
+      onClick={() => onSelect()}
+    >
       <Icon />
       {t(label)}
     </Item>
@@ -286,10 +300,11 @@ function ActionSheetBody({
             padding pays the 14 back inside the list, leaving mt-2 to be
             the gap it says it is. */}
         <div className={cn('-mx-2 mt-2 flex flex-col', !detail && 'pt-3.5')}>
-          {actions.map(({ label, icon: Icon, danger, className, onSelect }) => (
+          {actions.map(({ label, icon: Icon, danger, disabled, className, onSelect }) => (
             <button
               key={label}
               type="button"
+              disabled={disabled}
               onClick={() => {
                 onClose();
                 onSelect();
@@ -298,6 +313,9 @@ function ActionSheetBody({
                 // A sheet row is a touch target: a whole row to be tapped in.
                 'flex items-center gap-3 rounded-lg px-2 py-3 text-left text-base transition-colors duration-100',
                 danger ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-accent',
+                // The registry's own two, so a dimmed sheet row and a
+                // dimmed dropdown row are dimmed the same amount.
+                'disabled:pointer-events-none disabled:opacity-50',
                 className,
               )}
             >

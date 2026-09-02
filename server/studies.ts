@@ -542,7 +542,7 @@ export function studiesApi(
     // it can never be removed from inside the app.
     const left = readdirSync(path);
     if (left.some((f) => !f.endsWith('.swp'))) {
-      return c.json({ error: 'collection is not empty — move or delete its studies first' }, 409);
+      return c.json({ error: 'collection is not empty, move or delete its studies first' }, 409);
     }
     for (const orphan of left) rmSync(resolve(path, orphan));
     rmdirSync(path);

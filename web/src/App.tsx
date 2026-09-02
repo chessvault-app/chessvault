@@ -153,7 +153,7 @@ function DemoBanner() {
       // 4.68:1 and is still plainly a band. Dark was never close (9.32:1).
       className="text-warn border-border flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--background))] px-3 py-1.5 text-center text-sm"
     >
-      {t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
+      {t('Demo: a sample vault of your own. Edit anything, and a reload puts it back.')}
     </div>
   );
 }
@@ -761,7 +761,7 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
           </div>
           <h1 className="text-xl font-semibold tracking-tight">{t('Something went wrong')}</h1>
           <p className="text-muted-foreground text-base leading-relaxed">
-            {t('This page hit an error it could not recover from. Reloading usually clears it — nothing in your vault is affected.')}
+            {t('This page hit an error it could not recover from. Reloading usually clears it, and nothing in your vault is affected.')}
           </p>
           <div className="mt-1 flex gap-2">
             <Button variant="secondary" onClick={() => location.reload()}>{t('Reload')}</Button>

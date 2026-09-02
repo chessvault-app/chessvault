@@ -108,5 +108,5 @@ export async function saveAndLeave(): Promise<void> {
   if (await guard.save()) settle(true);
   // A failed save must not lose the changes it failed to write: the
   // question stays up, now with somewhere to press again.
-  else useLeaveAsk.setState({ busy: false, error: 'Could not save — your changes are still here.' });
+  else useLeaveAsk.setState({ busy: false, error: 'Could not save. Your changes are still here.' });
 }

@@ -844,7 +844,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
           // reaches — Lumbra's Gigabase OTB indexed in 6h11m. The wait
           // scales with the games in the file, so the copy says so rather
           // than naming one number that is wrong at every other size.
-          '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload. A small database takes a minute; millions of games can take hours.',
+          '“{name}” has no position index yet. Indexing reads the games already in it. A small database takes a minute, millions of games take hours.',
           { name: bookLabel(name) },
         )}
       </p>
@@ -872,7 +872,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
             {t('Index positions')}
           </Button>
           {state === 'failed' && (
-            <span className="text-destructive text-sm">{t('indexing failed — see the Databases page')}</span>
+            <span className="text-destructive text-sm">{t('indexing failed, see the Databases page')}</span>
           )}
         </div>
       )}
@@ -937,7 +937,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
           itself. */}
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
-          'Answers come from your collection plus every chess.com and Lichess month you have browsed — a month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
+          'Your collection plus every chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
         )}
       </p>
       <FilterGroup label="Side">
@@ -1276,7 +1276,7 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
                       // the same either way.
                       t('1 game reaches this position')
                     : t('{n} games reach this position', { n: hits.length })
-                  : t('{n}+ games reach this position — the list stops here', { n: hits.length })}
+                  : t('{n}+ games reach this position. The list stops here.', { n: hits.length })}
             </p>
           )}
           <ul className="flex flex-col gap-px">

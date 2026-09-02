@@ -294,9 +294,9 @@ const ROW_WIDTHS = ['w-36', 'w-44', 'w-28', 'w-40', 'w-32'];
  * every shortfall moved everything on screen.
  */
 const CHECKLIST_LABELS = [
-  'Add your Lichess or Chess.com username — the Games page fills itself from it',
-  'Fetch the puzzle database — the trainer runs offline from it',
-  'Import a scanned tactics book — its diagrams become solvable puzzles',
+  'Add your Lichess or Chess.com username and the Games page fills itself',
+  'Fetch the puzzle database so the trainer runs offline',
+  'Import a scanned tactics book and its diagrams become puzzles',
 ] as const;
 
 /**
@@ -1196,7 +1196,7 @@ export function HomePage() {
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {data.due > 0
                         ? t('{n} due for review', { n: data.due })
-                        : t('Nothing due — the next review lands {when}', {
+                        : t('Nothing due. The next review lands {when}', {
                             when: formatUntil(data.nextDue!),
                           })}
                     </span>
@@ -1215,7 +1215,7 @@ export function HomePage() {
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {data.repertoire.due > 0
                         ? t('{n} repertoire positions due', { n: data.repertoire.due })
-                        : t('Repertoire — the next position comes back {when}', {
+                        : t('Repertoire: the next position comes back {when}', {
                             when: formatUntil(data.repertoire.nextDue!),
                           })}
                     </span>

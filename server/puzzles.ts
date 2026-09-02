@@ -727,7 +727,7 @@ export function puzzlesApi(
     const db = puzzleDb();
     if (!db) {
       return c.json(
-        { error: 'No puzzle database yet — build it from the Puzzles page.' },
+        { error: 'No puzzle database yet. Build it from the Puzzles page.' },
         503,
       );
     }
@@ -752,7 +752,7 @@ export function puzzlesApi(
         const pool = failedPool(entries);
         const candidates = pool.length > 1 ? pool.filter((p) => p !== lastId) : pool;
         if (candidates.length === 0) {
-          return c.json({ error: 'No failed puzzles to review — nothing to fix.' }, 404);
+          return c.json({ error: 'No failed puzzles to review. Nothing to fix.' }, 404);
         }
         id = candidates[Math.floor(Math.random() * candidates.length)]!;
       }

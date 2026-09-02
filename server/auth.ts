@@ -313,7 +313,7 @@ export function authApi(
     if (configured === UNREADABLE) return c.json({ error: 'vault configuration error' }, 503);
 
     const ip = clientIp(c.req.header('x-forwarded-for'));
-    if (isThrottled(ip)) return c.json({ error: 'too many attempts — try again later' }, 429);
+    if (isThrottled(ip)) return c.json({ error: 'too many attempts, try again later' }, 429);
 
     const body = (await c.req.json().catch(() => ({}))) as { password?: string; code?: string };
     if (typeof body.password !== 'string' || !verifyPassword(body.password, configured)) {

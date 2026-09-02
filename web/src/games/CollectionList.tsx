@@ -623,7 +623,7 @@ export function CollectionList({
             className={cn('min-h-0 flex-1', games.length > 0 && 'border-border border-t')}
             icon={Folder}
             title="Your collection is empty"
-            body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
+            body="The games worth keeping, each annotatable like a study. Import one, or add games from your online archive."
             action={
               <Button variant="default" size="sm" onClick={onImport}>
                 <Plus className="size-3.5" data-icon="inline-start" />

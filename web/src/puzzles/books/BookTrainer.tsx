@@ -532,10 +532,10 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           (() => {
             const meta = PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META];
             return (
-              <TitleTip title={`${t(meta.label)} — ${t(meta.title)}`}>
+              <TitleTip title={`${t(meta.label)}: ${t(meta.title)}`}>
                 <span
                   role="img"
-                  aria-label={`${t(meta.label)} — ${t(meta.title)}`}
+                  aria-label={`${t(meta.label)}: ${t(meta.title)}`}
                   className="shrink-0 cursor-help"
                 >
                   <meta.icon className={cn('size-3.5', meta.iconClass)} aria-hidden />
@@ -681,7 +681,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                   : wrong
                     ? t('The marked move is where the line goes wrong.')
                     : t('Correct so far, but the book line goes further.')
-              : t('Explore freely — only the mainline is judged on submit.')}
+              : t('Explore freely. Only the mainline is judged on submit.')}
         </p>
       </div>
 
@@ -779,7 +779,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               variant="default"
               size="sm"
               disabled={phase !== 'solving' || !hasMoves}
-              title={t('Grade the mainline — this is the only judged moment')}
+              title={t('Grade the mainline. This is the only judged moment.')}
               onClick={() => void submit()}
             >
               {phase === 'checking' ? (
@@ -818,7 +818,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       phase === 'solving' ? (id) => setTree(promoteToMainline(tree, id)) : undefined
     }
     onFlip={() => setFlipped((f) => !f)}
-    emptyText={t('Nothing entered yet — find the first move on the board.')}
+    emptyText={t('Nothing entered yet. Find the first move on the board.')}
   />
   );
 

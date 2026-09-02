@@ -215,10 +215,10 @@ export function GrowDialog({
             {reach === 0
               ? facts.parentId === null
                 ? t(
-                    'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.',
+                    'None of your games are indexed yet. Collect some on the Games page, from an online archive or a PGN, and this will have something to read.',
                   )
                 : t('None of your games reach this position.')
-              : t('Your games do not reach this position often enough — lower the floor, or play more.')}
+              : t('Your games do not reach this position often enough. Lower the floor, or play more.')}
           </p>
         ) : (
           <>

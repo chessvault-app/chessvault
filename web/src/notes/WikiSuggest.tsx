@@ -130,7 +130,7 @@ export function WikiSuggest({
         ))}
         {total > items.length && (
           <div className="text-muted-foreground px-2 py-1 text-xs">
-            {t('{n} more — keep typing', { n: total - items.length })}
+            {t('{n} more, keep typing', { n: total - items.length })}
           </div>
         )}
       </PopoverContent>

@@ -177,7 +177,7 @@ function StudyList() {
         <EmptyState
           icon={Library}
           title="No studies yet"
-          body="A study is a set of annotated chapters — lines, comments, arrows — kept as plain PGN. Start an empty one, or import a PGN you already have."
+          body="A study is a set of annotated chapters, kept as plain PGN. Start an empty one, or import a PGN you already have."
           action={
             <Button
               variant="default"
@@ -496,7 +496,7 @@ function CreateMenu() {
               <Textarea
                 value={pgnText}
                 onChange={(e) => takePgn(e.target.value)}
-                placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
+                placeholder={t('Paste a PGN here. A Lichess study export brings its chapters, comments and arrows.')}
                 spellCheck={false}
                 className="h-28 w-full resize-none p-2 font-mono"
               />

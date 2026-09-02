@@ -244,7 +244,7 @@ export function PuzzleEntry({
             <aside className="border-border flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
               <img src={draft.imageUrl} alt={t('book diagram')} className="border-border rounded-md border" />
               <p className="text-muted-foreground text-sm leading-relaxed">
-                {t('The diagram from the book — make the board match it, then record the solution.')}
+                {t('The diagram from the book. Make the board match it, then record the solution.')}
               </p>
             </aside>
           ) : null}
@@ -387,7 +387,7 @@ function SolutionRecorder({
       const cp = score.mate !== undefined ? (score.mate * pov > 0 ? 10000 : -10000) : (score.cp ?? 0) * pov;
       if (cp < 150) {
         notes.push(
-          `After ${Math.floor(i / 2) + 1}. ${line[i]!.san} the engine sees only ${formatScore(score)} — check the transcription.`,
+          `After ${Math.floor(i / 2) + 1}. ${line[i]!.san} the engine sees only ${formatScore(score)}. Check the transcription.`,
         );
       }
     }
@@ -462,7 +462,7 @@ function SolutionRecorder({
             <div className="board-box flex h-6 items-center gap-2 text-sm">
               <SideDot side={turn} />
               <span className="text-muted-foreground">
-                {t('Play the solution — every move, both sides.')}
+                {t('Play the solution, every move for both sides.')}
               </span>
             </div>
           </BoardLane>
@@ -487,7 +487,7 @@ function SolutionRecorder({
               own page, which it is not — it is one step of the entry that
               the board beside it belongs to. */}
           <p className="text-muted-foreground px-3 pt-2.5 text-sm">
-            {t('Record the solution — every move, both sides.')}
+            {t('Record the solution, every move for both sides.')}
           </p>
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 px-(--card-spacing) text-base">
             {line.length === 0 ? (

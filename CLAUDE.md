@@ -95,6 +95,16 @@ stays provable.
 Difficulty is a word — see `web/src/puzzles/bands.ts`. A rating is how the
 trainer picks a puzzle, not a verdict to hand back to whoever solved it.
 
+**UI copy has no em-dash, and says what a control does before why.** The
+dash was doing three jobs in the app's sentences (a consequence, an aside,
+a separator) that a full stop, a comma or a colon do in every other app,
+and Korean has no use for the character at all; `check:repo` rejects it in
+the dictionary, in any `t()` literal and in a server error string. The
+lone dash a table shows for "no value" is not a sentence and is fine. A
+description under a control leads with its effect and leaves the reasoning
+to the manual: two short sentences is the ceiling for a new one, and a
+number stays only when it changes the decision (a 300 MB download does).
+
 ## UI components
 
 **The component layer is shadcn/ui, and the registry files are owned.**
@@ -138,8 +148,9 @@ nobody ran until that job existed. `check:repo` documents
 its own list at the top of `scripts/check-repo.ts` — currently absolute
 paths and credentials, a rating rendered without `bandOf()`, the lockfile
 agreeing with package.json, the Rust crate notice matching Cargo.lock, the
-retired colour names in either the class or the `var()` form, and every
-UI string the manual "quotes" still existing in the app's source. Add to
+retired colour names in either the class or the `var()` form, every
+UI string the manual "quotes" still existing in the app's source, and no
+em-dash in a UI string. Add to
 that list whenever a mistake turns out to have a shape a grep can catch;
 keep the header in step with what the file does, or this paragraph starts
 lying about it.

@@ -278,6 +278,44 @@ other people.
   keeps its two fills, which it has for its own reason, and measures 30%
   and 20% either way.
 
+- **Four loading placeholders now hold the screen they stand in for.**
+  Every wait in the app was measured against the page that replaces it,
+  at 1280 px and on a 390 px phone, with the vault's answers held back
+  long enough to catch the placeholder. Eighteen screens already held
+  still; four did not. The puzzle trainer's Moves panel folded to one
+  line while a puzzle was found and then filled the column, so the
+  Puzzle panel and its Skip, Hint and Answer buttons dropped 274 px the
+  moment it landed. A puzzle book's Cycles panel was drawn without its
+  padding — the variable it borrowed exists only on a real card — and
+  with three lines of prose where the column's width and the language
+  decide how many there are (two on the desktop, four on the phone), so
+  the grid stepped 7 px one way and 41 px the other. A study made from a
+  game draws its two player bars, which the placeholder reserved for a
+  game only, so on a phone the board landed 34 px below where it had
+  been drawn. And the book reader's opening page was a 3:4 guess in a
+  padded box — which in fact stretched to the pane's height whatever it
+  claimed — 12 px below where the page lands, with the toolbar stepping
+  8 px sideways when the page count arrived. Each now takes its true
+  shape: the Moves panel keeps the move list's box, the Cycles panel
+  lays its own paragraph out invisibly and paints the bars over it, and
+  a document's players and a book's page shape and count are remembered
+  on the device from the last open, the way a shelf's shape already was.
+
+- **Plainer sentences everywhere.** One UI string in ten carried an
+  em-dash, doing the work a full stop, a comma or a colon does in any
+  other app, and the Korean had inherited it where the language has no
+  use for the character at all. Every one is gone: 160 dictionary
+  entries, the strings the server sends back as errors, the desktop
+  chooser and the landing page, in both languages. The longest
+  descriptions were cut to the same shape at the same time, the
+  control's effect first and the reasoning left to the manual. Counted
+  in the dictionary, 34 strings ran past 120 characters and 28 do now,
+  the longest fell from 268 to 224, and the demo's Settings banner is
+  the clearest case. The lone dash a table shows for "no value" stays,
+  since it is not a sentence. `check:repo` now rejects the character in
+  the dictionary, in any `t()` literal and in a server error string, so
+  it cannot creep back one string at a time.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

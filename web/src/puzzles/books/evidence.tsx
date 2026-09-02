@@ -74,7 +74,7 @@ export function SourcePane({
             <>
               <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={shown - 32} />
               <p className="text-muted-foreground text-sm leading-relaxed">
-                {t('The book’s own scan — make the board match it.')}
+                {t('The book’s own scan. Make the board match it.')}
               </p>
             </>
           ) : tab === 'solutions' && hasSolutions(evidence) ? (

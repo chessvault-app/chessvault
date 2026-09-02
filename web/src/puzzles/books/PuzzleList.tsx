@@ -66,7 +66,7 @@ export function PuzzleGrid({
               <TitleTip
                 key={p.id}
                 title={[
-                  meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
+                  meta ? `${t(meta.label)}: ${t(meta.title)}` : null,
                   prog
                     ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
                     : t('not attempted'),
@@ -403,7 +403,7 @@ export function PuzzleList({
             <TitleTip
               key={p.id}
               title={[
-                meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
+                meta ? `${t(meta.label)}: ${t(meta.title)}` : null,
                 prog
                   ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
                   : t('not attempted'),

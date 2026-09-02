@@ -249,7 +249,7 @@ export function lichessExplorerApi(
         }
         if (answer.status === 401) {
           return c.json(
-            { error: 'Lichess rejected this vault’s token — replace it in Settings with a new one (no scopes needed) from lichess.org/account/oauth/token/create' },
+            { error: 'Lichess rejected this vault’s token. Replace it in Settings with a new one (no scopes needed) from lichess.org/account/oauth/token/create' },
             502,
           );
         }

@@ -247,7 +247,7 @@ function NoteList() {
         <EmptyState
           icon={NotebookPen}
           title="No notes yet"
-          body="A note is plain markdown with interactive boards embedded anywhere in the text — an idea, a plan, a game to come back to."
+          body="A note is plain markdown with interactive boards anywhere in the text. An idea, a plan, a game to come back to."
           action={
             <Button variant="default" size="sm" onClick={() => void newUntitledNote(notes, refresh)}>
               <Plus className="size-3.5" data-icon="inline-start" />

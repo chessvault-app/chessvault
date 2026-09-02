@@ -25,7 +25,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={cycle}
-      title={t('{theme} — click to change', { theme: t(labels[preference]) })}
+      title={t('{theme}. Click to change.', { theme: t(labels[preference]) })}
       aria-label={t(labels[preference])}
     >
       <Icon className="size-[1.05rem]" strokeWidth={2} />

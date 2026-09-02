@@ -138,8 +138,8 @@ export function CompareDialog({
       <DialogContent size="sm" title={t('Compare with a database')}>
         <p className="text-muted-foreground text-sm leading-relaxed">
           {color === 'white'
-            ? t('Your recent games as White, checked against what this database’s players answer — positions where your move is one they rarely choose, strongest habit first.')
-            : t('Your recent games as Black, checked against what this database’s players answer — positions where your move is one they rarely choose, strongest habit first.')}
+            ? t('Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.')
+            : t('Your recent games as Black, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.')}
         </p>
         {databases.length > 1 && (
           <Select
@@ -171,7 +171,7 @@ export function CompareDialog({
           </div>
           {band !== undefined && rows !== null && !banded && (
             <p className="text-warn text-sm">
-              {t('This database’s sums are not split by level — showing all of its games.')}
+              {t('This database’s sums are not split by level, so all of its games are shown.')}
             </p>
           )}
         </div>
@@ -194,10 +194,10 @@ export function CompareDialog({
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
             {failed
-              ? t('The comparison could not be read — is the server reachable?')
+              ? t('The comparison could not be read. Is the server reachable?')
               : indexedGames === 0
                 ? t(
-                    'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.',
+                    'None of your games are indexed yet. Collect some on the Games page, from an online archive or a PGN, and this will have something to read.',
                   )
                 : t('Nothing to flag: where this database has a real sample, your recent moves are among its usual answers.')}
           </p>
@@ -221,7 +221,7 @@ export function CompareDialog({
                   )}
                 </span>
                 <span className="text-muted-foreground w-full truncate text-sm">
-                  {t('You play {mine} ({mineShare}) — they answer {top} ({topShare} of {total})', {
+                  {t('You play {mine} ({mineShare}), they answer {top} ({topShare} of {total})', {
                     mine: row.myMove.san,
                     mineShare: pct(row.myMove.total, row.refTotal),
                     top: row.top.san,

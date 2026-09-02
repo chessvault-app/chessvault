@@ -58,7 +58,7 @@ export function UploadBookDialog({
     setLooked(null);
     setError(null);
     if (file.size > MAX_PDF_BYTES) {
-      setError(t('That PDF is too big — the limit is {mb} MB.', { mb: MAX_PDF_BYTES / (1024 * 1024) }));
+      setError(t('That PDF is too big. The limit is {mb} MB.', { mb: MAX_PDF_BYTES / (1024 * 1024) }));
       setFile(null);
       return;
     }
@@ -139,10 +139,10 @@ export function UploadBookDialog({
               {t('Choose the book’s PDF')}
               <span className="text-muted-foreground block text-sm">
                 {replace
-                  ? t('a better file behind “{title}” — the old one is replaced, your page is kept', {
+                  ? t('a better file behind “{title}”. The old one is replaced and your page is kept', {
                       title: replace.title,
                     })
-                  : t('any chess book — it is kept in your vault and read here, beside a board')}
+                  : t('any chess book, kept in your vault and read here beside a board')}
               </span>
             </span>
           </label>
