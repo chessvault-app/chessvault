@@ -127,9 +127,13 @@ flowchart LR
   server) and, when a build of it exists, the Rust binary from `native/`,
   which the server prefers. They are held to byte-identical output by
   golden fixtures (`native/tests/goldens.json`, exported from the JS
-  side) and a whole-file diff; `CHESS_NATIVE=0` pins the JS path for
-  comparing them. Nothing requires the binary — it is a speed, not a
-  dependency. `native/README.md` has the build, the test and the rule.
+  side, the SQL and the shared literals included), a whole-file diff,
+  and a fuzz of the two on a random corpus that CI runs on every push;
+  the deep-search scan is tethered at runtime too, the server replaying
+  every native hit through its reference scanner before streaming it.
+  `CHESS_NATIVE=0` pins the JS path for comparing them. Nothing requires
+  the binary — it is a speed, not a dependency. `native/README.md` has
+  the build, the test and the rule.
   One heavy job deliberately is **not** a child: fast search
   (`server/scanWorker.ts`) holds an opted-in database's packed
   scan-index resident in server memory — one worker thread owning one
