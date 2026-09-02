@@ -4,6 +4,7 @@ import { typedMove } from '@shared/moveInput';
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useAnalysis } from '@/store/analysis';
+import { usePrefs } from '@/store/prefs';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -22,6 +23,10 @@ import { t } from '@/lib/i18n';
  * path hands its caller, so a typed move takes the same road as a
  * dragged one and a trainer judges both alike. It never takes focus on
  * mount: it is a row in a panel, not a dialog's sole field.
+ *
+ * Settings > Appearance > "Move box" hides it. The gate lives here, in
+ * the one component every panel renders, so no caller has to remember
+ * the setting and a panel added later gets it for free.
  */
 export function MoveBox({
   fen,
@@ -37,9 +42,11 @@ export function MoveBox({
   disabled?: boolean;
   className?: string;
 }) {
+  const shown = usePrefs((p) => p.moveBox);
   const errorId = useId();
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
+  if (!shown) return null;
 
   const submit = (): void => {
     const raw = typed.trim();

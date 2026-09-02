@@ -515,6 +515,12 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The move box can be switched off.** The "Type a move…" row under
+  every moves list is the keyboard's way onto the board, and for anyone
+  who only ever drags pieces it was a row of nothing. Settings ›
+  Appearance › Move box hides it on this device; it stays on by default,
+  and the setting is per-device like coordinates.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

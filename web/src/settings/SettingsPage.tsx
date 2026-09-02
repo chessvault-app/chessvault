@@ -709,7 +709,7 @@ function AppearanceCard() {
   const [moreOpen, setMoreOpen] = useState(false);
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setAnnotationSize } =
+  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setAnnotationSize } =
     usePrefs();
 
   return (
@@ -833,6 +833,20 @@ function AppearanceCard() {
           checked={coordinates}
           onCheckedChange={() => setCoordinates(!coordinates)}
           aria-label={t('Board coordinates')}
+        />
+      </SettingRow>
+
+      {/* Beside coordinates rather than under More options for the same
+          reason: it is a row that is on every moves panel or on none of
+          them, and the keyboard's only way onto the board. */}
+      <SettingRow
+        title={t('Move box')}
+        blurb={t('A field under the moves list where a move can be typed.')}
+      >
+        <Switch
+          checked={moveBox}
+          onCheckedChange={() => setMoveBox(!moveBox)}
+          aria-label={t('Move box')}
         />
       </SettingRow>
 

@@ -316,6 +316,15 @@ interface PrefsState {
   castleStyle: CastleStyle;
   /** File and rank labels on the board edge. */
   coordinates: boolean;
+  /**
+   * The typed-move field at the foot of every moves panel.
+   *
+   * On by default because it is the keyboard's only way onto the board;
+   * off for anyone who never types a move and would rather have the row
+   * back. Per-device like coordinates: it is a question of what the
+   * screen shows, not of the chess.
+   */
+  moveBox: boolean;
   /** How large a comment is rendered in the move list. */
   annotationSize: AnnotationSize;
   /** One short vibration when a piece lands. Android only — iOS Safari
@@ -369,6 +378,7 @@ interface PrefsState {
   setDensity: (id: Density) => void;
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
+  setMoveBox: (on: boolean) => void;
   setAnnotationSize: (size: AnnotationSize) => void;
   setHaptics: (on: boolean) => void;
   setAutosave: (on: boolean) => void;
@@ -430,6 +440,7 @@ export const usePrefs = create<PrefsState>()(
       captureSound: 'take-1',
       castleStyle: 'king',
       coordinates: true,
+      moveBox: true,
       // What the move list has always rendered a comment at.
       annotationSize: 'medium',
       haptics: true,
@@ -457,6 +468,7 @@ export const usePrefs = create<PrefsState>()(
       setCaptureSound: (captureSound) => set({ captureSound }),
       setCastleStyle: (castleStyle) => set({ castleStyle }),
       setCoordinates: (coordinates) => set({ coordinates }),
+      setMoveBox: (moveBox) => set({ moveBox }),
       setAnnotationSize: (annotationSize) => set({ annotationSize }),
       setHaptics: (haptics) => set({ haptics }),
       setAutosave: (autosave) => set({ autosave }),
