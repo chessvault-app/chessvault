@@ -28,7 +28,7 @@ position. It can carry:
   node compares it against what the linked studies actually reach and
   wears the difference as an arc filling around the dot toward the
   target (amber while short, green once met), with the panel saying it
-  in words: "Prepared to move 7 — target 12".
+  in words: "Prepared to move 7, target 12".
 - A free-text **note**.
 
 A node with no linked studies is a *plan* — drawn dashed — which is how the
@@ -191,7 +191,7 @@ is not folding one node at a time but saying "this line, never mind the
 rest". **Restore the whole graph** ends it, switching arrangements ends
 it, and it is not remembered between visits: coming back to a map that is
 mostly missing, with no memory of asking, reads as a map that has lost
-its branches. **Align** fits what is drawn, which is also what switching
+its branches. **Align the map** fits what is drawn, which is also what switching
 arrangements does for you.
 
 The layout is a deterministic force relaxation, so the same map always
@@ -245,7 +245,7 @@ One file, `vault/repertoire/map.json` — beside the drill history,
 because they are two views of the same subject. Only the skeleton is in
 it: moves, ids, links (stored under the field name `tags`), names,
 depths, notes. Positions and coverage are derived at load by replaying
-the moves. Renaming or moving a linked study (or a whole collection)
+the moves. Renaming or moving a linked study (or a whole folder)
 follows through to the links, the same way bookmarks follow; deleting
 one deliberately does **not** remove its links — a link whose study
 vanished means "this line lost its prep", and the panel shows it as a

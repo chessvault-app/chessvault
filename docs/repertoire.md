@@ -78,7 +78,7 @@ holding the new position.
 - **Hit** — the set is non-empty. The move commits, and a `hit` is
   recorded for the position.
 - **Miss** — the set is empty. The move is *refused*: the book move is
-  named ("Your study plays e4 here — try it again"), the piece stands
+  named ("Your study plays e4 here. Try again."), the piece stands
   for a beat and snaps back — the puzzle trainer's wrong-move rhythm —
   and the position waits to be answered right. A `miss` is recorded.
 
@@ -106,8 +106,8 @@ more often, as in life.
 The uncovered replies are not discarded. The most common one, if it
 accounts for **at least 5% of games** in the position *and is relevant
 to the study's subject*, produces a quiet note under the status — "Gap
-noted — the field also plays a6 (24% of games), and your study has no
-answer to it" — and one `gap` record per position per session. The move
+noted. The field also plays a6 in 24% of games, and your study has no
+answer to it." — and one `gap` record per position per session. The move
 itself is never played; the drill keeps testing memory. (Steering
 ending sessions on every rare sideline was the original design, and it
 made drills unfinishable — the field found the same hole every time

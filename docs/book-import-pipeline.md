@@ -137,7 +137,7 @@ Self-supervised text helpers (both take `--book`):
 
 ## Per-book configs (`scripts/ml/books/*.json`)
 
-Every book-specific fact is data: page ranges, artifact paths, number
+Every book-specific fact is data: page ranges, artefact paths, number
 style (`bare` digits vs `123)`), solutions anchor (`N - 1.` / `N) Name`
 / `N. Name`), move markers (dotted vs dotless), where the side to move
 is printed (`chapter` header, per-puzzle `label` "White to play", or a

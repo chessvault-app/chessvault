@@ -16,7 +16,7 @@ them. When in doubt, these win over novelty.
 - **No user-facing ratings.** Puzzle ratings exist only as curation
   data; the UI shows bands (Easy/Medium/Hard/Expert) as text labels.
   Difficulty is ordinal, so if it ever needs more visual weight it gets
-  a strength meter, not colors.
+  a strength meter, not colours.
 - **No scores either.** The same rule, one step out: a rating is not the
   only number that hands back a verdict. The dashboard carried a "Win
   rate" percentage in 24px bold and the trainer a "Run" of consecutive
@@ -31,9 +31,9 @@ them. When in doubt, these win over novelty.
   which is a game's voice, and the app had already decided everywhere
   else that a solve is a fact to state.
 
-## The color grammar
+## The colour grammar
 
-Color carries meaning, and each hue has exactly one job:
+Colour carries meaning, and each hue has exactly one job:
 
 | Hue | Meaning | Examples |
 | --- | --- | --- |
@@ -46,8 +46,8 @@ Color carries meaning, and each hue has exactly one job:
 Corollaries that were learned the hard way: a green dot on a tile grid
 reads as "solved" no matter what you meant (the fidelity marks became
 shape-coded icons for this reason), and the difficulty ramp
-(green→red) is forbidden because it would collide with outcome colors
-in the same rows. Signals should never be color-only — the winning
+(green→red) is forbidden because it would collide with outcome colours
+in the same rows. Signals should never be colour-only — the winning
 digit is also bold, tier marks also differ by icon shape.
 
 
@@ -110,9 +110,9 @@ noticed where it was sitting.
 
 Nothing is magic, so nothing wears sparkles. `Sparkles` sat on the
 opening map's "Grow from my games" and on a reference database's
-Optimize; it is the magic-wand glyph, and it advertises a result the
+Optimise; it is the magic-wand glyph, and it advertises a result the
 reader is not expected to inspect. Both are the opposite — growing reads
-the games already in the vault, and optimizing states its three steps in
+the games already in the vault, and optimising states its three steps in
 the confirmation before it runs. `GitBranch` and `Hammer` say what they
 do.
 
@@ -370,7 +370,7 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   pages, but a **leaf page claims it** — board, study, puzzle and
   repertoire replace the global tabs with their own controls (move
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
-  back chevron, chess.com/Lichess-style. Desktop navigates by sidebar, no
+  back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
   back arrows on top-level pages.
 - **A phone's hub is a launcher, not a dashboard.** The Puzzles tab lands
   on `#/puzzles/hub` (`puzzles/HubPage.tsx`), which is its destinations
@@ -446,7 +446,7 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   second fetch.** Whatever it asks for on mount cannot start until the
   first answer is back, so two independent questions are asked one after
   the other. The page that owns the first one owns them both, side by
-  side. The Databases page had its collections listed by the panel the
+  side. The Databases page had its PGN files listed by the panel the
   databases list mounts: on an emulated 200 ms link they landed 242 ms
   apart, and asked together they land together.
 - **Cover the wait that actually exists.** Data arriving is not the same
@@ -568,8 +568,8 @@ a "name" with a contact, so a plain text field is rendered as
 ## iOS keyboard: do not fight it
 
 Three attempts to outsmart the keyboard (scroll-pinning, focus
-pre-scrolling, shell resizing) each produced a worse artifact than the
-native behavior. Settled rule: never move the PAGE while the keyboard is
+pre-scrolling, shell resizing) each produced a worse artefact than the
+native behaviour. Settled rule: never move the PAGE while the keyboard is
 up; reset window scroll only on the viewport resize that signals it
 closed.
 

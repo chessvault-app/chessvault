@@ -100,7 +100,7 @@ re-measure.
 3. Validation gates must close loopholes as they're found (mate check,
    sanity counts, uniqueness-or-nothing repairs).
 4. Distrust "high accuracy" on compound tasks — per-unit accuracy is
-   not per-artifact accuracy.
+   not per-artefact accuracy.
 5. Keep the human in the loop cheap: drafts carry evidence crops and
    solution-page peeks so hand-fixing a residue puzzle takes seconds.
 6. A searched setting whose underlying fact is ABSENT will win on noise.
