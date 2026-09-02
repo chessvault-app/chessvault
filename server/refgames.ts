@@ -1314,8 +1314,7 @@ export function refGamesApi(
    * lookup tables simply offers nothing; openings and ECO come from
    * the vendored catalogue (/api/openings), not from here — the
    * language's names should not depend on which database is picked —
-   * and events have no lookup table, so suggesting them would scan
-   * the games themselves.
+   * and tournaments answer from the events lookup below.
    */
   api.get('/refgames/suggest', (c) => {
     const found = fromQuery(c);

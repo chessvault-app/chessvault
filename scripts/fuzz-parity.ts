@@ -9,9 +9,15 @@
  *
  * Seeded and deterministic per (games, seed): capture- and
  * promotion-hungry self-play becomes a PGN corpus, both pipelines
- * build it, every table is byte-compared (games, plies, move_counts,
- * scan_pack, key_index) and so is the schema — the indexes and lookup
- * tables a data diff cannot see — and a spread of deep hunts,
+ * build the first two thirds of it fresh from two source files (a
+ * file boundary is where one shared parser loses the next file's
+ * headers) and append the rest, every table is byte-compared (games,
+ * plies, move_counts, scan_pack, key_index, players, openings,
+ * events) and so is the schema — the indexes and lookup tables a data
+ * diff cannot see. Each lookup is then held against the games table it
+ * summarises: the append re-derives them by dropping and recreating,
+ * and one that both sides forget to drop is stale on both at once,
+ * which no cross-pipeline diff can see. Then a spread of deep hunts,
  * positions sampled from the corpus at several plies and rungs plus
  * material specs, runs three ways:
  *
@@ -160,20 +166,37 @@ async function main(): Promise<void> {
   let jsApi: ReturnType<typeof refGamesApi> | null = null;
   let rsApi: ReturnType<typeof refGamesApi> | null = null;
   try {
-    const pgn = join(dir, 'fuzz.pgn');
-    writeFileSync(pgn, corpus.map((m, at) => pgnOf(m, at)).join('\n'));
+    // Three files: the first two are built fresh in one pass (each
+    // ends on its last result line with no blank line after it, the
+    // shape that made one parser swallow the next file's headers), the
+    // third appended, so the append path — dedup, index extension,
+    // lookup re-derivation — is exercised on both sides too.
+    const pgns = corpus.map((m, at) => pgnOf(m, at));
+    const third = Math.max(1, Math.floor(pgns.length / 3));
+    const files = [
+      [join(dir, 'fuzz-a.pgn'), pgns.slice(0, third)],
+      [join(dir, 'fuzz-b.pgn'), pgns.slice(third, third * 2)],
+      [join(dir, 'fuzz-extra.pgn'), pgns.slice(third * 2)],
+    ] as const;
+    for (const [path, games] of files) writeFileSync(path, games.join('\n'));
+    const [a, b, extra] = files.map(([path]) => path) as [string, string, string];
     for (const side of ['js', 'rs']) {
       const dataDir = join(dir, side);
-      if (side === 'js') {
-        execFileSync(
-          process.platform === 'win32' ? 'npx.cmd' : 'npx',
-          ['tsx', 'scripts/build-refgames.ts', pgn, '--name', 'fuzz'],
-          { cwd: REPO_ROOT, env: { ...process.env, CHESS_VAULT_DATA: dataDir }, shell: true, stdio: 'ignore' },
-        );
-      } else {
-        execFileSync(binary!, ['build', pgn, '--name', 'fuzz', '--data', dataDir], {
-          stdio: 'ignore',
-        });
+      for (const [sources, flags] of [
+        [[a, b], []],
+        [[extra], ['--append']],
+      ] as const) {
+        if (side === 'js') {
+          execFileSync(
+            process.platform === 'win32' ? 'npx.cmd' : 'npx',
+            ['tsx', 'scripts/build-refgames.ts', ...sources, '--name', 'fuzz', ...flags],
+            { cwd: REPO_ROOT, env: { ...process.env, CHESS_VAULT_DATA: dataDir }, shell: true, stdio: 'ignore' },
+          );
+        } else {
+          execFileSync(binary!, ['build', ...sources, '--name', 'fuzz', ...flags, '--data', dataDir], {
+            stdio: 'ignore',
+          });
+        }
       }
     }
     const jsFile = join(dir, 'js', 'refgames', 'fuzz.sqlite');
@@ -200,6 +223,44 @@ async function main(): Promise<void> {
       const b = JSON.stringify((rs.prepare(q).all() as Record<string, unknown>[]).map(collapse));
       if (a !== b) fail(`in ${table}`);
       console.log(`  ${table}: identical`);
+    }
+    // The lookups summarise the games table, and the append re-derives
+    // them by dropping and recreating. A table both sides forget to
+    // drop is identical across pipelines AND stale, so each is also
+    // held against a fresh derivation from the games it summarises.
+    for (const [table, stored, derived] of [
+      [
+        'players',
+        'SELECT * FROM players ORDER BY name',
+        `SELECT name, COUNT(*) AS games, SUM(w) AS as_white, SUM(b) AS as_black, MAX(elo) AS max_elo
+         FROM (
+           SELECT white AS name, 1 AS w, 0 AS b, white_elo AS elo FROM games
+           UNION ALL
+           SELECT black AS name, 0 AS w, 1 AS b, black_elo AS elo FROM games
+         ) GROUP BY name ORDER BY name`,
+      ],
+      [
+        'openings',
+        'SELECT * FROM openings ORDER BY opening, eco',
+        `SELECT opening, eco, COUNT(*) AS games FROM games
+         WHERE opening IS NOT NULL OR eco IS NOT NULL GROUP BY opening, eco ORDER BY opening, eco`,
+      ],
+      [
+        'events',
+        'SELECT * FROM events ORDER BY event',
+        `SELECT event, COUNT(*) AS games FROM games
+         WHERE event IS NOT NULL GROUP BY event ORDER BY event`,
+      ],
+    ] as const) {
+      for (const [side, db] of [
+        ['js', js],
+        ['rs', rs],
+      ] as const) {
+        const a = JSON.stringify(db.prepare(stored).all());
+        const b = JSON.stringify(db.prepare(derived).all());
+        if (a !== b) fail(`— ${table} is stale after the append (${side})`);
+      }
+      console.log(`  ${table}: current after append`);
     }
     js.close();
     rs.close();
