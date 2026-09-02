@@ -110,16 +110,21 @@ export function ShelfCard({
           'transition-[border-color,box-shadow,transform] duration-150',
           'hover:border-border hover:shadow-md md:hover:-translate-y-px',
           layout === 'grid' ? 'px-4 py-3' : 'items-center px-3 py-2',
-          // A bookmarked card says so before it is read: a warm edge down
-          // the left. It is the WHOLE indicator now — the filled star that
-          // used to sit in the corner cost a permanent 28px of every card
-          // on a phone to say something an edge says for nothing.
+          // A bookmarked card says so before it is read: an edge down the
+          // left in the accent, plus the small glyph on the meta line
+          // below. The edge alone was the whole indicator for a while,
+          // and it broke two of the app's own rules: it was amber, which
+          // means caution everywhere else (the engine-guess tier, the
+          // offline notice), and it was colour with no shape, which a
+          // screen reader and a deuteranopic reader both miss. The glyph
+          // costs one caption-height on the line that was already there,
+          // not the 28px corner the old filled star took from every card.
           //
           // The hover colour has to be re-stated for that edge, or it is
           // lost exactly when you reach for the card: `hover:border-line-
           // strong` sets ALL FOUR sides, so pointing at a marked card
-          // repainted its amber edge the same grey as the rest of it.
-          marked && 'border-l-warn hover:border-l-warn border-l-2',
+          // repainted its edge the same grey as the rest of it.
+          marked && 'border-l-primary hover:border-l-primary border-l-2',
         )}
       >
         {/* The card stays; its contents slide off it. */}
@@ -167,7 +172,15 @@ export function ShelfCard({
             {/* Three steps, not two: the name is the brightest thing on the
                 card, the stat line is the quietest, and the note's own
                 words sit between them. */}
-            <p className="text-muted-foreground text-xs leading-4">{meta}</p>
+            <p className="text-muted-foreground text-xs leading-4">
+              {marked && (
+                <Bookmark
+                  className="text-primary mr-1 inline size-3 -translate-y-px fill-current"
+                  aria-label={t('Bookmarked')}
+                />
+              )}
+              {meta}
+            </p>
             {preview && layout === 'grid' && (
               <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-[1.35rem] opacity-90">
                 {preview}
@@ -199,7 +212,7 @@ export function ShelfCard({
               className={cn(
                 'pointer-coarse:hidden opacity-0 transition-opacity',
                 'group-hover:opacity-100 focus-visible:opacity-100',
-                marked && 'text-warn',
+                marked && 'text-primary',
               )}
               onClick={(e) => {
                 e.stopPropagation();

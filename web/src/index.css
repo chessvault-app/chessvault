@@ -348,7 +348,13 @@
      closes — the worst of them on --surface-3 is 5.69:1 at knob 1
      against 4.39:1 at knob 0. A lerp there would be a no-op written out
      four times. */
-  --good: oklch(calc(51% + (47% - 51%) * var(--ui-contrast)) 0.141 150);
+  /* 50 / 52 / 52, not 51 / 53 / 52.5: at knob 0 those three sat at
+     4.36 / 4.36 / 4.48 on --surface-3, which is also --accent, the fill
+     under a hovered or selected row, and a solved chip on the row you
+     are pointing at is exactly where the outcome colour is read. One
+     point of lightness each clears 4.5 there (4.53 / 4.55 / 4.54) and
+     costs nothing anywhere else. Info already cleared at 4.53. */
+  --good: oklch(calc(50% + (47% - 50%) * var(--ui-contrast)) 0.141 150);
   /* 52.5%, not the registry's 57.7%, and the four points were measured
      off the one place it actually fails: "Delete all data" in Settings.
      That button is `bg-destructive/10 text-destructive`, so the red is
@@ -371,8 +377,8 @@
      carried a side to win or lose from. The answer was not to move these
      tokens — they cannot reach the floor through a wash that is itself
      moving. See --good-tint below. */
-  --destructive: oklch(calc(52.5% + (48% - 52.5%) * var(--ui-contrast)) 0.245 27.3);
-  --warn: oklch(calc(53% + (49% - 53%) * var(--ui-contrast)) 0.112 75);
+  --destructive: oklch(calc(52% + (48% - 52%) * var(--ui-contrast)) 0.245 27.3);
+  --warn: oklch(calc(52% + (49% - 52%) * var(--ui-contrast)) 0.112 75);
   --info: oklch(calc(51% + (48% - 51%) * var(--ui-contrast)) 0.102 230);
   /* What reads ON a filled --destructive panel, in both themes: the dark red is
      dark enough for white in light mode, and the light red of dark mode
@@ -428,7 +434,11 @@
    * 7:1. The chip is the same lightness with more chroma and a wash of
    * itself behind it.
    */
-  --eco-l: 45%;
+  /* 45% at knob 0, 41% at knob 1: like the semantic four, the tag has to
+     follow --ui-contrast or High contrast closes the gap on it. The
+     contrast walk's light + High contrast row (the one it did not use to
+     have) caught the C family at 4.24:1 on a hovered row. */
+  --eco-l: calc(45% + (41% - 45%) * var(--ui-contrast));
   /* FIXED chroma, not scaled by --accent-tint: the family hue is DATA
      — which opening this is — not chrome, and the neutral appearance
      drained it to grey along with the buttons, leaving the games table
@@ -438,7 +448,7 @@
      that line. */
   --eco-c: 0.12;
   --eco-wash: 10%;
-  --eco-name-l: 45%;
+  --eco-name-l: calc(45% + (41% - 45%) * var(--ui-contrast));
   --eco-name-c: 0.05;
 
   /**
@@ -543,7 +553,10 @@
 
   --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
   --muted-foreground: oklch(calc(74% + (90% - 74%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  --text-subtle: oklch(calc(68% + (80% - 68%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  /* 69.5, not 68: on --surface-3 (32%) the third tier read 4.40:1, under
+     the floor by the width of a rounding. muted-foreground stays at 74,
+     so the two tiers are still a step apart. */
+  --text-subtle: oklch(calc(69.5% + (80% - 69.5%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
 
   --primary-l: calc(92.2% - 19.2% * var(--accent-tint));
   --primary-hover-l: calc(85% - 7% * var(--accent-tint));
@@ -554,7 +567,20 @@
   --ring: oklch(calc(55.6% + (100% - 55.6%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   --good: oklch(72% 0.16 152);
-  --destructive: oklch(70.4% 0.191 22.2);
+  /* 72, not the registry's 70.4: 4.39:1 on --surface-3, and a failed
+     chip sits on a hovered row often enough. 72 reads 4.53 there.
+
+     What none of these four clear in dark is --accent (37%), the hover
+     and selection fill: text-subtle would need 74, the same rung as
+     muted-foreground above it, and this red would need 81, to
+     reach 4.5 on it, and the fill itself cannot come down to meet them,
+     since at 33% it is 1.04:1 from --surface-3 and a pressed control
+     vanishes again, which is the measured reason --accent sits a rung
+     above. So --accent in dark is a transient fill exempt from the four
+     backgrounds rule, on purpose, and check:contrast walks hover and
+     selection on every page to catch a string that is read there
+     rather than glanced at. */
+  --destructive: oklch(72% 0.191 22.2);
   --warn: oklch(80% 0.15 80);
   --info: oklch(72% 0.13 232);
   /* Dark mode's --destructive is a light red; white on it is unreadable. */

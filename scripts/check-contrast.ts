@@ -94,6 +94,16 @@ const THEMES = [
     scheme: 'high-contrast',
     strokeFloor: 1.2,
   },
+  // And in light, where the semantic four lerp on the knob (index.css):
+  // the one combination this walk did not cover was the one where those
+  // tokens actually move. A manual scan of 456 text nodes found nothing
+  // there; this row keeps that a fact rather than a memory.
+  {
+    name: 'light + high contrast',
+    prefs: { preference: 'light' },
+    scheme: 'high-contrast',
+    strokeFloor: 1.3,
+  },
 ];
 
 /**

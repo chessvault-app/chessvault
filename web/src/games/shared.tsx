@@ -334,7 +334,9 @@ export function GameRow({
         // border-color on every child through `.divide-border > *`, which
         // outranks a plain `border-l-warn` on the row — the edge came out
         // the same grey as the hairlines between rows.
-        bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
+        // In the accent, not amber: amber is caution everywhere else in
+        // the app, and a bookmark is not a warning.
+        bookmarked && 'before:bg-primary before:absolute before:inset-y-0 before:left-0 before:w-0.5',
       )}
     >
       {onSwipeAway && <SwipeTrack dx={swipe.dx} bookmarked={bookmarked} />}

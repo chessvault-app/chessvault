@@ -371,7 +371,7 @@ export function GameTableRow({
         // The kept-game mark the card rows carry, unchanged: a warm edge
         // down the left that costs no width (painted, not bordered — see
         // GameRow on why divide-border outranks a border-l).
-        bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
+        bookmarked && 'before:bg-primary before:absolute before:inset-y-0 before:left-0 before:w-0.5',
       )}
     >
       {standing !== undefined && (
