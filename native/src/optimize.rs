@@ -34,7 +34,7 @@ pub fn run_optimize(db_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
     if swept > 0 {
         // Every derived table summarised games that are gone.
-        conn.execute_batch("DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings;")?;
+        conn.execute_batch("DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings; DROP TABLE IF EXISTS events;")?;
         conn.execute_batch(sql::REFGAMES_LOOKUPS)?;
         let count: i64 = conn.query_row("SELECT COUNT(*) AS n FROM games", [], |r| r.get(0))?;
         conn.execute(

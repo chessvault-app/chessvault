@@ -205,7 +205,7 @@ console.log('indexing…');
 db.exec(REFGAMES_INDEXES);
 // The lookup tables summarise the whole games table, so an append
 // re-derives them (0.8 s measured on an Elite month) rather than merging.
-if (appendMode) db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings;');
+if (appendMode) db.exec('DROP TABLE IF EXISTS players; DROP TABLE IF EXISTS openings; DROP TABLE IF EXISTS events;');
 db.exec(REFGAMES_LOOKUPS);
 
 const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');

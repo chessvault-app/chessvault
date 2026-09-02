@@ -86,4 +86,8 @@ pub const REFGAMES_LOOKUPS: &str = "
     SELECT opening, eco, COUNT(*) AS games FROM games
     WHERE opening IS NOT NULL OR eco IS NOT NULL
     GROUP BY opening, eco;
+  CREATE TABLE IF NOT EXISTS events AS
+    SELECT event, COUNT(*) AS games FROM games
+    WHERE event IS NOT NULL
+    GROUP BY event;
 ";
