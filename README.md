@@ -368,6 +368,19 @@ Backups are layered: the server auto-commits every vault change to
 against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 — history included — to any machine for an off-cloud copy.
 
+That history leaves `config.json` and `sessions.json` out, and has since
+0.4.x; a vault older than that may still carry them in early commits,
+which means every password hash, authenticator secret and Lichess token
+they ever held goes along with each backup. The server says so at boot
+when it finds any. To purge them, with the server stopped:
+
+```bash
+git --git-dir=vault/.history.git --work-tree=vault filter-branch --index-filter 'git rm --cached --ignore-unmatch config.json sessions.json' -- --all
+```
+
+then rotate the password and the Lichess token, since copies already
+pulled off-box keep the old values.
+
 That first layer is reachable from the app, not only from git. Every
 study, game and note has a clock in its header which lists the times it
 was saved, shows what any of them held, and puts one back;

@@ -460,6 +460,18 @@ other people.
   place Settings ever offered it, and a search can carry at most sixteen
   terms, so one request can no longer walk a whole database per term.
 
+- **Smaller doors closed.** An upload that failed used to answer with the
+  server's own path to the file; it says "upload failed" now and keeps
+  the reason for the log. Two uploads of the same name or the same book
+  at once are refused rather than written over each other. The browsing
+  cache stops at forty players per site, the puzzle trainer's caches
+  forget their oldest windows, a bookmark needs a study that exists, and
+  the repertoire record bounds its names. The app cannot be framed by
+  another site, and a game's page on lichess no longer learns the vault's
+  address from the link. The desktop window refuses a server that
+  redirects it off HTTPS. And a vault whose history still carries an old
+  `config.json` is told so at boot, with the purge in the README.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

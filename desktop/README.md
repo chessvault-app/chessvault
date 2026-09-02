@@ -139,6 +139,16 @@ Self-hosting the feed instead still works: point `build.publish` back at
 server's `/updates` route (below) serves it. Nothing else in the app knows
 where updates come from.
 
+What an update is checked against, and what it is not: the installer's
+sha512 has to match the one in `latest.yml`, and both arrive over HTTPS
+from GitHub. There is no code signature. The Windows build is unsigned and
+the macOS build is ad-hoc signed (`"identity": null`), so nothing on the
+machine vouches for who built the file; whoever can publish a release on
+the repository ships code to every installed app, which downloads it in
+the background and installs it on quit. That is the ordinary state of an
+unsigned open-source app, and it is why publishing is a button a person
+presses rather than a step the workflow takes.
+
 ### Cutting a release
 
 ```

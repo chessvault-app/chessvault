@@ -356,6 +356,19 @@ SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22
 `scripts/backup-vault.sh`가 히스토리까지 포함한 보관함 전체를 아무 기계로나
 내려받습니다.
 
+그 히스토리는 `config.json`과 `sessions.json`을 빼놓고, 0.4.x부터 그래
+왔습니다. 그보다 오래된 보관함은 초기 커밋에 아직 둘을 담고 있을 수 있고,
+그러면 그동안의 비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰이 백업마다
+따라갑니다. 서버가 그런 커밋을 찾으면 시작할 때 알립니다. 지우려면 서버를
+멈춘 뒤:
+
+```bash
+git --git-dir=vault/.history.git --work-tree=vault filter-branch --index-filter 'git rm --cached --ignore-unmatch config.json sessions.json' -- --all
+```
+
+그다음 비밀번호와 Lichess 토큰을 바꾸세요. 이미 다른 기계로 내려받은
+사본은 옛 값을 그대로 갖고 있습니다.
+
 첫 번째 겹은 git 없이 앱 안에서 바로 쓸 수 있습니다. 모든 스터디와 게임과
 노트의 머리글에 있는 시계 아이콘이 저장된 시점들을 보여 주고, 그때 무엇이
 있었는지 확인한 뒤 되돌릴 수 있습니다. 아예 삭제된 문서는 설정 → 삭제된
