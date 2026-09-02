@@ -676,7 +676,7 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
         />
       </Field>
 
-      <Field label="Tournament">
+      <Field label="Event">
         <ClearableInput
           inputSize="sm"
           value={event}
