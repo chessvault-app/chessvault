@@ -240,6 +240,15 @@ other people.
   it — so this is a straight gain on a fast connection and neutral on a
   slow one.
 
+- **The Databases page asks for both of its lists at once.** The uploaded
+  PGN collections were listed by the panel that the databases list brings
+  on screen, so the request for them could not start until the databases
+  had answered — two round trips in a row for two questions with nothing
+  to do with each other. Measured against an emulated 200 ms link, the
+  collections landed 242 ms after the databases did; they now land
+  together. On a fast connection nothing looks different, which is where
+  the wait was invisible to begin with.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

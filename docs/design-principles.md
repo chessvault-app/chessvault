@@ -442,6 +442,13 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   arrived, and a panel that announces "nothing solved yet" to somebody
   with a hundred solves is worse than one that waits. Track the ANSWER
   arriving, per block, and hold each one's own placeholder until it does.
+- **A panel that a fetch has to finish before it exists must not own a
+  second fetch.** Whatever it asks for on mount cannot start until the
+  first answer is back, so two independent questions are asked one after
+  the other. The page that owns the first one owns them both, side by
+  side. The Databases page had its collections listed by the panel the
+  databases list mounts: on an emulated 200 ms link they landed 242 ms
+  apart, and asked together they land together.
 - **Cover the wait that actually exists.** Data arriving is not the same
   as content appearing: a big book's list answers in 48 ms and then takes
   most of a second to build, so the skeleton is keyed on the grid being on
