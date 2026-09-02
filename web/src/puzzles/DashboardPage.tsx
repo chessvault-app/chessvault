@@ -171,7 +171,11 @@ export function DashboardPage() {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-        {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive mb-3 text-sm" role="alert">
+            {error}
+          </p>
+        )}
         {/* This page carried a phone-only row of Train/Books/Themes
             buttons, from when the Puzzles tab landed here and it had to
             double as the hub. It is a launcher now (#/puzzles/hub), where

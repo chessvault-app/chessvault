@@ -510,6 +510,7 @@ function TitleEditor({
       <ClearableInput
         autoFocus
         inputSize="sm"
+        aria-label={t(backSection === 'games' ? 'Rename this game' : 'Rename this study')}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => void submit()}
@@ -714,6 +715,7 @@ function ChapterRow({
         <ClearableInput
           autoFocus
           inputSize="sm"
+          aria-label={t('Rename this chapter')}
           onFocus={(e) => e.target.select()}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

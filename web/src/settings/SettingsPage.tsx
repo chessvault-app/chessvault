@@ -102,7 +102,9 @@ export function SettingsPage() {
       return (
         <PageShell width="narrow">
           <div>
-            <p className="text-destructive mb-3 text-sm">{loadError}</p>
+            <p className="text-destructive mb-3 text-sm" role="alert">
+              {loadError}
+            </p>
             <Button variant="secondary" size="sm" onClick={() => void refresh()}>
               {t('Try again')}
             </Button>
@@ -1558,6 +1560,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
             inputMode="numeric"
             autoComplete="one-time-code"
             placeholder="123 456"
+            aria-label={t('Authenticator code')}
             className="w-28"
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -1600,6 +1603,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="123 456"
+              aria-label={t('Authenticator code')}
               className="w-28"
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -1682,6 +1686,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
             type={show ? 'text' : 'password'}
             autoComplete="off"
             placeholder="lip_…"
+            aria-label={t('Lichess token')}
             className="w-full pr-9"
             value={token}
             onChange={(e) => setToken(e.target.value)}
@@ -2136,6 +2141,7 @@ function DangerCard({ gate }: { gate: boolean }) {
         <ClearableInput
           inputSize="lg"
           placeholder={t('Type “{phrase}” to arm', { phrase: WIPE_PHRASE })}
+          aria-label={t('Type “{phrase}” to arm', { phrase: WIPE_PHRASE })}
           className="flex-1"
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}

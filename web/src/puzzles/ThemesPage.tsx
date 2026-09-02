@@ -211,7 +211,13 @@ export function ThemesPage() {
           <PageHeader
             title={t('Puzzle themes')}
             back={() => navigate('puzzles', 'hub')}
-            actions={error && <span className="text-destructive text-sm">{error}</span>}
+            actions={
+              error && (
+                <span className="text-destructive text-sm" role="alert">
+                  {error}
+                </span>
+              )
+            }
           />
           <SearchInput
             inputSize="sm"

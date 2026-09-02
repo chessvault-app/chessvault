@@ -173,7 +173,11 @@ export function ShelfCard({
                 {preview}
               </p>
             )}
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && (
+              <p className="text-destructive text-sm" role="alert">
+                {error}
+              </p>
+            )}
           </div>
         </div>
 

@@ -420,6 +420,7 @@ export function RefDbManager({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search')}
+            aria-label={t('Search')}
             spellCheck={false}
             className="min-w-0 flex-1"
           />
@@ -476,7 +477,11 @@ export function RefDbManager({
             {status?.log?.at(-1) ?? t('The build failed.')}
           </p>
         )}
-        {error && <p className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">{error}</p>}
+        {error && (
+          <p role="alert" className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">
+            {error}
+          </p>
+        )}
 
         {/* The list scrolls, the panel does not grow: one list at a time,
             capped, is what keeps the Build bar below in view. */}
@@ -1221,6 +1226,7 @@ function BuildWindow({
           autoFocus
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && go()}
+          aria-label={t('Name')}
           placeholder={t('Name, or leave blank for “{name}”', { name: derived })}
         />
         {taken ? (

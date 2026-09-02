@@ -904,7 +904,11 @@ export function ArchiveBrowser({
         {offline && months.length > 0 && (
           <span className="text-warn text-sm">{t('offline, cached months only')}</span>
         )}
-        {error && <span className="text-destructive text-sm">{error}</span>}
+        {error && (
+          <span className="text-destructive text-sm" role="alert">
+            {error}
+          </span>
+        )}
       </>
     ) : undefined;
 
@@ -1057,6 +1061,7 @@ export function ArchiveBrowser({
               if (e.key === 'Enter' && username.trim()) void loadMonths();
             }}
             placeholder={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
+            aria-label={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
             className={cn('min-w-0 flex-1', merged && 'basis-72')}
             inputSize="sm"
           />

@@ -1,7 +1,7 @@
 import { INPUT_BASE } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { safeCommentText } from '@shared/pgn';
 import { NAG_GLYPH } from '@/analysis/notation';
@@ -76,6 +76,8 @@ export function AnnotationPane({
   );
   const box = useRef<HTMLTextAreaElement>(null);
   const sheetBox = useRef<HTMLTextAreaElement>(null);
+  // The sheet's field is named by the sheet's title, which is the same text.
+  const sheetTitleId = useId();
   const caret = useRef<number | null>(null);
 
   // `[[` completes here exactly as it does in a note, and from the same
@@ -298,6 +300,7 @@ export function AnnotationPane({
         ) : (
           <Textarea
             ref={box}
+            aria-label={placeholder}
             value={draft}
             onChange={(e) => {
               edit(e.target);
@@ -331,9 +334,10 @@ export function AnnotationPane({
             }
           }}
         >
-          <DialogContent title={placeholder}>
+          <DialogContent title={placeholder} titleId={sheetTitleId}>
             <Textarea
               ref={sheetBox}
+              aria-labelledby={sheetTitleId}
               autoFocus={autoFocusField()}
               value={draft}
               onChange={(e) => {

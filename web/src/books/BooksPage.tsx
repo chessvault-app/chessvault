@@ -377,6 +377,7 @@ export function BooksPage() {
             value={query}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             placeholder={t('Search books…')}
+            aria-label={t('Search books…')}
             className="min-w-0 flex-1"
           />
           {bookmarkToggle('sm:hidden')}

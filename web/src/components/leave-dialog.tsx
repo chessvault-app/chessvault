@@ -93,7 +93,11 @@ export function LeaveDialog() {
             name,
           })}
         </p>
-        {error && <p className="text-destructive text-sm">{t(error)}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {t(error)}
+          </p>
+        )}
 
         {/* Three answers, three weights, in the order they should be
             considered: save, back out, throw away. Discard sat in the middle

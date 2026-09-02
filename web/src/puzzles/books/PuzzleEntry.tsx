@@ -556,7 +556,11 @@ function SolutionRecorder({
               ))}
             </div>
           )}
-          {error && <p className="text-destructive border-border border-t px-3 py-2 text-sm">{error}</p>}
+          {error && (
+            <p className="text-destructive border-border border-t px-3 py-2 text-sm" role="alert">
+              {error}
+            </p>
+          )}
 
           {/* The panel's footer (shadcn's CardFooter), not a loose row under
               it: the four verbs all act on the line in this panel, and a row

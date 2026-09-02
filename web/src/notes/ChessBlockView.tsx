@@ -274,6 +274,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
               placeholder={t('Paste a FEN or PGN…')}
+              aria-label={t('Paste a FEN or PGN…')}
               rows={3}
               className="w-full resize-none font-mono"
             />

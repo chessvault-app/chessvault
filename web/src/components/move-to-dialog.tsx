@@ -75,6 +75,7 @@ export function MoveToDialog({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={t('New folder…')}
+            aria-label={t('New folder…')}
             className="min-w-0 flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter') pickNew();

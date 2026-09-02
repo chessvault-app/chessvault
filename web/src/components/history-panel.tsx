@@ -160,7 +160,11 @@ function HistorySheet({
             {t('Restore this version')}
           </Button>
 
-          {error && <p className="text-destructive shrink-0 text-sm">{error}</p>}
+          {error && (
+            <p className="text-destructive shrink-0 text-sm" role="alert">
+              {error}
+            </p>
+          )}
         </DialogContent>
       </Dialog>
     );
@@ -228,7 +232,11 @@ function HistorySheet({
           </ul>
         )}
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

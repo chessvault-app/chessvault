@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -45,6 +45,9 @@ export function PromptDialog({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(initial);
+  // The title is the field's name: the window asks one question and the
+  // title row already says which.
+  const titleId = useId();
   const submit = (): void => {
     if (!draft.trim()) return;
     if (closeOnSubmit) onClose();
@@ -57,9 +60,10 @@ export function PromptDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent size="sm" title={label}>
+      <DialogContent size="sm" title={label} titleId={titleId}>
         {extra}
         <ClearableInput
+          aria-labelledby={titleId}
           autoFocus={autoFocusField()}
           value={draft}
           onFocus={(e) => e.target.select()}

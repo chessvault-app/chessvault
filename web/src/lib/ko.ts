@@ -1959,4 +1959,8 @@ export const ko: Record<string, string> = {
   Distance: '거리',
   'Chess board, {turn}': '체스 보드, {turn}',
   'Chess board, {turn}, last move {from} to {to}': '체스 보드, {turn}, 마지막 수 {from}에서 {to}로',
+  // --- what a screen reader is told when a long job ends --------------------
+  Notifications: '알림',
+  'Indexing finished.': '색인이 끝났습니다.',
+  'Import finished. {n} diagrams found.': '가져오기가 끝났습니다. 다이어그램 {n}개를 찾았습니다.',
 };

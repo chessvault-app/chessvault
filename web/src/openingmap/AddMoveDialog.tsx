@@ -1,5 +1,5 @@
 import { Check, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
@@ -60,6 +60,7 @@ export function AddMoveDialog({
   const needsToken = source === ONLINE_SOURCE && hasToken === false;
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const errorId = useId();
 
   useEffect(() => {
     if (!source || !facts.fen) {
@@ -254,6 +255,8 @@ export function AddMoveDialog({
             value={typed}
             placeholder={t('Type a move…')}
             aria-label={t('Type a move…')}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
             // The list is what this sheet is for; this box is what it
             // falls back to. Without the marker it is the window's only
             // input, and a phone opened the sheet with the keyboard
@@ -268,7 +271,11 @@ export function AddMoveDialog({
             <Plus className="size-3.5" data-icon="inline-start" /> {t('Add')}
           </Button>
         </form>
-        {error && <p className="text-destructive px-1 text-sm">{error}</p>}
+        {error && (
+          <p id={errorId} className="text-destructive px-1 text-sm" role="alert">
+            {error}
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

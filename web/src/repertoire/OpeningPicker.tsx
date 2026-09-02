@@ -181,6 +181,7 @@ export function OpeningPicker({
               className="w-full"
               value={query}
               placeholder={t('Search any opening or ECO code…')}
+              aria-label={t('Search any opening or ECO code…')}
               onChange={(e) => setQuery(e.target.value)}
             />
           );

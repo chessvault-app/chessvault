@@ -568,7 +568,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
       {loadError && (
         <CanvasOverlay>
-          <div className="bg-card max-w-md rounded-xl ring-1 ring-border p-6">
+          <div className="bg-card max-w-md rounded-xl ring-1 ring-border p-6" role="alert">
             <p className="text-destructive text-base font-medium">{t('The opening map could not be read')}</p>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{loadError}</p>
           </div>
@@ -1268,7 +1268,11 @@ function NodePanel({
               {making ? t('Making the study…') : t('New study from this line')}
             </span>
           </button>
-          {makeError && <p className="text-destructive px-1 text-sm">{makeError}</p>}
+          {makeError && (
+            <p className="text-destructive px-1 text-sm" role="alert">
+              {makeError}
+            </p>
+          )}
         </div>
       </Field>
 

@@ -289,6 +289,14 @@ export interface DialogContentProps extends Omit<DialogPrimitive.Popup.Props, 'r
   /** Out of sight, still mounted — for a window that has opened another as a sibling. */
   hidden?: boolean;
   /**
+   * The id the title row's heading carries. For the window whose only
+   * field is named by its title (a rename, a "name this" prompt): the
+   * caller makes one with useId, passes it here and points the field's
+   * aria-labelledby at it, so the field has a name the title row already
+   * shows and nothing is drawn twice. Base UI takes the id as given.
+   */
+  titleId?: string;
+  /**
    * `sm` is the one-question window (a confirm, a rename, a picker);
    * `default` a window (a form, a list); `full` a wide one on a DESKTOP.
    * On a phone every one of them is the bottom sheet.
@@ -308,6 +316,7 @@ function DialogContent({
   actions,
   onBack,
   hidden = false,
+  titleId,
   size = 'default',
   fill = false,
   alert = false,
@@ -512,7 +521,9 @@ function DialogContent({
                 sheared flat on every titled window. The padding gives the
                 glyphs room inside the clip box; the negative margin gives
                 the row its height back, so nothing else moves. */}
-            <DialogTitle className="-my-1 min-w-0 flex-1 truncate py-1">{t(title)}</DialogTitle>
+            <DialogTitle id={titleId} className="-my-1 min-w-0 flex-1 truncate py-1">
+              {t(title)}
+            </DialogTitle>
             {actions}
             {/* A way out for the mouse, and only for the mouse: a phone
                 has three already — drag the sheet down, tap the scrim,

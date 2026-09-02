@@ -159,7 +159,11 @@ function StudyList() {
         create={<CreateMenu />}
       />
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p className="text-destructive text-sm" role="alert">
+          {error}
+        </p>
+      )}
 
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
@@ -497,6 +501,7 @@ function CreateMenu() {
                 value={pgnText}
                 onChange={(e) => takePgn(e.target.value)}
                 placeholder={t('Paste a PGN here. A Lichess study export brings its chapters, comments and arrows.')}
+                aria-label={t('Paste a PGN here. A Lichess study export brings its chapters, comments and arrows.')}
                 spellCheck={false}
                 className="h-28 w-full resize-none p-2 font-mono"
               />
@@ -520,7 +525,11 @@ function CreateMenu() {
               className="hidden"
               onChange={(e) => void pickFile(e.target.files?.[0])}
             />
-            {failure && <p className="text-destructive text-sm">{failure}</p>}
+            {failure && (
+              <p className="text-destructive text-sm" role="alert">
+                {failure}
+              </p>
+            )}
             {/* mt-1 on top of the window's own gap-3: the fields are a group,
                 and what commits them should not look like another one. */}
             <div className="mt-1 flex justify-end gap-2">
@@ -632,6 +641,8 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               if (e.key === 'Escape') onClose();
             }}
             placeholder={t('Lichess username')}
+            // The Field's label lands on the row, not on this box.
+            aria-label={t('Lichess username')}
             className="flex-1"
           />
           <Button
@@ -699,7 +710,11 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           )}
         </>
       )}
-      {failure && <p className="text-destructive text-sm">{failure}</p>}
+      {failure && (
+        <p className="text-destructive text-sm" role="alert">
+          {failure}
+        </p>
+      )}
       <div className="mt-1 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}

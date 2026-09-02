@@ -338,6 +338,8 @@ export function StructuredFiltersWindow({
               value={draft.player}
               onChange={(e) => patch({ player: e.target.value })}
               placeholder={t('Any player')}
+              // The Field's label lands on the row, not on this box.
+              aria-label={t('Player')}
               className="min-w-0 flex-1"
             />
             {/* Static widths sized to their longest option: without
@@ -616,6 +618,7 @@ export function QueryBox({
           if (open && control.current?.handleKey(e)) return;
         }}
         placeholder={placeholder}
+        aria-label={placeholder}
         spellCheck={false}
         className="w-full"
         highlight={<QueryHighlight query={query} />}

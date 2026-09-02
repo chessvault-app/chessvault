@@ -237,6 +237,7 @@ export function ShelfToolbar({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           placeholder={placeholder}
+          aria-label={placeholder}
           className="min-w-0 flex-1"
         />
         {bookmark('sm:hidden')}

@@ -48,6 +48,7 @@ import { Progress, ProgressIndicator } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import type { BuildStatus } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
+import { announce } from '@/lib/announce';
 import { isDemo } from '@/lib/demo';
 import { RATING_BANDS } from '@/repertoire/field';
 import { TitleTip } from '@/components/title-tip';
@@ -401,7 +402,12 @@ export function ExplorerPane({
                     already draws that line in one row — but every failure
                     here was red, so a tunnel, a dropped wifi and a Lichess
                     rate limit all read as the app being broken. */}
-                <p className={cn('text-sm', offline ? 'text-warn' : 'text-destructive')}>{error}</p>
+                <p
+                  className={cn('text-sm', offline ? 'text-warn' : 'text-destructive')}
+                  role={offline ? 'status' : 'alert'}
+                >
+                  {error}
+                </p>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -616,6 +622,8 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
             value={player}
             onChange={(e) => setPlayer(e.target.value)}
             placeholder={t('Any player')}
+            // The Field's label lands on the row, not on this box.
+            aria-label={t('Player')}
             className="min-w-0 flex-1"
           />
           <Select
@@ -817,8 +825,10 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
         setLine(s.log?.at(-1) ?? null);
         setPercent(s.phase?.percent ?? null);
         if (!s.running) {
-          if ((s.exitCode ?? 1) === 0) onDone();
-          else setState('failed');
+          if ((s.exitCode ?? 1) === 0) {
+            announce(t('Indexing finished.'));
+            onDone();
+          } else setState('failed');
         }
       } catch {
         /* next tick asks again */
@@ -882,7 +892,9 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
             {t('Index positions')}
           </Button>
           {state === 'failed' && (
-            <span className="text-destructive text-sm">{t('indexing failed, see the Databases page')}</span>
+            <span className="text-destructive text-sm" role="alert">
+              {t('indexing failed, see the Databases page')}
+            </span>
           )}
         </div>
       )}
@@ -1196,6 +1208,11 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     setExhaustive(true);
     setFailed(false);
     let sawDone = false;
+    // Counted here as well as in state: the verdict below is spoken from
+    // inside this closure, where the state's value is the one it started
+    // with.
+    let got = 0;
+    let exhaustive = true;
     try {
       const query = new URLSearchParams({ fen, db });
       const filterQuery = refFilterQuery(refFilters);
@@ -1223,11 +1240,13 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
           if (frame.type === 'game') {
             const { type: _type, ...hit } = frame;
             setHits((prev) => [...(prev ?? []), hit]);
+            got += 1;
           } else {
             setProgress({ scanned: frame.scanned, total: frame.total });
             if (frame.type === 'done') {
               sawDone = true;
-              setExhaustive(frame.exhaustive !== false);
+              exhaustive = frame.exhaustive !== false;
+              setExhaustive(exhaustive);
             }
           }
         }
@@ -1239,6 +1258,15 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     if (seq.current === mine) {
       setRunning(false);
       if (!sawDone) setFailed(true);
+      // Said once at the end, not per frame: the count below is repainted
+      // as hits arrive, which a screen reader does not hear.
+      announce(
+        !sawDone
+          ? t('The search failed.')
+          : exhaustive
+            ? t('{n} games found', { n: got.toLocaleString() })
+            : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
+      );
     }
   };
 
@@ -1277,7 +1305,9 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
         // Failed and empty-handed: say so, offer to go again — an empty
         // div read as "no games", and auto mode had hidden the button.
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-destructive text-sm">{t('The search failed.')}</p>
+          <p className="text-destructive text-sm" role="alert">
+            {t('The search failed.')}
+          </p>
           <Button variant="secondary" size="sm" onClick={() => void run()}>
             <RotateCw className="size-3.5" data-icon="inline-start" />
             {t('Try again')}

@@ -331,6 +331,7 @@ export function BookPage({ slug }: { slug: string }) {
             <ClearableInput
               autoFocus
               inputSize="sm"
+              aria-label={t('Rename this book')}
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
               onBlur={() => {

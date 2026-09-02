@@ -378,13 +378,18 @@ export function Shelf() {
               value={query}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
               placeholder={t('Search books…')}
+              aria-label={t('Search books…')}
               className="min-w-0 flex-1"
             />
             {bookmarkToggle('sm:hidden')}
           </div>
         </div>
 
-        {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive mb-3 text-sm" role="alert">
+            {error}
+          </p>
+        )}
 
         {books === null ? (
           shelfPending && reservedCards > 0 ? <SkeletonBookCards cards={reservedCards} /> : null

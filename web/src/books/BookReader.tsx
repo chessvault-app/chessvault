@@ -612,7 +612,11 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
   const [note, setNote] = useState<string | null>(null);
   return (
     <>
-      {note && <span className="text-destructive text-xs">{note}</span>}
+      {note && (
+        <span className="text-destructive text-xs" role="alert">
+          {note}
+        </span>
+      )}
       <Button
         variant="ghost"
         size="icon-sm"
@@ -1177,6 +1181,7 @@ function SearchPopover({
             autoFocus
             value={draft}
             placeholder={t('Search the book…')}
+            aria-label={t('Search the book…')}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') setOpen(false);

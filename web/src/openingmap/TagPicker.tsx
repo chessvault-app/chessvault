@@ -146,6 +146,7 @@ export function TagPicker({
                 // wording, and it sits under the segmented control, which is
                 // the only thing that says which list is under it.
                 placeholder={t(KINDS[kind].search)}
+                aria-label={t(KINDS[kind].search)}
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
               />

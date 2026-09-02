@@ -1104,13 +1104,17 @@ function NumberInput({
   value,
   min,
   onChange,
+  id,
 }: {
   value: number;
   min: number;
   onChange: (value: number) => void;
+  /** Handed down by the Field around it, so its label points here. */
+  id?: string;
 }) {
   return (
     <Input
+      id={id}
       type="number"
       min={min}
       value={value}

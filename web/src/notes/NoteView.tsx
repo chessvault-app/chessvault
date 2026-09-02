@@ -496,6 +496,7 @@ function NoteTitle({ id }: { id: string }) {
       <ClearableInput
         autoFocus
         inputSize="sm"
+        aria-label={t('Rename this note')}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => void submit()}

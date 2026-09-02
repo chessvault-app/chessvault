@@ -104,7 +104,11 @@ export function ShelfFolderHeader({
         </Button>
       </ActionMenu>
 
-      {failure && <span className="text-destructive text-sm">{failure}</span>}
+      {failure && (
+        <span className="text-destructive text-sm" role="alert">
+          {failure}
+        </span>
+      )}
     </div>
   );
 }

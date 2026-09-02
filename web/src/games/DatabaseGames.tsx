@@ -40,6 +40,7 @@ import { GameListShell } from './GameListShell';
 import type { RefDb } from '@/databases/RefDbManager';
 import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
+import { announce } from '@/lib/announce';
 
 // The setup board is the whole editor, embedded — and the editor is a
 // board plus its tools, none of which belongs in this bundle until the
@@ -578,6 +579,11 @@ export function DatabaseGames({
     setHuntExhaustive(true);
     setHuntFailed(null);
     let sawDone = false;
+    // Counted here as well as in state: the verdict below is spoken from
+    // inside this closure, where the state's value is the one it started
+    // with.
+    let got = 0;
+    let exhaustive = true;
     try {
       const params = new URLSearchParams();
       if (curDb) params.set('db', curDb);
@@ -599,6 +605,7 @@ export function DatabaseGames({
         if (huntSeq.current === mine) {
           setHunting(false);
           setHuntFailed(huntKind === 'position' ? 'bad-fen' : 'failed');
+          announce(t('The search failed.'));
         }
         return;
       }
@@ -623,11 +630,13 @@ export function DatabaseGames({
           if (frame.type === 'game') {
             const { type: _type, ply: _ply, ...game } = frame;
             setHuntRows((prev) => [...(prev ?? []), game]);
+            got += 1;
           } else {
             setHuntProgress({ scanned: frame.scanned, total: frame.total });
             if (frame.type === 'done') {
               sawDone = true;
-              setHuntExhaustive(frame.exhaustive !== false);
+              exhaustive = frame.exhaustive !== false;
+              setHuntExhaustive(exhaustive);
             }
           }
         }
@@ -639,6 +648,15 @@ export function DatabaseGames({
     if (huntSeq.current === mine) {
       setHunting(false);
       if (!sawDone && huntSeq.current === mine) setHuntFailed((f) => f ?? 'failed');
+      // The count line above is repainted, which a screen reader does not
+      // hear; the verdict of a hunt that took seconds is said once.
+      announce(
+        !sawDone
+          ? t('The search failed.')
+          : exhaustive
+            ? t('{n} games found', { n: got.toLocaleString() })
+            : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
+      );
     }
   }, [applyFilters, curDb, huntKind, huntFen, rung, presetId, heldPlies, customSpec]);
 
@@ -1214,6 +1232,7 @@ export function DatabaseGames({
               if (e.key === 'Enter' && huntFen.trim() && !hunting) void runHunt();
             }}
             placeholder={t('Paste a FEN')}
+            aria-label={t('Paste a FEN')}
             spellCheck={false}
             // basis-24, down from 40: the basis is what flex-wrap breaks
             // on, and 10rem of it wrapped the row even at the Games

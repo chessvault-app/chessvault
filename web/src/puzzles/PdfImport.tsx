@@ -16,6 +16,7 @@ import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './imp
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
+import { announce } from '@/lib/announce';
 
 /** How wide the hovered crop is drawn, in px. Big enough to read the
     pieces on a diagram; small enough to sit beside a window. */
@@ -278,6 +279,15 @@ export function PdfImport({
   const paused = mine && job.status === 'paused';
   const reading = mine && job.status === 'reading';
   const solve = mine ? job.solve : null;
+
+  // A scan takes minutes and ends by repainting the summary, which a
+  // screen reader does not hear. The failure is spoken by its own red
+  // line below (role="alert"), so only the finish is said here.
+  useEffect(() => {
+    if (mine && job.status === 'done') {
+      announce(t('Import finished. {n} diagrams found.', { n: job.found.length }));
+    }
+  }, [mine, job.status, job.found.length]);
 
   /**
    * The list follows the board being read.
@@ -640,8 +650,16 @@ export function PdfImport({
               </p>
             </div>
           )}
-          {mine && job.error && <p className="text-destructive text-sm">{job.error}</p>}
-          {saveError && <p className="text-destructive text-sm">{saveError}</p>}
+          {mine && job.error && (
+            <p className="text-destructive text-sm" role="alert">
+              {job.error}
+            </p>
+          )}
+          {saveError && (
+            <p className="text-destructive text-sm" role="alert">
+              {saveError}
+            </p>
+          )}
           {libraryNote && <p className="text-muted-foreground text-sm">{libraryNote}</p>}
 
           {found.length > 0 && (

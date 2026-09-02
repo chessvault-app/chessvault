@@ -214,7 +214,11 @@ export function UploadBookDialog({
             </div>
           </div>
         )}
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           {file && progress === null && (
             <Button variant="ghost" size="sm" onClick={() => setFile(null)}>

@@ -354,7 +354,7 @@
   <body>
     <header>
       <div class="bar">
-        <button type="button" id="nav-toggle" class="btn" aria-expanded="false" aria-controls="side-nav" aria-label="Contents" title="Contents">
+        <button type="button" id="nav-toggle" class="btn" aria-expanded="false" aria-controls="side-nav" aria-label="Contents" title="Contents" data-ko-label="목차">
           <!-- A sidebar-panel glyph, matching the drawer it opens. -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -2594,6 +2594,26 @@
       // bottom — which is why the class goes on at runtime rather than in
       // the markup.
       var renderPager = function () {};
+
+      // ---- The drawer's one switch. On a narrow screen the closed drawer
+      // is only slid off-screen by the stylesheet, which leaves its links
+      // in the tab order and in the accessibility tree (measured at
+      // 375px: focus() lands on a link at left=-335). `inert` takes it
+      // out while it is closed; on the wide layout the nav is always in
+      // view and never inert. Re-applied when the width crosses over.
+      var narrow = window.matchMedia('(max-width: 63.99rem)');
+      var setNavOpen = function (open) {
+        document.body.classList.toggle('nav-open', open);
+        document.getElementById('nav-toggle').setAttribute('aria-expanded', String(open));
+        document.getElementById('side-nav').inert = narrow.matches && !open;
+      };
+      var syncNavInert = function () {
+        setNavOpen(document.body.classList.contains('nav-open'));
+      };
+      if (narrow.addEventListener) narrow.addEventListener('change', syncNavInert);
+      else narrow.addListener(syncNavInert);
+      syncNavInert();
+
       (function () {
         var pages = Array.prototype.slice.call(document.querySelectorAll('.page'));
         if (!pages.length) return;
@@ -2642,8 +2662,7 @@
             else a.removeAttribute('aria-current');
           });
           renderPager();
-          document.body.classList.remove('nav-open');
-          document.getElementById('nav-toggle').setAttribute('aria-expanded', 'false');
+          setNavOpen(false);
           // After the browser's own anchor scroll, not before it — a page
           // change starts reading at the top.
           setTimeout(function () { window.scrollTo(0, 0); }, 0);
@@ -2656,12 +2675,10 @@
       (function () {
         var toggle = document.getElementById('nav-toggle');
         toggle.addEventListener('click', function () {
-          var open = document.body.classList.toggle('nav-open');
-          toggle.setAttribute('aria-expanded', String(open));
+          setNavOpen(!document.body.classList.contains('nav-open'));
         });
         document.getElementById('scrim').addEventListener('click', function () {
-          document.body.classList.remove('nav-open');
-          toggle.setAttribute('aria-expanded', 'false');
+          setNavOpen(false);
         });
       })();
 
@@ -2685,12 +2702,25 @@
         alts.forEach(function (node) {
           englishAlts.push(node.getAttribute('alt') || '');
         });
+        // The same again for a control named only by aria-label (and the
+        // matching title): the Contents button was announced in English
+        // from the Korean page.
+        var labels = document.querySelectorAll('[data-ko-label]');
+        var englishLabels = [];
+        labels.forEach(function (node) {
+          englishLabels.push(node.getAttribute('aria-label') || '');
+        });
         function apply(lang) {
           nodes.forEach(function (node, i) {
             node.innerHTML = lang === 'ko' ? node.getAttribute('data-ko') : english[i];
           });
           alts.forEach(function (node, i) {
             node.setAttribute('alt', lang === 'ko' ? node.getAttribute('data-ko-alt') : englishAlts[i]);
+          });
+          labels.forEach(function (node, i) {
+            var label = lang === 'ko' ? node.getAttribute('data-ko-label') : englishLabels[i];
+            node.setAttribute('aria-label', label);
+            if (node.hasAttribute('title')) node.setAttribute('title', label);
           });
           document.documentElement.lang = lang;
           document.querySelectorAll('.lang button').forEach(function (button) {

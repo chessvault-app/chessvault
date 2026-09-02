@@ -562,7 +562,23 @@ export function GamesBrowser({
         {/* Inside the pane rather than above it (where the page used to
             draw it): the browser owns the failure, and a host's layout
             has no slot for a line that is almost never there. */}
-        {error && <p className="text-destructive px-3 py-2 text-sm">{error}</p>}
+        {error && (
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setError(null);
+                void load();
+              }}
+            >
+              {t('Try again')}
+            </Button>
+          </div>
+        )}
         {tab === 'databases' ? (
           <DatabaseGames
             table={table}
@@ -779,6 +795,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           rows={6}
           spellCheck={false}
           placeholder={t('Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …')}
+          aria-label={t('Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …')}
           className="w-full resize-none font-mono placeholder:font-sans"
         />
 
@@ -803,18 +820,21 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
                 onChange={(e) => setWhite(e.target.value)}
                 onFocus={scrollFocusIntoView}
                 placeholder={t('White (optional)')}
+                aria-label={t('White')}
               />
               <ClearableInput
                 value={black}
                 onChange={(e) => setBlack(e.target.value)}
                 onFocus={scrollFocusIntoView}
                 placeholder={t('Black (optional)')}
+                aria-label={t('Black')}
               />
               <ClearableInput
                 value={whiteElo}
                 onChange={(e) => setWhiteElo(e.target.value)}
                 onFocus={scrollFocusIntoView}
                 placeholder={t('White rating')}
+                aria-label={t('White rating')}
                 inputMode="numeric"
               />
               <ClearableInput
@@ -822,6 +842,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
                 onChange={(e) => setBlackElo(e.target.value)}
                 onFocus={scrollFocusIntoView}
                 placeholder={t('Black rating')}
+                aria-label={t('Black rating')}
                 inputMode="numeric"
               />
               <ClearableInput
@@ -829,12 +850,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
                 onChange={(e) => setDate(e.target.value)}
                 onFocus={scrollFocusIntoView}
                 placeholder={t('Date, e.g. 2026-08-08')}
+                aria-label={t('Date')}
               />
               <ClearableInput
                 value={event}
                 onChange={(e) => setEvent(e.target.value)}
                 onFocus={scrollFocusIntoView}
                 placeholder={t('Event (optional)')}
+                aria-label={t('Event')}
               />
             </div>
 
@@ -859,7 +882,11 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           </div>
         </Disclosure>
 
-        {failure && <p className="text-destructive text-sm">{failure}</p>}
+        {failure && (
+          <p className="text-destructive text-sm" role="alert">
+            {failure}
+          </p>
+        )}
 
         {/* Sticky, so the only way to submit is never scrolled away — this
             form is long enough with Advanced open that it now scrolls, and

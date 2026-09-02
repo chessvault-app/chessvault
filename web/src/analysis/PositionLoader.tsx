@@ -227,6 +227,7 @@ export function LoadPositionForm({
           rows={5}
           spellCheck={false}
           placeholder={t('Paste a FEN or PGN, then press Enter')}
+          aria-label={t('Paste a FEN or PGN, then press Enter')}
           className={cn(
             'w-full resize-none font-mono leading-relaxed placeholder:font-sans',
             // Fixed heights, not growth: growing boxes swallowed the

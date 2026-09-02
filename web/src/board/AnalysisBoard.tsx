@@ -476,6 +476,7 @@ function NameField({
         {...noAutofill}
         value={draft}
         placeholder={placeholder}
+        aria-label={placeholder}
         spellCheck={false}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => setDraft(e.target.value)}

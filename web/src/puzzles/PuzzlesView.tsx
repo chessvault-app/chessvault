@@ -1087,7 +1087,9 @@ function Trainer({
                 // used to need a full page reload to recover from.
                 <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-border">
                   <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                    <p className="text-muted-foreground text-sm">{error}</p>
+                    <p className="text-muted-foreground text-sm" role="alert">
+                      {error}
+                    </p>
                     <Button
                       variant="secondary"
                       size="sm"

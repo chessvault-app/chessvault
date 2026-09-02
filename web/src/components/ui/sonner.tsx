@@ -2,6 +2,7 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner';
 import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from 'lucide-react';
 
 import { useTheme } from '@/store/theme';
+import { t } from '@/lib/i18n';
 
 /**
  * shadcn's Sonner toaster, owned: the registry's file with the theme read
@@ -19,6 +20,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme}
       className="toaster group"
       position="bottom-right"
+      // The region's accessible name, otherwise "Notifications" in
+      // English on every page whatever language the app is in.
+      containerAriaLabel={t('Notifications')}
       mobileOffset={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
       icons={{
         success: <CircleCheckIcon className="size-4" />,

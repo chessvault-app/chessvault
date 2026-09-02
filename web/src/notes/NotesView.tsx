@@ -227,7 +227,11 @@ function NoteList() {
         create={<CreateMenu notes={notes} onDone={refresh} />}
       />
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p className="text-destructive text-sm" role="alert">
+          {error}
+        </p>
+      )}
 
       {!loaded ? (
         // A vault seen empty reserves nothing: its settle is the
