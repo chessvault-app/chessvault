@@ -45,7 +45,8 @@
  *    desktop chooser), with {placeholders} standing for whatever the code
  *    interpolates and a trailing … marking a deliberate truncation. The
  *    first run of this check caught fourteen misquotes. The page's Korean twin (data-ko) quotes the
- *    same strings in «guillemets» and is read the same way. The Korean
+ *    same strings in «guillemets» and is read the same way, except that a
+ *    «quote» written in Korean is looked up in the dictionary. The Korean
  *    dictionary is NOT part of that haystack: it mirrors the app's
  *    strings rather than rendering them, so a key outliving its call site
  *    would keep vouching for a label the screen no longer shows.
@@ -419,6 +420,9 @@ if (existsSync(DOCS)) {
   }
   hay = collapse(hay + '\n' + decodeEscapes(hay));
   const docsText = readFileSync(DOCS, 'utf-8');
+  // A Korean-side «quote» may be the Korean label itself (나뭇결, 게임 리뷰),
+  // which lives only in the dictionary; those are checked against its values.
+  const dictHay = existsSync(DICTIONARY) ? collapse(readFileSync(DICTIONARY, 'utf-8')) : '';
   const seen = new Set<string>();
   for (const match of docsText.matchAll(/“([^”]+)”|«([^»]+)»/g)) {
     const quote = collapse(match[1] ?? match[2]!);
@@ -431,7 +435,7 @@ if (existsSync(DOCS)) {
       .replace(/\s*…$/, '')
       .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       .replace(/\\\{[^{}]*\\\}/g, '.{1,80}?');
-    if (!new RegExp(probe).test(hay)) {
+    if (!new RegExp(probe).test(/[\u3131-\uD79D]/.test(quote) ? dictHay : hay)) {
       findings.push({
         file: DOCS,
         line: docsText.slice(0, match.index).split('\n').length,
