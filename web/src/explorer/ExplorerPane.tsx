@@ -87,7 +87,6 @@ export function ExplorerPane({
   const moves = useExplorer((s) => s.moves);
   const topGames = useExplorer((s) => s.topGames);
   const opening = useExplorer((s) => s.opening);
-  const openingsSeen = useExplorer((s) => s.openingsSeen);
   const loading = useExplorer((s) => s.loading);
   const error = useExplorer((s) => s.error);
   // Whether that error is an outage rather than a fault — see the store.
@@ -178,24 +177,20 @@ export function ExplorerPane({
     () => pathTo(tree, cursorId).map((id) => getNode(tree, id).fen),
     [tree, cursorId],
   );
-  // Asked of the shared opening cache, not only of what this pane has
-  // explored. `openingsSeen` fills as the user steps forward, so switching
-  // the explorer on in the middle of a game found nothing behind the cursor
-  // and said "Out of book" about a position still in theory.
+  // Asked of the shared opening cache, which every panel that names a line
+  // fills. The pane used to walk its own record of what IT had explored,
+  // which is filled one position per lookup: switching the explorer on in
+  // the middle of a game found nothing behind the cursor and said "Out of
+  // book" about a position still in theory.
   const named = useLineOpening(lineFens);
+
+  const fresh = resultFen === node.fen;
 
   // The name shown is the deepest *named* position on the current line: deep
   // middlegames keep their opening's name rather than dropping to nothing.
-  const lineOpening = useMemo((): Opening | null => {
-    if (opening && resultFen === node.fen) return opening;
-    for (const id of [...pathTo(tree, cursorId)].reverse()) {
-      const seen = openingsSeen[getNode(tree, id).fen];
-      if (seen) return seen;
-    }
-    return named;
-  }, [opening, resultFen, node.fen, tree, cursorId, openingsSeen, named]);
-
-  const fresh = resultFen === node.fen;
+  // The source's own answer for the position on screen wins, since a remote
+  // database names it from its own catalogue rather than the vendored one.
+  const lineOpening: Opening | null = (fresh ? opening : null) ?? named;
 
   return (
     // While the explorer is off there is nothing to size: no resize grip,
