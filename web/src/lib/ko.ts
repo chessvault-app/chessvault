@@ -493,7 +493,7 @@ export const ko: Record<string, string> = {
   'indexing failed, see the Databases page': '색인 실패, 데이터베이스 페이지를 확인하세요',
   'Nothing matches those filters': '필터에 맞는 게임이 없습니다',
   'No game in your collection gets through the filters above. Clearing them shows the whole collection again.':
-    '위 필터를 통과하는 게임이 컬렉션에 없습니다. 필터를 지우면 전체 컬렉션이 다시 보입니다.',
+    '위 필터를 통과하는 게임이 모음에 없습니다. 필터를 지우면 모음 전체가 다시 보입니다.',
   'No bookmarked game in your collection matches it. Clearing the search shows every bookmark again.':
     '모음의 즐겨찾기 중 일치하는 게임이 없습니다. 검색을 지우면 모든 즐겨찾기가 다시 보입니다.',
   'No game in your collection matches it. Clearing the search shows the whole collection again.':
@@ -551,7 +551,7 @@ export const ko: Record<string, string> = {
   Documents: '문서',
   'Auto-save': '자동 저장',
   'Write changes to the vault as you make them. Off, they wait for you to save.':
-    '변경하는 즉시 볼트에 씁니다. 끄면 저장할 때까지 기다립니다.',
+    '변경하는 즉시 보관함에 씁니다. 끄면 저장할 때까지 기다립니다.',
   'Add a chapter': '챕터 추가',
   'Click to accept ANY move here (the book’s K~)': '여기서는 아무 수나 받도록 클릭 (책의 K~)',
   'Braces and annotation commands cannot be saved in a comment; the text was rewritten.':
@@ -941,7 +941,7 @@ export const ko: Record<string, string> = {
     '이 창을 서버에 연결하거나, 이 기기의 폴더를 사용하세요.',
   'Switch…': '전환…',
   'Usernames pre-fill the archive browser on the Games page.':
-    '사용자명은 게임 페이지의 보관함 검색에 미리 채워집니다.',
+    '사용자명은 게임 페이지의 온라인 기보 브라우저에 미리 채워집니다.',
   'Save profile': '프로필 저장',
   'Play a click on moves and captures.': '수와 기물 잡기에 소리를 냅니다.',
   'Vibrate on moves': '수를 둘 때 진동',
@@ -1330,7 +1330,7 @@ export const ko: Record<string, string> = {
   'A folder of Syzygy files on this machine, read directly with nothing else running. Needs the native core built.':
     '이 기기에 있는 Syzygy 파일 폴더입니다. 다른 것을 띄우지 않고 그대로 읽으며, 네이티브 코어가 빌드되어 있어야 합니다.',
   'This server also has table files at {dir}, set in its vault config.':
-    '이 서버에는 {dir}에 테이블 파일도 설정되어 있습니다(금고 설정 파일).',
+    '이 서버에는 {dir}에 테이블 파일도 설정되어 있습니다(보관함 설정 파일).',
   'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another machine.':
     '서버에 있는 테이블 파일로 답하게 하려면 보관함 설정 파일에 «tablebaseDir»을 적으세요. 경로는 다른 기기에서 입력할 수 없습니다.',
   'Cached answers': '캐시된 답',
@@ -1707,7 +1707,7 @@ export const ko: Record<string, string> = {
   "Your vault": "내 보관함",
   "My games": "내 게임",
   'Your collection plus every chess.com and Lichess month you have browsed. A month, once viewed, keeps counting here. "Kept only" narrows to the collection.':
-    '컬렉션과 함께, 둘러본 모든 chess.com·Lichess 월 기보에서 답합니다. 한 번 본 달은 계속 집계에 남습니다. "보관한 게임만"은 컬렉션으로 좁힙니다.',
+    '모음과 함께, 둘러본 모든 chess.com·Lichess 월 기보에서 답합니다. 한 번 본 달은 계속 집계에 남습니다. "보관한 것만"은 모음으로 좁힙니다.',
   "Won": "승",
   "Drew": "무",
   "Lost": "패",
@@ -1718,9 +1718,9 @@ export const ko: Record<string, string> = {
   "Kept only": "보관한 것만",
   // The badge on a deviation row; "Kept only" above is the filter that
   // narrows to the same games, so they share the word.
-  "Kept": "보관함",
-  "In your collection": "보관함에 담긴 게임입니다",
-  "Only the games in your collection, not every archived game": "보관함에 담은 게임만 봅니다. 전체 기보가 아닙니다",
+  "Kept": "모음에 있음",
+  "In your collection": "모음에 있는 게임입니다",
+  "Only the games in your collection, not every archived game": "모음에 담은 게임만 봅니다. 전체 기보가 아닙니다",
   "From date": "시작일",
   "To date": "종료일",
   // The date picker's empty trigger (components/date-picker).
