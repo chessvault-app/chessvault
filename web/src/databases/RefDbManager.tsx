@@ -589,10 +589,24 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
         </div>
         <ul className="divide-border min-h-0 flex-1 divide-y overflow-hidden">
           {Array.from({ length: rows }, (_, i) => (
-            <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-3">
-              <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
-              <Skeleton className="ml-auto h-2.5 w-24 shrink-0" />
-              <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
+            <li
+              key={i}
+              className="flex flex-col gap-1 py-1.5 pl-[17px] pr-3 md:flex-row md:items-center md:gap-2"
+            >
+              {/* my-1 below md: on the phone line this bar is the name,
+                  and a 12px bar in a line where the real name draws a
+                  20px one left every row 8px short of what landed. From
+                  md the 36px icon sets the height and the margin would
+                  do nothing, so it is not asked for. */}
+              <Skeleton className={cn('my-1 h-3 md:my-0', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+              {/* The real databases row wraps below md, and a skeleton
+                  a line shorter than what lands is the jump it exists to
+                  prevent. Same trick as the row: `contents` from md up,
+                  so the wide placeholder is the one flat line it was. */}
+              <div className="flex items-center gap-2 md:contents">
+                <Skeleton className="ml-auto h-2.5 w-24 shrink-0" />
+                <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
+              </div>
             </li>
           ))}
         </ul>
@@ -637,119 +651,158 @@ function DbList({
         // pr-3, the search row's own: the delete button and the upload
         // button above are the same 28px box, and at pr-1.5 the trash
         // column stood 6px right of the upload icon.
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-3 text-sm">
-          <span className="text-foreground min-w-0 flex-1 truncate font-medium" title={d.sources}>
+        // Two lines below md, one from md up. The single row cannot be
+        // made to fit a phone: the two figure columns and the four icon
+        // buttons come to 401px of shrink-0 content in a 343px row at
+        // 375 CSS px, so flex took the whole shortfall out of the only
+        // flexible child and drew the name at exactly 0 wide. Measured
+        // in the app, not estimated — the list showed sizes and buttons
+        // for databases with no names on them (lanph3re's report). The
+        // name takes the first line whole rather than sharing it with
+        // the figures: a name wants about 162px at 14px, and sharing
+        // left it 167 before the first badge, which is a truncation
+        // waiting for a longer name.
+        <li
+          key={d.name}
+          className="flex flex-col gap-1 py-1.5 pl-[17px] pr-3 text-sm md:flex-row md:items-center md:gap-2"
+        >
+          <span className="text-foreground min-w-0 truncate font-medium md:flex-1" title={d.sources}>
             {d.name}
           </span>
-          {/* Two aligned columns, not one dotted run: with counts from
-              four digits to eight the run put every size at a different
-              x, and the eye could not compare either figure down the
-              list. Fixed right-aligned columns line both up. */}
-          <span className="text-muted-foreground w-32 shrink-0 text-right tabular-nums">
-            {t('{n} games', { n: d.games.toLocaleString() })}
-          </span>
-          <span className="text-muted-foreground w-16 shrink-0 text-right tabular-nums">
-            {fmtBytes(d.bytes)}
-          </span>
-          {/* Built before the position index existed: the explorer
-              offers to add it when this database is its source. */}
-          {d.indexed === false && <span className="text-warn shrink-0">{t('no position index')}</span>}
-          {/* Games above the index's high-water mark — an interrupted
-              append. Optimize brings the index up to them. */}
-          {d.stale === true && <span className="text-warn shrink-0">{t('index behind')}</span>}
-          {/* Fast search: hold the packed scan-index in server memory
-              (~0.5 KB per game), so position and material hunts scan
-              bytes instead of replaying movetext. Only offered where a
-              full index pass has written the packs. */}
-          {/* The slot is reserved even where the toggle is not offered:
-              without it the +, hammer and trash of an unpacked row stood
-              28px left of their neighbours', and the icon columns read
-              as ragged rather than as columns. */}
-          {d.packed !== true && <span className="w-7 shrink-0" aria-hidden />}
-          {d.packed === true &&
-            (scanBusy === d.name ? (
-              // The load is seconds of real disk work on a big database
-              // — say so where the press landed, or it reads as ignored
-              // and the first search merely slow.
-              <span
-                className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs"
-                role="status"
-              >
-                <Spinner className="size-3.5" />
-                {d.fastScan === true ? t('Releasing the scan index…') : t('Loading the scan index…')}
-              </span>
-            ) : (
+          {/* The phone's second line, and nothing at all from md up:
+              `contents` dissolves this wrapper and the actions' one, so
+              the wide row is the same single flex line it always was,
+              with the same columns in the same order. It wraps because
+              two badges beside the figures outrun a phone's width. */}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 md:contents">
+            {/* Two aligned columns, not one dotted run: with counts from
+                four digits to eight the run put every size at a different
+                x, and the eye could not compare either figure down the
+                list. Fixed right-aligned columns line both up. Fixed from
+                md only: on the phone line there is no column to line up
+                with, and a 128px box held "40 games" a long way from the
+                size beside it. */}
+            <span className="text-muted-foreground shrink-0 tabular-nums md:w-32 md:text-right">
+              {t('{n} games', { n: d.games.toLocaleString() })}
+            </span>
+            <span className="text-muted-foreground shrink-0 tabular-nums md:w-16 md:text-right">
+              {fmtBytes(d.bytes)}
+            </span>
+            {/* Built before the position index existed: the explorer
+                offers to add it when this database is its source. */}
+            {d.indexed === false && <span className="text-warn shrink-0">{t('no position index')}</span>}
+            {/* Games above the index's high-water mark — an interrupted
+                append. Optimize brings the index up to them. */}
+            {d.stale === true && <span className="text-warn shrink-0">{t('index behind')}</span>}
+            {/* On the phone line the four icons are one group pushed to
+                the right edge; from md `contents` gives them back to the
+                row, where `ml-auto` no longer applies because a contents
+                box has no margins to apply it to. */}
+            <div className="ml-auto flex items-center gap-2 md:contents">
+              {/* Fast search: hold the packed scan-index in server memory
+                  (~0.5 KB per game), so position and material hunts scan
+                  bytes instead of replaying movetext. Only offered where a
+                  full index pass has written the packs. */}
+              {/* The slot is reserved even where the toggle is not offered:
+                  without it the +, hammer and trash of an unpacked row stood
+                  28px left of their neighbours', and the icon columns read
+                  as ragged rather than as columns. Wide only: on the phone
+                  the icons are right-aligned as a group, so the reservation
+                  bought nothing and cost 36px of a 343px line. */}
+              {d.packed !== true && <span className="hidden w-7 shrink-0 md:block" aria-hidden />}
+              {d.packed === true &&
+                (scanBusy === d.name ? (
+                  // The load is seconds of real disk work on a big database
+                  // — say so where the press landed, or it reads as ignored
+                  // and the first search merely slow. The words are wide
+                  // only; on a phone they would take the line the icons are
+                  // on, so the spinner carries the message and the sentence
+                  // stays for whoever is listening rather than looking.
+                  <span
+                    className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs"
+                    role="status"
+                  >
+                    <Spinner className="size-3.5" />
+                    <span className="sr-only md:not-sr-only">
+                      {d.fastScan === true
+                        ? t('Releasing the scan index…')
+                        : t('Loading the scan index…')}
+                    </span>
+                  </span>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    active={d.fastScan === true}
+                    disabled={scanBusy !== null}
+                    className="shrink-0"
+                    title={
+                      d.fastScan === true
+                        ? t('Fast search is on — the scan index is held in server memory')
+                        : t('Fast search: hold the scan index in server memory')
+                    }
+                    onClick={() => onFastScan(d.name, d.fastScan !== true)}
+                  >
+                    <Zap className="size-3.5" />
+                  </Button>
+                ))}
+              {/* Growing THIS database, from its own row — burying append
+                  behind typing a matching name into the build form was not
+                  a flow anyone would find (lanph3re said so). */}
               <Button
                 variant="ghost"
                 size="icon-sm"
-                active={d.fastScan === true}
-                disabled={scanBusy !== null}
-                className="shrink-0"
+                disabled={optimizeDisabled}
                 title={
-                  d.fastScan === true
-                    ? t('Fast search is on — the scan index is held in server memory')
-                    : t('Fast search: hold the scan index in server memory')
+                  optimizeDisabled
+                    ? t('Wait for the running job to finish')
+                    : t('Add games to this database')
                 }
-                onClick={() => onFastScan(d.name, d.fastScan !== true)}
+                className="shrink-0"
+                onClick={() => onAddTo(d.name)}
               >
-                <Zap className="size-3.5" />
+                <Plus className="size-3.5" />
               </Button>
-            ))}
-          {/* Growing THIS database, from its own row — burying append
-              behind typing a matching name into the build form was not
-              a flow anyone would find (lanph3re said so). */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            disabled={optimizeDisabled}
-            title={
-              optimizeDisabled
-                ? t('Wait for the running job to finish')
-                : t('Add games to this database')
-            }
-            className="shrink-0"
-            onClick={() => onAddTo(d.name)}
-          >
-            <Plus className="size-3.5" />
-          </Button>
-          {/* Housekeeping in the build slot: duplicates out, derived
-              tables re-derived, space returned. Asked first — it can run
-              for minutes on a big database.
-              The hammer says rebuild, which is what this is. It was
-              Sparkles, and sparkles promise a result you are not meant to
-              look at — the wrong thing to put on a job that rewrites the
-              user's database and states in the same breath exactly which
-              three things it does. */}
-          <ConfirmDialog
-            icon={Hammer}
-            triggerClassName="shrink-0"
-            disabled={optimizeDisabled}
-            // Heavy, not destructive: the question is about the minutes,
-            // and a red dialog said this deletes your database.
-            tone="default"
-            triggerTitle={
-              optimizeDisabled ? 'Wait for the running job to finish' : 'Optimize this database'
-            }
-            question={t(
-              'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.',
-              { name: d.name },
-            )}
-            confirmLabel="Optimize"
-            onConfirm={() => onOptimize(d.name)}
-          />
-          {/* Asked in a window rather than warned about in a tooltip: a
-              title nobody reads was all that stood between a press and
-              however many minutes of indexing. */}
-          <ConfirmDialog
-            icon={Trash2}
-            triggerClassName="shrink-0"
-            triggerTitle="Delete this database"
-            question={t('Delete “{name}”? The collections it was built from are kept.', {
-              name: d.name,
-            })}
-            confirmLabel="Delete"
-            onConfirm={() => onDelete(d.name)}
-          />
+              {/* Housekeeping in the build slot: duplicates out, derived
+                  tables re-derived, space returned. Asked first — it can run
+                  for minutes on a big database.
+                  The hammer says rebuild, which is what this is. It was
+                  Sparkles, and sparkles promise a result you are not meant to
+                  look at — the wrong thing to put on a job that rewrites the
+                  user's database and states in the same breath exactly which
+                  three things it does. */}
+              <ConfirmDialog
+                icon={Hammer}
+                triggerClassName="shrink-0"
+                disabled={optimizeDisabled}
+                // Heavy, not destructive: the question is about the minutes,
+                // and a red dialog said this deletes your database.
+                tone="default"
+                triggerTitle={
+                  optimizeDisabled ? 'Wait for the running job to finish' : 'Optimize this database'
+                }
+                question={t(
+                  'Optimize “{name}”? Removes exact duplicate games, refreshes the derived tables and compacts the file. This can take a while.',
+                  { name: d.name },
+                )}
+                confirmLabel="Optimize"
+                onConfirm={() => onOptimize(d.name)}
+              />
+              {/* Asked in a window rather than warned about in a tooltip: a
+                  title nobody reads was all that stood between a press and
+                  however many minutes of indexing. */}
+              <ConfirmDialog
+                icon={Trash2}
+                triggerClassName="shrink-0"
+                triggerTitle="Delete this database"
+                question={t('Delete “{name}”? The collections it was built from are kept.', {
+                  name: d.name,
+                })}
+                confirmLabel="Delete"
+                onConfirm={() => onDelete(d.name)}
+              />
+            </div>
+          </div>
         </li>
       ))}
     </ul>
