@@ -168,6 +168,27 @@ other people.
   the page also makes Storage used below re-read, which had been showing
   the size it loaded with — a card apart, two answers for the same thing.
 
+- **A page you launch into no longer waits a third of a second before it
+  asks for its data.** Every section but Home loads as its own chunk, and
+  React suspends the first time it draws one — which commits the blank
+  fallback, and once a fallback has been committed React holds what
+  replaces it back for 300 ms so that a spinner cannot flash past. On a
+  launch there is no spinner to protect: the page was ready and simply sat
+  there. Measured on a cold launch against a local server, the Databases
+  page rendered at 171 ms and did not appear — or fetch its own contents —
+  until 453 ms, with its chunk in hand since 139 ms and nothing running in
+  between. Sections are now loaded without that boundary: the same blank
+  box is held as ordinary state and replaced the moment the chunk lands.
+  The same cold launch makes its first request at 165 ms instead of
+  447 ms and has the list on screen at 215 ms instead of 956 ms; Board,
+  Games, Notes and Puzzles were measured and gain the same 250–290 ms.
+  First paint is unchanged, deliberately: holding the first render for the
+  chunk was tried, and on a 1.6 Mbps link it pushed the fonts behind the
+  download and cost 1.4 s of blank screen to save 300 ms. On a link that
+  slow the throttle never cost anything anyway — the download outlasts
+  it — so this is a straight gain on a fast connection and neutral on a
+  slow one.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb

@@ -450,8 +450,19 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   than laying out cards and filling them in one at a time — bounded, and
   skipped once cached, because a cover is a nicety and must never be
   something a page waits on.
-- Suspense is used for CODE (route chunks), never for data; its fallback
-  stays blank because a chunk usually beats the next paint.
+- Route chunks are not loaded through Suspense, and data never is. A
+  boundary that has committed a fallback cannot reveal what replaces it
+  for 300 ms — React's reveal throttle, there to stop a spinner flashing
+  past — and `React.lazy` always commits one, because it calls its loader
+  during the render it is being drawn in. Measured on a cold launch, that
+  was 285 ms in which the page was fully rendered, its chunk long since
+  arrived, and it could not so much as ask for its own contents. So
+  `lib/lazyRoute` fetches the chunk itself and holds the same blank box as
+  ordinary state, replaced the moment the module lands. Holding the FIRST
+  RENDER for the chunk instead was tried and rejected: on a throttled
+  1.6 Mbps link the extra download pushed the webfonts behind it and first
+  contentful paint went from 3.1 s to 4.5 s. Draw the app's own frame on
+  time; fill it as soon as there is something to fill it with.
 
 ## Dialog policy
 
