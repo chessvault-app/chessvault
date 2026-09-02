@@ -96,6 +96,15 @@
  *     keeps the retired words out of the dictionary's values, and keeps
  *     보관함 to entries whose English says vault. Only the dictionary is
  *     checked: Korean in the manual is prose.
+ *
+ * 12. A fitted literal says what it is fitted to. DESIGN.md allows a
+ *     `text-[…]`, `rounded-[…]` or `shadow-[…]` literal only for a glyph
+ *     or shape sized to the thing it sits on (a board square, an 8px
+ *     mark), and asks that the line above say so. An audit found the
+ *     record counting five where the code had three, and five radii off
+ *     the knob that nothing had noticed. So: outside the registry files,
+ *     a literal that does not read a `var(--…)` needs the word "fitted",
+ *     "chip corner" or "pixel cap" in the five lines above it.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -163,6 +172,9 @@ const RETIRED_COLORS: { pattern: RegExp; why: string }[] = [
  * thing the cascade does, minus the cases where the class lives on a
  * grandparent. Those it cannot see, and it says so by staying quiet.
  */
+const FITTED_LITERAL = /\b(?:text|rounded|shadow)-\[[^\]\s]*\]/g;
+const FITTED_WHY = /fitted|chip corner|pixel cap/i;
+
 const SAN_RENDER = /figurine\(|numberedSan\(|\{[^{}]*\b\w+\.san\b[^{}]*\}/g;
 const ELO_RENDER = /\{[^{}]*\b(?:elo|\w+\.(?:white|black)Elo)\b[^{}]*\}/;
 
@@ -271,6 +283,25 @@ for (const file of tracked) {
         if (pattern.test(line)) {
           findings.push({ file, line: i + 1, text: line.trim().slice(0, 120), why });
         }
+      }
+    });
+  }
+
+  if (/^web\/src\/.*\.tsx$/.test(file) && !file.startsWith('web/src/components/ui/')) {
+    lines.forEach((line, i) => {
+      for (const hit of line.match(FITTED_LITERAL) ?? []) {
+        if (/var\(--|inherit/.test(hit)) continue;
+        // Five lines, not three: the reason sits above a ternary whose
+        // branches each carry the literal, and the last branch is four
+        // lines down.
+        const above = lines.slice(Math.max(0, i - 5), i).join('\n');
+        if (FITTED_WHY.test(above)) continue;
+        findings.push({
+          file,
+          line: i + 1,
+          text: hit,
+          why: 'a size literal off the ladder with no word on what it is fitted to (DESIGN.md, the Named Tier and One Knob rules)',
+        });
       }
     });
   }

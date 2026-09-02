@@ -396,7 +396,9 @@ function EvalGraph({ points, tall = false }: { points: GraphPoint[]; tall?: bool
                 'absolute -translate-x-1/2 -translate-y-1/2 transition-transform duration-75',
                 // Shape as well as colour: a blunder is a diamond, a
                 // mistake a square, an inaccuracy a circle — so the graph
-                // still reads when the hues do not.
+                // still reads when the hues do not. The 1px corner is
+                // fitted to an 8px mark and off the radius knob: any rung
+                // of the ladder would round the diamond into a blob.
                 p.nag === 4
                   ? 'bg-nag-blunder size-2 rotate-45 rounded-[1px]'
                   : p.nag === 2

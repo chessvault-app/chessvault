@@ -796,7 +796,7 @@ export function EditorView({
             <div className="flex w-full flex-wrap items-center justify-center gap-2">
               {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
                   so the active tool's highlight sits concentric in its corner. */}
-              <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
+              <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(var(--radius-md)+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
                 variant={tool.kind === 'move' ? 'default' : 'ghost'}
                 size="sm"

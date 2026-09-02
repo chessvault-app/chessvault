@@ -91,7 +91,9 @@ export function PuzzleGrid({
                   {p.number ?? i + 1}
                   {/* State by glyph as well as tint — the colour grammar's
                       own rule; a tile that is only a colour is unreadable
-                      to 1 in 12 people. */}
+                      to 1 in 12 people. The size is fitted to a tile
+                      corner, not on the type ladder: a mark read off the
+                      tile, never a sentence. */}
                   {(last === 'win' || last === 'loss') && (
                     <span className="absolute bottom-0.5 left-1 text-[0.5rem] leading-none" aria-hidden>
                       {last === 'win' ? '✓' : '✗'}

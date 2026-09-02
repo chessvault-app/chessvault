@@ -28,6 +28,11 @@ export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
     // The split the bar cannot print. Through t(), which it was not: the
     // three words were English in the source, on a bar that stands in two
     // panels of a translated app.
+    //
+    // The text size below is fitted to the bar's own 16px track, not on
+    // the type ladder: the figures are read off the bar, never as a line
+    // of text. The 4px corner is the chip corner, off the radius knob on
+    // purpose.
     <TitleTip
       title={t('White {w}% · Draw {d}% · Black {b}%', {
         w: pct(w).toFixed(1),
@@ -35,7 +40,8 @@ export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
         b: pct(b).toFixed(1),
       })}
     >
-    <div className="border-border flex h-4 w-full overflow-hidden rounded-[4px] border font-mono text-[0.5625rem]">
+      {/* Fitted to the 16px track; the corner is the chip corner. */}
+      <div className="border-border flex h-4 w-full overflow-hidden rounded-[4px] border font-mono text-[0.5625rem]">
       {segments.map(({ value, className }, i) => (
         <span
           key={i}

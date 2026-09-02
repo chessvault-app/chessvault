@@ -164,13 +164,15 @@ A magic `text-[…]` literal means a tier exists that nobody named: 81 of
 the 89 in the app were the same value, retyped at every call site. That
 is where `text-micro` came from — the 10px rung the table opens with,
 named once and used by the eval bar, the PV peek and the puzzle-book
-tiles, none of which are type in the sense the other rungs mean. Four
-literals remain in app code — the tile-corner glyphs sized to a board
-square, the heat map's cell labels, the result bar's digits, and the
-11px variation text the annotation-size setting needs to keep its
-bottom rung apart — each sized to the thing it sits on and not to type,
-which is the only excuse a literal has. `web/src/components/ui/` has
-its own, which are the registry's and not ours to name.
+tiles, none of which are type in the sense the other rungs mean. Three
+literals remain in app code — the tile-corner glyph, the heat map's cell
+labels, the result bar's digits — each sized to the thing it sits on and
+not to type, which is the only excuse a literal has, and each says so in
+a comment above it; `check:repo` refuses a new one without that
+sentence. (The 11px variation text is not a literal but the bottom rung
+of the annotation-size setting, kept in `store/prefs.ts`.)
+`web/src/components/ui/` has its own, which are the registry's and not
+ours to name.
 
 Placeholders are what a scale change breaks. A skeleton line box must
 equal the real line-height, and line-heights do not all move together —

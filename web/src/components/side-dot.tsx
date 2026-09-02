@@ -20,6 +20,8 @@ export function SideDot({
   return (
     <span
       className={cn(
+        // Fitted to a 10px mark, off the radius knob on purpose: the
+        // ladder's smallest rung is 6px, which makes this a circle.
         'size-2.5 shrink-0 rounded-[3px] border',
         side === 'white'
           ? 'bg-side-white border-side-white-line'

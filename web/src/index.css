@@ -516,6 +516,11 @@
   --side-black-line: oklch(100% 0 0 / 50%);
 
   /* Move-quality NAG badges, chess.com's colour language. */
+  /* The ink for a hatch drawn over a NAG fill: a fixed black at half
+     alpha, because the fill it sits on is a fixed hex and no theme token
+     could hold a ratio against it (progress-bar.tsx has the numbers).
+     Named here so the sanctioned literals stay one list. */
+  --nag-ink: rgb(0 0 0 / 0.5);
   --nag-good: #3aab3a;
   --nag-mistake: #ee8b1f;
   --nag-brilliant: #1baca6;
@@ -831,6 +836,17 @@
   --shadow-control: 0 1px 3px 0 hsl(var(--shadow-color) / 10%), 0 1px 2px -1px hsl(var(--shadow-color) / 10%);
   --shadow-panel: 0 1px 2px -1px hsl(var(--shadow-color) / 12%), 0 4px 16px -6px hsl(var(--shadow-color) / 14%);
   --shadow-pop: 0 4px 12px -2px hsl(var(--shadow-color) / 18%), 0 16px 40px -12px hsl(var(--shadow-color) / 22%);
+  /* The Tailwind utilities resolve to the three tokens, so a call site
+     cannot cast a fixed-black shadow by habit. An audit counted 31
+     shadow-sm/md/lg in the tree against a record that said five and
+     the tokens consumed once; mapping them here is what makes the One
+     Shadow Colour rule true by construction instead of by review.
+     sm is control, md is panel, lg and above are pop. */
+  --shadow-sm: var(--shadow-control);
+  --shadow-md: var(--shadow-panel);
+  --shadow-lg: var(--shadow-pop);
+  --shadow-xl: var(--shadow-pop);
+  --shadow-2xl: var(--shadow-pop);
 }
 
 @layer base {
@@ -944,7 +960,7 @@
     margin: 0.5rem 0;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-md);
     background: var(--card);
     cursor: pointer;
   }

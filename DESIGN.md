@@ -381,9 +381,13 @@ title is 16px there and 20px everywhere else, and why the density knob
 leaves the reader's toolbar bands alone — they are not rows.
 
 **The Named Tier Rule.** A magic `text-[…]` literal means a tier exists
-that nobody named. Five survive in app code, each sized to a physical
-thing it sits on — a board square, a heat-map cell — which is the only
-excuse a literal has.
+that nobody named. Three survive in app code — the heat map's cell
+label, the result bar's digits, the puzzle tile's corner mark — each
+sized to a physical thing it sits on, which is the only excuse a literal
+has, and each says so in a comment on the line above it. `check:repo`
+holds that: a `text-[…]`, `rounded-[…]` or `shadow-[…]` literal outside
+the registry files is a finding unless it reads a `var(--…)` or the
+lines above it say what it is fitted to.
 
 **The Hangul Fallback Rule.** Any font stack that can appear beside
 Korean must resolve hangul. This is why Pretendard sits inside the *mono*
@@ -434,12 +438,15 @@ read on a white page in light mode where card and background are the same
 value. The ring used to be `ring-foreground/10`, a fixed alpha the
 contrast knob could never reach — High contrast, the one scheme chosen
 for legibility, moved every border and left card edges at 1.3:1. On the
-border token the knob reaches them. Across the whole app there are **five** shadow usages in total.
+border token the knob reaches them.
 
 Three shadow tokens exist for the cases that genuinely float, and all
-three are cast in `--shadow-color`, which follows the theme's hue —
-Tailwind's own `shadow-sm`/`md` are fixed black and sat beside these as a
-visibly different-coloured shadow.
+three are cast in `--shadow-color`, which follows the theme's hue.
+Tailwind's own `shadow-sm`/`md`/`lg` are fixed black and once sat beside
+these as a visibly different-coloured shadow; an audit found 31 of them
+against a record that said five, so the utilities now resolve to the
+tokens (`shadow-sm` is control, `shadow-md` is panel, `shadow-lg` and up
+are pop) and a call site cannot cast a black one by habit.
 
 ### Shadow Vocabulary
 
@@ -454,11 +461,15 @@ visibly different-coloured shadow.
 ### Named Rules
 
 **The Hairline-First Rule.** Reach for a ring or a tonal rung before a
-shadow. A shadow is for something that has genuinely left the page, and
-five usages app-wide is the standing evidence that most things have not.
+shadow. A shadow is for something that has genuinely left the page:
+cards carry none, and the ones that exist sit on floating things (a
+popover, a peek card, a promotion picker) and lifted ones (a shelf card
+under the pointer).
 
 **The One Shadow Colour Rule.** A shadow is cast in `--shadow-color` or
-it is not cast. Never Tailwind's fixed-black shadow utilities.
+it is not cast. The Tailwind utilities are mapped onto the three tokens
+so this holds by construction; a `shadow-[…]` literal is the one way
+round it, and `check:repo` flags one.
 
 ## Shapes
 
@@ -482,8 +493,12 @@ that a variant can fill it in without the control changing size, and
 
 **The One Knob Rule.** Every corner in the app derives from `--radius`. A
 hand-written radius is a corner that stops responding to the setting, and
-the only sanctioned exceptions are the 4px chip corner and the pixel caps
-that stop small controls turning into pills.
+the only sanctioned exceptions are the 4px chip corner, the pixel caps
+that stop small controls turning into pills, and a mark fitted to its
+own few pixels (the 10px side dot at 3px, the review strip's 8px
+diamond at 1px), where the ladder's smallest rung would round the shape
+away. Each says so on the line above it, and `check:repo` asks for that
+sentence.
 
 ## Components
 

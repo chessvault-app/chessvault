@@ -57,6 +57,8 @@ export function HeatMapOverlay({
           >
             <span
               className={cn(
+                // Fitted to a board square, not on the type ladder: the
+                // count has to sit inside one cell at the smallest board.
                 'rounded-sm px-1 font-mono text-[9px] leading-tight font-semibold tabular-nums shadow-sm',
                 bucketClass(info.value, info.piece),
               )}

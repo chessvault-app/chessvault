@@ -17,9 +17,31 @@ const systemPrefersDark = (): boolean =>
 const resolve = (p: ThemePreference): 'light' | 'dark' =>
   p === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : p;
 
-/** Toggle the `.dark` class that every design token hangs off. */
+/**
+ * Toggle the `.dark` class that every design token hangs off, and let the
+ * ground follow it.
+ *
+ * index.html pins the root's background inline before first paint, so a
+ * dark-theme user never sees a white flash. An inline style outranks the
+ * stylesheet for the life of the page, though, and nothing ever cleared
+ * it: switch the theme in Settings and the body went white while the
+ * root stayed near-black, which is the colour iOS overscroll and the
+ * standalone viewport's under-reported band show (index.css sets
+ * `html { background-color: var(--background) }` for exactly those).
+ * Every tinted or High contrast ground drifted the same way. Once the
+ * class is set the stylesheet owns the ground, so the pin comes off, and
+ * the theme-color metas (media-query only, so they followed the OS, not
+ * the choice) take the colour the root actually resolved to.
+ */
 const apply = (resolved: 'light' | 'dark'): void => {
-  document.documentElement.classList.toggle('dark', resolved === 'dark');
+  const root = document.documentElement;
+  root.classList.toggle('dark', resolved === 'dark');
+  root.style.removeProperty('background-color');
+  const ground = getComputedStyle(root).backgroundColor;
+  if (!ground || ground === 'rgba(0, 0, 0, 0)') return;
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.content = ground;
+  }
 };
 
 export const useTheme = create<ThemeState>()(

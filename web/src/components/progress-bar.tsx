@@ -80,7 +80,7 @@ export function ProgressBar({
               style={{
                 width: `${(100 * failed) / total}%`,
                 backgroundImage:
-                  'repeating-linear-gradient(135deg, transparent 0 2px, rgba(0,0,0,0.5) 2px 4px)',
+                  'repeating-linear-gradient(135deg, transparent 0 2px, var(--nag-ink) 2px 4px)',
               }}
             />
           </>
