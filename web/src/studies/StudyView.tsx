@@ -54,6 +54,14 @@ import { TitleTip } from '@/components/title-tip';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
+/**
+ * Whether this document drew player bars last time — see `reservedPlayers`.
+ * A study's chapters can carry White and Black headers (one made from an
+ * imported game does), and the bars are drawn for the headers, not for
+ * the kind. Per document, like a puzzle book's shape.
+ */
+const playersKey = (base: string, id: string): string => `vault:doc-players:${base}:${id}`;
+
 export function StudyView({
   id,
   kind = 'study',
@@ -115,6 +123,25 @@ export function StudyView({
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
+
+  // What the placeholder reserves for the player bars while the document
+  // is in flight. On a wide screen the top slot is held whatever it will
+  // carry, but a stacked layout draws the bars only when there are
+  // players, and `kind === 'game'` was the guess: measured on the demo at
+  // 390px, a study made from a game put its board 34px lower and the
+  // column under it 64px lower than the placeholder had them. Stored per
+  // document on the way out, read on the way in; a document never opened
+  // here falls back to the guess. Keyed on the document, not the mount:
+  // this view is not remounted between one study and the next.
+  const hasPlayers = useAnalysis((s) => s.gameHeaders !== null);
+  const reservedPlayers = useMemo<boolean | null>(() => {
+    const stored = localStorage.getItem(playersKey(base, id));
+    return stored === null ? null : stored === '1';
+  }, [base, id]);
+  useEffect(() => {
+    if (openId !== id) return;
+    localStorage.setItem(playersKey(base, id), hasPlayers ? '1' : '0');
+  }, [openId, id, base, hasPlayers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,7 +259,11 @@ export function StudyView({
     return (
       <div className="h-full">
         {pending && (
-          <SkeletonBoard players={kind === 'game'} chapters={kind === 'study'} explorer />
+          <SkeletonBoard
+            players={reservedPlayers ?? kind === 'game'}
+            chapters={kind === 'study'}
+            explorer
+          />
         )}
       </div>
     );

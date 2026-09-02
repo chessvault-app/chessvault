@@ -84,11 +84,39 @@ const BOARD_SIDE_MIN = 420;
 const ZOOM_MIN = 0.25;
 /** Whether the diagram buttons are drawn; remembered on the device. */
 const HOTSPOTS_KEY = 'vault:reader:hotspots';
+/**
+ * What this device learned about a book's pages last time it was open —
+ * the first page's height over its width, and how many there are — so
+ * the opening treatment can be the page's own shape and the toolbar can
+ * say "/ 128" before the file is back. Measured on the demo: a 3:4 guess
+ * stood 164px shorter than the page at 1280px and 36px taller at 390px,
+ * and the centred toolbar stepped 8px sideways when the count arrived.
+ */
+const pageShapeKey = (id: string): string => `vault:book-page:${id}`;
+function parsePageShape(raw: string | null): { aspect: number; pages: number } | null {
+  if (raw === null) return null;
+  try {
+    const v = JSON.parse(raw) as { aspect?: unknown; pages?: unknown };
+    if (typeof v.aspect !== 'number' || !(v.aspect > 0) || typeof v.pages !== 'number' || !(v.pages > 0))
+      return null;
+    return { aspect: v.aspect, pages: v.pages };
+  } catch {
+    return null;
+  }
+}
 export function BookReader({ id, page }: { id: string; page?: string }) {
   const wide = useWideLayout();
   const [book, setBook] = useState<LibraryBook | null | undefined>(undefined);
   const { doc, error, retry } = useBookPdf(id, book?.bytes ?? null);
-  const pages = doc?.numPages ?? book?.pages ?? 0;
+  const [reservedPage] = useState(() => parsePageShape(localStorage.getItem(pageShapeKey(id))));
+  const pages = doc?.numPages ?? book?.pages ?? reservedPage?.pages ?? 0;
+  const rememberPage = useCallback(
+    (aspect: number) => {
+      if (!doc) return;
+      localStorage.setItem(pageShapeKey(id), JSON.stringify({ aspect, pages: doc.numPages }));
+    },
+    [id, doc],
+  );
 
   // The book's row from the shelf: its title, and where reading stopped.
   const load = useCallback(async (force = false): Promise<void> => {
@@ -248,6 +276,8 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       reading={reading}
       hotspots={hotspots}
       onToggleHotspots={toggleHotspots}
+      reservedAspect={reservedPage?.aspect ?? null}
+      onAspect={rememberPage}
     />
   );
 
@@ -687,6 +717,8 @@ function PdfPane({
   reading,
   hotspots,
   onToggleHotspots,
+  reservedAspect,
+  onAspect,
 }: {
   doc: ReturnType<typeof useBookPdf>['doc'];
   error: string | null;
@@ -711,6 +743,11 @@ function PdfPane({
   overlayFor: (page: number) => React.ReactNode;
   /** The diagram pass over this book, while it runs: a line over the page. */
   reading: { page: number; pages: number } | null;
+  /** The first page's height over its width from a previous open, for
+      the opening treatment before the document is back. */
+  reservedAspect: number | null;
+  /** The measured first-page shape, unrotated — the reader remembers it. */
+  onAspect: (aspect: number) => void;
   /** Whether the diagram buttons are drawn over the pages. */
   hotspots: boolean;
   onToggleHotspots: () => void;
@@ -788,6 +825,12 @@ function PdfPane({
       live = false;
     };
   }, [doc, rotation]);
+  // Remembered for the next open's treatment — unrotated, which is how a
+  // book opens.
+  useEffect(() => {
+    if (aspect === null || rotation !== 0) return;
+    onAspect(aspect);
+  }, [aspect, rotation, onAspect]);
   const fitZoomFor = (height: number): number | null =>
     aspect && pageW > 0 && height > 0
       ? Math.min(1, Math.max(ZOOM_MIN, (height - 24) / (pageW * aspect)))
@@ -1029,13 +1072,13 @@ function PdfPane({
               their slots' own spinners never show through an open. */}
           {!painted && (
             <div className="bg-background absolute inset-0 z-10 overflow-hidden">
-              <OpeningTreatment show={slow} pageW={pageW} />
+              <OpeningTreatment show={slow} pageW={pageW} aspect={aspect ?? reservedAspect} />
             </div>
           )}
         </div>
       ) : (
         <div className="min-h-0 flex-1">
-          <OpeningTreatment show={slow} pageW={pageW} />
+          <OpeningTreatment show={slow} pageW={pageW} aspect={reservedAspect} />
         </div>
       )}
     </>
@@ -1048,12 +1091,32 @@ function PdfPane({
  * page has rastered — `show` gates the content behind the slow-load beat,
  * the ground is painted either way so nothing shows through.
  */
-function OpeningTreatment({ show, pageW }: { show: boolean; pageW: number }) {
+function OpeningTreatment({
+  show,
+  pageW,
+  aspect,
+}: {
+  show: boolean;
+  pageW: number;
+  /** The first page's height over its width, where it is known; a 3:4
+      page otherwise. */
+  aspect: number | null;
+}) {
   return (
     <div className="bg-muted/40 h-full overflow-hidden">
       {show && (
-        <div className="relative flex h-full justify-center p-3">
-          <Skeleton className="aspect-[3/4] rounded-md" style={{ width: pageW || '100%' }} />
+        // No padding of its own: the scroller puts its first page on the
+        // column's top edge, and the p-3 this wore started the placeholder
+        // 12px below where the page lands.
+        // items-start, or the flex item stretches to the column's height
+        // and the aspect ratio never applies — which is what the old
+        // aspect-[3/4] class had been doing all along: the placeholder
+        // was always the pane's height, whatever it claimed.
+        <div className="relative flex h-full items-start justify-center">
+          <Skeleton
+            className="rounded-md"
+            style={{ width: pageW || '100%', aspectRatio: `1 / ${aspect ?? 4 / 3}` }}
+          />
           <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
             <Spinner />
             {t('Opening the book…')}
