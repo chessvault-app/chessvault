@@ -98,7 +98,7 @@ moves, and reporting each from the right side of the board:
 npm run check:tablebase -- --tables <dir> --positions 200
 ```
 
-It walks random legal endings, asks this binary and
+It walks random legal endgames, asks this binary and
 tablebase.lichess.ovh about each, and compares the verdict for the
 position and for every legal move. The failure it exists to catch is the
 same one: not a crash, but a confident wrong answer — an inverted point

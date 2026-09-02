@@ -2,8 +2,9 @@
 
 *English · [한국어](README.ko.md)*
 
-Two modes, chosen on first launch (change later from the Switch vault
-card in Settings — or the Vault menu, which hides behind Alt):
+Two modes, chosen on first launch (change later from the Desktop app
+card in Settings, whose Vault row has a Switch… button — or the Vault
+menu, which hides behind Alt):
 
 - **remote** — a window onto a Chess Vault server somewhere else. Pure
   client.
@@ -90,7 +91,7 @@ and delete the ad-hoc hook.
 The packaged local mode runs the bundled server on Electron's own Node
 (`ELECTRON_RUN_AS_NODE`), with `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA`
 pointed at `%APPDATA%/Chess Vault/{vault,data}` — a fresh vault per
-machine profile.
+device profile.
 
 The puzzle pool and the reference databases all build in the
 packaged app: `build-puzzles.mjs`, `build-refgames.mjs`,

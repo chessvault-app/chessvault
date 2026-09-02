@@ -186,7 +186,7 @@ breaks the knobs, and is therefore forbidden.
 - One type family for two scripts, with mono reserved for what is scanned as a column.
 - shadcn/ui (Base UI, nova style) at the component layer, worn faithfully.
 
-## Colors
+## Colours
 
 A neutral grey ladder with one near-black accent, plus a small fixed set
 of semantic hues that never change with the theme.
@@ -558,7 +558,7 @@ hit areas, `title` as a tooltip. Composites live in
 - A section list of icon-plus-label rows; the active section takes the
   primary treatment, everything else is quiet until hovered.
 - On a phone the bottom bar becomes the open page's controls — move
-  navigation, puzzle actions — in the chess.com / Lichess idiom, claimed
+  navigation, puzzle actions — in the Chess.com / Lichess idiom, claimed
   by whichever page is open.
 
 ### Signature: the board and its overlays

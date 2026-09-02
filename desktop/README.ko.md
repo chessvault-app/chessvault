@@ -2,8 +2,9 @@
 
 *[English](README.md) · 한국어*
 
-처음 실행할 때 고르는 두 가지 모드가 있습니다(나중에 바꾸려면 설정의 Switch
-vault 카드 — 또는 Alt 뒤에 숨어 있는 Vault 메뉴):
+처음 실행할 때 고르는 두 가지 모드가 있습니다(나중에 바꾸려면 설정의 데스크톱
+앱 카드에서 보관함 행의 전환… 버튼 — 또는 Alt 뒤에 숨어 있는 Vault → Switch
+vault… 메뉴):
 
 - **원격** — 다른 곳에 있는 Chess Vault 서버를 들여다보는 창입니다. 순수한
   클라이언트입니다.
@@ -21,6 +22,34 @@ vault 카드 — 또는 Alt 뒤에 숨어 있는 Vault 메뉴):
 웹 앱은 어느 모드에서든 같은 HTTP API와 주고받습니다. 셸은 앱에 API를 절대
 노출하지 않습니다(모드 선택기의 IPC는 셸 설정이지 앱의 표면이 아닙니다). 이
 덕분에 데스크톱 빌드는 언제든 걷어낼 수 있고, 웹 배포가 기준으로 남습니다.
+
+## macOS에 설치하기
+
+앱은 Apple Developer ID로 서명되지 않았고 노터라이즈도 되지 않았으므로,
+macOS가 그냥 열어 주지는 않습니다. 무엇이 보이는지는 빌드가 무엇을 담고
+있느냐에 따라 다릅니다:
+
+- **"Chess Vault이(가) 손상되었기 때문에 열 수 없습니다."** 서명이 아예
+  없는 경우로, 0.4.1 이전의 `mac.identity: null`이 만들던 것입니다. 손상된
+  것이 아닙니다. arm64 macOS는 서명되지 않은 코드를 불러오기를 거부하고,
+  Gatekeeper는 그것을 손상이라고 보고합니다. 앱을 Applications로 끌어다
+  놓은 뒤 한 번만 고치면 됩니다:
+
+  ```
+  xattr -dr com.apple.quarantine "/Applications/Chess Vault.app"
+  ```
+
+  오른쪽 클릭 → 열기로는 이 경우가 *풀리지 않습니다*.
+
+- **"…확인되지 않은 개발자가 배포했습니다."** 0.4.1에서 더한 애드혹
+  서명입니다(지금은 `desktop/after-pack.mjs`의 일부). 앱을 오른쪽 클릭 →
+  **열기** → **열기**, 한 번이면 됩니다. 위의 `xattr` 한 줄도 여기서
+  통합니다.
+
+둘 다 내려받은 파일에 대한 경고가 아닙니다. 누가 이 앱을 만들었는지 알 수
+없다는 macOS의 말이고, 그것은 사실이며 누군가 Developer ID와
+노터라이즈 비용을 내기 전까지는 계속 사실입니다 — 그때가 되면
+`mac.identity`를 설정하고 애드혹 훅을 지우면 됩니다.
 
 ## 패키징
 
@@ -48,6 +77,18 @@ AppImage와 deb를 만듭니다. 과정은 이렇습니다:
 3. `electron-builder`: `desktop/`을 asar에 담고, 서버 번들과 `dist/`는
    extraResources로 실어 서버의 `./dist` 정적 루트와 `REPO_ROOT`가 모두
    `resources/`로 해석되게 합니다.
+4. `desktop/after-pack.mjs`: `release/server/node_modules`를 패키징된
+   `resources/server/` 안으로 복사한 뒤, macOS에서는 앱에 애드혹 서명을
+   합니다.
+
+   이 복사가 있는 이유는 extraResources가 그것을 실어 주지 않기 때문입니다.
+   app-builder-lib의 복사 필터는 `if (relative === "node_modules") return
+   false`로 시작하므로, extraResources 원본의 루트에 정확히 그 이름으로 있는
+   디렉터리는 `filter`가 무엇을 말하든 — 아무 말 없이 — 버려집니다. 0.4.2
+   전까지 앱은 데이터베이스 드라이버 없이 나갔고, 모든 로컬 보관함이 실행
+   즉시 "Cannot find package 'better-sqlite3'"로 죽었습니다. 훅은 복사가
+   자리를 잡지 못하면 예외를 던지므로, 다음에 깨질 때는 앱이 아니라 빌드가
+   깨집니다.
 
 패키징된 로컬 모드는 번들된 서버를 Electron 자신의
 Node로(`ELECTRON_RUN_AS_NODE`) 돌리며,

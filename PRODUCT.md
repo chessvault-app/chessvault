@@ -15,13 +15,13 @@ stand up a small server to get that. They are comfortable with the idea
 of a folder on disk being the source of truth; they are not necessarily
 comfortable with a terminal, and are never required to use one.
 
-They arrive with material already: chess.com and Lichess accounts with
+They arrive with material already: Chess.com and Lichess accounts with
 years of games, PGNs collected from elsewhere, and physical or scanned
 chess books. The product's job starts by taking that in, not by asking
 them to begin again.
 
 A second, factual audience: the same person on a phone. The vault lives
-on one machine or one server, and every other device is a client of it.
+on one device or one server, and every other device is a client of it.
 
 ## Product Purpose
 
@@ -63,8 +63,8 @@ adopt.
 Two deployments of the same code, differing only in where the vault
 lives:
 
-- **On this machine.** A desktop installer for Windows, macOS and Linux.
-  The app starts its own server; nothing leaves the machine; updates
+- **On this computer.** A desktop installer for Windows, macOS and Linux.
+  The app starts its own server; nothing leaves the device; updates
   arrive through the app.
 - **On a server.** One small Linux box owns the vault; phone, laptop and
   desktop are all clients over HTTPS. Chosen only when the same vault is
@@ -77,7 +77,7 @@ Typical sessions: reviewing a game just played against the engine and
 the explorer; building or drilling a repertoire against a real field of
 games; working a tactics book in cycles; keeping notes and studies that
 link back to both. On a phone, the bottom bar becomes the open page's
-controls, chess.com/Lichess-style.
+controls, Chess.com/Lichess-style.
 
 The interface is bilingual English and Korean throughout, including the
 docs and the public site. Both languages ship together; neither is a
@@ -126,13 +126,14 @@ Durable constraints future work must preserve:
 
 Terminology used consistently by the product and its docs: *vault*,
 *study*, *note*, *collection*, *reference database*, *field*, *band*
-(difficulty), *fidelity tier*, *draft*, *repertoire map*, *import*.
+(difficulty), *fidelity tier*, *draft*, *opening map*, *import*.
 
 *Import* is the verb for bringing outside material in — a PDF, a PGN, a
 Lichess or Chess.com account — and it is in this list because it had
-drifted into three words for one act: the library said "Upload PDF",
-its dialog said "Add a book" and then "Add to library", while the puzzle
-shelf and every document in the repository said import. Upload is what
+drifted into three words for one act: the Books shelf, then still called
+a library, said "Upload PDF", its dialog said "Add a book" and then "Add
+to library", while the puzzle shelf and every document in the repository
+said import. Upload is what
 the network does and is fine in a progress line; import is what the user
 did.
 

@@ -15,7 +15,7 @@ tour.
 
 **Quick start:** grab the installer for Windows, macOS or Linux from
 [Releases](https://github.com/chessvault-app/chessvault/releases/latest),
-run it, and answer **local** when it asks where your vault lives. That is
+run it, and answer **On this computer** when it asks where your vault lives. That is
 the whole setup. [Two ways to run it](#two-ways-to-run-it) has the
 details — and the second way, for when you want the same vault on every
 device.
@@ -67,7 +67,7 @@ is one connected body of work, and the links are what make it that.
   (```` ```chess ```` fences) and Obsidian-style `[[wiki-links]]`
   across notes, studies and games. Files stay Obsidian-readable.
 - **Games** — a curated collection (annotatable like studies), your
-  chess.com / Lichess archives browsed month by month with filters, and
+  Chess.com / Lichess archives browsed month by month with filters, and
   manual PGN import.
 - **Database search** — reference databases built from your own PGNs,
   searched the way a desktop chess database searches, three ways. A
@@ -78,7 +78,7 @@ is one connected body of work, and the links are what make it that.
   degrees, down through same-pawns-and-material to bare pawn structure
   or bare material, with a hold requirement to tell a settled structure
   from a passing one. **By material situation**: endgame presets from
-  pawn endings to "a queen up", or your own per-side, per-piece spec.
+  the pawn endgame to "a queen up", or your own per-side, per-piece spec.
   Exact position search answers in milliseconds on a ten-million-game
   corpus, and the relaxed and material hunts in tenths of a second with
   fast search on —
@@ -90,14 +90,14 @@ is one connected body of work, and the links are what make it that.
     <img alt="Games" src="docs/screenshots/games.png">
   </picture>
 
-- **Books** — a library of your chess books: upload any PDF and read it
+- **Books** — a shelf of your chess books: upload any PDF and read it
   in the app, in a pane beside the analysis board, with a board button on
   every printed diagram that sets that position up. The file stays in
   your vault and is served with byte ranges; your page is kept per book.
 
   <img alt="A printed diagram in a book, becoming the position on the board beside it" src="docs/screenshots/book-to-board.gif">
 
-- **Puzzles** — a lichess-themed trainer with difficulty bands, a
+- **Puzzles** — a Lichess-themed trainer with difficulty bands, a
   progress dashboard, and a review schedule: what you miss comes back on
   a spaced ladder (a day, then 3, 7 and 21) and retires after a clean
   solve at every step. Plus **book puzzles**: hand a scanned tactics
@@ -158,9 +158,9 @@ is one connected body of work, and the links are what make it that.
 - **Everywhere** — responsive down to phones, installable as a PWA
   (home-screen icon, splash screens, offline shell), and a desktop app
   (Windows, macOS and Linux installers) that keeps the vault on that
-  machine by default, or runs as a client to your server. On a phone the
+  device by default, or runs as a client to your server. On a phone the
   bottom bar turns into the open page's controls (move navigation, puzzle
-  actions), chess.com/Lichess-style.
+  actions), Chess.com/Lichess-style.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
 end · `f` flip board · `Enter` play the typed move · `Ctrl/⌘ S` save ·
@@ -171,7 +171,7 @@ end · `f` flip board · `Enter` play the typed move · `Ctrl/⌘ S` save ·
 Both run the same code. The only question is **where the vault lives** —
 the folder holding your games, studies, notes and puzzles.
 
-| | **On this machine** | **On a server** |
+| | **On this computer** | **On a server** |
 | --- | --- | --- |
 | vault lives | on your computer | on one small Linux box |
 | you reach it from | that computer | phone, laptop, desktop — all clients |
@@ -182,16 +182,16 @@ Pick the second only if you want the same vault from more than one device.
 Nothing is lost by starting with the first: the vault is a folder, so
 moving to a server later is copying it there.
 
-### A · On this machine
+### A · On this computer
 
 **Download the app** for Windows, macOS or Linux from
 [Releases](https://github.com/chessvault-app/chessvault/releases/latest)
 and install it. Nothing else is needed — no Node, no terminal.
 
-On first run it asks where your vault lives. Choose **local** — the app
-starts the server itself and everything stays on this machine. (The other
-answer, *remote*, makes the same app a window onto a server you host; see
-B.) Then it asks which folder:
+On first run it asks where your vault lives. Choose **On this computer** —
+the app starts the server itself and everything stays on this device. (The
+other answer, **On my server**, makes the same app a window onto a server
+you host; see B.) Then it asks which folder:
 
 - **App-managed vault** — it picks one in your user profile and gets on
   with it.
@@ -201,7 +201,7 @@ B.) Then it asks which folder:
 
 Updates arrive through the app itself, from those same releases.
 
-**First minutes, once it opens:** put your chess.com / Lichess usernames
+**First minutes, once it opens:** put your Chess.com / Lichess usernames
 into Settings and the Games page starts browsing your archives; open
 Puzzles and accept the database it offers to fetch, and the trainer is
 ready. The Lichess token ([below](#lichess-token-optional)) is only
@@ -219,7 +219,7 @@ npm start                      # http://127.0.0.1:8787
 
 From source the vault is `vault/` in the repo unless `CHESS_VAULT_DIR`
 says otherwise. No password is needed — nothing is listening beyond your
-machine.
+device.
 
 ### B · On a server
 
@@ -328,8 +328,8 @@ One port serves the built app and the HTTP API together. Then:
    `appPassword` in `vault/config.json`), and add authenticator 2FA
    while you are there. Anything reachable from the internet needs this.
 3. **Connect your devices.** Phone: open the URL and Add to Home Screen —
-   it installs as a PWA with an offline shell. Desktop: install the app
-   and choose *remote* mode with your server's URL.
+   it installs as a PWA with an offline shell. Desktop: install the app,
+   answer **On my server**, and give it your server's URL.
 
 Settings shows two version numbers, and they are different things: the
 **server** version is the web app and API you are connected to; the
@@ -390,7 +390,7 @@ ships with, the first time something asks for a name.
 install answers from the first minute instead of showing empty pages.
 A *reference database* is whole games plus a position index in one
 SQLite file: the games are searchable by player, opening, ECO,
-tournament, result and rating in the Games tab (any of them openable on
+event, result and rating in the Games tab (any of them openable on
 the board), and the position index is what the local explorer and the
 repertoire trainer answer from — filterable, because the games survive
 beside it. The bundled set keeps the strongest games of every opening
@@ -398,7 +398,7 @@ from a recent Lichess Elite month: 38,977 games in 25 MB, CC0, indexed
 to move 15. It is copied into `data/` the first time the app runs and is an
 ordinary file after that: delete it, build over it. Deleting is final;
 it is not put back. (Earlier releases also bundled a summed-away
-"opening book"; the position index replaced it — one artifact answers
+"opening book"; the position index replaced it — one artefact answers
 both questions now, and answers them filtered.)
 
 It is built when a release is cut, not kept in the repo, so each
@@ -406,7 +406,7 @@ release carries data from a month that was current then. **A server
 install and a source checkout have none of it** — they take the commit, not
 the release artefacts — and start with an empty explorer and an empty
 game browser. **When you outgrow the starter, build your own** — that
-is the ordinary way round anyway: upload your PGN collections on the
+is the ordinary way round anyway: upload your PGN files on the
 Databases page and press Build. Neither `deploy.sh` nor the app
 downloads games for this; only the release workflow does.
 (`npm run build:bundled-refgames` shrinks data you already have into
@@ -414,7 +414,7 @@ what an installer carries — it is for packaging installers by hand, not
 for getting your first database.)
 
 **Building needs no shell.** Open the Databases page, upload your PGN
-collections, tick the ones to merge and press Build. Good free sources:
+files, tick the ones to merge and press Build. Good free sources:
 [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite" and the
 [Lichess Elite Database](https://database.nikonoel.fr/) — the second is
 CC0, the first CC BY-NC-SA 4.0, which is fine for a database you build
@@ -456,7 +456,7 @@ same thing from a terminal if you prefer one.
 **Reference games build in the app too, and they are plural.** The
 desktop starts seeded — the installer's starter set is one
 database, in place before the app first opens — and the Databases page
-uploads PGN collections and indexes any selection of them into a
+uploads PGN files and indexes any selection of them into a
 named database beside the others: an Elite month, an OTB collection,
 your club's games, each searchable on its own and switchable in the
 Games page's Databases browser. Replacing one is therefore not a special
@@ -497,7 +497,7 @@ WASM and CSS are all bundled. The only features that reach outside are
 augmentation, which you can leave off.
 
 **With no network at all: yes.** That is the default arrangement — the
-app and the vault both on your machine — and nothing about it needs the
+app and the vault both on your device — and nothing about it needs the
 internet. Engine, reference databases, puzzles, your whole collection.
 
 If you have moved the vault to a server (way B), you need to be able to
@@ -523,7 +523,7 @@ vault/      YOUR DATA — plain files, git-friendly
 deleted and rebuilt. Backing up or migrating is copying a folder.
 
 **`native/` is optional.** It is a Rust crate — `chessvault-core` —
-that mirrors the four heavy database jobs (build, index, optimize,
+that mirrors the four heavy database jobs (build, index, optimise,
 search every game) byte for byte, golden-tested against the JavaScript
 pipeline's own answers. The desktop installer carries it, built for
 that platform, so an installed app is fast without you doing anything:
@@ -655,7 +655,7 @@ covers it, including how to bootstrap that config from the book itself.
 
 - [Architecture](docs/architecture.md) — the plain-files vault, the
   process split, the HTTP-only client rule.
-- [Design principles](docs/design-principles.md) — the color grammar,
+- [Design principles](docs/design-principles.md) — the colour grammar,
   layout rules, and other standing decisions.
 - [Book import pipeline](docs/book-import-pipeline.md) — how PDFs
   become verified puzzle books, with a runbook.
@@ -676,9 +676,9 @@ covers it, including how to bootstrap that config from the book itself.
 
 The book reader only ever opens a PDF you hand it. No book is bundled
 with the app, none is fetched by it, and nothing it reads is uploaded
-anywhere but your own server: the PDF itself (in the library), the crops,
+anywhere but your own server: the PDF itself (on the Books shelf), the crops,
 the page images and the puzzles all land in your vault, on your own
-machine, and the vault is gitignored so none of it can be committed by
+device, and the vault is gitignored so none of it can be committed by
 accident.
 
 That is a privacy property, not a licence. A scan of a book still in
