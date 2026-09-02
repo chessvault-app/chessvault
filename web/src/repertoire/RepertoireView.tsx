@@ -21,6 +21,7 @@ import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSqua
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
+import { MoveBox } from '@/board/MoveBox';
 import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
@@ -1694,6 +1695,15 @@ export function RepertoireView() {
     onSelect={setCursorId}
     onFlip={() => setFlipped((f) => !f)}
     emptyText="Make your first move on the board."
+    // The drill's own path, so a typed move is recalled or missed exactly
+    // as a dragged one (and auto-queens the same way, via toUci).
+    moveBox={
+      <MoveBox
+        fen={node.fen}
+        disabled={!canMove}
+        onMove={(uci) => onMove(uci.slice(0, 2), uci.slice(2, 4))}
+      />
+    }
   />
   );
 

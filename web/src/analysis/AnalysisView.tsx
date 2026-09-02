@@ -2,6 +2,7 @@ import { ChevronLeft, Check, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrd
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveBox } from '@/board/MoveBox';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -190,6 +191,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           />
           <MoveTreePane />
           <ReviewStrip />
+          <AnalysisMoveBox />
           {/* -mb takes back the card's floor, as the resize grip does: the
               band draws the panel's bottom edge, so it has to reach it.
               At lg the panes are all on screen and this is the one that

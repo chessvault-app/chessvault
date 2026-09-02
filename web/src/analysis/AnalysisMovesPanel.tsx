@@ -1,5 +1,6 @@
 import { EngineBlock } from '@/engine/EnginePane';
 import { PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveBox } from '@/board/MoveBox';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ export function AnalysisMovesPanel({
         }
       />
       <MoveTreePane />
+      <AnalysisMoveBox />
       {/* `stacked:hidden`: where this panel is one tab of several, the
           column's own strip carries the buttons (ColumnControls). */}
       <PaneControls className="stacked:hidden" />

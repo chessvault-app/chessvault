@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2 } from 'lucide-react';
 import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
@@ -23,6 +23,7 @@ export function AnswerPanel({
   onFlip,
   title = t('Moves'),
   emptyText = t('Play a move on the board.'),
+  moveBox,
   className,
 }: {
   tree: MoveTree;
@@ -45,6 +46,12 @@ export function AnswerPanel({
   onFlip?: () => void;
   title?: string;
   emptyText?: string;
+  /**
+   * The keyboard's way to play a move (a MoveBox), drawn under the list.
+   * The caller wires it, because only the caller knows which tree the
+   * board is really on and which of its phases take a move.
+   */
+  moveBox?: ReactNode;
   /** Lets a caller make this the panel that fills the column's spare height. */
   className?: string;
 }) {
@@ -85,6 +92,7 @@ export function AnswerPanel({
         </div>
       )}
       {onPromote && <PromoteStrip tree={tree} cursorId={cursorId} onPromote={onPromote} />}
+      {moveBox}
       {/* The navigation toolbar — hidden on phones, where the bottom action
           bar owns move navigation (no duplicate). */}
       <div className="border-border flex w-full shrink-0 items-center justify-center gap-1 border-t py-1 max-md:hidden">

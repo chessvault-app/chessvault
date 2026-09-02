@@ -27,6 +27,7 @@ import type { MoveTree, NodeId } from '@shared/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { Board, boardAnimMs } from '@/board/Board';
+import { MoveBox } from '@/board/MoveBox';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -819,6 +820,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     }
     onFlip={() => setFlipped((f) => !f)}
     emptyText={t('Nothing entered yet. Find the first move on the board.')}
+    moveBox={
+      <MoveBox
+        fen={node.fen}
+        disabled={phase !== 'solving'}
+        onMove={(uci) => applyMove(uci.slice(0, 2), uci.slice(2, 4), uci.slice(4) || undefined)}
+      />
+    }
   />
   );
 

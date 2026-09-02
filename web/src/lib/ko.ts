@@ -1957,4 +1957,6 @@ export const ko: Record<string, string> = {
   'Next move': '다음 수',
   Results: '결과',
   Distance: '거리',
+  'Chess board, {turn}': '체스 보드, {turn}',
+  'Chess board, {turn}, last move {from} to {to}': '체스 보드, {turn}, 마지막 수 {from}에서 {to}로',
 };

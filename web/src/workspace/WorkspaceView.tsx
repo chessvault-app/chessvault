@@ -2,6 +2,7 @@ import { LayoutDashboard } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveBox } from '@/board/MoveBox';
 import { EngineBlock } from '@/engine/EnginePane';
 import { EVAL_LANE_PX } from '@/engine/EvalBar';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
@@ -408,6 +409,7 @@ function Workspace() {
             }
           />
           <MoveTreePane />
+          <AnalysisMoveBox />
           <BoardControls
             className="border-border -mb-(--card-spacing) border-t"
            

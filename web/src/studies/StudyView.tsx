@@ -15,6 +15,7 @@ import { getNode, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useOpeningName } from '@/lib/opening';
 import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveBox } from '@/board/MoveBox';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -434,6 +435,7 @@ export function StudyView({
           />
           <MoveTreePane />
           <ReviewStrip />
+          <AnalysisMoveBox />
           <PaneControls className="max-lg:hidden" />
           <AnnotationPane
             editing={editing}

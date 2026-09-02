@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveBox } from '@/board/MoveBox';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
@@ -318,6 +319,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         }
       />
       <MoveTreePane />
+      <AnalysisMoveBox />
       {nav && <PaneControls />}
     </Panel>
   );

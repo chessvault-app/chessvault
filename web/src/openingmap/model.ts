@@ -1,6 +1,4 @@
-import { Chess } from 'chessops/chess';
-import { parseFen } from 'chessops/fen';
-import { makeSanAndPlay, parseSan } from 'chessops/san';
+import { typedMove } from '@shared/moveInput';
 import { addSanOwned, createTree, getNode, INITIAL_FEN } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 
@@ -170,12 +168,7 @@ export function resolveMap(map: OpeningMap): ResolvedMap {
  * of the "Nf3" a study derives.
  */
 export function normalizeSan(fen: string, input: string): string | null {
-  const setup = parseFen(fen);
-  if (setup.isErr) return null;
-  const pos = Chess.fromSetup(setup.value);
-  if (pos.isErr) return null;
-  const move = parseSan(pos.value, input.trim());
-  return move ? makeSanAndPlay(pos.value, move) : null;
+  return typedMove(fen, input)?.san ?? null;
 }
 
 // ------------------------------------------------------------------ edits

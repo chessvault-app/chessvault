@@ -25,6 +25,7 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { Board, boardAnimMs } from '@/board/Board';
+import { MoveBox } from '@/board/MoveBox';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
@@ -703,6 +704,17 @@ function Trainer({
       cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
       onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
       onFlip={() => setFlipped((f) => !f)}
+      // Read against the LIVE position, not the reviewed one, and judged
+      // by the same call a dragged move reaches, promotion letter and all.
+      moveBox={
+        view && (
+          <MoveBox
+            fen={view.fen}
+            disabled={phase !== 'solving' || reviewing}
+            onMove={(uci) => applyUserMove(uci)}
+          />
+        )
+      }
     />
   ) : (
     // The same box the move list takes once there is one — `min-h-32
