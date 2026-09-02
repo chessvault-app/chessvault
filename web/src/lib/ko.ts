@@ -1319,17 +1319,12 @@ export const ko: Record<string, string> = {
   'Lichess’s public tablebase': 'Lichess의 공개 테이블베이스',
   'A tablebase server of your own': '직접 운영하는 테이블베이스 서버',
   'Table files on the server': '서버에 있는 테이블 파일',
-  'Forget cached answers': '캐시된 답 잊기',
   'Choose…': '고르기…',
   'Choose the folder of Syzygy tables': 'Syzygy 테이블이 든 폴더 고르기',
-  'Off on this device. No endgame lookups are made from here.':
-    '이 기기에서는 꺼져 있습니다. 여기서는 엔드게임 조회를 하지 않습니다.',
   'Answering from the table files on the server, nothing else involved.':
     '서버의 테이블 파일로 답하고 있으며, 다른 것은 거치지 않습니다.',
   'Set to your own table files, but they cannot be read. Lichess’s public server is answering instead.':
     '직접 가진 테이블 파일로 설정되어 있지만 읽을 수 없습니다. 대신 Lichess의 공개 서버가 답하고 있습니다.',
-  'Answering from the tablebase server you named.': '지정한 테이블베이스 서버로 답하고 있습니다.',
-  'Answering from Lichess’s public tablebase.': 'Lichess의 공개 테이블베이스로 답하고 있습니다.',
   'A tablebase server of your own: lila-tablebase over your own tables, or any address that speaks its protocol. Empty falls back to Lichess.':
     '직접 운영하는 테이블베이스 서버입니다. 내 테이블 위에 띄운 lila-tablebase, 또는 같은 프로토콜을 쓰는 주소면 됩니다. 비워 두면 Lichess로 되돌아갑니다.',
   'A folder of Syzygy files on this machine, read directly with nothing else running. Needs the native core built.':
@@ -1339,11 +1334,10 @@ export const ko: Record<string, string> = {
   'To answer from table files on the server itself, set “tablebaseDir” in its vault config. A path cannot be typed from another machine.':
     '서버에 있는 테이블 파일로 답하게 하려면 보관함 설정 파일에 «tablebaseDir»을 적으세요. 경로는 다른 기기에서 입력할 수 없습니다.',
   'Cached answers': '캐시된 답',
-  'Answers are kept for good, so each ending is asked about once. Forget them to ask again, for example after adding tables to your own server.':
-    '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다. 직접 띄운 서버에 테이블을 추가한 뒤처럼 다시 묻게 하려면 잊게 하세요.',
-  Forget: '잊기',
-  'Forgot {n} cached answers.': '캐시된 답 {n}개를 잊었습니다.',
-  'Nothing was cached.': '캐시된 것이 없습니다.',
+  'Answers are kept for good, so each ending is asked about once.':
+    '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다.',
+  'Nothing cached': '캐시 없음',
+  'Clear cached answers': '캐시된 답 비우기',
   'Endgame moves judged against the tablebase, not the engine':
     '엔진이 아니라 테이블베이스로 판정한 엔드게임 수',
   Checkmate: '체크메이트',

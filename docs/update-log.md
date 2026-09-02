@@ -122,16 +122,29 @@ other people.
   Tablebase label, as a tooltip rather than as printed text — one word
   and a hostname would push the verdict itself off the end of the strip.
 
-- **And a way to forget them.** A cache with no expiry is right for a
-  fact and wrong for a source that has since LEARNED something: point a
-  vault at a server holding the five-piece tables, look at a six-piece
-  ending, and "no table holds this" is on disk for good — adding the
-  six-piece tables afterwards changes nothing, because nothing asks
-  again. Settings → Tablebase now has the way to ask again, and says how
-  many answers it dropped. It clears the tab's own memory of them too,
-  or the button would only half work. The other two reasons to press it
-  are wanting the disk back and not wanting a record of which endings
-  you studied.
+- **And a way to clear them, which says what it holds first.** A cache
+  with no expiry is right for a fact and wrong for a source that has
+  since LEARNED something: point a vault at a server holding the
+  five-piece tables, look at a six-piece ending, and "no table holds
+  this" is on disk for good — adding the six-piece tables afterwards
+  changes nothing, because nothing asks again. Settings → Tablebase now
+  has the way to ask again, on a **Cached answers** row that says how
+  many are held and what they take on disk before you empty it, the way
+  Browsed games and Storage used say it. The bin drops the lot, the row
+  falls to "Nothing cached", and the Storage used figure below moves
+  with it rather than standing on what it read when the page opened. It
+  clears the tab's own memory of the answers too, or the button would
+  only half work. The other two reasons to press it are wanting the disk
+  back and not wanting a record of which endings you studied.
+
+  Two lines of grey went with it. The button used to report "Forgot 812
+  cached answers." in the app's SUCCESS colour, which it kept saying
+  until you left the page while the two cards below it sat 32 pixels
+  lower — measured; the row's own figures falling to nothing say it in
+  the place you were already looking and cost no height. And the line
+  under the source, which read the choice back to you as a sentence, now
+  appears only for table files, the one source that can be set and not
+  be answering.
 
 - **Settings → Tablebase turns it off.** It is the one lookup the app
   makes without being asked for one — no source to select, no button to
