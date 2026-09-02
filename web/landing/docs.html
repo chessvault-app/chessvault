@@ -839,7 +839,7 @@
               </li>
             </ul>
             <h2 data-ko="그리기">Drawing on the board</h2>
-            <p data-ko="오른쪽 버튼으로 <strong>끌면 화살표</strong>, <strong>클릭하면 동그라미</strong>입니다. 수식 키가 색을 고릅니다: 그냥 = 초록, <kbd>Shift</kbd>/<kbd>Ctrl</kbd> = 빨강, <kbd>Alt</kbd> = 파랑, <kbd>Shift+Alt</kbd> = 노랑. 이 네 색만 PGN으로 저장됩니다(스터디에서는 Edit 모드에서만 그려집니다). 엔진의 최선수 화살표는 별도의 파란 자동 화살표라, 직접 그린 것과 섞이지 않습니다.">
+            <p data-ko="오른쪽 버튼으로 <strong>끌면 화살표</strong>, <strong>클릭하면 동그라미</strong>입니다. 수식 키가 색을 고릅니다: 그냥 = 초록, <kbd>Shift</kbd>/<kbd>Ctrl</kbd> = 빨강, <kbd>Alt</kbd> = 파랑, <kbd>Shift+Alt</kbd> = 노랑. 이 네 색만 PGN으로 저장됩니다(스터디에서는 Edit 모드에서만 그려집니다). 엔진의 최플레이어 화살표는 별도의 파란 자동 화살표라, 직접 그린 것과 섞이지 않습니다.">
               With the right button, <strong>drag for an arrow</strong>, <strong>click for a
               circle</strong>. Modifier keys pick the colour: plain = green,
               <kbd>Shift</kbd>/<kbd>Ctrl</kbd> = red, <kbd>Alt</kbd> = blue,
@@ -887,7 +887,7 @@
                 to-square). Promotion opens a piece picker. How castling is entered is a setting —
                 Appearance → Castling: king two squares (g1) or king onto the rook (h1).
               </li>
-              <li data-ko="양쪽의 <strong>선수 막대</strong>가 이름·레이팅·시계(PGN에 시계가 있으면)를 보여 줍니다. Board 페이지에서는 이름 칸이 편집됩니다.">
+              <li data-ko="양쪽의 <strong>플레이어 막대</strong>가 이름·레이팅·시계(PGN에 시계가 있으면)를 보여 줍니다. Board 페이지에서는 이름 칸이 편집됩니다.">
                 The <strong>player bars</strong> on either side show names, ratings and clocks
                 (when the PGN carries them). On the Board page the name fields are editable.
               </li>
@@ -1638,7 +1638,7 @@
               <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd> behave as
               <a href="#shortcuts">the shortcuts page</a> says.
             </p>
-            <p data-ko="<strong>Game details</strong> 패널: 두 선수 줄(당신 진영이 강조), 결과 배지, 오프닝(ECO와 이름), 이벤트·라운드, 날짜·수·시간 제한·«View online» — 그리고 그 아래, 좌표 없는 미리보기 보드와 넘김 버튼(Start · Back · {idx} / {plies} · Forward · End), 본선 전체가 클릭 가능한 SAN으로. 휴대폰에서는 같은 내용이 «{white} vs {black}» 시트로 옵니다. 패널 머리의 핀(«Keep the panel open»)이 선택이 없을 때도 열을 지킬지 정합니다. 풀어 두면 선택과 함께 떠나며, 그 옆의 ×(«Close»)나 <kbd>Esc</kbd>가 둘 다 치웁니다. 표가 패널에게 열을 내주지 않아도 되는 넓은 창에서는 꽂힌 채로, 그보다 좁으면 풀린 채로 시작합니다.">
+            <p data-ko="<strong>Game details</strong> 패널: 두 플레이어 줄(당신 진영이 강조), 결과 배지, 오프닝(ECO와 이름), 이벤트·라운드, 날짜·수·시간 제한·«View online» — 그리고 그 아래, 좌표 없는 미리보기 보드와 넘김 버튼(Start · Back · {idx} / {plies} · Forward · End), 본선 전체가 클릭 가능한 SAN으로. 휴대폰에서는 같은 내용이 «{white} vs {black}» 시트로 옵니다. 패널 머리의 핀(«Keep the panel open»)이 선택이 없을 때도 열을 지킬지 정합니다. 풀어 두면 선택과 함께 떠나며, 그 옆의 ×(«Close»)나 <kbd>Esc</kbd>가 둘 다 치웁니다. 표가 패널에게 열을 내주지 않아도 되는 넓은 창에서는 꽂힌 채로, 그보다 좁으면 풀린 채로 시작합니다.">
               The <strong>Game details</strong> panel: the two player rows (your side accented),
               the result badge, the opening (ECO and name), event and round, date · moves · time
               control · “View online” — then a coordinate-free preview board with its stepper
@@ -1697,11 +1697,11 @@
             <div class="scroll-x">
               <table class="controls">
                 <tbody>
-                  <tr><td>Player · Against</td><td data-ko="선수, 그리고 그 상대.">A player, and who they faced.</td></tr>
+                  <tr><td>Player · Against</td><td data-ko="플레이어, 그리고 그 상대.">A player, and who they faced.</td></tr>
                   <tr><td>Opening or ECO</td><td data-ko="«Najdorf, B90…»">“Najdorf, B90…”</td></tr>
                   <tr><td>Tournament · Played between</td><td data-ko="대회와 기간.">The event, and a date range.</td></tr>
                   <tr><td>Strength</td><td data-ko="Any rating · 2300+ · 2500+ · 2700+">Any rating · 2300+ · 2500+ · 2700+</td></tr>
-                  <tr><td>Side · Result · Outcome</td><td data-ko="진영(Either side / As White / As Black), 결과(White won / Black won / Drawn), 그리고 지목한 선수 기준의 승패(Won / Lost / Drew).">The side (Either side / As White / As Black), the game's result (White won / Black won / Drawn), and — for the named player — their outcome (Won / Lost / Drew).</td></tr>
+                  <tr><td>Side · Result · Outcome</td><td data-ko="진영(Either side / As White / As Black), 결과(White won / Black won / Drawn), 그리고 지목한 플레이어 기준의 승패(Won / Lost / Drew).">The side (Either side / As White / As Black), the game's result (White won / Black won / Drawn), and — for the named player — their outcome (Won / Lost / Drew).</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2369,7 +2369,7 @@
                   </tr>
                   <tr>
                     <td>Browsed games</td>
-                    <td data-ko="캐시된 아카이브 월들의 목록 — 선수별 크기와 «{size} in total». 줄마다 휴지통(«Clear this player's months»)이 그 선수의 것만 지우고, 아래 <strong>Clear all</strong>은 전부 지웁니다. 어느 쪽이든 아래 Storage used의 숫자가 함께 갱신됩니다. «Nothing here is in your collection…» — 캐시일 뿐입니다.">
+                    <td data-ko="캐시된 아카이브 월들의 목록 — 플레이어별 크기와 «{size} in total». 줄마다 휴지통(«Clear this player's months»)이 그 플레이어의 것만 지우고, 아래 <strong>Clear all</strong>은 전부 지웁니다. 어느 쪽이든 아래 Storage used의 숫자가 함께 갱신됩니다. «Nothing here is in your collection…» — 캐시일 뿐입니다.">
                       The cached archive months — sizes per player, “{size} in total”. The bin on
                       each row (“Clear this player's months”) takes that player alone;
                       <strong>Clear all</strong> below takes the lot. Either way the Storage used
