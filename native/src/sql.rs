@@ -69,6 +69,9 @@ pub const MOVE_COUNTS: &str = "
 /// `scripts/lib/db-tuning.ts` REFGAMES_INDEXES.
 pub const REFGAMES_INDEXES: &str = "
   CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);
+  CREATE INDEX IF NOT EXISTS idx_games_black ON games (black);
+  CREATE INDEX IF NOT EXISTS idx_games_opening ON games (opening);
+  CREATE INDEX IF NOT EXISTS idx_games_eco ON games (eco);
 ";
 
 /// `scripts/lib/db-tuning.ts` REFGAMES_LOOKUPS.
@@ -86,4 +89,8 @@ pub const REFGAMES_LOOKUPS: &str = "
     SELECT opening, eco, COUNT(*) AS games FROM games
     WHERE opening IS NOT NULL OR eco IS NOT NULL
     GROUP BY opening, eco;
+  CREATE TABLE IF NOT EXISTS events AS
+    SELECT event, COUNT(*) AS games FROM games
+    WHERE event IS NOT NULL
+    GROUP BY event;
 ";
