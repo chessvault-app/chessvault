@@ -91,7 +91,8 @@ was needed and what it cost, not just what changed. Behaviour-neutral
 refactors and behaviour changes go in separate commits so the neutral one
 stays provable.
 
-**UI text is sentence case**, and nothing user-facing exposes a rating.
+**UI text is sentence case**, and nothing hands the solver a rating (a
+game's own header Elo is the record of the game and stays).
 Difficulty is a word — see `web/src/puzzles/bands.ts`. A rating is how the
 trainer picks a puzzle, not a verdict to hand back to whoever solved it.
 

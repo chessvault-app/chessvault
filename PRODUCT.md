@@ -107,9 +107,10 @@ Durable constraints future work must preserve:
 - **The vault is user data and is never committed** to the repository:
   games, notes, studies, imported books, and the config that holds
   tokens.
-- **Nothing user-facing exposes a rating.** Difficulty is reported as a
-  word. A rating is how the trainer picks a puzzle, not a verdict handed
-  back to whoever solved it.
+- **No rating for the solver.** Difficulty is reported as a word. A
+  rating is how the trainer picks a puzzle, not a verdict handed back to
+  whoever solved it. A game's own header Elo is the record of that game
+  and is shown as the date is.
 - **Nothing is imported on trust.** A position, a side to move and a
   solution are accepted together only when replaying that solution in
   that position is legal. What fails degrades to a lower fidelity tier or

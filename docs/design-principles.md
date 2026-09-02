@@ -13,10 +13,13 @@ them. When in doubt, these win over novelty.
   Engine + book / Engine solution / Engine guess / Draft", not
   "book-parsed/engine-corroborated". A stranger should understand a
   label without the tooltip; the tooltip carries the precision.
-- **No user-facing ratings.** Puzzle ratings exist only as curation
+- **No rating for the solver.** Puzzle ratings exist only as curation
   data; the UI shows bands (Easy/Medium/Hard/Expert) as text labels.
   Difficulty is ordinal, so if it ever needs more visual weight it gets
-  a strength meter, not colours.
+  a strength meter, not colours. The rule is about the person using the
+  app: nothing hands them a number about themselves. A game's own header
+  Elo is the record of the game, two players' published ratings on the
+  day it was played, and the Games table shows it as it shows the date.
 - **No scores either.** The same rule, one step out: a rating is not the
   only number that hands back a verdict. The dashboard carried a "Win
   rate" percentage in 24px bold and the trainer a "Run" of consecutive

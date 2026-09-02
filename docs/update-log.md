@@ -464,6 +464,16 @@ other people.
   Books shelf's toolbar says Import, as its empty state did. A study
   card's title takes two lines before it cuts.
 
+- **Two rules written down.** The landing page's first picture is the
+  vault itself, a listing of the real files a vault holds, with the
+  analysis board moved down to the gallery: the folder is the claim
+  nobody else can make, and it was the one thing the page did not
+  picture. And the rating rule is "no rating for the solver": nothing
+  hands the person using the app a number about themselves, while a
+  game's own header Elo is the record of that game and the Games table
+  shows it as it shows the date. The principles, PRODUCT.md and the
+  manual say so.
+
 - **Korean.** The games table showed two headers reading 수순; Notation
   is 기보. "Solution shown" reads 정답을 봄. Six strings that had bypassed
   the dictionary (the promotion picker's buttons, "Starting position",
