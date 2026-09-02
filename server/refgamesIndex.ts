@@ -37,7 +37,7 @@ import { endianness } from 'node:os';
  */
 export const REF_MAX_PLY = 30;
 
-const SCHEMA = `
+export const PLIES_SCHEMA = `
   CREATE TABLE IF NOT EXISTS plies (
     pos INTEGER NOT NULL,
     uci TEXT NOT NULL,
@@ -52,7 +52,7 @@ const SCHEMA = `
 /** The packed scan-index (shared/scanPack.ts): one blob per game, in
     the same file — no sidecar. Keyed by game id; the future scanner
     walks it in id order. */
-const SCAN_PACK_SCHEMA = `
+export const SCAN_PACK_SCHEMA = `
   CREATE TABLE IF NOT EXISTS scan_pack (
     game_id INTEGER PRIMARY KEY,
     pack BLOB NOT NULL
@@ -60,7 +60,7 @@ const SCAN_PACK_SCHEMA = `
 `;
 
 /** The inverted key index (shared/keyIndex.ts), derived from the packs. */
-const KEY_INDEX_SCHEMA = `
+export const KEY_INDEX_SCHEMA = `
   CREATE TABLE IF NOT EXISTS key_index (
     bucket INTEGER PRIMARY KEY,
     entries BLOB NOT NULL
@@ -342,7 +342,7 @@ export function indexPositions(
           'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; ' +
           'DROP TABLE IF EXISTS scan_pack; DROP TABLE IF EXISTS key_index;',
       );
-      db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
+      db.exec(PLIES_SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
       db.exec(SCAN_PACK_SCHEMA);
     } else {
       // The sums are re-derived whole either way — since they carry no
@@ -437,7 +437,7 @@ export function indexPositions(
     }
 
     log('  positions: indexing…');
-    db.exec(SCHEMA); // now the index, over the finished table
+    db.exec(PLIES_SCHEMA); // now the index, over the finished table
     log('  positions: summing per move…');
     db.exec(REFGAMES_MOVE_COUNTS);
     if (packing) {

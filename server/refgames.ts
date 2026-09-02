@@ -60,6 +60,10 @@ import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
 const REFGAMES_DIR = resolve(DATA, 'refgames');
 const PAGE = 50;
+/** The most games one deep search streams before it stops — every scan
+    path stops here, and native/src/deep.rs carries the same number (the
+    goldens hold the two together). */
+export const DEEP_SEARCH_CAP = 200;
 
 /**
  * The native pipeline binary, when one is present — the heavy jobs and
@@ -1692,7 +1696,6 @@ export function refGamesApi(
    * The scan yields to the event loop between batches, so the server
    * keeps answering while it runs.
    */
-  const DEEP_SEARCH_CAP = 200;
   api.get('/refgames/deep-search', async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);

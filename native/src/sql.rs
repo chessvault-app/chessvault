@@ -1,8 +1,13 @@
 //! SQL mirrored from the TS pipeline, verbatim — each constant names its
 //! source of truth. Rust cannot import the TS strings, so this file is
-//! the one deliberate duplication in the crate; the whole-file parity
-//! test (JS-built vs Rust-built database diffed table by table) is the
-//! guard against drift. Edit only together with the TS side.
+//! the one deliberate duplication in the crate. The whole-file parity
+//! test (JS-built vs Rust-built database diffed table by table) cannot
+//! see all of it — an index or a lookup table the TS side grew is
+//! invisible to a diff of the data tables, which is how this file fell
+//! two commits behind `scripts/lib/db-tuning.ts` — so the goldens now
+//! carry the TS strings themselves and `tests/goldens.rs` compares each
+//! constant here to its source, whitespace aside. Edit only together
+//! with the TS side, then regenerate.
 
 /// `scripts/build-refgames.ts` — the games and meta tables.
 pub const GAMES_SCHEMA: &str = "
@@ -48,6 +53,15 @@ pub const SCAN_PACK_TABLE: &str = "
 ";
 
 pub const PLIES_INDEX: &str = "CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);";
+
+/// `server/refgamesIndex.ts` KEY_INDEX_SCHEMA — the inverted key index
+/// (spec in shared/keyIndex.ts), derived whole from the packs.
+pub const KEY_INDEX_TABLE: &str = "
+  CREATE TABLE IF NOT EXISTS key_index (
+    bucket INTEGER PRIMARY KEY,
+    entries BLOB NOT NULL
+  );
+";
 
 /// `server/refgamesIndex.ts` REFGAMES_MOVE_COUNTS — per-(pos, uci, eb)
 /// result sums, thin positions (< MOVE_COUNT_MIN_GAMES) dropped.
