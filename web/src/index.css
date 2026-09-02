@@ -1189,6 +1189,10 @@ cg-board square.check {
   font-family: var(--font-mono);
   font-size: 0.66em;
   font-weight: 700;
+  /* Lowercase files, as chess prints them and as every SAN in the moves
+     panel already has them; chessground's stylesheet uppercases the
+     labels and the board read "A B C D" under "1. e4". */
+  text-transform: none;
   /* The percentages below put the labels INSIDE the board edge, where
      chessground paints pieces at z-index 2 — without a layer of their own
      the a1/h1 corner pieces sit on the labels. Above pieces, still under
