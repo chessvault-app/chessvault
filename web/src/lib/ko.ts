@@ -1975,6 +1975,7 @@ export const ko: Record<string, string> = {
   'Import finished. {n} diagrams found.': '가져오기가 끝났습니다. 다이어그램 {n}개를 찾았습니다.',
   'Column widths': '열 너비',
   'To review': '복습 대상',
+  'One wrong try so far. Find the best move.': '지금까지 한 번 틀렸습니다. 최선의 수를 찾으세요.',
   'Vault folder: {path}': '보관함 폴더: {path}',
   'Settings sections': '설정 섹션',
   'Open the manual': '매뉴얼 열기',

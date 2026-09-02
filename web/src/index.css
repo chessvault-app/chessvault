@@ -439,6 +439,11 @@
      contrast walk's light + High contrast row (the one it did not use to
      have) caught the C family at 4.24:1 on a hovered row. */
   --eco-l: calc(45% + (41% - 45%) * var(--ui-contrast));
+  /* Which way the family step goes (games/shared.tsx): down in light,
+     where a darker chip reads better on the page, up in dark. Each step
+     is 2% of lightness, so the E family sits 8% from the A family and
+     every step has at least the base tag's contrast. */
+  --eco-dir: -1;
   /* FIXED chroma, not scaled by --accent-tint: the family hue is DATA
      — which opening this is — not chrome, and the neutral appearance
      drained it to grey along with the buttons, leaving the games table
@@ -607,6 +612,7 @@
      measures 5.37:1, because --accent is a light grey and the chip's ink
      is already dark. */
   --eco-l: 85%;
+  --eco-dir: 1;
   --eco-c: 0.08;
   --eco-wash: 15%;
   /* 75%, for the reason the chip above moved to 85%, and missed the

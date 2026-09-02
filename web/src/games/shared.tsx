@@ -574,26 +574,42 @@ export function ResultScore({
  * code in a list of two hundred games: you find the Sicilians by colour
  * before you have read a word.
  */
-const ECO_HUE: Record<string, number> = { A: 285, B: 232, C: 195, D: 152, E: 65 };
+/**
+ * One hue for every family, and a lightness step per letter.
+ *
+ * The families used to take five hues (285, 232, 195, 152, 65), on the
+ * argument that you find the Sicilians by colour. Two of those were
+ * green and amber, which everywhere else in the app mean solved and
+ * caution, and a green D36 chip sat two cells from a green "1-0" in the
+ * same row: the colour grammar gives a hue one job, and the eye pairs
+ * green with a win before it pairs it with a Queen's Gambit. The letter
+ * carries the family now, as it always did, and the family also moves
+ * the chip a step along the lightness ladder (index.css sets the
+ * direction per theme: down in light, up in dark, so every step keeps
+ * at least the contrast the base tag measured).
+ */
+const ECO_STEP: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, E: 4 };
+const ECO_HUE = 264;
 
 export function OpeningTag({ eco, name }: { eco: string; name?: string | null }) {
-  const hue = ECO_HUE[eco[0]?.toUpperCase() ?? ''] ?? 264;
+  const step = ECO_STEP[eco[0]?.toUpperCase() ?? ''] ?? 0;
+  const l = (base: string): string => `calc(var(${base}) + var(--eco-dir) * ${step * 2}%)`;
   return (
     <>
       <span
         className="mr-1.5 inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
-        // Lightness and chroma from the theme (index.css), hue from the
-        // ECO letter: the same tag was written once for the dark page and
-        // was a pale wash on the light one.
+        // Lightness and chroma from the theme (index.css), the step from
+        // the ECO letter: the same tag was written once for the dark page
+        // and was a pale wash on the light one.
         style={{
-          color: `oklch(var(--eco-l) var(--eco-c) ${hue})`,
-          backgroundColor: `oklch(var(--eco-l) var(--eco-c) ${hue} / var(--eco-wash))`,
+          color: `oklch(${l('--eco-l')} var(--eco-c) ${ECO_HUE})`,
+          backgroundColor: `oklch(${l('--eco-l')} var(--eco-c) ${ECO_HUE} / var(--eco-wash))`,
         }}
       >
         {eco}
       </span>
       {name && (
-        <span style={{ color: `oklch(var(--eco-name-l) var(--eco-name-c) ${hue})` }}>{name}</span>
+        <span style={{ color: `oklch(${l('--eco-name-l')} var(--eco-name-c) ${ECO_HUE})` }}>{name}</span>
       )}
     </>
   );

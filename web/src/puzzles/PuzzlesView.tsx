@@ -928,7 +928,12 @@ function Trainer({
               : phase === 'loading'
               ? t('Finding a puzzle…')
               : failed
-                ? t('Find the best move.')
+                ? // The wrong move was drawn for the 650ms of the rollback
+                  // and then nothing said it had happened: the most common
+                  // event in training had no shape a sighted reader could
+                  // find afterwards. So the line stays, as a fact rather
+                  // than a scold, until the puzzle ends.
+                  t('One wrong try so far. Find the best move.')
                 : (modeNote ??
                   t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme))))}
           </p>
