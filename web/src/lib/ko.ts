@@ -89,7 +89,7 @@ export const ko: Record<string, string> = {
   'New folder…': '새 폴더…',
   'Move into this new folder': '이 새 폴더로 옮기기',
   'Move to a folder': '폴더로 옮기기',
-  'Delete “{name}”?': '“{name}”을(를) 지울까요?',
+  'Delete “{name}”?': '“{name}”을(를) 삭제할까요?',
   Filters: '필터',
   'This book already holds {n} puzzles. What should the import do with them?':
     '이 책에는 이미 퍼즐 {n}개가 있습니다. 가져오기에서 어떻게 할까요?',
@@ -113,7 +113,7 @@ export const ko: Record<string, string> = {
 
   // --- analysis, board, editor --------------------------------------------
   'Delete this move and everything after it': '이 수와 그 이후를 모두 삭제',
-  'Clear the board': '보드 비우기',
+  'Clear the board': '보드 지우기',
   'Clear all moves': '모든 수 지우기',
   'all moves': '모든 수',
   'Has a comment': '주석 있음',
@@ -971,8 +971,8 @@ export const ko: Record<string, string> = {
   '{size} in total': '모두 {size}',
   "Clear this player's months": '이 플레이어의 저장된 달 지우기',
   'Clear all': '모두 지우기',
-  'Wipe all data': '모든 데이터 삭제',
-  'Wipe the entire vault?': '보관함 전체를 삭제할까요?',
+  'Wipe all data': '모든 데이터 지우기',
+  'Wipe the entire vault?': '보관함 전체를 지울까요?',
   'Confirm your app password': '앱 비밀번호를 확인하세요',
   Language: '언어',
   'App language': '앱 언어',
@@ -1154,11 +1154,11 @@ export const ko: Record<string, string> = {
   'Delete this database': '이 데이터베이스 삭제',
   'What can be done with this database': '이 데이터베이스로 할 수 있는 것',
   'Delete “{name}”? The PGN files it was built from are kept.':
-    '“{name}”을(를) 지울까요? 이것을 만든 PGN 파일은 그대로 둡니다.',
+    '“{name}”을(를) 삭제할까요? 이것을 만든 PGN 파일은 그대로 둡니다.',
   // Not 'Delete this folder' — that one is a folder on a shelf.
   'Delete this PGN file': '이 PGN 파일 삭제',
   'Delete “{name}”? Databases already built from it are not affected.':
-    '“{name}”을(를) 지울까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
+    '“{name}”을(를) 삭제할까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
   'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
   'Add games to this database': '이 데이터베이스에 게임 추가',
@@ -1337,7 +1337,7 @@ export const ko: Record<string, string> = {
   'Answers are kept for good, so each ending is asked about once.':
     '답은 영구히 보관되므로 한 엔드게임은 한 번만 물어봅니다.',
   'Nothing cached': '캐시 없음',
-  'Clear cached answers': '캐시된 답 비우기',
+  'Clear cached answers': '캐시된 답 지우기',
   'Endgame moves judged against the tablebase, not the engine':
     '엔진이 아니라 테이블베이스로 판정한 엔드게임 수',
   Checkmate: '체크메이트',
@@ -1381,14 +1381,14 @@ export const ko: Record<string, string> = {
   Draw: '무승부',
 
   // --- notes ---------------------------------------------------------------
-  'Removed “{name}”': '“{name}” 삭제됨',
+  'Removed “{name}”': '“{name}” 제거됨',
   Undo: '되돌리기',
-  'Release to remove': '놓으면 삭제',
+  'Release to remove': '놓으면 제거',
   'Release to bookmark': '놓으면 즐겨찾기',
   'Release to unbookmark': '놓으면 즐겨찾기 해제',
   'Delete this folder': '이 폴더 삭제',
   'Only empty folders can be deleted': '빈 폴더만 삭제할 수 있습니다',
-  'Remove this book and its progress': '이 책과 진행 상황 삭제',
+  'Remove this book and its progress': '이 책과 진행 상황 제거',
   'New note': '새 노트',
   'None of your games are indexed yet. Collect some on the Games page, from an online archive or a PGN, and this will have something to read.':
     '아직 색인된 게임이 없습니다. 게임 페이지에서 온라인 아카이브나 PGN으로 게임을 모으면, 여기서 읽을 것이 생깁니다.',
@@ -1472,7 +1472,7 @@ export const ko: Record<string, string> = {
   'Update in place': '제자리에서 갱신',
   'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.':
     '책을 다시 읽어 각 퍼즐을 찾은 것으로 바꿉니다. 이번 가져오기가 놓친 것은 그대로 둡니다.',
-  'Clear and rebuild': '비우고 다시 만들기',
+  'Clear and rebuild': '지우고 다시 만들기',
   'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.':
     '책을 먼저 비워서 이번 가져오기의 결과만 담기게 합니다. 어느 쪽이든 시도 기록은 유지됩니다.',
   'Each one replays the move the book prints, from the position on the page.':
@@ -1548,8 +1548,8 @@ export const ko: Record<string, string> = {
     "이 기기의 세션을 서버에서 끝내므로 쿠키 사본도 더는 쓸 수 없습니다. 다른 기기는 로그인 상태로 남습니다.",
   "Signed out. Back to the lock screen…": "로그아웃했습니다. 잠금 화면으로 돌아갑니다…",
   "Token saved.": "토큰을 저장했습니다.",
-  "Token removed.": "토큰을 삭제했습니다.",
-  "Vault wiped. Reloading…": "보관함을 비웠습니다. 다시 불러옵니다…",
+  "Token removed.": "토큰을 제거했습니다.",
+  "Vault wiped. Reloading…": "보관함을 지웠습니다. 다시 불러옵니다…",
   "Could not reach the Lichess database.": "Lichess 데이터베이스에 접속하지 못했습니다.",
 
   // --- the server's own error strings, shown as it sent them ---------------
@@ -1566,8 +1566,8 @@ export const ko: Record<string, string> = {
   "a study with that name exists": "같은 이름의 스터디가 이미 있습니다",
   "already in the collection": "이미 모음에 있습니다",
   "authentication required": "로그인이 필요합니다",
-  "folder is not empty, move or delete its studies first": "폴더가 비어 있지 않습니다. 안의 스터디를 옮기거나 지우세요",
-  "folder is not empty, move or remove its books first": "폴더가 비어 있지 않습니다. 안의 책을 옮기거나 빼세요",
+  "folder is not empty, move or delete its studies first": "폴더가 비어 있지 않습니다. 안의 스터디를 옮기거나 삭제하세요",
+  "folder is not empty, move or remove its books first": "폴더가 비어 있지 않습니다. 안의 책을 옮기거나 제거하세요",
   "confirmation phrase mismatch": "확인 문구가 일치하지 않습니다",
   "cover too large": "표지가 너무 큽니다",
   "current password is wrong": "현재 비밀번호가 틀렸습니다",
@@ -1725,7 +1725,7 @@ export const ko: Record<string, string> = {
   "To date": "종료일",
   // The date picker's empty trigger (components/date-picker).
   "Pick a date": "날짜 선택",
-  "Clear": "비우기",
+  "Clear": "지우기",
   // The filter window's group headings. Close, Result and Games are already
   // above — one entry each, whatever screen asks for them.
   "Side": "색",
