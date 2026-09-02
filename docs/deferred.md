@@ -65,7 +65,7 @@ if toolchain-free servers become a real case.
 
 From the Games-menu research (SCID vs PC, ChessBase, En Croissant,
 Lichess) and the search-capability survey (ChessBase 17/18, Scid vs PC,
-ChessTempo, Lichess, chess.com): features every serious database tool
+ChessTempo, Lichess, Chess.com): features every serious database tool
 grows eventually, kept off until a use case actually asks for them —
 
 - **Opponent dossiers / player reports** — once OTB or league play
@@ -74,7 +74,7 @@ grows eventually, kept off until a use case actually asks for them —
   SCID tradition; worthwhile if reading a printed line ever beats
   reading the map and the explorer.
 - **Cross-database dedup and merge tooling** — when overlapping corpora
-  are a practice rather than an accident (Optimize already sweeps
+  are a practice rather than an accident (Optimise already sweeps
   duplicates within one database).
 - **Multi-database federated search** — one query across every
   database at once; wanted only if keeping many small databases becomes
@@ -94,7 +94,8 @@ grows eventually, kept off until a use case actually asks for them —
   for a manoeuvre no motif covers.
 - **Fragment-position search boards** — ChessBase's partial-position
   boards with OR, exclude and mirroring. Kept off in favour of fixed
-  relaxation levels on the deep scan (exact / pawns / pawns per file /
+  relaxation levels on the deep scan (Exact position / Same pawns &
+  material / Same pawn files & material / Same pawn structure / Same
   material — Scid's ladder), which answer most of the same questions at
   a fraction of the UI; revisit only when the ladder plus motifs fail a
   question someone actually asked.

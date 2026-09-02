@@ -4,8 +4,8 @@
 
 Chess Vault is a private, offline-first chess workbench: analysis board,
 position editor, studies, notes, a curated game collection, and puzzle
-training (lichess-style themes plus paper books imported by ML). One
-person's tool, built to outlive any one machine.
+training (Lichess-style themes plus paper books imported by ML). One
+person's tool, built to outlive any one device.
 
 ## The one non-negotiable: the vault is plain files
 
@@ -22,10 +22,10 @@ vault/
   puzzlebooks/<id>/                  (b + 16 hex; the title lives in book.json)
     book.json  puzzles.json  drafts.json  progress.json  ocr.json  cycles.json
     diagrams/  *.jpg          (evidence scans, cover)
-  books/.collections.json            (the library's collections, by name)
-  books/<id>/                        (the library: a PDF you read beside a board)
+  books/.collections.json            (the shelf's folders, by name)
+  books/<id>/                        (the shelf: a PDF you read beside a board)
     book.pdf   book.json  reading.json  cover.jpg  diagrams.json
-                          (book.json names the book's collection, if any;
+                          (book.json names the book's folder, if any;
                            book.pdf is excluded from .history.git)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (drill history)
@@ -120,7 +120,7 @@ flowchart LR
 - **Job children** (spawned by the server, never in-process — with two
   deliberate exceptions, both below): the heavy
   database work — building a reference database, indexing its positions,
-  optimizing it, scanning every game for a position — runs as a child so
+  optimising it, scanning every game for a position — runs as a child so
   the API stays answerable, with one job slot and the child's stdout as
   the progress log. Each has two implementations that must agree: the
   TypeScript one (`scripts/*.ts`, or the bundled `.mjs` beside a packaged
@@ -210,8 +210,8 @@ alone with nothing public at all. Both are just HTTP to the same server.
 
 Two databases are prepared once rather than grown with the vault — the
 puzzle pool and the reference games; [databases](databases.md) covers how
-each machine comes by them (the app builds both — the puzzle pool from
-the public dump, reference games from uploaded PGN collections — and the
+each device comes by them (the app builds both — the puzzle pool from
+the public dump, reference games from uploaded PGN files — and the
 desktop installer seeds starters besides). Desktop builds
 update from this repository's GitHub releases; a server can host its own
 feed at `/updates` instead, for anyone who would rather not use them

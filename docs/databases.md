@@ -78,7 +78,7 @@ survives a rebuild.
 
 **More reference games.** They are plural:
 `data/refgames/<name>.sqlite`, each an independent database, listed and
-switched in the games-page Databases browser. The Databases page uploads PGN collections
+switched in the games-page Databases browser. The Databases page uploads PGN files
 (the same `vault/sources/` uploads), indexes any selection of them under a
 name, and deletes either kind — the built database or the upload it was
 built from. Every verb below belongs to a database's own row, and the
@@ -86,18 +86,18 @@ row has two shapes: on a wide screen the verbs are the icons named here,
 and on a phone they are the same verbs written out in the row's **⋯**
 menu, because a name and four icons will not both fit a phone's width.
 A database **grows from its own row**: the + on it opens
-one window that lists the uploaded collections with their own ticks
+one window that lists the uploaded PGN files with their own ticks
 (and an Upload button, for games not on the server yet) — press Add
 games and only the games the database does not already hold are indexed
 (same players, result, date and movetext is the same game), with the
 position index extending from where it left off instead of rebuilding.
 Feeding the same file twice adds nothing. An append interrupted between
 its insert and its index pass leaves the database served but marked
-**index behind** in the manager; Optimize (below) heals it. Building
+**index behind** in the manager; Optimise (below) heals it. Building
 under an already-taken name from the build bar asks the same
 Replace-or-Add-to question before touching anything.
 
-Each database row in the manager also offers **Optimize**: remove
+Each database row in the manager also offers **Optimise**: remove
 exact duplicate games (for databases built before the append dedup
 existed, or from overlapping sources), re-derive every derived table,
 and compact the file. Real deletions — SQLite wants no flag-and-sweep
@@ -143,7 +143,7 @@ What a built database answers, and from where:
     (kings optional — the hunt accepts a kingless sketch) and every
     game that ever passed through the Sicilian structure answers,
     whatever was on the board around it.
-  - **Same material** — piece counts alone: every R+P-vs-R ending,
+  - **Same material** — piece counts alone: every R+P-vs-R endgame,
     wherever the men stood.
   Every rung except *Same pawn structure* also keeps the target's side
   to move — those rungs relax *where* things stand, never whose turn
@@ -155,7 +155,7 @@ What a built database answers, and from where:
   chain only adds games; switching between the three loose rungs can
   lose and gain games at once. A material hunt picks an endgame
   situation — the presets are data, `web/src/games/endgames.json`, from
-  pawn endings to "a queen up" — or a custom per-piece, per-side count
+  pawn endgames to "a queen up" — or a custom per-piece, per-side count
   editor, plus how long the material must hold (any moment, 4+ or 8+
   moves). Hits stream in as the scan runs, with progress; the filter
   row above and the search box both narrow a hunt exactly as they
@@ -180,7 +180,7 @@ What a built database answers, and from where:
   database** — and each flagged line opens on the board at the decision
   point, where the explorer can take the question further.
 
-A machine still carrying the single-file era's `data/refgames.sqlite`
+A device still carrying the single-file era's `data/refgames.sqlite`
 migrates on the server's next start: the file is renamed into the
 directory, named after its source when the meta records one.
 
@@ -199,8 +199,8 @@ unavailable. The puzzle build became a server-side job, offered by the
 page that needs it.
 
 `refgames.sqlite` followed, and its input being different in kind — not
-one public dump, but whatever PGN collections you happen to have — is
-what dictated the shape of the fix: uploading collections already worked
+one public dump, but whatever PGN files you happen to have — is
+what dictated the shape of the fix: uploading PGN files already worked
 (the pattern every database build here uses), so the build offer
 indexes those same uploads rather than inventing a second way to get
 files in.
@@ -356,14 +356,14 @@ of — managing is a place you go, not a layer over what you were doing.
 The page does not scroll. One panel takes the height that is left, and
 inside it:
 
-- a **segmented control** between Databases and PGN collections, with the
+- a **segmented control** between Databases and PGN files, with the
   count on each. They are the same shelf at two stages, and showing both
   at once meant two columns growing independently: at 18 databases beside
-  24 collections the page ran to 1202px with Build 1074px down it. One
+  24 PGN files the page ran to 1202px with Build 1074px down it. One
   list at a time is as tall as one list, and it scrolls itself.
 - a **search** that narrows whichever list is showing.
 - an **upload** icon, opening a window that is one large drop target.
-- a **Build bar** that appears with the first ticked collection, naming
+- a **Build bar** that appears with the first ticked PGN file, naming
   its own count, pinned to the panel's bottom edge so it stays in view
   however long the list is. It opens a window that takes the new
   database's name.
@@ -372,7 +372,7 @@ Uploading and naming were permanent furniture below the list they applied
 to, which is what pushed everything else down. Both are momentary — a
 file chooser and a text field — so both are windows now.
 
-Ticks are counted over every collection, not the filtered view: a search
+Ticks are counted over every PGN file, not the filtered view: a search
 that hides three of five ticked files must not make Build say two.
 Starting a build clears the search and switches to Databases, or the
 thing just built would be hidden behind the query used to pick its
@@ -385,14 +385,14 @@ desktop, a bottom sheet on a phone. Nothing keeps a copy:
 there is no trash directory behind either route, so the question is the
 only thing in the way. Each question says what is *not* affected, because
 that is the part that gets guessed at — deleting a database keeps the
-collections it was built from, and deleting a collection leaves every
+PGN files it was built from, and deleting a PGN file leaves every
 database already built from it alone.
 
-A deleted collection loses its build tick with it, so the next build
+A deleted PGN file loses its build tick with it, so the next build
 cannot name a file that is no longer there. A refused delete keeps both,
 and says why.
 
-The server refuses a collection delete outright while a build is running
+The server refuses a PGN file delete outright while a build is running
 (409): the indexer was handed those paths and is still reading them. The
 app disables the trigger for the same reason, but the server is the one
 that decides — a second client cannot be relied on to.
