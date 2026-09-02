@@ -400,9 +400,9 @@
         <a href="#board" data-ko="보드">The board</a>
         <a href="#engine" data-ko="엔진">The engine</a>
         <a href="#explorer" data-ko="탐색기">The explorer</a>
-        <a href="#editor" data-ko="에디터">The editor</a>
+        <a href="#editor" data-ko="편집기">The editor</a>
         <a href="#workspace" data-ko="워크스페이스">The workspace</a>
-        <h5 data-ko="서재">Your library</h5>
+        <h5 data-ko="목록">Your shelves</h5>
         <a href="#studies" data-ko="스터디">Studies</a>
         <a href="#notes" data-ko="노트">Notes</a>
         <a href="#games" data-ko="기보">Games</a>
@@ -489,7 +489,7 @@
             </p>
             <ul>
               <li data-ko="<strong>이 컴퓨터에서.</strong> <a href='https://github.com/chessvault-app/chessvault/releases/latest'>Releases</a>에서 Windows, macOS, Linux 설치 프로그램을 받아 실행합니다. Node도 터미널도 필요 없고, 업데이트는 앱이 스스로 받습니다.">
-                <strong>On this machine.</strong> Download the installer for Windows, macOS or
+                <strong>On this device.</strong> Download the installer for Windows, macOS or
                 Linux from
                 <a href="https://github.com/chessvault-app/chessvault/releases/latest">Releases</a>
                 and run it. No Node, no terminal; updates arrive through the app itself.
@@ -565,7 +565,7 @@
               suggesting three things, all done inside the app:
             </p>
             <ol>
-              <li data-ko="설정에 <strong>Chess.com / Lichess 사용자명</strong>을 넣으면 Games 페이지가 당신의 아카이브를 스스로 채웁니다.">
+              <li data-ko="설정에 <strong>Chess.com / Lichess 사용자명</strong>을 넣으면 Games 페이지가 당신의 온라인 기보를 스스로 채웁니다.">
                 Add your <strong>Chess.com / Lichess usernames</strong> in Settings — the Games
                 page fills itself from them.
               </li>
@@ -967,7 +967,7 @@
               are gone with it, a chapter having no move to judge. Arrows and circles are not here:
               <a href="#shortcuts">they are drawn on the board itself</a>.
             </p>
-            <p data-ko="코멘트에 <code>[[</code>를 치면 <a href='#notes'>위키링크</a> 목록이 상자 위에 뜹니다 — 노트에서와 같은 목록, 같은 키(<kbd>↑</kbd><kbd>↓</kbd> 고르기, <kbd>Enter</kbd>/<kbd>Tab</kbd> 받기, <kbd>Esc</kbd> 무르기). 이렇게 적은 링크는 수 목록에서 링크로 읽히고, 가리킨 문서의 «Linked mentions»에도 올라갑니다. 휴대폰에서는 코멘트 시트 안에서도 됩니다.">
+            <p data-ko="주석에 <code>[[</code>를 치면 <a href='#notes'>위키링크</a> 목록이 상자 위에 뜹니다 — 노트에서와 같은 목록, 같은 키(<kbd>↑</kbd><kbd>↓</kbd> 고르기, <kbd>Enter</kbd>/<kbd>Tab</kbd> 받기, <kbd>Esc</kbd> 무르기). 이렇게 적은 링크는 수 목록에서 링크로 읽히고, 가리킨 문서의 «Linked mentions»에도 올라갑니다. 휴대폰에서는 주석 시트 안에서도 됩니다.">
               Typing <code>[[</code> in the comment opens the <a href="#notes">wiki-link</a> list
               above the box — the same list a note gets, and the same keys
               (<kbd>↑</kbd><kbd>↓</kbd> pick, <kbd>Enter</kbd>/<kbd>Tab</kbd> accept,
@@ -975,7 +975,7 @@
               shows up under the named document's “Linked mentions”. On a phone it works inside
               the comment sheet too.
             </p>
-            <p data-ko="두 가지는 코멘트가 담을 수 없어서 치는 동안 고쳐 씁니다. `}`는 `)`가 됩니다 — PGN 코멘트는 `}`에서 끝나고 벗어날 방법이 없습니다 — 그리고 `[%eval 9.9]` 모양은 공백 하나로 끊어 놓습니다. 그러지 않으면 산문이 그 수의 평가나 아무도 그리지 않은 화살표가 됩니다. 상자 아래 한 줄이 그렇게 했다고 알리고 스스로 사라집니다.">
+            <p data-ko="두 가지는 주석가 담을 수 없어서 치는 동안 고쳐 씁니다. `}`는 `)`가 됩니다 — PGN 주석는 `}`에서 끝나고 벗어날 방법이 없습니다 — 그리고 `[%eval 9.9]` 모양은 공백 하나로 끊어 놓습니다. 그러지 않으면 산문이 그 수의 평가나 아무도 그리지 않은 화살표가 됩니다. 상자 아래 한 줄이 그렇게 했다고 알리고 스스로 사라집니다.">
               Two things a comment cannot keep are rewritten as you type them. A <code>}</code>
               becomes a <code>)</code> — a PGN comment ends at one and has no way to escape it —
               and anything shaped like <code>[%eval 9.9]</code> gets one space through it, or the
@@ -1195,7 +1195,7 @@
             </p>
             <h2 data-ko="필터">The filters</h2>
             <ul>
-              <li data-ko="<strong>My games</strong> — Side(Any/White/Black), Result(All/Won/Drew/Lost), Time control(Bullet/Blitz/Rapid/Classical, 복수 선택), «Kept only»(모음에 담은 게임만 — 아카이브 전체가 아니라), Played between(기간). 실황 카운트가 아래 줄에 섭니다.">
+              <li data-ko="<strong>My games</strong> — Side(Any/White/Black), Result(All/Won/Drew/Lost), Time control(Bullet/Blitz/Rapid/Classical, 복수 선택), «Kept only»(모음에 담은 게임만 — 온라인 기보 전체가 아니라), Played between(기간). 실황 카운트가 아래 줄에 섭니다.">
                 <strong>My games</strong> — Side (Any/White/Black), Result (All/Won/Drew/Lost),
                 Time control (Bullet/Blitz/Rapid/Classical, multi-select), “Kept only” (only the
                 games in your collection, not every archived one), Played between (dates). A live
@@ -1234,8 +1234,8 @@
 
         <section class="page" id="editor">
           <div class="doc">
-            <h1 data-ko="에디터">The editor</h1>
-            <p class="lede" data-ko="아무 포지션이나 차리는 곳입니다 — 책의 도해를 옮기거나, 연습 문제를 만들거나, 국면 하나를 처음부터 놓거나. 완성되면 한 버튼으로 분석 보드에 넘깁니다.">
+            <h1 data-ko="편집기">The editor</h1>
+            <p class="lede" data-ko="아무 포지션이나 차리는 곳입니다 — 책의 도해를 옮기거나, 연습 문제를 만들거나, 포지션 하나를 처음부터 놓거나. 완성되면 한 버튼으로 분석 보드에 넘깁니다.">
               Where any position gets set up — a diagram copied from a book, an exercise of your
               own, a structure laid from scratch. One button hands the finished position to the
               analysis board.
@@ -1355,12 +1355,12 @@
             </p>
             <h2 data-ko="그 자리에서">Working in place</h2>
             <ul>
-              <li data-ko="밴드의 어느 줄이든 한 번 클릭하면 그 게임이 보드에 올라옵니다 — 아카이브의 게임은 당신 진영에서. 페이지는 어디로도 가지 않습니다. <kbd>↑</kbd><kbd>↓</kbd>로 줄을 넘기면 게임이 차례로 보드를 지나갑니다.">
+              <li data-ko="밴드의 어느 줄이든 한 번 클릭하면 그 게임이 보드에 올라옵니다 — 온라인 기보의 게임은 당신 진영에서. 페이지는 어디로도 가지 않습니다. <kbd>↑</kbd><kbd>↓</kbd>로 줄을 넘기면 게임이 차례로 보드를 지나갑니다.">
                 One click on any band row puts that game on the board — archive games from your
                 side — and the page goes nowhere. <kbd>↑</kbd><kbd>↓</kbd> walk the rows, each
                 game taking the board in turn.
               </li>
-              <li data-ko="모음의 게임은 문서입니다: 두 번 클릭(또는 <kbd>Enter</kbd>)이 그 문서 페이지를 엽니다 — 주석은 문서의 일이고, 워크스페이스의 보드는 일회용이라 줄 넘기기가 언제나 자유롭습니다. 데이터베이스와 아카이브의 게임은 두 번 클릭해도 이 자리에서 열립니다.">
+              <li data-ko="모음의 게임은 문서입니다: 두 번 클릭(또는 <kbd>Enter</kbd>)이 그 문서 페이지를 엽니다 — 주석은 문서의 일이고, 워크스페이스의 보드는 일회용이라 줄 넘기기가 언제나 자유롭습니다. 데이터베이스와 온라인 기보의 게임은 두 번 클릭해도 이 자리에서 열립니다.">
                 A collection game is a document: a double click (or <kbd>Enter</kbd>) opens its
                 document page — annotating is a document's work, and the workspace board stays
                 throwaway so browsing stays free. Database and archive games open in place even on
@@ -1391,7 +1391,7 @@
         <section class="page" id="studies">
           <div class="doc">
             <h1 data-ko="스터디">Studies</h1>
-            <p class="lede" data-ko="스터디는 챕터로 나뉜 PGN 문서입니다 — 오프닝 파일, 연습 모음, 아이디어 정리. 선반에서 만들고 가져오며, 한 편을 열면 보드와 챕터 패널이 함께 옵니다.">
+            <p class="lede" data-ko="스터디는 챕터로 나뉜 PGN 문서입니다 — 오프닝 파일, 연습 모음, 아이디어 정리. 목록에서 만들고 가져오며, 한 편을 열면 보드와 챕터 패널이 함께 옵니다.">
               A study is a PGN document in chapters — an opening file, a set of exercises, a body
               of ideas. The shelf creates and imports them; opening one brings the board and its
               chapters together.
@@ -1416,8 +1416,8 @@
                 />
               </picture>
             </figure>
-            <h2 data-ko="선반">The shelf</h2>
-            <p data-ko="위 줄에 제목과 도구들: 북마크 필터(«Show bookmarked only» / «Show all»), 정렬(«Sort by»: Last modified · Title · Size, 방향 버튼과 함께), 보기 전환(«Grid view» / «List view»), 그리고 만들기 메뉴. 아래 줄이 검색(«Search studies…»)입니다. 카드는 미리보기 보드, 제목, «{n} chapters» · «edited {when}»을 보여 주고 — 북마크된 카드는 왼쪽 모서리가 따뜻한 색으로 표시됩니다. 카드 메뉴(⋯)에 <strong>Bookmark · Rename · Move to a folder · Remove</strong>가 있고, 터치에서는 카드를 왼쪽으로 쓸면 지우고(실행 취소 가능) 오른쪽으로 쓸면 북마크합니다.">
+            <h2 data-ko="목록">The shelf</h2>
+            <p data-ko="위 줄에 제목과 도구들: 즐겨찾기 필터(«Show bookmarked only» / «Show all»), 정렬(«Sort by»: Last modified · Title · Size, 방향 버튼과 함께), 보기 전환(«Grid view» / «List view»), 그리고 만들기 메뉴. 아래 줄이 검색(«Search studies…»)입니다. 카드는 미리보기 보드, 제목, «{n} chapters» · «edited {when}»을 보여 주고 — 즐겨찾기된 카드는 왼쪽 모서리가 따뜻한 색으로 표시됩니다. 카드 메뉴(⋯)에 <strong>Bookmark · Rename · Move to a folder · Remove</strong>가 있고, 터치에서는 카드를 왼쪽으로 쓸면 지우고(실행 취소 가능) 오른쪽으로 쓸면 즐겨찾기합니다.">
               The top row holds the title and its tools: the bookmark filter (“Show bookmarked
               only” / “Show all”), sorting (“Sort by”: Last modified · Title · Size, with a
               direction button), the view switch (“Grid view” / “List view”), and the create menu.
@@ -1432,7 +1432,7 @@
                 <tbody>
                   <tr><td>New study</td><td data-ko="빈 스터디 하나.">A fresh study.</td></tr>
                   <tr><td>New folder</td><td data-ko="스터디를 묶는 폴더.">A folder to group studies.</td></tr>
-                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «A Lichess study export brings its chapters, comments and arrows.» 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 컬렉션을 정합니다.">Paste a PGN or choose a file. “A Lichess study export brings its chapters, comments and arrows.” Set the title and target collection.</td></tr>
+                  <tr><td>Import PGN</td><td data-ko="PGN을 붙여 넣거나 파일로 고릅니다. «A Lichess study export brings its chapters, comments and arrows.» 챕터·주석·화살표가 그대로 들어옵니다. 제목과 대상 폴더을 정합니다.">Paste a PGN or choose a file. “A Lichess study export brings its chapters, comments and arrows.” Set the title and target collection.</td></tr>
                   <tr><td>From Lichess</td><td data-ko="사용자명을 넣고 «List this account's studies» → 가져올 것을 체크 → Import. 비공개 스터디는 <code>study:read</code> 스코프의 토큰이 필요합니다.">Enter a username, “List this account's studies”, tick what to bring, Import. Private studies need a token with the <code>study:read</code> scope.</td></tr>
                 </tbody>
               </table>
@@ -1524,11 +1524,11 @@
               what went wrong — the material becomes one connected body of work. The syntax is
               Obsidian's, so the links read there too.
             </p>
-            <p data-ko="링크는 노트만의 것이 아닙니다. 수의 코멘트에서도 <code>[[</code>가 같은 목록을 엽니다 — <a href='#board'>주석 달기</a>를 보세요.">
+            <p data-ko="링크는 노트만의 것이 아닙니다. 수의 주석에서도 <code>[[</code>가 같은 목록을 엽니다 — <a href='#board'>주석 달기</a>를 보세요.">
               Links are not only a Notes thing: <code>[[</code> opens the same list in a move's
               comment — see <a href="#board">annotating</a>.
             </p>
-            <p data-ko="<code>[[대상|보일 글]]</code>은 <em>보일 글</em>로 읽히면서 <em>대상</em>으로 이어지고, <code>![[대상]]</code>은 노트 안에서 카드로 펼쳐집니다(코멘트 안에서는 평범한 링크로 읽힙니다 — 수 목록의 한 줄에 카드가 끼어들면 수가 벌어집니다). 문서 머리의 이름표(«Other names for this study» / «Other names for this note»)가 <strong>다른 이름</strong>을 쉼표로 나누어 받고, 그 이름으로도 이어집니다. 두 문서가 같은 이름을 주장하면 앱은 고르지 않고 어느 쪽인지 묻습니다. 가리키는 것이 없는 링크는 회색 점선이고, 누르면 그 이름의 기보·스터디·노트를 만들어 주겠다고 합니다.">
+            <p data-ko="<code>[[대상|보일 글]]</code>은 <em>보일 글</em>로 읽히면서 <em>대상</em>으로 이어지고, <code>![[대상]]</code>은 노트 안에서 카드로 펼쳐집니다(주석 안에서는 평범한 링크로 읽힙니다 — 수 목록의 한 줄에 카드가 끼어들면 수가 벌어집니다). 문서 머리의 이름표(«Other names for this study» / «Other names for this note»)가 <strong>다른 이름</strong>을 쉼표로 나누어 받고, 그 이름으로도 이어집니다. 두 문서가 같은 이름을 주장하면 앱은 고르지 않고 어느 쪽인지 묻습니다. 가리키는 것이 없는 링크는 회색 점선이고, 누르면 그 이름의 기보·스터디·노트를 만들어 주겠다고 합니다.">
               <code>[[Target|shown]]</code> reads as <em>shown</em> and opens <em>Target</em>;
               <code>![[Target]]</code> unfolds as a card inside a note (inside a comment it reads
               as a plain link — a card wedged into a row of moves would push the moves apart).
@@ -1540,7 +1540,7 @@
               study or note it names.
             </p>
             <h2 data-ko="무엇이 여기를 가리키는가">What links here</h2>
-            <p data-ko="문서의 제목줄에 있는 고리 아이콘(«Linked mentions»)이 그 문서를 가리키는 것들을 보여 줍니다 — 노트, 스터디, 기보 어디에서 왔든, 아이콘이 어느 쪽인지 말해 줍니다. 누르면 그 자리가 열립니다. 스터디라면 그 코멘트가 있는 챕터가 열립니다. 아래쪽 «Unlinked mentions»는 대괄호 없이 이 문서의 이름을 적어 둔 곳들입니다 — 곁의 <strong>Link</strong>가 그 한 자리에만 대괄호를 씌워 줍니다. 가리키는 것이 하나도 없으면 아이콘 자체가 나오지 않습니다.">
+            <p data-ko="문서의 제목줄에 있는 고리 아이콘(«Linked mentions»)이 그 문서를 가리키는 것들을 보여 줍니다 — 노트, 스터디, 기보 어디에서 왔든, 아이콘이 어느 쪽인지 말해 줍니다. 누르면 그 자리가 열립니다. 스터디라면 그 주석가 있는 챕터가 열립니다. 아래쪽 «Unlinked mentions»는 대괄호 없이 이 문서의 이름을 적어 둔 곳들입니다 — 곁의 <strong>Link</strong>가 그 한 자리에만 대괄호를 씌워 줍니다. 가리키는 것이 하나도 없으면 아이콘 자체가 나오지 않습니다.">
               The link icon in a document's title row (“Linked mentions”) shows what points at it —
               from a note, a study or a game, with the icon saying which. Pressing one opens it, and
               for a study it opens the chapter the comment is in. Below, “Unlinked mentions” are
@@ -1548,7 +1548,7 @@
               <strong>Link</strong> beside one wraps that single occurrence. A document nothing
               points at carries no icon at all.
             </p>
-            <p data-ko="선반은 스터디의 것과 같은 문법입니다 — 검색, 정렬, 북마크, 폴더, 그리고 만들기 메뉴의 <strong>New note</strong> / <strong>New folder</strong>.">
+            <p data-ko="목록은 스터디의 것과 같은 문법입니다 — 검색, 정렬, 즐겨찾기, 폴더, 그리고 만들기 메뉴의 <strong>New note</strong> / <strong>New folder</strong>.">
               The shelf speaks the studies shelf's grammar — search, sorting, bookmarks,
               folders, and a create menu of <strong>New note</strong> /
               <strong>New folder</strong>.
@@ -1559,7 +1559,7 @@
         <section class="page" id="games">
           <div class="doc">
             <h1 data-ko="기보">Games</h1>
-            <p class="lede" data-ko="Games 페이지는 네 탭입니다: <strong>Collection · Databases · Chess.com · Lichess</strong> — 간직할 기보의 모음, 참고 데이터베이스 검색, 그리고 당신의 온라인 아카이브 둘. 넓은 화면에서는 곁에 «Game details» 패널이 섭니다 — 자리가 넉넉하면 늘 열린 채로, 그렇지 않으면 고른 게임과 함께.">
+            <p class="lede" data-ko="Games 페이지는 네 탭입니다: <strong>Collection · Databases · Chess.com · Lichess</strong> — 간직할 기보의 모음, 참고 데이터베이스 검색, 그리고 당신의 온라인 기보 둘. 넓은 화면에서는 곁에 «Game details» 패널이 섭니다 — 자리가 넉넉하면 늘 열린 채로, 그렇지 않으면 고른 게임과 함께.">
               The Games page is four tabs — <strong>Collection · Databases · Chess.com ·
               Lichess</strong>: the collection of games worth keeping, searching the reference
               databases, and your two online archives. On a wide screen the “Game details” panel
@@ -1588,7 +1588,7 @@
             </figure>
             <h2 data-ko="모음">The collection</h2>
             <ul>
-              <li data-ko="검색(«Search collection…»)과 북마크 필터가 위에, 그 아래로 필터 줄: <strong>Whose games</strong>(Anyone's games · My games · Mine as White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong>(All games / With notes), 그리고 «More filters». 검색 상자는 Databases 탭과 같은 질의 언어를 씁니다 — <a href='#db-search'>데이터베이스 검색</a> 참조. 줄을 오른쪽 클릭하면 <strong>Bookmark · Rename · Remove</strong>(잠깐 실행 취소 가능)가 나오고, 출처가 있으면 <strong>View online</strong>이 함께 옵니다. 기보를 여는 것은 이 메뉴가 아니라 더블 클릭입니다. 카드 줄로 그려지는 좁은 화면에서는 같은 메뉴가 줄의 ⋯에 있고, <strong>Preview the board</strong>와 <strong>Game details</strong>가 앞에 붙습니다 — 넓은 화면에서 곁의 패널이 하는 일입니다.">
+              <li data-ko="검색(«Search collection…»)과 즐겨찾기 필터가 위에, 그 아래로 필터 줄: <strong>Whose games</strong>(Anyone's games · My games · Mine as White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong>(All games / With notes), 그리고 «More filters». 검색 상자는 Databases 탭과 같은 질의 언어를 씁니다 — <a href='#db-search'>데이터베이스 검색</a> 참조. 줄을 오른쪽 클릭하면 <strong>Bookmark · Rename · Remove</strong>(잠깐 실행 취소 가능)가 나오고, 출처가 있으면 <strong>View online</strong>이 함께 옵니다. 기보를 여는 것은 이 메뉴가 아니라 더블 클릭입니다. 카드 줄로 그려지는 좁은 화면에서는 같은 메뉴가 줄의 ⋯에 있고, <strong>Preview the board</strong>와 <strong>Game details</strong>가 앞에 붙습니다 — 넓은 화면에서 곁의 패널이 하는 일입니다.">
                 Search (“Search collection…”) and the bookmark filter on top, and a filter row
                 under them: <strong>Whose games</strong> (Anyone's games · My games · Mine as
                 White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong> (All
@@ -1601,17 +1601,17 @@
                 <strong>Preview the board</strong> and <strong>Game details</strong> in front —
                 the work the panel beside a wide table does.
               </li>
-              <li data-ko="<strong>Import a game</strong> — PGN을 붙여 넣습니다: «Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …». 헤더가 있으면 아래 칸들(White/Black, 레이팅, 날짜, 이벤트)이 저절로 채워지고, Result는 <strong>Auto · 1-0 · 0-1 · ½-½</strong>에서 고릅니다. 제출은 <strong>Add to collection</strong>.">
+              <li data-ko="<strong>Import a game</strong> — PGN을 붙여 넣습니다: «Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …». 헤더가 있으면 아래 칸들(White/Black, 레이팅, 날짜, 대회)이 저절로 채워지고, Result는 <strong>Auto · 1-0 · 0-1 · ½-½</strong>에서 고릅니다. 제출은 <strong>Add to collection</strong>.">
                 <strong>Import a game</strong> — paste a PGN: “Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …”. Headers fill the detail fields (players, ratings, date, event) by
                 themselves; Result is a segmented <strong>Auto · 1-0 · 0-1 · ½-½</strong>. Submit
                 is <strong>Add to collection</strong>.
               </li>
-              <li data-ko="모음의 기보를 열면 스터디와 똑같이 주석이 달립니다 — 변화수, 코멘트, 기호, 화살표, 그리고 이전 버전까지.">
+              <li data-ko="모음의 기보를 열면 스터디와 똑같이 주석이 달립니다 — 변화수, 주석, 기호, 화살표, 그리고 이전 버전까지.">
                 Opening a collected game gives it a study's whole toolkit — variations, comments,
                 glyphs, arrows, and its earlier versions.
               </li>
             </ul>
-            <h2 data-ko="아카이브 (Chess.com · Lichess)">The archives (Chess.com · Lichess)</h2>
+            <h2 data-ko="온라인 기보 (Chess.com · Lichess)">The archives (Chess.com · Lichess)</h2>
             <ul>
               <li data-ko="사용자명은 설정에서 미리 채워집니다. <strong>Archive month</strong>를 골라 달을 넘기고, «More filters»가 진영·결과로 거릅니다.">
                 Usernames come pre-filled from Settings. Pick an <strong>Archive month</strong> and
@@ -1637,7 +1637,7 @@
               <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd> behave as
               <a href="#shortcuts">the shortcuts page</a> says.
             </p>
-            <p data-ko="<strong>Game details</strong> 패널: 두 플레이어 줄(당신 진영이 강조), 결과 배지, 오프닝(ECO와 이름), 이벤트·라운드, 날짜·수·시간 제한·«View online» — 그리고 그 아래, 좌표 없는 미리보기 보드와 넘김 버튼(Start · Back · {idx} / {plies} · Forward · End), 본선 전체가 클릭 가능한 SAN으로. 휴대폰에서는 같은 내용이 «{white} vs {black}» 시트로 옵니다. 패널 머리의 핀(«Keep the panel open»)이 선택이 없을 때도 열을 지킬지 정합니다. 풀어 두면 선택과 함께 떠나며, 그 옆의 ×(«Close»)나 <kbd>Esc</kbd>가 둘 다 치웁니다. 표가 패널에게 열을 내주지 않아도 되는 넓은 창에서는 꽂힌 채로, 그보다 좁으면 풀린 채로 시작합니다.">
+            <p data-ko="<strong>Game details</strong> 패널: 두 플레이어 줄(당신 진영이 강조), 결과 배지, 오프닝(ECO와 이름), 대회·라운드, 날짜·수·시간 제한·«View online» — 그리고 그 아래, 좌표 없는 미리보기 보드와 넘김 버튼(Start · Back · {idx} / {plies} · Forward · End), 본선 전체가 클릭 가능한 SAN으로. 휴대폰에서는 같은 내용이 «{white} vs {black}» 시트로 옵니다. 패널 머리의 핀(«Keep the panel open»)이 선택이 없을 때도 열을 지킬지 정합니다. 풀어 두면 선택과 함께 떠나며, 그 옆의 ×(«Close»)나 <kbd>Esc</kbd>가 둘 다 치웁니다. 표가 패널에게 열을 내주지 않아도 되는 넓은 창에서는 꽂힌 채로, 그보다 좁으면 풀린 채로 시작합니다.">
               The <strong>Game details</strong> panel: the two player rows (your side accented),
               the result badge, the opening (ECO and name), event and round, date · moves · time
               control · “View online” — then a coordinate-free preview board with its stepper
@@ -1682,7 +1682,7 @@
               A qualifier's value colours itself in place — the whole query stays one line of
               text, edited like text. The field colours
               itself as you type but waits until you pause to warn; suggestions open unprompted
-              and answer the keyboard, completing names and tournaments from the database's own
+              and answer the keyboard, completing names and events from the database's own
               derived lookups; and while the box has focus a panel under it lists every qualifier
               with a live example. A query that cannot match anything — two scores, years that
               share no span, two names on one seat — or a term the surrounding filters leave no
@@ -1858,7 +1858,7 @@
           <div class="doc">
             <h1 data-ko="책">Books</h1>
             <p class="lede" data-ko="당신의 체스책 서재입니다: 아무 PDF나 올려 앱 안에서, 분석 보드 곁의 창으로 읽습니다. 특징은 도해 버튼 — 인쇄된 도해마다 그 포지션을 보드에 차려 주는 버튼이 붙습니다.">
-              A library of your chess books: upload any PDF and read it beside the analysis board.
+              A shelf of your chess books: upload any PDF and read it beside the analysis board.
               The signature is the diagram buttons — every printed diagram grows a button that sets
               its position up on the board.
             </p>
@@ -1874,8 +1874,8 @@
               />
               <figcaption data-ko="도해 버튼: 책 속 포지션이 곁의 보드로.">A diagram button carrying the printed position to the board.</figcaption>
             </figure>
-            <h2 data-ko="선반">The shelf</h2>
-            <p data-ko="만들기 메뉴의 <strong>Import a PDF</strong>(«Import a book» 창 — PDF를 놓고 제목과 폴더를 정한 뒤 «Import»)와 <strong>New folder</strong>, 그리고 검색, 정렬(Title · Added · Size · Last read), 북마크 필터. 책 카드에는 «{n} pages»와 «Page {page} of {pages}» — 읽던 자리가 책마다 기억됩니다. 카드 메뉴: <strong>Read · Bookmark · Rename · Move to a folder · Read diagrams · Replace PDF… · Remove from the shelf</strong> — PDF를 바꿔도 읽던 페이지는 유지되고, 지울 때는 «any puzzle book read from it is kept»라고 미리 말해 줍니다.">
+            <h2 data-ko="목록">The shelf</h2>
+            <p data-ko="만들기 메뉴의 <strong>Import a PDF</strong>(«Import a book» 창 — PDF를 놓고 제목과 폴더를 정한 뒤 «Import»)와 <strong>New folder</strong>, 그리고 검색, 정렬(Title · Added · Size · Last read), 즐겨찾기 필터. 책 카드에는 «{n} pages»와 «Page {page} of {pages}» — 읽던 자리가 책마다 기억됩니다. 카드 메뉴: <strong>Read · Bookmark · Rename · Move to a folder · Read diagrams · Replace PDF… · Remove from the shelf</strong> — PDF를 바꿔도 읽던 페이지는 유지되고, 지울 때는 «any puzzle book read from it is kept»라고 미리 말해 줍니다.">
               The create menu holds <strong>Import a PDF</strong> (the “Import a book” window —
               drop the PDF, set a title and folder, “Import”) and
               <strong>New folder</strong>; beside it, search, sorting (Title · Added · Size ·
@@ -1903,7 +1903,7 @@
               out.
             </p>
             <h2 data-ko="도해에서 보드로">From diagram to board</h2>
-            <p data-ko="도해 오른쪽 위의 작은 버튼(«Set up this position»)을 누르면 «White to move» / «Black to move» / «Edit position…»을 묻고, 포지션이 곁의 보드에 차려집니다. 보드 쪽 도구 막대(넓은 화면): <strong>Load a position · Reset to the starting position · Fix this position in the editor · Open on the board page</strong> — 도해 인식이 칸 하나를 잘못 읽었을 때 에디터가 바로잡는 길입니다. 휴대폰은 <strong>Book</strong> / <strong>Board</strong> / <strong>Edit</strong> 세 탭으로 갈라지고, 하단 바가 열린 탭의 도구를 듭니다 — Edit 탭에서는 하단 바가 비어 있습니다.">
+            <p data-ko="도해 오른쪽 위의 작은 버튼(«Set up this position»)을 누르면 «White to move» / «Black to move» / «Edit position…»을 묻고, 포지션이 곁의 보드에 차려집니다. 보드 쪽 도구 막대(넓은 화면): <strong>Load a position · Reset to the starting position · Fix this position in the editor · Open on the board page</strong> — 도해 인식이 칸 하나를 잘못 읽었을 때 편집기가 바로잡는 길입니다. 휴대폰은 <strong>Book</strong> / <strong>Board</strong> / <strong>Edit</strong> 세 탭으로 갈라지고, 하단 바가 열린 탭의 도구를 듭니다 — Edit 탭에서는 하단 바가 비어 있습니다.">
               The small button off a diagram's top-right corner (“Set up this position”) asks
               “White to move” / “Black to move” / “Edit position…”, and the position lands on the board
               beside it. The board side's toolbar (wide layouts): <strong>Load a position · Reset
@@ -1930,7 +1930,7 @@
             <p class="lede" data-ko="트레이너는 Lichess 퍼즐 데이터베이스(CC0)를 씁니다. 처음 열면 내려받아 빌드해 주고, 그다음부터는 완전히 오프라인입니다 — 6백만 개가 넘는 퍼즐이 이 기기에 삽니다.">
               The trainer runs on the Lichess puzzle database (CC0). The first visit offers to
               fetch and build it; from then on it is fully offline — over six million puzzles
-              living on this machine.
+              living on this device.
             </p>
             <figure>
               <picture>
@@ -2368,7 +2368,7 @@
                   </tr>
                   <tr>
                     <td>Browsed games</td>
-                    <td data-ko="캐시된 아카이브 월들의 목록 — 플레이어별 크기와 «{size} in total». 줄마다 휴지통(«Clear this player's months»)이 그 플레이어의 것만 지우고, 아래 <strong>Clear all</strong>은 전부 지웁니다. 어느 쪽이든 아래 Storage used의 숫자가 함께 갱신됩니다. «Nothing here is in your collection…» — 캐시일 뿐입니다.">
+                    <td data-ko="캐시된 온라인 기보 월들의 목록 — 플레이어별 크기와 «{size} in total». 줄마다 휴지통(«Clear this player's months»)이 그 플레이어의 것만 지우고, 아래 <strong>Clear all</strong>은 전부 지웁니다. 어느 쪽이든 아래 Storage used의 숫자가 함께 갱신됩니다. «Games you kept are copies and stay in your collection.» 이것은 캐시일 뿐입니다.">
                       The cached archive months — sizes per player, “{size} in total”. The bin on
                       each row (“Clear this player's months”) takes that player alone;
                       <strong>Clear all</strong> below takes the lot. Either way the Storage used
@@ -2533,7 +2533,7 @@
             </p>
 
             <h2 data-ko="오프라인에서는 뭐가 되나요?">What works offline?</h2>
-            <p data-ko="로컬 설치라면: 사실상 전부입니다. 엔진·글꼴·아이콘이 앱에 동봉되어 런타임에 부르는 CDN이 없습니다. 인터넷이 필요한 것은 온라인 데이터베이스(Lichess), 아카이브의 새 달 받아 오기, Lichess에서 가져오기뿐 — 이미 열어 본 아카이브 달은 캐시에서 열립니다.">
+            <p data-ko="로컬 설치라면: 사실상 전부입니다. 엔진·글꼴·아이콘이 앱에 동봉되어 런타임에 부르는 CDN이 없습니다. 인터넷이 필요한 것은 온라인 데이터베이스(Lichess), 온라인 기보의 새 달 받아 오기, Lichess에서 가져오기뿐 — 이미 열어 본 온라인 기보 달은 캐시에서 열립니다.">
               On a local install: essentially everything. The engine, fonts and icons ship with
               the app, and there are no runtime CDN calls. What needs the internet is the online
               database (Lichess), fetching new archive months, and importing from Lichess —

@@ -44,7 +44,8 @@
  *    reworded. A quote must appear in the app's source (web/src, the
  *    desktop chooser), with {placeholders} standing for whatever the code
  *    interpolates and a trailing … marking a deliberate truncation. The
- *    first run of this check caught fourteen misquotes. The Korean
+ *    first run of this check caught fourteen misquotes. The page's Korean twin (data-ko) quotes the
+ *    same strings in «guillemets» and is read the same way. The Korean
  *    dictionary is NOT part of that haystack: it mirrors the app's
  *    strings rather than rendering them, so a key outliving its call site
  *    would keep vouching for a label the screen no longer shows.
@@ -419,8 +420,8 @@ if (existsSync(DOCS)) {
   hay = collapse(hay + '\n' + decodeEscapes(hay));
   const docsText = readFileSync(DOCS, 'utf-8');
   const seen = new Set<string>();
-  for (const match of docsText.matchAll(/“([^”]+)”/g)) {
-    const quote = collapse(match[1]!);
+  for (const match of docsText.matchAll(/“([^”]+)”|«([^»]+)»/g)) {
+    const quote = collapse(match[1] ?? match[2]!);
     if (seen.has(quote)) continue;
     seen.add(quote);
     // A trailing ellipsis is a deliberate truncation: match the prefix.
