@@ -108,6 +108,16 @@ app.use('*', async (c, next) => {
   c.header('Cross-Origin-Opener-Policy', 'same-origin');
   c.header('Cross-Origin-Embedder-Policy', 'require-corp');
   c.header('Cross-Origin-Resource-Policy', 'same-origin');
+  // The app is never a frame: COOP says nothing about framing, and an
+  // outside page that framed a signed-in vault could click through it.
+  // Only frame-ancestors, not a whole content policy: the engine's wasm,
+  // the editors' inline styles and the workers' blob: URLs would each
+  // need an allowance, and one wrong allowance is a broken app rather
+  // than a warning.
+  c.header('Content-Security-Policy', "frame-ancestors 'none'");
+  c.header('X-Content-Type-Options', 'nosniff');
+  // Outbound links (a game's page on lichess) get no vault URL to keep.
+  c.header('Referrer-Policy', 'same-origin');
 });
 
 /**

@@ -267,7 +267,10 @@ export function normaliseTablebaseUrl(raw: unknown): string | null {
 export function cacheSource(url: string): string {
   if (url === DEFAULT_TABLEBASE) return 'lichess';
   try {
-    return new URL(url).host.replace(/[^a-z0-9.-]/g, '-') || 'custom';
+    const host = new URL(url).host.replace(/[^a-z0-9.-]/g, '-');
+    // `http://..` parses, and its host would have been a directory name
+    // one level above the cache.
+    return host && host !== '.' && host !== '..' ? host : 'custom';
   } catch {
     return 'custom';
   }

@@ -162,6 +162,12 @@ describe('cacheSource', () => {
     // Same machine, different path: the same tables, so the same corner.
     expect(cacheSource('http://localhost:7788/tb/standard')).toBe('localhost-7788');
   });
+
+  it('never names a folder above the cache', () => {
+    // `http://..` parses, and its host is a path component.
+    expect(cacheSource('http://..')).toBe('custom');
+    expect(cacheSource('http://./x')).toBe('custom');
+  });
 });
 
 describe('the Syzygy prober', () => {

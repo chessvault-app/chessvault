@@ -81,7 +81,9 @@ export async function startVaultBackup(
       `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
     );
     // Untrack them if an earlier version committed either; --ignore-unmatch
-    // makes this a no-op once clean. Leaves the working files intact.
+    // makes this a no-op once clean. Leaves the working files intact. The
+    // helper passes --literal-pathspecs, so the pdf pattern is spelled as
+    // git's own glob form rather than left to the shell-style default.
     await git(gitDir, dir, [
       'rm',
       '--cached',
@@ -89,8 +91,28 @@ export async function startVaultBackup(
       '--ignore-unmatch',
       'config.json',
       'sessions.json',
-      'books/*/book.pdf',
+      ':(glob)books/*/book.pdf',
     ]).catch(() => undefined);
+    // Untracking stops here; it does not reach into commits already made.
+    // A history that carries an old config.json carries every password
+    // hash, authenticator secret and Lichess token it ever held, and
+    // scripts/backup-vault.sh copies the whole repo off-box. Said once,
+    // loudly, at boot: rewriting history is the owner's call, not this
+    // server's.
+    const leaked = await git(gitDir, dir, [
+      'log',
+      '--all',
+      '--format=%H',
+      '--',
+      'config.json',
+      'sessions.json',
+    ]).catch(() => '');
+    const commits = leaked.split('\n').filter(Boolean).length;
+    if (commits > 0) {
+      console.warn(
+        `[vault-backup] ${commits} commit(s) in ${HISTORY_DIR_NAME} still carry config.json or sessions.json from an older version. They hold past secrets; see "Backups" in README.md for how to purge them.`,
+      );
+    }
   }
 
   let timer: ReturnType<typeof setTimeout> | null = null;
