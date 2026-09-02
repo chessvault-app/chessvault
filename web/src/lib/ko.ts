@@ -11,6 +11,7 @@
  * check:repo (its item 11):
  *   vault 보관함 · the Games collection 모음 · a shelf folder 폴더 · an
  *   uploaded .pgn PGN 파일 · any browse page's shelf 목록 · board 보드 ·
+ *   side 진영 (색 is only a theme colour) ·
  *   a line of moves 라인 (변화수 only for "variation") · player 플레이어 ·
  *   opening book 북, a book a user imports 책 · delete 삭제, remove 제거,
  *   clear or wipe 지우기, undo a bookmark/link/selection 해제 · show 보기
@@ -449,7 +450,7 @@ export const ko: Record<string, string> = {
   Mode: '모드',
   'Free play': '자유 대국',
   'Drill a study': '스터디 드릴',
-  'Play as': '플레이할 색',
+  'Play as': '플레이할 진영',
   Chapter: '챕터',
   'Study to drill': '드릴할 스터디',
   'Chapter to drill': '드릴할 챕터',
@@ -487,7 +488,7 @@ export const ko: Record<string, string> = {
   "Anyone's games": '모두의 게임',
   'Mine as White': '내가 백으로',
   'Mine as Black': '내가 흑으로',
-  "Searched player's side and result": '검색한 플레이어의 색과 결과',
+  "Searched player's side and result": '검색한 플레이어의 진영과 결과',
   'Index positions': '포지션 색인 만들기',
   '“{name}” has no position index yet. Indexing reads the games already in it. A small database takes a minute, millions of games take hours.':
     '“{name}”에는 아직 포지션 색인이 없습니다. 색인은 이미 들어 있는 기보를 읽어 만듭니다. 작은 데이터베이스는 1분, 수백만 판이면 몇 시간이 걸립니다.',
@@ -718,7 +719,7 @@ export const ko: Record<string, string> = {
   'The opening map could not be read': '오프닝 맵을 읽을 수 없습니다',
   'No moves yet': '아직 수가 없습니다',
   'Start with your first move for this colour. The rest of the tree grows from it.':
-    '이 색의 첫 수부터 시작하세요. 나머지 트리는 거기서 자랍니다.',
+    '이 진영의 첫 수부터 시작하세요. 나머지 트리는 거기서 자랍니다.',
   'Add a move': '수 추가',
   'Move details': '수 상세',
   'Not a legal move in this position': '이 포지션에서 둘 수 없는 수입니다',
@@ -1725,7 +1726,7 @@ export const ko: Record<string, string> = {
   "Clear": "지우기",
   // The filter window's group headings. Close, Result and Games are already
   // above — one entry each, whatever screen asks for them.
-  "Side": "색",
+  "Side": "진영",
   "Time control": "시간제",
   "Played between": "대국 기간",
   "Clear filters": "필터 지우기",
@@ -1908,7 +1909,7 @@ export const ko: Record<string, string> = {
   'Any opponent': '모든 상대',
   'Search database…': '데이터베이스 검색…',
   'Narrow the search with': '검색을 좁히는 문법',
-  'This player, either side': '이 플레이어의 게임, 어느 색이든',
+  'This player, either side': '이 플레이어의 게임, 어느 진영이든',
   'Somebody else in the same game': '같은 게임의 다른 플레이어',
   'Exact score': '정확한 결과',
   'Type a player name': '플레이어 이름을 입력하세요',

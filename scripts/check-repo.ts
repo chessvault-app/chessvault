@@ -639,7 +639,7 @@ for (const file of tracked) {
 // minority spelling of something the dictionary already had a word for;
 // the audit that settled them is in the update log. Checked on the
 // dictionary's values only: an English key never contains Hangul.
-const RETIRED_KO: { pattern: RegExp; why: string }[] = [
+const RETIRED_KO: { pattern: RegExp; why: string; unless?: Set<string> }[] = [
   { pattern: /컬렉션|볼트|금고/, why: 'the collection is 모음 and the vault is 보관함' },
   { pattern: /서재|(?<!문)서가|책장/, why: 'a shelf is 목록' },
   { pattern: /체스판/, why: 'the board is 보드' },
@@ -651,6 +651,8 @@ const RETIRED_KO: { pattern: RegExp; why: string }[] = [
   { pattern: /플라이|하프무브/, why: 'a ply is 반수' },
   { pattern: /보이기|가리기/, why: 'show is 보기 and hide is 숨기기' },
   { pattern: /정석/, why: 'the opening book is 북' },
+  // 색 is a theme colour (Colours, Coloured 색상, Neutrals 중성색); a side is 진영.
+  { pattern: /(?<![검탐성])색(?![인상])/, why: 'a side is 진영 (색 is only a theme colour)', unless: new Set(['Colours']) },
   { pattern: /(?<!풀이 )실력/, why: "a player's strength is 기력 (풀이 실력, the solver's own skill, is not a player)" },
 ];
 // 보관함 is the vault. The one English key without "vault" that may say it is
@@ -663,8 +665,8 @@ if (existsSync(DICTIONARY)) {
     const k = /^\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|([A-Za-z]\w*))\s*:/.exec(line);
     if (k) key = k[1] ?? k[2] ?? k[3] ?? '';
     const value = k ? line.slice(k[0].length) : line;
-    for (const { pattern, why } of RETIRED_KO) {
-      if (pattern.test(value)) {
+    for (const { pattern, why, unless } of RETIRED_KO) {
+      if (pattern.test(value) && !unless?.has(key)) {
         findings.push({ file: DICTIONARY, line: i + 1, text: line.trim().slice(0, 120), why: `a retired Korean word: ${why}` });
       }
     }
