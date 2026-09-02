@@ -47,7 +47,9 @@ export function Disclosure({
         onClick={onToggle}
         aria-expanded={open}
         className={cn(
-          'text-muted-foreground hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100',
+          // A line of text-sm is 20px; a thumb gets the 36px floor
+          // (DESIGN.md, Buttons).
+          'text-muted-foreground hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100 pointer-coarse:min-h-9',
           className,
         )}
       >

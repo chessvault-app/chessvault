@@ -421,7 +421,9 @@ export function StructuredFiltersWindow({
         )}
 
         <Field label="Played between">
-          <div className="flex items-center gap-2">
+          {/* Wrapping: two 152px pickers and the dash are 324px, which is
+              wider than a 320px phone with nothing else on the line. */}
+          <div className="flex flex-wrap items-center gap-2">
             <DatePicker
               value={draft.from}
               onValueChange={(v) => patch({ from: v })}

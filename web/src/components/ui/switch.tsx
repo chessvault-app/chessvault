@@ -6,7 +6,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 /**
  * shadcn's Switch (nova), owned: the registry's pill and knob, Base UI's
  * switch role. `after:-inset-x-3 after:-inset-y-2` is the registry's own
- * bigger hit box. `title` is a tooltip, as on Button.
+ * bigger hit box; on a coarse pointer the box is stretched to the app's
+ * 36px floor (DESIGN.md, Buttons) whatever the pill's own height, since
+ * the registry's 34px was measured 2px short. `title` is a tooltip, as
+ * on Button.
  *
  * Styled off aria-checked, the one signal the switch role guarantees —
  * it survived a data-attribute collision already (a Radix TooltipTrigger
@@ -23,7 +26,7 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        'peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none group-has-[:focus-visible]/field-label:border-transparent group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40',
+        'peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none group-has-[:focus-visible]/field-label:border-transparent group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 pointer-coarse:after:inset-y-[calc((100%-2.25rem)/2)] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40',
         'aria-checked:bg-primary aria-[checked=false]:bg-input dark:aria-[checked=false]:bg-input/80 disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}

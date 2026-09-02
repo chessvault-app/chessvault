@@ -509,6 +509,11 @@ hit areas, `title` as a tooltip. Composites live in
 - **Sizes:** default 32px high with 10px of side padding; xs 24px, sm
   28px, lg 36px; icon buttons square at each. Coarse pointers bump
   default and sm to 36px and icon to 44px.
+- **The coarse-pointer floor:** 36px is the smallest hit area any control
+  may have under a coarse pointer, and icon buttons and the bottom bar
+  take 44px. This is the rung `pointer-coarse:` reaches for everywhere
+  (tabs, switches, checkboxes, radios, disclosures, hover-revealed
+  links), whether by growing the control or by an `after:` hit box.
 - **Primary:** primary fill, primary-foreground text, hover at 80% alpha.
 - **Outline:** background fill, border stroke, hover to the muted rung;
   in dark it takes shadcn's translucent `input/30`.

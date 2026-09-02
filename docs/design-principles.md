@@ -399,6 +399,8 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   nobody finds.
 - Touch has no hover: anything hover-revealed must also work by tap
   (preview eyes toggle on tap; `pointer-coarse:` sizes tap targets up).
+  The floor it sizes up to is 36px for any control, 44px for icon buttons
+  and the bottom bar (DESIGN.md, Buttons).
 
 ## Waiting
 

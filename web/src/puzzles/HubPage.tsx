@@ -1179,9 +1179,13 @@ function Hub() {
             a page that is still deciding what it says — Train in
             particular, whose word underneath ("adaptive", a difficulty)
             arrives with the answers. The row is the same four 64px tiles
-            either way, so nothing moves when they become real. */}
+            either way, so nothing moves when they become real. At 320px
+            (the narrowest phone) four across leaves 66px a tile, which
+            "Puzzle books" does not fit, so the row folds to two by two
+            there and only there (20.0625rem because Tailwind's max-* is
+            exclusive: `width < 321px` is what includes 320). */}
         {skeleton && (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -1194,7 +1198,7 @@ function Hub() {
           </div>
         )}
         {settled && (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
             {(
               [
                 ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],

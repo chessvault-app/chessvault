@@ -67,8 +67,20 @@ export function useMediaQuery(query: string, enabled = true): boolean {
   return matches;
 }
 
-/** JS mirror of the CSS `wide` variant (index.css): side-by-side layouts. */
-const WIDE_MQ = '(min-width: 64rem), (orientation: landscape) and (min-width: 44rem)';
+/**
+ * JS mirror of the CSS `wide` variant (index.css): side-by-side layouts.
+ *
+ * It must be the SAME query, character for character once whitespace is
+ * folded, because useWideLayout selects whole render trees (the trainer's
+ * pane switcher, the book reader, the repertoire) while the `wide:`
+ * classes select what is drawn inside them. It drifted once: the CSS lost
+ * its `(min-width: 64rem)` branch so an upright iPad stacks, and this kept
+ * it, so at 1024px portrait the JS rendered the side-by-side tree with
+ * every `wide:` class off, and the phone pane switcher vanished with no
+ * side column to replace it. media.test.ts reads index.css and fails if
+ * the two part again.
+ */
+export const WIDE_MQ = '(orientation: landscape) and (min-width: 44rem)';
 
 /**
  * Whether the app is laid out side by side, in JavaScript.
@@ -77,6 +89,16 @@ const WIDE_MQ = '(min-width: 64rem), (orientation: landscape) and (min-width: 44
  * is drawn — a trainer that analyses by itself on a desktop and waits to be
  * asked on a phone. It lived in puzzles/books/layout.ts, which is where the
  * second copy of the query got written rather than found.
+ *
+ * `.force-stacked` (index.css) is the one thing this cannot see: a
+ * matchMedia query knows the viewport, not the DOM, so a board page
+ * rendered inside a `.force-stacked` region reads `wide` here while every
+ * `wide:` class inside it is off. Today every such region (the editor
+ * beside the book reader's PDF, the position setup window) holds only
+ * EditorView, which lays itself out with the variants and never asks
+ * this hook; anything new rendered inside one has to do the same. No fix
+ * is offered here because there is no cheap one: it would mean a ref and
+ * a closest() walk at every call site.
  */
 export function useWideLayout(): boolean {
   return useMediaQuery(WIDE_MQ);

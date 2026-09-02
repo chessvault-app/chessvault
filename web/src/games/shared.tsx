@@ -526,7 +526,9 @@ export function GameRow({
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
+            // Under a thumb the padding, not the icon, brings the 22px
+            // link up to the 36px floor (DESIGN.md, Buttons).
+            className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:p-[11px] pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
           >
             <ExternalLink className="size-3.5" />
           </a>

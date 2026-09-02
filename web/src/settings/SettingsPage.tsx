@@ -2098,7 +2098,11 @@ function StorageCard({ reload = 0 }: { reload?: number }) {
               {section ? (
                 <button
                   type="button"
-                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-base"
+                  // A thumb gets the 36px floor (DESIGN.md, Buttons) out of
+                  // the row's own padding: the negative margin keeps the
+                  // row at the 40px it already was. An `after:` hit box
+                  // would not do here, since `truncate` clips it.
+                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-base pointer-coarse:-my-1.5 pointer-coarse:min-h-9"
                   onClick={() => navigate(section)}
                 >
                   {t(label)}

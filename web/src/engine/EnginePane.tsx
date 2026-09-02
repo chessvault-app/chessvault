@@ -500,7 +500,10 @@ function PvRow({
           aria-expanded={open}
           aria-label={t(open ? 'Show one line' : 'Show the whole variation')}
           className={cn(
-            'text-muted-foreground hover:text-foreground -me-1 hidden size-6 shrink-0',
+            // size-9: it only ever shows under a thumb, so it takes the
+            // coarse floor (DESIGN.md, Buttons) outright rather than a
+            // 24px box a thumb would miss.
+            'text-muted-foreground hover:text-foreground -me-1 hidden size-9 shrink-0',
             'place-items-center rounded-md pointer-coarse:grid',
           )}
         >
