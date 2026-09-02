@@ -20,6 +20,19 @@ describe('studies api', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it('will not bookmark a study that does not exist', async () => {
+    // The list is rewritten whole per toggle; an id naming nothing was a
+    // way to grow it for ever.
+    const res = await app.request('/api/studies/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'Never Made' }),
+    });
+    expect(res.status).toBe(404);
+    const { ids } = await (await app.request('/api/studies/bookmarks')).json();
+    expect(ids).toEqual([]);
+  });
+
   it('starts empty', async () => {
     const { studies } = await (await app.request('/api/studies')).json();
     expect(studies).toEqual([]);

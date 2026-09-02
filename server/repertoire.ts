@@ -99,6 +99,12 @@ export function repertoireApi(stateDir: string = resolve(VAULT, 'repertoire')): 
     ) {
       return c.json({ error: 'expected { study, chapter, key, result }' }, 400);
     }
+    // The record is append-only and read whole on every summary, so the
+    // three names are bounded like the move lists beside them: a study id
+    // is four short segments and a key is one position.
+    if (body.study.length > 400 || body.chapter.length > 400 || body.key.length > 200) {
+      return c.json({ error: 'study, chapter or key is too long' }, 400);
+    }
     const entry: DrillEntry = {
       study: body.study,
       chapter: body.chapter,

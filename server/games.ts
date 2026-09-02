@@ -263,6 +263,26 @@ function monthPath(dir: string, user: string, month: string): string {
 }
 
 /**
+ * How many players' months one provider's cache may hold.
+ *
+ * Every month anyone looks at is kept, and there was no ceiling on whose:
+ * a loop over usernames could fill the disk with strangers' archives,
+ * and every one of them went into the vault backup. Forty is well past
+ * the handful a person actually follows, and the Databases page lists
+ * and clears them one at a time. A player already cached is never
+ * refused: their months are the ones actually in use.
+ */
+const MAX_CACHED_PLAYERS = 40;
+
+function cacheFull(dir: string, provider: string, user: string): boolean {
+  const providerDir = resolve(dir, provider);
+  if (existsSync(resolve(providerDir, user)) || !existsSync(providerDir)) return false;
+  const players = readdirSync(providerDir).filter((f) => statSync(resolve(providerDir, f)).isDirectory());
+  return players.length >= MAX_CACHED_PLAYERS;
+}
+const CACHE_FULL = 'the browsing cache already holds 40 players: clear some in Databases first';
+
+/**
  * What is known about a cached month besides its games.
  *
  * Kept beside them as a dotfile, so the month listing — which counts
@@ -562,6 +582,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
     if (!month || !MONTH_RE.test(month)) return c.json({ error: 'invalid month' }, 400);
 
     const path = monthPath(dir, user, month);
+    if (cacheFull(dir, 'chesscom', user.toLowerCase())) return c.json({ error: CACHE_FULL }, 409);
     const now = new Date();
     const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
     // The current month keeps growing; refetch it when we can.
@@ -775,6 +796,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
     if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
     if (!MONTH_RE.test(month)) return c.json({ error: 'invalid month' }, 400);
     const path = resolve(dir, 'lichess', user, `${month}.pgn`);
+    if (cacheFull(dir, 'lichess', user)) return c.json({ error: CACHE_FULL }, 409);
     const cached = existsSync(path);
     const meta = readCacheMeta(dir, 'lichess', user);
     const [y, m] = month.split('-').map(Number) as [number, number];

@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { puzzlesApi, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
+import { puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
   let dir: string;
@@ -57,6 +57,27 @@ describe('puzzles api', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(counted === undefined ? { id, win } : { id, win, counted }),
     });
+
+  it('keeps the rating window to whole ratings on the scale', () => {
+    // The window keys a cache, and an unbounded float was an unbounded
+    // cache: every distinct value a new entry.
+    expect(ratingBound('1500.0001', 0)).toBe(1500);
+    expect(ratingBound('-40', 0)).toBe(0);
+    expect(ratingBound('1e9', 9999)).toBe(9999);
+    expect(ratingBound('abc', 9999)).toBe(9999);
+    expect(ratingBound(undefined, 0)).toBe(0);
+  });
+
+  it('answers the history for a negative limit with one row, not the whole file', async () => {
+    await attempt('aaa', true);
+    await attempt('bbb', false);
+    const all = await (await app.request('/api/puzzles/history?limit=-1')).json();
+    expect(all.attempts).toHaveLength(1);
+    const two = await (await app.request('/api/puzzles/history?limit=2')).json();
+    expect(two.attempts).toHaveLength(2);
+    // The counters the tests below start from are the defaults.
+    await app.request('/api/puzzles/reset', { method: 'POST' });
+  });
 
   it('reports meta with default counters', async () => {
     const res = await app.request('/api/puzzles/meta');

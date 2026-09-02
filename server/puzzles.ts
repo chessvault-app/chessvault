@@ -186,6 +186,34 @@ const SMALL_POOL = 256;
 /** Filter -> buckets, or null when the database predates the count tables. */
 const bucketCache = new Map<string, Buckets | null>();
 
+/**
+ * How many filters either cache remembers.
+ *
+ * A key is the rating window and theme, and the window used to be
+ * whatever floats the query string carried, so a loop over distinct
+ * values grew the process without bound at forty kilobytes a key. The
+ * window is whole ratings now (see ratingBound), which makes the key
+ * space finite, and the caches still forget their oldest entry past
+ * this many, since finite is not small.
+ */
+const CACHE_ENTRIES = 512;
+
+function remember<V>(cache: Map<string, V>, key: string, value: V): void {
+  if (cache.size >= CACHE_ENTRIES) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, value);
+}
+
+/** A rating bound from the query string: a whole number inside the
+    scale, or the default when it is nothing of the kind. */
+export function ratingBound(raw: string | undefined, fallback: number): number {
+  const n = Math.round(Number(raw));
+  if (!raw || !Number.isFinite(n)) return fallback;
+  return Math.min(9999, Math.max(0, n));
+}
+
 const hasTable = (db: InstanceType<typeof Database>, name: string): boolean =>
   db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined;
 
@@ -238,7 +266,7 @@ function loadBuckets(
     }
     buckets = { ratings, cum, total };
   }
-  bucketCache.set(cacheKey, buckets);
+  remember(bucketCache, cacheKey, buckets);
   return buckets;
 }
 
@@ -296,7 +324,7 @@ function pickPuzzle(
     let count = countCache.get(cacheKey);
     if (count === undefined) {
       count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
-      countCache.set(cacheKey, count);
+      remember(countCache, cacheKey, count);
     }
     if (count === 0) return null;
     const byOffset = db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`);
@@ -787,8 +815,8 @@ export function puzzlesApi(
       return c.json({ error: 'No puzzle matches that filter.' }, 404);
     }
 
-    const min = Number(c.req.query('min')) || 0;
-    const max = Number(c.req.query('max')) || 9999;
+    const min = ratingBound(c.req.query('min'), 0);
+    const max = ratingBound(c.req.query('max'), 9999);
     const puzzle = pickPuzzle(db, min, max, theme, attemptedIds());
     if (!puzzle) return c.json({ error: 'No puzzle matches that filter.' }, 404);
     return c.json({ puzzle });
@@ -808,7 +836,7 @@ export function puzzlesApi(
   });
 
   api.post('/puzzles/attempt', async (c) => {
-    const body = (await c.req.json()) as { id?: string; win?: boolean; counted?: boolean };
+    const body = (await c.req.json().catch(() => ({}))) as { id?: string; win?: boolean; counted?: boolean };
     if (typeof body.id !== 'string' || typeof body.win !== 'boolean') {
       return c.json({ error: 'expected { id, win }' }, 400);
     }
@@ -859,7 +887,10 @@ export function puzzlesApi(
   });
 
   api.get('/puzzles/history', (c) => {
-    const limit = Math.min(Number(c.req.query('limit') || 50), 500);
+    // Clamped from below as well: `slice(-limit)` with a negative limit
+    // is `slice(1)`, which handed back the whole file past the 500 cap.
+    const asked = Math.round(Number(c.req.query('limit') || 50));
+    const limit = Number.isFinite(asked) ? Math.min(500, Math.max(1, asked)) : 50;
     return c.json({ attempts: historyEntries().slice(-limit).reverse() });
   });
 

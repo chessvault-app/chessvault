@@ -32,6 +32,13 @@ describe('repertoire drill api', () => {
     expect((await attempt({ study: 'x', chapter: 'c', key: KEY, result: 'meh' })).status).toBe(400);
   });
 
+  it('bounds the names, since the record is append-only and read whole', async () => {
+    const long = 'x'.repeat(401);
+    expect((await attempt({ study: long, chapter: 'c', key: KEY, result: 'hit' })).status).toBe(400);
+    expect((await attempt({ study: 'x', chapter: long, key: KEY, result: 'hit' })).status).toBe(400);
+    expect((await attempt({ study: 'x', chapter: 'c', key: 'k'.repeat(201), result: 'hit' })).status).toBe(400);
+  });
+
   it('requires a study on summary', async () => {
     expect((await app.request('/api/repertoire/summary')).status).toBe(400);
   });

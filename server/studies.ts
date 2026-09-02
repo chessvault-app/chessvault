@@ -411,6 +411,10 @@ export function studiesApi(
     const ids = readMarks();
     const at = ids.indexOf(id);
     const bookmarked = at < 0;
+    // Only a document that exists can be marked: the list is rewritten
+    // whole on every toggle, and an id that names nothing was a way to
+    // grow it without end.
+    if (bookmarked && !existsSync(pathOf(id))) return c.json({ error: 'no such study' }, 404);
     if (bookmarked) ids.unshift(id);
     else ids.splice(at, 1);
     // Atomic, like every other vault write: a crash mid-write must not
