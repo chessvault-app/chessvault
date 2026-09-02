@@ -832,7 +832,7 @@ export const ko: Record<string, string> = {
   Profile: '프로필',
   'Display name': '표시 이름',
   'How the app greets you': '앱이 당신을 부르는 이름',
-  'Chess.com username': 'chess.com 사용자명',
+  'Chess.com username': 'Chess.com 사용자명',
   'your Chess.com username': 'Chess.com 사용자명',
   'your Lichess username': 'Lichess 사용자명',
   Version: '버전',
