@@ -203,7 +203,7 @@ export const ko: Record<string, string> = {
   'Add to collection': '모음에 추가',
   'Select all': '전체 선택',
   'Select all new': '새 게임 전체 선택',
-  'All dates': '전체 기간',
+  'Any date': '모든 날짜',
   'Showing the first {shown} of {total}. Select all new still takes every one.':
     '{total}개 중 처음 {shown}개만 표시합니다. 새 게임 전체 선택은 그래도 전부 선택합니다.',
   'Select…': '선택…',
@@ -435,7 +435,7 @@ export const ko: Record<string, string> = {
   'Filter games': '게임 거르기',
   Player: '플레이어',
   'Any player': '모든 플레이어',
-  'Any outcome': '모든 결과',
+  'Any outcome': '모든 승패',
   'Won or lost by whom? Name a player above.': '누구의 승패인가요? 위에 플레이어를 입력하세요.',
   'Opening or ECO': '오프닝 또는 ECO',
   'Najdorf, B90…': '나이도르프, B90…',
@@ -1040,7 +1040,6 @@ export const ko: Record<string, string> = {
   'Password, 2FA, themes, tokens': '비밀번호, 2단계 인증, 테마, 토큰',
 
   // --- opponent strength (repertoire) -------------------------------------
-  'All ratings': '전체',
   'Start position': '시작 포지션',
   Details: '자세히',
   'Tap for details': '눌러서 자세히 보기',
@@ -1067,7 +1066,7 @@ export const ko: Record<string, string> = {
   Medium: '보통',
   Hard: '어려움',
   Expert: '전문가',
-  'Any difficulty': '난이도 전체',
+  'Any difficulty': '모든 난이도',
   'Difficulty {hint}': '난이도 {hint}',
 
   // --- longer prose --------------------------------------------------------

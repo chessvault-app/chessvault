@@ -819,11 +819,11 @@ export function ArchiveBrowser({
                     // on disk, saying so.
                     label:
                       total !== null
-                        ? `${t('All dates')} · ${t('{n} games', { n: total.toLocaleString() })}`
+                        ? `${t('Any date')} · ${t('{n} games', { n: total.toLocaleString() })}`
                         : cachedGames > 0
-                          ? `${t('All dates')} · ${t('{n} games cached', { n: cachedGames })}`
-                          : t('All dates'),
-                    short: t('All dates'),
+                          ? `${t('Any date')} · ${t('{n} games cached', { n: cachedGames })}`
+                          : t('Any date'),
+                    short: t('Any date'),
                   },
                   ...months.map((m) => ({
                     value: m.month,

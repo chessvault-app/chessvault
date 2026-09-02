@@ -90,7 +90,7 @@ export const RATING_BANDS: { label: string; ratings: string }[] = [
   { label: '2000–2200', ratings: '2000' },
   { label: '2200–2500', ratings: '2200' },
   { label: '2500+', ratings: '2500' },
-  { label: 'All ratings', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
+  { label: 'Any rating', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
 ];
 
 /** Where a fresh session starts: 1600–1800, the group the database as a
