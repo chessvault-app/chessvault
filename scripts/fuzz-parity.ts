@@ -9,11 +9,14 @@
  *
  * Seeded and deterministic per (games, seed): capture- and
  * promotion-hungry self-play becomes a PGN corpus, both pipelines
- * build it, every table is byte-compared (games, plies, move_counts,
- * scan_pack, key_index), and a spread of deep hunts — positions
- * sampled from the corpus at several plies and rungs, plus material
- * specs — runs through the JS route AND the native deep-search CLI,
- * frames compared. Needs the release binary
+ * build the first two thirds of it fresh and append the rest (the
+ * append path re-derives the lookup tables, and a table it forgets to
+ * drop survives stale), every table is byte-compared (games, plies,
+ * move_counts, scan_pack, key_index, players, openings, events), each
+ * lookup table is checked against the games table it summarises, and
+ * a spread of deep hunts — positions sampled from the corpus at
+ * several plies and rungs, plus material specs — runs through the JS
+ * route AND the native deep-search CLI, frames compared. Needs the release binary
  * (`npm run build:native`); refuses to guess without it. Exits
  * non-zero on the first divergence, printing the seed to replay it.
  */
@@ -94,7 +97,7 @@ function pgnOf(moves: string, at: number): string {
     tokens.push(san);
   });
   const result = ['1-0', '0-1', '1/2-1/2'][at % 3]!;
-  return `[Event "Fuzz"]\n[White "W${at}"]\n[Black "B${at}"]\n[Result "${result}"]\n[WhiteElo "${1000 + (at % 1800)}"]\n[BlackElo "${1100 + (at % 1700)}"]\n\n${tokens.join(' ')} ${result}\n`;
+  return `[Event "Fuzz ${at % 5}"]\n[White "W${at}"]\n[Black "B${at}"]\n[Result "${result}"]\n[WhiteElo "${1000 + (at % 1800)}"]\n[BlackElo "${1100 + (at % 1700)}"]\n\n${tokens.join(' ')} ${result}\n`;
 }
 
 async function main(): Promise<void> {
@@ -104,20 +107,32 @@ async function main(): Promise<void> {
   );
   const dir = mkdtempSync(join(tmpdir(), 'fuzz-parity-'));
   try {
-    const pgn = join(dir, 'fuzz.pgn');
-    writeFileSync(pgn, corpus.map((m, at) => pgnOf(m, at)).join('\n'));
+    // Two files: the first is built fresh, the second appended, so the
+    // append path — dedup, index extension, lookup re-derivation — is
+    // exercised on both sides, not just the fresh build.
+    const pgns = corpus.map((m, at) => pgnOf(m, at));
+    const split = Math.max(1, Math.floor((pgns.length * 2) / 3));
+    const fresh = join(dir, 'fuzz.pgn');
+    const extra = join(dir, 'fuzz-extra.pgn');
+    writeFileSync(fresh, pgns.slice(0, split).join('\n'));
+    writeFileSync(extra, pgns.slice(split).join('\n'));
     for (const side of ['js', 'rs']) {
       const dataDir = join(dir, side);
-      if (side === 'js') {
-        execFileSync(
-          process.platform === 'win32' ? 'npx.cmd' : 'npx',
-          ['tsx', 'scripts/build-refgames.ts', pgn, '--name', 'fuzz'],
-          { cwd: REPO_ROOT, env: { ...process.env, CHESS_VAULT_DATA: dataDir }, shell: true, stdio: 'ignore' },
-        );
-      } else {
-        execFileSync(binary!, ['build', pgn, '--name', 'fuzz', '--data', dataDir], {
-          stdio: 'ignore',
-        });
+      for (const [pgn, flags] of [
+        [fresh, []],
+        [extra, ['--append']],
+      ] as const) {
+        if (side === 'js') {
+          execFileSync(
+            process.platform === 'win32' ? 'npx.cmd' : 'npx',
+            ['tsx', 'scripts/build-refgames.ts', pgn, '--name', 'fuzz', ...flags],
+            { cwd: REPO_ROOT, env: { ...process.env, CHESS_VAULT_DATA: dataDir }, shell: true, stdio: 'ignore' },
+          );
+        } else {
+          execFileSync(binary!, ['build', pgn, '--name', 'fuzz', ...flags, '--data', dataDir], {
+            stdio: 'ignore',
+          });
+        }
       }
     }
     let api: ReturnType<typeof refGamesApi> | null = null;
@@ -129,6 +144,9 @@ async function main(): Promise<void> {
       ['move_counts', 'SELECT * FROM move_counts ORDER BY pos, uci, eb'],
       ['scan_pack', 'SELECT game_id, hex(pack) p FROM scan_pack ORDER BY game_id'],
       ['key_index', 'SELECT bucket, hex(entries) e FROM key_index ORDER BY bucket'],
+      ['players', 'SELECT * FROM players ORDER BY name'],
+      ['openings', 'SELECT * FROM openings ORDER BY opening, eco'],
+      ['events', 'SELECT * FROM events ORDER BY event'],
     ] as const) {
       const a = JSON.stringify(js.prepare(q).all());
       const b = JSON.stringify(rs.prepare(q).all());
@@ -137,6 +155,49 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       console.log(`  ${table}: identical`);
+    }
+    // The lookups summarise the games table, and the append re-derives
+    // them by dropping and recreating. A table both sides forget to
+    // drop is identical across pipelines AND stale, so each is also
+    // held against a fresh derivation from the games it summarises.
+    for (const [table, stored, derived] of [
+      [
+        'players',
+        'SELECT * FROM players ORDER BY name',
+        `SELECT name, COUNT(*) AS games, SUM(w) AS as_white, SUM(b) AS as_black, MAX(elo) AS max_elo
+         FROM (
+           SELECT white AS name, 1 AS w, 0 AS b, white_elo AS elo FROM games
+           UNION ALL
+           SELECT black AS name, 0 AS w, 1 AS b, black_elo AS elo FROM games
+         ) GROUP BY name ORDER BY name`,
+      ],
+      [
+        'openings',
+        'SELECT * FROM openings ORDER BY opening, eco',
+        `SELECT opening, eco, COUNT(*) AS games FROM games
+         WHERE opening IS NOT NULL OR eco IS NOT NULL GROUP BY opening, eco ORDER BY opening, eco`,
+      ],
+      [
+        'events',
+        'SELECT * FROM events ORDER BY event',
+        `SELECT event, COUNT(*) AS games FROM games
+         WHERE event IS NOT NULL GROUP BY event ORDER BY event`,
+      ],
+    ] as const) {
+      for (const [side, db] of [
+        ['js', js],
+        ['rs', rs],
+      ] as const) {
+        const a = JSON.stringify(db.prepare(stored).all());
+        const b = JSON.stringify(db.prepare(derived).all());
+        if (a !== b) {
+          console.error(
+            `STALE ${table} after append (${side}) — replay with: npm run fuzz:parity -- ${GAMES} ${SEED}`,
+          );
+          process.exit(1);
+        }
+      }
+      console.log(`  ${table}: current after append`);
     }
     js.close();
 
