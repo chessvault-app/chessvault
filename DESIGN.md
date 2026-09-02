@@ -269,15 +269,22 @@ NAG colours (`nag-good`, `nag-mistake`, `nag-brilliant`, `nag-blunder`,
 values left in the system because they match a published annotation
 convention rather than this palette.
 
-Two families are **coloured by data**, where the hue is the information
-and only its lightness and chroma belong to the theme. The ECO tag takes
-`--eco-l` / `--eco-c` (with `--eco-wash` for the tint behind it) and the
-opening map takes `--map-line-l` / `--map-line-c`; the caller supplies
-the hue — an ECO letter, a position on the wheel — and the token supplies
-everything else. Both are OKLCH for a reason that is not consistency:
+One family is **coloured by data**, where the hue is the information
+and only its lightness and chroma belong to the theme: the opening map
+takes `--map-line-l` / `--map-line-c` and the caller supplies the hue, a
+position on the wheel. It is OKLCH for a reason that is not consistency:
 holding a *hue-independent* lightness is the whole point, and the map
 spelled the same idea in `hsl` for a while, where one line came out
 nearly six times brighter than another.
+
+The ECO tag used to be the second such family, one hue per letter, and
+two of its five hues were the green and amber the grammar reserves for
+outcome and caution: a green D36 chip sat two cells from a green "1-0".
+It is one hue now (`--eco-l` / `--eco-c`, with `--eco-wash` for the
+tint behind it), and the letter moves the chip two points along the
+lightness ladder per family, in the direction `--eco-dir` sets per
+theme, so every step keeps the base tag's contrast. The letter carries
+the family, as it always did.
 
 ### Named Rules
 
