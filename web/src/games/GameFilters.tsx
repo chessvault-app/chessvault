@@ -1034,7 +1034,7 @@ export function SearchQueryIssues({
             <IssueLine
               key={i}
               badge={issue.value ?? ''}
-              message={t('is not an Elo floor or band. Use 2500 or 2400-2600')}
+              message={t('is not a rating floor or band. Use 2500 or 2400-2600')}
             />
           ) : (
             <IssueLine

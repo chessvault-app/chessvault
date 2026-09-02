@@ -816,7 +816,7 @@ export const ko: Record<string, string> = {
   'Drill a study instead': '대신 스터디 하나를 드릴하기',
   'Search any opening or ECO code…': '오프닝 또는 ECO 코드 검색…',
   'New game': '새 게임',
-  'Opponent strength': '상대 실력',
+  'Opponent strength': '상대 기력',
   'Where replies come from': '응수의 출처',
   'Lichess database': 'Lichess 데이터베이스',
   'Set up a new game': '새 게임 설정',
@@ -1923,7 +1923,7 @@ export const ko: Record<string, string> = {
   'cannot hold with the active filters': '은(는) 현재 필터와 동시에 성립할 수 없습니다',
   'Both players at least, or a band': '두 플레이어 모두 이상, 또는 범위',
   'Type a floor or a band, like 2500 or 2400-2600': '2500이나 2400-2600처럼 하한 또는 범위를 입력하세요',
-  'is not an Elo floor or band. Use 2500 or 2400-2600':
+  'is not a rating floor or band. Use 2500 or 2400-2600':
     '은(는) 레이팅 하한이나 범위가 아닙니다. 2500이나 2400-2600처럼 쓰세요',
   'This player as White': '이 플레이어가 백인 게임',
   'This player as Black': '이 플레이어가 흑인 게임',

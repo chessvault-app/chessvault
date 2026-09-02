@@ -650,6 +650,7 @@ const RETIRED_KO: { pattern: RegExp; why: string }[] = [
   { pattern: /플라이|하프무브/, why: 'a ply is 반수' },
   { pattern: /보이기|가리기/, why: 'show is 보기 and hide is 숨기기' },
   { pattern: /정석/, why: 'the opening book is 북' },
+  { pattern: /(?<!풀이 )실력/, why: "a player's strength is 기력 (풀이 실력, the solver's own skill, is not a player)" },
 ];
 // 보관함 is the vault. The one English key without "vault" that may say it is
 // the Settings heading over the vault-wipe controls.
