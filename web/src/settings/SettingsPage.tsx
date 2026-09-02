@@ -134,24 +134,28 @@ export function SettingsPage() {
             a secret, so in the demo they are described rather than shown —
             a disabled form a visitor can fill in and not submit is a worse
             explanation than a sentence. */}
-        {/* Ordered by CONSEQUENCE: what can change a vault or a secret
-            comes before what changes how the app looks, and the
-            irreversible card stays at the bottom where a reader has to
-            travel to it. It used to open on three appearance dropdowns —
-            thirty-three options between them — with Auto-save, the one
-            switch on this page that decides whether work is kept, below
-            them under Sound. Decoration is what you came for least often
-            and it was the first thing offered. */}
+        {/* Ordered by CONSEQUENCE, with one card moved up: what can change
+            a vault or a secret comes first, and the irreversible card
+            stays at the bottom where a reader has to travel to it. It used
+            to open on three appearance dropdowns — thirty-three options
+            between them — with Auto-save, the one switch on this page that
+            decides whether work is kept, below them under Sound, and the
+            swing away from that put Appearance under Storage used: a
+            thirteen-row inventory nobody reads twice, standing in front of
+            the language and the theme, which are what most visits to this
+            page are for. So Appearance goes just ahead of Storage — after
+            everything that changes a vault, before the table — and Sound,
+            which nobody comes for, keeps its place. */}
         {isDemo() ? (
           <>
             <DocumentsCard />
+            <AppearanceCard />
             {/* Storage is here in the demo as well, now that the in-memory
                 vault can answer for itself: it is the one card that says
                 what a vault is MADE of — games, studies, notes, and the
-                caches that rebuild themselves — which is worth more to
-                somebody deciding whether to install than three appearance
-                dropdowns are. The cards below it are the ones that really
-                do need a server. */}
+                caches that rebuild themselves — which is worth showing
+                somebody deciding whether to install. The cards below it
+                are the ones that really do need a server. */}
             <StorageCard />
             {/* And recovery: the demo keeps its own versions of whatever
                 you edit in the tab (web/src/demo/nodeShim/history.ts), so
@@ -159,7 +163,6 @@ export function SettingsPage() {
                 you work, which is the honest demonstration of a safety
                 net. Delete a note and it turns up in this list. */}
             <RecoveryCard />
-            <AppearanceCard />
             <SoundCard />
             <Card icon={Info} title={t('This is a demo')}>
               <p className="text-muted-foreground text-sm leading-relaxed">
@@ -193,10 +196,10 @@ export function SettingsPage() {
                 a card apart. It was reachable before this too, by
                 Clear all; a button per row is what made it ordinary. */}
             <BrowsedGamesCard onCleared={() => setStorageStamp((n) => n + 1)} />
+            <AppearanceCard />
             <StorageCard reload={storageStamp} />
             <RecoveryCard />
             <DesktopCard />
-            <AppearanceCard />
             <SoundCard />
             <DangerCard gate={settings.gate} />
             {typeof __LAG__ !== 'undefined' && __LAG__ && <LagCard />}

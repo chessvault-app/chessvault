@@ -6,6 +6,7 @@ import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { createLiveSim, layoutGraph, layoutTree, PAD, type LiveSim } from './graph';
+import { fitView, labelOpacity as labelOpacityAt } from './fit';
 import { favouriteChild } from './mainline';
 import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
 import { prefersReducedMotion } from '@/lib/motion';
@@ -536,7 +537,11 @@ export function MapCanvas({
    * tree half off-screen with the middle of nowhere centred.
    */
   const nodeCount = graph.nodes.length;
+  /** The Align count the last fit answered, so a fit can tell being ASKED from arriving. */
+  const alignSeen = useRef(align);
   useEffect(() => {
+    const asked = align !== alignSeen.current;
+    alignSeen.current = align;
     const box = host.current?.getBoundingClientRect();
     if (!box || box.width === 0) return;
     /**
@@ -566,14 +571,22 @@ export function MapCanvas({
         maxY = Math.max(maxY, p.y + n.r + PAD);
       }
     }
-    const w = maxX - minX;
-    const h = maxY - minY;
-    const k = Math.min(2, 0.92 * Math.min(box.width / w, box.height / h));
-    commitView({
-      x: box.width / 2 - ((minX + maxX) / 2) * k,
-      y: box.height / 2 - ((minY + maxY) / 2) * k,
-      k,
-    });
+    /**
+     * Arriving, the fit stops short of where the names fade (fit.ts): the
+     * whole map first was a picture of dots. The demo's map fits 1280x720
+     * at k=0.32, where the labels stand at a tenth of their opacity, so a
+     * first visit read a constellation rather than "1. e4, 1... e5". Now
+     * it opens on the root at the zoom the labels are whole at, and a map
+     * that does not fit there runs off the canvas for a pan to reach.
+     * Align is the reader asking for all of it and keeps fitting all of
+     * it. The root is anchored where the LAYOUT put it, not where a drag
+     * left it: on a constellation that is the middle either way, and on
+     * a tree it is the edge the clamp then pushes into view.
+     */
+    const root = graph.nodes.find((n) => n.id === map.root.id);
+    commitView(
+      fitView(box, { minX, minY, maxX, maxY }, { legible: !asked, anchor: root }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeCount, map.id, arrangement, align]);
 
@@ -801,9 +814,11 @@ export function MapCanvas({
   // as the view pulls back, the graph-view convention: far out you read
   // the shape, close in you read the names.
   const inv = 1 / view.k;
-  // Soft at the fitted overview of a BIG map (k ≈ 0.4, where 70 labels
-  // collide), fully readable one wheel-notch in, gone only far out.
-  const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.3) / 0.24));
+  // Soft at the overview of a BIG map (k ≈ 0.4, where 70 labels collide),
+  // fully readable one wheel-notch in, gone only far out. The ramp's ends
+  // live in fit.ts, because the arriving fit floors itself at the readable
+  // one.
+  const labelOpacity = labelOpacityAt(view.k);
 
   /**
    * The mainline — an answer to something you asked, not a permanent

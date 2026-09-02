@@ -55,6 +55,7 @@ import { Segmented } from '@/components/segmented';
 import { SideDot } from '@/components/side-dot';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/components/panel';
+import { PageHeader } from '@/components/page-header';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -1097,8 +1098,21 @@ export function RepertoireView() {
     }
   };
 
-  const header = (
-    <h1 className="text-foreground text-base font-semibold">{t('Repertoire')}</h1>
+  /**
+   * The heading every scrolling page starts with, rather than an h1 of
+   * this page's own — the composite is what carries the back chevron
+   * and its phone-only rule. On the board family's rung (DESIGN.md:
+   * 16px, 600), because the title shares its strip with the board's
+   * controls; PageHeader has no size prop, so the rung is set on its h1
+   * from here. `back` only in the phone strip, which is the one that
+   * shows a chevron at all.
+   */
+  const header = (back = false) => (
+    <PageHeader
+      title={t('Repertoire')}
+      back={back ? () => up('home') : undefined}
+      className="[&>h1]:text-base [&>h1]:tracking-normal"
+    />
   );
 
 
@@ -1727,18 +1741,7 @@ export function RepertoireView() {
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
-      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="md:hidden"
-          title={t('Back')}
-          onClick={() => up('home')}
-        >
-          <ChevronLeft className="size-3.5" />
-        </Button>
-        {header}
-      </div>
+      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">{header(true)}</div>
 
       {/* Once the line has ended the board becomes the analysis board, so
           the pieces move freely and the eval bar is the shared one. */}
@@ -1820,7 +1823,7 @@ export function RepertoireView() {
         className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}
         {...paneSwipe.column}
       >
-        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
+        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header()}</div>
 
         {phase === 'idle' ? (
           /* fit: a short form under a tall board. Left to shrink, the panel

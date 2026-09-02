@@ -540,6 +540,8 @@ function Trainer({
   // the real analysis board + merged engine/moves panel. Entering is an
   // explicit "analyse" act, so the engine comes on; leaving turns it off.
   const [analysing, setAnalysing] = useState(false);
+  /** Whether a desktop has asked for the engine block; see dockEngine. */
+  const [engineOpen, setEngineOpen] = useState(false);
   /** Which pane the phone is showing. A desktop shows all three at once. */
   const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
   /**
@@ -575,14 +577,30 @@ function Trainer({
       loadError: null,
       gameHeaders: null,
     });
-    useEngine.getState().setEnabled(true);
     setAnalysing(true);
   };
 
   /**
-   * A finished puzzle on a desktop analyses itself. There is room for the
-   * engine beside the board there, so waiting to be asked only costs a
-   * click — and the panel it would appear in is already on screen.
+   * Whether the engine is on follows what is showing it. A phone has an
+   * engine tab, so analysing turns it on there; a desktop docks the block
+   * above the move list only once it is asked for (`engineOpen`), and an
+   * engine running behind a block that is not on screen is heat for
+   * nothing. `analysing` going false is handled below, where the engine
+   * is switched off with everything else.
+   */
+  useEffect(() => {
+    if (analysing) useEngine.getState().setEnabled(!wide || engineOpen);
+  }, [analysing, wide, engineOpen]);
+
+  /**
+   * A finished puzzle on a desktop loads itself into the analysis board,
+   * so the played line is navigable and the pieces move freely. The
+   * ENGINE waits to be asked, which it did not: it came on with the
+   * verdict, and its three lines plus the docked strip took the height
+   * the Puzzle panel needed for its own actions — at 1280x720 the panel
+   * body was 183px holding 209px, Try again and Next puzzle 14px under
+   * its fold. The block is a toggle on the Puzzle panel's header now,
+   * the same choice the phone's Engine tab is.
    */
   useEffect(() => {
     if (phase === 'done' && puzzle && !analysing) {
@@ -599,6 +617,7 @@ function Trainer({
     if (phase !== 'done' && analysing) {
       setAnalysing(false);
       setPane('info');
+      setEngineOpen(false);
       useEngine.getState().setEnabled(false);
     }
     // analyse() closes over the current puzzle; the guards above are what
@@ -678,7 +697,12 @@ function Trainer({
    * time behind a switcher. Writing them twice is how the two layouts
    * would drift apart, which is the whole reason they are values here.
    */
-  const dockEngine = wide && analysing;
+  // Docked only once asked for: even switched off, the block's strip is a
+  // 44px row, and with the move list already at its floor that row is
+  // the difference between the Puzzle panel's actions fitting and not
+  // (measured at 1280x720: the column had 568px, the Moves panel's floor
+  // took 264 of them, and the Puzzle panel's body was left 9px short).
+  const dockEngine = wide && analysing && engineOpen;
   const movesPanel = analysing ? (
     // min-h-32 overrides the panel's own `min-h-min`, which is what cut the
     // Puzzle panel off below a short window: min-content there is the
@@ -768,6 +792,21 @@ function Trainer({
         <>
           {puzzle && phase === 'done' && (
             <span className="text-muted-foreground font-mono text-xs">#{puzzle.id}</span>
+          )}
+          {/* The desktop's way to the engine, where the phone has a tab:
+              opens the block above the move list and starts the search;
+              again closes it and stops. See dockEngine for why it is not
+              simply there. */}
+          {wide && analysing && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={engineOpen}
+              title={t('Engine')}
+              onClick={() => setEngineOpen((v) => !v)}
+            >
+              <Cpu className="size-3.5" />
+            </Button>
           )}
           <Button
             variant="ghost"
