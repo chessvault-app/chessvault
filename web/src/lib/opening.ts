@@ -22,6 +22,9 @@ import { api } from '@/lib/api';
     true with a null name — a waypoint inside theory. */
 interface KnownOpening {
   name: string | null;
+  /** The same answer in its two printed halves, for callers that lay the
+      code out separately from the name (the explorer's header does). */
+  opening: { eco: string; name: string } | null;
   book: boolean;
 }
 
@@ -71,16 +74,15 @@ function lookupMany(fens: string[]): Promise<void> {
           // The ECO code rides with the name — "B90 Sicilian, Najdorf" says
           // more than either half, and it is what every book and database
           // prints.
-          const name = hit?.opening
-            ? [hit.opening.eco, hit.opening.name].filter(Boolean).join(' ')
-            : null;
+          const opening = hit?.opening ?? null;
+          const name = opening ? [opening.eco, opening.name].filter(Boolean).join(' ') : null;
           // A server from before membership existed sends no `book`; a name
           // is then the best available proxy.
-          known.set(fen, { name, book: hit?.book ?? name !== null });
+          known.set(fen, { name, opening, book: hit?.book ?? name !== null });
         }
       } catch {
         // A name is decoration; a failed lookup must not break the panel.
-        for (const fen of chunk) known.set(fen, { name: null, book: false });
+        for (const fen of chunk) known.set(fen, { name: null, opening: null, book: false });
       } finally {
         for (const fen of chunk) inFlight.delete(fen);
       }
@@ -194,7 +196,25 @@ export function useBookTags(tree: MoveTree, enabled = true): Set<NodeId> {
  */
 export const NAMED_PLIES = 30;
 
-export function useOpeningName(fens: string[]): string | null {
+/**
+ * The deepest named position on a line, in its two printed halves.
+ *
+ * Same walk and same cache as useOpeningName; the explorer's header needs
+ * the code and the name apart, because it sets the code in mono beside the
+ * name rather than in front of it.
+ */
+export function useLineOpening(fens: string[]): { eco: string; name: string } | null {
+  useLineLookup(fens);
+  for (let at = Math.min(fens.length, NAMED_PLIES + 1) - 1; at >= 0; at--) {
+    const opening = known.get(fens[at]!)?.opening;
+    if (opening) return opening;
+  }
+  return null;
+}
+
+/** The lookup half both line hooks share: ask about the whole line, and
+    re-render once the answers land. */
+function useLineLookup(fens: string[]): void {
   const [, bump] = useState(0);
   const current = fens[fens.length - 1];
 
@@ -204,10 +224,10 @@ export function useOpeningName(fens: string[]): string | null {
     // The whole line, not just the position being looked at. Asking only
     // about the current one meant the answer depended on HOW you got here:
     // stepping forward move by move looked up each position on the way,
-    // but opening a game — or handing a repertoire line to the board —
-    // lands on the last move with nothing behind it ever asked about, so
-    // the line came out unnamed or wearing whatever shallow name happened
-    // to be cached.
+    // but opening a game — or handing a repertoire line to the board, or
+    // switching the explorer on mid-game — lands on the last move with
+    // nothing behind it ever asked about, so the line came out unnamed or
+    // wearing whatever shallow name happened to be cached.
     const wanted = fens.slice(0, NAMED_PLIES + 1).filter((fen) => !known.has(fen));
     if (wanted.length === 0) return;
     void lookupMany(wanted).then(() => {
@@ -220,6 +240,10 @@ export function useOpeningName(fens: string[]): string | null {
     // name, and the array identity changes on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
+}
+
+export function useOpeningName(fens: string[]): string | null {
+  useLineLookup(fens);
 
   for (let at = Math.min(fens.length, NAMED_PLIES + 1) - 1; at >= 0; at--) {
     const name = known.get(fens[at]!)?.name;

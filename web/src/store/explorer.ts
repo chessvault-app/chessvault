@@ -91,12 +91,6 @@ interface ExplorerState {
   moves: ExplorerMove[];
   topGames: TopGame[];
   opening: Opening | null;
-  /**
-   * Every named position seen this session, keyed by FEN. Deep positions have
-   * no name of their own, so the pane walks the current line's ancestors
-   * through this cache to keep showing "Sicilian Najdorf" past the book.
-   */
-  openingsSeen: Record<string, Opening>;
   loading: boolean;
   error: string | null;
   /**
@@ -312,19 +306,16 @@ export const useExplorer = create<ExplorerState>()(
             indexed?: boolean;
           }>(url, { signal: own.signal });
           if (fen !== latestFen) return; // user has moved on
-          set((s) => ({
+          set({
             refIndexed: !isRefDb(book) || body.indexed !== false,
             resultFen: fen,
             moves: body.moves ?? [],
             topGames: body.topGames ?? [],
             opening: body.opening ?? null,
-            openingsSeen: body.opening
-              ? { ...s.openingsSeen, [fen]: body.opening }
-              : s.openingsSeen,
             loading: false,
             error: null,
             offline: false,
-          }));
+          });
         } catch (error) {
           // api() folds an abort into ApiError status 0, so the signal —
           // not the error — is what says this request was superseded
@@ -356,7 +347,6 @@ export const useExplorer = create<ExplorerState>()(
         moves: [],
         topGames: [],
         opening: null,
-        openingsSeen: {},
         loading: false,
         error: null,
         offline: false,
