@@ -51,32 +51,39 @@ interface Pending {
  * not set one up, not a vault whose endgames should stop working.
  */
 /**
- * One prober per directory, for the life of the process.
+ * ONE prober, for the directory most recently asked about.
  *
  * The point of this source is a child that STAYS, and the route picks
  * its prober per request (so a setting saved in Settings takes effect
  * without a restart) — so building a fresh closure each time would
  * spawn a fresh child each time and never reuse a mapping, which is
- * precisely the shape this exists to avoid. Keyed by directory, because
- * that is what a prober is: two directories are two sets of tables.
+ * precisely the shape this exists to avoid.
+ *
+ * One, not one per directory: this was a map keyed by directory that
+ * never forgot an entry, so every path Settings was ever pointed at kept
+ * its resident child, tables mapped and all, for the life of the
+ * process. A vault has one set of tables; the prober for the previous
+ * directory is closed the moment a different one is asked for, and a
+ * miss (no binary, no such directory) is remembered the same way, for
+ * that directory alone.
  */
-const probers = new Map<string, TablebaseProbe | null>();
+interface Prober {
+  dir: string;
+  probe: TablebaseProbe | null;
+  close: () => void;
+}
+let current: Prober | null = null;
 
 export function nativeTablebase(tablesDir: string): TablebaseProbe | null {
-  const found = probers.get(tablesDir);
-  if (found !== undefined) return found;
-  const made = build(tablesDir);
-  // A miss is remembered too — but only the "no binary, no directory"
-  // kind, which cannot change without a restart or a new setting. The
-  // Settings route re-reads by asking with the new path, which is a
-  // different key.
-  probers.set(tablesDir, made);
-  return made;
+  if (current?.dir === tablesDir) return current.probe;
+  current?.close();
+  current = build(tablesDir);
+  return current.probe;
 }
 
-function build(tablesDir: string): TablebaseProbe | null {
+function build(tablesDir: string): Prober {
   const binary = nativeBinary();
-  if (!binary || !existsSync(tablesDir)) return null;
+  if (!binary || !existsSync(tablesDir)) return { dir: tablesDir, probe: null, close: () => {} };
 
   let child: ChildProcessWithoutNullStreams | null = null;
   let buffer = '';
@@ -132,7 +139,7 @@ function build(tablesDir: string): TablebaseProbe | null {
     return spawned;
   };
 
-  return {
+  const probe: TablebaseProbe = {
     source: 'local',
     probe(fen: string) {
       return new Promise<LichessTablebaseResponse>((done, reject) => {
@@ -153,6 +160,17 @@ function build(tablesDir: string): TablebaseProbe | null {
         // 3-4-5 set asked about six pieces.
         return answer.category === 'unknown' ? null : answer;
       });
+    },
+  };
+  return {
+    dir: tablesDir,
+    probe,
+    // Retired, not just forgotten: the child holds the tables mapped
+    // until it is told to go, and nothing else will tell it.
+    close: () => {
+      const gone = child;
+      child = null;
+      gone?.kill();
     },
   };
 }

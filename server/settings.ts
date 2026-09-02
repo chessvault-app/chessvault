@@ -55,11 +55,15 @@ interface Config {
 export interface SettingsDeps {
   configPath?: string;
   vaultDir?: string;
+  /** Whether the client is on the machine the server runs on (see
+      LOOPBACK_ONLY in server/paths.ts). Tests say yes. */
+  sameMachine?: boolean;
 }
 
 export function settingsApi(deps: SettingsDeps = {}): Hono {
   const configPath = deps.configPath ?? VAULT_CONFIG;
   const vaultDir = deps.vaultDir ?? VAULT;
+  const sameMachine = deps.sameMachine ?? LOOPBACK_ONLY;
   // The session store lives beside config.json (see auth.ts). The routes
   // that rotate a credential clear it, so "everyone is signed out now"
   // stays true under random per-login tokens.
@@ -112,7 +116,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
           // Whether asking for a filesystem path is a fair question at
           // all: on a server in another room the person reading this is
           // not the person who can see its disks (server/paths.ts).
-          sameMachine: LOOPBACK_ONLY,
+          sameMachine,
         };
       })(),
       // Normalised on the way out as well as in: a config edited by hand
@@ -252,6 +256,14 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
    * since a false also means "no native binary".
    */
   api.put('/settings/tablebase-dir', async (c) => {
+    // Only from the machine itself, which is the only place the page
+    // offers the box (`sameMachine` above). The route answered from
+    // anywhere, and `local` below says whether the folder exists on the
+    // server's disk, which from across a network is a way to ask about
+    // paths that are none of the asker's business.
+    if (!sameMachine) {
+      return c.json({ error: 'the table folder can only be set on the machine the server runs on' }, 403);
+    }
     const body = (await c.req.json().catch(() => ({}))) as { dir?: unknown };
     const dir = typeof body.dir === 'string' ? body.dir.trim() : '';
     if (dir.length > 4096) return c.json({ error: 'that path is too long' }, 400);

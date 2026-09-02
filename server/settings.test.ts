@@ -24,7 +24,10 @@ beforeEach(() => {
   vault = mkdtempSync(join(tmpdir(), 'vault-settings-'));
   writeFileSync(join(vault, 'config.json'), JSON.stringify({ appPassword: 'hunter22', keepMe: 1 }));
   app = new Hono();
-  app.route('/api', settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault }));
+  app.route(
+    '/api',
+    settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault, sameMachine: true }),
+  );
 });
 
 afterEach(() => {
@@ -242,7 +245,7 @@ describe('tablebase endpoint', () => {
       local: false,
       // Tests run without CHESS_BIND, which is not loopback-only — so
       // the page would not offer to take a filesystem path.
-      sameMachine: false,
+      sameMachine: true,
     });
 
     expect((await json('PUT', '/api/settings/tablebase', { url: 'nonsense' })).status).toBe(400);
@@ -283,6 +286,26 @@ describe('tablebase files', () => {
 
     expect((await json('PUT', '/api/settings/tablebase-dir', { dir: '' })).status).toBe(200);
     expect(config().tablebaseDir).toBeUndefined();
+  });
+
+  it('refuses the folder from across a network, where it would be an existence oracle', async () => {
+    // `local` says whether the folder exists on the server's disk once
+    // the native binary is there, and a page in another room has no
+    // business asking that about arbitrary paths. The page hides the box
+    // off the machine; the route now agrees with it.
+    const remote = new Hono();
+    remote.route(
+      '/api',
+      settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault, sameMachine: false }),
+    );
+    const res = await remote.request('/api/settings/tablebase-dir', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ dir: vault }),
+    });
+    expect(res.status).toBe(403);
+    expect(config().tablebaseDir).toBeUndefined();
+    expect((await (await remote.request('/api/settings')).json()).tablebase.sameMachine).toBe(false);
   });
 });
 
