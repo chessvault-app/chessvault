@@ -1,7 +1,8 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { manualUrl } from '@/lib/manual';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { forgetTablebaseAnswers } from '@/explorer/tablebase';
@@ -128,6 +129,7 @@ export function SettingsPage() {
   return (
     <PageShell width="narrow">
         <PageHeader title={t('Settings')} back={() => up('home')} />
+        <JumpList dep={settings} />
 
         {/* Appearance is the only card that works without a server: it
             writes to this device, not to a vault. The rest change a vault or
@@ -233,13 +235,68 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-card rounded-xl ring-1 ring-border p-4">
+    // data-settings-card is what the jump list above the cards reads.
+    <section className="bg-card rounded-xl ring-1 ring-border scroll-mt-14 p-4" data-settings-card>
       <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
         <Icon className="text-muted-foreground size-4" />
         {title}
+        {/* The manual is written card by card, and nothing in the app
+            pointed at it. One quiet mark per card opens the manual's
+            Settings page in a new tab; the shortcut sheet stays what it
+            was. */}
+        <TitleTip title={t('Open the manual')}>
+          <a
+            href={manualUrl('settings')}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t('Open the manual')}
+            className="text-muted-foreground hover:text-foreground ml-auto grid size-6 place-items-center rounded-md pointer-coarse:size-9"
+          >
+            <CircleHelp className="size-3.5" />
+          </a>
+        </TitleTip>
       </h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
+  );
+}
+
+/**
+ * The card names in a row at the top, each a jump to its card.
+ *
+ * Settings is fifteen cards in one column, and on a wide window the one
+ * you came for could be 1,700px down with nothing to say where. The row
+ * reads the cards that are actually on the page (the demo and a real
+ * server show different sets), sticks to the top while the page scrolls,
+ * and stays out of the way on a phone, where the page is short enough
+ * to thumb and the row would cost a line.
+ */
+function JumpList({ dep }: { dep: unknown }) {
+  const [cards, setCards] = useState<{ el: HTMLElement; title: string }[]>([]);
+  useEffect(() => {
+    const found = [...document.querySelectorAll<HTMLElement>('[data-settings-card]')].map((el) => ({
+      el,
+      title: el.querySelector('h2')?.firstChild?.textContent?.trim() || el.querySelector('h2')?.textContent?.trim() || '',
+    }));
+    setCards(found.filter((c) => c.title));
+  }, [dep]);
+  if (cards.length < 4) return null;
+  return (
+    <nav
+      aria-label={t('Settings sections')}
+      className="bg-background/95 sticky top-0 z-10 -mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex"
+    >
+      {cards.map((c) => (
+        <button
+          key={c.title}
+          type="button"
+          className="text-muted-foreground hover:text-foreground rounded-md px-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          onClick={() => c.el.scrollIntoView({ block: 'start' })}
+        >
+          {c.title}
+        </button>
+      ))}
+    </nav>
   );
 }
 

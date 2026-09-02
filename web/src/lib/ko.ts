@@ -1974,6 +1974,10 @@ export const ko: Record<string, string> = {
   'Indexing finished.': '색인이 끝났습니다.',
   'Import finished. {n} diagrams found.': '가져오기가 끝났습니다. 다이어그램 {n}개를 찾았습니다.',
   'Column widths': '열 너비',
+  'To review': '복습 대상',
+  'Vault folder: {path}': '보관함 폴더: {path}',
+  'Settings sections': '설정 섹션',
+  'Open the manual': '매뉴얼 열기',
   'More filters, {n} on': '필터 더 보기, {n}개 켜짐',
   'Demo vault. A reload puts it back.': '데모 보관함입니다. 새로 고치면 되돌아갑니다.',
   'Write a note. Markdown shortcuts work: # for a heading, - for a list.':

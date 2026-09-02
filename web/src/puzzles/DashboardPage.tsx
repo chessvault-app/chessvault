@@ -219,7 +219,10 @@ export function DashboardPage() {
                 docs/design-principles.md on ratings). Solved and Failed
                 say the same thing as counts. */}
             <Figure
-              label={t('Failed')}
+              // "To review", not "Failed": the number is the review pool's
+              // size, which the tooltip already said, and "Failed 10"
+              // beside "Solved 21" in the same weight read as a grade.
+              label={t('To review')}
               title={t('Puzzles whose latest attempt failed. This is the review pool.')}
               value={String(failed)}
             />

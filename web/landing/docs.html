@@ -659,13 +659,13 @@
               with what you were last doing, and its arrangement is yours to decide.
             </p>
             <h2 data-ko="탐색">Navigation</h2>
-            <p data-ko="사이드바의 순서: <strong>Games · Studies · Notes · Books · Puzzles</strong>(하위로 Dashboard, Puzzle books, Themes) · <strong>Opening map</strong> · <strong>Tools</strong>(Board, Editor, Explorer, Workspace, Repertoire — Workspace 항목은 그 페이지를 담을 만큼 넓은 창에서만 보입니다. <a href='#workspace'>워크스페이스</a> 참조) · <strong>Databases</strong>. 사이드바 아래에는 연결 상태 표시(«This device», 서버 이름, 또는 «Offline»), 설정 톱니, 라이트/다크 전환이 있습니다.">
+            <p data-ko="사이드바의 순서: <strong>Games · Studies · Notes · Books · Puzzles</strong>(하위로 Dashboard, Puzzle books, Themes) · <strong>Opening map</strong> · <strong>Tools</strong>(Board, Editor, Explorer, Workspace, Repertoire — Workspace 항목은 그 페이지를 담을 만큼 넓은 창에서만 보입니다. <a href='#workspace'>워크스페이스</a> 참조) · <strong>Databases</strong>. 사이드바 아래에는 보관함 폴더의 이름(툴팁에 전체 경로, 넓은 창에서만), 연결 상태 표시(«This device», 서버 이름, 또는 «Offline»), 설정 톱니, 라이트/다크 전환이 있습니다.">
               The sidebar, top to bottom: <strong>Games · Studies · Notes · Books ·
               Puzzles</strong> (with Dashboard, Puzzle books and Themes under it) ·
               <strong>Opening map</strong> · <strong>Tools</strong> (Board, Editor, Explorer,
               Workspace, Repertoire — the Workspace row exists only on windows wide enough to hold
               that page; see <a href="#workspace">The workspace</a>) ·
-              <strong>Databases</strong>. Below them sit the connection label (“This device”, your server's name, or “Offline”), the Settings gear, and the light/dark
+              <strong>Databases</strong>. Below them sit the vault's folder name (its full path in the tooltip; wide windows only), the connection label (“This device”, your server's name, or “Offline”), the Settings gear, and the light/dark
               toggle.
             </p>
             <p data-ko="휴대폰의 하단 바는 <strong>Home · Games · Studies · Notes · Puzzles · More</strong>를 들고, Books·Opening map·Databases·Settings와 나머지 도구는 <strong>More</strong> 안에 있습니다. 보드가 있는 페이지에서는 하단 바가 그 페이지의 조작으로 바뀝니다 — <a href='#phone'>휴대폰에서</a> 참조.">
@@ -2001,8 +2001,8 @@
               solve at every step. The review banner explains itself: “Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.”
             </p>
             <h2 data-ko="대시보드">The dashboard</h2>
-            <p data-ko="Puzzles → Dashboard: <strong>Attempts · Solved · Failed</strong>, 난이도별 분해(«By difficulty»), 책 진행, 그리고 모든 시도의 이력이 있습니다. 이력은 결과와 난이도로 거를 수 있고(«Filter by outcome» / «Filter by difficulty»), 어느 퍼즐이든 «Replay puzzle #{id}»로 다시 풀 수 있습니다. 복습 입구(«Review puzzles · {n} due»)와, 퍼즐 진행을 지우는 «Reset»도 여기 있습니다. 휴대폰에는 별도의 허브 화면이 있어 «Next puzzle», 복습, 책의 다음 퍼즐, 풀이 이력을 한눈에 모아 보여 줍니다.">
-              Puzzles → Dashboard: <strong>Attempts · Solved · Failed</strong>, the
+            <p data-ko="Puzzles → Dashboard: <strong>Attempts · Solved · To review</strong>, 난이도별 분해(«By difficulty»), 책 진행, 그리고 모든 시도의 이력이 있습니다. 이력은 결과와 난이도로 거를 수 있고(«Filter by outcome» / «Filter by difficulty»), 어느 퍼즐이든 «Replay puzzle #{id}»로 다시 풀 수 있습니다. 복습 입구(«Review puzzles · {n} due»)와, 퍼즐 진행을 지우는 «Reset»도 여기 있습니다. 휴대폰에는 별도의 허브 화면이 있어 «Next puzzle», 복습, 책의 다음 퍼즐, 풀이 이력을 한눈에 모아 보여 줍니다.">
+              Puzzles → Dashboard: <strong>Attempts · Solved · To review</strong>, the
               “By difficulty” breakdown, book progress, and a history of every attempt — filtered
               by outcome and difficulty, any puzzle replayable via “Replay puzzle #{id}”. The
               review entry (“Review puzzles · {n} due”) and the progress “Reset” live here too. A
@@ -2300,9 +2300,11 @@
         <section class="page" id="settings">
           <div class="doc">
             <h1 data-ko="설정">Settings</h1>
-            <p class="lede" data-ko="사용자로서 하는 모든 일은 앱 안에서 할 수 있습니다. 셸이 필요한 일은 없습니다. 카드 순서대로:">
-              Everything you do as a user happens in the app — nothing needs a shell. Card by
-              card, in order:
+            <p class="lede" data-ko="사용자로서 하는 모든 일은 앱 안에서 할 수 있습니다. 셸이 필요한 일은 없습니다. 각 카드 제목의 ? 표시(«Open the manual»)는 이 페이지를 새 탭에 엽니다. 넓은 창에서는 카드 이름들이 맨 위에 한 줄로 붙어 있어, 누르면 그 카드로 갑니다. 카드 순서대로:">
+              Everything you do as a user happens in the app — nothing needs a shell. The ? on each
+              card's title (“Open the manual”) opens this page in a new tab, and on a wide window
+              the card names sit in a row at the top and jump to their card. Card by card, in
+              order:
             </p>
             <div class="scroll-x">
               <table class="controls">

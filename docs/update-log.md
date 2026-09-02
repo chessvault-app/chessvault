@@ -436,6 +436,18 @@ other people.
   Replay quotes it), and the board's file letters are lowercase, as
   chess prints them and as the moves panel already had them.
 
+- **Four of the critique's open questions, answered.** The sidebar's foot
+  now names the vault's folder, with the whole path in its tooltip, on
+  the wide layout: the product is a folder of plain files and the app
+  had never shown it. The dashboard's "Failed" figure is "To review",
+  which is what the number is (the tooltip had said so), so it no longer
+  reads as a grade beside "Solved". Settings carries a row of its card
+  names at the top on a wide window, stuck there while the page scrolls,
+  each a jump to its card; the page was fifteen cards deep with nothing
+  to say where. And every Settings card's title ends in a ? that opens
+  the manual's Settings page in a new tab: the manual is written card by
+  card, and nothing in the app had pointed at it.
+
 - **Korean.** The games table showed two headers reading 수순; Notation
   is 기보. "Solution shown" reads 정답을 봄. Six strings that had bypassed
   the dictionary (the promotion picker's buttons, "Starting position",

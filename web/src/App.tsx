@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
 import { navigate, sectionHref, useRoute, type Section } from '@/lib/router';
@@ -323,6 +324,43 @@ function Shell() {
 /** The phone bottom row: global tabs, or a page's contextual action bar
     when one is claimed (see MobileActionBar). The slot is always mounted so
     a page's portal has a target; it only shows while claimed. */
+/** One fetch for the app's life: the folder does not move while it runs. */
+let vaultPathOnce: Promise<string | null> | null = null;
+const vaultPath = (): Promise<string | null> =>
+  (vaultPathOnce ??= api<{ vaultPath?: string }>('/api/settings')
+    .then((s) => s.vaultPath ?? null)
+    .catch(() => null));
+
+/**
+ * The vault's folder, named in the shell.
+ *
+ * The product is a folder of plain files, and the app never showed it:
+ * the landing page's hero is a directory tree, the sidebar was a list of
+ * sections. The folder's name sits over the connection label, with the
+ * whole path in its tooltip, on the wide layout where a sidebar has a
+ * foot to stand it on. A phone client is a window onto someone else's
+ * folder and does not get one.
+ */
+function VaultLabel() {
+  const [path, setPath] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void vaultPath().then((p) => {
+      if (live) setPath(p);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (!path) return null;
+  const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+  return (
+    <span className="text-foreground block truncate text-sm" title={t('Vault folder: {path}', { path })}>
+      {name}
+    </span>
+  );
+}
+
 /**
  * Where this window's data actually lives.
  *
@@ -615,7 +653,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
       </div>
 
       <div className="border-border flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
-        <ConnectionLabel />
+        <div className="hidden min-w-0 lg:block">
+          <VaultLabel />
+          <ConnectionLabel />
+        </div>
         <div className="flex flex-col items-center gap-1 lg:flex-row">
           {/* A tip, where the rows above take an aria-label instead: those
               print their label beside the icon at lg and this one never
