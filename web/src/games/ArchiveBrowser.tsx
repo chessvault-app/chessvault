@@ -83,6 +83,7 @@ import {
   type ResultFilter,
   type SideFilter,
   type StructuredFilters,
+  QUICK_SELECT,
 } from './GameFilters';
 
 interface ArchiveMonth {
@@ -845,12 +846,12 @@ export function ArchiveBrowser({
           <SideSelect
             value={sideFilter}
             onChange={setSideFilter}
-            className={merged ? 'flex-none' : undefined}
+            className={cn(QUICK_SELECT, merged && 'flex-none')}
           />
           <ResultSelect
             value={resultFilter}
             onChange={setResultFilter}
-            className={merged ? 'flex-none' : undefined}
+            className={cn(QUICK_SELECT, merged && 'flex-none')}
           />
           {/* The same More-filters window the collection and the elite
               browser carry, answered client-side against the loaded
@@ -858,6 +859,7 @@ export function ArchiveBrowser({
               answer, exactly as in the collection. */}
           <MoreFiltersButton
             on={hasStructuredFilters(structured)}
+            quick={(sideFilter !== 'any' ? 1 : 0) + (resultFilter !== 'any' ? 1 : 0)}
             onClick={() => {
               setQuickDraft({ side: sideFilter, result: resultFilter });
               setEditingFilters(true);

@@ -416,6 +416,21 @@ other people.
   boot-time pin that stopped the white flash was never released, so the
   root stayed the old colour under iOS overscroll.
 
+- **What the second critique found.** Rerun after the batch, the review
+  scored the app 31 of 40 against 27 in the morning, and turned up two
+  things the keyboard work had made visible. The games table's column
+  grips sat in the tab order before any row, so ten Tabs reached "Resize
+  the Black column" and no game; they are behind one "Column widths"
+  control now, unseen until it has focus, with Up and Down walking the
+  grips and Escape coming back. The tooltip cascade it also reported
+  did not reproduce with real key presses (one open at a time at any
+  pace), so tooltips stay as they were. On a phone, the three quick
+  filter selects showed their values cut to "Anyo… / Any r… / All ga…";
+  below the tablet width they live only in the More filters window and
+  the button carries a count. The demo banner says one line there and
+  unfolds on tap. The trainer's Skip, Hint and Solution take the 44px
+  rung on a thumb, and the undo offer's button reaches the 36px floor.
+
 - **Korean.** The games table showed two headers reading 수순; Notation
   is 기보. "Solution shown" reads 정답을 봄. Six strings that had bypassed
   the dictionary (the promotion picker's buttons, "Starting position",

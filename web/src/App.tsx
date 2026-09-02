@@ -138,6 +138,7 @@ export function App() {
  * before rather than after.
  */
 function DemoBanner() {
+  const [expanded, setExpanded] = useState(false);
   if (!isDemo()) return null;
   return (
     <div
@@ -153,7 +154,22 @@ function DemoBanner() {
       // 4.68:1 and is still plainly a band. Dark was never close (9.32:1).
       className="text-warn border-border flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--background))] px-3 py-1.5 text-center text-sm"
     >
-      {t('Demo: a sample vault of your own. Edit anything, and a reload puts it back.')}
+      {/* The whole sentence wrapped to two lines at 375px and took about
+          100px off every page, above the board included. Below md the
+          band says the short form, and a tap unfolds the rest. */}
+      <span className="max-md:hidden">
+        {t('Demo: a sample vault of your own. Edit anything, and a reload puts it back.')}
+      </span>
+      <button
+        type="button"
+        className="md:hidden"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((v) => !v)}
+      >
+        {expanded
+          ? t('Demo: a sample vault of your own. Edit anything, and a reload puts it back.')
+          : t('Demo vault. A reload puts it back.')}
+      </button>
     </div>
   );
 }

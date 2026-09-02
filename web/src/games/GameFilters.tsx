@@ -41,13 +41,33 @@ export type ResultFilter = 'any' | '1-0' | '0-1' | '1/2-1/2';
  * cannot show. A lit-only state read as "pressed", not "narrowing your
  * list" (lanph3re's report).
  */
-export function MoreFiltersButton({ on, onClick }: { on: boolean; onClick: () => void }) {
+export function MoreFiltersButton({
+  on,
+  quick = 0,
+  onClick,
+}: {
+  on: boolean;
+  /**
+   * How many of the row's quick selects are narrowing the list. Below
+   * `md` the selects are not in the row (three 88px selects showed
+   * "Anyo… / Any r… / All ga…", their values cut to nothing, measured
+   * at 375px) and live only in the window, so the button has to say
+   * how many are on; from `md` up the selects show their own values and
+   * the count stays hidden, exactly as the dot's rule below.
+   */
+  quick?: number;
+  onClick: () => void;
+}) {
   return (
     <Button
       variant="secondary"
       size="icon-sm"
       active={on}
       title={t('More filters')}
+      // Spread, not `aria-label={… : undefined}`: Button spreads its props
+      // after the name it derives from `title`, so an explicit undefined
+      // would erase that fallback and leave the button unnamed.
+      {...(quick > 0 ? { 'aria-label': t('More filters, {n} on', { n: quick }) } : {})}
       className="relative shrink-0"
       onClick={onClick}
     >
@@ -55,9 +75,21 @@ export function MoreFiltersButton({ on, onClick }: { on: boolean; onClick: () =>
       {on && (
         <span aria-hidden className="bg-primary absolute right-1 top-1 size-1.5 rounded-full" />
       )}
+      {quick > 0 && (
+        <span
+          aria-hidden
+          className="bg-primary text-primary-foreground text-micro absolute -top-1 -right-1 grid size-4 place-items-center rounded-full font-medium md:hidden"
+        >
+          {quick}
+        </span>
+      )}
     </Button>
   );
 }
+
+/** The class a quick select wears in the row: from `md` up it stands in
+    the row, below it lives in the More filters window alone. */
+export const QUICK_SELECT = 'max-md:hidden';
 
 /** The standard one-line rail the filter selects sit in. */
 export function FilterRow({ className, children }: { className?: string; children: ReactNode }) {

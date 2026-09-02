@@ -28,6 +28,7 @@ import {
   type ResultFilter,
   type StructuredFilters,
   type ValueSuggestion,
+  QUICK_SELECT,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -1171,18 +1172,19 @@ export function DatabaseGames({
       <ResultSelect
         value={resultFilter}
         onChange={setResultFilter}
-        className={merged ? 'flex-none' : undefined}
+        className={cn(QUICK_SELECT, merged && 'flex-none')}
       />
       <StrengthSelect
         value={minElo}
         onChange={setMinElo}
-        className={merged ? 'flex-none' : undefined}
+        className={cn(QUICK_SELECT, merged && 'flex-none')}
       />
       {/* The rest of the constraints — who, which side, which outcome,
           which opening, which tournament, which dates — live in a window:
           they are text, not chips, and a lit icon says they are on. */}
       <MoreFiltersButton
         on={structuredOn}
+        quick={(resultFilter !== 'any' ? 1 : 0) + (minElo ? 1 : 0)}
         onClick={() => {
           setQuickDraft({ result: resultFilter, minElo });
           setEditingFilters(true);

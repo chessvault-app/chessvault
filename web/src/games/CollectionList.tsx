@@ -41,6 +41,7 @@ import {
   type OwnershipFilter,
   type ResultFilter,
   type StructuredFilters,
+  QUICK_SELECT,
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell } from './GameListShell';
@@ -419,20 +420,23 @@ export function CollectionList({
         <OwnershipSelect
           value={ownFilter}
           onChange={setOwnFilter}
-          className={merged ? 'flex-none' : undefined}
+          className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
         <ResultSelect
           value={resultFilter}
           onChange={setResultFilter}
-          className={merged ? 'flex-none' : undefined}
+          className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
         <NotesSelect
           value={notesFilter}
           onChange={setNotesFilter}
-          className={merged ? 'flex-none' : undefined}
+          className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
         <MoreFiltersButton
           on={hasStructuredFilters(structured)}
+          quick={
+            (ownFilter !== 'any' ? 1 : 0) + (resultFilter !== 'any' ? 1 : 0) + (notesFilter !== 'any' ? 1 : 0)
+          }
           onClick={() => {
             setQuickDraft({ own: ownFilter, result: resultFilter, notes: notesFilter });
             setEditingFilters(true);
