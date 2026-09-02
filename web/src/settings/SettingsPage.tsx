@@ -174,7 +174,17 @@ export function SettingsPage() {
             <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
-            <TablebaseCard settings={settings} onChanged={refresh} />
+            {/* Both of these empty a cache the Storage used card is
+                counting, so both have to tell it. The tablebase one was
+                the older mistake: forgetting its answers left the
+                "Tablebase cache" row saying what it read at mount, so
+                the page carried two answers for the same folder until a
+                reload. */}
+            <TablebaseCard
+              settings={settings}
+              onChanged={refresh}
+              onCleared={() => setStorageStamp((n) => n + 1)}
+            />
             {/* Clearing a cached player changes a row of the card below
                 — and left it saying the size it read at mount, so the
                 page carried two different answers for "Browsed games"
@@ -859,9 +869,13 @@ function DocumentsCard() {
 function TablebaseCard({
   settings,
   onChanged,
+  onCleared,
 }: {
   settings: Settings;
   onChanged: () => Promise<void>;
+  /** Say so when the cache folder has been emptied: Storage used counts
+      it, and it does not re-read on its own. */
+  onCleared: () => void;
 }) {
   const tablebase = usePrefs((p) => p.tablebase);
   const setTablebase = usePrefs((p) => p.setTablebase);
@@ -920,11 +934,16 @@ function TablebaseCard({
       }));
     } catch (e) {
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      // Told anyway, the way Browsed games tells it: the delete walks a
+      // folder and can fail part way through it, so a failure is not a
+      // promise that the size is unchanged.
+      onCleared();
       return;
     }
     // The tab remembers this session's answers too, and a cleared server
     // with a full page memo would be a button that only half worked.
     forgetTablebaseAnswers();
+    onCleared();
     setNote({
       kind: 'ok',
       text: forgotten === 0 ? t('Nothing was cached.') : t('Forgot {n} cached answers.', { n: forgotten }),
