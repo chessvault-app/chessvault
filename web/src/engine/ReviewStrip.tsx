@@ -158,9 +158,12 @@ export function ReviewStrip({
             {t('Reviewing')}
           </span>
           <div className="bg-muted/50 h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
+            {/* Scaled from the left rather than a width transition, so
+                the progress ticks animate on the compositor instead of
+                relaying out the strip. */}
             <div
-              className="bg-primary h-full rounded-full transition-[width] duration-200"
-              style={{ width: `${Math.round(progress * 100)}%` }}
+              className="bg-primary h-full origin-left rounded-full transition-transform duration-200"
+              style={{ transform: `scaleX(${Math.round(progress * 100) / 100})` }}
             />
           </div>
           <span className="text-muted-foreground w-9 text-right font-mono text-xs tabular-nums">

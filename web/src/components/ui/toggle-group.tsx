@@ -29,6 +29,12 @@ function ToggleGroup({
   ...props
 }: ToggleGroupPrimitive.Props &
   VariantProps<typeof toggleVariants> & { spacing?: number }) {
+  // One context object per distinct set of values: a fresh literal each
+  // render re-rendered every item (and its Tooltip) on every parent render.
+  const context = React.useMemo(
+    () => ({ variant, size, spacing, orientation }),
+    [variant, size, spacing, orientation],
+  );
   return (
     <ToggleGroupPrimitive
       data-slot="toggle-group"
@@ -44,7 +50,7 @@ function ToggleGroup({
       )}
       {...props}
     >
-      <ToggleGroupContext.Provider value={{ variant, size, spacing, orientation }}>{children}</ToggleGroupContext.Provider>
+      <ToggleGroupContext.Provider value={context}>{children}</ToggleGroupContext.Provider>
     </ToggleGroupPrimitive>
   );
 }

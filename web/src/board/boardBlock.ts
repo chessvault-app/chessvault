@@ -63,10 +63,23 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
   };
   publish();
 
-  const observer = new ResizeObserver(publish);
+  // The observer's callback reads two rects and then writes a property
+  // the column's layout depends on; written inside the callback, that is
+  // a layout invalidated in the same step that just laid the board out,
+  // so the write waits for the next frame. One frame at most is pending;
+  // a burst of resize ticks lands as a single write.
+  let frame = 0;
+  const observer = new ResizeObserver(() => {
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      publish();
+    });
+  });
   observer.observe(el);
   return () => {
     observer.disconnect();
+    if (frame) cancelAnimationFrame(frame);
     // Left set, the last board's height would cap the next page's column
     // before its own block has had a chance to measure — but only clear it
     // if this block is still the one that set it. See `owner`.

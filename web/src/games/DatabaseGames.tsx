@@ -1,5 +1,5 @@
 ﻿import { CornerDownLeft, Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -112,6 +112,93 @@ interface RefGame {
   plyCount: number;
   sanPrefix: string | null;
 }
+
+/**
+ * One reference row, memoised on primitives the way ArchiveRow and
+ * CollectionRow are: a selection tick or an Add re-renders the rows whose
+ * state changed and nothing else. Before this, every render handed each
+ * row a fresh summary object, a fresh onSelect and a fresh menu array, so
+ * a page of rows rebuilt itself on every parent render (measured: a
+ * 162 ms long task on entering Games). `summary` is cached per game by the
+ * parent and the callbacks are stable by contract (see rowHandlers in
+ * DatabaseGames).
+ */
+const RefRow = memo(function RefRow({
+  game,
+  summary,
+  table,
+  selected,
+  inCollection,
+  onSelectRow,
+  onOpen,
+  onCollect,
+  onPreview,
+  loadPreview,
+  onDetails,
+}: {
+  game: RefGame;
+  summary: GameSummary;
+  table: boolean;
+  selected: boolean;
+  inCollection: boolean;
+  onSelectRow: (game: RefGame) => void;
+  onOpen: (game: RefGame) => void;
+  onCollect: (game: RefGame) => void;
+  onPreview: (p: Preview | null) => void;
+  loadPreview: (game: RefGame) => Promise<{ fen: string; orientation: 'white' | 'black' } | null>;
+  onDetails: (game: RefGame) => void;
+}) {
+  if (table) {
+    return (
+      <GameTableRow
+        game={summary}
+        selected={selected}
+        onSelect={() => onSelectRow(game)}
+        onOpen={() => onOpen(game)}
+        menu={[
+          { label: 'Open on the board', icon: Play, onSelect: () => onOpen(game) },
+          { label: 'Add to collection', icon: Plus, onSelect: () => onCollect(game) },
+        ]}
+      />
+    );
+  }
+  return (
+    <GameRow
+      game={summary}
+      onOpen={() => onOpen(game)}
+      onPreview={onPreview}
+      loadPreview={() => loadPreview(game)}
+      actions={null}
+      menu={[{ label: 'Game details', icon: Info, onSelect: () => onDetails(game) }]}
+      showLink={false}
+      standing={
+        /* w-16 and a bare word when it is done, exactly like the
+           archive's rows: the two lists take turns in one 210px column,
+           and 20 characters of player name is worth more than a tick
+           beside a word that is already past tense. */
+        <Button
+          variant={inCollection ? 'ghost' : 'secondary'}
+          size="sm"
+          className="w-16 shrink-0"
+          disabled={inCollection}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCollect(game);
+          }}
+        >
+          {inCollection ? (
+            t('Added')
+          ) : (
+            <>
+              <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+              {t('Add')}
+            </>
+          )}
+        </Button>
+      }
+    />
+  );
+});
 
 /**
  * A position handed over from another surface — the board's explorer
@@ -918,6 +1005,23 @@ export function DatabaseGames({
     userSide: null,
     annotated: false,
   });
+  // One summary per row object, so the memoised rows see the same prop
+  // across renders. Keyed on the RefGame object (a search replaces the
+  // array, and with it the objects) and thrown away when the database
+  // changes, which is the only other input toSummary reads.
+  const summaries = useRef<{ db: string | null; map: WeakMap<RefGame, GameSummary> }>({
+    db: curDb,
+    map: new WeakMap(),
+  });
+  if (summaries.current.db !== curDb) summaries.current = { db: curDb, map: new WeakMap() };
+  const summaryOf = (g: RefGame): GameSummary => {
+    let s = summaries.current.map.get(g);
+    if (!s) {
+      s = toSummary(g);
+      summaries.current.map.set(g, s);
+    }
+    return s;
+  };
 
   /** The row, packaged for the details view: everything it needs to
       show and act on this game without knowing what a database is. */
@@ -940,6 +1044,17 @@ export function DatabaseGames({
     ),
   });
   const selectRow = (g: RefGame): void => onSelect?.(packageRow(g));
+
+  // The rows memoise on primitives, so every callback handed to them must
+  // keep one identity for the component's life. Each forwards through a
+  // ref to the LATEST handler — stable outside, fresh closure inside — the
+  // same idiom ArchiveBrowser and GamesBrowser use.
+  const rowHandlers = useRef({ openGame, collect, selectRow, loadFinalFen });
+  rowHandlers.current = { openGame, collect, selectRow, loadFinalFen };
+  const rowOpen = useCallback((g: RefGame) => void rowHandlers.current.openGame(g), []);
+  const rowCollect = useCallback((g: RefGame) => void rowHandlers.current.collect(g), []);
+  const rowSelect = useCallback((g: RefGame) => rowHandlers.current.selectRow(g), []);
+  const rowLoadPreview = useCallback((g: RefGame) => rowHandlers.current.loadFinalFen(g), []);
 
   // The ⋯ → Game details sheet: the details panel's content where the
   // rows are cards and no panel stands beside them.
@@ -1134,57 +1249,22 @@ export function DatabaseGames({
     clear: () => onSelect?.(null),
   };
 
-  const rowItems = navRows.map((g) =>
-    table ? (
-      <GameTableRow
-        key={g.id}
-        game={toSummary(g)}
-        selected={selectedKey === refGameKey(g.id)}
-        onSelect={() => selectRow(g)}
-        onOpen={() => void openGame(g)}
-        menu={[
-          { label: 'Open on the board', icon: Play, onSelect: () => void openGame(g) },
-          { label: 'Add to collection', icon: Plus, onSelect: () => void collect(g) },
-        ]}
-      />
-    ) : (
-    <GameRow
+  const rowItems = navRows.map((g) => (
+    <RefRow
       key={g.id}
-      game={toSummary(g)}
-      onOpen={() => void openGame(g)}
+      game={g}
+      summary={summaryOf(g)}
+      table={table}
+      selected={selectedKey === refGameKey(g.id)}
+      inCollection={inCollection(g)}
+      onSelectRow={rowSelect}
+      onOpen={rowOpen}
+      onCollect={rowCollect}
       onPreview={setPreview}
-      loadPreview={() => loadFinalFen(g)}
-      actions={null}
-      menu={[{ label: 'Game details', icon: Info, onSelect: () => setDetails(g) }]}
-      showLink={false}
-      standing={
-        /* w-16 and a bare word when it is done, exactly like the
-           archive's rows: the two lists take turns in one 210px column,
-           and 20 characters of player name is worth more than a tick
-           beside a word that is already past tense. */
-        <Button
-          variant={inCollection(g) ? 'ghost' : 'secondary'}
-          size="sm"
-          className="w-16 shrink-0"
-          disabled={inCollection(g)}
-          onClick={(e) => {
-            e.stopPropagation();
-            void collect(g);
-          }}
-        >
-          {inCollection(g) ? (
-            t('Added')
-          ) : (
-            <>
-              <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-              {t('Add')}
-            </>
-          )}
-        </Button>
-      }
+      loadPreview={rowLoadPreview}
+      onDetails={setDetails}
     />
-    ),
-  );
+  ));
 
   // The count leads the band in the archive's own voice; the picker and
   // the manager sit with it.

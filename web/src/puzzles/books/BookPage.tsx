@@ -776,9 +776,12 @@ function ScanPanel({
             })}
       </p>
       <div className="bg-border mx-auto mt-3 h-1 max-w-xs overflow-hidden rounded-full">
+        {/* Scaled from the left rather than a width transition: the
+            fill animates on the compositor instead of relaying out the
+            page on every progress tick. */}
         <div
-          className={cn('h-full rounded-full transition-[width] duration-300', live ? 'bg-primary' : 'bg-warn')}
-          style={{ width: `${pct}%` }}
+          className={cn('h-full origin-left rounded-full transition-transform duration-300', live ? 'bg-primary' : 'bg-warn')}
+          style={{ transform: `scaleX(${pct / 100})` }}
         />
       </div>
       <p className="text-muted-foreground mt-3 text-sm">

@@ -101,7 +101,9 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
   // title tooltips get in components/ui/tooltip.
   useEffect(() => {
     if (!peek) return;
-    document.addEventListener('scroll', close, true);
+    // Passive too: close never cancels the scroll, so the browser need
+    // not wait for it before scrolling.
+    document.addEventListener('scroll', close, { capture: true, passive: true });
     return () => document.removeEventListener('scroll', close, true);
   }, [peek, close]);
 

@@ -273,7 +273,6 @@ export function EvalBar({
   className,
 }: EvalBarProps) {
   const fraction = score ? winningChances(score) : 0.5;
-  const percent = `${(fraction * 100).toFixed(1)}%`;
   // A finished game is named by its result and not by a score, everywhere
   // the bar names it: `-#1` is a mate in one, and the board it would be
   // printed on has already been mated.
@@ -327,12 +326,17 @@ export function EvalBar({
         aria-valuenow={fraction}
         aria-label={t('Evaluation {score}', { score: label })}
       >
+        {/* The fill is a full-size layer scaled down from its anchored
+            edge, not a box whose height is animated: a transform
+            animates on the compositor, where a height or width transition
+            relaid the bar (and everything reading it) on every engine
+            update. Same 300 ms ease-out, same resting geometry. */}
         <div
-          className="bg-eval-white absolute transition-[height,width] duration-300 ease-out"
+          className="bg-eval-white absolute inset-0 transition-transform duration-300 ease-out"
           style={
             orientation === 'vertical'
-              ? { bottom: 0, left: 0, right: 0, height: percent }
-              : { top: 0, bottom: 0, left: 0, width: percent }
+              ? { transformOrigin: 'bottom', transform: `scaleY(${fraction})` }
+              : { transformOrigin: 'left', transform: `scaleX(${fraction})` }
           }
         />
         {/* No midpoint marker. There was one — 3px of red across the middle,

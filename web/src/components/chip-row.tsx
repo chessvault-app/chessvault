@@ -25,10 +25,11 @@ export function ChipRow({
   const update = (): void => {
     const el = ref.current;
     if (!el) return;
-    setCan({
-      left: el.scrollLeft > 2,
-      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2,
-    });
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    // Only when an answer changed: a fresh object per scroll event or
+    // ResizeObserver tick is a re-render of the row and every chip in it.
+    setCan((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
   };
 
   useEffect(() => {

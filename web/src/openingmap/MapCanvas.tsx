@@ -650,11 +650,23 @@ export function MapCanvas({
   const alreadyHeld = (self: number): boolean =>
     [...pointers.current.keys()].some((id) => id !== self);
 
+  /**
+   * The host's rect, measured once per gesture rather than per event: a
+   * pinch asked for it on every pointermove of both fingers, and a wheel
+   * on every notch, each a forced layout. The host does not move during a
+   * gesture, so a pointerdown or pointerup empties the cache; a wheel has
+   * no end, so a wheel's measurement lasts one frame.
+   */
+  const hostBox = useRef<DOMRect | null>(null);
+  const wheelFrame = useRef(0);
+  const hostRect = (): DOMRect => (hostBox.current ??= host.current!.getBoundingClientRect());
+
   const onPointerDown = (e: React.PointerEvent): void => {
     if (alreadyHeld(e.pointerId)) dropNode();
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved.current = false;
+    hostBox.current = null;
   };
   const onPointerMove = (e: React.PointerEvent): void => {
     const before = pointers.current.get(e.pointerId);
@@ -680,7 +692,7 @@ export function MapCanvas({
       const anchor = others[0]![1];
       const d0 = Math.hypot(before.x - anchor.x, before.y - anchor.y) || 1;
       const d1 = Math.hypot(now.x - anchor.x, now.y - anchor.y) || 1;
-      const box = host.current!.getBoundingClientRect();
+      const box = hostRect();
       const mx = (now.x + anchor.x) / 2 - box.left;
       const my = (now.y + anchor.y) / 2 - box.top;
       const v = viewRef.current;
@@ -693,13 +705,20 @@ export function MapCanvas({
   };
   const onPointerUp = (e: React.PointerEvent): void => {
     pointers.current.delete(e.pointerId);
+    hostBox.current = null;
     // Land React on wherever the pan left the ref, once. A gesture that
     // never panned left the ref holding the object state already holds,
     // so this costs no render then.
     setView(viewRef.current);
   };
   const onWheel = (e: React.WheelEvent): void => {
-    const box = host.current!.getBoundingClientRect();
+    const box = hostRect();
+    if (!wheelFrame.current) {
+      wheelFrame.current = requestAnimationFrame(() => {
+        wheelFrame.current = 0;
+        hostBox.current = null;
+      });
+    }
     const mx = e.clientX - box.left;
     const my = e.clientY - box.top;
     const v = viewRef.current;

@@ -343,7 +343,10 @@ function MobileBottom({ active }: { active: Section }) {
       <div
         id={MOBILE_BAR_SLOT_ID}
         className={cn(
-          'bg-card/85 border-border flex items-stretch border-t backdrop-blur-xl md:hidden',
+          // Opaque, not bg-card/85 over backdrop-blur-xl: a 24px blur
+          // across a full-width strip was re-blurred on every scrolled
+          // frame beneath it, on the phones that can least afford it.
+          'bg-card border-border flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
           !claimed && 'hidden',
         )}
@@ -702,7 +705,8 @@ function MobileNav({ active }: { active: Section }) {
     <nav
       aria-label={t('Page controls')}
       className={cn(
-        'bg-card/85 border-border flex shrink-0 items-stretch border-t backdrop-blur-xl md:hidden',
+        // Opaque for the same reason as the page-control slot above.
+        'bg-card border-border flex shrink-0 items-stretch border-t md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
         // Gone while the keyboard is up. The shell now ends at the top of

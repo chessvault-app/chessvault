@@ -201,8 +201,11 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
     };
     // touchstart too: iOS taps on dead space never synthesize click for
     // document-level listeners, so touch alone could not close the peek.
-    document.addEventListener('click', onDown, true);
-    document.addEventListener('touchstart', onDown, true);
+    // Passive: onDown only dismisses (suppressNextClick swallows the
+    // follow-up click on its own listener), so a touchstart the browser
+    // has to wait on would only delay the scroll it may be starting.
+    document.addEventListener('click', onDown, { capture: true, passive: true });
+    document.addEventListener('touchstart', onDown, { capture: true, passive: true });
     return () => {
       document.removeEventListener('click', onDown, true);
       document.removeEventListener('touchstart', onDown, true);
@@ -217,7 +220,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
       setOpen(false);
       setHover(false);
     };
-    window.addEventListener('scroll', drop, true);
+    window.addEventListener('scroll', drop, { capture: true, passive: true });
     window.addEventListener('resize', drop);
     return () => {
       window.removeEventListener('scroll', drop, true);

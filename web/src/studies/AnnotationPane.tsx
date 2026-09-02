@@ -24,6 +24,9 @@ const ASSESSMENT_NAGS = [14, 16, 18, 10, 13, 15, 17, 19];
 
 /** Whether the glyph palette is unfolded — a preference, so it persists. */
 const PALETTE_KEY = 'vault:nag-palette';
+/** Whether the browser sizes a textarea to its content on its own (see fit). */
+const FIELD_SIZING =
+  typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content');
 
 /**
  * Said when `safeCommentText` has just changed something under the caret.
@@ -99,14 +102,32 @@ export function AnnotationPane({
   // second line out of sight — an editor you cannot read your own note in.
   // The move table above is min-h-0 flex-1, so it yields the rows rather
   // than the panel growing past its column.
+  //
+  // Where the browser knows `field-sizing: content` (the Textarea
+  // primitive already carries it, between the same min-h and max-h) the
+  // sizing is the browser's and this does nothing: an inline height would
+  // only override it. The JS path below is the fallback for the browsers
+  // that do not, and it is written to force as few layouts as it can:
+  // the old version reset the height to auto and then read offsetHeight,
+  // clientHeight and scrollHeight on every keystroke, two synchronous
+  // layouts before paint. The border is measured once (it does not change
+  // with the text), and a note that has only GROWN skips the reset: with
+  // an explicit height on, scrollHeight is already the content's height.
+  const border = useRef<number | null>(null);
   const fit = useCallback(() => {
+    if (FIELD_SIZING) return;
     const el = box.current;
     if (!el) return;
-    el.style.height = 'auto';
     // scrollHeight is content + padding; the border is ours to add back, or
     // the box settles two pixels short and scrolls its own last line.
-    const border = el.offsetHeight - el.clientHeight;
-    el.style.height = `${el.scrollHeight + border}px`;
+    border.current ??= el.offsetHeight - el.clientHeight;
+    const b = border.current;
+    if (el.scrollHeight > el.clientHeight) {
+      el.style.height = `${el.scrollHeight + b}px`;
+      return;
+    }
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + b}px`;
   }, []);
 
   // `editing` is a dependency because it is what MOUNTS the textarea: turning

@@ -554,6 +554,13 @@ export function PdfScroller({
     lastRotation.current = rotation;
     if (reported.current !== null) target.current = reported.current;
   }, [rotation]);
+  // Keyed on what can change the answer, not on every render: the three
+  // effects above that ask for a page (pageNo, the first aspect, a
+  // rotation) and everything `tops` is built from (the page width, the
+  // flip, the count, and `total`, which moves whenever any page's measured
+  // aspect does). Deps-less, this scrolled and then read scrollHeight,
+  // clientHeight and scrollTop on every render while a page was pending,
+  // a forced layout per scroll event.
   useEffect(() => {
     const p = target.current;
     const el = viewportRef.current;
@@ -568,7 +575,8 @@ export function PdfScroller({
       target.current = null;
       reported.current = p;
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageNo, baseAspect, rotation, pageW, flipped, pages, total]);
   useEffect(() => {
     if (view.height === 0 || target.current !== null) return;
     // From the element, not from the render's `view`: the effect above may

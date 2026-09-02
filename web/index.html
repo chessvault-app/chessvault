@@ -93,6 +93,17 @@
     <link rel="apple-touch-startup-image" media="screen and (device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape) and (prefers-color-scheme: light)" href="/splash/1024x768@2x-light.png" />
     <link rel="apple-touch-startup-image" media="screen and (device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape) and (prefers-color-scheme: dark)" href="/splash/1024x768@2x-dark.png" />
     <!-- splash:end -->
+    <!-- The two faces the English shell paints with, asked for before the
+         stylesheet arrives: the @font-face rules live in an @import inside
+         index.css, so without this the first Pretendard request waited on
+         the whole CSS (measured: CSS at 14 ms, first font at 334 ms).
+         Subset 91 is the one whose unicode-range carries Latin; the mono
+         face is the Latin 400 that clocks and move lists paint with. Paths
+         relative to this file (Vite resolves an html href as a file, not a
+         package), emitted as the same hashed assets the stylesheet names,
+         so the preload and the @font-face fetch one file. -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="../node_modules/pretendard/dist/web/variable/woff2-dynamic-subset/PretendardVariable.subset.91.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2" />
     <style>
       /* The page's own ground, inline because it must exist before any
          stylesheet. Whatever shows between the OS startup image going and

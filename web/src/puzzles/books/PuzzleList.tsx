@@ -198,7 +198,9 @@ function useGridWindow(
       if (overflow === 'auto' || overflow === 'scroll') scrollers.push(el);
     }
     for (const target of scrollers) target.addEventListener('scroll', measure, { passive: true });
-    globalThis.addEventListener('scroll', measure, true);
+    // Passive as well: measure never cancels a scroll, and a bare `true`
+    // third argument is a non-passive listener the browser must wait on.
+    globalThis.addEventListener('scroll', measure, { capture: true, passive: true });
     globalThis.addEventListener('resize', measure);
     // Last line of defence: the grid's own size settling (fonts, images,
     // a filter changing the count) without any scroll at all.

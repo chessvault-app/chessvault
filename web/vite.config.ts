@@ -90,13 +90,50 @@ export default defineConfig({
      *
      * A warning that fires on every build for a known, deliberate chunk
      * trains you to scroll past it, and the next one that means something
-     * scrolls past with it. 700 clears NoteView with ~9% headroom and
-     * still catches real growth. For scale, the entry chunk that gates
-     * first paint is 216 kB (68 kB gzipped) and the runner-up is pdfjs at
-     * 427 kB. If this needs raising again, that is the signal to split
-     * the editor rather than the number.
+     * scrolls past with it. 700 clears the editor with headroom and
+     * still catches real growth. The editor stack now has its own chunk
+     * (the `editor` group below, 530 kB) and NoteView is 114 kB; the
+     * runner-up is pdfjs at 427 kB. If this needs raising again, that is
+     * the signal to split the editor further rather than the number.
      */
     chunkSizeWarningLimit: 700,
+    rolldownOptions: {
+      output: {
+        /**
+         * Two named groups over rolldown's automatic split. Without them
+         * the React runtime sat inside the entry chunk (index, 249 kB;
+         * 71 kB with React in its own 190 kB chunk), whose hash changes
+         * with every release, and NoteView carried the whole
+         * TipTap/ProseMirror stack in one 644 kB chunk. `react` changes
+         * only when React does, so it stays cached across app releases;
+         * `editor` keeps the editor stack (530 kB) out of the note VIEW
+         * (114 kB), so the two fetch in parallel and an editor update
+         * leaves the view's hash alone. Boot bytes are unchanged: the
+         * entry's static graph is 592 kB of JS with these groups and
+         * 591 kB without.
+         *
+         * `includeDependenciesRecursively` is off because on it pulled a
+         * group's dependencies in with it: TipTap's use-sync-external-store
+         * landed in `editor`, zustand imports the same module, and the
+         * editor chunk became part of first paint (measured: 1.2 MB of
+         * eager JS instead of 0.6).
+         *
+         * No `@base-ui` group, though one was tried both ways: as one
+         * chunk it put every Base UI primitive the lazy routes use into
+         * the boot path (+106 kB eager); `entriesAware` split it into 24
+         * fragments, several under 1 kB, for no fewer eager bytes. The
+         * automatic split already keeps each route's primitives with the
+         * route.
+         */
+        codeSplitting: {
+          includeDependenciesRecursively: false,
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 3 },
+            { name: 'editor', test: /node_modules[\\/](@tiptap|prosemirror-[a-z-]+|markdown-it)[\\/]/, priority: 2 },
+          ],
+        },
+      },
+    },
   },
   worker: { format: 'es' },
   optimizeDeps: {
