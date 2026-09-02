@@ -561,6 +561,32 @@ export const GAMES_WHERE_KEYS = [
   'terms',
 ] as const;
 
+/**
+ * How many box terms one request may carry.
+ *
+ * Every term compiles to its own clause, and a player term to a LIKE
+ * subquery per seat; the count was open, so a query string of fifteen
+ * hundred unmatched `player:` terms had SQLite evaluating thousands of
+ * subqueries against every row of a ten-million-game table, on the
+ * event loop, for one request. Sixteen is far past what the search box
+ * can mean (it rejects a third player outright) and far short of what
+ * hurts. Checked at the route, not in gamesWhere: the native binary
+ * compiles the same terms, and both sides must see the same list.
+ */
+export const MAX_SEARCH_TERMS = 16;
+
+/** How many terms a `terms` key carries. Malformed JSON counts as none,
+    which is what gamesWhere makes of it. */
+export function searchTermCount(raw: string | undefined): number {
+  if (!raw) return 0;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function gamesWhere(
   get: (key: string) => string | undefined,
   alias = '',
@@ -1435,6 +1461,9 @@ export function refGamesApi(
     // window build the same SQL, and the deep-search route composes the
     // same way. The raw query's own `terms` key (if a caller sent one)
     // is overridden: this route's terms come from `q` alone.
+    if (parsed.terms.length > MAX_SEARCH_TERMS) {
+      return c.json({ error: 'too many search terms' }, 400);
+    }
     const structured = gamesWhere(
       (k) =>
         k === 'terms'
@@ -1591,6 +1620,9 @@ export function refGamesApi(
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { db } = found;
+    if (searchTermCount(c.req.query('terms')) > MAX_SEARCH_TERMS) {
+      return c.json({ error: 'too many search terms' }, 400);
+    }
     const fen = c.req.query('fen')?.trim();
     if (!fen) return c.json({ error: 'expected fen' }, 400);
     const setup = parseFen(fen);
@@ -1700,6 +1732,9 @@ export function refGamesApi(
     // A ceiling so one request cannot ask for the whole database's worth
     // of work; the client chunks to well under it.
     if (fens.length > 256) return c.json({ error: 'too many positions' }, 400);
+    if (searchTermCount(c.req.query('terms')) > MAX_SEARCH_TERMS) {
+      return c.json({ error: 'too many search terms' }, 400);
+    }
 
     if (!positionIndexInfo(db).indexed) {
       return c.json({ indexed: false, positions: [] });
@@ -1851,6 +1886,9 @@ export function refGamesApi(
     const qTerms: SearchTerm[] = parsedQ.text
       ? [...parsedQ.terms, { kind: 'player', value: parsedQ.text }]
       : parsedQ.terms;
+    if (qTerms.length > MAX_SEARCH_TERMS) {
+      return c.json({ error: 'too many search terms' }, 400);
+    }
     const getFilter = (k: string): string | undefined =>
       k === 'terms'
         ? qTerms.length > 0

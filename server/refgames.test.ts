@@ -70,6 +70,37 @@ describe('opening names derived from moves', () => {
     expect(rows[0].eco).toBe('B90');
     expect(rows[0].moves).toBeUndefined(); // rides along server-side only
   });
+
+  it('refuses a request carrying more box terms than a search can mean', async () => {
+    // Each term is a clause, and a player term a LIKE subquery per seat;
+    // the count was open, and a query string of them was a full-table
+    // walk per term on the event loop. Sixteen is the ceiling.
+    const many = Array.from({ length: 17 }, (_, i) => `opening:x${i}`).join(' ');
+    const search = await app.request(`/api/refgames/search?q=${encodeURIComponent(many)}`);
+    expect(search.status).toBe(400);
+    const deep = await app.request(
+      `/api/refgames/deep-search?q=${encodeURIComponent(many)}&fen=${encodeURIComponent(
+        'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+      )}`,
+    );
+    expect(deep.status).toBe(400);
+    const terms = JSON.stringify(Array.from({ length: 17 }, () => ({ kind: 'eco', value: 'B9' })));
+    const explore = await app.request(
+      `/api/refgames/explore?fen=${encodeURIComponent(
+        'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+      )}&terms=${encodeURIComponent(terms)}`,
+    );
+    expect(explore.status).toBe(400);
+    const batch = await app.request(`/api/refgames/explore-batch?terms=${encodeURIComponent(terms)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fens: ['rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'] }),
+    });
+    expect(batch.status).toBe(400);
+    // Sixteen still answers.
+    const sixteen = Array.from({ length: 16 }, (_, i) => `opening:x${i}`).join(' ');
+    expect((await app.request(`/api/refgames/search?q=${encodeURIComponent(sixteen)}`)).status).toBe(200);
+  });
 });
 
 describe('reference games api', () => {
