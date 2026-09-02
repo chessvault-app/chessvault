@@ -392,6 +392,12 @@ const FORCE_STATES = `(() => {
     };
     walk(rules);
   }
+  // No transitions while forced: a tray that fades in over 100ms was
+  // sampled at 35% opacity on a slow run, and every focus ring inside it
+  // came back at a third of its alpha, twenty failures that no state a
+  // person can reach ever shows. The forced sheet is a snapshot of the
+  // settled state, so the settling is skipped.
+  decls.unshift('*, *::before, *::after { transition: none !important; animation: none !important; }');
   const el = document.createElement('style');
   el.id = 'contrast-forced-states';
   el.textContent = decls.join('\\n');
