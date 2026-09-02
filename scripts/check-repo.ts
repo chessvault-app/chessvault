@@ -85,6 +85,15 @@
  *     verbatim. A bare dash standing for "no value" in a table cell is not
  *     a sentence and is left alone, so only a dash with a letter or digit
  *     beside it counts. Code comments are prose and are not checked.
+ *
+ * 11. One Korean word per concept. A vocabulary audit found the vault's
+ *     word (보관함) standing in for the Games collection in four sentences,
+ *     the opening book's word (북) on four puzzle-book errors, and four
+ *     words for a shelf, five for a line of moves, three for a player. The
+ *     canon is one word each (see the glossary at the top of ko.ts); this
+ *     keeps the retired words out of the dictionary's values, and keeps
+ *     보관함 to entries whose English says vault. Only the dictionary is
+ *     checked: Korean in the manual is prose.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -623,6 +632,49 @@ for (const file of tracked) {
     if (!UI_DASH.test(text)) continue;
     findings.push({ file, line: code.slice(0, index).split('\n').length, text: text.slice(0, 120), why: DASH_WHY });
   }
+}
+
+// One Korean word per concept (11). The retired words were each the
+// minority spelling of something the dictionary already had a word for;
+// the audit that settled them is in the update log. Checked on the
+// dictionary's values only: an English key never contains Hangul.
+const RETIRED_KO: { pattern: RegExp; why: string }[] = [
+  { pattern: /컬렉션|볼트|금고/, why: 'the collection is 모음 and the vault is 보관함' },
+  { pattern: /서재|(?<!문)서가|책장/, why: 'a shelf is 목록' },
+  { pattern: /체스판/, why: 'the board is 보드' },
+  { pattern: /선수/, why: 'a player is 플레이어' },
+  { pattern: /변화수를|책의 변화|수순만 보/, why: 'a line of moves is 라인 (변화수 only where the English says variation)' },
+  { pattern: /인덱스/, why: 'an index is 색인' },
+  { pattern: /코멘트/, why: 'a comment is 주석' },
+  { pattern: /아이디(?!어)|사용자 이름/, why: 'a username is 사용자명' },
+  { pattern: /플라이|하프무브/, why: 'a ply is 반수' },
+  { pattern: /보이기|가리기/, why: 'show is 보기 and hide is 숨기기' },
+  { pattern: /정석/, why: 'the opening book is 북' },
+];
+// 보관함 is the vault. The one English key without "vault" that may say it is
+// the Settings heading over the vault-wipe controls.
+const VAULT_WORD_EXEMPT = new Set(['Danger zone']);
+if (existsSync(DICTIONARY)) {
+  const lines = blankComments(readFileSync(DICTIONARY, 'utf-8')).split('\n');
+  let key = '';
+  lines.forEach((line, i) => {
+    const k = /^\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|([A-Za-z]\w*))\s*:/.exec(line);
+    if (k) key = k[1] ?? k[2] ?? k[3] ?? '';
+    const value = k ? line.slice(k[0].length) : line;
+    for (const { pattern, why } of RETIRED_KO) {
+      if (pattern.test(value)) {
+        findings.push({ file: DICTIONARY, line: i + 1, text: line.trim().slice(0, 120), why: `a retired Korean word: ${why}` });
+      }
+    }
+    if (/보관함/.test(value) && !/vault/i.test(key) && !VAULT_WORD_EXEMPT.has(key)) {
+      findings.push({
+        file: DICTIONARY,
+        line: i + 1,
+        text: line.trim().slice(0, 120),
+        why: '보관함 is the vault; this English says something else (the collection is 모음, an archive is 기보)',
+      });
+    }
+  });
 }
 
 if (findings.length === 0) {

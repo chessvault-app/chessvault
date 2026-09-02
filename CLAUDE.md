@@ -149,8 +149,10 @@ its own list at the top of `scripts/check-repo.ts` — currently absolute
 paths and credentials, a rating rendered without `bandOf()`, the lockfile
 agreeing with package.json, the Rust crate notice matching Cargo.lock, the
 retired colour names in either the class or the `var()` form, every
-UI string the manual "quotes" still existing in the app's source, and no
-em-dash in a UI string. Add to
+UI string the manual "quotes" still existing in the app's source, no
+em-dash in a UI string, and one Korean word per concept in the dictionary
+(the glossary at the top of `web/src/lib/ko.ts` is the canon; 보관함 is
+the vault and nothing else). Add to
 that list whenever a mistake turns out to have a shape a grep can catch;
 keep the header in step with what the file does, or this paragraph starts
 lying about it.

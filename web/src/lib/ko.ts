@@ -7,6 +7,16 @@
  * solution) are native. Translating those into coined Korean would be
  * correct and unreadable.
  *
+ * One word per concept, settled by a vocabulary audit and held by
+ * check:repo (its item 11):
+ *   vault 보관함 · the Games collection 모음 · a shelf folder 폴더 · an
+ *   uploaded .pgn PGN 파일 · any browse page's shelf 목록 · board 보드 ·
+ *   a line of moves 라인 (변화수 only for "variation") · player 플레이어 ·
+ *   opening book 북, a book a user imports 책 · delete 삭제, remove 제거,
+ *   clear or wipe 지우기, undo a bookmark/link/selection 해제 · show 보기
+ *   as a button, 표시 in a setting's description · hide 숨기기 · index 색인
+ *   · username 사용자명 · ply 반수 · an unrestricted filter 모든 …
+ *
  * Anything missing here renders as its English original, so this file can
  * grow without any component knowing.
  */
@@ -546,7 +556,7 @@ export const ko: Record<string, string> = {
   'Add a chapter': '챕터 추가',
   'Click to accept ANY move here (the book’s K~)': '여기서는 아무 수나 받도록 클릭 (책의 K~)',
   'Braces and annotation commands cannot be saved in a comment; the text was rewritten.':
-    '중괄호와 주석 명령은 코멘트에 저장할 수 없어 텍스트를 고쳐 썼습니다.',
+    '중괄호와 주석 명령은 주석에 저장할 수 없어 텍스트를 고쳐 썼습니다.',
   'Hide glyphs': '기호 숨기기',
   'Show glyphs': '기호 보기',
   'All games': '모든 게임',
@@ -1790,7 +1800,7 @@ export const ko: Record<string, string> = {
   'that PDF is too big (500 MB cap)': 'PDF가 너무 큽니다 (최대 500 MB)',
   'that file is not a PDF': 'PDF 파일이 아닙니다',
   'no such page': '그런 페이지가 없습니다',
-  'not a book on the shelf': '목록의 책이 아닙니다',
+  'not a book on the shelf': '목록의 책이 아닙니다',
   Book: '책',
   Read: '읽기',
   'Read the book': '책 읽기',
@@ -1868,7 +1878,6 @@ export const ko: Record<string, string> = {
   'What each part of the app keeps on disk. Your documents are at the top. The caches and reference data below are rebuilt or refetched when cleared from their own pages.':
     '앱의 각 영역이 디스크에 차지하는 크기입니다. 직접 만든 문서가 위에 있습니다. 아래의 캐시와 참고 자료는 각자의 페이지에서 지워도 다시 만들어지거나 내려받습니다.',
   'Puzzle progress': '퍼즐 진행 기록',
-  'PGN files': 'PGN 파일',
   'Document history': '문서 기록',
   'Explorer cache': '탐색기 캐시',
   'Tablebase cache': '테이블베이스 캐시',
