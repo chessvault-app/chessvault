@@ -9,7 +9,7 @@ import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
-import { authApi, migratePlaintextPassword, requireAuth } from './auth.ts';
+import { authApi, isGated, migratePlaintextPassword, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
 import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
@@ -23,7 +23,7 @@ import { tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
-import { APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
+import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -180,7 +180,7 @@ app.use('/*', async (c, next) => {
 // vault has no session for the cookie-based gate to protect, so without
 // this any web page open in the user's own browser could reach the API on
 // loopback — including /api/settings/wipe. See server/crossSite.ts.
-app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_ONLY }));
+app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_ONLY, gated: isGated, allowedHosts: ALLOWED_HOSTS }));
 
 // Cap request bodies before any handler buffers them: the vault-write
 // routes (studies, notes, draft images) otherwise accept unbounded input.

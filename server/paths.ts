@@ -52,6 +52,16 @@ export const LOOPBACK_ONLY = BIND === '127.0.0.1' || BIND === 'localhost' || BIN
  */
 export const TRUSTED_PROXY = process.env.CHESS_TRUSTED_PROXY?.trim() === '1';
 
+/**
+ * Host names an ungated server answers to, beyond the ones it can work
+ * out for itself (see crossSite.ts). Comma-separated, case-insensitive,
+ * no port.
+ */
+export const ALLOWED_HOSTS = (process.env.CHESS_ALLOWED_HOSTS ?? '')
+  .split(',')
+  .map((h) => h.trim().toLowerCase())
+  .filter(Boolean);
+
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');

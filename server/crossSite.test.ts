@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { crossSiteGuard } from './crossSite.ts';
+import { crossSiteGuard, type CrossSiteOptions } from './crossSite.ts';
 
-function makeApp(opts: { loopbackOnly?: boolean } = {}): Hono {
+function makeApp(opts: CrossSiteOptions = {}): Hono {
   const app = new Hono();
   app.use('/api/*', crossSiteGuard(opts));
   app.get('/api/read', (c) => c.json({ ok: true }));
@@ -131,5 +131,37 @@ describe('crossSiteGuard', () => {
     const app = makeApp();
     const res = await app.request('/api/read', { headers: { host: 'vault.tailnet.example' } });
     expect(res.status).toBe(200);
+  });
+
+  it('vouches for the Hosts an ungated network server can, and no other', async () => {
+    const app = makeApp({ gated: () => false, allowedHosts: ['vault.home.example'] });
+    for (const host of [
+      '192.168.1.20:8787',
+      '100.101.102.103',
+      '[fd7a:115c:a1e0::1]:8787',
+      'localhost:8787',
+      'study-mac.local:8787',
+      'study-mac.tail1234.ts.net',
+      'Vault.Home.Example:8787',
+    ]) {
+      const res = await app.request('/api/read', { headers: { host } });
+      expect(res.status, host).toBe(200);
+    }
+    // The rebind: an outside name the browser now resolves to this box.
+    for (const host of ['attacker.example', 'attacker.example:8787', 'ts.net.attacker.example']) {
+      const res = await app.request('/api/read', { headers: { host } });
+      expect(res.status, host).toBe(403);
+    }
+    // No Host at all (an HTTP/1.0 tool) is not a browser and is let by.
+    expect((await app.request('/api/read')).status).toBe(200);
+  });
+
+  it('drops the Host check the moment a password is on', async () => {
+    let gated = false;
+    const app = makeApp({ gated: () => gated });
+    const attacker = { headers: { host: 'attacker.example' } };
+    expect((await app.request('/api/read', attacker)).status).toBe(403);
+    gated = true;
+    expect((await app.request('/api/read', attacker)).status).toBe(200);
   });
 });

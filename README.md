@@ -328,6 +328,15 @@ One port serves the built app and the HTTP API together. Then:
 2. **Turn on the lock screen.** Set an app password in Settings (or
    `appPassword` in `vault/config.json`), and add authenticator 2FA
    while you are there. Anything reachable from the internet needs this.
+
+   A vault on a tailnet or a home network can run without one, and then
+   the server only answers to host names it can vouch for: an IP
+   address, `localhost`, a `.local` or `.ts.net` name. That is what stops
+   a website you visit from reaching the API by pointing its own name at
+   your machine. A name of your own goes in `CHESS_ALLOWED_HOSTS`
+   (comma-separated). And a reverse proxy on ANOTHER host needs
+   `CHESS_TRUSTED_PROXY=1` for the login throttle to count clients by the
+   address the proxy forwards rather than by the proxy's own.
 3. **Connect your devices.** Phone: open the URL and Add to Home Screen —
    it installs as a PWA with an offline shell. Desktop: install the app,
    answer **On my server**, and give it your server's URL.

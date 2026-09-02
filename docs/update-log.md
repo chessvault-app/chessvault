@@ -439,6 +439,17 @@ other people.
   had carried in English and never shown, is now a real placeholder in
   the reader's language.
 
+- **A server without a password answers only to names it can vouch for.**
+  On a tailnet or a home network the vault may run unlocked, and a
+  website you visited could point its own name at your machine and reach
+  the API as if it were the app. The server now refuses a host name it
+  cannot account for: an IP address, `localhost`, `.local` and `.ts.net`
+  names pass on their own, and `CHESS_ALLOWED_HOSTS` lists any other.
+  With a password set nothing changes. The login throttle also stopped
+  believing a forwarded-for header the client wrote itself: a server
+  reached directly counts guesses by the connecting address, and a proxy
+  on another host declares itself with `CHESS_TRUSTED_PROXY=1`.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
