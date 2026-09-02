@@ -75,6 +75,16 @@
  *    `.rs` with no row makes the table a coverage claim that is not
  *    true — both one line a grep can see. The crate's own plumbing
  *    (lib, main, util) mirrors nothing and is exempt from naming one.
+ *
+ * 10. No em-dash in a UI string. One sentence in ten had grown one, doing
+ *     three jobs (a consequence, an aside, a separator) that a full stop,
+ *     a comma or a colon do in every other app, and Korean has no use for
+ *     the character at all. All of them were taken out in one pass; this
+ *     keeps them out. Held to it: the dictionary's keys and values, every
+ *     t('literal'), and the server's error strings, which the app shows
+ *     verbatim. A bare dash standing for "no value" in a table cell is not
+ *     a sentence and is left alone, so only a dash with a letter or digit
+ *     beside it counts. Code comments are prose and are not checked.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -575,6 +585,43 @@ const TS_PATH = /[\w./-]+\.ts\b/g;
         why: `not in ${NATIVE_README}'s layout table — add the row, or the table is a coverage claim that is not true`,
       });
     }
+  }
+}
+
+// No em-dash in a UI string: the dictionary, every t('literal'), and the
+// server's error strings. A dash with a letter or digit beside it is a
+// sentence's dash; the lone '—' a table shows for "no value" is not.
+const UI_DASH = /[\p{L}\p{N}]\s*—|—\s*[\p{L}\p{N}]/u;
+const DASH_WHY = 'an em-dash in a UI string — a full stop, a comma or a colon does its job (CLAUDE.md)';
+const blankComments = (src: string): string => {
+  const blank = (m: string): string => m.replace(/[^\n]/g, ' ');
+  return src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^\s*\/\/.*$/gm, blank);
+};
+if (existsSync(DICTIONARY)) {
+  blankComments(readFileSync(DICTIONARY, 'utf-8'))
+    .split('\n')
+    .forEach((line, i) => {
+      if (UI_DASH.test(line)) {
+        findings.push({ file: DICTIONARY, line: i + 1, text: line.trim().slice(0, 120), why: DASH_WHY });
+      }
+    });
+}
+for (const file of tracked) {
+  const isApp = /^web\/src\/.*\.tsx?$/.test(file) && file !== DICTIONARY && !/\.test\.tsx?$/.test(file);
+  const isServer = /^server\/.*\.ts$/.test(file) && !/\.test\.ts$/.test(file);
+  if (!isApp && !isServer) continue;
+  let code: string;
+  try {
+    code = blankComments(readFileSync(file, 'utf-8'));
+  } catch {
+    continue;
+  }
+  const spots: { text: string; index: number }[] = isApp
+    ? tCallKeys(code)
+    : [...code.matchAll(/error:\s*'((?:[^'\\]|\\.)*)'/g)].map((m) => ({ text: m[1]!, index: m.index! }));
+  for (const { text, index } of spots) {
+    if (!UI_DASH.test(text)) continue;
+    findings.push({ file, line: code.slice(0, index).split('\n').length, text: text.slice(0, 120), why: DASH_WHY });
   }
 }
 
