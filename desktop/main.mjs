@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import { createWriteStream, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -68,6 +68,16 @@ function isOwnOrigin(url) {
   } catch {
     return false;
   }
+}
+
+/** The shell's own chooser page, as the URL a frame reports. */
+const CHOOSER_URL = pathToFileURL(join(here, 'chooser.html')).href;
+
+/** Did this IPC message come from the chooser page, and not from whatever
+    page the vault (or a remote server) is serving into the same window? */
+function fromChooser(event) {
+  const url = event.senderFrame?.url ?? '';
+  return url.split('?')[0] === CHOOSER_URL;
 }
 
 /**
@@ -354,9 +364,36 @@ async function wiredUpdater() {
 }
 
 app.whenReady().then(async () => {
+  /**
+   * What a page may ask the machine for: nothing, with one exception.
+   *
+   * Electron GRANTS every permission request unless told otherwise, and
+   * the window shows whatever page the chosen server serves. Camera,
+   * microphone, location and notifications were all one call away for
+   * that page, with no prompt on Windows or Linux. The app uses none of
+   * them. It does read the clipboard, for pasting a position, so that
+   * one is allowed, and only to the vault's own origin.
+   */
+  const GRANTED = new Set(['clipboard-read', 'clipboard-sanitized-write']);
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback, details) => {
+    callback(GRANTED.has(permission) && isOwnOrigin(details?.requestingUrl ?? ''));
+  });
+  session.defaultSession.setPermissionCheckHandler((_wc, permission, origin) => {
+    return GRANTED.has(permission) && isOwnOrigin(origin ?? '');
+  });
+
   const win = createWindow();
 
-  ipcMain.handle('vault:choose', async (_e, mode, url, vaultDir) => {
+  ipcMain.handle('vault:choose', async (event, mode, url, vaultDir) => {
+    // Only the shell's own chooser page may choose. The bridge is also in
+    // the hands of whatever page a remote server serves, and this handler
+    // took its word for a filesystem path: a hostile server could point
+    // the app at any folder it named, or a UNC share of its own, and the
+    // bundled server would start there and write into it. The chooser is
+    // the one page asking a person, so it is the one page answered.
+    if (!fromChooser(event)) return { error: 'Only the vault chooser can open a vault.' };
+    if (mode !== 'local' && mode !== 'remote') return { error: 'Unknown vault mode.' };
+    if (vaultDir != null && typeof vaultDir !== 'string') return { error: 'Unknown vault folder.' };
     // Remote mode loads this URL as a top-level page that inherits the
     // preload bridge — force https so a plaintext or exotic-scheme server
     // can never receive the session cookie or the bridge.

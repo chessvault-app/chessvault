@@ -450,6 +450,16 @@ other people.
   reached directly counts guesses by the connecting address, and a proxy
   on another host declares itself with `CHESS_TRUSTED_PROXY=1`.
 
+- **The desktop window keeps its own keys.** In remote mode the window
+  shows whatever your server serves, and that page could pick a vault
+  folder on your disk through the shell, or be granted the camera,
+  microphone and location without a prompt. Only the shell's own chooser
+  can choose a vault now, and no page gets a permission beyond reading
+  the clipboard on the vault's own address. On the server, the Syzygy
+  folder can be set only from the machine itself, which is the only
+  place Settings ever offered it, and a search can carry at most sixteen
+  terms, so one request can no longer walk a whole database per term.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
