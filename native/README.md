@@ -63,6 +63,11 @@ So the crate is pinned to the JavaScript pipeline's own output:
   seeded random corpus — tables, schema, and deep hunts three ways —
   with no fixture in between, so it cannot be blessed by regenerating.
 
+All of it runs in CI: the `native` job of `.github/workflows/verify.yml`
+builds the crate, runs the fixtures and fuzzes two seeds on every push
+and pull request, one seed fixed so a failure reproduces anywhere and
+one that moves with the run.
+
 **If you change anything either side computes** — the hash scheme, the
 schema, `finalMen`, the result or level codes, the replay loop's stopping
 rules — regenerate the fixtures and re-run the diff:
