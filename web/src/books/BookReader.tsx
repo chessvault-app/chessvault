@@ -89,10 +89,13 @@ const HOTSPOTS_KEY = 'vault:reader:hotspots';
 /** Whether the line strip is drawn under the board at wide; remembered on the device. */
 const STRIP_KEY = 'vault:reader:strip';
 /**
- * What the strip takes off the board's height budget when it is shown: its
- * own cap (max-h-24, three lines) plus the gap above it. A fixed reserve
- * rather than the strip's measured height, so the board does not change
- * size as the line grows — it is the thing being read against.
+ * What the strip takes off the board's height budget when it is shown:
+ * three lines (the engine tab's cap, max-h-24) plus the gap above it. A
+ * fixed reserve rather than the strip's measured height, so the board does
+ * not change size as the line grows — it is the thing being read against.
+ * The reserve is what the strip gets on a height-bound window; on a
+ * width-bound one the column has room to spare under the nav and the
+ * strip grows into all of it (flex-1 below), scrolling only past that.
  */
 const STRIP_BUDGET = 'calc(100dvh - 10rem - 7rem)';
 /**
@@ -485,8 +488,16 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           right as above, so the first chip's text starts on the board's
           left edge (1280x780: chip text 842, board 841). In the chip
           grammar the engine tab's strip uses: muted moves, the one you
-          are on in the accent, sidelines one level deep in brackets. */}
-      {strip && <CurrentLine className="board-col-cap mx-auto w-full wide:pl-9 wide:pr-5" />}
+          are on in the accent, sidelines one level deep in brackets.
+          Not the engine tab's three-line cap: the strip fills whatever the
+          column has left under the nav (flex-1 min-h-0, max-h-none) and
+          scrolls only when the line outgrows that, which on a
+          height-bound window is the three lines STRIP_BUDGET reserved
+          and on a tall one is far more. A box scrolling beside empty
+          space was the first thing reported. */}
+      {strip && (
+        <CurrentLine className="board-col-cap mx-auto w-full min-h-0 flex-1 max-h-none wide:pl-9 wide:pr-5" />
+      )}
     </div>
   );
 

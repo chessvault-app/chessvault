@@ -13,7 +13,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   move 6 was. The moves are now one clickable line under the board's
   navigation, in the strip the engine tab already uses on a phone: the
   move you are on in the accent, the sideline where the book branches in
-  brackets, at most three lines tall with the current move kept in view.
+  brackets, the current move kept in view. It takes whatever room the
+  column has under the board, and scrolls only when the line outgrows
+  it.
   It is not a moves panel, and the page keeps its two parts, the book
   and the board. A button in the board's toolbar puts it away, remembered
   on this device. On a window short enough for the board to be sized by
