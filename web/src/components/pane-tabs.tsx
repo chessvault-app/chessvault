@@ -42,7 +42,17 @@ export function PaneTabs<T extends string>({
       // not part of what turns.
       data-pane-strip
     >
-      <TabsList className={cn('w-auto', className)}>
+      {/* OUT OF SCOPE FOR AUDITS AND CRITIQUES. This strip is 32px on a
+          coarse pointer, under the app's 36px floor, by decision
+          (lanph3re, 2026-09-03): it is the one row that stands between
+          the board and the pane on every phone page, and the 42px the
+          floor produced was measured as height taken from the pane it
+          switches. The tabs are a third of the screen wide, so the
+          target was never short of room. Do not raise it, do not flag
+          it; CLAUDE.md and DESIGN.md both name this exception. */}
+      <TabsList
+        className={cn('w-auto pointer-coarse:group-data-horizontal/tabs:h-8', className)}
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -65,7 +75,10 @@ export function PaneTabs<T extends string>({
               // the tab still looked like the old one under the new panel.
               // Same duration and same easing here; measured in
               // index.css beside the rule that moves the pane.
-              className={cn('duration-(--pane-turn) ease-(--pane-turn-ease)', Icon && 'py-1')}
+              className={cn(
+                'duration-(--pane-turn) ease-(--pane-turn-ease) pointer-coarse:h-[calc(100%-1px)]',
+                Icon && 'py-1',
+              )}
             >
               {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
             </TabsTrigger>

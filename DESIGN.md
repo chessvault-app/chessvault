@@ -538,6 +538,10 @@ hit areas, `title` as a tooltip. Composites live in
   take 44px. This is the rung `pointer-coarse:` reaches for everywhere
   (tabs, switches, checkboxes, radios, disclosures, hover-revealed
   links), whether by growing the control or by an `after:` hit box.
+  One exception, by decision and out of scope for any audit: the
+  phone's pane strip (`components/pane-tabs.tsx`) stays at the
+  registry's 32px, because its tabs are a third of the screen wide and
+  every pixel it grows comes off the pane under it.
 - **Primary:** primary fill, primary-foreground text, hover at 80% alpha.
 - **Outline:** background fill, border stroke, hover to the muted rung;
   in dark it takes shadcn's translucent `input/30`.

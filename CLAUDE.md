@@ -126,10 +126,13 @@ and enforces the registry's composition rules (Field for forms,
 ToggleGroup for option sets, `data-icon` on button icons, no `dark:`
 colour overrides). The skill is guidance, written for any shadcn project;
 where it disagrees with this file or with behaviour that was measured here,
-this file wins. Two places it will point at are deliberate: the registry's
+this file wins. Three places it will point at are deliberate: the registry's
 own `dark:` classes inside `web/src/components/ui/` (its rule is aimed at
-app code), and the few icons sized `size-3.5` where a 16px icon was
-measured too large for its row.
+app code), the few icons sized `size-3.5` where a 16px icon was
+measured too large for its row, and the phone's pane strip
+(`components/pane-tabs.tsx`) held at 32px under the 36px coarse-pointer
+floor. That strip is out of scope for every audit and critique: it is
+not to be raised, and not to be reported.
 
 **Class names speak the registry's vocabulary** (`bg-card`,
 `text-muted-foreground`, `border-input`, `bg-destructive`), with the

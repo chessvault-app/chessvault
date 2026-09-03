@@ -384,11 +384,14 @@ other people.
   walk now covers light plus High contrast, the one combination it did
   not, and passes on 11 routes, 4 schemes and 2 widths.
 
-- **36px is the touch floor, and it is written down.** Pane tabs were
-  24px tall on a phone; switches, checkboxes and radios reached 34; the
-  engine's thumb-only chevron 24, a link 22, the disclosure toggle 20.
-  Each reaches 36 on a coarse pointer with the desktop look untouched,
-  and DESIGN.md states the floor. A portrait window of 1024px or more
+- **36px is the touch floor, and it is written down.** Switches,
+  checkboxes and radios reached 34 on a phone; the engine's thumb-only
+  chevron 24, a link 22, the disclosure toggle 20. Each reaches 36 on a
+  coarse pointer with the desktop look untouched, and DESIGN.md states
+  the floor. The one control held under it, by decision, is the pane
+  strip between the board and the pane: its tabs are a third of the
+  screen wide already, and the height it gained came off the pane it
+  switches. A portrait window of 1024px or more
   stacks in every view now: the JavaScript side of the layout rule had
   kept a branch the stylesheet had removed, and a test holds the two
   equal. Nothing scrolls sideways at 320px.
