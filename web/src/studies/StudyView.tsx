@@ -266,6 +266,16 @@ export function StudyView({
             explorer
           />
         )}
+        {/* The phone's bottom bar is claimed now, not when the study
+            mounts: the global tabs stood there through the wait and were
+            swapped for the move controls as the document landed. The
+            controls themselves at their own height, invisible, so the
+            bar is the right size and nothing in it can be pressed. */}
+        {pending && (
+          <MobileActionBar>
+            <BoardControls className="py-1.5 invisible" aria-hidden />
+          </MobileActionBar>
+        )}
       </div>
     );
   }
