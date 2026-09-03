@@ -1185,8 +1185,15 @@ function OpeningTreatment({
               dark rectangles wandering over the placeholder (lanph3re's
               report); a headless capture caught one such frame. The
               spinner beside it is the motion that says loading. */}
+          {/* min-h-full: the aspect ratio is the page's FLOOR, not its
+              ceiling. On a phone the column is taller than one page, and
+              a placeholder that stopped at the page's foot left a bare
+              band of column under a rounded card (lanph3re's report):
+              a box, not a page. The scroller starts the next page right
+              where the first ends, so the placeholder covers the column
+              the way the pages will. */}
           <Skeleton
-            className="animate-none rounded-md"
+            className="min-h-full animate-none rounded-md"
             style={{ width: pageW || '100%', aspectRatio: `1 / ${aspect ?? 4 / 3}` }}
           />
           <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
