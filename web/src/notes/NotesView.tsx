@@ -25,6 +25,7 @@ import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
   shelfHasShape,
+  readShelfHeights,
   shelfShapeOf,
   storedShelfShape,
 } from '@/components/shelf-reservation';
@@ -120,9 +121,24 @@ function NoteList() {
     if (!loaded || error !== null) return;
     localStorage.setItem(
       NOTES_SHELF_KEY,
-      storedShelfShape(shelfShapeOf(notes.map((n) => n.id), folders)),
+      storedShelfShape(shelfShapeOf(notes.map((n) => n.id), folders), readShelfHeights()),
     );
-  }, [loaded, error, notes, folders]);
+    // The heights are read off the page after the cards are drawn, and
+    // again when the layout switches: a list row and a grid card differ.
+    // And once more when the web font is in, since the fallback face
+    // wraps different words (see the studies shelf).
+    let stale = false;
+    void document.fonts?.ready.then(() => {
+      if (stale) return;
+      localStorage.setItem(
+        NOTES_SHELF_KEY,
+        storedShelfShape(shelfShapeOf(notes.map((n) => n.id), folders), readShelfHeights()),
+      );
+    });
+    return () => {
+      stale = true;
+    };
+  }, [loaded, error, notes, folders, view.layout]);
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
@@ -241,6 +257,7 @@ function NoteList() {
             layout={view.layout}
             groups={reservedShelf}
             gridClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            cover={false}
           />
         ) : null
       ) : /* Nothing in the vault at all — no note at any depth (the listing

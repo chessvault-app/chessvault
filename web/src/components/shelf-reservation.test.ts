@@ -64,3 +64,25 @@ describe('shelfShapeOf', () => {
     expect(shape.folders).toEqual([2, 1]);
   });
 });
+
+describe('heights', () => {
+  const shape = { root: 1, folders: [2, 0] };
+
+  it('rides along only when there is one per card', () => {
+    expect(parseShelfShape(storedShelfShape(shape, [110, 86, 86])).heights).toEqual([110, 86, 86]);
+    // Two heights for three cards: a card mid-mount, or another shape.
+    expect(parseShelfShape(storedShelfShape(shape, [110, 86])).heights).toBeUndefined();
+    expect(parseShelfShape(storedShelfShape(shape)).heights).toBeUndefined();
+  });
+
+  it('drops a list that is not all heights, and keeps the counts', () => {
+    const parsed = parseShelfShape(JSON.stringify({ ...shape, heights: [110, 'tall', 86] }));
+    expect(parsed).toEqual(shape);
+    expect(parseShelfShape(JSON.stringify({ ...shape, heights: [110, 0, 86] })).heights).toBeUndefined();
+    expect(parseShelfShape(JSON.stringify({ ...shape, heights: [110, 86, 9000] })).heights).toBeUndefined();
+  });
+
+  it('stores a tenth of a pixel, which is what a layout can differ by', () => {
+    expect(JSON.parse(storedShelfShape(shape, [110.4, 86.25, 86])).heights).toEqual([110.4, 86.3, 86]);
+  });
+});

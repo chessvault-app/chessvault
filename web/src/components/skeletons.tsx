@@ -111,6 +111,7 @@ export function SkeletonCards({
   layout = 'list',
   gridClassName = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3',
   groups,
+  cover = true,
   className,
 }: {
   cards?: number;
@@ -122,7 +123,15 @@ export function SkeletonCards({
    * stack is drawn, which is right only for a shelf nothing is known
    * about.
    */
-  groups?: { root: number; folders: number[] };
+  groups?: { root: number; folders: number[]; heights?: number[] };
+  /**
+   * Whether each card opens on a 64px board. Studies always do; a note
+   * mostly does not (it has a 16px glyph where the board would be), and
+   * a board-sized block over a glyph reads as the wrong shelf. Height
+   * comes from `groups.heights` where the shelf measured it and from
+   * the text lines otherwise, so this changes nothing about the size.
+   */
+  cover?: boolean;
   /**
    * The shelf's own arrangement, which it knows before the documents
    * arrive — it is a stored preference, not something the answer decides.
@@ -144,14 +153,19 @@ export function SkeletonCards({
     <div
       key={i}
       className={cn(
-        'bg-card flex gap-3 rounded-xl ring-1 ring-border',
+        'bg-card flex gap-3 overflow-hidden rounded-xl ring-1 ring-border',
         grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
       )}
+      // The card's settled height where the shelf measured it last visit
+      // (shelf-reservation says why a measurement and not a line count).
+      // The lines below are then only what the placeholder looks like;
+      // without one they are also what it measures.
+      style={groups?.heights ? { height: groups.heights[i] } : undefined}
     >
       {/* The first board, where the document has one. Its 64px is
           shorter than the text beside it, so a document without one
           makes no difference to the height. */}
-      <Skeleton className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded-sm')} />
+      <Skeleton className={cn('shrink-0', grid && cover ? 'size-16 rounded-md' : 'size-4 rounded-sm')} />
       <div className="min-w-0 flex-1">
         {/* Title on a 24px line, then the quiet stat line on 16. */}
         <div className="flex h-6 items-center">
@@ -204,7 +218,11 @@ export function SkeletonCards({
                   <Skeleton className="h-2.5 w-28" />
                 </div>
               ) : (
-                stack(n, groups.root + f)
+                // The offset is the cards drawn BEFORE this collection,
+                // not its ordinal: the index reads `heights`, and by the
+                // ordinal the third group took the second's row heights
+                // (24px over on the demo's phone studies shelf).
+                stack(n, groups.root + groups.folders.slice(0, f).reduce((a, b) => a + b, 0))
               )}
             </section>
           ))}

@@ -27,6 +27,7 @@ import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
   shelfHasShape,
+  readShelfHeights,
   shelfShapeOf,
   storedShelfShape,
 } from '@/components/shelf-reservation';
@@ -72,13 +73,26 @@ function StudyList() {
   const [reservedShelf] = useState(() => parseShelfShape(localStorage.getItem(STUDIES_SHELF_KEY)));
   // Remembered for the NEXT visit's reservation — the settled answer
   // only, never an error's empty list.
+  // The cards' heights go with it, read off the page once they are
+  // drawn (this effect runs after that commit), and again when the
+  // layout is switched, since a list row and a grid card are not the
+  // same height.
+  // Measured once the web font is in: a title that wraps in the real
+  // face and not in the fallback is a 24px row, and a first visit
+  // measured before the font landed stored the fallback's heights (24px
+  // over on the phone's studies shelf, on the demo).
   useEffect(() => {
     if (!listLoaded || error !== null) return;
-    localStorage.setItem(
-      STUDIES_SHELF_KEY,
-      storedShelfShape(shelfShapeOf(studies.map((s) => s.id), folders)),
-    );
-  }, [listLoaded, error, studies, folders]);
+    const shape = shelfShapeOf(studies.map((s) => s.id), folders);
+    localStorage.setItem(STUDIES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+    let stale = false;
+    void document.fonts?.ready.then(() => {
+      if (!stale) localStorage.setItem(STUDIES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+    });
+    return () => {
+      stale = true;
+    };
+  }, [listLoaded, error, studies, folders, view.layout]);
   // Bookmarks, kept in the vault exactly as the games shelf keeps its
   // own — a mark belongs to the shelf, not to a browser.
   const [markedIds, setMarked] = useState<Set<string>>(new Set());

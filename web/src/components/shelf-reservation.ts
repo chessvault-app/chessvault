@@ -24,7 +24,28 @@ export interface ShelfShape {
       An entry of 0 is a real shape: a header over the one-line "Empty
       collection." note. */
   folders: number[];
+  /**
+   * Each card's settled height in CSS px, in the order the grouped list
+   * draws them (root, then each collection), when the shelf measured
+   * them last visit. Optional because older stores and the floors have
+   * none, and dropped by the reader unless it has one per card.
+   *
+   * A pixel and not a line count, because the count is not knowable
+   * from the text: a grid card gives its title two lines and its
+   * excerpt two, and which of those it uses depends on the words AND
+   * the column width, and a row's cards then all take the tallest
+   * (shelf-card's h-full). Measured at 1280 on the demo's studies
+   * shelf, eight of twelve titles wrapped and the one-line placeholder
+   * stood 24px short per row; the notes shelf's one-line excerpts made
+   * its placeholder 20px tall per card the other way. The same device
+   * reads this at the same width nearly every time, and when it does
+   * not the hint is roughly right, which is all a hint is for.
+   */
+  heights?: number[];
 }
+
+/** No card is taller than this; a stored height past it is not one. */
+const MAX_CARD_HEIGHT = 400;
 
 /**
  * Caps, MAX_ROWS's argument: a count past them is clamped rather than
@@ -73,13 +94,37 @@ export function parseShelfShape(raw: string | null, floor: ShelfShape = WELCOME_
   const value = stored as Partial<ShelfShape>;
   const root = clampCount(value.root);
   if (root === null || !Array.isArray(value.folders)) return floor;
-  return {
-    root,
-    folders: value.folders
-      .map(clampCount)
-      .filter((n): n is number => n !== null)
-      .slice(0, MAX_SHELF_FOLDERS),
-  };
+  const folders = value.folders
+    .map(clampCount)
+    .filter((n): n is number => n !== null)
+    .slice(0, MAX_SHELF_FOLDERS);
+  const shape: ShelfShape = { root, folders };
+  // One height per card the reader will draw, or none: a list that is
+  // short or holds a non-height is from another shape or another
+  // version, and a placeholder half-measured is worse than one
+  // un-measured, because the seam moves.
+  const cards = root + folders.reduce((a, b) => a + b, 0);
+  if (
+    Array.isArray(value.heights) &&
+    value.heights.length >= cards &&
+    value.heights.slice(0, cards).every((h) => typeof h === 'number' && h > 0 && h <= MAX_CARD_HEIGHT)
+  ) {
+    shape.heights = value.heights.slice(0, cards);
+  }
+  return shape;
+}
+
+/**
+ * The settled cards' heights, read off the page in the order the grouped
+ * list draws them. Every shelf card carries `data-slot="shelf-card"`, and
+ * a page holds one shelf, so the document is the scope. `null` when
+ * there is nothing to measure yet (or no document, in a node test).
+ */
+export function readShelfHeights(): number[] | null {
+  if (typeof document === 'undefined') return null;
+  const cards = document.querySelectorAll<HTMLElement>('[data-slot="shelf-card"]');
+  if (cards.length === 0) return null;
+  return [...cards].map((card) => card.getBoundingClientRect().height);
 }
 
 /** Whether a shape has anything to reserve at all. */
@@ -124,5 +169,13 @@ export function shelfShapeFromCollections(
   };
 }
 
-/** What a settled shelf stores for the reader above. */
-export const storedShelfShape = (shape: ShelfShape): string => JSON.stringify(shape);
+/** What a settled shelf stores for the reader above. The heights ride
+    along only when the page measured one per card; a count that does
+    not match the shape (a card mid-mount, a filtered list) is dropped
+    rather than stored to be dropped by the reader. */
+export const storedShelfShape = (shape: ShelfShape, heights: number[] | null = null): string => {
+  const cards = shape.root + shape.folders.reduce((a, b) => a + b, 0);
+  return JSON.stringify(
+    heights !== null && heights.length === cards ? { ...shape, heights: heights.map((h) => Math.round(h * 10) / 10) } : shape,
+  );
+};

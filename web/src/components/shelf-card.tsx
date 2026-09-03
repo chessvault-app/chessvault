@@ -88,7 +88,7 @@ export function ShelfCard({
     // h-full through both: in a two-column grid a card with a preview line
     // sits beside one without, and cards of two heights in the same row
     // read as a broken grid rather than as two different notes.
-    <li className="h-full">
+    <li data-slot="shelf-card" className="h-full">
       <div
         role="button"
         tabIndex={0}
