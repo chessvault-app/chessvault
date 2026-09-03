@@ -541,6 +541,13 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The move rows get the panel's height on a phone.** The panel's
+  title row is 8px shorter, and the empty band the card kept under its
+  last row is gone: it was the floor the desktop's control row and
+  resize grip stand on, and on a phone both are hidden and the
+  contextual bar ends the column instead. A game's moves list shows one
+  more row for it.
+
 - **The pane switcher is the pane's own header on a phone.** The strip
   that turns the panes under the board (moves, engine, explorer, and the
   trainers' puzzle text) is now the top of the pane card rather than a

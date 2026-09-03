@@ -411,7 +411,7 @@ function Workspace() {
           <MoveTreePane />
           <AnalysisMoveBox />
           <BoardControls
-            className="border-border -mb-(--card-spacing) border-t"
+            className="border-border -mb-[var(--card-floor,var(--card-spacing))] border-t"
            
           />
         </Panel>
@@ -459,9 +459,9 @@ function Workspace() {
             />
             {analysisOpen && (
               <>
-                <ReviewStrip panel className="-mb-(--card-spacing)" />
+                <ReviewStrip panel className="-mb-[var(--card-floor,var(--card-spacing))]" />
                 {reviewIdle && !(hasGame && hasMoves) && (
-                  <p className="text-muted-foreground border-border -mb-(--card-spacing) border-t px-3 py-2 text-sm">
+                  <p className="text-muted-foreground border-border -mb-[var(--card-floor,var(--card-spacing))] border-t px-3 py-2 text-sm">
                     {t('Play moves or load a game, then run an engine review.')}
                   </p>
                 )}

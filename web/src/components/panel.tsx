@@ -150,6 +150,16 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
       className={cn(
         fit ? 'min-h-max overflow-visible' : 'min-h-0',
         'gap-0 pt-0 [&>[data-slot=card-footer]]:mt-(--card-spacing)',
+        // The card's floor is a desktop thing. On a desktop the last band
+        // is a control row or the resize grip, and each takes the floor
+        // back with -mb-(--card-floor) so it draws the panel's bottom
+        // edge; on a phone those bands are hidden and the floor stood
+        // under the last move row as 16px of nothing (lanph3re's report),
+        // while the phone's contextual bar already ends the column. So
+        // the floor is a token: the card's own spacing from lg up, zero
+        // below it, and the bands that take it back read the same token,
+        // so they and the floor cannot disagree.
+        '[--card-floor:var(--card-spacing)] max-lg:[--card-floor:0px] pb-(--card-floor)',
         className,
       )}
     >
@@ -205,7 +215,7 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
               // the panel's edge, so it has to reach it. (No resizable panel
               // carries a footer as well; one that did would zero the card's
               // pb and this would then overshoot by --card-spacing.)
-              'border-border/60 hover:bg-accent mt-auto -mb-(--card-spacing) hidden h-2.5 shrink-0 touch-none',
+              'border-border/60 hover:bg-accent mt-auto -mb-(--card-floor) hidden h-2.5 shrink-0 touch-none',
               'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
               'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
             )}
@@ -233,8 +243,8 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // No rule under the title: the registry's card header draws none, and
     // neither does its dialog title row, so panels and windows agree (the
     // old look's rule went with the old look).
-    // min-h-11 (13 on touch): the height an icon button gives it — 28 on
-    // a desktop, 36 on a coarse pointer — plus the room around it, so
+    // min-h-11: the height an icon button gives it — 28 on a desktop, 36
+    // on a coarse pointer — plus the room around it, so
     // a header holding only a switch, or nothing, is as tall as its
     // neighbours. Measured before: Chapters 44, Engine 44, Explorer 36 —
     // the title and its rule jumped 4px when the phone's pane tabs
@@ -253,7 +263,7 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // and under `overflow-hidden` that is out of sight, not merely tight.
     <CardHeader
       className={cn(
-        'flex min-h-11 pointer-coarse:min-h-13 shrink-0 flex-row items-center justify-between gap-2',
+        'flex min-h-11 shrink-0 flex-row items-center justify-between gap-2',
         className,
       )}
     >

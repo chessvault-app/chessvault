@@ -673,7 +673,7 @@ function useRepeat(step: () => void): {
 export function PaneControls({ className }: { className?: string }) {
   return (
     <BoardControls
-      className={cn('border-border -mb-(--card-spacing) border-t max-md:hidden', className)}
+      className={cn('border-border -mb-[var(--card-floor,var(--card-spacing))] border-t max-md:hidden', className)}
     />
   );
 }
