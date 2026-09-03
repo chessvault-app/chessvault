@@ -191,7 +191,13 @@ export function DashboardPage() {
           actions={<ResetButton onDone={refresh} />}
         />
 
-        <Panel className="mb-4">
+        {/* The card floor is zero below lg (panel.tsx): in the workspace
+            column the phone's contextual bar ends the stack, and 16px
+            of nothing stood under the last move row. These panels are
+            cards on a scrolling page, ending in a bare figure list or
+            band grid, so the floor comes back on a phone (lanph3re's
+            report). Books and the log end in their own padded rows. */}
+        <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
           <PanelHeader title={t('Training')} />
           {/* A figure list, not four cards. Each number used to be its own
               raised tile with its value at text-2xl in bold — the rung the
@@ -284,7 +290,7 @@ export function DashboardPage() {
           </p>
         ) : null}
 
-        <Panel className="mb-4">
+        <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
           <PanelHeader title={t('By difficulty')} />
           <div className="grid gap-2.5 px-(--card-spacing)">
             {BANDS.map((band) => {

@@ -612,7 +612,9 @@ function CyclesPanel({
   const [showPast, setShowPast] = useState(false);
 
   return (
-    <Panel className="mb-4">
+    // The card floor comes back below lg: this card ends in a bare
+    // grid, not a padded row (see DashboardPage).
+    <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
       {/* The acts live on the header row, the way the editor's column
           keeps Load beside its name: one or two small buttons do not
           earn a whole footer band, and the band was a third of a phone
