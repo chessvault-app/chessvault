@@ -27,7 +27,7 @@ export const BOARD_MAX_W =
   // band takes the bottom of the window) publishes the height its region
   // actually has. `.board-col-cap` (index.css) reads the same variable so
   // the column keeps agreeing with the board it holds.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] wide:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem))))] wide:lg:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem)),64rem))]';
+  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] wide:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem))))] wide:lg:max-w-[min(100%,max(18rem,var(--board-budget,calc(100dvh-10rem))),64rem)]';
 
 // (The lg: ceiling rides on wide: — a bare lg: is the viewport's word, and
 // inside a `.force-stacked` region of a wide page it sized the editor's
