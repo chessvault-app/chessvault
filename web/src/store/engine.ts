@@ -35,6 +35,17 @@ interface EngineState {
   threadsAvailable: boolean;
 
   setEnabled: (on: boolean) => void;
+  /**
+   * The engine is on but not searching: a review has the cores. Nothing
+   * about `enabled` changes, so the eval bar keeps its lane and the panel
+   * its shape, which is the point: a review used to switch the engine
+   * off and back on, and the board column grew and shrank by the bar's
+   * lane at both ends of it (lanph3re's report). Positions asked for
+   * while held are remembered and the last one is searched on release.
+   */
+  held: boolean;
+  hold: () => void;
+  release: () => void;
   toggle: () => void;
   setOption: (patch: Partial<Pick<EngineState, 'threads' | 'hashMb' | 'multiPv' | 'depth' | 'moveSeconds'>>) => void;
   /** Analyse a position, or clear results if the engine is off. */
@@ -235,12 +246,32 @@ export const useEngine = create<EngineState>()(
 
         toggle: () => get().setEnabled(!get().enabled),
 
+        held: false,
+        hold: () => {
+          if (get().held) return;
+          engine?.stop();
+          requestedFen = null;
+          // The last result stays on screen: it is still this position's,
+          // and a bar that blanks for the length of a review is the pop
+          // this exists to remove, in a quieter form.
+          set({ held: true });
+        },
+        release: () => {
+          if (!get().held) return;
+          set({ held: false });
+          if (get().enabled && pendingFen && pendingFen !== get().resultFen) {
+            requestedFen = pendingFen;
+            set({ lines: [], finished: false, resultFen: null });
+            void ensureEngine().analyse(pendingFen, get().depth, get().moveSeconds * 1000);
+          }
+        },
+
         setOption: (patch) => {
           set(patch);
           const { threads, hashMb, multiPv } = get();
           engine?.setOptions({ threads, hashMb, multiPv });
           // Re-run so the change is visible immediately rather than next move.
-          if (get().enabled && pendingFen) {
+          if (get().enabled && !get().held && pendingFen) {
             set({ lines: [], finished: false });
             void engine?.analyse(pendingFen, get().depth, get().moveSeconds * 1000);
           }
@@ -250,6 +281,12 @@ export const useEngine = create<EngineState>()(
           if (get().enabled && fen === requestedFen) return; // the twin pane's echo
           pendingFen = fen;
           if (!get().enabled) return;
+          if (get().held) {
+            // Remembered for release. The old result is cleared here as it
+            // is below: the bar stays, but never shows another position's eval.
+            if (fen !== get().resultFen) set({ lines: [], finished: false, resultFen: null });
+            return;
+          }
           requestedFen = fen;
           // Clear straight away so the pane never shows another position's eval.
           set({ lines: [], finished: false, resultFen: null });

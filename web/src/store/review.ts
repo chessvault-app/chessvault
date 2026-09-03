@@ -78,13 +78,11 @@ export const useReview = create<ReviewState>()((set, get) => ({
     if (line.length === 0) return;
 
     // The interactive engine would fight the review worker for cores, so
-    // it is paused for the run and put back the way it was found when the
-    // run ends, however it ends. It used to be switched off and left off:
-    // a reader who had the engine on came back from a review to a silent
-    // panel with a switch to find (lanph3re's report).
-    const interactive = useEngine.getState();
-    const resumeEngine = interactive.enabled;
-    if (resumeEngine) interactive.setEnabled(false);
+    // it is held for the run: still on, not searching, its bar and its
+    // panel where they were. It used to be switched off, which took the
+    // eval bar's lane out of the board column and put it back at the end
+    // (lanph3re's report), and before that it was left off altogether.
+    useEngine.getState().hold();
 
     set({ status: 'running', progress: 0, white: null, black: null, error: null });
 
@@ -231,7 +229,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
       if (get().status !== 'idle') set({ status: 'error', error: (error as Error).message });
     } finally {
       engine.terminate();
-      if (resumeEngine) useEngine.getState().setEnabled(true);
+      useEngine.getState().release();
     }
   },
 }));
