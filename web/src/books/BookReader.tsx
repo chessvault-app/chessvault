@@ -476,10 +476,12 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       </div>
       {/* Under the nav, as wide as the board's column and no wider:
           board-col-cap is the cap the board block itself sits in (it reads
-          --board-budget above), and NOT BOARD_MAX_W, whose lg variant
-          resolves to min(100%, 64rem) and let the strip run the whole
-          region on a height-bound window (measured at 1600x700: strip
-          774 wide over a 368 board). On the board's own edges: pl-9 is
+          --board-budget above). It was chosen over BOARD_MAX_W while that
+          constant's lg variant had 64rem inside its max() and resolved to
+          min(100%, 64rem), letting the strip run the whole region on a
+          height-bound window (1600x700: strip 774 wide over a 368 board);
+          the constant is fixed, and the cap stays because it is the one
+          rule the board block itself obeys. On the board's own edges: pl-9 is
           the eval lane and the gap the board row keeps to its left
           (EvalBarSlot's w-7 plus gap-2), pr-5 the slot paid back on the
           right as above, so the first chip's text starts on the board's
