@@ -143,7 +143,23 @@ export function ShelfCard({
               way to tell two notes apart is to show what is in them. */}
           {board ?? <Icon className="text-muted-foreground size-4 shrink-0" strokeWidth={1.75} />}
 
-          <div className="min-w-0 flex-1">
+          <div
+            className={cn(
+              'min-w-0 flex-1',
+              // One height for every grid card, whatever its words do. A
+              // title takes one line or two and the preview zero, one or
+              // two, so rows stepped between 111 and 135px on a shelf
+              // with short names beside long ones (lanph3re's report).
+              // The column reserves the fullest card's text, two title
+              // lines (3rem) + the meta line (1rem) + its mt-1 (0.25rem)
+              // + two preview lines (2.7rem), and centres what it has, so
+              // a short title stays packed against its meta line rather
+              // than pinned to the top of an empty box. Measured at 1280
+              // on the demo's shelf with five names shortened and three
+              // previews removed: 111/114/135 before, 135 throughout after.
+              layout === 'grid' && 'flex min-h-[6.95rem] flex-col justify-center',
+            )}
+          >
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
                 corner rather than sharing the row. In the flex row it used
                 to sit in, it took its width from every line of the card

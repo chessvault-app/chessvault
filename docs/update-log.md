@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Every card on the studies and notes shelves is one height.** A card's
+  title took one line or two and its preview none, one or two, so a
+  shelf with short names beside long ones stepped between three heights
+  from row to row. The grid card now reserves the fullest column's text,
+  two title lines and a two-line preview, and centres what it has, so a
+  short title stays against its meta line rather than at the top of an
+  empty box. Measured on the demo's shelves at 1280 and 1024: every card
+  is 135px, and the placeholder lands on the same pixels.
 - **The Databases page remembers its own shape.** The last page still
   waiting on a flat guess: six placeholder rows for every vault, and the
   manager panel even where the answer is the demo's read-only card. It

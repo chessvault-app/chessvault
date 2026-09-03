@@ -166,7 +166,18 @@ export function SkeletonCards({
           shorter than the text beside it, so a document without one
           makes no difference to the height. */}
       <Skeleton className={cn('shrink-0', grid && cover ? 'size-16 rounded-md' : 'size-4 rounded-sm')} />
-      <div className="min-w-0 flex-1">
+      <div
+        className={cn(
+          'min-w-0 flex-1',
+          // The card's own rule (shelf-card): every grid card reserves the
+          // fullest text column, two title lines + meta + two preview
+          // lines, and centres what it holds, so the settled card is 135px
+          // whatever its words do. The placeholder measures the same
+          // without a stored height, and draws its one title line where
+          // the card would centre one.
+          grid && 'flex min-h-[6.95rem] flex-col justify-center',
+        )}
+      >
         {/* Title on a 24px line, then the quiet stat line on 16. */}
         <div className="flex h-6 items-center">
           <Skeleton className={cn('h-3.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
@@ -176,12 +187,11 @@ export function SkeletonCards({
         </div>
         {grid && (
           // TWO lines of excerpt, the card's own line-clamp-2. This was
-          // one line on the strength of an 88-90px measurement that has
-          // gone stale: measured again on the demo's studies shelf at
-          // 1280px, the settled card is 111px with a 43px excerpt block
-          // — the clamp fills both lines in practice — and the one-line
-          // reservation stood 21.5px short per card row. Wrapped lines
-          // meet, so the two boxes carry no gap.
+          // one line on the strength of an 88-90px measurement that had
+          // gone stale (a 43px excerpt block stood the reservation 21.5px
+          // short per row). The column's min-height above now sets the
+          // card's 135px either way; these lines are what the placeholder
+          // looks like. Wrapped lines meet, so the two boxes carry no gap.
           <div className="mt-1">
             {['w-full', 'w-2/3'].map((w) => (
               <div key={w} className="flex h-[1.35rem] items-center">

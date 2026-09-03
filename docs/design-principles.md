@@ -430,9 +430,10 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   everything under it down.
 - **A placeholder is the size of what replaces it, and the size is
   measured.** Not guessed from the class names: a list shelf card is
-  88–90 px because the 64 px board is what governs, a grid one 111 px
-  because it also carries a 43 px excerpt, a game row 72 px because its
-  three lines are 20 + 20 + 16. Compose the
+  88–90 px because the 64 px board is what governs, a grid one 135 px
+  because its text column reserves two title lines and a two-line
+  excerpt whatever the words do, a game row 72 px because its three
+  lines are 20 + 20 + 16. Compose the
   real thing's own layout constants where they exist — `SkeletonBoard`
   builds from `BOARD_WIDE_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
   rather than from something that looks like them, because a copy drifts
