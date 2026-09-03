@@ -9,6 +9,7 @@ import {
 } from '@shared/searchQuery';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -859,19 +860,25 @@ export function SearchQueryHints({
   // answer must not overwrite a fresher question's. An EMPTY value
   // asks too — a completed qualifier opens on the field's top names
   // before a character is typed.
-  const [fetched, setFetched] = useState<ValueSuggestion[]>([]);
+  // Held WITH the question it answered: the list is not emptied on a
+  // keystroke (a fast server would flash rows-nothing-rows), but until
+  // the fresh answer lands only the held names that still fit what is
+  // typed are shown. Measured on a ten-million-game database, typing
+  // "Kasp" after "Carl" offered Carlsen for 240ms (lanph3re's report),
+  // and on a slow link for as long as the link took.
+  const [fetched, setFetched] = useState<{ key: string; list: ValueSuggestion[] }>({
+    key: '',
+    list: [],
+  });
   const fetchKey = valueOp && !valueOp.values ? `${valueOp.key}:${typedValue}` : null;
   useEffect(() => {
-    if (!suggest || fetchKey === null) {
-      setFetched([]);
-      return;
-    }
+    if (!suggest || fetchKey === null) return;
     let stale = false;
     const timer = setTimeout(() => {
       const [field, ...rest] = fetchKey.split(':');
       void suggest(field!, rest.join(':'))
         .then((got) => {
-          if (!stale) setFetched(got);
+          if (!stale) setFetched({ key: fetchKey, list: got });
         })
         .catch(() => {});
     }, 150);
@@ -880,6 +887,22 @@ export function SearchQueryHints({
       clearTimeout(timer);
     };
   }, [suggest, fetchKey]);
+  const live = useMemo(() => {
+    if (fetchKey === null) return [];
+    if (fetched.key === fetchKey) return fetched.list;
+    // The server's own match, applied to what is in hand: players and
+    // names by prefix, tournaments by any word.
+    const needle = typedValue.toLowerCase();
+    const contains = valueOp?.key === 'event';
+    return fetched.list.filter((val) => {
+      const name = val.v.toLowerCase();
+      return contains ? name.includes(needle) : name.startsWith(needle);
+    });
+  }, [fetchKey, fetched, typedValue, valueOp]);
+  // The answer is out and nothing in hand fits: rows where the names
+  // will land, past the app's hold, in place of a hint that reads as
+  // "nothing found".
+  const waiting = useSlowLoad(fetchKey !== null && fetched.key !== fetchKey && live.length === 0);
 
   // One flat list whatever the mode, so the keyboard walks it blind.
   // Memoised as DATA: the rows are memo components over these, and an
@@ -903,7 +926,7 @@ export function SearchQueryHints({
               secondary: t(val.desc),
             }))
           : valueOp && !valueOp.values
-            ? fetched.map((val) => ({
+            ? live.map((val) => ({
                 id: `live:${val.v}`,
                 insert: `${head}${valueOp.key}:${/\s/.test(val.v) ? `"${val.v}"` : val.v} `,
                 kind: 'name' as const,
@@ -913,7 +936,7 @@ export function SearchQueryHints({
             : [],
     // Everything above derives from the query and the fetched values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [query, fetched],
+    [query, live],
   );
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
@@ -985,11 +1008,11 @@ export function SearchQueryHints({
   );
 
   const hint =
-    valueOp && !valueOp.values && entries.length === 0
+    valueOp && !valueOp.values && entries.length === 0 && !waiting
       ? t(valueOp.valueHint ?? '')
       : null;
 
-  if (entries.length === 0 && hint === null) return null;
+  if (entries.length === 0 && hint === null && !waiting) return null;
   return (
     <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
       {prefixOps.length > 0 && (
@@ -1030,6 +1053,18 @@ export function SearchQueryHints({
             </ul>
           );
         })()}
+      {entries.length === 0 && waiting && (
+        // Three rows at HintRow's own h-7: a name and its count, where
+        // the names will land.
+        <ul role="status" aria-label={t('Loading')} aria-live="polite">
+          {['w-32', 'w-40', 'w-28'].map((w) => (
+            <li key={w} className="flex h-7 items-center gap-2 px-2">
+              <Skeleton className={cn('h-2.5', w)} />
+              <Skeleton className="ml-auto h-2 w-14" />
+            </li>
+          ))}
+        </ul>
+      )}
       {hint && <p className="text-muted-foreground px-2 py-1 text-xs">{hint}</p>}
     </div>
   );

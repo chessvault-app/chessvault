@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The search box's name suggestions never offer the previous
+  query's names.** Typing a new prefix kept the last answer's list on
+  screen until the fresh one landed, so "Kasp" offered Carlsen for as
+  long as the server took. The list now shows only the held names that
+  still fit what is typed, draws placeholder rows where the names will
+  land when nothing fits and the wait is long enough to notice, and the
+  server no longer suggests "?", PGN's unknown player, which on a big
+  database was the most common name of all.
 - **A database search typed over results says it is searching.** The
   browser showed "Searching…" and placeholder rows only when the list
   was empty. A new search over rows already on screen showed nothing:

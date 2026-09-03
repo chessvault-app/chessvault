@@ -1552,12 +1552,14 @@ export function refGamesApi(
     // panel opens on them before a character is typed.
     const rows = await (q
       ? query(found).all<{ name: string; games: number }>(
-          'SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 50',
+          "SELECT name, games FROM players WHERE name LIKE ? AND name <> '?' ORDER BY games DESC LIMIT 50",
           [`${q}%`],
           signal,
         )
       : query(found).all<{ name: string; games: number }>(
-          'SELECT name, games FROM players ORDER BY games DESC LIMIT 50',
+          // "?" is PGN's unknown player, and on a big database it is the
+          // single most common name. It is not a suggestion.
+          "SELECT name, games FROM players WHERE name <> '?' ORDER BY games DESC LIMIT 50",
           [],
           signal,
         ));
