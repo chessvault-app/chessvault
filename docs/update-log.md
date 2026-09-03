@@ -5,6 +5,16 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The opening map's keyboard focus is a ring around the dot, not a box
+  round its labels.** 0.8.0 gave the map's dots a keyboard path, and the
+  page's focus ring followed them as the browser draws one on an SVG
+  group: a rectangle round the dot and both of its labels. The dot now
+  wears the same ring as every other control, drawn round the circle
+  itself at the same width at any zoom, and only for the keyboard; a
+  mouse never sees it.
+
 ## 0.8.0
 
 The explorer stops guessing once the pieces run out: under seven of them

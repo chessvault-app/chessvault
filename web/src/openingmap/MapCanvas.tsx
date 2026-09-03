@@ -1051,7 +1051,13 @@ export function MapCanvas({
                 // group carries the position, so the animation loop moves
                 // the whole dot — marks, arcs, labels — with one write.
                 transform={`translate(${x} ${y})`}
-                className="cursor-pointer"
+                // outline-none: the page's :focus-visible ring is an
+                // outline, and on an SVG group the browser draws an
+                // outline as the group's bounding box, which here is a
+                // rectangle hugging the dot and both of its labels. The
+                // focus ring is drawn below instead, as a circle around
+                // the dot, in the same colour the outline would have had.
+                className="group/dot cursor-pointer outline-none"
                 opacity={dimOf(id)}
                 // The tree item the svg's role promises. One tab stop
                 // (see tabStop), the arrows walk the tree from it, and
@@ -1259,6 +1265,22 @@ export function MapCanvas({
                     />
                   </>
                 )}
+
+                {/* Keyboard focus, as the ring the page gives every other
+                    control (index.css :focus-visible), drawn around the
+                    dot at screen size so it is the same width at any
+                    zoom. Shown only under :focus-visible, so a mouse
+                    never sees it and the arrow keys always do. */}
+                <circle
+                  cx={0}
+                  cy={0}
+                  r={r + 4 / view.k}
+                  fill="none"
+                  stroke="color-mix(in oklab, var(--ring) 50%, transparent)"
+                  strokeWidth={3 / view.k}
+                  className="opacity-0 group-focus-visible/dot:opacity-100"
+                  pointerEvents="none"
+                />
 
                 {/* Depth progress as an arc around the dot: how far the
                     preparation runs toward the intended move. */}
