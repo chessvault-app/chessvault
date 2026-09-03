@@ -5,7 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.8.0
+
+The explorer stops guessing once the pieces run out: under seven of them
+it says what the position is — won, drawn, lost, and how far away — with
+every legal move ranked by the truth, and the review judges those endings
+on the result rather than the score. The server answers while a database
+query runs, where one crowded position used to hold it for 44 seconds.
+And the board has a keyboard: a move box under every moves list, and
+every control reachable without a mouse.
 
 - **The server answers while a database query runs.** Every statement
   that scans a reference database — the explorer's live join and
@@ -29,11 +37,6 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   gain the ranking on their next index pass, and a deploy adds it to the
   files already there; the first one takes about half an hour per
   ten-million-game file, once.
-
-The explorer stops guessing once the pieces run out: under seven of them
-it says what the position IS — won, drawn, lost, and how far away — with
-every legal move ranked by the truth rather than by what happened to
-other people.
 
 - **Exact endgame verdicts, above the game statistics.** Any position of
   seven pieces or fewer now carries a Tablebase block at the top of the
