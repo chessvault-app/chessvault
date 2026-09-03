@@ -539,11 +539,37 @@ export function MapCanvas({
   const nodeCount = graph.nodes.length;
   /** The Align count the last fit answered, so a fit can tell being ASKED from arriving. */
   const alignSeen = useRef(align);
+  /**
+   * Bumped when the host gains a size after having none, so the fit runs
+   * once there is something to fit into.
+   *
+   * The page can mount before it has any size at all: a webview that is
+   * hidden or not yet shown lays the whole document out at 0x0, and the
+   * map's chunk and data arrive fast enough now to land inside that
+   * moment. The fit measured a 0x0 host, bailed, and nothing asked
+   * again, so the map opened at the identity view with the root in the
+   * top-left corner. Nothing in the dependency list changes when the
+   * window gets its size; a ResizeObserver is what does.
+   */
+  const [sized, setSized] = useState(0);
   useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const box = el.getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) {
+      const watch = new ResizeObserver((entries) => {
+        const r = entries[0]?.contentRect;
+        if (!r || r.width === 0 || r.height === 0) return;
+        watch.disconnect();
+        setSized((n) => n + 1);
+      });
+      watch.observe(el);
+      return () => watch.disconnect();
+    }
+    // Read only once the fit is going to happen, so an Align pressed while
+    // the host had no size is still "asked" when the retry lands.
     const asked = align !== alignSeen.current;
     alignSeen.current = align;
-    const box = host.current?.getBoundingClientRect();
-    if (!box || box.width === 0) return;
     /**
      * Fit the picture that is actually on screen, not the layout's idea
      * of it. After a drag the dots stand where the reader put them —
@@ -588,7 +614,7 @@ export function MapCanvas({
       fitView(box, { minX, minY, maxX, maxY }, { legible: !asked, anchor: root }),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeCount, map.id, arrangement, align]);
+  }, [nodeCount, map.id, arrangement, align, sized]);
 
   /**
    * Every pointer on the surface, wherever it landed — including on a

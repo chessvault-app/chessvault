@@ -515,6 +515,13 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The opening map fits itself on load again.** The map could open
+  with the start position pinned in the top-left corner at full zoom
+  instead of centred and legible. When the page loaded in a window that
+  did not have its size yet (a hidden or not-yet-shown view), the fit
+  measured nothing and never tried again. It now waits for the canvas
+  to have a size and fits then.
+
 - **The move box can be switched off.** The "Type a move…" row under
   every moves list is the keyboard's way onto the board, and for anyone
   who only ever drags pieces it was a row of nothing. Settings ›
