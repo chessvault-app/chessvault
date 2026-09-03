@@ -146,6 +146,22 @@ await build({
 });
 console.log('scan worker bundled');
 
+// The query worker — the same story again: refgamesQuery.ts looks for
+// this file beside the bundle before falling back to the TS source.
+await build({
+  entryPoints: [join(repo, 'server', 'queryWorker.ts')],
+  outfile: join(out, 'query-worker.mjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['better-sqlite3'],
+  banner: {
+    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+  },
+});
+console.log('query worker bundled');
+
 /**
  * The native fast path, when this machine has built one.
  *

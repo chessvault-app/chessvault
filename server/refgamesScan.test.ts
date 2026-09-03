@@ -259,8 +259,8 @@ describe('resident scan through the route', () => {
     app = new Hono().route('/api', refgames);
   }, 30_000);
 
-  afterAll(() => {
-    refgames.closeDb();
+  afterAll(async () => {
+    await refgames.closeDb();
     rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
@@ -351,7 +351,7 @@ describe('resident scan through the route', () => {
       });
       expect(res.status).toBe(409);
     } finally {
-      bareApi.closeDb();
+      await bareApi.closeDb();
     }
   });
 });
@@ -395,8 +395,8 @@ describe('key index through the route', () => {
     app = new Hono().route('/api', refgames);
   }, 30_000);
 
-  afterAll(() => {
-    refgames.closeDb();
+  afterAll(async () => {
+    await refgames.closeDb();
     rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 

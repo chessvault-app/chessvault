@@ -41,6 +41,8 @@ import {
 } from './refgamesResident.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { TOP_GAMES_MIN_GAMES, positionIndexInfo } from './refgamesIndex.ts';
+import { closeQueries, isAbortedQuery, queryFor, type Query } from './refgamesQuery.ts';
+import type { Context } from 'hono';
 import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
 import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
@@ -480,6 +482,21 @@ function hasTopGames(db: InstanceType<typeof Database>): boolean {
   );
 }
 
+/** One per-move row of an explore answer, as the sums and the live
+    aggregation both produce it. */
+interface MoveRow {
+  uci: string;
+  w: number;
+  d: number;
+  b: number;
+}
+
+/** One move of an explore answer as the client receives it. */
+interface ExplorerMove extends MoveRow {
+  san: string;
+  total: number;
+}
+
 /** One row of the explorer's top-games list, as both the live join and
     the precomputed table produce it. */
 interface TopGameRow {
@@ -830,7 +847,7 @@ export function refgamesBuildRunning(): boolean {
  */
 export function refGamesApi(
   source: string | { dir: string } = { dir: REFGAMES_DIR },
-): Hono & { closeDb: () => void } {
+): Hono & { closeDb: () => Promise<void> } {
   const single = typeof source === 'string' ? source : null;
   const dir = typeof source === 'string' ? null : source.dir;
 
@@ -873,14 +890,49 @@ export function refGamesApi(
 
   // Windows can't delete or rename over an open database file, so builds,
   // deletes and tests all need this.
-  const close = (name?: string): void => {
+  const close = (name?: string): Promise<void> => {
+    const gone: Promise<void>[] = [];
     for (const [key, db] of handles) {
       if (name !== undefined && key !== name) continue;
       db.close();
       handles.delete(key);
       counts.delete(key);
+      // The query thread's handle on the same file goes with it: a build
+      // or delete is about to replace what it has open. Its close is a
+      // thread exit, so the callers that rename or delete wait for it.
+      gone.push(closeQueries(fileFor(key)));
     }
+    return Promise.all(gone).then(() => undefined);
   };
+
+  /**
+   * The statements that scan rows run on the file's query thread
+   * (refgamesQuery.ts), never on the event loop. The cheap reads — meta,
+   * sqlite_master, a lookup by primary key or through the sums — stay on
+   * the read-only handle above, where a round trip would cost more than
+   * they do. What is heavy is a judgement made per statement in the
+   * routes below, and the log is the measure: an explore's live join held
+   * the loop for 44 s, a search's count for 15 s.
+   */
+  const query = (found: { name: string }): Query => queryFor(fileFor(found.name));
+
+  /**
+   * A route whose statements can be abandoned mid-flight: the client went
+   * away (a newer lookup, a closed tab) and the thread running its
+   * statement was terminated for it. The rejection is not a failure to
+   * log or report — there is nobody to report to — so it is answered with
+   * the status nginx coined for exactly this, and nothing else changes.
+   */
+  const guarded =
+    (handler: (c: Context) => Promise<Response>) =>
+    async (c: Context): Promise<Response> => {
+      try {
+        return await handler(c);
+      } catch (error) {
+        if (isAbortedQuery(error)) return new Response(null, { status: 499 });
+        throw error;
+      }
+    };
 
   const readMeta = (db: InstanceType<typeof Database>): Record<string, string> =>
     Object.fromEntries(
@@ -1014,19 +1066,20 @@ export function refGamesApi(
       // An append works on the live file: closing our readonly handle
       // first keeps Windows happy about the WAL sidecars, and there is no
       // rename to finish afterwards.
-      if (append) close(name);
+      if (append) void close(name);
       spawnJob(
         current,
         'build-refgames.mjs',
         'scripts/build-refgames.ts',
         [...sources, '--name', name, ...(append ? ['--append'] : [])],
         ['build', ...sources, '--name', name, ...(append ? ['--append'] : []), '--data', DATA],
-        (code) => {
-          close(name); // reopen the fresh file on next query
+        async (code) => {
+          await close(name); // reopen the fresh file on next query
           // Windows: our own read handle blocks the script's rename-over, so
           // it leaves the fresh file beside the target and we swap it in
-          // here — synchronously after close, before any request can reopen
-          // the old file.
+          // here — as soon as the handles are gone. A request that lands
+          // in between reopens the old file, and the swap's own retry
+          // (renameRetrying) rides that out.
           const building = `${fileFor(name)}.building`;
           if (!append && code === 0 && existsSync(building)) {
             try {
@@ -1101,14 +1154,14 @@ export function refGamesApi(
         log: [],
         lineAt: Date.now(),
       };
-      close(name); // the job rewrites the live file
+      void close(name); // the job rewrites the live file
       spawnJob(
         current,
         'optimize-refgames.mjs',
         'scripts/optimize-refgames.ts',
         [name],
         ['optimize', name, '--data', DATA],
-        () => close(name),
+        () => void close(name),
       );
       return c.json({ started: true, name });
     });
@@ -1141,7 +1194,7 @@ export function refGamesApi(
         'scripts/index-refgames-positions.ts',
         [name],
         ['index', name, '--data', DATA],
-        () => close(name), // reopen so the fresh plies table and meta show
+        () => void close(name), // reopen so the fresh plies table and meta show
       );
       return c.json({ started: true, name });
     });
@@ -1205,14 +1258,14 @@ export function refGamesApi(
       ),
     );
 
-    api.delete('/refgames/:name', (c) => {
+    api.delete('/refgames/:name', async (c) => {
       const name = c.req.param('name');
       if (!NAME_RE.test(name)) return c.json({ error: 'invalid database name' }, 400);
       if (job?.running && job.name === name) {
         return c.json({ error: 'that database is being built right now' }, 409);
       }
       if (!existsSync(fileFor(name))) return c.json({ error: 'no such database' }, 404);
-      close(name);
+      await close(name);
       // A resident index outliving its file would keep answering for a
       // database that no longer exists — and holding its memory.
       evictResident(fileFor(name));
@@ -1471,45 +1524,51 @@ export function refGamesApi(
    * language's names should not depend on which database is picked —
    * and tournaments answer from the events lookup below.
    */
-  api.get('/refgames/suggest', (c) => {
+  api.get('/refgames/suggest', guarded(async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ names: [] });
     const q = (c.req.query('q') ?? '').trim();
+    const signal = c.req.raw.signal;
     // Tournaments answer from their own lookup — a contains match, not
     // the players' prefix, because a tournament is remembered by any
     // word of its name ("olympiad" must find "42nd Olympiad").
     if (c.req.query('field') === 'event') {
       if (!hasEvents(found.db)) return c.json({ names: [] });
-      const rows = (
-        q
-          ? found.db
-              .prepare(
-                'SELECT event AS name, games FROM events WHERE event LIKE ? ORDER BY games DESC LIMIT 50',
-              )
-              .all(`%${q}%`)
-          : found.db.prepare('SELECT event AS name, games FROM events ORDER BY games DESC LIMIT 50').all()
-      ) as { name: string; games: number }[];
+      const rows = await (q
+        ? query(found).all<{ name: string; games: number }>(
+            'SELECT event AS name, games FROM events WHERE event LIKE ? ORDER BY games DESC LIMIT 50',
+            [`%${q}%`],
+            signal,
+          )
+        : query(found).all<{ name: string; games: number }>(
+            'SELECT event AS name, games FROM events ORDER BY games DESC LIMIT 50',
+            [],
+            signal,
+          ));
       return c.json({ names: rows });
     }
     if (!hasLookups(found.db)) return c.json({ names: [] });
     // An empty prefix answers with the database's biggest names — the
     // panel opens on them before a character is typed.
-    const rows = (
-      q
-        ? found.db
-            .prepare(
-              'SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 50',
-            )
-            .all(`${q}%`)
-        : found.db.prepare('SELECT name, games FROM players ORDER BY games DESC LIMIT 50').all()
-    ) as { name: string; games: number }[];
+    const rows = await (q
+      ? query(found).all<{ name: string; games: number }>(
+          'SELECT name, games FROM players WHERE name LIKE ? ORDER BY games DESC LIMIT 50',
+          [`${q}%`],
+          signal,
+        )
+      : query(found).all<{ name: string; games: number }>(
+          'SELECT name, games FROM players ORDER BY games DESC LIMIT 50',
+          [],
+          signal,
+        ));
     return c.json({ names: rows });
-  });
+  }));
 
-  api.get('/refgames/search', (c) => {
+  api.get('/refgames/search', guarded(async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { name, db } = found;
+    const signal = c.req.raw.signal;
     // The box's query language peels its recognised terms off first;
     // whatever is left runs the plain needle path below unchanged.
     const parsed = parseSearchQuery((c.req.query('q') ?? '').trim());
@@ -1639,22 +1698,22 @@ export function refGamesApi(
       if (where === '') {
         total = tableCount(name, db);
       } else {
-        const n = (
-          db
-            .prepare(`SELECT COUNT(*) AS n FROM (SELECT 1 FROM games ${where} LIMIT ?)`)
-            .get(...args, COUNT_CAP + 1) as { n: number }
-        ).n;
+        const n = (await query(found).get<{ n: number }>(
+          `SELECT COUNT(*) AS n FROM (SELECT 1 FROM games ${where} LIMIT ?)`,
+          [...args, COUNT_CAP + 1],
+          signal,
+        ))!.n;
         capped = n > COUNT_CAP;
         total = capped ? COUNT_CAP : n;
       }
     }
-    const page = db
-      .prepare(
-        `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
-         FROM games ${where}${where ? ' AND' : ' WHERE'} id < ?
-         ORDER BY id DESC LIMIT ${PAGE}`,
-      )
-      .all(...args, cursor ?? Number.MAX_SAFE_INTEGER) as (RefGameRow & { moves: string })[];
+    const page = await query(found).all<RefGameRow & { moves: string }>(
+      `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
+       FROM games ${where}${where ? ' AND' : ' WHERE'} id < ?
+       ORDER BY id DESC LIMIT ${PAGE}`,
+      [...args, cursor ?? Number.MAX_SAFE_INTEGER],
+      signal,
+    );
     return c.json({
       total,
       capped: cursor === null ? capped : undefined,
@@ -1671,7 +1730,33 @@ export function refGamesApi(
         return derived ? { ...row, eco: row.eco ?? derived.eco, opening: derived.name } : row;
       }),
     });
-  });
+  }));
+
+  /**
+   * The live per-move aggregation — the join over every game through the
+   * position, under the request's filters — on the file's query thread.
+   * It is the statement the precomputed sums exist to avoid, and where
+   * they cannot (a filter, a thin position) it is the one that used to
+   * hold the event loop: 49 s from the start position of a 10 M-game
+   * file, measured. Off the loop it costs the same and blocks nothing;
+   * abandoned, it is stopped.
+   */
+  const liveMoves = (
+    found: { name: string },
+    filterSql: string,
+    binds: unknown[],
+    signal: AbortSignal | undefined,
+  ): ((key: unknown) => Promise<MoveRow[]>) => {
+    const sql = `SELECT p.uci AS uci,
+                SUM(g.result = '1-0') AS w,
+                SUM(g.result = '1/2-1/2') AS d,
+                SUM(g.result = '0-1') AS b
+         FROM plies p JOIN games g ON g.id = p.game_id
+         WHERE p.pos = ?${filterSql}
+         GROUP BY p.uci
+         ORDER BY w + d + b DESC, p.uci`;
+    return (key) => query(found).all<MoveRow>(sql, [key, ...binds], signal);
+  };
 
   /**
    * The explorer's question, answered from a reference database: what was
@@ -1687,7 +1772,7 @@ export function refGamesApi(
    * rating), in the exact shape the explorer pane already renders, so
    * opening one goes through the /refgames/find path books use.
    */
-  api.get('/refgames/explore', (c) => {
+  api.get('/refgames/explore', guarded(async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { db } = found;
@@ -1711,30 +1796,17 @@ export function refGamesApi(
     const key = toDbKey(hashSetup(pos.toSetup()));
     const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db));
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
+    const signal = c.req.raw.signal;
 
-    const live = db.prepare(
-      `SELECT p.uci AS uci,
-                SUM(g.result = '1-0') AS w,
-                SUM(g.result = '1/2-1/2') AS d,
-                SUM(g.result = '0-1') AS b
-         FROM plies p JOIN games g ON g.id = p.game_id
-         WHERE p.pos = ?${sql}
-         GROUP BY p.uci
-         ORDER BY w + d + b DESC, p.uci`,
-    );
+    const live = liveMoves(found, sql, binds, signal);
     // Precomputed sums first; a position they answer nothing for may
     // still be a THIN one (under MOVE_COUNT_MIN_GAMES the build stores
     // no rows), so an empty answer falls back to the live aggregation,
     // which is instant on a row set that small.
     const summed = summedPath(db, (k) => c.req.query(k));
-    let rows = (summed ? summed(key) : live.all(key, ...binds)) as {
-      uci: string;
-      w: number;
-      d: number;
-      b: number;
-    }[];
+    let rows = summed ? (summed(key) as MoveRow[]) : await live(key);
     if (rows.length === 0 && summed) {
-      rows = live.all(key, ...binds) as typeof rows;
+      rows = await live(key);
     }
 
     const moves = rows.flatMap((row) => {
@@ -1749,16 +1821,16 @@ export function refGamesApi(
     const ranked = topGamesPath(db, (k) => c.req.query(k));
     const topGames = (
       ranked?.(key) ??
-      (db
-        .prepare(
-          `SELECT p.uci AS uci, g.white, g.black, g.white_elo AS whiteElo,
-                  g.black_elo AS blackElo, g.result, g.date
-           FROM plies p JOIN games g ON g.id = p.game_id
-           WHERE p.pos = ?${sql}
-           ORDER BY g.white_elo + g.black_elo DESC, g.id DESC
-           LIMIT 8`,
-        )
-        .all(key, ...binds) as TopGameRow[])
+      (await query(found).all<TopGameRow>(
+        `SELECT p.uci AS uci, g.white, g.black, g.white_elo AS whiteElo,
+                g.black_elo AS blackElo, g.result, g.date
+         FROM plies p JOIN games g ON g.id = p.game_id
+         WHERE p.pos = ?${sql}
+         ORDER BY g.white_elo + g.black_elo DESC, g.id DESC
+         LIMIT 8`,
+        [key, ...binds],
+        signal,
+      ))
     ).filter((g) => {
       const move = parseUci(g.uci);
       return move !== undefined && pos.isLegal(move);
@@ -1772,7 +1844,7 @@ export function refGamesApi(
       moves,
       topGames: topGames.map((g) => ({ ...g, site: null })),
     });
-  });
+  }));
 
   /**
    * The same answer as /refgames/explore, for many positions at once and
@@ -1790,7 +1862,7 @@ export function refGamesApi(
    * for a list the map never draws, and `opening` is a name the client
    * already has from its own catalogue.
    */
-  api.post('/refgames/explore-batch', async (c) => {
+  api.post('/refgames/explore-batch', guarded(async (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { db } = found;
@@ -1812,34 +1884,27 @@ export function refGamesApi(
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     // The map's sweep never filters, and the live aggregation is what made
     // its first batch cost seconds — see REFGAMES_MOVE_COUNTS.
-    const live = db.prepare(
-      `SELECT p.uci AS uci,
-              SUM(g.result = '1-0') AS w,
-              SUM(g.result = '1/2-1/2') AS d,
-              SUM(g.result = '0-1') AS b
-       FROM plies p JOIN games g ON g.id = p.game_id
-       WHERE p.pos = ?${sql}
-       GROUP BY p.uci
-       ORDER BY w + d + b DESC, p.uci`,
-    );
+    const live = liveMoves(found, sql, binds, c.req.raw.signal);
     const summed = summedPath(db, (k) => c.req.query(k));
 
-    const positions = fens.map((fen) => {
+    const positions: { fen: string; moves: ExplorerMove[] }[] = [];
+    for (const fen of fens) {
       const setup = parseFen(fen.trim());
-      if (setup.isErr) return { fen, moves: [] };
+      if (setup.isErr) {
+        positions.push({ fen, moves: [] });
+        continue;
+      }
       const position = Chess.fromSetup(setup.unwrap());
-      if (position.isErr) return { fen, moves: [] };
+      if (position.isErr) {
+        positions.push({ fen, moves: [] });
+        continue;
+      }
       const pos = position.unwrap();
       const key = toDbKey(hashSetup(pos.toSetup()));
-      let rows = (summed ? summed(key) : live.all(key, ...binds)) as {
-        uci: string;
-        w: number;
-        d: number;
-        b: number;
-      }[];
+      let rows = summed ? (summed(key) as MoveRow[]) : await live(key);
       // Thin positions store no precomputed rows — see
       // MOVE_COUNT_MIN_GAMES; their live sum is instant.
-      if (rows.length === 0 && summed) rows = live.all(key, ...binds) as typeof rows;
+      if (rows.length === 0 && summed) rows = await live(key);
       const moves = rows.flatMap((row) => {
         const move = parseUci(row.uci);
         if (!move || !pos.isLegal(move)) return [];
@@ -1847,11 +1912,11 @@ export function refGamesApi(
           { uci: row.uci, san: makeSan(pos, move), w: row.w, d: row.d, b: row.b, total: row.w + row.d + row.b },
         ];
       });
-      return { fen, moves };
-    });
+      positions.push({ fen, moves });
+    }
 
     return c.json({ indexed: true, positions });
-  });
+  }));
 
   /**
    * Search the WHOLE database for a position — any depth, not just the
@@ -2475,7 +2540,7 @@ export function refGamesApi(
   // Match a book's top-game reference (metadata only) to a full game in
   // ANY database, so the explorer can open it on the board — a book does
   // not know which database holds its games.
-  api.get('/refgames/find', (c) => {
+  api.get('/refgames/find', guarded(async (c) => {
     const all = names();
     if (all.length === 0) return c.json({ error: 'no reference games database' }, 503);
     const { white, black, date, result } = c.req.query();
@@ -2483,19 +2548,17 @@ export function refGamesApi(
     for (const name of all) {
       const db = open(name);
       if (!db) continue;
-      const row = db
-        .prepare(
-          `SELECT id FROM games
-           WHERE white = ? AND black = ? AND (? IS NULL OR date = ?) AND (? IS NULL OR result = ?)
-           LIMIT 1`,
-        )
-        .get(white, black, date ?? null, date ?? null, result ?? null, result ?? null) as
-        | { id: number }
-        | undefined;
+      const row = await query({ name }).get<{ id: number }>(
+        `SELECT id FROM games
+         WHERE white = ? AND black = ? AND (? IS NULL OR date = ?) AND (? IS NULL OR result = ?)
+         LIMIT 1`,
+        [white, black, date ?? null, date ?? null, result ?? null, result ?? null],
+        c.req.raw.signal,
+      );
       if (row) return c.json(single ? { id: row.id } : { id: row.id, db: name });
     }
     return c.json({ error: 'not indexed' }, 404);
-  });
+  }));
 
   api.get('/refgames/:id/pgn', (c) => {
     const found = fromQuery(c);
@@ -2525,8 +2588,8 @@ export function refGamesApi(
   // test suite (or a re-mounted server) leaves threads holding indexes
   // for handles that no longer answer.
   return Object.assign(api, {
-    closeDb: () => {
-      close();
+    closeDb: async () => {
+      await close();
       evictAllResidents();
     },
   });

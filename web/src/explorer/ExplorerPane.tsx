@@ -83,6 +83,7 @@ export function ExplorerPane({
   const selectBook = useExplorer((s) => s.selectBook);
   const refreshDbs = useExplorer((s) => s.refreshDbs);
   const lookup = useExplorer((s) => s.lookup);
+  const cancel = useExplorer((s) => s.cancel);
   const resultFen = useExplorer((s) => s.resultFen);
   const moves = useExplorer((s) => s.moves);
   const topGames = useExplorer((s) => s.topGames);
@@ -168,7 +169,13 @@ export function ExplorerPane({
 
   useEffect(() => {
     if (enabled) lookup(node.fen);
-  }, [node.fen, enabled, book, lookup]);
+    // The cleanup runs on every change too, a beat before the next
+    // lookup, which is harmless: the next lookup would have aborted the
+    // previous one itself. What it adds is the unmount and the switch
+    // off, where a request in flight was otherwise left to finish on the
+    // server for nobody.
+    return () => cancel();
+  }, [node.fen, enabled, book, lookup, cancel]);
 
   // Every position from the root to the cursor, which is what naming a line
   // takes: the catalogue is keyed by position, and the deepest named one
