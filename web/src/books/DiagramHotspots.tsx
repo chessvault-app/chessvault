@@ -1,12 +1,12 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { Grid3x3 } from 'lucide-react';
-import { cloneElement, useEffect, useState } from 'react';
+import { Grid3x3, Pencil } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { fullFen, positionOf } from '@shared/bookEngine';
 
+import { ActionMenu, type MenuAction } from '@/components/action-menu';
+import { KingIcon } from '@/components/king-icon';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
@@ -179,7 +179,6 @@ export function DiagramHotspots({
   diagrams,
   known = [],
   rotation = 0,
-  sheet = false,
   onSet,
   onEdit,
 }: {
@@ -189,8 +188,6 @@ export function DiagramHotspots({
   known?: KnownDiagram[];
   /** How the page is turned; the boxes turn with it. */
   rotation?: 0 | 90 | 180 | 270;
-  /** A phone: the chooser is the app's bottom sheet, not a popover. */
-  sheet?: boolean;
   /** Called after a position lands on the board. */
   onSet?: () => void;
   /** Open the position in the editor instead — for a diagram the reader
@@ -264,7 +261,6 @@ export function DiagramHotspots({
             key={s.key}
             fen={s.fen}
             readable={s.ok}
-            sheet={sheet}
             onSet={set}
             onEdit={onEdit}
           >
@@ -289,7 +285,6 @@ export function DiagramHotspots({
 function SideToMovePopover({
   fen,
   readable: ok = true,
-  sheet = false,
   onSet,
   onEdit,
   children,
@@ -301,82 +296,46 @@ function SideToMovePopover({
       asking a side to move for a board no side can move on is the tap
       that used to do nothing. */
   readable?: boolean;
-  /** A phone: a bottom sheet rather than a popover off the button. */
-  sheet?: boolean;
   onSet: (fen: string) => void;
   onEdit?: (fen: string) => void;
   children: React.ReactElement;
 }) {
-  const [open, setOpen] = useState(false);
   const placement = fen.split(' ')[0] ?? fen;
   const choose = (side: 'w' | 'b'): void => {
-    setOpen(false);
     // fullFen, not a hand-built one: a diagram states no castling rights,
     // and a bare `-` here made O-O illegal for every line played from a
     // book position. The rest of the book pipeline infers them from the
     // untouched home squares, and the overlay now says the same thing.
     onSet(side === fen.split(' ')[1] ? fen : fullFen(placement, side));
   };
-  const choices = (
-    <>
-      {ok &&
-        (['w', 'b'] as const).map((side) => (
-          <Button
-            key={side}
-            variant="ghost"
-            size={sheet ? 'lg' : 'sm'}
-            className="justify-start"
-            onClick={() => choose(side)}
-          >
-            {side === 'w' ? t('White to move') : t('Black to move')}
-          </Button>
-        ))}
-      {onEdit && (
-        <Button
-          variant="ghost"
-          size={sheet ? 'lg' : 'sm'}
-          className="justify-start"
-          onClick={() => {
-            setOpen(false);
-            onEdit(fullFen(placement, 'w'));
-          }}
-        >
-          {t('Edit position…')}
-        </Button>
-      )}
-    </>
-  );
-  if (sheet) {
-    return (
-      <>
-        {cloneElement(children as React.ReactElement<{ onClick?: () => void }>, {
-          onClick: () => setOpen(true),
-        })}
-        {open && (
-          <Dialog
-            open
-            onOpenChange={(next) => {
-              if (!next) setOpen(false);
-            }}
-          >
-            <DialogContent
-              size="sm"
-              title={ok ? t('Who is to move?') : t('Edit position')}
-              icon={Grid3x3}
-            >
-              <div className="flex flex-col gap-1">{choices}</div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </>
-    );
-  }
+  // The app's one row menu (components/action-menu): a dropdown under the
+  // button on a desktop, the bottom sheet on a phone. This used to be its
+  // own Dialog of ghost buttons, which put a sheet of 14px rows beside
+  // the game list's sheet of 16px rows (lanph3re's report): two sheets
+  // on one phone, one component now.
+  const actions: MenuAction[] = [
+    ...(ok
+      ? [
+          { label: 'White to move', icon: WhiteKing, onSelect: () => choose('w') },
+          { label: 'Black to move', icon: BlackKing, onSelect: () => choose('b') },
+        ]
+      : []),
+    ...(onEdit
+      ? [{ label: 'Edit position…', icon: Pencil, onSelect: () => onEdit(fullFen(placement, 'w')) }]
+      : []),
+  ];
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={children} />
-      <PopoverContent align="end" className="flex w-auto flex-col gap-1 p-1.5">
-        {choices}
-      </PopoverContent>
-    </Popover>
+    <ActionMenu title={ok ? 'Who is to move?' : 'Edit position'} actions={actions}>
+      {children}
+    </ActionMenu>
   );
+}
+
+// The kings as menu icons: the menu sizes and places the icon it is
+// handed, so the side is bound here.
+function WhiteKing({ className }: { className?: string }) {
+  return <KingIcon side="white" className={className} />;
+}
+function BlackKing({ className }: { className?: string }) {
+  return <KingIcon side="black" className={className} />;
 }

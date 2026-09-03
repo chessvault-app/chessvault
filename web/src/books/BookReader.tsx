@@ -263,7 +263,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             diagrams={diagramsOn(n)}
             known={known.get(n) ?? []}
             rotation={rotation}
-            sheet={!wide}
             onSet={() => {
               if (!wide) setTab('board');
             }}

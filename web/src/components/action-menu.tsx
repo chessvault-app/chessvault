@@ -1,6 +1,5 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { useRender } from '@base-ui/react/use-render';
-import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import {
@@ -25,7 +24,8 @@ import { isCoarsePointer, useMediaQuery } from '@/lib/media';
 
 export interface MenuAction {
   label: string;
-  icon: LucideIcon;
+  /** Any icon component taking a class: a lucide icon, or the app's own. */
+  icon: React.ComponentType<{ className?: string }>;
   /** Destructive items are tinted and sit last, away from the thumb. */
   danger?: boolean;
   /**
