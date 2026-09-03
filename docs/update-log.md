@@ -540,6 +540,12 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The book reader opens without dark patches on the placeholder.**
+  While a book opened, the page-sized placeholder pulsed, and a layer
+  that size is repainted in tiles that do not all land on the same
+  frame, which on a phone showed as dark rectangles wandering over it.
+  The placeholder holds still now; the spinner beside it is the motion.
+
 - **The engine stays through a review.** A review used to switch the
   interactive engine off so the two did not fight for cores, and leave
   it off. It holds it now: on, not searching, its eval bar and panel

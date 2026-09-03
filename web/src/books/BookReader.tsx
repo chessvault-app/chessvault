@@ -1119,8 +1119,14 @@ function OpeningTreatment({
         // aspect-[3/4] class had been doing all along: the placeholder
         // was always the pane's height, whatever it claimed.
         <div className="relative flex h-full items-start justify-center">
+          {/* animate-none: this is a page-sized layer, and a layer that size
+              pulsing its opacity is composited in tiles that do not all
+              repaint on the same frame. On a phone the seams showed as
+              dark rectangles wandering over the placeholder (lanph3re's
+              report); a headless capture caught one such frame. The
+              spinner beside it is the motion that says loading. */}
           <Skeleton
-            className="rounded-md"
+            className="animate-none rounded-md"
             style={{ width: pageW || '100%', aspectRatio: `1 / ${aspect ?? 4 / 3}` }}
           />
           <div className="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 text-sm">
