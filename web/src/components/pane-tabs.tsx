@@ -77,12 +77,21 @@ export function PaneTabs<T extends string>({
           this exception. */}
       <TabsList
         variant={header ? 'line' : 'default'}
+        // The height is inline, not a class: the registry's own coarse
+        // rule (pointer-coarse:…:h-auto) shares a variant with any class
+        // that would restate it, and which of two equals wins is the
+        // order they were emitted in, which the registry owns. Measured
+        // as a different strip height from one page to the next before
+        // this was inline. The corners likewise: the line variant says
+        // rounded-none on the same variant, so the top rounding is said
+        // on that variant too.
+        style={header ? { height: '2.5rem' } : undefined}
         className={cn(
           header
             ? [
-                'relative z-10 flex w-full shrink-0 gap-0 rounded-t-xl rounded-b-none p-0',
+                'relative z-10 flex w-full shrink-0 gap-0 p-0',
+                'data-[variant=line]:rounded-t-xl data-[variant=line]:rounded-b-none',
                 'bg-card text-card-foreground ring-1 ring-border',
-                'group-data-horizontal/tabs:h-10 pointer-coarse:group-data-horizontal/tabs:h-10',
                 // Over the column's gap and 1px of the card below, so the
                 // header's ring draws the seam once and the card's top ring
                 // is under it rather than beside it.
@@ -100,6 +109,8 @@ export function PaneTabs<T extends string>({
               value={tab.id}
               aria-label={t(tab.label)}
               title={t(tab.label)}
+              // Inline for the same reason as the list's height above.
+              style={header ? { height: '100%' } : undefined}
               // An icon tab is its icon plus 4px, and no fixed height at
               // all: these tabs are a third of the screen wide, so the
               // target was never short of room; it was short of it
@@ -118,7 +129,7 @@ export function PaneTabs<T extends string>({
                 'duration-(--pane-turn) ease-(--pane-turn-ease) pointer-coarse:h-[calc(100%-1px)]',
                 Icon && 'py-1',
                 // The header draws its own line (below), one that moves.
-                header && 'h-full rounded-none after:hidden pointer-coarse:h-full',
+                header && 'rounded-none after:hidden',
               )}
             >
               {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
