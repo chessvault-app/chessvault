@@ -7,6 +7,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The book reader shows the moves played under the board.** A book
+  that follows a line to move 10 and then turns back to "6.Bg5" left the
+  reader stepping back four times and remembering what the position at
+  move 6 was. The moves are now one clickable line under the board's
+  navigation, in the strip the engine tab already uses on a phone: the
+  move you are on in the accent, the sideline where the book branches in
+  brackets, at most three lines tall with the current move kept in view.
+  It is not a moves panel, and the page keeps its two parts, the book
+  and the board. A button in the board's toolbar puts it away, remembered
+  on this device. On a window short enough for the board to be sized by
+  height, the board gives up the strip's three lines.
 - **The search box's name suggestions never offer the previous
   query's names.** Typing a new prefix kept the last answer's list on
   screen until the fresh one landed, so "Kasp" offered Carlsen for as

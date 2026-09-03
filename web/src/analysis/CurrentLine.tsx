@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, NodeId } from '@shared/types';
 import { useAnalysis } from '@/store/analysis';
 import { cn } from '@/lib/utils';
+import { scrollRowIntoPanel } from '@/lib/scroll';
 import { figurine } from './notation';
 
 /**
@@ -43,6 +44,7 @@ export function CurrentLine({ className }: { className?: string }) {
         key={id}
         type="button"
         onClick={() => setCursor(id)}
+        data-on={on || undefined}
         className={cn(
           'font-moves rounded-sm px-1 py-0.5 text-sm transition-colors duration-100',
           // The one you are on carries the accent, the same way a hovered
@@ -106,6 +108,23 @@ export function CurrentLine({ className }: { className?: string }) {
    * sentence that rewrites itself as you read it, and the Moves tab is
    * where a tree is meant to be read.
    */
+  // The lit chip is kept in view as the cursor moves: the box is three
+  // lines tall and a long game runs to many more, so stepping forward
+  // would otherwise walk the move you are on out of the bottom of it.
+  // Scrolled within the box only (lib/scroll), never the page.
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const lit = el.querySelector<HTMLElement>('[data-on]');
+    // Nothing lit is the root, before the first move: the start of the
+    // line, which is the top of the box. Left alone, "Start" after a walk
+    // to the end kept the box scrolled to the end (measured: first chip
+    // 96px above the box's top edge).
+    if (lit) scrollRowIntoPanel(el, lit);
+    else el.scrollTop = 0;
+  }, [cursorId]);
+
   const chain = mainlineFrom(tree, tree.rootId);
   if (chain.length === 0) return null;
   const out: ReactNode[] = [];
@@ -139,7 +158,7 @@ export function CurrentLine({ className }: { className?: string }) {
     // The border and insets are the caller's: docked under the engine's
     // lines it is a section of that pane, under the reader's board it is
     // a caption with nothing to separate itself from.
-    <div className={cn('max-h-24 shrink-0 overflow-y-auto', className)}>
+    <div ref={box} className={cn('max-h-24 shrink-0 overflow-y-auto', className)}>
       <div className="flex flex-wrap items-baseline gap-x-0.5 gap-y-1">{out}</div>
     </div>
   );

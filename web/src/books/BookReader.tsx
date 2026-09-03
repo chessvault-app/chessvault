@@ -1,4 +1,4 @@
-import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, List, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -7,6 +7,7 @@ import { AnalysisBoard, BoardControls, PaneControls } from '@/board/AnalysisBoar
 import { AnalysisMoveBox } from '@/board/MoveBox';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
+import { CurrentLine } from '@/analysis/CurrentLine';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
@@ -85,6 +86,15 @@ const BOARD_SIDE_MIN = 420;
 const ZOOM_MIN = 0.25;
 /** Whether the diagram buttons are drawn; remembered on the device. */
 const HOTSPOTS_KEY = 'vault:reader:hotspots';
+/** Whether the line strip is drawn under the board at wide; remembered on the device. */
+const STRIP_KEY = 'vault:reader:strip';
+/**
+ * What the strip takes off the board's height budget when it is shown: its
+ * own cap (max-h-24, three lines) plus the gap above it. A fixed reserve
+ * rather than the strip's measured height, so the board does not change
+ * size as the line grows — it is the thing being read against.
+ */
+const STRIP_BUDGET = 'calc(100dvh - 10rem - 7rem)';
 /**
  * What this device learned about a book's pages last time it was open —
  * the first page's height over its width, and how many there are — so
@@ -188,6 +198,16 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     });
   // A quarter turn at a time, for a scan that came in sideways.
   const [rotation, setRotation] = useState<Rotation>(0);
+  // The line under the board, on a desktop: the moves played, as one
+  // strip to step back through. Not a moves panel — a book that turns
+  // back to move 6 wants the position at move 6, not columns and
+  // comments (the panel is one press away on the board page).
+  const [strip, setStrip] = useState(() => localStorage.getItem(STRIP_KEY) !== 'off');
+  const toggleStrip = (): void =>
+    setStrip((on) => {
+      localStorage.setItem(STRIP_KEY, on ? 'off' : 'on');
+      return !on;
+    });
   const rotate = (): void => setRotation((r) => (((r + 90) % 360) as Rotation));
 
   // Text search: hits are boxes on the pages; the current one is shown.
@@ -413,6 +433,15 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       <Button
         variant="ghost"
         size="icon-sm"
+        active={strip}
+        title={strip ? t('Hide the moves under the board') : t('Show the moves under the board')}
+        onClick={toggleStrip}
+      >
+        <List className="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
         title={t('Open on the board page')}
         onClick={() => {
           useAnalysis.setState({ handoff: true });
@@ -428,7 +457,13 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // moves and the engine are the board page's, one press away; what the
   // reader beside a book wants is the position and a way through it.
   const boardOnly = (
-    <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 md:px-6 md:pb-6 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:w-full wide:[&>*:first-child]:mx-auto wide:[&>*:first-child]:pr-5">
+    <div
+      className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 md:px-6 md:pb-6 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:w-full wide:[&>*:first-child]:mx-auto wide:[&>*:first-child]:pr-5"
+      // The board's width budget reads this variable (boardSize.ts): with
+      // the strip under it the board gives up the strip's cap on a
+      // height-bound window, and nothing on a width-bound one.
+      style={strip ? ({ '--board-budget': STRIP_BUDGET } as React.CSSProperties) : undefined}
+    >
       {/* The board column is capped (board-col-cap) to what the board can
           use, and as a flex-none item of this column it sat at the left of
           a wider region. An explicit full width (still under the cap) and
@@ -439,6 +474,19 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       <div className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W)}>
         <BoardControls className="-my-1" />
       </div>
+      {/* Under the nav, as wide as the board's column and no wider:
+          board-col-cap is the cap the board block itself sits in (it reads
+          --board-budget above), and NOT BOARD_MAX_W, whose lg variant
+          resolves to min(100%, 64rem) and let the strip run the whole
+          region on a height-bound window (measured at 1600x700: strip
+          774 wide over a 368 board). On the board's own edges: pl-9 is
+          the eval lane and the gap the board row keeps to its left
+          (EvalBarSlot's w-7 plus gap-2), pr-5 the slot paid back on the
+          right as above, so the first chip's text starts on the board's
+          left edge (1280x780: chip text 842, board 841). In the chip
+          grammar the engine tab's strip uses: muted moves, the one you
+          are on in the accent, sidelines one level deep in brackets. */}
+      {strip && <CurrentLine className="board-col-cap mx-auto w-full wide:pl-9 wide:pr-5" />}
     </div>
   );
 
