@@ -14,12 +14,13 @@ use crate::util::commas;
 
 /// (key, label, weight) — the TS PHASES table, in order. See the comment
 /// there for where the weights come from (a measured gigabase build).
-pub const PHASES: [(&str, &str, u32); 8] = [
+pub const PHASES: [(&str, &str, u32); 9] = [
     ("replay", "replaying", 50),
     ("plies-index", "indexing plies", 14),
     ("sums", "summing per move", 20),
     ("thin", "dropping thin positions", 4),
     ("sums-index", "indexing the sums", 2),
+    ("top", "ranking top games", 8),
     ("keys-count", "inverting keys", 3),
     ("keys-fill", "inverting keys", 4),
     ("keys-write", "inverting keys", 3),

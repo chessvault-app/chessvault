@@ -167,6 +167,7 @@ pub fn index_positions(
         conn.execute_batch(
             "DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; \
              DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; \
+             DROP INDEX IF EXISTS idx_top_games_pos; DROP TABLE IF EXISTS top_games; \
              DROP TABLE IF EXISTS scan_pack; DROP TABLE IF EXISTS key_index;",
         )?;
         conn.execute_batch(sql::PLIES_TABLE)?;
@@ -174,7 +175,8 @@ pub fn index_positions(
     } else {
         // The sums are re-derived whole either way — see the TS twin.
         conn.execute_batch(
-            "DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;",
+            "DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; \
+             DROP INDEX IF EXISTS idx_top_games_pos; DROP TABLE IF EXISTS top_games;",
         )?;
     }
 
@@ -316,6 +318,9 @@ pub fn index_positions(
     conn.execute_batch(sql::MOVE_COUNTS_THIN)?;
     phase.enter("sums-index", None);
     conn.execute_batch(sql::MOVE_COUNTS_INDEX)?;
+    phase.enter("top", None);
+    conn.execute_batch(sql::TOP_GAMES_TABLE)?;
+    conn.execute_batch(sql::TOP_GAMES_INDEX)?;
     if packing {
         build_key_index(&conn, &mut phase)?;
     }

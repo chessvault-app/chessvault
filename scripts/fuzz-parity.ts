@@ -209,6 +209,7 @@ async function main(): Promise<void> {
       ['games', 'SELECT * FROM games ORDER BY id'],
       ['plies', 'SELECT * FROM plies ORDER BY game_id, ply'],
       ['move_counts', 'SELECT * FROM move_counts ORDER BY pos, uci, eb'],
+      ['top_games', 'SELECT * FROM top_games ORDER BY pos, eb, elo DESC, game_id DESC'],
       ['scan_pack', 'SELECT game_id, hex(pack) p FROM scan_pack ORDER BY game_id'],
       ['key_index', 'SELECT bucket, hex(entries) e FROM key_index ORDER BY bucket'],
       ['players', 'SELECT * FROM players ORDER BY name'],

@@ -76,7 +76,10 @@ npm ci --no-audit --no-fund >/dev/null
 rm -rf dist && tar xzf "$STAGE/deploy-dist.tar.gz" && rm -rf "$STAGE"
 # Derived tables and indexes the API relies on. Idempotent and a no-op in
 # milliseconds once applied, so it is cheaper to run every deploy than to
-# remember which databases predate which optimisation.
+# remember which databases predate which optimisation. The first deploy
+# after a new derivation is the exception, and the old server keeps
+# answering while it runs: the top-games ranking took about half an hour
+# per 10 M-game file (measured on a 3 M-row slice).
 npx tsx scripts/tune-dbs.ts
 
 # The native fast path, rebuilt against the commit that was just deployed.

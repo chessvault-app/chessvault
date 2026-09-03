@@ -14,7 +14,7 @@ import {
   sweepUnfinishedBuilds,
   undeclaredFilters,
 } from './refgames.ts';
-import { indexPositions } from './refgamesIndex.ts';
+import { TOP_GAMES_MIN_GAMES, indexPositions } from './refgamesIndex.ts';
 import {
   findCrossImpossible,
   matchesSearchTerms,
@@ -700,6 +700,97 @@ describe('position index and explore', () => {
     } finally {
       wide.closeDb();
       rmSync(wideDir, { recursive: true, force: true });
+    }
+  });
+
+  it('ranks the strongest games once enough pass through a position', async () => {
+    // TOP_GAMES_MIN_GAMES games through the start position, all 1.e4,
+    // rated so that the strongest eight are known: the pass ranks the
+    // start position (and the one after e4), and the route must answer
+    // from that table exactly as the live join would have — the live
+    // join is what cost 44 s on a gigabase, and this is the test that
+    // the shortcut is not a different answer.
+    const hotDir = mkdtempSync(join(tmpdir(), 'refgames-hot-'));
+    const hotPath = join(hotDir, 'games.sqlite');
+    const db = new Database(hotPath);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '${TOP_GAMES_MIN_GAMES}'), ('sources', 'hot.pgn');
+    `);
+    const insert = db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    // Ratings climb with the id, so the strongest games are the LAST
+    // ones inserted, in a 1000..2999 spread that covers ten level
+    // buckets; a tie on the sum (two games per rating) falls to the
+    // later id, the live join's own tiebreak.
+    db.exec('BEGIN');
+    for (let i = 0; i < TOP_GAMES_MIN_GAMES; i += 1) {
+      const elo = 1000 + Math.floor(i / 2) % 2000;
+      insert.run(`W${i}`, `B${i}`, elo, elo, '1-0', '2026.01.01', 'T', 'C20', 'Open', 'e4 e5');
+    }
+    db.exec('COMMIT');
+    db.close();
+    indexPositions(hotPath);
+
+    const hot = refGamesApi(hotPath);
+    const hotApp = new Hono().route('/api', hot);
+    try {
+      const stored = new Database(hotPath, { readonly: true });
+      // Ranked: the start position and the one after e4 — eight per
+      // level bucket, ten buckets, both positions.
+      expect(
+        (stored.prepare('SELECT COUNT(*) AS n FROM top_games').get() as { n: number }).n,
+      ).toBe(2 * 10 * 8);
+      // The live answer, straight from the join the route used to run.
+      const live = stored
+        .prepare(
+          `SELECT g.white FROM plies p JOIN games g ON g.id = p.game_id
+           WHERE p.pos = (SELECT pos FROM move_counts GROUP BY pos ORDER BY SUM(w + d + b) DESC, pos LIMIT 1)
+           ORDER BY g.white_elo + g.black_elo DESC, g.id DESC LIMIT 8`,
+        )
+        .all() as { white: string }[];
+      stored.close();
+      expect(live.map((g) => g.white)).toEqual(
+        ['W3999', 'W3998', 'W3997', 'W3996', 'W3995', 'W3994', 'W3993', 'W3992'],
+      );
+
+      const ask = async (query: string): Promise<{ white: string; whiteElo: number }[]> =>
+        (
+          (await (
+            await hotApp.request(`/api/refgames/explore?fen=${encodeURIComponent(START)}${query}`)
+          ).json()) as { topGames: { white: string; whiteElo: number }[] }
+        ).topGames;
+      // Unfiltered: the table's answer is the live one.
+      expect((await ask('')).map((g) => g.white)).toEqual(live.map((g) => g.white));
+      // An aligned band reads the same rows: the top of the 2000-2199
+      // bucket, strongest first, later id first on a tie.
+      const band = await ask('&band=2000-2199');
+      expect(band).toHaveLength(8);
+      expect(band.every((g) => g.whiteElo >= 2000 && g.whiteElo <= 2199)).toBe(true);
+      expect(band[0]).toMatchObject({ white: 'W2399', whiteElo: 2199 });
+      expect(band[1]).toMatchObject({ white: 'W2398', whiteElo: 2199 });
+      // An open band from an edge spans buckets, and still ranks across them.
+      expect((await ask('&band=2600-')).map((g) => g.white)).toEqual(live.map((g) => g.white));
+      // A ranked position with nothing in the band is an empty list, not
+      // a fall through to the live join.
+      expect(await ask('&band=3000-')).toEqual([]);
+      // Off the bucket edges, or with any other filter, the live join
+      // still answers — the same rule as the sums.
+      expect((await ask('&band=2100-2199')).map((g) => g.whiteElo)).toEqual(
+        [2199, 2199, 2198, 2198, 2197, 2197, 2196, 2196],
+      );
+      expect((await ask('&player=W2500')).map((g) => g.white)).toEqual(['W2500']);
+    } finally {
+      hot.closeDb();
+      rmSync(hotDir, { recursive: true, force: true });
     }
   });
 

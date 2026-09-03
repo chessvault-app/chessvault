@@ -65,6 +65,10 @@ const PHASES = [
   { key: 'sums', label: 'summing per move', weight: 20 },
   { key: 'thin', label: 'dropping thin positions', weight: 4 },
   { key: 'sums-index', label: 'indexing the sums', weight: 2 },
+  // The top-games ranking: a join over every row of the crowded
+  // positions (~107 M on the OTB gigabase at 20 µs each, measured on
+  // a 3 M-row slice), so about half an hour beside the sums' hour.
+  { key: 'top', label: 'ranking top games', weight: 8 },
   // The key index is three JS loops over known row counts, so it is the
   // one late phase that can report real progress: a weight slot each.
   { key: 'keys-count', label: 'inverting keys', weight: 3 },
@@ -373,6 +377,54 @@ export const REFGAMES_MOVE_COUNTS_LEGACY = REFGAMES_MOVE_COUNTS.replace(
     GROUP BY p.pos, p.uci;`,
 );
 
+/**
+ * The strongest games of every crowded position, precomputed.
+ *
+ * The explorer shows eight games under its table, strongest pair first.
+ * Live, that is a join over every game through the position sorted by
+ * rating — near the root, the whole corpus. On a 10 M-game file the
+ * start position took 44 s and the position after 1.e4 10 s, measured
+ * with the sqlite CLI, and the route runs synchronously on the event
+ * loop, so for that long the server answered nothing at all: the
+ * "deploy box does not respond for a minute" report was this query.
+ * Eight rows read from a table take microseconds.
+ *
+ * Only positions with TOP_GAMES_MIN_GAMES games or more are ranked: at
+ * 4.4 µs a row (the 44 s over 10 M), 5,000 rows is ~20 ms live, and the
+ * OTB gigabase has 3,354 such positions — 107 M plies rows to rank once
+ * at index time, against 309 M in the table. Ranked per level bucket,
+ * eight each, so an aligned band answers from the same rows: the top
+ * eight of a union of buckets is inside the union of their top eights.
+ * The route (topGamesPath in refgames.ts) reads the position's total
+ * from move_counts to know whether it was ranked; a filtered question
+ * still joins live, the same rule as the sums.
+ *
+ * Derived from plies and move_counts, so it is built after them here,
+ * dropped with them on either kind of pass, and added to older files
+ * by scripts/tune-dbs.ts. The native twin runs the same text
+ * (native/src/sql.rs), held to it by the goldens.
+ */
+export const TOP_GAMES_MIN_GAMES = 5000;
+
+export const TOP_GAMES_TABLE = `  CREATE TABLE IF NOT EXISTS top_games AS
+    SELECT pos, eb, uci, game_id, elo FROM (
+      SELECT p.pos AS pos, p.eb AS eb, p.uci AS uci, p.game_id AS game_id,
+             g.white_elo + g.black_elo AS elo,
+             ROW_NUMBER() OVER (
+               PARTITION BY p.pos, p.eb
+               ORDER BY g.white_elo + g.black_elo DESC, g.id DESC
+             ) AS rank
+      FROM plies p JOIN games g ON g.id = p.game_id
+      WHERE p.pos IN (
+        SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) >= ${TOP_GAMES_MIN_GAMES}
+      )
+    ) WHERE rank <= 8;
+`;
+export const TOP_GAMES_INDEX = `  CREATE INDEX IF NOT EXISTS idx_top_games_pos ON top_games (pos);
+`;
+export const REFGAMES_TOP_GAMES = `
+${TOP_GAMES_TABLE}${TOP_GAMES_INDEX}`;
+
 /** Whether a database already carries the index (and how many rows).
     `stale` — games exist above the index's high-water id, so an append
     died between its insert and its index pass; re-running the index (or
@@ -476,6 +528,7 @@ export function indexPositions(
       db.exec(
         'DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; ' +
           'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; ' +
+          'DROP INDEX IF EXISTS idx_top_games_pos; DROP TABLE IF EXISTS top_games; ' +
           'DROP TABLE IF EXISTS scan_pack; DROP TABLE IF EXISTS key_index;',
       );
       db.exec(PLIES_SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
@@ -486,7 +539,10 @@ export function indexPositions(
       // of which the sums are ~10), where merging them under the thin
       // threshold would need re-aggregating every touched position
       // anyway.
-      db.exec('DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;');
+      db.exec(
+        'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts; ' +
+          'DROP INDEX IF EXISTS idx_top_games_pos; DROP TABLE IF EXISTS top_games;',
+      );
     }
 
     const insert = db.prepare(
@@ -598,6 +654,9 @@ export function indexPositions(
     db.exec(MOVE_COUNTS_THIN);
     phase.enter('sums-index');
     db.exec(MOVE_COUNTS_INDEX);
+    phase.enter('top');
+    db.exec(TOP_GAMES_TABLE);
+    db.exec(TOP_GAMES_INDEX);
     if (packing) {
       buildKeyIndex(db, log, phase);
     }

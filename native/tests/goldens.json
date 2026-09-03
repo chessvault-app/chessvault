@@ -1,5 +1,5 @@
 {
- "schema": 2,
+ "schema": 3,
  "generator": "scripts/export-native-goldens.ts",
  "refMaxPly": 30,
  "fens": [
@@ -8382,6 +8382,7 @@
   "scanPackSchema": "\n  CREATE TABLE IF NOT EXISTS scan_pack (\n    game_id INTEGER PRIMARY KEY,\n    pack BLOB NOT NULL\n  );\n",
   "keyIndexSchema": "\n  CREATE TABLE IF NOT EXISTS key_index (\n    bucket INTEGER PRIMARY KEY,\n    entries BLOB NOT NULL\n  );\n",
   "moveCounts": "\n  CREATE TABLE IF NOT EXISTS move_counts AS\n    SELECT pos, uci, eb,\n           SUM(r = 0) AS w,\n           SUM(r = 1) AS d,\n           SUM(r = 2) AS b\n    FROM plies\n    GROUP BY pos, uci, eb;\n  CREATE TEMP TABLE mc_thin AS\n    SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < 5;\n  DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);\n  DROP TABLE mc_thin;\n  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);\n",
+  "topGames": "\n  CREATE TABLE IF NOT EXISTS top_games AS\n    SELECT pos, eb, uci, game_id, elo FROM (\n      SELECT p.pos AS pos, p.eb AS eb, p.uci AS uci, p.game_id AS game_id,\n             g.white_elo + g.black_elo AS elo,\n             ROW_NUMBER() OVER (\n               PARTITION BY p.pos, p.eb\n               ORDER BY g.white_elo + g.black_elo DESC, g.id DESC\n             ) AS rank\n      FROM plies p JOIN games g ON g.id = p.game_id\n      WHERE p.pos IN (\n        SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) >= 5000\n      )\n    ) WHERE rank <= 8;\n  CREATE INDEX IF NOT EXISTS idx_top_games_pos ON top_games (pos);\n",
   "refgamesIndexes": "\n  CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);\n  CREATE INDEX IF NOT EXISTS idx_games_black ON games (black);\n  CREATE INDEX IF NOT EXISTS idx_games_opening ON games (opening);\n  CREATE INDEX IF NOT EXISTS idx_games_eco ON games (eco);\n",
   "refgamesLookups": "\n  CREATE TABLE IF NOT EXISTS players AS\n    SELECT name, COUNT(*) AS games, SUM(w) AS as_white, SUM(b) AS as_black, MAX(elo) AS max_elo\n    FROM (\n      SELECT white AS name, 1 AS w, 0 AS b, white_elo AS elo FROM games\n      UNION ALL\n      SELECT black AS name, 0 AS w, 1 AS b, black_elo AS elo FROM games\n    )\n    GROUP BY name;\n  CREATE UNIQUE INDEX IF NOT EXISTS idx_players_name ON players (name);\n  CREATE TABLE IF NOT EXISTS openings AS\n    SELECT opening, eco, COUNT(*) AS games FROM games\n    WHERE opening IS NOT NULL OR eco IS NOT NULL\n    GROUP BY opening, eco;\n  CREATE TABLE IF NOT EXISTS events AS\n    SELECT event, COUNT(*) AS games FROM games\n    WHERE event IS NOT NULL\n    GROUP BY event;\n"
  },

@@ -6,7 +6,11 @@
  * to repeat and reversible with a DROP.
  */
 import type Database from 'better-sqlite3';
-import { REFGAMES_MOVE_COUNTS, REFGAMES_MOVE_COUNTS_LEGACY } from '../../server/refgamesIndex.ts';
+import {
+  REFGAMES_MOVE_COUNTS,
+  REFGAMES_MOVE_COUNTS_LEGACY,
+  REFGAMES_TOP_GAMES,
+} from '../../server/refgamesIndex.ts';
 
 type Db = InstanceType<typeof Database>;
 
@@ -138,6 +142,21 @@ export function tune(db: Db): string[] {
       db.prepare("SELECT 1 FROM pragma_table_info('plies') WHERE name = 'r'").get() !== undefined;
     db.exec(hasResult ? REFGAMES_MOVE_COUNTS : REFGAMES_MOVE_COUNTS_LEGACY);
     applied.push('move_counts');
+  }
+  // The strongest games of the crowded positions, ranked per level
+  // bucket from the sums just above — so only a bucketed sums table can
+  // have them; the joined legacy variant carries no eb. Not milliseconds
+  // on a gigabase: it joins every row of those positions once (about
+  // half an hour on 10 M games, measured), which is still the one pass
+  // that spares the server a 44 s stall per explore.
+  if (has(db, 'games') && has(db, 'plies') && has(db, 'move_counts') && !has(db, 'top_games')) {
+    const bucketed =
+      db.prepare("SELECT 1 FROM pragma_table_info('move_counts') WHERE name = 'eb'").get() !==
+      undefined;
+    if (bucketed) {
+      db.exec(REFGAMES_TOP_GAMES);
+      applied.push('top_games');
+    }
   }
   return applied;
 }

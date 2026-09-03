@@ -40,7 +40,7 @@ import {
   residentStatus,
 } from './refgamesResident.ts';
 import { openingForKey, type Opening } from './openings.ts';
-import { positionIndexInfo } from './refgamesIndex.ts';
+import { TOP_GAMES_MIN_GAMES, positionIndexInfo } from './refgamesIndex.ts';
 import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
 import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
@@ -468,6 +468,28 @@ function hasMoveCounts(db: InstanceType<typeof Database>): boolean {
       .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'move_counts'")
       .get() !== undefined
   );
+}
+
+/** Whether the file ranked its crowded positions' strongest games
+    (TOP_GAMES_TABLE in refgamesIndex.ts). */
+function hasTopGames(db: InstanceType<typeof Database>): boolean {
+  return (
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'top_games'")
+      .get() !== undefined
+  );
+}
+
+/** One row of the explorer's top-games list, as both the live join and
+    the precomputed table produce it. */
+interface TopGameRow {
+  uci: string;
+  white: string;
+  black: string;
+  whiteElo: number;
+  blackElo: number;
+  result: string;
+  date: string | null;
 }
 
 /** Whether the file carries the derived player/opening lookup tables the
@@ -1348,6 +1370,53 @@ export function refGamesApi(
   };
 
   /**
+   * The precomputed strongest games of a position, when the file ranked
+   * them (TOP_GAMES_TABLE) and the question is one they answer — the
+   * sums' own rule: no filter, or a band on the 200-point edges. Returns
+   * the lookup; ITS null means the position was not ranked (fewer than
+   * TOP_GAMES_MIN_GAMES games, by the sums), so the caller joins live,
+   * where an empty array is a real answer: a ranked position with no
+   * game in that band. Without this the live join sorted every game
+   * through the position on the event loop — 44 s for the start
+   * position of a 10 M-game file, during which the server answered
+   * nothing (measured; see the table's comment).
+   */
+  const topGamesPath = (
+    db: InstanceType<typeof Database>,
+    get: (key: string) => string | undefined,
+  ): ((pos: unknown) => TopGameRow[] | null) | null => {
+    if (!hasTopGames(db) || !hasMoveCounts(db)) return null;
+    const others = gamesWhere((k) => (k === 'band' ? undefined : get(k)), 'g.');
+    if (others.clauses.length > 0) return null;
+    const band = parseBand(get('band'));
+    let extra = '';
+    const binds: number[] = [];
+    if (band) {
+      if (band.lo % 200 !== 0 || (band.hi !== null && (band.hi + 1) % 200 !== 0)) return null;
+      binds.push(band.lo / 200);
+      if (band.hi === null) {
+        extra = ' AND t.eb >= ?';
+      } else {
+        extra = ' AND t.eb BETWEEN ? AND ?';
+        binds.push((band.hi + 1) / 200 - 1);
+      }
+    }
+    const total = db.prepare('SELECT SUM(w + d + b) AS n FROM move_counts WHERE pos = ?');
+    const stmt = db.prepare(
+      `SELECT t.uci AS uci, g.white, g.black, g.white_elo AS whiteElo,
+              g.black_elo AS blackElo, g.result, g.date
+       FROM top_games t JOIN games g ON g.id = t.game_id
+       WHERE t.pos = ?${extra}
+       ORDER BY t.elo DESC, t.game_id DESC
+       LIMIT 8`,
+    );
+    return (pos) => {
+      const n = (total.get(pos) as { n: number | null }).n ?? 0;
+      return n >= TOP_GAMES_MIN_GAMES ? (stmt.all(pos, ...binds) as TopGameRow[]) : null;
+    };
+  };
+
+  /**
    * The deepest catalogued opening along a game's first plies.
    *
    * A database only knows the name its source PGN carried, and the big
@@ -1674,8 +1743,13 @@ export function refGamesApi(
       return [{ uci: row.uci, san: makeSan(pos, move), w: row.w, d: row.d, b: row.b, total: row.w + row.d + row.b }];
     });
 
+    // Precomputed for the crowded positions, live for the rest — the
+    // live join sorts every game through the position, which near the
+    // root is the whole file (see topGamesPath).
+    const ranked = topGamesPath(db, (k) => c.req.query(k));
     const topGames = (
-      db
+      ranked?.(key) ??
+      (db
         .prepare(
           `SELECT p.uci AS uci, g.white, g.black, g.white_elo AS whiteElo,
                   g.black_elo AS blackElo, g.result, g.date
@@ -1684,15 +1758,7 @@ export function refGamesApi(
            ORDER BY g.white_elo + g.black_elo DESC, g.id DESC
            LIMIT 8`,
         )
-        .all(key, ...binds) as {
-        uci: string;
-        white: string;
-        black: string;
-        whiteElo: number;
-        blackElo: number;
-        result: string;
-        date: string | null;
-      }[]
+        .all(key, ...binds) as TopGameRow[])
     ).filter((g) => {
       const move = parseUci(g.uci);
       return move !== undefined && pos.isLegal(move);

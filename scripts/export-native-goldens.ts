@@ -36,6 +36,7 @@ import {
   KEY_INDEX_SCHEMA,
   PLIES_SCHEMA,
   REFGAMES_MOVE_COUNTS,
+  REFGAMES_TOP_GAMES,
   REF_MAX_PLY,
   SCAN_PACK_SCHEMA,
   eloBucket,
@@ -497,6 +498,9 @@ const sql = {
   /** sql::MOVE_COUNTS — MOVE_COUNT_MIN_GAMES is interpolated, so it
       rides along. */
   moveCounts: REFGAMES_MOVE_COUNTS,
+  /** sql::TOP_GAMES_TABLE followed by sql::TOP_GAMES_INDEX —
+      TOP_GAMES_MIN_GAMES is interpolated, so it rides along. */
+  topGames: REFGAMES_TOP_GAMES,
   /** sql::REFGAMES_INDEXES */
   refgamesIndexes: REFGAMES_INDEXES,
   /** sql::REFGAMES_LOOKUPS */
@@ -511,7 +515,7 @@ const constants = {
 };
 
 const goldens = {
-  schema: 2,
+  schema: 3,
   generator: 'scripts/export-native-goldens.ts',
   refMaxPly: REF_MAX_PLY,
   fens,

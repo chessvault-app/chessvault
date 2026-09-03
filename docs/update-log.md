@@ -7,6 +7,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The explorer no longer freezes the server on a crowded position.**
+  The eight games under the explorer's table were sorted live from every
+  game through the position, and near the start of a ten-million-game
+  database that was the whole file: 44 seconds for the start position,
+  measured, during which the server answered nothing at all. The
+  position index now ranks those games once, per position and level
+  band, and the explorer reads eight rows. Databases built by the app
+  gain the ranking on their next index pass, and a deploy adds it to the
+  files already there; the first one takes about half an hour per
+  ten-million-game file, once.
+
 The explorer stops guessing once the pieces run out: under seven of them
 it says what the position IS — won, drawn, lost, and how far away — with
 every legal move ranked by the truth rather than by what happened to

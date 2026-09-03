@@ -93,6 +93,31 @@ pub const MOVE_COUNTS_INDEX: &str = "
   CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
 ";
 
+/// `server/refgamesIndex.ts` TOP_GAMES_TABLE / TOP_GAMES_INDEX — the
+/// strongest eight games per (position, level bucket) of every position
+/// the sums put at TOP_GAMES_MIN_GAMES (5000, interpolated there) games or
+/// more. The goldens hold the two concatenated against the TS
+/// REFGAMES_TOP_GAMES they add up to.
+pub const TOP_GAMES_TABLE: &str = "
+  CREATE TABLE IF NOT EXISTS top_games AS
+    SELECT pos, eb, uci, game_id, elo FROM (
+      SELECT p.pos AS pos, p.eb AS eb, p.uci AS uci, p.game_id AS game_id,
+             g.white_elo + g.black_elo AS elo,
+             ROW_NUMBER() OVER (
+               PARTITION BY p.pos, p.eb
+               ORDER BY g.white_elo + g.black_elo DESC, g.id DESC
+             ) AS rank
+      FROM plies p JOIN games g ON g.id = p.game_id
+      WHERE p.pos IN (
+        SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) >= 5000
+      )
+    ) WHERE rank <= 8;
+";
+
+pub const TOP_GAMES_INDEX: &str = "
+  CREATE INDEX IF NOT EXISTS idx_top_games_pos ON top_games (pos);
+";
+
 /// `scripts/lib/db-tuning.ts` REFGAMES_INDEXES.
 pub const REFGAMES_INDEXES: &str = "
   CREATE INDEX IF NOT EXISTS idx_games_players ON games (white, black, opening, eco);

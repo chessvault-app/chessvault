@@ -47,6 +47,8 @@ struct SqlGolden {
     key_index_schema: String,
     #[serde(rename = "moveCounts")]
     move_counts: String,
+    #[serde(rename = "topGames")]
+    top_games: String,
     #[serde(rename = "refgamesIndexes")]
     refgames_indexes: String,
     #[serde(rename = "refgamesLookups")]
@@ -171,7 +173,7 @@ fn load() -> Goldens {
     let text = std::fs::read_to_string(path)
         .expect("goldens.json exists — run scripts/export-native-goldens.ts");
     let goldens: Goldens = serde_json::from_str(&text).expect("goldens.json parses");
-    assert_eq!(goldens.schema, 2, "unknown goldens schema");
+    assert_eq!(goldens.schema, 3, "unknown goldens schema");
     goldens
 }
 
@@ -379,6 +381,11 @@ fn sql_matches_the_ts_source() {
                 sql::MOVE_COUNTS_INDEX
             ),
             &goldens.sql.move_counts,
+        ),
+        (
+            "TOP_GAMES_TABLE + _INDEX",
+            format!("{}{}", sql::TOP_GAMES_TABLE, sql::TOP_GAMES_INDEX),
+            &goldens.sql.top_games,
         ),
         ("REFGAMES_INDEXES", sql::REFGAMES_INDEXES.to_owned(), &goldens.sql.refgames_indexes),
         ("REFGAMES_LOOKUPS", sql::REFGAMES_LOOKUPS.to_owned(), &goldens.sql.refgames_lookups),
