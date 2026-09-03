@@ -529,6 +529,18 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The pane switcher is the pane's own header on a phone.** The strip
+  that turns the panes under the board (moves, engine, explorer, and the
+  trainers' puzzle text) is now the top of the pane card rather than a
+  pill floating above it: the card's surface and edge, a line under the
+  open tab, and the card's corners squared to meet it. The line follows
+  a swipe, travelling with your thumb and landing with the pane, which
+  is the first thing on the page that says the panes can be swiped at
+  all. The header also stands where the gap between pill and card was,
+  so the pane under it is a little taller than before. The book reader
+  and the puzzle-book fix page keep the pill: their switcher stands at
+  the top of a column with no card for it to belong to.
+
 - **The filters button joins the search row on a phone.** Below the
   tablet width the quick selects already live in the More filters
   window, which left a row of its own holding one button and nothing

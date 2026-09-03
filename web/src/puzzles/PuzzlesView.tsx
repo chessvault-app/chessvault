@@ -1221,7 +1221,7 @@ function Trainer({
             desktop. The switcher is the phone's whole navigation here:
             analysing used to replace the page, and going back for the
             puzzle's own text meant leaving the analysis. */}
-        {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
+        {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
         {(wide || paneSwipe.shows('moves')) && movesPanel}
         {!wide && analysing && paneSwipe.shows('engine') && (
           <Panel className="min-h-0 flex-1">

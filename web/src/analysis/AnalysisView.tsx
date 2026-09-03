@@ -145,7 +145,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             {wantExplorer ? t('Explorer') : t('Board')}
           </h1>
         </div>
-        <PaneTabs className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
+        <PaneTabs variant="header" className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
         {/* Desktop keeps an explicit floor; phones drop it so the panel
             shrinks into the slot and the move table scrolls inside.
             The floor is a share of the column as well as a size: the column

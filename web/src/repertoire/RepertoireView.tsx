@@ -1851,7 +1851,7 @@ export function RepertoireView() {
           <>
             {/* Moves above the game on a desktop; one pane at a time on a
                 phone, the engine chosen for you when the line ends. */}
-            {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
+            {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
             {(wide || paneSwipe.shows('moves')) && movesPanel}
             {!wide && analysing && paneSwipe.shows('engine') && (
               <Panel className="min-h-0 flex-1">

@@ -896,7 +896,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             read while solving and the engine docks on top of them the
             moment it is over. One at a time on a phone, behind the
             switcher. */}
-        {!wide && <PaneTabs value={shownPane} onChange={setPane} tabs={panes} />}
+        {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
         {(wide || paneSwipe.shows('moves')) && movesPanel}
         {!wide && analysing && paneSwipe.shows('engine') && (
           <Panel className="min-h-0 flex-1">

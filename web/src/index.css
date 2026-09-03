@@ -1408,6 +1408,38 @@ cg-board square.check {
   transition: transform var(--pane-turn) var(--pane-turn-ease);
 }
 
+/* The pane header (components/pane-tabs, variant "header"): the strip is
+   the top of the card under it, so every pane card that follows it in the
+   column meets it with square top corners — the open one, and the
+   neighbour the swipe stands beside it. Below lg only, which is every
+   width the strip is on screen at; above it the strip is hidden and the
+   cards keep their corners. */
+@media (width < 64rem) {
+  [data-pane-strip][data-pane-header] ~ [data-slot='card'] {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+/* The header's line moves with the finger (translate, from --pane-dx) and
+   walks to its tab on the pane's clock: a tap moves `left`, a settling
+   swipe moves the transform, and both take the turn's own duration and
+   curve so the line and the pane land together. Mid-drag it is pinned to
+   the finger, so no transition. Reduced motion flattens it to the swap. */
+[data-pane-indicator] {
+  transition:
+    left var(--pane-turn) var(--pane-turn-ease),
+    transform var(--pane-turn) var(--pane-turn-ease);
+}
+[data-pane-swipe='drag'] [data-pane-indicator] {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pane-indicator] {
+    transition: none;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Note editor typography. Tiptap renders semantic HTML; these give it the
    reading rhythm of a document without pulling in a typography plugin. */

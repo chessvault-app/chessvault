@@ -356,7 +356,7 @@ export function StudyView({
       >
         {titleRow('stacked:hidden', true)}
 
-        <PaneTabs className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
+        <PaneTabs variant="header" className="lg:hidden" value={pane} onChange={setPane} tabs={panes} />
         {/* The hiding goes on the panel itself. A `contents` wrapper around
             it did the same job, but a box that generates no box of its own
             cannot be moved — and the swipe that turns these panes moves
