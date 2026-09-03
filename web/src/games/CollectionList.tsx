@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
-import { collectionWasNonEmpty } from './collection';
+import { collectionLastCount, collectionWasNonEmpty } from './collection';
 
 import { t } from '@/lib/i18n';
 import {
@@ -409,10 +409,16 @@ export function CollectionList({
    * vault known to be empty draws nothing and stays that way; one that
    * has emptied since draws them once and self-heals on the next load.
    */
-  const showFilters = loaded ? games.length > 0 : merged && collectionWasNonEmpty();
   /** Whether the filter controls ride the search row rather than a row of their own. */
   const folded = useFiltersFolded();
   const filtersInRow = merged || folded;
+  // Before the load, wherever the controls ride the search row: that is
+  // the merged toolbar AND a phone's folded row, where the More filters
+  // button is the one control drawn. Reading `merged` alone here left
+  // the phone's search box 42px wider until the games arrived, and the
+  // bookmark button slid left by that much as the button appeared
+  // (measured on the demo).
+  const showFilters = loaded ? games.length > 0 : filtersInRow && collectionWasNonEmpty();
 
   // The shared filter row's contents (GameFilters): side is YOUR side,
   // so it matches only the games you played; reference games (no side of
@@ -504,13 +510,17 @@ export function CollectionList({
    * left edge takes the difference; in the count band the span is
    * flex-1 and nothing moves whatever this measures.
    *
-   * w-16 is measured, not guessed. A three-digit tally renders 65.5px
-   * in Korean and 71.9px in English at this size and weight, so 4rem
-   * lands 1.5px under the first and 8px under the second — the measured
-   * travel of that left edge, with Import unmoved at both. Smaller and
-   * larger collections were measured too — 47.9/54.3px at one digit,
-   * 78.7/85.1px at four — and no single width can suit them all; this
-   * one is nearest the counts a collection actually holds.
+   * The width is the words' own: the count this device last saw is
+   * laid out invisibly and the bar painted over it, so a returning
+   * collection's tally lands on the placeholder to the pixel (it is off
+   * only when the count changed, by the width of a digit). Before that
+   * count existed the bar was a fixed 4rem, which is still the fallback
+   * for a device that has never read the collection: a three-digit
+   * tally renders 65.5px in Korean and 71.9px in English at this size
+   * and weight, so 4rem lands 1.5px under the first and 8px under the
+   * second, and no single width suits one digit (47.9/54.3px) and four
+   * (78.7/85.1px) both. Measured on the demo, "게임 30개" is 58px and the
+   * fixed bar moved the whole filter row 6px as it landed.
    *
    * Not behind `useSlowLoad`, though it shows for about 20ms on a warm
    * server, which is squarely the flash that hook exists to suppress:
@@ -519,8 +529,14 @@ export function CollectionList({
    * it would be a hole in a loading state its neighbours are already
    * drawing — one skeleton arriving late reads worse than one brief.
    */
+  const lastCount = collectionLastCount();
   const tally = loaded ? (
     t('{n} games', { n: visible.length.toLocaleString() })
+  ) : lastCount !== null ? (
+    <span className="relative inline-block">
+      <span className="invisible">{t('{n} games', { n: lastCount.toLocaleString() })}</span>
+      <Skeleton className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2" />
+    </span>
   ) : (
     <Skeleton className="h-2.5 w-16" />
   );

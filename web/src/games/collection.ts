@@ -55,6 +55,22 @@ export function collectionWasNonEmpty(): boolean {
   }
 }
 
+/** The count the collection held last time, for the tally's placeholder
+    to be laid out at the width of the words that are coming. */
+const COUNT_KEY = 'vault:games-collection-count';
+
+/** How many games the collection held the last time it was read on this
+    device, or null when nothing has read it (or there is no storage). */
+export function collectionLastCount(): number | null {
+  try {
+    const raw = localStorage.getItem(COUNT_KEY);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isInteger(n) && n >= 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadCollection(): Promise<GameSummary[]> {
   // One request even when both panes of the page ask at the same moment.
   // api() throws on failure, so the rejection reaches every caller's own
@@ -64,6 +80,7 @@ export async function loadCollection(): Promise<GameSummary[]> {
       cache = games;
       try {
         localStorage.setItem(NONEMPTY_KEY, games.length > 0 ? '1' : '0');
+        localStorage.setItem(COUNT_KEY, String(games.length));
       } catch {
         /* the session still has the list; only the next cold start loses it */
       }
