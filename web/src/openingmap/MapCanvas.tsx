@@ -598,21 +598,17 @@ export function MapCanvas({
       }
     }
     /**
-     * Arriving, the fit stops short of where the names fade (fit.ts): the
-     * whole map first was a picture of dots. The demo's map fits 1280x720
-     * at k=0.32, where the labels stand at a tenth of their opacity, so a
-     * first visit read a constellation rather than "1. e4, 1... e5". Now
-     * it opens on the root at the zoom the labels are whole at, and a map
-     * that does not fit there runs off the canvas for a pan to reach.
-     * Align is the reader asking for all of it and keeps fitting all of
-     * it. The root is anchored where the LAYOUT put it, not where a drag
-     * left it: on a constellation that is the middle either way, and on
-     * a tree it is the edge the clamp then pushes into view.
+     * Arriving is the same fit Align does: the whole map, centred, at the
+     * largest zoom that shows all of it. It briefly opened on the root at
+     * the zoom where the labels are legible instead (fit.ts keeps that
+     * option and its tests), on the argument that a whole map at k=0.32
+     * is a picture of dots; lanph3re's call (2026-09-03) is that the
+     * first view of a map is its shape, and the names are one pinch
+     * away. The opening view and Align now agree, so pressing Align on
+     * arrival does nothing, which is what a reader expects of it.
      */
-    const root = graph.nodes.find((n) => n.id === map.root.id);
-    commitView(
-      fitView(box, { minX, minY, maxX, maxY }, { legible: !asked, anchor: root }),
-    );
+    void asked;
+    commitView(fitView(box, { minX, minY, maxX, maxY }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeCount, map.id, arrangement, align, sized]);
 

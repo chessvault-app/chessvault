@@ -429,8 +429,7 @@ other people.
   engine block now waits behind a toggle on the panel header when a
   puzzle finishes, and the actions fit. Settings starts with Appearance
   instead of a thirteen-row storage table. Repertoire's title is the
-  shared page header. The opening map opens on the root at the zoom
-  where its labels are legible instead of a constellation at half size.
+  shared page header.
 
 - **The design record is true again, with tripwires.** DESIGN.md said
   five shadow usages and never Tailwind's black ones; the tree had 31.
