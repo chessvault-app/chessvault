@@ -432,9 +432,20 @@ export function DatabaseGames({
   /** Where the next page starts; null when every match is in hand. */
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  /** Whether the search in flight is a fresh one (cursor null) rather
+      than the next page of the one on screen. A page keeps its own
+      "Loading more games…" row; a fresh search over rows that are
+      already there had nothing at all. */
+  const [fresh, setFresh] = useState(false);
   // Nothing for the first moment — a search that answers in 40 ms should
   // not flash a skeleton on the way past.
   const searching = useSlowLoad(loading && rows.length === 0);
+  // A fresh search typed over results: the rows stay where they are and
+  // dim, and the count says so, past the same hold. Measured on a
+  // ten-million-game database, "Carlsen" over 51 rows took 1.1s during
+  // which the pane showed the old total and the old rows unchanged
+  // (lanph3re's report); a placeholder here would shove the list.
+  const refreshing = useSlowLoad(loading && fresh && rows.length > 0);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // A slow answer for "naj" must not overwrite the rows for "najdorf"
@@ -512,6 +523,7 @@ export function DatabaseGames({
     const seq = ++searchSeq.current;
     searchedQ.current = q;
     setLoading(true);
+    setFresh(cursor === null);
     try {
       const params = new URLSearchParams({ q });
       if (cursor !== null) params.set('cursor', String(cursor));
@@ -1129,7 +1141,7 @@ export function DatabaseGames({
           : t('{n}+ games found. The list stops here.', {
               n: (huntRows?.length ?? 0).toLocaleString(),
             })
-    : loading && rows.length === 0
+    : loading && fresh && (rows.length === 0 || refreshing)
       ? t('Searching…')
       : capped
         ? t('{n}+ games', { n: total.toLocaleString() })
@@ -1513,6 +1525,7 @@ export function DatabaseGames({
       // second list above them. A hunt streams rows in as it scans, so
       // it never shows the skeleton at all.
       listLoading={!inHunt && searching}
+      listBusy={!inHunt && refreshing}
       listClassName="flex-1 overflow-y-auto"
       more={
         // "more", not "older": this list is in insertion order (id DESC),

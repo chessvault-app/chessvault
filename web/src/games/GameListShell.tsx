@@ -60,6 +60,7 @@ export function GameListShell({
   list,
   listClassName,
   listLoading = false,
+  listBusy = false,
   dense = false,
   more,
   footnote,
@@ -107,6 +108,10 @@ export function GameListShell({
   /** Rows are on their way: skeleton rows REPLACE the list's contents
       (never stack above them). */
   listLoading?: boolean;
+  /** A fresh answer is out for rows that are still on screen: they
+      stay, dimmed, and the list says it is busy. The placeholder is for
+      an empty list; this is for a stale one. */
+  listBusy?: boolean;
   /** One-line table rows: the virtualization's intrinsic size drops to
       match, so offscreen rows reserve a row's height, not a card's. */
   dense?: boolean;
@@ -152,10 +157,16 @@ export function GameListShell({
         (() => {
           const rows = (
             <ul
+              aria-busy={listBusy || undefined}
               className={cn(
                 // Named container: GameRow's narrow-row rules answer to the
                 // list's own width, not the window's.
                 '@container/arc divide-border border-border min-h-0 divide-y border-t',
+                // Stale rows under a fresh search: half-dimmed, on a short
+                // fade so a fast answer (under useSlowLoad's hold) never
+                // shows it at all.
+                'transition-opacity duration-150',
+                listBusy && 'opacity-50',
                 // Dividers AND a faint stripe on every other row: at two
                 // lines a row is tall enough that a hairline alone leaves the
                 // list reading as one block of text. 2% of the foreground —

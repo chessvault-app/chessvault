@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A database search typed over results says it is searching.** The
+  browser showed "Searching…" and placeholder rows only when the list
+  was empty. A new search over rows already on screen showed nothing:
+  the old rows and the old total stayed until the answer replaced them,
+  which on a ten-million-game database was more than a second of a pane
+  that looked finished. The rows now stay where they are and dim, the
+  count says "Searching…", and both come back with the answer. Paging
+  keeps its own "Loading more games…" row.
 - **Every card on the studies and notes shelves is one height.** A card's
   title took one line or two and its preview none, one or two, so a
   shelf with short names beside long ones stepped between three heights
