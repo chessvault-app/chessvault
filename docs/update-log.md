@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **`opening:` finds the games it names on every database.** The
+  search box suggests the catalogue's opening names, but the qualifier
+  matched only the `Opening` header text the source PGN carried, which
+  the big dumps do not carry at all: `player:"Carlsen, Magnus"
+  opening:"Sicilian Defense: Lasker-Pelikan Variation"` found nothing
+  where the explorer, standing on that position, listed the games.
+  The name now also matches through the position index, the games
+  that pass through the catalogued positions carrying it, which is how
+  the explorer and the list's own opening column already name games.
+  The filter window's Opening field takes the same road. A deep search
+  that names an opening runs on the JS path until the native core
+  learns the catalogue.
 - **The book reader shows the moves played under the board.** A book
   that follows a line to move 10 and then turns back to "6.Bg5" left the
   reader stepping back four times and remembering what the position at

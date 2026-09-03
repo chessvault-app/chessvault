@@ -39,7 +39,7 @@ import {
   residentScan,
   residentStatus,
 } from './refgamesResident.ts';
-import { openingForKey, type Opening } from './openings.ts';
+import { openingForKey, openingKeysNamed, type Opening } from './openings.ts';
 import { TOP_GAMES_MIN_GAMES, positionIndexInfo } from './refgamesIndex.ts';
 import { closeQueries, isAbortedQuery, queryFor, type Query } from './refgamesQuery.ts';
 import type { Context } from 'hono';
@@ -158,7 +158,31 @@ export function undeclaredFilters(
     ...(get('match') === 'structure' && !declared.scan.has('match:structure')
       ? ['match:structure']
       : []),
+    // An opening name is answered in POSITIONS as well as text (see the
+    // opening block in gamesWhere), which needs the catalogue the crate
+    // does not carry. Until a binary declares the token, a request that
+    // names an opening, by the window's field or the box's `opening:`,
+    // takes the JS path, where both spellings compile the same clause.
+    ...((get('opening') !== undefined || hasOpeningTerm(get('terms'))) &&
+    !declared.filters.has('opening:positions')
+      ? ['opening:positions']
+      : []),
   ];
+}
+
+/** Whether a `terms` key carries an `opening:` term. Malformed JSON
+    carries none, which is what gamesWhere makes of it. */
+function hasOpeningTerm(raw: string | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return (
+      Array.isArray(parsed) &&
+      parsed.some((t: unknown) => typeof t === 'object' && t !== null && (t as { kind?: unknown }).kind === 'opening')
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -638,10 +662,33 @@ export function gamesWhere(
    * table, where the plain LIKE still answers.
    */
   seekPlayers = false,
+  /**
+   * The database carries the position index, so an opening NAME is
+   * answered the way the explorer and the list's own opening column
+   * answer it: through the catalogue's positions. The big dumps carry
+   * no Opening header at all, and the ones that do spell names their
+   * own way, while the box suggests the vendored catalogue's names,
+   * so text alone found nothing for exactly the name it had offered.
+   * The text match stays beside the positions, for a source whose
+   * names the catalogue lacks.
+   */
+  openingPositions = false,
 ): { clauses: string[]; binds: unknown[] } {
   const clauses: string[] = [];
   const binds: unknown[] = [];
   const like = (value: string): string => `%${value}%`;
+  /** The positions arm for an opening name, or nothing when no
+      catalogued line carries the name (the text arm still runs). Keys
+      are the catalogue's, as the plies table stores them. */
+  const openingArm = (name: string): { sql: string; binds: bigint[] } | null => {
+    if (!openingPositions) return null;
+    const keys = openingKeysNamed(name).map((hex) => toDbKey(BigInt(`0x${hex}`)));
+    if (keys.length === 0) return null;
+    return {
+      sql: `${alias}id IN (SELECT game_id FROM plies WHERE pos IN (${keys.map(() => '?').join(',')}))`,
+      binds: keys,
+    };
+  };
   const whiteMatch = seekPlayers
     ? `${alias}white IN (SELECT name FROM players WHERE name LIKE ?)`
     : `${alias}white LIKE ?`;
@@ -720,8 +767,11 @@ export function gamesWhere(
 
   const opening = get('opening')?.trim();
   if (opening) {
-    clauses.push(`(${alias}opening LIKE ? OR ${alias}eco LIKE ?)`);
-    binds.push(like(opening), `${opening}%`);
+    const arm = openingArm(opening);
+    clauses.push(
+      `(${alias}opening LIKE ? OR ${alias}eco LIKE ?${arm ? ` OR ${arm.sql}` : ''})`,
+    );
+    binds.push(like(opening), `${opening}%`, ...(arm?.binds ?? []));
   }
 
   const event = get('event')?.trim();
@@ -772,8 +822,9 @@ export function gamesWhere(
         clauses.push(blackMatch);
         binds.push(like(term.value));
       } else if (term.kind === 'opening' && typeof term.value === 'string') {
-        clauses.push(`${alias}opening LIKE ?`);
-        binds.push(like(term.value));
+        const arm = openingArm(term.value);
+        clauses.push(arm ? `(${alias}opening LIKE ? OR ${arm.sql})` : `${alias}opening LIKE ?`);
+        binds.push(like(term.value), ...(arm?.binds ?? []));
       } else if (term.kind === 'eco' && typeof term.value === 'string') {
         clauses.push(`${alias}eco LIKE ?`);
         binds.push(`${term.value}%`);
@@ -1581,6 +1632,7 @@ export function refGamesApi(
     // the client has.
     const cursor = Number(c.req.query('cursor')) || null;
     const seek = hasLookups(db);
+    const positions = positionIndexInfo(db).indexed;
 
     // One box searches everything a game is findable by: players, the
     // opening name, and the ECO code (prefix match, so "B9" finds B90-B99).
@@ -1605,6 +1657,7 @@ export function refGamesApi(
           : c.req.query(k),
       '',
       seek,
+      positions,
     );
     const clauses = [...structured.clauses];
     const args = [...structured.binds];
@@ -1796,7 +1849,7 @@ export function refGamesApi(
     }
 
     const key = toDbKey(hashSetup(pos.toSetup()));
-    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db));
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db), positionIndexInfo(db).indexed);
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     const signal = c.req.raw.signal;
 
@@ -1882,7 +1935,7 @@ export function refGamesApi(
       return c.json({ indexed: false, positions: [] });
     }
 
-    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db));
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.', hasLookups(db), positionIndexInfo(db).indexed);
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     // The map's sweep never filters, and the live aggregation is what made
     // its first batch cost seconds — see REFGAMES_MOVE_COUNTS.
@@ -2033,7 +2086,7 @@ export function refGamesApi(
 
     // The filter SQL, computed once for every path below: the resident
     // scan narrows its id list with it, the JS loop pages with it.
-    const { clauses, binds } = gamesWhere(getFilter, '', hasLookups(db));
+    const { clauses, binds } = gamesWhere(getFilter, '', hasLookups(db), positionIndexInfo(db).indexed);
     const sqlAnd = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
     // A database indexed before the reachability columns scans without
     // the prefilter — slower, never wrong; the next index pass adds them.
