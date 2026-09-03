@@ -540,6 +540,11 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The review's progress bar keeps its shape.** The fill was drawn by
+  scaling a rounded bar, so its end was a squashed cap at every tick
+  that rounded out as it grew. It slides now instead, and the cap is
+  the track's own at every width.
+
 - **The move rows get the panel's height on a phone.** The panel's
   title row is 8px shorter, and the empty band the card kept under its
   last row is gone: it was the floor the desktop's control row and

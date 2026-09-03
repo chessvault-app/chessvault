@@ -158,12 +158,16 @@ export function ReviewStrip({
             {t('Reviewing')}
           </span>
           <div className="bg-muted/50 h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
-            {/* Scaled from the left rather than a width transition, so
-                the progress ticks animate on the compositor instead of
-                relaying out the strip. */}
+            {/* A full-width fill slid left by the part not yet done, inside
+                the track's own clip: the ticks animate on the compositor
+                (no relayout), and the fill's round cap stays round. The
+                earlier scaleX did the first and not the second: a rounded
+                bar scaled to 0.4 has caps squashed to 0.4 of their width,
+                so the fill's end was a different shape from the track's at
+                every tick and reshaped as it grew. */}
             <div
-              className="bg-primary h-full origin-left rounded-full transition-transform duration-200"
-              style={{ transform: `scaleX(${Math.round(progress * 100) / 100})` }}
+              className="bg-primary h-full w-full rounded-full transition-transform duration-200"
+              style={{ transform: `translateX(-${Math.round((1 - progress) * 1000) / 10}%)` }}
             />
           </div>
           <span className="text-muted-foreground w-9 text-right font-mono text-xs tabular-nums">
