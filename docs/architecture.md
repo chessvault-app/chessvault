@@ -85,6 +85,10 @@ flowchart LR
   impl --> data
   api <--> scanw
   scanw --> data
+  qw["Query workers — one resident
+  child per reference database"]
+  api <--> qw
+  qw --> data
 ```
 
 - **Server** (`server/`, Hono on Node): HTTP API over the vault files,
@@ -145,6 +149,19 @@ flowchart LR
   holding memory-mapped Syzygy files, spawned once and kept, because a
   process started per lookup would spend tens of milliseconds to read a
   few hundred bytes (`server/tablebaseNative.ts`, `native/README.md`).
+  The third is the reference databases' query workers
+  (`server/queryWorker.ts`, owned by `server/refgamesQuery.ts`): one
+  child process per database file, holding one read-only connection
+  and running the statements that scan rows — the explorer's live join
+  and aggregation, the games browser's count and page, name
+  suggestions, the game lookup — one at a time, in order, while the
+  server's own thread only routes. A process and not a thread because
+  a SQLite statement is one native call that a thread's `terminate()`
+  cannot interrupt: a request the client abandons is stopped by killing
+  the process, and a fresh one is forked for whatever was queued behind
+  it. The cheap reads (meta, a lookup by key, the precomputed sums)
+  stay on the main thread's own handle, where a round trip would cost
+  more than they do.
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,

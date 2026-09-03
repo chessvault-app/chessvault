@@ -84,6 +84,10 @@ flowchart LR
   impl --> data
   api <--> scanw
   scanw --> data
+  qw["질의 워커 — 참조 데이터베이스마다
+  상주 자식 하나"]
+  api <--> qw
+  qw --> data
 ```
 
 - **서버** (`server/`, Node 위의 Hono): 보관함 파일에 대한 HTTP API와 빌드된
@@ -140,7 +144,18 @@ flowchart LR
   `chessvault-core tablebase`는 메모리에 매핑한 Syzygy 파일을 쥐고 있는
   **상주** 자식으로, 한 번 띄워 두고 계속 씁니다. 조회 하나마다
   프로세스를 띄우면 수백 바이트를 읽는 데 수십 밀리초가 들기 때문입니다
-  (`server/tablebaseNative.ts`, `native/README.md`).
+  (`server/tablebaseNative.ts`, `native/README.md`). 세 번째는 참조
+  데이터베이스의 질의 워커(`server/queryWorker.ts`, 수명은
+  `server/refgamesQuery.ts`가 관리)입니다. 데이터베이스 파일마다 자식
+  프로세스 하나가 읽기 전용 연결 하나를 쥐고, 행을 훑는 문장, 즉 탐색기의
+  실시간 조인과 집계, 게임 브라우저의 건수와 페이지, 이름 제안, 게임
+  찾기를 도착한 순서대로 하나씩 실행하며, 서버 자체 스레드는 요청을
+  넘기기만 합니다. 스레드가 아니라 프로세스인 이유는 SQLite 문장 하나가
+  네이티브 호출 하나라서 스레드의 `terminate()`로는 중단할 수 없기
+  때문입니다. 클라이언트가 포기한 요청은 프로세스를 죽여 멈추고, 뒤에
+  줄 서 있던 것을 위해 새 프로세스를 띄웁니다. 가벼운 읽기(메타, 키
+  조회, 미리 계산한 합계)는 왕복 비용이 더 크므로 메인 스레드의 핸들에
+  남습니다.
 - **데스크톱** (`desktop/`, Electron): 실행할 때 두 가지 모드 중 하나를
   고릅니다. *원격 클라이언트*(서버 URL을 가리킴)와 *자체 호스팅*(동봉한
   서버를 로컬 폴더에 대해 띄움)입니다. UI가 HTTP 전용이므로 셸은

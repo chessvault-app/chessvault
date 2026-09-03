@@ -1596,11 +1596,13 @@
             </figure>
             <h2 data-ko="모음">The collection</h2>
             <ul>
-              <li data-ko="검색(«Search collection…»)과 즐겨찾기 필터가 위에, 그 아래로 필터 줄: <strong>Whose games</strong>(Anyone's games · My games · Mine as White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong>(All games / With notes), 그리고 «More filters». 검색 상자는 Databases 탭과 같은 질의 언어를 씁니다 — <a href='#db-search'>데이터베이스 검색</a> 참조. 줄을 오른쪽 클릭하면 <strong>Bookmark · Rename · Remove</strong>(잠깐 실행 취소 가능)가 나오고, 출처가 있으면 <strong>View online</strong>이 함께 옵니다. 기보를 여는 것은 이 메뉴가 아니라 더블 클릭입니다. 카드 줄로 그려지는 좁은 화면에서는 같은 메뉴가 줄의 ⋯에 있고, <strong>Preview the board</strong>와 <strong>Game details</strong>가 앞에 붙습니다. 넓은 화면에서는 옆의 패널이 맡는 일입니다.">
+              <li data-ko="검색(«Search collection…»)과 즐겨찾기 필터가 위에, 그 아래로 필터 줄: <strong>Whose games</strong>(Anyone's games · My games · Mine as White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong>(All games / With notes), 그리고 «More filters». 태블릿 너비 아래에서는 세 선택 상자가 «More filters» 창에만 있고, 그 버튼은 검색 칸 옆에 켜진 필터 수를 달고 섭니다. 검색 상자는 Databases 탭과 같은 질의 언어를 씁니다 — <a href='#db-search'>데이터베이스 검색</a> 참조. 줄을 오른쪽 클릭하면 <strong>Bookmark · Rename · Remove</strong>(잠깐 실행 취소 가능)가 나오고, 출처가 있으면 <strong>View online</strong>이 함께 옵니다. 기보를 여는 것은 이 메뉴가 아니라 더블 클릭입니다. 카드 줄로 그려지는 좁은 화면에서는 같은 메뉴가 줄의 ⋯에 있고, <strong>Preview the board</strong>와 <strong>Game details</strong>가 앞에 붙습니다. 넓은 화면에서는 옆의 패널이 맡는 일입니다.">
                 Search (“Search collection…”) and the bookmark filter on top, and a filter row
                 under them: <strong>Whose games</strong> (Anyone's games · My games · Mine as
                 White · Mine as Black) · <strong>Result</strong> · <strong>Notes</strong> (All
-                games / With notes), then “More filters”. The box speaks the same query language
+                games / With notes), then “More filters”. Below the tablet width the three selects
+                live in the “More filters” window alone, and the button stands beside the search
+                field carrying a count of what is on. The box speaks the same query language
                 as the Databases tab — see <a href="#db-search">Searching the databases</a>. A
                 right-click on a row gives <strong>Bookmark · Rename · Remove</strong> (undoable
                 for a moment), with <strong>View online</strong> where a source exists; opening a
@@ -1636,13 +1638,16 @@
               </li>
             </ul>
             <h2 data-ko="기보 테이블과 상세 패널">The table, and the details panel</h2>
-            <p data-ko="모든 기보 목록이 같은 테이블입니다. 열: <strong>White · Elo · Black · Elo · Result · Moves · ECO · Event · Date · Notation</strong>. Elo는 게임 헤더에 적힌 두 플레이어의 레이팅으로, 날짜처럼 그 게임의 기록입니다. 주석 달린 기보에는 White 칸에 공책 기호가 붙고, 즐겨찾은 줄은 왼쪽 가장자리가 강조색입니다. 머리 사이의 손잡이로 열 너비를 끕니다(«Drag to resize · double-click to reset»). 한 번 클릭하면 선택되어 상세 패널에 표시되고, 두 번 클릭하면 열리며, <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd>는 <a href='#shortcuts'>단축키</a> 페이지에 적힌 대로 동작합니다.">
+            <p data-ko="모든 기보 목록이 같은 테이블입니다. 열: <strong>White · Elo · Black · Elo · Result · Moves · ECO · Event · Date · Notation</strong>. Elo는 게임 헤더에 적힌 두 플레이어의 레이팅으로, 날짜처럼 그 게임의 기록입니다. 주석 달린 기보에는 White 칸에 공책 기호가 붙고, 즐겨찾은 줄은 왼쪽 가장자리가 강조색입니다. 머리 사이의 손잡이로 열 너비를 끕니다(«Drag to resize · double-click to reset»). 키보드로는 표 앞의 «Column widths» 컨트롤(포커스를 받기 전에는 보이지 않습니다)이 손잡이로 포커스를 넘기며, <kbd>↑</kbd><kbd>↓</kbd>로 손잡이를 옮기고 <kbd>←</kbd><kbd>→</kbd>로 너비를 조절하며 <kbd>Enter</kbd>는 원래대로, <kbd>Esc</kbd>는 빠져나옵니다. 한 번 클릭하면 선택되어 상세 패널에 표시되고, 두 번 클릭하면 열리며, <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd>는 <a href='#shortcuts'>단축키</a> 페이지에 적힌 대로 동작합니다.">
               Every game list is the same table. Columns: <strong>White · Elo · Black · Elo ·
               Result · Moves · ECO · Event · Date · Notation</strong>. Elo is the two players'
               rating from the game header, the record of that game as the date is. An annotated
               game wears a notebook glyph in its White cell; a bookmarked one, an edge in the
               accent colour down its left. The nubs between
-              headers resize columns (“Drag to resize · double-click to reset”). One click selects
+              headers resize columns (“Drag to resize · double-click to reset”). From the keyboard,
+              a “Column widths” control before the table (unseen until it has focus) hands focus to
+              the grips: <kbd>↑</kbd><kbd>↓</kbd> walk them, <kbd>←</kbd><kbd>→</kbd> step the
+              width, <kbd>Enter</kbd> resets it and <kbd>Esc</kbd> comes back. One click selects
               (feeding the details panel), a double click opens, and
               <kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd><kbd>Esc</kbd> behave as
               <a href="#shortcuts">the shortcuts page</a> says.
@@ -2408,7 +2413,7 @@
                   </tr>
                   <tr>
                     <td>Storage used</td>
-                    <td data-ko="영역별 저장 공간: Games, Studies, Notes, Books, Puzzle books, Puzzle progress, Repertoire, PGN sources, Browsed games, Document history, Reference databases, 캐시, 그리고 합계. 읽기 전용이고, 앞의 넷은 각자의 페이지로 이어집니다.">
+                    <td data-ko="영역별 저장 공간: Games, Studies, Notes, Books, Puzzle books, Puzzle progress, Repertoire, PGN files, Browsed games, Document history, Reference databases, 캐시, 그리고 합계. 읽기 전용이고, 앞의 넷은 각자의 페이지로 이어집니다.">
                       Storage by area — Games, Studies, Notes, Books, Puzzle books, Puzzle
                       progress, Repertoire, PGN files, Browsed games, Document history, Reference
                       databases, the caches — and a total. Read-only; the first four link to their
@@ -2507,9 +2512,11 @@
                 navigation in the trainer, the open tab's tools in the book reader, the selected
                 move's strip on the opening map. Leaving the page brings the tabs back.
               </li>
-              <li data-ko="보드 옆의 패널들은 탭(Moves / Engine / Chapters / Explorer)이 되고, 상세 패널들은 아래에서 올라오는 시트가 됩니다. 패널 위에서 좌우로 밀면 위쪽 탭 줄까지 올라가지 않아도 옆 탭으로 넘어갑니다. 양 끝에서는 멈추며, 옆으로 스크롤되는 줄이나 글자를 입력하는 칸 위에서 시작한 손짓은 그 컨트롤이 가져갑니다.">
+              <li data-ko="보드 옆의 패널들은 탭(Moves / Engine / Chapters / Explorer)이 되고, 상세 패널들은 아래에서 올라오는 시트가 됩니다. 탭 줄은 패널 카드의 머리이며, 열린 탭 아래의 선이 미는 손가락을 따라갑니다. 패널 위에서 좌우로 밀면 위쪽 탭 줄까지 올라가지 않아도 옆 탭으로 넘어갑니다. 양 끝에서는 멈추며, 옆으로 스크롤되는 줄이나 글자를 입력하는 칸 위에서 시작한 손짓은 그 컨트롤이 가져갑니다.">
                 The panels beside a board become tabs — Moves / Engine / Chapters / Explorer — and
-                the detail panels become bottom sheets. Swipe sideways across a panel to turn to
+                the detail panels become bottom sheets. The tab strip is the panel card's own
+                header, and the line under the open tab follows your thumb as you swipe. Swipe
+                sideways across a panel to turn to
                 the next tab, without reaching back up to the strip; it stops at either end, and a
                 gesture that starts on a row that scrolls sideways or in a text field belongs to
                 that control instead.

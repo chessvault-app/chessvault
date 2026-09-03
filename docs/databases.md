@@ -166,7 +166,12 @@ What a built database answers, and from where:
 - The **explorer** answers any position in the first 30 plies from
   precomputed per-move sums — including sliced by the **Level** band
   (200-point buckets of the game's lower rating), so "what do players
-  at my level play here" reads as fast as the corpus-wide answer.
+  at my level play here" reads as fast as the corpus-wide answer. The
+  eight games under its table are ranked at index time too, per
+  position and Level band, for every position the sums put at 5,000
+  games or more (`top_games`, beside the sums); a rarer position is
+  joined live, in the database's query worker, off the server's own
+  thread.
 - Past those 30 plies, the explorer offers **Search every game for
   this position**: a streamed scan of the whole database's movetext,
   any depth, progress and hits arriving live, the reference filters
@@ -296,6 +301,17 @@ the load, the scan and the in-place verification. Without residency
 the same hunts stream through the native binary, or plain JavaScript
 without that — slower, never unavailable.
 
+**Every statement that scans rows runs off the server's thread.** Each
+reference database in use has one child process holding one read-only
+connection (`server/queryWorker.ts`, owned by `server/refgamesQuery.ts`);
+the explorer's live join and aggregation, the browser's count and page,
+name suggestions and the game lookup run there one at a time, and the
+server answers everything else meanwhile. A request the app abandons —
+a newer position asked for, the explorer closed — is stopped by killing
+the process, which is the one way to stop a SQLite statement mid-call;
+a fresh one is forked for what was queued. `docs/architecture.md`,
+"Processes", says why a process and not a thread.
+
 ## Scale and hardware
 
 What building, indexing, and searching cost at three real sizes — a
@@ -304,7 +320,11 @@ which is Mega Database scale. All measured 2026-08-28 on one machine
 (Ryzen 5 7500F, 6 cores, 32 GB, NVMe), current pipeline: the index
 pass writes the position index, the packed scan-index with its count
 envelopes, and the inverted key index in one run. Anything not
-directly measured is marked *est.*
+directly measured is marked *est.* The pass has since gained the
+explorer's ranked games (`top_games`): on the ten-million-game file
+that is one join over the 107 M ply rows of its crowded positions,
+about half an hour more, measured on a 3 M-row slice at 20 µs a row
+and not in the figures below.
 
 | | 3,436 games | 280,059 games | 10,355,488 games |
 | --- | --- | --- | --- |
