@@ -536,8 +536,10 @@ other people.
   open tab, and the card's corners squared to meet it. The line follows
   a swipe, travelling with your thumb and landing with the pane, which
   is the first thing on the page that says the panes can be swiped at
-  all. The header also stands where the gap between pill and card was,
-  so the pane under it is a little taller than before. The book reader
+  all. The header is the pill's height and stands where the gap between
+  pill and card was, so the pane under it is 12px taller than before:
+  with a swipe to turn the panes, the strip is the least used control
+  on the page and gives the room back. The book reader
   and the puzzle-book fix page keep the pill: their switcher stands at
   the top of a column with no card for it to belong to.
 

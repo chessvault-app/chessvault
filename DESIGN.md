@@ -540,9 +540,10 @@ hit areas, `title` as a tooltip. Composites live in
   links), whether by growing the control or by an `after:` hit box.
   One exception, by decision and out of scope for any audit: the
   phone's pane strip (`components/pane-tabs.tsx`) keeps its own height
-  (the pill at the registry's 32px, the header at 40px including the
-  gap it swallows), because its tabs are a third of the screen wide and
-  every pixel it grows comes off the pane under it.
+  (32px, whether pill or header, and the header also swallows the gap
+  under it), because its tabs are a third of the screen wide, a swipe
+  turns the panes without it, and every pixel it grows comes off the
+  pane under it.
 - **Primary:** primary fill, primary-foreground text, hover at 80% alpha.
 - **Outline:** background fill, border stroke, hover to the muted rung;
   in dark it takes shadcn's translucent `input/30`.

@@ -70,11 +70,12 @@ export function PaneTabs<T extends string>({
           pane on every phone page, and every pixel it grows comes off
           the pane it switches; its tabs are a third of the screen wide,
           so the target was never short of room. The pill keeps the
-          registry's 32px on every pointer. The header is 40px and stands
-          in for the 12px gap the pill stood above as well, so the pane
-          under it is 4px taller than it was under the pill. Do not raise
-          either, do not flag them; CLAUDE.md and DESIGN.md both name
-          this exception. */}
+          registry's 32px on every pointer, and so does the header, which
+          also stands in for the 12px gap the pill stood above: the strip
+          is the least used control on the page now that a swipe turns
+          the panes, so the pane under it gets that room back. Do not
+          raise either, do not flag them; CLAUDE.md and DESIGN.md both
+          name this exception. */}
       <TabsList
         variant={header ? 'line' : 'default'}
         // The height is inline, not a class: the registry's own coarse
@@ -85,7 +86,7 @@ export function PaneTabs<T extends string>({
         // this was inline. The corners likewise: the line variant says
         // rounded-none on the same variant, so the top rounding is said
         // on that variant too.
-        style={header ? { height: '2.5rem' } : undefined}
+        style={header ? { height: '2rem' } : undefined}
         className={cn(
           header
             ? [
