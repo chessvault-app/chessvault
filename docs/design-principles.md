@@ -277,8 +277,9 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   is the board family's own shell, so the board is the size it is
   everywhere else. The reader's hotspots follow the same rule as every
   hover-revealed thing: a small button in the diagram's corner, always
-  visible, larger under a coarse pointer, and a popover — never a guess
-  — where the page did not say who is to move.
+  visible, larger under a coarse pointer, and the app's action menu —
+  never a guess — where the page did not say who is to move, the same
+  menu every row opens.
 - Canvas pages (the opening map) sit in `components/canvas-shell`: the ordinary
   `PageHeader` on `PageShell`'s own gutters, an optional search row
   under it, and then one surface filling everything below, edge to

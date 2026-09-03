@@ -5,8 +5,29 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.8.1
 
+The book reader shows the moves played under the board, so a book that
+turns back to "6.Bg5" no longer means stepping back and remembering.
+Around it, a round of phone fixes and paint hints: the diagram button's
+chooser is the same sheet every other row opens, the puzzle dashboard's
+cards end with room under them, a search over results says it is
+searching, and the shelves' cards are one height.
+
+- **A book opens as a page, not a box.** The placeholder drawn while a
+  book loads was one page's shape, and on a phone the column runs on
+  below one page, so the open showed a rounded card over a bare band.
+  The placeholder now fills the column the way the pages will.
+- **The diagram button's chooser is the app's own menu.** Tapping a
+  diagram in the book reader opened a window of plain buttons, which on
+  a phone was a sheet in a smaller face than the game list's, on the
+  same screen. It now opens the same menu every row's ⋯ opens: a list
+  under the button on a desktop, the bottom sheet on a phone, with the
+  sides shown by their kings and "Edit position…" by a pencil.
+- **The puzzle dashboard's cards end with room under them.** On a phone
+  the Training and By difficulty cards, and the book page's Cycles card,
+  put their last row on the card's edge. The room the desktop already
+  had is back below it.
 - **The book reader shows the moves played under the board.** A book
   that follows a line to move 10 and then turns back to "6.Bg5" left the
   reader stepping back four times and remembering what the position at
