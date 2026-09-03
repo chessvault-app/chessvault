@@ -270,7 +270,7 @@ function PlaceholderRow({
   icon?: boolean;
 }) {
   return (
-    <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0">
+    <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0 pointer-coarse:min-h-11">
       {icon && <Skeleton className="size-3.5 shrink-0 rounded-sm" />}
       <span className="relative min-w-0 flex-1 font-medium">
         <span className="invisible">&nbsp;</span>
@@ -916,6 +916,12 @@ export function HomePage() {
                   // stood taller than the card it stood for and the page
                   // settled upwards by that much per row as it landed.
                   'py-(--row-py)',
+                  // ListRow's coarse floor too. It was added to the row
+                  // and not to this, and on a phone the placeholder stood
+                  // 37px against the row's 44: measured on the demo, four
+                  // stored rows moved the whole page 28px as the card
+                  // filled in.
+                  'pointer-coarse:min-h-11',
                   // The rows a desktop will not draw. Which of them carry
                   // the class does not matter — every placeholder here is
                   // the same — only how many, so the trailing ones take
