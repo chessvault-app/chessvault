@@ -540,6 +540,11 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The engine comes back after a review.** A review pauses the
+  interactive engine so the two do not fight for cores, and it used to
+  leave it off. It is switched back on when the review ends, whether it
+  finished, failed or was cleared, if it was on when the review began.
+
 - **The review's progress bar keeps its shape.** The fill was drawn by
   scaling a rounded bar, so its end was a squashed cap at every tick
   that rounded out as it grew. It slides now instead, and the cap is

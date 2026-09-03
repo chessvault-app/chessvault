@@ -77,9 +77,14 @@ export const useReview = create<ReviewState>()((set, get) => ({
     const line = mainlineFrom(tree, tree.rootId);
     if (line.length === 0) return;
 
-    // The interactive engine would fight the review worker for cores.
+    // The interactive engine would fight the review worker for cores, so
+    // it is paused for the run and put back the way it was found when the
+    // run ends, however it ends. It used to be switched off and left off:
+    // a reader who had the engine on came back from a review to a silent
+    // panel with a switch to find (lanph3re's report).
     const interactive = useEngine.getState();
-    if (interactive.enabled) interactive.setEnabled(false);
+    const resumeEngine = interactive.enabled;
+    if (resumeEngine) interactive.setEnabled(false);
 
     set({ status: 'running', progress: 0, white: null, black: null, error: null });
 
@@ -226,6 +231,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
       if (get().status !== 'idle') set({ status: 'error', error: (error as Error).message });
     } finally {
       engine.terminate();
+      if (resumeEngine) useEngine.getState().setEnabled(true);
     }
   },
 }));
