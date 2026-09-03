@@ -29,6 +29,7 @@ import {
   type StructuredFilters,
   type ValueSuggestion,
   QUICK_SELECT,
+  useFiltersFolded,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -457,6 +458,9 @@ export function DatabaseGames({
   // the window mirrors them so it is the complete editor, and Apply is
   // what commits (see StructuredFiltersWindow's extraFields).
   const [quickDraft, setQuickDraft] = useState({ result: 'any' as ResultFilter, minElo: 0 });
+  /** Whether the filter controls ride the search row rather than a row of their own. */
+  const folded = useFiltersFolded();
+  const filtersInRow = merged || folded;
   const structuredOn =
     structured.player !== '' ||
     structured.player2 !== '' ||
@@ -1468,16 +1472,14 @@ export function DatabaseGames({
             >
               <ScanSearch className="size-3.5" />
             </Button>
+            {filtersInRow && filters}
             {merged && (
-              <>
-                {filters}
-                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                  <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
-                    {count}
-                  </span>
-                  {dbControls}
+              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
+                  {count}
                 </span>
-              </>
+                {dbControls}
+              </span>
             )}
           </div>
           <SearchQueryIssues
@@ -1497,7 +1499,7 @@ export function DatabaseGames({
           {huntControls}
         </div>
       }
-      filters={merged ? undefined : filters}
+      filters={filtersInRow ? undefined : filters}
       countBand={merged ? undefined : countBand}
       listHeader={table ? <GameTableHeader /> : undefined}
       listVars={table ? tableVars : undefined}

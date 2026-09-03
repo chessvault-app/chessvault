@@ -84,6 +84,7 @@ import {
   type SideFilter,
   type StructuredFilters,
   QUICK_SELECT,
+  useFiltersFolded,
 } from './GameFilters';
 
 interface ArchiveMonth {
@@ -1051,6 +1052,9 @@ export function ArchiveBrowser({
   // made — and flex-wrap is the narrow-pane story. Card mode keeps the
   // stacked bands. Defined after the pieces it folds in, which is why
   // it sits below them rather than leading the bands as it used to.
+  /** Whether the filter controls ride the search row rather than a row of their own. */
+  const folded = useFiltersFolded();
+  const filtersInRow = merged || folded;
   const toolbar = (
     <>
         <div className={cn('flex items-center gap-1', merged && 'w-full flex-wrap gap-1.5')}>
@@ -1080,15 +1084,11 @@ export function ArchiveBrowser({
               <Globe className="size-3.5" />
             )}
           </Button>
-          {merged && (
-            <>
-              {filters}
-              {countGroup && (
-                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                  {countGroup}
-                </span>
-              )}
-            </>
+          {filtersInRow && filters}
+          {merged && countGroup && (
+            <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+              {countGroup}
+            </span>
           )}
         </div>
 
@@ -1199,8 +1199,8 @@ export function ArchiveBrowser({
       toolbar={toolbar}
       // No reserved filter row at table density, where the filters live
       // in the toolbar row and no filter band will come.
-      filtersLoading={months.length === 0 && loading === 'months' && !merged}
-      filters={merged ? undefined : filters}
+      filtersLoading={months.length === 0 && loading === 'months' && !filtersInRow}
+      filters={filtersInRow ? undefined : filters}
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}

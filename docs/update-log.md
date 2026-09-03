@@ -526,6 +526,12 @@ other people.
   redirects it off HTTPS. And a vault whose history still carries an old
   `config.json` is told so at boot, with the purge in the README.
 
+- **The filters button joins the search row on a phone.** Below the
+  tablet width the quick selects already live in the More filters
+  window, which left a row of its own holding one button and nothing
+  else. That button now sits beside the search field in the collection,
+  the archive and the reference database, and the empty row is gone.
+
 - **The opening map fits itself on load again.** The map could open
   with the start position pinned in the top-left corner at full zoom
   instead of centred and legible. When the page loaded in a window that

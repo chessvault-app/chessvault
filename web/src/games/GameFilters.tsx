@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { SlidersHorizontal, TriangleAlert } from 'lucide-react';
+import { useMediaQuery } from '@/lib/media';
 import {
   findCrossImpossible,
   parseSearchQuery,
@@ -90,6 +91,19 @@ export function MoreFiltersButton({
 /** The class a quick select wears in the row: from `md` up it stands in
     the row, below it lives in the More filters window alone. */
 export const QUICK_SELECT = 'max-md:hidden';
+
+/**
+ * True below `md`, where QUICK_SELECT hides the selects: the same edge, so
+ * the two never disagree about which side of it a width is on.
+ *
+ * With the selects gone, a filter row of its own held one button and
+ * 40px of nothing on either side of it. The lists ask this to put that
+ * button in the search row instead and draw no filter row at all, the
+ * way the merged table chrome already folds it in from the other side.
+ */
+export function useFiltersFolded(): boolean {
+  return useMediaQuery('(max-width: 47.9375rem)');
+}
 
 /** The standard one-line rail the filter selects sit in. */
 export function FilterRow({ className, children }: { className?: string; children: ReactNode }) {

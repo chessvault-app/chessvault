@@ -42,6 +42,7 @@ import {
   type ResultFilter,
   type StructuredFilters,
   QUICK_SELECT,
+  useFiltersFolded,
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell } from './GameListShell';
@@ -409,6 +410,9 @@ export function CollectionList({
    * has emptied since draws them once and self-heals on the next load.
    */
   const showFilters = loaded ? games.length > 0 : merged && collectionWasNonEmpty();
+  /** Whether the filter controls ride the search row rather than a row of their own. */
+  const folded = useFiltersFolded();
+  const filtersInRow = merged || folded;
 
   // The shared filter row's contents (GameFilters): side is YOUR side,
   // so it matches only the games you played; reference games (no side of
@@ -536,16 +540,14 @@ export function CollectionList({
         <div className="flex w-full flex-col gap-2">
           <div className={cn('flex w-full items-center gap-1.5', merged && 'flex-wrap')}>
             {search}
+            {filtersInRow && filterControls}
             {merged ? (
-              <>
-                {filterControls}
-                <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                  <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
-                    {tally}
-                  </span>
-                  {importButton}
+              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
+                  {tally}
                 </span>
-              </>
+                {importButton}
+              </span>
             ) : (
               importButton
             )}
@@ -571,9 +573,9 @@ export function CollectionList({
       // panel's height, so held back they left a header over nothing
       // that grew a fifth of a second later. No reserved filter row at
       // table density, where no filter band will come.
-      filtersLoading={!loaded && !merged}
+      filtersLoading={!loaded && !filtersInRow}
       listLoading={!loaded}
-      filters={merged ? undefined : filterControls}
+      filters={filtersInRow ? undefined : filterControls}
       list={
         loaded && visible.length > 0
           ? visible.map((game) =>
