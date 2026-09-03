@@ -597,6 +597,21 @@ other people.
   Appearance › Move box hides it on this device; it stays on by default,
   and the setting is per-device like coordinates.
 
+- **Loading placeholders that stay put on a phone.** Four screens moved
+  as they filled in, measured on the demo against the loaded screen in
+  the same viewport. Home's Continue card grew 28px: its rows had been
+  given the phone's 44px touch floor and the placeholder rows had not.
+  The Studies and Notes shelves settled 120px and 86px away from their
+  placeholders, because a card's height depends on whether its title
+  and excerpt wrap and no line count can know that; each shelf now
+  remembers the cards' measured heights per device and reserves
+  exactly those, once the web font is in. A study opening on a phone
+  drew the global tabs through the wait and swapped them for the move
+  controls as it landed; the controls' bar is claimed from the start.
+  And the Games page's search row was 42px wide of itself on a phone
+  until the games arrived, with the count placeholder 6px wide of the
+  count on every width.
+
 ## 0.7.2
 
 A phone swipe that brings the panel you asked for along with your thumb
