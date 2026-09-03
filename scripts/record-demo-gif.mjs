@@ -47,7 +47,7 @@ import { fileURLToPath } from 'node:url';
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = resolve(REPO, 'docs/screenshots/book-to-board.gif');
 const BASE = process.env.BASE ?? 'http://localhost:8129';
-const BOOK = 'b5a3e1c07f2d49b8';
+const BOOK = 'b5a3e1c07f2d49b8c';
 
 /** Laid out at 1180 (landscape, so `wide`: book and board side by side). */
 const VIEW = { width: 1180, height: 720 };
