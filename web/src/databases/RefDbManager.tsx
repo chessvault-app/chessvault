@@ -574,7 +574,11 @@ export function RefDbManager({
  * and both trailing squares are icon-sm buttons. Measured without that,
  * a row stayed 41px on a phone where the real one is 48.
  */
-export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
+export function RefDbManagerSkeleton({ rows }: {
+  /** Rows the list drew last visit (databases/reservation.ts). 0 is the
+      empty sentence, laid out invisibly at its own wrapped height. */
+  rows: number;
+}) {
   return (
     <Panel className="min-h-0">
       {/* Announced once, like every other skeleton here; components/skeletons' own
@@ -585,15 +589,28 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
         aria-label={t('Loading')}
         aria-live="polite"
       >
-        {/* The switch: one box the size the segmented control settles at. */}
+        {/* The switch: one box the size the segmented control settles at.
+            42px under a coarse pointer, not the 36 every other control
+            here grows to: the tabs track is its 36px triggers plus its
+            own 3px of padding above and below (ui/tabs' p-[3px] and
+            pointer-coarse:h-auto). Measured on a phone at 42 against a
+            36px placeholder, which stood the whole list 6px high. */}
         <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
-          <Skeleton className="h-8 w-52 rounded-xl pointer-coarse:h-9" />
+          <Skeleton className="h-8 w-52 rounded-xl pointer-coarse:h-[42px]" />
         </div>
         {/* The search row, and the upload icon beside it. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
           <Skeleton className="h-7 min-w-0 flex-1 pointer-coarse:h-9" />
           <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
         </div>
+        {rows === 0 ? (
+          // The real sentence, invisible, so a vault with nothing built
+          // reserves the height those words wrap to on this width rather
+          // than six rows it will give back.
+          <p className="text-muted-foreground invisible px-3 py-6 text-center text-sm leading-relaxed">
+            {t('No databases yet. Upload a PGN file and build one.')}
+          </p>
+        ) : (
         <ul className="divide-border min-h-0 flex-1 divide-y overflow-hidden">
           {Array.from({ length: rows }, (_, i) => (
             <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-3">
@@ -616,6 +633,7 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
             </li>
           ))}
         </ul>
+        )}
       </div>
     </Panel>
   );

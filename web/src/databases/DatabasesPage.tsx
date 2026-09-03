@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { RefDbManager, RefDbManagerSkeleton, type RefDb, type Source } from './RefDbManager';
 import { useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
+import { databasesShapeOf, parseDatabasesShape, storedDatabasesShape } from './reservation';
+
+/** See `reserved` below: which block the page drew last visit, and how
+    many rows its list held. */
+const DATABASES_SHAPE_KEY = 'vault:databases-shape';
 
 /**
  * One page for everything built from uploaded PGN collections.
@@ -41,6 +47,14 @@ export function DatabasesPage() {
       .then(setMeta)
       .catch(() => setMeta(null));
   }, []);
+
+  // What this device reserves while /api/refgames is out, from what it
+  // saw last visit (databases/reservation.ts) — a paint hint on home's
+  // bargain, corrected by the answer. Read once; the wait cannot change it.
+  const [reserved] = useState(() => parseDatabasesShape(localStorage.getItem(DATABASES_SHAPE_KEY)));
+  useEffect(() => {
+    if (meta !== null) localStorage.setItem(DATABASES_SHAPE_KEY, storedDatabasesShape(databasesShapeOf(meta)));
+  }, [meta]);
 
   /**
    * The uploaded PGN collections, loaded HERE rather than inside the
@@ -98,7 +112,12 @@ export function DatabasesPage() {
       />
 
       {meta === null ? (
-        slow && <RefDbManagerSkeleton />
+        slow &&
+        (reserved.mount === 'manager' ? (
+          <RefDbManagerSkeleton rows={reserved.rows} />
+        ) : (
+          <MountNote ready={reserved.mount === 'mounted'} games={0} placeholder />
+        ))
       ) : meta.databases ? (
         <RefDbManager
           databases={meta.databases}
@@ -108,28 +127,55 @@ export function DatabasesPage() {
           onSourceRemoved={dropSource}
         />
       ) : (
-        // What is mounted, and why there is nothing to press. Only the
-        // count: this mount has no name to show, and its size cannot be
-        // measured through the demo's in-memory filesystem.
-        <div className="bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-border p-4 text-sm">
-          {meta.ready ? (
-            <>
-              <p className="text-foreground font-medium">
-                {t('{n} games', { n: (meta.games ?? 0).toLocaleString() })}
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                {t(
-                  'This database is read-only. Uploading files and building databases need the installed app.',
-                )}
-              </p>
-            </>
-          ) : (
-            <p className="text-muted-foreground leading-relaxed">
-              {t('This server has no reference games database.')}
-            </p>
-          )}
-        </div>
+        <MountNote ready={meta.ready} games={meta.games ?? 0} />
       )}
     </PageShell>
+  );
+}
+
+/**
+ * What is mounted, and why there is nothing to press. Only the count:
+ * this mount has no name to show, and its size cannot be measured
+ * through the demo's in-memory filesystem.
+ *
+ * As a placeholder it is the same card with its words invisible, so a
+ * device that saw this mount last visit reserves the card's own height
+ * rather than a panel's — the panel-sized ghost is what the demo used to
+ * draw over a two-line card.
+ */
+function MountNote({
+  ready,
+  games,
+  placeholder = false,
+}: {
+  ready: boolean;
+  games: number;
+  placeholder?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-border p-4 text-sm',
+        placeholder && '[&>p]:invisible',
+      )}
+      {...(placeholder ? { role: 'status', 'aria-label': t('Loading'), 'aria-live': 'polite' as const } : {})}
+    >
+      {ready ? (
+        <>
+          <p className="text-foreground font-medium">
+            {t('{n} games', { n: games.toLocaleString() })}
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            {t(
+              'This database is read-only. Uploading files and building databases need the installed app.',
+            )}
+          </p>
+        </>
+      ) : (
+        <p className="text-muted-foreground leading-relaxed">
+          {t('This server has no reference games database.')}
+        </p>
+      )}
+    </div>
   );
 }

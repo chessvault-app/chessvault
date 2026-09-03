@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Databases page remembers its own shape.** The last page still
+  waiting on a flat guess: six placeholder rows for every vault, and the
+  manager panel even where the answer is the demo's read-only card. It
+  now reserves what this device saw last visit, which block the page
+  drew and how many rows its list held, on the same bargain as the other
+  pages: a paint hint, wrong by at most one visit, corrected by the
+  answer. A vault with nothing built reserves its empty sentence at the
+  height it wraps to.
 - **A position taken from a book diagram keeps its castling rights.**
   Choosing the side to move on a diagram in the reader, or opening it in
   the editor, rebuilt the position with no castling rights at all, so
