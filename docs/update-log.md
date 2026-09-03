@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The evaluation bar's black half no longer disappears into a dark
+  page.** In the dark theme the bar's black and the page's black were a
+  point and a half apart, and the contrast slider took both to the same
+  black, so a large black advantage looked like a bar that had not
+  loaded. The black half now sits at the board frame's lightness, and
+  the light theme's white half drops a few points below its page for the
+  mirror case. The border stays, and the two halves are as far apart as
+  they were.
 - **The opening map's keyboard focus is a ring around the dot, not a box
   round its labels.** 0.8.0 gave the map's dots a keyboard path, and the
   page's focus ring followed them as the browser draws one on an SVG

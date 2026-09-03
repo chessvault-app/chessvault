@@ -502,7 +502,7 @@
   --sq-check: oklch(58% 0.23 27);
 
   /* Eval bar: the "white advantage" / "black advantage" fills. */
-  --eval-white: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --eval-white: oklch(calc(94% + (100% - 94%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
   --eval-black: oklch(calc(30% + (0% - 30%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   /* Keeps the bar's dark half readable against a matching background. */
   --eval-border: oklch(0% 0 0 / 20%);
@@ -651,8 +651,13 @@
   --sq-dest: oklch(72% 0.11 152 / 38%);
   --sq-check: oklch(62% 0.24 27);
 
+  /* The bar's dark half sits at the board frame's lightness, not the page's,
+     so a black advantage still reads as a bar and not as the page showing
+     through. 13% here was 1.5 points off --background, and the two met at
+     pure black once the contrast slider moved. Light mode does the mirror
+     with its white half (94% on a 100% page). */
   --eval-white: oklch(calc(93% + (100% - 93%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --eval-black: oklch(calc(13% + (0% - 13%) * var(--ui-contrast)) calc(0.012 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(calc(27% + (0% - 27%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --eval-border: oklch(100% 0 0 / 25%);
 
   --shadow-color: var(--ui-hue) 40% 4%;
