@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The server answers while a database query runs.** Every statement
+  that scans a reference database — the explorer's live join and
+  aggregation, the games browser's count and page, name suggestions,
+  the game lookup — now runs in a process of its own per database, one
+  statement at a time, and the server's own thread only routes. A slow
+  query costs the request that asked for it and nothing else: the health
+  check, the pages and every other request answer meanwhile. And a
+  request the app has given up on, because a newer position was asked
+  for or the explorer was left, is stopped where it runs rather than
+  finished for nobody. The explorer now cancels its lookup when the pane
+  closes or is switched off.
+
 - **The explorer no longer freezes the server on a crowded position.**
   The eight games under the explorer's table were sorted live from every
   game through the position, and near the start of a ten-million-game

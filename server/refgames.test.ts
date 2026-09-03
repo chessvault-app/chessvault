@@ -56,8 +56,8 @@ describe('opening names derived from moves', () => {
     app = new Hono().route('/api', refgames);
   });
 
-  afterAll(() => {
-    refgames.closeDb();
+  afterAll(async () => {
+    await refgames.closeDb();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -137,8 +137,8 @@ describe('reference games api', () => {
     app = new Hono().route('/api', refgames);
   });
 
-  afterAll(() => {
-    refgames.closeDb();
+  afterAll(async () => {
+    await refgames.closeDb();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -433,8 +433,8 @@ describe('directory mount', () => {
     app = new Hono().route('/api', api);
   });
 
-  afterAll(() => {
-    api.closeDb();
+  afterAll(async () => {
+    await api.closeDb();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -543,8 +543,8 @@ describe('position index and explore', () => {
     app = new Hono().route('/api', refgames);
   });
 
-  afterAll(() => {
-    refgames.closeDb();
+  afterAll(async () => {
+    await refgames.closeDb();
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -557,7 +557,7 @@ describe('position index and explore', () => {
     const { games, plies } = indexPositions(dbPath);
     expect(games).toBe(3);
     expect(plies).toBe(9); // three games, three plies each
-    refgames.closeDb(); // fresh handle sees the new table
+    await refgames.closeDb(); // fresh handle sees the new table
 
     const body = await explore(`fen=${encodeURIComponent(START)}`);
     expect(body.indexed).toBe(true);
@@ -611,14 +611,14 @@ describe('position index and explore', () => {
     // fallback, same answers.
     db.exec('DROP INDEX idx_move_counts_pos; DROP TABLE move_counts;');
     db.close();
-    refgames.closeDb();
+    await refgames.closeDb();
     const without = await explore(`fen=${encodeURIComponent(START)}`);
     expect(without).toEqual(before);
     // And the deploy-time tune is what puts the table back.
     const restore = new Database(dbPath);
     expect(tune(restore)).toContain('move_counts');
     restore.close();
-    refgames.closeDb();
+    await refgames.closeDb();
     const restored = await explore(`fen=${encodeURIComponent(START)}`);
     expect(restored).toEqual(before);
   });
@@ -698,7 +698,7 @@ describe('position index and explore', () => {
       // Off the bucket edges: 1700 excludes the 1600-floor games.
       expect((await band('1700-1999')).moves).toEqual([]);
     } finally {
-      wide.closeDb();
+      await wide.closeDb();
       rmSync(wideDir, { recursive: true, force: true });
     }
   });
@@ -789,7 +789,7 @@ describe('position index and explore', () => {
       );
       expect((await ask('&player=W2500')).map((g) => g.white)).toEqual(['W2500']);
     } finally {
-      hot.closeDb();
+      await hot.closeDb();
       rmSync(hotDir, { recursive: true, force: true });
     }
   });

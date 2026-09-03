@@ -112,6 +112,8 @@ interface ExplorerState {
   refreshDbs: () => Promise<void>;
   /** Debounced lookup for the position on screen. */
   lookup: (fen: string) => void;
+  /** Drop the lookup in flight, if any: the pane is leaving, or off. */
+  cancel: () => void;
 }
 
 /**
@@ -439,6 +441,21 @@ export const useExplorer = create<ExplorerState>()(
           set({ loading: true });
           if (debounceTimer) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => void doLookup(fen), 120);
+        },
+
+        // A lookup nobody will read is not just wasted on the wire: the
+        // server stops the statement behind an abandoned request (it
+        // kills the process running it, see server/refgamesQuery.ts),
+        // and the abort is what tells it to. A newer lookup already
+        // aborts the older; this is for the pane going away with one
+        // in flight, where nothing newer ever comes.
+        cancel: () => {
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+          }
+          controller?.abort();
+          controller = null;
         },
 
       };
