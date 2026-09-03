@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   defenderWildcards,
   engineTier,
+  fullFen,
   lineFromPv,
   overlap,
   type EngineLine,
@@ -22,6 +23,15 @@ function fake(answers: { w?: EngineLine | null; b?: EngineLine | null }): Engine
   };
   return Object.assign(search, { asked });
 }
+
+describe('fullFen', () => {
+  it('gives a diagram the castling rights its home squares imply', () => {
+    // What the reader's overlay hands the board: a bare `-` here made O-O
+    // illegal in every line played from a book position.
+    expect(fullFen('r3k2r/8/8/8/8/8/8/R3K2R', 'w')).toBe('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+    expect(fullFen('4k3/8/8/8/8/8/8/4K3', 'b')).toBe('4k3/8/8/8/8/8/8/4K3 b - - 0 1');
+  });
+});
 
 describe('engineTier', () => {
   it('corroborates when the engine lands where the book said', () => {

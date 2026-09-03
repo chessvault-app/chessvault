@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A position taken from a book diagram keeps its castling rights.**
+  Choosing the side to move on a diagram in the reader, or opening it in
+  the editor, rebuilt the position with no castling rights at all, so
+  castling was illegal in every line played from it and the game saved
+  from it said so. The reader now infers the rights from the untouched
+  home squares, as the book importer already did.
 - **The evaluation bar's black half no longer disappears into a dark
   page.** In the dark theme the bar's black and the page's black were a
   point and a half apart, and the contrast slider took both to the same

@@ -2,7 +2,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Grid3x3 } from 'lucide-react';
 import { cloneElement, useEffect, useState } from 'react';
 
-import { positionOf } from '@shared/bookEngine';
+import { fullFen, positionOf } from '@shared/bookEngine';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -158,7 +158,7 @@ function readable(fen: string): boolean {
   const placement = fen.split(' ')[0] ?? fen;
   const own = fen.split(' ')[1];
   return (['w', 'b'] as const).some(
-    (side) => positionOf(side === own ? fen : `${placement} ${side} - - 0 1`) !== null,
+    (side) => positionOf(side === own ? fen : fullFen(placement, side)) !== null,
   );
 }
 
@@ -311,7 +311,11 @@ function SideToMovePopover({
   const placement = fen.split(' ')[0] ?? fen;
   const choose = (side: 'w' | 'b'): void => {
     setOpen(false);
-    onSet(side === fen.split(' ')[1] ? fen : `${placement} ${side} - - 0 1`);
+    // fullFen, not a hand-built one: a diagram states no castling rights,
+    // and a bare `-` here made O-O illegal for every line played from a
+    // book position. The rest of the book pipeline infers them from the
+    // untouched home squares, and the overlay now says the same thing.
+    onSet(side === fen.split(' ')[1] ? fen : fullFen(placement, side));
   };
   const choices = (
     <>
@@ -334,7 +338,7 @@ function SideToMovePopover({
           className="justify-start"
           onClick={() => {
             setOpen(false);
-            onEdit(`${placement} w - - 0 1`);
+            onEdit(fullFen(placement, 'w'));
           }}
         >
           {t('Edit position…')}
