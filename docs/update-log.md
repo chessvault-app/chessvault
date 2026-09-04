@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The phone's home has chess on it.** The Continue card leads with
+  your latest study's position as a small board at every width; it was
+  desktop-only, and the phone drew the same study as a text row. The
+  board replaces that row, so the card grows by a board less a row.
+  Below it, the shortcut tiles say what is moving rather than how much
+  there is: Puzzles leads with "{n} due", then "{n} today", and falls
+  back to the lifetime solve count only when nothing is due and nothing
+  was solved; Repertoire, which had no figure, shows its due count on the
+  same terms. The tiles' icons carry the theme's accent at rest, where
+  before they took it only on hover, which a phone has none of; and the
+  first tile in your arrangement spans the row, so the grid has a first
+  thing to press. The desktop dashboard is unchanged.
 - **The sidebar folds.** A button at the top of the sidebar folds it to
   its icons, and the same button under the mark unfolds it; the choice
   stays on the device. Before, the window decided alone: labels from a
