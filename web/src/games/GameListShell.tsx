@@ -149,7 +149,10 @@ export function GameListShell({
         // border-t, and a text-only band must claim the same or the count
         // row jumps a few pixels when the tab beside it holds controls.
         // (min-height is border-box, so the border is inside the number.)
-        <div className="border-border flex min-h-[2.3125rem] flex-wrap items-center gap-1.5 border-t px-3 py-1 text-sm">
+        // On a coarse pointer the same controls are h-9, so the band is
+        // 45px there: the collection's text-only band stood 37 beside the
+        // databases' and the archives' 45 (lanph3re's report).
+        <div className="border-border flex min-h-[2.3125rem] flex-wrap items-center gap-1.5 border-t px-3 py-1 text-sm pointer-coarse:min-h-[2.8125rem]">
           {countBand}
         </div>
       )}
