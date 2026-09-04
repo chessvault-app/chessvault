@@ -470,10 +470,30 @@ function NameField({
   const [draft, setDraft] = useState(initial);
   const [focused, setFocused] = useState(false);
   const showClear = focused && draft !== '';
+  // As wide as its text and no wider: a field that took the row put the
+  // rating at the row's far end on the Board page, while a collection
+  // game's plain name kept its rating at its side (lanph3re's two
+  // screenshots). An inline-grid with the text mirrored behind the
+  // input is the one way a text input follows its content; the mirror
+  // is invisible and the input lies over it at the same width. The
+  // placeholder sizes an empty field, so "White" still reads whole. It
+  // may shrink below its text when the row is short (min-w-0), the way
+  // the plain name truncates.
   return (
-    <span className="relative flex min-w-0 flex-1 items-center">
+    <span className="relative inline-grid min-w-0 shrink items-center [&>*]:[grid-area:1/1]">
+      <span
+        aria-hidden
+        className={cn('invisible truncate pr-1 text-base font-medium whitespace-pre', showClear && 'pr-6')}
+      >
+        {draft || placeholder}
+      </span>
       <input
         {...noAutofill}
+        // size=1: an input's default intrinsic width (20 characters) is
+        // what the grid track would otherwise take, and every name came
+        // out 214px wide whatever it said (measured); at 1 the mirror
+        // behind it is the only width in the track.
+        size={1}
         value={draft}
         placeholder={placeholder}
         aria-label={placeholder}

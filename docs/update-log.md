@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Board page's rating sits beside the name.** The Board page's
+  player names are editable fields, and a field took the whole row, so
+  a game opened from a database or an archive showed its rating at the
+  row's far end while the same game from the collection, whose names
+  are plain, showed it right after the name. The field is now as wide
+  as its text, and the rating stands beside the name on every page.
 - **A phone can add the open game to the collection.** The board's
   moves header keeps that button from tablet width up, and a phone had
   no row for it, so a game opened from a database or an online archive
