@@ -1951,6 +1951,8 @@ export const ko: Record<string, string> = {
   // --- keyboard path: landmarks, separators, the board's name ----------------
   'Skip to content': '본문으로 건너뛰기',
   Sections: '섹션',
+  'Fold the sidebar': '사이드바 접기',
+  'Unfold the sidebar': '사이드바 펼치기',
   'Page controls': '페이지 컨트롤',
   'Resize pane': '창 크기 조절',
   'Resize panel': '패널 크기 조절',

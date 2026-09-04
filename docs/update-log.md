@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The sidebar folds.** A button at the top of the sidebar folds it to
+  its icons, and the same button under the mark unfolds it; the choice
+  stays on the device. Before, the window decided alone: labels from a
+  wide window, icons below, so a wide window could not give the 140px
+  back to the games table and an iPad in portrait could not ask for the
+  labels. Folded, hovering a row shows its name in a tooltip beside it,
+  and nothing unfolds on hover: a fold is a choice, and the pointer
+  crossing the edge of the window is not a way to undo one.
 - **`opening:` finds the games it names on every database.** The
   search box suggests the catalogue's opening names, but the qualifier
   matched only the `Opening` header text the source PGN carried, which

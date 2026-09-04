@@ -39,6 +39,12 @@ const PIN_KEY = 'vault:games-details-pinned';
  * that (clientWidth 1016 against scrollWidth 1026). 1680 is the round
  * number above it, and measures clean — 1030 against 1030.
  *
+ * The 208 is the sidebar unfolded. Folded to its rail it gives 140 of
+ * that back, so the panel is free from about 1540 — but a media query
+ * cannot see the fold, and erring towards "not free" only means a wide
+ * window with a folded rail starts unpinned when it could have started
+ * pinned, which the switch in the panel's header corrects once.
+ *
  * Below that width the panel is paid for in table columns — the table
  * never sheds them, it scrolls sideways to reach them (GameTable) — so a
  * window that narrow starts with the column given back and spends it on

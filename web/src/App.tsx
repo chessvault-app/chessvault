@@ -12,6 +12,8 @@ import {
   Layers,
   Network,
   LayoutDashboard,
+  PanelLeftClose,
+  PanelLeftOpen,
   Puzzle,
   Settings,
   SquareMousePointer,
@@ -37,7 +39,7 @@ import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { TitleTip } from '@/components/title-tip';
 import { t, useLang } from '@/lib/i18n';
-import { useWorkspaceViewport } from '@/lib/media';
+import { useMediaQuery, useWorkspaceViewport } from '@/lib/media';
 import { isDemo } from '@/lib/demo';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
@@ -466,35 +468,48 @@ function SubNavItem({
   label,
   icon: Icon,
   active,
+  folded,
   href,
   onClick,
 }: {
   label: string;
   icon: typeof Folder;
   active: boolean;
+  folded: boolean;
   href: string;
   onClick: () => void;
 }) {
   return (
-    <NavLink
-      href={href}
-      onActivate={onClick}
-      // aria-label, not title — the top-level rows' rule, and for their
-      // reason: the label is written beside the icon at lg, so a tip only
-      // repeats what is already on screen.
-      aria-label={t(label)}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
-        'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
-        active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-      )}
-    >
-      <Icon className="size-3.5 shrink-0" />
-      <span className="hidden lg:block">{t(label)}</span>
-    </NavLink>
+    // The top-level rows' rule: a tip only while folded, since unfolded
+    // the label is written beside the icon and a tip would repeat it.
+    <TitleTip title={folded ? t(label) : undefined} side="right">
+      <NavLink
+        href={href}
+        onActivate={onClick}
+        aria-label={t(label)}
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
+          folded ? 'justify-center' : 'justify-start pl-[2.35rem] pr-3',
+          active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        )}
+      >
+        <Icon className="size-3.5 shrink-0" />
+        {!folded && <span>{t(label)}</span>}
+      </NavLink>
+    </TitleTip>
   );
 }
+
+/**
+ * Whether the sidebar is folded to its icon rail — a reading preference,
+ * per device, kept the way the Games details column's pin is
+ * (games/CollectionView, PIN_KEY): written on every toggle and never
+ * removed for agreeing with the default, because the default moves with
+ * the window and a choice erased for matching it would be undone by a
+ * resize.
+ */
+const FOLD_KEY = 'vault:sidebar-folded';
 
 function Sidebar({ active, params }: { active: Section; params: string[] }) {
   // The workspace row appears only where the workspace can (see the note
@@ -502,62 +517,116 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
   // know, the same reason media.ts gives for existing.
   const roomy = useWorkspaceViewport();
   const tools = TOOLS_SUBNAV.filter(({ key }) => key !== 'workspace' || roomy);
+  // null = nobody has chosen on this device, so the width decides: the
+  // labelled column from lg, the icon rail below it, which is what the
+  // rail always did before it could be asked.
+  const lg = useMediaQuery('(min-width: 64rem)');
+  const [choice, setChoice] = useState<boolean | null>(() => {
+    const stored = localStorage.getItem(FOLD_KEY);
+    return stored === null ? null : stored === '1';
+  });
+  const folded = choice ?? !lg;
+  const toggleFold = (): void => {
+    const next = !folded;
+    setChoice(next);
+    try {
+      localStorage.setItem(FOLD_KEY, next ? '1' : '0');
+    } catch {
+      /* the session still remembers; it just will not survive a reload */
+    }
+  };
+  // Where the chip opens: to the right, off the rail and over the page,
+  // so it covers no row beneath — which is what the browser's bubble did,
+  // and why the rows carried no tip at all until they could fold.
+  const tipSide = 'right';
+  // Button makes `title` the tooltip AND the accessible name of an
+  // icon-only button, so the switch states its position once.
+  const foldButton = (
+    <Button
+      variant="ghost"
+      size="icon-lg"
+      onClick={toggleFold}
+      title={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
+      className="text-muted-foreground hover:text-foreground shrink-0"
+    >
+      {folded ? (
+        <PanelLeftOpen className="size-[1.15rem]" strokeWidth={2} />
+      ) : (
+        <PanelLeftClose className="size-[1.15rem]" strokeWidth={2} />
+      )}
+    </Button>
+  );
   return (
     <nav
       aria-label={t('Sections')}
       className={cn(
         'bg-card border-border hidden shrink-0 flex-col border-r md:flex',
-        'w-[4.25rem] lg:w-52',
+        folded ? 'w-[4.25rem]' : 'w-52',
       )}
     >
-      {/* A tip and not the aria-label the rows below take: those repeat the
-          label already printed beside their icon, and this one does not —
-          the wordmark says whose app this is and the tip says where the
-          press goes. */}
-      <TitleTip title={t('Home')}>
-        <button
-          type="button"
-          onClick={() => navigate('home')}
-          // justify-center in the collapsed rail: the icons below centre
-          // themselves in the 68px column (their buttons are justify-center
-          // inside p-2), so a left-aligned logo under px-4 sat 6px to their
-          // left. At lg the wordmark returns and the row left-aligns again.
-          className="hover:bg-accent flex h-14 items-center justify-center gap-2.5 px-4 text-left transition-colors duration-100 lg:justify-start"
-        >
-          {/* Bare, in the text's own ink — the same treatment as the home
-              header. The filled tile it used to sit on read as a button
-              distinct from the wordmark beside it. */}
-          <BrandMark className="size-6 shrink-0" />
-          {/* The name the mark alone cannot give. `hidden` below lg is
-              display:none, so the wordmark is out of the accessibility tree
-              exactly where it is the only thing naming this button — which
-              the `title` used to cover as its last-resort name, and a tip
-              does not. Absolute, so it costs the row no width and no gap. */}
-          <span className="sr-only lg:hidden">{t('Chess Vault')}</span>
-          <span className="hidden truncate text-base font-semibold tracking-tight lg:block">
-            {t('Chess Vault')}
-          </span>
-        </button>
-      </TitleTip>
+      {/* The brand row: the Home button, and unfolded the fold switch at
+          its end. Siblings, never nested: a button in a button is not
+          markup, and a tip inside a tip is both open at once (TitleTip). */}
+      <div className={cn('flex h-14 items-center', !folded && 'pr-2')}>
+        {/* A tip and not the aria-label the rows below take: those repeat
+            the label already printed beside their icon, and this one does
+            not — the wordmark says whose app this is and the tip says
+            where the press goes. */}
+        <TitleTip title={t('Home')} side={folded ? tipSide : undefined}>
+          <button
+            type="button"
+            onClick={() => navigate('home')}
+            // justify-center in the folded rail: the icons below centre
+            // themselves in the 68px column (their rows are justify-center
+            // inside p-2), so a left-aligned logo under px-4 sat 6px to
+            // their left. Unfolded the wordmark returns and the row
+            // left-aligns again.
+            className={cn(
+              'hover:bg-accent flex h-14 min-w-0 flex-1 items-center gap-2.5 px-4 text-left transition-colors duration-100',
+              folded ? 'justify-center' : 'justify-start',
+            )}
+          >
+            {/* Bare, in the text's own ink — the same treatment as the home
+                header. The filled tile it used to sit on read as a button
+                distinct from the wordmark beside it. */}
+            <BrandMark className="size-6 shrink-0" />
+            {/* The name the mark alone cannot give. Folded, the wordmark is
+                not drawn, which would leave this button unnamed — the
+                `title` used to cover that as its last-resort name, and a
+                tip does not — so the name stays as sr-only text, which
+                costs the row no width and no gap. */}
+            {folded ? (
+              <span className="sr-only">{t('Chess Vault')}</span>
+            ) : (
+              <span className="truncate text-base font-semibold tracking-tight">{t('Chess Vault')}</span>
+            )}
+          </button>
+        </TitleTip>
+        {!folded && foldButton}
+      </div>
+      {/* Folded, the switch takes a row of its own under the mark: 68px
+          seats the mark or the button, not both. */}
+      {folded && <div className="flex justify-center pb-1">{foldButton}</div>}
 
       <div className="flex flex-1 flex-col gap-0.5 p-2">
         {NAV.map(({ section, label, icon: Icon }) => {
           const isActive = section === active;
           return (
             <Fragment key={section}>
+            {/* A tip only while folded. Unfolded, the label is written
+                beside the icon, so a tip would repeat what is already on
+                screen; the aria-label stays either way, for a screen
+                reader and for touch, where no tip ever opens. */}
+            <TitleTip title={folded ? t(label) : undefined} side={tipSide}>
             <NavLink
               href={sectionHref(section)}
               onActivate={() => navigate(section)}
-              // aria-label, not title: the label is written beside the icon
-              // at lg, so the native tooltip only ever repeated what was
-              // already on screen — and it popped over the item below it.
-              // Screen readers still get the name in the collapsed rail.
               aria-label={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
                 'transition-colors duration-150',
-                'justify-center lg:justify-start',
+                folded ? 'justify-center' : 'justify-start',
                 isActive
                   ? // Fill, outline and rail together: on the darker page
                     // the soft fill alone was close enough to the sidebar
@@ -570,8 +639,9 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                 <span className="bg-primary absolute left-0 h-6 w-[3px] rounded-r-full" />
               )}
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
-              <span className="hidden lg:block">{t(label)}</span>
+              {!folded && <span>{t(label)}</span>}
             </NavLink>
+            </TitleTip>
             {/* A section's children are drawn by the section, not after the
                 whole list. They used to be appended below the NAV loop,
                 which only looked right for as long as Puzzles happened to
@@ -589,6 +659,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                   key={param}
                   label={sub}
                   icon={SubIcon}
+                  folded={folded}
                   active={active === 'puzzles' && params[0] === param}
                   href={sectionHref('puzzles', param)}
                   onClick={() => navigate('puzzles', param)}
@@ -613,6 +684,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             and withdrawn on sight: three small blobs directly under
             Network's three, which is the clustering this whole sweep is
             against. */}
+        <TitleTip title={folded ? t('Tools') : undefined} side={tipSide}>
         <NavLink
           href={sectionHref('board')}
           onActivate={() => navigate('board')}
@@ -620,14 +692,16 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
-            'transition-colors duration-150 justify-center lg:justify-start',
+            'transition-colors duration-150',
+            folded ? 'justify-center' : 'justify-start',
             inTools(active) ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <SquareMousePointer className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
-          <span className="hidden lg:block">{t('Tools')}</span>
+          {!folded && <span>{t('Tools')}</span>}
         </NavLink>
+        </TitleTip>
         {/* As above: the five tools unfold under their row only while one
             of them is open. The Tools row lands on the Board. */}
         {inTools(active) &&
@@ -636,6 +710,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             key={key}
             label={label}
             icon={Icon}
+            folded={folded}
             active={isActive(active, params)}
             href={sectionHref(...nav)}
             onClick={() => navigate(...nav)}
@@ -643,6 +718,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         ))}
 
         {/* Databases: a top-level row of its own — management, not a tool. */}
+        <TitleTip title={folded ? t('Databases') : undefined} side={tipSide}>
         <NavLink
           href={sectionHref('databases')}
           onActivate={() => navigate('databases')}
@@ -650,28 +726,37 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
-            'transition-colors duration-150 justify-center lg:justify-start',
+            'transition-colors duration-150',
+            folded ? 'justify-center' : 'justify-start',
             active === 'databases' ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {active === 'databases' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <Database className="size-[1.15rem] shrink-0" strokeWidth={active === 'databases' ? 2.4 : 2} />
-          <span className="hidden lg:block">{t('Databases')}</span>
+          {!folded && <span>{t('Databases')}</span>}
         </NavLink>
+        </TitleTip>
       </div>
 
-      <div className="border-border flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
-        <div className="hidden min-w-0 lg:block">
-          <VaultLabel />
-          <ConnectionLabel />
-        </div>
-        <div className="flex flex-col items-center gap-1 lg:flex-row">
-          {/* A tip, where the rows above take an aria-label instead: those
-              print their label beside the icon at lg and this one never
-              does, at any width. It also stands next to ThemeToggle, which
+      <div
+        className={cn(
+          'border-border flex items-center gap-1 border-t p-2',
+          folded ? 'flex-col' : 'flex-row justify-between px-3',
+        )}
+      >
+        {!folded && (
+          <div className="min-w-0">
+            <VaultLabel />
+            <ConnectionLabel />
+          </div>
+        )}
+        <div className={cn('flex items-center gap-1', folded ? 'flex-col' : 'flex-row')}>
+          {/* A tip at every width, where the rows above take one only
+              folded: those print their label beside the icon unfolded and
+              this one never does. It also stands next to ThemeToggle, which
               is a Button and has always shown the themed chip — two 36px
               icons, a pixel apart, answering a hover differently. */}
-          <TitleTip title={t('Settings')}>
+          <TitleTip title={t('Settings')} side={folded ? tipSide : undefined}>
             <NavLink
               href={sectionHref('settings')}
               onActivate={() => navigate('settings')}
