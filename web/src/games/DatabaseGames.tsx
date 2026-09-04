@@ -1302,6 +1302,40 @@ export function DatabaseGames({
    * how long it must hold). One press runs it; the filter row above
    * narrows a hunt exactly as it narrows the text search.
    */
+  const runButton = (
+    <>
+      {/* Icon-only, the archive's own precedent (its Browse is a globe
+          beside the username field): the labelled button was the row's
+          widest piece and wrapped onto a line of its own in narrow panes
+          (lanph3re's report). The FEN field submits on Enter besides, so
+          the button is the pointer's way in, not the only one. Primary
+          still — it is the row's one verb. The glyph is the RETURN
+          symbol, not ScanSearch: the toggle one row up already wears
+          that one and means it (search BY position), and two identical
+          icons stacked read as one control twice (lanph3re's catch) —
+          ↵ says what this one does and how the keyboard does it. */}
+      <Button
+        variant="default"
+        size="icon-sm"
+        title={t('Search')}
+        disabled={
+          hunting ||
+          (huntKind === 'position' && huntFen.trim() === '') ||
+          (huntKind === 'material' && presetId === 'custom' && customSpec === null)
+        }
+        onClick={() => void runHunt()}
+      >
+        <CornerDownLeft className="size-3.5" />
+      </Button>
+    </>
+  );
+  // The last select and the run button travel as one: each was its own
+  // flex item, so a narrow pane broke the row wherever the width ran
+  // out and the verb landed alone on a line (lanph3re's screenshot).
+  // Grouped, a phone shows the kind and the field on one line and the
+  // match rung with the button on the next, the verb still ending the
+  // row and never by itself. Both modes end this way.
+  const tail = 'flex shrink-0 items-center gap-1.5';
   const huntControls = huntOpen && (
     <div className="flex w-full flex-wrap items-center gap-1.5">
       <Select
@@ -1359,13 +1393,16 @@ export function DatabaseGames({
               </InputGroupButton>
             }
           />
-          <Select
-            value={rung}
-            onValueChange={(v) => setRung(v as MatchMode)}
-            ariaLabel={t('How closely to match')}
-            size="sm"
-            groups={[{ options: RUNGS.map((r) => ({ value: r.id, label: t(r.label) })) }]}
-          />
+          <span className={tail}>
+            <Select
+              value={rung}
+              onValueChange={(v) => setRung(v as MatchMode)}
+              ariaLabel={t('How closely to match')}
+              size="sm"
+              groups={[{ options: RUNGS.map((r) => ({ value: r.id, label: t(r.label) })) }]}
+            />
+            {runButton}
+          </span>
         </>
       ) : (
         <>
@@ -1399,40 +1436,20 @@ export function DatabaseGames({
               <SlidersHorizontal className="size-3.5" />
             </Button>
           )}
-          <Select
-            value={String(heldPlies)}
-            onValueChange={(v) => setHeldPlies(Number(v))}
-            ariaLabel={t('How long it must hold')}
-            size="sm"
-            groups={[
-              { options: HELD.map((h) => ({ value: String(h.plies), label: t(h.label) })) },
-            ]}
-          />
+          <span className={tail}>
+            <Select
+              value={String(heldPlies)}
+              onValueChange={(v) => setHeldPlies(Number(v))}
+              ariaLabel={t('How long it must hold')}
+              size="sm"
+              groups={[
+                { options: HELD.map((h) => ({ value: String(h.plies), label: t(h.label) })) },
+              ]}
+            />
+            {runButton}
+          </span>
         </>
       )}
-      {/* Icon-only, the archive's own precedent (its Browse is a globe
-          beside the username field): the labelled button was the row's
-          widest piece and wrapped onto a line of its own in narrow panes
-          (lanph3re's report). The FEN field submits on Enter besides, so
-          the button is the pointer's way in, not the only one. Primary
-          still — it is the row's one verb. The glyph is the RETURN
-          symbol, not ScanSearch: the toggle one row up already wears
-          that one and means it (search BY position), and two identical
-          icons stacked read as one control twice (lanph3re's catch) —
-          ↵ says what this one does and how the keyboard does it. */}
-      <Button
-        variant="default"
-        size="icon-sm"
-        title={t('Search')}
-        disabled={
-          hunting ||
-          (huntKind === 'position' && huntFen.trim() === '') ||
-          (huntKind === 'material' && presetId === 'custom' && customSpec === null)
-        }
-        onClick={() => void runHunt()}
-      >
-        <CornerDownLeft className="size-3.5" />
-      </Button>
     </div>
   );
 
