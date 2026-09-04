@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
 
 import { pdfUrl } from './data';
+import './text-layer.css';
 import { isCoarsePointer } from '@/lib/media';
 
 /**
@@ -114,6 +115,9 @@ export function PdfPage({
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /** The selectable text over the canvas — see text-layer.css. */
+  const textRef = useRef<HTMLDivElement>(null);
+  const textLayer = useRef<{ cancel: () => void } | null>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   /**
    * The page's shape at rotation 0, learned from the first raster. It is
@@ -154,7 +158,7 @@ export function PdfPage({
     // A beat before rendering: a page that scrolls past in a flick is
     // mounted and unmounted inside this, and never costs a raster.
     const timer = setTimeout(() => void (async () => {
-      const page = await doc.getPage(pageNo);
+      const [page, pdfjs] = await Promise.all([doc.getPage(pageNo), loadPdfjs()]);
       if (!live) return;
       const base = page.getViewport({ scale: 1, rotation });
       const cssW = Math.max(1, Math.round(width * zoom));
@@ -168,6 +172,28 @@ export function PdfPage({
         ratio = Math.sqrt(MAX_CANVAS_PIXELS / (cssW * cssH));
       }
       const viewport = page.getViewport({ scale: (cssW * ratio) / base.width, rotation });
+      // The text layer, laid out at the page's CSS scale beside the
+      // raster and not after it: the text is what is under the pointer,
+      // and it should be there as soon as the page is. Replaced whole on
+      // every re-render of the page (a zoom, a turn): the layer's own
+      // update path exists, but a fresh layout over a fresh raster is
+      // the one that cannot drift from it.
+      const text = textRef.current;
+      if (text) {
+        textLayer.current?.cancel();
+        text.replaceChildren();
+        text.style.setProperty('--total-scale-factor', String(cssW / base.width));
+        const layer = new pdfjs.TextLayer({
+          textContentSource: page.streamTextContent(),
+          container: text,
+          viewport: page.getViewport({ scale: cssW / base.width, rotation }),
+        });
+        textLayer.current = layer;
+        layer.render().catch(() => {
+          // Cancelled by a newer layout, or a page with no text: the
+          // canvas is still the page.
+        });
+      }
       const off = document.createElement('canvas');
       off.width = Math.round(viewport.width);
       off.height = Math.round(viewport.height);
@@ -211,7 +237,13 @@ export function PdfPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, pageNo, width, zoom, rotation]);
 
-  useEffect(() => () => taskRef.current?.cancel(), []);
+  useEffect(
+    () => () => {
+      taskRef.current?.cancel();
+      textLayer.current?.cancel();
+    },
+    [],
+  );
 
   // The box, from this render's own width and zoom — not from the raster,
   // which is a beat behind them.
@@ -274,7 +306,13 @@ export function PdfPage({
           <Spinner className="text-muted-foreground size-5" />
         </div>
       )}
-      {box && overlay && <div className="absolute inset-0">{overlay}</div>}
+      {/* Under the overlay, over the canvas; hidden with the canvas until
+          the first raster so a selection cannot start on a blank slot. */}
+      <div ref={textRef} className={cn('textLayer', !size && 'invisible')} />
+      {/* pointer-events-none: the overlay's box covers the whole page, and
+          a box that takes the pointer takes it from the text under it.
+          The hotspot buttons opt back in. */}
+      {box && overlay && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
     </div>
   );
 }

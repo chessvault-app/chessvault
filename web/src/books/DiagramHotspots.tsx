@@ -246,7 +246,9 @@ export function DiagramHotspots({
             // can see which diagrams the app has before tapping one.
             variant={s.ok ? 'secondary' : 'outline'}
             size="icon-sm"
-            className={cn('absolute shadow-md', 'pointer-coarse:size-9')}
+            // pointer-events-auto: the overlay this sits in lets the pointer
+            // through to the page's text (pdfViewer); the button takes it back.
+            className={cn('pointer-events-auto absolute shadow-md', 'pointer-coarse:size-9')}
             style={style}
             title={s.ok ? t('Set up this position') : t('Edit position')}
           >

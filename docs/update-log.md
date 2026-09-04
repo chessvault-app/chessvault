@@ -7,6 +7,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The book's text can be selected.** A page in the reader is a
+  picture no longer: its text can be dragged over and copied, as in any
+  PDF reader, and the diagram buttons still take a press over it. A scan
+  with no text layer has nothing to select, as it has nothing to search.
 - **The book reader turns to a chapter.** A book whose PDF carries a
   table of contents gets a “Contents” button beside search, on a desktop
   and in the phone's bottom bar: the chapter you are in is marked, and
