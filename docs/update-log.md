@@ -5,7 +5,17 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.8.2
+
+Notes open again: since 0.8.0 every note page opened to “Something went
+wrong”, the note saved underneath, because the build had split one of
+the editor's libraries away from it. Around the fix, the databases
+browser's hunt grows a library: twelve motifs from an isolated queen's
+pawn to the Greek gift, twenty-nine named pawn structures, twenty-six
+material presets that can be asked for either side, and `opening:`
+finding games on every database. The desktop app draws its own title
+bar, the sidebar folds, and the phone's Games rows, home and reader
+each get a round of fixes.
 
 - **Notes open again.** Since the build started keeping the editor in
   a chunk of its own, opening any note showed “Something went wrong”:
@@ -86,7 +96,6 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   unlocks it whatever Safari said. And a book left on its last page,
   where that page is shorter than the window, no longer re-scrolls to
   its foot on every layout change with the page number stuck.
-
 - **The Games search rows fit a phone.** While you type in a Games
   tab's search field it takes the whole row, the buttons beside it
   stepping aside until you leave; before, the collection's box was
