@@ -1,5 +1,5 @@
 {
- "schema": 4,
+ "schema": 5,
  "generator": "scripts/export-native-goldens.ts",
  "refMaxPly": 30,
  "fens": [
@@ -8430,6 +8430,621 @@
     }
    ],
    "pack": "13000e0e68222222116822222211c093df96eaccab1460551bd08b2a8ac8372a60b5dc00a7094378876b175b42821f1ac5c6fcda0434a42f07490b1c47f6a61e1687d46b20a765c1607db6b4dd1e45354b0f9c27c75a68a71f901515151515b45353d231313131313131313131000000000101000101000000000000000000"
+  },
+  {
+   "why": "the Greek gift, 7.Bxh7+ at ply 12",
+   "moves": "e4 e6 d4 d5 Nc3 Nf6 Bd3 Be7 Nf3 O-O e5 Nfd7 Bxh7+ Kxh7 Ng5+ Kg8 Qh5",
+   "result": "1-0",
+   "whiteElo": 2170,
+   "blackElo": 1530,
+   "r": 0,
+   "eb": 7,
+   "plyCount": 17,
+   "finalWmen": 15,
+   "finalBmen": 15,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "e7e6"
+    },
+    {
+     "ply": 2,
+     "pos": "-2453554305490528928",
+     "uci": "d2d4"
+    },
+    {
+     "ply": 3,
+     "pos": "-8037563938528154997",
+     "uci": "d7d5"
+    },
+    {
+     "ply": 4,
+     "pos": "-5214293287340332489",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 5,
+     "pos": "-3191474461864009756",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 6,
+     "pos": "-5210582998396785988",
+     "uci": "f1d3"
+    },
+    {
+     "ply": 7,
+     "pos": "-7950061048952551104",
+     "uci": "f8e7"
+    },
+    {
+     "ply": 8,
+     "pos": "639045124140207085",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 9,
+     "pos": "-5480477010246322110",
+     "uci": "e8h8"
+    },
+    {
+     "ply": 10,
+     "pos": "-5780244459730889997",
+     "uci": "e4e5"
+    },
+    {
+     "ply": 11,
+     "pos": "895871353918542159",
+     "uci": "f6d7"
+    },
+    {
+     "ply": 12,
+     "pos": "3071086564641847422",
+     "uci": "d3h7"
+    },
+    {
+     "ply": 13,
+     "pos": "-3124334002197059297",
+     "uci": "g8h7"
+    },
+    {
+     "ply": 14,
+     "pos": "4986145567382966863",
+     "uci": "f3g5"
+    },
+    {
+     "ply": 15,
+     "pos": "-8810096502561197260",
+     "uci": "h7g8"
+    },
+    {
+     "ply": 16,
+     "pos": "5792087018495668777",
+     "uci": "d1h5"
+    }
+   ],
+   "pack": "12000f0f88221222117822222211c093df96eaccab1460551bd08b2a8ac8372a60b5e45fddd6bcaadeab408983e2ed8bd29342b8922cf312d2f64f51c3f67eb8f38f1fa95e474f1240ce34b3eda729f2959d886e80881515151515151515151515151514141414140000000000000000000000000103000000"
+  },
+  {
+   "why": "Black's Greek gift, 8...Bxh2+ at ply 15",
+   "moves": "d4 d5 Nf3 Nf6 e3 e6 Bd3 Bd6 O-O O-O Nbd2 Nbd7 c4 dxc4 Nxc4 Bxh2+ Nxh2 Ng4",
+   "result": "0-1",
+   "whiteElo": 2501,
+   "blackElo": 2232,
+   "r": 2,
+   "eb": 11,
+   "plyCount": 18,
+   "finalWmen": 14,
+   "finalBmen": 14,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "d2d4"
+    },
+    {
+     "ply": 1,
+     "pos": "-1256379834086527957",
+     "uci": "d7d5"
+    },
+    {
+     "ply": 2,
+     "pos": "-3942975149839160169",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 3,
+     "pos": "8243992947740434232",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 4,
+     "pos": "1616048258468489824",
+     "uci": "e2e3"
+    },
+    {
+     "ply": 5,
+     "pos": "-6310212773310636882",
+     "uci": "e7e6"
+    },
+    {
+     "ply": 6,
+     "pos": "1919499429352523044",
+     "uci": "f1d3"
+    },
+    {
+     "ply": 7,
+     "pos": "4375406784605742808",
+     "uci": "f8d6"
+    },
+    {
+     "ply": 8,
+     "pos": "-6558355274139739819",
+     "uci": "e1h1"
+    },
+    {
+     "ply": 9,
+     "pos": "6952748666077654055",
+     "uci": "e8h8"
+    },
+    {
+     "ply": 10,
+     "pos": "8954349479434225302",
+     "uci": "b1d2"
+    },
+    {
+     "ply": 11,
+     "pos": "-7410792867215446904",
+     "uci": "b8d7"
+    },
+    {
+     "ply": 12,
+     "pos": "-1114370310050462433",
+     "uci": "c2c4"
+    },
+    {
+     "ply": 13,
+     "pos": "-7749318152831998389",
+     "uci": "d5c4"
+    },
+    {
+     "ply": 14,
+     "pos": "6461844769444276035",
+     "uci": "d2c4"
+    },
+    {
+     "ply": 15,
+     "pos": "-7361379829806791597",
+     "uci": "d6h2"
+    },
+    {
+     "ply": 16,
+     "pos": "2418481321421251831",
+     "uci": "f3h2"
+    },
+    {
+     "ply": 17,
+     "pos": "-3593152966968419321",
+     "uci": "f6g4"
+    }
+   ],
+   "pack": "13000e0e68222222117822122211c093df962bec4e8e97eca4f338dfe44c602ae731aedcaf6524451fa1d86642e855591736272c2116968661cc88ec9fbd1f4533714b66f698432771dc5304a40bf7243bbb07dc34f48f2dab05151515151515151515151515151594f3f2f2f2000000000000000000000000000101010300"
+  },
+  {
+   "why": "Bxh7 without check (the king on f8) is no gift",
+   "moves": "e4 e6 d4 d5 Nc3 Nf6 Bd3 Be7 Nf3 Kf8 e5 Nfd7 Bxh7 g6",
+   "result": "1/2-1/2",
+   "whiteElo": 2702,
+   "blackElo": 1035,
+   "r": 1,
+   "eb": 5,
+   "plyCount": 14,
+   "finalWmen": 16,
+   "finalBmen": 15,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "e7e6"
+    },
+    {
+     "ply": 2,
+     "pos": "-2453554305490528928",
+     "uci": "d2d4"
+    },
+    {
+     "ply": 3,
+     "pos": "-8037563938528154997",
+     "uci": "d7d5"
+    },
+    {
+     "ply": 4,
+     "pos": "-5214293287340332489",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 5,
+     "pos": "-3191474461864009756",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 6,
+     "pos": "-5210582998396785988",
+     "uci": "f1d3"
+    },
+    {
+     "ply": 7,
+     "pos": "-7950061048952551104",
+     "uci": "f8e7"
+    },
+    {
+     "ply": 8,
+     "pos": "639045124140207085",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 9,
+     "pos": "-5480477010246322110",
+     "uci": "e8f8"
+    },
+    {
+     "ply": 10,
+     "pos": "7204850741836245484",
+     "uci": "e4e5"
+    },
+    {
+     "ply": 11,
+     "pos": "-4586228039363679664",
+     "uci": "f6d7"
+    },
+    {
+     "ply": 12,
+     "pos": "-1825638796742737055",
+     "uci": "d3h7"
+    },
+    {
+     "ply": 13,
+     "pos": "1770078605734793728",
+     "uci": "g7g6"
+    }
+   ],
+   "pack": "0f00100f88222222117822222211c093df96eaccab1460551bd08b2a8ac8372a60b5e45fddd6bcaadeab408983e2ed8bd29342b8922cece9dba650aacaa66143fadf005257172e0e9b721515151515151515151515151514140000000000000000000000000100"
+  },
+  {
+   "why": "rooks on the seventh: Black's at ply 8, White's at ply 9",
+   "moves": "h4 a5 Rh3 Ra6 Ra3 Rb6 Rxa5 Rxb2 Ra7",
+   "result": "1/2-1/2",
+   "whiteElo": 1715,
+   "blackElo": 1759,
+   "r": 1,
+   "eb": 8,
+   "plyCount": 9,
+   "finalWmen": 15,
+   "finalBmen": 15,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "h2h4"
+    },
+    {
+     "ply": 1,
+     "pos": "7777633218904112296",
+     "uci": "a7a5"
+    },
+    {
+     "ply": 2,
+     "pos": "-6604300956699935415",
+     "uci": "h1h3"
+    },
+    {
+     "ply": 3,
+     "pos": "-6502494343035450164",
+     "uci": "a8a6"
+    },
+    {
+     "ply": 4,
+     "pos": "2904148506388897646",
+     "uci": "h3a3"
+    },
+    {
+     "ply": 5,
+     "pos": "-8380443134809873184",
+     "uci": "a6b6"
+    },
+    {
+     "ply": 6,
+     "pos": "-8855844488687224160",
+     "uci": "a3a5"
+    },
+    {
+     "ply": 7,
+     "pos": "-5659774465734260855",
+     "uci": "b6b2"
+    },
+    {
+     "ply": 8,
+     "pos": "-5261633640711872982",
+     "uci": "a5a7"
+    }
+   ],
+   "pack": "0a000f0f78222222117822222211c093df96a8bc0e7649bd205ecc8c62c16e9f4a02e0e44bd1a07ab299894715352a9e1fc3c0ca340415151515151515347373000000000000010100"
+  },
+  {
+   "why": "passed pawns for both, doubled for both, in eight plies",
+   "moves": "a4 h5 a5 h4 a6 h3 axb7 hxg2",
+   "result": "1/2-1/2",
+   "whiteElo": 1583,
+   "blackElo": 2699,
+   "r": 1,
+   "eb": 7,
+   "plyCount": 8,
+   "finalWmen": 15,
+   "finalBmen": 15,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "a2a4"
+    },
+    {
+     "ply": 1,
+     "pos": "-2128056900424617057",
+     "uci": "h7h5"
+    },
+    {
+     "ply": 2,
+     "pos": "-3515315588232998892",
+     "uci": "a4a5"
+    },
+    {
+     "ply": 3,
+     "pos": "-3752221523383486627",
+     "uci": "h5h4"
+    },
+    {
+     "ply": 4,
+     "pos": "-6822530069141467950",
+     "uci": "a5a6"
+    },
+    {
+     "ply": 5,
+     "pos": "691061639560730580",
+     "uci": "h4h3"
+    },
+    {
+     "ply": 6,
+     "pos": "-1188974218503025614",
+     "uci": "a6b7"
+    },
+    {
+     "ply": 7,
+     "pos": "-4822845588591247826",
+     "uci": "h3g2"
+    }
+   ],
+   "pack": "09000f0f78222222117822222211c093df969f335f241490faf15df72694d2cc66a7d497ea57328c076b2e7e755d20ad6c401515151515151534330000000000000101"
+  },
+  {
+   "why": "double fianchettos on both sides",
+   "moves": "Nf3 Nf6 g3 g6 Bg2 Bg7 b3 b6 Bb2 Bb7",
+   "result": "1/2-1/2",
+   "whiteElo": 2796,
+   "blackElo": 1371,
+   "r": 1,
+   "eb": 6,
+   "plyCount": 10,
+   "finalWmen": 16,
+   "finalBmen": 16,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 1,
+     "pos": "1745331025956806767",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 2,
+     "pos": "8952445698811122999",
+     "uci": "g2g3"
+    },
+    {
+     "ply": 3,
+     "pos": "-1464139832832811734",
+     "uci": "g7g6"
+    },
+    {
+     "ply": 4,
+     "pos": "-5854661815093673724",
+     "uci": "f1g2"
+    },
+    {
+     "ply": 5,
+     "pos": "8451680928673718859",
+     "uci": "f8g7"
+    },
+    {
+     "ply": 6,
+     "pos": "2444979068942253932",
+     "uci": "b2b3"
+    },
+    {
+     "ply": 7,
+     "pos": "8690875916082502948",
+     "uci": "b7b6"
+    },
+    {
+     "ply": 8,
+     "pos": "-3301267694686513555",
+     "uci": "c1b2"
+    },
+    {
+     "ply": 9,
+     "pos": "-7887135340046887636",
+     "uci": "c8b7"
+    }
+   ],
+   "pack": "0b00101088222222118822222211c093df966fa09f2937559c542a1d805204414c374b628a946c7f9157245d18756dd6bcc52c551331bbc093c4151515151515151515151500000000000000000000"
+  },
+  {
+   "why": "the Sveshnikov knight on its d5 outpost at ply 15",
+   "moves": "e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 e5 Nb5 d6 N1c3 a6 Na3 b5 Nd5",
+   "result": "1-0",
+   "whiteElo": 1984,
+   "blackElo": 2976,
+   "r": 0,
+   "eb": 9,
+   "plyCount": 15,
+   "finalWmen": 15,
+   "finalBmen": 15,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "c7c5"
+    },
+    {
+     "ply": 2,
+     "pos": "-3865343109444783841",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 3,
+     "pos": "8175368123777155760",
+     "uci": "b8c6"
+    },
+    {
+     "ply": 4,
+     "pos": "-7359059979445435581",
+     "uci": "d2d4"
+    },
+    {
+     "ply": 5,
+     "pos": "-3145568053995111256",
+     "uci": "c5d4"
+    },
+    {
+     "ply": 6,
+     "pos": "3132257644329352803",
+     "uci": "f3d4"
+    },
+    {
+     "ply": 7,
+     "pos": "-8348405256010542992",
+     "uci": "e7e5"
+    },
+    {
+     "ply": 8,
+     "pos": "-6700763594364524592",
+     "uci": "d4b5"
+    },
+    {
+     "ply": 9,
+     "pos": "-285115743973607289",
+     "uci": "d7d6"
+    },
+    {
+     "ply": 10,
+     "pos": "7341001740576053241",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 11,
+     "pos": "141576635596022314",
+     "uci": "a7a6"
+    },
+    {
+     "ply": 12,
+     "pos": "187129249533924168",
+     "uci": "b5a3"
+    },
+    {
+     "ply": 13,
+     "pos": "8000825490658642363",
+     "uci": "b7b5"
+    },
+    {
+     "ply": 14,
+     "pos": "-3425605957464966293",
+     "uci": "c3d5"
+    }
+   ],
+   "pack": "10000f0f78222222117822222211c093df96eaccab141f318ae2b002ca5d43835c4ca8fccd5463be406b70d07cc2d067085a87f894d0f9578f522a22323148138e9dbb4999c06bbbd6043c76637515151515151574f3f3f3f3f3f3f3f3f3000000000001010000000000000000"
+  },
+  {
+   "why": "the Exchange Ruy doubling Black's c-pawns at ply 8",
+   "moves": "e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6",
+   "result": "1/2-1/2",
+   "whiteElo": 1829,
+   "blackElo": 1088,
+   "r": 1,
+   "eb": 5,
+   "plyCount": 8,
+   "finalWmen": 15,
+   "finalBmen": 15,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "e7e5"
+    },
+    {
+     "ply": 2,
+     "pos": "4619377770347068234",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 3,
+     "pos": "-345540709486475035",
+     "uci": "b8c6"
+    },
+    {
+     "ply": 4,
+     "pos": "1413994493879372054",
+     "uci": "f1b5"
+    },
+    {
+     "ply": 5,
+     "pos": "5813520181061004007",
+     "uci": "a7a6"
+    },
+    {
+     "ply": 6,
+     "pos": "6035931744141089669",
+     "uci": "b5c6"
+    },
+    {
+     "ply": 7,
+     "pos": "-3937770343560242384",
+     "uci": "d7c6"
+    }
+   ],
+   "pack": "09000f0f88221222118812222211c093df96eaccab144a7bdf8ce5489f3316c90922e7aab4a6859b080a301b06594b945e101515151515151515350000000000000203"
   }
  ],
  "signatures": [
@@ -8778,7 +9393,7 @@
  ],
  "motifSpecs": [
   {
-   "why": "IQP, either side, any moment",
+   "why": "iqp, either side, any moment",
    "canonical": "{\"id\":\"iqp\",\"side\":\"either\",\"stable\":1}",
    "cases": [
     {
@@ -8835,6 +9450,58 @@
     },
     {
      "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
      "satisfied": false
     }
    ],
@@ -8898,7 +9565,1494 @@
     null,
     null,
     19,
+    8,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "doubled-pawns, either side, any moment",
+   "canonical": "{\"id\":\"doubled-pawns\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": true
+    }
+   ],
+   "hits": [
+    5,
+    null,
+    null,
+    3,
+    3,
+    null,
+    null,
+    null,
+    31,
+    null,
+    31,
+    null,
+    11,
+    9,
+    12,
+    48,
+    36,
+    9,
+    null,
+    null,
+    21,
+    23,
+    9,
+    null,
+    29,
+    42,
+    10,
+    4,
+    24,
+    12,
+    32,
+    29,
+    36,
+    41,
+    21,
+    null,
+    44,
+    52,
+    null,
+    null,
+    20,
+    19,
+    null,
+    12,
+    47,
+    13,
+    13,
+    null,
+    24,
+    15,
+    9,
+    null,
+    null,
+    26,
+    18,
+    17,
+    null,
+    null,
+    7,
+    5,
+    null,
+    14,
+    null,
+    null,
+    7,
+    null,
+    6,
     8
+   ]
+  },
+  {
+   "why": "passed-pawn, either side, any moment",
+   "canonical": "{\"id\":\"passed-pawn\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    7,
+    7,
+    null,
+    null,
+    null,
+    49,
+    null,
+    53,
+    null,
+    28,
+    23,
+    78,
+    48,
+    36,
+    74,
+    null,
+    null,
+    24,
+    23,
+    null,
+    40,
+    48,
+    42,
+    27,
+    38,
+    60,
+    26,
+    32,
+    39,
+    50,
+    54,
+    22,
+    null,
+    null,
+    52,
+    null,
+    null,
+    33,
+    56,
+    null,
+    30,
+    47,
+    38,
+    31,
+    null,
+    null,
+    null,
+    39,
+    59,
+    null,
+    26,
+    29,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    7,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "rook-on-seventh, either side, any moment",
+   "canonical": "{\"id\":\"rook-on-seventh\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    77,
+    null,
+    null,
+    93,
+    null,
+    88,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    38,
+    null,
+    30,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    8,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "fianchetto, either side, any moment",
+   "canonical": "{\"id\":\"fianchetto\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    55,
+    27,
+    null,
+    null,
+    null,
+    null,
+    20,
+    null,
+    57,
+    null,
+    33,
+    null,
+    null,
+    22,
+    null,
+    null,
+    null,
+    13,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    56,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    13,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    5,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "knight-outpost, either side, any moment",
+   "canonical": "{\"id\":\"knight-outpost\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    14,
+    null,
+    null,
+    null,
+    null,
+    70,
+    78,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    57,
+    null,
+    null,
+    null,
+    44,
+    54,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    31,
+    null,
+    null,
+    null,
+    66,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    46,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    15,
+    null
+   ]
+  },
+  {
+   "why": "opposite-bishops, either side, any moment",
+   "canonical": "{\"id\":\"opposite-bishops\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "opposite-castling, either side, any moment",
+   "canonical": "{\"id\":\"opposite-castling\",\"side\":\"either\",\"stable\":1}",
+   "cases": [],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    14,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "same-side-castling, either side, any moment",
+   "canonical": "{\"id\":\"same-side-castling\",\"side\":\"either\",\"stable\":1}",
+   "cases": [],
+   "hits": [
+    null,
+    10,
+    10,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    16,
+    14,
+    null,
+    10,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "greek-gift, either side, any moment",
+   "canonical": "{\"id\":\"greek-gift\",\"side\":\"either\",\"stable\":1}",
+   "cases": [],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    13,
+    16,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "underpromotion, either side, any moment",
+   "canonical": "{\"id\":\"underpromotion\",\"side\":\"either\",\"stable\":1}",
+   "cases": [],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    9,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    30,
+    null,
+    60,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    50,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "en-passant, either side, any moment",
+   "canonical": "{\"id\":\"en-passant\",\"side\":\"either\",\"stable\":1}",
+   "cases": [],
+   "hits": [
+    5,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    12,
+    null,
+    null,
+    74,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -8960,6 +11114,58 @@
     {
      "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
      "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
     }
    ],
    "hits": [
@@ -9022,7 +11228,15 @@
     null,
     null,
     null,
-    8
+    8,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9083,6 +11297,58 @@
     },
     {
      "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
      "satisfied": false
     }
    ],
@@ -9146,12 +11412,20 @@
     null,
     null,
     19,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
     null
    ]
   },
   {
-   "why": "opposite-side castling",
-   "canonical": "{\"id\":\"opposite-castling\",\"side\":\"either\",\"stable\":1}",
+   "why": "black's Greek gift",
+   "canonical": "{\"id\":\"greek-gift\",\"side\":\"black\",\"stable\":1}",
    "cases": [],
    "hits": [
     null,
@@ -9210,7 +11484,383 @@
     null,
     null,
     null,
-    14,
+    null,
+    null,
+    null,
+    null,
+    null,
+    16,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "white's passed pawn held two plies",
+   "canonical": "{\"id\":\"passed-pawn\",\"side\":\"white\",\"stable\":2}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    7,
+    7,
+    null,
+    null,
+    null,
+    49,
+    null,
+    53,
+    null,
+    28,
+    null,
+    null,
+    null,
+    49,
+    null,
+    null,
+    null,
+    71,
+    23,
+    null,
+    null,
+    48,
+    74,
+    27,
+    null,
+    60,
+    67,
+    null,
+    39,
+    50,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    65,
+    null,
+    null,
+    85,
+    47,
+    38,
+    31,
+    null,
+    null,
+    null,
+    39,
+    null,
+    null,
+    54,
+    51,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    7,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "black's rook on the seventh",
+   "canonical": "{\"id\":\"rook-on-seventh\",\"side\":\"black\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "6k1/R7/8/8/8/8/r7/6K1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "6k1/r7/8/8/8/8/8/6K1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/8/8/8/8/8/6B1/4K3 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    88,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    38,
+    null,
+    30,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    8,
+    null,
     null,
     null,
     null
@@ -9280,9 +11930,31 @@
     14,
     null,
     null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
     null
    ]
   }
+ ],
+ "motifIds": [
+  "iqp",
+  "doubled-pawns",
+  "passed-pawn",
+  "rook-on-seventh",
+  "fianchetto",
+  "knight-outpost",
+  "opposite-bishops",
+  "opposite-castling",
+  "same-side-castling",
+  "greek-gift",
+  "underpromotion",
+  "en-passant"
  ],
  "sql": {
   "gamesSchema": "\n  CREATE TABLE IF NOT EXISTS games (\n    id INTEGER PRIMARY KEY,\n    white TEXT NOT NULL COLLATE NOCASE,\n    black TEXT NOT NULL COLLATE NOCASE,\n    white_elo INTEGER NOT NULL,\n    black_elo INTEGER NOT NULL,\n    result TEXT NOT NULL,\n    date TEXT,\n    event TEXT,\n    eco TEXT,\n    opening TEXT,\n    moves TEXT NOT NULL,\n    ply_count INTEGER,\n    final_wmen INTEGER,\n    final_bmen INTEGER\n  );\n  CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);\n",

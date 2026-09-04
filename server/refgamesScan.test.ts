@@ -575,3 +575,67 @@ describe('motif replay', () => {
     expect(hit(exchange, '{"id":"iqp","side":"black"}')).toBeNull();
   });
 });
+
+describe('motif replay: the castling and move kinds', () => {
+  const hit = (moves: string, raw: string): number | null =>
+    replayMotifHit(moves, parseMotifSpec(raw)!);
+
+  it('same-side castling holds from the second castle, either wing', () => {
+    expect(hit('e4 e5 Nf3 Nc6 Bc4 Bc5 O-O Nf6 Qe2 O-O', '{"id":"same-side-castling"}')).toBe(10);
+    expect(hit('d4 d5 Nc3 Nc6 Bf4 Bf5 Qd2 Qd7 O-O-O O-O-O', '{"id":"same-side-castling"}')).toBe(10);
+    expect(
+      hit('e4 e5 Nf3 Nc6 Bc4 Bc5 O-O d6 d3 Bg4 Nc3 Qd7 Be3 O-O-O', '{"id":"same-side-castling"}'),
+    ).toBeNull();
+  });
+
+  it('the Greek gift is Bxh7+ beside a king on g8, and only with check', () => {
+    // 7.Bxh7+ at ply 12: the position after it is the first that holds.
+    const gift = 'e4 e6 d4 d5 Nc3 Nf6 Bd3 Be7 Nf3 O-O e5 Nfd7 Bxh7+ Kxh7 Ng5+ Kg8 Qh5';
+    expect(hit(gift, '{"id":"greek-gift"}')).toBe(13);
+    expect(hit(gift, '{"id":"greek-gift","side":"white"}')).toBe(13);
+    expect(hit(gift, '{"id":"greek-gift","side":"black"}')).toBeNull();
+    // Black's mirror, ...Bxh2+ at ply 15.
+    const mirror = 'd4 d5 Nf3 Nf6 e3 e6 Bd3 Bd6 O-O O-O Nbd2 Nbd7 c4 dxc4 Nxc4 Bxh2+ Nxh2 Ng4';
+    expect(hit(mirror, '{"id":"greek-gift","side":"black"}')).toBe(16);
+    expect(hit(mirror, '{"id":"greek-gift","side":"white"}')).toBeNull();
+    // The king on f8: Bxh7 takes a pawn but gives no check, so it is
+    // no gift.
+    expect(
+      hit('e4 e6 d4 d5 Nc3 Nf6 Bd3 Be7 Nf3 Kf8 e5 Nfd7 Bxh7 g6', '{"id":"greek-gift"}'),
+    ).toBeNull();
+  });
+
+  it('underpromotion and en passant are remembered from the move on', () => {
+    const under = 'e4 d5 exd5 c6 dxc6 Nf6 cxb7 Nbd7 bxa8=N';
+    expect(hit(under, '{"id":"underpromotion"}')).toBe(9);
+    expect(hit(under, '{"id":"underpromotion","side":"black"}')).toBeNull();
+    // A queen is the promotion, not an underpromotion.
+    expect(hit('e4 d5 exd5 c6 dxc6 Nf6 cxb7 Nbd7 bxa8=Q', '{"id":"underpromotion"}')).toBeNull();
+    const ep = 'e4 c5 e5 d5 exd6';
+    expect(hit(ep, '{"id":"en-passant"}')).toBe(5);
+    expect(hit(ep, '{"id":"en-passant","side":"white"}')).toBe(5);
+    expect(hit(ep, '{"id":"en-passant","side":"black"}')).toBeNull();
+    // The pawn stepping past without a capture is no en passant.
+    expect(hit('e4 c5 e5 d5 Nf3', '{"id":"en-passant"}')).toBeNull();
+  });
+
+  it('board motifs arise at the move that makes them', () => {
+    // 3.Nf3 g6 4.Bg2: White's fianchetto at ply 5, Black's at 6.
+    expect(hit('Nf3 Nf6 g3 g6 Bg2 Bg7 b3 b6 Bb2 Bb7', '{"id":"fianchetto"}')).toBe(5);
+    expect(hit('Nf3 Nf6 g3 g6 Bg2 Bg7 b3 b6 Bb2 Bb7', '{"id":"fianchetto","side":"black"}')).toBe(6);
+    // The Sveshnikov knight lands on d5 at ply 15.
+    const sveshnikov = 'e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 e5 Nb5 d6 N1c3 a6 Na3 b5 Nd5';
+    expect(hit(sveshnikov, '{"id":"knight-outpost","side":"white"}')).toBe(15);
+    expect(hit(sveshnikov, '{"id":"knight-outpost","side":"black"}')).toBeNull();
+    // ...Rxb2 at ply 8 is Black's seventh, Ra7 at ply 9 White's.
+    const seventh = 'h4 a5 Rh3 Ra6 Ra3 Rb6 Rxa5 Rxb2 Ra7';
+    expect(hit(seventh, '{"id":"rook-on-seventh"}')).toBe(8);
+    expect(hit(seventh, '{"id":"rook-on-seventh","side":"white"}')).toBe(9);
+    // axb7 at ply 7 leaves a passed b-pawn; ...hxg2 at ply 8 a passed g-pawn.
+    expect(hit('a4 h5 a5 h4 a6 h3 axb7 hxg2', '{"id":"passed-pawn","side":"white"}')).toBe(7);
+    expect(hit('a4 h5 a5 h4 a6 h3 axb7 hxg2', '{"id":"passed-pawn","side":"black"}')).toBe(8);
+    // ...dxc6 doubles Black's c-pawns at ply 8.
+    expect(hit('e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6', '{"id":"doubled-pawns"}')).toBe(8);
+    expect(hit('e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6', '{"id":"doubled-pawns","side":"white"}')).toBeNull();
+  });
+});

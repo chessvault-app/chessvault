@@ -27,7 +27,17 @@ pub const SUPPORTED_SCAN: &[&str] = &[
     "match:structure",
     "motif",
     "motif:iqp",
+    "motif:doubled-pawns",
+    "motif:passed-pawn",
+    "motif:rook-on-seventh",
+    "motif:fianchetto",
+    "motif:knight-outpost",
+    "motif:opposite-bishops",
     "motif:opposite-castling",
+    "motif:same-side-castling",
+    "motif:greek-gift",
+    "motif:underpromotion",
+    "motif:en-passant",
 ];
 
 /// Piece letters in the fixed order every signature and spec uses.

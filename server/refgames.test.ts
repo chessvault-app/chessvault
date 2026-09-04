@@ -1511,6 +1511,16 @@ describe('motif hunts through the route', () => {
       ['Isolani', 19],
     ]);
     expect(await games(`motif=${encodeURIComponent('{"id":"iqp","stable":4}')}`)).toEqual([]);
+    // The other kinds ride the same route: same-wing castling in the
+    // Tarrasch (ply 16) and the third game (ply 10), White's fianchetto
+    // in the Tarrasch (Bg2 at ply 13).
+    expect(await games(`motif=${encodeURIComponent('{"id":"same-side-castling"}')}`)).toEqual([
+      ['Isolani', 16],
+      ['Same', 10],
+    ]);
+    expect(await games(`motif=${encodeURIComponent('{"id":"fianchetto","side":"white"}')}`)).toEqual([
+      ['Isolani', 13],
+    ]);
     // The game filters narrow a motif hunt as they narrow every other.
     expect(
       await games(`motif=${encodeURIComponent('{"id":"opposite-castling"}')}&player=isolani`),
@@ -1546,7 +1556,7 @@ describe('motif hunts through the route', () => {
       (await app.request(`/api/refgames/deep-search?${query}`)).status;
     const motif = encodeURIComponent('{"id":"iqp"}');
     expect(await bad('motif=nonsense')).toBe(400);
-    expect(await bad(`motif=${encodeURIComponent('{"id":"greek-gift"}')}`)).toBe(400);
+    expect(await bad(`motif=${encodeURIComponent('{"id":"rook-lift"}')}`)).toBe(400);
     expect(await bad(`motif=${encodeURIComponent('{"id":"iqp","stable":0}')}`)).toBe(400);
     expect(await bad(`motif=${encodeURIComponent('{"id":"opposite-castling","side":"white"}')}`)).toBe(400);
     expect(await bad(`motif=${motif}&fen=${encodeURIComponent('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')}`)).toBe(400);

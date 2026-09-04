@@ -11,7 +11,8 @@ use chessvault_core::deep::find_motif_hit;
 use chessvault_core::scan_match::{
     material_men_bounds, material_satisfied, match_signature, MaterialSpec, Rung,
 };
-use chessvault_core::scan_motif::{iqp_satisfied, MotifSpec};
+use chessvault_core::scan_match::SUPPORTED_SCAN;
+use chessvault_core::scan_motif::{board_motif_satisfied, MotifId, MotifSpec};
 use chessvault_core::zobrist::{hash_position, to_db_key};
 
 #[derive(Deserialize)]
@@ -30,6 +31,8 @@ struct Goldens {
     material_specs: Vec<MaterialSpecGolden>,
     #[serde(rename = "motifSpecs")]
     motif_specs: Vec<MotifSpecGolden>,
+    #[serde(rename = "motifIds")]
+    motif_ids: Vec<String>,
     sql: SqlGolden,
     constants: ConstantsGolden,
 }
@@ -188,7 +191,7 @@ fn load() -> Goldens {
     let text = std::fs::read_to_string(path)
         .expect("goldens.json exists — run scripts/export-native-goldens.ts");
     let goldens: Goldens = serde_json::from_str(&text).expect("goldens.json parses");
-    assert_eq!(goldens.schema, 4, "unknown goldens schema");
+    assert_eq!(goldens.schema, 5, "unknown goldens schema");
     goldens
 }
 
@@ -334,7 +337,7 @@ fn motif_specs_match() {
                 .into_position(CastlingMode::Chess960)
                 .expect("golden fen is a position");
             assert_eq!(
-                iqp_satisfied(pos.board(), spec.side),
+                board_motif_satisfied(pos.board(), spec.id, spec.side),
                 case.satisfied,
                 "{} on {}",
                 golden.why,
@@ -351,6 +354,22 @@ fn motif_specs_match() {
                 game.why
             );
         }
+    }
+}
+
+#[test]
+fn every_motif_is_declared() {
+    // A motif the TypeScript side knows must parse here AND be declared
+    // as a `motif:<id>` token, or the server would keep it on the JS
+    // path forever with nothing to say so.
+    for id in &load().motif_ids {
+        let parsed: Result<MotifId, _> = serde_json::from_str(&format!("\"{id}\""));
+        assert!(parsed.is_ok(), "motif id {id} is unknown to scan_motif.rs");
+        let token = format!("motif:{id}");
+        assert!(
+            SUPPORTED_SCAN.contains(&token.as_str()),
+            "SUPPORTED_SCAN lacks {token}"
+        );
     }
 }
 

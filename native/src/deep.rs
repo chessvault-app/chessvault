@@ -17,14 +17,15 @@ use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension};
 use serde_json::json;
 use shakmaty::{
-    fen::Fen, san::SanPlus, CastlingMode, CastlingSide, Chess, Color, FromSetup, Position,
+    fen::Fen, san::SanPlus, CastlingMode, CastlingSide, Chess, Color, FromSetup, Position, Role,
+    Square,
 };
 
 use crate::filters::games_where;
 use crate::scan_match::{
     material_men_bounds, material_satisfied, match_signature, MaterialSpec, Rung,
 };
-use crate::scan_motif::{iqp_satisfied, MotifId, MotifSpec};
+use crate::scan_motif::{board_motif_satisfied, MotifId, MotifKind, MotifSide, MotifSpec};
 use crate::zobrist::{hash_position, to_db_key};
 
 pub const DEEP_SEARCH_CAP: u64 = 200;
@@ -185,43 +186,64 @@ fn find_material_hit(moves: &str, spec: &MaterialSpec, lo_w: i64, lo_b: i64) -> 
     step(&pos, ply, &mut streak)
 }
 
-/// Does the position hold the motif — the IQP off the board, opposite
-/// castling off the wings noted as the castling moves were played.
+/// Does the position hold the motif — a board motif off the board, the
+/// castling motifs off the wings noted as the castling moves were
+/// played, the move motifs off whether a side has played the move.
 fn motif_holds(
     pos: &Chess,
     spec: &MotifSpec,
     white_wing: Option<CastlingSide>,
     black_wing: Option<CastlingSide>,
+    white_played: bool,
+    black_played: bool,
 ) -> bool {
-    match spec.id {
-        MotifId::Iqp => iqp_satisfied(pos.board(), spec.side),
-        MotifId::OppositeCastling => {
-            matches!((white_wing, black_wing), (Some(w), Some(b)) if w != b)
-        }
+    match spec.id.kind() {
+        MotifKind::Board => board_motif_satisfied(pos.board(), spec.id, spec.side),
+        MotifKind::Castling => match (white_wing, black_wing) {
+            (Some(w), Some(b)) => {
+                if spec.id == MotifId::OppositeCastling {
+                    w != b
+                } else {
+                    w == b
+                }
+            }
+            _ => false,
+        },
+        MotifKind::Move => match spec.side {
+            MotifSide::White => white_played,
+            MotifSide::Black => black_played,
+            MotifSide::Either => white_played || black_played,
+        },
     }
 }
 
 /// The FIRST ply of the earliest streak holding the motif for its
 /// stability length, or None — the exact shape of the JS
 /// `replayMotifHit` (server/refgamesScan.ts): the material hunt's
-/// streak without its men gates, the IQP read before each move, each
-/// side's castling wing noted as the move is played (so the position
-/// after the second castle is the first that holds), and a side still
-/// uncastled once its rights are gone ending the game early. Public
-/// for the golden test, which holds it to the JS answers per game.
+/// streak without its men gates, a board motif read before each move,
+/// each side's castling wing and each side's motif move noted as the
+/// move is played (so the position after the move is the first that
+/// holds), and a side still uncastled once its rights are gone ending
+/// a castling hunt early. Public for the golden test, which holds it to
+/// the JS answers per game.
 pub fn find_motif_hit(moves: &str, spec: &MotifSpec) -> Option<u32> {
+    let kind = spec.id.kind();
     let mut pos = Chess::default();
     let mut ply: u32 = 0;
     let mut streak: u32 = 0;
     let mut white_wing: Option<CastlingSide> = None;
     let mut black_wing: Option<CastlingSide> = None;
+    let mut white_played = false;
+    let mut black_played = false;
     let step = |pos: &Chess,
                 white_wing: Option<CastlingSide>,
                 black_wing: Option<CastlingSide>,
+                white_played: bool,
+                black_played: bool,
                 ply: u32,
                 streak: &mut u32|
      -> Option<u32> {
-        if motif_holds(pos, spec, white_wing, black_wing) {
+        if motif_holds(pos, spec, white_wing, black_wing, white_played, black_played) {
             *streak += 1;
             if *streak >= spec.stable {
                 // ply + 1 first: u32, and ply - stable alone underflows
@@ -233,9 +255,10 @@ pub fn find_motif_hit(moves: &str, spec: &MotifSpec) -> Option<u32> {
         }
         None
     };
-    let castling = spec.id == MotifId::OppositeCastling;
     for token in moves.split(' ') {
-        if let Some(hit) = step(&pos, white_wing, black_wing, ply, &mut streak) {
+        if let Some(hit) = step(
+            &pos, white_wing, black_wing, white_played, black_played, ply, &mut streak,
+        ) {
             return Some(hit);
         }
         let Ok(san) = token.parse::<SanPlus>() else {
@@ -244,25 +267,54 @@ pub fn find_motif_hit(moves: &str, spec: &MotifSpec) -> Option<u32> {
         let Ok(m) = san.san.to_move(&pos) else {
             return None;
         };
-        if castling {
+        let white = pos.turn() == Color::White;
+        if kind == MotifKind::Castling {
             if let Some(wing) = m.castling_side() {
-                if pos.turn() == Color::White {
+                if white {
                     white_wing = Some(wing);
                 } else {
                     black_wing = Some(wing);
                 }
             }
         }
+        let mut played = false;
+        if kind == MotifKind::Move {
+            played = match spec.id {
+                MotifId::Underpromotion => m.promotion().is_some_and(|role| role != Role::Queen),
+                MotifId::EnPassant => m.is_en_passant(),
+                // A bishop takes the pawn on h7 (h2) beside a king on
+                // g8 (g1), and it is check: the sacrifice, whether or
+                // not it is taken.
+                MotifId::GreekGift => {
+                    m.role() == Role::Bishop
+                        && m.to() == if white { Square::H7 } else { Square::H2 }
+                        && m.capture() == Some(Role::Pawn)
+                        && pos.board().king_of(if white { Color::Black } else { Color::White })
+                            == Some(if white { Square::G8 } else { Square::G1 })
+                }
+                _ => false,
+            };
+        }
         pos.play_unchecked(m);
         ply += 1;
-        if castling
+        if played && spec.id == MotifId::GreekGift {
+            played = pos.is_check();
+        }
+        if played {
+            if white {
+                white_played = true;
+            } else {
+                black_played = true;
+            }
+        }
+        if kind == MotifKind::Castling
             && ((white_wing.is_none() && !pos.castles().has_color(Color::White))
                 || (black_wing.is_none() && !pos.castles().has_color(Color::Black)))
         {
             return None;
         }
     }
-    step(&pos, white_wing, black_wing, ply, &mut streak)
+    step(&pos, white_wing, black_wing, white_played, black_played, ply, &mut streak)
 }
 
 /// One hunt per invocation: a position (fen, optionally relaxed by

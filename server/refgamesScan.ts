@@ -2,6 +2,7 @@ import { Chess, castlingSide } from 'chessops/chess';
 import type { Setup } from 'chessops/setup';
 import type { SquareSet } from 'chessops/squareSet';
 import { parseSan } from 'chessops/san';
+import { isNormal } from 'chessops/types';
 import type { CastlingSide } from 'chessops/types';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import {
@@ -11,7 +12,7 @@ import {
   type MatchMode,
   type MaterialSpec,
 } from '../shared/scanMatch.ts';
-import { iqpSatisfied, type MotifSpec } from '../shared/scanMotif.ts';
+import { MOTIF_KIND, boardMotifSatisfied, type MotifSpec } from '../shared/scanMotif.ts';
 import { PACK_KEYS_AT, packEventsAt, packLength, packPawnsAt, pawnFilesHash } from '../shared/scanPack.ts';
 
 /**
@@ -206,29 +207,37 @@ export function replayMaterialHit(moves: string, spec: MaterialSpec): number | n
 /**
  * The FIRST ply of the earliest streak holding the motif for its
  * stability length, or null — the reference, and the ONLY speed: the
- * pack carries neither castling nor pawn squares, so no pack function
+ * pack carries neither castling nor squares, so no pack function
  * answers a motif (shared/scanMotif.ts). The material hunt's streak
  * shape exactly, the men gates aside (a motif constrains no counts).
  *
- * The IQP is read off the board before each move, as every replay
- * function reads its position. Opposite castling is read off the MOVES:
- * each side's wing is noted as its castling move is played, and the
- * position after the second castle is the first that holds — the
- * predicate is monotone from there, so `stable` only asks that the game
- * go on that long. A side still uncastled once its rights are gone can
- * never castle, and the game is done.
+ * A board motif is read off the board before each move, as every
+ * replay function reads its position. The other kinds are read off the
+ * MOVES as they are played, so the position after the move is the
+ * first that holds: each side's castling wing for the castling motifs
+ * (a side still uncastled once its rights are gone can never castle,
+ * and the game is done), and whether a side has played the move for
+ * the move motifs. Both are monotone once they hold, so `stable` only
+ * asks that the game go on that long.
  * MIRRORED in native/src/deep.rs (find_motif_hit).
  */
 export function replayMotifHit(moves: string, spec: MotifSpec): number | null {
+  const kind = MOTIF_KIND[spec.id];
   const pos = Chess.default();
   let ply = 0;
   let streak = 0;
   let whiteWing: CastlingSide | undefined;
   let blackWing: CastlingSide | undefined;
-  const holds = (): boolean =>
-    spec.id === 'iqp'
-      ? iqpSatisfied(pos.board, spec.side)
-      : whiteWing !== undefined && blackWing !== undefined && whiteWing !== blackWing;
+  let whitePlayed = false;
+  let blackPlayed = false;
+  const holds = (): boolean => {
+    if (kind === 'board') return boardMotifSatisfied(pos.board, spec.id, spec.side);
+    if (kind === 'castling') {
+      if (whiteWing === undefined || blackWing === undefined) return false;
+      return spec.id === 'opposite-castling' ? whiteWing !== blackWing : whiteWing === blackWing;
+    }
+    return spec.side === 'white' ? whitePlayed : spec.side === 'black' ? blackPlayed : whitePlayed || blackPlayed;
+  };
   const step = (): number | null => {
     if (holds()) {
       streak += 1;
@@ -243,17 +252,43 @@ export function replayMotifHit(moves: string, spec: MotifSpec): number | null {
     if (hit !== null) return hit;
     const move = parseSan(pos, san);
     if (!move) return null;
-    if (spec.id === 'opposite-castling') {
+    const white = pos.turn === 'white';
+    if (kind === 'castling') {
       const wing = castlingSide(pos, move);
       if (wing !== undefined) {
-        if (pos.turn === 'white') whiteWing = wing;
+        if (white) whiteWing = wing;
         else blackWing = wing;
+      }
+    }
+    let played = false;
+    if (kind === 'move' && isNormal(move)) {
+      const piece = pos.board.get(move.from);
+      if (spec.id === 'underpromotion') {
+        played = move.promotion !== undefined && move.promotion !== 'queen';
+      } else if (spec.id === 'en-passant') {
+        played =
+          piece?.role === 'pawn' &&
+          move.to === pos.epSquare &&
+          (move.from & 7) !== (move.to & 7);
+      } else if (spec.id === 'greek-gift') {
+        // A bishop takes the pawn on h7 (h2) beside a king on g8 (g1),
+        // and it is check: the sacrifice, whether or not it is taken.
+        played =
+          piece?.role === 'bishop' &&
+          move.to === (white ? 55 : 15) &&
+          pos.board.get(move.to)?.role === 'pawn' &&
+          pos.board.kingOf(white ? 'black' : 'white') === (white ? 62 : 6);
       }
     }
     pos.play(move);
     ply += 1;
+    if (played && spec.id === 'greek-gift') played = pos.isCheck();
+    if (played) {
+      if (white) whitePlayed = true;
+      else blackPlayed = true;
+    }
     if (
-      spec.id === 'opposite-castling' &&
+      kind === 'castling' &&
       ((whiteWing === undefined && pos.castles.castlingRights.intersect(pos.board.white).isEmpty()) ||
         (blackWing === undefined && pos.castles.castlingRights.intersect(pos.board.black).isEmpty()))
     ) {

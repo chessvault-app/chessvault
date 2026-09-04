@@ -307,6 +307,16 @@ async function main(): Promise<void> {
       `motif=${encodeURIComponent('{"id":"iqp"}')}`,
       `motif=${encodeURIComponent('{"id":"iqp","side":"white","stable":4}')}&minElo=1200`,
       `motif=${encodeURIComponent('{"id":"opposite-castling"}')}`,
+      `motif=${encodeURIComponent('{"id":"same-side-castling"}')}`,
+      `motif=${encodeURIComponent('{"id":"doubled-pawns","stable":4}')}`,
+      `motif=${encodeURIComponent('{"id":"passed-pawn","side":"black","stable":2}')}&result=1-0`,
+      `motif=${encodeURIComponent('{"id":"rook-on-seventh"}')}`,
+      `motif=${encodeURIComponent('{"id":"knight-outpost"}')}`,
+      `motif=${encodeURIComponent('{"id":"fianchetto"}')}`,
+      `motif=${encodeURIComponent('{"id":"opposite-bishops"}')}`,
+      `motif=${encodeURIComponent('{"id":"greek-gift"}')}`,
+      `motif=${encodeURIComponent('{"id":"underpromotion"}')}`,
+      `motif=${encodeURIComponent('{"id":"en-passant","side":"white"}')}`,
     );
     let compared = 0;
     const paths = new Map<string, number>();

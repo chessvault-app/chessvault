@@ -30,7 +30,13 @@ import {
   materialSatisfied,
   parseMaterialSpec,
 } from '../shared/scanMatch.ts';
-import { canonicalMotif, iqpSatisfied, parseMotifSpec } from '../shared/scanMotif.ts';
+import {
+  MOTIF_IDS,
+  MOTIF_KIND,
+  boardMotifSatisfied,
+  canonicalMotif,
+  parseMotifSpec,
+} from '../shared/scanMotif.ts';
 import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack } from '../shared/scanPack.ts';
 import { replayMotifHit } from '../server/refgamesScan.ts';
 import { KEY_INDEX_META, KEY_INDEX_VERSION } from '../shared/keyIndex.ts';
@@ -336,6 +342,46 @@ const MOTIF_CORPUS: { why: string; moves: string; result: string }[] = [
     moves: 'e4 e6 d4 d5 exd5 exd5 c4 dxc4 Bxc4 Nf6 Nf3 Be7 O-O O-O Nc3 Nc6 Re1 Bg4',
     result: '1-0',
   },
+  {
+    why: 'the Greek gift, 7.Bxh7+ at ply 12',
+    moves: 'e4 e6 d4 d5 Nc3 Nf6 Bd3 Be7 Nf3 O-O e5 Nfd7 Bxh7+ Kxh7 Ng5+ Kg8 Qh5',
+    result: '1-0',
+  },
+  {
+    why: "Black's Greek gift, 8...Bxh2+ at ply 15",
+    moves: 'd4 d5 Nf3 Nf6 e3 e6 Bd3 Bd6 O-O O-O Nbd2 Nbd7 c4 dxc4 Nxc4 Bxh2+ Nxh2 Ng4',
+    result: '0-1',
+  },
+  {
+    why: 'Bxh7 without check (the king on f8) is no gift',
+    moves: 'e4 e6 d4 d5 Nc3 Nf6 Bd3 Be7 Nf3 Kf8 e5 Nfd7 Bxh7 g6',
+    result: '1/2-1/2',
+  },
+  {
+    why: "rooks on the seventh: Black's at ply 8, White's at ply 9",
+    moves: 'h4 a5 Rh3 Ra6 Ra3 Rb6 Rxa5 Rxb2 Ra7',
+    result: '1/2-1/2',
+  },
+  {
+    why: 'passed pawns for both, doubled for both, in eight plies',
+    moves: 'a4 h5 a5 h4 a6 h3 axb7 hxg2',
+    result: '1/2-1/2',
+  },
+  {
+    why: 'double fianchettos on both sides',
+    moves: 'Nf3 Nf6 g3 g6 Bg2 Bg7 b3 b6 Bb2 Bb7',
+    result: '1/2-1/2',
+  },
+  {
+    why: 'the Sveshnikov knight on its d5 outpost at ply 15',
+    moves: 'e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 e5 Nb5 d6 N1c3 a6 Na3 b5 Nd5',
+    result: '1-0',
+  },
+  {
+    why: "the Exchange Ruy doubling Black's c-pawns at ply 8",
+    moves: 'e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6',
+    result: '1/2-1/2',
+  },
 ];
 for (const { why, moves, result } of MOTIF_CORPUS) {
   const golden = replayGolden(why, moves, result, 1000 + randInt(2000), 1000 + randInt(2000));
@@ -525,12 +571,28 @@ const MOTIF_FENS = [
   'r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1', // black IQP
   'r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1', // symmetrical isolanis
   'r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1', // d4 with c3 beside it
+  '8/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1', // opposite bishops, c3 against d5
+  '8/5k2/8/2b5/8/2B5/5K2/8 w - - 0 1', // same-coloured bishops
+  'r7/5k2/8/3b4/8/2B5/5K2/8 w - - 0 1', // a rook spoils the bishop ending
+  '6k1/R7/8/8/8/8/r7/6K1 w - - 0 1', // both rooks on their seventh
+  '6k1/r7/8/8/8/8/8/6K1 w - - 0 1', // a black rook on White's seventh
+  '4k3/8/8/3P4/4p3/8/8/4K3 w - - 0 1', // white passed, black not
+  '4k3/8/3p4/3P4/8/8/8/4K3 w - - 0 1', // blocked, neither passed
+  '4k3/8/8/3N4/2P5/8/8/4K3 w - - 0 1', // a supported outpost on d5
+  '4k3/2p5/8/3N4/2P5/8/8/4K3 w - - 0 1', // the c-pawn could chase it
+  '4k3/8/8/8/3N4/2P5/8/4K3 w - - 0 1', // too far back for an outpost
+  '4k3/6b1/6p1/8/8/6P1/6B1/4K3 w - - 0 1', // fianchettos both sides
+  '4k3/8/8/8/8/8/6B1/4K3 w - - 0 1', // the bishop without its pawn
+  '4k3/3p4/3p4/8/3P4/3P4/8/4K3 w - - 0 1', // doubled pawns both sides
 ];
+// One spec per motif, plus the sided and held shapes the UI sends.
 const MOTIF_SPECS: { why: string; raw: string }[] = [
-  { why: 'IQP, either side, any moment', raw: '{"id":"iqp"}' },
+  ...MOTIF_IDS.map((id) => ({ why: `${id}, either side, any moment`, raw: JSON.stringify({ id }) })),
   { why: "white's IQP held four moves", raw: '{"id":"iqp","side":"white","stable":8}' },
   { why: "black's IQP held three plies", raw: '{"id":"iqp","side":"black","stable":3}' },
-  { why: 'opposite-side castling', raw: '{"id":"opposite-castling"}' },
+  { why: "black's Greek gift", raw: '{"id":"greek-gift","side":"black"}' },
+  { why: "white's passed pawn held two plies", raw: '{"id":"passed-pawn","side":"white","stable":2}' },
+  { why: "black's rook on the seventh", raw: '{"id":"rook-on-seventh","side":"black"}' },
   { why: 'opposite-side castling, the game going on three plies', raw: '{"id":"opposite-castling","stable":3}' },
 ];
 const motifSpecs = MOTIF_SPECS.map(({ why, raw }) => {
@@ -539,21 +601,32 @@ const motifSpecs = MOTIF_SPECS.map(({ why, raw }) => {
   return {
     why,
     canonical: canonicalMotif(spec),
-    // The board predicate is the IQP's alone; opposite castling has no
-    // per-position truth to pin.
+    // The board predicate per position, for the board kinds; the
+    // castling and move kinds have no per-position truth to pin.
     cases:
-      spec.id === 'iqp'
-        ? MOTIF_FENS.map((fen) => ({ fen, satisfied: iqpSatisfied(boardOf(fen), spec.side) }))
+      MOTIF_KIND[spec.id] === 'board'
+        ? MOTIF_FENS.map((fen) => ({
+            fen,
+            satisfied: boardMotifSatisfied(boardOf(fen), spec.id, spec.side),
+          }))
         : [],
     hits: games.map((game) => replayMotifHit(game.moves, spec)),
   };
 });
 for (const spec of motifSpecs) {
-  if (!spec.hits.some((h) => h !== null) || !spec.hits.some((h) => h === null)) {
-    throw new Error(`motif spec "${spec.why}" never splits the game set — its replay goldens are inert`);
-  }
-  if (spec.cases.length > 0 && (!spec.cases.some((c) => c.satisfied) || !spec.cases.some((c) => !c.satisfied))) {
+  // Fixtures that never both answer are fixtures testing nothing: a
+  // board motif must split the FEN set, and every motif must split the
+  // game set — except the opposite-bishops ending, which no hand-written
+  // opening reaches in thirty plies; its FEN cases carry the positive
+  // side, and its all-null hits still hold the replay to the same
+  // answer.
+  const hitsSplit = spec.hits.some((h) => h !== null) && spec.hits.some((h) => h === null);
+  const casesSplit = spec.cases.some((c) => c.satisfied) && spec.cases.some((c) => !c.satisfied);
+  if (spec.cases.length > 0 && !casesSplit) {
     throw new Error(`motif spec "${spec.why}" never splits the FEN set — its predicate goldens are inert`);
+  }
+  if (!hitsSplit && !spec.why.startsWith('opposite-bishops')) {
+    throw new Error(`motif spec "${spec.why}" never splits the game set — its replay goldens are inert`);
   }
 }
 
@@ -596,7 +669,7 @@ const constants = {
 };
 
 const goldens = {
-  schema: 4,
+  schema: 5,
   generator: 'scripts/export-native-goldens.ts',
   refMaxPly: REF_MAX_PLY,
   fens,
@@ -607,6 +680,10 @@ const goldens = {
   signatures,
   materialSpecs,
   motifSpecs,
+  /** Every motif id, so the crate's SUPPORTED_SCAN is held to this list
+      — a motif added here without its `motif:<id>` token there would
+      silently stay on the JS path forever. */
+  motifIds: [...MOTIF_IDS],
   sql,
   constants,
 };
