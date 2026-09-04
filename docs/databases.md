@@ -157,10 +157,15 @@ What a built database answers, and from where:
   fan out from there, none containing another. Loosening down the
   chain only adds games; switching between the three loose rungs can
   lose and gain games at once. A material hunt picks an endgame
-  situation — the presets are data, `web/src/games/endgames.json`, from
-  pawn endgames to "a queen up" — or a custom per-piece, per-side count
-  editor, plus how long the material must hold (any moment, 4+ or 8+
-  moves). A motif hunt picks a pattern rather than a position or a
+  situation — the presets are data, `web/src/games/endgames.json`:
+  twenty-six of them, the symmetric endgames from pawns to queens, the
+  unbalanced ones (rook and pawns against a rook, queen against two
+  rooks), the middlegame classes (queenless, heavy pieces only) and
+  the imbalances from a pawn up to three minor pieces against a queen.
+  An imbalance counts from White's side: "a queen up" finds the games
+  where White was a queen up, and the custom editor is where to ask
+  for Black — or a custom per-piece, per-side count editor, plus how
+  long the material must hold (any moment, 4+ or 8+ moves). A motif hunt picks a pattern rather than a position or a
   count — what the ladder cannot express, and never a query language
   (`docs/deferred.md` records that line). Twelve are offered, each a
   fixed definition (`shared/scanMotif.ts`) and each somebody's unless

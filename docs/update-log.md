@@ -21,6 +21,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   let through, so they cost what a hunt costs without fast search; the
   native core answers them too, and a binary from before them leaves
   them to the server.
+- **Sixteen more material presets.** The material hunt's list grows
+  from ten to twenty-six: the double rook, rook and bishop and rook
+  and knight endgames, rook and pawns against a rook, a rook against
+  pawns, a queen against a rook or two, heavy pieces only, and the
+  imbalances from a pawn up through a minor piece or a rook up to the
+  bishop pair against bishop and knight or two knights, rook and
+  bishop against rook and knight, and three minor pieces against a
+  queen. An imbalance counts from White's side, as “A queen up” always
+  did; the docs now say so.
 - **Study and note cards are shorter.** A card on the Studies and
   Notes shelves reserved two lines of name and two of preview, and
   most needed one of each, so every card carried a band of nothing
