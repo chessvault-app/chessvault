@@ -7,6 +7,25 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Games search rows fit a phone.** While you type in a Games
+  tab's search field it takes the whole row, the buttons beside it
+  stepping aside until you leave; before, the collection's box was
+  140px between Cancel, the bookmark switch and the filters, too short
+  to read a qualifier back. Picking a qualifier or a value from the
+  hints panel now puts the caret after what it added and scrolls the
+  field to show it, where it used to stay mid-word with the end of the
+  query off the right edge. The row that says how many games there are
+  stands one height across the four tabs on touch; the collection's
+  was 8px shorter than the others'. The archive tabs' row is the
+  username, the globe and the filters button below the phone width:
+  the month select moves into the “More filters” window as its own
+  **Archive month** field, applied with the rest, since in
+  the row it left the username about 108px. That window drops its
+  Player row for the archives, where the player is fixed by the
+  username and the row restated the side-and-result fields beneath it;
+  and in every tab's window the Player name takes a line of its own
+  below the phone width, side and outcome beneath it, where it had
+  about 90px beside two selects.
 - **The phone's home has chess on it.** The Continue card leads with
   your latest study's position as a small board at every width; it was
   desktop-only, and the phone drew the same study as a text row. The
