@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Notes open again.** Since the build started keeping the editor in
+  a chunk of its own, opening any note showed “Something went wrong”:
+  one small library the editor needs at load time had been split into
+  the note page's chunk, the two chunks imported each other, and the
+  editor's came up first with nothing to read. The note itself was
+  always saved. The editor's chunk now carries every library it loads
+  with, and the build refuses to produce two chunks that import each
+  other, so this shape of mistake cannot ship again.
 - **The databases browser hunts by motif.** “Search by” gains Motif
   beside Position and Material, with twelve patterns: an isolated
   queen's pawn, doubled pawns, a passed pawn, a rook on the seventh, a

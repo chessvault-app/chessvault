@@ -2,7 +2,47 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
+import type { Plugin } from 'vite';
 import { licenses } from './vite.licenses.ts';
+
+/**
+ * Fail the build on a cycle between chunks. Rolldown will happily emit
+ * two chunks that import each other; whichever evaluates second sees
+ * the other's exports, and the first sees `undefined` for anything it
+ * reads at module load. That is silent at build time and a crash at
+ * run time — the editor chunk did exactly this when a manual group
+ * split a package from its dependency (see codeSplitting below). Only
+ * static imports count: a dynamic import is a request made later, not
+ * an evaluation order.
+ */
+function noChunkCycles(): Plugin {
+  return {
+    name: 'no-chunk-cycles',
+    generateBundle(_options, bundle) {
+      const edges = new Map<string, string[]>();
+      for (const [file, out] of Object.entries(bundle)) {
+        if (out.type === 'chunk') edges.set(file, out.imports);
+      }
+      const state = new Map<string, 'open' | 'done'>();
+      const walk = (file: string, path: string[]): void => {
+        const seen = state.get(file);
+        if (seen === 'done') return;
+        if (seen === 'open') {
+          const cycle = [...path.slice(path.indexOf(file)), file].join(' -> ');
+          throw new Error(
+            `chunks import each other, and the first to evaluate reads undefined: ${cycle}. ` +
+              'A manual group has probably split a package from a dependency it uses at module load; ' +
+              'add the dependency to the group (see codeSplitting in web/vite.config.ts).',
+          );
+        }
+        state.set(file, 'open');
+        for (const next of edges.get(file) ?? []) walk(next, [...path, file]);
+        state.set(file, 'done');
+      };
+      for (const file of edges.keys()) walk(file, []);
+    },
+  };
+}
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -25,7 +65,7 @@ export default defineConfig({
   // a blocking stylesheet means the first thing painted is a styled page
   // rather than an unstyled flash. (vite.launchScreen.ts, which deferred
   // it, went with the launch screen it existed for.)
-  plugins: [react(), tailwindcss(), licenses()],
+  plugins: [react(), tailwindcss(), licenses(), noChunkCycles()],
   // Stated false so it FOLDS. `isDemo()` guards on
   // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
   // absent but cannot be evaluated at build time — so the demo's dynamic
@@ -124,12 +164,32 @@ export default defineConfig({
          * fragments, several under 1 kB, for no fewer eager bytes. The
          * automatic split already keeps each route's primitives with the
          * route.
+         *
+         * The `editor` group must be CLOSED under the stack's own small
+         * dependencies, which is what the second half of its pattern
+         * is. With only the named packages in it, prosemirror-history's
+         * rope-sequence fell into the NoteView chunk, so the editor
+         * chunk imported from the view chunk that imports it; rolldown
+         * evaluated the editor chunk first, its import was still
+         * undefined, and `Branch.empty = new Branch(RopeSequence.empty)`
+         * threw at module load: every note page opened to the error
+         * boundary, and shipped that way on 2026-09-04. Each package
+         * listed is reached only through TipTap, ProseMirror or
+         * markdown-it (`npm ls` says so), so the group grows by their
+         * few kilobytes and nothing eager. use-sync-external-store and
+         * @floating-ui are deliberately NOT here: both are shared with
+         * the boot path (see above). noChunkCycles fails the build if
+         * two chunks ever import each other again.
          */
         codeSplitting: {
           includeDependenciesRecursively: false,
           groups: [
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 3 },
-            { name: 'editor', test: /node_modules[\\/](@tiptap|prosemirror-[a-z-]+|markdown-it)[\\/]/, priority: 2 },
+            {
+              name: 'editor',
+              test: /node_modules[\\/](@tiptap|prosemirror-[a-z-]+|markdown-it|rope-sequence|orderedmap|w3c-keyname|linkify-it|linkifyjs|mdurl|uc\.micro|entities|punycode\.js|fast-equals)[\\/]/,
+              priority: 2,
+            },
           ],
         },
       },
