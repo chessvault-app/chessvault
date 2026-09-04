@@ -13,7 +13,7 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/components/ui/button';
 
 import { Select } from '@/components/ui/select';
-import { ClearableInput } from '@/components/text-fields';
+import { ClearableInput, searchRowClass } from '@/components/text-fields';
 import { InputGroupButton } from '@/components/ui/input-group';
 import ENDGAMES from './endgames.json';
 import {
@@ -1451,7 +1451,7 @@ export function DatabaseGames({
               back toward the old two rows with no second layout. Card
               mode keeps the stacked bands: a phone's rows are cards, and
               its chrome was never the problem. */}
-          <div className={cn('flex w-full items-center gap-1.5', merged && 'flex-wrap')}>
+          <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
             <QueryBox
               query={query}
               onQuery={onQuery}

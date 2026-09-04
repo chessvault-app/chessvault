@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CloudBoardArt } from '@/components/cloud-board-art';
 
 import { Select } from '@/components/ui/select';
-import { SearchInput } from '@/components/text-fields';
+import { SearchInput, searchRowClass } from '@/components/text-fields';
 import { Field } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -1057,7 +1057,7 @@ export function ArchiveBrowser({
   const filtersInRow = merged || folded;
   const toolbar = (
     <>
-        <div className={cn('flex items-center gap-1', merged && 'w-full flex-wrap gap-1.5')}>
+        <div className={cn('flex items-center gap-1', searchRowClass, merged && 'w-full flex-wrap gap-1.5')}>
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
           <SearchInput

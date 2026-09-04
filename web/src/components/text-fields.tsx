@@ -25,6 +25,18 @@ function emptyField(el: HTMLInputElement, then: 'stay' | 'leave'): void {
   else el.blur();
 }
 
+/**
+ * For the flex row a SearchInput leads: on a phone, while the field has
+ * focus, every sibling in the row is hidden so the field can take the
+ * whole line. The row does not wrap in card mode, so w-full on the field
+ * alone only shrank against the buttons beside it (the toolbar showed a
+ * 140px box between Cancel, the bookmark switch and the filters). The
+ * field, its Cancel and its hints panel are all inside the first child,
+ * so nothing a typing user needs goes with them. The search must be the
+ * row's first child.
+ */
+export const searchRowClass = 'max-sm:has-[[data-search-field]:focus]:*:not-first:hidden';
+
 /** Two sizes Cancel can be, matched to the field's. */
 const cancelSizes = {
   sm: 'h-7 pointer-coarse:h-9',
@@ -199,8 +211,8 @@ export function SearchInput({
         'relative inline-flex items-center',
         className,
         // The whole line, phones only, and only while it is being used.
-        // The toolbars wrap, so this takes a row of its own rather than
-        // squeezing the buttons beside it.
+        // The row it stands in hides everything beside it meanwhile (see
+        // searchRowClass); this fills the room that opens up.
         focused && 'max-sm:w-full',
       )}
     >

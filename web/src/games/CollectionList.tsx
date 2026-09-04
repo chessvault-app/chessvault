@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
+import { searchRowClass } from '@/components/text-fields';
 import { collectionLastCount, collectionWasNonEmpty } from './collection';
 
 import { t } from '@/lib/i18n';
@@ -554,7 +555,7 @@ export function CollectionList({
       // used to arrive pre-assembled in.
       toolbar={
         <div className="flex w-full flex-col gap-2">
-          <div className={cn('flex w-full items-center gap-1.5', merged && 'flex-wrap')}>
+          <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
             {search}
             {filtersInRow && filterControls}
             {merged ? (
