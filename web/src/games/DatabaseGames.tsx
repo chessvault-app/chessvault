@@ -4,7 +4,7 @@ import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
-import type { MatchMode } from '@shared/scanMatch';
+import { isSymmetricMaterial, mirrorMaterialSpec, type MatchMode } from '@shared/scanMatch';
 import type { MotifSide } from '@shared/scanMotif';
 
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
@@ -645,6 +645,12 @@ export function DatabaseGames({
   const [rung, setRung] = useState<MatchMode>('exact');
   const [presetId, setPresetId] = useState<string>(ENDGAMES[0]!.id);
   const [heldPlies, setHeldPlies] = useState(1);
+  // Whose situation a preset describes. Presets are written from
+  // White's side (the spec language has no "either colour"), and the
+  // browser mirrors one for Black; a symmetric preset reads the same
+  // either way and shows no side. The custom editor names its sides
+  // itself, so the knob stays out of its way.
+  const [materialSide, setMaterialSide] = useState<'white' | 'black'>('white');
   // The motif list is two files in one select: the pattern motifs
   // (motifs.json, a predicate the server replays) and the named pawn
   // structures (structures.json, a pawns-only sketch that runs the
@@ -725,11 +731,14 @@ export function DatabaseGames({
   const runHunt = useCallback(async (fenOverride?: string): Promise<void> => {
     // Resolved before any state moves: a custom pick with no spec has
     // nothing to run (the Search button is disabled then too).
+    const preset = ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!;
     const material =
       huntKind === 'material'
         ? presetId === 'custom'
           ? customSpec
-          : (ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!).spec
+          : materialSide === 'black'
+            ? mirrorMaterialSpec(preset.spec)
+            : preset.spec
         : null;
     if (huntKind === 'material' && !material) return;
     const mine = ++huntSeq.current;
@@ -843,6 +852,7 @@ export function DatabaseGames({
     rung,
     presetId,
     heldPlies,
+    materialSide,
     customSpec,
     structureEntry,
     motifEntry,
@@ -1604,6 +1614,23 @@ export function DatabaseGames({
               <SlidersHorizontal className="size-3.5" />
             </Button>
           )}
+          {presetId !== 'custom' &&
+            !isSymmetricMaterial((ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!).spec) && (
+              <Select
+                value={materialSide}
+                onValueChange={(v) => setMaterialSide(v as 'white' | 'black')}
+                ariaLabel={t('Which side has it')}
+                size="sm"
+                groups={[
+                  {
+                    options: [
+                      { value: 'white', label: t('White') },
+                      { value: 'black', label: t('Black') },
+                    ],
+                  },
+                ]}
+              />
+            )}
           <span className={tail}>
             <Select
               value={String(heldPlies)}

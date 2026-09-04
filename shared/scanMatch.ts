@@ -243,3 +243,45 @@ export function materialMenBounds(spec: MaterialSpec): {
   const [loB, hiB] = bounds(spec.black);
   return { loW, hiW, loB, hiB };
 }
+
+/** The loose shape a preset or an editor holds before the parser
+    normalises it: any block may be missing, and a range is whatever
+    the JSON says (the parser is the gate, not this type). */
+export interface MaterialSpecLike {
+  white?: Partial<Record<string, number[]>>;
+  black?: Partial<Record<string, number[]>>;
+  diff?: Partial<Record<string, number[]>>;
+  stable?: number;
+}
+
+/**
+ * The same situation from the other side: White's block becomes
+ * Black's and every difference range flips sign. A preset is written
+ * once, from White's side, and the browser mirrors it when the user
+ * asks for Black — the spec language has no "either colour", so this
+ * is how one preset serves both. Mirroring twice is the identity, and
+ * a spec the mirror leaves unchanged (the parsed forms compare equal)
+ * is symmetric and needs no side at all.
+ */
+export function mirrorMaterialSpec<T extends MaterialSpecLike>(spec: T): T {
+  const diff: Partial<Record<string, number[]>> = {};
+  for (const [key, range] of Object.entries(spec.diff ?? {})) {
+    if (range) diff[key] = [-(range[1] ?? 0), -(range[0] ?? 0)];
+  }
+  const out: MaterialSpecLike = { ...spec };
+  delete out.white;
+  delete out.black;
+  delete out.diff;
+  if (spec.black !== undefined) out.white = spec.black;
+  if (spec.white !== undefined) out.black = spec.white;
+  if (spec.diff !== undefined) out.diff = diff;
+  return out as T;
+}
+
+/** Whether a spec reads the same from either side, so a side would
+    change nothing: the symmetric endgames, as against an imbalance. */
+export function isSymmetricMaterial(spec: MaterialSpecLike): boolean {
+  const a = parseMaterialSpec(JSON.stringify(spec));
+  const b = parseMaterialSpec(JSON.stringify(mirrorMaterialSpec(spec)));
+  return a !== null && b !== null && canonicalMaterial(a) === canonicalMaterial(b);
+}

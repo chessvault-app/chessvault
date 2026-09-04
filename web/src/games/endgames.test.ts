@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMaterialSpec } from '@shared/scanMatch';
+import { isSymmetricMaterial, parseMaterialSpec } from '@shared/scanMatch';
 import ENDGAMES from './endgames.json';
 
 /**
@@ -24,17 +24,23 @@ describe('material presets', () => {
     }
   });
 
-  it("counts an imbalance from White's side", () => {
-    // A preset whose diffs are all one-signed leans White's way: no
-    // preset asks for a range that only Black could satisfy.
-    for (const { id, spec } of ENDGAMES) {
-      const diff = (spec as { diff?: Record<string, [number, number]> }).diff ?? {};
-      for (const [key, [lo, hi]] of Object.entries(diff)) {
-        // The pieces White is meant to have more of never go negative,
-        // and what White gives up never goes positive.
-        if (id === 'three-minors-vs-queen' && key === 'q') expect(hi).toBeLessThanOrEqual(0);
-        else if (lo > 0 || hi < 0) expect(lo > 0 ? lo : hi, `${id}.${key}`).not.toBe(0);
-      }
-    }
+  it('knows which presets are symmetric, so only an imbalance shows a side', () => {
+    // Written from White's side and mirrored on request; the symmetric
+    // ones read the same either way and take no side. A new preset
+    // lands in one list or the other, on purpose.
+    const symmetric = ENDGAMES.filter((e) => isSymmetricMaterial(e.spec)).map((e) => e.id);
+    expect(symmetric).toEqual([
+      'pawn',
+      'knight',
+      'bishop',
+      'bishop-vs-knight',
+      'rook',
+      'double-rook',
+      'rook-bishop',
+      'rook-knight',
+      'queen',
+      'queenless-middlegame',
+      'heavy-pieces',
+    ]);
   });
 });

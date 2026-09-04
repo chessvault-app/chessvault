@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { parseFen } from 'chessops/fen';
 import {
   canonicalMaterial,
+  isSymmetricMaterial,
   matchSignature,
   materialMenBounds,
   materialSatisfied,
+  mirrorMaterialSpec,
   parseMaterialSpec,
 } from './scanMatch.ts';
 
@@ -127,5 +129,47 @@ describe('materialMenBounds', () => {
       loB: 2, // king + one rook
       hiB: 16, // everything else unconstrained — capped at the board
     });
+  });
+});
+
+describe('mirrorMaterialSpec', () => {
+  it('swaps the sides and flips every difference', () => {
+    expect(mirrorMaterialSpec({ diff: { q: [1, 9] } })).toEqual({ diff: { q: [-9, -1] } });
+    expect(
+      mirrorMaterialSpec({
+        white: { r: [1, 1], p: [1, 8] },
+        black: { r: [1, 1], p: [0, 0] },
+        diff: { major: [1, 10], minor: [-10, -1] },
+        stable: 4,
+      }),
+    ).toEqual({
+      white: { r: [1, 1], p: [0, 0] },
+      black: { r: [1, 1], p: [1, 8] },
+      diff: { major: [-10, -1], minor: [1, 10] },
+      stable: 4,
+    });
+    // A missing block stays missing rather than becoming an empty one.
+    expect(mirrorMaterialSpec({ white: { q: [0, 0] } })).toEqual({ black: { q: [0, 0] } });
+  });
+
+  it('is its own inverse, and the mirror satisfies the mirrored board', () => {
+    const spec = { white: { b: [2, 2], n: [0, 0] }, black: { b: [1, 1], n: [1, 1] }, diff: { p: [1, 3] } };
+    expect(mirrorMaterialSpec(mirrorMaterialSpec(spec))).toEqual(spec);
+    // White's bishop pair and a pawn up: true as written, true for
+    // Black through the mirror on the colours-swapped board.
+    const pair = board('2b1k1n1/pppp4/8/8/8/8/PPPPP3/2BBK3 w - - 0 1');
+    const swapped = board('2bbk3/ppppp3/8/8/8/8/PPPP4/2B1K1N1 w - - 0 1');
+    expect(materialSatisfied(pair, parseMaterialSpec(JSON.stringify(spec))!)).toBe(true);
+    expect(materialSatisfied(swapped, parseMaterialSpec(JSON.stringify(spec))!)).toBe(false);
+    expect(materialSatisfied(swapped, parseMaterialSpec(JSON.stringify(mirrorMaterialSpec(spec)))!)).toBe(true);
+  });
+
+  it('tells a symmetric situation from an imbalance', () => {
+    expect(isSymmetricMaterial({ white: { q: [0, 0] }, black: { q: [0, 0] } })).toBe(true);
+    expect(isSymmetricMaterial({ diff: { minor: [-1, 1], major: [-1, 1] } })).toBe(true);
+    expect(isSymmetricMaterial({ diff: { q: [1, 9] } })).toBe(false);
+    expect(isSymmetricMaterial({ white: { r: [1, 1] }, black: { q: [1, 1] } })).toBe(false);
+    // A spec that does not parse is nobody's symmetric.
+    expect(isSymmetricMaterial({})).toBe(false);
   });
 });
