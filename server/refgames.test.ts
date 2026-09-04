@@ -21,6 +21,7 @@ import {
   parseSearchQuery,
 } from '../shared/searchQuery.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
+import { openingKeysNamed } from './openings.ts';
 
 /**
  * The big dumps often carry no [Opening] header, so a built database
@@ -50,8 +51,12 @@ describe('opening names derived from moves', () => {
     db.prepare(
       'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).run('Bare', 'Headers', 2600, 2600, '1-0', '2026.02.02', null, null, null, 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6');
+    db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run('Carlsen, Magnus', 'Headers', 2850, 2600, '1-0', '2026.02.03', null, 'B33', null, 'e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 Nf6 Nc3 e5 Ndb5 d6');
     tune(db);
     db.close();
+    indexPositions(dbPath);
     refgames = refGamesApi(dbPath);
     app = new Hono().route('/api', refgames);
   });
@@ -69,6 +74,27 @@ describe('opening names derived from moves', () => {
     expect(rows[0].opening).toContain('Najdorf');
     expect(rows[0].eco).toBe('B90');
     expect(rows[0].moves).toBeUndefined(); // rides along server-side only
+  });
+
+  it('finds a nameless game by the catalogue name the box suggested', async () => {
+    // The box offers the vendored catalogue's names; the text column
+    // is NULL on this database, as on the big dumps. The name answers
+    // through the position index instead — the games through the
+    // catalogued positions that carry it — beside the player term.
+    const search = async (q: string): Promise<{ white: string; opening: string }[]> =>
+      (await (await app.request(`/api/refgames/search?q=${encodeURIComponent(q)}`)).json()).rows;
+    const exact = await search('player:"Carlsen, Magnus" opening:"Sicilian Defense: Lasker-Pelikan Variation"');
+    expect(exact.map((r) => r.white)).toEqual(['Carlsen, Magnus']);
+    expect(exact[0]!.opening).toContain('Lasker-Pelikan');
+    // A broader name is every line under it: both Sicilians.
+    expect((await search('opening:sicilian')).map((r) => r.white).sort()).toEqual(['Bare', 'Carlsen, Magnus']);
+    // The window's own field takes the same road.
+    const field = await (
+      await app.request(`/api/refgames/search?opening=${encodeURIComponent('Lasker-Pelikan')}`)
+    ).json();
+    expect(field.rows.map((r: { white: string }) => r.white)).toEqual(['Carlsen, Magnus']);
+    // A name the catalogue lacks still finds nothing here, honestly.
+    expect(await search('opening:xyzzy')).toEqual([]);
   });
 
   it('refuses a request carrying more box terms than a search can mean', async () => {
@@ -1280,6 +1306,42 @@ describe('native filter negotiation', () => {
     expect(gamesWhere((k) => (k === 'terms' ? 'not json' : undefined)).clauses).toEqual([]);
   });
 
+  it('answers an opening name through the catalogue positions when the index is there', () => {
+    const najdorf = openingKeysNamed('najdorf');
+    expect(najdorf.length).toBeGreaterThan(0);
+    const marks = najdorf.map(() => '?').join(',');
+    const term = gamesWhere(
+      (k) => (k === 'terms' ? JSON.stringify(parseSearchQuery('opening:najdorf').terms) : undefined),
+      'g.',
+      false,
+      true,
+    );
+    expect(term.clauses).toEqual([
+      `(g.opening LIKE ? OR g.id IN (SELECT game_id FROM plies WHERE pos IN (${marks})))`,
+    ]);
+    expect(term.binds).toHaveLength(1 + najdorf.length);
+    expect(term.binds[0]).toBe('%najdorf%');
+    expect(typeof term.binds[1]).toBe('bigint');
+    // The window's field keeps its ECO arm and gains the same positions.
+    const field = gamesWhere((k) => (k === 'opening' ? 'najdorf' : undefined), '', false, true);
+    expect(field.clauses).toEqual([
+      `(opening LIKE ? OR eco LIKE ? OR id IN (SELECT game_id FROM plies WHERE pos IN (${marks})))`,
+    ]);
+    // No catalogued line carries the name: the text arm alone, as before.
+    expect(
+      gamesWhere((k) => (k === 'opening' ? 'xyzzy' : undefined), '', false, true).clauses,
+    ).toEqual(['(opening LIKE ? OR eco LIKE ?)']);
+    // Without the index, nothing changes at all.
+    expect(
+      gamesWhere(
+        (k) => (k === 'terms' ? JSON.stringify(parseSearchQuery('opening:najdorf').terms) : undefined),
+        '',
+        false,
+        false,
+      ).clauses,
+    ).toEqual(['opening LIKE ?']);
+  });
+
   it('parses a declaration and rejects everything else', () => {
     expect(parseNativeCapabilities('{"filters":["result","player"]}\n')).toEqual({
       filters: new Set(['result', 'player']),
@@ -1323,7 +1385,23 @@ describe('native filter negotiation', () => {
     // declared ones: half-filtered fast is wrong, filtered slow is not.
     expect(undeclaredFilters(declared, query({ player: 'Carlsen', opening: 'B90' }))).toEqual([
       'opening',
+      'opening:positions',
     ]);
+    // An opening name is answered in positions, a token of its own: a
+    // binary that declares the `opening` key but not the token routes
+    // both spellings of the name, field and term, down the JS path.
+    const openingOnly = { ...declared, filters: new Set<string>(GAMES_WHERE_KEYS) };
+    expect(undeclaredFilters(openingOnly, query({ opening: 'najdorf' }))).toEqual(['opening:positions']);
+    expect(
+      undeclaredFilters(openingOnly, query({ terms: '[{"kind":"opening","value":"najdorf"}]' })),
+    ).toEqual(['opening:positions']);
+    expect(undeclaredFilters(openingOnly, query({ terms: '[{"kind":"eco","value":"B9"}]' }))).toEqual([]);
+    expect(
+      undeclaredFilters(
+        { ...openingOnly, filters: new Set<string>([...GAMES_WHERE_KEYS, 'opening:positions']) },
+        query({ opening: 'najdorf' }),
+      ),
+    ).toEqual([]);
     // Scan keys negotiate in their own field: a binary from before the
     // ladder declared no scan at all, so match/material stay JS.
     const preLadder = { filters: declared.filters, scan: new Set<string>(), deep: null };
@@ -1331,7 +1409,7 @@ describe('native filter negotiation', () => {
     expect(undeclaredFilters(preLadder, query({ material: '{}' }))).toEqual(['material']);
     // Present-but-empty still counts: both sides may ignore it today,
     // but "present means asked" is the one rule that needs no smarts.
-    expect(undeclaredFilters(declared, query({ opening: '' }))).toEqual(['opening']);
+    expect(undeclaredFilters(declared, query({ opening: '' }))).toEqual(['opening', 'opening:positions']);
     // A key that is not in the vocabulary never counts.
     expect(
       undeclaredFilters({ filters: new Set(), scan: new Set(), deep: null }, query({ fen: 'x', db: 'y' })),

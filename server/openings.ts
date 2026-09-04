@@ -171,6 +171,26 @@ export function openingForKey(hexKey: string): Opening | null {
   return entry ? { eco: entry[0], name: entry[1] } : null;
 }
 
+/**
+ * Every catalogued position whose name contains `needle`, as hex keys:
+ * the `opening:` qualifier's answer in positions. A name is a substring
+ * match, case-insensitive, the same test the text column gets, so
+ * "sicilian" is every Sicilian line's key and "Lasker-Pelikan" the
+ * handful that name it. The map is ~3,800 entries; a walk per request
+ * costs nothing next to the query it feeds.
+ */
+export function openingKeysNamed(needle: string): string[] {
+  const index = openingsIndex();
+  if (!index) return [];
+  const want = needle.toLowerCase();
+  if (!want) return [];
+  const keys: string[] = [];
+  for (const [key, [, name]] of Object.entries(index)) {
+    if (name.toLowerCase().includes(want)) keys.push(key);
+  }
+  return keys;
+}
+
 interface OpeningLine {
   eco: string;
   name: string;

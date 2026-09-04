@@ -121,7 +121,10 @@ What a built database answers, and from where:
   `opening:`, `eco:`, `event:`, `result:`, `year:`, `elo:` — the box's own
   panel documents it), parsed once in `shared/searchQuery.ts` for the server
   and the in-page collection search alike; impossible combinations
-  warn instead of silently finding nothing.
+  warn instead of silently finding nothing. An opening name matches the
+  catalogue's positions as well as the source's own `Opening` text, so
+  the names the box suggests find games on a database whose PGN carried
+  none (the big dumps), the same way the explorer names them.
 - The same browser **hunts by position or material**. The scan-search
   toggle beside the search box unfolds the controls. A position hunt
   takes a FEN — pasted, or set up on a board — and how closely to
