@@ -701,7 +701,7 @@ export function HomePage() {
     /**
      * Drawn on a phone and not on a desktop, which has somewhere better
      * to say the same thing: the repertoire reminder lives in the Training
-     * panel, and the last study is the board above these rows.
+     * panel.
      *
      * A flag rather than the `md:hidden` it used to be written as, because
      * two things now read it — the class on the row, and the count of rows
@@ -714,16 +714,15 @@ export function HomePage() {
     data === null
       ? []
       : [
-          ...(data.lastStudy
+          // The board above says this at every width once the study has a
+          // position, so the row is only for a study that has none.
+          ...(data.lastStudy && !data.lastStudy.fen
             ? [
                 {
                   icon: Library,
                   label: baseName(data.lastStudy.id),
                   detail: t('Continue study'),
                   go: () => navigate('studies', encodeURIComponent(data.lastStudy!.id)),
-                  // The board above says this on any screen wide enough to
-                  // draw it, so the row would be the same study twice.
-                  ...(data.lastStudy.fen ? { phoneOnly: true } : {}),
                 },
               ]
             : []),
@@ -948,7 +947,7 @@ export function HomePage() {
               {t('Continue')}
             </h2>
             {reserved.board && (
-              <div className="border-border hidden items-center gap-3 border-b px-3 py-3 md:flex">
+              <div className="border-border flex items-center gap-3 border-b px-3 py-3">
                 <Skeleton className="size-24 shrink-0 rounded-sm" />
                 <span className="min-w-0 flex-1">
                   <Skeleton className="h-5 w-44 max-w-full" />
@@ -997,7 +996,7 @@ export function HomePage() {
             ))}
           </div>
         )}
-        {effective.continueCard && continueRows.length > 0 && (
+        {effective.continueCard && (continueRows.length > 0 || boardStudy !== null) && (
           <div
             className={cn(
               'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border',
@@ -1020,14 +1019,20 @@ export function HomePage() {
                 No extra request: this is the eager landing chunk, and
                 MiniBoard is a FEN parser with no dependency on the real
                 board.
-                Desktop only. The phone's Continue is a launcher and its
-                rows are the whole point of the screen; a 96px board above
-                them would push the targets under the fold. */}
+                At every width. It was desktop-only, on the grounds that a
+                96px board would push the phone's targets under the fold,
+                and the phone drew the study as a text row instead. That
+                left the launcher of a chess app with no chess on it. The
+                board row replaces that text row rather than sitting above
+                it, so the card grows by the board less a row, 77px at the
+                comfortable rung (a 121px row for a 44px one, measured on
+                the demo at 375px), and stays the
+                first thing on screen. */}
             {boardStudy?.fen && (
               <button
                 type="button"
                 onClick={() => navigate('studies', encodeURIComponent(boardStudy.id))}
-                className="border-border hover:bg-accent hidden w-full items-center gap-3 border-b px-3 py-3 text-left transition-colors duration-100 md:flex"
+                className="border-border hover:bg-accent flex w-full items-center gap-3 border-b px-3 py-3 text-left transition-colors duration-100"
               >
                 <MiniBoard fen={boardStudy.fen} size={96} className="shrink-0 rounded-sm" />
                 <span className="min-w-0 flex-1">

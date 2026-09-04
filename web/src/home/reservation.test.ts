@@ -56,7 +56,7 @@ describe('parseContinueShape', () => {
   });
 
   it('reads no desktop rows as a real answer, not a missing one', () => {
-    // A board and a repertoire reminder: the phone draws two rows, the
+    // A board over two phone-only reminders: the phone draws the rows, the
     // desktop draws the board and none.
     expect(parseContinueShape(stored({ rows: 2, mdRows: 0, board: true }))).toEqual({
       rows: 2,
@@ -116,7 +116,7 @@ describe('continueReservation', () => {
     // The floor is not a number picked to be safe: it is the shape the
     // welcome study produces, which is what the launch it stands in for
     // writes back. Measured on this repo's own vault.
-    expect(WELCOME_SHAPE).toEqual({ rows: 1, mdRows: 0, board: true });
+    expect(WELCOME_SHAPE).toEqual({ rows: 0, mdRows: 0, board: true });
     expect(continueReservation(stored(WELCOME_SHAPE))).toEqual(WELCOME_SHAPE);
   });
 });
@@ -135,7 +135,7 @@ describe('shownOnDesktop', () => {
 
   it('draws the welcome vault on both, which is why its floor is worth reserving', () => {
     expect(shownOnDesktop(WELCOME_SHAPE)).toBe(true);
-    expect(WELCOME_SHAPE.rows).toBeGreaterThan(0);
+    expect(WELCOME_SHAPE.board).toBe(true);
   });
 });
 

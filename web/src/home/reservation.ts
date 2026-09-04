@@ -10,12 +10,11 @@
  * launch, and corrected by whatever the vault says.
  *
  * Three facts rather than one count, because the phone's card and the
- * desktop's are not the same card. The board is desktop-only; the
- * repertoire reminder is phone-only, as is the last study once there is a
- * board above to say the same thing. One count reserved the PHONE's rows
- * on a desktop, so the page settled upwards by as much as two rows — a
- * jump in the other direction is not an improvement on the jump it
- * replaced.
+ * desktop's are not the same card. The repertoire reminder is phone-only,
+ * and the board, drawn at every width, is not a row at all. One count
+ * reserved the PHONE's rows on a desktop, so the page settled upwards by
+ * as much as two rows — a jump in the other direction is not an
+ * improvement on the jump it replaced.
  *
  * Kept out of HomePage.tsx and free of React so it can be tested: the
  * repo's vitest runs in a node environment over `.ts` files, and both bugs
@@ -30,7 +29,7 @@ export interface ContinueShape {
       0, for a card that is a board and a repertoire reminder and nothing
       else. Never more than `rows`, since the desktop hides a subset. */
   mdRows: number;
-  /** Whether the desktop card leads with the last study's position. */
+  /** Whether the card leads with the last study's position. */
   board: boolean;
 }
 
@@ -49,8 +48,8 @@ export const MAX_ROWS = 4;
 
 /**
  * What a vault holds before anybody has done anything with it: the welcome
- * study, whose first chapter has a position (server/welcome.ts). So a
- * desktop draws its board and no rows, and a phone draws the one row.
+ * study, whose first chapter has a position (server/welcome.ts). So every
+ * width draws its board and no rows.
  *
  * This is the reservation for a device with no stored hint, and it is a
  * floor rather than a guess. The reasoning it replaced was that an unknown
@@ -67,7 +66,7 @@ export const MAX_ROWS = 4;
  * app. A richer vault than this is under-reserved and still moves, but by
  * less than the whole card.
  */
-export const WELCOME_SHAPE: ContinueShape = { rows: 1, mdRows: 0, board: true };
+export const WELCOME_SHAPE: ContinueShape = { rows: 0, mdRows: 0, board: true };
 
 /** A stored count as a count: a whole number of rows, capped, or none. */
 const rowCount = (v: unknown): number =>
@@ -109,7 +108,8 @@ export function parseContinueShape(raw: string | null): ContinueShape | null {
 export function continueReservation(raw: string | null): ContinueShape | null {
   const stored = parseContinueShape(raw);
   if (stored === null) return WELCOME_SHAPE;
-  return stored.rows > 0 ? stored : null;
+  // A board with no rows under it is still a card, at every width.
+  return stored.rows > 0 || stored.board ? stored : null;
 }
 
 /**
