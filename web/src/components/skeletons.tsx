@@ -170,12 +170,14 @@ export function SkeletonCards({
         className={cn(
           'min-w-0 flex-1',
           // The card's own rule (shelf-card): every grid card reserves the
-          // fullest text column, two title lines + meta + two preview
-          // lines, and centres what it holds, so the settled card is 135px
+          // fullest text column, two title lines + meta + one preview
+          // line, and centres what it holds, so the settled card is 114px
           // whatever its words do. The placeholder measures the same
           // without a stored height, and draws its one title line where
-          // the card would centre one.
-          grid && 'flex min-h-[6.95rem] flex-col justify-center',
+          // the card would centre one. From sm up only, as on the card:
+          // the one-column phone shelf reserves nothing, and its card is
+          // the height of these lines.
+          grid && 'flex flex-col justify-center sm:min-h-[5.6rem]',
         )}
       >
         {/* Title on a 24px line, then the quiet stat line on 16. */}
@@ -186,18 +188,12 @@ export function SkeletonCards({
           <Skeleton className="h-2 w-1/5" />
         </div>
         {grid && (
-          // TWO lines of excerpt, the card's own line-clamp-2. This was
-          // one line on the strength of an 88-90px measurement that had
-          // gone stale (a 43px excerpt block stood the reservation 21.5px
-          // short per row). The column's min-height above now sets the
-          // card's 135px either way; these lines are what the placeholder
-          // looks like. Wrapped lines meet, so the two boxes carry no gap.
-          <div className="mt-1">
-            {['w-full', 'w-2/3'].map((w) => (
-              <div key={w} className="flex h-[1.35rem] items-center">
-                <Skeleton className={cn('h-2', w)} />
-              </div>
-            ))}
+          // One line of excerpt, the card's own line-clamp-1, on the
+          // card's 1.35rem line. The column's min-height above sets the
+          // card's 114px either way; this line is what the placeholder
+          // looks like.
+          <div className="mt-1 flex h-[1.35rem] items-center">
+            <Skeleton className="h-2 w-2/3" />
           </div>
         )}
       </div>

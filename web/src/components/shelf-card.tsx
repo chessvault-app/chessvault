@@ -147,17 +147,23 @@ export function ShelfCard({
             className={cn(
               'min-w-0 flex-1',
               // One height for every grid card, whatever its words do. A
-              // title takes one line or two and the preview zero, one or
-              // two, so rows stepped between 111 and 135px on a shelf
-              // with short names beside long ones (lanph3re's report).
-              // The column reserves the fullest card's text, two title
-              // lines (3rem) + the meta line (1rem) + its mt-1 (0.25rem)
-              // + two preview lines (2.7rem), and centres what it has, so
-              // a short title stays packed against its meta line rather
-              // than pinned to the top of an empty box. Measured at 1280
-              // on the demo's shelf with five names shortened and three
-              // previews removed: 111/114/135 before, 135 throughout after.
-              layout === 'grid' && 'flex min-h-[6.95rem] flex-col justify-center',
+              // title takes one line or two and the preview zero or one,
+              // so rows stepped on a shelf with short names beside long
+              // ones (lanph3re's report). The column reserves the fullest
+              // card's text, two title lines (3rem) + the meta line (1rem)
+              // + its mt-1 (0.25rem) + one preview line (1.35rem), and
+              // centres what it has, so a short title stays packed against
+              // its meta line rather than pinned to the top of an empty
+              // box. Measured at 1280 on the demo's shelf: 135px a card
+              // when two preview lines were reserved, 114 with one; the
+              // second line was the band of nothing above and below every
+              // short title, and it cost a fifth of the shelf's height.
+              //
+              // From sm up only: below it the grid is one column, where no
+              // card has a neighbour to stay level with, so a phone card
+              // is as tall as its own words (90px with a one-line title,
+              // measured at 390) rather than 114 with a band of nothing.
+              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[5.6rem]',
             )}
           >
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
@@ -192,7 +198,10 @@ export function ShelfCard({
             </p>
             {/* Three steps, not two: the name is the brightest thing on the
                 card, the stat line is the quietest, and the note's own
-                words sit between them. */}
+                words sit between them. One line of those words: the card
+                is a reminder of what is inside, and the second line was
+                21px on every card of the shelf for a clause that the open
+                note shows whole. */}
             <p className="text-muted-foreground text-xs leading-4">
               {marked && (
                 <Bookmark
@@ -203,7 +212,7 @@ export function ShelfCard({
               {meta}
             </p>
             {preview && layout === 'grid' && (
-              <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-[1.35rem] opacity-90">
+              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.35rem] opacity-90">
                 {preview}
               </p>
             )}
