@@ -1,7 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-/** The band's height, the shell's overlay and the page's band agreeing. */
-const TITLE_BAR_HEIGHT = 32;
+/** The band's height, the shell's overlay and the page's band agreeing:
+    40px, the height Windows 11 apps draw their own bars at (measured on
+    the Claude desktop app: a 40px band, icons on a 40px pitch). */
+const TITLE_BAR_HEIGHT = 40;
 
 // Shell configuration only — the app itself never sees this surface.
 contextBridge.exposeInMainWorld('vaultShell', {

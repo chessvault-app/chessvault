@@ -124,6 +124,9 @@ export function TitleBar() {
   }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   if (!shell) return null;
+  // 36px buttons on a 40px pitch in a 40px band, the spacing Windows 11
+  // apps draw their own bars at (measured on the Claude desktop app).
+  const size = 'icon-lg';
   const icon = 'size-4';
   // The application menu's verbs, in the app's own menu and language.
   // The shell runs them by name (desktop/main.mjs, `commands`).
@@ -145,7 +148,7 @@ export function TitleBar() {
       // app predates the band still gives the window something to move by.
       id="title-bar"
       className={cn(
-        'bg-background text-muted-foreground relative flex shrink-0 items-center gap-0.5 pl-1.5',
+        'bg-background text-muted-foreground relative flex shrink-0 items-center gap-1 pl-3.5',
         // macOS: the traffic lights sit at the left, in the band.
         shell.platform === 'darwin' && 'pl-20',
       )}
@@ -154,7 +157,7 @@ export function TitleBar() {
       <ActionMenu title={t('Menu')} actions={menu} open={menuOpen} onOpenChange={setMenuOpen}>
         <Button
           variant="ghost"
-          size="icon-sm"
+          size={size}
           title={t('Menu')}
           className="[-webkit-app-region:no-drag]"
           active={menuOpen}
@@ -166,7 +169,7 @@ export function TitleBar() {
       {md && (
         <Button
           variant="ghost"
-          size="icon-sm"
+          size={size}
           title={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
           className="[-webkit-app-region:no-drag]"
           onClick={() => setFolded(!folded)}
@@ -176,7 +179,7 @@ export function TitleBar() {
       )}
       <Button
         variant="ghost"
-        size="icon-sm"
+        size={size}
         title={t('Back')}
         className="[-webkit-app-region:no-drag]"
         disabled={!edges.back}
@@ -186,7 +189,7 @@ export function TitleBar() {
       </Button>
       <Button
         variant="ghost"
-        size="icon-sm"
+        size={size}
         title={t('Forward')}
         className="[-webkit-app-region:no-drag]"
         disabled={!edges.forward}

@@ -187,7 +187,7 @@ async function waitForServer(base) {
  * overlay's colours here are the dark ground the window opens on; the
  * page corrects them once its stylesheet has resolved.
  */
-const TITLE_BAR_HEIGHT = 32;
+const TITLE_BAR_HEIGHT = 40;
 const TITLE_BAR =
   process.platform === 'darwin'
     ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 12, y: (TITLE_BAR_HEIGHT - 12) / 2 } }
