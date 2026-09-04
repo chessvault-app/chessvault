@@ -1,4 +1,13 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { SlidersHorizontal, TriangleAlert } from 'lucide-react';
 import { useMediaQuery } from '@/lib/media';
 import {
@@ -651,9 +660,31 @@ export function QueryBox({
     onOpenChange?.(next);
   };
   const control = useRef<SearchQueryHintsHandle | null>(null);
+  // A pick from the panel rewrites the whole string, and a controlled
+  // input given a new value keeps its caret where it was, so the caret
+  // sat mid-word after "player:" replaced "pla" and the next keystroke
+  // landed inside the qualifier. The caret belongs after what was just
+  // added, which for every pick is the end. Done in a layout effect
+  // once the new value has reached the DOM, not in the pick handler,
+  // where the input still holds the old string.
+  const input = useRef<HTMLInputElement | null>(null);
+  const caretToEnd = useRef(false);
+  const pick = (next: string): void => {
+    caretToEnd.current = true;
+    onQuery(next);
+  };
+  useLayoutEffect(() => {
+    if (!caretToEnd.current) return;
+    caretToEnd.current = false;
+    const el = input.current;
+    if (!el) return;
+    const end = el.value.length;
+    el.setSelectionRange(end, end);
+  }, [query]);
   return (
     <div className={cn('relative min-w-0 flex-1', className)}>
       <SearchInput
+        ref={input}
         inputSize="sm"
         value={query}
         onChange={(e) => onQuery(e.target.value)}
@@ -673,7 +704,7 @@ export function QueryBox({
         highlight={<QueryHighlight query={query} />}
       />
       {open && (
-        <SearchQueryHints query={query} onPick={onQuery} suggest={suggest} controlRef={control} />
+        <SearchQueryHints query={query} onPick={pick} suggest={suggest} controlRef={control} />
       )}
     </div>
   );
