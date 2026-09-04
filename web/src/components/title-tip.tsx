@@ -40,7 +40,21 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * inner control rather than around it (openingmap/FieldRow, and the
  * chapter rows in studies/StudyView).
  */
-export function TitleTip({ title, children }: { title?: string; children: ReactElement }) {
+export function TitleTip({
+  title,
+  side,
+  children,
+}: {
+  title?: string;
+  /**
+   * Where the chip opens; TooltipContent's own default (top) when unset.
+   * A control at the edge of the window wants the side that faces the
+   * page: the folded sidebar's rows open to the right, so the chip never
+   * covers the row beneath, which is what the browser's bubble did.
+   */
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  children: ReactElement;
+}) {
   if (title === undefined) return children;
   return (
     <Tooltip>
@@ -50,7 +64,9 @@ export function TitleTip({ title, children }: { title?: string; children: ReactE
           on separate lines (the puzzle tiles); everywhere else the class
           costs nothing, since it only collapses runs of spaces the way
           `normal` already does. */}
-      <TooltipContent className="whitespace-pre-line">{title}</TooltipContent>
+      <TooltipContent className="whitespace-pre-line" side={side}>
+        {title}
+      </TooltipContent>
     </Tooltip>
   );
 }
