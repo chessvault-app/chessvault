@@ -79,7 +79,8 @@ is one connected body of work, and the links are what make it that.
   or bare material, with a hold requirement to tell a settled structure
   from a passing one. **By material situation**: endgame presets from
   the pawn endgame to "a queen up", or your own per-side, per-piece spec.
-  **By motif**: an isolated queen's pawn, opposite-side castling, or a
+  **By motif**: twelve patterns, from an isolated queen's pawn or a
+  knight outpost to opposite-side castling and the Greek gift, or a
   named pawn structure from the Carlsbad to the Stonewall.
   Exact position search answers in milliseconds on a ten-million-game
   corpus, and the relaxed and material hunts in tenths of a second with

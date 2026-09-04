@@ -161,16 +161,35 @@ What a built database answers, and from where:
   pawn endgames to "a queen up" — or a custom per-piece, per-side count
   editor, plus how long the material must hold (any moment, 4+ or 8+
   moves). A motif hunt picks a pattern rather than a position or a
-  count — the two the ladder cannot express, and never a query
-  language (`docs/deferred.md` records that line). **Isolated queen's
-  pawn**: for a side, exactly one pawn on the d-file, none on the c-
-  or e-file, and the opponent has no d-pawn, so a symmetrical
-  d4-against-d5 pair is not one; whose it is (whichever side, White or
-  Black) and how long it must hold, with four moves the default so a
-  recapture's passing isolani does not count. **Opposite-side
-  castling**: the two kings castled to different wings; the hit is the
-  position after the second castle, so the found game opens with both
-  kings just castled. The same list offers six named pawn structures —
+  count — what the ladder cannot express, and never a query language
+  (`docs/deferred.md` records that line). Twelve are offered, each a
+  fixed definition (`shared/scanMotif.ts`) and each somebody's unless
+  it is symmetric: whose it is (whichever side, White or Black) and,
+  for the board patterns, how long it must hold, with four moves the
+  default so a recapture's passing isolani does not count.
+  - **Isolated queen's pawn** — exactly one pawn on the d-file, none
+    on the c- or e-file, and the opponent has no d-pawn, so a
+    symmetrical d4-against-d5 pair is not one.
+  - **Doubled pawns** — two or more on one file. **Passed pawn** — no
+    enemy pawn ahead of it on its own or an adjacent file.
+  - **Rook on the seventh** — a rook on the seventh rank from its
+    side; "at any moment" by default, since a rook visits.
+  - **Fianchetto** — the bishop on g2 with its pawn on g3, or b2 with
+    b3 (g7/g6 and b7/b6 for Black): the structure, not the bishop.
+  - **Knight outpost** — a knight on its fifth or sixth rank,
+    supported by a pawn, on a square no enemy pawn can ever attack.
+  - **Opposite-coloured bishops** — one bishop each on different
+    colours and nothing else but kings and pawns: the ending. Nobody's.
+  - **Opposite-side castling** and **Same-side castling** — read off
+    the moves, not the board (a king on g1 may have walked there); the
+    hit is the position after the second castle, so the found game
+    opens with both kings just castled. Nobody's.
+  - **Greek gift** — a bishop takes the pawn on h7 with check beside a
+    king on g8 (h2 and g1 for Black), whether or not it is accepted.
+    **Underpromotion** — a promotion to anything but a queen. **En
+    passant** — the capture. Each is remembered from the move on, for
+    the side that played it.
+  The same list offers six named pawn structures —
   Carlsbad, French advance chain, King's Indian closed centre, Maróczy
   bind, Hedgehog, Stonewall — each a pawns-only sketch
   (`web/src/games/structures.json`, every pawn on its square) that
@@ -313,10 +332,11 @@ exact route settles: that one game replayed and verified. Nothing is
 answered from the pack alone.
 
 **A motif hunt is the one search the packs cannot gate.** The pack
-carries neither castling nor pawn squares, only a pawn-files hash, and
-the two motifs (`shared/scanMotif.ts`) ask exactly those: an isolated
-d-pawn is a fact about files a hash of them cannot single out, and
-castling is a fact about the moves. So a motif hunt replays every game
+carries neither castling nor squares, only a pawn-files hash, and the
+motifs (`shared/scanMotif.ts`) ask exactly those: an isolated d-pawn or
+an outpost is a fact about squares a hash cannot single out, and
+castling, a Greek gift or an en passant capture is a fact about the
+moves. So a motif hunt replays every game
 the filters let through — through the native binary where it is
 present, plain JavaScript otherwise — and never touches the packs, the
 key index or the resident scan. The native core is negotiated per
