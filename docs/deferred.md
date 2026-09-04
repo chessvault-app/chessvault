@@ -84,9 +84,6 @@ grows eventually, kept off until a use case actually asks for them —
   grates.
 - **Novelty detection** ("first played in…") — needs a big canonical
   corpus to mean anything.
-- **Canned motif filters** — a few curated pattern searches (isolated
-  queen's pawn, opposite-side castling), never a CQL-style query
-  language.
 - **Move-sequence / manoeuvre search** — Scid's `Rh8 ? R1h7`, ChessBase's
   wildcard manoeuvre patterns. The most complex search gap left, for a
   niche ask; a specific manoeuvre (Greek gift, rook lift) ships as a

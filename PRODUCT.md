@@ -93,7 +93,7 @@ multi-threaded) with move trees, comments, NAGs and arrows; game review
 with accuracy and brilliancy detection; an opening explorer over local
 reference databases, Lichess, and the user's own games; database search
 by query language, by position (exact through progressively loosened, to
-bare material) and by material situation; PDF book reading beside the
+bare material), by material situation and by motif; PDF book reading beside the
 board with a board button on printed diagrams; a puzzle trainer with a
 spaced review ladder (a day, then 3, 7 and 21) and Woodpecker-style book
 cycles; an opening map of the user's preparation, derived live from the

@@ -7,6 +7,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The databases browser hunts by motif.** “Search by” gains Motif
+  beside Position and Material: an isolated queen's pawn, whose it is
+  and how long it must hold, and opposite-side castling, found at the
+  position after the second castle. The same list offers six named
+  pawn structures, Carlsbad to Stonewall, each a pawns-only sketch on
+  the Same pawn structure rung. The two motifs replay every game the
+  filters let through, so they cost what a hunt costs without fast
+  search; the native core answers them too, and a binary from before
+  them leaves them to the server.
 - **Study and note cards are shorter.** A card on the Studies and
   Notes shelves reserved two lines of name and two of preview, and
   most needed one of each, so every card carried a band of nothing

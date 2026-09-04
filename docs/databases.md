@@ -125,8 +125,8 @@ What a built database answers, and from where:
   catalogue's positions as well as the source's own `Opening` text, so
   the names the box suggests find games on a database whose PGN carried
   none (the big dumps), the same way the explorer names them.
-- The same browser **hunts by position or material**. The scan-search
-  toggle beside the search box unfolds the controls. A position hunt
+- The same browser **hunts by position, material or motif**. The
+  scan-search toggle beside the search box unfolds the controls. A position hunt
   takes a FEN — pasted, or set up on a board — and how closely to
   match (`docs/deferred.md` records why this is a fixed ladder and not
   a query language). Concretely, per rung:
@@ -160,7 +160,25 @@ What a built database answers, and from where:
   situation — the presets are data, `web/src/games/endgames.json`, from
   pawn endgames to "a queen up" — or a custom per-piece, per-side count
   editor, plus how long the material must hold (any moment, 4+ or 8+
-  moves). Hits stream in as the scan runs, with progress; the filter
+  moves). A motif hunt picks a pattern rather than a position or a
+  count — the two the ladder cannot express, and never a query
+  language (`docs/deferred.md` records that line). **Isolated queen's
+  pawn**: for a side, exactly one pawn on the d-file, none on the c-
+  or e-file, and the opponent has no d-pawn, so a symmetrical
+  d4-against-d5 pair is not one; whose it is (whichever side, White or
+  Black) and how long it must hold, with four moves the default so a
+  recapture's passing isolani does not count. **Opposite-side
+  castling**: the two kings castled to different wings; the hit is the
+  position after the second castle, so the found game opens with both
+  kings just castled. The same list offers six named pawn structures —
+  Carlsbad, French advance chain, King's Indian closed centre, Maróczy
+  bind, Hedgehog, Stonewall — each a pawns-only sketch
+  (`web/src/games/structures.json`, every pawn on its square) that
+  runs the *Same pawn structure* rung, so the answer is exactly what
+  drawing that sketch on the editor's board would find. The motifs are
+  data too, `web/src/games/motifs.json`; through the API a motif holds
+  for one ply unless the request says otherwise, as a material spec
+  does. Hits stream in as the scan runs, with progress; the filter
   row above and the search box both narrow a hunt exactly as they
   narrow the text search — editing either re-runs an open hunt. The
   explorer's own **Find this position in the databases browser**
@@ -294,6 +312,19 @@ the rest, and every surviving candidate is settled the same way the
 exact route settles: that one game replayed and verified. Nothing is
 answered from the pack alone.
 
+**A motif hunt is the one search the packs cannot gate.** The pack
+carries neither castling nor pawn squares, only a pawn-files hash, and
+the two motifs (`shared/scanMotif.ts`) ask exactly those: an isolated
+d-pawn is a fact about files a hash of them cannot single out, and
+castling is a fact about the moves. So a motif hunt replays every game
+the filters let through — through the native binary where it is
+present, plain JavaScript otherwise — and never touches the packs, the
+key index or the resident scan. The native core is negotiated per
+motif (`motif:<id>` beside the `match:structure` token), so a motif the
+TypeScript side adds later stays on the JavaScript path until the
+crate declares it. The named pawn structures are structure-rung hunts
+and take every fast path like any other sketch.
+
 **Fast search is residency, not a different algorithm.** Opting a
 database in — the toggle on its row in the manager — loads its packs
 into one worker thread that owns them
@@ -348,6 +379,12 @@ scale down roughly linearly:
   (the resident scan). Without it, the same hunts stream through the
   native binary in ~30 s or plain JavaScript in minutes — slower,
   never unavailable.
+- **Motif hunts: the full-corpus replay, always.** No pack can gate
+  them, so fast search does not apply and they cost what the row above
+  costs without it; not yet measured at ten million games. On a
+  3,436-game database the ten motif hunts measured took 43–71 ms
+  through the native binary and 72–277 ms in JavaScript, answering
+  identically.
 - **Text search: 28–110 ms**, including the no-match case and rare
   players, via the lookup tables and the union-seek.
 

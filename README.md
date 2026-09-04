@@ -70,7 +70,7 @@ is one connected body of work, and the links are what make it that.
   Chess.com / Lichess archives browsed month by month with filters, and
   manual PGN import.
 - **Database search** — reference databases built from your own PGNs,
-  searched the way a desktop chess database searches, three ways. A
+  searched the way a desktop chess database searches, four ways. A
   **query language** for the who and the what — `player:`, `opponent:`,
   `opening:`, `eco:`, `event:`, `result:`, `year:`, `elo:` — with
   chips, suggestions and live warnings for a query that cannot match.
@@ -79,6 +79,8 @@ is one connected body of work, and the links are what make it that.
   or bare material, with a hold requirement to tell a settled structure
   from a passing one. **By material situation**: endgame presets from
   the pawn endgame to "a queen up", or your own per-side, per-piece spec.
+  **By motif**: an isolated queen's pawn, opposite-side castling, or a
+  named pawn structure from the Carlsbad to the Stonewall.
   Exact position search answers in milliseconds on a ten-million-game
   corpus, and the relaxed and material hunts in tenths of a second with
   fast search on —
