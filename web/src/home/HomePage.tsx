@@ -1105,9 +1105,15 @@ export function HomePage() {
               key={id}
               type="button"
               onClick={() => navigate(...nav)}
-              className="bg-card hover:bg-accent group flex flex-col items-start gap-2 rounded-xl ring-1 ring-border p-3.5 text-left transition-colors duration-100"
+              className="bg-card hover:bg-accent flex flex-col items-start gap-2 rounded-xl ring-1 ring-border p-3.5 text-left transition-colors duration-100"
             >
-              <Icon className="text-muted-foreground group-hover:text-primary size-4.5 transition-colors" />
+              {/* The accent at rest, not on hover. The glyph used to turn
+                  primary under the pointer, and this grid is drawn only
+                  below md, where the pointer is a thumb: the one colour
+                  designed into the tiles was unreachable on the one
+                  device that draws them. Now it is the page's colour,
+                  and Appearance's tint has somewhere on home to show. */}
+              <Icon className="text-primary size-4.5" />
               <span>
                 <span className="text-foreground block text-base font-medium">
                   {t(label)}
