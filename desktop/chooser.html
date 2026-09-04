@@ -36,6 +36,15 @@
       [hidden] {
         display: none !important;
       }
+      /* The shell hides the native title bar (main.mjs, TITLE_BAR); this
+         page has no band of its own, so its top 32px is the drag region
+         the window moves by, under the OS's overlaid controls. */
+      .drag {
+        position: fixed;
+        inset: 0 0 auto 0;
+        height: 32px;
+        -webkit-app-region: drag;
+      }
       body {
         margin: 0;
         min-height: 100vh;
@@ -183,6 +192,7 @@
     </style>
   </head>
   <body>
+    <div class="drag"></div>
     <div class="card" id="step1">
       <!-- The app's mark: a hexagon outline with one wedge filled. The same
            drawing as web/src/components/brand-mark.tsx and

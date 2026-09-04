@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The desktop app draws its own title bar.** The window's top band
+  is the app's: a ☰ that opens the application menu (which hid behind
+  Alt), the sidebar's fold, and back and forward through the app's
+  history, with the window's title in the middle. The OS still draws
+  the minimize, maximize and close buttons, in the app's colours, so
+  snap layouts and the rest of the window's behaviour are as they
+  were. A server whose app is older than the band still gives the
+  window a strip to move it by.
 - **The book's text can be selected.** A page in the reader is a
   picture no longer: its text can be dragged over and copied, as in any
   PDF reader, and the diagram buttons still take a press over it. A scan

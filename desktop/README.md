@@ -4,7 +4,7 @@
 
 Two modes, chosen on first launch (change later from the Desktop app
 card in Settings, whose Vault row has a Switch… button — or the Vault
-menu, which hides behind Alt):
+menu, from the ☰ at the left of the title bar):
 
 - **remote** — a window onto a Chess Vault server somewhere else. Pure
   client.

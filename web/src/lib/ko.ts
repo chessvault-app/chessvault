@@ -58,6 +58,7 @@ export const ko: Record<string, string> = {
   Loading: '불러오는 중',
 
   // --- common actions ------------------------------------------------------
+  Menu: '메뉴',
   Back: '뒤로',
   Forward: '앞으로',
   Start: '시작',

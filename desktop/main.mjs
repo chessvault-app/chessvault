@@ -182,6 +182,20 @@ async function waitForServer(base) {
   return false;
 }
 
+/**
+ * The band's height, the same number preload.cjs hands the page. The
+ * overlay's colours here are the dark ground the window opens on; the
+ * page corrects them once its stylesheet has resolved.
+ */
+const TITLE_BAR_HEIGHT = 32;
+const TITLE_BAR =
+  process.platform === 'darwin'
+    ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 12, y: (TITLE_BAR_HEIGHT - 12) / 2 } }
+    : {
+        titleBarStyle: 'hidden',
+        titleBarOverlay: { color: '#0a0a0a', symbolColor: '#fafafa', height: TITLE_BAR_HEIGHT },
+      };
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -193,6 +207,13 @@ function createWindow() {
     backgroundColor: '#0a0a0a',
     autoHideMenuBar: true,
     icon: join(here, 'icon.png'),
+    // The page draws the title bar (web/src/components/title-bar): the
+    // native one is hidden and the OS keeps only its window controls,
+    // as an overlay in the app's colours, which the page sends over as
+    // its theme changes (`window:title-bar-colors`). Native rather than
+    // hand-drawn controls keep snap layouts, DPI and accessibility as
+    // they were. On macOS the traffic lights stay, set into the band.
+    ...TITLE_BAR,
     // Chromium's defaults already isolate and sandbox, but the window that
     // carries the shell bridge states them itself: an Electron downgrade
     // or a changed default must not be able to regress this silently.
@@ -271,7 +292,34 @@ function createWindow() {
   return win;
 }
 
+/**
+ * A page that draws no band of its own — a remote server whose app is
+ * older than the hidden title bar — would leave the window with nothing
+ * to move it by. After every load of the app, a page without the band's
+ * element gets a bare strip across its top that is a drag region and
+ * nothing else; a page that has the band is left alone.
+ */
+function ensureDragStrip(win) {
+  win.webContents.on('did-finish-load', () => {
+    void win.webContents
+      .executeJavaScript(
+        `(() => {
+          if (document.getElementById('title-bar') || document.getElementById('title-bar-fallback')) return;
+          const strip = document.createElement('div');
+          strip.id = 'title-bar-fallback';
+          strip.style.cssText = 'position:fixed;top:0;left:0;right:0;height:${TITLE_BAR_HEIGHT}px;-webkit-app-region:drag;pointer-events:none;z-index:2147483647';
+          document.body.append(strip);
+        })()`,
+        true,
+      )
+      .catch(() => {
+        // A page that refuses scripts from outside: it keeps its own bar.
+      });
+  });
+}
+
 async function openApp(win) {
+  ensureDragStrip(win);
   const settings = readSettings();
   if (settings.mode === 'remote' && settings.url) {
     await win.loadURL(settings.url);
@@ -478,6 +526,33 @@ app.whenReady().then(async () => {
       properties: ['openDirectory', 'createDirectory'],
     });
     return picked.canceled ? null : (picked.filePaths[0] ?? null);
+  });
+
+  // The band's ☰: the application menu, dropped from the button. The
+  // page asks with the button's corner in its own coordinates, which is
+  // what popup wants.
+  ipcMain.handle('window:menu', (_e, x, y) => {
+    const menu = Menu.getApplicationMenu();
+    if (!menu) return;
+    menu.popup({
+      window: win,
+      x: Number.isFinite(x) ? Math.round(x) : undefined,
+      y: Number.isFinite(y) ? Math.round(y) : undefined,
+    });
+  });
+  // The overlay's ground and ink, from the page's resolved theme. Only
+  // where there is an overlay (not macOS), and only colours: the page
+  // may be a remote server's, so nothing else about the window is
+  // taken from it.
+  ipcMain.handle('window:title-bar-colors', (_e, colors) => {
+    if (process.platform === 'darwin' || !win.setTitleBarOverlay) return;
+    const ok = (v) => typeof v === 'string' && /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%/]+\))$/i.test(v.trim());
+    if (!ok(colors?.color) || !ok(colors?.symbolColor)) return;
+    try {
+      win.setTitleBarOverlay({ color: colors.color, symbolColor: colors.symbolColor, height: TITLE_BAR_HEIGHT });
+    } catch {
+      // A platform without the overlay: the band is still drawn by the page.
+    }
   });
 
   Menu.setApplicationMenu(

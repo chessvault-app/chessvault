@@ -41,6 +41,8 @@ import { TitleTip } from '@/components/title-tip';
 import { t, useLang } from '@/lib/i18n';
 import { useMediaQuery, useWorkspaceViewport } from '@/lib/media';
 import { isDemo } from '@/lib/demo';
+import { TitleBar } from '@/components/title-bar';
+import { foldedFrom, useSidebar } from '@/store/sidebar';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -234,6 +236,8 @@ function Shell() {
       >
         {t('Skip to content')}
       </a>
+      {/* The desktop shell's own top band, nothing in a browser. */}
+      <TitleBar />
       <DemoBanner />
       {/* The sidebar/main row. Separated from the shell so a full-width
           strip (the demo notice) can sit above BOTH rather than becoming a
@@ -501,40 +505,19 @@ function SubNavItem({
   );
 }
 
-/**
- * Whether the sidebar is folded to its icon rail — a reading preference,
- * per device, kept the way the Games details column's pin is
- * (games/CollectionView, PIN_KEY): written on every toggle and never
- * removed for agreeing with the default, because the default moves with
- * the window and a choice erased for matching it would be undone by a
- * resize.
- */
-const FOLD_KEY = 'vault:sidebar-folded';
-
 function Sidebar({ active, params }: { active: Section; params: string[] }) {
   // The workspace row appears only where the workspace can (see the note
   // on TOOLS_SUBNAV). A hook rather than a class: the list is what has to
   // know, the same reason media.ts gives for existing.
   const roomy = useWorkspaceViewport();
   const tools = TOOLS_SUBNAV.filter(({ key }) => key !== 'workspace' || roomy);
-  // null = nobody has chosen on this device, so the width decides: the
-  // labelled column from lg, the icon rail below it, which is what the
-  // rail always did before it could be asked.
+  // The fold lives in a store (store/sidebar): the desktop title bar has
+  // the same switch, and both must say the same thing.
   const lg = useMediaQuery('(min-width: 64rem)');
-  const [choice, setChoice] = useState<boolean | null>(() => {
-    const stored = localStorage.getItem(FOLD_KEY);
-    return stored === null ? null : stored === '1';
-  });
-  const folded = choice ?? !lg;
-  const toggleFold = (): void => {
-    const next = !folded;
-    setChoice(next);
-    try {
-      localStorage.setItem(FOLD_KEY, next ? '1' : '0');
-    } catch {
-      /* the session still remembers; it just will not survive a reload */
-    }
-  };
+  const choice = useSidebar((s) => s.choice);
+  const setFolded = useSidebar((s) => s.setFolded);
+  const folded = foldedFrom(choice, lg);
+  const toggleFold = (): void => setFolded(!folded);
   // Where the chip opens: to the right, off the rail and over the page,
   // so it covers no row beneath — which is what the browser's bubble did,
   // and why the rows carried no tip at all until they could fold.

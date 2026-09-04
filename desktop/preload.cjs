@@ -1,5 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+/** The band's height, the shell's overlay and the page's band agreeing. */
+const TITLE_BAR_HEIGHT = 32;
+
 // Shell configuration only — the app itself never sees this surface.
 contextBridge.exposeInMainWorld('vaultShell', {
   choose: (mode, url, vaultDir) => ipcRenderer.invoke('vault:choose', mode, url, vaultDir),
@@ -21,4 +24,15 @@ contextBridge.exposeInMainWorld('vaultShell', {
     return () => ipcRenderer.removeListener('app:update-status', listener);
   },
   restartToUpdate: () => ipcRenderer.invoke('app:restart-to-update'),
+  // The window's chrome. The shell hides the native title bar and keeps
+  // the OS's window controls as an overlay; the page draws the band
+  // itself (components/title-bar) and needs to know it may, where the
+  // controls are, and how tall the band is. The app menu, which hides
+  // behind Alt once the bar is gone, pops up from the band's own button.
+  titleBar: {
+    platform: process.platform,
+    height: TITLE_BAR_HEIGHT,
+    popupMenu: (x, y) => ipcRenderer.invoke('window:menu', x, y),
+    setColors: (colors) => ipcRenderer.invoke('window:title-bar-colors', colors),
+  },
 });
