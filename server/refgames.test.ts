@@ -1414,5 +1414,117 @@ describe('native filter negotiation', () => {
     expect(
       undeclaredFilters({ filters: new Set(), scan: new Set(), deep: null }, query({ fen: 'x', db: 'y' })),
     ).toEqual([]);
+    // A motif negotiates its key AND its id: the key says the binary
+    // replays motifs at all, the id that it knows this one, so a
+    // motif added later stays JS on a binary that lacks it while the
+    // ones it declared stay native.
+    const motifs = { ...declared, scan: new Set(['match', 'material', 'motif', 'motif:iqp']) };
+    expect(undeclaredFilters(motifs, query({ motif: '{"id":"iqp","stable":8}' }))).toEqual([]);
+    expect(undeclaredFilters(motifs, query({ motif: '{"id":"opposite-castling"}' }))).toEqual([
+      'motif:opposite-castling',
+    ]);
+    expect(undeclaredFilters(preLadder, query({ motif: '{"id":"iqp"}' }))).toEqual([
+      'motif',
+      'motif:iqp',
+    ]);
+    // A request that is not even a spec names no id: the key alone
+    // routes it, and the JS path refuses it.
+    expect(undeclaredFilters(motifs, query({ motif: 'nonsense' }))).toEqual([]);
+    expect(undeclaredFilters(preLadder, query({ motif: 'nonsense' }))).toEqual(['motif']);
+  });
+});
+
+describe('motif hunts through the route', () => {
+  let dir: string;
+  let app: Hono;
+  let refgames: ReturnType<typeof refGamesApi>;
+
+  // Hand-written games with the motifs in them (the plies are pinned
+  // by the replay tests in refgamesScan.test.ts): kings castled to
+  // opposite wings, a Tarrasch isolani that stands for three plies,
+  // and a game with neither.
+  const OPPOSITE = 'e4 e5 Nf3 Nc6 Bc4 Bc5 O-O d6 d3 Bg4 Nc3 Qd7 Be3 O-O-O a4 Nf6';
+  const TARRASCH =
+    'd4 d5 c4 e6 Nc3 c5 cxd5 exd5 Nf3 Nc6 g3 Nf6 Bg2 Be7 O-O O-O Bg5 cxd4 Nxd4 h6 Nxc6 bxc6';
+  const SAME_WING = 'e4 e5 Nf3 Nc6 Bc4 Bc5 O-O Nf6 Qe2 O-O';
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refgames-motif-'));
+    const dbPath = join(dir, 'games.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '3'), ('sources', 'test.pgn');
+    `);
+    const insert = db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    insert.run('Wings', 'Apart', 2500, 2500, '1-0', '2026.01.01', 'Motifs', 'C50', null, OPPOSITE);
+    insert.run('Isolani', 'Holder', 2500, 2500, '0-1', '2026.01.02', 'Motifs', 'D34', null, TARRASCH);
+    insert.run('Same', 'Wing', 2500, 2500, '1/2-1/2', '2026.01.03', 'Motifs', 'C50', null, SAME_WING);
+    tune(db);
+    db.close();
+    // The index pass writes the men and ply columns the route's
+    // prefilter reads, so the `stable - 1` length gate is exercised.
+    indexPositions(dbPath);
+    refgames = refGamesApi(dbPath);
+    app = new Hono().route('/api', refgames);
+  });
+
+  afterAll(async () => {
+    await refgames.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const run = async (query: string): Promise<Record<string, unknown>[]> => {
+    const res = await app.request(`/api/refgames/deep-search?${query}`);
+    expect(res.status).toBe(200);
+    // A motif never takes a fast path: the pack cannot answer one.
+    expect(res.headers.get('x-scan-path')).toBe('replay');
+    return (await res.text())
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  };
+  const games = async (query: string) =>
+    (await run(query)).filter((f) => f.type === 'game').map((g) => [g.white, g.ply]);
+
+  it('finds each motif at the ply the reference replay says', async () => {
+    expect(await games(`motif=${encodeURIComponent('{"id":"opposite-castling"}')}`)).toEqual([
+      ['Wings', 14],
+    ]);
+    expect(await games(`motif=${encodeURIComponent('{"id":"iqp"}')}`)).toEqual([['Isolani', 19]]);
+    expect(await games(`motif=${encodeURIComponent('{"id":"iqp","side":"white"}')}`)).toEqual([]);
+    // Stability rides the same streak as the material hunt.
+    expect(await games(`motif=${encodeURIComponent('{"id":"iqp","stable":3}')}`)).toEqual([
+      ['Isolani', 19],
+    ]);
+    expect(await games(`motif=${encodeURIComponent('{"id":"iqp","stable":4}')}`)).toEqual([]);
+    // The game filters narrow a motif hunt as they narrow every other.
+    expect(
+      await games(`motif=${encodeURIComponent('{"id":"opposite-castling"}')}&player=isolani`),
+    ).toEqual([]);
+    const all = await run(`motif=${encodeURIComponent('{"id":"opposite-castling"}')}`);
+    expect(all.at(-1)).toMatchObject({ type: 'done', scanned: 3, matched: 1, exhaustive: true });
+  });
+
+  it('refuses a bad spec, and a motif beside any other hunt', async () => {
+    const bad = async (query: string) =>
+      (await app.request(`/api/refgames/deep-search?${query}`)).status;
+    const motif = encodeURIComponent('{"id":"iqp"}');
+    expect(await bad('motif=nonsense')).toBe(400);
+    expect(await bad(`motif=${encodeURIComponent('{"id":"greek-gift"}')}`)).toBe(400);
+    expect(await bad(`motif=${encodeURIComponent('{"id":"iqp","stable":0}')}`)).toBe(400);
+    expect(await bad(`motif=${encodeURIComponent('{"id":"opposite-castling","side":"white"}')}`)).toBe(400);
+    expect(await bad(`motif=${motif}&fen=${encodeURIComponent('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')}`)).toBe(400);
+    expect(await bad(`motif=${motif}&match=structure`)).toBe(400);
+    expect(await bad(`motif=${motif}&material=${encodeURIComponent('{"white":{"q":[0,0]}}')}`)).toBe(400);
   });
 });

@@ -18,9 +18,11 @@ import {
   parseMaterialSpec,
   type MatchMode,
 } from '../shared/scanMatch.ts';
+import { canonicalMotif, motifIdOf, parseMotifSpec, type MotifSpec } from '../shared/scanMotif.ts';
 import {
   positionTarget,
   replayMaterialHit,
+  replayMotifHit,
   replayPositionHit,
   type PositionTarget,
 } from './refgamesScan.ts';
@@ -90,13 +92,14 @@ function nativeBinary(): string | null {
 
 /**
  * The deep-scan request keys that are NOT gamesWhere filters: the
- * relaxation rung and the material spec (shared/scanMatch.ts). They
- * ride the same negotiation as the filters, in their own field of the
- * declaration — a binary from before the ladder declares no `scan` at
- * all, and every match/material request runs on the JS path until the
- * crate catches up.
+ * relaxation rung and the material spec (shared/scanMatch.ts), and the
+ * motif spec (shared/scanMotif.ts). They ride the same negotiation as
+ * the filters, in their own field of the declaration — a binary from
+ * before the ladder declares no `scan` at all, and every
+ * match/material/motif request runs on the JS path until the crate
+ * catches up.
  */
-export const SCAN_KEYS = ['match', 'material'] as const;
+export const SCAN_KEYS = ['match', 'material', 'motif'] as const;
 
 export interface NativeCapabilities {
   filters: ReadonlySet<string>;
@@ -158,6 +161,16 @@ export function undeclaredFilters(
     ...(get('match') === 'structure' && !declared.scan.has('match:structure')
       ? ['match:structure']
       : []),
+    // Each motif is negotiated as its own token too, `motif:<id>`: the
+    // key alone says a binary replays motifs at all, the id that it
+    // knows THIS one — so a motif added later falls to the JS path on
+    // an older binary while the ones it has stay native. The id is
+    // read tolerantly; a request that is not even a spec routes to
+    // the JS path, which refuses it properly.
+    ...(() => {
+      const id = motifIdOf(get('motif'));
+      return id !== null && !declared.scan.has(`motif:${id}`) ? [`motif:${id}`] : [];
+    })(),
     // An opening name is answered in POSITIONS as well as text (see the
     // opening block in gamesWhere), which needs the catalogue the crate
     // does not carry. Until a binary declares the token, a request that
@@ -1997,15 +2010,23 @@ export function refGamesApi(
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
     const { db } = found;
-    // Two hunts share this route: a position (fen, optionally relaxed a
-    // rung by match=) or a material situation (material=, no position at
-    // all — see shared/scanMatch.ts for both models). One or the other,
-    // never a mixture: a fen beside a material spec has no meaning.
+    // Three hunts share this route: a position (fen, optionally relaxed
+    // a rung by match=), a material situation (material=, no position at
+    // all — see shared/scanMatch.ts for both models) or a motif (motif=,
+    // shared/scanMotif.ts). One of the three, never a mixture: a fen
+    // beside a material spec has no meaning.
     const fen = c.req.query('fen')?.trim();
     const matchRaw = c.req.query('match');
     const materialRaw = c.req.query('material');
+    const motifRaw = c.req.query('motif');
     if (materialRaw !== undefined && (fen !== undefined || matchRaw !== undefined)) {
       return c.json({ error: 'material search takes no fen or match' }, 400);
+    }
+    if (
+      motifRaw !== undefined &&
+      (fen !== undefined || matchRaw !== undefined || materialRaw !== undefined)
+    ) {
+      return c.json({ error: 'motif search takes no fen, match or material' }, 400);
     }
     if (matchRaw !== undefined && !(MATCH_MODES as readonly string[]).includes(matchRaw)) {
       return c.json({ error: 'bad match mode' }, 400);
@@ -2015,17 +2036,27 @@ export function refGamesApi(
     if (materialRaw !== undefined && spec === null) {
       return c.json({ error: 'bad material spec' }, 400);
     }
+    const motif: MotifSpec | null = motifRaw !== undefined ? parseMotifSpec(motifRaw) : null;
+    if (motifRaw !== undefined && motif === null) {
+      return c.json({ error: 'bad motif spec' }, 400);
+    }
 
     let target: PositionTarget | null = null;
     // The men-column prefilter, one shape for every hunt: a game only
     // ever loses men, so it contains a qualifying position only if its
     // final counts dip to the ceiling or below, and only if it is long
     // enough — `missing` captures for a position hunt, `stable - 1`
-    // plies of standing still for a material one.
+    // plies of standing still for a material or motif one.
     let menCeilW: number;
     let menCeilB: number;
     let minPly: number;
-    if (spec) {
+    if (motif) {
+      // A motif bounds no counts, so the men columns say nothing: only
+      // the game's length gates, as for the structure rung.
+      menCeilW = 16;
+      menCeilB = 16;
+      minPly = motif.stable - 1;
+    } else if (spec) {
       const bounds = materialMenBounds(spec);
       menCeilW = bounds.hiW;
       menCeilB = bounds.hiB;
@@ -2121,6 +2152,7 @@ export function refGamesApi(
      */
     if (
       !spec &&
+      !motif &&
       mode === 'exact' &&
       fresh &&
       metaValue(KEY_INDEX_META) === String(KEY_INDEX_VERSION)
@@ -2222,7 +2254,11 @@ export function refGamesApi(
      * hunt after a restart pays the load once; evicted when idle.
      */
     let resident = false;
+    // Never for a motif: the pack carries neither castling nor pawn
+    // squares (shared/scanPack.ts), so no pack scan can answer one, and
+    // a motif hunt goes to the replay paths below — native or JS.
     if (
+      !motif &&
       fresh &&
       metaValue('fast_scan') === '1' &&
       metaValue(SCAN_PACK_META) === String(SCAN_PACK_VERSION)
@@ -2381,7 +2417,8 @@ export function refGamesApi(
       const argv = ['deep-search', found.name, '--filters', JSON.stringify(filters), '--data', DATA];
       // The binary receives the CANONICAL spec, never the request's own
       // JSON: this route validated above, for both implementations.
-      if (spec) argv.push('--material', canonicalMaterial(spec));
+      if (motif) argv.push('--motif', canonicalMotif(motif));
+      else if (spec) argv.push('--material', canonicalMaterial(spec));
       else {
         argv.push('--fen', fen!);
         if (mode !== 'exact') argv.push('--match', mode);
@@ -2456,9 +2493,11 @@ export function refGamesApi(
                 console.error(`deep-search (${found.name}): native hit on a game that is not there: ${f.id}`);
                 return;
               }
-              const hitPly = spec
-                ? replayMaterialHit(row.moves, spec)
-                : replayPositionHit(row.moves, target!);
+              const hitPly = motif
+                ? replayMotifHit(row.moves, motif)
+                : spec
+                  ? replayMaterialHit(row.moves, spec)
+                  : replayPositionHit(row.moves, target!);
               if (hitPly !== f.ply) {
                 overruled += 1;
                 console.error(
@@ -2567,9 +2606,11 @@ export function refGamesApi(
           scanned += 1;
           // The replay functions are the reference the pack scanner is
           // held to — see server/refgamesScan.ts.
-          const hitPly = spec
-            ? replayMaterialHit(row.moves, spec)
-            : replayPositionHit(row.moves, target!);
+          const hitPly = motif
+            ? replayMotifHit(row.moves, motif)
+            : spec
+              ? replayMaterialHit(row.moves, spec)
+              : replayPositionHit(row.moves, target!);
           if (hitPly !== null) {
             matched += 1;
             const { moves, ...headers } = row;

@@ -299,6 +299,10 @@ describe('resident scan through the route', () => {
       `material=${encodeURIComponent('{"diff":{"minor":[1,10]}}')}`,
       // With a filter, so the id-list leg of the resident path runs.
       `fen=${encodeURIComponent(START)}&minElo=2050`,
+      // A motif: the pack cannot answer one, so the opt-in must leave
+      // it on the replay path and its answer untouched.
+      `motif=${encodeURIComponent('{"id":"opposite-castling"}')}`,
+      `motif=${encodeURIComponent('{"id":"iqp","stable":2}')}`,
     ];
     const before = [];
     for (const hunt of hunts) before.push(await run(hunt));
