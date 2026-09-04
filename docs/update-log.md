@@ -26,6 +26,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   and in every tab's window the Player name takes a line of its own
   below the phone width, side and outcome beneath it, where it had
   about 90px beside two selects.
+- **The hunt row wraps in the right place.** On a phone the position
+  hunt's ↵ button used to fall to a line of its own under the kind
+  select. It now travels with the last select of each mode: the kind
+  and the FEN field on one line, "Exact position" and ↵ on the next.
+  In material mode the preset select had shrunk to "Pa…" to keep the
+  row on one line; it asks for its room now, so the held-for select and
+  ↵ take the second line and the preset's name shows whole. Wide panes
+  are unchanged.
 - **The phone's home has chess on it.** The Continue card leads with
   your latest study's position as a small board at every width; it was
   desktop-only, and the phone drew the same study as a text row. The
