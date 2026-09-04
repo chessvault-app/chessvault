@@ -99,7 +99,7 @@ export function usePinchZoom(
       }
       last = d;
     };
-    const onEnd = (): void => {
+    const onEnd = (e: TouchEvent): void => {
       if (!gestures && liveRef.current && last !== null && start !== null && start > 0) {
         liveRef.current(null);
         applyRef.current(last / start, at);
@@ -108,8 +108,14 @@ export function usePinchZoom(
       start = null;
       // The freeze's backstop: every touch sequence ends in touchend or
       // touchcancel, so a gestureend WebKit swallowed cannot leave the
-      // scroller locked.
-      if (!gLive) unfreeze();
+      // scroller locked. Once the last finger is up the gesture is over
+      // whatever WebKit said; it used to wait for gLive to clear, which
+      // is exactly the case a dropped gestureend never clears, and the
+      // reader stayed unscrollable until it was reopened.
+      if (e.touches.length === 0) {
+        gLive = false;
+        unfreeze();
+      }
     };
 
     // The WebKit pinch. The centre is the gesture's own centroid, taken
