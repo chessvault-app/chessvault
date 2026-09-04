@@ -1,7 +1,8 @@
-import { Chess } from 'chessops/chess';
+import { Chess, castlingSide } from 'chessops/chess';
 import type { Setup } from 'chessops/setup';
 import type { SquareSet } from 'chessops/squareSet';
 import { parseSan } from 'chessops/san';
+import type { CastlingSide } from 'chessops/types';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import {
   matchSignature,
@@ -10,6 +11,7 @@ import {
   type MatchMode,
   type MaterialSpec,
 } from '../shared/scanMatch.ts';
+import { iqpSatisfied, type MotifSpec } from '../shared/scanMotif.ts';
 import { PACK_KEYS_AT, packEventsAt, packLength, packPawnsAt, pawnFilesHash } from '../shared/scanPack.ts';
 
 /**
@@ -197,6 +199,66 @@ export function replayMaterialHit(moves: string, spec: MaterialSpec): number | n
     }
     pos.play(move);
     ply += 1;
+  }
+  return step();
+}
+
+/**
+ * The FIRST ply of the earliest streak holding the motif for its
+ * stability length, or null — the reference, and the ONLY speed: the
+ * pack carries neither castling nor pawn squares, so no pack function
+ * answers a motif (shared/scanMotif.ts). The material hunt's streak
+ * shape exactly, the men gates aside (a motif constrains no counts).
+ *
+ * The IQP is read off the board before each move, as every replay
+ * function reads its position. Opposite castling is read off the MOVES:
+ * each side's wing is noted as its castling move is played, and the
+ * position after the second castle is the first that holds — the
+ * predicate is monotone from there, so `stable` only asks that the game
+ * go on that long. A side still uncastled once its rights are gone can
+ * never castle, and the game is done.
+ * MIRRORED in native/src/deep.rs (find_motif_hit).
+ */
+export function replayMotifHit(moves: string, spec: MotifSpec): number | null {
+  const pos = Chess.default();
+  let ply = 0;
+  let streak = 0;
+  let whiteWing: CastlingSide | undefined;
+  let blackWing: CastlingSide | undefined;
+  const holds = (): boolean =>
+    spec.id === 'iqp'
+      ? iqpSatisfied(pos.board, spec.side)
+      : whiteWing !== undefined && blackWing !== undefined && whiteWing !== blackWing;
+  const step = (): number | null => {
+    if (holds()) {
+      streak += 1;
+      if (streak >= spec.stable) return ply - spec.stable + 1;
+    } else {
+      streak = 0;
+    }
+    return null;
+  };
+  for (const san of moves.split(' ')) {
+    const hit = step();
+    if (hit !== null) return hit;
+    const move = parseSan(pos, san);
+    if (!move) return null;
+    if (spec.id === 'opposite-castling') {
+      const wing = castlingSide(pos, move);
+      if (wing !== undefined) {
+        if (pos.turn === 'white') whiteWing = wing;
+        else blackWing = wing;
+      }
+    }
+    pos.play(move);
+    ply += 1;
+    if (
+      spec.id === 'opposite-castling' &&
+      ((whiteWing === undefined && pos.castles.castlingRights.intersect(pos.board.white).isEmpty()) ||
+        (blackWing === undefined && pos.castles.castlingRights.intersect(pos.board.black).isEmpty()))
+    ) {
+      return null;
+    }
   }
   return step();
 }

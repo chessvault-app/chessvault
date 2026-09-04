@@ -9,6 +9,7 @@ import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
 import type { NormalMove, Role } from 'chessops/types';
 import { MATCH_MODES, parseMaterialSpec } from '../shared/scanMatch.ts';
+import { parseMotifSpec } from '../shared/scanMotif.ts';
 import { encodeScanPack } from '../shared/scanPack.ts';
 import { refGamesApi } from './refgames.ts';
 import { indexPositions } from './refgamesIndex.ts';
@@ -19,6 +20,7 @@ import {
   packPositionCandidate,
   positionTarget,
   replayMaterialHit,
+  replayMotifHit,
   replayPositionHit,
 } from './refgamesScan.ts';
 
@@ -524,5 +526,48 @@ describe('metamorphic invariants over adversarial games', () => {
       expect(replayMaterialHit(moves, spec), moves.slice(0, 40)).not.toBeNull();
       expect(packMaterialHit(pack, spec), moves.slice(0, 40)).not.toBeNull();
     }
+  });
+});
+
+describe('motif replay', () => {
+  const hit = (moves: string, raw: string): number | null =>
+    replayMotifHit(moves, parseMotifSpec(raw)!);
+
+  it('opposite castling hits at the position after the second castle', () => {
+    // White O-O at ply 6, black O-O-O at ply 13: the position after
+    // it, ply 14, is the first that holds.
+    const opposite = 'e4 e5 Nf3 Nc6 Bc4 Bc5 O-O d6 d3 Bg4 Nc3 Qd7 Be3 O-O-O';
+    expect(hit(opposite, '{"id":"opposite-castling"}')).toBe(14);
+    // Monotone from there: stability only asks that the game go on.
+    expect(hit(opposite, '{"id":"opposite-castling","stable":3}')).toBeNull();
+    expect(hit(`${opposite} a4 Nf6`, '{"id":"opposite-castling","stable":3}')).toBe(14);
+    // Same wing, either wing, is not opposite; one side alone is not.
+    expect(hit('e4 e5 Nf3 Nc6 Bc4 Bc5 O-O Nf6 Qe2 O-O', '{"id":"opposite-castling"}')).toBeNull();
+    expect(hit('d4 d5 Nc3 Nc6 Bf4 Bf5 Qd2 Qd7 O-O-O O-O-O', '{"id":"opposite-castling"}')).toBeNull();
+    expect(hit('e4 e5 Nf3 Nc6 Bc4 Bc5 O-O d6 d3 Bg4', '{"id":"opposite-castling"}')).toBeNull();
+    // A king that walked forfeits its rights: the side can never castle.
+    expect(hit('e4 e5 Ke2 Nf6 Ke1 Bc5 Nf3 O-O d3 d6 Nc3 Bg4', '{"id":"opposite-castling"}')).toBeNull();
+    // SAN that stops parsing is no hit, never a partial one.
+    expect(hit('e4 e5 Zz9 O-O', '{"id":"opposite-castling"}')).toBeNull();
+  });
+
+  it('an IQP that arises and then resolves is held only as long as it stood', () => {
+    // A Tarrasch: black's d5 becomes isolated when the knight recaptures
+    // on d4 (ply 19), and stops being one when ...bxc6 puts a pawn
+    // beside it (ply 22) — three positions holding, 19 through 21.
+    const tarrasch =
+      'd4 d5 c4 e6 Nc3 c5 cxd5 exd5 Nf3 Nc6 g3 Nf6 Bg2 Be7 O-O O-O Bg5 cxd4 Nxd4 h6 Nxc6 bxc6';
+    expect(hit(tarrasch, '{"id":"iqp"}')).toBe(19);
+    expect(hit(tarrasch, '{"id":"iqp","side":"black"}')).toBe(19);
+    expect(hit(tarrasch, '{"id":"iqp","side":"white"}')).toBeNull();
+    expect(hit(tarrasch, '{"id":"iqp","stable":3}')).toBe(19);
+    expect(hit(tarrasch, '{"id":"iqp","stable":4}')).toBeNull();
+    // The streak met exactly on the final position: white's d4 is
+    // isolated from ...dxc4 (ply 8) and the game ends at ply 9.
+    const exchange = 'e4 e6 d4 d5 exd5 exd5 c4 dxc4 Bxc4';
+    expect(hit(exchange, '{"id":"iqp","side":"white"}')).toBe(8);
+    expect(hit(exchange, '{"id":"iqp","stable":2}')).toBe(8);
+    expect(hit(exchange, '{"id":"iqp","stable":3}')).toBeNull();
+    expect(hit(exchange, '{"id":"iqp","side":"black"}')).toBeNull();
   });
 });
