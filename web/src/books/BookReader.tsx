@@ -1,4 +1,4 @@
-import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, List, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, List, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, TableOfContents, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -44,6 +44,7 @@ import {
   type KnownDiagram,
 } from './DiagramHotspots';
 import { useDiagramJob } from './diagramJob';
+import { chapterAt, usePdfOutline, type Chapter } from './pdfOutline';
 import { usePdfSearch, type PdfSearch } from './pdfSearch';
 import { PdfScroller, useBookPdf, type Rotation } from './pdfViewer';
 import { UploadBookDialog } from './UploadBookDialog';
@@ -215,6 +216,8 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
 
   // Text search: hits are boxes on the pages; the current one is shown.
   const search = usePdfSearch(doc, goTo);
+  // The book's own contents, where the PDF carries an outline.
+  const chapters = usePdfOutline(doc);
 
   // The editor in the board's place, for a diagram the reader misread or
   // a position to adjust: opened from a hotspot's chooser with the read
@@ -288,6 +291,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       rotation={rotation}
       onRotate={rotate}
       search={search}
+      chapters={chapters}
       width={width}
       compact={compact}
       goTo={goTo}
@@ -770,6 +774,7 @@ function PdfPane({
   rotation,
   onRotate,
   search,
+  chapters,
   width,
   compact,
   toolbarInto = null,
@@ -793,6 +798,8 @@ function PdfPane({
   rotation: Rotation;
   onRotate: () => void;
   search: PdfSearch;
+  /** The book's outline, flattened; empty for a book without one. */
+  chapters: Chapter[];
   width: number;
   /** Phones: the toolbar goes to the bottom bar, not over the page. */
   compact: boolean;
@@ -1090,6 +1097,12 @@ function PdfPane({
             </Button>
           </>
         )}
+        {/* Only for a book that has one: a contents button over a book
+            with no outline would open nothing. Beside search and outside
+            the fold with it: both are ways of turning to a page. */}
+        {chapters.length > 0 && (
+          <ChaptersPopover chapters={chapters} pageNo={pageNo} goTo={goTo} size={size} icon={icon} sheet={compact} />
+        )}
         <SearchPopover search={search} size={size} icon={icon} sheet={compact} />
         {more.length > 0 && (
           <ActionMenu title={t('Page')} actions={more} open={moreOpen} onOpenChange={setMoreOpen}>
@@ -1206,6 +1219,100 @@ function OpeningTreatment({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The book's contents: its outline as a list to turn to a chapter from.
+ * Opened from the toolbar (or the phone's bottom bar), the chapter the
+ * reader is in marked, and closed by choosing one. A sub-chapter sits
+ * indented under its chapter, one step a level.
+ */
+function ChaptersPopover({
+  chapters,
+  pageNo,
+  goTo,
+  size,
+  icon,
+  sheet = false,
+}: {
+  chapters: Chapter[];
+  pageNo: number;
+  goTo: (n: number) => void;
+  size: 'icon' | 'icon-sm';
+  icon: string;
+  /** A phone: a bottom sheet (the app's Dialog), not a popover. */
+  sheet?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const at = chapterAt(chapters, pageNo);
+  // The current chapter is brought into view as the list opens: a long
+  // contents opened at the top says nothing about where the reader is.
+  const current = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (open) current.current?.scrollIntoView({ block: 'center' });
+  }, [open]);
+  const trigger = (
+    <Button
+      variant="ghost"
+      size={size}
+      title={t('Contents')}
+      onClick={sheet ? () => setOpen(true) : undefined}
+    >
+      <TableOfContents className={icon} />
+    </Button>
+  );
+  const body = (
+    <ul className="flex flex-col" role="list">
+      {chapters.map((c, i) => (
+        <li key={i}>
+          <button
+            type="button"
+            ref={i === at ? current : undefined}
+            aria-current={i === at ? 'page' : undefined}
+            className={cn(
+              'hover:bg-accent hover:text-accent-foreground flex w-full items-baseline gap-3 rounded-md px-2 py-1.5 text-left text-sm',
+              i === at ? 'bg-accent text-accent-foreground font-medium' : 'text-foreground',
+            )}
+            style={{ paddingLeft: `${0.5 + Math.min(c.depth, 4) * 0.75}rem` }}
+            onClick={() => {
+              goTo(c.page);
+              setOpen(false);
+            }}
+          >
+            <span className="min-w-0 flex-1 truncate">{c.title}</span>
+            <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{c.page}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+  if (sheet) {
+    return (
+      <>
+        {trigger}
+        {open && (
+          <Dialog
+            open
+            onOpenChange={(next) => {
+              if (!next) setOpen(false);
+            }}
+          >
+            <DialogContent size="sm" title={t('Contents')} icon={TableOfContents}>
+              <div className="-mx-2 max-h-[60dvh] overflow-y-auto">{body}</div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </>
+    );
+  }
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={trigger} />
+      <PopoverContent align="end" className="max-h-[min(24rem,70dvh)] w-80 overflow-y-auto p-1">
+        {body}
+      </PopoverContent>
+    </Popover>
   );
 }
 

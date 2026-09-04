@@ -1858,6 +1858,7 @@ export const ko: Record<string, string> = {
   'Puzzle book: {title}': '퍼즐 책: {title}',
   'Open the puzzle book': '퍼즐 책 열기',
   'Rotate the page': '쪽 돌리기',
+  Contents: '목차',
   'Search the book': '책에서 찾기',
   'Search the book…': '책에서 찾기…',
   'Previous match': '이전 결과',

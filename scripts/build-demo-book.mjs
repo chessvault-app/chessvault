@@ -110,7 +110,10 @@ function html(pieces) {
   .title p { font-size: 11pt; color: #333; margin: 0.05in 0; font-style: italic; }
   .title .rule { border-top: 1px solid #111; width: 2.2in; margin: 0.3in auto; }
   h2 { font-size: 15pt; font-weight: normal; margin: 0 0 0.06in; }
-  h2 .num { display: block; font-size: 9pt; letter-spacing: 0.18em; color: #555; margin-bottom: 0.07in; }
+  /* The chapter's number is its own block above the heading, not a span
+     inside it: the PDF's outline is built from the headings, and a span
+     inside one runs into the title with no space ("CHAPTER ONEThe..."). */
+  .num { font-size: 9pt; line-height: normal; letter-spacing: 0.18em; color: #555; margin: 0 0 0.07in; text-align: left; }
   p { font-size: 10.5pt; line-height: 1.52; margin: 0 0 0.11in; text-align: justify; hyphens: auto; }
   ol { font-size: 10.5pt; line-height: 1.6; padding-left: 0.24in; margin: 0 0 0.11in; }
   /* The diagram. Ruled border and shaded dark squares because that is what
@@ -151,7 +154,7 @@ ${page(`<h2>Contents</h2><div class="toc">
  <p style="margin-top:0.4in">Each chapter prints one position. In the reader, the
  button on a diagram sets that position up on the board beside it, so a line
  can be played out where it is being read rather than somewhere else.</p>`)}
-${page(`<h2><span class="num">CHAPTER ONE</span>The Spanish bishop</h2>
+${page(`<p class="num">CHAPTER ONE</p><h2>The Spanish bishop</h2>
  <p>After 1.e4 e5 2.Nf3 Nc6, White has already asked one question of the e5 pawn
  and been answered. The move 3.Bb5 asks a second, and the pin it makes is worth
  more than the tempo it costs, because the bishop is not really attacking the
@@ -168,7 +171,7 @@ ${page(`<p>If White retreats with 4.Ba4, the pin remains and so does the questio
  That is the mark of a good opening: not that it wins, but that both sides keep
  finding reasons to enter it.</p>
  <ol><li>e4 e5</li><li>Nf3 Nc6</li><li>Bb5 a6</li><li>Ba4 Nf6</li><li>O-O Be7</li></ol>`)}
-${page(`<h2><span class="num">CHAPTER TWO</span>Building the bridge</h2>
+${page(`<p class="num">CHAPTER TWO</p><h2>Building the bridge</h2>
  <p>A rook and a pawn against a rook is the most common ending there is, and this
  is the position that decides most of them. The pawn is one square from queening,
  the king in front of it is in the way of its own promotion, and the black king
@@ -185,7 +188,7 @@ ${page(`<p>The order matters more than the moves. Rc4 first, then Kc7 — the ki
  <p>Played the other way round — king first, rook later — the same position is a
  draw. It is worth setting up and losing a few times against an engine before
  trusting it in a game.</p>`)}
-${page(`<h2><span class="num">CHAPTER THREE</span>The third rank</h2>
+${page(`<p class="num">CHAPTER THREE</p><h2>The third rank</h2>
  <p>The other half of rook endings is knowing when you are not lost. Here Black
  is a pawn down with the king in front of the pawn, and the position is a
  comfortable draw — provided the rook is on the correct rank.</p>
@@ -208,7 +211,10 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.setContent(html(cburnett()), { waitUntil: 'load' });
 mkdirSync(dirname(OUT), { recursive: true });
-await page.pdf({ path: OUT, width: '5.5in', height: '8.5in', printBackground: true });
+// `outline` embeds the headings as the PDF's own table of contents, which
+// is what the reader's Contents button lists: a book printed without one
+// has no control at all, and the demo should show the control.
+await page.pdf({ path: OUT, width: '5.5in', height: '8.5in', printBackground: true, tagged: true, outline: true });
 
 /**
  * The pages that carry a diagram, as images, and where on each page the

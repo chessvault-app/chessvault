@@ -7,6 +7,20 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The book reader turns to a chapter.** A book whose PDF carries a
+  table of contents gets a “Contents” button beside search, on a desktop
+  and in the phone's bottom bar: the chapter you are in is marked, and
+  choosing one turns to its page. Sub-chapters sit indented under theirs.
+  A book without an outline shows no button. The demo's sample book now
+  carries one.
+- **The reader scrolls again after an interrupted pinch on an iPhone.**
+  A pinch holds the page still under the fingers by locking the
+  scroller, and when Safari ended the gesture without saying so the lock
+  stayed on until the book was reopened. Lifting the last finger now
+  unlocks it whatever Safari said. And a book left on its last page,
+  where that page is shorter than the window, no longer re-scrolls to
+  its foot on every layout change with the page number stuck.
+
 - **The Games search rows fit a phone.** While you type in a Games
   tab's search field it takes the whole row, the buttons beside it
   stepping aside until you leave; before, the collection's box was
