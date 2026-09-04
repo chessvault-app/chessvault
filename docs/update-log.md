@@ -28,8 +28,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   imbalances from a pawn up through a minor piece or a rook up to the
   bishop pair against bishop and knight or two knights, rook and
   bishop against rook and knight, and three minor pieces against a
-  queen. An imbalance counts from White's side, as “A queen up” always
-  did; the docs now say so.
+  queen. An imbalance takes a side: “A queen up” for White or for
+  Black, where it was always White's before; the symmetric endgames
+  show no side.
 - **Study and note cards are shorter.** A card on the Studies and
   Notes shelves reserved two lines of name and two of preview, and
   most needed one of each, so every card carried a band of nothing

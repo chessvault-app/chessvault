@@ -162,10 +162,12 @@ What a built database answers, and from where:
   unbalanced ones (rook and pawns against a rook, queen against two
   rooks), the middlegame classes (queenless, heavy pieces only) and
   the imbalances from a pawn up to three minor pieces against a queen.
-  An imbalance counts from White's side: "a queen up" finds the games
-  where White was a queen up, and the custom editor is where to ask
-  for Black — or a custom per-piece, per-side count editor, plus how
-  long the material must hold (any moment, 4+ or 8+ moves). A motif hunt picks a pattern rather than a position or a
+  An imbalance takes a side: "a queen up" for White or for Black, the
+  one preset mirrored (`mirrorMaterialSpec` in `shared/scanMatch.ts`
+  swaps the sides and flips the differences), while a symmetric
+  endgame shows no side because it reads the same either way. Or a
+  custom per-piece, per-side count editor. Plus how long the material
+  must hold (any moment, 4+ or 8+ moves). A motif hunt picks a pattern rather than a position or a
   count — what the ladder cannot express, and never a query language
   (`docs/deferred.md` records that line). Twelve are offered, each a
   fixed definition (`shared/scanMotif.ts`) and each somebody's unless
