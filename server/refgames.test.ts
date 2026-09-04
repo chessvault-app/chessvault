@@ -22,6 +22,7 @@ import {
 } from '../shared/searchQuery.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 import { openingKeysNamed } from './openings.ts';
+import STRUCTURES from '../web/src/games/structures.json';
 
 /**
  * The big dumps often carry no [Opening] header, so a built database
@@ -1447,6 +1448,8 @@ describe('motif hunts through the route', () => {
   const TARRASCH =
     'd4 d5 c4 e6 Nc3 c5 cxd5 exd5 Nf3 Nc6 g3 Nf6 Bg2 Be7 O-O O-O Bg5 cxd4 Nxd4 h6 Nxc6 bxc6';
   const SAME_WING = 'e4 e5 Nf3 Nc6 Bc4 Bc5 O-O Nf6 Qe2 O-O';
+  // A French advance whose pawns reach the named chain at ply 7.
+  const FRENCH = 'e4 e6 d4 d5 e5 c5 c3 Nc6 Nf3 Qb6';
 
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), 'refgames-motif-'));
@@ -1469,6 +1472,7 @@ describe('motif hunts through the route', () => {
     insert.run('Wings', 'Apart', 2500, 2500, '1-0', '2026.01.01', 'Motifs', 'C50', null, OPPOSITE);
     insert.run('Isolani', 'Holder', 2500, 2500, '0-1', '2026.01.02', 'Motifs', 'D34', null, TARRASCH);
     insert.run('Same', 'Wing', 2500, 2500, '1/2-1/2', '2026.01.03', 'Motifs', 'C50', null, SAME_WING);
+    insert.run('Chain', 'Advance', 2500, 2500, '1-0', '2026.01.04', 'Motifs', 'C02', null, FRENCH);
     tune(db);
     db.close();
     // The index pass writes the men and ply columns the route's
@@ -1512,7 +1516,29 @@ describe('motif hunts through the route', () => {
       await games(`motif=${encodeURIComponent('{"id":"opposite-castling"}')}&player=isolani`),
     ).toEqual([]);
     const all = await run(`motif=${encodeURIComponent('{"id":"opposite-castling"}')}`);
-    expect(all.at(-1)).toMatchObject({ type: 'done', scanned: 3, matched: 1, exhaustive: true });
+    expect(all.at(-1)).toMatchObject({ type: 'done', scanned: 4, matched: 1, exhaustive: true });
+  });
+
+  it('a named pawn structure is a sketch on the structure rung', async () => {
+    // The preset is data the browser sends as fen + match=structure —
+    // no motif machinery, the kingless-sketch path the editor handoff
+    // already takes. The French chain is reached at ply 7, and the
+    // Carlsbad sketch matches nothing here.
+    const sketch = (id: string) => STRUCTURES.find((s) => s.id === id)!.fen;
+    const hunt = async (id: string) => {
+      const res = await app.request(
+        `/api/refgames/deep-search?fen=${encodeURIComponent(sketch(id))}&match=structure`,
+      );
+      expect(res.status).toBe(200);
+      return (await res.text())
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as Record<string, unknown>)
+        .filter((f) => f.type === 'game')
+        .map((g) => [g.white, g.ply]);
+    };
+    expect(await hunt('french-advance')).toEqual([['Chain', 7]]);
+    expect(await hunt('carlsbad')).toEqual([]);
   });
 
   it('refuses a bad spec, and a motif beside any other hunt', async () => {

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "carlsbad",
+    "label": "Carlsbad structure",
+    "fen": "8/pp3ppp/2p5/3p4/3P4/4P3/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "french-advance",
+    "label": "French advance chain",
+    "fen": "8/pp3ppp/4p3/2ppP3/3P4/2P5/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "kid-closed",
+    "label": "King's Indian closed centre",
+    "fen": "8/ppp2p1p/3p2p1/3Pp3/2P1P3/8/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "maroczy",
+    "label": "Maróczy bind",
+    "fen": "8/pp1ppp1p/6p1/8/2P1P3/8/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "hedgehog",
+    "label": "Hedgehog",
+    "fen": "8/5ppp/pp1pp3/8/2P1P3/1P4P1/P4P1P/8 w - - 0 1"
+  },
+  {
+    "id": "stonewall",
+    "label": "Stonewall",
+    "fen": "8/pp4pp/2p1p3/3p1p2/2PP4/6P1/PP2PP1P/8 w - - 0 1"
+  }
+]

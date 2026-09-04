@@ -424,6 +424,16 @@ export const ko: Record<string, string> = {
   'Opposite-side castling': '반대 방향 캐슬링',
   'Which side has it': '어느 진영의 것인지',
   'Whichever side': '어느 쪽이든',
+  // The motif select's two groups and the named pawn structures
+  // (web/src/games/structures.json).
+  Patterns: '패턴',
+  'Pawn structures': '폰 구조',
+  'Carlsbad structure': '카를스바트 구조',
+  'French advance chain': '프렌치 전진 폰 사슬',
+  "King's Indian closed centre": '킹스 인디언 닫힌 중앙',
+  'Maróczy bind': '마로치 바인드',
+  Hedgehog: '헤지호그',
+  Stonewall: '스톤월',
   'Edit the custom material': '직접 지정한 기물 구성 편집',
   'White has': '백의 기물',
   'Black has': '흑의 기물',

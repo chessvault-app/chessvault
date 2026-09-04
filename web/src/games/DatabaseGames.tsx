@@ -18,6 +18,7 @@ import { ClearableInput, searchRowClass } from '@/components/text-fields';
 import { InputGroupButton } from '@/components/ui/input-group';
 import ENDGAMES from './endgames.json';
 import MOTIFS from './motifs.json';
+import STRUCTURES from './structures.json';
 import {
   catalogSuggest,
   EMPTY_STRUCTURED_FILTERS,
@@ -644,15 +645,20 @@ export function DatabaseGames({
   const [rung, setRung] = useState<MatchMode>('exact');
   const [presetId, setPresetId] = useState<string>(ENDGAMES[0]!.id);
   const [heldPlies, setHeldPlies] = useState(1);
-  // The motif and its two optional knobs (motifs.json says which a
-  // motif has). Its stability is its own, not the material hunt's: each
-  // motif carries a curated default (the IQP's 8 plies filter the
-  // transient isolani a recapture leaves for a move), and switching
-  // motifs resets to that motif's.
+  // The motif list is two files in one select: the pattern motifs
+  // (motifs.json, a predicate the server replays) and the named pawn
+  // structures (structures.json, a pawns-only sketch that runs the
+  // Same pawn structure rung, so it rides every fast path for free).
+  // One id names one entry across both. A motif's two optional knobs
+  // are its own (motifs.json says which a motif has), and its
+  // stability is not the material hunt's: each motif carries a curated
+  // default (the IQP's 8 plies filter the transient isolani a
+  // recapture leaves for a move), and switching motifs resets to it.
   const [motifId, setMotifId] = useState<string>(MOTIFS[0]!.id);
   const [motifSide, setMotifSide] = useState<MotifSide>('either');
   const [motifHeld, setMotifHeld] = useState(MOTIFS[0]!.stable);
-  const motifEntry = MOTIFS.find((m) => m.id === motifId) ?? MOTIFS[0]!;
+  const structureEntry = STRUCTURES.find((s) => s.id === motifId) ?? null;
+  const motifEntry = structureEntry ? null : (MOTIFS.find((m) => m.id === motifId) ?? MOTIFS[0]!);
   // The custom spec: the draft survives the window closing so a reopen
   // edits what was applied, and presetId only becomes 'custom' WITH a
   // spec in hand — a cancelled first visit leaves the preset standing.
@@ -750,7 +756,12 @@ export function DatabaseGames({
       if (huntKind === 'position') {
         params.set('fen', (fenOverride ?? huntFen).trim());
         if (rung !== 'exact') params.set('match', rung);
-      } else if (huntKind === 'motif') {
+      } else if (structureEntry) {
+        // A named structure is a pawn sketch on the structure rung —
+        // the editor handoff's own shape, with the sketch as data.
+        params.set('fen', structureEntry.fen);
+        params.set('match', 'structure');
+      } else if (motifEntry) {
         // The knobs a motif does not have are sent at their neutral
         // values, which is what the server would default them to.
         params.set(
@@ -833,6 +844,7 @@ export function DatabaseGames({
     presetId,
     heldPlies,
     customSpec,
+    structureEntry,
     motifEntry,
     motifSide,
     motifHeld,
@@ -1510,16 +1522,26 @@ export function DatabaseGames({
             value={motifId}
             onValueChange={(v) => {
               setMotifId(v);
-              setMotifHeld((MOTIFS.find((m) => m.id === v) ?? MOTIFS[0]!).stable);
+              const picked = MOTIFS.find((m) => m.id === v);
+              if (picked) setMotifHeld(picked.stable);
             }}
             ariaLabel={t('Motif')}
             size="sm"
             // The same basis as the material preset, for the same
             // reason: a phone puts the knobs on the next line.
             className="min-w-0 flex-1 basis-40"
-            groups={[{ options: MOTIFS.map((m) => ({ value: m.id, label: t(m.label) })) }]}
+            groups={[
+              {
+                label: 'Patterns',
+                options: MOTIFS.map((m) => ({ value: m.id, label: t(m.label) })),
+              },
+              {
+                label: 'Pawn structures',
+                options: STRUCTURES.map((s) => ({ value: s.id, label: t(s.label) })),
+              },
+            ]}
           />
-          {motifEntry.side && (
+          {motifEntry?.side && (
             <Select
               value={motifSide}
               onValueChange={(v) => setMotifSide(v as MotifSide)}
@@ -1531,7 +1553,7 @@ export function DatabaseGames({
             />
           )}
           <span className={tail}>
-            {motifEntry.held && (
+            {motifEntry?.held && (
               <Select
                 value={String(motifHeld)}
                 onValueChange={(v) => setMotifHeld(Number(v))}
