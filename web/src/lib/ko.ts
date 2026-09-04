@@ -419,9 +419,19 @@ export const ko: Record<string, string> = {
   'Custom…': '직접 지정…',
   'Custom material': '기물 구성 직접 지정',
   // The canned motifs (web/src/games/motifs.json) and their knobs.
+  // "En passant" is already in the puzzle themes below.
   Motif: '모티프',
   "Isolated queen's pawn": '고립 퀸폰',
+  'Doubled pawns': '더블 폰',
+  'Passed pawn': '통과 폰',
+  'Rook on the seventh': '7랭크의 룩',
+  Fianchetto: '피앙케토',
+  'Knight outpost': '나이트 전초기지',
+  'Opposite-coloured bishops': '반대색 비숍',
   'Opposite-side castling': '반대 방향 캐슬링',
+  'Same-side castling': '같은 방향 캐슬링',
+  'Greek gift': '그리스 선물',
+  Underpromotion: '언더프로모션',
   'Which side has it': '어느 진영의 것인지',
   'Whichever side': '어느 쪽이든',
   // The motif select's two groups and the named pawn structures

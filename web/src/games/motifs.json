@@ -7,9 +7,79 @@
     "stable": 8
   },
   {
+    "id": "doubled-pawns",
+    "label": "Doubled pawns",
+    "side": true,
+    "held": true,
+    "stable": 8
+  },
+  {
+    "id": "passed-pawn",
+    "label": "Passed pawn",
+    "side": true,
+    "held": true,
+    "stable": 8
+  },
+  {
+    "id": "rook-on-seventh",
+    "label": "Rook on the seventh",
+    "side": true,
+    "held": true,
+    "stable": 1
+  },
+  {
+    "id": "fianchetto",
+    "label": "Fianchetto",
+    "side": true,
+    "held": true,
+    "stable": 8
+  },
+  {
+    "id": "knight-outpost",
+    "label": "Knight outpost",
+    "side": true,
+    "held": true,
+    "stable": 8
+  },
+  {
+    "id": "opposite-bishops",
+    "label": "Opposite-coloured bishops",
+    "side": false,
+    "held": true,
+    "stable": 8
+  },
+  {
     "id": "opposite-castling",
     "label": "Opposite-side castling",
     "side": false,
+    "held": false,
+    "stable": 1
+  },
+  {
+    "id": "same-side-castling",
+    "label": "Same-side castling",
+    "side": false,
+    "held": false,
+    "stable": 1
+  },
+  {
+    "id": "greek-gift",
+    "label": "Greek gift",
+    "side": true,
+    "held": false,
+    "stable": 1
+  },
+  {
+    "id": "underpromotion",
+    "label": "Underpromotion",
+    "side": true,
+    "held": false,
+    "stable": 1
+  },
+  {
+    "id": "en-passant",
+    "label": "En passant",
+    "side": true,
     "held": false,
     "stable": 1
   }

@@ -687,7 +687,13 @@ const RETIRED_KO: { pattern: RegExp; why: string; unless?: Set<string> }[] = [
   { pattern: /보이기|가리기/, why: 'show is 보기 and hide is 숨기기' },
   { pattern: /정석/, why: 'the opening book is 북' },
   // 색 is a theme colour (Colours, Coloured 색상, Neutrals 중성색); a side is 진영.
-  { pattern: /(?<![검탐성])색(?![인상])/, why: 'a side is 진영 (색 is only a theme colour)', unless: new Set(['Colours']) },
+  // The opposite-coloured-bishop ending is the one entry where 색 is a
+  // square's colour, which Korean players also call 색 (반대색 비숍).
+  {
+    pattern: /(?<![검탐성])색(?![인상])/,
+    why: 'a side is 진영 (색 is only a theme colour)',
+    unless: new Set(['Colours', 'Opposite-coloured bishops']),
+  },
   { pattern: /당신/, why: 'Korean UI drops the pronoun or says 내' },
   { pattern: /거르/, why: 'a filter is 필터, as a noun' },
   { pattern: /회차/, why: 'a cycle is 사이클' },
