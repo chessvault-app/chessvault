@@ -381,8 +381,8 @@ export const ko: Record<string, string> = {
   '1 game reaches this position': '이 포지션에 도달한 게임 1개',
   '{n}+ games reach this position. The list stops here.': '이 포지션에 도달한 게임 {n}개 이상. 목록은 여기까지입니다.',
   'The search failed.': '검색이 실패했습니다.',
-  // --- the databases browser's position/material hunt ----------------------
-  'Search by position or material': '포지션·기물 구성으로 검색',
+  // --- the databases browser's position/material/motif hunt ----------------
+  'Search by position, material or motif': '포지션·기물 구성·모티프로 검색',
   'Find this position in the databases browser': '데이터베이스 브라우저에서 이 포지션 찾기',
   'Search by': '검색 기준',
   Material: '기물 구성',
@@ -418,6 +418,12 @@ export const ko: Record<string, string> = {
   'A queen up': '퀸 하나 우위',
   'Custom…': '직접 지정…',
   'Custom material': '기물 구성 직접 지정',
+  // The canned motifs (web/src/games/motifs.json) and their knobs.
+  Motif: '모티프',
+  "Isolated queen's pawn": '고립 퀸폰',
+  'Opposite-side castling': '반대 방향 캐슬링',
+  'Which side has it': '어느 진영의 것인지',
+  'Whichever side': '어느 쪽이든',
   'Edit the custom material': '직접 지정한 기물 구성 편집',
   'White has': '백의 기물',
   'Black has': '흑의 기물',

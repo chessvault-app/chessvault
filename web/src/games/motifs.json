@@ -1,0 +1,16 @@
+[
+  {
+    "id": "iqp",
+    "label": "Isolated queen's pawn",
+    "side": true,
+    "held": true,
+    "stable": 8
+  },
+  {
+    "id": "opposite-castling",
+    "label": "Opposite-side castling",
+    "side": false,
+    "held": false,
+    "stable": 1
+  }
+]

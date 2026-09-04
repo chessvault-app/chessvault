@@ -5,6 +5,7 @@ import { forgetCollection, loadCollection } from './collection';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import type { MatchMode } from '@shared/scanMatch';
+import type { MotifSide } from '@shared/scanMotif';
 
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { navigate } from '@/lib/router';
@@ -16,6 +17,7 @@ import { Select } from '@/components/ui/select';
 import { ClearableInput, searchRowClass } from '@/components/text-fields';
 import { InputGroupButton } from '@/components/ui/input-group';
 import ENDGAMES from './endgames.json';
+import MOTIFS from './motifs.json';
 import {
   catalogSuggest,
   EMPTY_STRUCTURED_FILTERS,
@@ -236,6 +238,14 @@ const RUNGS: { id: MatchMode; label: string }[] = [
   { id: 'files', label: 'Same pawn files & material' },
   { id: 'structure', label: 'Same pawn structure' },
   { id: 'material', label: 'Same material' },
+];
+
+/** Whose motif, for the motifs that have a side (motifs.json says
+    which): the IQP is somebody's, opposite castling is nobody's. */
+const MOTIF_SIDES: { id: MotifSide; label: string }[] = [
+  { id: 'either', label: 'Whichever side' },
+  { id: 'white', label: 'White' },
+  { id: 'black', label: 'Black' },
 ];
 
 /** Stability, offered in moves (a spec's `stable` counts plies). */
@@ -584,8 +594,8 @@ export function DatabaseGames({
   }, [applyFilters]);
 
   /**
-   * The deep hunt: a position (optionally relaxed a rung) or a material
-   * situation, streamed from /deep-search into rows of its own beside
+   * The deep hunt: a position (optionally relaxed a rung), a material
+   * situation or a motif, streamed from /deep-search into rows of its own beside
    * the text search's — closing the section brings the text rows back
    * untouched. Same reading loop as the explorer's DeepSearch: a stream
    * that ends without its `done` frame FAILED rather than found
@@ -629,11 +639,20 @@ export function DatabaseGames({
     [curDb],
   );
   const [huntOpen, setHuntOpen] = useState(false);
-  const [huntKind, setHuntKind] = useState<'position' | 'material'>('position');
+  const [huntKind, setHuntKind] = useState<'position' | 'material' | 'motif'>('position');
   const [huntFen, setHuntFen] = useState('');
   const [rung, setRung] = useState<MatchMode>('exact');
   const [presetId, setPresetId] = useState<string>(ENDGAMES[0]!.id);
   const [heldPlies, setHeldPlies] = useState(1);
+  // The motif and its two optional knobs (motifs.json says which a
+  // motif has). Its stability is its own, not the material hunt's: each
+  // motif carries a curated default (the IQP's 8 plies filter the
+  // transient isolani a recapture leaves for a move), and switching
+  // motifs resets to that motif's.
+  const [motifId, setMotifId] = useState<string>(MOTIFS[0]!.id);
+  const [motifSide, setMotifSide] = useState<MotifSide>('either');
+  const [motifHeld, setMotifHeld] = useState(MOTIFS[0]!.stable);
+  const motifEntry = MOTIFS.find((m) => m.id === motifId) ?? MOTIFS[0]!;
   // The custom spec: the draft survives the window closing so a reopen
   // edits what was applied, and presetId only becomes 'custom' WITH a
   // spec in hand — a cancelled first visit leaves the preset standing.
@@ -731,6 +750,17 @@ export function DatabaseGames({
       if (huntKind === 'position') {
         params.set('fen', (fenOverride ?? huntFen).trim());
         if (rung !== 'exact') params.set('match', rung);
+      } else if (huntKind === 'motif') {
+        // The knobs a motif does not have are sent at their neutral
+        // values, which is what the server would default them to.
+        params.set(
+          'motif',
+          JSON.stringify({
+            id: motifEntry.id,
+            side: motifEntry.side ? motifSide : 'either',
+            stable: motifEntry.held ? motifHeld : 1,
+          }),
+        );
       } else {
         params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
       }
@@ -794,7 +824,19 @@ export function DatabaseGames({
             : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
       );
     }
-  }, [applyFilters, curDb, huntKind, huntFen, rung, presetId, heldPlies, customSpec]);
+  }, [
+    applyFilters,
+    curDb,
+    huntKind,
+    huntFen,
+    rung,
+    presetId,
+    heldPlies,
+    customSpec,
+    motifEntry,
+    motifSide,
+    motifHeld,
+  ]);
 
   // Meta can fail like any other request — a raw fetch here used to leave
   // the pane wedged on nothing at all, with the rejection unhandled. The
@@ -1329,10 +1371,12 @@ export function DatabaseGames({
 
   /**
    * The hunt controls, folded behind the toggle beside the search box:
-   * a position (FEN, with the relaxation rung) or a material situation
+   * a position (FEN, with the relaxation rung), a material situation
    * (a preset from endgames.json — data, never per-preset code — and
-   * how long it must hold). One press runs it; the filter row above
-   * narrows a hunt exactly as it narrows the text search.
+   * how long it must hold) or a motif (motifs.json, the same
+   * arrangement: each entry says which knobs it has). One press runs
+   * it; the filter row above narrows a hunt exactly as it narrows the
+   * text search.
    */
   const runButton = (
     <>
@@ -1395,7 +1439,7 @@ export function DatabaseGames({
     <div className="flex w-full flex-wrap items-center gap-1.5">
       <Select
         value={huntKind}
-        onValueChange={(v) => setHuntKind(v as 'position' | 'material')}
+        onValueChange={(v) => setHuntKind(v as 'position' | 'material' | 'motif')}
         ariaLabel={t('Search by')}
         size="sm"
         groups={[
@@ -1403,6 +1447,7 @@ export function DatabaseGames({
             options: [
               { value: 'position', label: t('Position') },
               { value: 'material', label: t('Material') },
+              { value: 'motif', label: t('Motif') },
             ],
           },
         ]}
@@ -1456,6 +1501,47 @@ export function DatabaseGames({
               size="sm"
               groups={[{ options: RUNGS.map((r) => ({ value: r.id, label: t(r.label) })) }]}
             />
+            {runButton}
+          </span>
+        </>
+      ) : huntKind === 'motif' ? (
+        <>
+          <Select
+            value={motifId}
+            onValueChange={(v) => {
+              setMotifId(v);
+              setMotifHeld((MOTIFS.find((m) => m.id === v) ?? MOTIFS[0]!).stable);
+            }}
+            ariaLabel={t('Motif')}
+            size="sm"
+            // The same basis as the material preset, for the same
+            // reason: a phone puts the knobs on the next line.
+            className="min-w-0 flex-1 basis-40"
+            groups={[{ options: MOTIFS.map((m) => ({ value: m.id, label: t(m.label) })) }]}
+          />
+          {motifEntry.side && (
+            <Select
+              value={motifSide}
+              onValueChange={(v) => setMotifSide(v as MotifSide)}
+              ariaLabel={t('Which side has it')}
+              size="sm"
+              groups={[
+                { options: MOTIF_SIDES.map((s) => ({ value: s.id, label: t(s.label) })) },
+              ]}
+            />
+          )}
+          <span className={tail}>
+            {motifEntry.held && (
+              <Select
+                value={String(motifHeld)}
+                onValueChange={(v) => setMotifHeld(Number(v))}
+                ariaLabel={t('How long it must hold')}
+                size="sm"
+                groups={[
+                  { options: HELD.map((h) => ({ value: String(h.plies), label: t(h.label) })) },
+                ]}
+              />
+            )}
             {runButton}
           </span>
         </>
@@ -1548,7 +1634,7 @@ export function DatabaseGames({
               variant="secondary"
               size="icon-sm"
               active={huntOpen}
-              title={t('Search by position or material')}
+              title={t('Search by position, material or motif')}
               className="shrink-0"
               onClick={() => {
                 if (huntOpen) {
