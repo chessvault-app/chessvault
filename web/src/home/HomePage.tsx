@@ -114,8 +114,28 @@ interface RecentDoc extends DocMeta {
   kind: 'study' | 'note';
 }
 
+/**
+ * What a tile says after its name.
+ *
+ * A total is a size, and a size is the same every launch: a vault with
+ * thirty games showed thirty games for months, so the launcher never
+ * looked different from yesterday. The two tiles that have a schedule
+ * lead with it instead. `due` is what the trainer wants from you now and
+ * is drawn in the warn colour; `today` is what you have already done and
+ * is drawn in good; and the total is the fallback, muted, for a tile
+ * with nothing moving.
+ */
+interface TileFigure {
+  n: number;
+  kind: 'total' | 'due' | 'today';
+}
+
 interface HomeData {
-  counts: Partial<Record<HomeCount, number>>;
+  counts: Partial<Record<HomeCount, TileFigure>>;
+  /** Puzzles solved today off the history endpoint; null when it did not
+      answer, which is not a zero. Asked at every width now that the
+      Puzzles tile reads it. */
+  solvedToday: number | null;
   lastStudy: DocMeta | null;
   lastGame: DocMeta | null;
   /** Counted training attempts — 0 means the trainer is untouched. */
@@ -202,6 +222,25 @@ function latest(v: unknown): DocMeta | null {
 /** Module scope so the row's buttons can reach it too — and because a
     formatter with fixed options has no reason to be rebuilt per render. */
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+/** The app's colour grammar on a tile's figure: what is owed in warn,
+    what is done in good, a size in the muted ink every total wears. */
+const FIGURE_TONE: Record<TileFigure['kind'], string> = {
+  total: 'text-muted-foreground',
+  due: 'text-warn',
+  today: 'text-good',
+};
+
+function figureText(figure: TileFigure): string {
+  switch (figure.kind) {
+    case 'due':
+      return t('{n} due', { n: figure.n });
+    case 'today':
+      return t('{n} today', { n: figure.n });
+    default:
+      return compact.format(figure.n);
+  }
+}
 
 /** A study id is a path; the card shows its name. */
 const baseName = (id: string): string => id.split('/').at(-1) ?? id;
@@ -430,33 +469,31 @@ export function HomePage() {
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
 
-  // The dashboard's own two answers, asked for only where the dashboard
+  // The dashboard's own answer, asked for only where the dashboard
   // exists. /api/games parses the whole collection (mtime-cached, but the
-  // reply is every game as JSON) and the history read is a second request
-  // — a phone renders neither, so below md neither is fetched. Asked once,
-  // on the first render at md or the first resize into it.
+  // reply is every game as JSON) and a phone renders none of it, so
+  // below md it is not fetched. Asked once, on the first render at md or
+  // the first resize into it. The solved-today read used to ride here
+  // too, until the Puzzles tile started showing it: it is one small
+  // history request, and it now goes in the batch every width asks.
   const md = useMediaQuery('(min-width: 48rem)');
   const [dash, setDash] = useState<{
     gamesTotal: number;
     recentGames: RecentGame[];
-    /** Null when the history endpoint did not answer — not a zero. */
-    solvedToday: number | null;
   } | null>(null);
   const dashAsked = useRef(false);
   useEffect(() => {
     if (!md || dashAsked.current) return;
     dashAsked.current = true;
     void (async () => {
-      const [games, solvedToday] = await Promise.all([
-        api<{ total?: number; games?: RecentGame[] }>('/api/games').catch(() => null),
-        fetchSolvedToday(),
-      ]);
+      const games = await api<{ total?: number; games?: RecentGame[] }>('/api/games').catch(
+        () => null,
+      );
       // A set after navigating away is a no-op (React 18) and nothing else
       // here outlives the page, so no liveness flag.
       setDash({
         gamesTotal: games?.total ?? 0,
         recentGames: Array.isArray(games?.games) ? games.games.slice(0, 5) : [],
-        solvedToday,
       });
     })();
   }, [md]);
@@ -478,7 +515,7 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they
       // answer with a `studies` list.
-      const [studies, notes, games, puzzles, settings, books, library, map, repertoire] =
+      const [studies, notes, games, puzzles, settings, books, library, map, repertoire, solvedToday] =
         await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
@@ -493,6 +530,8 @@ export function HomePage() {
         grab('/api/openingmap'),
         // Counts only — home links to the trainer, it does not drill.
         grab('/api/repertoire/meta'),
+        // Null, not 0, when the history did not answer.
+        fetchSolvedToday(),
       ]);
       if (!live) return;
       const docs = (v: unknown): number | undefined =>
@@ -538,23 +577,36 @@ export function HomePage() {
           })
           .catch(() => {});
       }
-      const counts: Partial<Record<HomeCount, number>> = {
-        studies: docs(studies),
-        notes: docs(notes),
-        games: docs(games),
+      const total = (n: number | undefined): TileFigure | undefined =>
+        n === undefined ? undefined : { n, kind: 'total' };
+      const counts: Partial<Record<HomeCount, TileFigure>> = {
+        studies: total(docs(studies)),
+        notes: total(docs(notes)),
+        games: total(docs(games)),
       };
       // The library: how many books are on the shelf, once there are any.
       const shelf = (library as { books?: unknown[] } | null)?.books;
-      if (Array.isArray(shelf) && shelf.length > 0) counts.books = shelf.length;
-      // YOUR solves — a personal number like every other tile's, not the
-      // size of the Lichess pool.
+      if (Array.isArray(shelf) && shelf.length > 0) counts.books = total(shelf.length);
+      // The schedule first, today's work second, and only then the
+      // lifetime total: YOUR solves, a personal number like every other
+      // tile's, not the size of the Lichess pool. Due and today are both
+      // read only once the trainer is set up; before that the tile has
+      // nothing to schedule.
       const wins = meta?.user?.wins;
-      if (typeof wins === 'number' && wins > 0) counts.puzzles = wins;
+      const dueNow = meta?.ready === true ? (meta.due ?? 0) : 0;
+      if (dueNow > 0) counts.puzzles = { n: dueNow, kind: 'due' };
+      else if (meta?.ready === true && typeof solvedToday === 'number' && solvedToday > 0)
+        counts.puzzles = { n: solvedToday, kind: 'today' };
+      else if (typeof wins === 'number' && wins > 0) counts.puzzles = total(wins);
+      // The repertoire has no total worth a tile, so it says what is due
+      // or nothing.
+      const repDue = (repertoire as { due?: number } | null)?.due ?? 0;
+      if (repDue > 0) counts.repertoire = { n: repDue, kind: 'due' };
       // Both maps exist the moment the page is first opened, so the number
       // that means anything is the moves under them, and none of them is
       // no number rather than a nought.
       const charted = chartedMoves(map);
-      if (charted > 0) counts.openingmap = charted;
+      if (charted > 0) counts.openingmap = total(charted);
       // The desktop dashboard's slices, cut from answers already in hand.
       // Books by last training, not title: the shelf orders itself by
       // title, and this panel's question is "what am I in the middle of".
@@ -573,6 +625,7 @@ export function HomePage() {
         .slice(0, 5);
       setData({
         counts,
+        solvedToday: typeof solvedToday === 'number' ? solvedToday : null,
         lastStudy: latest(studies),
         lastGame: latest(games),
         attempts: meta?.user?.attempts ?? 0,
@@ -780,8 +833,7 @@ export function HomePage() {
   // about — a placeholder and a panel disagreeing about how many rows are
   // coming is worse than no placeholder, because it moves the page in a
   // direction the reader cannot predict.
-  const showSolvedToday =
-    data !== null && dash !== null && data.puzzleDbReady && dash.solvedToday !== null;
+  const showSolvedToday = data !== null && data.puzzleDbReady && data.solvedToday !== null;
   const showDue =
     data !== null && data.puzzleDbReady && (data.due > 0 || data.nextDue !== null);
   const showTraining = showSolvedToday || showDue || showRepertoireDue;
@@ -1118,9 +1170,14 @@ export function HomePage() {
                 <span className="text-foreground block text-base font-medium">
                   {t(label)}
                   {count !== undefined && data?.counts[count] !== undefined ? (
-                    <span className="text-muted-foreground font-mono text-sm font-normal">
+                    <span
+                      className={cn(
+                        'font-mono text-sm font-normal',
+                        FIGURE_TONE[data.counts[count]!.kind],
+                      )}
+                    >
                       {' '}
-                      · {compact.format(data.counts[count]!)}
+                      · {figureText(data.counts[count]!)}
                     </span>
                   ) : (
                     // Only the tiles that will get a number keep space for
@@ -1197,7 +1254,7 @@ export function HomePage() {
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {/* Non-null by showSolvedToday, which is the
                           condition this row is drawn under. */}
-                      {t('Solved today: {n}', { n: dash.solvedToday! })}
+                      {t('Solved today: {n}', { n: data.solvedToday! })}
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>

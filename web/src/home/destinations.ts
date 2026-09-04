@@ -61,7 +61,14 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
 
 /** Which personal count a tile shows. Absent means a tool: no number, and
     no skeleton reserving room for one. */
-export type HomeCount = 'studies' | 'notes' | 'games' | 'books' | 'puzzles' | 'openingmap';
+export type HomeCount =
+  | 'studies'
+  | 'notes'
+  | 'games'
+  | 'books'
+  | 'puzzles'
+  | 'openingmap'
+  | 'repertoire';
 
 export interface Destination {
   id: HomeEntryId;
@@ -138,6 +145,9 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     blurb: 'Practise an opening against real games',
     icon: Layers,
     nav: ['repertoire'],
+    // A schedule, not a size: the tile says how many lines are due and
+    // nothing when none are. See TileFigure.
+    count: 'repertoire',
   },
   // Not a page of its own: the board opened straight to its explorer pane.
   explorer: {

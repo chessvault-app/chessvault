@@ -650,6 +650,7 @@ export const ko: Record<string, string> = {
   '{n} waiting to be reviewed': '복습할 퍼즐 {n}개',
   '{n} due for review': '복습할 때가 된 퍼즐 {n}개',
   '{n} due': '복습 {n}개',
+  '{n} today': '오늘 {n}개',
   'Next review': '다음 복습',
   'The next puzzle whose review date has come': '복습할 때가 된 다음 퍼즐',
   Cycles: '사이클',
