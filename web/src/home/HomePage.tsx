@@ -947,7 +947,7 @@ export function HomePage() {
               {t('Continue')}
             </h2>
             {reserved.board && (
-              <div className="border-border flex items-center gap-3 border-b px-3 py-3">
+              <div className="border-border border-l-primary bg-primary/10 flex items-center gap-3 border-b border-l-2 px-3 py-3">
                 <Skeleton className="size-24 shrink-0 rounded-sm" />
                 <span className="min-w-0 flex-1">
                   <Skeleton className="h-5 w-44 max-w-full" />
@@ -1027,12 +1027,20 @@ export function HomePage() {
                 it, so the card grows by the board less a row, 77px at the
                 comfortable rung (a 121px row for a 44px one, measured on
                 the demo at 375px), and stays the
-                first thing on screen. */}
+                first thing on screen.
+                Marked, the way a marked shelf card is: a primary left
+                edge and a 10% wash, which is the app's tint everywhere
+                else. This row is "where you were", which is what marked
+                means on the shelf, and it is the card's one such row.
+                On the untinted theme the wash is a lifted row and no
+                more; with a tint it takes the accent, so the page has
+                one filled thing (the lead tile) and one washed thing
+                and they read as two weights of the same colour. */}
             {boardStudy?.fen && (
               <button
                 type="button"
                 onClick={() => navigate('studies', encodeURIComponent(boardStudy.id))}
-                className="border-border hover:bg-accent flex w-full items-center gap-3 border-b px-3 py-3 text-left transition-colors duration-100"
+                className="border-border border-l-primary bg-primary/10 hover:bg-accent flex w-full items-center gap-3 border-b border-l-2 px-3 py-3 text-left transition-colors duration-100"
               >
                 <MiniBoard fen={boardStudy.fen} size={96} className="shrink-0 rounded-sm" />
                 <span className="min-w-0 flex-1">
@@ -1163,14 +1171,22 @@ export function HomePage() {
               type="button"
               onClick={() => navigate(...nav)}
               className={cn(
-                'bg-card hover:bg-accent flex rounded-xl p-3.5 text-left ring-1 ring-border transition-colors duration-100',
+                'flex rounded-xl p-3.5 text-left transition-colors duration-100',
                 // The first tile is the lead: the whole row, laid out as a
-                // row, with its glyph a size up. Seven identical cards
-                // gave the grid no first thing to press, and the order is
-                // the user's own (Customise home), so whatever they put
-                // first is what the page leads with. One tile and not a
-                // ranking: a second wide tile would be a list.
-                i === 0 ? 'col-span-full items-center gap-3' : 'flex-col items-start gap-2',
+                // row, with its glyph a size up, and FILLED with primary.
+                // Seven identical cards gave the grid no first thing to
+                // press, and the order is the user's own (Customise
+                // home), so whatever they put first is what the page
+                // leads with. One tile and not a ranking: a second wide
+                // tile would be a list, and a second fill would be two
+                // primary actions on one screen, which the FAB rule
+                // (docs/design-principles.md) does not allow. The fill is
+                // the FAB's own paint, so on the untinted theme it is the
+                // registry's black-on-white button and with a tint it is
+                // the page's one patch of colour.
+                i === 0
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 col-span-full items-center gap-3'
+                  : 'bg-card hover:bg-accent ring-border flex-col items-start gap-2 ring-1',
               )}
             >
               {/* The accent at rest, not on hover. The glyph used to turn
@@ -1178,16 +1194,30 @@ export function HomePage() {
                   below md, where the pointer is a thumb: the one colour
                   designed into the tiles was unreachable on the one
                   device that draws them. Now it is the page's colour,
-                  and Appearance's tint has somewhere on home to show. */}
-              <Icon className={cn('text-primary shrink-0', i === 0 ? 'size-6' : 'size-4.5')} />
+                  and Appearance's tint has somewhere on home to show.
+                  On the lead's fill it is the fill's own ink instead. */}
+              <Icon
+                className={cn(
+                  'shrink-0',
+                  i === 0 ? 'text-primary-foreground size-6' : 'text-primary size-4.5',
+                )}
+              />
               <span className="min-w-0">
-                <span className="text-foreground block text-base font-medium">
+                <span
+                  className={cn(
+                    'block text-base font-medium',
+                    i === 0 ? 'text-primary-foreground' : 'text-foreground',
+                  )}
+                >
                   {t(label)}
                   {count !== undefined && data?.counts[count] !== undefined ? (
                     <span
                       className={cn(
                         'font-mono text-sm font-normal',
-                        FIGURE_TONE[data.counts[count]!.kind],
+                        // The colour grammar has no room on a primary
+                        // fill: amber on the tinted blue is mud, so the
+                        // lead's figure is its ink at 80%, whatever kind.
+                        i === 0 ? 'text-primary-foreground/80' : FIGURE_TONE[data.counts[count]!.kind],
                       )}
                     >
                       {' '}
@@ -1202,7 +1232,14 @@ export function HomePage() {
                     )
                   )}
                 </span>
-                <span className="text-muted-foreground block text-sm leading-snug">{t(blurb)}</span>
+                <span
+                  className={cn(
+                    'block text-sm leading-snug',
+                    i === 0 ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                  )}
+                >
+                  {t(blurb)}
+                </span>
               </span>
             </button>
           ))}
