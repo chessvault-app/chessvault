@@ -589,9 +589,17 @@ export function ArchiveBrowser({
   // a cached month is already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
-  const [quickDraft, setQuickDraft] = useState<{ side: SideFilter; result: ResultFilter }>({
+  // The month rides in the draft too: below sm the row has no month
+  // select, so the window is where a phone picks one, committed on
+  // Apply like the other two.
+  const [quickDraft, setQuickDraft] = useState<{
+    side: SideFilter;
+    result: ResultFilter;
+    month: string;
+  }>({
     side: 'any',
     result: 'any',
+    month: ALL_MONTHS,
   });
   // Memoised, both of them: "All dates" holds tens of thousands of rows,
   // and recomputing two O(n) passes on every render meant every checkbox
@@ -801,6 +809,41 @@ export function ArchiveBrowser({
      is currently set without scrolling to look. A select states
      its own value, takes one line whatever the options are, and
      wraps onto a second when the column is narrow. */
+  // The month select's options, once, for the row and for the window.
+  const monthGroups = [
+    {
+      options: [
+        {
+          value: ALL_MONTHS,
+          // The months below each state what they hold; this row
+          // states what the whole account holds — the provider's
+          // own lifetime figure, not just what is cached here.
+          // Offline (no stats to ask) it falls back to what is
+          // on disk, saying so.
+          label:
+            total !== null
+              ? `${t('Any date')} · ${t('{n} games', { n: total.toLocaleString() })}`
+              : cachedGames > 0
+                ? `${t('Any date')} · ${t('{n} games cached', { n: cachedGames })}`
+                : t('Any date'),
+          short: t('Any date'),
+        },
+        ...months.map((m) => ({
+          value: m.month,
+          label: `${m.month}${
+            m.cached
+              ? ` · ${t('{n} games', { n: m.games ?? 0 })}`
+              : offline
+                ? ` · ${t('needs internet')}`
+                : ''
+          }`,
+          // The month alone once it is chosen: how many games it
+          // holds is what you needed while picking one.
+          short: m.month,
+        })),
+      ],
+    },
+  ];
   const filters = months.length > 0 ? (
     <>
           <Select
@@ -812,40 +855,7 @@ export function ArchiveBrowser({
             // globe and the filters button, and the account's whole span
             // ("Any date") is what loads there.
             className={cn('min-w-0 flex-1 max-sm:hidden', merged && 'flex-none')}
-            groups={[
-              {
-                options: [
-                  {
-                    value: ALL_MONTHS,
-                    // The months below each state what they hold; this row
-                    // states what the whole account holds — the provider's
-                    // own lifetime figure, not just what is cached here.
-                    // Offline (no stats to ask) it falls back to what is
-                    // on disk, saying so.
-                    label:
-                      total !== null
-                        ? `${t('Any date')} · ${t('{n} games', { n: total.toLocaleString() })}`
-                        : cachedGames > 0
-                          ? `${t('Any date')} · ${t('{n} games cached', { n: cachedGames })}`
-                          : t('Any date'),
-                    short: t('Any date'),
-                  },
-                  ...months.map((m) => ({
-                    value: m.month,
-                    label: `${m.month}${
-                      m.cached
-                        ? ` · ${t('{n} games', { n: m.games ?? 0 })}`
-                        : offline
-                          ? ` · ${t('needs internet')}`
-                          : ''
-                    }`,
-                    // The month alone once it is chosen: how many games it
-                    // holds is what you needed while picking one.
-                    short: m.month,
-                  })),
-                ],
-              },
-            ]}
+            groups={monthGroups}
           />
           <SideSelect
             value={sideFilter}
@@ -865,7 +875,7 @@ export function ArchiveBrowser({
             on={hasStructuredFilters(structured)}
             quick={(sideFilter !== 'any' ? 1 : 0) + (resultFilter !== 'any' ? 1 : 0)}
             onClick={() => {
-              setQuickDraft({ side: sideFilter, result: resultFilter });
+              setQuickDraft({ side: sideFilter, result: resultFilter, month: month || ALL_MONTHS });
               setEditingFilters(true);
             }}
           />
@@ -875,9 +885,25 @@ export function ArchiveBrowser({
               draftResult={quickDraft.result}
               showEvent={false}
               extraFields={
-                // The row's selects, mirrored — side here is the SEARCHED
-                // player's seat, a different question from the named
-                // player's side above, which is why both exist.
+                <>
+                  {/* The row's month select, below sm only: there the row
+                      holds the handle, the globe and this window's
+                      button, and this is the month's one home. */}
+                  <div className="sm:hidden">
+                    <Field label="Archive month">
+                      <Select
+                        value={quickDraft.month}
+                        onValueChange={(m) => setQuickDraft((d) => ({ ...d, month: m }))}
+                        ariaLabel={t('Archive month')}
+                        size="sm"
+                        className="w-full"
+                        groups={monthGroups}
+                      />
+                    </Field>
+                  </div>
+                {/* The row's selects, mirrored — side here is the SEARCHED
+                    player's seat, a different question from the named
+                    player's side above, which is why both exist. */}
                 <Field label="Searched player's side and result">
                   <div className="flex gap-2">
                     <SideSelect
@@ -890,13 +916,15 @@ export function ArchiveBrowser({
                     />
                   </div>
                 </Field>
+                </>
               }
-              onClear={() => setQuickDraft({ side: 'any', result: 'any' })}
+              onClear={() => setQuickDraft({ side: 'any', result: 'any', month: ALL_MONTHS })}
               onApply={(next) => {
                 setEditingFilters(false);
                 setStructured(next);
                 setSideFilter(quickDraft.side);
                 setResultFilter(quickDraft.result);
+                if (quickDraft.month !== (month || ALL_MONTHS)) void loadMonth(quickDraft.month);
               }}
               onClose={() => setEditingFilters(false)}
             />
