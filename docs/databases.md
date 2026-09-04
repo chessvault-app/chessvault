@@ -402,9 +402,10 @@ scale down roughly linearly:
 - **Motif hunts: the full-corpus replay, always.** No pack can gate
   them, so fast search does not apply and they cost what the row above
   costs without it; not yet measured at ten million games. On a
-  3,436-game database the ten motif hunts measured took 43–71 ms
-  through the native binary and 72–277 ms in JavaScript, answering
-  identically.
+  3,436-game database, twenty hunts across the twelve motifs took
+  47–103 ms through the native binary and 15 ms to 1.8 s in
+  JavaScript (the bishop ending, replayed to the end of every game,
+  is the slow one), answering identically.
 - **Text search: 28–110 ms**, including the no-match case and rare
   players, via the lookup tables and the union-seek.
 
