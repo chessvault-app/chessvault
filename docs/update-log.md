@@ -14,9 +14,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   (whose it is, and how long it must hold); opposite-side and
   same-side castling, found at the position after the second castle;
   and the Greek gift, an underpromotion and an en passant capture,
-  remembered from the move on. The same list offers six named pawn
-  structures, Carlsbad to Stonewall, each a pawns-only sketch on the
-  Same pawn structure rung. The motifs replay every game the filters
+  remembered from the move on. The same list offers twenty-nine named
+  pawn structures, from the Giuoco Pianissimo and the Open Sicilian's
+  shapes to the Slav, the Stonewall and the Modern Benoni, each a
+  pawns-only sketch on the Same pawn structure rung. The motifs replay every game the filters
   let through, so they cost what a hunt costs without fast search; the
   native core answers them too, and a binary from before them leaves
   them to the server.

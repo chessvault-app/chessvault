@@ -189,9 +189,13 @@ What a built database answers, and from where:
     **Underpromotion** — a promotion to anything but a queen. **En
     passant** — the capture. Each is remembered from the move on, for
     the side that played it.
-  The same list offers six named pawn structures —
-  Carlsbad, French advance chain, King's Indian closed centre, Maróczy
-  bind, Hedgehog, Stonewall — each a pawns-only sketch
+  The same list offers twenty-nine named pawn structures, in opening
+  order from the Giuoco Pianissimo and the Closed Ruy Lopez through
+  the Open Sicilian and its Scheveningen, Najdorf, Dragon, Sveshnikov,
+  Maróczy and Hedgehog shapes, the French, Caro-Kann and Pirc, to the
+  Queen's Gambit, Carlsbad, Slav, Catalan, London, Stonewall,
+  Nimzo-Indian, Grünfeld, King's Indian and Benoni — each a pawns-only
+  sketch
   (`web/src/games/structures.json`, every pawn on its square) that
   runs the *Same pawn structure* rung, so the answer is exactly what
   drawing that sketch on the editor's board would find. The motifs are
