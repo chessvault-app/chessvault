@@ -16,8 +16,19 @@ use shakmaty::{Bitboard, Board};
 /// `match:structure` is a VALUE token: the structure rung changed what
 /// `match` can carry, and a binary without the token would refuse the
 /// value rather than answer wrongly — declaring it is what lets the
-/// server forward structure hunts here at all.
-pub const SUPPORTED_SCAN: &[&str] = &["match", "material", "match:structure"];
+/// server forward structure hunts here at all. `motif:<id>` tokens are
+/// the same idea per motif (scan_motif.rs): the `motif` key says this
+/// build replays motifs, each id that it knows that one, so a motif
+/// the TypeScript side adds later stays on the JS path until this file
+/// declares it.
+pub const SUPPORTED_SCAN: &[&str] = &[
+    "match",
+    "material",
+    "match:structure",
+    "motif",
+    "motif:iqp",
+    "motif:opposite-castling",
+];
 
 /// Piece letters in the fixed order every signature and spec uses.
 const LETTERS: [&str; 5] = ["p", "n", "b", "r", "q"];

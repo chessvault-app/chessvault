@@ -1,5 +1,5 @@
 {
- "schema": 3,
+ "schema": 4,
  "generator": "scripts/export-native-goldens.ts",
  "refMaxPly": 30,
  "fens": [
@@ -8030,6 +8030,406 @@
     }
    ],
    "pack": "29000d0e68122222116822222211c093df9657dbc49f161f2de249bfad50a8be8378b10ec7d3cfa1dc51abceb935b8efa19a68c2da1932a9c24e9fb8b482dfae8b49bbd2f5566b20ba92a715c10830bc6dc47afc00e6753d1ba83a1edd0b863d1ef2d0a4b6bbc84acdd29ed3659b19face91079030e01f7e4b89575cc2ab3a179c4d2de67c3b75137f4618678b626eacacc038350489e1e958672f1f103324642473f6d683c3a02224dabe48daabb20cfc841515151515151515151515f4f4f4f4f4f4d3d3d3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f33232d100000000000000000000010000000000010000020000000000000000000000000000000000010001"
+  },
+  {
+   "why": "opposite-side castling, white O-O at ply 6 and black O-O-O at ply 13",
+   "moves": "e4 e5 Nf3 Nc6 Bc4 Bc5 O-O d6 d3 Bg4 Nc3 Qd7 Be3 O-O-O a4 Nf6",
+   "result": "1-0",
+   "whiteElo": 1983,
+   "blackElo": 1073,
+   "r": 0,
+   "eb": 5,
+   "plyCount": 16,
+   "finalWmen": 16,
+   "finalBmen": 16,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "e7e5"
+    },
+    {
+     "ply": 2,
+     "pos": "4619377770347068234",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 3,
+     "pos": "-345540709486475035",
+     "uci": "b8c6"
+    },
+    {
+     "ply": 4,
+     "pos": "1413994493879372054",
+     "uci": "f1c4"
+    },
+    {
+     "ply": 5,
+     "pos": "-5651545600437680868",
+     "uci": "f8c5"
+    },
+    {
+     "ply": 6,
+     "pos": "527550949475665453",
+     "uci": "e1h1"
+    },
+    {
+     "ply": 7,
+     "pos": "-4336097311569693857",
+     "uci": "d7d6"
+    },
+    {
+     "ply": 8,
+     "pos": "6501083456003841057",
+     "uci": "d2d3"
+    },
+    {
+     "ply": 9,
+     "pos": "-6112672114677110291",
+     "uci": "c8g4"
+    },
+    {
+     "ply": 10,
+     "pos": "-2725581728492771047",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 11,
+     "pos": "-4739395562328433462",
+     "uci": "d8d7"
+    },
+    {
+     "ply": 12,
+     "pos": "-8260906283391419148",
+     "uci": "c1e3"
+    },
+    {
+     "ply": 13,
+     "pos": "4801052905103664489",
+     "uci": "e8a8"
+    },
+    {
+     "ply": 14,
+     "pos": "4085405947914453316",
+     "uci": "a2a4"
+    },
+    {
+     "ply": 15,
+     "pos": "8778156490418888987",
+     "uci": "g8f6"
+    }
+   ],
+   "pack": "1100101088222222118822222211c093df96eaccab144a7bdf8ce5489f3316c909221c85fd352dc66a205fb35c00211c4782ed293c1819a9e4d2cadc59b1f47ca9df69a58f1c4481b5701b2135c243d436bf151515151515151515151515151515151500000000000000000000000000000000"
+  },
+  {
+   "why": "a king walk forfeits the rights — the motif replay stops early",
+   "moves": "e4 e5 Ke2 Nf6 Ke1 Bc5 Nf3 O-O d3 d6 Nc3 Bg4",
+   "result": "0-1",
+   "whiteElo": 2299,
+   "blackElo": 2428,
+   "r": 2,
+   "eb": 11,
+   "plyCount": 12,
+   "finalWmen": 16,
+   "finalBmen": 16,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "e7e5"
+    },
+    {
+     "ply": 2,
+     "pos": "4619377770347068234",
+     "uci": "e1e2"
+    },
+    {
+     "ply": 3,
+     "pos": "-1577866082124504143",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 4,
+     "pos": "-8205668936040638743",
+     "uci": "e2e1"
+    },
+    {
+     "ply": 5,
+     "pos": "1858054775138697788",
+     "uci": "f8c5"
+    },
+    {
+     "ply": 6,
+     "pos": "-5833653511089618675",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 7,
+     "pos": "1451711726118187682",
+     "uci": "e8h8"
+    },
+    {
+     "ply": 8,
+     "pos": "584510707732289555",
+     "uci": "d2d3"
+    },
+    {
+     "ply": 9,
+     "pos": "-500030912299225633",
+     "uci": "d7d6"
+    },
+    {
+     "ply": 10,
+     "pos": "6981953834871095969",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 11,
+     "pos": "356456198844086130",
+     "uci": "c8g4"
+    }
+   ],
+   "pack": "0d00101088222222118822222211c093df96eaccab144a7bdf8cb1e3d47fe916d7023c425c3d0d01cb28a2328b971398cb4ddfadb0d7a102ab557277163686f7cefc15151515151515151515151515000000000000000000000000"
+  },
+  {
+   "why": "a Tarrasch isolani arising at ply 19 and resolving at ply 22",
+   "moves": "d4 d5 c4 e6 Nc3 c5 cxd5 exd5 Nf3 Nc6 g3 Nf6 Bg2 Be7 O-O O-O Bg5 cxd4 Nxd4 h6 Nxc6 bxc6",
+   "result": "1/2-1/2",
+   "whiteElo": 2309,
+   "blackElo": 2279,
+   "r": 1,
+   "eb": 11,
+   "plyCount": 22,
+   "finalWmen": 13,
+   "finalBmen": 13,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "d2d4"
+    },
+    {
+     "ply": 1,
+     "pos": "-1256379834086527957",
+     "uci": "d7d5"
+    },
+    {
+     "ply": 2,
+     "pos": "-3942975149839160169",
+     "uci": "c2c4"
+    },
+    {
+     "ply": 3,
+     "pos": "-5927952258504208445",
+     "uci": "e7e6"
+    },
+    {
+     "ply": 4,
+     "pos": "2266822105491396169",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 5,
+     "pos": "8891196048134644634",
+     "uci": "c7c5"
+    },
+    {
+     "ply": 6,
+     "pos": "-2448378854947037585",
+     "uci": "c4d5"
+    },
+    {
+     "ply": 7,
+     "pos": "5181436184869508831",
+     "uci": "e6d5"
+    },
+    {
+     "ply": 8,
+     "pos": "4055915058207714880",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 9,
+     "pos": "-8978288334604280337",
+     "uci": "b8c6"
+    },
+    {
+     "ply": 10,
+     "pos": "7767959877727968284",
+     "uci": "g2g3"
+    },
+    {
+     "ply": 11,
+     "pos": "-261636350109150207",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 12,
+     "pos": "-7468186869245025959",
+     "uci": "f1g2"
+    },
+    {
+     "ply": 13,
+     "pos": "4886929529860243990",
+     "uci": "f8e7"
+    },
+    {
+     "ply": 14,
+     "pos": "-2691972540858974021",
+     "uci": "e1h1"
+    },
+    {
+     "ply": 15,
+     "pos": "2172172699437675977",
+     "uci": "e8h8"
+    },
+    {
+     "ply": 16,
+     "pos": "152004134185738104",
+     "uci": "c1g5"
+    },
+    {
+     "ply": 17,
+     "pos": "-8003331161701026897",
+     "uci": "c5d4"
+    },
+    {
+     "ply": 18,
+     "pos": "8056593971342979428",
+     "uci": "f3d4"
+    },
+    {
+     "ply": 19,
+     "pos": "-3994051211424702601",
+     "uci": "h7h6"
+    },
+    {
+     "ply": 20,
+     "pos": "-3824839237808633545",
+     "uci": "d4c6"
+    },
+    {
+     "ply": 21,
+     "pos": "5673110161703287742",
+     "uci": "b7c6"
+    }
+   ],
+   "pack": "17000d0d68122222116812222211c093df962bec4e8e97eca4f3c3cf611a4956d1de9a236cbd6fde4d4bdf9680f940eea09befdde0241c5c763501146a3359e1694e16c2afedbbc0fe9cc9b5c8bc781f8866aff3fe3e64b1730177df4fa837c97063bebbfb77f7874a6115151515151515741313131313131313131372f1f1f1d100000000000001010000000000000000000101000202"
+  },
+  {
+   "why": "an exchange French leaving white an isolani from ply 8 to the end",
+   "moves": "e4 e6 d4 d5 exd5 exd5 c4 dxc4 Bxc4 Nf6 Nf3 Be7 O-O O-O Nc3 Nc6 Re1 Bg4",
+   "result": "1-0",
+   "whiteElo": 2646,
+   "blackElo": 1061,
+   "r": 0,
+   "eb": 5,
+   "plyCount": 18,
+   "finalWmen": 14,
+   "finalBmen": 14,
+   "plies": [
+    {
+     "ply": 0,
+     "pos": "-6694708290751851584",
+     "uci": "e2e4"
+    },
+    {
+     "ply": 1,
+     "pos": "8015784180261309674",
+     "uci": "e7e6"
+    },
+    {
+     "ply": 2,
+     "pos": "-2453554305490528928",
+     "uci": "d2d4"
+    },
+    {
+     "ply": 3,
+     "pos": "-8037563938528154997",
+     "uci": "d7d5"
+    },
+    {
+     "ply": 4,
+     "pos": "-5214293287340332489",
+     "uci": "e4d5"
+    },
+    {
+     "ply": 5,
+     "pos": "-2869011928495750948",
+     "uci": "e6d5"
+    },
+    {
+     "ply": 6,
+     "pos": "-6372996605145548733",
+     "uci": "c2c4"
+    },
+    {
+     "ply": 7,
+     "pos": "-4363280556838724841",
+     "uci": "d5c4"
+    },
+    {
+     "ply": 8,
+     "pos": "1057064800036919839",
+     "uci": "f1c4"
+    },
+    {
+     "ply": 9,
+     "pos": "-2512011136585114884",
+     "uci": "g8f6"
+    },
+    {
+     "ply": 10,
+     "pos": "-5105292443729317980",
+     "uci": "g1f3"
+    },
+    {
+     "ply": 11,
+     "pos": "146767794074491915",
+     "uci": "f8e7"
+    },
+    {
+     "ply": 12,
+     "pos": "-7242772020934074714",
+     "uci": "e1h1"
+    },
+    {
+     "ply": 13,
+     "pos": "6916873219003673556",
+     "uci": "e8h8"
+    },
+    {
+     "ply": 14,
+     "pos": "4883229039988359525",
+     "uci": "b1c3"
+    },
+    {
+     "ply": 15,
+     "pos": "2869417429922854070",
+     "uci": "b8c6"
+    },
+    {
+     "ply": 16,
+     "pos": "-3496526153793194683",
+     "uci": "f1e1"
+    },
+    {
+     "ply": 17,
+     "pos": "-2448505581992466532",
+     "uci": "c8g4"
+    }
+   ],
+   "pack": "13000e0e68222222116822222211c093df96eaccab1460551bd08b2a8ac8372a60b5dc00a7094378876b175b42821f1ac5c6fcda0434a42f07490b1c47f6a61e1687d46b20a765c1607db6b4dd1e45354b0f9c27c75a68a71f901515151515b45353d231313131313131313131000000000101000101000000000000000000"
   }
  ],
  "signatures": [
@@ -8373,6 +8773,514 @@
      "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
      "satisfied": false
     }
+   ]
+  }
+ ],
+ "motifSpecs": [
+  {
+   "why": "IQP, either side, any moment",
+   "canonical": "{\"id\":\"iqp\",\"side\":\"either\",\"stable\":1}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    76,
+    null,
+    null,
+    35,
+    null,
+    null,
+    null,
+    34,
+    null,
+    null,
+    null,
+    null,
+    43,
+    null,
+    null,
+    null,
+    null,
+    73,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    19,
+    8
+   ]
+  },
+  {
+   "why": "white's IQP held four moves",
+   "canonical": "{\"id\":\"iqp\",\"side\":\"white\",\"stable\":8}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    8
+   ]
+  },
+  {
+   "why": "black's IQP held three plies",
+   "canonical": "{\"id\":\"iqp\",\"side\":\"black\",\"stable\":3}",
+   "cases": [
+    {
+     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+     "satisfied": false
+    },
+    {
+     "fen": "rnbqkbnr/pp2pppp/8/2ppP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3",
+     "satisfied": false
+    },
+    {
+     "fen": "8/8/8/8/1k1PpQ2/8/8/4K3 b - d3 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r3k2r/8/8/8/8/8/8/R3K2R b - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "8/2k5/8/8/8/8/2K3P1/8 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 b - - 7 6",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": true
+    },
+    {
+     "fen": "r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    },
+    {
+     "fen": "r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1",
+     "satisfied": false
+    }
+   ],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    76,
+    null,
+    null,
+    35,
+    null,
+    null,
+    null,
+    34,
+    null,
+    null,
+    null,
+    null,
+    43,
+    null,
+    null,
+    null,
+    null,
+    73,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    19,
+    null
+   ]
+  },
+  {
+   "why": "opposite-side castling",
+   "canonical": "{\"id\":\"opposite-castling\",\"side\":\"either\",\"stable\":1}",
+   "cases": [],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    14,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "why": "opposite-side castling, the game going on three plies",
+   "canonical": "{\"id\":\"opposite-castling\",\"side\":\"either\",\"stable\":3}",
+   "cases": [],
+   "hits": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    14,
+    null,
+    null,
+    null
    ]
   }
  ],

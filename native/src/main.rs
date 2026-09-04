@@ -16,7 +16,7 @@ const USAGE: &str = "usage:
   chessvault-core build <sources...> --name <name> [--append] --data <dir>
   chessvault-core index <name> [--append] --data <dir>
   chessvault-core optimize <name> --data <dir>
-  chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec>) [--filters <json>] --data <dir>
+  chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec> | --motif <spec>) [--filters <json>] --data <dir>
   chessvault-core tablebase --tables <dir>
   chessvault-core capabilities";
 
@@ -38,6 +38,7 @@ struct Args {
     filters: Option<String>,
     match_mode: Option<String>,
     material: Option<String>,
+    motif: Option<String>,
     tables: Option<PathBuf>,
 }
 
@@ -51,6 +52,7 @@ fn parse(args: &[String]) -> Result<Args, String> {
         filters: None,
         match_mode: None,
         material: None,
+        motif: None,
         tables: None,
     };
     let mut i = 0;
@@ -84,6 +86,10 @@ fn parse(args: &[String]) -> Result<Args, String> {
             "--material" => {
                 i += 1;
                 out.material = Some(args.get(i).ok_or("--material needs a value")?.clone());
+            }
+            "--motif" => {
+                i += 1;
+                out.motif = Some(args.get(i).ok_or("--motif needs a value")?.clone());
             }
             flag if flag.starts_with("--") => return Err(format!("unknown flag: {flag}")),
             positional => out.positional.push(positional.to_owned()),
@@ -240,7 +246,7 @@ fn main() -> ExitCode {
         "deep-search" => {
             let Some(name) = args.positional.first() else {
                 eprintln!(
-                    "usage: chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec>) [--filters <json>] --data <dir>"
+                    "usage: chessvault-core deep-search <name> (--fen <fen> [--match <rung>] | --material <spec> | --motif <spec>) [--filters <json>] --data <dir>"
                 );
                 return ExitCode::from(2);
             };
@@ -249,13 +255,20 @@ fn main() -> ExitCode {
                 return ExitCode::FAILURE;
             }
             // One hunt per invocation, exactly as the server enforces:
-            // a position (with an optional rung) or a material spec.
-            if args.fen.is_none() && args.material.is_none() {
-                eprintln!("--fen <fen> or --material <spec> is required");
+            // a position (with an optional rung), a material spec or a
+            // motif spec.
+            if args.fen.is_none() && args.material.is_none() && args.motif.is_none() {
+                eprintln!("--fen <fen>, --material <spec> or --motif <spec> is required");
                 return ExitCode::from(2);
             }
             if args.material.is_some() && (args.fen.is_some() || args.match_mode.is_some()) {
                 eprintln!("--material excludes --fen and --match");
+                return ExitCode::from(2);
+            }
+            if args.motif.is_some()
+                && (args.fen.is_some() || args.match_mode.is_some() || args.material.is_some())
+            {
+                eprintln!("--motif excludes --fen, --match and --material");
                 return ExitCode::from(2);
             }
             let path = data.join("refgames").join(format!("{name}.sqlite"));
@@ -280,6 +293,7 @@ fn main() -> ExitCode {
                 args.fen.as_deref(),
                 args.match_mode.as_deref(),
                 args.material.as_deref(),
+                args.motif.as_deref(),
                 &|key| filters.get(key).cloned(),
             ) {
                 Ok(()) => ExitCode::SUCCESS,

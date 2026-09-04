@@ -30,7 +30,9 @@ import {
   materialSatisfied,
   parseMaterialSpec,
 } from '../shared/scanMatch.ts';
+import { canonicalMotif, iqpSatisfied, parseMotifSpec } from '../shared/scanMotif.ts';
 import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack } from '../shared/scanPack.ts';
+import { replayMotifHit } from '../server/refgamesScan.ts';
 import { KEY_INDEX_META, KEY_INDEX_VERSION } from '../shared/keyIndex.ts';
 import {
   KEY_INDEX_SCHEMA,
@@ -307,6 +309,42 @@ if (!games.some((g) => g.plyCount > REF_MAX_PLY)) {
   throw new Error('no game exceeds REF_MAX_PLY — the cap is untested');
 }
 
+// The motif corpus, AFTER the self-play so the rows above keep their
+// seeded draws (an insertion earlier would re-roll every later Elo and
+// turn an additive change into a 54-row diff): self-play may never
+// castle to opposite wings or leave an isolani standing, so the motif
+// replay's positive answers come from these. Their plies are pinned in
+// server/refgamesScan.test.ts.
+const MOTIF_CORPUS: { why: string; moves: string; result: string }[] = [
+  {
+    why: 'opposite-side castling, white O-O at ply 6 and black O-O-O at ply 13',
+    moves: 'e4 e5 Nf3 Nc6 Bc4 Bc5 O-O d6 d3 Bg4 Nc3 Qd7 Be3 O-O-O a4 Nf6',
+    result: '1-0',
+  },
+  {
+    why: 'a king walk forfeits the rights — the motif replay stops early',
+    moves: 'e4 e5 Ke2 Nf6 Ke1 Bc5 Nf3 O-O d3 d6 Nc3 Bg4',
+    result: '0-1',
+  },
+  {
+    why: 'a Tarrasch isolani arising at ply 19 and resolving at ply 22',
+    moves: 'd4 d5 c4 e6 Nc3 c5 cxd5 exd5 Nf3 Nc6 g3 Nf6 Bg2 Be7 O-O O-O Bg5 cxd4 Nxd4 h6 Nxc6 bxc6',
+    result: '1/2-1/2',
+  },
+  {
+    why: 'an exchange French leaving white an isolani from ply 8 to the end',
+    moves: 'e4 e6 d4 d5 exd5 exd5 c4 dxc4 Bxc4 Nf6 Nf3 Be7 O-O O-O Nc3 Nc6 Re1 Bg4',
+    result: '1-0',
+  },
+];
+for (const { why, moves, result } of MOTIF_CORPUS) {
+  const golden = replayGolden(why, moves, result, 1000 + randInt(2000), 1000 + randInt(2000));
+  if (golden.plies.length !== moves.split(' ').length) {
+    throw new Error(`motif corpus game did not replay whole: ${moves}`);
+  }
+  games.push(golden);
+}
+
 // ---------------------------------------------------------------------------
 // parity.pgn — a corpus for whole-file diffing. Includes every header
 // shape the build filter cares about: variant games, FEN games, unknown
@@ -476,6 +514,49 @@ if (!materialSpecs.some((s) => s.cases.some((c) => c.satisfied) && s.cases.some(
   throw new Error('no material spec splits the FEN set — the predicate goldens are inert');
 }
 
+// The canned motifs — pins for native/src/scan_motif.rs (the IQP
+// predicate, over the key FENs plus IQP positions of both colours) and
+// for deep.rs's find_motif_hit (every game above, the handcrafted
+// motif corpus included, per spec). The canonical strings are the
+// exact argv the server hands the binary.
+const MOTIF_FENS = [
+  ...FENS.map(({ fen }) => fen),
+  'r1bq1rk1/pp2bppp/2n2n2/8/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1', // white IQP
+  'r1bq1rk1/pp3ppp/2n2n2/3p4/8/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1', // black IQP
+  'r1bq1rk1/pp3ppp/2n2n2/3p4/3P4/2N2N2/PP3PPP/R1BQ1RK1 w - - 0 1', // symmetrical isolanis
+  'r1bq1rk1/pp2bppp/2n2n2/8/3P4/2P2N2/P4PPP/R1BQ1RK1 w - - 0 1', // d4 with c3 beside it
+];
+const MOTIF_SPECS: { why: string; raw: string }[] = [
+  { why: 'IQP, either side, any moment', raw: '{"id":"iqp"}' },
+  { why: "white's IQP held four moves", raw: '{"id":"iqp","side":"white","stable":8}' },
+  { why: "black's IQP held three plies", raw: '{"id":"iqp","side":"black","stable":3}' },
+  { why: 'opposite-side castling', raw: '{"id":"opposite-castling"}' },
+  { why: 'opposite-side castling, the game going on three plies', raw: '{"id":"opposite-castling","stable":3}' },
+];
+const motifSpecs = MOTIF_SPECS.map(({ why, raw }) => {
+  const spec = parseMotifSpec(raw);
+  if (!spec) throw new Error(`golden motif spec did not parse: ${raw}`);
+  return {
+    why,
+    canonical: canonicalMotif(spec),
+    // The board predicate is the IQP's alone; opposite castling has no
+    // per-position truth to pin.
+    cases:
+      spec.id === 'iqp'
+        ? MOTIF_FENS.map((fen) => ({ fen, satisfied: iqpSatisfied(boardOf(fen), spec.side) }))
+        : [],
+    hits: games.map((game) => replayMotifHit(game.moves, spec)),
+  };
+});
+for (const spec of motifSpecs) {
+  if (!spec.hits.some((h) => h !== null) || !spec.hits.some((h) => h === null)) {
+    throw new Error(`motif spec "${spec.why}" never splits the game set — its replay goldens are inert`);
+  }
+  if (spec.cases.length > 0 && (!spec.cases.some((c) => c.satisfied) || !spec.cases.some((c) => !c.satisfied))) {
+    throw new Error(`motif spec "${spec.why}" never splits the FEN set — its predicate goldens are inert`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 // The text the two pipelines share by copying, not by computing: the
@@ -515,7 +596,7 @@ const constants = {
 };
 
 const goldens = {
-  schema: 3,
+  schema: 4,
   generator: 'scripts/export-native-goldens.ts',
   refMaxPly: REF_MAX_PLY,
   fens,
@@ -525,6 +606,7 @@ const goldens = {
   games,
   signatures,
   materialSpecs,
+  motifSpecs,
   sql,
   constants,
 };

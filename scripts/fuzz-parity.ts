@@ -49,6 +49,7 @@ import { makeFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
 import type { NormalMove, Role } from 'chessops/types';
 import { canonicalMaterial, parseMaterialSpec } from '../shared/scanMatch.ts';
+import { canonicalMotif, parseMotifSpec } from '../shared/scanMotif.ts';
 
 // Not from server/paths.ts: that module reads CHESS_VAULT_DATA when it
 // is imported, and this script sets it (to the Rust build) before the
@@ -302,6 +303,10 @@ async function main(): Promise<void> {
       `material=${encodeURIComponent('{"diff":{"q":[1,9]},"stable":2}')}`,
       `material=${encodeURIComponent('{"white":{"q":[0,0]},"black":{"q":[0,0]},"stable":4}')}`,
       `material=${encodeURIComponent('{"white":{"r":[1,2]},"stable":3}')}&result=0-1`,
+      // The motifs: no pack path, so the replay pair IS the answer.
+      `motif=${encodeURIComponent('{"id":"iqp"}')}`,
+      `motif=${encodeURIComponent('{"id":"iqp","side":"white","stable":4}')}&minElo=1200`,
+      `motif=${encodeURIComponent('{"id":"opposite-castling"}')}`,
     );
     let compared = 0;
     const paths = new Map<string, number>();
@@ -323,6 +328,8 @@ async function main(): Promise<void> {
       // validates for it, so the fuzz must too.
       if (params.get('material'))
         argv.push('--material', canonicalMaterial(parseMaterialSpec(params.get('material')!)!));
+      else if (params.get('motif'))
+        argv.push('--motif', canonicalMotif(parseMotifSpec(params.get('motif')!)!));
       else {
         argv.push('--fen', params.get('fen')!);
         if (params.get('match')) argv.push('--match', params.get('match')!);

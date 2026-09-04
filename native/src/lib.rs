@@ -6,6 +6,7 @@ pub mod key_index;
 pub mod optimize;
 pub mod phases;
 pub mod scan_match;
+pub mod scan_motif;
 pub mod scan_pack;
 pub mod sql;
 pub mod tablebase;

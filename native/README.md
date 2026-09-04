@@ -134,8 +134,9 @@ allowed to differ — by declaration, never silently. `chessvault-core
 capabilities` prints what this build understands (one JSON line,
 `{"filters":[...],"scan":[...],"deep":"hits"}`): the `games_where`
 filter keys, the scan modes — `match` (the relaxation rung) and
-`material` (the material-spec hunt), both in `src/scan_match.rs` — and
-the deep-search output contract above. The server asks once
+`material` (the material-spec hunt), both in `src/scan_match.rs`, and
+`motif` with one `motif:<id>` token per motif this build replays
+(`src/scan_motif.rs`) — and the deep-search output contract above. The server asks once
 per build of the binary (cached by path and mtime, so a rebuild is
 re-asked). A request using any key the binary did not declare runs on
 the server's JS scan instead — slower, never wrong — which is how the
@@ -181,6 +182,7 @@ src/deep.rs      search every game for a position (the /deep-search route)
 src/optimize.rs  the housekeeping pass (scripts/optimize-refgames.ts)
 src/filters.rs   the reference filters as SQL (gamesWhere in server/refgames.ts)
 src/scan_match.rs  the relaxation ladder and material search (shared/scanMatch.ts)
+src/scan_motif.rs  the canned motifs' spec and IQP predicate (shared/scanMotif.ts)
 src/scan_pack.rs   the packed scan-index blob (shared/scanPack.ts)
 src/key_index.rs   the inverted key index exact search answers from (shared/keyIndex.ts)
 src/sql.rs       SQL mirrored from the TS side, each constant naming its source

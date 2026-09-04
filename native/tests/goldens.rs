@@ -7,9 +7,11 @@ use serde::Deserialize;
 use shakmaty::{fen::Fen, CastlingMode, Chess, Position};
 
 use chessvault_core::index::{elo_bucket, final_men, replay_plies, result_code};
+use chessvault_core::deep::find_motif_hit;
 use chessvault_core::scan_match::{
     material_men_bounds, material_satisfied, match_signature, MaterialSpec, Rung,
 };
+use chessvault_core::scan_motif::{iqp_satisfied, MotifSpec};
 use chessvault_core::zobrist::{hash_position, to_db_key};
 
 #[derive(Deserialize)]
@@ -26,6 +28,8 @@ struct Goldens {
     signatures: Vec<SignatureGolden>,
     #[serde(rename = "materialSpecs")]
     material_specs: Vec<MaterialSpecGolden>,
+    #[serde(rename = "motifSpecs")]
+    motif_specs: Vec<MotifSpecGolden>,
     sql: SqlGolden,
     constants: ConstantsGolden,
 }
@@ -86,6 +90,17 @@ struct MaterialSpecGolden {
     canonical: String,
     bounds: BoundsGolden,
     cases: Vec<MaterialCaseGolden>,
+}
+
+/// A motif spec's canonical argv, its IQP verdict per position (empty
+/// for a motif with no board predicate) and the replay's answer per
+/// golden game, in `games` order.
+#[derive(Deserialize)]
+struct MotifSpecGolden {
+    why: String,
+    canonical: String,
+    cases: Vec<MaterialCaseGolden>,
+    hits: Vec<Option<u32>>,
 }
 
 #[derive(Deserialize)]
@@ -173,7 +188,7 @@ fn load() -> Goldens {
     let text = std::fs::read_to_string(path)
         .expect("goldens.json exists — run scripts/export-native-goldens.ts");
     let goldens: Goldens = serde_json::from_str(&text).expect("goldens.json parses");
-    assert_eq!(goldens.schema, 3, "unknown goldens schema");
+    assert_eq!(goldens.schema, 4, "unknown goldens schema");
     goldens
 }
 
@@ -297,6 +312,43 @@ fn material_specs_match() {
                 "{} on {}",
                 golden.why,
                 case.fen
+            );
+        }
+    }
+}
+
+#[test]
+fn motif_specs_match() {
+    // The canonical string is the exact argv the server sends: parsing
+    // it, the IQP verdict per position and the replay's hit ply per
+    // game must agree with the JS side that wrote the fixture — the
+    // hit plies especially, since a motif hunt has no pack scan and
+    // this replay IS the native answer.
+    let goldens = load();
+    for golden in &goldens.motif_specs {
+        let spec: MotifSpec = serde_json::from_str(&golden.canonical)
+            .unwrap_or_else(|e| panic!("{} did not parse: {e}", golden.why));
+        for case in &golden.cases {
+            let fen: Fen = case.fen.parse().expect("golden fen parses");
+            let pos: Chess = fen
+                .into_position(CastlingMode::Chess960)
+                .expect("golden fen is a position");
+            assert_eq!(
+                iqp_satisfied(pos.board(), spec.side),
+                case.satisfied,
+                "{} on {}",
+                golden.why,
+                case.fen
+            );
+        }
+        assert_eq!(golden.hits.len(), goldens.games.len(), "{}: one hit per game", golden.why);
+        for (game, hit) in goldens.games.iter().zip(&golden.hits) {
+            assert_eq!(
+                find_motif_hit(&game.moves, &spec),
+                *hit,
+                "{} on game: {}",
+                golden.why,
+                game.why
             );
         }
     }

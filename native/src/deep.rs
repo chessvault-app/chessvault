@@ -16,12 +16,15 @@ use std::path::Path;
 use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension};
 use serde_json::json;
-use shakmaty::{fen::Fen, san::SanPlus, CastlingMode, Chess, Color, FromSetup, Position};
+use shakmaty::{
+    fen::Fen, san::SanPlus, CastlingMode, CastlingSide, Chess, Color, FromSetup, Position,
+};
 
 use crate::filters::games_where;
 use crate::scan_match::{
     material_men_bounds, material_satisfied, match_signature, MaterialSpec, Rung,
 };
+use crate::scan_motif::{iqp_satisfied, MotifId, MotifSpec};
 use crate::zobrist::{hash_position, to_db_key};
 
 pub const DEEP_SEARCH_CAP: u64 = 200;
@@ -182,15 +185,96 @@ fn find_material_hit(moves: &str, spec: &MaterialSpec, lo_w: i64, lo_b: i64) -> 
     step(&pos, ply, &mut streak)
 }
 
+/// Does the position hold the motif — the IQP off the board, opposite
+/// castling off the wings noted as the castling moves were played.
+fn motif_holds(
+    pos: &Chess,
+    spec: &MotifSpec,
+    white_wing: Option<CastlingSide>,
+    black_wing: Option<CastlingSide>,
+) -> bool {
+    match spec.id {
+        MotifId::Iqp => iqp_satisfied(pos.board(), spec.side),
+        MotifId::OppositeCastling => {
+            matches!((white_wing, black_wing), (Some(w), Some(b)) if w != b)
+        }
+    }
+}
+
+/// The FIRST ply of the earliest streak holding the motif for its
+/// stability length, or None — the exact shape of the JS
+/// `replayMotifHit` (server/refgamesScan.ts): the material hunt's
+/// streak without its men gates, the IQP read before each move, each
+/// side's castling wing noted as the move is played (so the position
+/// after the second castle is the first that holds), and a side still
+/// uncastled once its rights are gone ending the game early. Public
+/// for the golden test, which holds it to the JS answers per game.
+pub fn find_motif_hit(moves: &str, spec: &MotifSpec) -> Option<u32> {
+    let mut pos = Chess::default();
+    let mut ply: u32 = 0;
+    let mut streak: u32 = 0;
+    let mut white_wing: Option<CastlingSide> = None;
+    let mut black_wing: Option<CastlingSide> = None;
+    let step = |pos: &Chess,
+                white_wing: Option<CastlingSide>,
+                black_wing: Option<CastlingSide>,
+                ply: u32,
+                streak: &mut u32|
+     -> Option<u32> {
+        if motif_holds(pos, spec, white_wing, black_wing) {
+            *streak += 1;
+            if *streak >= spec.stable {
+                // ply + 1 first: u32, and ply - stable alone underflows
+                // on the very first ply of a stable-1 spec.
+                return Some(ply + 1 - spec.stable);
+            }
+        } else {
+            *streak = 0;
+        }
+        None
+    };
+    let castling = spec.id == MotifId::OppositeCastling;
+    for token in moves.split(' ') {
+        if let Some(hit) = step(&pos, white_wing, black_wing, ply, &mut streak) {
+            return Some(hit);
+        }
+        let Ok(san) = token.parse::<SanPlus>() else {
+            return None;
+        };
+        let Ok(m) = san.san.to_move(&pos) else {
+            return None;
+        };
+        if castling {
+            if let Some(wing) = m.castling_side() {
+                if pos.turn() == Color::White {
+                    white_wing = Some(wing);
+                } else {
+                    black_wing = Some(wing);
+                }
+            }
+        }
+        pos.play_unchecked(m);
+        ply += 1;
+        if castling
+            && ((white_wing.is_none() && !pos.castles().has_color(Color::White))
+                || (black_wing.is_none() && !pos.castles().has_color(Color::Black)))
+        {
+            return None;
+        }
+    }
+    step(&pos, white_wing, black_wing, ply, &mut streak)
+}
+
 /// One hunt per invocation: a position (fen, optionally relaxed by
-/// `rung`) or a material situation (`material`, the server's canonical
-/// spec JSON). The server enforces exclusivity; both here is a usage
-/// error.
+/// `rung`), a material situation (`material`, the server's canonical
+/// spec JSON) or a motif (`motif`, likewise canonical). The server
+/// enforces exclusivity; more than one here is a usage error.
 pub fn run_deep_search(
     db_path: &Path,
     fen: Option<&str>,
     rung: Option<&str>,
     material: Option<&str>,
+    motif: Option<&str>,
     filters: &dyn Fn(&str) -> Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // The men-column prefilter, one shape for every hunt — see the JS
@@ -199,13 +283,24 @@ pub fn run_deep_search(
         .map(serde_json::from_str)
         .transpose()
         .map_err(|_| "bad material spec")?;
+    let motif_spec: Option<MotifSpec> = motif
+        .map(serde_json::from_str)
+        .transpose()
+        .map_err(|_| "bad motif spec")?;
+    if motif_spec.is_some() && (spec.is_some() || fen.is_some() || rung.is_some()) {
+        return Err("--motif excludes --fen, --match and --material".into());
+    }
     let mut target = Target::Exact(0);
     let mut target_w = 0i64;
     let mut target_b = 0i64;
     let mut target_wp = 0i64;
     let mut target_bp = 0i64;
     let mut want_black_to_move = false;
-    let (men_ceil_w, men_ceil_b, min_ply, material_floor) = if let Some(spec) = &spec {
+    let (men_ceil_w, men_ceil_b, min_ply, material_floor) = if let Some(motif) = &motif_spec {
+        // Mirror of the JS route: a motif bounds no counts, so only the
+        // game's length gates, as for the structure rung.
+        (16, 16, i64::from(motif.stable) - 1, None)
+    } else if let Some(spec) = &spec {
         let (lo_w, hi_w, lo_b, hi_b) = material_men_bounds(spec);
         (hi_w, hi_b, i64::from(spec.stable) - 1, Some((lo_w, lo_b)))
     } else {
@@ -362,11 +457,12 @@ pub fn run_deep_search(
         }
         for row in &batch {
             scanned += 1;
-            let hit = match (&spec, material_floor, &target) {
-                (Some(spec), Some((lo_w, lo_b)), _) => {
+            let hit = match (&motif_spec, &spec, material_floor, &target) {
+                (Some(motif), _, _, _) => find_motif_hit(&row.moves, motif),
+                (None, Some(spec), Some((lo_w, lo_b)), _) => {
                     find_material_hit(&row.moves, spec, lo_w, lo_b)
                 }
-                (_, _, Target::Relaxed(Rung::Structure, sig)) => {
+                (_, _, _, Target::Relaxed(Rung::Structure, sig)) => {
                     find_structure_hit(&row.moves, sig, target_wp, target_bp)
                 }
                 _ => find_position_hit(&row.moves, &target, target_w, target_b, want_black_to_move),
