@@ -1,18 +1,53 @@
 [
   {
-    "id": "carlsbad",
-    "label": "Carlsbad structure",
-    "fen": "8/pp3ppp/2p5/3p4/3P4/4P3/PP3PPP/8 w - - 0 1"
+    "id": "giuoco-pianissimo",
+    "label": "Giuoco Pianissimo",
+    "fen": "8/ppp2ppp/3p4/4p3/4P3/2PP4/PP3PPP/8 w - - 0 1"
   },
   {
-    "id": "french-advance",
-    "label": "French advance chain",
-    "fen": "8/pp3ppp/4p3/2ppP3/3P4/2P5/PP3PPP/8 w - - 0 1"
+    "id": "closed-ruy-lopez",
+    "label": "Closed Ruy Lopez",
+    "fen": "8/2p2ppp/p2p4/1p2p3/4P3/2P4P/PP1P1PP1/8 w - - 0 1"
   },
   {
-    "id": "kid-closed",
-    "label": "King's Indian closed centre",
-    "fen": "8/ppp2p1p/3p2p1/3Pp3/2P1P3/8/PP3PPP/8 w - - 0 1"
+    "id": "exchange-ruy-lopez",
+    "label": "Exchange Ruy Lopez",
+    "fen": "8/1pp2ppp/p1p5/4p3/4P3/8/PPPP1PPP/8 w - - 0 1"
+  },
+  {
+    "id": "philidor",
+    "label": "Philidor centre",
+    "fen": "8/ppp2ppp/3p4/4p3/3PP3/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "symmetrical-d-pawns",
+    "label": "Symmetrical d-pawn centre",
+    "fen": "8/ppp2ppp/8/3p4/3P4/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "open-sicilian",
+    "label": "Open Sicilian",
+    "fen": "8/pp1ppppp/8/8/4P3/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "scheveningen",
+    "label": "Scheveningen",
+    "fen": "8/1p3ppp/p2pp3/8/4P3/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "najdorf",
+    "label": "Najdorf",
+    "fen": "8/1p3ppp/p2p4/4p3/4P3/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "dragon",
+    "label": "Dragon",
+    "fen": "8/pp2pp1p/3p2p1/8/4P3/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "sveshnikov",
+    "label": "Sveshnikov",
+    "fen": "8/pp3ppp/3p4/4p3/4P3/8/PPP2PPP/8 w - - 0 1"
   },
   {
     "id": "maroczy",
@@ -25,8 +60,88 @@
     "fen": "8/5ppp/pp1pp3/8/2P1P3/1P4P1/P4P1P/8 w - - 0 1"
   },
   {
+    "id": "french-advance",
+    "label": "French advance chain",
+    "fen": "8/pp3ppp/4p3/2ppP3/3P4/2P5/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "winawer",
+    "label": "Winawer",
+    "fen": "8/pp3ppp/4p3/2ppP3/3P4/P1P5/2P2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "caro-kann",
+    "label": "Caro-Kann",
+    "fen": "8/pp2pppp/2p5/8/3P4/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "advance-caro-kann",
+    "label": "Advance Caro-Kann",
+    "fen": "8/pp3ppp/2p1p3/3pP3/3P4/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "pirc",
+    "label": "Pirc",
+    "fen": "8/ppp1pp1p/3p2p1/8/3PP3/8/PPP2PPP/8 w - - 0 1"
+  },
+  {
+    "id": "qgd",
+    "label": "Queen's Gambit Declined",
+    "fen": "8/ppp2ppp/4p3/3p4/2PP4/4P3/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "carlsbad",
+    "label": "Carlsbad structure",
+    "fen": "8/pp3ppp/2p5/3p4/3P4/4P3/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "slav",
+    "label": "Slav",
+    "fen": "8/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/8 w - - 0 1"
+  },
+  {
+    "id": "semi-slav",
+    "label": "Semi-Slav triangle",
+    "fen": "8/pp3ppp/2p1p3/3p4/2PP4/4P3/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "catalan",
+    "label": "Catalan",
+    "fen": "8/ppp2ppp/4p3/3p4/2PP4/6P1/PP2PP1P/8 w - - 0 1"
+  },
+  {
+    "id": "london",
+    "label": "London System",
+    "fen": "8/pp3ppp/4p3/2pp4/3P4/2P1P3/PP3PPP/8 w - - 0 1"
+  },
+  {
     "id": "stonewall",
     "label": "Stonewall",
     "fen": "8/pp4pp/2p1p3/3p1p2/2PP4/6P1/PP2PP1P/8 w - - 0 1"
+  },
+  {
+    "id": "leningrad-dutch",
+    "label": "Leningrad Dutch",
+    "fen": "8/ppp1p2p/3p2p1/5p2/2PP4/6P1/PP2PP1P/8 w - - 0 1"
+  },
+  {
+    "id": "nimzo-doubled",
+    "label": "Nimzo-Indian doubled pawns",
+    "fen": "8/pppp1ppp/4p3/8/2PP4/P1P5/4PPPP/8 w - - 0 1"
+  },
+  {
+    "id": "grunfeld-exchange",
+    "label": "Grünfeld exchange centre",
+    "fen": "8/ppp1pp1p/6p1/8/3PP3/2P5/P4PPP/8 w - - 0 1"
+  },
+  {
+    "id": "kid-closed",
+    "label": "King's Indian closed centre",
+    "fen": "8/ppp2p1p/3p2p1/3Pp3/2P1P3/8/PP3PPP/8 w - - 0 1"
+  },
+  {
+    "id": "modern-benoni",
+    "label": "Modern Benoni",
+    "fen": "8/pp3ppp/3p4/2pP4/4P3/8/PP3PPP/8 w - - 0 1"
   }
 ]
