@@ -680,6 +680,12 @@ export function QueryBox({
     if (!el) return;
     const end = el.value.length;
     el.setSelectionRange(end, end);
+    // Chrome moves the caret but does not scroll a field to show a
+    // selection set by script, so a query longer than the box ended
+    // with its caret off the right edge and the visible text stopping
+    // mid-qualifier. Scrolling fires the input's scroll event, which
+    // is what brings the coloured mirror along.
+    el.scrollLeft = el.scrollWidth;
   }, [query]);
   return (
     <div className={cn('relative min-w-0 flex-1', className)}>
