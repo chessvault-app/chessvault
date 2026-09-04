@@ -13,6 +13,7 @@ import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
+import { toast } from 'sonner';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
@@ -229,18 +230,20 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
 }
 
 /**
- * Keep the loaded game: its PGN (headers included) becomes a collection
- * document, same endpoint the elite/archive Add buttons use. Only shown
- * when an actual game is on the board.
- *
- * Exported for the workspace, whose moves panel is this page's panel
- * rearranged — the same reason MoveActions and MovesOverflow are.
+ * Keeping the loaded game: its PGN (headers included) becomes a
+ * collection document, the same endpoint the database and archive Add
+ * buttons use. `hasGame` is whether there is a game to keep at all —
+ * headers on the board — and the button and the phone's menu row both
+ * draw from this, so the two say the same thing.
  */
-export function CollectGameButton() {
+function useCollectGame(): {
+  hasGame: boolean;
+  state: 'idle' | 'busy' | 'done' | 'failed';
+  collect: () => Promise<boolean>;
+} {
   const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
   const [state, setState] = useState<'idle' | 'busy' | 'done' | 'failed'>('idle');
-  if (!hasGame) return null;
-  const collect = async (): Promise<void> => {
+  const collect = async (): Promise<boolean> => {
     setState('busy');
     let ok: boolean;
     try {
@@ -258,7 +261,22 @@ export function CollectGameButton() {
     }
     setState(ok ? 'done' : 'failed');
     setTimeout(() => setState('idle'), 2000);
+    return ok;
   };
+  return { hasGame, state, collect };
+}
+
+/**
+ * Keep the loaded game: its PGN (headers included) becomes a collection
+ * document, same endpoint the elite/archive Add buttons use. Only shown
+ * when an actual game is on the board.
+ *
+ * Exported for the workspace, whose moves panel is this page's panel
+ * rearranged — the same reason MoveActions and MovesOverflow are.
+ */
+export function CollectGameButton() {
+  const { hasGame, state, collect } = useCollectGame();
+  if (!hasGame) return null;
   return (
     <Button
       variant="ghost"
@@ -497,6 +515,11 @@ export function MovesOverflow({
   const reviewing = useReview((s) => s.status) === 'running';
   // Review needs something to review; the root having children is that.
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
+  // The collect button is the header's from md; on a phone it is a row
+  // here, or a game opened from a database or an archive had no way
+  // into the collection at all (lanph3re's report). A row cannot turn
+  // into a check the way the button does, so the answer is a toast.
+  const collectGame = useCollectGame();
 
   const actions: MenuAction[] = [
     // First, and at every width, unlike everything below them.
@@ -519,6 +542,20 @@ export function MovesOverflow({
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),
     ...extra,
+    ...(phone && collectGame.hasGame
+      ? [
+          {
+            label: 'Add this game to the collection',
+            icon: FolderPlus,
+            disabled: collectGame.state === 'busy',
+            onSelect: () => {
+              void collectGame.collect().then((ok) => {
+                toast(ok ? t('In the collection') : t('Could not add this game'));
+              });
+            },
+          } as MenuAction,
+        ]
+      : []),
     // Offered only when there is a game to judge, and not while it is
     // already judging one — nor beside a page's own review control.
     ...(hasMoves && !reviewing && (phone || !ownReview)

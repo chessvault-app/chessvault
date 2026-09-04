@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A phone can add the open game to the collection.** The board's
+  moves header keeps that button from tablet width up, and a phone had
+  no row for it, so a game opened from a database or an online archive
+  could not be kept there. The ⋯ menu now offers “Add this game to the
+  collection” whenever a game is loaded, answering with a toast.
 - **The Databases search row lays out once.** The count and the
   database picker at the row's end arrive after the row does, and the
   search field shrank by their width as they landed. The row now holds
