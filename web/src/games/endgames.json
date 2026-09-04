@@ -3,73 +3,892 @@
     "id": "pawn",
     "label": "Pawn endgame",
     "spec": {
-      "white": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [0, 0] },
-      "black": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [0, 0] }
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "knight",
     "label": "Knight endgame",
     "spec": {
-      "white": { "n": [1, 2], "b": [0, 0], "r": [0, 0], "q": [0, 0] },
-      "black": { "n": [1, 2], "b": [0, 0], "r": [0, 0], "q": [0, 0] }
+      "white": {
+        "n": [
+          1,
+          2
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          1,
+          2
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "bishop",
     "label": "Bishop endgame",
     "spec": {
-      "white": { "n": [0, 0], "b": [1, 2], "r": [0, 0], "q": [0, 0] },
-      "black": { "n": [0, 0], "b": [1, 2], "r": [0, 0], "q": [0, 0] }
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          1,
+          2
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          1,
+          2
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "bishop-vs-knight",
     "label": "Bishop vs knight",
     "spec": {
-      "white": { "n": [0, 1], "b": [0, 1], "r": [0, 0], "q": [0, 0] },
-      "black": { "n": [0, 1], "b": [0, 1], "r": [0, 0], "q": [0, 0] },
-      "diff": { "n": [-1, 1], "b": [-1, 1], "minor": [0, 0] }
+      "white": {
+        "n": [
+          0,
+          1
+        ],
+        "b": [
+          0,
+          1
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          1
+        ],
+        "b": [
+          0,
+          1
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "diff": {
+        "n": [
+          -1,
+          1
+        ],
+        "b": [
+          -1,
+          1
+        ],
+        "minor": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "rook",
     "label": "Rook endgame",
     "spec": {
-      "white": { "n": [0, 0], "b": [0, 0], "r": [1, 2], "q": [0, 0] },
-      "black": { "n": [0, 0], "b": [0, 0], "r": [1, 2], "q": [0, 0] }
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          2
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          2
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "double-rook",
+    "label": "Double rook endgame",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          2,
+          2
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          2,
+          2
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "rook-bishop",
+    "label": "Rook and bishop endgame",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          1,
+          1
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          1,
+          1
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "rook-knight",
+    "label": "Rook and knight endgame",
+    "spec": {
+      "white": {
+        "n": [
+          1,
+          1
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          1,
+          1
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "queen",
     "label": "Queen endgame",
     "spec": {
-      "white": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [1, 1] },
-      "black": { "n": [0, 0], "b": [0, 0], "r": [0, 0], "q": [1, 1] }
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          1,
+          1
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          1,
+          1
+        ]
+      }
+    }
+  },
+  {
+    "id": "rook-and-pawns-vs-rook",
+    "label": "Rook and pawns vs rook",
+    "spec": {
+      "white": {
+        "p": [
+          1,
+          8
+        ],
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "p": [
+          0,
+          0
+        ],
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "rook-vs-pawns",
+    "label": "Rook vs pawns",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "p": [
+          1,
+          8
+        ],
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "queen-vs-rook",
+    "label": "Queen vs rook",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          1,
+          1
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "queen-vs-two-rooks",
+    "label": "Queen vs two rooks",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          1,
+          1
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          2,
+          2
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "queenless-middlegame",
     "label": "Queenless middlegame",
     "spec": {
-      "white": { "q": [0, 0] },
-      "black": { "q": [0, 0] },
-      "diff": { "minor": [-1, 1], "major": [-1, 1] }
+      "white": {
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "q": [
+          0,
+          0
+        ]
+      },
+      "diff": {
+        "minor": [
+          -1,
+          1
+        ],
+        "major": [
+          -1,
+          1
+        ]
+      }
+    }
+  },
+  {
+    "id": "heavy-pieces",
+    "label": "Heavy pieces only",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          2
+        ],
+        "q": [
+          1,
+          1
+        ]
+      },
+      "black": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          2
+        ],
+        "q": [
+          1,
+          1
+        ]
+      }
+    }
+  },
+  {
+    "id": "pawn-up",
+    "label": "A pawn up",
+    "spec": {
+      "diff": {
+        "p": [
+          1,
+          8
+        ],
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "two-pawns-up",
+    "label": "Two pawns up",
+    "spec": {
+      "diff": {
+        "p": [
+          2,
+          8
+        ],
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "minor-piece-up",
+    "label": "A minor piece up",
+    "spec": {
+      "diff": {
+        "minor": [
+          1,
+          10
+        ],
+        "major": [
+          0,
+          0
+        ]
+      }
     }
   },
   {
     "id": "exchange-up",
     "label": "Exchange up",
-    "spec": { "diff": { "major": [1, 10], "minor": [-10, -1] } }
+    "spec": {
+      "diff": {
+        "major": [
+          1,
+          10
+        ],
+        "minor": [
+          -10,
+          -1
+        ]
+      }
+    }
   },
   {
-    "id": "two-minors-vs-rook",
-    "label": "Two minors vs rook",
-    "spec": { "diff": { "minor": [2, 2], "major": [-1, -1] } }
+    "id": "rook-up",
+    "label": "A rook up",
+    "spec": {
+      "diff": {
+        "r": [
+          1,
+          10
+        ],
+        "q": [
+          0,
+          0
+        ],
+        "minor": [
+          0,
+          0
+        ]
+      }
+    }
   },
   {
     "id": "queen-up",
     "label": "A queen up",
-    "spec": { "diff": { "q": [1, 9] } }
+    "spec": {
+      "diff": {
+        "q": [
+          1,
+          9
+        ]
+      }
+    }
+  },
+  {
+    "id": "two-minors-vs-rook",
+    "label": "Two minors vs rook",
+    "spec": {
+      "diff": {
+        "minor": [
+          2,
+          2
+        ],
+        "major": [
+          -1,
+          -1
+        ]
+      }
+    }
+  },
+  {
+    "id": "bishop-pair-vs-bishop-knight",
+    "label": "Bishop pair vs bishop and knight",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          2,
+          2
+        ]
+      },
+      "black": {
+        "n": [
+          1,
+          1
+        ],
+        "b": [
+          1,
+          1
+        ]
+      }
+    }
+  },
+  {
+    "id": "bishop-pair-vs-two-knights",
+    "label": "Bishop pair vs two knights",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          2,
+          2
+        ]
+      },
+      "black": {
+        "n": [
+          2,
+          2
+        ],
+        "b": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "rook-bishop-vs-rook-knight",
+    "label": "Rook and bishop vs rook and knight",
+    "spec": {
+      "white": {
+        "n": [
+          0,
+          0
+        ],
+        "b": [
+          1,
+          1
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      },
+      "black": {
+        "n": [
+          1,
+          1
+        ],
+        "b": [
+          0,
+          0
+        ],
+        "r": [
+          1,
+          1
+        ],
+        "q": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  {
+    "id": "three-minors-vs-queen",
+    "label": "Three minor pieces vs queen",
+    "spec": {
+      "diff": {
+        "q": [
+          -1,
+          -1
+        ],
+        "minor": [
+          3,
+          3
+        ],
+        "r": [
+          0,
+          0
+        ]
+      }
+    }
   }
 ]
