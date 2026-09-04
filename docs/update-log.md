@@ -8,12 +8,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 ## Unreleased
 
 - **Study and note cards are shorter.** A card on the Studies and
-  Notes shelves reserved two lines of preview under its name, and most
-  previews needed one, so every card carried a band of nothing above
-  and below a short title. A card now shows one line of preview and is
-  a fifth shorter on a desktop; on a phone, where the shelf is one
-  column and no card needs to stay level with a neighbour, a card is
-  as tall as its own words.
+  Notes shelves reserved two lines of name and two of preview, and
+  most needed one of each, so every card carried a band of nothing
+  above and below a short title. A card now shows one line of each and
+  is a third shorter; the whole name is one hover away, and the list
+  layout shows it whole.
 - **The Board page's rating sits beside the name.** The Board page's
   player names are editable fields, and a field took the whole row, so
   a game opened from a database or an archive showed its rating at the

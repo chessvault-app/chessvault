@@ -147,23 +147,23 @@ export function ShelfCard({
             className={cn(
               'min-w-0 flex-1',
               // One height for every grid card, whatever its words do. A
-              // title takes one line or two and the preview zero or one,
-              // so rows stepped on a shelf with short names beside long
-              // ones (lanph3re's report). The column reserves the fullest
-              // card's text, two title lines (3rem) + the meta line (1rem)
-              // + its mt-1 (0.25rem) + one preview line (1.35rem), and
-              // centres what it has, so a short title stays packed against
-              // its meta line rather than pinned to the top of an empty
-              // box. Measured at 1280 on the demo's shelf: 135px a card
-              // when two preview lines were reserved, 114 with one; the
-              // second line was the band of nothing above and below every
-              // short title, and it cost a fifth of the shelf's height.
+              // card with a preview line stands beside one without, and
+              // rows stepped on a shelf with short names beside long ones
+              // (lanph3re's report). The column reserves the fullest
+              // card's text, the title line (1.5rem) + the meta line
+              // (1rem) + its mt-1 (0.25rem) + one preview line (1.35rem),
+              // and centres what it has, so a title with no preview stays
+              // packed against its meta line rather than pinned to the top
+              // of an empty box. Measured at 1280 on the demo's shelf:
+              // 135px a card when two title lines and two preview lines
+              // were reserved, 114 with one preview line, 90 with one of
+              // each; the spare lines were the band of nothing above and
+              // below every short card, a third of the shelf's height.
               //
               // From sm up only: below it the grid is one column, where no
               // card has a neighbour to stay level with, so a phone card
-              // is as tall as its own words (90px with a one-line title,
-              // measured at 390) rather than 114 with a band of nothing.
-              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[5.6rem]',
+              // is as tall as its own words.
+              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[4.1rem]',
             )}
           >
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
@@ -185,12 +185,14 @@ export function ShelfCard({
               title={title}
               className={cn(
                 'text-foreground font-semibold',
-                // Two lines on a card, one on a list row: at three columns
-                // the title box is 219px and eight of the demo's twelve
-                // titles needed more, so a card gives the name a second
-                // line before it cuts it; the 64px board beside it is two
-                // lines tall anyway.
-                layout === 'grid' ? 'line-clamp-2 text-base leading-6' : 'truncate text-base',
+                // One line, on a card as on a list row. A card gave the
+                // name a second line for a while (at three columns the
+                // title box is 219px and eight of the demo's twelve titles
+                // need more), and that line was 24px on every card of the
+                // shelf for the tail of a name the `title` above shows on
+                // hover and the list layout shows whole.
+                'truncate text-base',
+                layout === 'grid' && 'leading-6',
                 onToggleMark ? 'pr-14 pointer-coarse:pr-9' : 'pr-7 pointer-coarse:pr-9',
               )}
             >
