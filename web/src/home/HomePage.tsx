@@ -1157,12 +1157,21 @@ export function HomePage() {
             grid of cards beside it was the same list twice — once with
             blurbs. What the desktop gets instead is the dashboard below. */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:hidden">
-          {tiles.map(({ id, label, blurb, icon: Icon, nav, count }) => (
+          {tiles.map(({ id, label, blurb, icon: Icon, nav, count }, i) => (
             <button
               key={id}
               type="button"
               onClick={() => navigate(...nav)}
-              className="bg-card hover:bg-accent flex flex-col items-start gap-2 rounded-xl ring-1 ring-border p-3.5 text-left transition-colors duration-100"
+              className={cn(
+                'bg-card hover:bg-accent flex rounded-xl p-3.5 text-left ring-1 ring-border transition-colors duration-100',
+                // The first tile is the lead: the whole row, laid out as a
+                // row, with its glyph a size up. Seven identical cards
+                // gave the grid no first thing to press, and the order is
+                // the user's own (Customise home), so whatever they put
+                // first is what the page leads with. One tile and not a
+                // ranking: a second wide tile would be a list.
+                i === 0 ? 'col-span-full items-center gap-3' : 'flex-col items-start gap-2',
+              )}
             >
               {/* The accent at rest, not on hover. The glyph used to turn
                   primary under the pointer, and this grid is drawn only
@@ -1170,8 +1179,8 @@ export function HomePage() {
                   designed into the tiles was unreachable on the one
                   device that draws them. Now it is the page's colour,
                   and Appearance's tint has somewhere on home to show. */}
-              <Icon className="text-primary size-4.5" />
-              <span>
+              <Icon className={cn('text-primary shrink-0', i === 0 ? 'size-6' : 'size-4.5')} />
+              <span className="min-w-0">
                 <span className="text-foreground block text-base font-medium">
                   {t(label)}
                   {count !== undefined && data?.counts[count] !== undefined ? (
