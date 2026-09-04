@@ -1092,7 +1092,7 @@ export function ArchiveBrowser({
   const filtersInRow = merged || folded;
   const toolbar = (
     <>
-        <div className={cn('flex items-center gap-1', searchRowClass, merged && 'w-full flex-wrap gap-1.5')}>
+        <div className={cn('flex items-center gap-1.5', searchRowClass, merged && 'w-full flex-wrap')}>
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
           <SearchInput
