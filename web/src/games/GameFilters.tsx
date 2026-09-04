@@ -394,7 +394,10 @@ export function StructuredFiltersWindow({
       <DialogContent title="Filter games" icon={SlidersHorizontal}>
         {showPlayer && (
         <Field label="Player">
-          <div className="flex gap-2">
+          {/* The name on a line of its own below sm: beside two selects
+              sized to their longest option it had about 90px on a phone,
+              which is "Any pla" of its own placeholder. */}
+          <div className="flex flex-wrap gap-2">
             <ClearableInput
               // Desktop only — the mouse saves a click; a thumb gets the
               // keyboard over a window that is six fields to be READ, and
@@ -406,7 +409,7 @@ export function StructuredFiltersWindow({
               placeholder={t('Any player')}
               // The Field's label lands on the row, not on this box.
               aria-label={t('Player')}
-              className="min-w-0 flex-1"
+              className="min-w-0 flex-1 max-sm:basis-full"
             />
             {/* Static widths sized to their longest option: without
                 one, a select is as wide as its current VALUE, and the
