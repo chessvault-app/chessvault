@@ -1057,7 +1057,13 @@ export function ArchiveBrowser({
   const filtersInRow = merged || folded;
   const toolbar = (
     <>
-        <div className={cn('flex items-center gap-1', searchRowClass, merged && 'w-full flex-wrap gap-1.5')}>
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-1',
+            searchRowClass,
+            merged && 'w-full gap-1.5',
+          )}
+        >
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
           <SearchInput
@@ -1084,7 +1090,19 @@ export function ArchiveBrowser({
               <Globe className="size-3.5" />
             )}
           </Button>
-          {filtersInRow && filters}
+          {/* Card mode on a phone: the lookup pair on one line, the month
+              and the filters on the next. In one row the handle field
+              was 140px between the globe and the month select, too
+              narrow to read a username back. basis-full drops the group
+              to a line of its own below sm; above it the wrapper is the
+              flex-1 the month select used to be, so the row is unchanged.
+              At table density the pieces wrap loose as before. */}
+          {filtersInRow &&
+            (merged ? (
+              filters
+            ) : (
+              <div className="flex min-w-0 flex-1 items-center gap-1 max-sm:basis-full">{filters}</div>
+            ))}
           {merged && countGroup && (
             <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
               {countGroup}
