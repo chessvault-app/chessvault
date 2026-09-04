@@ -330,7 +330,8 @@ export function Shelf() {
             gets a full-width line of its own underneath. The bookmark
             switch rides beside the search below sm, exactly as in
             ShelfToolbar. */}
-        <div className="mb-4 flex flex-col gap-2.5">
+        {/* gap-4, the shelf toolbar's and PageShell's: see shelf-toolbar. */}
+        <div className="mb-4 flex flex-col gap-4">
           <PageHeader
             title={t('Puzzle books')}
             back={() => navigate('puzzles', 'hub')}

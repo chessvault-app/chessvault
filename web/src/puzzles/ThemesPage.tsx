@@ -234,7 +234,8 @@ export function ThemesPage() {
         {/* The shelves' two-row shape: the heading row carries what is
             ABOUT the page, and the search gets a full-width line of its
             own instead of a stub squeezed beside the title. */}
-        <div className="mb-4 flex flex-col gap-2.5">
+        {/* gap-4, the shelf toolbar's and PageShell's: see shelf-toolbar. */}
+        <div className="mb-4 flex flex-col gap-4">
           <PageHeader
             title={t('Puzzle themes')}
             back={() => navigate('puzzles', 'hub')}

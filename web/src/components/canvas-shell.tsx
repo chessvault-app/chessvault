@@ -92,7 +92,10 @@ export function CanvasShell({
           the pointer-events dance that used to arrange that is gone. */}
       <div className="shrink-0 px-4 pb-3 pt-4 md:px-6 md:pt-6">
         <PageHeader title={title} back={back} meta={meta} />
-        {search && <div className="mt-2 flex">{search}</div>}
+        {/* mt-4, PageShell's gap-4: the search field is what follows
+            this page's title, and it sits where every other page's
+            first row sits. */}
+        {search && <div className="mt-4 flex">{search}</div>}
       </div>
 
       {/* The surface, and everything that belongs ON it. Positioned, so

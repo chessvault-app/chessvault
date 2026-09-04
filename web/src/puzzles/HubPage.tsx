@@ -991,7 +991,10 @@ function Hub() {
     // blocks overflow, and the page moves. A launcher clipped off the
     // bottom edge would be worse than one you have to reach for.
     <PageShell width="medium" className="h-full gap-2 pb-3">
-      <PageHeader title={t('Puzzles')} />
+      {/* mb-2 on top of the column's gap-2: the title row keeps the
+          shell's 16px to the panel under it while the panels below stay
+          8px apart, which is the room this page fights for. */}
+      <PageHeader title={t('Puzzles')} className="mb-2" />
 
       {/* History first, then the book. Which one stretches is a property
           of the panels themselves (`flex-1` against `shrink-0`), not of

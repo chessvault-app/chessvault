@@ -327,7 +327,8 @@ export function BooksPage() {
           }}
         />
       )}
-      <div className="mb-4 flex flex-col gap-2.5">
+      {/* gap-4, the shelf toolbar's and PageShell's: see shelf-toolbar. */}
+      <div className="mb-4 flex flex-col gap-4">
         <PageHeader
           title={t('Books')}
           actions={

@@ -172,7 +172,12 @@ export function ShelfToolbar({
   );
 
   return (
-    <div className="flex flex-col gap-2.5">
+    // gap-4, PageShell's own: the 16px between a page's title row and
+    // whatever follows it. This was gap-2.5, which put the search field
+    // 10px under the title on the four shelves while the pages that
+    // hand the shell its children (Games, Settings, the dashboard) put
+    // theirs 16px down, and the shelves read as a tighter template.
+    <div className="flex flex-col gap-4">
       <PageHeader
         title={title}
         actions={

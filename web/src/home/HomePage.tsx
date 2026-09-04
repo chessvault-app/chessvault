@@ -914,8 +914,14 @@ export function HomePage() {
           carries the same pair, one flex-line to the left.
 
           One h1 in both states: deleting it outright would leave the only
-          route in the app with no heading at all. */}
-      <h1 className="flex items-center gap-2.5 justify-self-start max-md:mb-2 md:sr-only">
+          route in the app with no heading at all.
+
+          mb-4 is PageShell's own gap-4: the 16px every scrolling page
+          puts between its title row and what follows. This was mb-2,
+          and Continue's card sat 8px under the name while the Games
+          page's tabs sat 16px under theirs (lanph3re, comparing on the
+          phone). */}
+      <h1 className="flex items-center gap-2.5 justify-self-start max-md:mb-4 md:sr-only">
         {/* The mark bare, not on the sidebar's primary tile (lanph3re):
             a page header is type, and a filled tile beside it read as a
             button. currentColor keeps it in the heading's own ink. */}
