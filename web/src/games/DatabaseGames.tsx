@@ -1416,7 +1416,12 @@ export function DatabaseGames({
             }}
             ariaLabel={t('Material')}
             size="sm"
-            className="min-w-0 flex-1"
+            // basis-40, not the zero a bare flex-1 gives: with no basis
+            // the select never asked for room, so a phone kept the whole
+            // mode on one line and this read "Pa…". Asking for 160px
+            // sends the held-for pair to the next line instead, and the
+            // preset takes the rest of the first beside the kind.
+            className="min-w-0 flex-1 basis-40"
             groups={[
               {
                 options: [
