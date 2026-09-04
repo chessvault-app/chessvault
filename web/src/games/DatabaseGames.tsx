@@ -388,6 +388,9 @@ function CustomMaterialWindow({
  * either. GameListShell still has all three for the browsers that do use
  * them.)
  */
+/** The merged row's tail width as it last settled on this device. */
+const TAIL_KEY = 'vault:dbgames:tail-w';
+
 export function DatabaseGames({
   table = false,
   onSelect,
@@ -446,6 +449,35 @@ export function DatabaseGames({
   // which the pane showed the old total and the old rows unchanged
   // (lanph3re's report); a placeholder here would shove the list.
   const refreshing = useSlowLoad(loading && fresh && rows.length > 0);
+  // The row's tail — the count, the database picker, the manager — is
+  // drawn from two answers that arrive after the row does: the count
+  // from the first search, the picker from the server's directory. Both
+  // landed as the row was already up, and the search field, which takes
+  // what is left, shrank by their width as they did (lanph3re, on the
+  // Databases tab: the picker and the count popping in). The tail's
+  // settled width is remembered on this device and held as its minimum
+  // until this mount's answers are in, so a returning tab lays the row
+  // out once; the first visit ever still shifts, by the tail's width.
+  const tailRef = useRef<HTMLSpanElement>(null);
+  const [tailReserve] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem(TAIL_KEY));
+      return Number.isFinite(v) && v > 0 ? v : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const tailSettled = meta !== null && !(loading && fresh && rows.length === 0);
+  useEffect(() => {
+    if (!tailSettled || !tailRef.current) return;
+    const w = Math.ceil(tailRef.current.getBoundingClientRect().width);
+    if (w <= 0) return;
+    try {
+      localStorage.setItem(TAIL_KEY, String(w));
+    } catch {
+      /* not remembered; the next visit shifts once, as the first did */
+    }
+  }, [tailSettled, total, meta]);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // A slow answer for "naj" must not overwrite the rows for "najdorf"
@@ -1304,29 +1336,52 @@ export function DatabaseGames({
    */
   const runButton = (
     <>
-      {/* Icon-only, the archive's own precedent (its Browse is a globe
-          beside the username field): the labelled button was the row's
-          widest piece and wrapped onto a line of its own in narrow panes
-          (lanph3re's report). The FEN field submits on Enter besides, so
-          the button is the pointer's way in, not the only one. Primary
-          still — it is the row's one verb. The glyph is the RETURN
-          symbol, not ScanSearch: the toggle one row up already wears
-          that one and means it (search BY position), and two identical
-          icons stacked read as one control twice (lanph3re's catch) —
-          ↵ says what this one does and how the keyboard does it. */}
-      <Button
-        variant="default"
-        size="icon-sm"
-        title={t('Search')}
-        disabled={
-          hunting ||
-          (huntKind === 'position' && huntFen.trim() === '') ||
-          (huntKind === 'material' && presetId === 'custom' && customSpec === null)
-        }
-        onClick={() => void runHunt()}
-      >
-        <CornerDownLeft className="size-3.5" />
-      </Button>
+      {/* Icon-only, the archive's own precedent (its Browse is a globe
+
+          beside the username field): the labelled button was the row's
+
+          widest piece and wrapped onto a line of its own in narrow panes
+
+          (lanph3re's report). The FEN field submits on Enter besides, so
+
+          the button is the pointer's way in, not the only one. Primary
+
+          still — it is the row's one verb. The glyph is the RETURN
+
+          symbol, not ScanSearch: the toggle one row up already wears
+
+          that one and means it (search BY position), and two identical
+
+          icons stacked read as one control twice (lanph3re's catch) —
+
+          ↵ says what this one does and how the keyboard does it. */}
+
+      <Button
+
+        variant="default"
+
+        size="icon-sm"
+
+        title={t('Search')}
+
+        disabled={
+
+          hunting ||
+
+          (huntKind === 'position' && huntFen.trim() === '') ||
+
+          (huntKind === 'material' && presetId === 'custom' && customSpec === null)
+
+        }
+
+        onClick={() => void runHunt()}
+
+      >
+
+        <CornerDownLeft className="size-3.5" />
+
+      </Button>
+
     </>
   );
   // The last select and the run button travel as one: each was its own
@@ -1508,7 +1563,11 @@ export function DatabaseGames({
             </Button>
             {filtersInRow && filters}
             {merged && (
-              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+              <span
+                ref={tailRef}
+                className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5"
+                style={!tailSettled && tailReserve > 0 ? { minWidth: tailReserve } : undefined}
+              >
                 <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
                   {count}
                 </span>

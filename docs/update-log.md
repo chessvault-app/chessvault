@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Databases search row lays out once.** The count and the
+  database picker at the row's end arrive after the row does, and the
+  search field shrank by their width as they landed. The row now holds
+  the room its end took last time on this device until this visit's
+  answers are in; the very first visit still shifts.
 - **The desktop app draws its own title bar.** The window's top band
   is the app's: a ☰ that opens the application menu (which hid behind
   Alt) as the app's own menu, in its language, the sidebar's fold, and back and forward through the app's
