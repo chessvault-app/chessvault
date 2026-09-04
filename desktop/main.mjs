@@ -528,17 +528,29 @@ app.whenReady().then(async () => {
     return picked.canceled ? null : (picked.filePaths[0] ?? null);
   });
 
-  // The band's ☰: the application menu, dropped from the button. The
-  // page asks with the button's corner in its own coordinates, which is
-  // what popup wants.
-  ipcMain.handle('window:menu', (_e, x, y) => {
-    const menu = Menu.getApplicationMenu();
-    if (!menu) return;
-    menu.popup({
-      window: win,
-      x: Number.isFinite(x) ? Math.round(x) : undefined,
-      y: Number.isFinite(y) ? Math.round(y) : undefined,
-    });
+  // The band's ☰ menu: the page draws it and asks for the verb by
+  // name, from this list and no other. The same verbs as the application
+  // menu below, which stays for Alt and its shortcuts.
+  const commands = {
+    'switch-vault': async () => {
+      writeSettings({ mode: null });
+      serverProc?.kill();
+      serverProc = null;
+      await win.loadFile(join(here, 'chooser.html'));
+    },
+    reload: () => win.webContents.reload(),
+    'dev-tools': () => win.webContents.toggleDevTools(),
+    'full-screen': () => win.setFullScreen(!win.isFullScreen()),
+    'zoom-in': () => win.webContents.setZoomLevel(win.webContents.getZoomLevel() + 0.5),
+    'zoom-out': () => win.webContents.setZoomLevel(win.webContents.getZoomLevel() - 0.5),
+    'zoom-reset': () => win.webContents.setZoomLevel(0),
+    quit: () => app.quit(),
+  };
+  ipcMain.handle('window:command', async (_e, name) => {
+    const run = Object.hasOwn(commands, name) ? commands[name] : null;
+    if (!run) return false;
+    await run();
+    return true;
   });
   // The overlay's ground and ink, from the page's resolved theme. Only
   // where there is an overlay (not macOS), and only colours: the page

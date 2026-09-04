@@ -59,6 +59,10 @@ export const ko: Record<string, string> = {
 
   // --- common actions ------------------------------------------------------
   Menu: '메뉴',
+  'Switch vault…': '보관함 전환…',
+  'Full screen': '전체 화면',
+  'Developer tools': '개발자 도구',
+  Quit: '종료',
   Back: '뒤로',
   Forward: '앞으로',
   Start: '시작',

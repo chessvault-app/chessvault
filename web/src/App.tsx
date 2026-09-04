@@ -41,7 +41,7 @@ import { TitleTip } from '@/components/title-tip';
 import { t, useLang } from '@/lib/i18n';
 import { useMediaQuery, useWorkspaceViewport } from '@/lib/media';
 import { isDemo } from '@/lib/demo';
-import { TitleBar } from '@/components/title-bar';
+import { hasTitleBar, TitleBar } from '@/components/title-bar';
 import { foldedFrom, useSidebar } from '@/store/sidebar';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
@@ -523,8 +523,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
   // and why the rows carried no tip at all until they could fold.
   const tipSide = 'right';
   // Button makes `title` the tooltip AND the accessible name of an
-  // icon-only button, so the switch states its position once.
-  const foldButton = (
+  // icon-only button, so the switch states its position once. Under the
+  // desktop shell's band the switch is the band's, and a second one in
+  // the brand row was the same control twice on one screen.
+  const foldButton = hasTitleBar() ? null : (
     <Button
       variant="ghost"
       size="icon-lg"

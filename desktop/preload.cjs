@@ -32,7 +32,10 @@ contextBridge.exposeInMainWorld('vaultShell', {
   titleBar: {
     platform: process.platform,
     height: TITLE_BAR_HEIGHT,
-    popupMenu: (x, y) => ipcRenderer.invoke('window:menu', x, y),
+    // The app menu's verbs, run by the shell; the page draws the menu
+    // itself (the native popup is the OS's own face, in the OS's own
+    // language, and on Windows it clipped its descenders).
+    command: (name) => ipcRenderer.invoke('window:command', name),
     setColors: (colors) => ipcRenderer.invoke('window:title-bar-colors', colors),
   },
 });

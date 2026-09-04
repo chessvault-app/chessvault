@@ -1,6 +1,7 @@
-import { ArrowLeft, ArrowRight, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bug, Expand, FolderSync, Menu, PanelLeftClose, PanelLeftOpen, Percent, Power, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
@@ -24,7 +25,9 @@ import { useTheme } from '@/store/theme';
  * no second bar.
  *
  * What it holds is what a window wants at its top and the app had
- * nowhere to put: the application menu, which hid behind Alt; the
+ * nowhere to put: the application menu, which hid behind Alt, drawn as
+ * the app's own menu rather than the OS's popup (the OS's face and
+ * language, and on Windows one that clipped its descenders); the
  * sidebar's fold, which is the sidebar's own switch as well; and back
  * and forward through the app's history, which a browser gives and a
  * window did not.
@@ -34,7 +37,7 @@ import { useTheme } from '@/store/theme';
 interface TitleBarBridge {
   platform: 'win32' | 'darwin' | 'linux';
   height: number;
-  popupMenu: (x: number, y: number) => Promise<void>;
+  command: (name: string) => Promise<boolean>;
   setColors: (colors: { color: string; symbolColor: string }) => Promise<void>;
 }
 
@@ -119,8 +122,22 @@ export function TitleBar() {
     mo.observe(el, { childList: true, characterData: true, subtree: true });
     return () => mo.disconnect();
   }, []);
+  const [menuOpen, setMenuOpen] = useState(false);
   if (!shell) return null;
   const icon = 'size-4';
+  // The application menu's verbs, in the app's own menu and language.
+  // The shell runs them by name (desktop/main.mjs, `commands`).
+  const run = (name: string) => () => void shell.command(name);
+  const menu: MenuAction[] = [
+    { label: 'Switch vault…', icon: FolderSync, onSelect: run('switch-vault') },
+    { label: 'Reload', icon: RefreshCw, onSelect: run('reload') },
+    { label: 'Full screen', icon: Expand, onSelect: run('full-screen') },
+    { label: 'Zoom in', icon: ZoomIn, onSelect: run('zoom-in') },
+    { label: 'Zoom out', icon: ZoomOut, onSelect: run('zoom-out') },
+    { label: 'Reset zoom', icon: Percent, onSelect: run('zoom-reset') },
+    { label: 'Developer tools', icon: Bug, onSelect: run('dev-tools') },
+    { label: 'Quit', icon: Power, danger: true, onSelect: run('quit') },
+  ];
   return (
     <div
       // The id is the shell's tell: a page without it gets a bare drag
@@ -134,18 +151,17 @@ export function TitleBar() {
       )}
       style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title={t('Menu')}
-        className="[-webkit-app-region:no-drag]"
-        onClick={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          void shell.popupMenu(Math.round(r.left), Math.round(r.bottom));
-        }}
-      >
-        <Menu className={icon} />
-      </Button>
+      <ActionMenu title={t('Menu')} actions={menu} open={menuOpen} onOpenChange={setMenuOpen}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('Menu')}
+          className="[-webkit-app-region:no-drag]"
+          active={menuOpen}
+        >
+          <Menu className={icon} />
+        </Button>
+      </ActionMenu>
       {/* The sidebar exists from md; below it the band has no rail to fold. */}
       {md && (
         <Button
