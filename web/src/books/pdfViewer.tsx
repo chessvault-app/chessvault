@@ -570,8 +570,14 @@ export function PdfScroller({
     // turned to shares the board's top edge.
     const top = tops[p - 1] ?? 0;
     el.scrollTo({ top });
-    const reachable = top <= el.scrollHeight - el.clientHeight + 1;
-    if (reachable && Math.abs(el.scrollTop - top) < 2) {
+    // The last page is the one slot that can be unreachable for good: a
+    // page shorter than the viewport (a whole-page fit, a phone) never
+    // gets its top to the viewport's top. Its request is done at the
+    // column's end, or it stayed pending forever, re-scrolling there on
+    // every layout change and never reporting a page again.
+    const reachable = top <= el.scrollHeight - el.clientHeight + 1 || p === pages;
+    const landed = reachable ? Math.min(top, el.scrollHeight - el.clientHeight) : top;
+    if (reachable && Math.abs(el.scrollTop - landed) < 2) {
       target.current = null;
       reported.current = p;
     }

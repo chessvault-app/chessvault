@@ -293,7 +293,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       goTo={goTo}
       onScrolledTo={setPageNo}
       bumpZoom={bumpZoom}
-      setZoom={setZoom}
       zoomAnchor={zoomAnchor}
       overlayFor={overlayFor}
       reading={reading}
@@ -777,7 +776,6 @@ function PdfPane({
   goTo,
   onScrolledTo,
   bumpZoom,
-  setZoom,
   zoomAnchor,
   overlayFor,
   reading,
@@ -804,7 +802,6 @@ function PdfPane({
   /** The page the scroller arrived at on its own. */
   onScrolledTo: (n: number) => void;
   bumpZoom: (f: number, at?: PinchPoint & { top?: number; left?: number }) => void;
-  setZoom: (z: number) => void;
   zoomAnchor: React.RefObject<(PinchPoint & { top?: number; left?: number }) | null>;
   overlayFor: (page: number) => React.ReactNode;
   /** The diagram pass over this book, while it runs: a line over the page. */
@@ -920,13 +917,19 @@ function PdfPane({
   }, [doc, hasViewport]);
   const fitPageZoom = fitZoomFor(vpH);
   const fitted = fitPageZoom !== null && fitPageZoom < 1 && Math.abs(zoom - fitPageZoom) < 0.005;
+  // Through the anchored path, not setZoom: a fit is a zoom out, and a
+  // zoom out shrinks the column past the old offset, which the browser
+  // clamps before the scroller's effect can read it. Set directly, the
+  // fit read the clamped offset as where the reader was and mapped it
+  // through the old layout: pressed on page 8 of the demo book it
+  // landed on page 6.
   const toggleFit = (): void => {
     if (fitted) {
-      setZoom(1);
+      anchoredBump(1 / zoom);
       return;
     }
     const live = fitZoomFor(viewport.current?.clientHeight ?? vpH);
-    if (live !== null) setZoom(live);
+    if (live !== null) anchoredBump(live / zoom);
   };
   const onKey = (e: React.KeyboardEvent<HTMLDivElement>): void => {
     const keys: Record<string, () => void> = {
