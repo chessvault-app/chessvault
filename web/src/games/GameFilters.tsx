@@ -323,6 +323,7 @@ export function StructuredFiltersWindow({
   onApply,
   onClose,
   showEvent = true,
+  showPlayer = true,
   extraFields,
   onClear,
   draftResult,
@@ -332,6 +333,14 @@ export function StructuredFiltersWindow({
   onClose: () => void;
   /** The collection's games carry no Event header worth filtering. */
   showEvent?: boolean;
+  /**
+   * The archive's player is fixed by the username it was looked up
+   * with, so its Player row asked what the caller's own side-and-result
+   * fields (extraFields) already answer, with a contradiction hint to
+   * referee the two. Off, the row and the hint are not drawn and the
+   * Against field takes the desktop's autofocus.
+   */
+  showPlayer?: boolean;
   /**
    * The caller's quick filters, mirrored into this window so it is the
    * COMPLETE editor: the row outside and these fields edit the same
@@ -383,6 +392,7 @@ export function StructuredFiltersWindow({
       }}
     >
       <DialogContent title="Filter games" icon={SlidersHorizontal}>
+        {showPlayer && (
         <Field label="Player">
           <div className="flex gap-2">
             <ClearableInput
@@ -440,12 +450,14 @@ export function StructuredFiltersWindow({
             <p className="text-muted-foreground mt-1 text-sm">{t('Won or lost by whom? Name a player above.')}</p>
           )}
         </Field>
+        )}
 
         {/* The head-to-head slot: somebody ELSE in the same game, either
             seat. No side or outcome of their own — the player's above
             pin the pair's. */}
         <Field label="Against">
           <ClearableInput
+            autoFocus={!showPlayer && autoFocusField()}
             inputSize="sm"
             value={draft.player2}
             onChange={(e) => patch({ player2: e.target.value })}
@@ -500,7 +512,7 @@ export function StructuredFiltersWindow({
 
         {extraFields}
 
-        {contradictory && (
+        {showPlayer && contradictory && (
           <p className="text-warn text-sm">
             {t('That outcome and that result can never happen in the same game, so no game will match.')}
           </p>

@@ -884,6 +884,10 @@ export function ArchiveBrowser({
               initial={structured}
               draftResult={quickDraft.result}
               showEvent={false}
+              // The searched player IS the player: the window's Player row
+              // (name, side, outcome) restated the field below and the
+              // Against field, so the archive does not draw it.
+              showPlayer={false}
               extraFields={
                 <>
                   {/* The row's month select, below sm only: there the row
@@ -901,9 +905,9 @@ export function ArchiveBrowser({
                       />
                     </Field>
                   </div>
-                {/* The row's selects, mirrored — side here is the SEARCHED
-                    player's seat, a different question from the named
-                    player's side above, which is why both exist. */}
+                {/* The row's selects, mirrored: the searched player's seat
+                    and the game's result, the window's only side-and-result
+                    row here. */}
                 <Field label="Searched player's side and result">
                   <div className="flex gap-2">
                     <SideSelect
