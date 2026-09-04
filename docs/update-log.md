@@ -17,8 +17,21 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   was solved; Repertoire, which had no figure, shows its due count on the
   same terms. The tiles' icons carry the theme's accent at rest, where
   before they took it only on hover, which a phone has none of; and the
-  first tile in your arrangement spans the row, so the grid has a first
-  thing to press. The desktop dashboard is unchanged.
+  first tile in your arrangement spans the row, filled in the theme's
+  primary the way the round button on a board page is, so the grid has
+  a first thing to press. Continue's board row is marked with a primary
+  edge and a wash, the way a marked card on a shelf is. On the neutral
+  theme both are black-on-white; a tinted scheme colours them. The
+  desktop dashboard is unchanged.
+- **One gap under every phone page's title.** The 16px the shell puts
+  between a title row and what follows it now holds on every page: Home
+  had 8px to the Continue card, the shelves (Studies, Notes, Books,
+  Puzzle books, Puzzle themes) had 10px to their search field, the
+  Opening map had 8px, and the Puzzles hub 8px, against 16 on Games,
+  Settings, More and the puzzle dashboard. The shelves and the map take
+  the same 16px at every width, since the same row is drawn on a
+  desktop. The board pages, where the title shares a strip with the
+  board's controls, are a different template and keep their own.
 - **The sidebar folds.** A button at the top of the sidebar folds it to
   its icons, and the same button under the mark unfolds it; the choice
   stays on the device. Before, the window decided alone: labels from a
