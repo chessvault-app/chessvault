@@ -808,7 +808,10 @@ export function ArchiveBrowser({
             onValueChange={(m) => void loadMonth(m)}
             ariaLabel={t('Archive month')}
             size="sm"
-            className={cn('min-w-0 flex-1', merged && 'flex-none')}
+            // Not below sm: the phone's row has room for the handle, the
+            // globe and the filters button, and the account's whole span
+            // ("Any date") is what loads there.
+            className={cn('min-w-0 flex-1 max-sm:hidden', merged && 'flex-none')}
             groups={[
               {
                 options: [
@@ -1057,13 +1060,7 @@ export function ArchiveBrowser({
   const filtersInRow = merged || folded;
   const toolbar = (
     <>
-        <div
-          className={cn(
-            'flex flex-wrap items-center gap-1',
-            searchRowClass,
-            merged && 'w-full gap-1.5',
-          )}
-        >
+        <div className={cn('flex items-center gap-1', searchRowClass, merged && 'w-full flex-wrap gap-1.5')}>
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
           <SearchInput
@@ -1090,19 +1087,12 @@ export function ArchiveBrowser({
               <Globe className="size-3.5" />
             )}
           </Button>
-          {/* Card mode on a phone: the lookup pair on one line, the month
-              and the filters on the next. In one row the handle field
-              was 140px between the globe and the month select, too
-              narrow to read a username back. basis-full drops the group
-              to a line of its own below sm; above it the wrapper is the
-              flex-1 the month select used to be, so the row is unchanged.
-              At table density the pieces wrap loose as before. */}
-          {filtersInRow &&
-            (merged ? (
-              filters
-            ) : (
-              <div className="flex min-w-0 flex-1 items-center gap-1 max-sm:basis-full">{filters}</div>
-            ))}
+          {/* Below sm the month select steps out (see its class) and the
+              row is the handle field, the globe and the filters button,
+              the filters button ending the row the way the collection's
+              does. With the select in the row the field was 108px at
+              375px, too narrow to read a username back. */}
+          {filtersInRow && filters}
           {merged && countGroup && (
             <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
               {countGroup}
