@@ -503,7 +503,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
           />
         </span>
         <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-          {weak.wins}/{weak.attempts}
+          {t('{a} of {b}', { a: weak.wins, b: weak.attempts })}
         </span>
         <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
       </ListRow>
@@ -537,7 +537,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
             <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
           </span>
           <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-            {b.solved}/{b.puzzles}
+            {t('{a} of {b}', { a: b.solved, b: b.puzzles })}
           </span>
           <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
         </ListRow>

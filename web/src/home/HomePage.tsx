@@ -1564,7 +1564,7 @@ export function HomePage() {
                       <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
                     </span>
                     <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-                      {b.solved}/{b.puzzles}
+                      {t('{a} of {b}', { a: b.solved, b: b.puzzles })}
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>
