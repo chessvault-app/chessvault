@@ -107,23 +107,6 @@ engine moves up a version.
   used to end in a 16px blank under its last row, with that row cut
   mid-line above it; the list now runs to the edge, on the Games page
   and in the workspace's games band alike.
-- **The puzzle dashboard's rows get a real eye.** The eye that pops a
-  puzzle's position, on the dashboard's log and the hub's history, is
-  a button beside the row: it takes the keyboard (Enter opens the
-  peek, Escape closes it), a screen reader reads its own name, and on
-  a phone it is a 36px target instead of a 14px one next to a row that
-  navigates away.
-- **The dashboard's failed list has its next step.** Filtered to
-  Failed, the puzzle panel's header carries “Review”, going where the
-  button at the top goes, and an empty filter says “Nothing to
-  review.”. Each panel names what it counts, “Attempts by difficulty”
-  and “30 puzzles”, where the difference used to live in a hover tip.
-- **Review takes the dashboard's accent.** The review button is the
-  page's one filled button; the reset is an eraser icon in the header,
-  named “Wipe attempts, history and the review pool”, and its question
-  is unchanged. A history that failed to load says “Could not load the
-  attempts.” rather than “No attempts yet”.
-
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
@@ -135,6 +118,34 @@ engine moves up a version.
   six digits used to sit in one joined run; each now has its own cell,
   with a wider gap after the third, the way an authenticator app prints
   the code. Typing, pasting and the sixth digit's submit are unchanged.
+- **The puzzle dashboard can start training.** Its top slot always
+  holds a button now: “Review puzzles · {n} due” when something is
+  waiting, “Train” otherwise, with the “Nothing due” note under it.
+  The button is the page's one filled control; the reset is a quiet
+  “Wipe history” under the log, last on the page, and its question
+  says what it costs (“Wipe 30 attempts and the 9 puzzles waiting for
+  review?”).
+- **The dashboard's rows get a real eye.** The eye that pops a
+  puzzle's position, on the dashboard's log and the hub's history, is
+  a button beside the row: it takes the keyboard (Enter opens the
+  peek, Escape closes it), a screen reader reads its own name, and on
+  a phone it is a 36px target instead of a 14px one next to a row that
+  navigates away.
+- **The dashboard says what it counts, where a phone can read it.**
+  “Attempts by difficulty” and “30 puzzles” name their units, the
+  band counts read “11 of 17”, and the sentence reconciling Attempts
+  with the rest of the page sits under the figures instead of in a
+  hover tip. Filtered to Failed, the log's header carries “Review”
+  and an empty filter says “Nothing to review.”. On a phone the log
+  scrolls with the page instead of inside a well of its own, and past
+  200 puzzles a last row says so. A history that failed to load says
+  “Could not load the attempts.” rather than “No attempts yet”.
+
+- **The online archive's table takes a right-click.** A row in the
+  chess.com or Lichess table opens the same menu the reference
+  databases' rows have: “Open on the board” and “Add to collection”,
+  the second dimmed once the game is in. Before this a right-click on
+  an archive row did nothing.
 
 ## 0.8.2
 
