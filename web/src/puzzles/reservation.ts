@@ -8,10 +8,11 @@
  * Three facts, because the page has three blocks whose shape the
  * answers decide, and they are not one question:
  *
- *  - the review slot settles as one of FOUR shapes — a due button, a
- *    failed button, a one-line "next review lands…" note, or nothing —
- *    and it used to reserve the button for everyone, so a vault with an
- *    empty schedule gave 32px and a margin back when the answer came;
+ *  - the review slot settles as one of two shapes — a button (review
+ *    when something is due or failed, train otherwise), or that button
+ *    with a one-line "next review lands…" note under it — and the note
+ *    is the taller one, so a schedule with nothing due used to shove
+ *    when its line arrived;
  *  - the Books panel draws one row per book, or a whole EmptyState
  *    when there are none — which is TALLER than the three rows it used
  *    to reserve, so the empty case (every vault that has never imported
@@ -24,9 +25,9 @@
  */
 
 export interface DashboardShape {
-  /** Which shape the review slot settled as. The two buttons are one
-      case: same box, different words. */
-  review: 'button' | 'note' | 'none';
+  /** Which shape the review slot settled as. The three buttons are one
+      case: same box, different words. `note` is that box plus a line. */
+  review: 'button' | 'note';
   /** Rows the Books panel drew. 0 is the EmptyState, not nothing. */
   books: number;
   /** Rows the attempts list drew. 0 is its one-line note. */
@@ -53,12 +54,13 @@ export const MAX_ATTEMPTS = 12;
 
 /**
  * What a device that has never seen this vault reserves: what a fresh
- * vault certainly has, which on this page is nothing at all — no
- * schedule, no books (the EmptyState), no attempts (the one-line note).
- * Unlike home's WELCOME_SHAPE there is no seeded content here to raise
- * the floor: the welcome study puts nothing on this page.
+ * vault certainly has, which on this page is the Train button and
+ * nothing else — no schedule under it, no books (the EmptyState), no
+ * attempts (the one-line note). Unlike home's WELCOME_SHAPE there is no
+ * seeded content here to raise the floor: the welcome study puts
+ * nothing on this page.
  */
-export const FRESH_DASHBOARD: DashboardShape = { review: 'none', books: 0, attempts: 0 };
+export const FRESH_DASHBOARD: DashboardShape = { review: 'button', books: 0, attempts: 0 };
 
 const count = (v: unknown, max: number): number =>
   typeof v === 'number' && Number.isInteger(v) && v >= 0 ? Math.min(v, max) : 0;
@@ -80,7 +82,7 @@ export function parseDashboardShape(raw: string | null): DashboardShape {
   if (typeof stored !== 'object' || stored === null) return FRESH_DASHBOARD;
   const value = stored as Partial<DashboardShape>;
   return {
-    review: value.review === 'button' || value.review === 'note' ? value.review : 'none',
+    review: value.review === 'note' ? 'note' : 'button',
     books: count(value.books, MAX_BOOKS),
     attempts: count(value.attempts, MAX_ATTEMPTS),
   };

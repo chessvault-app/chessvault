@@ -1,4 +1,4 @@
-import { BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
+import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import {
   Empty,
@@ -168,7 +168,7 @@ export function DashboardPage() {
     localStorage.setItem(
       DASH_SHAPE_KEY,
       storedDashboardShape({
-        review: due > 0 || failed > 0 ? 'button' : nextDue ? 'note' : 'none',
+        review: due > 0 || failed > 0 || !nextDue ? 'button' : 'note',
         books: books.length,
         attempts: latestById.size,
       }),
@@ -248,28 +248,29 @@ export function DashboardPage() {
             offering, hidden in the one place nobody pressed. It takes
             the page's one accent, the default variant: with Reset in
             red and this in grey, the destructive control outranked it. */}
-        {/* The count comes from /api/puzzles/meta, so before it answers
-            this page cannot know whether the button belongs here — and it
-            used to resolve that by drawing nothing, then pushing every
-            panel below it down by 36px and a margin when the answer came.
-            Its place is held instead. A vault with nothing failed gives
-            the place up, which is the one case nothing can predict. */}
+        {/* The slot always holds a button now. It used to give its place
+            up for a vault with nothing to review, and then the page had
+            no way to start training: "Go solve something" was its own
+            instruction, and the sub-navigation is Dashboard, Puzzle
+            books and Themes. Nothing due means Train, not nothing.
+
+            The count comes from /api/puzzles/meta, so before it answers
+            this page cannot know which button belongs here; the box is
+            the same for all three, and the one thing that varies, the
+            note under Train for a schedule with nothing due, is what
+            last visit's shape remembers. */}
         {user === null ? (
-          // The slot settles as one of four shapes, and the place held
-          // is the one this device saw last visit: the button's box for
-          // a vault with reviews waiting (h-8, h-9 under a coarse
-          // pointer, where the real button grows too — it once held
-          // 36px against 32), the note's one 20px line for a schedule
-          // with nothing due, and nothing for a vault that has never
-          // trained, which reserved the button for everyone and gave it
-          // back.
-          reserved.review === 'button' ? (
-            <Skeleton className="mb-4 h-8 w-full rounded-lg pointer-coarse:h-9" />
-          ) : reserved.review === 'note' ? (
-            <div className="mb-4 flex h-5 items-center justify-center">
-              <Skeleton className="h-2.5 w-64 max-w-full" />
-            </div>
-          ) : null
+          // The button's box (h-8, h-9 under a coarse pointer, where the
+          // real button grows too — it once held 36px against 32), and
+          // under it the note's one 20px line when this device saw one.
+          <div className="mb-4">
+            <Skeleton className="h-8 w-full rounded-lg pointer-coarse:h-9" />
+            {reserved.review === 'note' && (
+              <div className="mt-2 flex h-5 items-center justify-center">
+                <Skeleton className="h-2.5 w-64 max-w-full" />
+              </div>
+            )}
+          </div>
         ) : due > 0 ? (
           // The schedule has something waiting: lead with the due count,
           // which is the number that asks to be acted on today.
@@ -292,13 +293,26 @@ export function DashboardPage() {
             <RotateCcw className="size-3.5" data-icon="inline-start" />
             {t('Review failed puzzles')} · {failed}
           </Button>
-        ) : nextDue ? (
-          // Nothing to press, but the schedule is not empty: say when it
-          // comes back, so an empty queue reads as earned rather than gone.
-          <p className="text-muted-foreground mb-4 text-center text-sm">
-            {t('Nothing due. The next review lands {when}', { when: formatUntil(nextDue) })}
-          </p>
-        ) : null}
+        ) : (
+          <div className="mb-4">
+            <Button
+              variant="default"
+              size="default"
+              className="w-full justify-center"
+              onClick={() => navigate('puzzles')}
+            >
+              <Puzzle className="size-3.5" data-icon="inline-start" />
+              {t('Train')}
+            </Button>
+            {nextDue && (
+              // The schedule is not empty: say when it comes back, so an
+              // empty queue reads as earned rather than gone.
+              <p className="text-muted-foreground mt-2 text-center text-sm">
+                {t('Nothing due. The next review lands {when}', { when: formatUntil(nextDue) })}
+              </p>
+            )}
+          </div>
+        )}
 
         <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
           {/* The unit is in the title. This panel counts attempts, the
@@ -546,19 +560,29 @@ export function DashboardPage() {
             // An outage is not an empty vault: told "No attempts yet", a
             // player on a phone with a flaky link would read that they
             // have never trained. The failure names itself instead.
-            <p className="text-muted-foreground px-3 py-3 text-sm">
-              {t(
-                historyFailed && history.length === 0
-                  ? 'Could not load the attempts.'
-                  : history.length === 0
-                    ? 'No attempts yet. Go solve something.'
-                    : // "Nothing to review" is a verdict on the review pool,
-                      // so it is said only when the pool alone was asked
-                      // for: with a band on top, an empty list means the
-                      // band is empty, not the pool.
-                      resultFilter === 'review' && bandFilter === 'any'
-                      ? 'Nothing to review.'
-                      : 'Nothing matches this filter.',
+            <p className="text-muted-foreground flex items-center gap-3 px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                {t(
+                  historyFailed && history.length === 0
+                    ? 'Could not load the attempts.'
+                    : history.length === 0
+                      ? 'No attempts yet. Go solve something.'
+                      : // "Nothing to review" is a verdict on the review
+                        // pool, so it is said only when the pool alone was
+                        // asked for: with a band on top, an empty list
+                        // means the band is empty, not the pool.
+                        resultFilter === 'review' && bandFilter === 'any'
+                        ? 'Nothing to review.'
+                        : 'Nothing matches this filter.',
+                )}
+              </span>
+              {/* The instruction comes with its control: "go solve
+                  something" pointed at nothing on the page. */}
+              {history.length === 0 && !historyFailed && (
+                <Button variant="secondary" size="sm" onClick={() => navigate('puzzles')}>
+                  <Puzzle className="size-3.5" data-icon="inline-start" />
+                  {t('Train')}
+                </Button>
               )}
             </p>
           ) : (

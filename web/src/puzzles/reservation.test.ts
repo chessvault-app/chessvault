@@ -28,10 +28,14 @@ describe('parseDashboardShape', () => {
     expect(parseDashboardShape('{"review":"note","books":0,"attempts":0}').review).toBe('note');
   });
 
-  it('reads an unknown review value as none, not as nothing learned', () => {
+  it('reads an unknown review value as the button, not as nothing learned', () => {
     const shape = parseDashboardShape('{"review":"banner","books":1,"attempts":1}');
-    expect(shape.review).toBe('none');
+    expect(shape.review).toBe('button');
     expect(shape.books).toBe(1);
+  });
+
+  it('reads the retired "none" as the button the slot now always holds', () => {
+    expect(parseDashboardShape('{"review":"none","books":0,"attempts":0}').review).toBe('button');
   });
 
   it('clamps counts past the caps rather than dropping them', () => {
