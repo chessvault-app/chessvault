@@ -166,6 +166,10 @@ engine moves up a version.
   resting; for the danger tone Cancel is first and the irreversible
   answer takes a deliberate reach. Every destructive confirm in the
   app follows.
+- **Two small corrections app-wide.** The connection errors read
+  “Vault server unreachable” and “No internet connection”, in sentence
+  case like every other line. A book row on the puzzle dashboard is no
+  longer announced with a stray “x” from its progress bar.
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
