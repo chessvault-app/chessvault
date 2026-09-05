@@ -711,7 +711,7 @@ export const ko: Record<string, string> = {
   'Puzzles whose latest attempt failed. This is the review pool.':
     '마지막 시도가 실패한 퍼즐입니다. 복습 대상과 같습니다.',
   'Review failed puzzles': '실패한 퍼즐 복습',
-  'By difficulty': '난이도별',
+  'Attempts by difficulty': '난이도별 시도',
   'All puzzle books': '모든 퍼즐 책',
   'Preview the position': '포지션 미리 보기',
   Shelf: '목록',
@@ -1594,6 +1594,7 @@ export const ko: Record<string, string> = {
   Hide: '숨기기',
   'No attempts yet. Go solve something.': '아직 시도가 없습니다. 뭐라도 풀어 보세요.',
   'Nothing matches this filter.': '이 조건에 맞는 것이 없습니다.',
+  'Nothing to review.': '복습할 것이 없습니다.',
   'Could not load the attempts.': '시도 기록을 불러오지 못했습니다.',
   'Wipe attempts, history and the review pool': '시도, 기록, 복습 대상을 모두 지우기',
   'Wipe all attempts, history and the review pool?':

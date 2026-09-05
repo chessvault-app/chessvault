@@ -299,7 +299,13 @@ export function DashboardPage() {
         ) : null}
 
         <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
-          <PanelHeader title={t('By difficulty')} />
+          {/* The unit is in the title. This panel counts attempts, the
+              log below counts puzzles, and the two agreed on "30" in the
+              demo only because nobody there had replayed anything; the
+              first real vault where they differ read as a bug, and the
+              tooltip that explained it lived on hover, which a phone has
+              not got. */}
+          <PanelHeader title={t('Attempts by difficulty')} />
           <div className="grid gap-2.5 px-(--card-spacing)">
             {BANDS.map((band) => {
               const inBand = counted.filter(
@@ -452,7 +458,20 @@ export function DashboardPage() {
 
         <Panel>
           <PanelHeader
-            title={history === null ? t('Puzzles') : `${t('Puzzles')} · ${puzzles.length}`}
+            title={history === null ? t('Puzzles') : t('{n} puzzles', { n: puzzles.length })}
+            // The failed list's own way onward. Filtered to the puzzles
+            // that went wrong, the panel was a column of red marks and
+            // nothing else, with the review button 500px above it: the
+            // one view a solver comes here to act on ended without an
+            // action. Same destination as the slot at the top.
+            actions={
+              resultFilter === 'review' && puzzles.length > 0 ? (
+                <Button variant="ghost" size="sm" onClick={() => navigate('puzzles', 'failed')}>
+                  <RotateCcw className="size-3.5" data-icon="inline-start" />
+                  {t('Review')}
+                </Button>
+              ) : undefined
+            }
           />
           {/*
             Two menus, not two runs of pills in one row.
@@ -531,7 +550,9 @@ export function DashboardPage() {
                   ? 'Could not load the attempts.'
                   : history.length === 0
                     ? 'No attempts yet. Go solve something.'
-                    : 'Nothing matches this filter.',
+                    : resultFilter === 'review'
+                      ? 'Nothing to review.'
+                      : 'Nothing matches this filter.',
               )}
             </p>
           ) : (
