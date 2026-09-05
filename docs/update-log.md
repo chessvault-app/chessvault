@@ -143,8 +143,18 @@ engine moves up a version.
   fades at its edge while there is more below. A history that failed
   to load says “Could not load the attempts.” rather than “No attempts
   yet”, a vault with nothing attempted says so in one line instead of
-  four empty bars, and the sentence explaining why attempts and
-  puzzles differ appears only when they do.
+  four empty bars and draws no filters over nothing, and the sentence
+  explaining why attempts and puzzles differ appears only when they
+  do. The review pool has one name, “To review”, in the figures and
+  the Status menu alike, with what it is written under the figures.
+- **The dashboard tells the truth during an outage.** With the vault
+  unreachable it used to say “To review 0” and “Nothing attempted
+  yet” over a solver's real history, with a slot that stayed a
+  skeleton. The figures show “…” until the answer comes, the failure
+  names itself, and “Try again” sits both in the slot and beside the
+  error line. The attempt log is a landmark a keyboard user can skip,
+  every row says it opens the puzzle to replay it, and the wipe
+  question no longer mentions “the 0 puzzles waiting for review”.
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
