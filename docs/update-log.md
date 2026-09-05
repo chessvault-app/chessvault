@@ -35,6 +35,13 @@ showing what is happening in the vault.
   headings a screen reader can jump to, a done checklist step is read as a
   line rather than skipped as a disabled button, and the phone's bar is
   announced as “Sections”.
+- **The phone's grid comes before the checklist.** On a full vault the
+  Shortcuts grid began at the bottom edge of a 390x844 screen, under
+  Continue, Recent games and a first-run checklist a returning vault had
+  mostly finished. Below md the checklist now sits under the grid. Done
+  checklist steps are no longer faded on top of being muted, which had
+  composited to 2.7:1 against the card. Dates on home are one format,
+  and the customise sheet's help names the More tab beside the sidebar.
 - **The phone home reflows under 320px.** At 200% zoom on a 390px phone
   the Continue lead's title collapsed beside its board, and the launcher
   and bar labels overprinted; the title now wraps under the board and the

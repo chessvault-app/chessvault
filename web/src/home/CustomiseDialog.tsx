@@ -102,7 +102,10 @@ export function CustomiseDialog({
     >
       <DialogContent size="sm" title={t('Customise home')}>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          {t('Off keeps a destination as a button under the grid. Hidden takes it off home. The sidebar still reaches everything.')}
+          {/* Names the phone's way to everything as well as the desktop's:
+              the sheet opens from a grid drawn only below md, where there
+              is no sidebar to be told about. */}
+          {t('Off keeps a destination as a button under the grid. Hidden takes it off home. The sidebar and the More tab still reach everything.')}
         </p>
 
         <ToggleRow

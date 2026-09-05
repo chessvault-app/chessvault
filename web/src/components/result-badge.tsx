@@ -26,9 +26,11 @@ const fmt = (result: string): string => result.replaceAll('1/2', '½');
 export function ResultBadge({
   result,
   userSide = null,
+  className,
 }: {
   result: string;
   userSide?: 'white' | 'black' | null;
+  className?: string;
 }) {
   const parts = result.split('-');
   const winner = result === '1-0' ? 'white' : result === '0-1' ? 'black' : null;
@@ -58,6 +60,7 @@ export function ResultBadge({
         'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-semibold',
         'tabular-nums leading-4',
         tone,
+        className,
       )}
     >
       {fmt(result)}

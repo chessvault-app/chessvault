@@ -491,10 +491,14 @@ function RecentGamesCard({
           {/* An unfinished game ("*") wears no badge — ResultBadge
               renders anything unrecognised as a draw. */}
           {(g.result === '1-0' || g.result === '0-1' || g.result.includes('1/2')) && (
-            <ResultBadge result={g.result} />
+            // Gone under 320px, where the names had no width left.
+            <ResultBadge result={g.result} className="max-[319px]:hidden" />
           )}
+          {/* The PGN's dotted date written the way the Continue row
+              writes the same date off a filename: one format on one
+              screen. */}
           <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-            {g.date}
+            {g.date.replaceAll('.', '-')}
           </span>
           <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
         </ListRow>
@@ -1015,7 +1019,14 @@ export function HomePage() {
         <BrandMark className="size-6 shrink-0" />
         <span className="text-xl font-semibold tracking-tight">{t('Chess Vault')}</span>
       </h1>
-      <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl">
+      {/* A column, so the phone can reorder without drawing anything
+          twice: the checklist is first-run content and a returning vault
+          has done most of it, so below md it takes `order-1` and lands
+          under the Shortcuts grid, which is the phone's navigation and
+          was the fourth block on a full vault (top of the grid measured
+          at y=845 on an 844px viewport). From md the source order is
+          the drawn order. */}
+      <div className="flex w-full max-w-lg flex-col md:max-w-2xl lg:max-w-3xl">
         {/* Continue — the best retention surface on the page. A returning
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
@@ -1177,7 +1188,11 @@ export function HomePage() {
                     </span>
                   )}
                 </span>
-                <span className="text-muted-foreground shrink-0">{detail}</span>
+                {/* Under 320px a row with a date tail has no room for
+                    both; the date is the fact, the detail is the caption. */}
+                <span className={cn('text-muted-foreground shrink-0', tail && 'max-[319px]:hidden')}>
+                  {detail}
+                </span>
                 <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
               </ListRow>
             ))}
@@ -1215,13 +1230,21 @@ export function HomePage() {
             the one thing on the page that a settled vault has finished
             with for good (reservation.ts). */}
         {data === null && reservedChecklist && (
-          <div role="status" aria-label={t('Loading')} aria-live="polite" className="mb-4">
+          <div
+            role="status"
+            aria-label={t('Loading')}
+            aria-live="polite"
+            className="mb-4 max-md:order-1 max-md:mt-4 max-md:mb-0"
+          >
             <PlaceholderChecklist />
           </div>
         )}
 
         {showChecklist && (
-          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border">
+          // Below md: after the grid (order-1) and before the launcher
+          // row (order-2); its margin moves to the top so the rhythm
+          // stays one gap-4 whether or not it is drawn.
+          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border max-md:order-1 max-md:mt-4 max-md:mb-0">
             <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
               {/* An h2 like Continue's: this was a <p>, so a reader
                   jumping by heading found one section on a page of
@@ -1255,7 +1278,11 @@ export function HomePage() {
                 // shortcut reads as a result somebody earned.
                 <div
                   key={step.label}
-                  className="border-border text-muted-foreground flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm opacity-60 last:border-b-0 pointer-coarse:min-h-11"
+                  // Muted, not faded: muted-foreground passes 4.5:1 on
+                  // the card; the disabled button's opacity-60 on top of
+                  // it composited to 2.7:1 (measured), and the tick and
+                  // "Done" already carry the state.
+                  className="border-border text-muted-foreground flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0 pointer-coarse:min-h-11"
                 >
                   <Check aria-hidden className="size-3.5 shrink-0" />
                   <span className="min-w-0 flex-1">
@@ -1306,7 +1333,7 @@ export function HomePage() {
             the sidebar is on screen carrying the same destinations, so a
             grid of cards beside it was the same list twice — once with
             blurbs. What the desktop gets instead is the dashboard below. */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:hidden">
+        <div className="grid grid-cols-2 gap-2 max-[319px]:grid-cols-1 sm:grid-cols-3 md:hidden">
           {tiles.map(({ id, label, blurb, icon: Icon, nav, count }, i) => {
             // The first tile is the lead: the whole row, laid out as a
             // row, with its glyph a size up. The order is the user's own
@@ -1361,18 +1388,19 @@ export function HomePage() {
                   {figure !== undefined ? (
                     <span
                       className={cn(
-                        // Nowrap so a figure with a unit ("58 moves")
-                        // breaks to the next line whole, never between
-                        // the number and its noun.
-                        'font-mono text-sm font-normal whitespace-nowrap',
+                        // Its own line under the name. Inline, a figure
+                        // with a unit ("58 moves") took the name's last
+                        // word down with it and read as part of the
+                        // name; and at 200% zoom the nowrap overflowed
+                        // the tile.
+                        'block font-mono text-sm font-normal',
                         // The colour grammar has no room on a primary
                         // fill: amber on the tinted blue is mud, so the
                         // filled lead's figure is its ink at 80%.
                         filled ? 'text-primary-foreground/80' : FIGURE_TONE[figure.kind],
                       )}
                     >
-                      {' '}
-                      · {figureText(figure)}
+                      {figureText(figure)}
                     </span>
                   ) : (
                     // Only the tiles that will get a number keep space for
@@ -1606,7 +1634,7 @@ export function HomePage() {
             a single orphan on the last line. */}
         {launchers.length > 0 && (
         <div
-          className="mt-4 grid gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5 md:hidden"
+          className="mt-4 grid gap-1 max-md:order-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5 md:hidden"
           style={{ gridTemplateColumns: `repeat(${launcherColumns(launchers.length)}, minmax(0, 1fr))` }}
         >
           {launchers.map((entry) => (

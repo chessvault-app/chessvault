@@ -266,8 +266,8 @@ export const ko: Record<string, string> = {
   'Go home': '홈으로',
 
   // --- home, customise -----------------------------------------------------
-  'Off keeps a destination as a button under the grid. Hidden takes it off home. The sidebar still reaches everything.':
-    '끄면 그리드 아래 버튼으로 남고, 숨기면 홈에서 빠집니다. 사이드바로는 모두 그대로 갈 수 있습니다.',
+  'Off keeps a destination as a button under the grid. Hidden takes it off home. The sidebar and the More tab still reach everything.':
+    '끄면 그리드 아래 버튼으로 남고, 숨기면 홈에서 빠집니다. 사이드바와 More 탭으로는 모두 그대로 갈 수 있습니다.',
   'Off the page': '홈에서 숨김',
   'Nothing. Every destination is on home.': '없음. 모든 항목이 홈에 있습니다.',
   'Bring back': '되돌리기',
