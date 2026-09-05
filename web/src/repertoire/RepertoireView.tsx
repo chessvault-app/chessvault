@@ -15,6 +15,7 @@ import {
   Play,
   RotateCcw,
   Settings2,
+  TriangleAlert,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -24,11 +25,14 @@ import { Board, type BoardApi } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
 import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
+import { setJumpTarget } from '@/studies/jumpTarget';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import { DEFAULT_BAND, fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
 import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker';
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
+import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { ColumnControls } from '@/board/AnalysisBoard';
 import { BoardLane, EvalBarSlot } from '@/engine/EvalBar';
@@ -213,6 +217,32 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
   );
 }
 
+/**
+ * A coverage gap as the panel reports it: the field's reply the study
+ * never answered, in the shape the two surfaces that show it need. The
+ * sentence is what the callout says; the squares let the board draw the
+ * reply; the position (the one BEFORE the reply, which the study does
+ * hold) and the chapter are where "Fix in study" lands.
+ */
+interface DrillGap {
+  text: string;
+  orig: Key;
+  dest: Key;
+  /** fenKey of the position the reply was played from. */
+  atKey: string;
+  /** The study and chapter holding that position. */
+  study: string;
+  chapter?: string;
+}
+
+/** Where a gap is fixed: the study and chapter of the first candidate
+    node holding the position the field deviated from. */
+const gapHome = (drill: DrillScope, cands: DrillCand[]): Pick<DrillGap, 'study' | 'chapter'> => {
+  const ci = cands[0]?.ci;
+  if (ci === undefined) return { study: drill.study };
+  return { study: drill.studies?.[ci] ?? drill.study, chapter: drill.chapters[ci]?.name };
+};
+
 /** The live drill: the chapters in scope, their position index, and the
     current candidate nodes — mutated in place as moves match. */
 interface DrillScope {
@@ -334,11 +364,12 @@ export function RepertoireView() {
     gaps: number;
   } | null>(null);
   const [drillNotice, setDrillNotice] = useState<string | null>(null);
-  /** A gap noted in passing — shown under the status, never stopping play. */
-  const [gapNote, setGapNote] = useState<string | null>(null);
+  /** The gap on show: noted in passing under the status, or the one that
+      ended the line. Carries the move so the board can draw it and the
+      position so the study can open on it. */
+  const [gap, setGap] = useState<DrillGap | null>(null);
   /** Why the line ended: past the database, the study's edge, or a gap. */
   const [endKind, setEndKind] = useState<'book' | 'line' | 'gap'>('book');
-  const [gapMsg, setGapMsg] = useState('');
   /** The live drill — render state never reads it, so a ref is honest. */
   const drillRef = useRef<DrillScope | null>(null);
   const wholeStudy = chapterPick === 'all';
@@ -580,6 +611,17 @@ export function RepertoireView() {
   // (slice(1) skipped a MOVE) and "First move" could never reach the start.
   const line = useMemo(() => [tree.rootId, ...mainlineFrom(tree, tree.rootId)], [tree]);
   const atTip = cursorId === tipId;
+  /* The noted gap drawn on the board as an arrow, in the amber the
+     callout is tinted, while the line goes on: the reply was never
+     played, so nothing else on the board shows it. A line that ended on
+     a gap needs none: the board it ends on is the analysis board, and
+     the reply was the last move, which its own highlight marks. Only at
+     the tip, since the arrow belongs to the position it was noted in. */
+  const gapArrow = useMemo(
+    (): DrawShape[] =>
+      gap && phase !== 'ended' && atTip ? [{ orig: gap.orig, dest: gap.dest, brush: 'yellow' }] : [],
+    [gap, phase, atTip],
+  );
   const orientation = flipped ? (userColor === 'white' ? 'black' : 'white') : userColor;
 
   const canMove = phase === 'playing' && atTip && pos.turn === userColor;
@@ -632,7 +674,7 @@ export function RepertoireView() {
         // position where the study covers none of the field's replies
         // falls through to the honest full-field sample, and ends below.
         const drill = drillRef.current;
-        let note: string | null = null;
+        let note: DrillGap | null = null;
         if (drill) {
           const games = body.moves.reduce((sum, m) => sum + m.total, 0);
           // In book: some candidate prepares the move, or it transposes
@@ -683,10 +725,16 @@ export function RepertoireView() {
                   drill.subjectFamily === null ? true : family === drill.subjectFamily;
               }
               if (relevant) {
-                note = t(
-                  'Gap noted. The field also plays {san} in {pct}% of games, and your study has no answer to it.',
-                  { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
-                );
+                note = {
+                  text: t(
+                    'The field also plays {san} in {pct}% of games, and your study has no answer to it.',
+                    { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
+                  ),
+                  orig: uncovered.uci.slice(0, 2) as Key,
+                  dest: uncovered.uci.slice(2, 4) as Key,
+                  atKey: fenKey(fen),
+                  ...gapHome(drill, drill.cands),
+                };
                 if (!drill.gapNoted.has(key)) {
                   drill.gapNoted.add(key);
                   recordDrill({
@@ -729,18 +777,22 @@ export function RepertoireView() {
               path: sansTo(added.tree, added.nodeId),
               played: san,
             });
-            setGapMsg(
-              t('The field answered {san}, played in {pct}% of games here, and your study holds no reply.', {
+            setGap({
+              text: t('The field answered {san}, played in {pct}% of games here, and your study holds no reply.', {
                 san,
                 pct,
               }),
-            );
+              orig: choice.uci.slice(0, 2) as Key,
+              dest: choice.uci.slice(2, 4) as Key,
+              atKey: fenKey(fen),
+              ...gapHome(d, d.cands),
+            });
             setEndKind('gap');
             setPhase('ended');
             return;
           }
           d.cands = next;
-          setGapNote(note);
+          setGap(note);
           if (expectedSans(d.chapters, next).length === 0) {
             setEndKind('line');
             setPhase('ended');
@@ -832,8 +884,7 @@ export function RepertoireView() {
     setFlipped(false);
     setError(null);
     setDrillNotice(null);
-    setGapNote(null);
-    setGapMsg('');
+    setGap(null);
     setEndKind('book');
     if (mode === 'drill' && mapDrill) {
       // The map's whole repertoire: every scoped chapter of every tagged
@@ -991,8 +1042,7 @@ export function RepertoireView() {
     setFlipped(false);
     setError(null);
     setDrillNotice(null);
-    setGapNote(null);
-    setGapMsg('');
+    setGap(null);
     setPhase('idle');
   };
 
@@ -1043,8 +1093,7 @@ export function RepertoireView() {
     setFlipped(false);
     setError(null);
     setDrillNotice(null);
-    setGapNote(null);
-    setGapMsg('');
+    setGap(null);
     setEndKind('book');
     const posIndex = buildPosIndex(scoped);
     const cands = posIndex.get(fenKey(getNode(gameTree, gameId).fen)) ?? [{ ci, nodeId: studyId }];
@@ -1510,7 +1559,8 @@ export function RepertoireView() {
    */
   const endAction =
     mode === 'drill' ? (
-      drillStudy && (
+      drillStudy &&
+      !(endKind === 'gap' && gap) && (
         <Button
           variant="secondary"
           size="sm"
@@ -1588,33 +1638,65 @@ export function RepertoireView() {
            at the same moment: what the board in front of you is. */
         <p className="text-foreground text-base font-semibold leading-snug">{setupLine}</p>
       ) : (
-        <p
-          className={cn(
-            'text-sm leading-relaxed',
-            (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
-              ? 'text-warn'
-              : 'text-muted-foreground',
-          )}
-        >
-          {phase === 'ended'
-            ? endKind === 'gap'
-              ? gapMsg
-              : endKind === 'line'
+        /* A line that ended on a gap has no status line of its own: the
+           callout below is the whole verdict, and a sentence above it
+           saying the same thing twice was what the callout replaced. */
+        !(phase === 'ended' && endKind === 'gap') && (
+          <p
+            className={cn(
+              'text-sm leading-relaxed',
+              drillNotice && phase === 'playing' ? 'text-warn' : 'text-muted-foreground',
+            )}
+          >
+            {phase === 'ended'
+              ? endKind === 'line'
                 ? t('End of your prepared line. Every move matched the study.')
                 : t('This line has run past the database. You are on your own now.')
-            : error
-              ? error
-              : drillNotice
-                ? drillNotice
-                : phase === 'thinking'
-                  ? t('Your opponent is replying…')
-                  : pos.turn === userColor && atTip
-                    ? t('Your move.')
-                    : t('Reviewing an earlier move. Step to the end to keep playing.')}
-        </p>
+              : error
+                ? error
+                : drillNotice
+                  ? drillNotice
+                  : phase === 'thinking'
+                    ? t('Your opponent is replying…')
+                    : pos.turn === userColor && atTip
+                      ? t('Your move.')
+                      : t('Reviewing an earlier move. Step to the end to keep playing.')}
+          </p>
+        )
       )}
-      {gapNote && phase !== 'ended' && (
-        <p className="text-muted-foreground text-sm leading-relaxed">{gapNote}</p>
+      {/* The gap, as a thing rather than a sentence: a warn-tinted callout
+          with the reply named in it and the way to fix it under it. It
+          used to be a muted paragraph in the status line's own colour,
+          which is the one thing on the panel that should NOT read as
+          routine (lanph3re's report). Shown while the line is being
+          played, and as the verdict when the line ended on one; a line
+          that ended some other way drops the note, as before.
+
+          "Fix in study" opens the study on the position the field
+          deviated FROM, which the study holds, so the missing reply is
+          one move away from the cursor. The floor's "Go to study" would
+          land at the root, so it steps aside when this is up. */}
+      {gap && (phase !== 'ended' || endKind === 'gap') && (
+        <Alert variant="warn">
+          <TriangleAlert />
+          <AlertTitle>
+            {phase === 'ended' ? t('The line ended on a gap') : t('Gap in your study')}
+          </AlertTitle>
+          <AlertDescription>{gap.text}</AlertDescription>
+          <div className="col-start-2 mt-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setJumpTarget({ fenKey: gap.atKey, chapter: gap.chapter });
+                navigate('studies', encodeURIComponent(gap.study));
+              }}
+            >
+              <BookOpen className="size-3.5" data-icon="inline-start" />
+              {t('Fix in study')}
+            </Button>
+          </div>
+        </Alert>
       )}
       {/* The dependency arrow, pointed back: Settings knows it
           powers this, but this error never said Settings was
@@ -1778,6 +1860,7 @@ export function RepertoireView() {
                   orientation={orientation}
                   dests={dests}
                   lastMove={moveSquares(node)}
+                  autoShapes={gapArrow}
                   check={pos.isCheck()}
                   onMove={onMove}
                 />
