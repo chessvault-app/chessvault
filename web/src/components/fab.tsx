@@ -11,6 +11,10 @@ export interface FabAction {
   label: string;
   icon: LucideIcon;
   onSelect: () => void;
+  /** Drawn but not pressable: for an action whose precondition is still
+      being checked, so its place in the row is held rather than filled
+      in late. */
+  disabled?: boolean;
 }
 
 /**
@@ -145,10 +149,11 @@ export function Fab({
       )}
     >
       {open &&
-        actions.map(({ label: itemLabel, icon: Icon, onSelect }) => (
+        actions.map(({ label: itemLabel, icon: Icon, onSelect, disabled }) => (
           <button
             key={itemLabel}
             type="button"
+            disabled={disabled}
             onClick={() => {
               setOpen(false);
               onSelect();
@@ -162,6 +167,7 @@ export function Fab({
             className={cn(
               'bg-toast text-toast-foreground flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
               'text-base shadow-lg transition-opacity duration-100 active:opacity-80',
+              'disabled:opacity-50',
             )}
           >
             <Icon className="size-4 shrink-0 opacity-70" />

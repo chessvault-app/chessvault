@@ -7,6 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The opening map's compare button no longer pops in.** “Compare my
+  moves with a database” used to appear a moment after the page, once
+  the server had listed the databases, shifting the buttons beside it.
+  It now holds its place from the first paint, dimmed until the list
+  arrives, and leaves only if there turns out to be nothing to compare
+  against.
+
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
   databases' rows have: “Open on the board” and “Add to collection”,

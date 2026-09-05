@@ -106,13 +106,19 @@ export function OpeningMapView({ params }: { params: string[] }) {
   // The field the map checks itself against — see useGaps.
   const [field, setField] = useState(readFieldPick);
   const [databases, setDatabases] = useState<FieldDatabase[]>([]);
+  // Whether the server has answered yet. An empty list means two things
+  // before that — "none" and "not asked" — and the toolbar drew the
+  // second as the first: the compare button was absent on the page's
+  // first paint and popped in a round trip later.
+  const [databasesKnown, setDatabasesKnown] = useState(false);
   useEffect(() => {
     // Not `databases ?? []`: a single-file mount has one database and no
     // list to put it in — see fieldDatabases. Any failure is simply "no
     // databases to offer" — the map is useful without a field.
     void api<Parameters<typeof fieldDatabases>[0]>('/api/refgames')
       .then((body) => setDatabases(fieldDatabases(body)))
-      .catch(() => setDatabases([]));
+      .catch(() => setDatabases([]))
+      .finally(() => setDatabasesKnown(true));
   }, []);
   /**
    * The online field goes through the server's Lichess token, and
@@ -361,12 +367,16 @@ export function OpeningMapView({ params }: { params: string[] }) {
       onSelect: () => setOptionsOpen(true),
     },
     // The improver's diff needs a reference corpus on the server and
-    // your indexed games behind it — neither exists in the demo.
-    ...(databases.length > 0 && !isDemo()
+    // your indexed games behind it — neither exists in the demo. Until
+    // the server has said whether there is one, the button holds its
+    // place dimmed: the usual answer is yes, and a control that arrives
+    // a beat after the row it belongs to shifts everything beside it.
+    ...(!isDemo() && (!databasesKnown || databases.length > 0)
       ? [
           {
             label: 'Compare my moves with a database',
             icon: ArrowLeftRight,
+            disabled: !databasesKnown,
             onSelect: () => setCompareOpen(true),
           },
         ]
@@ -503,13 +513,14 @@ export function OpeningMapView({ params }: { params: string[] }) {
           ? // The same actions the Fab carries, drawn straight onto the
             // map — no card behind them, and big enough to read as marks
             // on the surface rather than as a toolbar sitting on it.
-            mapActions.map(({ label, icon: Icon, onSelect }) => (
+            mapActions.map(({ label, icon: Icon, onSelect, disabled }) => (
               <Button
                 key={label}
                 variant="ghost"
                 size="icon"
                 title={t(label)}
                 aria-label={t(label)}
+                disabled={disabled}
                 onClick={onSelect}
                 className="text-muted-foreground hover:text-foreground hidden hover:bg-transparent md:inline-flex"
               >
