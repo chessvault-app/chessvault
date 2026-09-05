@@ -552,7 +552,7 @@ export function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="max-h-96 overflow-hidden">
+              <div className="lg:max-h-96 lg:overflow-hidden">
                 <SkeletonRows rows={reserved.attempts} />
               </div>
             )
@@ -586,7 +586,13 @@ export function DashboardPage() {
               )}
             </p>
           ) : (
-            <ul className="max-h-96 overflow-y-auto">
+            // The list scrolls inside itself only from lg, where the page
+            // is a column of panels and a 384px well keeps the log from
+            // being the whole of it. On a phone that well was a second
+            // scroller inside the page's own, taller than the screen's
+            // fold, capturing every flick: the page scrolls there and the
+            // list is as long as it is.
+            <ul className="lg:max-h-96 lg:overflow-y-auto">
               {/* The row and its eye are siblings: the eye is a button
                   and a button cannot sit inside the row's. The row keeps
                   its left padding and gives its right edge to the eye,
@@ -628,6 +634,14 @@ export function DashboardPage() {
                   <PreviewEye eye={preview.eyeProps(h.id)} />
                 </li>
               ))}
+              {/* The cap, said. The list stops at 200 puzzles and the
+                  history at 500 attempts, and neither used to say so: a
+                  vault past either simply ended. */}
+              {puzzles.length > 200 && (
+                <li className="text-muted-foreground px-3 py-2 text-xs">
+                  {t('Showing the latest {n}', { n: 200 })}
+                </li>
+              )}
             </ul>
           )}
         </Panel>
