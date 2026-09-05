@@ -79,10 +79,23 @@ export function usePuzzlePreview(): {
     }
     if (seq !== seqRef.current) return; // pointer moved on
     if (!anchor.isConnected) return; // row went away mid-fetch
+    // Beside the eye under a mouse, where the row is 700px wide and the
+    // card has room to its left. Under a thumb "left of the eye" is on
+    // top of the row it belongs to, the filters and the bottom bar (a
+    // 176px card on a 390px screen), so the card goes ABOVE the row,
+    // flipping below it near the top, inside the scrolling region
+    // rather than the window: the bar is in flow under `main`, and a
+    // viewport that counts it lets the card be drawn over it.
+    const coarse = isCoarsePointer();
+    const region = anchor.closest('main')?.getBoundingClientRect();
     const { top, left } = placeNear(anchor.getBoundingClientRect(), PEEK_CARD, {
-      side: 'left',
-      align: 'center',
-      gap: 16,
+      side: coarse ? 'top' : 'left',
+      align: coarse ? 'end' : 'center',
+      gap: coarse ? 8 : 16,
+      viewport: {
+        width: window.innerWidth,
+        height: coarse && region ? region.bottom : window.innerHeight,
+      },
     });
     setPreview({
       fen: positionAt(puzzle, 1).fen,
