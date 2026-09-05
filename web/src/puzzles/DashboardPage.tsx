@@ -172,6 +172,36 @@ export function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(readWell);
 
+  // One Tab stop for the whole log. Thirty rows and thirty eyes were
+  // sixty stops between the filters and the wipe under them, and a
+  // filtered list of two hundred would be four hundred. The first row
+  // is the stop; the arrows move between rows, Right reaches a row's
+  // eye and Left comes back, Home and End jump. The row last focused
+  // keeps the stop, so Shift+Tab returns to where the reader was.
+  const [logStop, setLogStop] = useState(0);
+  const onLogKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    const target = e.target as HTMLElement;
+    const li = target.closest('li');
+    const ul = e.currentTarget;
+    if (!li) return;
+    const rows = [...ul.querySelectorAll<HTMLLIElement>(':scope > li:has(button)')];
+    const i = rows.indexOf(li as HTMLLIElement);
+    if (i < 0) return;
+    const rowButton = (n: number) => rows[n]?.querySelector<HTMLButtonElement>('button');
+    const eye = li.querySelector<HTMLButtonElement>('button[aria-label]');
+    const onEye = target === eye;
+    let next: HTMLButtonElement | null | undefined;
+    if (e.key === 'ArrowDown') next = rowButton(Math.min(i + 1, rows.length - 1));
+    else if (e.key === 'ArrowUp') next = rowButton(Math.max(i - 1, 0));
+    else if (e.key === 'Home') next = rowButton(0);
+    else if (e.key === 'End') next = rowButton(rows.length - 1);
+    else if (e.key === 'ArrowRight' && !onEye) next = eye;
+    else if (e.key === 'ArrowLeft' && onEye) next = rowButton(i);
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+  };
+
   const latestById = new Map<string, HistoryEntry>();
   const trained = new Set<string>();
   for (const h of history ?? []) {
@@ -691,6 +721,7 @@ export function DashboardPage() {
               // lived only in its hover title.
               aria-label={t('Attempt log')}
               aria-describedby="puzzle-log-row-hint"
+              onKeyDown={onLogKeyDown}
               className={cn(
                 'lg:max-h-96 lg:overflow-y-auto',
                 // The edge of the well. With overlay scrollbars nothing
@@ -706,11 +737,13 @@ export function DashboardPage() {
                   and a button cannot sit inside the row's. The row keeps
                   its left padding and gives its right edge to the eye,
                   which the li pads instead. */}
-              {puzzles.slice(0, 200).map((h) => (
+              {puzzles.slice(0, 200).map((h, i) => (
                 <li key={h.id} className="border-border flex items-center border-b pr-1.5 last:border-b-0">
                   <ListRow
                     dense
                     onClick={() => navigate('puzzles', 'id', h.id)}
+                    onFocus={() => setLogStop(i)}
+                    tabIndex={i === logStop ? 0 : -1}
                     title={t('Replay puzzle #{id}', { id: h.id })}
                     aria-describedby="puzzle-log-row-hint"
                     className="min-w-0 flex-1 pr-1.5 text-sm"
@@ -741,7 +774,8 @@ export function DashboardPage() {
                       {formatAgo(h.at)}
                     </span>
                   </ListRow>
-                  <PreviewEye eye={preview.eyeProps(h.id)} />
+                  {/* Reached by Right from its row, never by Tab. */}
+                  <PreviewEye eye={preview.eyeProps(h.id)} tabIndex={-1} />
                 </li>
               ))}
               {/* The cap, said. The list stops at 200 puzzles and the
@@ -767,7 +801,7 @@ export function DashboardPage() {
 
       {/* The rows' shared description, read after a row's name. */}
       <span id="puzzle-log-row-hint" className="sr-only">
-        {t('Opens the puzzle to replay it.')}
+        {t('Opens the puzzle to replay it. Arrow keys move between rows; Right reaches the position preview.')}
       </span>
       {preview.layer}
     </PageShell>

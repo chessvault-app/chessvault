@@ -1597,7 +1597,7 @@ export const ko: Record<string, string> = {
   'Nothing to review.': '복습할 것이 없습니다.',
   'Nothing attempted yet.': '아직 시도한 퍼즐이 없습니다.',
   'Attempt log': '시도 이력',
-  'Opens the puzzle to replay it.': '퍼즐을 열어 다시 풉니다.',
+  'Opens the puzzle to replay it. Arrow keys move between rows; Right reaches the position preview.': '퍼즐을 열어 다시 풉니다. 화살표 키로 줄 사이를 옮기고, 오른쪽 키로 포지션 미리 보기에 닿습니다.',
   'Showing the latest {n}': '최근 {n}개만 표시',
   'Could not load the attempts.': '시도 기록을 불러오지 못했습니다.',
   'Could not load the puzzle books.': '퍼즐 책을 불러오지 못했습니다.',

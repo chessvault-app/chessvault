@@ -198,11 +198,21 @@ type EyeProps = ReturnType<ReturnType<typeof usePuzzlePreview>['eyeProps']>;
  * gives up its right edge and the eye stands next to it, on the icon
  * rung with the coarse-pointer box the other icon buttons take.
  */
-export function PreviewEye({ eye, className }: { eye: EyeProps; className?: string }) {
+export function PreviewEye({
+  eye,
+  className,
+  tabIndex,
+}: {
+  eye: EyeProps;
+  className?: string;
+  /** -1 in a list that moves focus with the arrows and reaches the eye by Right. */
+  tabIndex?: number;
+}) {
   return (
     <Button
       variant="ghost"
       size="icon-xs"
+      tabIndex={tabIndex}
       {...eye}
       className={cn('text-muted-foreground hover:text-foreground pointer-coarse:size-9', className)}
     >
