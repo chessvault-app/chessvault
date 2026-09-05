@@ -93,6 +93,10 @@ export function DashboardPage() {
   // catch below settles `history` to [] so the page can render, and the
   // list's empty line has to know which of the two it is saying.
   const [historyFailed, setHistoryFailed] = useState(false);
+  // Same for the meta call, which the review slot and the To review
+  // figure wait on: without it a failed answer left the slot a skeleton
+  // for ever and the figure at a zero it had not been told.
+  const [metaFailed, setMetaFailed] = useState(false);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
 
@@ -108,6 +112,7 @@ export function DashboardPage() {
     // error line, never a skeleton that spins forever with nothing to say.
     setError(null);
     setHistoryFailed(false);
+    setMetaFailed(false);
     void api<{ user: MetaUser; failed?: number; due?: number; nextDue?: string | null }>(
       '/api/puzzles/meta',
     )
@@ -117,7 +122,10 @@ export function DashboardPage() {
         setDue(d.due ?? 0);
         setNextDue(d.nextDue ?? null);
       })
-      .catch((e: unknown) => setError(apiErrorMessage(e)));
+      .catch((e: unknown) => {
+        setMetaFailed(true);
+        setError(apiErrorMessage(e));
+      });
     void api<{ attempts: HistoryEntry[] }>('/api/puzzles/history?limit=500')
       .then((d) => setHistory(d.attempts))
       .catch((e: unknown) => {
@@ -197,8 +205,15 @@ export function DashboardPage() {
     // the shell's column gap.
     <PageShell width="medium" className="block">
         {error && (
-          <p className="text-destructive mb-3 text-sm" role="alert">
-            {error}
+          // The line says what failed and the button beside it is the way
+          // back: a phone on a flaky link used to be left with a red
+          // sentence and a reload.
+          <p className="text-destructive mb-3 flex items-center gap-3 text-sm" role="alert">
+            <span className="min-w-0 flex-1">{error}</span>
+            <Button variant="secondary" size="sm" onClick={refresh}>
+              <RotateCcw className="size-3.5" data-icon="inline-start" />
+              {t('Try again')}
+            </Button>
           </p>
         )}
         {/* This page carried a phone-only row of Train/Books/Themes
@@ -232,7 +247,15 @@ export function DashboardPage() {
             the same for all three, and the one thing that varies, the
             note under Train for a schedule with nothing due, is what
             last visit's shape remembers. */}
-        {user === null ? (
+        {user === null && metaFailed ? (
+          // The answer is not coming. A skeleton here stood for ever
+          // after an outage, with no button under it; the slot offers
+          // the retry instead, in the same box.
+          <Button variant="secondary" size="default" className="mb-4 w-full justify-center" onClick={refresh}>
+            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            {t('Try again')}
+          </Button>
+        ) : user === null ? (
           // The button's box (h-8, h-9 under a coarse pointer, where the
           // real button grows too — it once held 36px against 32), and
           // under it the note's one 20px line when this device saw one.
@@ -323,7 +346,10 @@ export function DashboardPage() {
               // beside "Solved 21" in the same weight read as a grade.
               label={t('To review')}
               title={t('Puzzles whose latest attempt failed. This is the review pool.')}
-              value={String(failed)}
+              // The same placeholder as its neighbours while the answer is
+              // out: it read a live "0" beside two ellipses, and after an
+              // outage a zero over a real pool.
+              value={user ? String(failed) : '…'}
             />
           </dl>
           {/* The sentence that reconciles Attempts with everything else
@@ -353,7 +379,7 @@ export function DashboardPage() {
               tracks and four dashes: furniture with nothing on it, which
               is what a first visit saw. The grid stays while the answer
               is out, so nothing moves for the common case. */}
-          {history !== null && counted.length === 0 ? (
+          {history !== null && !historyFailed && counted.length === 0 ? (
             <p className="text-muted-foreground px-(--card-spacing) text-sm">{t('Nothing attempted yet.')}</p>
           ) : (
           <div className="grid gap-2.5 px-(--card-spacing)">
