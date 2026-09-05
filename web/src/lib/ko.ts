@@ -292,6 +292,17 @@ export const ko: Record<string, string> = {
   // --- licences ------------------------------------------------------------
   'Everything this app is built from, and the terms it is used under.':
     '이 앱을 이루는 모든 구성 요소와, 그 이용 조건입니다.',
+  'GNU General Public License v3': 'GNU 일반 공중 사용 허가서 v3',
+  'Filter by package or licence': '패키지나 라이선스로 필터',
+  'Bundled assets': '포함된 자료',
+  Packages: '패키지',
+  'Chromium (desktop app)': 'Chromium (데스크톱 앱)',
+  'The licence list could not be loaded.': '라이선스 목록을 불러오지 못했습니다.',
+  'Licence text unavailable.': '라이선스 본문이 없습니다.',
+  'Loading…': '불러오는 중…',
+  'The licence text could not be loaded.': '라이선스 본문을 불러오지 못했습니다.',
+  'No licence file ships with this component. It is under {license}.':
+    '이 구성 요소에는 라이선스 파일이 함께 들어 있지 않습니다. {license} 조건을 따릅니다.',
 
   // --- settings, artificial latency ----------------------------------------
   'Artificial latency': '인위적 지연',

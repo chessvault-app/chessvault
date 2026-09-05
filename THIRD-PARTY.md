@@ -4,9 +4,9 @@ What this app ships that somebody else made, and under what terms.
 
 Licence texts are in [`licenses/`](licenses/). Every build copies them into
 its output and generates `licenses/index.html`, a list of everything with
-each item's own licence text — reachable in the app under Settings →
-Licences. The generated `licenses/dependencies.txt` is the same list as one
-plain file.
+each item's own licence text, beside `licenses/index.json`, the same list
+as data, which is what Settings → Licences draws in the app. The generated
+`licenses/dependencies.txt` is the same list as one plain file.
 
 ## Bundled
 

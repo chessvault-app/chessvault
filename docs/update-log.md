@@ -7,11 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-- **The licences page shows its document again.** The server refused to
-  let any page frame it, including the app's own licences page, which
-  showed an empty panel in the desktop app and on any server. The frame
-  is the app's own file, and the server now allows it while still
-  refusing every outside page.
+- **The licences page is a page of the app.** It used to be a generated
+  document shown in a frame, with its own fonts and controls inside the
+  app's, and on the desktop app and any server the frame was empty, since
+  the server refused to let any page frame it, its own included. The
+  inventory is now drawn by the app itself: the same search field, filter
+  chips and rows as everywhere else, with each entry opening to its
+  licence text. The standalone document still ships with every build for
+  the landing site and for anyone reading the installed files.
 
 - **The opening map's compare button no longer pops in.** “Compare my
   moves with a database” used to appear a moment after the page, once
