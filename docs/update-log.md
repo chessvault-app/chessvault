@@ -26,6 +26,15 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   fade that marked the well's edges goes with it. A phone had already
   lost the well in 0.8.3 for the same reason.
 
+- **The demo's explorer answers again.** Since 0.8.0 the app's
+  reference-database statements run in a child process per file, and
+  the demo, which runs the same route code in the page, had no process
+  to fork: the repertoire trainer reported a failed request after the
+  first move, and the opening map's coverage check found nothing. The
+  demo build now points that one module at an in-page copy that runs
+  the same statements over its sqlite runtime, so the route code stays
+  shared and the two answer alike.
+
 ## 0.8.3
 
 The puzzle dashboard leads with its one button and tells the truth

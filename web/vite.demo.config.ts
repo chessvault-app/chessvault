@@ -81,6 +81,12 @@ export default defineConfig({
       'node:path': `${root}src/demo/nodeShim/path.ts`,
       'node:url': `${root}src/demo/nodeShim/url.ts`,
       'better-sqlite3': `${root}src/demo/nodeShim/sqlite.ts`,
+      // The reference-games query face forks a child process per file
+      // (server/refgamesQuery.ts); a page has none to fork, so its one
+      // importer, server/refgames.ts, is pointed at the in-page copy that
+      // runs the same statements over the sqlite shim above. An alias
+      // sees the specifier as written, hence the relative key.
+      './refgamesQuery.ts': `${root}src/demo/nodeShim/refgamesQuery.ts`,
     },
   },
   build: {
