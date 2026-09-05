@@ -114,14 +114,6 @@ export function TitleBar() {
   useEffect(() => {
     document.getElementById('title-bar-fallback')?.remove();
   }, [shell]);
-  const [title, setTitle] = useState(() => document.title);
-  useEffect(() => {
-    const el = document.querySelector('title');
-    if (!el) return;
-    const mo = new MutationObserver(() => setTitle(document.title));
-    mo.observe(el, { childList: true, characterData: true, subtree: true });
-    return () => mo.disconnect();
-  }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   if (!shell) return null;
   // 36px buttons on a 40px pitch in a 40px band, the spacing Windows 11
@@ -154,12 +146,25 @@ export function TitleBar() {
       )}
       style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
+      {/* The band over the sidebar is the sidebar's: its ground and its
+          right rule, at its width (App.tsx, Sidebar), so the column runs
+          to the window's top edge instead of stopping under a strip of
+          page ground. Below md there is no sidebar, and no segment. */}
+      {md && (
+        <div
+          aria-hidden
+          className={cn(
+            'bg-card border-border absolute inset-y-0 left-0 border-r',
+            folded ? 'w-[4.25rem]' : 'w-52',
+          )}
+        />
+      )}
       <ActionMenu title={t('Menu')} actions={menu} open={menuOpen} onOpenChange={setMenuOpen}>
         <Button
           variant="ghost"
           size={size}
           title={t('Menu')}
-          className="[-webkit-app-region:no-drag]"
+          className="relative [-webkit-app-region:no-drag]"
           active={menuOpen}
         >
           <Menu className={icon} />
@@ -171,7 +176,7 @@ export function TitleBar() {
           variant="ghost"
           size={size}
           title={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
-          className="[-webkit-app-region:no-drag]"
+          className="relative [-webkit-app-region:no-drag]"
           onClick={() => setFolded(!folded)}
         >
           {folded ? <PanelLeftOpen className={icon} /> : <PanelLeftClose className={icon} />}
@@ -181,7 +186,7 @@ export function TitleBar() {
         variant="ghost"
         size={size}
         title={t('Back')}
-        className="[-webkit-app-region:no-drag]"
+        className="relative [-webkit-app-region:no-drag]"
         disabled={!edges.back}
         onClick={() => history.back()}
       >
@@ -191,17 +196,12 @@ export function TitleBar() {
         variant="ghost"
         size={size}
         title={t('Forward')}
-        className="[-webkit-app-region:no-drag]"
+        className="relative [-webkit-app-region:no-drag]"
         disabled={!edges.forward}
         onClick={() => history.forward()}
       >
         <ArrowRight className={icon} />
       </Button>
-      {/* The window's title, centred on the window as the OS drew it,
-          under the controls' band so a long one cannot run into them. */}
-      <span className="pointer-events-none absolute inset-x-36 truncate text-center text-xs">
-        {title}
-      </span>
     </div>
   );
 }

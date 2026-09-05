@@ -12,6 +12,12 @@ showing what is happening in the vault. Beside it, the opening map's
 compare button holds its place, the Games pane's list reaches its edge,
 and the online archive's table takes a right-click.
 
+- **The desktop title bar joins the sidebar.** The band over the
+  sidebar is drawn in the sidebar's colour, with its rule, so the
+  column reaches the top of the window instead of stopping under a
+  strip of page ground. The window's title, which sat in the middle of
+  the band and only ever said the app's name, is gone; the taskbar
+  still shows it.
 - **On a phone the app stops behaving like a web page.** A list that
   reached its end handed the pull on to the page, which bounced under a
   bar that stayed put; every scroller now keeps its own overscroll. A
