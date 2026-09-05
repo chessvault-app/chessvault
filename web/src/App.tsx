@@ -838,7 +838,11 @@ function MobileNav({ active }: { active: Section }) {
 
   return (
     <nav
-      aria-label={t('Page controls')}
+      // "Sections", not "Page controls": that label belongs to the slot a
+      // page fills with its own controls, and a screen reader landing on
+      // Home heard the app's navigation announced as controls of a page
+      // it does not control.
+      aria-label={t('Sections')}
       className={cn(
         // Opaque for the same reason as the page-control slot above.
         'bg-card border-border flex shrink-0 items-stretch border-t md:hidden',
@@ -873,7 +877,10 @@ function MobileNav({ active }: { active: Section }) {
             )}
           >
             <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
-            {t(label)}
+            {/* Under 320px (a 390 phone zoomed to 200%) six labels
+                overprint each other; the glyph stays and the name goes to
+                the reader. */}
+            <span className="max-[319px]:sr-only">{t(label)}</span>
           </button>
         );
       })}
@@ -888,7 +895,7 @@ function MobileNav({ active }: { active: Section }) {
           )}
         >
           <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
-          {t('More')}
+          <span className="max-[319px]:sr-only">{t('More')}</span>
         </button>
     </nav>
   );

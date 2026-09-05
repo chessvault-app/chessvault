@@ -7,6 +7,51 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+The phone's home page stops repeating its own bottom bar and starts
+showing what is happening in the vault. Beside it, the opening map's
+compare button holds its place, the Games pane's list reaches its edge,
+and the online archive's table takes a right-click.
+
+- **The phone home draws your recent games.** Three rows under Continue,
+  newest first, each with its result and date, the same panel the desktop
+  dashboard already had. A phone had no list of games on home at all; the
+  way to the round just played was the bar, then Games, then finding it.
+  The games route takes `?limit=` so a phone downloads five rows and not
+  the whole collection.
+- **The default grid no longer duplicates the bar.** A vault that has
+  never been customised gets Board, Explorer and Opening map as tiles;
+  Games, Studies, Notes and Puzzles, which the bottom bar reaches in one
+  press, are off home and listed under “Off the page” in “Customise
+  home” with a way back. A stored layout is untouched. The first tile is
+  filled only when it has something due; a quiet tile is wide, not loud.
+- **Continue says what is due.** “Resume training” shows “{n} due” when
+  the trainer has something for you, and the difficulty word only when
+  nothing is; the open setting reads “Any difficulty” rather than “Any”.
+  The game row keeps its date whole beside the names instead of losing it
+  to the ellipsis, and the opening map's figure carries its unit
+  (“{n} moves”).
+- **Keyboard focus is visible on card rows.** The Continue, checklist,
+  games and dashboard rows drew the focus ring outside the row, where the
+  card's rounded clip cut three sides of it off; the ring is now drawn
+  inside the row. “Set up your vault”, “Shortcuts” and “Recent games” are
+  headings a screen reader can jump to, a done checklist step is read as a
+  line rather than skipped as a disabled button, and the phone's bar is
+  announced as “Sections”.
+- **The phone's grid comes before the checklist.** On a full vault the
+  Shortcuts grid began at the bottom edge of a 390x844 screen, under
+  Continue, Recent games and a first-run checklist a returning vault had
+  mostly finished. Below md the checklist now sits under the grid. Done
+  checklist steps are no longer faded on top of being muted, which had
+  composited to 2.7:1 against the card. Dates on home are one format,
+  the Recent games heading says “{n} games” rather than a bare number,
+  and the customise sheet's help speaks in its controls' own words and
+  names the More tab beside the sidebar. In Korean the last game is
+  마지막 게임, no longer the same words as the Recent games panel.
+- **The phone home reflows under 320px.** At 200% zoom on a 390px phone
+  the Continue lead's title collapsed beside its board, and the launcher
+  and bar labels overprinted; the title now wraps under the board and the
+  two rows keep their glyphs, with the names left to the screen reader.
+
 - **The opening map's compare button no longer pops in.** “Compare my
   moves with a database” used to appear a moment after the page, once
   the server had listed the databases, shifting the buttons beside it.

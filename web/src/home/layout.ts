@@ -40,16 +40,30 @@ export const HOME_ENTRY_IDS = [
 
 export type HomeEntryId = (typeof HOME_ENTRY_IDS)[number];
 
-/** The tiles a vault gets before anyone says otherwise. */
-export const DEFAULT_TILES: readonly HomeEntryId[] = [
-  'board',
-  'editor',
-  'studies',
-  'notes',
-  'games',
-  'puzzles',
-  'openingmap',
-];
+/**
+ * The tiles a vault gets before anyone says otherwise.
+ *
+ * Three, and none of them a bottom-bar tab. The grid is drawn only on a
+ * phone, where the bar already carries Games, Studies, Notes and
+ * Puzzles two hundred pixels under it, and the default grid used to draw
+ * those four again as tiles: the same list twice, which is the objection
+ * the desktop's dashboard was built on. What is left is what the bar
+ * cannot reach in one press: the board, the explorer and the map.
+ * Explorer over Editor because a phone between rounds asks what an
+ * opponent plays far more often than it sets up a position from nothing;
+ * the editor is one row down.
+ */
+export const DEFAULT_TILES: readonly HomeEntryId[] = ['board', 'explorer', 'openingmap'];
+
+/**
+ * What a never-customised vault keeps off home altogether: the four
+ * destinations the phone's bottom bar is made of. They are not lost, since
+ * the bar is where they live, and the customise sheet lists them under
+ * "Off the page" with a way back. A stored layout is not touched by this:
+ * hiding stays opt-in and by name there, for the reason `resolveHomeLayout`
+ * gives.
+ */
+export const DEFAULT_HIDDEN: readonly HomeEntryId[] = ['games', 'studies', 'notes', 'puzzles'];
 
 export interface ResolvedHome<T extends { id: string }> {
   /** The grid, in the stored order. */
@@ -82,6 +96,7 @@ export function resolveHomeLayout<T extends { id: string }>(
   stored: HomeLayout | null,
   catalogue: readonly T[],
   defaults: readonly string[] = DEFAULT_TILES,
+  defaultHidden: readonly string[] = DEFAULT_HIDDEN,
 ): ResolvedHome<T> {
   const wanted = stored === null ? defaults : stored.tiles;
   const byId = new Map(catalogue.map((entry) => [entry.id, entry]));
@@ -93,7 +108,7 @@ export function resolveHomeLayout<T extends { id: string }>(
     placed.add(id);
     tiles.push(entry);
   }
-  const hidden = new Set(stored?.hidden ?? []);
+  const hidden = new Set(stored === null ? defaultHidden : stored.hidden);
   const rest = catalogue.filter((entry) => !placed.has(entry.id));
   return {
     tiles,

@@ -456,7 +456,15 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
   };
   healVaultSides();
 
-  /** The collection: one game per file, newest date first. */
+  /**
+   * The collection: one game per file, newest date first.
+   *
+   * `?limit=n` cuts the list after sorting and leaves `total` whole. Home
+   * asks for its handful of recent games this way at every width; without
+   * it a phone drawing three rows downloaded the whole collection as JSON.
+   * The parse is the same either way (mtime-cached per file), so what the
+   * limit saves is the wire, not the disk.
+   */
   api.get('/games', (c) => {
     // A profile edit since the last look re-derives the stamps first,
     // so the sides this list reports are the profile's own truth.
@@ -465,7 +473,9 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
       .filter((f) => f.endsWith('.pgn'))
       .flatMap((f) => parseFileSummaries(dir, resolve(collectionDir, f)))
       .sort((a, b) => b.date.localeCompare(a.date) || a.file.localeCompare(b.file));
-    return c.json({ total: games.length, games });
+    const limit = Number(c.req.query('limit'));
+    const page = Number.isInteger(limit) && limit >= 0 ? games.slice(0, limit) : games;
+    return c.json({ total: games.length, games: page });
   });
 
   /** Months available for a user: remote archive list merged with the cache. */

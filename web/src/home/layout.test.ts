@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normaliseHomeLayout } from '@shared/homeLayout';
 import {
   chartedMoves,
+  DEFAULT_HIDDEN,
   DEFAULT_TILES,
   HOME_ENTRY_IDS,
   launcherColumns,
@@ -24,9 +25,24 @@ const layout = (
 
 describe('resolveHomeLayout', () => {
   it('takes the defaults when the vault has never been customised', () => {
-    const { tiles, launchers } = resolveHomeLayout(null, CATALOGUE, ['b', 'a']);
+    const { tiles, launchers } = resolveHomeLayout(null, CATALOGUE, ['b', 'a'], []);
     expect(ids(tiles)).toEqual(['b', 'a']);
     expect(ids(launchers)).toEqual(['c', 'd']);
+  });
+
+  it('keeps the default hidden set off a never-customised page, and lists it', () => {
+    const { tiles, launchers, hidden } = resolveHomeLayout(null, CATALOGUE, ['b'], ['d']);
+    expect(ids(tiles)).toEqual(['b']);
+    expect(ids(launchers)).toEqual(['a', 'c']);
+    expect(ids(hidden)).toEqual(['d']);
+  });
+
+  it('does not apply the default hidden set to a stored layout', () => {
+    // Hiding is opt-in and by name once a vault has spoken: a stored
+    // layout that never mentions 'd' draws it in the row.
+    const { launchers, hidden } = resolveHomeLayout(layout(['b']), CATALOGUE, ['b'], ['d']);
+    expect(ids(launchers)).toEqual(['a', 'c', 'd']);
+    expect(hidden).toEqual([]);
   });
 
   it('honours the stored order, and demotes rather than loses', () => {
@@ -148,6 +164,11 @@ describe('launcherColumns', () => {
 describe('the catalogue itself', () => {
   it('defaults to ids that exist', () => {
     for (const id of DEFAULT_TILES) expect(HOME_ENTRY_IDS).toContain(id);
+    for (const id of DEFAULT_HIDDEN) expect(HOME_ENTRY_IDS).toContain(id);
+  });
+
+  it('never defaults an id to both the grid and hidden', () => {
+    for (const id of DEFAULT_TILES) expect(DEFAULT_HIDDEN).not.toContain(id);
   });
 
   it('has no repeated id', () => {
