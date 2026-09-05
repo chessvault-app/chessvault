@@ -168,8 +168,9 @@ engine moves up a version.
   app follows.
 - **Two small corrections app-wide.** The connection errors read
   “Vault server unreachable” and “No internet connection”, in sentence
-  case like every other line. A book row on the puzzle dashboard is no
-  longer announced with a stray “x” from its progress bar.
+  case like every other line. The book rows on the puzzle dashboard,
+  the hub and the home page are no longer announced with a stray “x”
+  from their progress bar.
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
