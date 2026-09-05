@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The licences page shows its document again.** The server refused to
+  let any page frame it, including the app's own licences page, which
+  showed an empty panel in the desktop app and on any server. The frame
+  is the app's own file, and the server now allows it while still
+  refusing every outside page.
+
 - **The opening map's compare button no longer pops in.** “Compare my
   moves with a database” used to appear a moment after the page, once
   the server had listed the databases, shifting the buttons beside it.
