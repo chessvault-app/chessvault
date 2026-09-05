@@ -97,6 +97,10 @@ export function DashboardPage() {
   // figure wait on: without it a failed answer left the slot a skeleton
   // for ever and the figure at a zero it had not been told.
   const [metaFailed, setMetaFailed] = useState(false);
+  // And for the shelf: settled to [] so the page renders, the Books
+  // panel drew its empty state, "No puzzle books yet" with an Import
+  // button, over a vault that has books, during an outage.
+  const [booksFailed, setBooksFailed] = useState(false);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
 
@@ -113,6 +117,7 @@ export function DashboardPage() {
     setError(null);
     setHistoryFailed(false);
     setMetaFailed(false);
+    setBooksFailed(false);
     void api<{ user: MetaUser; failed?: number; due?: number; nextDue?: string | null }>(
       '/api/puzzles/meta',
     )
@@ -135,7 +140,10 @@ export function DashboardPage() {
       });
     void api<{ books: BookSummary[] }>('/api/puzzlebooks')
       .then((d) => setBooks(d.books))
-      .catch(() => setBooks((prev) => prev ?? []));
+      .catch(() => {
+        setBooks((prev) => prev ?? []);
+        setBooksFailed(true);
+      });
   }, []);
   useEffect(() => refresh(), [refresh]);
 
@@ -501,7 +509,11 @@ export function DashboardPage() {
                 </Button>
               }
             />
-            {books.length === 0 ? (
+            {booksFailed && books.length === 0 ? (
+              // An outage is not an empty shelf. Same rung and words as
+              // the log's own failure line.
+              <p className="text-muted-foreground px-3 py-3 text-sm">{t('Could not load the puzzle books.')}</p>
+            ) : books.length === 0 ? (
               <EmptyState
                 className="py-8"
                 icon={BookMarked}
