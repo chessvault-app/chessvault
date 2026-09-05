@@ -330,9 +330,12 @@ export function DashboardPage() {
 
               The dl is the app's own idiom for facts about a thing — the
               same grid the trainer's finished-puzzle panel uses. Two pairs
-              to a row from sm, one below it. */}
+              to a row from sm, one below it: Solved and To review share
+              the first row, since together they are the puzzles, and
+              Attempts, a different unit, takes the second. It used to
+              lead, which paired it with Solved and left To review alone
+              beside an empty cell. */}
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
-            <Figure label={t('Attempts')} value={user ? String(user.attempts) : '…'} />
             <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
             {/* No solve rate. It was "win rate" once, renamed because
                 nothing here is won, and then dropped because a percentage
@@ -342,16 +345,22 @@ export function DashboardPage() {
                 say the same thing as counts. */}
             <Figure
               // "To review", not "Failed": the number is the review pool's
-              // size, which the tooltip already said, and "Failed 10"
-              // beside "Solved 21" in the same weight read as a grade.
+              // size, and "Failed 10" beside "Solved 21" in the same
+              // weight read as a grade.
               label={t('To review')}
-              title={t('Puzzles whose latest attempt failed. This is the review pool.')}
               // The same placeholder as its neighbours while the answer is
               // out: it read a live "0" beside two ellipses, and after an
               // outage a zero over a real pool.
               value={user ? String(failed) : '…'}
             />
+            <Figure label={t('Attempts')} value={user ? String(user.attempts) : '…'} />
           </dl>
+          {/* What the pool is, in the open. It was To review's tooltip,
+              which a phone never sees, and the one sentence that ties
+              the figure to the menu's option and the button's verb. */}
+          <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-xs">
+            {t('Puzzles whose latest attempt failed. This is the review pool.')}
+          </p>
           {/* The sentence that reconciles Attempts with everything else
               on the page, in the open. It was the Attempts figure's
               tooltip, and a phone has no hover: "Attempts 30" over
@@ -578,7 +587,10 @@ export function DashboardPage() {
                   options: [
                     { value: 'all', label: 'All' },
                     { value: 'solved', label: 'Solved' },
-                    { value: 'review', label: 'Failed' },
+                    // The figure's word, not "Failed": one pool had three
+                    // names on the page (To review, Failed, Review), and
+                    // a first visit could not tell they were one set.
+                    { value: 'review', label: 'To review' },
                   ],
                 },
               ]}
