@@ -192,12 +192,7 @@ export function DashboardPage() {
             those buttons sit within reach of a thumb instead of pinned to
             the top of a page of statistics — so a phone arrives from
             there and leaves by the chevron. */}
-        <PageHeader
-          className="mb-4"
-          title={t('Puzzle dashboard')}
-          back={() => up('puzzles', 'hub')}
-          actions={<ResetButton onDone={refresh} />}
-        />
+        <PageHeader className="mb-4" title={t('Puzzle dashboard')} back={() => up('puzzles', 'hub')} />
 
         {/* The card floor is zero below lg (panel.tsx): in the workspace
             column the phone's contextual bar ends the stack, and 16px
@@ -220,11 +215,7 @@ export function DashboardPage() {
               same grid the trainer's finished-puzzle panel uses. Two pairs
               to a row from sm, one below it. */}
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
-            <Figure
-              label={t('Attempts')}
-              title={t("Training attempts only. Review sessions are not counted, so this can differ from the review pool.")}
-              value={user ? String(user.attempts) : '…'}
-            />
+            <Figure label={t('Attempts')} value={user ? String(user.attempts) : '…'} />
             <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
             {/* No solve rate. It was "win rate" once, renamed because
                 nothing here is won, and then dropped because a percentage
@@ -241,6 +232,14 @@ export function DashboardPage() {
               value={String(failed)}
             />
           </dl>
+          {/* The sentence that reconciles Attempts with everything else
+              on the page, in the open. It was the Attempts figure's
+              tooltip, and a phone has no hover: "Attempts 30" over
+              "30 puzzles" and "Solved 21, To review 9" did not add up
+              to anyone who could not reach it. */}
+          <p className="text-muted-foreground mt-2 px-(--card-spacing) text-xs">
+            {t('Training attempts only. Review sessions are not counted, so this can differ from the review pool.')}
+          </p>
         </Panel>
 
         {/* The review queue, promoted: it was a 14px icon inside the
@@ -333,8 +332,11 @@ export function DashboardPage() {
                 <div key={band.label} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
                   <span className="text-muted-foreground text-sm">{t(band.label)}</span>
                   <ProgressBar total={inBand.length} solved={wins} failed={losses} showEmpty />
+                  {/* "11 of 17", not "11/17": a fraction beside a striped
+                      bar read as a score, and nothing said the stripe
+                      was the failed part. */}
                   <span className="text-muted-foreground w-16 text-right font-mono text-xs tabular-nums">
-                    {inBand.length > 0 ? `${wins}/${inBand.length}` : '—'}
+                    {inBand.length > 0 ? t('{a} of {b}', { a: wins, b: inBand.length }) : '—'}
                   </span>
                 </div>
               );
@@ -644,6 +646,15 @@ export function DashboardPage() {
               )}
             </ul>
           )}
+          {/* The wipe lives under the log it wipes, last on the page and
+              last in the tab order, with a word on it. It was the eraser
+              alone in the page header: first thing Tab reached, and on
+              a phone an unexplained icon beside the title. */}
+          {history !== null && history.length > 0 && (
+            <div className="border-border flex justify-end border-t px-3 py-2">
+              <ResetButton attempts={user?.attempts ?? 0} review={failed} onDone={refresh} />
+            </div>
+          )}
         </Panel>
 
       {preview.layer}
@@ -654,20 +665,29 @@ export function DashboardPage() {
 /** Wipes counters + history — including the review pool — behind an
     anchored confirm, so it stays deliberate without a browser dialog.
 
-    A quiet icon, not a red "Reset" button. It was the only coloured
-    control on the page, and the eye landed on it before the review
-    button, which was grey: the page's one training action outranked
-    by its one destructive one. The eraser sits in the header on the
-    ghost rung, named by its tooltip, and the question it opens is as
-    red as ever. */
-function ResetButton({ onDone }: { onDone: () => void }) {
+    A quiet labelled button, not a red "Reset". It was the only
+    coloured control on the page, and the eye landed on it before the
+    review button, which was grey: the page's one training action
+    outranked by its one destructive one. It sits on the ghost rung
+    under the log, and the question it opens is as red as ever, and
+    now says what it costs: the counts are the difference between a
+    wipe someone meant and one they did not. */
+function ResetButton({
+  attempts,
+  review,
+  onDone,
+}: {
+  attempts: number;
+  review: number;
+  onDone: () => void;
+}) {
   return (
     <ConfirmDialog
       icon={Eraser}
       triggerTone="quiet"
+      label={t('Wipe history')}
       triggerTitle="Wipe attempts, history and the review pool"
-      triggerClassName="ml-auto"
-      question="Wipe all attempts, history and the review pool?"
+      question={t('Wipe {a} attempts and the {r} puzzles waiting for review?', { a: attempts, r: review })}
       confirmLabel={t('Wipe everything')}
       onConfirm={() => {
         // Refresh either way: the reload shows what the wipe really did.
