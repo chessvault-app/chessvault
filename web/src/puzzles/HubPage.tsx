@@ -497,6 +497,9 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
             solved={weak.wins}
             failed={weak.attempts - weak.wins}
             showEmpty
+            // The counts are in words beside it; the bar in the row's
+            // name only added the primitive's hidden "x".
+            decorative
           />
         </span>
         <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
@@ -531,7 +534,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
           )}
           <span className="flex min-w-0 flex-1 flex-col gap-1">
             <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
-            <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty />
+            <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
           </span>
           <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
             {b.solved}/{b.puzzles}
