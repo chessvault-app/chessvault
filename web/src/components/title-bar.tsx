@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Bug, Expand, FolderSync, Menu, PanelLeftClose, PanelLeftOpen, Percent, Power, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bug, Expand, FolderSync, Menu, PanelLeft, Percent, Power, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
@@ -202,7 +202,11 @@ export function TitleBar() {
             className="[-webkit-app-region:no-drag]"
             onClick={() => setFolded(!folded)}
           >
-            {folded ? <PanelLeftOpen className={icon} /> : <PanelLeftClose className={icon} />}
+            {/* One glyph for both states, no arrow: the tip says which way it
+                goes. Drawn as the sidebar's own switch was (App.tsx,
+                foldButton), a step over the band's 16px so the outlined
+                panel reads as heavy as the solid strokes beside it. */}
+            <PanelLeft className="size-[1.15rem]" strokeWidth={2} />
           </Button>
           {!folded && controls}
         </div>
