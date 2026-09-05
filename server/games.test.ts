@@ -56,6 +56,16 @@ describe('games api (collection model)', () => {
     expect(games).toEqual([]);
   });
 
+  it('cuts the list at ?limit= and leaves the total whole', async () => {
+    // Home asks for a handful at every width; a phone must not download
+    // the whole collection to draw three rows.
+    const { total, games } = await (await app.request('/api/games?limit=0')).json();
+    expect(games).toEqual([]);
+    expect(typeof total).toBe('number');
+    const { games: all } = await (await app.request('/api/games?limit=nonsense')).json();
+    expect(all.length).toBe(total);
+  });
+
   it('collects a game with the vault side recorded from the archive path', async () => {
     const res = await app.request('/api/games/collect', {
       method: 'POST',
