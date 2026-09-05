@@ -170,7 +170,8 @@ engine moves up a version.
   “Vault server unreachable” and “No internet connection”, in sentence
   case like every other line. The book rows on the puzzle dashboard,
   the hub and the home page are no longer announced with a stray “x”
-  from their progress bar.
+  from their progress bar, and read “2 of 3” beside it, as the
+  dashboard already did.
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
