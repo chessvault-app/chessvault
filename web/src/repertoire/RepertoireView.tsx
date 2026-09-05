@@ -15,6 +15,7 @@ import {
   Play,
   RotateCcw,
   Settings2,
+  TriangleAlert,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -24,7 +25,6 @@ import { Board, type BoardApi } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
 import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import { DEFAULT_BAND, fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
 import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker';
@@ -1643,24 +1643,27 @@ export function RepertoireView() {
           </p>
         )
       )}
-      {/* The gap, as a thing rather than a sentence: a warn-tinted callout
-          with the reply named in it. It used to be a muted paragraph in
-          the status line's own colour, which is the one thing on the
-          panel that should NOT read as routine (lanph3re's report).
-          Shown while the line is being played, and as the verdict when
-          the line ended on one; a line that ended some other way drops
-          the note, as before.
+      {/* The gap: the sentence in the warn colour with the warning glyph
+          in front of it, the annotation pane's own shape for a notice.
+          It used to be a muted paragraph in the status line's own
+          colour, which is the one thing on the panel that should NOT
+          read as routine (lanph3re's report). Shown while the line is
+          being played, and as the verdict when the line ended on one; a
+          line that ended some other way drops the note, as before.
 
-          One sentence and no heading: the sentence already opens with
-          the reply and the share, and a title over it said "gap" a
-          second time. No way out either. A "Fix in study" button was
-          tried and dropped (lanph3re's call): the drill is where the
-          user wants to stay, and the floor's "Go to study" is the way
-          to the study when the line is over. */}
+          Deliberately no more than that. A boxed callout with a heading
+          and a "Fix in study" button was tried and pared back one piece
+          at a time (lanph3re's calls): the heading said "gap" over a
+          sentence that already opens with the reply and the share, the
+          button left a page the user wants to stay on, and the box was
+          a frame around one line. The colour and the glyph are what
+          make it eye-catching; the board's arrow does the rest. */}
       {gap && (phase !== 'ended' || endKind === 'gap') && (
-        <Alert variant="warn">
-          <AlertDescription>{gap.text}</AlertDescription>
-        </Alert>
+        <p className="text-warn flex items-start gap-1.5 text-sm leading-relaxed">
+          {/* mt-1: the 16px icon centred on text-sm's 22px first line. */}
+          <TriangleAlert className="mt-1 size-4 shrink-0" />
+          {gap.text}
+        </p>
       )}
       {/* The dependency arrow, pointed back: Settings knows it
           powers this, but this error never said Settings was

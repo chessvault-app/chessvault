@@ -7,16 +7,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-The repertoire drill shows a gap as a callout with the reply drawn on
-the board, and the puzzle dashboard's attempt log scrolls with the page.
+The repertoire drill shows a gap in amber with the reply drawn on the
+board, and the puzzle dashboard's attempt log scrolls with the page.
 
-- **A gap is a callout and an arrow.** The drill used to report a
-  coverage gap as a muted sentence under the status line, in the same
-  colour as "Your opponent is replying…", and a line that ended on one
-  said so in the status line's own slot. It is now an amber callout,
-  and the unanswered reply is drawn on the board as an arrow while the
-  line goes on. The alert primitive that carries it is shadcn's, with a
-  warn variant beside the registry's two.
+- **A gap is amber, with a glyph and an arrow.** The drill used to
+  report a coverage gap as a muted sentence under the status line, in
+  the same colour as "Your opponent is replying…", and a line that
+  ended on one said so in the status line's own slot. The sentence is
+  now in the warning colour with a warning glyph in front of it, and
+  the unanswered reply is drawn on the board as an arrow while the line
+  goes on.
 
 - **One scrollbar on the puzzle dashboard.** From a laptop's width up
   the attempt log was a 384px well with a scroller of its own, inside
