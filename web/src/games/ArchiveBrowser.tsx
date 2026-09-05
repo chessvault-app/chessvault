@@ -235,6 +235,13 @@ const ArchiveRow = memo(function ArchiveRow({
         onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
         standing={selecting ? checkbox : undefined}
+        // The right-click menu the reference table's rows have, with the
+        // same two verbs; Add dims once the game is in, the way the card
+        // row's button does.
+        menu={[
+          { label: 'Open on the board', icon: Play, onSelect: () => onOpen(game) },
+          { label: 'Add to collection', icon: Plus, disabled: inCollection, onSelect: () => onCollect(game) },
+        ]}
       />
     );
   }
