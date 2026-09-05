@@ -696,6 +696,7 @@ export const ko: Record<string, string> = {
   'Puzzle not found.': '퍼즐을 찾을 수 없습니다.',
   'That book does not exist.': '그런 책이 없습니다.',
   'No puzzle books yet': '아직 퍼즐 책이 없습니다',
+  'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.': '아직 퍼즐 책이 없습니다. 스캔한 전술 책을 가져오면 그 다이어그램이 풀 수 있고 진행이 기록되는 문제집이 됩니다.',
   "One per paper book. Enter its puzzles from the board or import the book's own PDF. Solutions and progress live here, not in the back of the book.":
     '종이 책 한 권마다 하나씩 만드세요. 보드에서 퍼즐을 입력하거나 책의 PDF를 가져옵니다. 정답과 진행 상황은 책 뒤가 아니라 여기에 남습니다.',
   'Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.':

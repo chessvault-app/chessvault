@@ -1,13 +1,4 @@
 import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
-import { EmptyState } from '@/components/empty-state';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
 import { parseDashboardShape, storedDashboardShape } from './reservation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -71,12 +62,10 @@ const DASH_SHAPE_KEY = 'vault:puzzle-dash-shape';
 
 /**
  * The empty Books panel's words, named once: the placeholder holds the
- * EmptyState's place by rendering the same words invisibly, and two
- * copies would wrap apart the day one was edited.
+ * line's place by rendering the same words invisibly, and two copies
+ * would wrap apart the day one was edited.
  */
-const BOOKS_EMPTY_TITLE = 'No puzzle books yet';
-const BOOKS_EMPTY_BODY =
-  'Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.';
+const BOOKS_EMPTY = 'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.';
 
 type ResultFilter = 'all' | 'solved' | 'review';
 type BandFilter = 'any' | (typeof BANDS)[number]['id'];
@@ -480,31 +469,13 @@ export function DashboardPage() {
                 />
                 {/* One row per book this device saw last visit — and for
                     a vault that had none (or has never been seen), the
-                    EmptyState's own shape, built from its primitives
-                    with the real words drawn invisibly: the empty panel
-                    is TALLER than the three rows this used to reserve
-                    for everyone, so the commonest case moved in the
-                    wrong direction when the answer came. */}
+                    empty line's own box, with the real words drawn
+                    invisibly so it wraps where the line will. */}
                 {reserved.books === 0 ? (
-                  <Empty className="py-8">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <Skeleton className="size-4 rounded-sm" />
-                      </EmptyMedia>
-                      <EmptyTitle className="relative w-full">
-                        <span className="invisible">{t(BOOKS_EMPTY_TITLE)}</span>
-                        <Skeleton className="absolute inset-y-0.5 left-1/2 w-32 max-w-full -translate-x-1/2" />
-                      </EmptyTitle>
-                      <EmptyDescription className="relative w-full">
-                        <span className="invisible">{t(BOOKS_EMPTY_BODY)}</span>
-                        <Skeleton className="absolute inset-x-0 inset-y-1" />
-                      </EmptyDescription>
-                    </EmptyHeader>
-                    <EmptyContent>
-                      {/* The sm button's box, at about its label's width. */}
-                      <Skeleton className="h-7 w-36 rounded-md pointer-coarse:h-9" />
-                    </EmptyContent>
-                  </Empty>
+                  <p className="relative px-3 py-3 text-sm">
+                    <span className="invisible">{t(BOOKS_EMPTY)}</span>
+                    <Skeleton className="absolute inset-x-3 inset-y-4" />
+                  </p>
                 ) : (
                   Array.from({ length: reserved.books }, (_, i) => (
                     <div
@@ -541,7 +512,7 @@ export function DashboardPage() {
                 // the better label.
                 <Button variant="ghost" size="sm" onClick={() => navigate('puzzles', 'books')}>
                   <BookMarked className="size-3.5" data-icon="inline-start" />
-                  {t('All puzzle books')}
+                  {books.length === 0 && !booksFailed ? t('Import a book') : t('All puzzle books')}
                 </Button>
               }
             />
@@ -550,18 +521,12 @@ export function DashboardPage() {
               // the log's own failure line.
               <p className="text-muted-foreground px-3 py-3 text-sm">{t('Could not load the puzzle books.')}</p>
             ) : books.length === 0 ? (
-              <EmptyState
-                className="py-8"
-                icon={BookMarked}
-                title={BOOKS_EMPTY_TITLE}
-                body={BOOKS_EMPTY_BODY}
-                action={
-                  <Button variant="default" size="sm" onClick={() => navigate('puzzles', 'books')}>
-                    <BookMarked className="size-3.5" data-icon="inline-start" />
-                    {t('Import a book')}
-                  </Button>
-                }
-              />
+              // One line at the log's rung, not the centred icon, title,
+              // sentence and button: that shape is the empty-state idiom
+              // the design doc names as the anti-reference, and it stood
+              // 240px tall on a page whose grammar is 33px rows. The
+              // Import is the header's button while the shelf is empty.
+              <p className="text-muted-foreground px-3 py-3 text-sm">{t(BOOKS_EMPTY)}</p>
             ) : (
             <ul>
               {books.map((b) => (
