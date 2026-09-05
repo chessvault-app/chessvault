@@ -25,6 +25,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the second dimmed once the game is in. Before this a right-click on
   an archive row did nothing.
 
+- **The lock screen's authenticator code is two groups of three.** The
+  six digits used to sit in one joined run; each now has its own cell,
+  with a wider gap after the third, the way an authenticator app prints
+  the code. Typing, pasting and the sixth digit's submit are unchanged.
+
 ## 0.8.2
 
 Notes open again: since 0.8.0 every note page opened to “Something went
