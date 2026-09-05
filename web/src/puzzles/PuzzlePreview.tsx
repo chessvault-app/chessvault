@@ -1,6 +1,7 @@
 import { Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Board } from '@/board/Board';
+import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { placeNear } from '@/lib/floating';
@@ -48,11 +49,12 @@ interface Preview {
 export function usePuzzlePreview(): {
   /** Put on each row's eye; wires hover, tap and the accessible name. */
   eyeProps: (id: string) => {
-    className: string;
     'aria-label': string;
     onMouseEnter: (e: React.MouseEvent) => void;
     onMouseLeave: () => void;
     onClick: (e: React.MouseEvent) => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
+    onBlur: () => void;
   };
   /** Render once, anywhere in the tree. */
   layer: React.ReactNode;
@@ -96,8 +98,18 @@ export function usePuzzlePreview(): {
     setPreview(null);
   };
 
+  const toggle = (id: string, anchor: Element): void => {
+    if (openFor.current === id) {
+      hide();
+    } else {
+      openFor.current = id;
+      void show(id, anchor);
+    }
+  };
+
   const eyeProps = (id: string) => ({
-    className: 'text-muted-foreground hover:text-foreground size-3.5 shrink-0',
+    // A label, not a `title`: the Button would draw a tooltip on hover
+    // and focus, beside the board the same hover pops. The peek is the tip.
     'aria-label': t('Preview the position'),
     onMouseEnter: (e: React.MouseEvent) => {
       if (!isCoarsePointer()) void show(id, e.currentTarget);
@@ -106,15 +118,22 @@ export function usePuzzlePreview(): {
       if (!isCoarsePointer()) hide();
     },
     onClick: (e: React.MouseEvent) => {
-      if (!isCoarsePointer()) return;
-      // The row underneath navigates; a peek must not also open it.
-      e.stopPropagation();
-      if (openFor.current === id) {
+      // A mouse already has the peek from hover, so a click there does
+      // nothing; a tap (coarse) and a keyboard press (detail 0) toggle
+      // it, because neither has a hover to arrive by.
+      if (!isCoarsePointer() && e.detail !== 0) return;
+      toggle(id, e.currentTarget);
+    },
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape' && openFor.current === id) {
+        e.stopPropagation();
         hide();
-      } else {
-        openFor.current = id;
-        void show(id, e.currentTarget);
       }
+    },
+    onBlur: () => {
+      // Tabbing away from an eye opened by the keyboard closes its peek,
+      // the way the pointer leaving closes a hovered one.
+      if (openFor.current === id && !isCoarsePointer()) hide();
     },
   });
 
@@ -155,9 +174,26 @@ type EyeProps = ReturnType<ReturnType<typeof usePuzzlePreview>['eyeProps']>;
 /**
  * The eye itself, so callers do not each import the icon — and so the
  * two lists that have one cannot drift apart on how it is placed.
- * `className` is the LIST's own layout (where in the row it sits), which
- * is the only part either caller should be deciding.
+ * `className` is the LIST's own layout (where beside the row it sits),
+ * which is the only part either caller should be deciding.
+ *
+ * A button, and a SIBLING of the row rather than a child of it. It was a
+ * bare 14px svg inside the row's own button: not in the tab order, its
+ * label folded into the row's name for a screen reader, and on a phone a
+ * 14px target beside a 44px row that navigates away, where a miss is the
+ * opposite of a peek. A button cannot sit inside a button, so the row
+ * gives up its right edge and the eye stands next to it, on the icon
+ * rung with the coarse-pointer box the other icon buttons take.
  */
 export function PreviewEye({ eye, className }: { eye: EyeProps; className?: string }) {
-  return <Eye {...eye} className={cn(eye.className, className)} />;
+  return (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      {...eye}
+      className={cn('text-muted-foreground hover:text-foreground pointer-coarse:size-9', className)}
+    >
+      <Eye className="size-3.5" />
+    </Button>
+  );
 }

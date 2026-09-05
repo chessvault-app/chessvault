@@ -586,20 +586,25 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
         </p>
       )}
       {attempts.map((h) => (
-        <ListRow
+        /* The row and its eye are siblings, as on the dashboard: the eye
+           is a button and cannot sit inside the row's. The hairline moves
+           up to the pair so it runs under both. */
+        <div
           key={h.id + h.at}
-          divided
+          className="border-border flex items-center border-b pr-1.5 last:border-b-0"
+        >
+        <ListRow
           dense
           onClick={() => navigate('puzzles', 'id', h.id)}
           title={t('Replay puzzle #{id}', { id: h.id })}
-          className="text-sm"
+          className="min-w-0 flex-1 pr-1.5 text-sm"
         >
           {h.win ? (
-            <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
+            <Check className="text-good size-3.5 shrink-0" role="img" aria-label={t('solved')} />
           ) : (
-            <X className="text-destructive size-3.5 shrink-0" aria-label={t('failed')} />
+            <X className="text-destructive size-3.5 shrink-0" role="img" aria-label={t('failed')} />
           )}
-          {/* The dashboard's columns exactly — same widths, same ml-auto,
+          {/* The dashboard's columns exactly — same widths, same eye beside it,
               same right-aligned time. Two lists of the same rows that
               place their eye differently read as two different tables,
               and a time column left to size itself moves the eye between
@@ -607,21 +612,21 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
 
               The time column is w-20 and not w-16: at 4rem "1 min ago"
               and "Aug 11, 2025" both ran to a second line on a narrower
-              phone, which cost the row its height. The eye rides ml-auto,
-              so widening the time simply moves it a rem left —
-              there is spare room between the difficulty word and it —
-              and whitespace-nowrap makes the wrap impossible rather than
+              phone, which cost the row its height. The time rides ml-auto,
+              so widening it simply takes a rem from the spare room after
+              the difficulty word, and whitespace-nowrap makes the wrap impossible rather than
               merely unlikely. */}
           <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
           <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-          <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
           <span
-            className="text-muted-foreground w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
+            className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
             title={formatWhen(h.at)}
           >
             {formatAgo(h.at)}
           </span>
         </ListRow>
+        <PreviewEye eye={preview.eyeProps(h.id)} />
+        </div>
       ))}
       </div>
       {preview.layer}

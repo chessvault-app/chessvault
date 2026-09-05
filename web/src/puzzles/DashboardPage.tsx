@@ -523,18 +523,22 @@ export function DashboardPage() {
             </p>
           ) : (
             <ul className="max-h-96 overflow-y-auto">
+              {/* The row and its eye are siblings: the eye is a button
+                  and a button cannot sit inside the row's. The row keeps
+                  its left padding and gives its right edge to the eye,
+                  which the li pads instead. */}
               {puzzles.slice(0, 200).map((h) => (
-                <li key={h.id} className="border-border border-b last:border-b-0">
+                <li key={h.id} className="border-border flex items-center border-b pr-1.5 last:border-b-0">
                   <ListRow
                     dense
                     onClick={() => navigate('puzzles', 'id', h.id)}
                     title={t('Replay puzzle #{id}', { id: h.id })}
-                    className="text-sm"
+                    className="min-w-0 flex-1 pr-1.5 text-sm"
                   >
                     {h.win ? (
-                      <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
+                      <Check className="text-good size-3.5 shrink-0" role="img" aria-label={t('solved')} />
                     ) : (
-                      <X className="text-destructive size-3.5 shrink-0" aria-label={t('failed')} />
+                      <X className="text-destructive size-3.5 shrink-0" role="img" aria-label={t('failed')} />
                     )}
                     {/* The puzzle's name is its motif ("Fork", "Back rank
                         mate"), which is what a solver remembers; the id
@@ -546,15 +550,14 @@ export function DashboardPage() {
                       {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
                     </span>
                     <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-                    {/* ml-auto is this list's own layout, not the eye's. */}
-                    <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
                     <span
-                      className="text-muted-foreground w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
+                      className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
                       title={formatWhen(h.at)}
                     >
                       {formatAgo(h.at)}
                     </span>
                   </ListRow>
+                  <PreviewEye eye={preview.eyeProps(h.id)} />
                 </li>
               ))}
             </ul>
