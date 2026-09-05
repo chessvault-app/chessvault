@@ -181,12 +181,6 @@ engine moves up a version.
   from their progress bar, and read “2 of 3” beside it, as the
   dashboard already did.
 
-- **The online archive's table takes a right-click.** A row in the
-  chess.com or Lichess table opens the same menu the reference
-  databases' rows have: “Open on the board” and “Add to collection”,
-  the second dimmed once the game is in. Before this a right-click on
-  an archive row did nothing.
-
 ## 0.8.2
 
 Notes open again: since 0.8.0 every note page opened to “Something went
