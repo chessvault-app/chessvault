@@ -1596,10 +1596,13 @@ export const ko: Record<string, string> = {
   'Nothing matches this filter.': '이 조건에 맞는 것이 없습니다.',
   'Nothing to review.': '복습할 것이 없습니다.',
   'Nothing attempted yet.': '아직 시도한 퍼즐이 없습니다.',
+  'Attempt log': '시도 이력',
+  'Opens the puzzle to replay it.': '퍼즐을 열어 다시 풉니다.',
   'Showing the latest {n}': '최근 {n}개만 표시',
   'Could not load the attempts.': '시도 기록을 불러오지 못했습니다.',
   'Wipe attempts, history and the review pool': '시도, 기록, 복습 대상을 모두 지우기',
   'Wipe history': '기록 지우기',
+  'Wipe {a} attempts?': '시도 {a}개를 모두 지울까요?',
   'Wipe {a} attempts and the {r} puzzles waiting for review?': '시도 {a}개와 복습을 기다리는 퍼즐 {r}개를 모두 지울까요?',
   '{a} of {b}': '{b} 중 {a}',
   'Wipe all attempts, history and the review pool?':

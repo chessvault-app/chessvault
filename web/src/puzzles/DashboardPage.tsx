@@ -549,7 +549,11 @@ export function DashboardPage() {
 
         <Panel>
           <PanelHeader
-            title={history === null ? t('Puzzles') : t('{n} puzzles', { n: puzzles.length })}
+            title={
+              history === null || history.length === 0
+                ? t('Puzzles')
+                : t('{n} puzzles', { n: puzzles.length })
+            }
             // The failed list's own way onward. Filtered to the puzzles
             // that went wrong, the panel was a column of red marks and
             // nothing else, with the review button 500px above it: the
@@ -574,6 +578,9 @@ export function DashboardPage() {
             nine buttons. `steady` keeps each from resizing as it is
             changed and shoving the other along the row.
           */}
+          {/* No filters over nothing: a fresh vault drew two live menus
+              above "No attempts yet", furniture with nothing to sort. */}
+          {(history === null || history.length > 0) && (
           <div className="border-border flex items-center gap-1.5 border-b px-3 py-2">
             <Select
               value={resultFilter}
@@ -612,6 +619,7 @@ export function DashboardPage() {
               ]}
             />
           </div>
+          )}
           {/* Drawn at once, not behind useSlowLoad: these rows ARE the
               panel's height, so holding them back left a panel of a
               header and a filter row that grew a fifth of a second later.
@@ -638,7 +646,7 @@ export function DashboardPage() {
             // An outage is not an empty vault: told "No attempts yet", a
             // player on a phone with a flaky link would read that they
             // have never trained. The failure names itself instead.
-            <p className="text-muted-foreground flex items-center gap-3 px-3 py-2 text-sm">
+            <p className="text-muted-foreground px-3 py-3 text-sm">
               <span className="min-w-0 flex-1">
                 {t(
                   historyFailed && history.length === 0
@@ -654,14 +662,6 @@ export function DashboardPage() {
                         : 'Nothing matches this filter.',
                 )}
               </span>
-              {/* The instruction comes with its control: "go solve
-                  something" pointed at nothing on the page. */}
-              {history.length === 0 && !historyFailed && (
-                <Button variant="secondary" size="sm" onClick={() => navigate('puzzles')}>
-                  <Puzzle className="size-3.5" data-icon="inline-start" />
-                  {t('Train')}
-                </Button>
-              )}
             </p>
           ) : (
             // The list scrolls inside itself only from lg, where the page
@@ -673,6 +673,12 @@ export function DashboardPage() {
             <ul
               ref={wellRef}
               onScroll={readWell}
+              // A landmark a keyboard user can skip: the wipe under this
+              // list was sixty Tab stops from the top of the page. And
+              // one description for every row, since a row's purpose
+              // lived only in its hover title.
+              aria-label={t('Attempt log')}
+              aria-describedby="puzzle-log-row-hint"
               className={cn(
                 'lg:max-h-96 lg:overflow-y-auto',
                 // The edge of the well. With overlay scrollbars nothing
@@ -694,6 +700,7 @@ export function DashboardPage() {
                     dense
                     onClick={() => navigate('puzzles', 'id', h.id)}
                     title={t('Replay puzzle #{id}', { id: h.id })}
+                    aria-describedby="puzzle-log-row-hint"
                     className="min-w-0 flex-1 pr-1.5 text-sm"
                   >
                     {h.win ? (
@@ -746,6 +753,10 @@ export function DashboardPage() {
           )}
         </Panel>
 
+      {/* The rows' shared description, read after a row's name. */}
+      <span id="puzzle-log-row-hint" className="sr-only">
+        {t('Opens the puzzle to replay it.')}
+      </span>
       {preview.layer}
     </PageShell>
   );
@@ -776,7 +787,11 @@ function ResetButton({
       triggerTone="quiet"
       label={t('Wipe history')}
       triggerTitle="Wipe attempts, history and the review pool"
-      question={t('Wipe {a} attempts and the {r} puzzles waiting for review?', { a: attempts, r: review })}
+      question={
+        review > 0
+          ? t('Wipe {a} attempts and the {r} puzzles waiting for review?', { a: attempts, r: review })
+          : t('Wipe {a} attempts?', { a: attempts })
+      }
       confirmLabel={t('Wipe everything')}
       onConfirm={() => {
         // Refresh either way: the reload shows what the wipe really did.
