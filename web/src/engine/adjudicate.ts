@@ -78,7 +78,7 @@ export async function evaluateWhitePov(fen: string): Promise<{ cp?: number; mate
 /**
  * Free the worker's memory once nothing on screen adjudicates — every
  * other engine has this exit (the interactive one on its switch, the
- * probe on the overlay, the review in its finally); this one had none,
+ * review in its finally); this one had none,
  * so the first engine verdict kept a worker alive for the whole session.
  * A caller still awaiting the dead worker is resolved with an empty
  * score rather than left hanging; callers that release on unmount bail

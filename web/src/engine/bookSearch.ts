@@ -7,7 +7,7 @@ import { terminalScore } from './terminal';
  * solve from the book (see shared/bookEngine.ts for what is done with the
  * answers).
  *
- * Their own workers, like the probe and the adjudicator have theirs: an
+ * Their own workers, like the adjudicator has its own: an
  * import runs for minutes in the background and must never take the search
  * the reader is watching.
  *

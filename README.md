@@ -43,7 +43,7 @@ is one connected body of work, and the links are what make it that.
 
 ## Features
 
-- **Board** — free analysis with Stockfish 18 (WASM, multi-threaded),
+- **Board** — free analysis with Stockfish 19 (WASM, multi-threaded),
   full move trees with variations, comments, NAGs (`!`, `?!` and the
   rest of the annotation glyphs) and arrows, an
   opening explorer (local databases + Lichess) that adds the endgame
@@ -693,8 +693,6 @@ covers it, including how to bootstrap that config from the book itself.
   and exactly how the drill decides hit, miss and gap.
 - [The opening map](docs/opening-map.md) — your repertoire as a tree:
   hand-placed moves, tagged studies, coverage derived live.
-- [Explaining the engine](docs/explaining.md) — per-piece values: the
-  one engine answer that is read out of the network, not inferred.
 - [ML history](docs/ml-history.md) — how the book reader got good.
 - [Update log](docs/update-log.md) — what changed, newest first.
 

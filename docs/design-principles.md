@@ -167,9 +167,9 @@ A magic `text-[…]` literal means a tier exists that nobody named: 81 of
 the 89 in the app were the same value, retyped at every call site. That
 is where `text-micro` came from — the 10px rung the table opens with,
 named once and used by the eval bar, the PV peek and the puzzle-book
-tiles, none of which are type in the sense the other rungs mean. Three
-literals remain in app code — the tile-corner glyph, the heat map's cell
-labels, the result bar's digits — each sized to the thing it sits on and
+tiles, none of which are type in the sense the other rungs mean. Two
+literals remain in app code — the tile-corner glyph and the result bar's
+digits — each sized to the thing it sits on and
 not to type, which is the only excuse a literal has, and each says so in
 a comment above it; `check:repo` refuses a new one without that
 sentence. (The 11px variation text is not a literal but the bottom rung

@@ -19,7 +19,6 @@ import { cn } from '@/lib/utils';
 import { ClearButton } from '@/components/clear-button';
 import { noAutofill, noAutofillClass } from '@/components/ui/input';
 import { Board } from '@/board/Board';
-import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
 import { BoardLane, EvalBar, EvalBarRow, EvalBarSlot, useEvalReadout } from '@/engine/EvalBar';
@@ -373,7 +372,6 @@ export function AnalysisBoard({
                 onCancel={cancelPromotion}
               />
             )}
-            <HeatMapOverlay fen={node.fen} orientation={orientation} />
             <NagBadge node={node} orientation={orientation} book={bookMove} />
           </div>
         </div>

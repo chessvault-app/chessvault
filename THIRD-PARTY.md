@@ -14,7 +14,8 @@ Anything here travels with the app to whoever installs or visits it.
 
 | What | Where | Licence |
 | --- | --- | --- |
-| Stockfish 18 (WASM) | `web/public/engine/` | GPL-3.0-or-later |
+| Stockfish 19 (WASM, `@lichess-org/stockfish-web` build) and its small network `nn-61e7af4bb97d.nnue` | `web/public/engine/` | GPL-3.0-or-later (engine and network); the Lichess build's own patches and loader AGPL-3.0-or-later |
+| Stockfish 18 (WASM, `stockfish` npm package; single-threaded fallback only) | `web/public/engine/` | GPL-3.0-or-later |
 | chessground | npm, bundled into `dist/` | GPL-3.0-or-later |
 | chessops | npm, bundled into `dist/` | GPL-3.0-or-later |
 | pdf.js | `web/public/pdfjs-wasm/`, npm | Apache-2.0 |
@@ -39,7 +40,7 @@ installer is Electron, so it is listed too. electron-builder places
 `LICENSE.electron.txt` and `LICENSES.chromium.html` at the root of the
 installed app.
 
-**Where this table and the generated list disagree, on purpose: Stockfish.**
+**Where this table and the generated list disagree, on purpose: Stockfish 18.**
 The generated list prints `GPL-3.0` for it, because that is the SPDX id in
 the `stockfish` npm package's own metadata, and the walk reports what a
 package declares. The row above says GPL-3.0-**or-later**, which is what
