@@ -914,6 +914,11 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
+    /* Double-tap does nothing. Left at `auto`, a second tap on a heading
+       or the gap beside the board zoomed the page in on iOS, which no
+       app does. `manipulation` takes only that gesture: pinch still
+       zooms, so this is not the maximum-scale cap main.tsx declines. */
+    touch-action: manipulation;
   }
 
   /* Wiki links in notes ([[Target]]): linky at rest, actionable with
