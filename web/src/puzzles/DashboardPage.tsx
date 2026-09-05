@@ -245,7 +245,9 @@ export function DashboardPage() {
 
         {/* The review queue, promoted: it was a 14px icon inside the
             Failed card — the one training action this page should be
-            offering, hidden in the one place nobody pressed. */}
+            offering, hidden in the one place nobody pressed. It takes
+            the page's one accent, the default variant: with Reset in
+            red and this in grey, the destructive control outranked it. */}
         {/* The count comes from /api/puzzles/meta, so before it answers
             this page cannot know whether the button belongs here — and it
             used to resolve that by drawing nothing, then pushing every
@@ -272,7 +274,7 @@ export function DashboardPage() {
           // The schedule has something waiting: lead with the due count,
           // which is the number that asks to be acted on today.
           <Button
-            variant="secondary"
+            variant="default"
             size="default"
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'failed')}
@@ -282,7 +284,7 @@ export function DashboardPage() {
           </Button>
         ) : failed > 0 ? (
           <Button
-            variant="secondary"
+            variant="default"
             size="default"
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'failed')}
@@ -580,7 +582,7 @@ export function DashboardPage() {
                         title, where Replay still quotes it. The id stays
                         on screen only when the database is not there to
                         answer for the themes. */}
-                    <span className="text-foreground w-28 shrink-0 truncate">
+                    <span className="text-foreground w-32 shrink-0 truncate">
                       {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
                     </span>
                     <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
@@ -604,17 +606,20 @@ export function DashboardPage() {
 }
 
 /** Wipes counters + history — including the review pool — behind an
-    anchored confirm, so it stays deliberate without a browser dialog. */
+    anchored confirm, so it stays deliberate without a browser dialog.
+
+    A quiet icon, not a red "Reset" button. It was the only coloured
+    control on the page, and the eye landed on it before the review
+    button, which was grey: the page's one training action outranked
+    by its one destructive one. The eraser sits in the header on the
+    ghost rung, named by its tooltip, and the question it opens is as
+    red as ever. */
 function ResetButton({ onDone }: { onDone: () => void }) {
   return (
     <ConfirmDialog
       icon={Eraser}
-      triggerTone="danger"
-      label={t('Reset')}
+      triggerTone="quiet"
       triggerTitle="Wipe attempts, history and the review pool"
-      // Position only. A colour here would land AFTER the variant in
-      // cn() and win: text-muted-foreground was doing exactly that, which is why
-      // the one button meant to read as destructive was grey.
       triggerClassName="ml-auto"
       question="Wipe all attempts, history and the review pool?"
       confirmLabel={t('Wipe everything')}
