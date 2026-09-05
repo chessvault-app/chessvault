@@ -5,6 +5,18 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+The puzzle dashboard's attempt log scrolls with the page.
+
+- **One scrollbar on the puzzle dashboard.** From a laptop's width up
+  the attempt log was a 384px well with a scroller of its own, inside
+  the page's, so the dashboard showed two scrollbars and a wheel over
+  the log moved the log instead of the page. The well is gone at every
+  width: the log is as long as it is, the page scrolls it, and the
+  fade that marked the well's edges goes with it. A phone had already
+  lost the well in 0.8.3 for the same reason.
+
 ## 0.8.3
 
 The puzzle dashboard leads with its one button and tells the truth

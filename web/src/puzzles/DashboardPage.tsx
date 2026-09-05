@@ -1,7 +1,6 @@
 import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
 import { parseDashboardShape, storedDashboardShape } from './reservation';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
@@ -146,22 +145,6 @@ export function DashboardPage() {
   // The eye on each row, and the board it pops. Shared with the hub's
   // recent rows — see PuzzlePreview.
   const preview = usePuzzlePreview();
-
-  // Whether the log's well has rows below its edge, for the fade at the
-  // bottom of it. Read on scroll and once the rows are in; a list that
-  // fits has nothing to fade.
-  const wellRef = useRef<HTMLUListElement>(null);
-  const [wellMore, setWellMore] = useState(false);
-  const [wellAbove, setWellAbove] = useState(false);
-  const readWell = useCallback(() => {
-    const el = wellRef.current;
-    if (!el) return;
-    setWellMore(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
-    setWellAbove(el.scrollTop > 1);
-  }, []);
-  // After every render: the rows this reads are the render's own.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(readWell);
 
   // One Tab stop for the whole log. Thirty rows and thirty eyes were
   // sixty stops between the filters and the wipe under them, and a
@@ -634,11 +617,9 @@ export function DashboardPage() {
               The threshold is for content that can appear without moving
               anything, which this is not. */}
           {history === null ? (
-            // As many rows as this device saw, inside the list's own
-            // 384px ceiling so a full vault's reservation cannot stand
-            // taller than the scroller it reserves — and the one-line
-            // note's box for a vault that had no attempts, where five
-            // invented rows were the jump in the other direction.
+            // As many rows as this device saw, and the one-line note's
+            // box for a vault that had no attempts, where five invented
+            // rows were the jump in the other direction.
             reserved.attempts === 0 ? (
               <div className="px-3 py-3">
                 <div className="flex h-5 items-center">
@@ -646,9 +627,7 @@ export function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="lg:max-h-96 lg:overflow-hidden">
-                <SkeletonRows rows={reserved.attempts} />
-              </div>
+              <SkeletonRows rows={reserved.attempts} />
             )
           ) : puzzles.length === 0 ? (
             // An outage is not an empty vault: told "No attempts yet", a
@@ -672,15 +651,11 @@ export function DashboardPage() {
               </span>
             </p>
           ) : (
-            // The list scrolls inside itself only from lg, where the page
-            // is a column of panels and a 384px well keeps the log from
-            // being the whole of it. On a phone that well was a second
-            // scroller inside the page's own, taller than the screen's
-            // fold, capturing every flick: the page scrolls there and the
-            // list is as long as it is.
+            // The list is as long as it is and the page scrolls it, at
+            // every width. It was a 384px well of its own from lg, which
+            // put a second scrollbar inside the page's on a desktop; a
+            // phone had lost the well first for the same reason.
             <ul
-              ref={wellRef}
-              onScroll={readWell}
               // A landmark a keyboard user can skip: the wipe under this
               // list was sixty Tab stops from the top of the page. And
               // one description for every row, since a row's purpose
@@ -688,21 +663,6 @@ export function DashboardPage() {
               aria-label={t('Attempt log')}
               aria-describedby="puzzle-log-row-hint"
               onKeyDown={onLogKeyDown}
-              className={cn(
-                'lg:max-h-96 lg:overflow-y-auto',
-                // The edge of the well. With overlay scrollbars nothing
-                // said eighteen rows followed the twelfth, which the well
-                // cut mid-line; the last 24px fade while there is more
-                // below, and stop fading at the end so the last row is
-                // whole. A mask, not a gradient laid over the rows, so
-                // the rows under it stay clickable.
-                // Both ends, each only while there is a row past it: the
-                // bottom alone left the top row cut mid-glyph once the
-                // well had been scrolled.
-                wellMore && !wellAbove && 'lg:[mask-image:linear-gradient(to_bottom,black_calc(100%-24px),transparent)]',
-                wellAbove && !wellMore && 'lg:[mask-image:linear-gradient(to_bottom,transparent,black_24px)]',
-                wellAbove && wellMore && 'lg:[mask-image:linear-gradient(to_bottom,transparent,black_24px,black_calc(100%-24px),transparent)]',
-              )}
             >
               {/* The row and its eye are siblings: the eye is a button
                   and a button cannot sit inside the row's. The row keeps
