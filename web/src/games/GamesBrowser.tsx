@@ -515,7 +515,11 @@ export function GamesBrowser({
         />
       )}
 
-      <Panel className={cn('min-h-0', className)}>
+      {/* No floor: the card's bottom padding is for a control row or a
+          resize grip to take back and draw the edge with, and this pane
+          ends in its scrolling list, which took nothing back. Measured
+          16px of blank under a row cut mid-line (lanph3re's report). */}
+      <Panel className={cn('min-h-0 [--card-floor:0px]', className)}>
         {/* The pane's TITLE is the switch — the same line-Tabs strip
             the old source column used, for the same reason: naming
             the pane is what a header does, and the live tab is the

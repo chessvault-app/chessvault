@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Games pane's list reaches the pane's bottom edge.** The pane
+  used to end in a 16px blank under its last row, with that row cut
+  mid-line above it; the list now runs to the edge, on the Games page
+  and in the workspace's games band alike.
+
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
   databases' rows have: “Open on the board” and “Add to collection”,
