@@ -349,6 +349,11 @@ setting them in mono made every one of them look like a terminal.
   strip with the board's own controls and every point it takes is a point
   off the board.
 - **Title** (500, 16px / `text-base`): section titles, setting rows.
+- **Panel title** (500, 14px / `text-sm`): the header of a panel, via
+  `PanelHeader`, in the registry's own card-title voice. Deliberately on
+  the body rung, not Title: a panel's header shares a row with its
+  controls and reads as the name of a band, not a section of the page
+  (`docs/design-principles.md`, "A panel's header").
 - **Body** (400, 14px / `text-sm`): body copy, list rows, panel text.
 - **Label** (500, 12px / `text-xs`): captions and dense labels only.
 - **Micro** (10px / `text-micro`): the last rung, and the only one below
