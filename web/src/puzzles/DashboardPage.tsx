@@ -360,8 +360,8 @@ export function DashboardPage() {
                 {/* The title is known before the answer is; only the
                     shelf button and the rows are waited for. */}
                 <PanelHeader
-                  title={t('Books')}
-                  actions={<Skeleton className="h-7 w-16 rounded-md pointer-coarse:h-9" />}
+                  title={t('Puzzle books')}
+                  actions={<Skeleton className="h-7 w-28 rounded-md pointer-coarse:h-9" />}
                 />
                 {/* One row per book this device saw last visit — and for
                     a vault that had none (or has never been seen), the
@@ -416,17 +416,17 @@ export function DashboardPage() {
             )
           : (
           <Panel className="mb-4">
+            {/* "Puzzle books", as the navigation says: "Books" alone is
+                the PDF shelf, a different page. */}
             <PanelHeader
-              title={t('Books')}
+              title={t('Puzzle books')}
               actions={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  title={t('All puzzle books')}
-                  onClick={() => navigate('puzzles', 'books')}
-                >
+                // Named for where it goes. "Shelf" was the app's word for
+                // a page the reader had not seen, and its own tooltip said
+                // the better label.
+                <Button variant="ghost" size="sm" onClick={() => navigate('puzzles', 'books')}>
                   <BookMarked className="size-3.5" data-icon="inline-start" />
-                  {t('Shelf')}
+                  {t('All puzzle books')}
                 </Button>
               }
             />
@@ -529,7 +529,7 @@ export function DashboardPage() {
               groups={[
                 {
                   options: [
-                    { value: 'any', label: 'Any' },
+                    { value: 'any', label: 'All' },
                     ...BANDS.map((b) => ({ value: b.id, label: b.label })),
                   ],
                 },

@@ -745,7 +745,7 @@ export const ko: Record<string, string> = {
     '이미 풀고 있습니다. 사이클을 시작하면 사이클마다 점수가 따로 기록됩니다.',
   'Work the whole book in passes. Every puzzle once per cycle, scored by first attempts, and each pass should come out faster and cleaner.':
     '책 전체를 사이클로 반복합니다. 사이클마다 모든 퍼즐을 한 번씩 풀고 첫 시도로 점수를 매기며, 사이클을 거듭할수록 더 빠르고 깔끔해지는 것이 목표입니다.',
-  'Review puzzles · {n} due': '퍼즐 복습 · 복습할 때가 된 {n}개',
+  'Review puzzles · {n} due': '퍼즐 복습 · 때가 된 {n}개',
   'Nothing due. The next review lands {when}': '지금은 복습할 것이 없습니다. 다음 복습은 {when}',
   'Nothing solved yet. The puzzles you attempt turn up here.':
     '아직 푼 퍼즐이 없습니다. 풀어 본 퍼즐이 여기에 쌓입니다.',
