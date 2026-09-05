@@ -9,7 +9,8 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty';
 import { parseDashboardShape, storedDashboardShape } from './reservation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
@@ -140,6 +141,20 @@ export function DashboardPage() {
   // The eye on each row, and the board it pops. Shared with the hub's
   // recent rows — see PuzzlePreview.
   const preview = usePuzzlePreview();
+
+  // Whether the log's well has rows below its edge, for the fade at the
+  // bottom of it. Read on scroll and once the rows are in; a list that
+  // fits has nothing to fade.
+  const wellRef = useRef<HTMLUListElement>(null);
+  const [wellMore, setWellMore] = useState(false);
+  const readWell = useCallback(() => {
+    const el = wellRef.current;
+    if (!el) return;
+    setWellMore(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+  }, []);
+  // After every render: the rows this reads are the render's own.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(readWell);
 
   const latestById = new Map<string, HistoryEntry>();
   const trained = new Set<string>();
@@ -315,10 +330,15 @@ export function DashboardPage() {
               on the page, in the open. It was the Attempts figure's
               tooltip, and a phone has no hover: "Attempts 30" over
               "30 puzzles" and "Solved 21, To review 9" did not add up
-              to anyone who could not reach it. */}
-          <p className="text-muted-foreground mt-2 px-(--card-spacing) text-xs">
-            {t('Training attempts only. Review sessions are not counted, so this can differ from the review pool.')}
-          </p>
+              to anyone who could not reach it. Said only once the two
+              numbers actually differ: on a fresh vault it explained a
+              discrepancy that did not exist, over three zeros. Held to a
+              measure, since it ran 120 characters across a desktop card. */}
+          {user !== null && history !== null && user.attempts !== latestById.size && (
+            <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-xs">
+              {t('Training attempts only. Review sessions are not counted, so this can differ from the review pool.')}
+            </p>
+          )}
         </Panel>
 
         <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
@@ -329,6 +349,13 @@ export function DashboardPage() {
               tooltip that explained it lived on hover, which a phone has
               not got. */}
           <PanelHeader title={t('Attempts by difficulty')} />
+          {/* A vault with nothing counted gets one line, not four empty
+              tracks and four dashes: furniture with nothing on it, which
+              is what a first visit saw. The grid stays while the answer
+              is out, so nothing moves for the common case. */}
+          {history !== null && counted.length === 0 ? (
+            <p className="text-muted-foreground px-(--card-spacing) text-sm">{t('Nothing attempted yet.')}</p>
+          ) : (
           <div className="grid gap-2.5 px-(--card-spacing)">
             {BANDS.map((band) => {
               const inBand = counted.filter(
@@ -350,6 +377,7 @@ export function DashboardPage() {
               );
             })}
           </div>
+          )}
         </Panel>
 
         {/* Drawn from the first paint rather than behind useSlowLoad.
@@ -464,8 +492,10 @@ export function DashboardPage() {
                     {(b.due ?? 0) > 0 && (
                       <span className="text-info shrink-0 text-xs">{t('{n} due', { n: b.due! })}</span>
                     )}
-                    <span className="text-muted-foreground shrink-0 font-mono tabular-nums">
-                      {b.solved}/{b.puzzles}
+                    {/* The bands' spelling, for the same reason: this sits
+                        beside the same bar. */}
+                    <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+                      {t('{a} of {b}', { a: b.solved, b: b.puzzles })}
                     </span>
                     <ProgressBar
                       total={b.puzzles}
@@ -602,7 +632,20 @@ export function DashboardPage() {
             // scroller inside the page's own, taller than the screen's
             // fold, capturing every flick: the page scrolls there and the
             // list is as long as it is.
-            <ul className="lg:max-h-96 lg:overflow-y-auto">
+            <ul
+              ref={wellRef}
+              onScroll={readWell}
+              className={cn(
+                'lg:max-h-96 lg:overflow-y-auto',
+                // The edge of the well. With overlay scrollbars nothing
+                // said eighteen rows followed the twelfth, which the well
+                // cut mid-line; the last 24px fade while there is more
+                // below, and stop fading at the end so the last row is
+                // whole. A mask, not a gradient laid over the rows, so
+                // the rows under it stay clickable.
+                wellMore && 'lg:[mask-image:linear-gradient(to_bottom,black_calc(100%-24px),transparent)]',
+              )}
+            >
               {/* The row and its eye are siblings: the eye is a button
                   and a button cannot sit inside the row's. The row keeps
                   its left padding and gives its right edge to the eye,

@@ -1595,6 +1595,7 @@ export const ko: Record<string, string> = {
   'No attempts yet. Go solve something.': '아직 시도가 없습니다. 뭐라도 풀어 보세요.',
   'Nothing matches this filter.': '이 조건에 맞는 것이 없습니다.',
   'Nothing to review.': '복습할 것이 없습니다.',
+  'Nothing attempted yet.': '아직 시도한 퍼즐이 없습니다.',
   'Showing the latest {n}': '최근 {n}개만 표시',
   'Could not load the attempts.': '시도 기록을 불러오지 못했습니다.',
   'Wipe attempts, history and the review pool': '시도, 기록, 복습 대상을 모두 지우기',
