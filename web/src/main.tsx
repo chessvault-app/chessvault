@@ -6,6 +6,7 @@ import { initPrefs } from './store/prefs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { startKeyboardTracking } from './lib/keyboardInset';
+import { startInstallTracking } from './lib/install';
 import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
 import { sweepStorage } from './lib/storageSweep';
@@ -36,6 +37,9 @@ void hydrateTraining();
 // first render must not happen before it (English pays nothing — its
 // dictionary is the keys themselves).
 await initLang();
+
+// The install prompt fires once, early, and only its catcher can use it.
+startInstallTracking();
 
 // PWA shell: production only — a worker in dev would fight Vite's HMR.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
