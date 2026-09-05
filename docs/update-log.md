@@ -52,6 +52,15 @@ and the online archive's table takes a right-click.
   and bar labels overprinted; the title now wraps under the board and the
   two rows keep their glyphs, with the names left to the screen reader.
 
+- **The licences page is a page of the app.** It used to be a generated
+  document shown in a frame, with its own fonts and controls inside the
+  app's, and on the desktop app and any server the frame was empty, since
+  the server refused to let any page frame it, its own included. The
+  inventory is now drawn by the app itself: the same search field, filter
+  chips and rows as everywhere else, with each entry opening to its
+  licence text. The standalone document still ships with every build for
+  the landing site and for anyone reading the installed files.
+
 - **The opening map's compare button no longer pops in.** “Compare my
   moves with a database” used to appear a moment after the page, once
   the server had listed the databases, shifting the buttons beside it.

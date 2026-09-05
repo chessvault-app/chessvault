@@ -409,6 +409,8 @@ interface Row {
   /** Inlined licence text, or null when it is fetched on demand. */
   text: string | null;
   group: string;
+  /** Index into chromium.json, for a row whose text is fetched on demand. */
+  lazy?: number;
 }
 
 function rowHtml(r: Row, index: number, lazy: boolean): string {
@@ -417,25 +419,28 @@ function rowHtml(r: Row, index: number, lazy: boolean): string {
     : `<pre>${escapeHtml(r.text ?? `No licence file ships with this component. It is under ${r.license}.`)}</pre>`;
   return `      <details class="dep" data-name="${escapeHtml(r.name.toLowerCase())}" data-license="${escapeHtml(r.license)}" data-group="${escapeHtml(r.group)}">
         <summary><span class="nm">${escapeHtml(r.name)}</span>${
-          r.version && r.version !== '—' ? `<span class="ver">${escapeHtml(r.version)}</span>` : ''
+          r.version ? `<span class="ver">${escapeHtml(r.version)}</span>` : ''
         }<span class="lic">${escapeHtml(r.license)}</span></summary>
         ${r.url ? `<p class="src"><a href="${escapeHtml(r.url)}" rel="noreferrer">${escapeHtml(r.url)}</a></p>` : ''}
         ${body}
       </details>`;
 }
 
-function indexPage(
-  _files: string[],
-  deps: Dep[],
-  chrome: Chromium | null,
-  desktop: boolean,
-): string {
-  const rows: Row[] = [
+/**
+ * Every row the notice lists, in the order it lists them. Both outputs
+ * come from this: the standalone page (`index.html`, what the landing
+ * site links to and what a file browser opens) and `index.json`, which
+ * the app's own Licences page renders as one of its pages rather than a
+ * framed document. One list, so the two cannot disagree.
+ */
+function entries(deps: Dep[], chrome: Chromium | null, desktop: boolean): Row[] {
+  return [
     // A desktop-only row on the web page would claim the visitor received
     // something they did not — the same reason Chromium is not listed there.
     ...ASSETS.filter((a) => desktop || !a.desktopOnly).map((a) => ({
       name: a.name,
-      version: a.version,
+      // ASSETS writes "—" for "no version"; a row shows nothing for that.
+      version: a.version === '—' ? '' : a.version,
       license: a.license,
       url: a.url,
       text: a.file ? readFileSync(resolve(SOURCE, a.file), 'utf8').trim() : null,
@@ -449,19 +454,40 @@ function indexPage(
       text: d.text,
       group: 'Packages',
     })),
+    // Chromium's texts are fetched on first open: 19 MB inlined would make
+    // a settings page nobody could load, and only the desktop app contains
+    // it. `lazy` is the row's index into chromium.json.
+    ...(chrome?.names ?? []).map(([name, url, at]) => ({
+      name,
+      version: '',
+      license: 'see text',
+      url,
+      text: null,
+      group: 'Chromium (desktop app)',
+      lazy: at,
+    })),
   ];
+}
 
-  // Chromium's texts are fetched on first open: 19 MB inlined would make a
-  // settings page nobody could load, and only the desktop app contains it.
-  const chromeRows = (chrome?.names ?? []).map(([name, url, at]) => ({
-    name,
-    version: '—',
-    license: 'see text',
-    url,
-    text: null,
-    group: 'Chromium (desktop app)',
-    at,
-  }));
+/** What the app's Licences page fetches. */
+function indexJson(deps: Dep[], chrome: Chromium | null, desktop: boolean): string {
+  return JSON.stringify({
+    year: COPYRIGHT_YEAR,
+    holder: COPYRIGHT,
+    repo: REPO_URL,
+    entries: entries(deps, chrome, desktop),
+  });
+}
+
+function indexPage(
+  _files: string[],
+  deps: Dep[],
+  chrome: Chromium | null,
+  desktop: boolean,
+): string {
+  const all = entries(deps, chrome, desktop);
+  const rows = all.filter((r) => r.lazy === undefined);
+  const chromeRows = all.filter((r) => r.lazy !== undefined);
 
   const counts = new Map<string, number>();
   for (const r of [...rows, ...chromeRows]) counts.set(r.group, (counts.get(r.group) ?? 0) + 1);
@@ -475,7 +501,7 @@ function indexPage(
 
   const list = [
     ...rows.map((r, i) => rowHtml(r, i, false)),
-    ...chromeRows.map((r) => rowHtml(r, r.at, true)),
+    ...chromeRows.map((r) => rowHtml(r, r.lazy!, true)),
   ].join('\n');
 
   const total = rows.length + chromeRows.length;
@@ -722,6 +748,11 @@ export function licenses(desktop = true): Plugin {
           res.end(indexPage(texts(), collect(), withChromium ? chromium() : null, desktop));
           return;
         }
+        if (name === 'index.json') {
+          res.setHeader('content-type', 'application/json; charset=utf-8');
+          res.end(indexJson(collect(), withChromium ? chromium() : null, desktop));
+          return;
+        }
         if (name === 'dependencies.txt') {
           res.setHeader('content-type', 'text/plain; charset=utf-8');
           res.end(dependencyNotice(collect()));
@@ -758,6 +789,7 @@ export function licenses(desktop = true): Plugin {
         writeFileSync(resolve(target, 'chromium.json'), JSON.stringify(chrome.texts));
       }
       writeFileSync(resolve(target, 'index.html'), indexPage(files, deps, chrome, desktop));
+      writeFileSync(resolve(target, 'index.json'), indexJson(deps, chrome, desktop));
       const assets = ASSETS.filter((a) => desktop || !a.desktopOnly).length;
       console.log(
         `licenses: ${assets} assets + ${deps.length} packages` +
