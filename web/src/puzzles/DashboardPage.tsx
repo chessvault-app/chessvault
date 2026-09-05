@@ -194,54 +194,13 @@ export function DashboardPage() {
             there and leaves by the chevron. */}
         <PageHeader className="mb-4" title={t('Puzzle dashboard')} back={() => up('puzzles', 'hub')} />
 
-        {/* The card floor is zero below lg (panel.tsx): in the workspace
-            column the phone's contextual bar ends the stack, and 16px
-            of nothing stood under the last move row. These panels are
-            cards on a scrolling page, ending in a bare figure list or
-            band grid, so the floor comes back on a phone (lanph3re's
-            report). Books and the log end in their own padded rows. */}
-        <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
-          <PanelHeader title={t('Training')} />
-          {/* A figure list, not four cards. Each number used to be its own
-              raised tile with its value at text-2xl in bold — the rung the
-              type scale reserves for THE one display figure, spent four
-              times in one row — and one of them was a "Win rate" percentage,
-              which is a score. Four scores in 24px bold is a scoreboard, and
-              a scoreboard is the one thing this page is not: these numbers
-              are read beside the band table and the log below them, not
-              beaten.
-
-              The dl is the app's own idiom for facts about a thing — the
-              same grid the trainer's finished-puzzle panel uses. Two pairs
-              to a row from sm, one below it. */}
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
-            <Figure label={t('Attempts')} value={user ? String(user.attempts) : '…'} />
-            <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
-            {/* No solve rate. It was "win rate" once, renamed because
-                nothing here is won, and then dropped because a percentage
-                of your own attempts is still a score handed back to the
-                person who made them, which the app does not do (see
-                docs/design-principles.md on ratings). Solved and Failed
-                say the same thing as counts. */}
-            <Figure
-              // "To review", not "Failed": the number is the review pool's
-              // size, which the tooltip already said, and "Failed 10"
-              // beside "Solved 21" in the same weight read as a grade.
-              label={t('To review')}
-              title={t('Puzzles whose latest attempt failed. This is the review pool.')}
-              value={String(failed)}
-            />
-          </dl>
-          {/* The sentence that reconciles Attempts with everything else
-              on the page, in the open. It was the Attempts figure's
-              tooltip, and a phone has no hover: "Attempts 30" over
-              "30 puzzles" and "Solved 21, To review 9" did not add up
-              to anyone who could not reach it. */}
-          <p className="text-muted-foreground mt-2 px-(--card-spacing) text-xs">
-            {t('Training attempts only. Review sessions are not counted, so this can differ from the review pool.')}
-          </p>
-        </Panel>
-
+        {/* First on the page, above the figures. The one action this
+            page offers used to sit under the Training panel: on a phone
+            that put it at 72% of the first screen, below the least
+            actionable content on the page, and a solver opening the
+            dashboard wants "what is due" before "how many I have done".
+            The figures are context for the button, not the other way
+            round. */}
         {/* The review queue, promoted: it was a 14px icon inside the
             Failed card — the one training action this page should be
             offering, hidden in the one place nobody pressed. It takes
@@ -312,6 +271,55 @@ export function DashboardPage() {
             )}
           </div>
         )}
+
+
+        {/* The card floor is zero below lg (panel.tsx): in the workspace
+            column the phone's contextual bar ends the stack, and 16px
+            of nothing stood under the last move row. These panels are
+            cards on a scrolling page, ending in a bare figure list or
+            band grid, so the floor comes back on a phone (lanph3re's
+            report). Books and the log end in their own padded rows. */}
+        <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
+          <PanelHeader title={t('Training')} />
+          {/* A figure list, not four cards. Each number used to be its own
+              raised tile with its value at text-2xl in bold — the rung the
+              type scale reserves for THE one display figure, spent four
+              times in one row — and one of them was a "Win rate" percentage,
+              which is a score. Four scores in 24px bold is a scoreboard, and
+              a scoreboard is the one thing this page is not: these numbers
+              are read beside the band table and the log below them, not
+              beaten.
+
+              The dl is the app's own idiom for facts about a thing — the
+              same grid the trainer's finished-puzzle panel uses. Two pairs
+              to a row from sm, one below it. */}
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
+            <Figure label={t('Attempts')} value={user ? String(user.attempts) : '…'} />
+            <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
+            {/* No solve rate. It was "win rate" once, renamed because
+                nothing here is won, and then dropped because a percentage
+                of your own attempts is still a score handed back to the
+                person who made them, which the app does not do (see
+                docs/design-principles.md on ratings). Solved and Failed
+                say the same thing as counts. */}
+            <Figure
+              // "To review", not "Failed": the number is the review pool's
+              // size, which the tooltip already said, and "Failed 10"
+              // beside "Solved 21" in the same weight read as a grade.
+              label={t('To review')}
+              title={t('Puzzles whose latest attempt failed. This is the review pool.')}
+              value={String(failed)}
+            />
+          </dl>
+          {/* The sentence that reconciles Attempts with everything else
+              on the page, in the open. It was the Attempts figure's
+              tooltip, and a phone has no hover: "Attempts 30" over
+              "30 puzzles" and "Solved 21, To review 9" did not add up
+              to anyone who could not reach it. */}
+          <p className="text-muted-foreground mt-2 px-(--card-spacing) text-xs">
+            {t('Training attempts only. Review sessions are not counted, so this can differ from the review pool.')}
+          </p>
+        </Panel>
 
         <Panel className="mb-4 max-lg:[--card-floor:var(--card-spacing)]">
           {/* The unit is in the title. This panel counts attempts, the
