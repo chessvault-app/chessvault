@@ -475,8 +475,12 @@ function RecentGamesCard({
     <div className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-border', className)}>
       <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
         <h2 className="text-muted-foreground flex-1 text-sm font-medium">{t('Recent games')}</h2>
-        {/* The collection's size, where a tile used to carry it. */}
-        <span className="text-muted-foreground font-mono text-xs">{compact.format(total)}</span>
+        {/* The collection's size, where a tile used to carry it, with
+            its noun: a bare "30" beside a list of three read as a badge
+            count. */}
+        <span className="text-muted-foreground font-mono text-xs">
+          {t('{n} games', { n: compact.format(total) })}
+        </span>
       </div>
       {games.map((g) => (
         <ListRow

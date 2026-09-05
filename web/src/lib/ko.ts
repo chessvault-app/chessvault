@@ -266,8 +266,8 @@ export const ko: Record<string, string> = {
   'Go home': '홈으로',
 
   // --- home, customise -----------------------------------------------------
-  'Off keeps a destination as a button under the grid. Hidden takes it off home. The sidebar and the More tab still reach everything.':
-    '끄면 그리드 아래 버튼으로 남고, 숨기면 홈에서 빠집니다. 사이드바와 More 탭으로는 모두 그대로 갈 수 있습니다.',
+  'Switch a destination off to move it to the row below. Hide takes it off the page. The sidebar and the More tab still reach everything.':
+    '스위치를 끄면 아래 줄로 내려가고, 숨기기는 홈에서 뺍니다. 사이드바와 More 탭으로는 모두 그대로 갈 수 있습니다.',
   'Off the page': '홈에서 숨김',
   'Nothing. Every destination is on home.': '없음. 모든 항목이 홈에 있습니다.',
   'Bring back': '되돌리기',
@@ -1308,7 +1308,9 @@ export const ko: Record<string, string> = {
   'Searching…': '검색 중…',
   Continue: '계속',
   'Continue study': '스터디 계속하기',
-  'Last game': '최근 게임',
+  // 마지막, not 최근: 최근 게임 is the Recent games panel one card down,
+  // and the same words for the one game and the list read as one thing.
+  'Last game': '마지막 게임',
   'Resume training': '훈련 이어하기',
   'Repertoire review': '레퍼토리 복습',
   'Set up your vault': '보관함 준비하기',

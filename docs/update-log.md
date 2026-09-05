@@ -41,7 +41,10 @@ showing what is happening in the vault.
   mostly finished. Below md the checklist now sits under the grid. Done
   checklist steps are no longer faded on top of being muted, which had
   composited to 2.7:1 against the card. Dates on home are one format,
-  and the customise sheet's help names the More tab beside the sidebar.
+  the Recent games heading says “{n} games” rather than a bare number,
+  and the customise sheet's help speaks in its controls' own words and
+  names the More tab beside the sidebar. In Korean the last game is
+  마지막 게임, no longer the same words as the Recent games panel.
 - **The phone home reflows under 320px.** At 200% zoom on a 390px phone
   the Continue lead's title collapsed beside its board, and the launcher
   and bar labels overprinted; the title now wraps under the board and the
