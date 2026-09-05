@@ -552,7 +552,11 @@ export function DashboardPage() {
                   ? 'Could not load the attempts.'
                   : history.length === 0
                     ? 'No attempts yet. Go solve something.'
-                    : resultFilter === 'review'
+                    : // "Nothing to review" is a verdict on the review pool,
+                      // so it is said only when the pool alone was asked
+                      // for: with a band on top, an empty list means the
+                      // band is empty, not the pool.
+                      resultFilter === 'review' && bandFilter === 'any'
                       ? 'Nothing to review.'
                       : 'Nothing matches this filter.',
               )}
@@ -582,7 +586,11 @@ export function DashboardPage() {
                         title, where Replay still quotes it. The id stays
                         on screen only when the database is not there to
                         answer for the themes. */}
-                    <span className="text-foreground w-32 shrink-0 truncate">
+                    {/* 8rem fits "Capturing defender" (122px); on a phone
+                        the fixed columns then summed to 330px in a 316px
+                        row and the date ran 4px under the eye, so the
+                        name gives up a rem there. */}
+                    <span className="text-foreground w-28 shrink-0 truncate sm:w-32">
                       {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
                     </span>
                     <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
