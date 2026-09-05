@@ -690,15 +690,17 @@
                 <tbody>
                   <tr>
                     <td>Continue</td>
-                    <td data-ko="맨 위에 최근 스터디의 포지션이 작은 보드로 그려지고(«Continue study»), 그 아래 한 번에 잇는 줄들: 마지막 기보(«Last game»), 훈련 재개(«Resume training», 현재 난이도 낱말과 함께 — 퍼즐 데이터베이스가 준비되고 한 번이라도 풀었을 때), 그리고 복습할 때가 된 레퍼토리 포지션이 있을 때의 «Repertoire review». 그릴 포지션이 없는 스터디는 보드 대신 줄로 나옵니다. 마지막 줄은 휴대폰에서만 보입니다. 데스크톱에서는 아래 «Training» 패널이 같은 것을 알려 줍니다.">
+                    <td data-ko="맨 위에 최근 스터디의 포지션이 작은 보드로 그려지고(«Continue study»), 그 아래 한 번에 잇는 줄들: 마지막 기보(«Last game»), 훈련 재개(«Resume training», 복습할 것이 있으면 «{n} due», 없으면 현재 난이도 낱말과 함께 — 퍼즐 데이터베이스가 준비되고 한 번이라도 풀었을 때), 그리고 복습할 때가 된 레퍼토리 포지션이 있을 때의 «Repertoire review». 그릴 포지션이 없는 스터디는 보드 대신 줄로 나옵니다. 마지막 줄은 휴대폰에서만 보입니다. 데스크톱에서는 아래 «Training» 패널이 같은 것을 알려 줍니다. 게임 줄에서는 이름 뒤의 날짜가 잘리지 않고 따로 표시됩니다.">
                       Your latest study's position as a small board at the top (“Continue
                       study”), then one-tap resume rows under it: the last game document
-                      (“Last game”), “Resume training” with the current difficulty word — once
-                      the puzzle database is ready and something has been attempted — and
-                      “Repertoire review” whenever the drill schedule has positions due. A study
-                      with no position to draw gets a row instead of the board. That last row is
-                      the phone’s only reminder of it; on a desktop the “Training” panel below
-                      carries it instead.
+                      (“Last game”), “Resume training” with what is due (“{n} due”) or, when
+                      nothing is, the current difficulty word — once the puzzle database is
+                      ready and something has been attempted — and “Repertoire review” whenever
+                      the drill schedule has positions due. A study with no position to draw
+                      gets a row instead of the board. That last row is the phone’s only
+                      reminder of it; on a desktop the “Training” panel below carries it
+                      instead. On the game row the date at the end of the name is kept whole
+                      beside it, so a long pairing truncates the names and not the date.
                     </td>
                   </tr>
                   <tr>
@@ -711,24 +713,30 @@
                   </tr>
                   <tr>
                     <td data-ko="타일 그리드 <small>(휴대폰)</small>">The tile grid <small>(phone)</small></td>
-                    <td data-ko="목적지 타일들과 개인 수치. 첫 타일이 한 줄을 다 차지하므로 맨 앞에 둔 것이 페이지의 첫 항목이 됩니다. Puzzles와 Repertoire는 크기 대신 일정을 보입니다: 복습할 것이 있으면 «{n} due», 없으면 Puzzles는 오늘 푼 수(«{n} today»), 그것도 없으면 지금까지 푼 수. 그리드에서 내린 목적지는 아래 버튼 줄에 남으므로, 어떤 목적지도 손이 닿지 않는 곳으로 밀려나지 않습니다.">
-                      Destination tiles with personal figures. The first tile takes the whole
-                      row, so whatever you put first is what the page leads with. Puzzles and
-                      Repertoire show a schedule rather than a size: “{n} due” when the trainer
-                      has something for you, otherwise Puzzles shows what you solved today
-                      (“{n} today”), and only then the lifetime total. A destination demoted from
-                      the grid keeps a button in the row underneath, so nothing can be arranged
-                      out of reach.
+                    <td data-ko="목적지 타일들과 개인 수치. 기본은 Board, Explorer, Opening map 세 개입니다. 아래 막대가 이미 닿는 Games, Studies, Notes, Puzzles는 한 번도 구성하지 않은 보관함에서는 홈에 그려지지 않으며, «Customise home»의 «Off the page»에서 되돌릴 수 있습니다. 첫 타일이 한 줄을 다 차지하므로 맨 앞에 둔 것이 페이지의 첫 항목이 되고, 그 타일에 복습할 것이 있을 때만 채워집니다. Puzzles와 Repertoire는 크기 대신 일정을 보입니다: 복습할 것이 있으면 «{n} due», 없으면 Puzzles는 오늘 푼 수(«{n} today»), 그것도 없으면 지금까지 푼 수. Opening map은 기록한 수의 수(«{n} moves»). 그리드에서 내린 목적지는 아래 버튼 줄에 남으므로, 어떤 목적지도 손이 닿지 않는 곳으로 밀려나지 않습니다.">
+                      Destination tiles with personal figures. The defaults are three: Board,
+                      Explorer and Opening map. Games, Studies, Notes and Puzzles, which the
+                      bottom bar already reaches, are not drawn on home in a vault that has never
+                      been customised; “Customise home” lists them under “Off the page” with a
+                      way back. The first tile takes the whole row, so whatever you put first is
+                      what the page leads with, and it is filled only when that tile has
+                      something due. Puzzles and Repertoire show a schedule rather than a size:
+                      “{n} due” when the trainer has something for you, otherwise Puzzles shows
+                      what you solved today (“{n} today”), and only then the lifetime total. The
+                      opening map shows the moves it has charted (“{n} moves”). A destination
+                      demoted from the grid keeps a button in the row underneath, so nothing can
+                      be arranged out of reach.
                     </td>
                   </tr>
                   <tr>
                     <td data-ko="대시보드 패널 <small>(데스크톱)</small>">The dashboard panels <small>(desktop)</small></td>
-                    <td data-ko="«Training»(오늘 푼 수, 그리고 퍼즐과 레퍼토리 각각의 복습 예정 — 두 트레이너가 같은 일정표를 쓰므로 한 패널에 함께 표시됩니다), «Recent games», «Puzzle books»(진행 막대와 함께), «Recent work»(최근 스터디·노트).">
+                    <td data-ko="«Training»(오늘 푼 수, 그리고 퍼즐과 레퍼토리 각각의 복습 예정 — 두 트레이너가 같은 일정표를 쓰므로 한 패널에 함께 표시됩니다), «Recent games», «Puzzle books»(진행 막대와 함께), «Recent work»(최근 스터디·노트). «Recent games»는 휴대폰에도 그려지는 유일한 패널로, Continue 아래에 세 줄로 나옵니다.">
                       “Training” — solved today, and what each trainer has due: the puzzles
                       (“{n} due for review”) and the repertoire drill
                       (“{n} repertoire positions due”, or “Repertoire: the next position comes back {when}”). They share one schedule, so they share one panel. Then
                       “Recent games”, “Puzzle books” (with progress bars), and “Recent work”
-                      (latest studies and notes).
+                      (latest studies and notes). “Recent games” is the one panel a phone draws
+                      too: three rows under Continue.
                     </td>
                   </tr>
                   <tr>

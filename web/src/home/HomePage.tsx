@@ -19,7 +19,6 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { api, apiErrorMessage } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
-import { useMediaQuery } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
@@ -35,6 +34,7 @@ import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
 import {
   checklistReservation,
   continueReservation,
+  DASH_MAX,
   dashReservation,
   shownOnDesktop,
   storedChecklist,
@@ -127,7 +127,9 @@ interface RecentDoc extends DocMeta {
  */
 interface TileFigure {
   n: number;
-  kind: 'total' | 'due' | 'today';
+  /** `moves` is the opening map's total, which carries its unit: a bare
+      "58" beside a map said nothing a first-timer could decode. */
+  kind: 'total' | 'due' | 'today' | 'moves';
 }
 
 interface HomeData {
@@ -229,6 +231,7 @@ const FIGURE_TONE: Record<TileFigure['kind'], string> = {
   total: 'text-muted-foreground',
   due: 'text-warn',
   today: 'text-good',
+  moves: 'text-muted-foreground',
 };
 
 function figureText(figure: TileFigure): string {
@@ -237,6 +240,8 @@ function figureText(figure: TileFigure): string {
       return t('{n} due', { n: figure.n });
     case 'today':
       return t('{n} today', { n: figure.n });
+    case 'moves':
+      return t('{n} moves', { n: figure.n });
     default:
       return compact.format(figure.n);
   }
@@ -244,6 +249,17 @@ function figureText(figure: TileFigure): string {
 
 /** A study id is a path; the card shows its name. */
 const baseName = (id: string): string => id.split('/').at(-1) ?? id;
+
+/**
+ * "Alderman R vs Pereira V 2026-01-25" → the name, and the date as a tail
+ * the ellipsis cannot reach. A name with no date on the end is just the
+ * label. The date is what server/games.ts appends when it collects a
+ * game, so the shape is the app's own and not a guess at a user's.
+ */
+const splitDated = (name: string): { label: string; tail?: string } => {
+  const m = /^(.*\S)\s+(\d{4}-\d{2}-\d{2})$/.exec(name);
+  return m ? { label: m[1]!, tail: m[2] } : { label: name };
+};
 
 /** Collection file → the document id the games route opens. The same rule
     as games/shared.tsx's docId, restated because importing that module
@@ -275,7 +291,9 @@ function LauncherButton({ entry }: { entry: Destination }) {
       )}
     >
       <Icon className="size-3.5 shrink-0 max-sm:size-4" />
-      {t(label)}
+      {/* Under 320px the row's labels overprint; the glyph stays and the
+          name goes to the reader. */}
+      <span className="max-[319px]:sr-only">{t(label)}</span>
     </Button>
   );
 }
@@ -432,6 +450,63 @@ function PlaceholderPanel({
   );
 }
 
+/**
+ * The recent games, as a panel: the collection's newest first, each with
+ * its result and date, and the collection's size in the heading.
+ *
+ * One component for both widths. The desktop dashboard draws five rows in
+ * its grid; the phone draws three of the same rows under Continue, because
+ * the person most likely to be on a phone is the one between rounds who
+ * wants the game just played, and the phone used to have no list of games
+ * at all: the path was the bar, then Games, then finding it. The heading
+ * is an h2 with the count beside it, where it was a <p> that heading
+ * navigation could not find.
+ */
+function RecentGamesCard({
+  games,
+  total,
+  className,
+}: {
+  games: RecentGame[];
+  total: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-border', className)}>
+      <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
+        <h2 className="text-muted-foreground flex-1 text-sm font-medium">{t('Recent games')}</h2>
+        {/* The collection's size, where a tile used to carry it. */}
+        <span className="text-muted-foreground font-mono text-xs">{compact.format(total)}</span>
+      </div>
+      {games.map((g) => (
+        <ListRow
+          key={`${g.file}#${g.index}`}
+          divided
+          onClick={() => navigate('games', encodeURIComponent(collectionDocId(g)))}
+          className="text-sm"
+        >
+          <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+            {g.white} – {g.black}
+          </span>
+          {/* An unfinished game ("*") wears no badge — ResultBadge
+              renders anything unrecognised as a draw. */}
+          {(g.result === '1-0' || g.result === '0-1' || g.result.includes('1/2')) && (
+            <ResultBadge result={g.result} />
+          )}
+          <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+            {g.date}
+          </span>
+          <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+        </ListRow>
+      ))}
+    </div>
+  );
+}
+
+/** How many recent games the phone draws under Continue: enough to hold
+    a weekend's rounds, few enough to keep the grid on the first screen. */
+const PHONE_GAMES = 3;
+
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
   // What the vault says the page looks like; null until it has ever been
@@ -469,34 +544,29 @@ export function HomePage() {
   // conditional spread, and a hook cannot be called from one.
   const difficultyLabel = useDifficultyWord();
 
-  // The dashboard's own answer, asked for only where the dashboard
-  // exists. /api/games parses the whole collection (mtime-cached, but the
-  // reply is every game as JSON) and a phone renders none of it, so
-  // below md it is not fetched. Asked once, on the first render at md or
-  // the first resize into it. The solved-today read used to ride here
-  // too, until the Puzzles tile started showing it: it is one small
-  // history request, and it now goes in the batch every width asks.
-  const md = useMediaQuery('(min-width: 48rem)');
+  // The recent games, asked for at every width now that the phone draws
+  // them too. This used to wait for md, because /api/games answered with
+  // the whole collection as JSON and a phone rendered none of it; the
+  // route now takes `?limit=`, so what a phone downloads is the five rows
+  // the desktop panel shows, of which it draws three. The parse behind it
+  // is mtime-cached per file either way.
   const [dash, setDash] = useState<{
     gamesTotal: number;
     recentGames: RecentGame[];
   } | null>(null);
-  const dashAsked = useRef(false);
   useEffect(() => {
-    if (!md || dashAsked.current) return;
-    dashAsked.current = true;
     void (async () => {
-      const games = await api<{ total?: number; games?: RecentGame[] }>('/api/games').catch(
-        () => null,
-      );
+      const games = await api<{ total?: number; games?: RecentGame[] }>(
+        `/api/games?limit=${DASH_MAX.games}`,
+      ).catch(() => null);
       // A set after navigating away is a no-op (React 18) and nothing else
       // here outlives the page, so no liveness flag.
       setDash({
         gamesTotal: games?.total ?? 0,
-        recentGames: Array.isArray(games?.games) ? games.games.slice(0, 5) : [],
+        recentGames: Array.isArray(games?.games) ? games.games.slice(0, DASH_MAX.games) : [],
       });
     })();
-  }, [md]);
+  }, []);
 
   useEffect(() => {
     // Navigating away mid-flight: React 18 makes the setStates no-ops, but
@@ -606,7 +676,7 @@ export function HomePage() {
       // that means anything is the moves under them, and none of them is
       // no number rather than a nought.
       const charted = chartedMoves(map);
-      if (charted > 0) counts.openingmap = total(charted);
+      if (charted > 0) counts.openingmap = { n: charted, kind: 'moves' };
       // The desktop dashboard's slices, cut from answers already in hand.
       // Books by last training, not title: the shelf orders itself by
       // title, and this panel's question is "what am I in the middle of".
@@ -696,6 +766,14 @@ export function HomePage() {
   const continueRows: {
     icon: typeof Grid3x3;
     label: string;
+    /**
+     * A tail the label's truncation must not eat. A collection game is
+     * named "White vs Black YYYY-MM-DD", and at 390px the ellipsis fell
+     * exactly on the date, which is the one thing telling three games
+     * between the same two players apart. Drawn after the truncating
+     * span, at its own width.
+     */
+    tail?: string;
     detail: string;
     go: () => void;
     /**
@@ -730,18 +808,27 @@ export function HomePage() {
             ? [
                 {
                   icon: Folder,
-                  label: baseName(data.lastGame.id),
+                  ...splitDated(baseName(data.lastGame.id)),
                   detail: t('Last game'),
                   go: () => navigate('games', encodeURIComponent(data.lastGame!.id)),
                 },
               ]
             : []),
+          // The schedule first, the setting second: "9 due" is what the
+          // trainer wants now, and the difficulty word only matters when
+          // nothing is. "Any" alone read as a status nobody could decode;
+          // it is a difficulty, so it says so.
           ...(data.puzzleDbReady && data.attempts > 0
             ? [
                 {
                   icon: Puzzle,
                   label: t('Resume training'),
-                  detail: t(difficultyLabel),
+                  detail:
+                    data.due > 0
+                      ? t('{n} due', { n: data.due })
+                      : difficultyLabel === 'Any'
+                        ? t('Any difficulty')
+                        : t(difficultyLabel),
                   go: () => navigate('puzzles'),
                 },
               ]
@@ -1046,10 +1133,22 @@ export function HomePage() {
               <button
                 type="button"
                 onClick={() => navigate('studies', encodeURIComponent(boardStudy.id))}
-                className="border-border border-l-primary bg-primary/10 hover:bg-accent flex w-full items-center gap-3 border-b border-l-2 px-3 py-3 text-left transition-colors duration-100"
+                className={cn(
+                  'border-border border-l-primary bg-primary/10 hover:bg-accent flex w-full items-center gap-3 border-b border-l-2 px-3 py-3 text-left transition-colors duration-100',
+                  // The ring inset, for the reason ListRow gives: the card
+                  // clips an outline drawn outside a full-width row.
+                  'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset focus-visible:outline-none',
+                  // Under 320px (200% zoom on a 390 phone) the board is
+                  // `shrink-0` and the title beside it was one glyph
+                  // wide; the title goes under the board instead.
+                  'max-[319px]:flex-wrap',
+                )}
               >
                 <MiniBoard fen={boardStudy.fen} size={96} className="shrink-0 rounded-sm" />
-                <span className="min-w-0 flex-1">
+                {/* basis-full under 320px, or flex-1 shrinks the title
+                    to a few letters beside the board instead of taking
+                    the wrap the button offers. */}
+                <span className="min-w-0 flex-1 max-[319px]:basis-full">
                   <span className="text-foreground block truncate text-base font-semibold">
                     {baseName(boardStudy.id)}
                   </span>
@@ -1057,10 +1156,12 @@ export function HomePage() {
                     {t('Continue study')}
                   </span>
                 </span>
-                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                {/* Gone where the title wraps under the board: a chevron
+                    alone on a third line is a row of nothing. */}
+                <ChevronRight className="text-muted-foreground size-3.5 shrink-0 max-[319px]:hidden" />
               </button>
             )}
-            {continueRows.map(({ icon: Icon, label, detail, go, phoneOnly }) => (
+            {continueRows.map(({ icon: Icon, label, tail, detail, go, phoneOnly }) => (
               <ListRow
                 key={label + detail}
                 divided
@@ -1068,12 +1169,43 @@ export function HomePage() {
                 className={cn('text-sm', phoneOnly && 'md:hidden')}
               >
                 <Icon className="text-muted-foreground size-3.5 shrink-0" />
-                <span className="text-foreground min-w-0 flex-1 truncate font-medium">{label}</span>
+                <span className="text-foreground flex min-w-0 flex-1 items-baseline gap-1.5 font-medium">
+                  <span className="min-w-0 truncate">{label}</span>
+                  {tail && (
+                    <span className="text-muted-foreground shrink-0 font-mono text-xs font-normal tabular-nums">
+                      {tail}
+                    </span>
+                  )}
+                </span>
                 <span className="text-muted-foreground shrink-0">{detail}</span>
                 <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
               </ListRow>
             ))}
           </div>
+        )}
+
+        {/* The phone's recent games, under Continue and above the
+            checklist: a returning player's rounds outrank a first-run
+            list. Reserved from the same dashboard shape the desktop
+            stores, capped at the rows the phone draws, so the card lands
+            where its placeholder stood. A device that has never seen the
+            vault reserves none (WELCOME_DASH has no games), which is
+            right: a fresh vault has none. */}
+        {dash === null && reservedDash !== null && reservedDash.games > 0 && (
+          <div role="status" aria-label={t('Loading')} aria-live="polite" className="mb-4 md:hidden">
+            <PlaceholderPanel
+              title={t('Recent games')}
+              rows={Math.min(reservedDash.games, PHONE_GAMES)}
+              icon={false}
+            />
+          </div>
+        )}
+        {dash !== null && dash.recentGames.length > 0 && (
+          <RecentGamesCard
+            games={dash.recentGames.slice(0, PHONE_GAMES)}
+            total={dash.gamesTotal}
+            className="mb-4 md:hidden"
+          />
         )}
 
         {/* The checklist's place while the answer is in the air. Three
@@ -1091,9 +1223,12 @@ export function HomePage() {
         {showChecklist && (
           <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border">
             <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
-              <p className="text-muted-foreground flex-1 text-sm font-medium">
+              {/* An h2 like Continue's: this was a <p>, so a reader
+                  jumping by heading found one section on a page of
+                  four. */}
+              <h2 className="text-muted-foreground flex-1 text-sm font-medium">
                 {t('Set up your vault')}
-              </p>
+              </h2>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -1107,37 +1242,38 @@ export function HomePage() {
                 <X className="size-3" />
               </Button>
             </div>
-            {checklist.map((step) => (
-              <ListRow
-                key={step.label}
-                divided
-                onClick={step.go}
-                disabled={step.done}
-                className="text-sm"
-              >
-                {/* A done step is marked and quietened, not struck through
-                    and lit green. The ring-and-tick pair over a strikethrough
-                    is the onboarding-reward idiom, and green is spoken for
-                    here: the colour grammar gives it to outcomes — solved,
-                    won — so a green tick on a settings shortcut reads as a
-                    result somebody earned. A pending step carries no marker
-                    at all; the row's own chevron already says it is a way in,
-                    and the spacer keeps the labels in one column. */}
-                {step.done ? (
-                  <Check className="text-muted-foreground size-3.5 shrink-0" />
-                ) : (
-                  <span aria-hidden className="size-3.5 shrink-0" />
-                )}
-                <span
-                  className={
-                    step.done ? 'text-muted-foreground min-w-0 flex-1' : 'text-foreground min-w-0 flex-1'
-                  }
+            {checklist.map((step) =>
+              step.done ? (
+                // A done step is a fact, not a control: it was a disabled
+                // button, which most screen readers skip, so a reader
+                // never heard that two of three steps were done. A plain
+                // row at ListRow's rhythm, marked and quietened, not
+                // struck through and lit green. The ring-and-tick pair
+                // over a strikethrough is the onboarding-reward idiom, and
+                // green is spoken for here: the colour grammar gives it
+                // to outcomes (solved, won), so a green tick on a settings
+                // shortcut reads as a result somebody earned.
+                <div
+                  key={step.label}
+                  className="border-border text-muted-foreground flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm opacity-60 last:border-b-0 pointer-coarse:min-h-11"
                 >
-                  {step.label}
-                </span>
-                {!step.done && <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />}
-              </ListRow>
-            ))}
+                  <Check aria-hidden className="size-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    {step.label}
+                    <span className="sr-only">. {t('Done')}</span>
+                  </span>
+                </div>
+              ) : (
+                <ListRow key={step.label} divided onClick={step.go} className="text-sm">
+                  {/* A pending step carries no marker at all; the row's
+                      own chevron already says it is a way in, and the
+                      spacer keeps the labels in one column. */}
+                  <span aria-hidden className="size-3.5 shrink-0" />
+                  <span className="text-foreground min-w-0 flex-1">{step.label}</span>
+                  <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                </ListRow>
+              ),
+            )}
           </div>
         )}
 
@@ -1148,10 +1284,10 @@ export function HomePage() {
           {/* One caption, two rooms: below md it heads the launcher grid,
               from md the dashboard panels. The customise button is the
               same on both — the sheet's card switches apply everywhere. */}
-          <p className="text-muted-foreground flex-1 text-sm font-medium">
+          <h2 className="text-muted-foreground flex-1 text-sm font-medium">
             <span className="md:hidden">{t('Shortcuts')}</span>
             <span className="max-md:hidden">{t('Overview')}</span>
-          </p>
+          </h2>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -1171,28 +1307,33 @@ export function HomePage() {
             grid of cards beside it was the same list twice — once with
             blurbs. What the desktop gets instead is the dashboard below. */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:hidden">
-          {tiles.map(({ id, label, blurb, icon: Icon, nav, count }, i) => (
+          {tiles.map(({ id, label, blurb, icon: Icon, nav, count }, i) => {
+            // The first tile is the lead: the whole row, laid out as a
+            // row, with its glyph a size up. The order is the user's own
+            // (Customise home), so whatever they put first is what the
+            // page leads with. One tile and not a ranking: a second wide
+            // tile would be a list.
+            const lead = i === 0;
+            // FILLED with primary only when it has a reason to be: a
+            // schedule that wants you now. The fill is the FAB's own
+            // paint, the page's one primary action, and it used to go to
+            // whatever tile stood first, so demoting Board made "Set up
+            // any position" the loudest thing on a phone. A tile with
+            // nothing due is wide and quiet, and the Continue card's wash
+            // stays the page's one marked thing.
+            const figure = count === undefined ? undefined : data?.counts[count];
+            const filled = lead && figure?.kind === 'due';
+            return (
             <button
               key={id}
               type="button"
               onClick={() => navigate(...nav)}
               className={cn(
                 'flex rounded-xl p-3.5 text-left transition-colors duration-100',
-                // The first tile is the lead: the whole row, laid out as a
-                // row, with its glyph a size up, and FILLED with primary.
-                // Seven identical cards gave the grid no first thing to
-                // press, and the order is the user's own (Customise
-                // home), so whatever they put first is what the page
-                // leads with. One tile and not a ranking: a second wide
-                // tile would be a list, and a second fill would be two
-                // primary actions on one screen, which the FAB rule
-                // (docs/design-principles.md) does not allow. The fill is
-                // the FAB's own paint, so on the untinted theme it is the
-                // registry's black-on-white button and with a tint it is
-                // the page's one patch of colour.
-                i === 0
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 col-span-full items-center gap-3'
-                  : 'bg-card hover:bg-accent ring-border flex-col items-start gap-2 ring-1',
+                lead ? 'col-span-full items-center gap-3' : 'flex-col items-start gap-2',
+                filled
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'bg-card hover:bg-accent ring-border ring-1',
               )}
             >
               {/* The accent at rest, not on hover. The glyph used to turn
@@ -1205,29 +1346,33 @@ export function HomePage() {
               <Icon
                 className={cn(
                   'shrink-0',
-                  i === 0 ? 'text-primary-foreground size-6' : 'text-primary size-4.5',
+                  lead ? 'size-6' : 'size-4.5',
+                  filled ? 'text-primary-foreground' : 'text-primary',
                 )}
               />
               <span className="min-w-0">
                 <span
                   className={cn(
                     'block text-base font-medium',
-                    i === 0 ? 'text-primary-foreground' : 'text-foreground',
+                    filled ? 'text-primary-foreground' : 'text-foreground',
                   )}
                 >
                   {t(label)}
-                  {count !== undefined && data?.counts[count] !== undefined ? (
+                  {figure !== undefined ? (
                     <span
                       className={cn(
-                        'font-mono text-sm font-normal',
+                        // Nowrap so a figure with a unit ("58 moves")
+                        // breaks to the next line whole, never between
+                        // the number and its noun.
+                        'font-mono text-sm font-normal whitespace-nowrap',
                         // The colour grammar has no room on a primary
                         // fill: amber on the tinted blue is mud, so the
-                        // lead's figure is its ink at 80%, whatever kind.
-                        i === 0 ? 'text-primary-foreground/80' : FIGURE_TONE[data.counts[count]!.kind],
+                        // filled lead's figure is its ink at 80%.
+                        filled ? 'text-primary-foreground/80' : FIGURE_TONE[figure.kind],
                       )}
                     >
                       {' '}
-                      · {figureText(data.counts[count]!)}
+                      · {figureText(figure)}
                     </span>
                   ) : (
                     // Only the tiles that will get a number keep space for
@@ -1241,14 +1386,15 @@ export function HomePage() {
                 <span
                   className={cn(
                     'block text-sm leading-snug',
-                    i === 0 ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                    filled ? 'text-primary-foreground/80' : 'text-muted-foreground',
                   )}
                 >
                   {t(blurb)}
                 </span>
               </span>
             </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* The dashboard's place, held while the two batches are in the
@@ -1352,38 +1498,7 @@ export function HomePage() {
             )}
 
             {dash.recentGames.length > 0 && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
-                <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
-                  <p className="text-muted-foreground flex-1 text-sm font-medium">
-                    {t('Recent games')}
-                  </p>
-                  {/* The collection's size, where a tile used to carry it. */}
-                  <span className="text-muted-foreground font-mono text-xs">
-                    {compact.format(dash.gamesTotal)}
-                  </span>
-                </div>
-                {dash.recentGames.map((g) => (
-                  <ListRow
-                    key={`${g.file}#${g.index}`}
-                    divided
-                    onClick={() => navigate('games', encodeURIComponent(collectionDocId(g)))}
-                    className="text-sm"
-                  >
-                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">
-                      {g.white} – {g.black}
-                    </span>
-                    {/* An unfinished game ("*") wears no badge — ResultBadge
-                        renders anything unrecognised as a draw. */}
-                    {(g.result === '1-0' || g.result === '0-1' || g.result.includes('1/2')) && (
-                      <ResultBadge result={g.result} />
-                    )}
-                    <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-                      {g.date}
-                    </span>
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-                  </ListRow>
-                ))}
-              </div>
+              <RecentGamesCard games={dash.recentGames} total={dash.gamesTotal} />
             )}
 
             {data.books.length > 0 && (

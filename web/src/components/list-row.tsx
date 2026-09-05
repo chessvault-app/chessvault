@@ -58,6 +58,13 @@ export function ListRow({
         // the page. A row is a control and takes the icon rung.
         'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100 pointer-coarse:min-h-11',
         'enabled:hover:bg-accent disabled:opacity-60',
+        // The registry's ring, drawn INSET. Every panel these rows sit in
+        // is `overflow-hidden rounded-xl`, and the global outline is drawn
+        // outside the row, so on a full-width row three of its four sides
+        // were clipped by the panel and the fourth lay on the hairline.
+        // Measured on the phone home: tabbing to the Continue rows moved
+        // nothing visible. Inside the row the ring survives the clip.
+        'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset focus-visible:outline-none',
         divided && 'border-border border-b last:border-b-0',
         dense ? 'py-(--row-py-dense)' : 'py-(--row-py)',
         className,

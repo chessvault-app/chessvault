@@ -5,6 +5,41 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+The phone's home page stops repeating its own bottom bar and starts
+showing what is happening in the vault.
+
+- **The phone home draws your recent games.** Three rows under Continue,
+  newest first, each with its result and date, the same panel the desktop
+  dashboard already had. A phone had no list of games on home at all; the
+  way to the round just played was the bar, then Games, then finding it.
+  The games route takes `?limit=` so a phone downloads five rows and not
+  the whole collection.
+- **The default grid no longer duplicates the bar.** A vault that has
+  never been customised gets Board, Explorer and Opening map as tiles;
+  Games, Studies, Notes and Puzzles, which the bottom bar reaches in one
+  press, are off home and listed under “Off the page” in “Customise
+  home” with a way back. A stored layout is untouched. The first tile is
+  filled only when it has something due; a quiet tile is wide, not loud.
+- **Continue says what is due.** “Resume training” shows “{n} due” when
+  the trainer has something for you, and the difficulty word only when
+  nothing is; the open setting reads “Any difficulty” rather than “Any”.
+  The game row keeps its date whole beside the names instead of losing it
+  to the ellipsis, and the opening map's figure carries its unit
+  (“{n} moves”).
+- **Keyboard focus is visible on card rows.** The Continue, checklist,
+  games and dashboard rows drew the focus ring outside the row, where the
+  card's rounded clip cut three sides of it off; the ring is now drawn
+  inside the row. “Set up your vault”, “Shortcuts” and “Recent games” are
+  headings a screen reader can jump to, a done checklist step is read as a
+  line rather than skipped as a disabled button, and the phone's bar is
+  announced as “Sections”.
+- **The phone home reflows under 320px.** At 200% zoom on a 390px phone
+  the Continue lead's title collapsed beside its board, and the launcher
+  and bar labels overprinted; the title now wraps under the board and the
+  two rows keep their glyphs, with the names left to the screen reader.
+
 ## 0.8.2
 
 Notes open again: since 0.8.0 every note page opened to “Something went
