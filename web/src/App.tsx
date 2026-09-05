@@ -197,12 +197,6 @@ function Shell() {
         // retracted, which is taller than what you can actually see while
         // they are out, and that difference was cutting the bottom off
         // panels that reached the end of the page.
-        // --app-h is set in standalone PWA mode, where 100dvh can be stale
-        // on launch. Browsers fall back to 100svh — the SMALL viewport, the
-        // height with the toolbars showing. 100dvh is the height with them
-        // retracted, which is taller than what you can actually see while
-        // they are out, and that difference was cutting the bottom off
-        // panels that reached the end of the page.
         //
         // `vv-band` is a hook, not a style: while the keyboard is up, one
         // rule in index.css pins this to the visual viewport. At rest it

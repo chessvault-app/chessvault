@@ -56,7 +56,9 @@ export function ListRow({
         // The coarse floor: Home's Continue rows measured 37px on a phone,
         // the first thing a thumb reaches for and the smallest target on
         // the page. A row is a control and takes the icon rung.
-        'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100 pointer-coarse:min-h-11',
+        // select-none as the registry's Button has it: a long press on a
+        // phone should open nothing and select nothing in a control.
+        'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100 select-none pointer-coarse:min-h-11',
         'enabled:hover:bg-accent disabled:opacity-60',
         // The registry's ring, drawn INSET. Every panel these rows sit in
         // is `overflow-hidden rounded-xl`, and the global outline is drawn

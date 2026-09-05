@@ -322,6 +322,10 @@ export function GameRow({
       // numbers printed on top of each other at widths it did.
       className={cn(
         'group hover:bg-accent relative flex cursor-pointer flex-wrap items-center gap-3',
+        // A row is a control: a long press on a phone opens its menu and
+        // selects nothing. Coarse pointers only, so a desktop can still
+        // drag across a list of names.
+        'pointer-coarse:select-none',
         // py from the density token, not a literal: this row is every
         // game list in the app, which is the list a density knob is for.
         'overflow-hidden px-3 py-(--row-py) transition-colors duration-100',

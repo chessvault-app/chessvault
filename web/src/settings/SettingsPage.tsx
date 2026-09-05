@@ -1,7 +1,8 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
+import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
@@ -166,6 +167,7 @@ export function SettingsPage() {
                 net. Delete a note and it turns up in this list. */}
             <RecoveryCard />
             <SoundCard />
+            <InstallCard />
             <Card icon={Info} title={t('This is a demo')}>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {t(
@@ -203,6 +205,7 @@ export function SettingsPage() {
             <RecoveryCard />
             <DesktopCard />
             <SoundCard />
+            <InstallCard />
             <DangerCard gate={settings.gate} />
             {typeof __LAG__ !== 'undefined' && __LAG__ && <LagCard />}
             <VersionCard />
@@ -645,6 +648,38 @@ interface VaultShell {
   updateStatus?: () => Promise<UpdateStatus>;
   onUpdateStatus?: (fn: (state: UpdateStatus) => void) => () => void;
   restartToUpdate?: () => Promise<boolean>;
+}
+
+/**
+ * The way onto the home screen, said in the app. The page has been
+ * installable for a long time and nothing told anyone: a phone user
+ * lived in a browser tab, with its address bar and its bounce, never
+ * knowing the full-screen version was one menu away. Gone once the page
+ * runs from an icon or inside the desktop shell, since then it is done.
+ * Chromium hands over its own prompt and gets a button; every other
+ * browser gets the menu route, which is the same words on all of them.
+ */
+function InstallCard() {
+  const prompt = useInstallPrompt();
+  if (isInstalled()) return null;
+  return (
+    <Card icon={Smartphone} title={t('Home screen')}>
+      <SettingRow
+        title={t('Add to home screen')}
+        blurb={
+          prompt
+            ? t('Opens full screen from its own icon, like an app.')
+            : t('Open the browser menu and choose Add to Home Screen. It then opens full screen from its own icon, like an app.')
+        }
+      >
+        {prompt && (
+          <Button variant="secondary" size="sm" onClick={() => void prompt()}>
+            {t('Install')}
+          </Button>
+        )}
+      </SettingRow>
+    </Card>
+  );
 }
 
 function DesktopCard() {

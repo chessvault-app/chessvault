@@ -875,6 +875,24 @@
        invisible on every device. */
     background-color: var(--background);
     height: 100%;
+    /* The document never scrolls (the shell is a fixed box, measured 0px
+       of overflow on every route at 375x812), so a scroll that reaches it
+       can only be one that chained out of a page's own list. Stated on
+       html as well as body: the body rule reaches the viewport only by
+       propagation, and the rule that stops the page bouncing should not
+       depend on one. */
+    overscroll-behavior: none;
+  }
+
+  /* Every scroller in the page keeps its own overscroll. A list that hit
+     its end handed the gesture on to the document, and on a home-screen
+     app that is the whole page rubber-banding under a bar that stays
+     put, which is the one motion a native list never makes. The property
+     only does anything on a scroll container, so stating it on every
+     element under the shell costs nothing and catches the next scroller
+     without anyone remembering to. Utilities (overscroll-auto) still win. */
+  #root * {
+    overscroll-behavior: contain;
   }
 
   /* Home-screen launches mis-report the dynamic viewport until the first
@@ -896,6 +914,25 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
+    /* Double-tap does nothing. Left at `auto`, a second tap on a heading
+       or the gap beside the board zoomed the page in on iOS, which no
+       app does. `manipulation` takes only that gesture: pinch still
+       zooms, so this is not the maximum-scale cap main.tsx declines. */
+    touch-action: manipulation;
+  }
+
+  /* A long press on a phone selects nothing that is not prose. Headings,
+     stat labels, the board's coordinates and any row that acts as a
+     control brought up the selection handles on a long press, and on
+     Home every visible text was selectable (measured 12 of 12 leaves;
+     the board 21 of 21). Words someone would copy stay selectable:
+     inputs, the note editor, a PDF's text layer, and anything an editable
+     region contains are not matched. Coarse pointers only, so a desktop
+     can still drag across a heading. */
+  @media (pointer: coarse) {
+    #main :is(h1, h2, h3, h4, dt, dd, coords, button, [role='button'], [role='tab'], [role='option'], [role='menuitem']):not([contenteditable] *) {
+      user-select: none;
+    }
   }
 
   /* Wiki links in notes ([[Target]]): linky at rest, actionable with

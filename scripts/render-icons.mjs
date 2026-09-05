@@ -57,6 +57,15 @@ const render = (svg, size, path) => {
 };
 render(bare(INK), 512, 'web/public/icon-512.png');
 render(bare(INK), 192, 'web/public/icon-192.png');
+// The maskable pair: Android cuts a home-screen icon to the launcher's
+// shape and, given only the bare mark, first drops it on a white disc
+// and shrinks it, which is how a website looks on a home screen and how
+// no app does. Full bleed on the dark ground, mark well inside the 80%
+// safe zone (it spans 52% of the canvas), so any mask keeps the whole
+// glyph. Declared `purpose: maskable` in the manifest beside the bare
+// `any` pair, which browsers that do not mask still prefer.
+render(grounded(0), 512, 'web/public/icon-512-maskable.png');
+render(grounded(0), 192, 'web/public/icon-192-maskable.png');
 render(grounded(0), 180, 'web/public/apple-touch-icon.png');
 // Three sizes, because the platforms disagree and one file cannot satisfy
 // any two of them. NSIS refuses anything over 256 — desktop/build-server.mjs

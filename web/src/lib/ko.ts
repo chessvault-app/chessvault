@@ -939,6 +939,12 @@ export const ko: Record<string, string> = {
   'Source code': '소스 코드',
   Licences: '라이선스',
   'Desktop app': '데스크톱 앱',
+  'Home screen': '홈 화면',
+  'Add to home screen': '홈 화면에 추가',
+  'Opens full screen from its own icon, like an app.': '앱처럼 아이콘에서 전체 화면으로 열립니다.',
+  'Open the browser menu and choose Add to Home Screen. It then opens full screen from its own icon, like an app.':
+    '브라우저 메뉴에서 홈 화면에 추가를 고르세요. 그 뒤로는 앱처럼 아이콘에서 전체 화면으로 열립니다.',
+  Install: '설치',
   Built: '빌드 시각',
   'Find the best move.': '최선의 수를 찾으세요.',
   'Find the best move. The themes stay hidden until you finish.':
