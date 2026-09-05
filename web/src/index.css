@@ -921,6 +921,20 @@
     touch-action: manipulation;
   }
 
+  /* A long press on a phone selects nothing that is not prose. Headings,
+     stat labels, the board's coordinates and any row that acts as a
+     control brought up the selection handles on a long press, and on
+     Home every visible text was selectable (measured 12 of 12 leaves;
+     the board 21 of 21). Words someone would copy stay selectable:
+     inputs, the note editor, a PDF's text layer, and anything an editable
+     region contains are not matched. Coarse pointers only, so a desktop
+     can still drag across a heading. */
+  @media (pointer: coarse) {
+    #main :is(h1, h2, h3, h4, dt, dd, coords, button, [role='button'], [role='tab'], [role='option'], [role='menuitem']):not([contenteditable] *) {
+      user-select: none;
+    }
+  }
+
   /* Wiki links in notes ([[Target]]): linky at rest, actionable with
      Ctrl - the text itself stays literal markdown. */
   /* No radius here. There was a `border-radius: 3px`, and it drew
