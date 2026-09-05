@@ -118,13 +118,14 @@ engine moves up a version.
   six digits used to sit in one joined run; each now has its own cell,
   with a wider gap after the third, the way an authenticator app prints
   the code. Typing, pasting and the sixth digit's submit are unchanged.
-- **The puzzle dashboard can start training.** Its top slot always
-  holds a button now: “Review puzzles · {n} due” when something is
-  waiting, “Train” otherwise, with the “Nothing due” note under it.
-  The button is the page's one filled control; the reset is a quiet
-  “Wipe history” under the log, last on the page, and its question
-  says what it costs (“Wipe 30 attempts and the 9 puzzles waiting for
-  review?”).
+- **The puzzle dashboard leads with its action, and can start
+  training.** Its first block is a button: “Review puzzles · {n} due”
+  when something is waiting, “Train” otherwise, with the “Nothing due”
+  note under it. The button is the page's one filled control; the
+  reset is a quiet “Wipe history” under the log, last on the page, and
+  its question says what it costs (“Wipe 30 attempts and the 9 puzzles
+  waiting for review?”). On a phone the position peek opens above its
+  row instead of over it and the bottom bar.
 - **The dashboard's rows get a real eye.** The eye that pops a
   puzzle's position, on the dashboard's log and the hub's history, is
   a button beside the row: it takes the keyboard (Enter opens the
@@ -138,8 +139,12 @@ engine moves up a version.
   hover tip. Filtered to Failed, the log's header carries “Review”
   and an empty filter says “Nothing to review.”. On a phone the log
   scrolls with the page instead of inside a well of its own, and past
-  200 puzzles a last row says so. A history that failed to load says
-  “Could not load the attempts.” rather than “No attempts yet”.
+  200 puzzles a last row says so, and on a desktop the log's well
+  fades at its edge while there is more below. A history that failed
+  to load says “Could not load the attempts.” rather than “No attempts
+  yet”, a vault with nothing attempted says so in one line instead of
+  four empty bars, and the sentence explaining why attempts and
+  puzzles differ appears only when they do.
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
