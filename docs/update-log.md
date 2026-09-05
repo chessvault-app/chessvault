@@ -25,6 +25,14 @@ engine moves up a version.
   trace along with the second network it was tied to, so the overlay had
   nothing left to read. It goes rather than hold the engine back a
   version for it.
+- **The desktop title bar joins the sidebar.** The band over the
+  sidebar is drawn in the sidebar's colour, with its rule, so the
+  column reaches the top of the window instead of stopping under a
+  strip of page ground. The fold switch leads the band, and over a
+  folded rail it stands alone, with the menu, back and forward to its
+  right on the page ground. The window's title, which sat in the middle of
+  the band and only ever said the app's name, is gone; the taskbar
+  still shows it.
 - **On a phone the app stops behaving like a web page.** A list that
   reached its end handed the pull on to the page, which bounced under a
   bar that stayed put; every scroller now keeps its own overscroll. A
