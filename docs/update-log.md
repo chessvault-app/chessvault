@@ -152,9 +152,20 @@ engine moves up a version.
   yet” over a solver's real history, with a slot that stayed a
   skeleton. The figures show “…” until the answer comes, the failure
   names itself, and “Try again” sits both in the slot and beside the
-  error line. The attempt log is a landmark a keyboard user can skip,
-  every row says it opens the puzzle to replay it, and the wipe
-  question no longer mentions “the 0 puzzles waiting for review”.
+  error line, one or the other. The attempt log is one Tab stop: the
+  arrows move between rows, Right reaches a row's position preview,
+  and every row says it opens the puzzle to replay it. The wipe
+  question no longer mentions “the 0 puzzles waiting for review”, and
+  a shelf that failed to load says “Could not load the puzzle books.”
+  instead of inviting an import. The log's well fades at whichever
+  edge has rows past it, the pool filter titles its panel “9 puzzles
+  to review” instead of adding a second Review button, and an empty
+  shelf is one line with “Import a book” in the panel's header.
+- **A destructive confirm keeps Cancel on top on a phone.** The sheet
+  used to stack the red action where the thumb that opened it was
+  resting; for the danger tone Cancel is first and the irreversible
+  answer takes a deliberate reach. Every destructive confirm in the
+  app follows.
 
 - **The online archive's table takes a right-click.** A row in the
   chess.com or Lichess table opens the same menu the reference
