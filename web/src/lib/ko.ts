@@ -1590,6 +1590,7 @@ export const ko: Record<string, string> = {
     '다이어그램 {n}개를 찾았습니다. 잘못 잡힌 것을 체크 해제하고 나머지를 초안으로 추가하세요.',
   '{n} unsure': '{n}개 불확실',
   '{n} puzzles': '퍼즐 {n}개',
+  '{n} puzzles to review': '복습 대상 퍼즐 {n}개',
   read: '읽음',
   Hide: '숨기기',
   'No attempts yet. Go solve something.': '아직 시도가 없습니다. 뭐라도 풀어 보세요.',

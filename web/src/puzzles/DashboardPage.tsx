@@ -163,10 +163,12 @@ export function DashboardPage() {
   // fits has nothing to fade.
   const wellRef = useRef<HTMLUListElement>(null);
   const [wellMore, setWellMore] = useState(false);
+  const [wellAbove, setWellAbove] = useState(false);
   const readWell = useCallback(() => {
     const el = wellRef.current;
     if (!el) return;
     setWellMore(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+    setWellAbove(el.scrollTop > 1);
   }, []);
   // After every render: the rows this reads are the render's own.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,10 +250,14 @@ export function DashboardPage() {
           // sentence and a reload.
           <p className="text-destructive mb-3 flex items-center gap-3 text-sm" role="alert">
             <span className="min-w-0 flex-1">{error}</span>
-            <Button variant="secondary" size="sm" onClick={refresh}>
-              <RotateCcw className="size-3.5" data-icon="inline-start" />
-              {t('Try again')}
-            </Button>
+            {/* Once, not twice: when the meta failed the slot below holds
+                the retry, 40px from here, and this line is the sentence. */}
+            {!metaFailed && (
+              <Button variant="secondary" size="sm" onClick={refresh}>
+                <RotateCcw className="size-3.5" data-icon="inline-start" />
+                {t('Try again')}
+              </Button>
+            )}
           </p>
         )}
         {/* This page carried a phone-only row of Train/Books/Themes
@@ -591,23 +597,17 @@ export function DashboardPage() {
 
         <Panel>
           <PanelHeader
+            // Filtered to the pool, the title says so. The header once
+            // carried a Review button here too, but the slot at the top
+            // of the page is the same verb to the same place, and two
+            // controls for one act made the reader check whether they
+            // differed.
             title={
               history === null || history.length === 0
                 ? t('Puzzles')
-                : t('{n} puzzles', { n: puzzles.length })
-            }
-            // The failed list's own way onward. Filtered to the puzzles
-            // that went wrong, the panel was a column of red marks and
-            // nothing else, with the review button 500px above it: the
-            // one view a solver comes here to act on ended without an
-            // action. Same destination as the slot at the top.
-            actions={
-              resultFilter === 'review' && puzzles.length > 0 ? (
-                <Button variant="ghost" size="sm" onClick={() => navigate('puzzles', 'failed')}>
-                  <RotateCcw className="size-3.5" data-icon="inline-start" />
-                  {t('Review')}
-                </Button>
-              ) : undefined
+                : resultFilter === 'review'
+                  ? t('{n} puzzles to review', { n: puzzles.length })
+                  : t('{n} puzzles', { n: puzzles.length })
             }
           />
           {/*
@@ -730,7 +730,12 @@ export function DashboardPage() {
                 // below, and stop fading at the end so the last row is
                 // whole. A mask, not a gradient laid over the rows, so
                 // the rows under it stay clickable.
-                wellMore && 'lg:[mask-image:linear-gradient(to_bottom,black_calc(100%-24px),transparent)]',
+                // Both ends, each only while there is a row past it: the
+                // bottom alone left the top row cut mid-glyph once the
+                // well had been scrolled.
+                wellMore && !wellAbove && 'lg:[mask-image:linear-gradient(to_bottom,black_calc(100%-24px),transparent)]',
+                wellAbove && !wellMore && 'lg:[mask-image:linear-gradient(to_bottom,transparent,black_24px)]',
+                wellAbove && wellMore && 'lg:[mask-image:linear-gradient(to_bottom,transparent,black_24px,black_calc(100%-24px),transparent)]',
               )}
             >
               {/* The row and its eye are siblings: the eye is a button
