@@ -18,7 +18,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
+import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt, updateNode } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
@@ -217,14 +217,16 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
 
 /**
  * A coverage gap as the panel reports it: the field's reply the study
- * never answered, in the shape the two surfaces that show it need. The
- * sentence is what the callout says; the squares let the board draw the
- * reply.
+ * never answered, in the shape the three surfaces that show it need. The
+ * sentence is what the note says; the squares let the board draw the
+ * reply; the move and its share go into the tree as a variation.
  */
 interface DrillGap {
   text: string;
   orig: Key;
   dest: Key;
+  uci: string;
+  pct: number;
 }
 
 /** The live drill: the chapters in scope, their position index, and the
@@ -709,13 +711,16 @@ export function RepertoireView() {
                   drill.subjectFamily === null ? true : family === drill.subjectFamily;
               }
               if (relevant) {
+                const pct = Math.round((100 * uncovered.total) / games);
                 note = {
                   text: t(
                     'The field also plays {san} in {pct}% of games, and your study has no answer to it.',
-                    { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
+                    { san: uncovered.san, pct },
                   ),
                   orig: uncovered.uci.slice(0, 2) as Key,
                   dest: uncovered.uci.slice(2, 4) as Key,
+                  uci: uncovered.uci,
+                  pct,
                 };
                 if (!drill.gapNoted.has(key)) {
                   drill.gapNoted.add(key);
@@ -739,7 +744,22 @@ export function RepertoireView() {
           return;
         }
         playSound(soundFor(getNode(added.tree, added.nodeId).san));
-        setTree(added.tree);
+        // The noted gap goes into the tree as a variation beside the reply
+        // that was played, carrying its share as a comment, so the moves
+        // panel shows the hole where it is rather than only naming it in
+        // the panel below (lanph3re's ask). Added AFTER the played move so
+        // that stays the mainline; the drill's own path never walks into
+        // it, since the candidates advance on the move that was played.
+        let shown = added.tree;
+        if (note) {
+          const branch = addUci(shown, curId, note.uci);
+          if (branch && !branch.existed) {
+            shown = updateNode(branch.tree, branch.nodeId, {
+              comment: t('{pct}% of games. No answer in the study.', { pct: note.pct }),
+            });
+          }
+        }
+        setTree(shown);
         setTipId(added.nodeId);
         setCursorId(added.nodeId);
         const d = drillRef.current;
@@ -766,6 +786,8 @@ export function RepertoireView() {
               }),
               orig: choice.uci.slice(0, 2) as Key,
               dest: choice.uci.slice(2, 4) as Key,
+              uci: choice.uci,
+              pct,
             });
             setEndKind('gap');
             setPhase('ended');

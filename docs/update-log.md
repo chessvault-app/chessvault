@@ -14,9 +14,10 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   report a coverage gap as a muted sentence under the status line, in
   the same colour as "Your opponent is replying…", and a line that
   ended on one said so in the status line's own slot. The sentence is
-  now in the warning colour with a warning glyph in front of it, and
-  the unanswered reply is drawn on the board as an arrow while the line
-  goes on.
+  now in the warning colour with a warning glyph in front of it, the
+  unanswered reply is drawn on the board as an arrow while the line
+  goes on, and it enters the moves panel as a variation beside the
+  reply that was played, with its share of games as the comment.
 
 - **One scrollbar on the puzzle dashboard.** From a laptop's width up
   the attempt log was a 384px well with a scroller of its own, inside

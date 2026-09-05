@@ -554,6 +554,7 @@ export const ko: Record<string, string> = {
     '이 챕터에는 아직 수가 없습니다. 드릴할 것이 없습니다.',
   'Your study plays {moves} here. Try again.':
     '여기서 스터디의 수는 {moves}입니다. 다시 시도해 보세요.',
+  '{pct}% of games. No answer in the study.': '게임의 {pct}%. 스터디에 답이 없습니다.',
   'The field also plays {san} in {pct}% of games, and your study has no answer to it.':
     '필드는 게임의 {pct}%에서 {san}도 두는데, 스터디에 아직 준비된 답이 없습니다.',
   'The field answered {san}, played in {pct}% of games here, and your study holds no reply.':

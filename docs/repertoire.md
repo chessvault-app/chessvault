@@ -108,7 +108,9 @@ accounts for **at least 5% of games** in the position *and is relevant
 to the study's subject*, produces an amber note with a warning glyph
 under the status — "The field also plays a6 in 24% of games, and your
 study has no answer to it." — draws that reply on the board as an arrow,
-and records one `gap` per position per session. The move itself is never played; the
+adds it to the moves panel as a variation beside the reply that was
+played (with its share as the comment), and records one `gap` per
+position per session. The move itself is never played; the
 drill keeps testing memory. (Steering
 ending sessions on every rare sideline was the original design, and it
 made drills unfinishable — the field found the same hole every time
