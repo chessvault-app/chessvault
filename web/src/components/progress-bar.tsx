@@ -14,6 +14,7 @@ export function ProgressBar({
   failed,
   className,
   showEmpty = false,
+  decorative = false,
 }: {
   total: number;
   solved: number;
@@ -21,6 +22,14 @@ export function ProgressBar({
   className?: string;
   /** Render the empty track even when there is nothing to count. */
   showEmpty?: boolean;
+  /**
+   * Hidden from assistive tech, for a bar inside a row that already
+   * says its counts in words. Base UI's progressbar carries a clipped
+   * "x" of its own, and a row button that contains one is named
+   * "A sample book 1 due 2 of 3 x" by a screen reader; the bar's label
+   * was never part of that name, so nothing is lost by hiding it.
+   */
+  decorative?: boolean;
 }) {
   if (total === 0 && !showEmpty) return null;
   const label =
@@ -46,6 +55,7 @@ export function ProgressBar({
         // rate and is not one. Saying the counts twice is better than
         // saying a number that means a different thing each time.
         aria-valuetext={label}
+        aria-hidden={decorative || undefined}
         className={className}
       >
         {total > 0 && (

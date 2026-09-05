@@ -550,6 +550,7 @@ export function DashboardPage() {
                       solved={b.solved}
                       failed={b.failed}
                       className="w-24 shrink-0"
+                      decorative
                     />
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>
