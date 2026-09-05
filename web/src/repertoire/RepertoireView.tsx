@@ -15,7 +15,6 @@ import {
   Play,
   RotateCcw,
   Settings2,
-  TriangleAlert,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -25,8 +24,7 @@ import { Board, type BoardApi } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
 import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
-import { setJumpTarget } from '@/studies/jumpTarget';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import { DEFAULT_BAND, fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
 import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker';
@@ -221,27 +219,13 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
  * A coverage gap as the panel reports it: the field's reply the study
  * never answered, in the shape the two surfaces that show it need. The
  * sentence is what the callout says; the squares let the board draw the
- * reply; the position (the one BEFORE the reply, which the study does
- * hold) and the chapter are where "Fix in study" lands.
+ * reply.
  */
 interface DrillGap {
   text: string;
   orig: Key;
   dest: Key;
-  /** fenKey of the position the reply was played from. */
-  atKey: string;
-  /** The study and chapter holding that position. */
-  study: string;
-  chapter?: string;
 }
-
-/** Where a gap is fixed: the study and chapter of the first candidate
-    node holding the position the field deviated from. */
-const gapHome = (drill: DrillScope, cands: DrillCand[]): Pick<DrillGap, 'study' | 'chapter'> => {
-  const ci = cands[0]?.ci;
-  if (ci === undefined) return { study: drill.study };
-  return { study: drill.studies?.[ci] ?? drill.study, chapter: drill.chapters[ci]?.name };
-};
 
 /** The live drill: the chapters in scope, their position index, and the
     current candidate nodes — mutated in place as moves match. */
@@ -732,8 +716,6 @@ export function RepertoireView() {
                   ),
                   orig: uncovered.uci.slice(0, 2) as Key,
                   dest: uncovered.uci.slice(2, 4) as Key,
-                  atKey: fenKey(fen),
-                  ...gapHome(drill, drill.cands),
                 };
                 if (!drill.gapNoted.has(key)) {
                   drill.gapNoted.add(key);
@@ -784,8 +766,6 @@ export function RepertoireView() {
               }),
               orig: choice.uci.slice(0, 2) as Key,
               dest: choice.uci.slice(2, 4) as Key,
-              atKey: fenKey(fen),
-              ...gapHome(d, d.cands),
             });
             setEndKind('gap');
             setPhase('ended');
@@ -1559,8 +1539,7 @@ export function RepertoireView() {
    */
   const endAction =
     mode === 'drill' ? (
-      drillStudy &&
-      !(endKind === 'gap' && gap) && (
+      drillStudy && (
         <Button
           variant="secondary"
           size="sm"
@@ -1665,37 +1644,22 @@ export function RepertoireView() {
         )
       )}
       {/* The gap, as a thing rather than a sentence: a warn-tinted callout
-          with the reply named in it and the way to fix it under it. It
-          used to be a muted paragraph in the status line's own colour,
-          which is the one thing on the panel that should NOT read as
-          routine (lanph3re's report). Shown while the line is being
-          played, and as the verdict when the line ended on one; a line
-          that ended some other way drops the note, as before.
+          with the reply named in it. It used to be a muted paragraph in
+          the status line's own colour, which is the one thing on the
+          panel that should NOT read as routine (lanph3re's report).
+          Shown while the line is being played, and as the verdict when
+          the line ended on one; a line that ended some other way drops
+          the note, as before.
 
-          "Fix in study" opens the study on the position the field
-          deviated FROM, which the study holds, so the missing reply is
-          one move away from the cursor. The floor's "Go to study" would
-          land at the root, so it steps aside when this is up. */}
+          One sentence and no heading: the sentence already opens with
+          the reply and the share, and a title over it said "gap" a
+          second time. No way out either. A "Fix in study" button was
+          tried and dropped (lanph3re's call): the drill is where the
+          user wants to stay, and the floor's "Go to study" is the way
+          to the study when the line is over. */}
       {gap && (phase !== 'ended' || endKind === 'gap') && (
         <Alert variant="warn">
-          <TriangleAlert />
-          <AlertTitle>
-            {phase === 'ended' ? t('The line ended on a gap') : t('Gap in your study')}
-          </AlertTitle>
           <AlertDescription>{gap.text}</AlertDescription>
-          <div className="col-start-2 mt-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setJumpTarget({ fenKey: gap.atKey, chapter: gap.chapter });
-                navigate('studies', encodeURIComponent(gap.study));
-              }}
-            >
-              <BookOpen className="size-3.5" data-icon="inline-start" />
-              {t('Fix in study')}
-            </Button>
-          </div>
         </Alert>
       )}
       {/* The dependency arrow, pointed back: Settings knows it

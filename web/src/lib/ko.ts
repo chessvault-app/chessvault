@@ -556,9 +556,6 @@ export const ko: Record<string, string> = {
     '여기서 스터디의 수는 {moves}입니다. 다시 시도해 보세요.',
   'The field also plays {san} in {pct}% of games, and your study has no answer to it.':
     '필드는 게임의 {pct}%에서 {san}도 두는데, 스터디에 아직 준비된 답이 없습니다.',
-  'Gap in your study': '스터디의 갭',
-  'The line ended on a gap': '갭에서 라인이 끝났습니다',
-  'Fix in study': '스터디에서 고치기',
   'The field answered {san}, played in {pct}% of games here, and your study holds no reply.':
     '필드가 {san}으로 응수했습니다(이 포지션의 {pct}%). 스터디에 준비된 답이 없습니다.',
   'End of your prepared line. Every move matched the study.':

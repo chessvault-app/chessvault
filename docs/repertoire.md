@@ -106,12 +106,10 @@ more often, as in life.
 The uncovered replies are not discarded. The most common one, if it
 accounts for **at least 5% of games** in the position *and is relevant
 to the study's subject*, produces an amber callout under the status —
-"Gap in your study": "The field also plays a6 in 24% of games, and your
-study has no answer to it." — draws that reply on the board as an arrow,
-and records one `gap` per position per session. The callout's "Fix in
-study" opens the study on the position the field deviated from, so the
-missing reply is one move away from the cursor. The move itself is never
-played; the drill keeps testing memory. (Steering
+"The field also plays a6 in 24% of games, and your study has no answer
+to it." — draws that reply on the board as an arrow, and records one
+`gap` per position per session. The move itself is never played; the
+drill keeps testing memory. (Steering
 ending sessions on every rare sideline was the original design, and it
 made drills unfinishable — the field found the same hole every time
 instead of exercising the lines that exist.)
