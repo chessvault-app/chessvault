@@ -12,6 +12,28 @@ showing what is happening in the vault. Beside it, the opening map's
 compare button holds its place, the Games pane's list reaches its edge,
 and the online archive's table takes a right-click.
 
+- **On a phone the app stops behaving like a web page.** A list that
+  reached its end handed the pull on to the page, which bounced under a
+  bar that stayed put; every scroller now keeps its own overscroll. A
+  double tap on a heading or beside the board zoomed the page in; it
+  does nothing now, and pinch still zooms. A long press on a heading, a
+  stat, a board coordinate or a row brought up the text-selection
+  handles; on a touch screen those select nothing, while notes, fields
+  and a book's text stay selectable.
+- **The home-screen icon is an app icon.** Android cut the bare mark to
+  its launcher's shape by dropping it on a white disc; the manifest now
+  carries a full-bleed maskable pair beside it. The launch splash and
+  title colour follow the light ground the app starts on rather than
+  black.
+- **Settings says how to add the app to the home screen.** A “Home
+  screen” card with “Add to home screen” explains the browser's menu
+  route, or offers an “Install” button where the browser hands over
+  its own prompt. It is gone once the app runs from an icon or in the
+  desktop shell.
+- **Pages not yet opened in a build work offline.** The build writes the
+  list of its own chunks and the service worker warms its cache from it
+  on install, so a home-screen launch without a network shows every
+  page's shell rather than a blank box on the ones never visited.
 - **The phone home draws your recent games.** Three rows under Continue,
   newest first, each with its result and date, the same panel the desktop
   dashboard already had. A phone had no list of games on home at all; the
