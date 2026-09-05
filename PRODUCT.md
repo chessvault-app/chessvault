@@ -88,7 +88,7 @@ translation layer bolted on later.
 Sections of the app: home, board, workspace, editor, studies, notes,
 games, books, puzzles, repertoire, opening map, databases, settings.
 
-Confirmed capabilities include Stockfish 18 in the browser (WASM,
+Confirmed capabilities include Stockfish 19 in the browser (WASM,
 multi-threaded) with move trees, comments, NAGs and arrows; game review
 with accuracy and brilliancy detection; an opening explorer over local
 reference databases, Lichess, and the user's own games; database search

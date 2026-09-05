@@ -10,8 +10,21 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 The phone's home page stops repeating its own bottom bar and starts
 showing what is happening in the vault. Beside it, the opening map's
 compare button holds its place, the Games pane's list reaches its edge,
-and the online archive's table takes a right-click.
+and the online archive's table takes a right-click. Under it all, the
+engine moves up a version.
 
+- **Stockfish 19 in the browser.** The engine is now Lichess's build of
+  Stockfish 19 (`@lichess-org/stockfish-web`) with its size-optimised
+  small network: 1.5 MB to download where the old build was 7, and
+  stronger, by Lichess's own measurement, than the Stockfish 18 small
+  build. Stockfish 19 is only built with threads, so a page that cannot
+  get a SharedArrayBuffer keeps the single-threaded Stockfish 18 it had.
+- **The piece-value overlay is gone.** The thermometer in the Engine
+  header painted what the network thought each piece was worth, read
+  out of Stockfish's `eval` trace. Stockfish 19 retired that part of the
+  trace along with the second network it was tied to, so the overlay had
+  nothing left to read. It goes rather than hold the engine back a
+  version for it.
 - **On a phone the app stops behaving like a web page.** A list that
   reached its end handed the pull on to the page, which bounced under a
   bar that stayed put; every scroller now keeps its own overscroll. A

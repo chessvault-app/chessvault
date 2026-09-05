@@ -1,40 +1,55 @@
 /**
- * Copies the Stockfish 18 WASM builds into `web/public/engine/`.
+ * Stages the engine builds into `web/public/engine/`.
  *
- * They can't be bundled: the Emscripten loader resolves its `.wasm` sibling at
- * runtime relative to the worker's own URL, so the pair has to sit together as
- * plain static files. Run automatically before `dev` and `build`.
+ * They can't be bundled: both kinds of build resolve their `.wasm` (and
+ * the Lichess build its pthread workers) at runtime relative to their own
+ * URL, so each has to sit beside its siblings as plain static files. Run
+ * automatically before `dev` and `build`.
  *
- * Only the "lite" flavours are copied by default — 7 MB each, versus 113 MB for
- * the full build. Pass `--full` to add the large ones.
+ * Two sources:
+ *  - `@lichess-org/stockfish-web`: Stockfish 19 as an ES module, network
+ *    NOT included. The network is fetched from the Stockfish project's
+ *    own net server, once, and checked against the SHA-256 prefix its
+ *    name carries. The small net is 1 MB; the official one, `--full`
+ *    only, is 79 MB.
+ *  - `stockfish` (nmrugg): Stockfish 18 with the network embedded, used
+ *    only for the single-threaded fallback where the page cannot get a
+ *    SharedArrayBuffer. 7 MB; the `--full` variant 113 MB.
  */
-import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { REPO_ROOT } from '../server/paths.ts';
 
-const SOURCE = resolve(REPO_ROOT, 'node_modules/stockfish/bin');
 const TARGET = resolve(REPO_ROOT, 'web/public/engine');
+const NET_SERVER = 'https://tests.stockfishchess.org/api/nn/';
 
-/** Lite is multi-threaded; lite-single is the fallback without SharedArrayBuffer. */
-const LITE = [
-  'stockfish-18-lite.js',
-  'stockfish-18-lite.wasm',
-  'stockfish-18-lite-single.js',
-  'stockfish-18-lite-single.wasm',
-];
+const LICHESS = resolve(REPO_ROOT, 'node_modules/@lichess-org/stockfish-web');
+const CLASSIC = resolve(REPO_ROOT, 'node_modules/stockfish/bin');
 
-const FULL = [
-  'stockfish-18.js',
-  'stockfish-18.wasm',
-  'stockfish-18-single.js',
-  'stockfish-18-single.wasm',
-];
+/** Keep these in step with BUILDS in web/src/engine/StockfishEngine.ts. */
+const LITE = {
+  lichess: ['sf_dev_smallnet.js', 'sf_dev_smallnet.wasm'],
+  nets: ['nn-61e7af4bb97d.nnue'],
+  classic: ['stockfish-18-lite-single.js', 'stockfish-18-lite-single.wasm'],
+};
+const FULL = {
+  lichess: ['sf_dev.js', 'sf_dev.wasm'],
+  nets: ['nn-1a298aa575a0.nnue'],
+  classic: ['stockfish-18-single.js', 'stockfish-18-single.wasm'],
+};
 
-const wanted = process.argv.includes('--full') ? [...LITE, ...FULL] : LITE;
+const full = process.argv.includes('--full');
+const sets = full ? [LITE, FULL] : [LITE];
 
-if (!existsSync(SOURCE)) {
-  console.error(`Stockfish not found at ${SOURCE} — run \`npm install\` first.`);
-  process.exit(1);
+for (const [source, name] of [
+  [LICHESS, '@lichess-org/stockfish-web'],
+  [CLASSIC, 'stockfish'],
+] as const) {
+  if (!existsSync(source)) {
+    console.error(`${name} not found at ${source} — run \`npm install\` first.`);
+    process.exit(1);
+  }
 }
 
 mkdirSync(TARGET, { recursive: true });
@@ -43,22 +58,46 @@ let copied = 0;
 let skipped = 0;
 let bytes = 0;
 
-for (const name of wanted) {
-  const from = resolve(SOURCE, name);
+function stage(from: string, name: string): void {
   const to = resolve(TARGET, name);
   if (!existsSync(from)) {
     console.warn(`  missing in package, skipping: ${name}`);
-    continue;
+    return;
   }
   const size = statSync(from).size;
-  // Skip unchanged files so `npm run dev` doesn't recopy 14 MB every start.
+  // Skip unchanged files so `npm run dev` doesn't recopy megabytes every start.
   if (existsSync(to) && statSync(to).size === size) {
     skipped++;
-    continue;
+    return;
   }
   copyFileSync(from, to);
   copied++;
   bytes += size;
+}
+
+/** The name IS the checksum: `nn-<first 12 hex of sha256>.nnue`. */
+const checksumOk = (name: string, data: Uint8Array): boolean =>
+  createHash('sha256').update(data).digest('hex').startsWith(name.slice(3, 15));
+
+async function fetchNet(name: string): Promise<void> {
+  const to = resolve(TARGET, name);
+  if (existsSync(to) && checksumOk(name, readFileSync(to))) {
+    skipped++;
+    return;
+  }
+  const res = await fetch(NET_SERVER + name);
+  if (!res.ok) throw new Error(`${res.status} fetching ${NET_SERVER}${name}`);
+  const data = new Uint8Array(await res.arrayBuffer());
+  if (!checksumOk(name, data)) throw new Error(`checksum mismatch for ${name}`);
+  writeFileSync(to, data);
+  copied++;
+  bytes += data.byteLength;
+}
+
+for (const set of sets) {
+  for (const name of set.lichess) stage(resolve(LICHESS, name), name);
+  for (const name of set.classic) stage(resolve(CLASSIC, name), name);
+  for (const name of set.nets) await fetchNet(name);
 }
 
 const mb = (n: number): string => `${(n / 1e6).toFixed(1)} MB`;

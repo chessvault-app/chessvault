@@ -1857,7 +1857,6 @@ export const ko: Record<string, string> = {
 
   // --- engine explanations --------------------------------------------------
   Critical: '고비',
-  'Piece values on the board': '보드에 기물 가치 표시',
   // Fork, Pin, Skewer, Discovered attack, Trapped piece, Promotion and
   // Sacrifice already exist in the puzzle-theme section above; the motif
   // chips reuse those entries rather than coining second translations.

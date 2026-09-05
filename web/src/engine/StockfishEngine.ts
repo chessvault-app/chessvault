@@ -1,9 +1,23 @@
+import type { Init } from './lichessWorker.ts';
 import { parseBestMove, parseInfo, type PvLine } from './uci.ts';
 
 export type EngineFlavor = 'lite' | 'lite-single' | 'full' | 'full-single';
 
 /**
- * RELATIVE to the document, not to the origin.
+ * Which build each flavour is, and how it is spoken to.
+ *
+ * `lite` and `full` are Lichess's builds of Stockfish 19
+ * (`@lichess-org/stockfish-web`): an ES module the shim in
+ * lichessWorker.ts loads, with the network fetched separately — 1 MB for
+ * the size-optimised small net, 79 MB for the official one. The single-
+ * threaded flavours stay on nmrugg's Stockfish 18 builds, which need no
+ * SharedArrayBuffer: Stockfish 19 is only built with threads, so a page
+ * that is not cross-origin isolated (the static demo on a plain host, a
+ * browser with the isolation headers stripped) keeps an engine at all
+ * only this way. The two speak identical UCI, and the driver below
+ * cannot tell them apart.
+ *
+ * Paths are RELATIVE to the document, not to the origin.
  *
  * These were `/engine/…`, which is only the right file when the app is
  * served from the root of its origin. The static demo is not: it lives
@@ -16,15 +30,35 @@ export type EngineFlavor = 'lite' | 'lite-single' | 'full' | 'full-single';
  * assets against (see the demo backend's ECO and database fetches), and it
  * is the app's own base wherever it is deployed, root included.
  */
-const SCRIPTS: Record<EngineFlavor, string> = {
-  lite: 'engine/stockfish-18-lite.js',
-  'lite-single': 'engine/stockfish-18-lite-single.js',
-  full: 'engine/stockfish-18.js',
-  'full-single': 'engine/stockfish-18-single.js',
+type Build =
+  | { kind: 'classic'; script: string }
+  | { kind: 'lichess'; script: string; nnue: string[] };
+
+export const BUILDS: Record<EngineFlavor, Build> = {
+  lite: { kind: 'lichess', script: 'engine/sf_dev_smallnet.js', nnue: ['engine/nn-61e7af4bb97d.nnue'] },
+  'lite-single': { kind: 'classic', script: 'engine/stockfish-18-lite-single.js' },
+  full: { kind: 'lichess', script: 'engine/sf_dev.js', nnue: ['engine/nn-1a298aa575a0.nnue'] },
+  'full-single': { kind: 'classic', script: 'engine/stockfish-18-single.js' },
 };
 
-const scriptUrl = (flavor: EngineFlavor): string =>
-  new URL(SCRIPTS[flavor], document.baseURI).href;
+const assetUrl = (path: string): string => new URL(path, document.baseURI).href;
+
+/**
+ * A classic build IS the worker. A Lichess build is loaded by the shim,
+ * which is told what to load in its first message; every message after
+ * that is a UCI command, on both kinds.
+ */
+function spawnWorker(flavor: EngineFlavor): Worker {
+  const build = BUILDS[flavor];
+  if (build.kind === 'classic') return new Worker(assetUrl(build.script));
+  const worker = new Worker(new URL('./lichessWorker.ts', import.meta.url), { type: 'module' });
+  worker.postMessage({
+    type: 'init',
+    script: assetUrl(build.script),
+    nnue: build.nnue.map(assetUrl),
+  } satisfies Init);
+  return worker;
+}
 
 /**
  * How long a `stop` may go unanswered before the worker is presumed dead.
@@ -66,7 +100,7 @@ export function defaultFlavor(): EngineFlavor {
 }
 
 /**
- * Driver for the Stockfish 18 WASM worker.
+ * Driver for the Stockfish WASM worker.
  *
  * Owns exactly one worker and speaks UCI to it. Deliberately does not know about
  * React or the move tree — the store adapts it — so the same driver can serve the
@@ -96,13 +130,6 @@ export class StockfishEngine {
    * person deciding to rather than us looping.
    */
   private stallRecovered = false;
-
-  /**
-   * While set, every engine line is diverted here instead of the UCI
-   * parser — the `eval` trace is plain prose (a board of piece values),
-   * not `info` messages, and handleLine would drop all of it.
-   */
-  private traceSink: ((line: string) => void) | null = null;
 
   private lines = new Map<number, PvLine>();
 
@@ -147,7 +174,7 @@ export class StockfishEngine {
     }
 
     try {
-      this.worker = new Worker(scriptUrl(this.flavor));
+      this.worker = spawnWorker(this.flavor);
     } catch (error) {
       this.onError(`Could not start the engine worker: ${(error as Error).message}`);
       return;
@@ -172,11 +199,6 @@ export class StockfishEngine {
   }
 
   private handleLine(line: string): void {
-    if (this.traceSink) {
-      this.traceSink(line);
-      return;
-    }
-
     if (line === 'uciok') {
       this.send('isready');
       return;
@@ -336,43 +358,6 @@ export class StockfishEngine {
     this.send(`go depth ${depth}${moveMs > 0 ? ` movetime ${moveMs}` : ''}`);
   }
 
-  /**
-   * Run the NNUE `eval` trace for a position and return its raw lines.
-   *
-   * The trace ends with a "Final evaluation" line; if that never comes
-   * (an engine built without the command) the partial capture is returned
-   * after a timeout and the caller's parser will find no grid in it —
-   * absence, not an error. Must not be called while a search is in
-   * flight; callers serialise (see probe.ts).
-   */
-  evalTrace(fen: string): Promise<string[]> {
-    return new Promise((resolve, reject) => {
-      if (!this.worker || !this.ready) {
-        reject(new Error('engine not ready'));
-        return;
-      }
-      if (this.searching || this.pendingStop || this.traceSink) {
-        reject(new Error('engine busy'));
-        return;
-      }
-      const lines: string[] = [];
-      const timer = setTimeout(() => {
-        this.traceSink = null;
-        resolve(lines);
-      }, 5_000);
-      this.traceSink = (line) => {
-        lines.push(line);
-        if (line.startsWith('Final evaluation')) {
-          clearTimeout(timer);
-          this.traceSink = null;
-          resolve(lines);
-        }
-      };
-      this.send(`position fen ${fen}`);
-      this.send('eval');
-    });
-  }
-
   /** Halt the current search but keep the worker warm. */
   stop(): void {
     this.queued = null;
@@ -441,9 +426,6 @@ export class StockfishEngine {
     this.ready = false;
     this.currentFen = null;
     this.lines.clear();
-    // A trace in flight resolves partial via its own timer; the sink just
-    // must not outlive the worker it was reading.
-    this.traceSink = null;
     this.worker?.terminate();
     this.worker = null;
   }
