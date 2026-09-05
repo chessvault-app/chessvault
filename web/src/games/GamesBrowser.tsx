@@ -256,7 +256,7 @@ export function GamesBrowser({
       setGames(await loadCollection());
       setLoaded(true);
     } catch {
-      setError(t('vault server unreachable'));
+      setError(t('Vault server unreachable'));
     }
   }, []);
 
@@ -271,7 +271,7 @@ export function GamesBrowser({
         setGames(games);
         setLoaded(true);
       })
-      .catch(() => setError(t('vault server unreachable')));
+      .catch(() => setError(t('Vault server unreachable')));
     void api<{ keys: string[] }>('/api/games/bookmarks')
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});

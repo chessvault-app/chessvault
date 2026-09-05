@@ -1093,7 +1093,7 @@ export function RepertoireView() {
       navigate('studies', encodeURIComponent(body?.id ?? name));
     } catch (err) {
       // api() carries the server's own words; a network failure answers
-      // "vault server unreachable", as this always did.
+      // "Vault server unreachable", as this always did.
       setSaveError(apiErrorMessage(err));
     }
   };

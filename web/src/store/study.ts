@@ -265,7 +265,7 @@ export const useStudy = create<StudyState>()((set, get) => {
         const body = await api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies');
         set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
       } catch {
-        set({ listLoaded: true, error: 'vault server unreachable' });
+        set({ listLoaded: true, error: 'Vault server unreachable' });
       }
     },
 
@@ -416,7 +416,7 @@ export const useStudy = create<StudyState>()((set, get) => {
           error:
             e instanceof ApiError && e.status !== 0
               ? `could not open “${id}”`
-              : 'vault server unreachable',
+              : 'Vault server unreachable',
         });
         return false;
       }
@@ -693,7 +693,7 @@ export const useStudy = create<StudyState>()((set, get) => {
         error:
           e instanceof ApiError && e.status !== 0
             ? e.message
-            : 'vault server unreachable, changes not saved',
+            : 'Vault server unreachable, changes not saved',
       });
     }
   }

@@ -77,7 +77,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       // A tailnet blip at exactly this moment used to leave the button on
       // "Checking…" for ever — the throw skipped setBusy(false).
       setBusy(false);
-      setError(navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
+      setError(navigator.onLine ? t('Vault server unreachable') : t('No internet connection'));
       return;
     }
     const body = (await res.json().catch(() => ({}))) as { error?: string; needTotp?: boolean };

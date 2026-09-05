@@ -94,7 +94,7 @@ export async function api<T = unknown>(
   } catch {
     throw new ApiError(
       0,
-      navigator.onLine ? t('vault server unreachable') : t('no internet connection'),
+      navigator.onLine ? t('Vault server unreachable') : t('No internet connection'),
       true,
     );
   }
@@ -142,7 +142,7 @@ export function apiUpload<T = unknown>(
     const fail = (status: number, message: string, offline = false): void =>
       reject(new ApiError(status, message, offline));
     xhr.onerror = () =>
-      fail(0, navigator.onLine ? t('vault server unreachable') : t('no internet connection'), true);
+      fail(0, navigator.onLine ? t('Vault server unreachable') : t('No internet connection'), true);
     xhr.onabort = () => fail(0, t('Upload cancelled'));
     xhr.onload = () => {
       if (xhr.status === 401) onUnauthorized?.();
