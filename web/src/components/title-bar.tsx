@@ -133,60 +133,26 @@ export function TitleBar() {
     { label: 'Developer tools', icon: Bug, onSelect: run('dev-tools') },
     { label: 'Quit', icon: Power, danger: true, onSelect: run('quit') },
   ];
-  return (
-    <div
-      // The id is the shell's tell: a page without it gets a bare drag
-      // strip from the shell instead (desktop/main.mjs), so a server whose
-      // app predates the band still gives the window something to move by.
-      id="title-bar"
-      className={cn(
-        'bg-background text-muted-foreground relative flex shrink-0 items-center gap-1 pl-3.5',
-        // macOS: the traffic lights sit at the left, in the band.
-        shell.platform === 'darwin' && 'pl-20',
-      )}
-      style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
-    >
-      {/* The band over the sidebar is the sidebar's: its ground and its
-          right rule, at its width (App.tsx, Sidebar), so the column runs
-          to the window's top edge instead of stopping under a strip of
-          page ground. Below md there is no sidebar, and no segment. */}
-      {md && (
-        <div
-          aria-hidden
-          className={cn(
-            'bg-card border-border absolute inset-y-0 left-0 border-r',
-            folded ? 'w-[4.25rem]' : 'w-52',
-          )}
-        />
-      )}
+  // The application menu, back and forward: one group, drawn wherever
+  // the band has room for it.
+  const controls = (
+    <>
       <ActionMenu title={t('Menu')} actions={menu} open={menuOpen} onOpenChange={setMenuOpen}>
         <Button
           variant="ghost"
           size={size}
           title={t('Menu')}
-          className="relative [-webkit-app-region:no-drag]"
+          className="[-webkit-app-region:no-drag]"
           active={menuOpen}
         >
           <Menu className={icon} />
         </Button>
       </ActionMenu>
-      {/* The sidebar exists from md; below it the band has no rail to fold. */}
-      {md && (
-        <Button
-          variant="ghost"
-          size={size}
-          title={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
-          className="relative [-webkit-app-region:no-drag]"
-          onClick={() => setFolded(!folded)}
-        >
-          {folded ? <PanelLeftOpen className={icon} /> : <PanelLeftClose className={icon} />}
-        </Button>
-      )}
       <Button
         variant="ghost"
         size={size}
         title={t('Back')}
-        className="relative [-webkit-app-region:no-drag]"
+        className="[-webkit-app-region:no-drag]"
         disabled={!edges.back}
         onClick={() => history.back()}
       >
@@ -196,12 +162,61 @@ export function TitleBar() {
         variant="ghost"
         size={size}
         title={t('Forward')}
-        className="relative [-webkit-app-region:no-drag]"
+        className="[-webkit-app-region:no-drag]"
         disabled={!edges.forward}
         onClick={() => history.forward()}
       >
         <ArrowRight className={icon} />
       </Button>
+    </>
+  );
+  return (
+    <div
+      // The id is the shell's tell: a page without it gets a bare drag
+      // strip from the shell instead (desktop/main.mjs), so a server whose
+      // app predates the band still gives the window something to move by.
+      id="title-bar"
+      className="bg-background text-muted-foreground flex shrink-0 items-center"
+      style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
+    >
+      {/* The band over the sidebar is the sidebar's: its ground and its
+          right rule, at its width (App.tsx, Sidebar), so the column runs
+          to the window's top edge instead of stopping under a strip of
+          page ground. Unfolded it holds every control; folded, the rail
+          is 68px and holds the fold switch alone, centred the way the
+          rail centres its icons, and the rest sit past the seam on the
+          page ground. Below md there is no sidebar, and no segment. */}
+      {md && (
+        <div
+          className={cn(
+            'bg-card border-border flex h-full shrink-0 items-center gap-1 self-stretch border-r',
+            folded ? 'w-[4.25rem] justify-center' : 'w-52 pl-3.5',
+            // macOS: the traffic lights sit at the left, in the band.
+            shell.platform === 'darwin' && 'pl-20',
+          )}
+        >
+          <Button
+            variant="ghost"
+            size={size}
+            title={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
+            className="[-webkit-app-region:no-drag]"
+            onClick={() => setFolded(!folded)}
+          >
+            {folded ? <PanelLeftOpen className={icon} /> : <PanelLeftClose className={icon} />}
+          </Button>
+          {!folded && controls}
+        </div>
+      )}
+      {(!md || folded) && (
+        <div
+          className={cn(
+            'flex items-center gap-1 pl-3.5',
+            !md && shell.platform === 'darwin' && 'pl-20',
+          )}
+        >
+          {controls}
+        </div>
+      )}
     </div>
   );
 }
