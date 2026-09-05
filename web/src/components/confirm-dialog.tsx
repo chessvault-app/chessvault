@@ -160,7 +160,14 @@ export function ConfirmDialog(
               <AlertDialogTitle>{t(confirmLabel)}</AlertDialogTitle>
               <AlertDialogDescription>{t(question)}</AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            {/* On a phone the footer stacks column-reverse, which puts
+                the action on top: right for an ordinary dialog, where
+                the primary belongs under the thumb, and wrong for a
+                destructive one, where the thumb that just opened the
+                sheet is resting exactly there. The danger tone keeps
+                Cancel on top on a phone, so the irreversible answer
+                takes a deliberate reach. */}
+            <AlertDialogFooter className={tone === 'danger' ? 'max-sm:flex-col' : undefined}>
               {/* Cancel takes the focus (AlertDialogCancel autofocuses): a
                   confirmation opens under the keyboard on the answer that
                   loses nothing. */}
