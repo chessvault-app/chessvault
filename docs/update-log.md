@@ -5,13 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.8.3
 
-The phone's home page stops repeating its own bottom bar and starts
-showing what is happening in the vault. Beside it, the opening map's
-compare button holds its place, the Games pane's list reaches its edge,
-and the online archive's table takes a right-click. Under it all, the
-engine moves up a version.
+The puzzle dashboard leads with its one button and tells the truth
+during an outage, the desktop title bar joins the sidebar, and the
+phone's home page stops repeating its own bottom bar and starts showing
+what is happening in the vault. Beside them, the opening map's compare
+button holds its place, the Games pane's list reaches its edge, and the
+online archive's table takes a right-click. Under it all, the engine
+moves up a version.
 
 - **Stockfish 19 in the browser.** The engine is now Lichess's build of
   Stockfish 19 (`@lichess-org/stockfish-web`) with its size-optimised

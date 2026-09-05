@@ -110,7 +110,8 @@ flowchart LR
   동작합니다.
 - **웹 앱** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand):
   사용자가 만지는 모든 것. 체스 로직은 `chessops`, 보드는 chessground, 노트는
-  TipTap, 엔진은 stockfish.js(WASM, 스레드)를 씁니다. 컴포넌트 층은 shadcn의
+  TipTap, 엔진은 Stockfish의 WASM 빌드(스레드가 되면 Lichess의 Stockfish 19 빌드,
+  안 되면 단일 스레드 Stockfish 18)를 씁니다. 컴포넌트 층은 shadcn의
   것입니다. 레지스트리의 파일을 가져와 이 앱의 얼굴을 입힌 것이
   `web/src/components/ui`(밑은 Base UI)에, 앱의 합성 컴포넌트가
   `web/src/components`에 있고, 테마는 앱의 OKLCH 사다리에서 파생한 shadcn

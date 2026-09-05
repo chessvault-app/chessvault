@@ -111,7 +111,8 @@ flowchart LR
   skeleton on boot, so pointing it at an empty folder works.
 - **Web app** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand):
   everything the user touches. Chess logic via `chessops`, boards via
-  chessground, notes via TipTap, engine via stockfish.js (WASM, threads).
+  chessground, notes via TipTap, engine via Stockfish's WASM builds (the Lichess build of
+  Stockfish 19 with threads, Stockfish 18 single-threaded without).
   The component layer is shadcn's: the registry's files, owned and given
   the app's face, under `web/src/components/ui` (Base UI underneath), the
   app's composites under `web/src/components`, the theme in shadcn's

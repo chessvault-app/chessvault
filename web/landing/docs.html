@@ -1655,6 +1655,10 @@
                 then <strong>Add selected</strong> for the lot (“Adding {done}/{total}…”). A fully
                 collected month says so: “Every game shown is already in the collection”.
               </li>
+              <li data-ko="줄을 오른쪽 클릭하면 참조 데이터베이스 줄과 같은 메뉴가 열립니다: «Open on the board»와 «Add to collection». 게임이 이미 들어 있으면 둘째는 흐려집니다.">
+                A right-click on a row opens the same menu the reference databases' rows have:
+                “Open on the board” and “Add to collection”, the second dimmed once the game is in.
+              </li>
               <li data-ko="열어 본 달은 디스크에 캐시되어 다음에는 즉시 열리고, 오프라인에서도 열립니다(«offline, cached months only»). 캐시 목록과 비우기는 설정 → Browsed games에 있습니다.">
                 Browsed months are cached on disk — instant next time, and open offline (“offline, cached months only”). The inventory and its clear-all live in Settings → Browsed
                 games.
@@ -2072,11 +2076,13 @@
               solve at every step. The review banner explains itself: “Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.”
             </p>
             <h2 data-ko="대시보드">The dashboard</h2>
-            <p data-ko="Puzzles → Dashboard: <strong>Attempts · Solved · To review</strong>, 난이도별 분해(«Attempts by difficulty»), 책 진행, 그리고 모든 시도의 이력이 있습니다. 이력은 결과와 난이도로 거를 수 있고(«Filter by outcome» / «Filter by difficulty»), 어느 퍼즐이든 «Replay puzzle #{id}»로 다시 풀 수 있습니다. 복습 입구(«Review puzzles · {n} due»)와, 이력 아래에서 퍼즐 진행을 지우는 «Wipe history»도 여기 있습니다. 휴대폰에는 별도의 허브 화면이 있어 «Next puzzle», 복습, 책의 다음 퍼즐, 풀이 이력을 한눈에 모아 보여 줍니다.">
+            <p data-ko="Puzzles → Dashboard: <strong>Attempts · Solved · To review</strong>, 난이도별 분해(«Attempts by difficulty»), 책 진행, 그리고 모든 시도의 이력이 있습니다. 이력은 결과와 난이도로 거를 수 있고(«Filter by outcome» / «Filter by difficulty»), 어느 퍼즐이든 «Replay puzzle #{id}»로 다시 풀 수 있습니다. 페이지는 버튼 하나로 시작합니다. 기다리는 퍼즐이 있으면 «Review puzzles · {n} due», 없으면 «Train»입니다. 이력 아래, 페이지 맨 끝에 «Wipe history»가 있습니다. 이력은 Tab 한 번에 들어가는 자리이고, 화살표로 줄 사이를 옮기며 오른쪽 키가 그 줄의 포지션 미리보기를 엽니다. 휴대폰에는 별도의 허브 화면이 있어 «Next puzzle», 복습, 책의 다음 퍼즐, 풀이 이력을 한눈에 모아 보여 줍니다.">
               Puzzles → Dashboard: <strong>Attempts · Solved · To review</strong>, the
               “Attempts by difficulty” breakdown, book progress, and a history of every attempt — filtered
               by outcome and difficulty, any puzzle replayable via “Replay puzzle #{id}”. The
-              review entry (“Review puzzles · {n} due”) and, under the history, “Wipe history” live here too. A
+              page leads with its one button: “Review puzzles · {n} due” when something is waiting, “Train”
+              otherwise; under the history, last on the page, sits “Wipe history”. The history is one Tab
+              stop: the arrows move between rows and Right opens a row's position preview. A
               phone gets a hub screen joining “Next puzzle”, the review, your book's next puzzle
               and the history at a glance.
             </p>
@@ -2505,6 +2511,15 @@
                       device vibrates) · <strong>Volume</strong> · <strong>Move sound</strong> and
                       <strong>Capture sound</strong> (numbered variants plus “Rotate through all” —
                       picking one plays it).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Home screen</td>
+                    <td data-ko="브라우저에서만, 앱이 아이콘에서 열리기 전까지. «Add to home screen»이 브라우저 메뉴의 경로를 설명하거나, 브라우저가 자체 설치 프롬프트를 넘겨 주는 곳에서는 <strong>Install</strong> 버튼을 내놓습니다. 아이콘에서 열리거나 데스크톱 앱 안에서는 사라집니다.">
+                      In a browser only, until the app runs from an icon: “Add to home screen”
+                      explains the browser's menu route, or offers <strong>Install</strong> where the
+                      browser hands over its own prompt. Gone once the page opens from an icon or
+                      inside the desktop app.
                     </td>
                   </tr>
                   <tr>

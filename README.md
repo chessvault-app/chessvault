@@ -574,8 +574,9 @@ npm run dev          # server + web with hot reload, http://localhost:5173
 ```
 
 First run copies the Stockfish engine assets out of `node_modules`
-(the 7 MB lite build; `npm run setup:engine -- --full` adds the
-full-strength one beside it).
+(Stockfish 19 from the Lichess build with its 1 MB small network, and
+the 7 MB Stockfish 18 single-threaded fallback; `npm run setup:engine --
+--full` adds the full-strength networks beside them).
 
 The Rust core under `native/` is optional and not built by any of the
 above. To have it — a source checkout runs the JavaScript jobs without
@@ -727,6 +728,6 @@ Copyright © 2026 the Chess Vault authors.
 
 This project is licensed under **GPL-3.0** (see [LICENSE](LICENSE)) —
 the choice is effectively made by its bundled dependencies: Stockfish
-and Stockfish.js are GPLv3. `chessops` and
+is GPLv3 and the Lichess WASM build's loader AGPLv3. `chessops` and
 `chessground` are AGPL/GPL — same caveat. The Lichess puzzle database
 the app downloads is CC0.
