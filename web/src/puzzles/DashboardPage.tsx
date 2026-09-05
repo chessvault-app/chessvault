@@ -45,10 +45,12 @@ interface HistoryEntry {
   themes?: string[];
 }
 
+/** The server also sends a streak. The page does not read it: a streak
+    is the gamified reading of consistency, which the app does not hand
+    back (see docs/design-principles.md on ratings). */
 interface MetaUser {
   attempts: number;
   wins: number;
-  streak: number;
 }
 
 interface BookSummary {
@@ -86,6 +88,10 @@ export function DashboardPage() {
   const [due, setDue] = useState(0);
   const [nextDue, setNextDue] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
+  // Whether the history is really empty or merely failed to arrive: the
+  // catch below settles `history` to [] so the page can render, and the
+  // list's empty line has to know which of the two it is saying.
+  const [historyFailed, setHistoryFailed] = useState(false);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
 
@@ -100,6 +106,7 @@ export function DashboardPage() {
     // Three loads, one rule: a failure renders an empty page under an
     // error line, never a skeleton that spins forever with nothing to say.
     setError(null);
+    setHistoryFailed(false);
     void api<{ user: MetaUser; failed?: number; due?: number; nextDue?: string | null }>(
       '/api/puzzles/meta',
     )
@@ -114,6 +121,7 @@ export function DashboardPage() {
       .then((d) => setHistory(d.attempts))
       .catch((e: unknown) => {
         setHistory((prev) => prev ?? []);
+        setHistoryFailed(true);
         setError(apiErrorMessage(e));
       });
     void api<{ books: BookSummary[] }>('/api/puzzlebooks')
@@ -514,11 +522,16 @@ export function DashboardPage() {
               </div>
             )
           ) : puzzles.length === 0 ? (
+            // An outage is not an empty vault: told "No attempts yet", a
+            // player on a phone with a flaky link would read that they
+            // have never trained. The failure names itself instead.
             <p className="text-muted-foreground px-3 py-3 text-sm">
               {t(
-                history.length === 0
-                  ? 'No attempts yet. Go solve something.'
-                  : 'Nothing matches this filter.',
+                historyFailed && history.length === 0
+                  ? 'Could not load the attempts.'
+                  : history.length === 0
+                    ? 'No attempts yet. Go solve something.'
+                    : 'Nothing matches this filter.',
               )}
             </p>
           ) : (
