@@ -10,7 +10,31 @@
  */
 const CACHE = 'vault-shell-v1';
 
-self.addEventListener('install', () => self.skipWaiting());
+/**
+ * Warm the cache with the build's own chunks. The routes are split into
+ * chunks fetched on first visit, so offline the shell came up and any
+ * page not yet opened in this build drew a blank box. The build writes
+ * the list (web/vite.precache.ts) and this reads it; a missing list, or
+ * one file failing, must not fail the install, which is why it is not
+ * addAll. Not awaited by skipWaiting: the new worker takes over at once
+ * and the warm-up finishes behind it.
+ */
+async function precache() {
+  const res = await fetch('/precache.json', { cache: 'no-store' });
+  if (!res.ok) return;
+  const files = await res.json();
+  const cache = await caches.open(CACHE);
+  await Promise.all(
+    files.map((f) =>
+      cache.match(f).then((hit) => hit || cache.add(f).catch(() => undefined)),
+    ),
+  );
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(precache().catch(() => undefined));
+  self.skipWaiting();
+});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(

@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { licenses } from './vite.licenses.ts';
+import { precache } from './vite.precache.ts';
 
 /**
  * Fail the build on a cycle between chunks. Rolldown will happily emit
@@ -65,7 +66,7 @@ export default defineConfig({
   // a blocking stylesheet means the first thing painted is a styled page
   // rather than an unstyled flash. (vite.launchScreen.ts, which deferred
   // it, went with the launch screen it existed for.)
-  plugins: [react(), tailwindcss(), licenses(), noChunkCycles()],
+  plugins: [react(), tailwindcss(), licenses(), precache(), noChunkCycles()],
   // Stated false so it FOLDS. `isDemo()` guards on
   // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
   // absent but cannot be evaluated at build time — so the demo's dynamic

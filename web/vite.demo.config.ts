@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { cpSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { licenses } from './vite.licenses.ts';
+import { precache } from './vite.precache.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -59,7 +60,7 @@ export default defineConfig({
   root,
   base: './',
   publicDir: `${root}public`,
-  plugins: [react(), tailwindcss(), licenses(/* desktop */ false), demoAssets()],
+  plugins: [react(), tailwindcss(), licenses(/* desktop */ false), precache(), demoAssets()],
   define: {
     // server/paths.ts reads process.env for its overrides; in the demo there
     // are none, and an undefined `process` would throw at import.
