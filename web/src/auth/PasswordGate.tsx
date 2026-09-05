@@ -159,10 +159,11 @@ export function PasswordGate({ children }: { children: ReactNode }) {
                   <ShieldCheck className="size-3" />
                   {t('Authenticator code')}
                 </FieldLabel>
-                {/* shadcn's InputOTP (lanph3re's call): six slots in one run —
-                    no separator, lanph3re's call too — and the sixth digit
-                    submits — a code is never longer, so
-                    there is nothing to press after it. Digits only, and
+                {/* shadcn's InputOTP (lanph3re's call), two groups of three
+                    like every authenticator app prints the code, each digit in
+                    its own cell so the focus ring never overlaps a neighbour.
+                    The sixth digit submits: a code is never longer, so there
+                    is nothing to press after it. Digits only, and
                     one-time-code lets iOS offer the code from Messages. */}
                 <InputOTP
                   id="gate-code"
@@ -174,15 +175,17 @@ export function PasswordGate({ children }: { children: ReactNode }) {
                   value={code}
                   onChange={setCode}
                   onComplete={(value) => void submit(value)}
-                  containerClassName="justify-center"
+                  containerClassName="justify-center gap-4"
                 >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
+                  <InputOTPGroup className="gap-1.5">
+                    <InputOTPSlot index={0} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={1} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={2} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                  </InputOTPGroup>
+                  <InputOTPGroup className="gap-1.5">
+                    <InputOTPSlot index={3} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={4} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={5} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
                   </InputOTPGroup>
                 </InputOTP>
               </Field>
