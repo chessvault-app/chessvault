@@ -1877,11 +1877,10 @@ cg-board square.check {
   --board-dark: oklch(39% 0.008 260);
 }
 
-/* Two boards matched to chess.com's, sampled from screenshots of its
-   board (#ececec/#aca595 and #f2f2f2/#d3a36a): a near-white light square
-   against a khaki grey, and against the same tan its Tan board uses.
-   The light square is a plain grey both times, so the coordinate labels
-   mixed out of it stay neutral. */
+/* Two boards with a near-white light square (#ececec and #f2f2f2)
+   against a khaki grey (#aca595) and a tan (#d3a36a). The light square
+   is a plain grey both times, so the coordinate labels mixed out of it
+   stay neutral. */
 :root[data-board='khaki'],
 [data-board='khaki'] {
   --board-light: oklch(94% 0 90);
