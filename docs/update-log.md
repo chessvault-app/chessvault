@@ -5,6 +5,17 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The skip link shows only for the keyboard.** "Skip to content", the
+  jump past the sidebar that Tab reaches first, used to appear on any
+  focus, so when a popup closed after its trigger had gone (a redrawn
+  opening-map node, the search dialog) and focus fell back to the
+  document's first tabbable, the link surfaced. On a phone it sat in the
+  status bar under the notch, after a tap, where nobody could use it. It
+  now appears only under keyboard focus, and it sits below the top
+  safe-area inset instead of at the viewport's edge.
+
 ## 0.8.4
 
 The repertoire drill shows a gap in amber with the reply drawn on the

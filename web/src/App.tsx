@@ -222,10 +222,17 @@ function Shell() {
       )}
     >
       {/* The first thing Tab reaches: a jump past the section list into
-          the page, unseen until it has focus. The ring is the app's one
-          focus ring; the box is a card so it reads over any page. The
-          press moves focus itself: routes live in the hash, so a plain
-          `#main` jump would be read as a section and land on Home. */}
+          the page, unseen until it has KEYBOARD focus. It used to show on
+          any focus, and a popup that closes after its trigger has gone
+          (a redrawn map node, the search dialog) hands focus back to the
+          document's first tabbable, which is this link: on a phone it
+          surfaced in the status bar after a tap, where nobody could use
+          it. focus-visible keeps it for Tab. Its top is the shell's own
+          safe-area inset plus 8px, so it clears the notch the shell
+          already pads for. The ring is the app's one focus ring; the box
+          is a card so it reads over any page. The press moves focus
+          itself: routes live in the hash, so a plain `#main` jump would
+          be read as a section and land on Home. */}
       <a
         href="#main"
         onClick={(e) => {
@@ -233,7 +240,8 @@ function Shell() {
           document.getElementById('main')?.focus();
         }}
         className={cn(
-          'sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50',
+          'sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:z-50',
+          'focus-visible:top-[calc(env(safe-area-inset-top)+0.5rem)] focus-visible:left-[calc(env(safe-area-inset-left)+0.5rem)]',
           'bg-card text-foreground border-border rounded-lg border px-3 py-1.5 text-sm font-medium',
           'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
         )}
