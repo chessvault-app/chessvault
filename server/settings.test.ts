@@ -49,6 +49,29 @@ describe('settings read', () => {
   });
 });
 
+describe('vault name', () => {
+  it('round-trips, trims, and forgets on blank', async () => {
+    expect((await json('PUT', '/api/settings/name', { name: '  Club games ' })).status).toBe(200);
+    expect((await (await json('GET', '/api/settings')).json()).name).toBe('Club games');
+    expect(config().name).toBe('Club games');
+    expect(config().keepMe).toBe(1);
+    expect((await json('PUT', '/api/settings/name', { name: '   ' })).status).toBe(200);
+    expect((await (await json('GET', '/api/settings')).json()).name).toBeNull();
+    expect(config().name).toBeUndefined();
+  });
+
+  it('refuses a non-string or an over-long name', async () => {
+    expect((await json('PUT', '/api/settings/name', { name: 7 })).status).toBe(400);
+    expect((await json('PUT', '/api/settings/name', { name: 'x'.repeat(61) })).status).toBe(400);
+    expect((await json('PUT', '/api/settings/name', 'junk')).status).toBe(400);
+  });
+
+  it('reads a name somebody typed by hand as a number as none', async () => {
+    writeFileSync(join(vault, 'config.json'), JSON.stringify({ name: 42 }));
+    expect((await (await json('GET', '/api/settings')).json()).name).toBeNull();
+  });
+});
+
 describe('profile', () => {
   it('round-trips and trims', async () => {
     const put = await json('PUT', '/api/settings/profile', {

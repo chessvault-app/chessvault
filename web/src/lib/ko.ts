@@ -941,6 +941,10 @@ export const ko: Record<string, string> = {
   'Source code': '소스 코드',
   Licences: '라이선스',
   'Desktop app': '데스크톱 앱',
+  'Vault name': '보관함 이름',
+  'Save name': '이름 저장',
+  'Names this vault at the foot of the sidebar and in the window title. Every device that opens it sees the same name.':
+    '사이드바 아래와 창 제목에 이 보관함의 이름을 보여 줍니다. 이 보관함을 여는 모든 기기에 같은 이름이 보입니다.',
   'Home screen': '홈 화면',
   'Add to home screen': '홈 화면에 추가',
   'Opens full screen from its own icon, like an app.': '앱처럼 아이콘에서 전체 화면으로 열립니다.',

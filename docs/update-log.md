@@ -9,7 +9,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 The repertoire drill shows a gap in amber with the reply drawn on the
 board, the opening map marks the opponent's replies with a centre dot,
-and the puzzle dashboard's attempt log scrolls with the page. Seven
+the puzzle dashboard's attempt log scrolls with the page, and a vault
+can be given a name. Seven
 fixes beside them: a comment keeps its paragraphs across a reload,
 the error page clears when the address changes, a mistyped link lands
 on "no such document" instead of that page, a damaged opening index
@@ -112,6 +113,13 @@ Position window on an iPad comes back whole and leaves without a trace.
   whole or not at all, and one that does not read is recompiled on the
   spot, or, if the catalogue it comes from is gone too, left out so the
   games list still loads without opening names.
+
+- **A vault can be given a name.** Settings → Vault takes one, and the
+  sidebar's foot and the window title show it in place of the folder's
+  name; blank it and the folder's name comes back. It is kept in the
+  vault's own config, so a phone and a desktop opening the same folder
+  agree about what it is called, and it rides the settings answer the
+  sidebar foot already waited for, so nothing new loads.
 
 ## 0.8.3
 

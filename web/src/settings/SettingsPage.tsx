@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
+import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Vault, Volume2 } from 'lucide-react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ import { PIECE_THUMBS } from '@/pieces/thumbs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
+import { setVaultName } from '@/lib/vaultName';
 
 interface Settings {
   profile: { name?: string; chesscom?: string; lichess?: string };
@@ -63,6 +64,8 @@ interface Settings {
     local: boolean;
   };
   vaultPath: string;
+  /** What the vault is called, or null when its folder name stands in. */
+  name: string | null;
   version: string;
 }
 
@@ -180,6 +183,7 @@ export function SettingsPage() {
         ) : (
           <>
             <ProfileCard settings={settings} onSaved={refresh} />
+            <VaultCard settings={settings} onSaved={refresh} />
             <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
@@ -349,6 +353,48 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
       <p className="text-muted-foreground text-sm">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
       <div className="flex items-center gap-3">
         <Button variant="default" onClick={() => void save()}>{t('Save profile')}</Button>
+        <Feedback note={note} />
+      </div>
+    </Card>
+  );
+}
+
+// --- Vault name ----------------------------------------------------------------
+// Its own card, not a second name in Profile: "Display name" is the
+// person's, and two name fields side by side read as one thing. The
+// placeholder is what the sidebar shows without a name, so blanking the
+// field is not a mystery.
+
+function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => Promise<void> }) {
+  const [name, setName] = useState(settings.name ?? '');
+  const [note, setNote] = useState<Note>(null);
+  const folder = settings.vaultPath.split(/[\\/]/).filter(Boolean).pop() ?? settings.vaultPath;
+
+  const save = async (): Promise<void> => {
+    const clean = name.trim();
+    try {
+      await api('/api/settings/name', { method: 'PUT', json: { name: clean } });
+    } catch {
+      setNote({ kind: 'error', text: t('Could not save.') });
+      return;
+    }
+    // The sidebar foot reads the store, not the settings answer, so it
+    // changes with the save rather than on the next full load.
+    setVaultName(clean === '' ? null : clean);
+    setNote({ kind: 'ok', text: t('Saved.') });
+    await onSaved();
+  };
+
+  return (
+    <Card icon={Vault} title={t('Vault')}>
+      <Field label="Vault name">
+        <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={folder} maxLength={60} />
+      </Field>
+      <p className="text-muted-foreground text-sm">
+        {t('Names this vault at the foot of the sidebar and in the window title. Every device that opens it sees the same name.')}
+      </p>
+      <div className="flex items-center gap-3">
+        <Button variant="default" onClick={() => void save()}>{t('Save name')}</Button>
         <Feedback note={note} />
       </div>
     </Card>

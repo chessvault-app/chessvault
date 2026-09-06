@@ -41,6 +41,11 @@ interface Config {
   /** Which of the three sources answers — see server/tablebase.ts. */
   tablebaseSource?: string;
   profile?: Profile;
+  /** What this vault is called, shown where the app names it. In the
+      vault, not on a device: the phone and the desktop opening the same
+      folder should agree about what it is called. Absent means the folder
+      name stands in. */
+  name?: string;
   /** How this vault's home page is arranged — see shared/homeLayout.ts.
       Absent means nobody has ever said, which is not the same as having
       asked for nothing. */
@@ -59,6 +64,14 @@ export interface SettingsDeps {
       LOOPBACK_ONLY in server/paths.ts). Tests say yes. */
   sameMachine?: boolean;
 }
+
+/** A vault name as stored: trimmed, and absent when blank or not a string,
+    so a config edited by hand cannot hand the page a number to draw. */
+const cleanName = (v: unknown): string | undefined => {
+  if (typeof v !== 'string') return undefined;
+  const t = v.trim();
+  return t === '' ? undefined : t;
+};
 
 export function settingsApi(deps: SettingsDeps = {}): Hono {
   const configPath = deps.configPath ?? VAULT_CONFIG;
@@ -124,8 +137,28 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       home: normaliseHomeLayout(config.home),
       training: normaliseTraining(config.training),
       vaultPath: vaultDir,
+      name: cleanName(config.name) ?? null,
       version: APP_VERSION,
     });
+  });
+
+  // --- vault name ----------------------------------------------------------
+  // Blank forgets it, so the folder name stands in again; the cap is what a
+  // sidebar foot can show without becoming a paragraph.
+  api.put('/settings/name', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as { name?: unknown } | null;
+    if (!body || typeof body !== 'object' || (body.name !== undefined && typeof body.name !== 'string')) {
+      return c.json({ error: 'invalid name' }, 400);
+    }
+    if (typeof body.name === 'string' && body.name.trim().length > 60) {
+      return c.json({ error: 'name is too long' }, 400);
+    }
+    const name = cleanName(body.name);
+    writeConfig((config) => {
+      if (name === undefined) delete config.name;
+      else config.name = name;
+    });
+    return c.json({ ok: true });
   });
 
   api.put('/settings/profile', async (c) => {

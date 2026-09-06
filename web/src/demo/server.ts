@@ -152,6 +152,9 @@ function buildApp(): Hono {
       home,
       training,
       vaultPath: 'demo',
+      // Never given here: the card that names a vault is one of the ones
+      // the demo says need your own server, so the folder name stands in.
+      name: null,
       version: 'demo',
       demo: true,
     }),

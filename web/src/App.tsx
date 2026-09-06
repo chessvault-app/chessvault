@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { api } from '@/lib/api';
+import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
 import { navigate, sectionHref, useRoute, type Section } from '@/lib/router';
@@ -326,6 +326,7 @@ function Shell() {
           is read, so the dialog cannot belong to the editor it used to hang
           off. It is a modal, so there is only ever one to mount. */}
       <WikiUnresolved />
+      <VaultTitle />
       </div>
     </div>
   );
@@ -334,41 +335,50 @@ function Shell() {
 /** The phone bottom row: global tabs, or a page's contextual action bar
     when one is claimed (see MobileActionBar). The slot is always mounted so
     a page's portal has a target; it only shows while claimed. */
-/** One fetch for the app's life: the folder does not move while it runs. */
-let vaultPathOnce: Promise<string | null> | null = null;
-const vaultPath = (): Promise<string | null> =>
-  (vaultPathOnce ??= api<{ vaultPath?: string }>('/api/settings')
-    .then((s) => s.vaultPath ?? null)
-    .catch(() => null));
-
 /**
- * The vault's folder, named in the shell.
+ * The vault, named in the shell.
  *
  * The product is a folder of plain files, and the app never showed it:
  * the landing page's hero is a directory tree, the sidebar was a list of
- * sections. The folder's name sits over the connection label, with the
+ * sections. The vault's name sits over the connection label, with the
  * whole path in its tooltip, on the wide layout where a sidebar has a
  * foot to stand it on. A phone client is a window onto someone else's
- * folder and does not get one.
+ * folder and does not get one. The name is the one given in Settings,
+ * or the folder's own when none has been; both come from the settings
+ * answer this foot always waited for (lib/vaultName), so a name is not a
+ * second thing to load.
  */
 function VaultLabel() {
-  const [path, setPath] = useState<string | null>(null);
-  useEffect(() => {
-    let live = true;
-    void vaultPath().then((p) => {
-      if (live) setPath(p);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-  if (!path) return null;
-  const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+  const info = useVaultInfo();
+  const name = displayName(info);
+  if (!name) return null;
   return (
-    <span className="text-foreground block truncate text-sm" title={t('Vault folder: {path}', { path })}>
+    <span
+      className="text-foreground block truncate text-sm"
+      title={info.path ? t('Vault folder: {path}', { path: info.path }) : undefined}
+    >
       {name}
     </span>
   );
+}
+
+/**
+ * The tab and window title carry the vault's name once one is known, so
+ * two windows on two vaults can be told apart from the taskbar. Only a
+ * given name changes it: a folder name is a path detail, and the title
+ * stays the app's until somebody names the vault.
+ */
+function VaultTitle() {
+  const { name } = useVaultInfo();
+  useEffect(() => {
+    if (!name) return;
+    const was = document.title;
+    document.title = `${name} · Chess Vault`;
+    return () => {
+      document.title = was;
+    };
+  }, [name]);
+  return null;
 }
 
 /**
