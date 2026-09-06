@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
-import { navigate } from '@/lib/router';
+import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
@@ -68,7 +68,7 @@ async function post(url: string, body: unknown): Promise<string | null> {
 
 /** Router shell for Notes: the list, or one open note. */
 export function NotesView({ params }: { params: string[] }) {
-  const id = params[0] ? decodeURIComponent(params[0]) : null;
+  const id = params[0] ? decodeSegment(params[0]) : null;
   return id ? (
     <Suspense fallback={<div className="h-full" />}>
       <NoteView id={id} />

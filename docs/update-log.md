@@ -49,6 +49,12 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   section first. It now clears the moment the address changes, so the
   next study, note or game opens as itself.
 
+- **A mistyped link lands on "no such document".** A study, note,
+  game, book or puzzle-book address with a stray `%` in it, the kind a
+  hand-typed or cut-off link carries, threw while the page was drawn
+  and showed the error page. The segment is now taken as written, so
+  the page asks for that document and reports that it is not there.
+
 ## 0.8.3
 
 The puzzle dashboard leads with its one button and tells the truth

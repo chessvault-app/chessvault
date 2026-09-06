@@ -12,6 +12,7 @@
  * PuzzleList, PuzzleEntry (entry + correction), evidence (the scan
  * viewers) and BookTrainer.
  */
+import { decodeSegment } from '@/lib/router';
 import { Shelf } from './books/Shelf';
 import { BookPage } from './books/BookPage';
 import { BookTrainer } from './books/BookTrainer';
@@ -19,15 +20,15 @@ import { PuzzleCorrector } from './books/PuzzleEntry';
 
 export function BooksView({ params }: { params: string[] }) {
   // Route segments arrive URL-encoded ("Test%20Book").
-  const slug = params[0] ? decodeURIComponent(params[0]) : null;
-  const puzzleId = params[1] ? decodeURIComponent(params[1]) : null;
+  const slug = params[0] ? decodeSegment(params[0]) : null;
+  const puzzleId = params[1] ? decodeSegment(params[1]) : null;
   // /books/<slug>/fix/<id>: correct an existing puzzle through entry flow.
   if (slug && puzzleId === 'fix' && params[2]) {
     return (
       <PuzzleCorrector
         key={`${slug}/fix/${params[2]}`}
         slug={slug}
-        puzzleId={decodeURIComponent(params[2])}
+        puzzleId={decodeSegment(params[2])}
       />
     );
   }

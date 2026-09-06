@@ -29,6 +29,25 @@ function parse(hash: string): Route {
 }
 
 /**
+ * A route segment as the document id it names.
+ *
+ * The app writes ids with encodeURIComponent, so a `/` in a folder name
+ * or a `%` in a title arrives escaped and this undoes it. A hand-typed or
+ * truncated link can carry a `%` that escapes nothing, and
+ * decodeURIComponent throws on that, during render, which put the whole
+ * section on the error page. Such a segment is taken as it stands: the
+ * view asks the server for it, hears there is no such document, and says
+ * so where the document would be.
+ */
+export function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+/**
  * Where the app actually is, as against what the address bar says at this
  * instant.
  *

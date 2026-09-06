@@ -5,6 +5,7 @@
  * databases and their manager), and shared.tsx (the model plus the row,
  * preview and badge pieces every list draws with).
  */
+import { decodeSegment } from '@/lib/router';
 import { StudyView } from '@/studies/StudyView';
 import { CollectionView } from './CollectionView';
 
@@ -16,6 +17,6 @@ export function GamesView({ params }: { params: string[] }) {
   // somewhere rather than 404ing: the collection, where the browser is
   // one tab or one press away.
   if (params[0] === 'elite') return <CollectionView />;
-  const id = params[0] ? decodeURIComponent(params[0]) : null;
+  const id = params[0] ? decodeSegment(params[0]) : null;
   return id ? <StudyView id={id} kind="game" /> : <CollectionView />;
 }

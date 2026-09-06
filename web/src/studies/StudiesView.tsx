@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
-import { navigate } from '@/lib/router';
+import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
@@ -39,7 +39,7 @@ import { t } from '@/lib/i18n';
 
 /** Router shell for the Studies section: list, or one open study. */
 export function StudiesView({ params }: { params: string[] }) {
-  const id = params[0] ? decodeURIComponent(params[0]) : null;
+  const id = params[0] ? decodeSegment(params[0]) : null;
   // `#/studies/<id>/<chapter>` — which chapter to open at, counted from 0.
   // A backlink from a comment on a move in chapter four should land there
   // rather than at chapter one, and putting it in the address rather than
