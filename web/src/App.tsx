@@ -461,6 +461,19 @@ function NavLink({
   );
 }
 
+/**
+ * The rail's icon column. Folded, the rail is 68px wide and its rows sit
+ * inside p-2, so a row is 52px and its centreline is 26px in. Every row is
+ * left-aligned in both states with a left inset that puts its icon's centre
+ * on that line: 16.8px for the 18.4px section icons, 19px for the 14px
+ * sub-row icons, 22px for the 24px brand mark (that row has no p-2 wrapper,
+ * so its line is at 34px). The rows used to be justify-center folded and
+ * justify-start px-3 unfolded, which slid every icon 5px on each fold.
+ * Unfolded, the label simply goes on being written to the icon's right.
+ */
+const NAV_ROW =
+  'group relative flex h-10 items-center justify-start gap-3 rounded-lg pr-3 pl-[1.05rem] text-base font-medium transition-colors duration-150';
+
 /** An indented child row under a top-level sidebar entry. */
 function SubNavItem({
   label,
@@ -487,8 +500,10 @@ function SubNavItem({
         aria-label={t(label)}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
-          folded ? 'justify-center' : 'justify-start pl-[2.35rem] pr-3',
+          'flex h-8 items-center justify-start gap-2.5 rounded-lg pr-3 text-sm font-medium transition-colors duration-150',
+          // Folded, the 14px icon sits on the rail's icon column (see
+          // NAV_ROW); unfolded it indents under its parent's label.
+          folded ? 'pl-[1.1875rem]' : 'pl-[2.35rem]',
           active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
         )}
       >
@@ -555,15 +570,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <button
             type="button"
             onClick={() => navigate('home')}
-            // justify-center in the folded rail: the icons below centre
-            // themselves in the 68px column (their rows are justify-center
-            // inside p-2), so a left-aligned logo under px-4 sat 6px to
-            // their left. Unfolded the wordmark returns and the row
-            // left-aligns again.
-            className={cn(
-              'hover:bg-accent flex h-14 min-w-0 flex-1 items-center gap-2.5 px-4 text-left transition-colors duration-100',
-              folded ? 'justify-center' : 'justify-start',
-            )}
+            // Left-aligned in both states, with the 24px mark's centre on
+            // the rail's icon column (see NAV_ROW), so the mark does not
+            // move when the wordmark beside it goes.
+            className="hover:bg-accent flex h-14 min-w-0 flex-1 items-center justify-start gap-2.5 pr-4 pl-[1.375rem] text-left transition-colors duration-100"
           >
             {/* Bare, in the text's own ink — the same treatment as the home
                 header. The filled tile it used to sit on read as a button
@@ -603,9 +613,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               aria-label={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
-                'transition-colors duration-150',
-                folded ? 'justify-center' : 'justify-start',
+                NAV_ROW,
                 isActive
                   ? // Fill, outline and rail together: on the darker page
                     // the soft fill alone was close enough to the sidebar
@@ -670,9 +678,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           aria-label={t('Tools')}
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
-            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
-            'transition-colors duration-150',
-            folded ? 'justify-center' : 'justify-start',
+            NAV_ROW,
             inTools(active) ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
@@ -704,9 +710,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           aria-label={t('Databases')}
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
-            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
-            'transition-colors duration-150',
-            folded ? 'justify-center' : 'justify-start',
+            NAV_ROW,
             active === 'databases' ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
