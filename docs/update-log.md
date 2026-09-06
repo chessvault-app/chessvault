@@ -42,6 +42,13 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   annotation opened as one paragraph the next time the study, or the
   annotated game, was opened. Line breaks now survive the reload.
 
+- **The error page lets go when the address changes.** A page that hit
+  an error was replaced by "Something went wrong", and that stayed in
+  front of every other page in the same section, the section's list
+  and the sidebar's own item included, until you went to another
+  section first. It now clears the moment the address changes, so the
+  next study, note or game opens as itself.
+
 ## 0.8.3
 
 The puzzle dashboard leads with its one button and tells the truth

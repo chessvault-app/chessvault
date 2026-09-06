@@ -254,7 +254,7 @@ function Shell() {
           skeleton — React only suspends on promises it is given, which ours
           are not.
         */}
-        <RouteErrorBoundary key={section}>
+        <RouteErrorBoundary key={section} at={[section, ...params].join('/')}>
         <Suspense fallback={<div className="h-full" />}>
         {section === 'home' ? (
           <HomePage />
@@ -904,12 +904,23 @@ function MobileNav({ active }: { active: Section }) {
  * exact symptom lazyRoute exists to remove. Keyed on the section by the
  * caller, so navigating anywhere else discards the crashed instance and
  * gives the next view a clean start.
+ *
+ * `at` is the whole address, and a change to it clears the failure. The
+ * key alone was not enough: it only moves between sections, so one bad
+ * study link put this page in front of every study, the study list and
+ * the sidebar's own Studies item until the reader went somewhere else
+ * first (measured on the demo). A view that throws again on the new
+ * address lands back here, which is the right answer for that address.
  */
-class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class RouteErrorBoundary extends Component<{ at: string; children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
 
   static getDerivedStateFromError(): { failed: boolean } {
     return { failed: true };
+  }
+
+  override componentDidUpdate(prev: { at: string }): void {
+    if (this.state.failed && prev.at !== this.props.at) this.setState({ failed: false });
   }
 
   override render() {
