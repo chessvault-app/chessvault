@@ -27,6 +27,14 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   fade that marked the well's edges goes with it. A phone had already
   lost the well in 0.8.3 for the same reason.
 
+- **The window no longer scrolls under the app.** A wheel over the
+  sidebar on the puzzle dashboard could slide the whole window up, title
+  bar and sidebar included, leaving a blank band under the page. A
+  hidden screen-reader hint under a long attempt log sat past the
+  shell's bottom edge and gave the window 720px of scroll it had never
+  had. The shell now contains everything positioned inside it, so the
+  window has nothing to scroll.
+
 - **The demo's explorer answers again.** Since 0.8.0 the app's
   reference-database statements run in a child process per file, and
   the demo, which runs the same route code in the page, had no process

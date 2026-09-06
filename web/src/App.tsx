@@ -205,6 +205,16 @@ function Shell() {
         // shell that is wrong while nobody is typing is worse than a
         // keyboard that misbehaves while somebody is.
         'bg-background text-foreground vv-band flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
+        // The containing block for everything absolutely positioned under
+        // it. Without this an `sr-only` span (position: absolute) placed
+        // past the shell's bottom edge, which the puzzle dashboard's log
+        // hint is on a vault with a long log, sits outside the shell and
+        // gives the DOCUMENT scrollable height (measured: 1730px in a
+        // 1010px window). A wheel over the sidebar then scrolled the whole
+        // window, title bar and all, by 720px. The shell fills the
+        // viewport from (0,0), so nothing positioned moves; it is only
+        // clipped here instead of stretching the page.
+        'relative',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
