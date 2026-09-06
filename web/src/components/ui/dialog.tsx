@@ -166,7 +166,15 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
  * note at the top). The phone branch styles the Drawer's Viewport with
  * the same classes instead; this element is the Dialog's.
  */
-function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdrop.Props) {
+function DialogOverlay({
+  className,
+  onClick,
+  enter = true,
+  ...props
+}: DialogPrimitive.Backdrop.Props & {
+  /** Fade in as the window opens. Off for a window coming back from a page: see `returned`. */
+  enter?: boolean;
+}) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
@@ -192,7 +200,7 @@ function DialogOverlay({ className, onClick, ...props }: DialogPrimitive.Backdro
       }}
       className={cn(
         'vv-band fixed inset-0 isolate z-50 flex justify-center bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs',
-        'sm:data-open:animate-in sm:data-open:fade-in-0',
+        enter && 'sm:data-open:animate-in sm:data-open:fade-in-0',
         className,
       )}
       {...props}
@@ -379,11 +387,13 @@ function DialogContent({
   const { cap, covered: coversParent, ref: coverRef } = useSheetCover(small && phone);
 
   const shut = hidden || covered > 0;
-  // Coming back from a page: the overlay flips from visibility:hidden to
-  // visible, and WebKit repaints the card from a stale layout (an iPad
-  // showed the Position card cut off ~16px short, its bottom padding and
-  // corners missing, until any field inside it changed). One forced
-  // layout of the card as it comes back is what that tap was doing.
+  // Whether this window has come back from a page. A desktop window parks
+  // with display:none (the overlay below), so coming back re-displays
+  // the card, and a re-displayed element starts its CSS animations over:
+  // the card would zoom in a second time, and the way back from a page
+  // is instant. Once returned, the enter animation is off for good; it
+  // has already played.
+  const [returned, setReturned] = React.useState(false);
   const wasCovered = React.useRef(false);
   React.useLayoutEffect(() => {
     if (covered > 0) {
@@ -392,13 +402,24 @@ function DialogContent({
     }
     if (!wasCovered.current) return;
     wasCovered.current = false;
+    setReturned(true);
+    // The phone's Viewport parks with visibility:hidden instead, because
+    // the page over it reads its height live, and a parked card that
+    // comes back from visibility:hidden is what WebKit once repainted
+    // from a stale layout (an iPad showed the Position card cut off
+    // ~16px short, its bottom padding and corners missing, until any
+    // field inside it changed, back when the desktop branch parked the
+    // same way). One forced layout of the card as it comes back is what
+    // that tap was doing. The desktop branch gets a fresh layout from
+    // the display flip itself.
+    if (!phone) return;
     const el = card.current;
     if (!el) return;
     const prior = el.style.display;
     el.style.display = 'none';
     void el.offsetHeight;
     el.style.display = prior;
-  }, [covered]);
+  }, [covered, phone]);
   // A nested page that names no destination goes back to the window it
   // covered — closing a page IS going back.
   const back = onBack ?? (!small && coverParent ? close : undefined);
@@ -702,7 +723,20 @@ function DialogContent({
         // retires the overlay's own `flex`; its `justify-center` is a
         // no-op on the utility's single full-width column.
         className="grid optical-center p-4"
-        style={hidden ? { display: 'none' } : covered > 0 ? { visibility: 'hidden' } : undefined}
+        enter={!returned}
+        // Parked under a page, or hidden by its caller: gone from layout
+        // entirely, not visibility:hidden. Nothing on a desktop reads the
+        // parked card's height (the page floor and the layer cap are the
+        // phone's). An invisible card is still a composited layer in
+        // WebKit, and one it has painted from stale state before (the
+        // relayout kick above, when the page closed back to it). An iPad
+        // also showed the editor's Position card for a moment after a
+        // loaded position tore the window and its Load page down
+        // together, though both leave the DOM in one commit (measured in
+        // Chromium): a stale layer is the explanation left, and a
+        // display:none card has no layer to show. Not measured on the
+        // device itself.
+        style={shut ? { display: 'none' } : undefined}
       >
         <DialogPrimitive.Popup
           data-slot="dialog-content"
@@ -727,8 +761,9 @@ function DialogContent({
             cardClass,
             'h-auto max-h-full rounded-xl',
             small ? 'max-w-sm' : size === 'full' ? 'max-w-4xl' : 'max-w-lg',
-            // The desktop card arrives the stock way.
-            'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 duration-100',
+            // The desktop card arrives the stock way, once (see `returned`).
+            'duration-100',
+            !returned && 'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
           )}
           {...props}
         >
