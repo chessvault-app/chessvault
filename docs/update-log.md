@@ -9,10 +9,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 The repertoire drill shows a gap in amber with the reply drawn on the
 board, and the puzzle dashboard's attempt log scrolls with the page.
-Four fixes beside them: a comment keeps its paragraphs across a reload,
+Five fixes beside them: a comment keeps its paragraphs across a reload,
 the error page clears when the address changes, a mistyped link lands
-on "no such document" instead of that page, and a damaged opening index
-rebuilds itself rather than taking the games list down.
+on "no such document" instead of that page, a damaged opening index
+rebuilds itself rather than taking the games list down, and the window
+no longer scrolls under the app on the puzzle dashboard.
 
 - **A gap is amber, with a glyph and an arrow.** The drill used to
   report a coverage gap as a muted sentence under the status line, in
