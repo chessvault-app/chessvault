@@ -709,34 +709,44 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
 
 ## The mark
 
-A hexagon outline with one of its six wedges filled, white on a black
-rounded square. It is in `web/public/favicon.svg`, cut into every icon
-size by `scripts/render-icons.mjs`, and drawn in the app by
-`web/src/components/brand-mark.tsx`.
+A knight's head as one open line, from the base of the throat, out
+along the muzzle, up the forehead to the ear, down two steps of mane and
+along the neck back to the base. The line is in
+`web/src/components/brand-mark.tsx` and in `scripts/render-icons.mjs`,
+which cuts every icon size from it; the script also carries a solid
+silhouette of the same head, which is what the favicon and the `.ico`
+use.
 
-- **A hexagon is a cell** — a tile, a crystal, the outline of a cube seen
-  corner-on. Both readings fit a vault: a container, and a solid block
-  you can look into.
-- **The filled wedge is the top face of that cube catching light** — the
-  lid of the box, and one position out of many, the one in front of you.
-  A vault of games, studies and puzzles is exactly that: a lot of
-  material, and one thing you are working on.
-- **Outline and fill say what is yours and what is open.** The outline
-  is the boundary — your files, on your disk. Nothing is drawn locked:
-  the stance is "your chess, in plain files", not "behind a door", so
-  the mark is a container, not a padlock.
-- **Not a chess piece.** Every chess app wears a knight or a king; a
-  piece says "chess", not which app, and this app's distinction is where
-  your material lives, not the game. The pieces stay on the board
-  (cburnett); `KnightIcon` is what the app uses where it means *chess*
-  — the notes palette, an archive row — never the brand.
+- **A knight, this time.** The hexagon that preceded it (0.1 to 0.8.4)
+  was chosen not to be a piece, on the argument that a piece says "chess"
+  and not which app. In a tab strip and a dock that argument lost: the
+  hexagon said nothing at all, and a mark that has to be explained is
+  not doing the one job a mark has. The name carries "vault"; the mark
+  carries "chess".
+- **Straight where a horse has bone, curved where it has muscle.** The
+  forehead, the ear, the two mane steps and the muzzle are straight
+  segments meeting at corners; the throat and the neck are curves. Eleven
+  points in all. That construction is what keeps it from being the
+  knight every other chess app wears: it is a drawing, not a silhouette
+  of the board piece.
+- **One line, at the weight of everything else.** The stroke is 7 units
+  on an 80-unit box, the weight the hexagon had, and it sits in the
+  sidebar among outline icons as one of them.
+- **Two drawings, because it has to survive 16 px.** A 7-unit line is
+  1.4 px at favicon size and disappears in a tab strip, so the favicon
+  and the `.ico` carry a solid cut of the same head, drawn for that size
+  with a deeper muzzle and a heavier neck. Everything from 180 px up
+  carries the line.
+- **Still not `KnightIcon`.** Where the app means *chess* rather than
+  itself (the notes palette, an archive row, an empty state) it draws
+  the cburnett knight, the piece on the board. The two are different
+  enough in construction that neither reads as the other.
 - **Black and white** because the theme at rest is neutral and the board
-  is the only colour the app insists on. The tile takes no side, sits
-  beside any other icon, and is the same two inks as the splash, so
-  launch and icon agree.
-- **Two shapes, because it has to survive 16 px.** An outline plus one
-  triangle keeps its silhouette in a browser tab and on the 32 px
-  sidebar tile, which is what a nine-dot lattice, tried first, did not.
+  is the only colour the app insists on. Bare in the surrounding ink
+  everywhere the app draws it; white on a black rounded square only on
+  the icons an OS composites onto a ground of its own, apple-touch and
+  the desktop installers, and the same two inks as the splash, so launch
+  and icon agree.
 
 ## Process conventions
 

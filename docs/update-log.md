@@ -7,6 +7,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A new mark: a knight's head as one line.** The hexagon is replaced
+  everywhere it appeared: the sidebar, the home header, the lock screen,
+  the favicon, the installed icons, the splash screens, the landing page
+  and the desktop chooser. The line is straight where a horse has bone
+  and curved where it has muscle, at the weight the hexagon had; the
+  favicon carries a solid cut of the same head, since a line that thin
+  vanishes in a tab strip. A pinned tab, a home screen or a dock now
+  says chess before the name is read, which the hexagon never did.
+
 - **Two more board colours: Khaki and Tan.** Both put a near-white light
   square against a khaki grey or a tan, so the dark square carries all
   the colour. Settings → Appearance → Board.

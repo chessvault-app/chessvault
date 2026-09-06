@@ -3,12 +3,20 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'nod
 import pngToIco from 'png-to-ico';
 
 /**
- * The mark, once — the same drawing as web/src/components/brand-mark.tsx.
- * Everything below is a choice of ink and ground around it.
+ * The mark, twice. The LINE is the same drawing as
+ * web/src/components/brand-mark.tsx: a knight's head as one open stroke
+ * on an 80-unit box. The SOLID is a silhouette of the same head drawn
+ * separately for the sizes where a line cannot live: at 16 px the
+ * 7-unit stroke is 1.4 px, so the favicon and the .ico carry the solid
+ * and everything from 180 px up carries the line. Everything below is a
+ * choice of ink and ground around one of the two.
  */
+const LINE = 'M22 66 C24 61 27 57 29 54 L19 45 L11 39 L19 29 L33 11 L39 19 L45 15 L52 23 L61 33 C64 41 65 53 64 66';
+const SOLID = 'M28 72 L32 48 L10 42 L21 27 L35 7 L44 18 L50 13 L64 27 C69 40 69 56 66 72 Z';
 const MARK = (ink) => `
-  <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="${ink}" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M60 60 L60 24 L91 42 Z" fill="${ink}"/>`;
+  <path d="${LINE}" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
+const CUT = (ink) => `
+  <path d="${SOLID}" fill="${ink}"/>`;
 
 /**
  * Bare, on nothing — how the app itself wears the mark since the sidebar
@@ -18,7 +26,9 @@ const MARK = (ink) => `
  * puts on a home screen.
  */
 const bare = (ink) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 20 80 80">${MARK(ink)}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">${MARK(ink)}</svg>`;
+const bareCut = (ink) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">${CUT(ink)}</svg>`;
 
 /**
  * Grounded — for the icons an OS composites onto grounds the image cannot
@@ -30,25 +40,26 @@ const bare = (ink) =>
  */
 const grounded = (rx) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <rect width="120" height="120" rx="${rx}" fill="#0a0a0a"/>${MARK('#ffffff')}</svg>`;
+  <rect width="120" height="120" rx="${rx}" fill="#0a0a0a"/>
+  <g transform="translate(12 12) scale(1.2)">${MARK('#ffffff')}</g></svg>`;
 
 const INK = '#0a0a0a';
 
 /**
  * The favicon is written here rather than read from here, so the tab
- * icon and every raster stay one drawing. currentColor plus the media
- * query is what lets the bare mark survive a dark tab strip.
+ * icon and every raster stay one drawing. It carries the SOLID: a tab
+ * strip shows it at 16 or 32 px, where the line is a thread. currentColor
+ * plus the media query is what lets the bare mark survive a dark strip.
  */
 writeFileSync(
   'web/public/favicon.svg',
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 20 80 80">
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
   <style>:root{color:${INK}}@media(prefers-color-scheme:dark){:root{color:#ffffff}}</style>
-  <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M60 60 L60 24 L91 42 Z" fill="currentColor"/>
+  <path d="${SOLID}" fill="currentColor"/>
 </svg>
 `,
 );
-console.log('web/public/favicon.svg  bare, scheme-adaptive');
+console.log('web/public/favicon.svg  bare solid, scheme-adaptive');
 
 const render = (svg, size, path) => {
   const png = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng();
@@ -94,7 +105,7 @@ render(grounded(27), 256, 'desktop/icon-256.png');
 const ICO_SIZES = [16, 32, 48];
 const tmp = ICO_SIZES.map((size) => {
   const path = `web/public/.favicon-${size}.png`;
-  render(bare(INK), size, path);
+  render(bareCut(INK), size, path);
   return path;
 });
 writeFileSync('web/public/favicon.ico', await pngToIco(tmp));
@@ -184,11 +195,7 @@ const splashSvg = (w, h, { bg, fg }) => {
   return `<?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <rect width="${w}" height="${h}" fill="${bg}"/>
-  <g transform="translate(${(w - logo) / 2}, ${(h - logo) / 2}) scale(${logo / 80})" fill="${fg}">
-    <g transform="translate(-20 -20)">
-      <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="${fg}" stroke-width="7" stroke-linejoin="round"/>
-      <path d="M60 60 L60 24 L91 42 Z"/>
-    </g>
+  <g transform="translate(${(w - logo) / 2}, ${(h - logo) / 2}) scale(${logo / 80})">${MARK(fg)}
   </g>
 </svg>`;
 };
