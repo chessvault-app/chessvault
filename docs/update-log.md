@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.8.4
 
 The repertoire drill shows a gap in amber with the reply drawn on the
 board, the opening map marks the opponent's replies with a centre dot,
@@ -120,6 +120,12 @@ Position window on an iPad comes back whole and leaves without a trace.
   vault's own config, so a phone and a desktop opening the same folder
   agree about what it is called, and it rides the settings answer the
   sidebar foot already waited for, so nothing new loads.
+
+- **The Vault card wears the brand mark.** The card at the top of
+  Settings → Vault carried a safe-door icon, which read as a lock or a
+  bank rather than this app's vault, a folder of plain files. It now
+  shows the brand mark, the one glyph that already means this vault on
+  the sidebar and the lock screen.
 
 ## 0.8.3
 
