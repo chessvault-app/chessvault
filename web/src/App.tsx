@@ -484,6 +484,15 @@ function NavLink({
 const NAV_ROW =
   'group relative flex h-10 items-center justify-start gap-3 rounded-lg pr-3 pl-[1.05rem] text-base font-medium transition-colors duration-150';
 
+/**
+ * A row's label. It stays in the tree folded, so the fold's width change
+ * (Sidebar's nav) wipes it rather than popping it, but it also fades over
+ * the same 150ms: the rail is 68px and the label starts 55px in, so a
+ * clipped label would still show its first letter beside the icon.
+ */
+const navLabel = (folded: boolean): string =>
+  cn('whitespace-nowrap transition-opacity duration-150 ease-out', folded && 'opacity-0');
+
 /** An indented child row under a top-level sidebar entry. */
 function SubNavItem({
   label,
@@ -510,7 +519,7 @@ function SubNavItem({
         aria-label={t(label)}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex h-8 items-center justify-start gap-2.5 rounded-lg pr-3 text-sm font-medium transition-colors duration-150',
+          'flex h-8 items-center justify-start gap-2.5 rounded-lg pr-3 text-sm font-medium transition-[color,background-color,padding-left] duration-150 ease-out',
           // Folded, the 14px icon sits on the rail's icon column (see
           // NAV_ROW); unfolded it indents under its parent's label.
           folded ? 'pl-[1.1875rem]' : 'pl-[2.35rem]',
@@ -518,7 +527,7 @@ function SubNavItem({
         )}
       >
         <Icon className="size-3.5 shrink-0" />
-        {!folded && <span>{t(label)}</span>}
+        <span className={navLabel(folded)}>{t(label)}</span>
       </NavLink>
     </TitleTip>
   );
@@ -562,7 +571,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         ) : (
           <PanelLeftClose className="size-[1.15rem] shrink-0" strokeWidth={2} />
         )}
-        {!folded && <span>{t('Fold the sidebar')}</span>}
+        <span className={navLabel(folded)}>{t('Fold the sidebar')}</span>
       </button>
     </TitleTip>
   );
@@ -571,6 +580,12 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
       aria-label={t('Sections')}
       className={cn(
         'bg-card border-border hidden shrink-0 flex-col border-r md:flex',
+        // The fold is a 150ms width change, the rows' own colour timing.
+        // Labels stay in the tree in both states and the nav clips them,
+        // so the narrowing edge wipes them out and the widening edge
+        // wipes them in; nothing else moves. The reduced-motion block in
+        // index.css flattens this to the instant swap it used to be.
+        'overflow-hidden transition-[width] duration-150 ease-out',
         folded ? 'w-[4.25rem]' : 'w-52',
       )}
     >
@@ -593,16 +608,12 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                 header. The filled tile it used to sit on read as a button
                 distinct from the wordmark beside it. */}
             <BrandMark className="size-6 shrink-0" />
-            {/* The name the mark alone cannot give. Folded, the wordmark is
-                not drawn, which would leave this button unnamed — the
-                `title` used to cover that as its last-resort name, and a
-                tip does not — so the name stays as sr-only text, which
-                costs the row no width and no gap. */}
-            {folded ? (
-              <span className="sr-only">{t('Chess Vault')}</span>
-            ) : (
-              <span className="truncate text-base font-semibold tracking-tight">{t('Chess Vault')}</span>
-            )}
+            {/* The name the mark alone cannot give. Drawn in both states
+                and clipped by the nav when folded, like the row labels,
+                so the button keeps its name from its text: a tip does not
+                name a button the way `title` once did. Not truncated,
+                since an ellipsis would show past the mark on the rail. */}
+            <span className={cn('text-base font-semibold tracking-tight', navLabel(folded))}>{t('Chess Vault')}</span>
           </button>
         </TitleTip>
       </div>
@@ -637,7 +648,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                 <span className="bg-primary absolute left-0 h-6 w-[3px] rounded-r-full" />
               )}
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
-              {!folded && <span>{t(label)}</span>}
+              <span className={navLabel(folded)}>{t(label)}</span>
             </NavLink>
             </TitleTip>
             {/* A section's children are drawn by the section, not after the
@@ -695,7 +706,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         >
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <SquareMousePointer className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
-          {!folded && <span>{t('Tools')}</span>}
+          <span className={navLabel(folded)}>{t('Tools')}</span>
         </NavLink>
         </TitleTip>
         {/* As above: the five tools unfold under their row only while one
@@ -727,7 +738,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         >
           {active === 'databases' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <Database className="size-[1.15rem] shrink-0" strokeWidth={active === 'databases' ? 2.4 : 2} />
-          {!folded && <span>{t('Databases')}</span>}
+          <span className={navLabel(folded)}>{t('Databases')}</span>
         </NavLink>
         </TitleTip>
       </div>

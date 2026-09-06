@@ -190,10 +190,14 @@ export function TitleBar() {
         <div
           className={cn(
             'bg-card border-border flex h-full shrink-0 items-center gap-1 self-stretch border-r',
-            // Unfolded, 11px and not the band's 14: the switch's glyph then
-            // centres at the x the sidebar's row icons centre at below it
-            // (measured: 29px for both; 14px put it at 32).
-            folded ? 'w-[4.25rem] justify-center' : 'w-52 pl-[11px]',
+            // 11px and not the band's 14: the switch's glyph then centres
+            // at the x the sidebar's row icons centre at below it
+            // (measured: 29px; 14px put it at 32). Left-aligned in both
+            // states, since the width now slides in step with the sidebar
+            // (App.tsx) and a centred switch would drift with it; the
+            // band clips the controls it drops when folded.
+            'overflow-hidden pl-[11px] transition-[width] duration-150 ease-out',
+            folded ? 'w-[4.25rem]' : 'w-52',
             // macOS: the traffic lights sit at the left, in the band.
             shell.platform === 'darwin' && 'pl-20',
           )}

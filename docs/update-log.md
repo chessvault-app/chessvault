@@ -49,7 +49,10 @@ sidebar's icons stay where they are when it folds.
   in both states, and the switch is the first row under the mark in
   both, "Fold the sidebar" with its label or the icon alone, so
   nothing below it moves and the switch itself stays under the
-  pointer that pressed it.
+  pointer that pressed it. The fold itself is now a 150ms slide of
+  the sidebar's edge, with the labels fading as it passes, and the
+  desktop title bar's band slides with it; with reduced motion
+  requested it is the instant swap it was.
 
 - **The demo's explorer answers again.** Since 0.8.0 the app's
   reference-database statements run in a child process per file, and
