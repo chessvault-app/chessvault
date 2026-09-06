@@ -56,10 +56,10 @@ Position window on an iPad comes back whole and leaves without a trace.
   its icon and an unfolded one left-aligned it, and a whole row down,
   because the fold switch sat beside the name unfolded and took a row
   of its own under the mark folded. Each row now has one left inset
-  in both states, and the switch is the first row under the mark in
-  both, "Fold the sidebar" with its label or the icon alone, so
-  nothing below it moves and the switch itself stays under the
-  pointer that pressed it. The fold itself is now a 150ms slide of
+  in both states, so the icons hold their line. The switch stays
+  beside the name, where the desktop title bar puts it, and on the
+  first row under the mark only while folded, since the rail has no
+  room beside it. The fold itself is now a 150ms slide of
   the sidebar's edge, with the labels fading as it passes, and the
   desktop title bar's band slides with it; with reduced motion
   requested it is the instant swap it was.
