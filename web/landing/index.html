@@ -355,12 +355,26 @@
       }
       .vault .root { font-family: var(--mono); font-size: var(--t-sm); color: var(--muted-foreground); display: block; margin-bottom: var(--s3); }
       .vault ul { list-style: none; margin: 0; padding: 0; }
+      /* THE TREE'S RAILS ARE BORDERS, NOT GLYPHS. The listing used to spell
+         its branches with box-drawing characters, one per row, and a row
+         has padding, so the vertical bars stopped short of each other and
+         the tree read as ticks hanging in space. A border runs the full
+         height of its list item, children included, so a parent's rail
+         passes its children unbroken and stops at the middle of the last
+         row. --rail-mid is the first line's centre: the row's top padding
+         plus half a line of the path's own size. */
       .vault li {
+        --rail-pad: 0.3rem; --rail-mid: calc(var(--rail-pad) + 0.75 * var(--t-sm));
+        position: relative; padding-left: 1.1rem;
         display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
-        gap: 0 var(--s4); padding-block: 0.3rem;
+        gap: 0 var(--s4); padding-block: var(--rail-pad);
       }
-      .vault .path { font-family: var(--mono); font-size: var(--t-sm); white-space: pre; }
-      .vault .path .tick { color: var(--muted-foreground); }
+      .vault li::before, .vault li::after { content: ""; position: absolute; left: 0.3rem; border: 0 solid var(--muted-foreground); }
+      .vault li::before { top: 0; bottom: 0; border-left-width: 1px; }
+      .vault li:last-child::before { bottom: auto; height: var(--rail-mid); }
+      .vault li::after { top: var(--rail-mid); width: 0.55rem; border-top-width: 1px; }
+      .vault li > ul { flex-basis: 100%; padding-left: 0.15rem; }
+      .vault .path { font-family: var(--mono); font-size: var(--t-sm); line-height: 1.5; white-space: nowrap; }
       .vault .gloss { font-size: var(--t-sm); color: var(--muted-foreground); text-align: right; }
       .vault figcaption { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--hairline); font-size: var(--t-sm); color: var(--muted-foreground); }
       /* ALL SIX ROWS STACK, OR NONE DO. The two-column row is a nice shape
@@ -376,7 +390,7 @@
          left under its path, indented by the width of the "|- " tick so it
          hangs off the name rather than the margin. */
       @container (width < 18.75rem) {
-        .vault li { display: block; padding-block: 0.35rem; }
+        .vault li { display: block; --rail-pad: 0.35rem; }
         .vault .gloss { display: block; text-align: left; padding-left: 1rem; }
       }
 
@@ -636,37 +650,43 @@
           <span class="root">~/chess-vault/</span>
           <ul>
             <li>
-              <span class="path"><span class="tick">├ </span>studies/</span>
+              <span class="path">studies/</span>
               <span class="gloss" data-ko="스터디 하나가 PGN 파일 하나, 챕터는 그 안에">one study per PGN file, chapters inside it</span>
+              <ul>
+                <li><span class="path">Attacking the castled king.pgn</span></li>
+                <li><span class="path">Minority attack.pgn</span></li>
+                <li><span class="path">Openings/</span></li>
+              </ul>
             </li>
-            <li><span class="path"><span class="tick">│  ├ </span>Attacking the castled king.pgn</span></li>
-            <li><span class="path"><span class="tick">│  ├ </span>Minority attack.pgn</span></li>
-            <li><span class="path"><span class="tick">│  └ </span>Openings/</span></li>
             <li>
-              <span class="path"><span class="tick">├ </span>notes/</span>
+              <span class="path">notes/</span>
               <span class="gloss" data-ko="마크다운, 본문에 보드를">markdown, boards in the text</span>
+              <ul>
+                <li><span class="path">Notes on the Catalan.md</span></li>
+                <li><span class="path">Opening prep checklist.md</span></li>
+              </ul>
             </li>
-            <li><span class="path"><span class="tick">│  ├ </span>Notes on the Catalan.md</span></li>
-            <li><span class="path"><span class="tick">│  └ </span>Opening prep checklist.md</span></li>
             <li>
-              <span class="path"><span class="tick">├ </span>games/collection/</span>
+              <span class="path">games/collection/</span>
               <span class="gloss" data-ko="게임 하나가 PGN 하나">one PGN per game</span>
+              <ul>
+                <li><span class="path">Bex N vs Ueda K 2026-02-02.pgn</span></li>
+              </ul>
             </li>
-            <li><span class="path"><span class="tick">│  └ </span>Bex N vs Ueda K 2026-02-02.pgn</span></li>
             <li>
-              <span class="path"><span class="tick">├ </span>puzzles/history.jsonl</span>
+              <span class="path">puzzles/history.jsonl</span>
               <span class="gloss" data-ko="모든 시도, 한 줄에 하나">every attempt, one line each</span>
             </li>
             <li>
-              <span class="path"><span class="tick">├ </span>repertoire/map.json</span>
+              <span class="path">repertoire/map.json</span>
               <span class="gloss" data-ko="오프닝 맵">the opening map</span>
             </li>
             <li>
-              <span class="path"><span class="tick">├ </span>config.json</span>
+              <span class="path">config.json</span>
               <span class="gloss" data-ko="설정과 토큰, 커밋되지 않음">settings and tokens, never committed</span>
             </li>
             <li>
-              <span class="path"><span class="tick">└ </span>.history.git</span>
+              <span class="path">.history.git</span>
               <span class="gloss" data-ko="모든 변경을 되돌릴 수 있게">every change, undoable</span>
             </li>
           </ul>

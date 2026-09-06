@@ -11,7 +11,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   six-line summary beside the headline, and the demo vault's own files
   under it. On a phone the two stacked and read as a duplicate. The
   deeper listing now sits beside the headline with one caption, and the
-  summary is gone.
+  summary is gone. Its branches are drawn as lines rather than spelled
+  with box-drawing characters, so they join instead of hanging as ticks
+  with a gap between each row.
 
 ## 0.8.5
 
