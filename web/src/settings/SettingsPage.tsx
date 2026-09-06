@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Folder, Trash2, User, Volume2 } from 'lucide-react';
+import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ import { PIECE_THUMBS } from '@/pieces/thumbs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
+import { BrandMark } from '@/components/brand-mark';
 import { setVaultName } from '@/lib/vaultName';
 
 interface Settings {
@@ -237,7 +238,8 @@ function Card({
   title,
   children,
 }: {
-  icon: typeof User;
+  /** A lucide icon, or the brand mark: anything that takes a className. */
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   children: React.ReactNode;
 }) {
@@ -386,7 +388,7 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
   };
 
   return (
-    <Card icon={Folder} title={t('Vault')}>
+    <Card icon={BrandMark} title={t('Vault')}>
       <Field label="Vault name">
         <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={folder} maxLength={60} />
       </Field>
