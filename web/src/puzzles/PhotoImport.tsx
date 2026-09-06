@@ -158,7 +158,7 @@ export function PhotoImport({
       }
       setPasteHint(t('No image in the clipboard. Copy or snip one first.'));
     } catch {
-      setPasteHint('Clipboard access was blocked. Press Ctrl+V instead.');
+      setPasteHint(t('Clipboard access was blocked. Press Ctrl+V instead.'));
     }
   };
 

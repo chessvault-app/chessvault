@@ -1616,6 +1616,8 @@ export const ko: Record<string, string> = {
   // --- position from an image ----------------------------------------------
   'No image in the clipboard. Copy or snip one first.':
     '클립보드에 이미지가 없습니다. 먼저 복사하거나 캡처해 두세요.',
+  'Clipboard access was blocked. Press Ctrl+V instead.':
+    '클립보드 접근이 막혔습니다. 대신 Ctrl+V를 누르세요.',
   'That drop had no image file.': '놓은 파일 중에 이미지가 없습니다.',
   'Set up by hand': '직접 만들기',
   'Load into the editor': '편집기로 불러오기',
