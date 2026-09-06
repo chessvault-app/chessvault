@@ -5,7 +5,13 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.8.5
+
+A new mark: a knight's head drawn as one line, on the sidebar, every
+icon, the browser tab and the splash screens. Beside it, Khaki and Tan
+board colours, a switch for every card on home with the arrangement kept
+per device, a skip link that shows only for the keyboard, and Korean
+names for the three board colours that lacked one.
 
 - **A new mark: a knight's head as one line.** The hexagon is replaced
   everywhere it appeared: the sidebar, the home header, the lock screen,
@@ -19,6 +25,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **Two more board colours: Khaki and Tan.** Both put a near-white light
   square against a khaki grey or a tan, so the dark square carries all
   the colour. Settings → Appearance → Board.
+
+- **Three board colours have their Korean names.** Rosewood, Paper and
+  ink and Charcoal had no dictionary entry, so the Korean picker showed
+  three English names among nine Korean ones.
 
 - **Every card on home has a switch, and the arrangement is per device.**
   "Customise home" offered switches for Continue and the setup checklist
