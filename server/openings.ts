@@ -1,10 +1,11 @@
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import { parseSan } from 'chessops/san';
 import { DATA_OPENINGS, REPO_ROOT } from './paths.ts';
+import { writeAtomic } from './atomic.ts';
 import { BOOK_SCHEMA_VERSION, hashSetup } from '../shared/zobrist.ts';
 
 /**
@@ -93,7 +94,10 @@ function compileOpenings(): { file: OpeningsFile; lines: number; collisions: num
 export function writeOpenings(): { path: string; count: number; lines: number; collisions: number } {
   const { file, lines, collisions } = compileOpenings();
   mkdirSync(dirname(DATA_OPENINGS), { recursive: true });
-  writeFileSync(DATA_OPENINGS, JSON.stringify(file));
+  // Atomic, because loadIndex trusts whatever sits at this path: a
+  // process that died mid-write used to leave a truncated file that every
+  // later boot parsed, threw on, and reported as a failed collection list.
+  writeAtomic(DATA_OPENINGS, JSON.stringify(file));
   return { path: DATA_OPENINGS, count: file.count, lines, collisions };
 }
 
@@ -105,6 +109,18 @@ let cache: {
 /** One failure is enough: without this, a missing TSV would be re-read, and
     re-fail, on every explorer request for the life of the process. */
 let unbuildable = false;
+
+/** The index file as it is, or null when it is missing or damaged. */
+function readIndex(): OpeningsFile | null {
+  try {
+    const parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as Partial<OpeningsFile> | null;
+    return parsed && typeof parsed.byKey === 'object' && parsed.byKey !== null
+      ? (parsed as OpeningsFile)
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The loaded index — names AND membership. Backed by data/openings.json,
@@ -131,21 +147,27 @@ function loadIndex(): { byKey: OpeningsFile['byKey']; members: Set<string> } | n
     }
   }
   if (!cache || cache.mtimeMs !== mtimeMs) {
-    let parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as OpeningsFile;
-    if (!parsed.memberKeys && !unbuildable) {
-      // An index from before membership existed. If the TSVs are gone the
-      // old file still answers names; membership then degrades to the
-      // terminal positions it has, rather than to nothing.
+    let parsed = readIndex();
+    if ((parsed === null || !parsed.memberKeys) && !unbuildable) {
+      // An index from before membership existed, or one that does not
+      // parse (a write that was cut off, a hand edit). If the TSVs are
+      // gone an old file still answers names; membership then degrades
+      // to the terminal positions it has, rather than to nothing.
+      const why = parsed === null ? 'unreadable' : 'without the membership set';
       try {
         writeOpenings();
-        console.log(`openings: recompiled ${DATA_OPENINGS} with the membership set`);
+        console.log(`openings: recompiled ${DATA_OPENINGS}, which was ${why}`);
         mtimeMs = statSync(DATA_OPENINGS).mtimeMs;
-        parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as OpeningsFile;
+        parsed = readIndex();
       } catch (error) {
         unbuildable = true;
-        console.warn(`openings: stale index kept, none could be rebuilt (${(error as Error).message})`);
+        console.warn(`openings: index ${why}, none could be rebuilt (${(error as Error).message})`);
       }
     }
+    // Still nothing readable: the last good index if this process had
+    // one, else no names. Never a throw, which took the routes that
+    // name openings down with it.
+    if (parsed === null) return cache;
     cache = {
       mtimeMs,
       byKey: parsed.byKey,

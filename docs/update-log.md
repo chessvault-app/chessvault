@@ -55,6 +55,15 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   and showed the error page. The segment is now taken as written, so
   the page asks for that document and reports that it is not there.
 
+- **A damaged opening index rebuilds itself.** The server compiles its
+  opening names into one file on first use, and a server that died in
+  the middle of that write left a cut-off file behind. Every boot after
+  that read it, failed on it, and the Games page reported the vault
+  server unreachable while it was running fine. The file is now written
+  whole or not at all, and one that does not read is recompiled on the
+  spot, or, if the catalogue it comes from is gone too, left out so the
+  games list still loads without opening names.
+
 ## 0.8.3
 
 The puzzle dashboard leads with its one button and tells the truth
