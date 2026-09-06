@@ -8,8 +8,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 ## Unreleased
 
 The repertoire drill shows a gap in amber with the reply drawn on the
-board, and the puzzle dashboard's attempt log scrolls with the page.
-Seven fixes beside them: a comment keeps its paragraphs across a reload,
+board, the opening map marks the opponent's replies with a centre dot,
+and the puzzle dashboard's attempt log scrolls with the page. Seven
+fixes beside them: a comment keeps its paragraphs across a reload,
 the error page clears when the address changes, a mistyped link lands
 on "no such document" instead of that page, a damaged opening index
 rebuilds itself rather than taking the games list down, the window
@@ -25,6 +26,14 @@ Position window on an iPad comes back whole and leaves without a trace.
   unanswered reply is drawn on the board as an arrow while the line
   goes on, and it enters the moves panel as a variation beside the
   reply that was played, with its share of games as the comment.
+
+- **The opening map says whose ply a dot is.** Every dot on the
+  opponent's plies carries a small centre dot in the board's dark colour:
+  each reply on the White map, each of White's moves on the Black map.
+  Your own moves are plain. Nothing else on the dot moved: the fill, the
+  dashed rim, the depth arc and the corner badges keep their meanings,
+  and the centre was the one spot none of them used, so a lit line now
+  reads as alternating layers instead of a run of equal beads.
 
 - **One scrollbar on the puzzle dashboard.** From a laptop's width up
   the attempt log was a 384px well with a scroller of its own, inside

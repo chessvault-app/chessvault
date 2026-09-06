@@ -1030,6 +1030,8 @@ export function MapCanvas({
             const cov = coverage?.get(id);
             // A node no study covers is a plan, and draws hollow.
             const planned = !isRoot && !invalid && coverage !== undefined && !cov?.covered;
+            // Odd plies are White's. The opponent's side is the one the map is not for.
+            const theirs = !isRoot && !invalid && facts.ply % 2 === (map.color === 'white' ? 0 : 1);
             const move = isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
             const caption = invalid
               ? t('Not a legal move here')
@@ -1238,6 +1240,24 @@ export function MapCanvas({
                   strokeWidth={selected ? 2 : 1.2}
                   strokeDasharray={planned && !selected ? '3 3' : undefined}
                 />
+                {/* Whose ply: the opponent's replies carry a centre dot in the
+                    board's dark colour, so the two layers of a line can be told
+                    apart at a glance. "Opponent" follows the map's colour, so
+                    on the Black map it is White's moves that carry it. The
+                    centre is the one spot no other mark uses: fills, strokes
+                    and the depth arc all live on the rim, the badges on the
+                    corners. It does not fade with zoom, since it is a shape
+                    cue rather than a detail. */}
+                {theirs && (
+                  <circle
+                    cx={0}
+                    cy={0}
+                    r={r * 0.42}
+                    fill="var(--board-dark)"
+                    fillOpacity={planned ? 0.6 : 1}
+                    pointerEvents="none"
+                  />
+                )}
                 {/* Held: a finger has picked the dot up and it moves with
                     the finger now. A ring outside everything else the dot
                     wears, in the foreground colour so it reads on any

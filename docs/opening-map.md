@@ -31,6 +31,12 @@ position. It can carry:
   in words: "Prepared to move 7, target 12".
 - A free-text **note**.
 
+Every dot on the opponent's plies carries a centre dot in the board's dark
+colour: on the White map that is every reply, on the Black map every move
+White makes. Your own moves are plain. The rim still says what it always
+said (planned, covered, on the lit line), so the centre is the one mark that
+says whose turn the position was.
+
 A node with no linked studies is a *plan* — drawn dashed — which is how the
 map shows the difference between "I intend to meet 1...c6" and "I have
 something prepared against it".
