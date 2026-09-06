@@ -3,9 +3,9 @@
  * puzzle trainer is set to, and the study the repertoire driller was last
  * run on.
  *
- * Shared for the same reason homeLayout is: the route that writes it into
- * config.json, the demo's stand-in for that route, and the pages that read
- * it must agree about what a stored value is.
+ * Shared because the route that writes it into config.json, the demo's
+ * stand-in for that route, and the pages that read it must agree about
+ * what a stored value is.
  *
  * In the vault rather than in a browser because it describes this vault's
  * chess, not this screen — a phone and a desktop opening the same vault

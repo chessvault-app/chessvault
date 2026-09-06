@@ -6,7 +6,6 @@ import { Hono } from 'hono';
 import {APP_VERSION, LOOPBACK_ONLY, VAULT, VAULT_CONFIG} from './paths.ts';
 import { revokeAllSessions } from './auth.ts';
 import { hashPassword, verifyPassword } from './password.ts';
-import { normaliseHomeLayout } from '../shared/homeLayout.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 import { DEFAULT_TABLEBASE, normaliseTablebaseUrl, readTablebaseConfig } from './tablebase.ts';
@@ -46,10 +45,6 @@ interface Config {
       folder should agree about what it is called. Absent means the folder
       name stands in. */
   name?: string;
-  /** How this vault's home page is arranged — see shared/homeLayout.ts.
-      Absent means nobody has ever said, which is not the same as having
-      asked for nothing. */
-  home?: unknown;
   /** Puzzle difficulty and the last drilled study — see shared/training.ts.
       Chess, not screen, so it belongs to the vault and follows you between
       devices. */
@@ -132,9 +127,6 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
           sameMachine,
         };
       })(),
-      // Normalised on the way out as well as in: a config edited by hand
-      // must not be able to hand the page something it cannot draw.
-      home: normaliseHomeLayout(config.home),
       training: normaliseTraining(config.training),
       vaultPath: vaultDir,
       name: cleanName(config.name) ?? null,
@@ -179,37 +171,12 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     return c.json({ ok: true });
   });
 
-  // --- home page -----------------------------------------------------------
-  // Which destinations home leads with, in which order, and whether its two
-  // cards are drawn. In the vault rather than in a browser because it
-  // describes this vault's chess, not this screen: a phone and a desktop
-  // opening the same vault should agree about where things are.
-
-  api.put('/settings/home', async (c) => {
-    const layout = normaliseHomeLayout(await c.req.json().catch(() => null));
-    if (!layout) return c.json({ error: 'invalid home layout' }, 400);
-    writeConfig((config) => {
-      config.home = layout;
-    });
-    return c.json({ ok: true });
-  });
-
-  // Reset. Deleting rather than writing today's defaults back is what keeps
-  // "never customised" reachable — and a vault in that state inherits a
-  // later version's defaults instead of being frozen at the arrangement
-  // that happened to be current the day the button was pressed.
-  api.delete('/settings/home', (c) => {
-    writeConfig((config) => {
-      delete config.home;
-    });
-    return c.json({ ok: true });
-  });
-
   // --- training ------------------------------------------------------------
   // The puzzle trainer's difficulty and the last drilled study. In the vault
-  // for the same reason the home layout is: it describes this vault's chess
-  // rather than one screen, so picking Hard on the desktop is still Hard on
-  // the phone.
+  // because it describes this vault's chess rather than one screen, so
+  // picking Hard on the desktop is still Hard on the phone. (The home
+  // page's arrangement is the opposite case and lives on the device: a
+  // phone's home is its navigation and a desktop's is a dashboard.)
 
   /**
    * A PATCH, not a replacement.

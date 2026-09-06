@@ -12,12 +12,11 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
-import { api, apiErrorMessage } from '@/lib/api';
+import { api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
@@ -30,7 +29,14 @@ import { useDifficultyWord } from '@/puzzles/bands';
 import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
-import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
+import {
+  cardOn,
+  chartedMoves,
+  launcherColumns,
+  normaliseHomeLayout,
+  resolveHomeLayout,
+  type HomeLayout,
+} from './layout';
 import {
   checklistReservation,
   continueReservation,
@@ -58,7 +64,7 @@ const CustomiseDialog = lazy(() =>
  * this screen IS the navigation. The two rows of destinations are not
  * written here: they come from the catalogue in `destinations.ts`,
  * arranged by `layout.ts`, and which of them are tiles is a property of
- * the vault, not of this file.
+ * this device, not of this file.
  *
  * From md the sidebar is on screen carrying every destination, so home
  * stopped offering navigation there at all (it drew the same list twice,
@@ -165,10 +171,10 @@ interface HomeData {
  * Where the checklist's dismissal used to live, before it could be
  * switched back on.
  *
- * Read once per device and then deleted: a dismissal made under the old
- * behaviour is honoured by writing it into the vault, so nobody's X is
- * undone — but there is exactly one source of truth afterwards. Deletable
- * a release or two from now, along with the branch that reads it.
+ * Read once and then deleted: a dismissal made under the old behaviour is
+ * honoured by writing it into the layout, so nobody's X is undone, but
+ * there is exactly one source of truth afterwards. Deletable a release or
+ * two from now, along with the branch that reads it.
  */
 const CHECKLIST_KEY = 'vault:home-checklist-dismissed';
 /** Last launch's Continue card, as a shape — the layout reservation. See
@@ -185,27 +191,44 @@ const DASH_KEY = 'vault:home-dash';
     and the only one on this page that a phone reserves too. */
 const CHECKLIST_SHOWN_KEY = 'vault:home-checklist-shown';
 /**
- * The last layout this device saw, kept only so the first paint draws the
- * page you actually have rather than the default one.
+ * This device's arrangement of the page: the authority, not a hint.
  *
- * A paint hint and never the authority — the same bargain, and the same
- * honesty, as CONTINUE_KEY: the vault decides, this is overwritten by
- * whatever it says, and a device that has never opened this vault shows
- * the defaults until the answer arrives.
+ * It used to be the echo of what the vault stored under config.json's
+ * `home`, kept so the first paint would not be a rearrangement, and the
+ * vault's answer overwrote it a beat later. The vault is not asked any
+ * more (layout.ts says why the page is a screen's business), and because
+ * the echo was written under this same key, every device that had opened
+ * a vault kept the arrangement it was showing. Null means this device has
+ * never customised home and takes the defaults.
  */
 const LAYOUT_KEY = 'vault:home-layout';
 
-const readEcho = (): HomeLayout | null => {
-  try {
-    return normaliseHomeLayout(JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? 'null'));
-  } catch {
-    return null;
-  }
-};
-
-const writeEcho = (layout: HomeLayout | null): void => {
+const writeLayout = (layout: HomeLayout | null): void => {
   if (layout === null) localStorage.removeItem(LAYOUT_KEY);
   else localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+};
+
+const readLayout = (): HomeLayout | null => {
+  try {
+    const stored = normaliseHomeLayout(JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? 'null'));
+    if (stored !== null) return stored;
+  } catch {
+    // Not a layout: the defaults, below.
+  }
+  // Dismissed before there was any way to bring the checklist back. Moved
+  // into the layout once, with the defaults written down around it.
+  if (localStorage.getItem(CHECKLIST_KEY) === '1') {
+    const defaults = resolveHomeLayout(null, HOME_DESTINATIONS);
+    const migrated: HomeLayout = {
+      tiles: defaults.tiles.map((entry) => entry.id),
+      hidden: defaults.hidden.map((entry) => entry.id),
+      off: ['checklist'],
+    };
+    writeLayout(migrated);
+    localStorage.removeItem(CHECKLIST_KEY);
+    return migrated;
+  }
+  return null;
 };
 
 /** The list inside a studies-API answer (the notes and games endpoints
@@ -517,15 +540,10 @@ const PHONE_GAMES = 3;
 
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
-  // What the vault says the page looks like; null until it has ever been
-  // said. Seeded from the echo so the first paint is not a rearrangement.
-  const [layout, setLayout] = useState<HomeLayout | null>(readEcho);
+  // What this device says the page looks like; null until it has ever
+  // been said. Read synchronously, so the first paint is the page you have.
+  const [layout, setLayout] = useState<HomeLayout | null>(readLayout);
   const [editing, setEditing] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  /** The last arrangement the server confirmed — where a failed save goes back to. */
-  const confirmed = useRef<HomeLayout | null>(null);
-  /** Which save is the current one, so a slow failure cannot undo a newer press. */
-  const attempt = useRef(0);
   // What the Continue card was LAST launch, so this launch can reserve its
   // space before the data returns. Without it the card popped in a beat
   // after first paint and pushed the whole page down — the most visible
@@ -533,13 +551,6 @@ export function HomePage() {
   // launch; a device with no memory of this vault reserves the floor every
   // vault has (reservation.ts), and only a vault that was seen to have no
   // card reserves nothing.
-  //
-  // One case it cannot see, and it is the layout echo's blindness rather
-  // than this one's: somebody who switched Continue OFF, met on a device
-  // that has never opened the vault, gets the floor drawn and then taken
-  // away. `effective.continueCard` reads the same empty localStorage the
-  // tiles do, so that device draws the default page until the vault
-  // answers — of which this card is one part.
   const [reserved] = useState(() => continueReservation(localStorage.getItem(CONTINUE_KEY)));
   // And what the dashboard grid below was, on the same terms. Read once at
   // mount like the card's: a reservation that changed while the answer was
@@ -577,9 +588,9 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
-    // Navigating away mid-flight: React 18 makes the setStates no-ops, but
-    // the echo and checklist-flag writes below are not React's to drop, so
-    // everything after the await is skipped once the page is gone.
+    // Navigating away mid-flight: React 18 makes the setStates no-ops, and
+    // `live` keeps everything after the await from running once the page
+    // is gone.
     let live = true;
     const grab = async (url: string): Promise<unknown> => {
       try {
@@ -623,38 +634,6 @@ export function HomePage() {
         user?: { attempts?: number; wins?: number };
       } | null;
       const profile = (settings as { profile?: { chesscom?: string; lichess?: string } })?.profile;
-
-      // The arrangement, from the same answer the profile came in. The
-      // echo is corrected to whatever the vault says, including to nothing
-      // when the vault says it was never customised.
-      const stored = normaliseHomeLayout((settings as { home?: unknown } | null)?.home);
-      confirmed.current = stored;
-      setLayout(stored);
-      writeEcho(stored);
-      if (stored !== null) {
-        // The vault has an opinion, so the old per-device flag is stale by
-        // definition: applying it could undo a checklist switched back on
-        // somewhere else.
-        localStorage.removeItem(CHECKLIST_KEY);
-      } else if (localStorage.getItem(CHECKLIST_KEY) === '1' && settings !== null) {
-        // Dismissed before there was any way to bring it back. Move that
-        // into the vault once — and only drop the flag when the write
-        // lands, so a failed migration simply happens next launch.
-        const migrated: HomeLayout = {
-          tiles: resolveHomeLayout(null, HOME_DESTINATIONS).tiles.map((entry) => entry.id),
-          hidden: [],
-          continueCard: true,
-          checklist: false,
-        };
-        setLayout(migrated);
-        writeEcho(migrated);
-        void api('/api/settings/home', { method: 'PUT', json: migrated })
-          .then(() => {
-            confirmed.current = migrated;
-            localStorage.removeItem(CHECKLIST_KEY);
-          })
-          .catch(() => {});
-      }
       const total = (n: number | undefined): TileFigure | undefined =>
         n === undefined ? undefined : { n, kind: 'total' };
       const counts: Partial<Record<HomeCount, TileFigure>> = {
@@ -726,33 +705,12 @@ export function HomePage() {
     };
   }, []);
 
-  /**
-   * Apply now, store next — and put it back if the vault disagrees.
-   *
-   * The press has to land immediately or reordering is unusable, but the
-   * vault is what the page IS: a change that failed to save and stayed on
-   * screen would be a lie until the next reload. So a failure reverts to
-   * the last arrangement the server confirmed and says why. `attempt`
-   * keeps a slow failure from undoing a press made after it.
-   */
+  /** Apply and store, in one press. Reset removes the stored value rather
+      than writing today's defaults, so a device put back to default is a
+      device that never chose, and inherits a later version's defaults. */
   const save = (next: HomeLayout | null): void => {
-    const mine = ++attempt.current;
     setLayout(next);
-    writeEcho(next);
-    setSaveError(null);
-    void (async () => {
-      try {
-        // Reset DELETEs rather than storing today's defaults, so a vault
-        // put back to default is a vault that never chose.
-        await api('/api/settings/home', next === null ? { method: 'DELETE' } : { method: 'PUT', json: next });
-        if (mine === attempt.current) confirmed.current = next;
-      } catch (e) {
-        if (mine !== attempt.current) return;
-        setLayout(confirmed.current);
-        writeEcho(confirmed.current);
-        setSaveError(apiErrorMessage(e));
-      }
-    })();
+    writeLayout(next);
   };
 
 
@@ -762,14 +720,16 @@ export function HomePage() {
   // still reach it, which is what makes hiding a preference rather than a
   // way to lose a page.
   const { tiles, launchers, hidden } = resolveHomeLayout(layout, HOME_DESTINATIONS);
-  // The arrangement as an edit would have to state it: a vault that has
+  // The arrangement as an edit would have to state it: a device that has
   // never been customised is its defaults, written down.
   const effective: HomeLayout = {
     tiles: tiles.map((entry) => entry.id),
     hidden: hidden.map((entry) => entry.id),
-    continueCard: layout?.continueCard !== false,
-    checklist: layout?.checklist !== false,
+    off: layout?.off ?? [],
   };
+  /** Whether a card is switched on. Every panel below, and every
+      placeholder that reserves its space, reads its own id here. */
+  const show = (card: string): boolean => cardOn(layout, card);
 
   const continueRows: {
     icon: typeof Grid3x3;
@@ -908,7 +868,7 @@ export function HomePage() {
           },
         ];
   const showChecklist =
-    effective.checklist && data !== null && checklist.some((step) => !step.done);
+    show('checklist') && data !== null && checklist.some((step) => !step.done);
 
   // Whether the Training panel has a single row to offer. Stated once,
   // because the dashboard's "nothing at all" card is the negation of every
@@ -1037,7 +997,7 @@ export function HomePage() {
             skeleton rows — or, on a device that has never opened this
             vault, at the size every vault's welcome study makes — so the
             page does not jump when it fills in. */}
-        {effective.continueCard && data === null && reserved !== null && (
+        {show('continue') && data === null && reserved !== null && (
           <div
             role="status"
             aria-label={t('Loading')}
@@ -1104,7 +1064,7 @@ export function HomePage() {
             ))}
           </div>
         )}
-        {effective.continueCard && (continueRows.length > 0 || boardStudy !== null) && (
+        {show('continue') && (continueRows.length > 0 || boardStudy !== null) && (
           <div
             className={cn(
               'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border',
@@ -1210,7 +1170,7 @@ export function HomePage() {
             where its placeholder stood. A device that has never seen the
             vault reserves none (WELCOME_DASH has no games), which is
             right: a fresh vault has none. */}
-        {dash === null && reservedDash !== null && reservedDash.games > 0 && (
+        {show('games') && dash === null && reservedDash !== null && reservedDash.games > 0 && (
           <div role="status" aria-label={t('Loading')} aria-live="polite" className="mb-4 md:hidden">
             <PlaceholderPanel
               title={t('Recent games')}
@@ -1219,7 +1179,7 @@ export function HomePage() {
             />
           </div>
         )}
-        {dash !== null && dash.recentGames.length > 0 && (
+        {show('games') && dash !== null && dash.recentGames.length > 0 && (
           <RecentGamesCard
             games={dash.recentGames.slice(0, PHONE_GAMES)}
             total={dash.gamesTotal}
@@ -1233,7 +1193,7 @@ export function HomePage() {
             reserves nothing: unlike Continue and the grid, this card is
             the one thing on the page that a settled vault has finished
             with for good (reservation.ts). */}
-        {data === null && reservedChecklist && (
+        {show('checklist') && data === null && reservedChecklist && (
           <div
             role="status"
             aria-label={t('Loading')}
@@ -1261,10 +1221,10 @@ export function HomePage() {
                 size="icon-sm"
                 className="-my-1 -mr-1.5"
                 title={t('Hide this checklist')}
-                // Hidden in the vault now, not on this device — and the
-                // customise sheet can bring it back, which is what the old
-                // localStorage flag made impossible.
-                onClick={() => save({ ...effective, checklist: false })}
+                // Switched off in the layout, where the customise sheet
+                // can bring it back, which is what the old dismissal flag
+                // made impossible.
+                onClick={() => save({ ...effective, off: [...effective.off, 'checklist'] })}
               >
                 <X className="size-3" />
               </Button>
@@ -1451,16 +1411,16 @@ export function HomePage() {
             aria-live="polite"
             className="grid gap-3 max-md:hidden lg:grid-cols-2"
           >
-            {reservedDash.training > 0 && (
+            {show('training') && reservedDash.training > 0 && (
               <PlaceholderPanel title={t('Training')} rows={reservedDash.training} />
             )}
-            {reservedDash.games > 0 && (
+            {show('games') && reservedDash.games > 0 && (
               <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} />
             )}
-            {reservedDash.books > 0 && (
+            {show('books') && reservedDash.books > 0 && (
               <PlaceholderPanel title={t('Puzzle books')} rows={reservedDash.books} books />
             )}
-            {reservedDash.docs > 0 && (
+            {show('work') && reservedDash.docs > 0 && (
               <PlaceholderPanel title={t('Recent work')} rows={reservedDash.docs} />
             )}
           </div>
@@ -1475,7 +1435,7 @@ export function HomePage() {
             with nothing at all says so once, in one card. */}
         {data !== null && dash !== null && (
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
-            {showTraining && (
+            {show('training') && showTraining && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Training')}
@@ -1529,11 +1489,11 @@ export function HomePage() {
               </div>
             )}
 
-            {dash.recentGames.length > 0 && (
+            {show('games') && dash.recentGames.length > 0 && (
               <RecentGamesCard games={dash.recentGames} total={dash.gamesTotal} />
             )}
 
-            {data.books.length > 0 && (
+            {show('books') && data.books.length > 0 && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Puzzle books')}
@@ -1572,7 +1532,7 @@ export function HomePage() {
               </div>
             )}
 
-            {data.recentDocs.length > 0 && (
+            {show('work') && data.recentDocs.length > 0 && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
                 <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Recent work')}
@@ -1603,10 +1563,14 @@ export function HomePage() {
               </div>
             )}
 
-            {!showTraining &&
-              dash.recentGames.length === 0 &&
-              data.books.length === 0 &&
-              data.recentDocs.length === 0 && (
+            {/* Only when a panel that is switched ON has nothing to say. A
+                dashboard somebody switched off entirely is a preference,
+                and an empty state under it would be a nag. */}
+            {(show('training') || show('games') || show('books') || show('work')) &&
+              !(show('training') && showTraining) &&
+              !(show('games') && dash.recentGames.length > 0) &&
+              !(show('books') && data.books.length > 0) &&
+              !(show('work') && data.recentDocs.length > 0) && (
                 <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border lg:col-span-2">
                   <EmptyState
                     icon={Folder}
@@ -1647,22 +1611,18 @@ export function HomePage() {
         </div>
         )}
 
-        {/* The sheet edits the PHONE's arrangement (its grid and row are
-            drawn nowhere from md), which is why it shows both groups
-            rather than describing them — on a desktop they are not on
-            screen behind it at all. The two card switches still apply at
-            every width. */}
+        {/* The sheet's destination groups edit the PHONE's arrangement (its
+            grid and row are drawn nowhere from md), which is why it shows
+            both groups rather than describing them: on a desktop they are
+            not on screen behind it at all. The card switches apply at
+            whichever width draws the card. */}
         {editing && (
           <Suspense fallback={null}>
             <CustomiseDialog
               layout={effective}
               onChange={save}
               onReset={() => save(null)}
-              onClose={() => {
-                setEditing(false);
-                setSaveError(null);
-              }}
-              error={saveError}
+              onClose={() => setEditing(false)}
             />
           </Suspense>
         )}

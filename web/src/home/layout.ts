@@ -1,4 +1,173 @@
-import type { HomeLayout } from '@shared/homeLayout';
+/**
+ * How a device stores the arrangement of its home page.
+ *
+ * Per device, in localStorage, and deliberately not in the vault: the
+ * page is a screen's business. A phone's home is its navigation and a
+ * desktop's is a dashboard beside a sidebar, and one arrangement that has
+ * to suit both is the wrong one for at least one of them. The vault used
+ * to hold this (config.json's `home`), and every device already kept an
+ * echo of the vault's answer under the same key it reads now, so nothing
+ * anybody arranged was lost when the vault stopped being asked.
+ *
+ * Deliberately, nothing in the normaliser knows which destinations or
+ * cards exist. Those lists are this build's, and they grow when a panel
+ * is added; a stored layout that named everything would let an older
+ * build's layout silently amputate a newer one's page. So it validates
+ * SHAPE, a list of plausible ids per field, and the page that renders it
+ * ignores the ids it does not recognise.
+ */
+
+export interface HomeLayout {
+  /** Entry ids drawn as tiles, in order. Anything listed in neither this
+      nor `hidden` is drawn as a button in the row underneath. */
+  tiles: string[];
+  /** Entry ids drawn nowhere on home at all.
+   *
+   * Opt-in and listed one by one, never "everything unmentioned": a
+   * destination this build has not heard of is in neither list and must
+   * still appear, so a layout stored by an older build cannot hide a
+   * page it was never told about.
+   *
+   * Home is not the only way anywhere, since the sidebar and More reach
+   * every destination, so an empty home is a preference rather than a
+   * way to strand a page. */
+  hidden: string[];
+  /** Card ids switched off, on the same opt-in terms as `hidden`: a card
+      this layout has never heard of is drawn. */
+  off: string[];
+}
+
+/** Thirteen destinations and six cards exist; the cap is only there so a
+    hand-edited value cannot make the page arbitrarily long. */
+export const MAX_HOME_TILES = 40;
+export const MAX_HOME_ID = 64;
+
+const ID = new RegExp(`^[a-z0-9-]{1,${MAX_HOME_ID}}$`);
+
+/** A list of ids, deduplicated, or null if it is not one. */
+function idList(raw: unknown): string[] | null {
+  if (!Array.isArray(raw) || raw.length > MAX_HOME_TILES) return null;
+  const out: string[] = [];
+  for (const id of raw) {
+    if (typeof id !== 'string' || !ID.test(id)) return null;
+    // First position wins. A repeat is a value somebody edited by hand,
+    // and dropping it beats drawing the same tile twice.
+    if (!out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+/**
+ * Anything at all → a layout, or null if it is not one.
+ *
+ * Null means "this device has never customised home", and that is NOT
+ * the same as a layout with no tiles: someone who switches every tile off
+ * has said something, and gets an empty grid. Keeping the two apart is
+ * why resetting DELETES the stored value instead of writing today's
+ * defaults back: a device that has never chosen inherits whatever a later
+ * version ships.
+ *
+ * Two earlier shapes are still read. A layout stored before hiding
+ * existed has no `hidden`, and one stored before the cards were a list
+ * says `continueCard: false` or `checklist: false` instead of naming them
+ * in `off`. Absent is empty, not invalid, in both cases: rejecting either
+ * would reset a page somebody had already arranged.
+ */
+export function normaliseHomeLayout(input: unknown): HomeLayout | null {
+  if (input === null || typeof input !== 'object') return null;
+  const raw = input as Record<string, unknown>;
+  const tiles = idList(raw.tiles);
+  if (tiles === null) return null;
+  const hidden = raw.hidden === undefined ? [] : idList(raw.hidden);
+  if (hidden === null) return null;
+  const off = raw.off === undefined ? [] : idList(raw.off);
+  if (off === null) return null;
+  // The two flags only ever turned a card off when they were exactly
+  // false, so that is the only value that carries over.
+  if (raw.continueCard === false && !off.includes('continue')) off.push('continue');
+  if (raw.checklist === false && !off.includes('checklist')) off.push('checklist');
+  return {
+    tiles,
+    // A tile wins: it is the more visible of the two, and a value saying
+    // both is one somebody edited by hand.
+    hidden: hidden.filter((id) => !tiles.includes(id)),
+    off,
+  };
+}
+
+/**
+ * The cards home draws besides the tile grid, in the order the dialog
+ * lists them.
+ *
+ * ONE list, read by the page to decide what to draw and by the customise
+ * dialog to decide what to offer, because the two used to be written
+ * separately and drifted: the dialog offered two switches while the page
+ * had grown four more panels nobody could turn off. A card added to the
+ * page is added here, and the dialog has it the same moment.
+ *
+ * `phone` and `desktop` say where the page draws it, so the dialog can say
+ * so too: a switch for a panel this screen never shows would otherwise
+ * read as broken.
+ */
+export interface HomeCard {
+  id: string;
+  label: string;
+  /** What the card shows, in the dialog's own words. */
+  blurb: string;
+  phone: boolean;
+  desktop: boolean;
+}
+
+export const HOME_CARDS: readonly HomeCard[] = [
+  {
+    id: 'continue',
+    label: 'Continue',
+    blurb: 'Where you left off, above everything else.',
+    phone: true,
+    desktop: true,
+  },
+  {
+    id: 'games',
+    label: 'Recent games',
+    blurb: 'The latest games in your collection, with their results.',
+    phone: true,
+    desktop: true,
+  },
+  {
+    id: 'checklist',
+    label: 'Set up your vault',
+    blurb: 'The first steps for a new vault. It leaves once they are all done.',
+    phone: true,
+    desktop: true,
+  },
+  {
+    id: 'training',
+    label: 'Training',
+    blurb: 'Solved today, and what is due for review.',
+    phone: false,
+    desktop: true,
+  },
+  {
+    id: 'books',
+    label: 'Puzzle books',
+    blurb: 'The books you are in the middle of.',
+    phone: false,
+    desktop: true,
+  },
+  {
+    id: 'work',
+    label: 'Recent work',
+    blurb: 'The studies and notes last touched.',
+    phone: false,
+    desktop: true,
+  },
+];
+
+/** Whether a card is drawn: on unless this layout names it off. A device
+    that has never customised draws every card. */
+export function cardOn(layout: HomeLayout | null, id: string): boolean {
+  return layout === null || !layout.off.includes(id);
+}
 
 /**
  * What home can offer, as ids, and how a stored layout turns into the two
@@ -12,7 +181,7 @@ import type { HomeLayout } from '@shared/homeLayout';
  */
 
 /**
- * Stable ids, stored in the vault. Not `Section` values, and they must not
+ * Stable ids, stored on the device. Not `Section` values, and they must not
  * become them: Board and Explorer are one section (Explorer is the board
  * opened on its explorer pane) and Puzzle books is a param of `puzzles`,
  * so a section cannot name every entry. These ids were already what each
@@ -41,7 +210,7 @@ export const HOME_ENTRY_IDS = [
 export type HomeEntryId = (typeof HOME_ENTRY_IDS)[number];
 
 /**
- * The tiles a vault gets before anyone says otherwise.
+ * The tiles a device gets before anyone says otherwise.
  *
  * Three, and none of them a bottom-bar tab. The grid is drawn only on a
  * phone, where the bar already carries Games, Studies, Notes and
@@ -56,7 +225,7 @@ export type HomeEntryId = (typeof HOME_ENTRY_IDS)[number];
 export const DEFAULT_TILES: readonly HomeEntryId[] = ['board', 'explorer', 'openingmap'];
 
 /**
- * What a never-customised vault keeps off home altogether: the four
+ * What a never-customised device keeps off home altogether: the four
  * destinations the phone's bottom bar is made of. They are not lost, since
  * the bar is where they live, and the customise sheet lists them under
  * "Off the page" with a way back. A stored layout is not touched by this:
@@ -82,8 +251,8 @@ export interface ResolvedHome<T extends { id: string }> {
  * rather than noticed later:
  *
  * - An id this build does not know is dropped, not drawn. Two clients of
- *   different ages share one vault, and the older one must not render a
- *   tile it has no page for.
+ *   different ages take turns on one device, and the older one must not
+ *   render a tile it has no page for.
  * - An entry the stored layout never mentions lands in the launcher row.
  *   A destination added in a later version therefore appears on an old
  *   stored layout instead of vanishing. Hiding is opt-in and by name for

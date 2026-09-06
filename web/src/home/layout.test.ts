@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { normaliseHomeLayout } from '@shared/homeLayout';
 import {
+  cardOn,
   chartedMoves,
   DEFAULT_HIDDEN,
   DEFAULT_TILES,
+  HOME_CARDS,
   HOME_ENTRY_IDS,
   launcherColumns,
+  MAX_HOME_TILES,
+  normaliseHomeLayout,
   resolveHomeLayout,
 } from './layout.ts';
 
@@ -22,6 +25,112 @@ const layout = (
   if (!l) throw new Error('fixture is not a layout');
   return l;
 };
+
+describe('normaliseHomeLayout', () => {
+  it('accepts a layout and reads absent lists as empty', () => {
+    expect(normaliseHomeLayout({ tiles: ['games', 'studies'] })).toEqual({
+      tiles: ['games', 'studies'],
+      hidden: [],
+      off: [],
+    });
+  });
+
+  it('reads a layout stored before hiding existed as hiding nothing', () => {
+    // Absent is empty, not invalid: rejecting the field's absence would
+    // reset every page arranged before it shipped.
+    expect(normaliseHomeLayout({ tiles: ['games'] })?.hidden).toEqual([]);
+  });
+
+  it('keeps a hidden list, and holds it to the shape the tiles are held to', () => {
+    expect(normaliseHomeLayout({ tiles: [], hidden: ['games', 'notes'] })?.hidden).toEqual([
+      'games',
+      'notes',
+    ]);
+    expect(normaliseHomeLayout({ tiles: [], hidden: 'games' })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: [], hidden: ['has space'] })).toBeNull();
+    expect(
+      normaliseHomeLayout({ tiles: [], hidden: Array.from({ length: 41 }, (_, i) => `t${i}`) }),
+    ).toBeNull();
+  });
+
+  it('keeps the cards switched off, on the same terms', () => {
+    expect(normaliseHomeLayout({ tiles: [], off: ['training', 'work'] })?.off).toEqual([
+      'training',
+      'work',
+    ]);
+    expect(normaliseHomeLayout({ tiles: [], off: 'training' })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: [], off: ['Training'] })).toBeNull();
+  });
+
+  it('reads the two flags a layout used to carry as cards switched off', () => {
+    // What every device stored before the cards were a list. Only an
+    // exact false ever turned a card off, so only that carries over.
+    expect(normaliseHomeLayout({ tiles: [], continueCard: false, checklist: false })?.off).toEqual([
+      'continue',
+      'checklist',
+    ]);
+    expect(normaliseHomeLayout({ tiles: [], checklist: false, off: ['checklist'] })?.off).toEqual([
+      'checklist',
+    ]);
+    expect(normaliseHomeLayout({ tiles: [], checklist: 'no', continueCard: 0 })?.off).toEqual([]);
+  });
+
+  it('lets a tile win over hiding the same id', () => {
+    // Both is a value somebody edited by hand, and a tile is the more
+    // visible of the two answers.
+    const l = normaliseHomeLayout({ tiles: ['games'], hidden: ['games', 'notes'] });
+    expect(l?.tiles).toEqual(['games']);
+    expect(l?.hidden).toEqual(['notes']);
+  });
+
+  it('keeps an empty tile list, which is not the same as never having chosen', () => {
+    // The distinction the whole feature rests on: null means "this device
+    // has never customised home" and takes the defaults; [] means somebody
+    // switched every tile off and gets an empty grid.
+    expect(normaliseHomeLayout({ tiles: [] })?.tiles).toEqual([]);
+  });
+
+  it('drops a repeated id at its later position', () => {
+    expect(normaliseHomeLayout({ tiles: ['games', 'notes', 'games'] })?.tiles).toEqual([
+      'games',
+      'notes',
+    ]);
+  });
+
+  it('keeps an id this build has never heard of', () => {
+    // The normaliser is not the catalogue: a newer build may store a
+    // destination this one has no page for, and amputating it here would
+    // lose it for the build that does.
+    expect(normaliseHomeLayout({ tiles: ['tv'] })?.tiles).toEqual(['tv']);
+  });
+
+  it('refuses anything that is not a layout', () => {
+    expect(normaliseHomeLayout(null)).toBeNull();
+    expect(normaliseHomeLayout('games')).toBeNull();
+    expect(normaliseHomeLayout(42)).toBeNull();
+    expect(normaliseHomeLayout({})).toBeNull();
+    expect(normaliseHomeLayout({ tiles: 42 })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: [7] })).toBeNull();
+  });
+
+  it('refuses ids that are not ids, and lists that are not lists of them', () => {
+    expect(normaliseHomeLayout({ tiles: ['has space'] })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: ['../etc'] })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: ['Games'] })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: ['x'.repeat(65)] })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: Array.from({ length: MAX_HOME_TILES + 1 }, () => 'a') })).toBeNull();
+  });
+});
+
+describe('cardOn', () => {
+  it('draws every card for a device that never chose, and every card not named off', () => {
+    expect(cardOn(null, 'training')).toBe(true);
+    expect(cardOn(layout([]), 'training')).toBe(true);
+    // A card this layout predates is drawn: off is opt-in and by name.
+    expect(cardOn(normaliseHomeLayout({ tiles: [], off: ['training'] }), 'work')).toBe(true);
+    expect(cardOn(normaliseHomeLayout({ tiles: [], off: ['training'] }), 'training')).toBe(false);
+  });
+});
 
 describe('resolveHomeLayout', () => {
   it('takes the defaults when the vault has never been customised', () => {
@@ -173,5 +282,10 @@ describe('the catalogue itself', () => {
 
   it('has no repeated id', () => {
     expect(new Set(HOME_ENTRY_IDS).size).toBe(HOME_ENTRY_IDS.length);
+    expect(new Set(HOME_CARDS.map((c) => c.id)).size).toBe(HOME_CARDS.length);
+  });
+
+  it('draws every card somewhere', () => {
+    for (const card of HOME_CARDS) expect(card.phone || card.desktop).toBe(true);
   });
 });

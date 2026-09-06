@@ -6,7 +6,6 @@ import { registerDiagram } from '../puzzles/books/localDiagrams.ts';
 import { haveVersions, runHistory, setHistoryRoot } from './nodeShim/history.ts';
 import { vaultHistoryApi } from '../../../server/vaultHistory.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
-import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { normaliseTraining, type Training } from '@shared/training';
 import { mountVault } from '../../../server/mountVault.ts';
 import { puzzleBooksApi } from '../../../server/puzzlebooks.ts';
@@ -118,18 +117,14 @@ function buildApp(): Hono {
    * module reaches for node:child_process and node:crypto, which the demo
    * config does not shim.
    *
-   * Home's arrangement is the exception it has to answer for real, or the
-   * customise sheet would be a control that does nothing in the app most
-   * people meet first. It lives in a variable for the life of the tab —
-   * the same promise the demo banner already makes about every edit made
-   * here — and is validated by the shared normaliser, so the demo cannot
-   * accept a layout the real route would refuse.
-   *
-   * Training state is here for the same reason: the difficulty picker is
-   * one of the first things a visitor touches, and a route that 404s would
-   * have the trainer quietly disagree with the word the hub shows.
+   * Training state is the one thing it has to answer for real: the
+   * difficulty picker is one of the first things a visitor touches, and a
+   * route that 404s would have the trainer quietly disagree with the word
+   * the hub shows. It lives in a variable for the life of the tab, the
+   * same promise the demo banner already makes about every edit made here.
+   * (Home's arrangement used to be here too; it is per device now and
+   * never asks a server.)
    */
-  let home: HomeLayout | null = null;
   let training: Training = {};
   app.get('/api/settings', (c) =>
     c.json({
@@ -149,7 +144,6 @@ function buildApp(): Hono {
         local: false,
         sameMachine: false,
       },
-      home,
       training,
       vaultPath: 'demo',
       // Never given here: the card that names a vault is one of the ones
@@ -164,16 +158,6 @@ function buildApp(): Hono {
     if (!body || typeof body !== 'object') return c.json({ error: 'invalid training' }, 400);
     // Merged, exactly like the real route: two pages patch this one object.
     training = { ...training, ...normaliseTraining(body) };
-    return c.json({ ok: true });
-  });
-  app.put('/api/settings/home', async (c) => {
-    const next = normaliseHomeLayout(await c.req.json().catch(() => null));
-    if (!next) return c.json({ error: 'invalid home layout' }, 400);
-    home = next;
-    return c.json({ ok: true });
-  });
-  app.delete('/api/settings/home', (c) => {
-    home = null;
     return c.json({ ok: true });
   });
   /**

@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Every card on home has a switch, and the arrangement is per device.**
+  "Customise home" offered switches for Continue and the setup checklist
+  while the page had grown four more panels (Recent games, Training,
+  Puzzle books, Recent work) nobody could turn off. The dialog now lists
+  every card the page can draw, from the same list the page draws from,
+  so the two cannot drift again. The arrangement is stored on the device
+  rather than in the vault: a phone's home is its navigation and a
+  desktop's is a dashboard, and one arrangement for both suited neither.
+  Nothing already arranged is lost, since every device kept a copy of what
+  the vault said, and that copy is what it now reads. The vault's own
+  copy is no longer read or written.
+
 - **The skip link shows only for the keyboard.** "Skip to content", the
   jump past the sidebar that Tab reaches first, used to appear on any
   focus, so when a popup closed after its trigger had gone (a redrawn

@@ -266,8 +266,14 @@ export const ko: Record<string, string> = {
   'Go home': '홈으로',
 
   // --- home, customise -----------------------------------------------------
-  'Switch a destination off to move it to the row below. Hide takes it off the page. The sidebar and the More tab still reach everything.':
-    '스위치를 끄면 아래 줄로 내려가고, 숨기기는 홈에서 뺍니다. 사이드바와 More 탭으로는 모두 그대로 갈 수 있습니다.',
+  'Switch a card off to take it off the page. Switch a destination off to move it to the row below. Hide takes it off the page. The sidebar and the More tab still reach everything.':
+    '카드의 스위치를 끄면 홈에서 사라집니다. 목적지의 스위치를 끄면 아래 줄로 내려가고, 숨기기는 홈에서 뺍니다. 사이드바와 More 탭으로는 모두 그대로 갈 수 있습니다.',
+  Cards: '카드',
+  'Wide screens only.': '넓은 화면에서만 보입니다.',
+  'The latest games in your collection, with their results.': '모음의 최신 게임과 그 결과.',
+  'Solved today, and what is due for review.': '오늘 푼 수와 복습할 것.',
+  'The books you are in the middle of.': '풀고 있는 책.',
+  'The studies and notes last touched.': '마지막으로 만진 스터디와 노트.',
   'Off the page': '홈에서 숨김',
   'Nothing. Every destination is on home.': '없음. 모든 항목이 홈에 있습니다.',
   'Bring back': '되돌리기',

@@ -1,5 +1,4 @@
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
-import type { HomeLayout } from '@shared/homeLayout';
 import { Button } from '@/components/ui/button';
 import { SettingRow } from '@/components/setting-row';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -7,26 +6,32 @@ import { Switch } from '@/components/ui/switch';
 import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination } from './destinations';
-import { resolveHomeLayout } from './layout';
+import { HOME_CARDS, cardOn, resolveHomeLayout, type HomeLayout } from './layout';
 
 /**
  * Rearranging the landing page, from the landing page.
  *
  * A list of settings that applies as you touch it, so it has no Save and
- * no Cancel — Sheet's own X, Escape, the scrim and a phone's swipe are the
- * ways out, and each press is already stored by the time you use one. The
- * one button here is a verb: reset.
+ * no Cancel: the dialog's own X, Escape, the scrim and a phone's swipe are
+ * the ways out, and each press is already stored by the time you use one.
+ * The one button here is a verb: reset.
  *
- * The groups are the point of the design: the list shows where everything
- * IS rather than describing where it would go. Switching a destination off
- * moves it to the row under the grid; hiding takes it off home altogether,
- * into a third group it can be brought back from.
+ * Two halves. The cards come first, one switch each, and the list is
+ * `HOME_CARDS`, the same list the page draws from, so a panel added to
+ * the page is offered here the same moment. The dialog used to write its
+ * own two switches and fell four panels behind the page.
+ *
+ * Then the destinations, in groups, which are the point of the design:
+ * the list shows where everything IS rather than describing where it
+ * would go. Switching a destination off moves it to the row under the
+ * grid; hiding takes it off home altogether, into a third group it can be
+ * brought back from.
  *
  * Hiding used to be refused on the grounds that nothing here should become
  * unreachable, which was the right worry aimed at the wrong page: home is
  * not the only way anywhere. The sidebar reaches every section, More lists
  * the rest, and a book is under Puzzles wherever home puts it. What hiding
- * costs is a shortcut, and a shortcut nobody uses is clutter — so the
+ * costs is a shortcut, and a shortcut nobody uses is clutter, so the
  * third group is the honest place for it, listed by name and one press
  * from coming back.
  *
@@ -39,18 +44,22 @@ export function CustomiseDialog({
   onChange,
   onReset,
   onClose,
-  error,
 }: {
-  /** The arrangement on screen, with its tiles already spelled out — an
-      uncustomised vault arrives here as the defaults written down, so a
-      first edit says what it kept as well as what it changed. */
+  /** The arrangement on screen, with its tiles already spelled out: a
+      never-customised device arrives here as the defaults written down,
+      so a first edit says what it kept as well as what it changed. */
   layout: HomeLayout;
   onChange: (next: HomeLayout) => void;
   onReset: () => void;
   onClose: () => void;
-  error: string | null;
 }) {
   const { tiles, launchers, hidden } = resolveHomeLayout(layout, HOME_DESTINATIONS);
+
+  const toggleCard = (id: string): void =>
+    onChange({
+      ...layout,
+      off: cardOn(layout, id) ? [...layout.off, id] : layout.off.filter((c) => c !== id),
+    });
 
   // Promoting also un-hides: the grid is the most visible place there is,
   // so asking for it cannot leave the entry listed as off the page.
@@ -64,7 +73,7 @@ export function CustomiseDialog({
   const demote = (entry: Destination): void =>
     onChange({ ...layout, tiles: layout.tiles.filter((id) => id !== entry.id) });
 
-  // One press from wherever it stands, tile or button — hiding a tile via
+  // One press from wherever it stands, tile or button: hiding a tile via
   // the row below would be two presses to say one thing.
   const hide = (entry: Destination): void =>
     onChange({
@@ -108,34 +117,39 @@ export function CustomiseDialog({
           {/* In the controls' own words: the switch, the "Hide" button
               and the groups "In the row below" and "Off the page". It
               said "Off" and "Hidden", states no control was labelled with. */}
-          {t('Switch a destination off to move it to the row below. Hide takes it off the page. The sidebar and the More tab still reach everything.')}
+          {t('Switch a card off to take it off the page. Switch a destination off to move it to the row below. Hide takes it off the page. The sidebar and the More tab still reach everything.')}
         </p>
 
-        <ToggleRow
-          title={t('Continue')}
-          blurb={t('Where you left off, above everything else.')}
-          checked={layout.continueCard}
-          onToggle={() => onChange({ ...layout, continueCard: !layout.continueCard })}
-        />
-        <ToggleRow
-          title={t('Set up your vault')}
-          blurb={t('The first steps for a new vault. It leaves once they are all done.')}
-          checked={layout.checklist}
-          onToggle={() => onChange({ ...layout, checklist: !layout.checklist })}
-        />
+        {/* Every card the page can draw, on or off. A card the phone never
+            shows says so in its blurb, so the switch does not read as one
+            that does nothing. */}
+        <Group label={t('Cards')} empty="" count={HOME_CARDS.length}>
+          {HOME_CARDS.map((card) => (
+            <SettingRow
+              key={card.id}
+              title={t(card.label)}
+              blurb={card.phone ? t(card.blurb) : `${t(card.blurb)} ${t('Wide screens only.')}`}
+            >
+              <Switch
+                checked={cardOn(layout, card.id)}
+                onCheckedChange={() => toggleCard(card.id)}
+                aria-label={t(card.label)}
+              />
+            </SettingRow>
+          ))}
+        </Group>
 
         {/* No scroller of its own. Sheet's body already scrolls, so capping
-            this at max-h-72 made a second one inside the first — which held
-            the two card switches and the paragraph above them permanently on
+            this at max-h-72 made a second one inside the first, which held
+            the card switches and the paragraph above them permanently on
             screen while only the destinations moved. Nothing here is worth
-            pinning: the switches are two rows among fourteen, and a short
-            list in a tall sheet was scrolling in a box while the sheet
-            around it had room to spare. */}
+            pinning: a short list in a tall sheet was scrolling in a box
+            while the sheet around it had room to spare. */}
         <div className="flex flex-col gap-1">
           <Group label={t('On the grid')} empty={t('Nothing. Every destination is a button below.')} count={tiles.length}>
             {tiles.map((entry, i) => (
               // Keyed by id, not position: React then MOVES the row that
-              // moved, and the focus ring travels with it — keyed by index,
+              // moved, and the focus ring travels with it. Keyed by index,
               // a second press would reorder the row that took its place.
               <Row key={entry.id} entry={entry} checked onToggle={() => demote(entry)}>
                 <Button
@@ -194,12 +208,6 @@ export function CustomiseDialog({
           </Group>
         </div>
 
-        {error !== null && (
-          <p className="text-destructive text-sm" role="status">
-            {error}
-          </p>
-        )}
-
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={onReset}>
             {t('Reset to default')}
@@ -207,25 +215,6 @@ export function CustomiseDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** One of the page's cards, on or off. The Settings row, shared. */
-function ToggleRow({
-  title,
-  blurb,
-  checked,
-  onToggle,
-}: {
-  title: string;
-  blurb: string;
-  checked: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <SettingRow title={title} blurb={blurb}>
-      <Switch checked={checked} onCheckedChange={onToggle} aria-label={title} />
-    </SettingRow>
   );
 }
 
@@ -285,8 +274,8 @@ function Row({
     // coarse pointer `Switch` grows its touch target with an absolutely
     // positioned ::before inset by -12px, which is invisible but still
     // counts towards scrollable overflow. Against 8px of padding it stood
-    // 4px outside the row, which made the list — a scroll container in
-    // both axes, as `overflow-y-auto` always is — pannable sideways by 3px
+    // 4px outside the row, which made the list, a scroll container in
+    // both axes as `overflow-y-auto` always is, pannable sideways by 3px
     // on a phone, with no scrollbar to say why. 12px of padding contains
     // it exactly, so the whole touch target survives.
     <div className="border-border bg-muted/50 flex items-center gap-2 rounded-md border px-3 py-1.5">
