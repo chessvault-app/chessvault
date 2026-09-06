@@ -43,9 +43,23 @@ const nextParsedId = (): NodeId => `q${(++parsedNodeCounter).toString(36)}`;
  */
 const UNREAD_COMMAND = /\[%[^\]]*\]/g;
 
-/** Text of a comment once the commands nothing reads are removed. */
+/**
+ * Text of a comment once the commands nothing reads are removed.
+ *
+ * Runs of blanks collapse to one space and each line is trimmed, but a
+ * line break stays a line break. The comment box makes one on Enter and
+ * the writer keeps it (chessops leaves the text alone), so this was the
+ * one place a two-paragraph annotation became one paragraph: measured,
+ * "line one\nline two" came back as "line one line two" on the next
+ * open. A `\r` from a file saved on Windows counts as a blank here, so
+ * it folds into the break beside it rather than surviving as a stray.
+ */
 export function commentText(text: string): string {
-  return text.replace(UNREAD_COMMAND, ' ').replace(/\s+/g, ' ').trim();
+  return text
+    .replace(UNREAD_COMMAND, ' ')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/ ?\n ?/g, '\n')
+    .trim();
 }
 
 /**

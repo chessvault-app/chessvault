@@ -36,6 +36,12 @@ board, and the puzzle dashboard's attempt log scrolls with the page.
   the same statements over its sqlite runtime, so the route code stays
   shared and the two answer alike.
 
+- **A comment keeps its paragraphs.** Enter in the comment box makes a
+  new line and the file kept it, but the reader folded every run of
+  whitespace into one space on the way back in, so a two-paragraph
+  annotation opened as one paragraph the next time the study, or the
+  annotated game, was opened. Line breaks now survive the reload.
+
 ## 0.8.3
 
 The puzzle dashboard leads with its one button and tells the truth

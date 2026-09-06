@@ -6,6 +6,7 @@ import {
   blankCommands,
   chaptersToPgn,
   commentSpans,
+  commentText,
   gameToTree,
   pgnToChapters,
   safeCommentText,
@@ -251,6 +252,16 @@ describe('safeCommentText', () => {
     const plain = 'The rook belongs behind the pawn — see chapter 3 (Lucena).';
     expect(safeCommentText(plain)).toBe(plain);
     expect(roundTrip(plain).text).toBe(plain);
+  });
+
+  it('keeps the line breaks the comment box makes on Enter', () => {
+    // The reader used to fold every run of whitespace into one space, so
+    // a two-paragraph annotation opened as one paragraph.
+    expect(roundTrip('First point.\nSecond point.').text).toBe('First point.\nSecond point.');
+    expect(roundTrip('One.\n\nTwo.').text).toBe('One.\n\nTwo.');
+    // Blanks beside a break belong to the break, and a Windows file's
+    // carriage return is a blank.
+    expect(commentText('a  \r\n  b\t c')).toBe('a\nb c');
   });
 
   it('rewrites the brace that makePgn would otherwise delete', () => {
