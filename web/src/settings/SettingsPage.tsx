@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Vault, Volume2 } from 'lucide-react';
+import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Folder, Trash2, User, Volume2 } from 'lucide-react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
 import { Button } from '@/components/ui/button';
@@ -386,7 +386,7 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
   };
 
   return (
-    <Card icon={Vault} title={t('Vault')}>
+    <Card icon={Folder} title={t('Vault')}>
       <Field label="Vault name">
         <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={folder} maxLength={60} />
       </Field>
