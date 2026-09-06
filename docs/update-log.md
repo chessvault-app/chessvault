@@ -9,11 +9,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 The repertoire drill shows a gap in amber with the reply drawn on the
 board, and the puzzle dashboard's attempt log scrolls with the page.
-Five fixes beside them: a comment keeps its paragraphs across a reload,
+Six fixes beside them: a comment keeps its paragraphs across a reload,
 the error page clears when the address changes, a mistyped link lands
 on "no such document" instead of that page, a damaged opening index
-rebuilds itself rather than taking the games list down, and the window
-no longer scrolls under the app on the puzzle dashboard.
+rebuilds itself rather than taking the games list down, the window no
+longer scrolls under the app on the puzzle dashboard, and the editor's
+Position window on an iPad comes back whole and leaves without a trace.
 
 - **A gap is amber, with a glyph and an arrow.** The drill used to
   report a coverage gap as a muted sentence under the status line, in
@@ -39,6 +40,18 @@ no longer scrolls under the app on the puzzle dashboard.
   shell's bottom edge and gave the window 720px of scroll it had never
   had. The shell now contains everything positioned inside it, so the
   window has nothing to scroll.
+
+- **The editor's Position window on an iPad.** The window the editor's
+  Position button opens could come back from its Load page cut off
+  about 16px short, its bottom padding and corners missing until a
+  field inside it changed, and after a position was loaded a picture
+  of it could hang on the screen for a moment while the window went.
+  While a page was up the window used to hide but stay laid out, and
+  WebKit kept a stale picture of it. It now leaves the layout entirely
+  while a page is up, and comes back without replaying its opening
+  animation. The leftover was reported on an iPad mini and does not
+  reproduce in a desktop browser, where both windows leave in the same
+  frame.
 
 - **The demo's explorer answers again.** Since 0.8.0 the app's
   reference-database statements run in a child process per file, and
