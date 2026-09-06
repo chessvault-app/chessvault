@@ -17,6 +17,8 @@ export type BoardTheme =
   | 'rosewood'
   | 'charcoal'
   | 'ink'
+  | 'khaki'
+  | 'tan'
   | 'wood';
 export type PieceSet =
   | 'cburnett'
@@ -44,6 +46,10 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   // materials rather than one material at two lightnesses.
   { id: 'ink', label: 'Paper and ink' },
   { id: 'charcoal', label: 'Charcoal' },
+  // Two near-white boards, matched to the boards chess.com draws so a
+  // position looks the same here as where somebody last saw it.
+  { id: 'khaki', label: 'Khaki' },
+  { id: 'tan', label: 'Tan' },
 ];
 
 /**

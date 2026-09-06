@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Two more board colours: Khaki and Tan.** Both are a near-white light
+  square against a khaki grey or a tan, matched to the boards chess.com
+  draws, so a position studied there looks the same here. Settings →
+  Appearance → Board.
+
 - **Every card on home has a switch, and the arrangement is per device.**
   "Customise home" offered switches for Continue and the setup checklist
   while the page had grown four more panels (Recent games, Training,

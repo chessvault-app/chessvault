@@ -1877,6 +1877,23 @@ cg-board square.check {
   --board-dark: oklch(39% 0.008 260);
 }
 
+/* Two boards matched to chess.com's, sampled from screenshots of its
+   board (#ececec/#aca595 and #f2f2f2/#d3a36a): a near-white light square
+   against a khaki grey, and against the same tan its Tan board uses.
+   The light square is a plain grey both times, so the coordinate labels
+   mixed out of it stay neutral. */
+:root[data-board='khaki'],
+[data-board='khaki'] {
+  --board-light: oklch(94% 0 90);
+  --board-dark: oklch(72% 0.024 87);
+}
+
+:root[data-board='tan'],
+[data-board='tan'] {
+  --board-light: oklch(96% 0 90);
+  --board-dark: oklch(75% 0.093 70);
+}
+
 /* An indeterminate progress bar: a segment that sweeps the track.
    For work whose total is genuinely unknown — the puzzle build knows how
    many rows it has read, never how many are left. A part-filled static bar

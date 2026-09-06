@@ -1090,6 +1090,8 @@ export const ko: Record<string, string> = {
   'Tournament green': '토너먼트 그린',
   'Classic brown': '클래식 브라운',
   'Wood grain': '나뭇결',
+  Khaki: '카키',
+  Tan: '탄',
   Slate: '슬레이트',
   Paper: '페이퍼',
   Green: '그린',
