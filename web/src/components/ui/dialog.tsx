@@ -379,6 +379,26 @@ function DialogContent({
   const { cap, covered: coversParent, ref: coverRef } = useSheetCover(small && phone);
 
   const shut = hidden || covered > 0;
+  // Coming back from a page: the overlay flips from visibility:hidden to
+  // visible, and WebKit repaints the card from a stale layout (an iPad
+  // showed the Position card cut off ~16px short, its bottom padding and
+  // corners missing, until any field inside it changed). One forced
+  // layout of the card as it comes back is what that tap was doing.
+  const wasCovered = React.useRef(false);
+  React.useLayoutEffect(() => {
+    if (covered > 0) {
+      wasCovered.current = true;
+      return;
+    }
+    if (!wasCovered.current) return;
+    wasCovered.current = false;
+    const el = card.current;
+    if (!el) return;
+    const prior = el.style.display;
+    el.style.display = 'none';
+    void el.offsetHeight;
+    el.style.display = prior;
+  }, [covered]);
   // A nested page that names no destination goes back to the window it
   // covered — closing a page IS going back.
   const back = onBack ?? (!small && coverParent ? close : undefined);
