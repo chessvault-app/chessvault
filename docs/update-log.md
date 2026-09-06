@@ -5,6 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The landing page lists the vault once.** It listed it twice: a
+  six-line summary beside the headline, and the demo vault's own files
+  under it. On a phone the two stacked and read as a duplicate. The
+  deeper listing now sits beside the headline with one caption, and the
+  summary is gone.
+
 ## 0.8.5
 
 A new mark: a knight's head drawn as one line, on the sidebar, every

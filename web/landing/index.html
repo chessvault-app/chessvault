@@ -386,14 +386,7 @@
       /* s7, not s8: `section` opens with s7, so this puts the rule below
          the screenshot equidistant from both instead of nearer the heading
          it introduces. */
-      .shot { margin-bottom: var(--s7); }
-      .shot img {
-        width: 100%; height: auto; display: block; border-radius: var(--radius-xl);
-        box-shadow: 0 0 0 1px var(--hairline), 0 1.5rem 3rem oklch(0% 0 0 / 0.18);
-      }
-
-      section { padding-block: var(--s7) var(--s8); }
-      section + section, .shot + section { border-top: 1px solid var(--border); }
+      section + section, .lede + section { border-top: 1px solid var(--border); }
       /* `.plate h3` rides with h2 on purpose. A plate's title is a heading
          one level under "A closer look" — it was an h2, which made the five
          figures siblings of the section that contains them in every screen
@@ -631,72 +624,14 @@
           </p>
         </div>
 
-        <!-- The paths are the real ones (docs/architecture.md). Only the
-             glosses are translated; a filename does not change language. -->
-        <figure class="vault">
-          <span class="root">~/chess-vault/</span>
-          <ul>
-            <li>
-              <span class="path"><span class="tick">├ </span>studies/</span>
-              <span class="gloss" data-ko="PGN, 한 파일에 챕터를">PGN, chapters in one file</span>
-            </li>
-            <li>
-              <span class="path"><span class="tick">├ </span>notes/</span>
-              <span class="gloss" data-ko="마크다운, 본문에 보드를">markdown, boards in the text</span>
-            </li>
-            <li>
-              <span class="path"><span class="tick">├ </span>games/collection/</span>
-              <span class="gloss" data-ko="간직할 만한 게임">the ones worth keeping</span>
-            </li>
-            <li>
-              <span class="path"><span class="tick">├ </span>puzzles/</span>
-              <span class="gloss" data-ko="무엇을 언제 풀었는지">what you solved, and when</span>
-            </li>
-            <li>
-              <span class="path"><span class="tick">├ </span>repertoire/map.json</span>
-              <span class="gloss" data-ko="오프닝 맵">the opening map</span>
-            </li>
-            <li>
-              <span class="path"><span class="tick">└ </span>.history.git</span>
-              <span class="gloss" data-ko="모든 변경을 되돌릴 수 있게">every change, undoable</span>
-            </li>
-          </ul>
-          <figcaption data-ko="보관함이 디스크에 놓인 그대로입니다. 데이터베이스도, 독자 규격도 없습니다.">
-            Your vault as it sits on disk. No database, no proprietary format.
-          </figcaption>
-        </figure>
-      </div>
-
-      <!-- EAGER, AND THE ONLY ONE. This shot sits 527px down a 1280x800
-           desktop — above the fold, and the largest thing in it, so it is
-           what LCP is measured on. `loading="lazy"` here would defer the
-           one image the score depends on. On a 390px phone it lands 8px
-           BELOW the fold, which is near enough that lazy would still be
-           the wrong call. The five plates below are 1959px down and
-           further; they are lazy.
-
-           width/height ON EVERY IMAGE, including this one, which is
-           eager and so never had a shift of its own to fix. It carries
-           them because the rule is cheaper to keep than to reason about
-           per image, and because this one is the page's LCP element: the
-           ratio lets the space be reserved before the first byte. The
-           plates below are where the attributes actually earn their
-           keep, and the numbers are with them.
-
-           The number is the LIGHT capture's, and it is right for both
-           only because the pair is the same size — capture-screenshots.mjs
-           renders one target spec under two themes, and the app's themes
-           swap colour, not geometry. Verified: all six pairs match to the
-           pixel. If a capture ever makes them differ, the ratio here is
-           wrong in one scheme and the attributes have to move onto the
-           <source> elements. -->
-<!-- The first picture on the page is the vault, not a screenshot of
-           the app: the folder is the claim nobody else can make, and for a
-           long time it was the one thing the page did not show. The names
-           are the demo vault's own files (demo-seed/), so what is listed
-           here is what "Try the demo" opens. The analysis board moved to
-           the gallery's last plate. -->
-      <div class="wrap shot">
+        <!-- The vault, beside the claim. The names are the demo vault's own
+             files (demo-seed/), one level deep, so what is listed here is
+             what "Try the demo" opens; a made-up path here is a promise the
+             app does not keep. Only the glosses are translated; a filename
+             does not change language. There used to be two listings, a
+             six-line summary here and this one under the lede: on a phone
+             the lede is one column, they stacked, and two blocks opening on
+             the same root line read as a duplicate. -->
         <figure class="vault">
           <span class="root">~/chess-vault/</span>
           <ul>
@@ -735,12 +670,14 @@
               <span class="gloss" data-ko="모든 변경을 되돌릴 수 있게">every change, undoable</span>
             </li>
           </ul>
-          <figcaption data-ko="어떤 편집기나 백업 도구가 보는 그대로의 파일들입니다. 나머지는 전부 앱이 이 파일들에서 만들어 내고, 지워도 다시 만듭니다.">
-            The files, as any editor or backup tool sees them. Everything else the app derives
-            from these, and rebuilds if deleted.
+          <figcaption data-ko="보관함이 디스크에 놓인 그대로, 어떤 편집기나 백업 도구가 보는 그대로의 파일들입니다. 데이터베이스도, 독자 규격도 없습니다. 나머지는 전부 앱이 이 파일들에서 만들어 내고, 지워도 다시 만듭니다.">
+            Your vault as it sits on disk: the files, as any editor or backup tool sees them.
+            No database, no proprietary format. Everything else the app derives from these,
+            and rebuilds if deleted.
           </figcaption>
         </figure>
       </div>
+
 
       <section class="wrap" id="what">
         <p class="slug" data-ko="목차">contents</p>
