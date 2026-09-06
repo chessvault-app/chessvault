@@ -541,24 +541,30 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
   // so it covers no row beneath — which is what the browser's bubble did,
   // and why the rows carried no tip at all until they could fold.
   const tipSide = 'right';
-  // Button makes `title` the tooltip AND the accessible name of an
-  // icon-only button, so the switch states its position once. Under the
-  // desktop shell's band the switch is the band's, and a second one in
-  // the brand row was the same control twice on one screen.
-  const foldButton = hasTitleBar() ? null : (
-    <Button
-      variant="ghost"
-      size="icon-lg"
-      onClick={toggleFold}
-      title={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
-      className="text-muted-foreground hover:text-foreground shrink-0"
-    >
-      {folded ? (
-        <PanelLeftOpen className="size-[1.15rem]" strokeWidth={2} />
-      ) : (
-        <PanelLeftClose className="size-[1.15rem]" strokeWidth={2} />
-      )}
-    </Button>
+  // The fold switch is a row of the icon column, in both states: it used
+  // to sit at the end of the brand row unfolded and on a row of its own
+  // folded, which moved the switch on every press and, because that row
+  // exists only folded, dropped every icon under it by the row's height.
+  // Now the row is always there, so nothing below it moves, and its icon
+  // sits on the column like every other. Under the desktop shell's band
+  // the switch is the band's, and a second one here was the same control
+  // twice on one screen.
+  const foldRow = hasTitleBar() ? null : (
+    <TitleTip title={folded ? t('Unfold the sidebar') : undefined} side={tipSide}>
+      <button
+        type="button"
+        onClick={toggleFold}
+        aria-label={folded ? t('Unfold the sidebar') : t('Fold the sidebar')}
+        className={cn(NAV_ROW, 'text-muted-foreground hover:bg-accent hover:text-foreground')}
+      >
+        {folded ? (
+          <PanelLeftOpen className="size-[1.15rem] shrink-0" strokeWidth={2} />
+        ) : (
+          <PanelLeftClose className="size-[1.15rem] shrink-0" strokeWidth={2} />
+        )}
+        {!folded && <span>{t('Fold the sidebar')}</span>}
+      </button>
+    </TitleTip>
   );
   return (
     <nav
@@ -568,10 +574,8 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         folded ? 'w-[4.25rem]' : 'w-52',
       )}
     >
-      {/* The brand row: the Home button, and unfolded the fold switch at
-          its end. Siblings, never nested: a button in a button is not
-          markup, and a tip inside a tip is both open at once (TitleTip). */}
-      <div className={cn('flex h-14 items-center', !folded && 'pr-2')}>
+      {/* The brand row: the Home button alone. */}
+      <div className="flex h-14 items-center">
         {/* A tip and not the aria-label the rows below take: those repeat
             the label already printed beside their icon, and this one does
             not — the wordmark says whose app this is and the tip says
@@ -601,13 +605,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             )}
           </button>
         </TitleTip>
-        {!folded && foldButton}
       </div>
-      {/* Folded, the switch takes a row of its own under the mark: 68px
-          seats the mark or the button, not both. */}
-      {folded && <div className="flex justify-center pb-1">{foldButton}</div>}
 
       <div className="flex flex-1 flex-col gap-0.5 p-2">
+        {foldRow}
         {NAV.map(({ section, label, icon: Icon }) => {
           const isActive = section === active;
           return (

@@ -9,11 +9,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 The repertoire drill shows a gap in amber with the reply drawn on the
 board, and the puzzle dashboard's attempt log scrolls with the page.
-Five fixes beside them: a comment keeps its paragraphs across a reload,
+Six fixes beside them: a comment keeps its paragraphs across a reload,
 the error page clears when the address changes, a mistyped link lands
 on "no such document" instead of that page, a damaged opening index
-rebuilds itself rather than taking the games list down, and the window
-no longer scrolls under the app on the puzzle dashboard.
+rebuilds itself rather than taking the games list down, the window
+no longer scrolls under the app on the puzzle dashboard, and the
+sidebar's icons stay where they are when it folds.
 
 - **A gap is amber, with a glyph and an arrow.** The drill used to
   report a coverage gap as a muted sentence under the status line, in
@@ -39,6 +40,16 @@ no longer scrolls under the app on the puzzle dashboard.
   shell's bottom edge and gave the window 720px of scroll it had never
   had. The shell now contains everything positioned inside it, so the
   window has nothing to scroll.
+
+- **The sidebar's icons stay put across a fold.** Folding the sidebar
+  used to move every icon: 5px sideways, because a folded row centred
+  its icon and an unfolded one left-aligned it, and a whole row down,
+  because the fold switch sat beside the name unfolded and took a row
+  of its own under the mark folded. Each row now has one left inset
+  in both states, and the switch is the first row under the mark in
+  both, "Fold the sidebar" with its label or the icon alone, so
+  nothing below it moves and the switch itself stays under the
+  pointer that pressed it.
 
 - **The demo's explorer answers again.** Since 0.8.0 the app's
   reference-database statements run in a child process per file, and
