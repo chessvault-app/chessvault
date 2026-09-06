@@ -64,7 +64,7 @@
       }
       /* Bare, in the page's own ink, at the lock screen's size — the app
          wears the mark that way everywhere it is drawn by a PAGE (sidebar,
-         lock screen, home header, favicon). A ground survives only on the
+         lock screen, home header). A ground survives only on the
          icons an OS composites onto grounds the image cannot see, which
          this is not. The filled tile that used to be here read as a button
          standing above the two that actually are. */
@@ -194,13 +194,11 @@
   <body>
     <div class="drag"></div>
     <div class="card" id="step1">
-      <!-- The app's mark: a hexagon outline with one wedge filled. The same
-           drawing as web/src/components/brand-mark.tsx and
-           web/public/favicon.svg — copied because this window loads no
-           bundle. The knight that used to be here was the mark the app
-           retired in a015079e. The knight line from brand-mark.tsx; where
-           the app means "chess" rather than itself it draws the cburnett
-           knight instead. -->
+      <!-- The app's mark: a knight's head as one line, the same drawing as
+           web/src/components/brand-mark.tsx — copied because this window
+           loads no bundle. (favicon.svg carries the solid cut of the same
+           head, for 16 px, not this line.) Where the app means "chess"
+           rather than itself it draws the cburnett knight instead. -->
       <svg class="logo" viewBox="0 0 80 80" fill="none" aria-hidden>
         <path d="M22 66 C24 61 27 57 29 54 L19 45 L11 39 L19 29 L33 11 L39 19 L45 15 L52 23 L61 33 C64 41 65 53 64 66" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
       </svg>

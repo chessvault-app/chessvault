@@ -84,7 +84,8 @@ const ASSETS: {
 }[] = [
   // The default pieces, and the knight and king glyphs the UI draws
   // (components/knight-icon, king-icon). Not the app icon, favicon or landing
-  // mark any more: those are the hex, ours, since a015079.
+  // mark: those have been our own drawing since a015079 (the hex, then the
+  // knight line that replaced it), not derived from this set.
   //
   // Also the diagrams printed in the demo's sample book: the pieces are drawn
   // into that PDF from this same set (scripts/build-demo-book.mjs), so the

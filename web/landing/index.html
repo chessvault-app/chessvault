@@ -227,9 +227,9 @@
       .bar { display: flex; align-items: center; gap: var(--s3); }
       /* nowrap: squeezed to 105px the wordmark broke after "Chess" and took
          the header from 61px to 73. It shrinks the row instead now, and
-         below 22rem it gives up the word and keeps the hex. */
+         below 22rem it gives up the word and keeps the mark. */
       .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
-      /* The bare hex in currentColor, as the docs page wears it — one mark
+      /* The bare mark in currentColor, as the docs page wears it — one mark
          across the site's pages. */
       .mark svg { width: 1.5rem; height: 1.5rem; }
       .bar .spacer { margin-left: auto; }
@@ -305,7 +305,7 @@
          both other controls on a phone: at 320px it ran 21px past the
          viewport. The label is the part with slack — the button still goes
          to the same place — so it shortens first, the gap tightens with it,
-         and only below 22rem does the wordmark go, leaving the hex. */
+         and only below 22rem does the wordmark go, leaving the mark. */
       .btn .narrow { display: none; }
       @media (max-width: 30rem) {
         .bar { gap: var(--s2); }
