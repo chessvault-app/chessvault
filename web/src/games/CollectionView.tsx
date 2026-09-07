@@ -122,7 +122,7 @@ export function CollectionView() {
         actions={
           <Button
             variant="default"
-            size="sm"
+            size="default"
             className="hidden md:inline-flex"
             onClick={() => openImport.current?.()}
           >
