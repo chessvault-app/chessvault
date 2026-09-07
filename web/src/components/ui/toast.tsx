@@ -11,7 +11,7 @@
  *
  * The action and the close are the app's own Button (outline sm, ghost
  * icon-sm), so they take the radius ladder and the coarse-pointer sizes
- * every other control does. This replaced sonner (0.8.6): its buttons
+ * every other control does. This replaced sonner (0.9.0): its buttons
  * were hard-coded to 4px corners and 24px, its X hung off the card's
  * top-left corner, and it was the one overlay in the app not on Base UI.
  */

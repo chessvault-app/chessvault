@@ -293,7 +293,7 @@ span 하나였고, 그래서 숫자 옆의 단어까지 고정폭 서체를 입�
   둘입니다. 데스크톱에서는 `text-xl font-semibold tracking-tight`이고 동작은
   오른쪽으로 밀립니다. 휴대폰에서는 이름이 44px 줄 안의 `text-2xl` 큰 제목이고,
   그 줄이 곧 페이지의 바입니다. 스크롤 영역 맨 위에 붙어(sticky) 페이지
-  배경을 받고, 페이지가 그 아래로 스크롤되면 이름을 `text-base`로 줄이고
+  배경을 받고, 페이지가 그 아래로 스크롤되면 이름을 3분의 2로(24px에서 16px로, 작은 크기로 다시 조판하지 않고) 줄이고
   바들의 흰색을 입습니다(iOS의 큰 제목, Material 3의 medium 앱 바. 톤 위의
   페이지에서는 채움이 곧 바이고, 가느다란 선은 고대비에서만 긋습니다). 동작은
   두 상태 모두 이름과 같은 줄에 머무릅니다. 더보기를 거쳐 들어오는
@@ -610,8 +610,8 @@ Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 
   소유합니다.** Button, Input, InputOTP, Textarea, Label, Field, InputGroup,
   Checkbox, RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu,
   ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch,
-  Progress, Spinner, Skeleton, Empty, Card, Separator, Calendar,
-  Toast입니다. 각각
+  Progress, Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar,
+  Toast, Command입니다. 각각
   `npx shadcn add`가 써 주는 모양 그대로(밑은 Base UI, `cva` 변형,
   `data-slot`)이고, 각각 레지스트리 자신의 얼굴인 nova 스타일을 하고
   있습니다. 그 크기, 둥근 정도의 사다리, 포커스 링, 반전된 툴팁, 테두리가

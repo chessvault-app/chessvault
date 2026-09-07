@@ -14,7 +14,7 @@ import { t } from '@/lib/i18n';
  * One name, two rungs. On a desktop the title is `text-xl` on one line
  * with the actions. On a phone it is a large title, `text-2xl` in a 44px
  * row, and the row is a bar: sticky at the top of the page's scroller,
- * where it takes the page's background, drops to `text-base` and draws a
+ * where it takes the page's background, scales to two thirds (24px to 16px) and draws a
  * hairline once the page has scrolled under it (the iOS large title, the
  * Material 3 medium app bar). The actions stay on the title's line in both
  * states, so a phone's bookmark toggle or a desktop's sort menu never

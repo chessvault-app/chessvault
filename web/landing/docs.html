@@ -613,15 +613,18 @@
               app ever goes away your chess opens in something else.
             </p>
             <h2 data-ko="백업">Backing up</h2>
-            <p data-ko="백업은 보관함 폴더를 복사하는 일입니다 — 파생 데이터베이스와 색인까지 전부 따라갑니다. 파생된 것들(퍼즐 풀, 참고 게임 데이터베이스, 색인)은 언제든 지우고 다시 만들 수 있습니다. 내 작업을 볼모로 잡는 데이터베이스는 없습니다.">
-              Backing up is copying the vault folder — derived databases and indexes included. The
-              derived things (the puzzle pool, reference game databases, indexes) can always be
-              deleted and rebuilt; no database holds your work hostage.
+            <p data-ko="설정 → Vault의 “Download a copy”가 모든 문서와 변경 기록을 tar 파일 하나로 내려받습니다. 이름은 보관함 이름과 날짜이고 어느 OS에서든 열립니다. 설정과 토큰은 서버에 남습니다. 보관함 폴더를 복사해도 백업입니다 — 파생 데이터베이스와 색인까지 전부 따라갑니다. 파생된 것들(퍼즐 풀, 참고 게임 데이터베이스, 색인)은 언제든 지우고 다시 만들 수 있습니다. 내 작업을 볼모로 잡는 데이터베이스는 없습니다.">
+              Settings → Vault has “Download a copy”: one tar file of every document and the change
+              history, named after the vault and the day, that any OS opens. Settings and tokens stay
+              on the server. Copying the vault folder is a backup too — derived databases and indexes
+              included. The derived things (the puzzle pool, reference game databases, indexes) can
+              always be deleted and rebuilt; no database holds your work hostage.
             </p>
             <h2 data-ko="이전 버전">Earlier versions</h2>
-            <p data-ko="모든 스터디·기보·노트의 머리에는 시계 버튼(<strong>Earlier versions</strong>)이 있습니다. 저장할 때마다 판본이 자동으로 보관되며, 시점을 골라 들여다보고 <strong>Restore this version</strong>으로 복원합니다. 복원해도 지금 버전은 함께 보존됩니다 — 언제든 돌아올 수 있습니다. 판본 보관이 꺼진 보관함(예: git이 없는 서버)에서는 «This vault is not keeping a history, so there is nothing earlier to show»라고 말해 줍니다.">
+            <p data-ko="모든 스터디·기보·노트의 머리에는 시계 버튼(<strong>Earlier versions</strong>)이 있습니다(휴대폰에서는 제목 줄의 ⋯ 뒤에 다른 도구와 함께 있습니다). 저장할 때마다 판본이 자동으로 보관되며, 시점을 골라 들여다보고 <strong>Restore this version</strong>으로 복원합니다. 복원해도 지금 버전은 함께 보존됩니다 — 언제든 돌아올 수 있습니다. 판본 보관이 꺼진 보관함(예: git이 없는 서버)에서는 «This vault is not keeping a history, so there is nothing earlier to show»라고 말해 줍니다.">
               Every study, game and note carries a clock button in its header —
-              <strong>Earlier versions</strong>. Each save is kept automatically; pick a time to
+              <strong>Earlier versions</strong> (on a phone it sits with the other tools behind the
+              title row's ⋯). Each save is kept automatically; pick a time to
               look at it and <strong>Restore this version</strong> brings it back. The version you
               have now is kept too, so you can always come back. A vault that keeps no history — a
               server without git, say — says so: “This vault is not keeping a history, so there is nothing earlier to show.”
@@ -632,9 +635,9 @@
                 <strong>Settings → Deleted documents</strong> restores studies, notes and games
                 that are gone entirely — <strong>Bring this back</strong>.
               </li>
-              <li data-ko="<strong>설정 → Danger zone</strong>이 보관함 전체를 비웁니다. 확인 문구를 직접 입력한 뒤, 비밀번호가 설정되어 있으면 그것까지 다시 물은 다음에야 진행됩니다. 되돌릴 수 없습니다.">
+              <li data-ko="<strong>설정 → Danger zone</strong>이 보관함 전체를 비웁니다. 확인 문구를 직접 입력한 뒤, 비밀번호가 설정되어 있으면 그것까지 다시 물은 다음에야 진행됩니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.">
                 <strong>Settings → Danger zone</strong> wipes the whole vault. It makes you type an
-                arming phrase, then asks for the app password when one is set. There is no undo.
+                arming phrase, then asks for the app password when one is set. There is no undo, so download a copy first.
               </li>
             </ul>
             <h2 data-ko="무엇이 어디에">What lives where</h2>
@@ -649,14 +652,14 @@
                 <tbody>
                   <tr><td data-ko="스터디와 기보 (챕터·변화수·주석·화살표 포함)">Studies and games (chapters, variations, comments, arrows)</td><td>PGN</td></tr>
                   <tr><td data-ko="노트 (위키링크와 보드 펜스 포함)">Notes (wiki-links and board fences included)</td><td data-ko="마크다운">Markdown</td></tr>
-                  <tr><td data-ko="퍼즐 진행, 레퍼토리 기록, 홈 배치, 오프닝 맵">Puzzle progress, the repertoire record, the home layout, the opening map</td><td>JSON</td></tr>
+                  <tr><td data-ko="퍼즐 진행, 레퍼토리 기록, 오프닝 맵">Puzzle progress, the repertoire record, the opening map</td><td>JSON</td></tr>
                   <tr><td data-ko="업로드한 책 PDF, PGN 파일">Uploaded book PDFs, PGN files</td><td data-ko="파일 그대로">The files themselves</td></tr>
                   <tr><td data-ko="참고 데이터베이스, 퍼즐 풀, 색인 (파생 — 재생성 가능)">Reference databases, the puzzle pool, indexes (derived — rebuildable)</td><td>SQLite</td></tr>
                 </tbody>
               </table>
             </div>
-            <p data-ko="설정 페이지 맨 아래 줄이 보관함의 정확한 경로를 알려 줍니다.">
-              The line at the bottom of the Settings page names the vault's exact path.
+            <p data-ko="설정의 Vault 카드가 폴더를 보여 줍니다: 정확한 경로, 용량, 안에 든 것마다 한 줄씩. 경로는 거기서 복사합니다.">
+              The Vault card in Settings shows the folder: its exact path, its size, and a row for each kind of thing in it. Copy the path from there.
             </p>
           </div>
         </section>
@@ -669,14 +672,14 @@
               with what you were last doing, and its arrangement is yours to decide.
             </p>
             <h2 data-ko="탐색">Navigation</h2>
-            <p data-ko="사이드바의 순서: <strong>Games · Studies · Notes · Books · Puzzles</strong>(하위로 Dashboard, Puzzle books, Themes) · <strong>Opening map</strong> · <strong>Tools</strong>(Board, Editor, Explorer, Workspace, Repertoire — Workspace 항목은 그 페이지를 담을 만큼 넓은 창에서만 보입니다. <a href='#workspace'>워크스페이스</a> 참조) · <strong>Databases</strong>. Puzzles와 Tools의 하위 행은 그 섹션이 열려 있는 동안에만 펼쳐집니다. 사이드바 아래에는 보관함의 이름(설정 → Vault에서 지은 이름, 없으면 폴더 이름. 툴팁에 전체 경로, 펼친 상태에서만), 연결 상태 표시(«This device», 서버 이름, 또는 «Offline»), 설정 톱니, 라이트/다크 전환이 있습니다. 마크 아래 첫 행인 “Fold the sidebar”가 사이드바를 아이콘만 남기고 접으며, 접힌 상태에서는 같은 자리의 “Unfold the sidebar”가 다시 펼치고 각 행에 마우스를 올리면 이름이 툴팁으로 뜹니다. 선택하기 전에는 창 너비가 정합니다: 넓은 창에서는 펼치고 좁은 창에서는 접습니다. 한 번 누르면 이 기기에서 그 선택이 유지됩니다.">
+            <p data-ko="사이드바의 순서: <strong>Games · Studies · Notes · Books · Puzzles</strong>(하위로 Dashboard, Puzzle books, Themes) · <strong>Opening map</strong> · <strong>Tools</strong>(Board, Editor, Explorer, Workspace, Repertoire — Workspace 항목은 그 페이지를 담을 만큼 넓은 창에서만 보입니다. <a href='#workspace'>워크스페이스</a> 참조) · <strong>Databases</strong>. Puzzles와 Tools의 하위 행은 그 섹션이 열려 있는 동안에만 펼쳐집니다. 사이드바 아래에는 보관함의 이름(설정 → Vault에서 지은 이름, 없으면 폴더 이름. 툴팁에 전체 경로, 펼친 상태에서만), 연결 상태 표시(«This device», 서버 이름, 또는 «Offline». 넓은 창에서만), 설정 톱니, 라이트/다크 전환이 있습니다. 마크 옆, 브랜드 줄 끝의 “Fold the sidebar”가 사이드바를 아이콘만 남기고 접으며, 접힌 상태에서는 열의 첫 행에 놓인 같은 버튼 “Unfold the sidebar”가 다시 펼치고 각 행에 마우스를 올리면 이름이 툴팁으로 뜹니다. 선택하기 전에는 창 너비가 정합니다: 넓은 창에서는 펼치고 좁은 창에서는 접습니다. 한 번 누르면 이 기기에서 그 선택이 유지됩니다.">
               The sidebar, top to bottom: <strong>Games · Studies · Notes · Books ·
               Puzzles</strong> (with Dashboard, Puzzle books and Themes under it) ·
               <strong>Opening map</strong> · <strong>Tools</strong> (Board, Editor, Explorer,
               Workspace, Repertoire — the Workspace row exists only on windows wide enough to hold
               that page; see <a href="#workspace">The workspace</a>) ·
-              <strong>Databases</strong>. The Puzzles and Tools sub-rows unfold only while that section is open. Below them sit the vault's name (the one given in Settings → Vault, else its folder's; the full path in the tooltip; unfolded only), the connection label (“This device”, your server's name, or “Offline”), the Settings gear, and the light/dark
-              toggle. The first row under the mark, “Fold the sidebar”, folds the sidebar to its icons; folded, the same row reads “Unfold the sidebar” and unfolds it, and hovering a row shows its name as a tooltip. Until you choose, the window decides: labels on a wide window, icons on a narrower one. One press keeps your choice on this device.
+              <strong>Databases</strong>. The Puzzles and Tools sub-rows unfold only while that section is open. Below them sit the vault's name (the one given in Settings → Vault, else its folder's; the full path in the tooltip; unfolded only), the connection label (“This device”, your server's name, or “Offline”; wide windows only), the Settings gear, and the light/dark
+              toggle. At the end of the brand row, beside the mark, “Fold the sidebar” folds the sidebar to its icons; folded, the same button on the first row of the column reads “Unfold the sidebar” and unfolds it, and hovering a row shows its name as a tooltip. Until you choose, the window decides: labels on a wide window, icons on a narrower one. One press keeps your choice on this device.
             </p>
             <p data-ko="휴대폰의 하단 바는 <strong>Home · Games · Studies · Puzzles · More</strong>를 들고, Notes·Books·Opening map·Databases·Settings와 나머지 도구는 <strong>More</strong> 안에 있습니다. 이미 있는 페이지의 탭을 한 번 더 누르면 페이지 맨 위로 돌아갑니다. 보드가 있는 페이지에서는 하단 바가 그 페이지의 조작으로 바뀝니다 — <a href='#phone'>휴대폰에서</a> 참조.">
               A phone's bottom bar carries <strong>Home · Games · Studies · Puzzles ·
@@ -869,8 +872,8 @@
                 <strong>The mouse wheel</strong> — rolling it over the board steps through the
                 moves.
               </li>
-              <li data-ko="<strong>누르고 있기</strong> — Back/Forward 버튼을 누르고 있으면 반복됩니다.">
-                <strong>Press and hold</strong> — the Back/Forward buttons repeat while held.
+              <li data-ko="<strong>누르고 있기</strong> — 보드의 이전/다음 수 버튼을 누르고 있으면 반복됩니다.">
+                <strong>Press and hold</strong> — the board's previous/next move buttons repeat while held.
               </li>
             </ul>
             <h2 data-ko="그리기">Drawing on the board</h2>
@@ -989,7 +992,7 @@
                 <tbody>
                   <tr><td>Show the current line only</td><td data-ko="가지 갈래를 접고 지금 줄만 봅니다. 트리에 갈래가 없으면 아예 나타나지 않습니다.">Folds the branches away to read one line. Absent while the tree has no branches at all.</td></tr>
                   <tr><td>Engine review</td><td data-ko="게임 전체를 판정합니다 — 아래 «게임 리뷰» 참조.">Judges the whole game — see Game review below.</td></tr>
-                  <tr><td>Add this game to the collection</td><td data-ko="불러온 게임을 모음에 담습니다. 담기면 «In the collection»(초록 체크)으로 바뀝니다. Board 페이지에서, 헤더가 있는 게임이 실려 있을 때만 나타납니다. 휴대폰에서는 ⋯ 메뉴의 행이며, 결과는 토스트로 알립니다.">Puts a loaded game into your collection; turns into “In the collection” (a green check). Board page only, and only with a real game loaded. On a phone it is a row in the ⋯ menu instead, answering with a toast.</td></tr>
+                  <tr><td>Add this game to the collection</td><td data-ko="불러온 게임을 모음에 담습니다. 담기면 «In the collection»(초록 체크)으로 바뀝니다. Board 페이지와 워크스페이스의 수 목록 패널에서, 헤더가 있는 게임이 실려 있을 때만 나타납니다. 휴대폰에서는 ⋯ 메뉴의 행이며, 결과는 토스트로 알립니다.">Puts a loaded game into your collection; turns into “In the collection” (a green check). On the Board page and in the workspace's moves panel, and only with a real game loaded. On a phone it is a row in the ⋯ menu instead, answering with a toast.</td></tr>
                   <tr><td>Load a position from FEN, PGN or an image</td><td data-ko="아래 «포지션 불러오기» 참조.">See Loading a position below.</td></tr>
                   <tr><td>Delete this move and everything after it</td><td data-ko="휴지통 아이콘. 실행 취소 토스트가 잠깐 떠 있습니다.">The trash icon; undoable via a toast for a moment.</td></tr>
                   <tr><td>Clear all moves · Clear the board</td><td data-ko="트리 비우기, 그리고 (허용된 곳에서) 보드까지 비우기.">Empty the tree — and, where allowed, the board too.</td></tr>
@@ -999,9 +1002,9 @@
             </div>
 
             <h2 data-ko="주석 달기">Annotating</h2>
-            <p data-ko="주석 도구는 보드 아래의 주석 패널에 있습니다(스터디와 기보에서는 <strong>Edit</strong> 모드에서만 보입니다). 기호 팔레트는 두 무리입니다 — 품질: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code>, 평가: <code>⩲</code> <code>±</code> <code>+−</code> <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. 각 무리 안에서는 하나만 켜지고, 켜진 것을 다시 누르면 지워집니다. 곁의 접기 화살표(«Show glyphs» / «Hide glyphs»)가 팔레트를 접습니다. 그 아래 상자가 이 수의 주석입니다. 트리의 뿌리에서는 챕터 서문이 되고, 그때는 기호도 접기 화살표도 함께 사라집니다. 챕터에는 평가할 수가 없기 때문입니다. 화살표와 동그라미는 여기 없습니다: <a href='#shortcuts'>보드에 직접 그립니다</a>.">
-              The annotation tools live in a pane under the board (in studies and games it appears
-              only in <strong>Edit</strong> mode). The glyph palette comes in two groups — quality:
+            <p data-ko="주석 도구는 수 목록 패널 발치의 주석 패널에 있습니다. 스터디와 기보에서만, 그것도 <strong>Edit</strong> 모드에서만 보입니다. 기호 팔레트는 두 무리입니다 — 품질: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code>, 평가: <code>⩲</code> <code>±</code> <code>+−</code> <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. 각 무리 안에서는 하나만 켜지고, 켜진 것을 다시 누르면 지워집니다. 곁의 접기 화살표(«Show glyphs» / «Hide glyphs»)가 팔레트를 접습니다. 그 아래 상자가 이 수의 주석입니다. 트리의 뿌리에서는 챕터 서문이 되고, 그때는 기호도 접기 화살표도 함께 사라집니다. 챕터에는 평가할 수가 없기 때문입니다. 화살표와 동그라미는 여기 없습니다: <a href='#shortcuts'>보드에 직접 그립니다</a>.">
+              The annotation tools live in a pane at the foot of the Moves panel, in studies and
+              games only, and only in <strong>Edit</strong> mode. The glyph palette comes in two groups — quality:
               <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code>
               <code>?!</code>, and assessment: <code>⩲</code> <code>±</code> <code>+−</code>
               <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. One per
@@ -1038,10 +1041,11 @@
             </p>
 
             <h2 data-ko="게임 리뷰">Game review</h2>
-            <p data-ko="<strong>Engine review</strong>(현미경 아이콘 — «judge every move (?!/?/??) and measure accuracy»)가 게임 전체를 훑습니다. 끝나면 수 목록 아래 띠에:">
+            <p data-ko="<strong>Engine review</strong>(현미경 아이콘 — «judge every move (?!/?/??) and measure accuracy»)가 게임 전체를 훑습니다. 실행 전에는 수 목록 아래 띠가 리뷰를 권하고, 휴대폰에서는 그 대신 페이지 위에 몇 초 동안 토스트가 떠 X로 닫을 수 있습니다. 끝나면 수 목록 아래 띠에:">
               <strong>Engine review</strong> (the microscope — “judge every move (?!/?/??) and
-              measure accuracy”) sweeps the whole game. When it finishes, the strip under the move
-              list holds:
+              measure accuracy”) sweeps the whole game. Before it runs, a band under the move list
+              offers it; on a phone that offer is a toast over the page for a few seconds instead,
+              with an X. When it finishes, the strip under the move list holds:
             </p>
             <ul>
               <li data-ko="클릭(또는 끌기)으로 이동하는 <strong>평가 그래프</strong> — 포인터 아래의 수가 파란 점과 안내선으로 표시되어 클릭이 어디로 가는지 미리 보여 주고, 접었다 펼 수 있습니다.">
@@ -1080,9 +1084,9 @@
               docks above the moves on a desktop and gets its own tab on a phone.
             </p>
             <h2 data-ko="패널 머리">The panel header</h2>
-            <p data-ko="«Engine»이라는 제목 옆에는 엔진이 켜져 있는 동안 현재 평가(백 우세면 초록, 흑 우세면 빨강)와 <code>depth</code> 값이 표시됩니다. 오른쪽에는 버튼 둘:">
-              Beside the word “Engine”, while it runs, sit the current score (green when White is
-              better, red when Black is) and the <code>depth</code> readout. To the right, two
+            <p data-ko="«Engine»이라는 제목 옆에는 엔진이 켜져 있는 동안 현재 평가(초록도 빨강도 아닌 글자색. 평가는 결과가 아니라 수치입니다)와 <code>depth</code> 값이 표시됩니다. 오른쪽에는 버튼 둘:">
+              Beside the word “Engine”, while it runs, sit the current score (in the text colour, not
+              green or red: an evaluation is a quantity, not an outcome) and the <code>depth</code> readout. To the right, two
               controls:
             </p>
             <div class="scroll-x">
@@ -1110,10 +1114,11 @@
             </div>
             <h2 data-ko="후보 수 목록">The candidate lines</h2>
             <ul>
-              <li data-ko="줄마다 고정폭 점수 칸과 SAN 변화수가 옵니다. <strong>수 하나를 클릭하면 그 줄이 트리로 들어가고</strong>, 데스크톱에서 수 위에 머무르면 그 시점의 미니 보드가 뜹니다.">
+              <li data-ko="줄마다 고정폭 점수 칸과 SAN 변화수가 옵니다. <strong>수 하나를 클릭하면 그 줄이 트리로 들어가고</strong>, 데스크톱에서 수 위에 머무르면 그 시점의 미니 보드가 뜨고, 손가락으로는 줄마다 붙은 화살표(«Show the whole variation» / «Show one line»)로 첫 줄 너머를 읽습니다.">
                 Each line is a fixed-width score column and the variation in SAN.
                 <strong>Clicking any move plays the line into the tree</strong>; hovering one (on a
-                desktop) pops a mini-board preview of that point.
+                desktop) pops a mini-board preview of that point; under a thumb each row has a
+                chevron (“Show the whole variation” / “Show one line”) to read past its first line.
               </li>
               <li data-ko="아직 답이 없으면 «Thinking…», 더 검색할 것이 없는 끝 포지션이면 «Checkmate. There is nothing left to search.»라고 그대로 알려 줍니다.">
                 While it has nothing yet: “Thinking…”. A terminal position says so honestly —
@@ -1240,9 +1245,9 @@
                 Level, Player (with side and outcome conditions), Opening or ECO, Event,
                 Played between.
               </li>
-              <li data-ko="<strong>Lichess 데이터베이스</strong> — Opponent strength(레이팅 구간)와 Time control.">
-                <strong>The Lichess database</strong> — Opponent strength (the rating bands) and
-                Time control.
+              <li data-ko="<strong>Lichess 데이터베이스</strong> — Opponent strength(레이팅 구간)만. Masters 데이터베이스에는 필터 창이 없습니다.">
+                <strong>The Lichess database</strong> — Opponent strength (the rating bands); the
+                Masters database has no filter window.
               </li>
             </ul>
             <h2 data-ko="테이블 너머">Past the table</h2>
@@ -1451,12 +1456,12 @@
               </picture>
             </figure>
             <h2 data-ko="목록">The shelf</h2>
-            <p data-ko="위 줄에 제목과 도구들: 즐겨찾기 필터(«Show bookmarked only» / «Show all»), 정렬(«Sort by»: Last modified · Title · Size, 방향 버튼과 함께), 보기 전환(«Grid view» / «List view»), 그리고 만들기 메뉴. 아래 줄이 검색(«Search studies…»)입니다. 카드는 미리보기 보드, 제목, «{n} chapters» · «edited {when}»을 보여 주고, 즐겨찾기된 카드는 왼쪽 모서리가 따뜻한 색으로 표시됩니다. 카드 메뉴(⋯)에 <strong>Bookmark · Rename · Move to a folder · Remove</strong>가 있고, 터치에서는 카드를 왼쪽으로 밀면 제거되고(실행 취소 가능) 오른쪽으로 밀면 즐겨찾기됩니다.">
-              The top row holds the title and its tools: the bookmark filter (“Show bookmarked
+            <p data-ko="위 줄에 제목과, 그 아래 개수(«{n} studies»), 그리고 도구들: 즐겨찾기 필터(«Show bookmarked only» / «Show all»), 정렬(«Sort by»: Last modified · Title · Size, 방향 버튼과 함께), 보기 전환(«Grid view» / «List view»), 그리고 만들기 메뉴. 아래 줄이 검색(«Search studies…»)입니다. 카드는 미리보기 보드, 제목, «{n} chapters» · «edited {when}»을 보여 주고, 즐겨찾기된 카드는 왼쪽 가장자리가 강조색으로 표시됩니다. 카드 메뉴(⋯)에 <strong>Bookmark · Rename · Move to a folder · Remove</strong>가 있고, 터치에서는 카드를 왼쪽으로 밀면 제거되고(실행 취소 가능) 오른쪽으로 밀면 즐겨찾기됩니다.">
+              The top row holds the title, with how much the shelf holds under it (“{n} studies”), and its tools: the bookmark filter (“Show bookmarked
               only” / “Show all”), sorting (“Sort by”: Last modified · Title · Size, with a
               direction button), the view switch (“Grid view” / “List view”), and the create menu.
               The row below is search (“Search studies…”). A card shows a preview board, the title
-              and “{n} chapters” · “edited {when}” — a bookmarked one wears a warm left edge. Its ⋯
+              and “{n} chapters” · “edited {when}” — a bookmarked one wears a left edge in the accent colour. Its ⋯
               menu holds <strong>Bookmark · Rename · Move to a folder · Remove</strong>; on
               touch, swiping a card left removes it (undoable) and right bookmarks it.
             </p>
@@ -1472,13 +1477,14 @@
               </table>
             </div>
             <h2 data-ko="스터디 안에서">Inside a study</h2>
-            <p data-ko="머리, 왼쪽부터: 뒤로(«All studies») · 제목(두 번 클릭해 이름 바꾸기) · 이름표(«Other names for this study» — 쉼표로 나눈 별칭, <a href='#notes'>위키링크</a> 참조) · 고리(«Linked mentions», 가리키는 것이 있을 때만) · 시계(«Earlier versions» — <a href='#vault'>보관함</a> 참조) · <strong>Edit</strong> 토글(«Show NAGs, comments and move tools» / «Hide the editing tools») · 저장 표시. 기물은 읽는 중에도 움직일 수 있습니다. Edit는 주석 도구를 꺼내는 스위치일 뿐이라, 그냥 따라 읽을 때는 보드가 어지럽지 않습니다.">
+            <p data-ko="머리, 왼쪽부터: 뒤로(«All studies») · 제목(두 번 클릭해 이름 바꾸기) · 이름표(«Other names for this study» — 쉼표로 나눈 별칭, <a href='#notes'>위키링크</a> 참조) · 고리(«Linked mentions», 가리키는 것이 있을 때만) · 시계(«Earlier versions» — <a href='#vault'>보관함</a> 참조) · <strong>Edit</strong> 토글(«Show NAGs, comments and move tools» / «Hide the editing tools») · 저장 표시. 휴대폰에서는 이름표, 고리, 시계가 같은 줄의 ⋯ 하나 뒤로 접힙니다. 기물은 읽는 중에도 움직일 수 있습니다. Edit는 주석 도구를 꺼내는 스위치일 뿐이라, 그냥 따라 읽을 때는 보드가 어지럽지 않습니다.">
               The header, left to right: back (“All studies”) · the title (double-click to rename)
               · the tag (“Other names for this study” — the comma-separated aliases, see
               <a href="#notes">Wiki-links</a>) · the link (“Linked mentions”, only where something
               points here) · the clock (“Earlier versions” — see <a href="#vault">The vault</a>) ·
               the <strong>Edit</strong> toggle (“Show NAGs, comments and move tools” / “Hide the
-              editing tools”) · the save control. The pieces move whether you are reading or
+              editing tools”) · the save control; on a phone the tag, the link and the clock fold
+              behind one ⋯ in the same row. The pieces move whether you are reading or
               editing — Edit only brings out the annotation tools, so the board stays uncluttered
               when you are just stepping through.
             </p>
@@ -1527,13 +1533,14 @@
               </picture>
             </figure>
             <h2 data-ko="읽기와 쓰기">Reading and writing</h2>
-            <p data-ko="노트는 읽기 모드로 열립니다. 링크는 클릭하면 바로 열리고, 도구 막대는 없습니다. 머리의 <strong>Edit</strong>(«Edit this note»)가 편집으로 바꾸고, 같은 자리가 <strong>Done</strong>(«Back to reading»)이 됩니다. 머리의 나머지는 다른 문서와 같습니다: 뒤로, 제목(두 번 클릭해 이름 바꾸기), 이름표(«Other names for this note»), 고리(«Linked mentions», 가리키는 것이 있을 때만), 시계(«Earlier versions»), 저장 표시.">
+            <p data-ko="노트는 읽기 모드로 열립니다. 링크는 클릭하면 바로 열리고, 도구 막대는 없습니다. 머리의 <strong>Edit</strong>(«Edit this note»)가 편집으로 바꾸고, 같은 자리가 <strong>Done</strong>(«Back to reading»)이 됩니다. 머리의 나머지는 다른 문서와 같습니다: 뒤로, 제목(두 번 클릭해 이름 바꾸기), 이름표(«Other names for this note»), 고리(«Linked mentions», 가리키는 것이 있을 때만), 시계(«Earlier versions»), 저장 표시. 휴대폰에서는 이름표, 고리, 시계가 ⋯ 하나 뒤로 접힙니다.">
               A note opens read-only — links follow on a click, and there is no toolbar. The
               header's <strong>Edit</strong> (“Edit this note”) switches to writing; the same spot
               becomes <strong>Done</strong> (“Back to reading”). The rest of the header matches
               every document: back, the title (double-click to rename), the tag (“Other names for
               this note”), the link (“Linked mentions”, only where something points here), the
-              clock (“Earlier versions”), the save control.
+              clock (“Earlier versions”), the save control; on a phone the tag, the link and the
+              clock fold behind one ⋯.
             </p>
             <h3 data-ko="서식 도구 막대">The formatting toolbar</h3>
             <p data-ko="편집 중에만 노트 위에 고정되어 표시됩니다. 열 개의 버튼, 순서대로:">
@@ -1582,10 +1589,11 @@
               <strong>Link</strong> beside one wraps that single occurrence. A document nothing
               points at carries no icon at all.
             </p>
-            <p data-ko="목록은 스터디 목록과 같은 구성입니다: 검색, 정렬, 즐겨찾기, 폴더, 그리고 만들기 메뉴의 <strong>New note</strong> / <strong>New folder</strong>.">
+            <p data-ko="목록은 스터디 목록과 같은 구성입니다: 검색, 정렬, 즐겨찾기, 폴더, 이름 아래의 개수, 그리고 만들기 메뉴의 <strong>New note</strong> / <strong>New folder</strong>. 카드는 스터디 카드가 챕터를 세는 자리에서 링크를 셉니다(«{n} links» · «edited {when}»).">
               The shelf speaks the studies shelf's grammar — search, sorting, bookmarks,
-              folders, and a create menu of <strong>New note</strong> /
-              <strong>New folder</strong>.
+              folders, the count under the name, and a create menu of <strong>New note</strong> /
+              <strong>New folder</strong>. A card counts its links (“{n} links” · “edited {when}”)
+              where a study's counts chapters.
             </p>
           </div>
         </section>
@@ -1700,10 +1708,11 @@
               (“Close”) or <kbd>Esc</kbd> puts both away. It starts pinned on a window wide enough that the table loses no
               columns to it, and unpinned below that.
             </p>
-            <p data-ko="네 개의 탭은 어느 너비에서나 그대로이고, 너비는 겉모습만 바꿉니다. 데스크톱은 상세 칸과 빽빽한 표를 더하고, 휴대폰은 같은 탭들을 카드 줄로 그리며 게임 상세를 그 줄의 메뉴에서 엽니다. 판이 한 줄을 담을 만큼 넓으면(워크스페이스의 밴드, 넓은 창의 이 페이지) 각 탭의 검색·필터·개수가 한 줄로 접혀 그 아래가 전부 게임 줄이 되고, 좁으면 위에 적은 띠 배치로 돌아갑니다. 데스크톱에서는 «Import a game»이 다른 책장의 가져오기처럼 제목 줄에 있고, 휴대폰의 만들기 버튼은 한 번 누르면 곧장 같은 가져오기로 갑니다. 그것이 내주던 나머지는 전부 탭이 되었기 때문입니다.">
+            <p data-ko="네 개의 탭은 어느 너비에서나 그대로이고, 너비는 겉모습만 바꿉니다. 데스크톱은 상세 칸과 빽빽한 표를 더하고, 휴대폰은 같은 탭들을 카드 줄로 그리며(셋째 줄은 오프닝의 계열과 날짜, 전체 오프닝 이름은 줄의 툴팁), 게임 상세를 그 줄의 메뉴에서 엽니다. 판이 한 줄을 담을 만큼 넓으면(워크스페이스의 밴드, 넓은 창의 이 페이지) 각 탭의 검색·필터·개수가 한 줄로 접혀 그 아래가 전부 게임 줄이 되고, 좁으면 위에 적은 띠 배치로 돌아갑니다. 데스크톱에서는 «Import a game»이 다른 책장의 가져오기처럼 제목 줄에 있고, 휴대폰의 만들기 버튼은 한 번 누르면 곧장 같은 가져오기로 갑니다. 그것이 내주던 나머지는 전부 탭이 되었기 때문입니다.">
               The four tabs are the page at every width; width changes only the dressing. A
               desktop adds the details column and the dense table, a phone gives the same tabs
-              card rows and opens a game's details from the row's own menu. Where the pane is wide
+              card rows (the third line is the opening's family and the date, with the full opening
+              name in the row's tooltip) and opens a game's details from the row's own menu. Where the pane is wide
               enough to hold one line — the workspace's band, this page on a wide window — each
               tab's search, filters and count fold into a single row and everything under it is
               game rows; narrower panes keep the stacked bands described above. On a desktop
@@ -1952,17 +1961,17 @@
                 loading="lazy"
                 decoding="async"
                 alt="A printed diagram becoming the position on the board beside the book"
-                data-ko-alt="인쇄된 다이어그램가 책 옆 보드 위의 포지션으로 옮겨지는 모습"
+                data-ko-alt="인쇄된 다이어그램이 책 옆 보드 위의 포지션으로 옮겨지는 모습"
               />
               <figcaption data-ko="다이어그램 버튼: 책 속 포지션이 곁의 보드로.">A diagram button carrying the printed position to the board.</figcaption>
             </figure>
             <h2 data-ko="목록">The shelf</h2>
-            <p data-ko="만들기 메뉴의 <strong>Import a PDF</strong>(«Import a book» 창 — PDF를 놓고 제목과 폴더를 정한 뒤 «Import»)와 <strong>New folder</strong>, 그리고 검색, 정렬(Title · Added · Size · Last read), 즐겨찾기 필터. 책 카드에는 «{n} pages»와 «Page {page} of {pages}»가 표시되고, 읽던 자리는 책마다 기억됩니다. 카드 메뉴: <strong>Read · Bookmark · Rename · Move to a folder · Read diagrams · Replace PDF… · Remove from the shelf</strong>. PDF를 바꿔도 읽던 페이지는 유지되고, 제거할 때는 «any puzzle book read from it is kept»라고 미리 알려 줍니다.">
+            <p data-ko="만들기 메뉴의 <strong>Import a PDF</strong>(«Import a book» 창 — PDF를 놓고 제목과 폴더를 정한 뒤 «Import»)와 <strong>New folder</strong>, 그리고 검색, 정렬(Title · Added · Size · Last read), 즐겨찾기 필터. 책 카드에는 한 번 연 뒤에는 «Page {page} of {pages}»가, 그 전에는 «{n} pages»가 표시되고, 읽던 자리는 책마다 기억됩니다. 카드 메뉴: <strong>Read · Bookmark · Rename · Move to a folder · Read diagrams · Replace PDF… · Remove from the shelf</strong>. PDF를 바꿔도 읽던 페이지는 유지되고, 제거할 때는 «any puzzle book read from it is kept»라고 미리 알려 줍니다.">
               The create menu holds <strong>Import a PDF</strong> (the “Import a book” window —
               drop the PDF, set a title and folder, “Import”) and
               <strong>New folder</strong>; beside it, search, sorting (Title · Added · Size ·
-              Last read) and the bookmark filter. A card shows “{n} pages” and “Page {page} of
-              {pages}” — your place is kept per book. Its menu: <strong>Read · Bookmark · Rename ·
+              Last read) and the bookmark filter. A card shows “Page {page} of {pages}” once you have opened it, “{n} pages”
+              before — your place is kept per book. Its menu: <strong>Read · Bookmark · Rename ·
               Move to a folder · Read diagrams · Replace PDF… · Remove from the shelf</strong> —
               replacing the PDF keeps your page, and removing warns “any puzzle book read from it
               is kept”.
@@ -2453,7 +2462,7 @@
                   </tr>
                   <tr>
                     <td>Tablebase</td>
-                    <td data-ko="<strong>Use the tablebase</strong> 스위치는 이 기기에만 적용됩니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «Answers come from»은 보관함의 설정으로, <strong>Lichess</strong> · <strong>Your server</strong> · <strong>Table files</strong> 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타납니다. 저장하면 재시작 없이 적용되며, 출처마다 캐시가 따로 쌓입니다. <strong>Table files</strong>는 앱과 서버가 같은 컴퓨터일 때만 나타납니다. 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이므로, 다른 곳의 서버라면 그 서버의 보관함 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 설정해 두고도 답하지 않을 수 있는 유일한 선택이기도 합니다. 폴더가 사라졌거나 네이티브 코어가 없는 빌드면 조용히 Lichess로 되돌아가므로, 둘 중 어느 쪽인지는 그 아래 한 줄이 알려 줍니다. <strong>Cached answers</strong>는 답을 몇 개 갖고 있고 디스크를 얼마나 쓰는지 보여 주며, 옆의 휴지통(«Clear cached answers»)이 그것을 모두 버립니다. 줄은 «Nothing cached»로 바뀌고 아래 Storage used의 숫자도 함께 갱신됩니다. 직접 운영하는 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다. 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
+                    <td data-ko="<strong>Use the tablebase</strong> 스위치는 이 기기에만 적용됩니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «Answers come from»은 보관함의 설정으로, <strong>Lichess’s public tablebase</strong> · <strong>A tablebase server of your own</strong> · <strong>Table files on the server</strong> 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타납니다. 저장하면 재시작 없이 적용되며, 출처마다 캐시가 따로 쌓입니다. <strong>Table files</strong>는 앱과 서버가 같은 컴퓨터일 때만 나타납니다. 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이므로, 다른 곳의 서버라면 그 서버의 보관함 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 설정해 두고도 답하지 않을 수 있는 유일한 선택이기도 합니다. 폴더가 사라졌거나 네이티브 코어가 없는 빌드면 조용히 Lichess로 되돌아가므로, 둘 중 어느 쪽인지는 그 아래 한 줄이 알려 줍니다. <strong>Cached answers</strong>는 답을 몇 개 갖고 있고 디스크를 얼마나 쓰는지 보여 주며, 옆의 휴지통(«Clear cached answers»)이 그것을 모두 버립니다. 줄은 «Nothing cached»로 바뀌고 아래 Storage used의 숫자도 함께 갱신됩니다. 직접 운영하는 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다. 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다.">
                       <strong>Use the tablebase</strong> is the switch, and it is this device's
                       alone: off, nothing is asked from here at all. Under it,
                       <strong>Answers come from</strong> — the vault's own setting, one choice of
@@ -2490,12 +2499,12 @@
                   </tr>
                   <tr>
                     <td>Appearance</td>
-                    <td data-ko="<strong>App language</strong>(English · 한국어) · <strong>App theme</strong>(Follow system / Light / Dark) · <strong>Density</strong>(Comfortable / Compact) · <strong>Colours</strong>(중성색 다섯, 유채색 여덟 중 하나인 “Follow the board”는 고른 보드에서 강조색을 가져옵니다, High contrast) · <strong>Board</strong>(열 테마, 목록의 줄마다 그 테마로 칠한 견본이 붙고, «나뭇결» 하나는 무늬가 있습니다) · <strong>Pieces</strong>(Cburnett부터 열 세트, 줄마다 그 세트의 나이트가 붙습니다) · <strong>Castling</strong>(킹 두 칸 g1 / 룩 위 h1) · <strong>Board coordinates</strong> · <strong>Move box</strong>(키보드로 수를 두는 «Type a move…» 칸), 그리고 «More options» 아래의 <strong>Corners</strong>(모서리 반경)와 <strong>Annotation size</strong>. 전부 기기별 설정입니다.">
+                    <td data-ko="<strong>App language</strong>(English · 한국어) · <strong>App theme</strong>(Follow system / Light / Dark) · <strong>Density</strong>(Comfortable / Compact) · <strong>Colours</strong>(중성색 다섯, 유채색 여덟 중 하나인 “Follow the board”는 고른 보드에서 강조색을 가져옵니다, High contrast) · <strong>Board</strong>(열두 테마, 목록의 줄마다 그 테마로 칠한 견본이 붙고, «나뭇결» 하나는 무늬가 있습니다) · <strong>Pieces</strong>(Cburnett부터 열 세트, 줄마다 그 세트의 나이트가 붙습니다) · <strong>Castling</strong>(킹 두 칸 g1 / 룩 위 h1) · <strong>Board coordinates</strong> · <strong>Move box</strong>(키보드로 수를 두는 «Type a move…» 칸), 그리고 «More options» 아래의 <strong>Corners</strong>(모서리 반경)와 <strong>Annotation size</strong>. 전부 기기별 설정입니다.">
                       <strong>App language</strong> (English · 한국어) · <strong>App theme</strong>
                       (Follow system / Light / Dark) · <strong>Density</strong> (Comfortable /
                       Compact) · <strong>Colours</strong> (five neutrals, eight coloured
                       schemes of which “Follow the board” takes its accent from the chosen
-                      board, High contrast) · <strong>Board</strong> (ten themes, each row of
+                      board, High contrast) · <strong>Board</strong> (twelve themes, each row of
                       the list carrying a swatch painted in that theme, one of them — “Wood
                       grain” — textured) ·
                       <strong>Pieces</strong> (ten sets, Cburnett onward,
@@ -2509,13 +2518,14 @@
                   </tr>
                   <tr>
                     <td>Storage used</td>
-                    <td data-ko="디스크에 있는 것과 그중 비울 수 있는 것: <strong>Vault</strong>(내 문서와 변경 기록, 위의 Vault 카드로 이어집니다), <strong>Browsed games</strong>, <strong>Reference databases</strong>, <strong>Explorer cache</strong>, <strong>Tablebase cache</strong>, 그리고 «{size} in total». 읽기 전용이며, 각 줄은 그것을 지우는 카드나 페이지로 이어집니다.">
+                    <td data-ko="디스크에 있는 것과 그중 비울 수 있는 것: <strong>Vault</strong>(내 문서와 변경 기록, 위의 Vault 카드로 이어집니다), <strong>Browsed games</strong>, <strong>Reference databases</strong>, <strong>Explorer cache</strong>, <strong>Tablebase cache</strong>, 그리고 «{size} in total». 읽기 전용이며, 각 줄은 그것을 지우는 카드나 페이지로 이어집니다. 앱에서 아직 지울 수 없는 Explorer cache만 숫자로만 남습니다.">
                       What is on disk and what of it can be freed: <strong>Vault</strong> (your
                       documents and their history; it links to the Vault card above),
                       <strong>Browsed games</strong>, <strong>Reference databases</strong>,
                       <strong>Explorer cache</strong>, <strong>Tablebase cache</strong>, and
                       “{size} in total”. Read-only; each row links to the card or page that
-                      clears it.
+                      clears it, except Explorer cache, which nothing in the app clears yet and so
+                      stays a figure alone.
                     </td>
                   </tr>
                   <tr>
@@ -2535,9 +2545,9 @@
                   </tr>
                   <tr>
                     <td>Sound</td>
-                    <td data-ko="<strong>Move sounds</strong> · <strong>Vibrate on moves</strong>(진동이 있는 기기에서) · <strong>Volume</strong> · <strong>Move sound</strong>와 <strong>Capture sound</strong>(번호 붙은 변주들, «Rotate through all» 포함. 고르면 바로 들려줍니다).">
-                      <strong>Move sounds</strong> · <strong>Vibrate on moves</strong> (where the
-                      device vibrates) · <strong>Volume</strong> · <strong>Move sound</strong> and
+                    <td data-ko="<strong>Move sounds</strong> · <strong>Vibrate on moves</strong>(기물을 놓을 때와 밀기가 넘어갈 때 짧게 한 번. 안드로이드에서만) · <strong>Volume</strong> · <strong>Move sound</strong>와 <strong>Capture sound</strong>(번호 붙은 변주들, «Rotate through all» 포함. 고르면 바로 들려줍니다).">
+                      <strong>Move sounds</strong> · <strong>Vibrate on moves</strong> (one short tick when a
+                      piece lands and when a swipe takes; Android only) · <strong>Volume</strong> · <strong>Move sound</strong> and
                       <strong>Capture sound</strong> (numbered variants plus “Rotate through all” —
                       picking one plays it).
                     </td>
@@ -2553,9 +2563,9 @@
                   </tr>
                   <tr>
                     <td>Danger zone</td>
-                    <td data-ko="보관함 전체를 비웁니다. 변경 이력까지 지워집니다. «The password, 2FA and tokens survive. There is no undo…» 칸이 요구하는 확인 문구(Type “wipe everything” to arm)를 입력해야 <strong>Wipe all data</strong>를 누를 수 있고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
+                    <td data-ko="보관함 전체를 비웁니다. 변경 이력까지 지워집니다. «The password, 2FA and tokens survive. There is no undo, so download a copy first.» 칸이 요구하는 확인 문구(Type “wipe everything” to arm)를 입력해야 <strong>Wipe all data</strong>를 누를 수 있고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
                       Wiping the vault — change history included. “The password, 2FA and
-                      tokens survive. There is no undo…” Typing the arming phrase the field asks
+                      tokens survive. There is no undo, so download a copy first.” Typing the arming phrase the field asks
                       for — Type “wipe everything” to arm — unlocks <strong>Wipe all data</strong>,
                       and the confirm asks for the app password when one is set.
                     </td>
@@ -2632,6 +2642,30 @@
                 The comment box opens as a sheet, and while a note is being edited the bottom bar
                 steps aside for the keyboard.
               </li>
+              <li data-ko="페이지 이름은 큰 제목이고, 스크롤하면 맨 위의 바로 줄어들며 페이지의 버튼은 그 옆에 있습니다. 페이지는 짧게 겹쳐 바뀌고 바의 알약이 탭 사이를 미끄러집니다. 시스템의 움직임 줄이기 설정에서는 모두 멈춥니다.">
+                The page's name is a large title that shrinks into a bar at the top as you scroll,
+                with the page's buttons beside it; pages change with a short cross-fade, and the
+                bar's pill slides between tabs. All of it stays still under the system's
+                reduced-motion setting.
+              </li>
+              <li data-ko="현재 탭을 한 번 더 누르면 그 페이지의 맨 위로 돌아갑니다.">
+                A second tap on the current tab scrolls its page back to the top.
+              </li>
+              <li data-ko="홈 제목 줄 끝의 검색 버튼이 빠른 전환 목록을 엽니다: 섹션과 모든 스터디, 노트, 기보를 이름으로.">
+                The search button at the end of Home's title row opens the quick switcher: the
+                sections and every study, note and game, by name.
+              </li>
+              <li data-ko="문서의 도구(다른 이름, 여기로 오는 링크, 이전 버전)는 제목 줄의 ⋯ 하나 뒤로 접히고, 줄에는 이름, Edit, Save만 남습니다.">
+                A document's tools (other names, what links here, earlier versions) fold behind one
+                ⋯ in the title row; the row keeps the name, Edit and Save.
+              </li>
+              <li data-ko="리뷰 제안은 수 목록 창의 띠 대신 페이지 위에 몇 초 동안 뜨는 토스트이며 X로 닫습니다.">
+                The review offer is a toast over the page for a few seconds, with an X, instead of a
+                band in the moves pane.
+              </li>
+              <li data-ko="보드 아래의 처음, 이전, 다음, 마지막 화살표는 손가락 아래에서 22px입니다.">
+                The first, previous, next and last arrows under the board are 22px under a thumb.
+              </li>
             </ul>
             <p data-ko="같은 서버를 보는 모든 기기는 같은 것을 봅니다: 기보도, 진행도, 홈 배치도. 기기별인 것은 표시 설정(테마, 보드, 밀도)뿐입니다.">
               Every device on the same server sees the same things — games, progress, the home
@@ -2668,9 +2702,9 @@
             </p>
 
             <h2 data-ko="내 데이터는 어디에 있나요?">Where is my data?</h2>
-            <p data-ko="전부 보관함 폴더 안에, 평범한 파일로 있습니다. 설정 페이지 맨 아래가 정확한 경로를 알려 줍니다. 백업은 그 폴더를 복사하면 됩니다. <a href='#vault'>보관함</a> 참조.">
-              All of it in the vault folder, as plain files. The bottom of the Settings page names
-              the exact path, and backing up is copying that folder — see
+            <p data-ko="전부 보관함 폴더 안에, 평범한 파일로 있습니다. 설정의 Vault 카드가 정확한 경로를 보여 주고, 그 카드의 “Download a copy”가 백업입니다. 그 폴더를 복사해도 됩니다. <a href='#vault'>보관함</a> 참조.">
+              All of it in the vault folder, as plain files. The Vault card in Settings shows the
+              exact path, and its “Download a copy” is a backup; so is copying that folder — see
               <a href="#vault">The vault</a>.
             </p>
 

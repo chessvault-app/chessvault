@@ -324,7 +324,7 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   it is `text-xl font-semibold tracking-tight` with the actions pushed
   right. On a phone the name is a `text-2xl` large title in a 44px row,
   and the row is the page's bar: sticky at the top of the scroller, it
-  takes the page background, shrinks the name to `text-base` and takes
+  takes the page background, scales the name to two thirds (24px to 16px, not re-set at a smaller size) and takes
   the bars' white once the page has scrolled under it (the iOS large
   title, Material 3's medium app bar; on the tonal page the fill is the
   bar, and a hairline is drawn only under High contrast), with the
@@ -667,7 +667,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
   RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
   Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
-  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Toast —
+  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Toast, Command —
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius

@@ -182,11 +182,10 @@ flowchart LR
   relaunches backgrounded PWAs from scratch. Every view is lazy, including
   the analysis board — the landing page must not pay for the engine, the
   explorer and the PGN parsers to draw a launcher — which is also why the
-  home page's customise dialog is the one thing on it that is lazy. It
-  currently loads 662 kB of JS in Korean — 563 kB of shell across 49
+  home page's customise dialog is the one thing on it that is lazy. The 0.7.2
+  build loaded 662 kB of JS in Korean — 563 kB of shell across 49
   chunks (the 248 kB entry, 133 kB of the component layer, 63 kB of
-  dialog) and 99 kB of dictionary — and 563 kB in English; measured on
-  the 0.7.2 build. The shell was 217 kB before the component layer
+  dialog) and 99 kB of dictionary — and 563 kB in English. The shell was 217 kB before the component layer
   came in, and the Base UI port grew the layer's and the dialog's chunks
   again. New UI strings usually cost the dictionary and nothing else —
   0.5.0 added the Databases vocabulary, the level bands, the deep search
