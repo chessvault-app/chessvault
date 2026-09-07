@@ -2,7 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- maximum-scale=1 and user-scalable=no hold the page at its own size on a
+         phone: Android and the home-screen app on iOS honour them; a Safari tab
+         ignores both, and there body's touch-action (index.css) does the same
+         job. The book reader, the evidence pages and the opening map keep their
+         own pinch, which scales what they show and not the app. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     <title>Chess Vault</title>
     <meta name="description" content="A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles." />
     <meta name="color-scheme" content="light dark" />

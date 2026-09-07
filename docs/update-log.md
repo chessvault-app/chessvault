@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A pinch no longer zooms the app on a phone.** The cap that held the
+  page at its own size left with 0.4.5's fix for iOS zooming into small
+  fields, on the reading that Safari ignored it anyway; the home-screen
+  app did not, and two fingers have zoomed the whole shell since. The
+  viewport declines scaling again, and the shell asks for pans only,
+  which is what holds a Safari tab off. The book reader, the evidence
+  pages and the opening map keep their own pinch, which scales what they
+  show and not the app.
 - **The title band and the eval bar lose their hairlines.** The desktop's
   band over the sidebar drew its right rule in the plain border colour
   while the sidebar under it had already given the line up on the toned

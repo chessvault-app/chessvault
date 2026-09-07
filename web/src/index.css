@@ -972,11 +972,15 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
-    /* Double-tap does nothing. Left at `auto`, a second tap on a heading
-       or the gap beside the board zoomed the page in on iOS, which no
-       app does. `manipulation` takes only that gesture: pinch still
-       zooms, so this is not the maximum-scale cap main.tsx declines. */
-    touch-action: manipulation;
+    /* Neither a double tap nor a pinch zooms the app. A second tap on a
+       heading, or two fingers on the gap beside the board, zoomed the page
+       in on iOS, which no app does. Pans only: `manipulation` left the
+       pinch, and the viewport's user-scalable=no (index.html) is what a
+       Safari tab ignores, so this rule is the one that reaches it. The
+       reader's own pinch is untouched: it listens for the touches and
+       gesture events, which touch-action never withholds, and its scroller
+       already declares the same value. */
+    touch-action: pan-x pan-y;
   }
 
   /* A long press on a phone selects nothing that is not prose. Headings,
