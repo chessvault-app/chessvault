@@ -234,28 +234,28 @@ export function ThemesPage() {
         {/* The shelves' two-row shape: the heading row carries what is
             ABOUT the page, and the search gets a full-width line of its
             own instead of a stub squeezed beside the title. */}
-        {/* gap-4, the shelf toolbar's and PageShell's: see shelf-toolbar. */}
-        <div className="mb-4 flex flex-col gap-4">
-          <PageHeader
-            title={t('Puzzle themes')}
-            back={() => navigate('puzzles', 'hub')}
-            actions={
-              error && (
-                <span className="text-destructive text-sm" role="alert">
-                  {error}
-                </span>
-              )
-            }
-          />
-          <SearchInput
-            inputSize="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Find a theme')}
-            aria-label={t('Find a theme')}
-            className="w-full"
-          />
-        </div>
+        <PageHeader
+          title={t('Puzzle themes')}
+          back={() => navigate('puzzles', 'hub')}
+          className="mb-4"
+          actions={
+            error && (
+              <span className="text-destructive text-sm" role="alert">
+                {error}
+              </span>
+            )
+          }
+          search={
+            <SearchInput
+              inputSize="sm"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('Find a theme')}
+              aria-label={t('Find a theme')}
+              className="w-full"
+            />
+          }
+        />
 
         <ChipRow className="mb-4" innerClassName="gap-2">
           <ThemeCard

@@ -71,6 +71,9 @@ export function PageShell({
 }) {
   return (
     <div
+      // Marks the page's scroller for the screenshot grid (shot-grid.ts),
+      // which scrolls it to picture the header's compact state.
+      data-page-scroll={scroll ? '' : undefined}
       className={cn(
         'h-full min-h-0',
         // The gutter is a WIDE, fine-pointer fix: the 5px centring

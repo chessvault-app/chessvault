@@ -330,61 +330,61 @@ export function Shelf() {
             gets a full-width line of its own underneath. The bookmark
             switch rides beside the search below sm, exactly as in
             ShelfToolbar. */}
-        {/* gap-4, the shelf toolbar's and PageShell's: see shelf-toolbar. */}
-        <div className="mb-4 flex flex-col gap-4">
-          <PageHeader
-            title={t('Puzzle books')}
-            back={() => navigate('puzzles', 'hub')}
-            actions={
-              <>
-              {bookmarkToggle('hidden sm:inline-flex')}
-              <Select
-                value={view.sort}
-                onValueChange={(value) => view.setSort(value as BookSort)}
-                ariaLabel={t('Sort by')}
-                size="sm"
-                align="end"
-                steady
-                className="hidden shrink-0 sm:flex"
-                groups={[
-                  { options: BOOK_SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
-                ]}
+        <PageHeader
+          title={t('Puzzle books')}
+          back={() => navigate('puzzles', 'hub')}
+          className="mb-4"
+          search={
+            <>
+              <SearchInput
+                inputSize="sm"
+                value={query}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+                placeholder={t('Search books…')}
+                aria-label={t('Search books…')}
+                className="min-w-0 flex-1"
               />
-              <Button
-                variant="secondary"
-                size="icon-sm"
-                title={
-                  view.dir === 'asc'
-                    ? t('Ascending. Press for descending.')
-                    : t('Descending. Press for ascending.')
-                }
-                className="hidden shrink-0 sm:inline-flex"
-                onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
-              >
-                {view.dir === 'asc' ? (
-                  <ArrowUpNarrowWide className="size-3.5" />
-                ) : (
-                  <ArrowDownWideNarrow className="size-3.5" />
-                )}
-              </Button>
-                <CreateControl
-                  actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
-                />
-              </>
-            }
-          />
-          <div className="flex items-center gap-2">
-            <SearchInput
-              inputSize="sm"
-              value={query}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-              placeholder={t('Search books…')}
-              aria-label={t('Search books…')}
-              className="min-w-0 flex-1"
+              {bookmarkToggle('sm:hidden')}
+            </>
+          }
+          actions={
+            <>
+            {bookmarkToggle('hidden sm:inline-flex')}
+            <Select
+              value={view.sort}
+              onValueChange={(value) => view.setSort(value as BookSort)}
+              ariaLabel={t('Sort by')}
+              size="sm"
+              align="end"
+              steady
+              className="hidden shrink-0 sm:flex"
+              groups={[
+                { options: BOOK_SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
+              ]}
             />
-            {bookmarkToggle('sm:hidden')}
-          </div>
-        </div>
+            <Button
+              variant="secondary"
+              size="icon-sm"
+              title={
+                view.dir === 'asc'
+                  ? t('Ascending. Press for descending.')
+                  : t('Descending. Press for ascending.')
+              }
+              className="hidden shrink-0 sm:inline-flex"
+              onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
+            >
+              {view.dir === 'asc' ? (
+                <ArrowUpNarrowWide className="size-3.5" />
+              ) : (
+                <ArrowDownWideNarrow className="size-3.5" />
+              )}
+            </Button>
+              <CreateControl
+                actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
+              />
+            </>
+          }
+        />
 
         {error && (
           <p className="text-destructive mb-3 text-sm" role="alert">

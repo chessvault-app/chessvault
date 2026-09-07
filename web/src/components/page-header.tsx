@@ -12,6 +12,13 @@ import { t } from '@/lib/i18n';
  *
  * A `description` turns the row into a titled block: the explanatory
  * line sits tight under the heading instead of a full shell-gap away.
+ *
+ * A `search` is the page's find-or-filter field, on a full-width row of
+ * its own one shell gap (16px) under the heading row, where every other
+ * page's first row sits. It was the same two rows written out by hand on
+ * five pages (the shelf toolbar, Books, the puzzle shelf, Themes, the
+ * canvas shell), which is how the shelves once came to sit 10px under
+ * their titles while everything else sat 16.
  */
 export function PageHeader({
   title,
@@ -21,6 +28,8 @@ export function PageHeader({
   description,
   meta,
   actions,
+  search,
+  searchRow,
   className,
 }: {
   title: string;
@@ -44,14 +53,21 @@ export function PageHeader({
    */
   meta?: ReactNode;
   actions?: ReactNode;
+  /** The page's search or filter field, and anything that rides beside it. */
+  search?: ReactNode;
+  /** Extra classes on the search row (`searchRowClass` for the phone focus rule). */
+  searchRow?: string;
   className?: string;
 }) {
+  // className lands on the outermost box there is: the header alone, the
+  // titled block, or the block with its search row.
+  const outer = search ? undefined : className;
   const header = (
     <header
       className={cn(
         'flex items-center gap-x-3 gap-y-2',
         truncate ? 'flex-nowrap' : 'flex-wrap',
-        !description && className,
+        !description && outer,
       )}
     >
       {back && (
@@ -74,11 +90,19 @@ export function PageHeader({
       )}
     </header>
   );
-  if (!description) return header;
-  return (
-    <div className={cn('flex flex-col gap-2', className)}>
+  const block = description ? (
+    <div className={cn('flex flex-col gap-2', outer)}>
       {header}
       <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+    </div>
+  ) : (
+    header
+  );
+  if (!search) return block;
+  return (
+    <div className={cn('flex flex-col gap-4', className)}>
+      {block}
+      <div className={cn('flex items-center gap-2', searchRow)}>{search}</div>
     </div>
   );
 }

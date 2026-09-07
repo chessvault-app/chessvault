@@ -172,15 +172,25 @@ export function ShelfToolbar({
   );
 
   return (
-    // gap-4, PageShell's own: the 16px between a page's title row and
-    // whatever follows it. This was gap-2.5, which put the search field
-    // 10px under the title on the four shelves while the pages that
-    // hand the shell its children (Games, Settings, the dashboard) put
-    // theirs 16px down, and the shelves read as a tighter template.
-    <div className="flex flex-col gap-4">
-      <PageHeader
-        title={title}
-        actions={
+    // The search row is PageHeader's: one shell gap under the title, the
+    // same distance every page puts its first row at.
+    <PageHeader
+      title={title}
+      search={
+        <>
+          <SearchInput
+            type="text"
+            inputSize="sm"
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            className="min-w-0 flex-1"
+          />
+          {bookmark('sm:hidden')}
+        </>
+      }
+      actions={
           <>
             {/* Wide screens only — below sm this toolbar is just Create, and
                 the switch travels down to the search row. */}
@@ -234,19 +244,5 @@ export function ShelfToolbar({
           </>
         }
       />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          type="text"
-          inputSize="sm"
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder={placeholder}
-          aria-label={placeholder}
-          className="min-w-0 flex-1"
-        />
-        {bookmark('sm:hidden')}
-      </div>
-    </div>
   );
 }
