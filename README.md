@@ -576,8 +576,10 @@ npm run dev          # server + web with hot reload, http://localhost:5173
 
 First run copies the Stockfish engine assets out of `node_modules`
 (Stockfish 19 from the Lichess build with its 1 MB small network, and
-the 7 MB Stockfish 18 single-threaded fallback; `npm run setup:engine --
---full` adds the full-strength networks beside them).
+the 7 MB Stockfish 18 single-threaded fallback). Stockfish's full
+network (99 MB) is not shipped: the engine's settings in the app have
+the server download and keep it on request; `npm run setup:engine --
+--full` stages it into the build instead.
 
 The Rust core under `native/` is optional and not built by any of the
 above. To have it — a source checkout runs the JavaScript jobs without

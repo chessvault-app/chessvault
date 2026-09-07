@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-  defaultFlavor,
+  flavorFor,
   StockfishEngine,
   supportsThreads,
   type EngineFlavor,
+  type EngineNetwork,
   type SearchUpdate,
 } from '@/engine/StockfishEngine';
 import type { PvLine } from '@/engine/uci';
@@ -18,7 +19,10 @@ const defaultThreads = (): number => {
 interface EngineState {
   /** User's on/off switch. Off means no worker exists at all. */
   enabled: boolean;
+  /** Derived from `network` and whether this page has threads; never chosen directly. */
   flavor: EngineFlavor;
+  /** The user's choice of network; the full one has to be on the server first. */
+  network: EngineNetwork;
   threads: number;
   hashMb: number;
   multiPv: number;
@@ -48,6 +52,12 @@ interface EngineState {
   release: () => void;
   toggle: () => void;
   setOption: (patch: Partial<Pick<EngineState, 'threads' | 'hashMb' | 'multiPv' | 'depth' | 'moveSeconds'>>) => void;
+  /**
+   * Change networks. A network is loaded once, when the worker boots, so
+   * this rebuilds the worker rather than sending an option; a search in
+   * flight restarts on the new one.
+   */
+  setNetwork: (network: EngineNetwork) => void;
   /** Analyse a position, or clear results if the engine is off. */
   analyse: (fen: string) => void;
   stop: () => void;
@@ -154,6 +164,7 @@ export const useEngine = create<EngineState>()(
       return {
         enabled: false,
         flavor: 'lite',
+        network: 'small',
         threads: 2,
         hashMb: 128,
         multiPv: 3,
@@ -277,6 +288,21 @@ export const useEngine = create<EngineState>()(
           }
         },
 
+        setNetwork: (network) => {
+          if (network === get().network) return;
+          set({ network, flavor: flavorFor(network, supportsThreads()) });
+          if (!engine) return;
+          holdIdleTeardown();
+          engine.terminate();
+          engine = null;
+          requestedFen = null;
+          if (get().enabled && !get().held && pendingFen) {
+            requestedFen = pendingFen;
+            set({ lines: [], finished: false, resultFen: null });
+            void ensureEngine().analyse(pendingFen, get().depth, get().moveSeconds * 1000);
+          }
+        },
+
         analyse: (fen) => {
           if (get().enabled && fen === requestedFen) return; // the twin pane's echo
           pendingFen = fen;
@@ -305,7 +331,7 @@ export const useEngine = create<EngineState>()(
       // `enabled` is deliberately NOT persisted: the engine always starts off
       // (lanph3re's preference) and is switched on per session when wanted.
       partialize: (s) => ({
-        flavor: s.flavor,
+        network: s.network,
         threads: s.threads,
         hashMb: s.hashMb,
         multiPv: s.multiPv,
@@ -320,10 +346,10 @@ export const useEngine = create<EngineState>()(
         if (state.threads === 2 && navigator.hardwareConcurrency) {
           state.threads = defaultThreads();
         }
-        if (!supportsThreads()) {
-          state.flavor = defaultFlavor();
-          state.threadsAvailable = false;
-        }
+        // The flavour follows the network and this page's threads; older
+        // blobs persisted a flavour of their own, which is ignored.
+        state.flavor = flavorFor(state.network ?? 'small', supportsThreads());
+        if (!supportsThreads()) state.threadsAvailable = false;
       },
     },
   ),

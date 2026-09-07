@@ -46,6 +46,9 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
     'the library is the user\'s own PDFs, streamed to and from disk; the demo ' +
     'answers /api/books with an empty shelf (see server.ts) and nothing to upload into',
   storageApi: 'a disk inventory of a vault the demo does not have; Settings shows the demo card instead',
+  engineNetsApi:
+    'the full network is 99 MB the server fetches and keeps on disk; the demo ' +
+    'has no disk, and the engine settings hide the Network row under isDemo()',
   backupApi:
     'a tar of the vault folder, offered from the Vault card; the demo vault is ' +
     'the seed in this tab, and its card has no download button',

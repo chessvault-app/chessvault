@@ -1,14 +1,19 @@
 import { AlertTriangle, ChevronDown, Settings2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
+import { FULL_NET } from './StockfishEngine.ts';
 import { Button } from '@/components/ui/button';
 import { PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
+import { Progress } from '@/components/ui/progress';
+import { Segmented } from '@/components/segmented';
 import { Slider as UiSlider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { api, apiErrorMessage } from '@/lib/api';
+import { isDemo } from '@/lib/demo';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { formatPv, type PvPly } from './pv.ts';
@@ -374,13 +379,14 @@ function EngineSettings() {
 
   return (
     <div className="border-border bg-muted/50 grid gap-3 border-b px-3 py-3">
+      <NetworkRow />
       <Slider
         label="Threads"
         value={threads}
         min={1}
         max={maxThreads}
         disabled={!threadsAvailable}
-        hint={threadsAvailable ? `of ${maxThreads} cores` : 'unavailable in this context'}
+        hint={threadsAvailable ? `of ${maxThreads} cores` : t('unavailable in this context')}
         onChange={(v) => setOption({ threads: v })}
       />
       <Slider
@@ -419,6 +425,158 @@ function EngineSettings() {
         onChange={(v) => setOption({ hashMb: v })}
       />
     </div>
+  );
+}
+
+interface NetStatus {
+  name: string;
+  bytes: number;
+  ready: boolean;
+  downloading: { bytes: number; total: number } | null;
+  error: string | null;
+}
+
+const mb = (bytes: number): string => `${Math.max(1, Math.round(bytes / 1e6))} MB`;
+
+/**
+ * Which network the engine runs: the small one every build ships, or
+ * Stockfish's own, which the server fetches once (99 MB) and keeps.
+ *
+ * Pressing Full before the file is there starts the download and shows
+ * it; the choice takes effect when the bytes have arrived, and the
+ * segment reads Full meanwhile so the press is seen to have landed. Not
+ * in the demo, which has no server to keep the file on; and moot
+ * without threads, since the full network only exists for the threaded
+ * build (StockfishEngine.flavorFor).
+ */
+function NetworkRow() {
+  const network = useEngine((s) => s.network);
+  const setNetwork = useEngine((s) => s.setNetwork);
+  const threadsAvailable = useEngine((s) => s.threadsAvailable);
+  const [status, setStatus] = useState<NetStatus | null>(null);
+  const [wanted, setWanted] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+
+  const refresh = useCallback(async (): Promise<void> => {
+    try {
+      const { nets } = await api<{ nets: NetStatus[] }>('/api/engine/nets');
+      setStatus(nets.find((n) => n.name === FULL_NET) ?? null);
+    } catch (error) {
+      setFailed(apiErrorMessage(error));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDemo()) return;
+    void refresh();
+  }, [refresh]);
+
+  // Poll while the server is downloading; one second is the bar's own pace.
+  const downloading = status?.downloading !== null && status?.downloading !== undefined;
+  useEffect(() => {
+    if (!downloading) return;
+    const id = setInterval(() => void refresh(), 1000);
+    return () => clearInterval(id);
+  }, [downloading, refresh]);
+
+  // The press lands once the file does; a file that has gone (removed on
+  // another device, say) puts the choice back to what can actually run.
+  useEffect(() => {
+    if (!status) return;
+    if (status.ready && wanted) {
+      setWanted(false);
+      setNetwork('full');
+    } else if (!status.ready && !status.downloading && network === 'full') {
+      setNetwork('small');
+    }
+  }, [status, wanted, network, setNetwork]);
+
+  if (isDemo()) return null;
+
+  const start = async (): Promise<void> => {
+    setFailed(null);
+    setWanted(true);
+    try {
+      await api(`/api/engine/nets/${FULL_NET}`, { method: 'POST' });
+    } catch (error) {
+      setWanted(false);
+      setFailed(apiErrorMessage(error));
+    }
+    await refresh();
+  };
+
+  const remove = async (): Promise<void> => {
+    setWanted(false);
+    setNetwork('small');
+    try {
+      await api(`/api/engine/nets/${FULL_NET}`, { method: 'DELETE' });
+    } catch (error) {
+      setFailed(apiErrorMessage(error));
+    }
+    await refresh();
+  };
+
+  const choose = (value: 'small' | 'full'): void => {
+    if (!threadsAvailable) return;
+    if (value === 'small') {
+      setWanted(false);
+      setNetwork('small');
+    } else if (status?.ready) {
+      setNetwork('full');
+    } else if (!downloading) {
+      void start();
+    }
+  };
+
+  const error = failed ?? status?.error ?? null;
+  const shown: 'small' | 'full' = wanted || network === 'full' ? 'full' : 'small';
+  const progress = status?.downloading;
+  const percent = progress?.total ? Math.min(100, Math.round((progress.bytes / progress.total) * 100)) : 0;
+
+  return (
+    <Field label="Network" className={cn(!threadsAvailable && 'opacity-50')}>
+      <div className="grid gap-2">
+        <Segmented
+          value={shown}
+          onChange={choose}
+          ariaLabel="Network"
+          even
+          segments={[
+            { value: 'small', label: t('Small network') },
+            { value: 'full', label: t('Full network') },
+          ]}
+        />
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {threadsAvailable
+            ? t('Full is the network Stockfish itself ships, stronger and slower to load. It is a 99 MB download, kept on the server.')
+            : t('unavailable in this context')}
+        </p>
+        {progress ? (
+          <div className="grid gap-1">
+            {progress.total ? <Progress value={percent} aria-label={t('Download progress')} /> : null}
+            <p className="text-muted-foreground text-xs tabular-nums">
+              {progress.total
+                ? t('Downloading, {done} of {total}', { done: mb(progress.bytes), total: mb(progress.total) })
+                : t('Starting the download…')}
+            </p>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-destructive text-xs">{t('Could not download: {reason}', { reason: error })}</p>
+            <Button variant="outline" size="sm" onClick={() => void start()}>
+              {t('Try again')}
+            </Button>
+          </div>
+        ) : status?.ready ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-xs">{t('Kept on the server, {size}.', { size: mb(status.bytes) })}</p>
+            <Button variant="ghost" size="sm" title={t('Remove the full network from the server')} onClick={() => void remove()}>
+              {t('Remove')}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    </Field>
   );
 }
 

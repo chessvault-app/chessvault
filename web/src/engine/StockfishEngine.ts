@@ -2,6 +2,10 @@ import type { Init } from './lichessWorker.ts';
 import { parseBestMove, parseInfo, type PvLine } from './uci.ts';
 
 export type EngineFlavor = 'lite' | 'lite-single' | 'full' | 'full-single';
+/** Which network the threaded build runs: the 1 MB small one, or Stockfish's own. */
+export type EngineNetwork = 'small' | 'full';
+/** The full network's file name, which is also its checksum (server/engineNets.ts). */
+export const FULL_NET = 'nn-1a298aa575a0.nnue';
 
 /**
  * Which build each flavour is, and how it is spoken to.
@@ -37,7 +41,10 @@ type Build =
 export const BUILDS: Record<EngineFlavor, Build> = {
   lite: { kind: 'lichess', script: 'engine/sf_19_smallnet.js', nnue: ['engine/nn-61e7af4bb97d.nnue'] },
   'lite-single': { kind: 'classic', script: 'engine/stockfish-18-lite-single.js' },
-  full: { kind: 'lichess', script: 'engine/sf_19.js', nnue: ['engine/nn-1a298aa575a0.nnue'] },
+  // The full network is not a static file: 99 MB is fetched by the server
+  // on request and served from there (see the engine settings' Network
+  // row). Same origin, so the worker's fetch carries the session cookie.
+  full: { kind: 'lichess', script: 'engine/sf_19.js', nnue: [`api/engine/nets/${FULL_NET}/file`] },
   'full-single': { kind: 'classic', script: 'engine/stockfish-18-single.js' },
 };
 
@@ -94,9 +101,19 @@ export function supportsThreads(): boolean {
   );
 }
 
+/**
+ * The build for a network choice on this browser. The full network only
+ * exists for the threaded build (its single-threaded twin would be a
+ * 113 MB file nothing stages), so without threads the choice is moot.
+ */
+export function flavorFor(network: EngineNetwork, threads: boolean): EngineFlavor {
+  if (!threads) return 'lite-single';
+  return network === 'full' ? 'full' : 'lite';
+}
+
 /** Pick the strongest flavour this browser can actually run. */
 export function defaultFlavor(): EngineFlavor {
-  return supportsThreads() ? 'lite' : 'lite-single';
+  return flavorFor('small', supportsThreads());
 }
 
 /**

@@ -14,7 +14,7 @@ Anything here travels with the app to whoever installs or visits it.
 
 | What | Where | Licence |
 | --- | --- | --- |
-| Stockfish 19 (WASM, `@lichess-org/stockfish-web` build) and its small network `nn-61e7af4bb97d.nnue` | `web/public/engine/` | GPL-3.0-or-later (engine and network); the Lichess build's own patches and loader AGPL-3.0-or-later |
+| Stockfish 19 (WASM, `@lichess-org/stockfish-web` build) and its small network `nn-61e7af4bb97d.nnue`; its full network `nn-1a298aa575a0.nnue` when a user asks the server to fetch it | `web/public/engine/`, `data/engine-nets/` | GPL-3.0-or-later (engine and network); the Lichess build's own patches and loader AGPL-3.0-or-later |
 | Stockfish 18 (WASM, `stockfish` npm package; single-threaded fallback only) | `web/public/engine/` | GPL-3.0-or-later |
 | chessground | npm, bundled into `dist/` | GPL-3.0-or-later |
 | chessops | npm, bundled into `dist/` | GPL-3.0-or-later |

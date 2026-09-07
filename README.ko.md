@@ -549,8 +549,10 @@ npm run dev          # 서버 + 웹, 핫 리로드, http://localhost:5173
 ```
 
 처음 실행하면 Stockfish 엔진 자산을 `node_modules`에서 복사해
-옵니다(7 MB 라이트 빌드. `npm run setup:engine -- --full`은 그 옆에 full
-빌드를 더해 줍니다).
+옵니다(Lichess 빌드의 Stockfish 19와 1 MB 작은 신경망, 7 MB의 단일 스레드
+Stockfish 18). Stockfish의 전체 신경망(99 MB)은 싣지 않습니다. 앱의 엔진
+설정에서 요청하면 서버가 내려받아 보관하고, `npm run setup:engine --
+--full`은 대신 빌드에 넣습니다.
 
 `native/`의 Rust 코어는 선택 사항이고 위 명령 중 어느 것도 그것을 빌드하지
 않습니다. 소스 체크아웃은 없어도 JavaScript 작업으로 동작하지만, 원한다면

@@ -13,6 +13,7 @@ let emit: ((update: SearchUpdate) => void) | null = null;
 vi.mock('@/engine/StockfishEngine', () => ({
   supportsThreads: () => false,
   defaultFlavor: () => 'lite-single',
+  flavorFor: () => 'lite-single',
   StockfishEngine: class {
     constructor(
       _flavor: string,

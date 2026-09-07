@@ -161,6 +161,16 @@ export const ko: Record<string, string> = {
   'Show one line': '라인 하나만 보기',
   'Engine on/off': '엔진 켜기/끄기',
   Threads: '스레드',
+  Network: '신경망',
+  'unavailable in this context': '이 환경에서는 쓸 수 없음',
+  'Small network': '작은 신경망',
+  'Full network': '전체 신경망',
+  'Full is the network Stockfish itself ships, stronger and slower to load. It is a 99 MB download, kept on the server.':
+    '전체는 Stockfish 자체가 쓰는 신경망으로, 더 강하고 불러오는 데 더 오래 걸립니다. 99 MB를 내려받아 서버에 둡니다.',
+  'Downloading, {done} of {total}': '내려받는 중, {total} 중 {done}',
+  'Could not download: {reason}': '내려받지 못했습니다: {reason}',
+  'Kept on the server, {size}.': '서버에 있습니다, {size}.',
+  'Remove the full network from the server': '전체 신경망을 서버에서 제거',
   Lines: '라인 수',
   Depth: '깊이',
   'Time limit': '시간 제한',
@@ -2014,6 +2024,7 @@ export const ko: Record<string, string> = {
     '앱이 디스크에 두는 것. 보관함은 내 문서입니다. 나머지는 각자의 자리에서 지운 뒤 다시 만들거나 다시 받습니다.',
   'Explorer cache': '탐색기 캐시',
   'Tablebase cache': '테이블베이스 캐시',
+  'Engine networks': '엔진 신경망',
 
   // The Games page table and its details panel. (White, Black, Result,
   // Moves, Tournament, Date, Game, Start, Back and Forward already

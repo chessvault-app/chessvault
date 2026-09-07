@@ -55,6 +55,7 @@ describe('storage api', () => {
       'refgames',
       'explorerCache',
       'tablebaseCache',
+      'engineNets',
     ]);
   });
 });

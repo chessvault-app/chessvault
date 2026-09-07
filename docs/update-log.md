@@ -5,6 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **Two networks for the engine.** The engine's settings gain a Network
+  row: the small network every build ships, or Stockfish's own full one,
+  stronger and slower to load. The first press on Full has the server
+  download it (99 MB) and keep it, and the choice takes effect when it
+  has arrived; Remove deletes it again. Storage used shows it as Engine
+  networks. Not in the demo, which has no server to keep it on.
+
 ## 0.9.0
 
 A design pass across the app. On a phone every page has a large title

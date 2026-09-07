@@ -72,6 +72,7 @@ export function storageApi(vault: string = VAULT, data: string = DATA): Hono {
     { key: 'refgames', paths: [resolve(data, 'refgames')] },
     { key: 'explorerCache', paths: [resolve(data, 'explorer-cache')] },
     { key: 'tablebaseCache', paths: [resolve(data, 'tablebase-cache')] },
+    { key: 'engineNets', paths: [resolve(data, 'engine-nets')] },
   ];
 
   /** The areas that live INSIDE the vault folder, as against the caches

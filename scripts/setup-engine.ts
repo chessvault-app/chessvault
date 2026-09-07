@@ -8,33 +8,34 @@
  *
  * Two sources:
  *  - `@lichess-org/stockfish-web`: Stockfish 19 as an ES module, network
- *    NOT included. The network is fetched from the Stockfish project's
- *    own net server, once, and checked against the SHA-256 prefix its
- *    name carries. The small net is 1 MB; the official one, `--full`
- *    only, is 79 MB.
+ *    NOT included. The small network (1 MB) is fetched from the Stockfish
+ *    project's own net server, once, and checked against the SHA-256
+ *    prefix its name carries. Both engine modules are staged, since the
+ *    full network (99 MB) is not shipped at all: the server fetches it on
+ *    request from the engine's settings (server/engineNets.ts). `--full`
+ *    stages it here too, for a build that wants it offline.
  *  - `stockfish` (nmrugg): Stockfish 18 with the network embedded, used
  *    only for the single-threaded fallback where the page cannot get a
  *    SharedArrayBuffer. 7 MB; the `--full` variant 113 MB.
  */
-import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { REPO_ROOT } from '../server/paths.ts';
+import { downloadNet, netFileOk } from '../server/engineNets.ts';
 
 const TARGET = resolve(REPO_ROOT, 'web/public/engine');
-const NET_SERVER = 'https://tests.stockfishchess.org/api/nn/';
 
 const LICHESS = resolve(REPO_ROOT, 'node_modules/@lichess-org/stockfish-web');
 const CLASSIC = resolve(REPO_ROOT, 'node_modules/stockfish/bin');
 
 /** Keep these in step with BUILDS in web/src/engine/StockfishEngine.ts. */
 const LITE = {
-  lichess: ['sf_19_smallnet.js', 'sf_19_smallnet.wasm'],
+  lichess: ['sf_19_smallnet.js', 'sf_19_smallnet.wasm', 'sf_19.js', 'sf_19.wasm'],
   nets: ['nn-61e7af4bb97d.nnue'],
   classic: ['stockfish-18-lite-single.js', 'stockfish-18-lite-single.wasm'],
 };
 const FULL = {
-  lichess: ['sf_19.js', 'sf_19.wasm'],
+  lichess: [],
   nets: ['nn-1a298aa575a0.nnue'],
   classic: ['stockfish-18-single.js', 'stockfish-18-single.wasm'],
 };
@@ -75,23 +76,20 @@ function stage(from: string, name: string): void {
   bytes += size;
 }
 
-/** The name IS the checksum: `nn-<first 12 hex of sha256>.nnue`. */
-const checksumOk = (name: string, data: Uint8Array): boolean =>
-  createHash('sha256').update(data).digest('hex').startsWith(name.slice(3, 15));
-
+/**
+ * The same verified download the server runs when a user asks for the
+ * full network from the app (server/engineNets.ts), so the two never
+ * disagree about what a good file is. The name IS the checksum.
+ */
 async function fetchNet(name: string): Promise<void> {
   const to = resolve(TARGET, name);
-  if (existsSync(to) && checksumOk(name, readFileSync(to))) {
+  if (netFileOk(name, to)) {
     skipped++;
     return;
   }
-  const res = await fetch(NET_SERVER + name);
-  if (!res.ok) throw new Error(`${res.status} fetching ${NET_SERVER}${name}`);
-  const data = new Uint8Array(await res.arrayBuffer());
-  if (!checksumOk(name, data)) throw new Error(`checksum mismatch for ${name}`);
-  writeFileSync(to, data);
+  await downloadNet(name, to);
   copied++;
-  bytes += data.byteLength;
+  bytes += statSync(to).size;
 }
 
 for (const set of sets) {

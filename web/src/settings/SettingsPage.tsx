@@ -2338,6 +2338,8 @@ const STORAGE_AREAS: { keys: string[]; label: string; section?: Section; anchor?
   { keys: ['refgames'], label: 'Reference databases', section: 'databases' },
   { keys: ['explorerCache'], label: 'Explorer cache' },
   { keys: ['tablebaseCache'], label: 'Tablebase cache', anchor: 'tablebase' },
+  // Removed from the engine's settings, on the Board.
+  { keys: ['engineNets'], label: 'Engine networks', section: 'board' },
 ];
 
 /**

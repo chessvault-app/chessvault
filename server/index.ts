@@ -19,6 +19,7 @@ import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
+import { engineNetsApi } from './engineNets.ts';
 import { backupApi } from './backup.ts';
 import { tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
@@ -254,6 +255,9 @@ app.route('/api', tablebaseApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', booksApi());
 app.route('/api', storageApi());
+// The engine's full network, fetched once on request and served to the
+// worker from the server, since the browser cannot fetch it itself.
+app.route('/api', engineNetsApi());
 // The vault as one file, named after the vault. Not in mountVault: the
 // demo's vault is a tab, and a download of it would be the seed.
 app.route(
