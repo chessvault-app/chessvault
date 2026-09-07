@@ -610,7 +610,7 @@ Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 
   Checkbox, RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu,
   ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch,
   Progress, Spinner, Skeleton, Empty, Card, Separator, Calendar,
-  Sonner입니다. 각각
+  Toast입니다. 각각
   `npx shadcn add`가 써 주는 모양 그대로(밑은 Base UI, `cva` 변형,
   `data-slot`)이고, 각각 레지스트리 자신의 얼굴인 nova 스타일을 하고
   있습니다. 그 크기, 둥근 정도의 사다리, 포커스 링, 반전된 툴팁, 테두리가

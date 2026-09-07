@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Toasts are the registry's own.** The cards that offer Undo after a
+  removal, the review on a phone and the result of collecting a game are
+  shadcn's Toast on Base UI now: the button and the X are the app's own
+  buttons, so they take its corners and touch sizes, and the X sits at
+  the end of the row. sonner is gone from the dependencies.
 - **Open anything by name.** Ctrl/⌘ K on a keyboard, or the search
   button at the end of Home's title row on a phone, opens a list of the
   sections and every study, note and game in the vault; type a few

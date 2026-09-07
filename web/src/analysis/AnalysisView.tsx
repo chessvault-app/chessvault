@@ -13,7 +13,7 @@ import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
@@ -550,7 +550,7 @@ export function MovesOverflow({
             disabled: collectGame.state === 'busy',
             onSelect: () => {
               void collectGame.collect().then((ok) => {
-                toast(ok ? t('In the collection') : t('Could not add this game'));
+                toast.add({ title: ok ? t('In the collection') : t('Could not add this game') });
               });
             },
           } as MenuAction,

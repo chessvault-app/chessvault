@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
 
 /**
  * How long an undo is offered. Long enough to read a sentence and press a
  * button, short enough that a removal is not left hanging over the list
- * for somebody who has already moved on. Sonner pauses it while the
- * pointer or the keyboard focus is on the toast — a grace period that
- * expires under the cursor takes the button away mid-press, and a
+ * for somebody who has already moved on. The toast's timer pauses while
+ * the pointer or the keyboard focus is on the viewport — a grace period
+ * that expires under the cursor takes the button away mid-press, and a
  * screen-reader user needs longer than 4.5 s.
  */
 const GRACE_MS = 4500;
@@ -18,7 +18,7 @@ const GRACE_MS = 4500;
  *
  * A removal happens at once on screen (the caller hides the row) and is
  * COMMITTED only when the offer expires: "Removed “x” · Undo" in shadcn's
- * toast (components/ui/sonner), undo puts the row back and nothing was
+ * toast (components/ui/toast), undo puts the row back and nothing was
  * ever sent. Leaving the page commits — a removal that was shown must not
  * silently un-happen because the offer was still up.
  */
@@ -31,14 +31,14 @@ export function useUndoable(): {
    */
   remove: (label: string, commit: () => void, undo?: () => void) => void;
 } {
-  const pending = useRef<{ id: string | number; commit: () => void } | null>(null);
+  const pending = useRef<{ id: string; commit: () => void } | null>(null);
 
   const flush = useCallback(() => {
     const p = pending.current;
     if (!p) return;
     pending.current = null;
     p.commit();
-    toast.dismiss(p.id);
+    toast.close(p.id);
   }, []);
 
   useEffect(() => {
@@ -57,18 +57,23 @@ export function useUndoable(): {
       flush();
       const message = t('Removed “{name}”', { name: label });
       announce(message);
-      const entry = { id: 0 as string | number, commit };
-      entry.id = toast(message, {
-        duration: GRACE_MS,
-        action: {
-          label: t('Undo'),
+      const entry = { id: '', commit };
+      entry.id = toast.add({
+        title: message,
+        timeout: GRACE_MS,
+        actionProps: {
+          children: t('Undo'),
           onClick: () => {
             if (pending.current === entry) pending.current = null;
             undo?.();
+            toast.close(entry.id);
           },
         },
-        // The offer expired unanswered: the removal is real now.
-        onAutoClose: () => {
+        // Closed with the offer still pending: it expired unanswered (or
+        // was swiped or X-ed away, which is the same answer), and the
+        // removal is real now. Undo and flush clear pending first, so
+        // their close comes through here and does nothing.
+        onClose: () => {
           if (pending.current !== entry) return;
           pending.current = null;
           commit();

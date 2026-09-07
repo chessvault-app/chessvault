@@ -1,6 +1,6 @@
 import { BookOpen, ChevronDown, Crown, Microscope, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { useAnalysis } from '@/store/analysis';
@@ -37,6 +37,22 @@ export function ReviewButton() {
         <Microscope className="size-3.5" />
       )}
     </Button>
+  );
+}
+
+/**
+ * What the offer to review is pressed on, wherever it is offered: the
+ * band under the board's move list, the workspace's Analysis panel, and
+ * the phone's toast all draw this, so the three cannot drift. The look is
+ * the toast's own action (the registry's outline sm Button), which the
+ * band adopted so a reader meets one button in three places.
+ */
+function reviewOfferChildren(): ReactNode {
+  return (
+    <>
+      <Microscope className="size-3.5" data-icon="inline-start" />
+      {t('Review game')}
+    </>
   );
 }
 
@@ -106,28 +122,18 @@ export function ReviewStrip({
   useEffect(() => {
     if (!offerAsToast || offeredFor.current === gameHeaders) return;
     offeredFor.current = gameHeaders;
-    const id = toast(t('See accuracy, mistakes and the evaluation graph.'), {
-      duration: 8000,
-      // The X the band had: a swipe also takes it away, but nothing on a
-      // toast says so, and the band was closed by a press.
-      closeButton: true,
-      action: {
-        // The same glyph the desktop's Review button and the ⋯ wear, so
-        // the phone's one route to the review is drawn like the others.
-        label: (
-          <>
-            <Microscope className="size-3.5" data-icon="inline-start" />
-            {t('Review game')}
-          </>
-        ),
-        onClick: () => void run(),
-      },
+    const id = toast.add({
+      title: t('See accuracy, mistakes and the evaluation graph.'),
+      timeout: 8000,
+      // The same button the band draws (reviewOfferChildren); the toast
+      // carries the registry's X beside it.
+      actionProps: { children: reviewOfferChildren(), onClick: () => void run() },
     });
     // The offer belongs to this game on this page. Leaving either takes
     // it down: a toast outlives the component that raised it, and this
     // one followed a reader from the board onto Settings.
     return () => {
-      toast.dismiss(id);
+      toast.close(id);
     };
   }, [offerAsToast, gameHeaders, run]);
 
@@ -143,9 +149,8 @@ export function ReviewStrip({
         <p className={cn('text-muted-foreground min-w-0 flex-1 text-sm', !panel && 'truncate')}>
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
-        <Button variant="secondary" size="sm" onClick={() => void run()}>
-          <Microscope className="size-3.5" data-icon="inline-start" />
-          {t('Review game')}
+        <Button variant="outline" size="sm" onClick={() => void run()}>
+          {reviewOfferChildren()}
         </Button>
         {!panel && (
           <Button

@@ -4,7 +4,7 @@ import { App } from './App';
 import { initTheme, watchSystemTheme } from './store/theme';
 import { initPrefs } from './store/prefs';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/toast';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { startInstallTracking } from './lib/install';
 import { startPixelGridTracking } from './board/pixelGrid';
@@ -73,7 +73,8 @@ createRoot(container).render(
   <StrictMode>
     <TooltipProvider>
       <App />
-      {/* The one toaster: the undo offer (hooks/use-undoable) posts into it. */}
+      {/* The one toaster: the undo offer (hooks/use-undoable), the review
+          offer (engine/ReviewStrip) and the collect result post into it. */}
       <Toaster />
     </TooltipProvider>
   </StrictMode>,

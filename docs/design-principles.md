@@ -665,7 +665,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
   RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
   Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
-  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Sonner —
+  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Toast —
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius
