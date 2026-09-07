@@ -217,7 +217,7 @@ function DemoBanner({ section, params }: { section: Section; params: string[] })
       // relative: the X is placed absolutely so the strip keeps the height
       // its sentence gives it; a button in the flow grew it by the icon
       // button's own box (and by the coarse-pointer bump on a phone).
-      className="text-warn border-border relative flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--card))] px-3 py-1.5 text-center text-sm"
+      className="text-warn border-card-ring relative flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--card))] px-3 py-1.5 text-center text-sm"
     >
       {/* The whole sentence wrapped to two lines at 375px and took about
           100px off every page, above the board included. Below md the
@@ -498,7 +498,7 @@ function MobileBottom({ active }: { active: Section }) {
           // Opaque, not bg-card/85 over backdrop-blur-xl: a 24px blur
           // across a full-width strip was re-blurred on every scrolled
           // frame beneath it, on the phones that can least afford it.
-          'bg-card border-border flex items-stretch border-t md:hidden',
+          'bg-card border-card-ring flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
           !claimed && 'hidden',
         )}
@@ -677,7 +677,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
     <nav
       aria-label={t('Sections')}
       className={cn(
-        'bg-card border-border hidden shrink-0 flex-col border-r md:flex',
+        // border-card-ring: the sidebar is a white column on the toned
+        // page and its fill is its edge; the line comes back under High
+        // contrast, where the page is white (the same rule as a card).
+        'bg-card border-card-ring hidden shrink-0 flex-col border-r md:flex',
         // The fold is a 150ms width change, the rows' own colour timing.
         // Labels stay in the tree in both states and the nav clips them,
         // so the narrowing edge wipes them out and the widening edge
@@ -1016,7 +1019,9 @@ function MobileNav({ active }: { active: Section }) {
       aria-label={t('Sections')}
       className={cn(
         // Opaque for the same reason as the page-control slot above.
-        'bg-card border-border relative flex shrink-0 items-stretch border-t md:hidden',
+        // border-card-ring, as the sidebar: the bar's fill is its edge on
+        // the toned page, and the hairline returns under High contrast.
+        'bg-card border-card-ring relative flex shrink-0 items-stretch border-t md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
         // Gone while the keyboard is up. The shell now ends at the top of

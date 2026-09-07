@@ -100,8 +100,13 @@ export function PageHeader({
             // Sticky over the page, bleeding into the gutters so the
             // hairline runs edge to edge and nothing scrolls past its
             // sides. z-20: under the Fab (z-30) and every dialog.
+            // At rest the row is the page; scrolled under, it becomes a
+            // bar, which on the tonal page means the bars' white (the tab
+            // bar's fill) rather than a hairline on the page's own tone.
+            // The hairline returns under High contrast with the bars'.
             'max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-4 max-md:px-4 max-md:bg-background',
-            'max-md:border-b max-md:border-transparent data-compact:max-md:border-border',
+            'max-md:transition-colors max-md:duration-150 data-compact:max-md:bg-card',
+            'max-md:border-b max-md:border-transparent data-compact:max-md:border-card-ring',
           ],
           className,
         )}

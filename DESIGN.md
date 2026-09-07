@@ -181,7 +181,7 @@ breaks the knobs, and is therefore forbidden.
 
 - Neutral by default: the grey ladder carries structure, the board carries colour.
 - OKLCH everywhere, parameterised by hue / tint / contrast rather than fixed.
-- Flat: depth is a tonal rung plus a hairline ring, almost never a shadow.
+- Flat: depth is a tonal rung, a hairline only where the contrast knob asks, almost never a shadow.
 - Dense and adjustable: two density rungs, read by every surface that repeats a row.
 - One type family for two scripts, with mono reserved for what is scanned as a column.
 - shadcn/ui (Base UI, nova style) at the component layer, worn faithfully.
@@ -580,8 +580,9 @@ hit areas, `title` as a tooltip. Composites live in
 
 ### Cards
 
-- **Corner:** `xl`. **Background:** surface. **Border:** none — a
-  `ring-1 ring-border` hairline instead. **Shadow:** none.
+- **Corner:** `xl`. **Background:** surface, a rung above the page.
+  **Border:** none — `ring-1 ring-card-ring`, which is transparent at
+  rest and a hairline under High contrast. **Shadow:** none.
 - **Padding:** `--card-spacing`, initialised from the density token
   `--card-pad` (1rem default, 0.75rem compact), used for both the vertical
   padding and the gap between slots.
@@ -613,8 +614,9 @@ hit areas, `title` as a tooltip. Composites live in
 - A section list of icon-plus-label rows; the active section takes the
   primary treatment, everything else is quiet until hovered.
 - The phone's bottom bar: five tabs (Home, Games, Studies, Puzzles,
-  More), docked and pinned, `bg-card` with a `border-t` hairline and the
-  home-indicator inset, gone while the keyboard is up. Each tab is a
+  More), docked and pinned, `bg-card` on the toned page (its fill is its
+  edge; `border-card-ring` draws the line only under High contrast) and
+  the home-indicator inset, gone while the keyboard is up. Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current
   tab fills the track `bg-muted` with a `primary/30` inset ring and
   goes semibold, the sidebar's current-row treatment. 56px tall.
@@ -623,8 +625,8 @@ hit areas, `title` as a tooltip. Composites live in
   by whichever page is open.
 - Page headers: `text-xl` on a desktop; on a phone a `text-2xl` large
   title in a 44px row that sticks to the top of the page, drops to
-  `text-base` and gains a `border-b` hairline once the page has
-  scrolled under it. A count line (`text-sm text-muted-foreground`)
+  `text-base` and takes the bars' white (`bg-card`) once the page has
+  scrolled under it, with a hairline only under High contrast. A count line (`text-sm text-muted-foreground`)
   sits 4px under the title; the search field is full width on a phone
   and `max-w-sm` on a desktop.
 

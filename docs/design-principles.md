@@ -324,9 +324,11 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   it is `text-xl font-semibold tracking-tight` with the actions pushed
   right. On a phone the name is a `text-2xl` large title in a 44px row,
   and the row is the page's bar: sticky at the top of the scroller, it
-  takes the page background, shrinks the name to `text-base` and draws
-  a hairline once the page has scrolled under it (the iOS large title,
-  Material 3's medium app bar), with the actions staying on the name's
+  takes the page background, shrinks the name to `text-base` and takes
+  the bars' white once the page has scrolled under it (the iOS large
+  title, Material 3's medium app bar; on the tonal page the fill is the
+  bar, and a hairline is drawn only under High contrast), with the
+  actions staying on the name's
   line in both states. The phone-only back chevron sits where a page is
   reached through More. `subtitle` (what the page has: 12 studies),
   `description` (what it is for) and `search` (its find-or-filter

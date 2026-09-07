@@ -18,7 +18,11 @@ import { cn } from '@/lib/utils';
  * its own, and for InputGroup, which wears it on the group.
  */
 export const INPUT_BASE =
-  'rounded-lg border border-input bg-transparent text-base transition-colors outline-none ' +
+  // bg-card, not the registry's transparent: on the tonal page a field
+  // is a white well with its stroke, the way a grouped screen's search
+  // field is; on a white card the stroke still defines it. Dark keeps
+  // the registry's translucent input fill below.
+  'rounded-lg border border-input bg-card text-base transition-colors outline-none ' +
   'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ' +
   'disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 ' +
   'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 ' +
