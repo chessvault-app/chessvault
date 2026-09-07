@@ -5,7 +5,11 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.9.1
+
+Three engines to choose from in the engine's settings: Stockfish 19 lite
+on the network every build ships, Stockfish 19 on its full network, which
+the server fetches once and keeps, and the single-threaded Stockfish 18.
 
 - **Three engines to choose from.** The engine's settings gain an Engine
   list: Stockfish 19 lite on the 1 MB network every build ships,
