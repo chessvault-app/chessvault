@@ -228,16 +228,16 @@ export function ThemesPage() {
   const leftovers = (themes ?? []).filter((t) => !KNOWN.has(t.theme) && matches(t.theme));
 
   return (
-    // `block`: this page spaces its sections with their own margins, not
-    // the shell's column gap.
-    <PageShell width="medium" className="block">
+    <PageShell width="medium">
         {/* The shelves' two-row shape: the heading row carries what is
             ABOUT the page, and the search gets a full-width line of its
             own instead of a stub squeezed beside the title. */}
         <PageHeader
           title={t('Puzzle themes')}
           back={() => navigate('puzzles', 'hub')}
-          className="mb-4"
+          subtitle={
+            themes === null ? undefined : themes.length === 1 ? t('1 theme') : t('{n} themes', { n: themes.length })
+          }
           actions={
             error && (
               <span className="text-destructive text-sm" role="alert">
@@ -257,7 +257,7 @@ export function ThemesPage() {
           }
         />
 
-        <ChipRow className="mb-4" innerClassName="gap-2">
+        <ChipRow innerClassName="gap-2">
           <ThemeCard
             className="w-full sm:w-auto"
             label={t('All themes')}
@@ -341,7 +341,7 @@ export function ThemesPage() {
 
 function ThemeGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-4">
+    <section>
       <h2 className="text-muted-foreground mb-2 text-sm font-medium">
         {title}
       </h2>

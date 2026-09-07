@@ -113,12 +113,11 @@ export function sortDocs<T extends { id: string; bytes: number; updatedAt: strin
  * a stub that grew over the buttons when it was focused, which is why
  * SearchInput still carries a rule for being focused at all.
  *
- * The bookmark filter sits in one of two places. On a wide screen there
- * is room for it in the heading row's toolbar, next to the other things
- * that act on the whole shelf. On a phone that toolbar is down to the
- * Create button, so it rides beside the search instead — after it, not
- * before, so the field still starts at the left edge like every other
- * row on the page.
+ * The bookmark filter sits in the heading row at every width. On a phone
+ * that row is otherwise empty (Create is the Fab there), so the switch is
+ * the one control beside the large title, and the search underneath has
+ * the whole line. It used to ride beside the search on a phone; that put
+ * the page's only button on its second row and left the title alone.
  */
 export function ShelfToolbar({
   title,
@@ -134,8 +133,11 @@ export function ShelfToolbar({
   markedOnly,
   onMarkedOnly,
   create,
+  subtitle,
 }: {
   title: string;
+  /** The count line under the title: how many the shelf holds. */
+  subtitle?: ReactNode;
   query: string;
   onQuery: (value: string) => void;
   placeholder: string;
@@ -157,7 +159,7 @@ export function ShelfToolbar({
    * Icon only: the pressed state says what a label would, in the width of
    * a button.
    */
-  const bookmark = (className: string): ReactNode => (
+  const bookmark = (className?: string): ReactNode => (
     <Button
       variant="secondary"
       size="icon-sm"
@@ -176,73 +178,69 @@ export function ShelfToolbar({
     // same distance every page puts its first row at.
     <PageHeader
       title={title}
+      subtitle={subtitle}
       search={
-        <>
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder={placeholder}
-            aria-label={placeholder}
-            className="min-w-0 flex-1"
-          />
-          {bookmark('sm:hidden')}
-        </>
+        <SearchInput
+          type="text"
+          inputSize="sm"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder={placeholder}
+          aria-label={placeholder}
+          className="min-w-0 flex-1"
+        />
       }
       actions={
-          <>
-            {/* Wide screens only — below sm this toolbar is just Create, and
-                the switch travels down to the search row. */}
-            {bookmark('hidden sm:inline-flex')}
-            <Select
-              value={sort}
-              onValueChange={(value) => onSort(value as ShelfSort)}
-              ariaLabel={t('Sort by')}
-              size="sm"
-              align="end"
-              // Otherwise picking Title after Last modified pulls the layout
-              // switch and Create left by 40-odd pixels.
-              steady
-              className="hidden shrink-0 sm:flex"
-              groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
-            />
-            {/* The select says WHAT the shelf is ordered by; this arrow says
-                WHICH WAY, and flips it. Without it 'Title' never admitted
-                whether it meant A→Z or Z→A. */}
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              title={dir === 'asc' ? t('Ascending. Press for descending.') : t('Descending. Press for ascending.')}
-              className="hidden shrink-0 sm:inline-flex"
-              onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
-            >
-              {dir === 'asc' ? (
-                <ArrowUpNarrowWide className="size-3.5" />
-              ) : (
-                <ArrowDownWideNarrow className="size-3.5" />
-              )}
-            </Button>
-            {/* Two states, so a switch rather than a menu — the same segmented
-                control the archive panel picks its site with. */}
-            <Segmented
-              value={layout}
-              onChange={onLayout}
-              ariaLabel="Layout"
-              size="sm"
-              // A setting, so a radiogroup — but drawn as a track: its
-              // two options are ICONS, and a choice row needs words. See
-              // the `look` note in Segmented.
-              look="track"
-              className="hidden sm:flex"
-              segments={[
-                { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
-                { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
-              ]}
-            />
-            {create}
-          </>
-        }
+      <>
+        {bookmark()}
+          <Select
+            value={sort}
+            onValueChange={(value) => onSort(value as ShelfSort)}
+            ariaLabel={t('Sort by')}
+            size="sm"
+            align="end"
+            // Otherwise picking Title after Last modified pulls the layout
+            // switch and Create left by 40-odd pixels.
+            steady
+            className="hidden shrink-0 sm:flex"
+            groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
+          />
+          {/* The select says WHAT the shelf is ordered by; this arrow says
+              WHICH WAY, and flips it. Without it 'Title' never admitted
+              whether it meant A→Z or Z→A. */}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            title={dir === 'asc' ? t('Ascending. Press for descending.') : t('Descending. Press for ascending.')}
+            className="hidden shrink-0 sm:inline-flex"
+            onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
+          >
+            {dir === 'asc' ? (
+              <ArrowUpNarrowWide className="size-3.5" />
+            ) : (
+              <ArrowDownWideNarrow className="size-3.5" />
+            )}
+          </Button>
+          {/* Two states, so a switch rather than a menu — the same segmented
+              control the archive panel picks its site with. */}
+          <Segmented
+            value={layout}
+            onChange={onLayout}
+            ariaLabel="Layout"
+            size="sm"
+            // A setting, so a radiogroup — but drawn as a track: its
+            // two options are ICONS, and a choice row needs words. See
+            // the `look` note in Segmented.
+            look="track"
+            className="hidden sm:flex"
+            segments={[
+              { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
+              { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
+            ]}
+          />
+          {create}
+        </>
+      }
       />
   );
 }

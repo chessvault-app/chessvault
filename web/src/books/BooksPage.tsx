@@ -175,7 +175,7 @@ export function BooksPage() {
     await api('/api/books/bookmarks/toggle', { method: 'POST', json: { id } }).catch(() => {});
   };
   // The same switch in both its homes — see ShelfToolbar's bookmark.
-  const bookmarkToggle = (className: string): React.ReactNode => (
+  const bookmarkToggle = (className?: string): React.ReactNode => (
     <Button
       variant="secondary"
       size="icon-sm"
@@ -292,7 +292,7 @@ export function BooksPage() {
     ));
 
   return (
-    <PageShell width="medium" className="block">
+    <PageShell width="medium">
       {/* The drop target is the page's content column: a PDF let go
           anywhere on the shelf is an upload. */}
       <div {...drop.handlers} className="contents">
@@ -329,23 +329,22 @@ export function BooksPage() {
       )}
       <PageHeader
         title={t('Books')}
-        className="mb-4"
+        subtitle={
+          books === null ? undefined : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
+        }
         search={
-          <>
-            <SearchInput
-              inputSize="sm"
-              value={query}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-              placeholder={t('Search books…')}
-              aria-label={t('Search books…')}
-              className="min-w-0 flex-1"
-            />
-            {bookmarkToggle('sm:hidden')}
-          </>
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+            placeholder={t('Search books…')}
+            aria-label={t('Search books…')}
+            className="min-w-0 flex-1"
+          />
         }
         actions={
           <>
-            {bookmarkToggle('hidden sm:inline-flex')}
+            {bookmarkToggle()}
             <Select
               value={view.sort}
               onValueChange={(value) => view.setSort(value as LibrarySort)}
@@ -388,7 +387,7 @@ export function BooksPage() {
         }
       />
 
-      {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       {books === null ? (
         // A vault seen without books (or never seen — nothing seeds one)

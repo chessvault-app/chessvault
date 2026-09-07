@@ -1162,6 +1162,7 @@ export function RepertoireView() {
     <PageHeader
       title={t('Repertoire')}
       back={back ? () => up('home') : undefined}
+      collapse={false}
       className="[&>h1]:text-base [&>h1]:tracking-normal"
     />
   );

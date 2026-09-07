@@ -307,7 +307,7 @@ export function Shelf() {
   };
 
   // The same switch in both its homes — see ShelfToolbar's bookmark.
-  const bookmarkToggle = (className: string): React.ReactNode => (
+  const bookmarkToggle = (className?: string): React.ReactNode => (
     <Button
       variant="secondary"
       size="icon-sm"
@@ -324,32 +324,30 @@ export function Shelf() {
   return (
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
-    <PageShell width="medium" className="block">
+    <PageShell width="medium">
         {/* The other shelves' two-row shape: the heading row carries what
             is ABOUT the shelf — filter, order, create — and the search
-            gets a full-width line of its own underneath. The bookmark
-            switch rides beside the search below sm, exactly as in
+            gets a full-width line of its own underneath, exactly as in
             ShelfToolbar. */}
         <PageHeader
           title={t('Puzzle books')}
           back={() => navigate('puzzles', 'hub')}
-          className="mb-4"
+          subtitle={
+            books === null ? undefined : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
+          }
           search={
-            <>
-              <SearchInput
-                inputSize="sm"
-                value={query}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-                placeholder={t('Search books…')}
-                aria-label={t('Search books…')}
-                className="min-w-0 flex-1"
-              />
-              {bookmarkToggle('sm:hidden')}
-            </>
+            <SearchInput
+              inputSize="sm"
+              value={query}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+              placeholder={t('Search books…')}
+              aria-label={t('Search books…')}
+              className="min-w-0 flex-1"
+            />
           }
           actions={
             <>
-            {bookmarkToggle('hidden sm:inline-flex')}
+              {bookmarkToggle()}
             <Select
               value={view.sort}
               onValueChange={(value) => view.setSort(value as BookSort)}
@@ -387,7 +385,7 @@ export function Shelf() {
         />
 
         {error && (
-          <p className="text-destructive mb-3 text-sm" role="alert">
+          <p className="text-destructive text-sm" role="alert">
             {error}
           </p>
         )}

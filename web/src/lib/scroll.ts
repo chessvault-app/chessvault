@@ -32,3 +32,21 @@ export function scrollRowIntoPanel(panel: HTMLElement | null, row: HTMLElement |
   if (top >= panel.scrollTop && bottom + margin <= panel.scrollTop + view) return;
   panel.scrollTop = Math.max(0, top - (view - row.offsetHeight - margin) / 2);
 }
+
+/**
+ * The nearest ancestor that scrolls vertically, whether or not it has
+ * anything to scroll yet.
+ *
+ * Distinct from keyboardInset's scrollerOf, which wants the box a caret
+ * can be scrolled INTO and so skips one that fits its content. A header
+ * that watches its page's scroller has to find it before the list has
+ * loaded, or a page that arrives empty and fills a moment later is a page
+ * whose header never compacts.
+ */
+export function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const overflowY = getComputedStyle(p).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll') return p;
+  }
+  return null;
+}

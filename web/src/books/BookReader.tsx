@@ -657,6 +657,7 @@ function ReaderHeader({
         title={title}
         back={onBack}
         backVisible="always"
+        collapse={false}
         truncate
         actions={menu}
       />

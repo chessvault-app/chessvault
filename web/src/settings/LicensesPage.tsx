@@ -4,7 +4,7 @@ import { ChipRow } from '@/components/chip-row';
 import { FilterChip } from '@/components/filter-chip';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
-import { SearchInput, searchRowClass } from '@/components/text-fields';
+import { SearchInput } from '@/components/text-fields';
 import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
@@ -106,41 +106,48 @@ export function LicensesPage() {
       <PageHeader
         title={t('Licences')}
         back={() => navigate('settings')}
-        description={t('Everything this app is built from, and the terms it is used under.')}
-      />
-      {inventory && (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Chess Vault © {inventory.year} {inventory.holder}.{' '}
-          <a
-            className="text-primary underline underline-offset-2"
-            href={`${BASE}GPL-3.0.txt`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t('GNU General Public License v3')}
-          </a>
-          {' · '}
-          <a
-            className="text-primary underline underline-offset-2"
-            href={inventory.repo}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t('Source code')}
-          </a>
-        </p>
-      )}
-      {inventory && (
-        <div className="flex flex-col gap-2">
-          <div className={cn('flex gap-2', searchRowClass)}>
+        description={
+          <>
+            {t('Everything this app is built from, and the terms it is used under.')}
+            {inventory && (
+              <>
+                {' '}
+                Chess Vault © {inventory.year} {inventory.holder}.{' '}
+                <a
+                  className="text-primary underline underline-offset-2"
+                  href={`${BASE}GPL-3.0.txt`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t('GNU General Public License v3')}
+                </a>
+                {' · '}
+                <a
+                  className="text-primary underline underline-offset-2"
+                  href={inventory.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t('Source code')}
+                </a>
+              </>
+            )}
+          </>
+        }
+        search={
+          inventory && (
             <SearchInput
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('Filter by package or licence')}
               aria-label={t('Filter by package or licence')}
-              className="min-w-0 flex-1 sm:max-w-sm"
+              className="min-w-0 flex-1"
             />
-          </div>
+          )
+        }
+      />
+      {inventory && (
+        <div className="flex flex-col gap-2">
           <ChipRow>
             <FilterChip label="All" count={total} active={group === ''} onClick={() => setGroup('')} />
             {groups.map(([g, n]) => (

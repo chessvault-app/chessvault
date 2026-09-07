@@ -90,10 +90,10 @@ export function CanvasShell({
           you drag. The canvas gets the room below instead, which also
           means it can no longer swallow a press meant for the header —
           the pointer-events dance that used to arrange that is gone. */}
-      <div className="shrink-0 px-4 pb-3 pt-4 md:px-6 md:pt-6">
+      <div className="flex shrink-0 flex-col gap-4 px-4 pb-3 pt-4 md:px-6 md:pt-6">
         {/* The search row is PageHeader's: the field is what follows this
-            page's title, one shell gap down, where every other page's
-            first row sits. */}
+            page's title, one shell gap down (the column's gap-4, as in
+            PageShell), where every other page's first row sits. */}
         <PageHeader title={title} back={back} meta={meta} search={search} />
       </div>
 

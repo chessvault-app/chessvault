@@ -159,6 +159,13 @@ function StudyList() {
     <PageShell width="wide">
       <ShelfToolbar
         title={t('Studies')}
+        subtitle={
+          studies.length === 0
+            ? undefined
+            : studies.length === 1
+              ? t('1 study')
+              : t('{n} studies', { n: studies.length })
+        }
         query={query}
         onQuery={setQuery}
         placeholder={t('Search studies…')}

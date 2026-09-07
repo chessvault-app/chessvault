@@ -976,12 +976,13 @@ export function HomePage() {
           and Continue's card sat 8px under the name while the Games
           page's tabs sat 16px under theirs (lanph3re, comparing on the
           phone). */}
-      <h1 className="flex items-center gap-2.5 justify-self-start max-md:mb-4 md:sr-only">
+      <h1 className="flex min-h-11 items-center gap-2.5 justify-self-start max-md:mb-4 md:sr-only">
         {/* The mark bare, not on the sidebar's primary tile (lanph3re):
             a page header is type, and a filled tile beside it read as a
             button. currentColor keeps it in the heading's own ink. */}
         <BrandMark className="size-6 shrink-0" />
-        <span className="text-xl font-semibold tracking-tight">{t('Chess Vault')}</span>
+        {/* text-2xl: the phone's large-title rung, PageHeader's own. */}
+        <span className="text-2xl font-semibold tracking-tight">{t('Chess Vault')}</span>
       </h1>
       {/* A column, so the phone can reorder without drawing anything
           twice: the checklist is first-run content and a returning vault

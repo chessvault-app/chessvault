@@ -782,13 +782,10 @@ export function SkeletonBoard({
 export function SkeletonForm({ groups = 3, className }: { groups?: number; className?: string }) {
   return (
     <Loading className={cn('flex flex-col gap-4', className)}>
-      {/* The page title is text-xl, whose line box is 28px — and that is
-          the whole header only where the header is only the title. Every
-          page that draws this passes PageHeader a `back`, whose chevron is
-          `md:hidden` and icon-sm: below md, under a coarse pointer, it is
-          36px and the header takes its height from it. Measured on a
-          420px phone: 28px of placeholder against a 36px header. */}
-      <div className="flex h-7 items-center max-md:pointer-coarse:h-9">
+      {/* The page title is text-xl on a desktop, whose line box is 28px.
+          Below md the header is the phone's 44px bar (PageHeader's
+          min-h-11), whatever it holds. */}
+      <div className="flex h-7 items-center max-md:h-11">
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (

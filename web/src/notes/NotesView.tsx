@@ -229,6 +229,9 @@ function NoteList() {
     <PageShell width="wide">
       <ShelfToolbar
         title={t('Notes')}
+        subtitle={
+          !loaded ? undefined : notes.length === 1 ? t('1 note') : t('{n} notes', { n: notes.length })
+        }
         query={query}
         onQuery={setQuery}
         placeholder={t('Search notes…')}

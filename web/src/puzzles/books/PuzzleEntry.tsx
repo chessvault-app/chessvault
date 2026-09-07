@@ -218,6 +218,7 @@ export function PuzzleEntry({
             title={`${t(replace ? 'Fix' : 'Add')} #${number}`}
             back={onCancel}
             backVisible="always"
+            collapse={false}
             truncate
           />
         </div>
