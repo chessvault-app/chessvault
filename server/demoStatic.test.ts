@@ -46,6 +46,9 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
     'the library is the user\'s own PDFs, streamed to and from disk; the demo ' +
     'answers /api/books with an empty shelf (see server.ts) and nothing to upload into',
   storageApi: 'a disk inventory of a vault the demo does not have; Settings shows the demo card instead',
+  backupApi:
+    'a tar of the vault folder, offered from the Vault card; the demo vault is ' +
+    'the seed in this tab, and its card has no download button',
   lichessExplorerApi: 'proxying the explorer needs the deployment\'s Lichess token',
   tablebaseApi:
     'the tablebase needs no token and would work here, and is still left out: ' +
