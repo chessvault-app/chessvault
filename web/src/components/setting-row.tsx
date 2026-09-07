@@ -17,7 +17,7 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="border-border bg-muted/50 flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+    <div className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
       <div className="min-w-0">
         <div className="text-base font-medium">{title}</div>
         <div className="text-muted-foreground text-sm">{blurb}</div>

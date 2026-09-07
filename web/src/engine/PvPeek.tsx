@@ -153,7 +153,7 @@ export function PvPeek({
     // between here and the body would capture a `fixed` card.
     <div
       style={{ top, left, width: CARD_W }}
-      className="bg-popover ring-border pointer-events-none fixed z-50 rounded-lg p-1 shadow-lg ring-1"
+      className="bg-popover ring-window-ring pointer-events-none fixed z-50 rounded-lg p-1 shadow-lg ring-1"
     >
       <Board
         fen={peek.fen}

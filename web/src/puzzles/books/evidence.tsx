@@ -270,7 +270,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
             style={float.style}
             className="pointer-events-none z-50 block"
           >
-            <span className="bg-card block rounded-xl ring-1 ring-border p-2 shadow-lg">
+            <span className="bg-card block rounded-xl ring-1 ring-window-ring p-2 shadow-lg">
               <SourceCrop
                 slug={slug}
                 page={page}

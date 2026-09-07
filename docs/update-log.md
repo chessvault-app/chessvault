@@ -19,6 +19,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   card; the puzzle database's progress track and the engine settings'
   body carried a rule nothing needed. All follow the cards now. Row rules,
   fields and boxes whose fill cannot separate them keep their hairlines.
+- **Windows and footers follow the tonal rule too.** A card's footer band
+  and a dialog's lose their top rule at rest. Dialogs, popovers, menus and
+  toasts drop their ring in light, where the scrim or the shadow already
+  separates them, and keep a hairline in dark, where a shadow is invisible
+  and a window's fill is a card's. The settings strips and the cover
+  placeholders stand on the full muted tone without an edge, a note's
+  embedded board is a card on the page, and a note's header takes the page
+  header's grammar: the page's tone at rest, the bars' fill with the
+  card's edge once the text has scrolled under it.
 
 ## 0.9.1
 

@@ -87,7 +87,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
       // padding is invisible — 16px above and below made the band read
       // ~26px deep either side of the text. Horizontal keeps the card's
       // spacing so the contents line up with the content edge above.
-      className={cn('bg-muted/50 flex items-center rounded-b-xl border-t px-(--card-spacing) py-3', className)}
+      className={cn('bg-muted/50 border-card-ring flex items-center rounded-b-xl border-t px-(--card-spacing) py-3', className)}
       {...props}
     />
   );

@@ -378,6 +378,8 @@ function NoteEditor({
    */
   const phone = useMediaQuery('(max-width: 47.9375rem)');
   const compact = useScrollCollapse(headerRef, phone && leadsWithHeading);
+  // Whether the note has scrolled under the header at all, for its fill.
+  const scrolled = useScrollCollapse(headerRef, true);
   const barTitleHidden = phone && leadsWithHeading && !compact;
 
   return (
@@ -403,7 +405,13 @@ function NoteEditor({
       <div
         ref={headerRef}
         className={cn(
-          'border-border bg-background sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
+          'sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
+          // The page header's grammar: the page's own tone at rest, and the
+          // bars' fill with the card's edge once the note has scrolled
+          // under it, so the line returns under High contrast. A standing
+          // rule on the page tone was the one sticky header that did not.
+          'transition-colors duration-(--pane-turn) ease-(--pane-turn-ease)',
+          scrolled ? 'bg-card border-card-ring' : 'bg-background border-transparent',
           // The palette is what the small bottom padding was for: it sits
           // right above the rule and does not want a gap of its own. In
           // reading mode it renders nothing, and the header was left with

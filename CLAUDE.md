@@ -116,7 +116,11 @@ number stays only when it changes the decision (a 300 MB download does).
 app's measured behaviour on top — the phone sheet, the page/layer chevron,
 the keyboard band, the sole-field focus, Android Back, the coarse-pointer
 hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
-<name>`; keep its look, add only behaviour; a hand-rolled popover, menu,
+<name>`; keep its look, add only behaviour, with one standing exception,
+an edge: where the tonal rule ("The component layer" in
+`docs/design-principles.md`) and a registry stroke disagree, the rule wins.
+A surface whose fill already separates it draws `border-card-ring`, a
+window `ring-window-ring`, never the bare border colour. A hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in

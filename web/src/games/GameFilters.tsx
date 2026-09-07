@@ -1066,7 +1066,7 @@ export function SearchQueryHints({
 
   if (entries.length === 0 && hint === null && !waiting) return null;
   return (
-    <div className="bg-popover border-border absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
+    <div className="bg-popover border-window-ring absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
       {prefixOps.length > 0 && (
         <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
           {t('Narrow the search with')}

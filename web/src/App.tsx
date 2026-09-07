@@ -311,7 +311,7 @@ function Shell() {
         className={cn(
           'sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:z-50',
           'focus-visible:top-[calc(env(safe-area-inset-top)+0.5rem)] focus-visible:left-[calc(env(safe-area-inset-left)+0.5rem)]',
-          'bg-card text-foreground border-border rounded-lg border px-3 py-1.5 text-sm font-medium',
+          'bg-card text-foreground border-window-ring rounded-lg border px-3 py-1.5 text-sm font-medium',
           'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
         )}
       >

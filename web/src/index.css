@@ -291,6 +291,12 @@
      the same lerp, since the mockup showed the eye did not need the
      second cue there either (see the note beside it). */
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
+  /* A window's edge: a dialog, popover, menu or toast. In light the scrim
+     or the shadow separates it, so it follows the card's ring; dark keeps
+     the hairline, since a shadow is invisible there and a window's fill
+     is a card's, so the line is the one cue left. Outranks the registry's
+     own ring-border on those files (lanph3re's call, 2026-09-08). */
+  --window-ring: var(--card-ring);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
@@ -604,6 +610,7 @@
      2026-09-07). High contrast still draws it, as in light: there the
      knob is the reader asking for every cue. */
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
+  --window-ring: var(--border);
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
   --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
@@ -783,6 +790,7 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-card-ring: var(--card-ring);
+  --color-window-ring: var(--window-ring);
   --color-input: var(--input);
   --color-ring: var(--ring);
 

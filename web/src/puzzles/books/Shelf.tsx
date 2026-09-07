@@ -508,7 +508,7 @@ function BookCard({
               className="border-border h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
             />
           ) : (
-            <span className="bg-muted/50 border-border grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
+            <span className="bg-muted border-card-ring grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
               <BookMarked className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
             </span>
           )}

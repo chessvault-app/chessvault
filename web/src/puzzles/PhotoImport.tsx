@@ -388,7 +388,7 @@ export function PhotoImport({
           <div
             className={cn(
               'rounded-lg border p-3 text-sm leading-relaxed',
-              reading.fen ? 'border-border bg-muted/50' : 'border-info/40 bg-info/10',
+              reading.fen ? 'border-card-ring bg-muted' : 'border-info/40 bg-info/10',
             )}
           >
             {reading.fen === null ? (

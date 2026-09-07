@@ -732,7 +732,11 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   the cards white on it, so surfaces separate by fill and the card's
   ring (`--card-ring`) is transparent until the contrast knob asks for
   it; the page was white with a ring round every card until a mockup
-  over the demo retired that (lanph3re, 2026-09-07), and the structural
+  over the demo retired that (lanph3re, 2026-09-07; since 2026-09-08 the
+  rule outranks the registry's own strokes too: a card's footer band takes
+  `--card-ring`, and every window, dialog, popover, menu and toast, takes
+  `--window-ring`, the card ring in light and the plain hairline in dark,
+  where a shadow is invisible and a window's fill is a card's), and the structural
   strokes had moved as a set while it was, because the hairline was then
   the only structure there was: `--border` rests at 88% rather than
   92.2% (1.26:1 on white was not visible on a phone at all; 1.44:1 now),

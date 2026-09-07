@@ -549,7 +549,7 @@ function BookCard({
             />
           ) : (
             <span
-              className="bg-muted/50 border-border grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border"
+              className="bg-muted border-card-ring grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border"
             >
               <BookText className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
             </span>

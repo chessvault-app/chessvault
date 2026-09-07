@@ -164,7 +164,7 @@ export function usePuzzlePreview(): {
       <div
         style={{ top: preview.top, left: preview.left }}
         className={cn(
-          'border-border bg-card pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
+          'border-window-ring bg-card pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
           'shadow-lg',
         )}
       >
