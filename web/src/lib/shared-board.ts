@@ -16,7 +16,25 @@
  */
 export const SHARED_BOARD = 'board';
 
+/**
+ * Whether a tap has named a thumbnail for the route change about to run.
+ *
+ * The page's board takes the name only while this is set (board/Board),
+ * and the router clears it once the transition has drawn. Without it the
+ * page board was named on every phone route change, so a game opened
+ * from a games row, which has no thumbnail, still ran the board group's
+ * 337ms spring over a snapshot taken before the board's images had
+ * loaded: an empty square for half a second where a 150ms cross-fade
+ * was owed. Measured on the demo in phone-emulated Chromium: the
+ * transition finished 349ms after the tap with the name always on.
+ */
+let armed = false;
+export const sharedBoardArmed = (): boolean => armed;
+export function disarmSharedBoard(): void {
+  armed = false;
+}
 export function nameSharedBoard(el: HTMLElement | null): void {
   if (!el) return;
   el.style.viewTransitionName = SHARED_BOARD;
+  armed = true;
 }

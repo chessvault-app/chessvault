@@ -5,6 +5,19 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **A game opens with its board, and the review offer rises once.** On a
+  phone a game opened from a games row showed the page for half a second
+  with an empty square where the board goes, and the review toast rose
+  twice. The board was named for a fly-in on every route change, even
+  from a row that has no thumbnail, so its 337ms group ran over a snapshot
+  taken before the board had drawn; it is named only when a tapped
+  thumbnail arms the flight. The page change's root group kept the new
+  page hidden 100ms past its own 150ms fade, and follows it now. The
+  toast waits for the page change to finish drawing, instead of being
+  captured mid-rise in the snapshot and then rising again live.
+
 ## 0.9.2
 
 A phone no longer zooms under two fingers, the “Open anything” sheet fits

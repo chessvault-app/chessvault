@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
+import { routeSettled } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useReview, type GraphPoint } from '@/store/review';
 import { Button } from '@/components/ui/button';
@@ -130,22 +131,32 @@ export function ReviewStrip({
   useEffect(() => {
     if (!offerAsToast || offeredFor.current === gameHeaders) return;
     offeredFor.current = gameHeaders;
-    const id = toast.add({
-      title: t('See accuracy, mistakes and the evaluation graph.'),
-      timeout: 8000,
-      // The same button the band draws (reviewOfferChildren); the toast
-      // carries the registry's X beside it.
-      actionProps: {
-        children: reviewOfferChildren(),
-        'aria-label': reviewOfferLabel(),
-        onClick: () => void run(),
-      },
+    let id: string | null = null;
+    let cancelled = false;
+    // After the page change has finished drawing, not during it: a toast
+    // raised inside the route's View Transition is captured mid-entrance
+    // in the new page's snapshot and then rises again live (lib/router,
+    // routeSettled).
+    void routeSettled().then(() => {
+      if (cancelled) return;
+      id = toast.add({
+        title: t('See accuracy, mistakes and the evaluation graph.'),
+        timeout: 8000,
+        // The same button the band draws (reviewOfferChildren); the toast
+        // carries the registry's X beside it.
+        actionProps: {
+          children: reviewOfferChildren(),
+          'aria-label': reviewOfferLabel(),
+          onClick: () => void run(),
+        },
+      });
     });
     // The offer belongs to this game on this page. Leaving either takes
     // it down: a toast outlives the component that raised it, and this
     // one followed a reader from the board onto Settings.
     return () => {
-      toast.close(id);
+      cancelled = true;
+      if (id !== null) toast.close(id);
     };
   }, [offerAsToast, gameHeaders, run]);
 

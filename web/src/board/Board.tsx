@@ -1,4 +1,4 @@
-import { SHARED_BOARD } from '@/lib/shared-board';
+import { SHARED_BOARD, sharedBoardArmed } from '@/lib/shared-board';
 import { Chessground } from '@lichess-org/chessground';
 import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
@@ -275,6 +275,15 @@ export function Board({
         if (!(effect instanceof KeyframeEffect)) return false;
         const target = effect.target;
         if (!(target instanceof Element) || !target.contains(el)) return false;
+        // A phone's route change runs inside a View Transition (lib/router),
+        // whose animations play on the root's ::view-transition pseudo-
+        // elements: the root contains every board, so the gate read the
+        // page's own cross-fade as an ancestor scaling and held the board
+        // for the whole of it, 150ms of fade plus the board group's 337ms
+        // spring, and the transition snapshotted an empty square. Those
+        // animations move snapshots, never the live element, so they are
+        // not what this gate is for.
+        if (effect.pseudoElement?.startsWith('::view-transition')) return false;
         // A spinner never settles; it also never scales an ancestor.
         return effect.getComputedTiming().iterations !== Infinity;
       });
@@ -449,8 +458,10 @@ export function Board({
         className,
       )}
       // The shared element a phone's route transition morphs a tapped
-      // thumbnail into (lib/shared-board). One board per page.
-      style={{ viewTransitionName: SHARED_BOARD }}
+      // thumbnail into (lib/shared-board). One board per page, and named
+      // only while a tap has armed a flight: unnamed, the board rides the
+      // page's own cross-fade instead of a board group of its own.
+      style={{ viewTransitionName: sharedBoardArmed() ? SHARED_BOARD : undefined }}
     >
       <div ref={host} className="size-full" />
     </div>

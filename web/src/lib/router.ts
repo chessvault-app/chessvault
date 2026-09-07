@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 import { prefersReducedMotion } from './motion';
+import { disarmSharedBoard } from './shared-board';
 
 // Named for the page each one IS. Two were not: `analysis` drew a page
 // the whole app calls the Board, and `books` was the opening-books page
@@ -139,11 +140,36 @@ function swapRoute(commit: () => void, appDriven: boolean): void {
   const phone = window.matchMedia('(max-width: 47.9375rem)').matches;
   if (!appDriven || !phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
     commit();
+    disarmSharedBoard();
     return;
   }
-  document.startViewTransition(() => {
+  const transition = document.startViewTransition(() => {
     flushSync(commit);
   });
+  // `finished` rejects when a transition is skipped (another starts, the
+  // tab hides); either way the route has settled, and a board flight the
+  // tap armed has flown.
+  const settled = transition.finished.catch(() => undefined).then(() => {
+    disarmSharedBoard();
+    if (inFlight === settled) inFlight = null;
+  });
+  inFlight = settled;
+}
+
+let inFlight: Promise<void> | null = null;
+
+/**
+ * Resolves once the page change in flight, if any, has finished drawing.
+ *
+ * Anything that appears during a View Transition is captured in the
+ * new page's snapshot and shown as a still while the old page fades,
+ * then plays live once the pseudo-elements are torn down. A toast raised
+ * in that window rose twice: once frozen mid-entrance in the snapshot,
+ * once for real. Whatever wants to appear after a route change awaits
+ * this first; with no transition in flight it resolves at once.
+ */
+export function routeSettled(): Promise<void> {
+  return inFlight ?? Promise.resolve();
 }
 
 /**
