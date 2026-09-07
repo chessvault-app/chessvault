@@ -40,14 +40,12 @@ import { ClearableInput } from '@/components/text-fields';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
-import { LinkedMentions } from '@/notes/LinkedMentions';
-import { AliasEditor } from '@/notes/AliasEditor';
 import { splitAliasList } from '@shared/frontMatter';
 import { PaneTabs } from '@/components/pane-tabs';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl } from '@/components/save-control';
-import { DocumentHistory } from '@/components/history-panel';
+import { DocumentTools } from '@/components/document-tools';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
@@ -306,21 +304,23 @@ export function StudyView({
       <TitleEditor id={id} backSection={backSection} />
       {/* What links here, then History, then Edit, then Save: what points
           at this document, what it has been, what it is becoming, what it
-          becomes. */}
-      <AliasEditor
-        title={t(kind === 'game' ? 'Other names for this game' : 'Other names for this study')}
-        names={aliases}
-        onSave={(names) => void setAliases(names)}
-      />
-      <LinkedMentions section={kind === 'game' ? 'games' : 'studies'} id={id} />
-      <DocumentHistory
-        kind={kind === 'game' ? 'games' : 'studies'}
-        id={id}
-        name={id.split('/').at(-1)!}
-        // Re-open rather than patch the store: a restore replaced the file
-        // on disk, and the document in the tab is now a stale copy of
-        // something that no longer exists.
-        onRestored={() => void open(id, base)}
+          becomes. On a phone the first three fold behind one ⋯. */}
+      <DocumentTools
+        aliases={{
+          title: t(kind === 'game' ? 'Other names for this game' : 'Other names for this study'),
+          names: aliases,
+          onSave: (names) => void setAliases(names),
+        }}
+        mentions={{ section: kind === 'game' ? 'games' : 'studies', id }}
+        history={{
+          kind: kind === 'game' ? 'games' : 'studies',
+          id,
+          name: id.split('/').at(-1)!,
+          // Re-open rather than patch the store: a restore replaced the file
+          // on disk, and the document in the tab is now a stale copy of
+          // something that no longer exists.
+          onRestored: () => void open(id, base),
+        }}
       />
       {/* One edit button for the whole document, in the header — the shape
           Notes uses. There is no separate pencil for the title (double-click

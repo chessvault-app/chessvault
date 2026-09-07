@@ -9,16 +9,16 @@ import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl, type SaveState } from '@/components/save-control';
-import { DocumentHistory } from '@/components/history-panel';
+import { DocumentTools } from '@/components/document-tools';
 import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { WikiSuggest } from './WikiSuggest';
 import { wikiSuggestStore } from './wikiLink';
-import { LinkedMentions } from './LinkedMentions';
-import { AliasEditor } from './AliasEditor';
 import { readAliases, writeAliases } from '@shared/frontMatter';
 import { MobileActionBar } from '@/components/mobile-action-bar';
+import { useScrollCollapse } from '@/hooks/use-scroll-collapse';
+import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
 
@@ -155,6 +155,10 @@ function NoteEditor({
   // Notes open read-only (wiki-links follow on plain click); the header's
   // Edit button switches the TipTap editor live.
   const [editable, setEditable] = useState(false);
+  // Whether the note's first block is a level-one heading; read at load
+  // and on every edit, since the bar's title depends on it (see below).
+  const [leadsWithHeading, setLeadsWithHeading] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
   /**
    * What is on the server, so an edit can be told from a settling node.
    *
@@ -250,6 +254,7 @@ function NoteEditor({
     // badge announced 저장 중… over an unedited note.
     onCreate: ({ editor }) => {
       takeBaseline(docToMarkdown(editor.state.doc, front.current));
+      setLeadsWithHeading(firstBlockIsHeading(editor.state.doc));
     },
     onUpdate: ({ editor }) => {
       // Compare rather than trust the event: only a real difference is an
@@ -259,6 +264,7 @@ function NoteEditor({
       // cannot be an edit: the note opens read-only and this fires before
       // anyone has been offered a way to change anything.
       if (takeBaseline(now)) return;
+      setLeadsWithHeading(firstBlockIsHeading(editor.state.doc));
       if (now === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -358,6 +364,22 @@ function NoteEditor({
     editor?.setEditable(editable);
   }, [editor, editable]);
 
+  /**
+   * A phone's bar names the note once the note's own name has scrolled
+   * under it, and not before. Most notes open with a level-one heading
+   * that IS the name (the seed's do; Obsidian's convention does), and at
+   * rest the bar was printing "Notes on th…" 60px above "Notes on the
+   * Catalan" at 24px: the same words twice, the small copy cut. The bar
+   * title now waits for the heading to go, the way PageHeader's large
+   * title becomes the bar. Desktop keeps both: a wide bar has room, and
+   * the bar's copy is the one that renames. A note that does not lead
+   * with a heading keeps its bar title at rest, since nothing else on
+   * screen names it.
+   */
+  const phone = useMediaQuery('(max-width: 47.9375rem)');
+  const compact = useScrollCollapse(headerRef, phone && leadsWithHeading);
+  const barTitleHidden = phone && leadsWithHeading && !compact;
+
   return (
     // No padding on the TOP of the scroll container: `sticky top-0` pins to
     // the scrollport, which is the padding box, so a pt- here leaves a band
@@ -379,6 +401,7 @@ function NoteEditor({
           bar span the column's full width — inset by the page padding it
           read as narrower than the text it formats. */}
       <div
+        ref={headerRef}
         className={cn(
           'border-border bg-background sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
           // The palette is what the small bottom padding was for: it sits
@@ -393,27 +416,29 @@ function NoteEditor({
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
         </Button>
-        <NoteTitle id={id} />
+        <NoteTitle id={id} hidden={barTitleHidden} />
         {/* What links here, then History, then Edit, then Save — see
             StudyView's header. */}
-        <AliasEditor
-          title={t('Other names for this note')}
-          names={readAliases(frontMatter)}
-          onSave={(names) => {
-            // A note keeps them in front matter, which this is the only key
-            // of that the app understands — every other line comes back
-            // exactly as the writer left it.
-            const next = writeAliases(frontMatter, names);
-            // Both the ref every write reads and the state this prop comes
-            // from: the ref so the save below carries the new block, the
-            // state so reopening the dialog shows what was just set.
-            front.current = next;
-            setFrontMatter(next);
-            if (editor) void save(docToMarkdown(editor.state.doc, next));
+        <DocumentTools
+          aliases={{
+            title: t('Other names for this note'),
+            names: readAliases(frontMatter),
+            onSave: (names) => {
+              // A note keeps them in front matter, which this is the only key
+              // of that the app understands — every other line comes back
+              // exactly as the writer left it.
+              const next = writeAliases(frontMatter, names);
+              // Both the ref every write reads and the state this prop comes
+              // from: the ref so the save below carries the new block, the
+              // state so reopening the dialog shows what was just set.
+              front.current = next;
+              setFrontMatter(next);
+              if (editor) void save(docToMarkdown(editor.state.doc, next));
+            },
           }}
+          mentions={{ section: 'notes', id }}
+          history={{ kind: 'notes', id, name: id.split('/').at(-1)!, onRestored }}
         />
-        <LinkedMentions section="notes" id={id} />
-        <DocumentHistory kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <Button
           variant={editable ? 'default' : 'secondary'}
           size="sm"
@@ -468,7 +493,13 @@ function NoteEditor({
   );
 }
 
-function NoteTitle({ id }: { id: string }) {
+/** Whether the document opens with a level-one heading (see the bar title). */
+function firstBlockIsHeading(doc: { firstChild: { type: { name: string }; attrs: Record<string, unknown> } | null }): boolean {
+  const first = doc.firstChild;
+  return first?.type.name === 'heading' && first.attrs.level === 1;
+}
+
+function NoteTitle({ id, hidden = false }: { id: string; hidden?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
@@ -521,7 +552,14 @@ function NoteTitle({ id }: { id: string }) {
           setEditing(true);
         }}
         title={failure ?? id}
-        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
+        // Hidden, not removed: it keeps its place in the row so the
+        // buttons stay put, and fades in over the bar's own duration.
+        className={cn(
+          'min-w-0 flex-1 truncate text-base font-semibold transition-opacity duration-150',
+          failure ? 'text-destructive' : 'text-foreground',
+          hidden && 'opacity-0',
+        )}
+        aria-hidden={hidden || undefined}
       >
         {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}

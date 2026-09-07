@@ -63,9 +63,33 @@ interface Answer {
 
 const NOTHING: Answer = { mentions: [], unlinked: [], unlinkedCapped: false };
 
-export function LinkedMentions({ section, id }: { section: LinkSection; id: string }) {
+export function LinkedMentions({
+  section,
+  id,
+  open: openProp,
+  onOpenChange,
+  trigger = true,
+  onCountChange,
+}: {
+  section: LinkSection;
+  id: string;
+  /** Held by the caller where the button is not this component's — a
+      phone's overflow menu opens it (components/document-tools). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Whether to draw the button; off when a menu item stands in for it. */
+  trigger?: boolean;
+  /** How many mentions there are, so a menu can drop its item at zero the
+      way this component drops its button. */
+  onCountChange?: (count: number) => void;
+}) {
   const [answer, setAnswer] = useState<Answer>(NOTHING);
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = openProp ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
   /** Mentions linked in this sitting, so a pressed row stops offering. */
   const [linked, setLinked] = useState<Set<string>>(new Set());
   const { mentions, unlinked, unlinkedCapped } = answer;
@@ -140,20 +164,27 @@ export function LinkedMentions({ section, id }: { section: LinkSection; id: stri
     else navigate(m.fromSection, id);
   };
 
-  if (mentions.length === 0 && unlinked.length === 0) return null;
+  const count = mentions.length + unlinked.length;
+  useEffect(() => {
+    onCountChange?.(count);
+  }, [count, onCountChange]);
+
+  if (count === 0) return null;
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="shrink-0"
-        title={t('Linked mentions')}
-        active={open}
-        onClick={() => setOpen(true)}
-      >
-        <Link className="size-3.5" />
-      </Button>
+      {trigger && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
+          title={t('Linked mentions')}
+          active={open}
+          onClick={() => setOpen(true)}
+        >
+          <Link className="size-3.5" />
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent size="sm" title={t('Linked mentions')}>
           {/* The spacing goes on a wrapper, never on the card. The card's

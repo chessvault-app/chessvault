@@ -258,26 +258,42 @@ export function DocumentHistory({
   id,
   name,
   onRestored,
+  open: openProp,
+  onOpenChange,
+  trigger = true,
 }: {
   kind: HistoryKind;
   id: string;
   name: string;
   onRestored: () => void;
+  /** Held by the caller where the button is not this component's — a
+      phone's overflow menu opens it (components/document-tools). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Whether to draw the button; off when a menu item stands in for it. */
+  trigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = openProp ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="shrink-0"
-        title={t('Earlier versions')}
-        active={open}
-        onClick={() => setOpen(true)}
-      >
-        <History className="size-3.5" />
-      </Button>
+      {trigger && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
+          title={t('Earlier versions')}
+          active={open}
+          onClick={() => setOpen(true)}
+        >
+          <History className="size-3.5" />
+        </Button>
+      )}
       {open && (
         <HistorySheet
           kind={kind}

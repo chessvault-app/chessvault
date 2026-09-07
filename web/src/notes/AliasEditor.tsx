@@ -30,13 +30,27 @@ export function AliasEditor({
   title,
   names,
   onSave,
+  open: openProp,
+  onOpenChange,
+  trigger = true,
 }: {
   /** What the control and its dialog are called, e.g. "…for this study". */
   title: string;
   names: string[];
   onSave: (names: string[]) => void;
+  /** Held by the caller where the button is not this component's — a
+      phone's overflow menu opens it (components/document-tools). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Whether to draw the button; off when a menu item stands in for it. */
+  trigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = openProp ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
   const [text, setText] = useState('');
   const current = names.join(', ');
 
@@ -56,16 +70,18 @@ export function AliasEditor({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="shrink-0"
-        title={title}
-        active={open}
-        onClick={() => setOpen(true)}
-      >
-        <Tags className="size-3.5" />
-      </Button>
+      {trigger && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
+          title={title}
+          active={open}
+          onClick={() => setOpen(true)}
+        >
+          <Tags className="size-3.5" />
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : commit())}>
         <DialogContent size="sm" title={title}>
           <FieldGroup>
