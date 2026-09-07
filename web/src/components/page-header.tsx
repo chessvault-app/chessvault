@@ -105,7 +105,7 @@ export function PageHeader({
             // bar's fill) rather than a hairline on the page's own tone.
             // The hairline returns under High contrast with the bars'.
             'max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-4 max-md:px-4 max-md:bg-background',
-            'max-md:transition-colors max-md:duration-150 data-compact:max-md:bg-card',
+            'max-md:transition-colors max-md:duration-(--pane-turn) max-md:ease-(--pane-turn-ease) data-compact:max-md:bg-card',
             'max-md:border-b max-md:border-transparent data-compact:max-md:border-card-ring',
           ],
           className,
@@ -131,7 +131,9 @@ export function PageHeader({
             // the line out on every frame and read as a reflow; a
             // transform is composited and reads as the title moving.
             // Only the size moves; the row keeps its 44px.
-            'max-md:origin-left max-md:transition-transform max-md:duration-150',
+            // On the app's one motion clock (the pane turn's spring), so the
+            // title, the pill and the panes settle at the same tempo.
+            'max-md:origin-left max-md:transition-transform max-md:duration-(--pane-turn) max-md:ease-(--pane-turn-ease)',
             'group-data-compact/header:max-md:scale-[0.667]',
             truncate && 'min-w-0 flex-1 truncate',
           )}

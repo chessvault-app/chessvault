@@ -671,6 +671,35 @@ of getting this wrong: its root was rewritten to drop the registry's
 padding and gap, which reads like a small local decision and is in fact a
 rule every call site then has to re-derive.
 
+## Motion
+
+One clock, and it is a spring. Every state motion the app draws (the
+pane turn and its indicator line, the tab bar's sliding pill, the page
+title's collapse, and the phone's route cross-fade) reads two tokens,
+`--pane-turn` and `--pane-turn-ease`, and those are a damped spring
+sampled into a CSS `linear()` easing: stiffness 380, damping ratio 0.92,
+unit mass, settling within 0.1% in 337ms with no overshoot, 90% of the
+way at about 180ms. `scripts/spring-easing.ts` prints the curve from the
+three numbers; moving the motion means re-running it and quoting what it
+printed.
+
+Why a spring: a spring arrives fast and eases to a stop with no fixed
+length, which is how iOS has animated since iOS 7 and what Material 3
+Expressive made its motion model in 2025; the 200ms cubic-bezier it
+replaced started from rest and took the same time for every distance.
+Why no overshoot: a bouncing move list is the register the record
+rejects; Apple's default rebounds a little (ratio about 0.83), Material's
+"standard" scheme sits near critical, and this app sits at 0.92. Why
+CSS: the shape at zero runtime cost, in the tokens the three motions
+already read. What CSS cannot do is take a finger's velocity; a
+velocity-seeded release for the pane swipe would be a JS spring in the
+hook, and a separate decision.
+
+**The One Clock Rule.** A new state motion reads the two tokens. A
+`duration-150` beside them is a second tempo on the same screen.
+Hover and colour changes are not motion and keep their own short
+transitions; `prefers-reduced-motion` flattens all of it to the swap.
+
 ## Do's and Don'ts
 
 ### Do:

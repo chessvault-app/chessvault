@@ -72,7 +72,7 @@ const WALL_PX = 24;
  * must not be the shorter of the two, or the offset is taken away
  * mid-transition and the row jumps the rest of the way.
  */
-const SETTLE_MS = 200;
+const SETTLE_MS = 340;
 
 /**
  * The pane on one side of the open one, or null if that side is the end of
