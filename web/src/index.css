@@ -540,7 +540,9 @@
   --eval-white: oklch(calc(94% + (100% - 94%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
   --eval-black: oklch(calc(30% + (0% - 30%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   /* Keeps the bar's dark half readable against a matching background. */
-  --eval-border: oklch(0% 0 0 / 20%);
+  /* Scaled by the contrast knob like --card-ring: the bar's two fills are
+     its edge on the toned page, and the hairline returns under High contrast. */
+  --eval-border: oklch(0% 0 0 / calc(20% * var(--ui-contrast)));
   /* Text sitting ON an eval fill (W/D/B bars, result badges). */
   --on-eval-white: oklch(0% 0 0 / 75%);
   --on-eval-black: oklch(100% 0 0 / 85%);
@@ -704,7 +706,7 @@
      with its white half (94% on a 100% page). */
   --eval-white: oklch(calc(93% + (100% - 93%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
   --eval-black: oklch(calc(27% + (0% - 27%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
-  --eval-border: oklch(100% 0 0 / 25%);
+  --eval-border: oklch(100% 0 0 / calc(25% * var(--ui-contrast)));
 
   --shadow-color: var(--ui-hue) 40% 4%;
 }

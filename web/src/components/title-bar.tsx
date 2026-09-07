@@ -189,7 +189,7 @@ export function TitleBar() {
       {md && (
         <div
           className={cn(
-            'bg-card border-border flex h-full shrink-0 items-center gap-1 self-stretch border-r',
+            'bg-card border-card-ring flex h-full shrink-0 items-center gap-1 self-stretch border-r',
             // 16px, not the band's 14: the switch is a 36px button, so its
             // glyph then centres 34px in, the line the sidebar's row icons
             // sit on below it (NAV_ROW in App.tsx; 11px matched the 29px

@@ -5,6 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The title band and the eval bar lose their hairlines.** The desktop's
+  band over the sidebar drew its right rule in the plain border colour
+  while the sidebar under it had already given the line up on the toned
+  page, and the eval bar kept a fixed 1px edge around its two fills. Both
+  follow the cards now: no line at rest, and it returns under High
+  contrast.
+
 ## 0.9.1
 
 Three engines to choose from in the engine's settings: Stockfish 19 lite

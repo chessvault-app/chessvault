@@ -303,8 +303,10 @@ export function EvalBar({
       <div
         data-slot="eval-bar"
         className={cn(
-          // The explicit border keeps the dark half readable against a dark
-          // panel background (and the light half against a light one).
+          // The border is kept for its width, which the bar's measurements
+          // include; its colour follows the contrast knob (index.css), so
+          // at rest the two fills are the edge and the hairline returns
+          // under High contrast, as a card's does.
           // Square, not the pill it was (lanph3re's call): the ends are
           // where the number is printed, and `rounded-full` on a 28px bar is
           // a 14px radius — the whole of the row the digits sit in.
