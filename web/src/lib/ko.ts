@@ -1046,7 +1046,7 @@ export const ko: Record<string, string> = {
   'Save profile': '프로필 저장',
   'Play a click on moves and captures.': '수와 기물 잡기에 소리를 냅니다.',
   'Vibrate on moves': '수를 둘 때 진동',
-  'One short tick when your piece lands.': '기물을 놓을 때 짧게 한 번 진동합니다.',
+  'One short tick when your piece lands, and when a swipe takes. Android only.': '기물을 놓을 때와 밀기가 넘어갈 때 짧게 한 번 진동합니다. 안드로이드에서만 됩니다.',
   'Annotation size': '주석 크기',
   // The middle size reuses the dictionary's own Medium, down with the
   // difficulty words — one key, one word, and duplicating it here would

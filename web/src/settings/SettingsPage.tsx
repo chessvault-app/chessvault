@@ -1411,7 +1411,7 @@ function SoundCard() {
           iOS Safari has no web haptics, and a switch that can only ever
           no-op is worse than an absent one. */}
       {'vibrate' in navigator && (
-        <SettingRow title={t('Vibrate on moves')} blurb={t('One short tick when your piece lands.')}>
+        <SettingRow title={t('Vibrate on moves')} blurb={t('One short tick when your piece lands, and when a swipe takes. Android only.')}>
           <Switch
             checked={haptics}
             onCheckedChange={() => setHaptics(!haptics)}

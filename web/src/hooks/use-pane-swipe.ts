@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@/lib/motion';
+import { gestureHaptic } from '@/board/sound';
 
 /** How far a finger must travel before the gesture has an axis at all. */
 const SLOP = 8;
@@ -571,6 +572,8 @@ export function usePaneSwipe<T extends string>({
             ? paneAfterSwipe(ids, value, dx.current, span.current, velocity())
             : null;
         if (next === null || next === value) return springBack();
+        // The page turns: say so under the finger.
+        gestureHaptic();
         // Reduced motion, or a neighbour the page never put on screen:
         // there is no row to walk home, so the swap is the whole turn.
         if (still.current || !peek.current || !open.current) {

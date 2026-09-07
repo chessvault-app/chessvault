@@ -203,9 +203,24 @@ export function soundForSan(san: string): SoundKind {
  * nothing, which is also fine.
  */
 export function moveHaptic(): void {
+  tick(10);
+}
+
+/**
+ * A shorter tick at the point a gesture takes: a swiped row crossing the
+ * distance that will remove or bookmark it, a pane swipe passing the
+ * share that turns the page. The finger learns where the commit point is
+ * without looking, which is what a platform's own swipe-to-delete does.
+ * Same switch and same platform note as the move tick.
+ */
+export function gestureHaptic(): void {
+  tick(6);
+}
+
+function tick(ms: number): void {
   if (!usePrefs.getState().haptics) return;
   try {
-    navigator.vibrate?.(10);
+    navigator.vibrate?.(ms);
   } catch {
     // Some engines throw instead of ignoring; a missing buzz is not an
     // error worth surfacing.

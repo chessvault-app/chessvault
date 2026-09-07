@@ -1,6 +1,7 @@
 import { Bookmark, BookmarkX, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { gestureHaptic } from '@/board/sound';
 import { t } from '@/lib/i18n';
 
 /** Past this much of a drag, letting go does the thing. */
@@ -61,6 +62,9 @@ export function useSwipeRow({
   const axis = useRef<'x' | 'y' | null>(null);
   // Whether this particular gesture is allowed to go right at all.
   const rightward = useRef(false);
+  // Whether the last move had crossed the threshold, so the tick fires
+  // once on the way over (and once on the way back), not every frame.
+  const wasArmed = useRef(false);
 
   const end = (): void => {
     if (dx <= -THRESHOLD) onRemove();
@@ -69,6 +73,7 @@ export function useSwipeRow({
     start.current = null;
     axis.current = null;
     rightward.current = false;
+    wasArmed.current = false;
   };
 
   return {
@@ -93,7 +98,13 @@ export function useSwipeRow({
           axis.current = Math.abs(moveX) > Math.abs(moveY) ? 'x' : 'y';
         }
         if (axis.current !== 'x') return;
-        setDx(rightward.current ? moveX : Math.min(0, moveX));
+        const next = rightward.current ? moveX : Math.min(0, moveX);
+        const armed = Math.abs(next) >= THRESHOLD;
+        if (armed !== wasArmed.current) {
+          wasArmed.current = armed;
+          gestureHaptic();
+        }
+        setDx(next);
       },
       onTouchEnd: end,
       onTouchCancel: end,
