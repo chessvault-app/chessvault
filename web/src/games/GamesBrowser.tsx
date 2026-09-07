@@ -692,27 +692,13 @@ export function GamesBrowser({
             onClearSearch={() => setQuery('')}
             onShowAll={() => setMarkedOnly(false)}
             search={finders(merged ? 'min-w-0 flex-1 basis-72' : 'min-w-0 flex-1')}
-            importButton={
-              /* Only inside a card. Import lived here, with the
-                 collection it grows, because a page-header button
-                 beside this big pane did not stand out (lanph3re's
-                 report) — the card's edge made the header read as
-                 outside the thing. On the page frame there is no edge,
-                 the button stands on the title line like every other
-                 shelf's Import, and this one steps aside (importRef).
-                 Below md the FAB is the import button either way. */
-              frame === 'panel' ? (
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="hidden shrink-0 md:inline-flex"
-                  onClick={() => setImporting(true)}
-                >
-                  <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
-                  {t('Import a game')}
-                </Button>
-              ) : undefined
-            }
+            /* No Import here. The band is the whole browser, so it used to
+                carry the collection's Import too; but the workspace loads a
+                game onto a throwaway board, it does not grow the
+                collection, and managing is a place you go (the Games page,
+                where the button stands on the title line). The workspace
+                never renders below md, so the phone FAB below is the Games
+                page's alone. */
             searchIssues={
               <SearchQueryIssues
                 query={query}

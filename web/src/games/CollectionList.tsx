@@ -207,7 +207,6 @@ export function CollectionList({
   onClearSearch,
   onShowAll,
   search,
-  importButton,
   searchIssues,
   merged = false,
   shape,
@@ -242,7 +241,6 @@ export function CollectionList({
       density is this list's to know — card mode stacks search over the
       filter band, table mode folds everything into one row. */
   search?: ReactNode;
-  importButton?: ReactNode;
   searchIssues?: ReactNode;
   /** One-row chrome by measured pane width - see DatabaseGames. */
   merged?: boolean;
@@ -562,15 +560,10 @@ export function CollectionList({
           <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
             {search}
             {filtersInRow && filterControls}
-            {merged ? (
-              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
-                  {tally}
-                </span>
-                {importButton}
+            {merged && (
+              <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
+                {tally}
               </span>
-            ) : (
-              importButton
             )}
           </div>
           {searchIssues}
