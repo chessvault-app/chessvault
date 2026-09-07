@@ -23,7 +23,9 @@ export function FilterChip({
   const chip = (
     <Toggle variant="chip" size="none" pressed={active} onPressedChange={() => onClick()}>
       {typeof label === 'string' ? t(label) : label}
-      {count !== undefined && <span className="ml-1 opacity-60">{count}</span>}
+      {/* The measured second tier, not an opacity: a 60% wash of the chip's
+          own ink measured 2.58:1 on its fill (the axe pass, 2026-09-07). */}
+      {count !== undefined && <span className="text-muted-foreground ml-1">{count}</span>}
     </Toggle>
   );
   if (!title) return chip;
