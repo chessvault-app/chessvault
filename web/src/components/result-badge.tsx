@@ -56,6 +56,7 @@ export function ResultBadge({
   // the row's, which is the tip that had something to add.
   return (
     <span
+      data-slot="result-badge"
       className={cn(
         'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-semibold',
         'tabular-nums leading-4',

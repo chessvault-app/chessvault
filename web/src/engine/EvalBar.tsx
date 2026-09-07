@@ -301,6 +301,7 @@ export function EvalBar({
       }
     >
       <div
+        data-slot="eval-bar"
         className={cn(
           // The explicit border keeps the dark half readable against a dark
           // panel background (and the light half against a light one).

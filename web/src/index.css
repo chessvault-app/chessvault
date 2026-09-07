@@ -495,6 +495,15 @@
   --board-dark-base: oklch(62% 0.072 52);
   --board-light: var(--board-light-base);
   --board-dark: var(--board-dark-base);
+  /* The coordinate labels' ink, one per square colour, mixed OUT of the
+     board's own tokens so a preset stays one material. Which way the mix
+     goes is decided per board and measured: a light label on a mid-tone
+     dark square never reaches 4.5:1 (white itself is 3.7:1 on walnut, 2.3
+     on tan), so light boards take dark ink on BOTH squares and dark
+     boards take light ink on their dark square. Every preset below sets
+     its own pair; the numbers are in the commit that added them. */
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
   --board-frame: oklch(88% calc(0.01 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(83% 0.16 108 / 55%);
   --sq-selected: oklch(62% 0.15 150 / 50%);
@@ -645,6 +654,10 @@
   --board-dark-base: oklch(39% 0.031 256);
   --board-light: var(--board-light-base);
   --board-dark: var(--board-dark-base);
+  /* A dark board: light ink on the dark square (5.9:1), and the light
+     square at 60% still takes dark ink (4.8:1). */
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
   --board-frame: oklch(27% calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(72% 0.15 110 / 42%);
   --sq-selected: oklch(65% 0.15 152 / 45%);
@@ -1274,10 +1287,10 @@ cg-board square.check {
    bright. Both are pushed well past the contrast chessground ships with,
    which is close to illegible on a themed board. */
 .cg-wrap coords coord.coord-light {
-  color: color-mix(in oklch, var(--board-dark), black 55%);
+  color: var(--coord-on-light);
 }
 .cg-wrap coords coord.coord-dark {
-  color: color-mix(in oklch, var(--board-light), white 60%);
+  color: var(--coord-on-dark);
 }
 
 /* Radius/clip/shadow live on cg-container, not .cg-wrap: chessground floors
@@ -1768,36 +1781,48 @@ cg-board square.check {
 [data-board='green'] {
   --board-light: oklch(95% 0.045 105);
   --board-dark: oklch(65% 0.095 135);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 :root[data-board='brown'],
 [data-board='brown'] {
   --board-light: oklch(89% 0.045 85);
   --board-dark: oklch(66% 0.065 65);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 :root[data-board='blue'],
 [data-board='blue'] {
   --board-light: oklch(92% 0.018 240);
   --board-dark: oklch(62% 0.065 245);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 :root[data-board='slate'],
 [data-board='slate'] {
   --board-light: oklch(87% 0.006 260);
   --board-dark: oklch(55% 0.018 260);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 90%);
 }
 
 :root[data-board='lavender'],
 [data-board='lavender'] {
   --board-light: oklch(93% 0.02 300);
   --board-dark: oklch(64% 0.058 300);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 :root[data-board='rosewood'],
 [data-board='rosewood'] {
   --board-light: oklch(92% 0.025 30);
   --board-dark: oklch(61% 0.065 25);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 /* Paper and ink. The only preset whose two squares are different
@@ -1830,6 +1855,8 @@ cg-board square.check {
 [data-board='ink'] {
   --board-light: oklch(93% 0.014 92);
   --board-dark: oklch(54% 0.028 250);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
 }
 
 /* The one textured board: the ChessBase-style rust brown, with the grain
@@ -1865,6 +1892,8 @@ cg-board square.check {
 [data-board='wood'] {
   --board-light: oklch(91% 0.042 84);
   --board-dark: oklch(58% 0.135 49);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 85%);
   --board-grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='800'%3E%3Cfilter%20id='v'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.004'%20numOctaves='3'%20seed='5'/%3E%3CfeColorMatrix%20values='.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%200%200%200%200%201'/%3E%3C/filter%3E%3Crect%20x='0'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3C/svg%3E");
 }
 
@@ -1875,6 +1904,10 @@ cg-board square.check {
 [data-board='charcoal'] {
   --board-light: oklch(56% 0.008 260);
   --board-dark: oklch(39% 0.008 260);
+  /* The light square is 56%: black itself is 4.5:1 on it, so the ink
+     goes all the way. */
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 90%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
 }
 
 /* Two boards with a near-white light square (#ececec and #f2f2f2)
@@ -1885,12 +1918,16 @@ cg-board square.check {
 [data-board='khaki'] {
   --board-light: oklch(94% 0 90);
   --board-dark: oklch(72% 0.024 87);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 :root[data-board='tan'],
 [data-board='tan'] {
   --board-light: oklch(96% 0 90);
   --board-dark: oklch(75% 0.093 70);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
 }
 
 /* An indeterminate progress bar: a segment that sweeps the track.
@@ -1970,4 +2007,41 @@ cg-board square.check {
      padding; the floating layers never needed it, because at rest they
      are bottom-anchored and stop well short of the top. */
   padding-top: env(safe-area-inset-top);
+}
+
+/* Windows Contrast Themes (forced-colors). The system replaces every
+   colour, drops box-shadows, and keeps borders and outlines. Two things
+   in this app are box-shadows that MEAN something: the card's hairline
+   (`ring-1`, the only edge a card has) and the focus ring. Both come back
+   as a real border and a real outline here. The board, the eval bar and
+   the marks whose colour IS the information keep their own paint; the
+   pieces still carry the contrast on any board. */
+@media (forced-colors: active) {
+  [data-slot='card'],
+  [class~='ring-1'],
+  [class~='ring-2'] {
+    border: 1px solid CanvasText;
+  }
+  :focus-visible {
+    outline: 3px solid Highlight;
+  }
+  .cg-wrap,
+  .cg-wrap *,
+  [data-slot='eval-bar'],
+  [data-slot='eval-bar'] *,
+  [data-slot='result-badge'],
+  [class*='-nag-'] {
+    forced-color-adjust: none;
+  }
+}
+
+/* A phone's page bar is sticky over the page's own scroller, so an element
+   focused from the keyboard (or a row scrolled to) can land under it.
+   scroll-padding keeps the top 44px of the scroller (the compact bar) out
+   of the target area; the bottom bar is a sibling of `main`, outside every
+   scroller, so it needs nothing. WCAG 2.2, focus not obscured. */
+@media (width < 48rem) {
+  [data-page-scroll] {
+    scroll-padding-top: 2.75rem;
+  }
 }

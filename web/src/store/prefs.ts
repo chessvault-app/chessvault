@@ -423,6 +423,21 @@ const applyDensity = (id: Density): void => {
   else delete el.dataset.density;
 };
 
+/**
+ * The scheme the page actually wears: the chosen one, unless nothing was
+ * chosen and the OS asks for more contrast, in which case High contrast
+ * stands in. A choice made in Settings wins over the OS, because it was
+ * made; the default is the one setting nobody made, and an operating
+ * system's `prefers-contrast: more` is the closest thing to that person
+ * having made it. Read at apply time, not once, and re-applied when the
+ * query flips (initPrefs listens).
+ */
+const HIGH_CONTRAST = SCHEME_PRESETS.find((p) => p.id === 'high-contrast')!.scheme;
+const wantsMoreContrast = (): boolean =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-contrast: more)').matches;
+const schemeToWear = (schemeId: string, scheme: Scheme): Scheme =>
+  schemeId === 'default' && wantsMoreContrast() ? HIGH_CONTRAST : scheme;
+
 /** Five custom properties; every token in index.css reads from them. */
 const applyScheme = ({ hue, tint, accent, accentTint = 1, contrast = 0 }: Scheme): void => {
   const el = document.documentElement;
@@ -482,7 +497,7 @@ export const usePrefs = create<PrefsState>()(
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
         const scheme = preset ? preset.scheme : get().scheme;
-        applyScheme(scheme);
+        applyScheme(schemeToWear(schemeId, scheme));
         set({ schemeId, scheme });
       },
       setRadius: (radius) => {
@@ -509,7 +524,7 @@ export const usePrefs = create<PrefsState>()(
         const preset = SCHEME_PRESETS.find((p) => p.id === state.schemeId);
         const scheme = preset ? preset.scheme : state.scheme;
         if (preset) state.scheme = scheme;
-        applyScheme(scheme);
+        applyScheme(schemeToWear(state.schemeId, scheme));
         applyRadius(state.radius ?? 'default');
         applyDensity(state.density ?? 'comfortable');
       },
@@ -519,9 +534,14 @@ export const usePrefs = create<PrefsState>()(
 
 /** Applied before React mounts so the board never flashes the default skin. */
 export function initPrefs(): void {
-  const { boardTheme, pieces, scheme, radius, density } = usePrefs.getState();
+  const { boardTheme, pieces, schemeId, scheme, radius, density } = usePrefs.getState();
   apply(boardTheme, pieces);
-  applyScheme(scheme);
+  applyScheme(schemeToWear(schemeId, scheme));
+  // The OS setting can change mid-session; the default scheme follows it.
+  window.matchMedia('(prefers-contrast: more)').addEventListener('change', () => {
+    const { schemeId, scheme } = usePrefs.getState();
+    applyScheme(schemeToWear(schemeId, scheme));
+  });
   applyRadius(radius);
   applyDensity(density);
 }
