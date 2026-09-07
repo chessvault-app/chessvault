@@ -215,10 +215,11 @@ what you grep for.
   takes it back to white (the knob lerps it) and puts the card ring on.
 - **surface** (`oklch(100% 0 0)` light, `oklch(20.5% 0 0)` dark): a card
   or panel resting on the page, a rung above it in both modes.
-- **card-ring**: the card's edge. Transparent on the tonal light page,
-  the full `border` hairline at the top of the contrast knob and always
-  in dark, where fill and line are both cues. Floating surfaces
-  (popovers, menus, dialogs, peeks) keep `border` at every setting.
+- **card-ring**: the card's edge. Transparent in both modes, where a
+  card is a rung of tone above the page, and the full `border` hairline
+  at the top of the contrast knob, where the reader has asked for every
+  cue. Floating surfaces (popovers, menus, dialogs, peeks) keep
+  `border` at every setting.
 - **surface-2** (`oklch(97% 0 0)` / `oklch(26.9% 0 0)`): the hover fill
   and the muted rung — a track, a secondary button, a row under the cursor.
 - **surface-3** (`oklch(92.8% 0 0)` / `oklch(32% 0 0)`): the pressed,
@@ -452,9 +453,10 @@ orientation plus a floor, never from width alone. Portrait always stacks.
 
 **The system is flat.** Depth is a rung on the surface ladder, and
 almost never a shadow. Cards carry no shadow at all: in light they are
-white on a 97% page and separate by fill; in dark, and in High contrast
-where the page is white again, they carry `ring-1 ring-card-ring`, a
-hairline that follows the contrast knob (it used to be
+white on a 97% page, in dark 20.5% on 14.5%, and in both they separate
+by fill alone; in High contrast, where the light page is white again,
+they carry `ring-1 ring-card-ring`, a hairline that follows the
+contrast knob (it used to be
 `ring-foreground/10`, a fixed alpha the knob could never reach, which
 left High contrast's card edges at 1.3:1). The page was white for a
 while, with every card the same white and the ring the only structure;
