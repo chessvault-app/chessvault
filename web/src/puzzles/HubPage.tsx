@@ -206,7 +206,7 @@ function PuzzleCard({
       // slack around a shape that already has its own margins, while the
       // horizontal padding is still holding the text off the edge.
       className={cn(
-        'bg-card border-border hover:bg-accent flex w-full items-stretch gap-3',
+        'bg-card border-card-ring hover:bg-accent flex w-full items-stretch gap-3',
         'rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100',
         // Sharing the leftover height between the cards puts it into the
         // BOARDS, where it is worth something, instead of into the gaps
@@ -297,7 +297,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
 /** The log's own shape, held while the attempts are still coming. */
 function HubSkeletonHistoryPanel() {
   return (
-    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
       <SkeletonPanelHeading width="w-24" className="shrink-0" />
       {/* overflow-y-auto like the list it stands for: the panel is
           overflow-hidden, so on a screen short enough the real rows
@@ -319,7 +319,7 @@ function HubSkeletonHistoryPanel() {
  */
 function HubSkeletonBookRow() {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
       <SkeletonPanelHeading width="w-20" />
       {/* py from the density token, like the ListRow this stands for. */}
       <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
@@ -367,7 +367,7 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
         // border, not ring: PuzzleCard's own geometry is `border
         // px-2.5 py-1.5`, and a ring costs no layout — so each slot
         // stood 2px short of the card that replaced it.
-        'bg-card border-border flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
+        'bg-card border-card-ring flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
         fill && 'min-h-0 flex-1',
       )}
     >
@@ -437,7 +437,7 @@ function EmptySlot({
   );
   // PuzzleCard's geometry exactly; only the hover and the press differ.
   const shape = cn(
-    'bg-card border-border flex w-full items-stretch gap-3',
+    'bg-card border-card-ring flex w-full items-stretch gap-3',
     'rounded-xl border px-2.5 py-1.5 text-left',
     fill && 'min-h-0 flex-1',
   );
@@ -480,7 +480,7 @@ function EmptySlot({
  */
 function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
       <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Worth practising')}
       </p>
@@ -514,7 +514,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
       <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Recently read')}
       </p>
@@ -579,7 +579,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // vault happens to hold, so a first session and a hundredth one put
     // every target in the same place. A section that appears only once it
     // has content also teaches nobody that it is there.
-    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
       <p className="text-muted-foreground border-border shrink-0 border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Puzzle history')}
       </p>
@@ -1203,7 +1203,7 @@ function Hub() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-border"
+                className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-card-ring"
               >
                 <Skeleton className="size-5 rounded-sm" />
                 <Skeleton className="h-2.5 w-12" />

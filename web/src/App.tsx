@@ -215,7 +215,7 @@ function DemoBanner({ section, params }: { section: Section; params: string[] })
       // relative: the X is placed absolutely so the strip keeps the height
       // its sentence gives it; a button in the flow grew it by the icon
       // button's own box (and by the coarse-pointer bump on a phone).
-      className="text-warn border-border relative flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--background))] px-3 py-1.5 text-center text-sm"
+      className="text-warn border-border relative flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--card))] px-3 py-1.5 text-center text-sm"
     >
       {/* The whole sentence wrapped to two lines at 375px and took about
           100px off every page, above the board included. Below md the
@@ -930,7 +930,7 @@ function MorePage() {
               type="button"
               onClick={() => (param ? navigate(section, param) : navigate(section))}
               className={cn(
-                'bg-card flex items-center gap-3 rounded-xl ring-1 ring-border p-3.5 text-left',
+                'bg-card flex items-center gap-3 rounded-xl ring-1 ring-card-ring p-3.5 text-left',
                 'active:bg-accent transition-colors duration-100',
               )}
             >

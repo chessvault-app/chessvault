@@ -395,7 +395,7 @@ const CHECKLIST_LABELS = [
  */
 function PlaceholderChecklist() {
   return (
-    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
       <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
         <p className="text-muted-foreground flex-1 text-sm font-medium">{t('Set up your vault')}</p>
         <span aria-hidden className="-my-1 -mr-1.5 size-7 shrink-0 pointer-coarse:size-9" />
@@ -450,7 +450,7 @@ function PlaceholderPanel({
   icon?: boolean;
 }) {
   return (
-    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
+    <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
       <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {title}
       </h2>
@@ -502,7 +502,7 @@ function RecentGamesCard({
   className?: string;
 }) {
   return (
-    <div className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-border', className)}>
+    <div className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-card-ring', className)}>
       <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
         <h2 className="text-muted-foreground flex-1 text-sm font-medium">{t('Recent games')}</h2>
         {/* The collection's size, where a tile used to carry it, with
@@ -1033,7 +1033,7 @@ export function HomePage() {
             aria-label={t('Loading')}
             aria-live="polite"
             className={cn(
-              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border',
+              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-card-ring',
               // Nothing but phone-only rows: a heading over an empty box
               // at this width, so the desktop reserves none of it. Decided
               // in CSS rather than from a JS breakpoint, so a window
@@ -1097,7 +1097,7 @@ export function HomePage() {
         {show('continue') && (continueRows.length > 0 || boardStudy !== null) && (
           <div
             className={cn(
-              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border',
+              'bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-card-ring',
               // The same rule the placeholder above is drawn under, so the
               // two agree: a card of nothing but phone-only rows is a
               // "Continue" heading over an empty box on a desktop.
@@ -1240,7 +1240,7 @@ export function HomePage() {
           // Below md: after the grid (order-1) and before the launcher
           // row (order-2); its margin moves to the top so the rhythm
           // stays one gap-4 whether or not it is drawn.
-          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-border max-md:order-1 max-md:mt-4 max-md:mb-0">
+          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-card-ring max-md:order-1 max-md:mt-4 max-md:mb-0">
             <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
               {/* An h2 like Continue's: this was a <p>, so a reader
                   jumping by heading found one section on a page of
@@ -1356,7 +1356,7 @@ export function HomePage() {
                 lead ? 'col-span-full items-center gap-3' : 'flex-col items-start gap-2',
                 filled
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'bg-card hover:bg-accent ring-border ring-1',
+                  : 'bg-card hover:bg-accent ring-card-ring ring-1',
               )}
             >
               {/* The accent at rest, not on hover. The glyph used to turn
@@ -1468,7 +1468,7 @@ export function HomePage() {
         {data !== null && dash !== null && (
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
             {show('training') && showTraining && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
                 <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Training')}
                 </h2>
@@ -1526,7 +1526,7 @@ export function HomePage() {
             )}
 
             {show('books') && data.books.length > 0 && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
                 <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Puzzle books')}
                 </h2>
@@ -1565,7 +1565,7 @@ export function HomePage() {
             )}
 
             {show('work') && data.recentDocs.length > 0 && (
-              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border">
+              <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
                 <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
                   {t('Recent work')}
                 </h2>
@@ -1603,7 +1603,7 @@ export function HomePage() {
               !(show('games') && dash.recentGames.length > 0) &&
               !(show('books') && data.books.length > 0) &&
               !(show('work') && data.recentDocs.length > 0) && (
-                <div className="bg-card overflow-hidden rounded-xl ring-1 ring-border lg:col-span-2">
+                <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring lg:col-span-2">
                   <EmptyState
                     icon={Folder}
                     title="Nothing to show yet"

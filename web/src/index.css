@@ -273,7 +273,23 @@
      own cap below has to know it too. */
   --board-side: 27rem;
 
-  --background: oklch(100% calc(0.003 * var(--ui-tint)) var(--ui-hue));
+  /* A tonal page: 97%, with the cards and panels white on it. The page
+     was the same white as its cards, so a hairline ring was the only
+     thing separating them (the note under --border). On a tone the
+     surfaces separate by fill, which is how Apple's grouped screens,
+     Material 3's surface containers and both big chess sites draw a
+     light theme, and it lets the chrome recede a rung further, which is
+     what the design asks of everything that is not the board. The
+     contrast knob takes it back to white: High contrast is the scheme
+     chosen for legibility, and its structure is the ring, restored
+     below. lanph3re's call, 2026-09-07, from a mockup over the demo. */
+  --background: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* The card's edge. Transparent on the tonal page, where the fill is
+     the edge; the full hairline at the top of the contrast knob, where
+     the page is white again and the ring is the only structure. One
+     lerp, so the thirteen schemes keep reaching it. Dark keeps its ring
+     at every setting: there the fill and the line are both cues. */
+  --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
@@ -281,15 +297,18 @@
   --surface-3: oklch(calc(92.8% + (90% - 92.8%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
   --surface-inset: oklch(calc(98.5% + (97% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
 
-  /* The registry ships 92.2%, which is 1.26:1 against the white page —
-     and in light the page, the card and the panel are all the same
-     white, so a 1px line at 1.26:1 is the ONLY thing separating them.
-     Measured on a phone that line is not there: the board pages' bottom
-     panel and bar read as one unbroken sheet. 88% is 1.44:1 on white and
-     1.32:1 on the muted rung — still a hairline, but one that survives
-     a small bright screen. Dark never had the problem, because there
-     the surface ladder separates panels by fill and the border is a
-     second cue; its values stay the registry's. */
+  /* The registry ships 92.2%, which is 1.26:1 against white — and while
+     the page, the card and the panel were all the same white, a 1px line
+     at 1.26:1 was the ONLY thing separating them. Measured on a phone
+     that line was not there: the board pages' bottom panel and bar read
+     as one unbroken sheet. 88% is 1.44:1 on white and 1.32:1 on the
+     muted rung, a hairline that survives a small bright screen. The page
+     is a tone now and cards separate by fill, but every other stroke
+     (inputs, dividers, the bars' edges) still draws in this, and High
+     contrast puts the page back to white with the card ring on, so the
+     value stays. Dark never had the problem, because there the surface
+     ladder separates panels by fill and the border is a second cue; its
+     values stay the registry's. */
   --border: oklch(calc(88% + (62% - 88%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
   /* A rung below --border, kept a real step apart now that --border
      itself has darkened: 82% is 1.75:1 on white. */
@@ -575,6 +594,7 @@
   --surface-inset: oklch(calc(23% + (7% - 23%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
 
   --border: oklch(calc(29% + (52% - 29%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --card-ring: var(--border);
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
   --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
@@ -753,6 +773,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-card-ring: var(--card-ring);
   --color-input: var(--input);
   --color-ring: var(--ring);
 

@@ -2,7 +2,7 @@
 name: Chess Vault
 description: A private, self-hosted chess workbench — the board carries the colour, the chrome stays out of the way.
 colors:
-  background: "oklch(100% 0 0)"
+  background: "oklch(97% 0 0)"
   background-dark: "oklch(14.5% 0 0)"
   background-accent: "oklch(97% 0 0)"
   background-accent-dark: "oklch(12% 0 0)"
@@ -208,10 +208,17 @@ what you grep for.
 
 ### Neutral
 
-- **background** (`oklch(100% 0 0)` light, `oklch(14.5% 0 0)` dark): the page.
+- **background** (`oklch(97% 0 0)` light, `oklch(14.5% 0 0)` dark): the
+  page. A tone in light, not white: cards and panels are white on it and
+  separate by fill, the way Apple's grouped screens, Material 3's surface
+  containers and both big chess sites draw a light theme. High contrast
+  takes it back to white (the knob lerps it) and puts the card ring on.
 - **surface** (`oklch(100% 0 0)` light, `oklch(20.5% 0 0)` dark): a card
-  or panel resting on the page. In light it is the same white as the
-  page, which is exactly why the hairline ring is load-bearing.
+  or panel resting on the page, a rung above it in both modes.
+- **card-ring**: the card's edge. Transparent on the tonal light page,
+  the full `border` hairline at the top of the contrast knob and always
+  in dark, where fill and line are both cues. Floating surfaces
+  (popovers, menus, dialogs, peeks) keep `border` at every setting.
 - **surface-2** (`oklch(97% 0 0)` / `oklch(26.9% 0 0)`): the hover fill
   and the muted rung — a track, a secondary button, a row under the cursor.
 - **surface-3** (`oklch(92.8% 0 0)` / `oklch(32% 0 0)`): the pressed,
@@ -443,14 +450,16 @@ orientation plus a floor, never from width alone. Portrait always stacks.
 
 ## Elevation & Depth
 
-**The system is flat.** Depth is a rung on the surface ladder plus a
-hairline ring, and almost never a shadow. Cards carry no shadow at all:
-they are `ring-1 ring-border`, which is what makes a white surface
-read on a white page in light mode where card and background are the same
-value. The ring used to be `ring-foreground/10`, a fixed alpha the
-contrast knob could never reach — High contrast, the one scheme chosen
-for legibility, moved every border and left card edges at 1.3:1. On the
-border token the knob reaches them.
+**The system is flat.** Depth is a rung on the surface ladder, and
+almost never a shadow. Cards carry no shadow at all: in light they are
+white on a 97% page and separate by fill; in dark, and in High contrast
+where the page is white again, they carry `ring-1 ring-card-ring`, a
+hairline that follows the contrast knob (it used to be
+`ring-foreground/10`, a fixed alpha the knob could never reach, which
+left High contrast's card edges at 1.3:1). The page was white for a
+while, with every card the same white and the ring the only structure;
+that was the registry's default and a mockup over the demo retired it
+(lanph3re, 2026-09-07).
 
 Three shadow tokens exist for the cases that genuinely float, and all
 three are cast in `--shadow-color`, which follows the theme's hue.

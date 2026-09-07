@@ -377,7 +377,7 @@ function ThemeCard({
         'transition-colors duration-100',
         highlight
           ? 'bg-muted border-primary/30 hover:border-primary/60'
-          : 'bg-card border-border hover:border-border hover:bg-accent',
+          : 'bg-card border-card-ring hover:border-card-ring hover:bg-accent',
         className,
       )}
     >

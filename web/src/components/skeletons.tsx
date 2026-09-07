@@ -153,7 +153,7 @@ export function SkeletonCards({
     <div
       key={i}
       className={cn(
-        'bg-card flex gap-3 overflow-hidden rounded-xl ring-1 ring-border',
+        'bg-card flex gap-3 overflow-hidden rounded-xl ring-1 ring-card-ring',
         grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
       )}
       // The card's settled height where the shelf measured it last visit
@@ -266,7 +266,7 @@ export function SkeletonBookCards({
     // measured 120px against the card’s 122.
     <div
       key={i}
-      className="bg-card border-border flex w-full items-stretch gap-3 rounded-xl border p-3"
+      className="bg-card border-card-ring flex w-full items-stretch gap-3 rounded-xl border p-3"
     >
       {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
           the size it will be rather than the size it looks like. */}
@@ -368,7 +368,7 @@ export function SkeletonTiles({
         // Card (ui/card sets it from --card-pad on the root), so outside
         // one it is nothing — measured, the header bar sat on the column's
         // edge and the panel had no floor, 16px short of the Panel's.
-        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-border pb-(--card-pad)">
+        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring pb-(--card-pad)">
           <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad) pointer-coarse:min-h-13">
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
@@ -443,7 +443,7 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
       // border, not ring — ThemeCard is `border px-3 py-2.5`, so this
       // stood 56px against its 58.
       className={cn(
-        'bg-card border-border flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
+        'bg-card border-card-ring flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
         className,
       )}
     >
@@ -709,7 +709,7 @@ export function SkeletonBoard({
         {chapters && (
           <div
             className={cn(
-              'bg-card flex shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-border max-lg:hidden',
+              'bg-card flex shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden',
               // The panel's floor and ceiling, for a device that has
               // never dragged it. One that has stores the height it chose
               // (vault:panel-h, applied by Panel on every mount at lg and
@@ -745,7 +745,7 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-border p-3">
+        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-card-ring p-3">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
@@ -754,7 +754,7 @@ export function SkeletonBoard({
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
         {explorer && (
-          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-border max-lg:hidden">
+          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden">
             <div className="flex min-h-11 items-center px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-16" />
             </div>
@@ -789,7 +789,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (
-        <div key={g} className="bg-card rounded-xl ring-1 ring-border p-4">
+        <div key={g} className="bg-card rounded-xl ring-1 ring-card-ring p-4">
           {/* The card's heading: an icon beside a title, on a 24px line. */}
           <div className="mb-3 flex h-6 items-center gap-2">
             <Skeleton className="size-4 shrink-0 rounded-sm" />

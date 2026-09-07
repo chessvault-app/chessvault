@@ -726,11 +726,15 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   92.8% and 37% now. The dark `--input` is shadcn's own translucent
   white, which the chosen tab's pill (`dark:bg-input/30
   dark:border-input`) depends on: over the muted track an opaque grey at
-  30% was the track's own colour. And in light the structural strokes
-  moved as a set, because that scheme paints the page, the cards and the
-  panels all the same white and the hairline is therefore the only
-  structure there is: `--border` rests at 88% rather than 92.2% (1.26:1
-  on the page was not visible on a phone at all; 1.44:1 now),
+  30% was the track's own colour. In light the page is a 97% tone and
+  the cards white on it, so surfaces separate by fill and the card's
+  ring (`--card-ring`) is transparent until the contrast knob asks for
+  it; the page was white with a ring round every card until a mockup
+  over the demo retired that (lanph3re, 2026-09-07), and the structural
+  strokes had moved as a set while it was, because the hairline was then
+  the only structure there was: `--border` rests at 88% rather than
+  92.2% (1.26:1 on white was not visible on a phone at all; 1.44:1 now),
+  and it still draws every other stroke,
   `--border-strong` follows to 82% to stay a distinct rung, and
   `--text-subtle` to 51.5% from 53%, which had measured 4.25:1 on
   `--surface-3` under a comment claiming a clearance the arithmetic

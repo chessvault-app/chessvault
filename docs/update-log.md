@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Light mode stands its cards on a tone.** The page is a light grey
+  (97%) and the cards and panels are white on it, so they separate by
+  fill and lose their hairline; the sidebar, the bars and every window
+  stay white. High contrast keeps its white page and its card edges.
+  Dark mode is unchanged.
 - **Toasts are the registry's own.** The cards that offer Undo after a
   removal, the review on a phone and the result of collecting a game are
   shadcn's Toast on Base UI now: the button and the X are the app's own

@@ -245,7 +245,7 @@ function Card({
 }) {
   return (
     // data-settings-card is what the jump list above the cards reads.
-    <section className="bg-card rounded-xl ring-1 ring-border scroll-mt-14 p-4" data-settings-card>
+    <section className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
       <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
         <Icon className="text-muted-foreground size-4" />
         {title}

@@ -579,7 +579,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
       {loadError && (
         <CanvasOverlay>
-          <div className="bg-card max-w-md rounded-xl ring-1 ring-border p-6" role="alert">
+          <div className="bg-card max-w-md rounded-xl ring-1 ring-card-ring p-6" role="alert">
             <p className="text-destructive text-base font-medium">{t('The opening map could not be read')}</p>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{loadError}</p>
           </div>

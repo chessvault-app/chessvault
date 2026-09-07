@@ -92,7 +92,7 @@ export function PaneTabs<T extends string>({
             ? [
                 'relative z-10 flex w-full shrink-0 gap-0 p-0',
                 'data-[variant=line]:rounded-t-xl data-[variant=line]:rounded-b-none',
-                'bg-card text-card-foreground ring-1 ring-border',
+                'bg-card text-card-foreground ring-1 ring-card-ring',
                 // Over the column's gap and 1px of the card below, so the
                 // header's ring draws the seam once and the card's top ring
                 // is under it rather than beside it.
