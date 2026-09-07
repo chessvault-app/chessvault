@@ -1,6 +1,8 @@
 import { BookOpen, ChevronDown, Crown, Microscope, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useMediaQuery } from '@/lib/media';
 import { useAnalysis } from '@/store/analysis';
 import { useReview, type GraphPoint } from '@/store/review';
 import { Button } from '@/components/ui/button';
@@ -88,9 +90,37 @@ export function ReviewStrip({
   const hasMoves = useAnalysis((s) => getRootHasMoves(s));
   // Dismissal is per game, by identity: the next loaded game offers again.
   const [offerDismissed, setOfferDismissed] = useState<unknown>(null);
+  /**
+   * On a phone the offer is a toast, not a band. The moves pane at 375px
+   * holds the pane strip, the panel's header, this offer, the move box
+   * and the bar, and showed two plies of the game under them; the offer
+   * was the one band that is not the document. A toast says the same
+   * sentence with the same button over the page for eight seconds and
+   * costs the pane nothing, the way a removal offers its undo. Once per
+   * game, by the same identity the band's dismissal uses; a desktop
+   * keeps the band, where a panel has the room.
+   */
+  const phone = useMediaQuery('(max-width: 47.9375rem)');
+  const offeredFor = useRef<unknown>(null);
+  const offerAsToast = phone && !panel && status === 'idle' && !!gameHeaders && hasMoves;
+  useEffect(() => {
+    if (!offerAsToast || offeredFor.current === gameHeaders) return;
+    offeredFor.current = gameHeaders;
+    const id = toast(t('See accuracy, mistakes and the evaluation graph.'), {
+      duration: 8000,
+      action: { label: t('Review game'), onClick: () => void run() },
+    });
+    // The offer belongs to this game on this page. Leaving either takes
+    // it down: a toast outlives the component that raised it, and this
+    // one followed a reader from the board onto Settings.
+    return () => {
+      toast.dismiss(id);
+    };
+  }, [offerAsToast, gameHeaders, run]);
 
   if (status === 'idle') {
     if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
+    if (offerAsToast) return null;
     return (
       <div className={cn('border-border flex shrink-0 items-center gap-2 border-t px-3 py-2', className)}>
         {/* Wraps in a panel, truncates in the dock: the dock is a strip
