@@ -86,7 +86,12 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
   return (
     <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-2.5 px-3 py-(--row-py-dense)">
+        <div
+          key={i}
+          // ListRow's own floor under a coarse pointer: 44px, where these
+          // rows were 33 and the dashboard's list grew 11px a row on a phone.
+          className="flex items-center gap-2.5 px-3 py-(--row-py-dense) pointer-coarse:min-h-11"
+        >
           <Skeleton className="size-3.5 shrink-0 rounded-sm" />
           <div className="flex h-5 min-w-0 flex-1 items-center">
             <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />

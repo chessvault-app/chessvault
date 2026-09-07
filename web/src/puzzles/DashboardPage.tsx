@@ -464,7 +464,7 @@ export function DashboardPage() {
                   Array.from({ length: reserved.books }, (_, i) => (
                     <div
                       key={i}
-                      className="border-border flex items-center gap-2.5 border-b px-3 py-(--row-py) last:border-b-0"
+                      className="border-border flex items-center gap-2.5 border-b px-3 py-(--row-py) last:border-b-0 pointer-coarse:min-h-11"
                     >
                       {/* A row of text-sm, whose line box is 20px — and the
                           padding is the density token, because the ListRow
