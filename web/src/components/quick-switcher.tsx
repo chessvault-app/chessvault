@@ -100,10 +100,21 @@ export function QuickSwitcher() {
         if (!next) setOpen(false);
       }}
     >
-      <DialogContent className="p-0" aria-label={t('Open anything')}>
-        <Command loop>
+      {/* p-0 from sm: the registry's palette, a Command wearing the card's
+          own padding. On a phone the card keeps its px-4, because the
+          grabber strip reaches through exactly that much (-mx-4): with
+          p-0 the strip stood 16px proud of each edge, the card became a
+          horizontal scroller, and on an iPhone the input and the rows ran
+          off the right of the screen. `fill`: the sheet opens as tall as
+          the band allows (the visible room above the keyboard, which the
+          sole field raises as the sheet opens), and the Command and its
+          list grow into it instead of the registry's 288px cap, which
+          had the sheet stopping at about half the screen with sixty rows
+          scrolling in a box. */}
+      <DialogContent className="sm:p-0" fill aria-label={t('Open anything')}>
+        <Command loop className="max-sm:min-h-0 max-sm:flex-1 max-sm:p-0">
           <CommandInput placeholder={t('Open anything…')} />
-          <CommandList>
+          <CommandList className="max-sm:min-h-0 max-sm:max-h-none max-sm:flex-1">
             <CommandEmpty>{t('Nothing by that name.')}</CommandEmpty>
             <CommandGroup heading={t('Go to')}>
               {HOME_DESTINATIONS.map((d) => (

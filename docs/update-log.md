@@ -15,6 +15,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   which is what holds a Safari tab off. The book reader, the evidence
   pages and the opening map keep their own pinch, which scales what they
   show and not the app.
+- **The "Open anything" sheet fits the phone.** It opened at about half
+  the screen with its list scrolling inside a 288px box, and its rows and
+  search field ran off the right edge. It now rises as tall as the room
+  above the keyboard, the list takes all of it, and nothing overflows.
 - **The title band and the eval bar lose their hairlines.** The desktop's
   band over the sidebar drew its right rule in the plain border colour
   while the sidebar under it had already given the line up on the toned
