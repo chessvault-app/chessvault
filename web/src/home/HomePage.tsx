@@ -104,6 +104,9 @@ interface RecentGame {
   black: string;
   result: string;
   date: string;
+  /** Which side the vault's owner played, when the game says (the
+      collection route answers it; the chip needs it to bold the win). */
+  userSide: 'white' | 'black' | null;
 }
 
 /** One row of /api/puzzlebooks — the same shape the puzzles hub reads. */
@@ -522,7 +525,7 @@ function RecentGamesCard({
               renders anything unrecognised as a draw. */}
           {(g.result === '1-0' || g.result === '0-1' || g.result.includes('1/2')) && (
             // Gone under 320px, where the names had no width left.
-            <ResultBadge result={g.result} className="max-[319px]:hidden" />
+            <ResultBadge result={g.result} userSide={g.userSide} className="max-[319px]:hidden" />
           )}
           {/* The PGN's dotted date written the way the Continue row
               writes the same date off a filename: one format on one
