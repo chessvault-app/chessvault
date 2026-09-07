@@ -5,6 +5,7 @@ import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { traverse } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { usePrefs } from '@/store/prefs';
 import { foldedFrom, useSidebar } from '@/store/sidebar';
@@ -154,7 +155,7 @@ export function TitleBar() {
         title={t('Back')}
         className="[-webkit-app-region:no-drag]"
         disabled={!edges.back}
-        onClick={() => history.back()}
+        onClick={() => traverse(-1)}
       >
         <ArrowLeft className={icon} />
       </Button>
@@ -164,7 +165,7 @@ export function TitleBar() {
         title={t('Forward')}
         className="[-webkit-app-region:no-drag]"
         disabled={!edges.forward}
-        onClick={() => history.forward()}
+        onClick={() => traverse(1)}
       >
         <ArrowRight className={icon} />
       </Button>

@@ -76,8 +76,10 @@ export function useRoute(): Route {
       if (!leaveIsBlocked()) {
         current = next;
         arrivedByNavigate = pendingNavigate;
+        const appDriven = pendingNavigate || pendingTraverse;
         pendingNavigate = false;
-        swapRoute(() => setRoute(parse(next)));
+        pendingTraverse = false;
+        swapRoute(() => setRoute(parse(next)), appDriven);
         return;
       }
       /**
@@ -121,10 +123,21 @@ export function useRoute(): Route {
  * browser without the API: those take the cut they always took. The
  * leave-guard branch above never comes here; it asks first and then
  * navigates again through this same path.
+ *
+ * And not when the browser moved the history itself. A swipe from the
+ * edge on an iPhone plays Safari's own animation first: the old page
+ * slides away and a snapshot of the previous one is revealed under it,
+ * and only once that has settled does the hashchange arrive. Fading
+ * then meant the page the user had just watched leave came back for
+ * 150ms over the one they had arrived at, and faded out a second time.
+ * Nothing in the event says who moved the history, so the app marks its
+ * own moves (navigateNow, traverse) and an unmarked one is the
+ * browser's, which has already animated it or, on a desktop, would
+ * never have.
  */
-function swapRoute(commit: () => void): void {
+function swapRoute(commit: () => void, appDriven: boolean): void {
   const phone = window.matchMedia('(max-width: 47.9375rem)').matches;
-  if (!phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
+  if (!appDriven || !phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
     commit();
     return;
   }
@@ -149,6 +162,18 @@ export function returnedThroughHistory(): boolean {
 }
 let arrivedByNavigate = true;
 let pendingNavigate = false;
+let pendingTraverse = false;
+
+/**
+ * Back or Forward, asked for by the app: the chevron on a leaf page,
+ * the arrows in the desktop title bar. Marked so the hashchange it
+ * causes still gets the cross-fade (swapRoute), as against the same move
+ * made from the browser's own chrome, which does not.
+ */
+export function traverse(delta: -1 | 1): void {
+  pendingTraverse = true;
+  window.history.go(delta);
+}
 
 /**
  * Go, without asking anyone.
@@ -222,7 +247,7 @@ if (typeof window !== 'undefined') historyFloor = window.history.length;
  */
 export function up(fallback: Section, ...params: string[]): void {
   const go = (): void => {
-    if (historyFloor !== null && window.history.length > historyFloor) window.history.back();
+    if (historyFloor !== null && window.history.length > historyFloor) traverse(-1);
     else navigateNow(fallback, ...params);
   };
   if (!leaveIsBlocked()) {

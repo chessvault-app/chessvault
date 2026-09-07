@@ -24,6 +24,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   height: a third of the card was left parked over the bar, opaque, for
   the last 300 ms before it vanished. Undo, swiping down and the timer
   now slide it exactly to the screen's edge, on a desktop as well.
+- **A swipe back on an iPhone no longer flashes the page you just left.**
+  Safari animates the swipe itself, sliding the old page off to reveal
+  the one before it, and then tells the app. The app answered with its
+  own cross-fade, so the page you had watched leave came back for a
+  moment over the one you had arrived at. The fade now runs only for
+  moves the app makes: a tab, a tile, a chevron. The browser's own Back
+  and Forward take the cut, since the browser has already drawn the move.
 - **The title band and the eval bar lose their hairlines.** The desktop's
   band over the sidebar drew its right rule in the plain border colour
   while the sidebar under it had already given the line up on the toned
