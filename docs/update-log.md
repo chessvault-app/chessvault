@@ -5,7 +5,13 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.9.2
+
+A phone no longer zooms under two fingers, the “Open anything” sheet fits
+it, a dismissed toast leaves the screen, and a swipe back on an iPhone
+plays once. Every edge the tonal page had left in the border colour, the
+title band, the eval bar, the shelves' cards, the windows and the card
+footers, follows the cards now: no line at rest, back under High contrast.
 
 - **A pinch no longer zooms the app on a phone.** The cap that held the
   page at its own size left with 0.4.5's fix for iOS zooming into small
