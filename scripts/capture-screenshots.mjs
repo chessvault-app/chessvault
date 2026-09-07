@@ -24,6 +24,14 @@
  * PNG bytes, and a JPEG round-trip would bake compression ringing into white
  * UI text on a dark background, which is the one thing these images are for.
  *
+ * THE RASTER IS THE WINDOW'S PIXELS AT SCALE 1, whatever the display says.
+ * `npm run shots` passes Chromium's --force-device-scale-factor=1: on a
+ * display set to 200% Electron is DPI-aware and hands back a raster twice
+ * the window on every side (games.png came out 3812x1996 against the
+ * committed 1904x993, at twice the bytes, and the manual's srcset widths
+ * lie about a picture like that). The flag makes the size a property of
+ * this file rather than of whoever's monitor ran it.
+ *
  * SIZE IS SET WITH ZOOM, NOT THE WINDOW. A BrowserWindow clamps to the
  * screen, so asking for a 1100px window on a 1920px display quietly gives
  * 1904. Zooming instead decouples the two: the raster is the window's size

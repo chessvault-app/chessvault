@@ -45,7 +45,7 @@
     "build:demo-dbs": "tsx scripts/build-demo-dbs.ts",
     "build:bundled-refgames": "tsx scripts/build-bundled-refgames.ts",
     "build:site": "npm run build:demo && tsx scripts/build-landing.ts",
-    "shots": "electron scripts/capture-screenshots.mjs",
+    "shots": "electron --force-device-scale-factor=1 scripts/capture-screenshots.mjs",
     "shots:gif": "node scripts/record-demo-gif.mjs",
     "desktop:package:linux": "node desktop/build-server.mjs && npm run build && electron-builder --linux AppImage deb",
     "fuzz:parity": "tsx scripts/fuzz-parity.ts",
