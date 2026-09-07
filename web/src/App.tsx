@@ -19,6 +19,7 @@ import {
   SquareMousePointer,
   Table2,
   Wrench,
+  X,
 } from 'lucide-react';
 import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -150,9 +151,55 @@ export function App() {
  * writes a study and comes back to find it gone should have been told
  * before rather than after.
  */
-function DemoBanner() {
+/**
+ * Where the demo's notice belongs: the hub pages, and not a board or an
+ * open document. It was the first thing on every screen, an amber strip
+ * (the caution colour) 33px tall above the board on the pages where the
+ * design says chrome gives up a rung before the board gives up a pixel,
+ * and it could not be put away. A visitor who has opened a game is in the
+ * demo already and knows it; the shelves are where the sentence does its
+ * work. Dismissed for the tab's life with the X; a reload puts the vault
+ * back, and the notice with it.
+ */
+function demoBannerBelongs(section: Section, params: string[]): boolean {
+  switch (section) {
+    case 'home':
+    case 'databases':
+    case 'settings':
+    case 'more':
+      return true;
+    case 'games':
+    case 'studies':
+    case 'notes':
+    case 'books':
+      return params.length === 0;
+    case 'puzzles':
+      return params[0] === 'hub' || params[0] === 'dashboard' || params[0] === 'themes' || (params[0] === 'books' && params.length === 1);
+    default:
+      return false;
+  }
+}
+
+const DEMO_BANNER_KEY = 'chess-vault:demo-banner';
+
+function DemoBanner({ section, params }: { section: Section; params: string[] }) {
   const [expanded, setExpanded] = useState(false);
-  if (!isDemo()) return null;
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem(DEMO_BANNER_KEY) === 'dismissed';
+    } catch {
+      return false;
+    }
+  });
+  if (!isDemo() || dismissed || !demoBannerBelongs(section, params)) return null;
+  const dismiss = (): void => {
+    setDismissed(true);
+    try {
+      sessionStorage.setItem(DEMO_BANNER_KEY, 'dismissed');
+    } catch {
+      // Storage refused: the notice comes back on the next page, which is fine.
+    }
+  };
   return (
     <div
       // Named so the screenshot capture can hide it — the demo is where
@@ -165,7 +212,10 @@ function DemoBanner() {
       // 14% the sentence came to 4.39:1 in light — under the floor, on the
       // first thing anyone sees after clicking "Try the demo". 10% reads
       // 4.68:1 and is still plainly a band. Dark was never close (9.32:1).
-      className="text-warn border-border flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--background))] px-3 py-1.5 text-center text-sm"
+      // relative: the X is placed absolutely so the strip keeps the height
+      // its sentence gives it; a button in the flow grew it by the icon
+      // button's own box (and by the coarse-pointer bump on a phone).
+      className="text-warn border-border relative flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_10%,var(--background))] px-3 py-1.5 text-center text-sm"
     >
       {/* The whole sentence wrapped to two lines at 375px and took about
           100px off every page, above the board included. Below md the
@@ -183,6 +233,15 @@ function DemoBanner() {
           ? t('Demo: a sample vault of your own. Edit anything, and a reload puts it back.')
           : t('Demo vault. A reload puts it back.')}
       </button>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        className="text-warn absolute top-1/2 right-1 -translate-y-1/2"
+        title={t('Close')}
+        onClick={dismiss}
+      >
+        <X className="size-3" />
+      </Button>
     </div>
   );
 }
@@ -258,7 +317,7 @@ function Shell() {
       </a>
       {/* The desktop shell's own top band, nothing in a browser. */}
       <TitleBar />
-      <DemoBanner />
+      <DemoBanner section={section} params={params} />
       {/* The sidebar/main row. Separated from the shell so a full-width
           strip (the demo notice) can sit above BOTH rather than becoming a
           third column beside the sidebar. */}
