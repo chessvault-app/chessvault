@@ -104,6 +104,15 @@ const THEMES = [
     scheme: 'high-contrast',
     strokeFloor: 1.3,
   },
+  // Follow the board seeds the accent from the chosen board (store/prefs
+  // BOARD_ACCENT); on the default Blue board that is a full-chroma blue
+  // primary, the one accent the other tinted schemes do not reach.
+  {
+    name: 'light + follow the board',
+    prefs: { preference: 'light' },
+    scheme: 'board',
+    strokeFloor: 1.3,
+  },
 ];
 
 /**

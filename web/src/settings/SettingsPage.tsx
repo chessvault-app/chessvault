@@ -37,7 +37,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { formatWhen } from '@/lib/dates';
 import { navigate, up, type Section } from '@/lib/router';
-import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, DENSITIES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
+import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, DENSITIES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, boardScheme, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
 import { PIECE_THUMBS } from '@/pieces/thumbs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
@@ -852,7 +852,7 @@ function DesktopCard() {
  */
 const SCHEME_GROUPS = [
   { label: 'Neutrals', ids: ['default', 'stone', 'zinc', 'gray', 'shadcn-slate'] },
-  { label: 'Coloured', ids: ['slate', 'paper', 'forest', 'rose', 'midnight', 'mono', 'graphite'] },
+  { label: 'Coloured', ids: ['board', 'slate', 'paper', 'forest', 'rose', 'midnight', 'mono', 'graphite'] },
   { label: 'Contrast', ids: ['high-contrast'] },
 ].map(({ label, ids }) => ({
   label,
@@ -935,7 +935,22 @@ function AppearanceCard() {
           onValueChange={setSchemeId}
           ariaLabel={t('Colours')}
           className="w-full"
-          groups={SCHEME_GROUPS}
+          // Follow the board's dot is the board's own colour, which the
+          // static list above cannot know; drawn from the chosen board.
+          groups={SCHEME_GROUPS.map((g) => ({
+            ...g,
+            options: g.options.map((o) =>
+              o.value === 'board'
+                ? {
+                    ...o,
+                    dot: {
+                      ...o.dot,
+                      color: `oklch(${20.5 + 37.5 * boardScheme(boardTheme).accentTint!}% ${0.135 * boardScheme(boardTheme).accentTint!} ${boardScheme(boardTheme).accent})`,
+                    },
+                  }
+                : o,
+            ),
+          }))}
         />
       </Field>
 

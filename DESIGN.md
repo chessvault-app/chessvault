@@ -28,6 +28,8 @@ colors:
   primary-dark: "oklch(92.2% 0 0)"
   primary-foreground: "oklch(98.5% 0 0)"
   primary-foreground-dark: "oklch(20.5% 0 0)"
+  primary-hover: "oklch(34% 0 0)"
+  primary-hover-dark: "oklch(85% 0 0)"
   primary-soft: "oklch(94% 0 0)"
   primary-soft-dark: "oklch(30% 0 0)"
   ring: "oklch(70.8% 0 0)"
@@ -101,7 +103,7 @@ components:
     padding: "0 0.625rem"
     typography: "{typography.body}"
   button-primary-hover:
-    backgroundColor: "color-mix(in oklch, oklch(20.5% 0 0) 80%, transparent)"
+    backgroundColor: "{colors.primary-hover}"
   button-outline:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
@@ -202,6 +204,11 @@ what you grep for.
   item. In the default Neutral scheme it is not a colour at all but the
   near-black end of the grey ladder; the `--accent-tint` knob is what
   gives it a hue in the tinted schemes, and `--accent-hue` decides which.
+  One scheme, Follow the board, reads both knobs off the chosen board's
+  dark square (`BOARD_ACCENT` in `store/prefs.ts`, held to index.css by
+  a test): a Blue board makes a blue accent, and a grey board keeps the
+  accent grey, since the tint follows the square's own chroma. The one
+  colour the app allows then does the branding.
 - **primary-soft** (`oklch(94% 0 0)` light, `oklch(30% 0 0)` dark): the
   quiet fill under something selected that must not shout — a highlighted
   row, a soft badge.
@@ -560,7 +567,9 @@ hit areas, `title` as a tooltip. Composites live in
   under it), because its tabs are a third of the screen wide, a swipe
   turns the panes without it, and every pixel it grows comes off the
   pane under it.
-- **Primary:** primary fill, primary-foreground text, hover at 80% alpha.
+- **Primary:** primary fill, primary-foreground text, hover to the
+  opaque `--primary-hover` rung (an 80% alpha lifted a coloured accent
+  over the text's floor: 3.88:1 measured on Follow the board, Blue).
 - **Outline:** background fill, border stroke, hover to the muted rung;
   in dark it takes shadcn's translucent `input/30`. A field-like
   control (a date picker's trigger, a toggle group), not a page's

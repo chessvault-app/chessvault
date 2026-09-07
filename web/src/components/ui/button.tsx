@@ -39,7 +39,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
+        // hover: the opaque --primary-hover token, not the registry's 80%
+        // alpha. On the near-black Neutral primary 80% alpha is still dark;
+        // on a coloured accent at mid lightness it lifts the fill over the
+        // white text's floor (3.88:1 measured on the Blue board's accent).
+        // The token is a darker rung of the same hue in light and a
+        // lighter one in dark, and the contrast knob reaches it.
+        default: 'bg-primary text-primary-foreground hover:bg-(--primary-hover)',
         outline:
           'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
         secondary:

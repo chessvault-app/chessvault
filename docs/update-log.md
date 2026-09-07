@@ -7,6 +7,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A scheme that follows the board.** Settings → Appearance → Colours
+  gains “Follow the board”: the accent takes the chosen board's colour,
+  so a Blue board makes a blue scheme and a Rosewood board a rose one,
+  and a grey board keeps the accent grey.
 - **The board flies.** On a phone, opening a study or a game from a
   shelf card or from Home's Continue row grows the card's small board
   into the page's board, instead of the page fading in around it. Off

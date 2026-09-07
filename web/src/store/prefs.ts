@@ -121,6 +121,11 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   // is the blue the app used to be drawn in.
   { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
   { id: 'graphite', label: 'Graphite', scheme: { hue: 264, tint: 0, accent: 240 } },
+  // The board's own colour as the accent: a Blue board makes a blue
+  // scheme, a Rosewood board a rose one, and the one colour the app
+  // allows does the branding. The triple here is a stand-in; what is
+  // worn comes from BOARD_ACCENT at apply time (schemeToWear).
+  { id: 'board', label: 'Follow the board', scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0 } },
   // Neutral with the lightness scale opened all the way up: the dark page
   // is #000 and its button #fff, the light page #fff and its button #000.
   {
@@ -424,9 +429,39 @@ const applyDensity = (id: Density): void => {
 };
 
 /**
+ * Each board's dark square, as the accent it seeds: its hue, and how much
+ * of the accent's chroma to use, which follows the square's own chroma
+ * (0.065 is a fully coloured board; a grey board gives a grey accent, so
+ * Slate and Charcoal do not turn the buttons blue). The numbers mirror
+ * the `[data-board]` blocks in index.css and a test holds them to it.
+ * The adaptive walnut is warm in light and cool in dark, so it seeds
+ * nothing: Follow the board on it is Neutral.
+ */
+export const BOARD_ACCENT: Record<BoardTheme, { hue: number; chroma: number }> = {
+  default: { hue: 264, chroma: 0 },
+  green: { hue: 135, chroma: 0.095 },
+  brown: { hue: 65, chroma: 0.065 },
+  wood: { hue: 49, chroma: 0.135 },
+  blue: { hue: 245, chroma: 0.065 },
+  slate: { hue: 260, chroma: 0.018 },
+  lavender: { hue: 300, chroma: 0.058 },
+  rosewood: { hue: 25, chroma: 0.065 },
+  ink: { hue: 250, chroma: 0.028 },
+  charcoal: { hue: 260, chroma: 0.008 },
+  khaki: { hue: 87, chroma: 0.024 },
+  tan: { hue: 70, chroma: 0.093 },
+};
+
+/** The scheme a board seeds, for Follow the board. */
+export function boardScheme(board: BoardTheme): Scheme {
+  const { hue, chroma } = BOARD_ACCENT[board];
+  return { hue: 264, tint: 0, accent: hue, accentTint: Math.min(1, chroma / 0.065) };
+}
+
+/**
  * The scheme the page actually wears: the chosen one, unless nothing was
  * chosen and the OS asks for more contrast, in which case High contrast
- * stands in. A choice made in Settings wins over the OS, because it was
+ * stands in; and Follow the board reads the board. A choice made in Settings wins over the OS, because it was
  * made; the default is the one setting nobody made, and an operating
  * system's `prefers-contrast: more` is the closest thing to that person
  * having made it. Read at apply time, not once, and re-applied when the
@@ -435,8 +470,8 @@ const applyDensity = (id: Density): void => {
 const HIGH_CONTRAST = SCHEME_PRESETS.find((p) => p.id === 'high-contrast')!.scheme;
 const wantsMoreContrast = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-contrast: more)').matches;
-const schemeToWear = (schemeId: string, scheme: Scheme): Scheme =>
-  schemeId === 'default' && wantsMoreContrast() ? HIGH_CONTRAST : scheme;
+const schemeToWear = (schemeId: string, scheme: Scheme, board: BoardTheme): Scheme =>
+  schemeId === 'board' ? boardScheme(board) : schemeId === 'default' && wantsMoreContrast() ? HIGH_CONTRAST : scheme;
 
 /** Five custom properties; every token in index.css reads from them. */
 const applyScheme = ({ hue, tint, accent, accentTint = 1, contrast = 0 }: Scheme): void => {
@@ -478,6 +513,9 @@ export const usePrefs = create<PrefsState>()(
       setBoardTheme: (boardTheme) => {
         apply(boardTheme, get().pieces);
         set({ boardTheme });
+        // Follow the board follows it.
+        const { schemeId, scheme } = get();
+        if (schemeId === 'board') applyScheme(schemeToWear(schemeId, scheme, boardTheme));
       },
       setPieces: (pieces) => {
         apply(get().boardTheme, pieces);
@@ -497,7 +535,7 @@ export const usePrefs = create<PrefsState>()(
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
         const scheme = preset ? preset.scheme : get().scheme;
-        applyScheme(schemeToWear(schemeId, scheme));
+        applyScheme(schemeToWear(schemeId, scheme, get().boardTheme));
         set({ schemeId, scheme });
       },
       setRadius: (radius) => {
@@ -524,7 +562,7 @@ export const usePrefs = create<PrefsState>()(
         const preset = SCHEME_PRESETS.find((p) => p.id === state.schemeId);
         const scheme = preset ? preset.scheme : state.scheme;
         if (preset) state.scheme = scheme;
-        applyScheme(schemeToWear(state.schemeId, scheme));
+        applyScheme(schemeToWear(state.schemeId, scheme, state.boardTheme));
         applyRadius(state.radius ?? 'default');
         applyDensity(state.density ?? 'comfortable');
       },
@@ -536,11 +574,11 @@ export const usePrefs = create<PrefsState>()(
 export function initPrefs(): void {
   const { boardTheme, pieces, schemeId, scheme, radius, density } = usePrefs.getState();
   apply(boardTheme, pieces);
-  applyScheme(schemeToWear(schemeId, scheme));
+  applyScheme(schemeToWear(schemeId, scheme, boardTheme));
   // The OS setting can change mid-session; the default scheme follows it.
   window.matchMedia('(prefers-contrast: more)').addEventListener('change', () => {
-    const { schemeId, scheme } = usePrefs.getState();
-    applyScheme(schemeToWear(schemeId, scheme));
+    const { schemeId, scheme, boardTheme } = usePrefs.getState();
+    applyScheme(schemeToWear(schemeId, scheme, boardTheme));
   });
   applyRadius(radius);
   applyDensity(density);
