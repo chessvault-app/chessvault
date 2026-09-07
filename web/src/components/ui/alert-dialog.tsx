@@ -141,7 +141,9 @@ function AlertDialogAction({
  */
 function AlertDialogCancel({
   className,
-  variant = 'outline',
+  // secondary, not the registry's outline: the app's secondary action is
+  // a fill on the tonal page (DESIGN.md, Buttons).
+  variant = 'secondary',
   size = 'default',
   autoFocus = true,
   ...props

@@ -811,7 +811,7 @@ function DialogFooter({
     >
       {children}
       {showCloseButton && (
-        <Button variant="outline" onClick={chain?.dismissAll}>
+        <Button variant="secondary" onClick={chain?.dismissAll}>
           {t('Close')}
         </Button>
       )}
