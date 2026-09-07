@@ -21,7 +21,7 @@ import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
-import { GameListShell } from './GameListShell';
+import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
@@ -298,10 +298,13 @@ export function ArchiveBrowser({
   selectedKey,
   inPlace = false,
   merged = false,
+  shape,
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
+  /** Where the list stands — see GameListShell. */
+  shape: GameListShape;
   /** Dense table rows instead of cards — the wide pane's presentation.
       Explicit, never inferred: the same list renders as cards below lg
       whatever the pane says. */
@@ -1242,7 +1245,7 @@ export function ArchiveBrowser({
       />
     )}
     <GameListShell
-      shape="panel"
+      shape={shape}
       toolbar={toolbar}
       // No reserved filter row at table density, where the filters live
       // in the toolbar row and no filter band will come.

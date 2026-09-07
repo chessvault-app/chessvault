@@ -40,7 +40,7 @@ import { EDITOR_WINDOW_SIZE } from '@/components/layout';
 import { cn } from '@/lib/utils';
 import { useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
-import { GameListShell } from './GameListShell';
+import { GameListShell, type GameListShape } from './GameListShell';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { Spinner } from '@/components/ui/spinner';
@@ -389,15 +389,14 @@ function CustomMaterialWindow({
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
  *
- * One shape, GameListShell's `panel`: the second half of the column that
- * finds games, behind the tab beside Online archives. The archive and the
- * reference database answer the same question, so they take turns in one
- * panel rather than each taking a box — and GamesBrowser, the only thing
- * that renders this, is that column at every width. (Two other shapes
- * were once offered here: a `page` on its own route, which nothing ever
- * navigated to, and a `sheet` for below lg, which nothing ever asked for
- * either. GameListShell still has all three for the browsers that do use
- * them.)
+ * One place, behind GamesBrowser's tab beside the archives, in whichever
+ * shape that browser's host gives it (`panel` in the workspace's band,
+ * `page` on the Games page). The archive and the reference database
+ * answer the same question, so they take turns in one column rather than
+ * each taking a box — and GamesBrowser, the only thing that renders
+ * this, is that column at every width. (A `sheet` for below lg was once
+ * offered here, which nothing ever asked for. GameListShell still has it
+ * for the browsers that do use it.)
  */
 /** The merged row's tail width as it last settled on this device. */
 const TAIL_KEY = 'vault:dbgames:tail-w';
@@ -408,7 +407,10 @@ export function DatabaseGames({
   selectedKey,
   inPlace = false,
   merged = false,
+  shape,
 }: {
+  /** Where the list stands — see GameListShell. */
+  shape: GameListShape;
   /** Dense table rows instead of cards — the wide pane's presentation.
       Explicit, never inferred: the phone sheet stays cards whatever the
       window says. */
@@ -1651,7 +1653,7 @@ export function DatabaseGames({
   return (
     <>
     <GameListShell
-      shape="panel"
+      shape={shape}
       toolbar={
         <div className="flex w-full flex-col gap-2">
           {/* At table density this one WRAPPING row is the whole chrome:

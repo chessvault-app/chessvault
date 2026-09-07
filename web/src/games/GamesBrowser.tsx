@@ -46,6 +46,7 @@ import {
 import { type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
+import type { GameListShape } from './GameListShell';
 
 /** The browser's tabs, at EVERY width, ordered by how close the games
     are to the reader: the collection leads — it is the reader's own,
@@ -88,6 +89,40 @@ let heldTab: MainTab | null = null;
 const MERGED_MIN_PX = 896;
 
 /**
+ * The browser's box, by frame. A Panel where the host sets the browser
+ * among cards; on a page, a plain column with the panel's one layout
+ * fact (a flex column whose list scrolls) and none of its dressing.
+ *
+ * No floor on the Panel: the card's bottom padding is for a control
+ * row or a resize grip to take back and draw the edge with, and this
+ * pane ends in its scrolling list, which took nothing back. Measured
+ * 16px of blank under a row cut mid-line (lanph3re's report).
+ *
+ * `--card` on the page column: the table's sticky column header and
+ * the archive's sticky select cell paint `bg-card` so rows scrolling
+ * under them cannot show through, and on a page "the surface under
+ * this" is the page's background, not a card's. Remapping the token
+ * for the subtree keeps those cells opaque in the right colour without
+ * teaching each of them where it stands. Menus and previews are
+ * portaled and never see it.
+ */
+function Box({
+  frame,
+  className,
+  children,
+}: {
+  frame: 'panel' | 'page';
+  className?: string;
+  children: ReactNode;
+}) {
+  return frame === 'panel' ? (
+    <Panel className={cn('min-h-0 [--card-floor:0px]', className)}>{children}</Panel>
+  ) : (
+    <div className={cn('flex min-h-0 flex-col [--card:var(--background)]', className)}>{children}</div>
+  );
+}
+
+/**
  * The tabbed games browser: reference databases, the collection, and
  * both online archives behind one tab strip, with all of the
  * collection's state (loading, bookmarks, search, rename,
@@ -106,15 +141,30 @@ const MERGED_MIN_PX = 896;
  */
 export function GamesBrowser({
   table,
+  frame,
   inPlace = false,
   onSelect,
   clearRef,
+  importRef,
   className,
 }: {
   /** Dense table rows instead of cards — the wide presentation.
       Explicit, never inferred: the Games page passes its own width
       flag, the workspace is always wide enough. */
   table: boolean;
+  /**
+   * What stands around the browser. `panel`: its own Panel, the tab
+   * strip as the card's title, for a host that sets it among other
+   * cards (the workspace's games band). `page`: nothing — the strip,
+   * the toolbar and the rows stand on the host's column as its own
+   * content, the way a shelf's cards do (the Games page). The page was
+   * a Panel too for a while, and it was the one page in the sidebar's
+   * run of shelves whose whole body sat inside a card: beside Studies,
+   * Notes and Books, whose chrome sits on the page and whose items are
+   * the cards, it read as a different app. Explicit for the same reason
+   * `table` is: the host knows what it stands the browser among.
+   */
+  frame: 'panel' | 'page';
   /** The host already shows the analysis board (the workspace): opening
       a database or archive game loads it and stays put instead of
       handing off to #/board. Collection games are documents and always
@@ -132,7 +182,15 @@ export function GamesBrowser({
    * useTableNav's is: it must speak about the rows currently on screen.
    */
   clearRef?: MutableRefObject<(() => void) | null>;
-  /** Merged onto the pane's Panel — the host owns the box. */
+  /**
+   * Filled with the pane's own way to open the import sheet, the same
+   * way `clearRef` is: on the page frame the Import button stands on
+   * the page's title line beside the other shelves' Import buttons,
+   * and only this pane owns the sheet and the reload after it. Below
+   * md the pane's own FAB is the import button, whoever hosts.
+   */
+  importRef?: MutableRefObject<(() => void) | null>;
+  /** Merged onto the pane's box — the host owns its size. */
   className?: string;
 }) {
   const [games, setGames] = useState<GameSummary[]>([]);
@@ -182,6 +240,7 @@ export function GamesBrowser({
     [games],
   );
   const [importing, setImporting] = useState(false);
+  if (importRef) importRef.current = () => setImporting(true);
   /** Which tab the pane is showing. A handed-over position lands on
       Databases whatever was held — that is what it is for, and with
       the tabs at every width the phone consumes the handoff the same
@@ -234,6 +293,8 @@ export function GamesBrowser({
   /** The pane's own width — see MERGED_MIN_PX. */
   const [stripRef, paneW] = useElementWidth();
   const merged = table && paneW >= MERGED_MIN_PX;
+  /** What the three lists tell the shell — the frame, in its words. */
+  const shape: GameListShape = frame === 'panel' ? 'panel' : 'page';
   /** Every tab's selection at once: only one is live, and a tab change
       is the other thing that drops them all. */
   const clearSelection = (): void => {
@@ -515,15 +576,13 @@ export function GamesBrowser({
         />
       )}
 
-      {/* No floor: the card's bottom padding is for a control row or a
-          resize grip to take back and draw the edge with, and this pane
-          ends in its scrolling list, which took nothing back. Measured
-          16px of blank under a row cut mid-line (lanph3re's report). */}
-      <Panel className={cn('min-h-0 [--card-floor:0px]', className)}>
+      <Box frame={frame} className={className}>
         {/* The pane's TITLE is the switch — the same line-Tabs strip
             the old source column used, for the same reason: naming
             the pane is what a header does, and the live tab is the
-            header's own rule, thickened under the name showing. */}
+            header's own rule, thickened under the name showing. On a
+            page the strip is the row under the page's own title, and
+            the rule under it is the page's. */}
         <Tabs value={tab} onValueChange={(v) => setTab(v as MainTab)} className="contents">
           {/* The SCROLLER is a wrapper, never the list itself. Four
               labels just fit a 375px phone in Korean and brush the
@@ -544,7 +603,13 @@ export function GamesBrowser({
             <TabsList
               variant="line"
               aria-label={t('What the pane is showing')}
-              className="flex w-max min-w-full items-center justify-start gap-1 rounded-none border-0 bg-transparent p-0 px-2"
+              className={cn(
+                'flex w-max min-w-full items-center justify-start gap-1 rounded-none border-0 bg-transparent p-0',
+                // In a card the first label steps in from the card's
+                // edge; on a page the first trigger's underline starts
+                // where the title and the search field do.
+                frame === 'panel' ? 'px-2' : 'px-0',
+              )}
             >
               {TABS.map(({ id, label }) => (
                 <TabsTrigger
@@ -585,6 +650,7 @@ export function GamesBrowser({
         )}
         {tab === 'databases' ? (
           <DatabaseGames
+            shape={shape}
             table={table}
             merged={merged}
             inPlace={inPlace}
@@ -593,6 +659,7 @@ export function GamesBrowser({
           />
         ) : tab === 'chesscom' || tab === 'lichess' ? (
           <ArchiveBrowser
+            shape={shape}
             table={table}
             merged={merged}
             inPlace={inPlace}
@@ -605,6 +672,7 @@ export function GamesBrowser({
           />
         ) : (
           <CollectionList
+            shape={shape}
             table={table}
             merged={merged}
             games={games}
@@ -625,21 +693,25 @@ export function GamesBrowser({
             onShowAll={() => setMarkedOnly(false)}
             search={finders(merged ? 'min-w-0 flex-1 basis-72' : 'min-w-0 flex-1')}
             importButton={
-              /* Import lives WITH the collection it grows: the
-                 page-header button beside this big pane did not stand
-                 out (lanph3re's report), and the empty state already
-                 points here. Below md the FAB is the import button, so
-                 this one steps aside rather than crowd the phone's
-                 toolbar. */
-              <Button
-                variant="default"
-                size="sm"
-                className="hidden shrink-0 md:inline-flex"
-                onClick={() => setImporting(true)}
-              >
-                <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
-                {t('Import a game')}
-              </Button>
+              /* Only inside a card. Import lived here, with the
+                 collection it grows, because a page-header button
+                 beside this big pane did not stand out (lanph3re's
+                 report) — the card's edge made the header read as
+                 outside the thing. On the page frame there is no edge,
+                 the button stands on the title line like every other
+                 shelf's Import, and this one steps aside (importRef).
+                 Below md the FAB is the import button either way. */
+              frame === 'panel' ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="hidden shrink-0 md:inline-flex"
+                  onClick={() => setImporting(true)}
+                >
+                  <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+                  {t('Import a game')}
+                </Button>
+              ) : undefined
             }
             searchIssues={
               <SearchQueryIssues
@@ -653,7 +725,7 @@ export function GamesBrowser({
             onFilterConstraints={setColConstraints}
           />
         )}
-      </Panel>
+      </Box>
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
 

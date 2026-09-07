@@ -46,7 +46,7 @@ import {
   useFiltersFolded,
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
-import { GameListShell } from './GameListShell';
+import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -210,10 +210,13 @@ export function CollectionList({
   importButton,
   searchIssues,
   merged = false,
+  shape,
   onSelect,
   selectedKey,
   onFilterConstraints,
 }: {
+  /** Where the list stands — see GameListShell. */
+  shape: GameListShape;
   /** Dense table rows instead of cards — the wide pane's presentation.
       Explicit, never inferred: the same list renders as cards below lg
       whatever the pane says. */
@@ -545,14 +548,15 @@ export function CollectionList({
   return (
     <>
     <GameListShell
-      shape="panel"
+      shape={shape}
       // At table density this one WRAPPING row is the whole resting
       // chrome, the same fold as the other three tabs: the search pair,
       // the filter selects, then — reading left to right as the
-      // narrowing runs — the count the narrowing produced, and Import
-      // last, the row ending on its primary the way the app's dialog
-      // footers do. Card mode rebuilds the stacked layout these pieces
-      // used to arrive pre-assembled in.
+      // narrowing runs — the count the narrowing produced, and, where
+      // the frame hands one over (the panel's), Import last, the row
+      // ending on its primary the way the app's dialog footers do. Card
+      // mode rebuilds the stacked layout these pieces used to arrive
+      // pre-assembled in.
       toolbar={
         <div className="flex w-full flex-col gap-2">
           <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>

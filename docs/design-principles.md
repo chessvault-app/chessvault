@@ -255,6 +255,19 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   pages of the same kind must agree — a page picks a tier, never a
   number. One gutter scale (1rem, 1.5rem from `md`, where the sidebar
   appears) and one safe-area-aware bottom inset come with it.
+- **A page's chrome stands on the page; a `Panel` frames a surface that
+  stands beside or among others.** Studies, Notes, Books and Games open
+  the same way: the title line with the page's own Import, the count,
+  the search row, then the content, all on the page's background. What
+  the content is (cards on a shelf, a table of games) picks the width;
+  it never earns a box. The box is for a second surface: the details
+  column beside the games table, the workspace's bands, a dashboard's
+  stacked panels. The Games page stood its whole body in a `Panel` for a
+  while, and beside three shelves whose cards are the items it read as
+  a different app; `GamesBrowser` takes a `frame` for that, `page` on
+  its page and `panel` in the workspace, and `GameListShell`'s `page`
+  shape drops the bands' side padding so the search field starts where
+  the title does.
 - Board-family pages (Board, studies/games viewer, trainers,
   repertoire, editor) fit the viewport rather than scrolling, by the
   shared shells in `components/layout.ts` — one place, not eight copies. The

@@ -1,9 +1,11 @@
+import { Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
+import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 
@@ -96,6 +98,8 @@ export function CollectionView() {
   // to come back on a click of the same row. So the close goes through
   // the pane's own clear, which is the one Escape uses.
   const clearSelection = useRef<(() => void) | null>(null);
+  // The browser owns the import sheet; the title line only rings it.
+  const openImport = useRef<(() => void) | null>(null);
 
   return (
     <PageShell
@@ -104,13 +108,29 @@ export function CollectionView() {
       // shown instead of shed. Below lg no viewport reaches either cap.
       width="xwide"
       scroll={false}
-      // Pinned at every width: the pane's lists scroll themselves (the
-      // panel shape's own behaviour), so the page never scrolls — the
-      // tab strip and the toolbar stay put while the rows move, on a
-      // phone exactly as on the desktop.
+      // Pinned at every width: the browser's lists scroll themselves,
+      // so the page never scrolls — the tab strip and the toolbar stay
+      // put while the rows move, on a phone exactly as on the desktop.
       className="h-full overflow-hidden pb-3 sm:pb-4 md:pb-6"
     >
-      <PageHeader title={t('Games')} />
+      {/* Import on the title line, where Studies, Notes and Books put
+          theirs: the page is a shelf of the reader's own games, and it
+          gets a shelf's header. Below md the browser's FAB is the
+          import button, so this one is not drawn there. */}
+      <PageHeader
+        title={t('Games')}
+        actions={
+          <Button
+            variant="default"
+            size="sm"
+            className="hidden md:inline-flex"
+            onClick={() => openImport.current?.()}
+          >
+            <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+            {t('Import a game')}
+          </Button>
+        }
+      />
 
       {/* minmax(0,1fr), not a bare fr: an fr track is min-content wide
           at its narrowest, so the table would silently refuse to shed
@@ -127,7 +147,17 @@ export function CollectionView() {
           showDetails && 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,23rem)]',
         )}
       >
-        <GamesBrowser table={wide} onSelect={setSelection} clearRef={clearSelection} />
+        {/* On the page, not in a card: the strip, the search row and the
+            rows are the page's own content, the way a shelf's cards are.
+            The details column beside it is the one card here, because
+            it is a second surface standing beside the first. */}
+        <GamesBrowser
+          table={wide}
+          frame="page"
+          onSelect={setSelection}
+          clearRef={clearSelection}
+          importRef={openImport}
+        />
         {/* The details column exists only where it has a column to
             stand in — mounted by the flag, not hidden by a class, so
             a phone never resolves selections for a panel nobody can

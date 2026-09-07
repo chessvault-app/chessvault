@@ -482,6 +482,7 @@ function Workspace() {
       <GamesBrowser
         key={huntSeq}
         table
+        frame="panel"
         inPlace
         onSelect={setSel}
         className="min-h-72 flex-1"

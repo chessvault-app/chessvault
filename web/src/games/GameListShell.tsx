@@ -10,10 +10,17 @@ import { FilterRow } from './GameFilters';
  * Where a list of games is standing, which decides what it brings.
  *
  * - `framed` — its own Panel and PanelHeader: a card on a page.
- * - `panel`  — hosted in the Games column's existing Panel, behind the
- *              source tabs: no frame or title of its own, and the toolbar
+ * - `panel`  — hosted in the games browser's Panel, behind the source
+ *              tabs: no frame or title of its own, and the toolbar
  *              clears the tab bar's lit rule with an extra step of top
  *              padding.
+ * - `page`   — the same browser standing on a page's own column with no
+ *              Panel around it (the Games page): every band keeps its
+ *              rule but drops its side padding, so the search field and
+ *              the count start on the page's edge, level with the title
+ *              above, the way a shelf's search row does. The rows keep
+ *              their own inset; a hairline that runs to the edge with
+ *              text 12px in is what a table looks like on a page.
  * - `sheet`  — inside a DialogContent: no frame or title (the window's
  *              title bar is the only title), and every band below the
  *              toolbar bleeds to the card's edges so its rules meet the
@@ -25,7 +32,7 @@ import { FilterRow } from './GameFilters';
  * and "bring a Panel" in the other, which is how the elite phone sheet
  * became a card inside a card.
  */
-export type GameListShape = 'framed' | 'panel' | 'sheet';
+export type GameListShape = 'framed' | 'panel' | 'page' | 'sheet';
 
 /**
  * The stack of bands every list of games is made of, in fixed order:
@@ -127,17 +134,22 @@ export function GameListShell({
   // share one derivation — which is what makes a double border
   // impossible by construction.
   const filterBorder = toolbar ? 'border-t' : undefined;
+  // The page shape's bands stand on the column's edge (see the type).
+  // One token, applied to every band the shell draws, so the rail of
+  // controls moves as one; FilterRow carries px-3 of its own, and cn's
+  // tailwind-merge lets this override it.
+  const bandX = shape === 'page' ? 'px-0' : 'px-3';
 
   const bands = (
     <>
-      {filtersLoading && <SkeletonFilterRow className={filterBorder} />}
+      {filtersLoading && <SkeletonFilterRow className={cn(filterBorder, bandX)} />}
       {filters != null && (
         <div ref={filtersRef}>
-          <FilterRow className={filterBorder}>{filters}</FilterRow>
+          <FilterRow className={cn(filterBorder, bandX)}>{filters}</FilterRow>
         </div>
       )}
       {notice != null && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2">{notice}</div>
+        <div className={cn('flex flex-wrap items-center gap-2 py-2', bandX)}>{notice}</div>
       )}
       {countBand != null && (
         // px-3 on BOTH sides and gap-1.5, both matching the toolbar and
@@ -152,7 +164,12 @@ export function GameListShell({
         // On a coarse pointer the same controls are h-9, so the band is
         // 45px there: the collection's text-only band stood 37 beside the
         // databases' and the archives' 45 (lanph3re's report).
-        <div className="border-border flex min-h-[2.3125rem] flex-wrap items-center gap-1.5 border-t px-3 py-1 text-sm pointer-coarse:min-h-[2.8125rem]">
+        <div
+          className={cn(
+            'border-border flex min-h-[2.3125rem] flex-wrap items-center gap-1.5 border-t py-1 text-sm pointer-coarse:min-h-[2.8125rem]',
+            bandX,
+          )}
+        >
           {countBand}
         </div>
       )}
@@ -268,6 +285,10 @@ export function GameListShell({
             // merged control rows and the filter rows read as one system
             // when every band pads its controls by the same 8px.
             shape === 'panel' && (dense ? 'px-3 py-2' : 'px-3 pb-3 pt-4'),
+            // The panel's rhythm without its inset: on a page the toolbar
+            // is the row under the tab strip's rule, and its field starts
+            // where the title does.
+            shape === 'page' && (dense ? 'py-2' : 'pb-3 pt-4'),
           )}
         >
           {toolbar}

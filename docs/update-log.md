@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Games page stands on the page like the other shelves.** Its
+  tabs, search row and rows used to sit inside one card under the
+  title, while Studies, Notes and Books put their chrome on the page and
+  their items in the cards. Now the source tabs run as a line under the
+  title, the search field starts where the title does, the table lies
+  bare with its hairlines, and Import is on the title line beside the
+  other shelves' Import. The details column stays a card: it is a second
+  surface beside the first. The workspace's games band keeps its card.
 - **Five tabs on the phone, and a pill under the current one.** The
   bottom bar carries Home, Games, Studies, Puzzles and More; Notes moves
   to More and stays a tile on Home. The current tab is marked with the
