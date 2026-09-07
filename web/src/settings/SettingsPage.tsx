@@ -427,7 +427,7 @@ function DemoVaultCard() {
   if (!vault) return null;
   return (
     <Card icon={BrandMark} title={t('Vault')}>
-      <VaultTree path={null} folders={vault.folders} rows={vault.rows} />
+      <VaultTree path={null} rows={vault.rows} />
       <p className="text-muted-foreground text-sm">
         {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
       </p>
@@ -480,11 +480,11 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
       {/* The vault as a folder: where it is, what it weighs, what lives in
           it (components/vault-tree). Held back until the answer is in, so
           the card grows once rather than in steps. */}
-      {vault && <VaultTree path={settings.vaultPath} folders={vault.folders} rows={vault.rows} />}
+      {vault && <VaultTree path={settings.vaultPath} rows={vault.rows} />}
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" onClick={() => void copyPath()}>{t('Copy the path')}</Button>
+        <Button variant="secondary" onClick={() => void copyPath()}>{t('Copy the path')}</Button>
         {reveal && (
-          <Button variant="outline" onClick={() => void reveal()}>{t('Show in the file manager')}</Button>
+          <Button variant="secondary" onClick={() => void reveal()}>{t('Show in the file manager')}</Button>
         )}
       </div>
     </Card>

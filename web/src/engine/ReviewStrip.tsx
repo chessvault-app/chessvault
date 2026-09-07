@@ -44,8 +44,8 @@ export function ReviewButton() {
  * What the offer to review is pressed on, wherever it is offered: the
  * band under the board's move list, the workspace's Analysis panel, and
  * the phone's toast all draw this, so the three cannot drift. The look is
- * the toast's own action (the registry's outline sm Button), which the
- * band adopted so a reader meets one button in three places.
+ * the toast's own action (the secondary sm Button, a tonal fill), which
+ * the band adopted so a reader meets one button in three places.
  *
  * Below md the word goes and the glyph stays, the way the document
  * header's Edit does: in the toast the sentence beside it already says
@@ -161,7 +161,7 @@ export function ReviewStrip({
         <p className={cn('text-muted-foreground min-w-0 flex-1 text-sm', !panel && 'truncate')}>
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
-        <Button variant="outline" size="sm" aria-label={reviewOfferLabel()} onClick={() => void run()}>
+        <Button variant="secondary" size="sm" aria-label={reviewOfferLabel()} onClick={() => void run()}>
           {reviewOfferChildren()}
         </Button>
         {!panel && (

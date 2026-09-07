@@ -113,7 +113,11 @@ function ToastDescription({
 
 function ToastAction({
   className,
-  render = <Button variant="outline" size="sm" />,
+  // secondary, not the registry's outline: on a tonal page the secondary
+  // action is a fill (iOS's gray button, Material's filled tonal), and
+  // strokes belong to fields. The band under the move list draws the
+  // same button (engine/ReviewStrip).
+  render = <Button variant="secondary" size="sm" />,
   ...props
 }: ToastPrimitive.Action.Props) {
   return (

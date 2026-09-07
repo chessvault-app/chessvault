@@ -31,22 +31,24 @@ export interface VaultRow {
 
 export function VaultTree({
   path,
-  folders,
   rows,
 }: {
   /** Where the folder is, or null where the page cannot say (the demo). */
   path: string | null;
-  folders: number;
   rows: VaultRow[];
 }) {
   const bytes = rows.reduce((sum, r) => sum + r.bytes, 0);
   const files = rows.reduce((sum, r) => sum + r.files, 0);
   return (
     <div className="vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5">
-      <div className="text-muted-foreground mb-2 flex flex-wrap justify-between gap-x-3 font-mono text-sm">
-        <span className="text-foreground min-w-0 break-all">{path ?? t('The demo vault, in this tab')}</span>
-        <span className="tabular-nums whitespace-nowrap">
-          {size(bytes)} · {t('{n} folders', { n: folders })} · {t('{n} files', { n: files })}
+      {/* The path is the one literal here and wears the mono face; the
+          totals are a sentence, so only their figures do (the Figures
+          rule). The folder count is not said: the rows below are the
+          folders. */}
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
+        <span className="text-foreground min-w-0 break-all font-mono text-sm">{path ?? t('The demo vault, in this tab')}</span>
+        <span className="text-muted-foreground text-sm whitespace-nowrap">
+          <Figures text={`${size(bytes)} · ${t('{n} files', { n: files })}`} />
         </span>
       </div>
       <ul>

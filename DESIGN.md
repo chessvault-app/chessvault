@@ -560,7 +560,11 @@ hit areas, `title` as a tooltip. Composites live in
   pane under it.
 - **Primary:** primary fill, primary-foreground text, hover at 80% alpha.
 - **Outline:** background fill, border stroke, hover to the muted rung;
-  in dark it takes shadcn's translucent `input/30`.
+  in dark it takes shadcn's translucent `input/30`. A field-like
+  control (a date picker's trigger, a toggle group), not a page's
+  secondary action: on the tonal page strokes belong to fields, and the
+  secondary action is a fill, the way iOS's gray button and Material's
+  filled tonal are. The toast's action and the review band draw it.
 - **Secondary / Ghost:** the surface-2 rung, hovering a further 5% toward
   the foreground; ghost is transparent until hovered.
 - **Destructive:** a 10% destructive wash with destructive text, *not* a
