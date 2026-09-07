@@ -21,6 +21,7 @@ import { api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { openQuickSwitcher } from '@/components/quick-switcher';
+import { useMediaQuery } from '@/lib/media';
 import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
 import { MiniBoard } from '@/components/mini-board';
@@ -546,6 +547,8 @@ export function HomePage() {
   // been said. Read synchronously, so the first paint is the page you have.
   const [layout, setLayout] = useState<HomeLayout | null>(readLayout);
   const [editing, setEditing] = useState(false);
+  // xl, the width at which the column opens to 64rem (see the shell below).
+  const wide = useMediaQuery('(min-width: 80rem)');
   // What the Continue card was LAST launch, so this launch can reserve its
   // space before the data returns. Without it the card popped in a beat
   // after first paint and pushed the whole page down — the most visible
@@ -1009,7 +1012,11 @@ export function HomePage() {
           was the fourth block on a full vault (top of the grid measured
           at y=845 on an 844px viewport). From md the source order is
           the drawn order. */}
-      <div className="flex w-full max-w-lg flex-col md:max-w-2xl lg:max-w-3xl">
+      {/* xl: 64rem. At 3xl the dashboard was a 768px phone column centred
+          in a 1232px main, 232px of nothing each side; the games page
+          beside it runs to 96rem. Two-up cards at lg already, so the
+          width goes to the cards and the Continue board. */}
+      <div className="flex w-full max-w-lg flex-col md:max-w-2xl lg:max-w-3xl xl:max-w-5xl">
         {/* Continue — the best retention surface on the page. A returning
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
@@ -1138,7 +1145,9 @@ export function HomePage() {
                   'max-[319px]:flex-wrap',
                 )}
               >
-                <MiniBoard fen={boardStudy.fen} size={96} className="shrink-0 rounded-sm" />
+                {/* 96px, and 128 from xl where the column has the room:
+                    the position is the one picture on the page. */}
+                <MiniBoard fen={boardStudy.fen} size={wide ? 128 : 96} className="shrink-0 rounded-sm" />
                 {/* basis-full under 320px, or flex-1 shrinks the title
                     to a few letters beside the board instead of taking
                     the wrap the button offers. */}
