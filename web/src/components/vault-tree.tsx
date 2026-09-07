@@ -68,7 +68,9 @@ export function VaultTree({
           </li>
         ))}
       </ul>
-      <p className="text-muted-foreground border-border mt-2.5 border-t pt-2 text-sm leading-relaxed">
+      {/* border-strong, the divider that survives a busy surface: on the muted
+          box the plain hairline measured 1.07:1 in dark. */}
+      <p className="text-muted-foreground mt-2.5 border-t border-[var(--border-strong)] pt-2 text-sm leading-relaxed">
         <Figures
           text={t(
             'Plain files. Any editor opens them and any backup tool copies them; nothing here needs this app to stay readable. The puzzle database, reference games and indexes live outside it and can be rebuilt.',
