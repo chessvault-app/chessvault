@@ -25,7 +25,7 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **The review offer is a toast on a phone.** The band that offered
   "Review game" in the moves pane is gone from small screens; the same
   sentence and button appear over the page for a few seconds instead,
-  and the pane shows more of the game.
+  with an X, and the pane shows more of the game.
 - **A note's card counts its links** ("3 links · edited yesterday")
   where it used to give the file's size in kilobytes.
 - **A phone's game row keeps its date.** The third line shows the

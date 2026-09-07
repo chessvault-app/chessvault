@@ -108,6 +108,9 @@ export function ReviewStrip({
     offeredFor.current = gameHeaders;
     const id = toast(t('See accuracy, mistakes and the evaluation graph.'), {
       duration: 8000,
+      // The X the band had: a swipe also takes it away, but nothing on a
+      // toast says so, and the band was closed by a press.
+      closeButton: true,
       action: { label: t('Review game'), onClick: () => void run() },
     });
     // The offer belongs to this game on this page. Leaving either takes

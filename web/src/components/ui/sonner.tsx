@@ -46,6 +46,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
           // 36px coarse floor every other control keeps, for the one
           // press that has 4.5 seconds to land.
           actionButton: 'pointer-coarse:min-h-9 pointer-coarse:px-3',
+          // sonner's X is a 20px disc; under a coarse pointer it takes the
+          // 36px hit box every other small control does, drawn outside
+          // the disc so the toast's text keeps its place.
+          closeButton: "pointer-coarse:after:absolute pointer-coarse:after:-inset-2 pointer-coarse:after:content-['']",
         },
       }}
       {...props}
