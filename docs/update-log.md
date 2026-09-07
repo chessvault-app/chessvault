@@ -5,7 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.9.0
+
+A design pass across the app. On a phone every page has a large title
+that shrinks into a bar, the bottom bar carries five tabs with a pill
+under the current one, and the pane turn, the pill and the title settle
+on one spring. Ctrl/⌘ K opens anything by name. Light mode stands its
+cards on a grey page. The Vault card shows the folder and gains
+“Download a copy”, and a colour scheme can follow the board.
 
 - **A flicked pane keeps its speed.** On a phone, a pane let go fast
   settles from the speed the finger had rather than restarting from
