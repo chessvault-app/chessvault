@@ -2128,4 +2128,6 @@ export const ko: Record<string, string> = {
   'Open anything by name': '이름으로 무엇이든 열기',
   'Nothing by that name.': '그 이름의 항목이 없습니다.',
   'Go to': '이동',
+  // The document tools' menu (components/document-tools).
+  Document: '문서',
 };
