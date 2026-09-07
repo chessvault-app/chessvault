@@ -7,6 +7,51 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Open anything by name.** Ctrl/⌘ K on a keyboard, or the search
+  button at the end of Home's title row on a phone, opens a list of the
+  sections and every study, note and game in the vault; type a few
+  letters and press Enter. The `?` sheet lists the key.
+- **A second tap on the current tab goes back to the top.** The tab
+  under your thumb used to do nothing once you were on its page.
+- **A phone's page changes with a short cross-fade,** the large title
+  shrinks into the bar by scaling rather than re-setting, and the bar's
+  pill slides between tabs. All three stay still under the system's
+  reduced-motion setting.
+- **A document's tools fold behind one ⋯ on a phone.** Other names, what
+  links here and earlier versions sit in a sheet; the title row keeps
+  the name, Edit and Save, and the name has room again. A note whose
+  first line is its own heading shows that heading once: the bar's
+  copy appears as the heading scrolls under it.
+- **The review offer is a toast on a phone.** The band that offered
+  "Review game" in the moves pane is gone from small screens; the same
+  sentence and button appear over the page for a few seconds instead,
+  and the pane shows more of the game.
+- **A note's card counts its links** ("3 links · edited yesterday")
+  where it used to give the file's size in kilobytes.
+- **A phone's game row keeps its date.** The third line shows the
+  opening's family and the date; the full opening name is in the row's
+  tooltip. It used to run the whole name and cut the date off.
+- **Home says who won.** The result chips under Recent games bold the
+  winning digit on the side you played, as the Games page does.
+- **A desktop's Home uses its width:** the column opens to 64rem on
+  wide windows and the Continue board grows to 128px.
+- **Shelf thumbnails are in full colour at rest.** They were dimmed
+  under a mouse until pointed at.
+- **The ECO chip keeps its hue and loses its tint,** so the result chip
+  beside it is the louder of the two again.
+- **The board's coordinates read on every board.** The label on a dark
+  square is dark ink on the light boards now; every preset measures at
+  least 4.5:1 on both squares in both modes.
+- **The app answers more of the system's settings.** Windows contrast
+  themes get real card borders and a real focus outline; a system set
+  to prefer more contrast gets the High contrast scheme unless another
+  was chosen; a card focused from the keyboard clears the sticky bar.
+- **A short tick where a swipe takes** (removing or bookmarking a row,
+  turning a pane), on the same switch as the move tick. Android only.
+- **Counts keep their words in the UI face.** "30 games" set the whole
+  phrase in the mono face, which has no Korean; now only the number is.
+- **The demo's notice stays on the shelves** and off the board and open
+  documents, and has an X for the session.
 - **The Games page stands on the page like the other shelves.** Its
   tabs, search row and rows used to sit inside one card under the
   title, while Studies, Notes and Books put their chrome on the page and

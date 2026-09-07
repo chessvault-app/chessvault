@@ -625,6 +625,15 @@ independently and one of them spelled the rank differently, which nothing
 would ever have reported, because a badge on the wrong square is still a
 badge.
 
+The coordinate labels are inked per board, not per mode: a light board
+takes dark ink on both squares, a dark board light ink on its dark
+square, each preset setting `--coord-on-light` / `--coord-on-dark` as a
+mix out of its own two tokens. A light label on a mid-tone dark square
+never reaches 4.5:1 (white itself is 3.7:1 on walnut, 2.3 on tan), so
+the direction is decided by measurement per preset; every one is at or
+above 4.5:1 on both squares in both modes, the tightest charcoal's light
+square at 4.54.
+
 ### Named Rules
 
 **The No-Hand-Rolled-Overlay Rule.** A second popover, menu, dialog or
