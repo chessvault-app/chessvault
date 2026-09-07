@@ -84,7 +84,9 @@ at.
 **Measure, do not assert.** A refactor that should change nothing is proved
 by diffing the output before and after. A claimed improvement is quoted
 with the number that was measured, and a number that has not been checked
-is labelled as such.
+is labelled as such. For anything visible, the diff is `npm run
+shots:grid`: record a baseline from the demo build, rebuild, run it
+again with `BASE_DIR` set, and quote which pictures changed and where.
 
 **Commit each verified change on its own**, with a message saying why it
 was needed and what it cost, not just what changed. Behaviour-neutral

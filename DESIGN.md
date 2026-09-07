@@ -597,9 +597,21 @@ hit areas, `title` as a tooltip. Composites live in
 
 - A section list of icon-plus-label rows; the active section takes the
   primary treatment, everything else is quiet until hovered.
+- The phone's bottom bar: five tabs (Home, Games, Studies, Puzzles,
+  More), docked and pinned, `bg-card` with a `border-t` hairline and the
+  home-indicator inset, gone while the keyboard is up. Each tab is a
+  28px-tall, 56px-wide pill track over a `text-xs` label; the current
+  tab fills the track `bg-muted` with a `primary/30` inset ring and
+  goes semibold, the sidebar's current-row treatment. 56px tall.
 - On a phone the bottom bar becomes the open page's controls — move
   navigation, puzzle actions — in the Chess.com / Lichess idiom, claimed
   by whichever page is open.
+- Page headers: `text-xl` on a desktop; on a phone a `text-2xl` large
+  title in a 44px row that sticks to the top of the page, drops to
+  `text-base` and gains a `border-b` hairline once the page has
+  scrolled under it. A count line (`text-sm text-muted-foreground`)
+  sits 4px under the title; the search field is full width on a phone
+  and `max-w-sm` on a desktop.
 
 ### Signature: the board and its overlays
 

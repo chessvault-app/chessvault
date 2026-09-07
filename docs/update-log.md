@@ -7,6 +7,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Five tabs on the phone, and a pill under the current one.** The
+  bottom bar carries Home, Games, Studies, Puzzles and More; Notes moves
+  to More and stays a tile on Home. The current tab is marked with the
+  same pill the sidebar's current row has, not by text colour alone.
+- **Page headers grew up.** On a phone the page's name is a large title
+  that shrinks into a bar at the top as you scroll, with the page's
+  buttons beside it. Shelves show how much they hold under their name
+  (12 studies), and the search field has a row of its own: full width on
+  a phone, capped on a desktop. The licences page joins the same shape.
 - **The landing page lists the vault once.** It listed it twice: a
   six-line summary beside the headline, and the demo vault's own files
   under it. On a phone the two stacked and read as a duplicate. The

@@ -5,6 +5,8 @@
  *   OUT=.shots/base npm run shots:grid                    # record a baseline
  *   ...edit, npm run build:demo...
  *   OUT=.shots/after BASE_DIR=.shots/base npm run shots:grid   # diff against it
+ *   ROUTES='#/games,#/studies' narrows a run (Git Bash: MSYS_NO_PATHCONV=1,
+ *   or the '#/' is rewritten as a path and the route never matches).
  *
  * WHY. `check:contrast` measures colour and takes no pictures; `shots`
  * recaptures the manual's images in Electron. Neither answers the

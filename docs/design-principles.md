@@ -150,8 +150,8 @@ usage moved up a rung instead:
 | captions | `text-xs` | 12px |
 | body, list rows, panel text | `text-sm` | 14px |
 | titles, setting rows | `text-base` | 16px |
-| page titles (`PageHeader`) | `text-xl` | 20px |
-| the one display figure | `text-2xl` | 24px |
+| page titles (`PageHeader`, desktop) | `text-xl` | 20px |
+| the one display figure, and a phone's page title | `text-2xl` | 24px |
 
 "The ONE display figure" is load-bearing and was not true for a while:
 the puzzle dashboard spent that rung four times in a single row, on four
@@ -297,10 +297,24 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   names the PAGE does not. A canvas still cannot be a fourth width: a
   width answers how long a line of text should be, and a canvas wants
   every pixel it is given at any size.
-- **One page title**: `PageHeader` — `text-xl font-semibold
-  tracking-tight`, actions pushed right, the phone-only back chevron
-  where a page is reached through More. `ShelfToolbar` is built on it.
-  (Four title sizes had accumulated; a page's name is one voice.)
+- **One page title**: `PageHeader` — one name, two rungs. On a desktop
+  it is `text-xl font-semibold tracking-tight` with the actions pushed
+  right. On a phone the name is a `text-2xl` large title in a 44px row,
+  and the row is the page's bar: sticky at the top of the scroller, it
+  takes the page background, shrinks the name to `text-base` and draws
+  a hairline once the page has scrolled under it (the iOS large title,
+  Material 3's medium app bar), with the actions staying on the name's
+  line in both states. The phone-only back chevron sits where a page is
+  reached through More. `subtitle` (what the page has: 12 studies),
+  `description` (what it is for) and `search` (its find-or-filter
+  field, full width on a phone and `max-w-sm` on a desktop) are slots
+  of the header, rendered as SIBLINGS spaced by the column's gap:
+  `sticky` holds an element inside its parent's box, so a header
+  wrapped up with its search row scrolls away with the wrapper, which is
+  also why a page that hands the shell its own margins cannot hold one.
+  `ShelfToolbar`, Books, the puzzle shelf, Themes, Licences and
+  `CanvasShell` are built on it. (Four title sizes had accumulated; a
+  page's name is one voice.)
   A canvas page uses it too, on the same gutters, with its surface
   starting below. It briefly had a `text-base` title of its own, on the
   theory that a heading competing with the canvas is a heading in the
@@ -374,8 +388,16 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   when the viewport is wide, single column otherwise. Stacked layouts
   lead with a page header (convention: header at top), wide layouts put
   the header in the side column where it aligns with the board.
-- Phones (`md:hidden` world): the bottom bar is the navigation on hub
-  pages, but a **leaf page claims it** — board, study, puzzle and
+- Phones (`md:hidden` world): the bottom bar holds five tabs — Home,
+  Games, Studies, Puzzles, More — the count where Material 3's guidance
+  stops and the one lichess ships; Notes, Books and the opening map are
+  reached through More and the Home tiles. The current tab wears the
+  sidebar's current-row pill (`bg-muted`, a `primary/30` inset ring
+  behind the icon, a semibold label), so both navigations say "you are
+  here" the same way. The bar stays docked and pinned: the floating
+  capsule is iOS 26's idiom alone, and hiding on scroll would resize
+  every page, since the bar is a flex sibling of `main`. It is the
+  navigation on hub pages, but a **leaf page claims it** — board, study, puzzle and
   repertoire replace the global tabs with their own controls (move
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
   back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
