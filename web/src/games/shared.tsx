@@ -430,16 +430,28 @@ export function GameRow({
           {/* Opening first, date, then who played — the order every plain
               row leads with (players are its title lines), so a renamed
               game's detail reads the same left to right. */}
-          <span className="text-muted-foreground block truncate text-sm" title={openingLabel}>
+          {/* The opening gives way; the date does not. This was one
+              truncated run, and a full opening name ("French Defense:
+              Steinitz Variation, Boleslavsky Variation") took the whole
+              line on a phone and cut the date off the end of every row,
+              so a list the desktop table dates was undated at 375px. The
+              chip and the family (the name before its colon) are what a
+              row is scanned by; the full name stays in the title, and
+              the date sits at the end in its own box. */}
+          <span className="text-muted-foreground flex min-w-0 items-baseline text-sm" title={openingLabel}>
             {game.opening ? (
-              <OpeningTag eco={game.opening.eco} name={game.opening.name} />
+              <span className="min-w-0 truncate">
+                <OpeningTag eco={game.opening.eco} name={openingFamily(game.opening.name)} />
+              </span>
             ) : game.eco ? (
               <OpeningTag eco={game.eco} />
             ) : null}
-            {(game.opening || game.eco) && ' · '}
-            {game.date}
-            {customName ? ` · ${t('{white} vs {black}', { white: game.white, black: game.black })}` : ''}
-            {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
+            <span className="shrink-0 truncate">
+              {(game.opening || game.eco) && ' · '}
+              {game.date}
+              {customName ? ` · ${t('{white} vs {black}', { white: game.white, black: game.black })}` : ''}
+              {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
+            </span>
           </span>
         </button>
         <ResultScore result={game.result} userSide={game.userSide} />
@@ -594,6 +606,12 @@ export function ResultScore({
  */
 const ECO_STEP: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, E: 4 };
 const ECO_HUE = 264;
+
+/** "French Defense: Steinitz Variation, …" as the family the row scans by. */
+export function openingFamily(name: string): string {
+  const colon = name.indexOf(':');
+  return colon > 0 ? name.slice(0, colon) : name;
+}
 
 export function OpeningTag({ eco, name }: { eco: string; name?: string | null }) {
   const step = ECO_STEP[eco[0]?.toUpperCase() ?? ''] ?? 0;
