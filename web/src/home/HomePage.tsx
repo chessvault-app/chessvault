@@ -1049,7 +1049,9 @@ export function HomePage() {
             </h2>
             {reserved.board && (
               <div className="border-border border-l-primary bg-primary/10 flex items-center gap-3 border-b border-l-2 px-3 py-3">
-                <Skeleton className="size-24 shrink-0 rounded-sm" />
+                {/* 96px, and 128 from xl: the MiniBoard below is sized the same way,
+                    and one size here stood 32px short of it on a desktop. */}
+                <Skeleton className="size-24 shrink-0 rounded-sm xl:size-32" />
                 <span className="min-w-0 flex-1">
                   <Skeleton className="h-5 w-44 max-w-full" />
                   <Skeleton className="mt-1.5 h-4 w-24 max-w-full" />
@@ -1409,7 +1411,9 @@ export function HomePage() {
                     // one: Board and Editor are tools and never carry one.
                     data === null &&
                     count !== undefined && (
-                      <Skeleton className="ml-1.5 inline-block h-2 w-5 align-middle" />
+                      // On the figure's own line, as the figure is: inline beside the
+                      // name, the tile grew a 20px line when the number landed.
+                      <Skeleton className="my-1.5 block h-2 w-10" />
                     )
                   )}
                 </span>
