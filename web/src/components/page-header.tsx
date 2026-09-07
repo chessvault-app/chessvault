@@ -120,10 +120,14 @@ export function PageHeader({
         <h1
           className={cn(
             'text-2xl font-semibold tracking-tight md:text-xl',
-            // The large title shrinks in place once the page is under
-            // the bar. Only the size moves; the row keeps its 44px.
-            'max-md:transition-[font-size] max-md:duration-150',
-            'group-data-compact/header:max-md:text-base',
+            // The large title shrinks in place once the page is under the
+            // bar: scaled from its left edge to two thirds (24px to 16px),
+            // not re-set at a smaller size. Animating font-size relaid
+            // the line out on every frame and read as a reflow; a
+            // transform is composited and reads as the title moving.
+            // Only the size moves; the row keeps its 44px.
+            'max-md:origin-left max-md:transition-transform max-md:duration-150',
+            'group-data-compact/header:max-md:scale-[0.667]',
             truncate && 'min-w-0 flex-1 truncate',
           )}
         >

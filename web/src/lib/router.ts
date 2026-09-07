@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { confirmLeave, leaveIsBlocked } from './leaveGuard';
+import { prefersReducedMotion } from './motion';
 
 // Named for the page each one IS. Two were not: `analysis` drew a page
 // the whole app calls the Board, and `books` was the opening-books page
@@ -75,7 +77,7 @@ export function useRoute(): Route {
         current = next;
         arrivedByNavigate = pendingNavigate;
         pendingNavigate = false;
-        setRoute(parse(next));
+        swapRoute(() => setRoute(parse(next)));
         return;
       }
       /**
@@ -99,6 +101,36 @@ export function useRoute(): Route {
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
   return route;
+}
+
+/**
+ * The page change itself, on a phone, as a 150ms cross-fade.
+ *
+ * A route change was a hard cut: the old page gone, the new one there,
+ * in one frame. On a desktop, where the sidebar stays and the column
+ * changes, that reads as a tool; on a phone, where the whole screen
+ * changes, it reads as a reload, and every native app crossfades or
+ * slides between a hub and a leaf. The browser's own View Transitions
+ * (Chrome 111, Safari 18) snapshot the old page, commit the new one and
+ * fade between the two; the CSS is under `::view-transition` in
+ * index.css. The route is committed synchronously inside the
+ * transition's callback, which is what the API needs to snapshot both
+ * states.
+ *
+ * Not on a desktop (`md` and up), not under reduced motion, and not in a
+ * browser without the API: those take the cut they always took. The
+ * leave-guard branch above never comes here; it asks first and then
+ * navigates again through this same path.
+ */
+function swapRoute(commit: () => void): void {
+  const phone = window.matchMedia('(max-width: 47.9375rem)').matches;
+  if (!phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
+    commit();
+    return;
+  }
+  document.startViewTransition(() => {
+    flushSync(commit);
+  });
 }
 
 /**

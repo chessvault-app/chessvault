@@ -912,6 +912,9 @@ function MobileNav({ active }: { active: Section }) {
     ...NAV.filter(({ section }) => !MORE_SECTIONS.some((m) => m.section === section)),
   ];
 
+  // Where the pill sits: the current tab's index, More being the fifth.
+  const activeIndex = inMore ? tabs.length : Math.max(0, tabs.findIndex(({ section }) => section === active));
+
   const tab = (
     key: string,
     label: string,
@@ -931,12 +934,9 @@ function MobileNav({ active }: { active: Section }) {
         isActive ? 'text-primary font-semibold' : 'text-muted-foreground',
       )}
     >
-      <span
-        className={cn(
-          'grid h-7 w-14 place-items-center rounded-full transition-colors duration-150',
-          isActive && 'bg-muted ring-primary/30 ring-1 ring-inset',
-        )}
-      >
+      {/* The pill's footprint; the pill itself is the sliding element
+          above, drawn once for the bar. */}
+      <span className="relative grid h-7 w-14 place-items-center rounded-full">
         <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
       </span>
       {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
@@ -955,7 +955,7 @@ function MobileNav({ active }: { active: Section }) {
       aria-label={t('Sections')}
       className={cn(
         // Opaque for the same reason as the page-control slot above.
-        'bg-card border-border flex shrink-0 items-stretch border-t md:hidden',
+        'bg-card border-border relative flex shrink-0 items-stretch border-t md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
         // Gone while the keyboard is up. The shell now ends at the top of
@@ -966,6 +966,17 @@ function MobileNav({ active }: { active: Section }) {
         'keyboard:hidden',
       )}
     >
+      {/* The one pill, behind whichever tab is current, sliding between
+          them over the pane-turn duration. Each tab used to draw its own
+          and the mark jumped; one element that moves is what Material 3
+          and every 2025 tab bar do. Its geometry is the tab's: five equal
+          tabs, so the pill's centre is (i + ½) fifths of the bar, and it
+          sits 4px down (the tab's py-1) at the icon's height. */}
+      <span
+        aria-hidden
+        className="bg-muted ring-primary/30 pointer-events-none absolute top-1 h-7 w-14 rounded-full ring-1 ring-inset transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)"
+        style={{ left: `calc(${(activeIndex + 0.5) * 20}% - 1.75rem)` }}
+      />
       {tabs.map(({ section, label, icon }) =>
         tab(
           section,

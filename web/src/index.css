@@ -2045,3 +2045,21 @@ cg-board square.check {
     scroll-padding-top: 2.75rem;
   }
 }
+
+/* A phone's page change is a 150ms cross-fade through the browser's own
+   View Transitions (lib/router, swapRoute). The UA's default is a 250ms
+   fade; this one takes the pane-turn's clock so a tab and a pane land at
+   the same tempo. Reduced motion takes the cut: the router never starts
+   one, and this covers a transition started by anything else. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 150ms;
+  animation-timing-function: var(--pane-turn-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
