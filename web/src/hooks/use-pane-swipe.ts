@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@/lib/motion';
 import { gestureHaptic } from '@/board/sound';
+import { springTrace } from '@/lib/spring';
 
 /** How far a finger must travel before the gesture has an axis at all. */
 const SLOP = 8;
@@ -64,15 +65,14 @@ const WALL_FOLLOW = 0.2;
 const WALL_PX = 24;
 
 /**
- * How long the row takes to settle, whether the turn completed or fell
- * back.
+ * How long past the transition the column is left carrying the offset.
  *
- * The JS half of `--pane-turn` in index.css, which is what actually times
- * the motion — this is only how long the column is left carrying it. It
- * must not be the shorter of the two, or the offset is taken away
- * mid-transition and the row jumps the rest of the way.
+ * The transition's own length comes from the spring (lib/spring), traced
+ * for the speed the finger let go at, and is set on the column beside
+ * the offset; this margin is so the offset is never taken away
+ * mid-transition, which made the row jump the rest of the way.
  */
-const SETTLE_MS = 340;
+const SETTLE_SLACK_MS = 16;
 
 /**
  * The pane on one side of the open one, or null if that side is the end of
@@ -322,6 +322,8 @@ export function usePaneSwipe<T extends string>({
       neighbour to travel to, which is what `dragOffset` reads as a wall. */
   const span = useRef(0);
   const settling = useRef<number | null>(null);
+  /** Where the row stands, the last offset painted. */
+  const at = useRef(0);
   /** Which turn the pending frame belongs to. Anything that ends a turn —
       the backstop below, a new gesture — moves it on, and a frame that
       arrives after that has nothing left to walk home. */
@@ -344,6 +346,8 @@ export function usePaneSwipe<T extends string>({
   const unwire = (): void => {
     open.current?.removeAttribute('data-pane-open');
     peek.current?.removeAttribute('data-pane-peek');
+    column.current?.style.removeProperty('--pane-turn');
+    column.current?.style.removeProperty('--pane-turn-ease');
     open.current = null;
     peek.current = null;
     geom.current = null;
@@ -360,6 +364,27 @@ export function usePaneSwipe<T extends string>({
     if (!node) return;
     node.dataset.paneSwipe = mode;
     node.style.setProperty('--pane-dx', `${offset}px`);
+    at.current = offset;
+  };
+
+  /**
+   * The settle's clock: the app's spring, released at the speed the
+   * finger had. A flick that let go at 1px/ms with 200px still to travel
+   * starts the settle at that speed instead of from rest, so the row
+   * never stalls under a fast finger and then restarts; a slow release
+   * traces the rest curve, which is the tokens. Set on the column, so
+   * the pane, its neighbour and the strip's line all take this turn's
+   * clock, and taken off with the rest of the offset (unwire).
+   */
+  const clock = (velocityPxPerMs: number): number => {
+    const node = column.current;
+    const left = at.current;
+    if (!node || left === 0) return 0;
+    // Trips per second towards rest: the row is at `left` and going to 0.
+    const trace = springTrace((-velocityPxPerMs * 1000) / left);
+    node.style.setProperty('--pane-turn', `${trace.ms}ms`);
+    node.style.setProperty('--pane-turn-ease', trace.easing);
+    return trace.ms;
   };
 
   /**
@@ -443,7 +468,7 @@ export function usePaneSwipe<T extends string>({
       transition that walks it home starts — a tab backgrounded on the
       release frame never runs that frame, and what it left behind was a
       panel parked half off the column until the next gesture. */
-  const clearLater = (): void => {
+  const clearLater = (ms: number): void => {
     stopSettling();
     settling.current = window.setTimeout(() => {
       settling.current = null;
@@ -465,13 +490,15 @@ export function usePaneSwipe<T extends string>({
       // that shape would run to take the column's own offsets off.
       flushSync(() => setBeside(null));
       unwire();
-    }, SETTLE_MS);
+    }, ms + SETTLE_SLACK_MS);
   };
 
-  /** Hand the offset to the transition, and clear up behind it. */
-  const settle = (): void => {
+  /** Hand the offset to the transition at the finger's speed, and clear
+      up behind it. */
+  const settle = (velocityPxPerMs: number): void => {
+    const ms = clock(velocityPxPerMs);
     paint('settle', 0);
-    clearLater();
+    clearLater(ms);
   };
 
   const forget = (): void => {
@@ -483,7 +510,7 @@ export function usePaneSwipe<T extends string>({
 
   /** A gesture that ends without turning a pane: put the row back. */
   const springBack = (): void => {
-    if (column.current?.hasAttribute('data-pane-swipe')) settle();
+    if (column.current?.hasAttribute('data-pane-swipe')) settle(velocity());
     else setBeside(null);
     forget();
   };
@@ -601,6 +628,8 @@ export function usePaneSwipe<T extends string>({
         paint('drag', offset);
         setBeside({ id: value, side: -side as 1 | -1 });
         onChange(next);
+        // Read before forget() empties the path.
+        const speed = velocity();
         forget();
         const mine = ++turn.current;
         requestAnimationFrame(() => {
@@ -613,7 +642,7 @@ export function usePaneSwipe<T extends string>({
           // where it now stands, and the browser has nothing to transition
           // from.
           void column.current.offsetWidth;
-          settle();
+          settle(speed);
         });
       },
       onTouchCancel: springBack,

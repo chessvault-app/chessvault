@@ -688,9 +688,10 @@ title's collapse, and the phone's route cross-fade) reads two tokens,
 `--pane-turn` and `--pane-turn-ease`, and those are a damped spring
 sampled into a CSS `linear()` easing: stiffness 380, damping ratio 0.92,
 unit mass, settling within 0.1% in 337ms with no overshoot, 90% of the
-way at about 180ms. `scripts/spring-easing.ts` prints the curve from the
-three numbers; moving the motion means re-running it and quoting what it
-printed.
+way at about 180ms. The spring lives in `web/src/lib/spring.ts`;
+`scripts/spring-easing.ts` prints the curve from it and a test holds
+the tokens to it, so moving the motion means changing the two numbers
+there, re-running the script and pasting what it printed.
 
 Why a spring: a spring arrives fast and eases to a stop with no fixed
 length, which is how iOS has animated since iOS 7 and what Material 3
@@ -700,9 +701,19 @@ Why no overshoot: a bouncing move list is the register the record
 rejects; Apple's default rebounds a little (ratio about 0.83), Material's
 "standard" scheme sits near critical, and this app sits at 0.92. Why
 CSS: the shape at zero runtime cost, in the tokens the three motions
-already read. What CSS cannot do is take a finger's velocity; a
-velocity-seeded release for the pane swipe would be a JS spring in the
-hook, and a separate decision.
+already read.
+
+**The finger's speed.** The pane swipe is the one motion that does not
+start from rest: the row is already moving under the finger when it
+lets go. So the hook (hooks/use-pane-swipe) asks `lib/spring` for the
+trace released at that speed, in trips per second towards rest, and
+sets it on the column as this turn's `--pane-turn` pair; the pane, its
+neighbour and the strip's line take it together, and it comes off with
+the offset. A slow release is the rest curve, which is the tokens. A
+flick at 10/s arrives in 294ms instead of 337 and overshoots by 0.08%;
+past 20/s the curve is clamped, where the overshoot is 0.73% and stops
+growing. Measured, not tuned: `scripts/spring-easing.ts <velocity>`
+prints any of them.
 
 **The shared board.** A phone's route change is a cross-fade, except
 for the board: the page's board carries `view-transition-name: board`

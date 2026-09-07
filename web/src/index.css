@@ -1465,11 +1465,12 @@ cg-board square.check {
    which lands back on the instant swap this gesture had before it
    moved at all. */
 /* A spring, sampled: stiffness 380, damping ratio 0.92, unit mass, which
-   settles within 0.1% in 337ms with no overshoot (scripts/spring-easing
-   prints these; re-run it to move them). It reaches 90% of the way at
+   settles within 0.1% in 337ms with no overshoot (web/src/lib/spring.ts
+   is the spring, scripts/spring-easing prints these from it, and
+   lib/spring.test.ts holds them to it). It reaches 90% of the way at
    about 180ms, so the arrival feels as it did at 200ms and only the tail
-   is longer and softer. Rest-to-rest only: CSS cannot take a finger's
-   velocity, so a flicked pane still starts this from zero. */
+   is longer and softer. Rest-to-rest: the swipe hook overrides the pair
+   on its column for a release at the finger's speed. */
 :root {
   --pane-turn: 337ms;
   --pane-turn-ease: linear(0, 0.0317 4.2%, 0.1075 8.3%, 0.2055 12.5%, 0.3112 16.7%, 0.4154 20.8%, 0.5125 25.0%, 0.5998 29.2%, 0.6759 33.3%, 0.7409 37.5%, 0.7953 41.7%, 0.8401 45.8%, 0.8766 50.0%, 0.9059 54.2%, 0.9290 58.3%, 0.9472 62.5%, 0.9613 66.7%, 0.9720 70.8%, 0.9802 75.0%, 0.9863 79.2%, 0.9907 83.3%, 0.9940 87.5%, 0.9963 91.7%, 0.9979 95.8%, 1);

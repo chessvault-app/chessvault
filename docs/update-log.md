@@ -7,6 +7,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A flicked pane keeps its speed.** On a phone, a pane let go fast
+  settles from the speed the finger had rather than restarting from
+  rest; a slow release is unchanged.
 - **Storage used says what can be freed.** The card no longer repeats
   the Vault card's folders: one row for the vault, linking to that card,
   then a row per cache with a link to where it is cleared.
