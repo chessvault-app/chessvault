@@ -92,6 +92,17 @@ interface Scan {
   links: Backlinks;
   prose: Prose[];
   aliases: AliasIndex;
+  /** Every document the scan saw, by section: what a switcher lists. */
+  index: LinkIndex;
+  /**
+   * How many links each document makes, keyed like `links`. A note's
+   * card shows this where it showed the file's size: a reader of a vault
+   * built on links wants to know how connected a note is, not how many
+   * kilobytes it weighs. Counted here because the scan has already read
+   * every mention; the listing reads only a file's head and must not
+   * start reading whole notes to count brackets.
+   */
+  outgoing: Map<string, number>;
 }
 
 /**
@@ -324,6 +335,7 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
     ) as unknown as AliasIndex;
     const links: Backlinks = new Map();
     const prose: Prose[] = [];
+    const outgoing = new Map<string, number>();
 
     for (const section of LINK_SECTIONS) {
       const { dir, ext } = SOURCE[section];
@@ -358,6 +370,8 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
             // the editor, not on a document that by definition is not the
             // one being pointed at.
             if (typeof hit === 'string') continue;
+            const fromKey = keyOf(section, from);
+            outgoing.set(fromKey, (outgoing.get(fromKey) ?? 0) + 1);
             // A document that links to itself is not a backlink. It would
             // appear on its own page as a mention of itself, which tells
             // the reader nothing they cannot see by looking down. The test
@@ -393,7 +407,7 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
         }
       }
     }
-    return { links, prose, aliases };
+    return { links, prose, aliases, index, outgoing };
   }
 
 
@@ -402,6 +416,23 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
     if (!cached || cached.sig !== sig) cached = { sig, scan: build() };
     return cached.scan;
   }
+
+  /**
+   * Every linkable document's id, by section, and how many links each
+   * makes. One answer for a shelf's cards or a switcher's list, from the
+   * scan that is already cached: no per-document round trips.
+   */
+  api.get('/links/index', (c) => {
+    const scan = current();
+    const outgoing: Record<LinkSection, Record<string, number>> = { notes: {}, studies: {}, games: {} };
+    for (const section of LINK_SECTIONS) {
+      for (const id of scan.index[section]) {
+        const n = scan.outgoing.get(keyOf(section, id));
+        if (n) outgoing[section][id] = n;
+      }
+    }
+    return c.json({ index: scan.index, outgoing });
+  });
 
   /**
    * `section` is the app's own routing word for the document kind, so a

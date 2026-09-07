@@ -106,6 +106,8 @@ function NoteList() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
   const [markedIds, setMarked] = useState<Set<string>>(new Set());
+  /** How many links each note makes, from the links scan (see NoteCard). */
+  const [linkCounts, setLinkCounts] = useState<Record<string, number>>({});
   const [markedOnly, setMarkedOnly] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
@@ -142,14 +144,19 @@ function NoteList() {
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      const [body, marks] = await Promise.all([
+      const [body, marks, links] = await Promise.all([
         api<{ studies: NoteMeta[]; folders: string[] }>(API),
         // Missing bookmarks are an empty set, not a broken shelf.
         api<{ ids: string[] }>(`${API}/bookmarks`).catch(() => null),
+        // Asked beside the list, not after it (design-principles, Waiting):
+        // a card without its count is a card with one fact fewer, not a
+        // broken shelf.
+        api<{ outgoing: { notes: Record<string, number> } }>('/api/links/index').catch(() => null),
       ]);
       setNotes(body.studies);
       setFolders(body.folders);
       setMarked(new Set(marks?.ids ?? []));
+      setLinkCounts(links?.outgoing.notes ?? {});
       setLoaded(true);
       setError(null);
     } catch (error) {
@@ -321,6 +328,7 @@ function NoteList() {
       ) : (
         <GroupedNotes
           notes={visible.filter((n) => !hidden.has(n.id))}
+          linkCounts={linkCounts}
           allFolders={needle ? [] : folders}
           markedIds={markedIds}
           onToggleMark={(id) => void toggleMark(id)}
@@ -402,6 +410,7 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
 
 function GroupedNotes({
   notes,
+  linkCounts,
   allFolders,
   markedIds,
   onToggleMark,
@@ -412,6 +421,7 @@ function GroupedNotes({
   onRemove,
 }: {
   notes: NoteMeta[];
+  linkCounts: Record<string, number>;
   allFolders: string[];
   markedIds: Set<string>;
   onToggleMark: (id: string) => void;
@@ -471,6 +481,7 @@ function GroupedNotes({
             <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((note) => (
                 <NoteCard
+                  links={linkCounts[note.id] ?? 0}
                   key={note.id}
                   note={note}
                   allFolders={allFolders}
@@ -491,6 +502,7 @@ function GroupedNotes({
 
 function NoteCard({
   note,
+  links,
   allFolders,
   marked,
   onToggleMark,
@@ -499,6 +511,8 @@ function NoteCard({
   onRemove,
 }: {
   note: NoteMeta;
+  /** Outgoing wiki links, counted by the links scan. */
+  links: number;
   allFolders: string[];
   marked: boolean;
   onToggleMark: () => void;
@@ -530,9 +544,17 @@ function NoteCard({
     <ShelfCard
       icon={NotebookPen}
       title={name}
+      // Links, then the edit: the card said "0.7 KB" here, a fact about
+      // the file rather than about the note. In a vault built on links the
+      // fact a reader wants beside a note's name is how connected it is.
+      // A note with no links says only when it was edited.
       meta={
         <span title={formatWhen(note.updatedAt)}>
-          {t('{n} KB', { n: (note.bytes / 1024).toFixed(1) })} ·{' '}
+          {links > 0 && (
+            <>
+              {links === 1 ? t('1 link') : t('{n} links', { n: links })} ·{' '}
+            </>
+          )}
           {t('edited {when}', { when: formatAgo(note.updatedAt) })}
         </span>
       }

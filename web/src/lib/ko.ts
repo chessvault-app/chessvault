@@ -2119,4 +2119,7 @@ export const ko: Record<string, string> = {
   'Demo vault. A reload puts it back.': '데모 보관함입니다. 새로 고치면 되돌아갑니다.',
   'Write a note. Markdown shortcuts work: # for a heading, - for a list.':
     '노트를 쓰세요. 마크다운 단축 입력이 됩니다: 제목은 #, 목록은 -.',
+  // The note card's link count (notes/NotesView).
+  '1 link': '링크 1개',
+  '{n} links': '링크 {n}개',
 };
