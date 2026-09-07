@@ -115,7 +115,7 @@ const ASSETS: {
     url: 'https://rhosgfx.itch.io/', file: null },
   { name: 'Stockfish (WASM engine; 19 via the Lichess build, 18 single-threaded fallback)', version: '19 / 18', license: 'GPL-3.0-or-later',
     url: 'https://github.com/official-stockfish/Stockfish', file: 'GPL-3.0-Stockfish.txt' },
-  { name: 'stockfish-web (Lichess’s WebAssembly build of Stockfish, with the size-optimised small network)', version: '0.4.4', license: 'AGPL-3.0-or-later',
+  { name: 'stockfish-web (Lichess’s WebAssembly build of Stockfish, with the size-optimised small network)', version: '0.5.0', license: 'AGPL-3.0-or-later',
     url: 'https://github.com/lichess-org/stockfish-web', file: 'AGPL-3.0.txt' },
   { name: 'ECO opening names', version: '—', license: 'CC0-1.0',
     url: 'https://github.com/lichess-org/chess-openings', file: null },

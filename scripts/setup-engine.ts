@@ -29,12 +29,12 @@ const CLASSIC = resolve(REPO_ROOT, 'node_modules/stockfish/bin');
 
 /** Keep these in step with BUILDS in web/src/engine/StockfishEngine.ts. */
 const LITE = {
-  lichess: ['sf_dev_smallnet.js', 'sf_dev_smallnet.wasm'],
+  lichess: ['sf_19_smallnet.js', 'sf_19_smallnet.wasm'],
   nets: ['nn-61e7af4bb97d.nnue'],
   classic: ['stockfish-18-lite-single.js', 'stockfish-18-lite-single.wasm'],
 };
 const FULL = {
-  lichess: ['sf_dev.js', 'sf_dev.wasm'],
+  lichess: ['sf_19.js', 'sf_19.wasm'],
   nets: ['nn-1a298aa575a0.nnue'],
   classic: ['stockfish-18-single.js', 'stockfish-18-single.wasm'],
 };

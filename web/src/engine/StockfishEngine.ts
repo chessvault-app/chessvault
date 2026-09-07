@@ -35,9 +35,9 @@ type Build =
   | { kind: 'lichess'; script: string; nnue: string[] };
 
 export const BUILDS: Record<EngineFlavor, Build> = {
-  lite: { kind: 'lichess', script: 'engine/sf_dev_smallnet.js', nnue: ['engine/nn-61e7af4bb97d.nnue'] },
+  lite: { kind: 'lichess', script: 'engine/sf_19_smallnet.js', nnue: ['engine/nn-61e7af4bb97d.nnue'] },
   'lite-single': { kind: 'classic', script: 'engine/stockfish-18-lite-single.js' },
-  full: { kind: 'lichess', script: 'engine/sf_dev.js', nnue: ['engine/nn-1a298aa575a0.nnue'] },
+  full: { kind: 'lichess', script: 'engine/sf_19.js', nnue: ['engine/nn-1a298aa575a0.nnue'] },
   'full-single': { kind: 'classic', script: 'engine/stockfish-18-single.js' },
 };
 

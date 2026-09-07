@@ -14,6 +14,9 @@ on one spring. Ctrl/⌘ K opens anything by name. Light mode stands its
 cards on a grey page. The Vault card shows the folder and gains
 “Download a copy”, and a colour scheme can follow the board.
 
+- **Stockfish 19, the release.** The browser engine is Lichess's build of
+  the released Stockfish 19 (stockfish-web 0.5.0) rather than the
+  development snapshot from four days before it. Same networks, same size.
 - **A flicked pane keeps its speed.** On a phone, a pane let go fast
   settles from the speed the finger had rather than restarting from
   rest; a slow release is unchanged.
