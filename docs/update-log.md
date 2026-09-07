@@ -7,6 +7,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Storage used says what can be freed.** The card no longer repeats
+  the Vault card's folders: one row for the vault, linking to that card,
+  then a row per cache with a link to where it is cleared.
 - **Back up from the app.** Settings → Vault gains “Download a copy”:
   one tar file of every document and the change history, named after
   the vault and the day, that any OS opens. Settings and tokens stay on

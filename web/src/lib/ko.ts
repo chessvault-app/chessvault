@@ -2010,10 +2010,8 @@ export const ko: Record<string, string> = {
   'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 목록에서 남아 있는 책을 확인하세요.',
   'The PDF could not be opened': 'PDF를 열 수 없습니다',
   'Storage used': '저장 공간 사용량',
-  'What each part of the app keeps on disk. Your documents are at the top. The caches and reference data below are rebuilt or refetched when cleared from their own pages.':
-    '앱의 각 영역이 디스크에 차지하는 크기입니다. 직접 만든 문서가 위에 있습니다. 아래의 캐시와 참고 자료는 각자의 페이지에서 지워도 다시 만들어지거나 내려받습니다.',
-  'Puzzle progress': '퍼즐 진행 기록',
-  'Document history': '문서 기록',
+  'What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.':
+    '앱이 디스크에 두는 것. 보관함은 내 문서입니다. 나머지는 각자의 자리에서 지운 뒤 다시 만들거나 다시 받습니다.',
   'Explorer cache': '탐색기 캐시',
   'Tablebase cache': '테이블베이스 캐시',
 

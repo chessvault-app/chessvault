@@ -239,16 +239,19 @@ export function SettingsPage() {
 function Card({
   icon: Icon,
   title,
+  anchor,
   children,
 }: {
   /** A lucide icon, or the brand mark: anything that takes a className. */
   icon: React.ComponentType<{ className?: string }>;
   title: string;
+  /** An id another card can scroll to (the Storage rows). */
+  anchor?: string;
   children: React.ReactNode;
 }) {
   return (
     // data-settings-card is what the jump list above the cards reads.
-    <section className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
+    <section id={anchor} className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
       <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
         <Icon className="text-muted-foreground size-4" />
         {title}
@@ -430,7 +433,7 @@ function DemoVaultCard() {
   const vault = useVaultRows();
   if (!vault) return null;
   return (
-    <Card icon={BrandMark} title={t('Vault')}>
+    <Card icon={BrandMark} title={t('Vault')} anchor="vault">
       <VaultTree path={null} rows={vault.rows} />
       <p className="text-muted-foreground text-sm">
         {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
@@ -470,7 +473,7 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
   };
 
   return (
-    <Card icon={BrandMark} title={t('Vault')}>
+    <Card icon={BrandMark} title={t('Vault')} anchor="vault">
       <Field label="Vault name">
         <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={folder} maxLength={60} />
       </Field>
@@ -1272,7 +1275,7 @@ function TablebaseCard({
     : t('Set to your own table files, but they cannot be read. Lichess’s public server is answering instead.');
 
   return (
-    <Card icon={Crown} title={t('Tablebase')}>
+    <Card icon={Crown} title={t('Tablebase')} anchor="tablebase">
       <SettingRow
         title={t('Use the tablebase')}
         blurb={
@@ -2229,7 +2232,7 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
   const total = (players ?? []).reduce((sum, p) => sum + p.bytes, 0);
 
   return (
-    <Card icon={HardDrive} title={t('Browsed games')}>
+    <Card icon={HardDrive} title={t('Browsed games')} anchor="browsed-games">
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
           'Months you have browsed are kept so they open instantly and work offline. Clearing them only means downloading a month again next time. Games you kept are copies and stay in your collection.',
@@ -2319,30 +2322,35 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
 // --- Storage used ------------------------------------------------------------
 
 /** The areas /api/storage reports, in its order, with what each is called. */
-const STORAGE_AREAS: { key: string; label: string; section?: Section }[] = [
-  { key: 'games', label: 'Games', section: 'games' },
-  { key: 'studies', label: 'Studies', section: 'studies' },
-  { key: 'notes', label: 'Notes', section: 'notes' },
-  { key: 'books', label: 'Books', section: 'books' },
-  { key: 'puzzlebooks', label: 'Puzzle books' },
-  { key: 'puzzles', label: 'Puzzle progress' },
-  { key: 'repertoire', label: 'Repertoire' },
-  { key: 'sources', label: 'PGN files' },
-  { key: 'gamesCache', label: 'Browsed games' },
-  { key: 'history', label: 'Document history' },
-  { key: 'refgames', label: 'Reference databases' },
-  { key: 'explorerCache', label: 'Explorer cache' },
-  { key: 'tablebaseCache', label: 'Tablebase cache' },
+/**
+ * The rows: one for the vault's documents, then each thing that can be
+ * cleared or rebuilt, with where to go to do it. A row links either to a
+ * section of the app or to a card on this page (`anchor`, the Card's id);
+ * a row with neither is a figure and nothing else.
+ */
+const STORAGE_AREAS: { keys: string[]; label: string; section?: Section; anchor?: string }[] = [
+  {
+    keys: ['games', 'studies', 'notes', 'books', 'puzzlebooks', 'puzzles', 'repertoire', 'sources', 'history'],
+    label: 'Vault',
+    anchor: 'vault',
+  },
+  { keys: ['gamesCache'], label: 'Browsed games', anchor: 'browsed-games' },
+  { keys: ['refgames'], label: 'Reference databases', section: 'databases' },
+  { keys: ['explorerCache'], label: 'Explorer cache' },
+  { keys: ['tablebaseCache'], label: 'Tablebase cache', anchor: 'tablebase' },
 ];
 
 /**
- * What the vault takes on disk, area by area.
+ * What is on disk, and what of it can be freed.
  *
- * An inventory, like the browsed-games card above it — the answer to
- * "what is using the space" for someone running this on a small box or a
- * phone's worth of server. Nothing is cleared from here: each area that
- * can be emptied has its own place (the library, the browsed-games card,
- * the databases page), and a list of sizes is not the place to lose data.
+ * The card used to list the vault's folders one by one, and then the
+ * Vault card above it grew the same folders as a tree, with the same
+ * sizes, forty pixels apart on one page. So the two are split by their
+ * question: the Vault card is "where is my data", and this one is "what
+ * can I free" — one row for the documents, pointing at the Vault card,
+ * and a row per cache with where to clear it. Nothing is cleared from
+ * here: each area that can be emptied has its own place, and a list of
+ * sizes is not the place to lose data.
  */
 function StorageCard({ reload = 0 }: { reload?: number }) {
   const [areas, setAreas] = useState<Record<string, { bytes: number; files: number }> | null>(null);
@@ -2360,16 +2368,18 @@ function StorageCard({ reload = 0 }: { reload?: number }) {
   return (
     <Card icon={HardDrive} title={t('Storage used')}>
       <p className="text-muted-foreground text-sm leading-relaxed">
-        {t(
-          'What each part of the app keeps on disk. Your documents are at the top. The caches and reference data below are rebuilt or refetched when cleared from their own pages.',
-        )}
+        {t('What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.')}
       </p>
       <ul className="divide-border border-border divide-y rounded-lg border">
-        {STORAGE_AREAS.map(({ key, label, section }) => {
-          const area = areas?.[key];
+        {STORAGE_AREAS.map(({ keys, label, section, anchor }) => {
+          const area = areas && { bytes: keys.reduce((s, k) => s + (areas[k]?.bytes ?? 0), 0) };
+          // A card that is not on this page (the demo has no Browsed
+          // games card) leaves its row a plain figure.
+          const target = anchor ? document.getElementById(anchor) : null;
+          const go = section ? () => navigate(section) : target ? () => target.scrollIntoView({ block: 'start' }) : null;
           return (
-            <li key={key} className="flex items-baseline gap-2 px-3 py-2">
-              {section ? (
+            <li key={label} className="flex items-baseline gap-2 px-3 py-2">
+              {go ? (
                 <button
                   type="button"
                   // A thumb gets the 36px floor (DESIGN.md, Buttons) out of
@@ -2377,7 +2387,7 @@ function StorageCard({ reload = 0 }: { reload?: number }) {
                   // row at the 40px it already was. An `after:` hit box
                   // would not do here, since `truncate` clips it.
                   className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-base pointer-coarse:-my-1.5 pointer-coarse:min-h-9"
-                  onClick={() => navigate(section)}
+                  onClick={go}
                 >
                   {t(label)}
                 </button>
