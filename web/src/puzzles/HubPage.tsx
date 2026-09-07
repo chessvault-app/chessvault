@@ -899,11 +899,13 @@ function Hub() {
    * and below both, the boards come down too.
    *
    * The numbers are measured rather than guessed (this vault): the
-   * launcher alone needs a 530px column, the book row takes it to 628.
+   * launcher alone needs a 546px column, the book row takes it to 644.
    * A phone spends about 56 more on the tab bar, so the viewports
-   * needed are 586 and 684. The history's own threshold is higher
+   * needed are 602 and 700. The history's own threshold is higher
    * again — it only earns a place once there is room for a caption and
-   * a few rows under it rather than a stub.
+   * a few rows under it rather than a stub. Both moved up 1rem when the
+   * phone's page header became a 44px row (it was the title's 28px):
+   * at 812 the old history threshold left the column 7px over.
    *
    * There is deliberately no threshold for the BOARD size. Where there
    * is no history the cards share the leftover height between them and
@@ -916,12 +918,12 @@ function Hub() {
    *
    *   568 (SE 1)      launcher only
    *   667 (SE 2/8)    launcher only
-   *   736 (8 Plus)    + book row
-   *   800 / 812       + book row and history
-   *   844 (14) / 932  + book row and history, more of it
+   *   736 (8 Plus)    launcher only
+   *   800 / 812       + book row
+   *   844 (14) / 932  + book row and history
    */
-  const roomForBooks = useMediaQuery('(min-height: 46rem)');
-  const roomForHistory = useMediaQuery('(min-height: 50rem)');
+  const roomForBooks = useMediaQuery('(min-height: 47rem)');
+  const roomForHistory = useMediaQuery('(min-height: 51rem)');
   // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
