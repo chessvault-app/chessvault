@@ -55,10 +55,16 @@ export async function readOutline(doc: PDFDocumentProxy): Promise<Chapter[]> {
 }
 
 /** The open document's chapters; empty until read, and empty for a book without any. */
-export function usePdfOutline(doc: PDFDocumentProxy | null): Chapter[] {
-  const [chapters, setChapters] = useState<Chapter[]>([]);
+/**
+ * `null` until the document's outline has been read, then the list, empty
+ * for a book without one. The reader tells the two apart: a contents
+ * button it is still waiting to know about keeps its place in the
+ * toolbar, while one the book turns out not to have is dropped.
+ */
+export function usePdfOutline(doc: PDFDocumentProxy | null): Chapter[] | null {
+  const [chapters, setChapters] = useState<Chapter[] | null>(null);
   useEffect(() => {
-    setChapters([]);
+    setChapters(null);
     if (!doc) return;
     let live = true;
     void readOutline(doc)
@@ -67,6 +73,7 @@ export function usePdfOutline(doc: PDFDocumentProxy | null): Chapter[] {
       })
       .catch(() => {
         // An outline that cannot be read is a book without one.
+        if (live) setChapters([]);
       });
     return () => {
       live = false;

@@ -15,7 +15,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   phone when its figure landed; the puzzle dashboard's book and attempt
   rows were 8 and 11px short under a finger; the themes page stood 16px
   too tall. Measured against the demo at 1280 and 390 wide, the ten pages
-  now settle at the height they were drawn.
+  now settle at the height they were drawn. The book reader's contents
+  button, which arrives once the PDF's outline is read and stepped the
+  centred toolbar sideways, now keeps its place from the first paint on a
+  book that had one last time.
 - **A game opens with its board, and the review offer rises once.** On a
   phone a game opened from a games row showed the page for half a second
   with an empty square where the board goes, and the review toast rose

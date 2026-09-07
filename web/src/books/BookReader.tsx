@@ -108,13 +108,15 @@ const STRIP_BUDGET = 'calc(100dvh - 10rem - 7rem)';
  * and the centred toolbar stepped 8px sideways when the count arrived.
  */
 const pageShapeKey = (id: string): string => `vault:book-page:${id}`;
-function parsePageShape(raw: string | null): { aspect: number; pages: number } | null {
+function parsePageShape(
+  raw: string | null,
+): { aspect: number; pages: number; contents: boolean } | null {
   if (raw === null) return null;
   try {
-    const v = JSON.parse(raw) as { aspect?: unknown; pages?: unknown };
+    const v = JSON.parse(raw) as { aspect?: unknown; pages?: unknown; contents?: unknown };
     if (typeof v.aspect !== 'number' || !(v.aspect > 0) || typeof v.pages !== 'number' || !(v.pages > 0))
       return null;
-    return { aspect: v.aspect, pages: v.pages };
+    return { aspect: v.aspect, pages: v.pages, contents: v.contents === true };
   } catch {
     return null;
   }
@@ -128,7 +130,15 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const rememberPage = useCallback(
     (aspect: number) => {
       if (!doc) return;
-      localStorage.setItem(pageShapeKey(id), JSON.stringify({ aspect, pages: doc.numPages }));
+      localStorage.setItem(
+        pageShapeKey(id),
+        // Keeps the contents flag the outline effect below wrote.
+        JSON.stringify({
+          aspect,
+          pages: doc.numPages,
+          contents: parsePageShape(localStorage.getItem(pageShapeKey(id)))?.contents ?? false,
+        }),
+      );
     },
     [id, doc],
   );
@@ -217,7 +227,19 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // Text search: hits are boxes on the pages; the current one is shown.
   const search = usePdfSearch(doc, goTo);
   // The book's own contents, where the PDF carries an outline.
-  const chapters = usePdfOutline(doc);
+  const outline = usePdfOutline(doc);
+  const chapters = outline ?? [];
+  // Whether this book has a contents button is remembered with its page
+  // shape: the outline is read from the PDF, after the book is open, and
+  // the centred toolbar stepped 15px on a desktop and 31 on a phone when
+  // the button joined it. Next visit the button's place is held from the
+  // first paint (see the toolbar).
+  useEffect(() => {
+    if (!doc || outline === null) return;
+    const shape = parsePageShape(localStorage.getItem(pageShapeKey(id)));
+    if (shape === null || shape.contents === outline.length > 0) return;
+    localStorage.setItem(pageShapeKey(id), JSON.stringify({ ...shape, contents: outline.length > 0 }));
+  }, [id, doc, outline]);
 
   // The editor in the board's place, for a diagram the reader misread or
   // a position to adjust: opened from a hotspot's chooser with the read
@@ -292,6 +314,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       onRotate={rotate}
       search={search}
       chapters={chapters}
+      contentsReserved={outline === null && (reservedPage?.contents ?? false)}
       width={width}
       compact={compact}
       goTo={goTo}
@@ -776,6 +799,7 @@ function PdfPane({
   onRotate,
   search,
   chapters,
+  contentsReserved,
   width,
   compact,
   toolbarInto = null,
@@ -801,6 +825,9 @@ function PdfPane({
   search: PdfSearch;
   /** The book's outline, flattened; empty for a book without one. */
   chapters: Chapter[];
+  /** Hold the contents button's place: last visit this book had one, and
+      the outline has not been read yet. */
+  contentsReserved: boolean;
   width: number;
   /** Phones: the toolbar goes to the bottom bar, not over the page. */
   compact: boolean;
@@ -1101,9 +1128,13 @@ function PdfPane({
         {/* Only for a book that has one: a contents button over a book
             with no outline would open nothing. Beside search and outside
             the fold with it: both are ways of turning to a page. */}
-        {chapters.length > 0 && (
+        {chapters.length > 0 ? (
           <ChaptersPopover chapters={chapters} pageNo={pageNo} goTo={goTo} size={size} icon={icon} sheet={compact} />
-        )}
+        ) : contentsReserved ? (
+          <Button variant="ghost" size={size} disabled title={t('Contents')}>
+            <TableOfContents className={icon} />
+          </Button>
+        ) : null}
         <SearchPopover search={search} size={size} icon={icon} sheet={compact} />
         {more.length > 0 && (
           <ActionMenu title={t('Page')} actions={more} open={moreOpen} onOpenChange={setMoreOpen}>
