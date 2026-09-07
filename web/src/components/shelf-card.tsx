@@ -61,28 +61,15 @@ export function ShelfCard({
 }) {
   const swipe = useSwipeRow({ onRemove: onSwipeAway, onBookmark: onToggleMark });
   const [menuOpen, setMenuOpen] = useState(false);
-  // Dimmed until the card is pointed at: a shelf of full-colour boards is
-  // a wall of competing pictures, and the thumbnail is a reminder, not
-  // the content. Hover brings the position back to full colour — on the
-  // same transition the card lifts with, so the two read as one gesture.
-  //
-  // Except where nothing hovers. On a coarse pointer the restore never
-  // fires, so the dimming was permanent and the one thing that tells two
-  // studies apart at a glance stayed washed out for the whole of a phone's
-  // life. There is no wall of competing pictures to calm down there
-  // either: the shelf is one column.
-  const board =
-    layout === 'grid' && fen ? (
-      <MiniBoard
-        fen={fen}
-        size={64}
-        className={cn(
-          'brightness-[0.65] saturate-[0.55] transition-[filter] duration-200 ease-in-out',
-          'group-hover:brightness-100 group-hover:saturate-100',
-          'pointer-coarse:brightness-100 pointer-coarse:saturate-100',
-        )}
-      />
-    ) : null;
+  // In full colour at rest. The board was dimmed to 65% brightness and
+  // 55% saturation under a fine pointer, restored on hover, on the
+  // argument that a shelf of boards is a wall of competing pictures. What
+  // it produced was twelve grey-brown squares on a white page: the board
+  // is the one thing this design lets carry colour, and the shelf was
+  // the one place it was muted. A phone never saw the dim (nothing
+  // hovers there) and its shelf read fine, which was the tell. Reversed
+  // by lanph3re, 2026-09-07; the card still lifts on hover.
+  const board = layout === 'grid' && fen ? <MiniBoard fen={fen} size={64} /> : null;
 
   return (
     // h-full through both: in a two-column grid a card with a preview line
