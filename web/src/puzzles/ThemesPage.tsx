@@ -401,7 +401,7 @@ function ThemeCard({
           {pending ? (
             // A zero that becomes six million is a number the page stated
             // and then took back; the placeholder says nothing instead.
-            <Skeleton className="my-[0.1875rem] block h-2 w-10" />
+            <Skeleton className="my-1 block h-2 w-10" />
           ) : (
             compact.format(count)
           )}

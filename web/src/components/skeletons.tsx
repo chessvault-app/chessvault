@@ -497,7 +497,9 @@ export function SkeletonThemeGroups({
   return (
     <Loading className={className}>
       {shape.map((n, g) => (
-        <section key={g} className="mb-4">
+        // The real groups end at their last card; a margin under the last
+        // placeholder group stood the page 16px taller than it settles.
+        <section key={g} className="mb-4 last:mb-0">
           {/* The group heading: an h2 at text-sm, whose line box is 20px
               — measured. It was drawn on a 16px line. */}
           <div className="mb-2 flex h-5 items-center">
