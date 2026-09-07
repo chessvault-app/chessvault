@@ -185,10 +185,18 @@ usage numbers. Future work must not fabricate any of these.
 
 ## Accessibility & Inclusion
 
-**Open — deliberately undecided.** No conformance target has been set.
-The existing code shows consistent care (aria labels across the
-component layer, `prefers-reduced-motion` honoured including in the
-animated opening map, a documented full-keyboard shortcut set, and
-coarse-pointer hit areas for touch), but no standard has been adopted
-that future work is held to, and none should be asserted until the user
-settles it.
+**The yardstick is WCAG 2.2 at level AA.** Settled 2026-09-07. It is
+the bar work is measured against, not a claim: no conformance is
+asserted anywhere, on the landing page or in the app, until an audit
+says so, and a fix that meets a criterion is recorded with the
+measurement that showed it. In this app's own terms the bar is text at
+4.5:1 and strokes at 3:1 on every background a token can land on, 24px
+pointer targets (the app's own floors are 36 and 44 under a coarse
+pointer), a non-drag way to do anything a drag does, keyboard reach to
+every control with a focus ring the sticky bar cannot hide, motion that
+stops under `prefers-reduced-motion`, a name on every icon-only
+control, a live region for status that changes on its own, and help and
+navigation that sit in the same place on every page. The mechanical
+parts run in `check:contrast` and the screenshot grid; an axe pass over
+the route sweep (both languages, both widths) is the first list for the
+rest, and what it finds is fixed or written down, never dismissed.
