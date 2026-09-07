@@ -77,16 +77,14 @@ export function ShelfCard({
     // read as a broken grid rather than as two different notes.
     <li data-slot="shelf-card" className="h-full">
       <div
-        role="button"
-        tabIndex={0}
+        // The surface answers a click, and only a click: it is not a
+        // button. It was `role="button"` with the bookmark and the ⋯
+        // inside it, a control holding controls, which WCAG 4.1.2 forbids
+        // and a screen reader reads as one button with two more in it
+        // (the axe pass, 2026-09-07). The name below is the real button,
+        // the way a game row's names are, so the keyboard lands on name,
+        // bookmark, ⋯ in that order and the mouse keeps the whole card.
         onClick={onOpen}
-        onKeyDown={(e) => {
-          // Only when the CARD is what's focused: its dialogs (rename, move
-          // to) and corner buttons are children in the React tree, so their
-          // Enter bubbles here even out of the portal — and confirming a
-          // rename must not also open what was renamed.
-          if (e.key === 'Enter' && e.target === e.currentTarget) onOpen();
-        }}
         {...swipe.handlers}
         className={cn(
           'bg-card border-border group relative flex h-full cursor-pointer gap-3',
@@ -168,10 +166,16 @@ export function ShelfCard({
                 you can pick a study by. This app's tooltip IS the title
                 attribute, so the name is one hover away instead of one
                 open-and-close. */}
-            <p
+            <button
+              type="button"
               title={title}
+              onClick={(e) => {
+                // The surface has the same click; one open, not two.
+                e.stopPropagation();
+                onOpen();
+              }}
               className={cn(
-                'text-foreground font-semibold',
+                'text-foreground block w-full text-left font-semibold',
                 // One line, on a card as on a list row. A card gave the
                 // name a second line for a while (at three columns the
                 // title box is 219px and eight of the demo's twelve titles
@@ -184,7 +188,7 @@ export function ShelfCard({
               )}
             >
               {title}
-            </p>
+            </button>
             {/* Three steps, not two: the name is the brightest thing on the
                 card, the stat line is the quietest, and the note's own
                 words sit between them. One line of those words: the card

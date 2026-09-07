@@ -521,16 +521,10 @@ function BookCard({
   return (
     <li className="h-full">
       <div
-        role="button"
-        tabIndex={0}
+        // A surface, not a button: the title below is the control, so the
+        // ⋯ and the dialogs inside are not nested in one (WCAG 4.1.2; see
+        // components/shelf-card).
         onClick={open}
-        onKeyDown={(e) => {
-          // Only when the CARD is what's focused: its dialogs (rename, move
-          // to, replace) and the ⋯ are children in the React tree, so their
-          // Enter bubbles here even out of the portal — and confirming a
-          // rename must not also open the book.
-          if (e.key === 'Enter' && e.target === e.currentTarget) open();
-        }}
         {...swipe.handlers}
         className={cn(
           'bg-card border-border group relative flex h-full cursor-pointer items-stretch gap-3',
@@ -561,7 +555,16 @@ function BookCard({
           )}
           <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
             <span className="min-w-0 pr-7">
-              <span className="text-foreground block truncate text-base font-medium">{book.title}</span>
+              <button
+                type="button"
+                className="text-foreground block w-full truncate text-left text-base font-medium"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  open();
+                }}
+              >
+                {book.title}
+              </button>
               <span className="text-muted-foreground block text-sm">
                 {fileSize(book.bytes)}
                 {where ? ` · ${where}` : ''}
