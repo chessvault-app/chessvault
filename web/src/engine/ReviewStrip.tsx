@@ -111,7 +111,17 @@ export function ReviewStrip({
       // The X the band had: a swipe also takes it away, but nothing on a
       // toast says so, and the band was closed by a press.
       closeButton: true,
-      action: { label: t('Review game'), onClick: () => void run() },
+      action: {
+        // The same glyph the desktop's Review button and the ⋯ wear, so
+        // the phone's one route to the review is drawn like the others.
+        label: (
+          <>
+            <Microscope className="size-3.5" data-icon="inline-start" />
+            {t('Review game')}
+          </>
+        ),
+        onClick: () => void run(),
+      },
     });
     // The offer belongs to this game on this page. Leaving either takes
     // it down: a toast outlives the component that raised it, and this
