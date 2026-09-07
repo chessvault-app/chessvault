@@ -111,8 +111,9 @@ export function LinkedMentions({
       cancelled = true;
       // Closed on the way out: the dialog belongs to the document that was
       // open, and leaving it up over the next one would be a list of the
-      // wrong thing.
-      setOpen(false);
+      // wrong thing. The own state only: a caller holding the state
+      // (components/document-tools) resets its own on the same change.
+      setOwn(false);
     };
   }, [section, id]);
 

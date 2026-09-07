@@ -1,5 +1,5 @@
 import { History, Link, MoreHorizontal, Tags } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { DocumentHistory, type HistoryKind } from '@/components/history-panel';
@@ -43,6 +43,12 @@ export function DocumentTools({
   const [open, setOpen] = useState<'aliases' | 'mentions' | 'history' | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mentionCount, setMentionCount] = useState(0);
+  // A dialog belongs to the document it was opened on: the next document
+  // (same view, new id) starts with none open.
+  useEffect(() => {
+    setOpen(null);
+    setMenuOpen(false);
+  }, [mentions.id]);
 
   const tools = (
     <>
