@@ -7,7 +7,13 @@ import { PageShell } from '@/components/page-shell';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/components/chip-row';
 import { SearchInput } from '@/components/text-fields';
-import { Skeleton, SkeletonThemeCard, SkeletonThemeGroups, useSlowLoad } from '@/components/skeletons';
+import {
+  Skeleton,
+  SkeletonSubtitle,
+  SkeletonThemeCard,
+  SkeletonThemeGroups,
+  useSlowLoad,
+} from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 
 /**
@@ -236,7 +242,7 @@ export function ThemesPage() {
           title={t('Puzzle themes')}
           back={() => navigate('puzzles', 'hub')}
           subtitle={
-            themes === null ? undefined : themes.length === 1 ? t('1 theme') : t('{n} themes', { n: themes.length })
+            themes === null ? <SkeletonSubtitle /> : themes.length === 1 ? t('1 theme') : t('{n} themes', { n: themes.length })
           }
           actions={
             error && (

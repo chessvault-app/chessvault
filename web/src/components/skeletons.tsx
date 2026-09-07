@@ -98,6 +98,17 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
   );
 }
 
+/**
+ * The count line under a page title ("12 studies"), while the count is
+ * not known. PageHeader draws that line only when given one, and every
+ * shelf gave it nothing until its list had arrived: the search field and
+ * every card under it then dropped 24px, the line's text-sm box, on five
+ * pages at every width. One text-sm line box: 8px bar, 6px each side.
+ */
+export function SkeletonSubtitle() {
+  return <Skeleton className="my-1.5 block h-2 w-16" />;
+}
+
 /** Ragged widths, so a list of placeholders does not read as a barcode. */
 const NAME_WIDTHS = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
 

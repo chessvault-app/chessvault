@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
-import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
+import { SkeletonBookCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   EMPTY_SHELF,
   parseShelfShape,
@@ -330,7 +330,7 @@ export function BooksPage() {
       <PageHeader
         title={t('Books')}
         subtitle={
-          books === null ? undefined : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
+          books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
         }
         search={
           <SearchInput

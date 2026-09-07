@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
+import { SkeletonBookCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   EMPTY_SHELF,
   parseShelfShape,
@@ -333,7 +333,7 @@ export function Shelf() {
           title={t('Puzzle books')}
           back={() => navigate('puzzles', 'hub')}
           subtitle={
-            books === null ? undefined : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
+            books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
           }
           search={
             <SearchInput

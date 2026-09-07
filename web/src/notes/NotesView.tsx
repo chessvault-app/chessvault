@@ -21,7 +21,7 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { CreateControl, FabSpacer } from '@/components/fab';
-import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
+import { SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
   shelfHasShape,
@@ -237,7 +237,7 @@ function NoteList() {
       <ShelfToolbar
         title={t('Notes')}
         subtitle={
-          !loaded ? undefined : notes.length === 1 ? t('1 note') : t('{n} notes', { n: notes.length })
+          !loaded ? <SkeletonSubtitle /> : notes.length === 1 ? t('1 note') : t('{n} notes', { n: notes.length })
         }
         query={query}
         onQuery={setQuery}

@@ -23,7 +23,7 @@ import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } f
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl, FabSpacer } from '@/components/fab';
-import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
+import { SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
   shelfHasShape,
@@ -160,11 +160,13 @@ function StudyList() {
       <ShelfToolbar
         title={t('Studies')}
         subtitle={
-          studies.length === 0
-            ? undefined
-            : studies.length === 1
-              ? t('1 study')
-              : t('{n} studies', { n: studies.length })
+          !listLoaded
+            ? <SkeletonSubtitle />
+            : studies.length === 0
+              ? undefined
+              : studies.length === 1
+                ? t('1 study')
+                : t('{n} studies', { n: studies.length })
         }
         query={query}
         onQuery={setQuery}

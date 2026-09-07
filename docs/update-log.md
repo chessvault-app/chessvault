@@ -7,6 +7,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Loading placeholders hold their pages still again.** The page-header
+  and shelf work had let a few placeholders drift from what replaces them.
+  Every shelf (studies, notes, books, puzzle books, themes) dropped 24px
+  when its count line arrived under the title; the home page's Continue
+  board was 32px short on a desktop, and a shortcut tile grew a line on a
+  phone when its figure landed; the puzzle dashboard's book and attempt
+  rows were 8 and 11px short under a finger; the themes page stood 16px
+  too tall. Measured against the demo at 1280 and 390 wide, the ten pages
+  now settle at the height they were drawn.
 - **A game opens with its board, and the review offer rises once.** On a
   phone a game opened from a games row showed the page for half a second
   with an empty square where the board goes, and the review toast rose
