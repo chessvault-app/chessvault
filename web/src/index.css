@@ -2096,6 +2096,21 @@ cg-board square.check {
   animation-duration: 150ms;
   animation-timing-function: var(--pane-turn-ease);
 }
+/* The shared board (lib/shared-board): the group carrying it moves and
+   resizes on the spring, and the two boards do not cross-fade on the
+   way, which blurred the pieces mid-flight; the new one is shown as soon
+   as the group starts. */
+::view-transition-group(board) {
+  animation-duration: var(--pane-turn);
+  animation-timing-function: var(--pane-turn-ease);
+}
+::view-transition-old(board) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(board) {
+  animation: none;
+}
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),

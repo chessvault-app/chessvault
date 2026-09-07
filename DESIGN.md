@@ -695,6 +695,15 @@ already read. What CSS cannot do is take a finger's velocity; a
 velocity-seeded release for the pane swipe would be a JS spring in the
 hook, and a separate decision.
 
+**The shared board.** A phone's route change is a cross-fade, except
+for the board: the page's board carries `view-transition-name: board`
+(board/Board.tsx), and a shelf card or Home's Continue row names its
+thumbnail the same the moment it is tapped (lib/shared-board), so the
+browser morphs the small board into the big one on the spring's clock
+while the rest of the page fades. Named at tap time only: a name must be
+unique among the elements a transition captures, and a shelf shows a
+dozen boards.
+
 **The One Clock Rule.** A new state motion reads the two tokens. A
 `duration-150` beside them is a second tempo on the same screen.
 Hover and colour changes are not motion and keep their own short

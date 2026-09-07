@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The board flies.** On a phone, opening a study or a game from a
+  shelf card or from Home's Continue row grows the card's small board
+  into the page's board, instead of the page fading in around it. Off
+  under the system's reduced-motion setting.
+- **Motion is a spring.** The pane turn, the tab bar's pill and the
+  page title's collapse settle on one damped spring (no bounce) instead
+  of three timed curves; they arrive as quickly as before and ease to a
+  stop.
 - **The vault has a face.** The Vault card in Settings shows the folder:
   its path, what it weighs, and one row per thing in it (games, studies,
   notes, books…) with how many files that is, drawn as the listing on

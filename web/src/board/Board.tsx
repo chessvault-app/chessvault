@@ -1,3 +1,4 @@
+import { SHARED_BOARD } from '@/lib/shared-board';
 import { Chessground } from '@lichess-org/chessground';
 import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
@@ -447,6 +448,9 @@ export function Board({
         'aspect-square board-box',
         className,
       )}
+      // The shared element a phone's route transition morphs a tapped
+      // thumbnail into (lib/shared-board). One board per page.
+      style={{ viewTransitionName: SHARED_BOARD }}
     >
       <div ref={host} className="size-full" />
     </div>

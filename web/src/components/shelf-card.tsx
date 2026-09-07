@@ -1,6 +1,7 @@
 import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { nameSharedBoard } from '@/lib/shared-board';
 import { Button } from '@/components/ui/button';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { MiniBoard } from '@/components/mini-board';
@@ -69,7 +70,14 @@ export function ShelfCard({
   // the one place it was muted. A phone never saw the dim (nothing
   // hovers there) and its shelf read fine, which was the tell. Reversed
   // by lanph3re, 2026-09-07; the card still lifts on hover.
-  const board = layout === 'grid' && fen ? <MiniBoard fen={fen} size={64} /> : null;
+  // Named as THE board the moment the card opens, so a phone's route
+  // transition grows it into the page's board (lib/shared-board).
+  const boardRef = useRef<HTMLDivElement>(null);
+  const open = (): void => {
+    nameSharedBoard(boardRef.current);
+    onOpen();
+  };
+  const board = layout === 'grid' && fen ? <MiniBoard ref={boardRef} fen={fen} size={64} /> : null;
 
   return (
     // h-full through both: in a two-column grid a card with a preview line
@@ -84,7 +92,7 @@ export function ShelfCard({
         // (the axe pass, 2026-09-07). The name below is the real button,
         // the way a game row's names are, so the keyboard lands on name,
         // bookmark, ⋯ in that order and the mouse keeps the whole card.
-        onClick={onOpen}
+        onClick={open}
         {...swipe.handlers}
         className={cn(
           'bg-card border-border group relative flex h-full cursor-pointer gap-3',
@@ -172,7 +180,7 @@ export function ShelfCard({
               onClick={(e) => {
                 // The surface has the same click; one open, not two.
                 e.stopPropagation();
-                onOpen();
+                open();
               }}
               className={cn(
                 'text-foreground block w-full text-left font-semibold',

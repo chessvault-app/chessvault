@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { cn } from '@/lib/utils';
 
 /** chessground's element, which this file renders by hand — see below. The
@@ -76,8 +77,11 @@ export function MiniBoard({
   size = 56,
   orientation = 'white',
   className,
+  ref,
 }: {
   fen: string;
+  /** The root, for a caller that names it as the shared board. */
+  ref?: Ref<HTMLDivElement>;
   /** Edge length in px, border included when the caller adds one. */
   size?: number;
   /** Which side sits at the bottom. A FEN reads white-side-up, so that is
@@ -97,6 +101,7 @@ export function MiniBoard({
       : read;
   return (
     <div
+      ref={ref}
       style={{ width: size, height: size }}
       className={cn('shrink-0 overflow-hidden rounded-md', className)}
       aria-hidden
