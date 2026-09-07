@@ -486,9 +486,11 @@ function BookCard({
         onClick={() => navigate('puzzles', 'books', book.slug)}
         {...swipe.handlers}
         className={cn(
-          'bg-card border-border group relative flex h-full cursor-pointer items-stretch gap-3',
+          // border-card-ring, as the shared shelf card: the card's fill is its
+          // edge on the toned page, and the hairline returns under High contrast.
+          'bg-card border-card-ring group relative flex h-full cursor-pointer items-stretch gap-3',
           'overflow-hidden rounded-xl border p-3 text-left transition-colors duration-100',
-          'hover:border-border hover:bg-accent',
+          'hover:bg-accent',
           // The whole indicator that a book is kept, and it costs no width
           // — see the shelves and the games rows.
           marked && 'border-l-warn hover:border-l-warn border-l-2',

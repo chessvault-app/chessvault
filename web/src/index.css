@@ -287,8 +287,9 @@
   /* The card's edge. Transparent on the tonal page, where the fill is
      the edge; the full hairline at the top of the contrast knob, where
      the page is white again and the ring is the only structure. One
-     lerp, so the thirteen schemes keep reaching it. Dark keeps its ring
-     at every setting: there the fill and the line are both cues. */
+     lerp, so the thirteen schemes keep reaching it; the dark block runs
+     the same lerp, since the mockup showed the eye did not need the
+     second cue there either (see the note beside it). */
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */

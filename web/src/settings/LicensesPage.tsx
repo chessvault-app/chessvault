@@ -223,7 +223,7 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
           <span className="text-muted-foreground shrink-0 font-mono text-xs">{entry.version}</span>
         )}
         <span
-          className="text-muted-foreground border-input max-w-[45%] shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap"
+          className="text-muted-foreground border-border max-w-[45%] shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap"
           title={entry.license}
         >
           {entry.license}

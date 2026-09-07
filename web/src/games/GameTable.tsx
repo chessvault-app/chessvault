@@ -426,7 +426,7 @@ export function GameTableRow({
         // Pinned to the pane's left edge: the checkbox must stay in
         // reach however far the table is scrolled. Opaque, following
         // the row's hover so the pin reads as part of its row.
-        <span className="border-border bg-card group-hover:bg-accent sticky left-0 z-[1] flex items-center self-stretch transition-colors duration-100">
+        <span className="bg-card group-hover:bg-accent sticky left-0 z-[1] flex items-center self-stretch transition-colors duration-100">
           {standing}
         </span>
       )}

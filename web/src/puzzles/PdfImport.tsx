@@ -432,7 +432,7 @@ export function PdfImport({
           )}
 
           {!mine && !saved && existing > 0 && (
-            <div className="border-border bg-muted flex flex-col gap-2 rounded-lg border p-3">
+            <div className="border-card-ring bg-muted flex flex-col gap-2 rounded-lg border p-3">
               <p className="text-foreground text-sm font-medium">
                 {t('This book already holds {n} puzzles. What should the import do with them?', {
                   n: existing,
@@ -530,7 +530,7 @@ export function PdfImport({
             rather than only in a README nobody opens on the way here.
           */}
           {!mine && !saved && (
-            <p className="border-border bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
+            <p className="border-card-ring bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
               <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
               {t(
                 'Crops, page images and solutions stay in your vault and are never published. They remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',

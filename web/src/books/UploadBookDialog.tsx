@@ -156,7 +156,6 @@ export function UploadBookDialog({
               />
             ) : (
               <span
-                data-decorative-stroke
                 className="bg-muted/50 border-border grid h-40 w-[7.5rem] shrink-0 place-items-center rounded-md border"
               >
                 {looked ? (

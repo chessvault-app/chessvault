@@ -95,13 +95,12 @@ export function ShelfCard({
         onClick={open}
         {...swipe.handlers}
         className={cn(
-          'bg-card border-border group relative flex h-full cursor-pointer gap-3',
+          'bg-card group relative flex h-full cursor-pointer gap-3',
           'overflow-hidden rounded-xl ring-1 ring-card-ring',
-          // Lifts a little under the pointer, and the border comes up with
-          // it. A card that only changed its border read as selected; one
-          // that rises reads as reachable.
-          'transition-[border-color,box-shadow,transform] duration-150',
-          'hover:border-border hover:shadow-md md:hover:-translate-y-px',
+          // Lifts a little under the pointer. A card that only changed its
+          // edge read as selected; one that rises reads as reachable.
+          'transition-[box-shadow,transform] duration-150',
+          'hover:shadow-md md:hover:-translate-y-px',
           layout === 'grid' ? 'px-4 py-3' : 'items-center px-3 py-2',
           // A bookmarked card says so before it is read: an edge down the
           // left in the accent, plus the small glyph on the meta line
@@ -112,12 +111,7 @@ export function ShelfCard({
           // screen reader and a deuteranopic reader both miss. The glyph
           // costs one caption-height on the line that was already there,
           // not the 28px corner the old filled star took from every card.
-          //
-          // The hover colour has to be re-stated for that edge, or it is
-          // lost exactly when you reach for the card: `hover:border-line-
-          // strong` sets ALL FOUR sides, so pointing at a marked card
-          // repainted its edge the same grey as the rest of it.
-          marked && 'border-l-primary hover:border-l-primary border-l-2',
+          marked && 'border-l-primary border-l-2',
         )}
       >
         {/* The card stays; its contents slide off it. */}

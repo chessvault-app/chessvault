@@ -1242,7 +1242,7 @@ function Hub() {
                   'px-1 text-center text-sm font-medium leading-tight transition-colors',
                   primary
                     ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
-                    : 'bg-card border-border hover:bg-accent',
+                    : 'bg-card border-card-ring hover:bg-accent',
                 )}
               >
                 <Icon className={cn('size-5', primary ? '' : 'text-primary')} />

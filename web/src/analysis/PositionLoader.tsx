@@ -265,7 +265,7 @@ export function LoadPositionForm({
           drop, or paste an image; the corner-adjust flow takes over. */}
       <label
         className={cn(
-          'border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
+          'border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
           fill && 'sm:h-44 sm:justify-center',
         )}
         onDragOver={(e) => e.preventDefault()}

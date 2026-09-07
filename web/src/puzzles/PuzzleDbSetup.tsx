@@ -147,7 +147,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                   : t('Building the database')}
             </p>
 
-            <span className="bg-muted/50 border-border flex h-2 w-full overflow-hidden rounded-full border">
+            <span className="bg-muted/50 flex h-2 w-full overflow-hidden rounded-full">
               <span
                 // Marks the sweep as motion that CARRIES the status, so
                 // index.css's reduced-motion block slows it instead of

@@ -13,6 +13,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   page, and the eval bar kept a fixed 1px edge around its two fills. Both
   follow the cards now: no line at rest, and it returns under High
   contrast.
+- **Every surface edge audited.** The puzzle hub's launcher tiles and the
+  two book shelves' cards drew their edge in the border colour on the
+  toned page; two notice boxes in the PDF import did the same on their
+  card; the puzzle database's progress track and the engine settings'
+  body carried a rule nothing needed. All follow the cards now. Row rules,
+  fields and boxes whose fill cannot separate them keep their hairlines.
 
 ## 0.9.1
 

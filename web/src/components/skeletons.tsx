@@ -725,7 +725,7 @@ export function SkeletonBoard({
             )}
             style={chapterH === null ? undefined : { height: chapterH, flex: '0 1 auto' }}
           >
-            <div className="border-border flex min-h-11 shrink-0 items-center border-b px-3 pointer-coarse:min-h-13">
+            <div className="flex min-h-11 shrink-0 items-center px-3 pointer-coarse:min-h-13">
               <Skeleton className="h-2.5 w-20" />
             </div>
             {/* px-1 and no gap, like the real list: its rows are --row-h
