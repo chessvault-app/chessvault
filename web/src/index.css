@@ -452,7 +452,14 @@
      for exactly this reason; the ECO tag now sits on the same side of
      that line. */
   --eco-c: 0.12;
-  --eco-wash: 10%;
+  /* No fill behind the code. The chip wore its own hue at 10% (15% in
+     dark) and was the one tinted surface on a games row: in dark it was
+     the highest-chroma pixel on the table, louder than the result chip
+     beside it, and two cells from the annotated pen's blue, which the
+     colour grammar reserves for "trusted". The letter and the hue still
+     say which family; a tint said it twice. lanph3re's call (2026-09-07):
+     keep the chroma, drop the wash. */
+  --eco-wash: 0%;
   --eco-name-l: calc(45% + (41% - 45%) * var(--ui-contrast));
   --eco-name-c: 0.05;
 
@@ -623,7 +630,7 @@
   --eco-l: 85%;
   --eco-dir: 1;
   --eco-c: 0.08;
-  --eco-wash: 15%;
+  --eco-wash: 0%;
   /* 75%, for the reason the chip above moved to 85%, and missed the
      first time: the chip and the name are one label, and only the chip
      was measured. The opening name on a hovered row read 4.13:1 at 72%
