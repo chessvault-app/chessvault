@@ -734,6 +734,19 @@ export function ColumnControls({ className }: { className?: string }) {
  * stopped being rendered on desktop layouts, which is how every board
  * page lost its arrows at once.
  */
+/**
+ * The navigation glyphs: 17.6px in a 32px button on a desktop, 22px in
+ * the 44px button a coarse pointer gets. The glyph did not grow with its
+ * button, so on a phone the strip a reader presses hundreds of times a
+ * game filled 40% of its targets and was the smallest set of icons on
+ * the screen (the pane strip's above it are 16px in a 32px row, the tab
+ * bar's 18.4px in 28px pills). 22px is the toolbar-glyph size iOS uses
+ * and keeps the stroke at lucide's own weight; 24px was tried beside it
+ * on the phone and read a rung louder than the rest of the page
+ * (lanph3re, 2026-09-07). The divider grows with them.
+ */
+const NAV_ICON = 'size-[1.1rem] pointer-coarse:size-[1.375rem]';
+
 export function BoardControls({
   className,
   ...rest
@@ -754,20 +767,20 @@ export function BoardControls({
       {...rest}
     >
       <Button variant="ghost" size="icon" onClick={goToStart} title={t('Start (↑)')}>
-        <ChevronFirst className="size-[1.1rem]" />
+        <ChevronFirst className={NAV_ICON} />
       </Button>
       <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')} {...repeatBack}>
-        <ChevronLeft className="size-[1.1rem]" />
+        <ChevronLeft className={NAV_ICON} />
       </Button>
       <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')} {...repeatForward}>
-        <ChevronRight className="size-[1.1rem]" />
+        <ChevronRight className={NAV_ICON} />
       </Button>
       <Button variant="ghost" size="icon" onClick={goToEnd} title={t('End (↓)')}>
-        <ChevronLast className="size-[1.1rem]" />
+        <ChevronLast className={NAV_ICON} />
       </Button>
-      <div className="bg-border mx-1 h-5 w-px" />
+      <div className="bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem]" />
       <Button variant="ghost" size="icon" onClick={flip} title={t('Flip board (f)')}>
-        <FlipVertical2 className="size-[1.1rem]" />
+        <FlipVertical2 className={NAV_ICON} />
       </Button>
     </div>
   );
