@@ -19,6 +19,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the screen with its list scrolling inside a 288px box, and its rows and
   search field ran off the right edge. It now rises as tall as the room
   above the keyboard, the list takes all of it, and nothing overflows.
+- **A dismissed toast leaves the screen.** On a phone the toast sits
+  above the bottom bar, and its exit slid it a fixed fraction of its own
+  height: a third of the card was left parked over the bar, opaque, for
+  the last 300 ms before it vanished. Undo, swiping down and the timer
+  now slide it exactly to the screen's edge, on a desktop as well.
 - **The title band and the eval bar lose their hairlines.** The desktop's
   band over the sidebar drew its right rule in the plain border colour
   while the sidebar under it had already given the line up on the toned
