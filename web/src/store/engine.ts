@@ -5,7 +5,7 @@ import {
   StockfishEngine,
   supportsThreads,
   type EngineFlavor,
-  type EngineNetwork,
+  type EngineChoice,
   type SearchUpdate,
 } from '@/engine/StockfishEngine';
 import type { PvLine } from '@/engine/uci';
@@ -19,10 +19,10 @@ const defaultThreads = (): number => {
 interface EngineState {
   /** User's on/off switch. Off means no worker exists at all. */
   enabled: boolean;
-  /** Derived from `network` and whether this page has threads; never chosen directly. */
+  /** Derived from `choice` and whether this page has threads; never chosen directly. */
   flavor: EngineFlavor;
-  /** The user's choice of network; the full one has to be on the server first. */
-  network: EngineNetwork;
+  /** The user's pick of engine; Stockfish 19 on the full network needs the file on the server first. */
+  choice: EngineChoice;
   threads: number;
   hashMb: number;
   multiPv: number;
@@ -53,11 +53,11 @@ interface EngineState {
   toggle: () => void;
   setOption: (patch: Partial<Pick<EngineState, 'threads' | 'hashMb' | 'multiPv' | 'depth' | 'moveSeconds'>>) => void;
   /**
-   * Change networks. A network is loaded once, when the worker boots, so
-   * this rebuilds the worker rather than sending an option; a search in
-   * flight restarts on the new one.
+   * Change engines. A build and its network are loaded once, when the
+   * worker boots, so this rebuilds the worker rather than sending an
+   * option; a search in flight restarts on the new one.
    */
-  setNetwork: (network: EngineNetwork) => void;
+  setChoice: (choice: EngineChoice) => void;
   /** Analyse a position, or clear results if the engine is off. */
   analyse: (fen: string) => void;
   stop: () => void;
@@ -164,7 +164,7 @@ export const useEngine = create<EngineState>()(
       return {
         enabled: false,
         flavor: 'lite',
-        network: 'small',
+        choice: 'sf19-lite',
         threads: 2,
         hashMb: 128,
         multiPv: 3,
@@ -288,9 +288,9 @@ export const useEngine = create<EngineState>()(
           }
         },
 
-        setNetwork: (network) => {
-          if (network === get().network) return;
-          set({ network, flavor: flavorFor(network, supportsThreads()) });
+        setChoice: (choice) => {
+          if (choice === get().choice) return;
+          set({ choice, flavor: flavorFor(choice, supportsThreads()) });
           if (!engine) return;
           holdIdleTeardown();
           engine.terminate();
@@ -331,7 +331,7 @@ export const useEngine = create<EngineState>()(
       // `enabled` is deliberately NOT persisted: the engine always starts off
       // (lanph3re's preference) and is switched on per session when wanted.
       partialize: (s) => ({
-        network: s.network,
+        choice: s.choice,
         threads: s.threads,
         hashMb: s.hashMb,
         multiPv: s.multiPv,
@@ -346,9 +346,9 @@ export const useEngine = create<EngineState>()(
         if (state.threads === 2 && navigator.hardwareConcurrency) {
           state.threads = defaultThreads();
         }
-        // The flavour follows the network and this page's threads; older
+        // The flavour follows the choice and this page's threads; older
         // blobs persisted a flavour of their own, which is ignored.
-        state.flavor = flavorFor(state.network ?? 'small', supportsThreads());
+        state.flavor = flavorFor(state.choice ?? 'sf19-lite', supportsThreads());
         if (!supportsThreads()) state.threadsAvailable = false;
       },
     },

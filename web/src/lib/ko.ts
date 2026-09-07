@@ -161,15 +161,16 @@ export const ko: Record<string, string> = {
   'Show one line': '라인 하나만 보기',
   'Engine on/off': '엔진 켜기/끄기',
   Threads: '스레드',
-  Network: '신경망',
   'unavailable in this context': '이 환경에서는 쓸 수 없음',
-  'Small network': '작은 신경망',
-  'Full network': '전체 신경망',
-  'Full is the network Stockfish itself ships, stronger and slower to load. It is a 99 MB download, kept on the server.':
-    '전체는 Stockfish 자체가 쓰는 신경망으로, 더 강하고 불러오는 데 더 오래 걸립니다. 99 MB를 내려받아 서버에 둡니다.',
+  'Stockfish 19 runs on its full network, a 99 MB download the server keeps. Stockfish 18 is the single-threaded build.':
+    'Stockfish 19는 전체 신경망으로 돌아갑니다. 서버가 99 MB를 내려받아 보관합니다. Stockfish 18은 단일 스레드 빌드입니다.',
+  'Stockfish 19 lite runs on the 1 MB network every build ships. Stockfish 18 is the single-threaded build.':
+    'Stockfish 19 lite는 모든 빌드에 실린 1 MB 신경망으로 돌아갑니다. Stockfish 18은 단일 스레드 빌드입니다.',
+  'Without threads only Stockfish 18 runs here. Stockfish 19 needs a cross-origin-isolated page (HTTPS).':
+    '스레드가 없어 여기서는 Stockfish 18만 돌아갑니다. Stockfish 19는 교차 출처 격리된 페이지(HTTPS)가 필요합니다.',
   'Downloading, {done} of {total}': '내려받는 중, {total} 중 {done}',
   'Could not download: {reason}': '내려받지 못했습니다: {reason}',
-  'Kept on the server, {size}.': '서버에 있습니다, {size}.',
+  'Full network kept on the server, {size}.': '전체 신경망이 서버에 있습니다, {size}.',
   'Remove the full network from the server': '전체 신경망을 서버에서 제거',
   Lines: '라인 수',
   Depth: '깊이',

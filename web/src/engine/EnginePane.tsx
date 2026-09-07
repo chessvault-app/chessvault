@@ -9,7 +9,7 @@ import { PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { Progress } from '@/components/ui/progress';
-import { Segmented } from '@/components/segmented';
+import { Select } from '@/components/ui/select';
 import { Slider as UiSlider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -379,7 +379,7 @@ function EngineSettings() {
 
   return (
     <div className="border-border bg-muted/50 grid gap-3 border-b px-3 py-3">
-      <NetworkRow />
+      <EngineRow />
       <Slider
         label="Threads"
         value={threads}
@@ -439,23 +439,24 @@ interface NetStatus {
 const mb = (bytes: number): string => `${Math.max(1, Math.round(bytes / 1e6))} MB`;
 
 /**
- * Which network the engine runs: the small one every build ships, or
- * Stockfish's own, which the server fetches once (99 MB) and keeps.
+ * Which engine runs: Stockfish 19 on the 1 MB network every build ships,
+ * Stockfish 19 on its full network, or the single-threaded Stockfish 18.
  *
- * Pressing Full before the file is there starts the download and shows
- * it; the choice takes effect when the bytes have arrived, and the
- * segment reads Full meanwhile so the press is seen to have landed. Not
- * in the demo, which has no server to keep the file on; and moot
- * without threads, since the full network only exists for the threaded
- * build (StockfishEngine.flavorFor).
+ * The full network is 99 MB the server fetches once and keeps. Picking
+ * Stockfish 19 before the file is there starts the download and shows
+ * it; the pick takes effect when the bytes have arrived, and the list
+ * reads Stockfish 19 meanwhile so the pick is seen to have landed. The
+ * demo has no server to keep the file on, so it offers the other two;
+ * a page without threads can only run Stockfish 18, and offers that.
  */
-function NetworkRow() {
-  const network = useEngine((s) => s.network);
-  const setNetwork = useEngine((s) => s.setNetwork);
+function EngineRow() {
+  const choice = useEngine((s) => s.choice);
+  const setChoice = useEngine((s) => s.setChoice);
   const threadsAvailable = useEngine((s) => s.threadsAvailable);
   const [status, setStatus] = useState<NetStatus | null>(null);
   const [wanted, setWanted] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
+  const demo = isDemo();
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
@@ -467,9 +468,9 @@ function NetworkRow() {
   }, []);
 
   useEffect(() => {
-    if (isDemo()) return;
+    if (demo) return;
     void refresh();
-  }, [refresh]);
+  }, [refresh, demo]);
 
   // Poll while the server is downloading; one second is the bar's own pace.
   const downloading = status?.downloading !== null && status?.downloading !== undefined;
@@ -479,19 +480,17 @@ function NetworkRow() {
     return () => clearInterval(id);
   }, [downloading, refresh]);
 
-  // The press lands once the file does; a file that has gone (removed on
+  // The pick lands once the file does; a file that has gone (removed on
   // another device, say) puts the choice back to what can actually run.
   useEffect(() => {
     if (!status) return;
     if (status.ready && wanted) {
       setWanted(false);
-      setNetwork('full');
-    } else if (!status.ready && !status.downloading && network === 'full') {
-      setNetwork('small');
+      setChoice('sf19');
+    } else if (!status.ready && !status.downloading && choice === 'sf19') {
+      setChoice('sf19-lite');
     }
-  }, [status, wanted, network, setNetwork]);
-
-  if (isDemo()) return null;
+  }, [status, wanted, choice, setChoice]);
 
   const start = async (): Promise<void> => {
     setFailed(null);
@@ -507,7 +506,7 @@ function NetworkRow() {
 
   const remove = async (): Promise<void> => {
     setWanted(false);
-    setNetwork('small');
+    if (choice === 'sf19') setChoice('sf19-lite');
     try {
       await api(`/api/engine/nets/${FULL_NET}`, { method: 'DELETE' });
     } catch (error) {
@@ -516,40 +515,36 @@ function NetworkRow() {
     await refresh();
   };
 
-  const choose = (value: 'small' | 'full'): void => {
-    if (!threadsAvailable) return;
-    if (value === 'small') {
-      setWanted(false);
-      setNetwork('small');
-    } else if (status?.ready) {
-      setNetwork('full');
-    } else if (!downloading) {
-      void start();
+  const pick = (value: string): void => {
+    if (value === 'sf19' && !status?.ready) {
+      if (!downloading) void start();
+      return;
     }
+    setWanted(false);
+    setChoice(value as 'sf19-lite' | 'sf19' | 'sf18');
   };
 
+  // Names, not translations: the options are the engines' own names.
+  const options = [
+    ...(threadsAvailable ? [{ value: 'sf19-lite', label: 'Stockfish 19 lite' }] : []),
+    ...(threadsAvailable && !demo ? [{ value: 'sf19', label: 'Stockfish 19' }] : []),
+    { value: 'sf18', label: 'Stockfish 18' },
+  ];
   const error = failed ?? status?.error ?? null;
-  const shown: 'small' | 'full' = wanted || network === 'full' ? 'full' : 'small';
+  const shown = threadsAvailable ? (wanted ? 'sf19' : choice) : 'sf18';
   const progress = status?.downloading;
   const percent = progress?.total ? Math.min(100, Math.round((progress.bytes / progress.total) * 100)) : 0;
 
   return (
-    <Field label="Network" className={cn(!threadsAvailable && 'opacity-50')}>
+    <Field label="Engine">
       <div className="grid gap-2">
-        <Segmented
-          value={shown}
-          onChange={choose}
-          ariaLabel="Network"
-          even
-          segments={[
-            { value: 'small', label: t('Small network') },
-            { value: 'full', label: t('Full network') },
-          ]}
-        />
+        <Select value={shown} onValueChange={pick} ariaLabel={t('Engine')} groups={[{ options }]} />
         <p className="text-muted-foreground text-xs leading-relaxed">
           {threadsAvailable
-            ? t('Full is the network Stockfish itself ships, stronger and slower to load. It is a 99 MB download, kept on the server.')
-            : t('unavailable in this context')}
+            ? demo
+              ? t('Stockfish 19 lite runs on the 1 MB network every build ships. Stockfish 18 is the single-threaded build.')
+              : t('Stockfish 19 runs on its full network, a 99 MB download the server keeps. Stockfish 18 is the single-threaded build.')
+            : t('Without threads only Stockfish 18 runs here. Stockfish 19 needs a cross-origin-isolated page (HTTPS).')}
         </p>
         {progress ? (
           <div className="grid gap-1">
@@ -569,7 +564,7 @@ function NetworkRow() {
           </div>
         ) : status?.ready ? (
           <div className="flex items-center justify-between gap-2">
-            <p className="text-muted-foreground text-xs">{t('Kept on the server, {size}.', { size: mb(status.bytes) })}</p>
+            <p className="text-muted-foreground text-xs">{t('Full network kept on the server, {size}.', { size: mb(status.bytes) })}</p>
             <Button variant="ghost" size="sm" title={t('Remove the full network from the server')} onClick={() => void remove()}>
               {t('Remove')}
             </Button>

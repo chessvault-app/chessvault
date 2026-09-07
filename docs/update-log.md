@@ -7,12 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-- **Two networks for the engine.** The engine's settings gain a Network
-  row: the small network every build ships, or Stockfish's own full one,
-  stronger and slower to load. The first press on Full has the server
-  download it (99 MB) and keep it, and the choice takes effect when it
-  has arrived; Remove deletes it again. Storage used shows it as Engine
-  networks. Not in the demo, which has no server to keep it on.
+- **Three engines to choose from.** The engine's settings gain an Engine
+  list: Stockfish 19 lite on the 1 MB network every build ships,
+  Stockfish 19 on its own full network, stronger and slower to load, and
+  the single-threaded Stockfish 18. The first pick of Stockfish 19 has the
+  server download the network (99 MB) and keep it, and the pick takes
+  effect when it has arrived; Remove deletes it again. Storage used shows
+  it as Engine networks. The demo, with no server to keep it on, offers
+  the other two.
 
 ## 0.9.0
 
