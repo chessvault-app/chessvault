@@ -10,6 +10,8 @@ import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
+import { VaultTree, type VaultRow } from '@/components/vault-tree';
+import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
 import {
@@ -155,6 +157,7 @@ export function SettingsPage() {
             which nobody comes for, keeps its place. */}
         {isDemo() ? (
           <>
+            <DemoVaultCard />
             <DocumentsCard />
             <AppearanceCard />
             {/* Storage is here in the demo as well, now that the in-memory
@@ -367,10 +370,85 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
 // placeholder is what the sidebar shows without a name, so blanking the
 // field is not a mystery.
 
+/**
+ * The rows the Vault card lists, from the areas /api/storage reports,
+ * in the folder's own order. A row shows only where there is something
+ * in it; the demo's vault has no books, a new vault has nothing.
+ */
+const VAULT_ROWS: { path: string; gloss: string; keys: string[] }[] = [
+  { path: 'games/', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
+  { path: 'studies/', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
+  { path: 'notes/', gloss: 'markdown, boards in the text', keys: ['notes'] },
+  { path: 'books/', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
+  { path: 'puzzlebooks/', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
+  { path: 'puzzles/', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
+  { path: 'repertoire/', gloss: 'the opening map and its drills', keys: ['repertoire'] },
+  { path: 'sources/', gloss: 'PGN files you added', keys: ['sources'] },
+  { path: '.history.git', gloss: 'every earlier version', keys: ['history'] },
+  { path: 'config.json', gloss: 'settings and tokens', keys: ['config'] },
+];
+
+/** What the card needs from /api/storage, fetched once. */
+function useVaultRows(): { rows: VaultRow[]; folders: number } | null {
+  const [state, setState] = useState<{ rows: VaultRow[]; folders: number } | null>(null);
+  useEffect(() => {
+    void api<{ areas: { key: string; bytes: number; files: number }[]; vault?: { config: number; folders: number } }>(
+      '/api/storage',
+    )
+      .then((body) => {
+        const by = Object.fromEntries(body.areas.map((a) => [a.key, a]));
+        by.config = { key: 'config', bytes: body.vault?.config ?? 0, files: body.vault?.config ? 1 : 0 };
+        const rows = VAULT_ROWS.map((r) => ({
+          path: r.path,
+          gloss: t(r.gloss),
+          bytes: r.keys.reduce((s, k) => s + (by[k]?.bytes ?? 0), 0),
+          files: r.keys.reduce((s, k) => s + (by[k]?.files ?? 0), 0),
+        })).filter((r) => r.files > 0);
+        setState({ rows, folders: body.vault?.folders ?? 0 });
+      })
+      .catch(() => setState({ rows: [], folders: 0 }));
+  }, []);
+  return state;
+}
+
+/** The desktop shell's bridge, where there is one (desktop/preload.cjs). */
+function revealVault(): (() => Promise<boolean>) | null {
+  const shell = (window as unknown as { vaultShell?: { revealVault?: () => Promise<boolean> } }).vaultShell;
+  return shell?.revealVault ?? null;
+}
+
+/**
+ * The demo's Vault card: the listing and the sentence, without a name to
+ * give or a path to show. It is the one card that says what a vault is
+ * MADE of, which is worth showing somebody deciding whether to install.
+ */
+function DemoVaultCard() {
+  const vault = useVaultRows();
+  if (!vault) return null;
+  return (
+    <Card icon={BrandMark} title={t('Vault')}>
+      <VaultTree path={null} folders={vault.folders} rows={vault.rows} />
+      <p className="text-muted-foreground text-sm">
+        {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
+      </p>
+    </Card>
+  );
+}
+
 function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => Promise<void> }) {
   const [name, setName] = useState(settings.name ?? '');
   const [note, setNote] = useState<Note>(null);
   const folder = settings.vaultPath.split(/[\\/]/).filter(Boolean).pop() ?? settings.vaultPath;
+  const vault = useVaultRows();
+  const reveal = revealVault();
+  const copyPath = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(settings.vaultPath);
+      toast.add({ title: t('Path copied'), timeout: 3000 });
+    } catch {
+      toast.add({ title: t('Could not copy the path'), timeout: 4000 });
+    }
+  };
 
   const save = async (): Promise<void> => {
     const clean = name.trim();
@@ -398,6 +476,16 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
       <div className="flex items-center gap-3">
         <Button variant="default" onClick={() => void save()}>{t('Save name')}</Button>
         <Feedback note={note} />
+      </div>
+      {/* The vault as a folder: where it is, what it weighs, what lives in
+          it (components/vault-tree). Held back until the answer is in, so
+          the card grows once rather than in steps. */}
+      {vault && <VaultTree path={settings.vaultPath} folders={vault.folders} rows={vault.rows} />}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" onClick={() => void copyPath()}>{t('Copy the path')}</Button>
+        {reveal && (
+          <Button variant="outline" onClick={() => void reveal()}>{t('Show in the file manager')}</Button>
+        )}
       </div>
     </Card>
   );

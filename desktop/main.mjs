@@ -505,6 +505,16 @@ app.whenReady().then(async () => {
     return true;
   });
 
+  // The vault's folder in the OS's own file manager: the one place the
+  // shell's knowledge of WHERE the vault is meets the page's claim that
+  // it is a folder of plain files. Shell configuration, not app surface:
+  // the page only asks, and a browser without the bridge shows no button.
+  ipcMain.handle('vault:reveal', async () => {
+    const dir = readSettings().vaultDir;
+    if (!dir) return false;
+    const problem = await shell.openPath(dir);
+    return problem === '';
+  });
   // The same thing the Vault menu does, reachable from the app's settings.
   ipcMain.handle('vault:switch', async () => {
     writeSettings({ mode: null });

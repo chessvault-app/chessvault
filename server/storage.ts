@@ -74,6 +74,10 @@ export function storageApi(vault: string = VAULT, data: string = DATA): Hono {
     { key: 'tablebaseCache', paths: [resolve(data, 'tablebase-cache')] },
   ];
 
+  /** The areas that live INSIDE the vault folder, as against the caches
+      beside it: what the Vault card's listing sums. */
+  const IN_VAULT = new Set(['games', 'studies', 'notes', 'books', 'puzzlebooks', 'puzzles', 'repertoire', 'sources', 'gamesCache', 'history']);
+
   api.get('/storage', async (c) => {
     const areas: StorageArea[] = [];
     for (const area of AREAS) {
@@ -86,7 +90,23 @@ export function storageApi(vault: string = VAULT, data: string = DATA): Hono {
       }
       areas.push({ key: area.key, bytes, files });
     }
-    return c.json({ areas });
+    // The vault as a folder, for the Vault card's listing: config.json
+    // (settings and tokens, the one file that is not a document) and how
+    // many folders the top level holds. The per-area figures above are
+    // the rest of it; the card sums the ones under IN_VAULT.
+    let config = 0;
+    try {
+      config = (await stat(resolve(vault, 'config.json'))).size;
+    } catch {
+      // No config yet: a vault nobody has set anything in.
+    }
+    let folders = 0;
+    try {
+      folders = (await readdir(vault, { withFileTypes: true })).filter((e) => e.isDirectory() && !e.name.startsWith('.')).length;
+    } catch {
+      // Unreadable between two calls; the next answer will be right.
+    }
+    return c.json({ areas, vault: { config, folders, inVault: [...IN_VAULT] } });
   });
 
   return api;

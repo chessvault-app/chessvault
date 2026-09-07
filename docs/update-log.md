@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The vault has a face.** The Vault card in Settings shows the folder:
+  its path, what it weighs, and one row per thing in it (games, studies,
+  notes, books…) with how many files that is, drawn as the listing on
+  the landing page is, from the live folder. Copy the path from there,
+  and in the desktop app open the folder in the file manager. The demo
+  shows the listing too.
 - **Light mode stands its cards on a tone.** The page is a light grey
   (97%) and the cards and panels are white on it, so they separate by
   fill and lose their hairline; the sidebar, the bars and every window

@@ -2091,3 +2091,72 @@ cg-board square.check {
     animation: none !important;
   }
 }
+
+/* The Vault card's listing (components/vault-tree). The rails are
+   borders, not glyphs: a border runs the full height of its row, so a
+   parent's rail passes every row unbroken and stops at the middle of the
+   last one; `--rail-mid` is the first line's centre, the row's top
+   padding plus half a line of the path's own 14px. The same construction
+   as the landing page's listing. Below 30rem each row stacks its gloss
+   under the path, indented past the tick. */
+.vault-tree {
+  container-type: inline-size;
+}
+.vault-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.vault-tree li {
+  --rail-pad: 0.3rem;
+  --rail-mid: calc(var(--rail-pad) + 0.75 * 0.875rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'path n'
+    'gloss gloss';
+  column-gap: 1rem;
+  align-items: baseline;
+  padding: var(--rail-pad) 0 var(--rail-pad) 1.1rem;
+}
+.vault-tree li > :nth-child(1) {
+  grid-area: path;
+}
+.vault-tree li > :nth-child(2) {
+  grid-area: gloss;
+  padding-left: 0.85rem;
+}
+.vault-tree li > :nth-child(3) {
+  grid-area: n;
+}
+.vault-tree li::before,
+.vault-tree li::after {
+  content: '';
+  position: absolute;
+  left: 0.3rem;
+  border: 0 solid var(--muted-foreground);
+}
+.vault-tree li::before {
+  top: 0;
+  bottom: 0;
+  border-left-width: 1px;
+}
+.vault-tree li:last-child::before {
+  bottom: auto;
+  height: var(--rail-mid);
+}
+.vault-tree li::after {
+  top: var(--rail-mid);
+  width: 0.55rem;
+  border-top-width: 1px;
+}
+@container (width >= 30rem) {
+  .vault-tree li {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'path gloss n';
+  }
+  .vault-tree li > :nth-child(2) {
+    padding-left: 0;
+  }
+}

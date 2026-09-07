@@ -2130,4 +2130,26 @@ export const ko: Record<string, string> = {
   'Go to': '이동',
   // The document tools' menu (components/document-tools).
   Document: '문서',
+  // The Vault card's listing (components/vault-tree, settings/SettingsPage).
+  'The demo vault, in this tab': '이 탭 안의 데모 보관함',
+  '{n} folders': '폴더 {n}개',
+  '{n} files': '파일 {n}개',
+  '1 file': '파일 1개',
+  'Plain files. Any editor opens them and any backup tool copies them; nothing here needs this app to stay readable. The puzzle database, reference games and indexes live outside it and can be rebuilt.':
+    '평범한 파일입니다. 어떤 편집기로도 열리고 어떤 백업 도구로도 복사되며, 읽히기 위해 이 앱이 필요한 것은 하나도 없습니다. 퍼즐 데이터베이스, 참조 게임, 색인은 바깥에 있고 다시 만들 수 있습니다.',
+  'one PGN per game, and the archives you browsed': '게임 하나에 PGN 하나, 그리고 둘러본 온라인 기보',
+  'one study per PGN file, chapters inside it': '스터디 하나에 PGN 파일 하나, 챕터는 그 안에',
+  'markdown, boards in the text': '마크다운, 본문에 보드',
+  'your PDFs, and what was read from them': '내 PDF와 거기서 읽어 낸 것',
+  'puzzle books read from scans': '스캔에서 읽어 낸 퍼즐 책',
+  'every attempt, and where you are': '모든 시도, 그리고 지금 위치',
+  'the opening map and its drills': '오프닝 맵과 그 훈련',
+  'PGN files you added': '내가 넣은 PGN 파일',
+  'every earlier version': '모든 이전 버전',
+  'settings and tokens': '설정과 토큰',
+  'This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.': '이 탭이 데모 보관함을 들고 있습니다. 앱을 설치하면 디스크에 하나가 생기고, 이 카드가 그 위치를 보여 줍니다.',
+  'Copy the path': '경로 복사',
+  'Path copied': '경로를 복사했습니다',
+  'Could not copy the path': '경로를 복사하지 못했습니다',
+  'Show in the file manager': '파일 관리자에서 보기',
 };

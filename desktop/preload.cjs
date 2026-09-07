@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('vaultShell', {
   // Back to the chooser, so the app can offer this somewhere findable
   // rather than only from a menu bar hidden behind Alt.
   switchVault: () => ipcRenderer.invoke('vault:switch'),
+  // The vault's folder, opened in the OS file manager (Settings, Vault).
+  revealVault: () => ipcRenderer.invoke('vault:reveal'),
   // What this shell is, and whether a newer one exists. Update failures
   // used to go to a console nobody opens.
   appInfo: () => ipcRenderer.invoke('app:info'),
