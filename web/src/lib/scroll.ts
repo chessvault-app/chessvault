@@ -1,3 +1,5 @@
+import { prefersReducedMotion } from './motion';
+
 /**
  * Scroll a panel so its active row is comfortably visible — WITHOUT ever
  * scrolling the page.
@@ -49,4 +51,27 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
     if (overflowY === 'auto' || overflowY === 'scroll') return p;
   }
   return null;
+}
+
+/**
+ * Back to the top of the open page, for a tap on the tab that is already
+ * current.
+ *
+ * `main` never scrolls; each page owns its own scroller (PageShell's
+ * column, the home grid, a launcher), so the one to reset is whichever
+ * box under `main` has actually moved — the outermost first, which is
+ * document order. The bar's own `navigate()` is a no-op on the same
+ * hash, which is what made a second tap dead: on every platform tab bar
+ * the second tap means "take me back to the top of this".
+ */
+export function scrollPageToTop(): void {
+  const main = document.getElementById('main');
+  if (!main) return;
+  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+  for (const el of main.querySelectorAll<HTMLElement>('*')) {
+    if (el.scrollTop > 0) {
+      el.scrollTo({ top: 0, behavior });
+      return;
+    }
+  }
 }

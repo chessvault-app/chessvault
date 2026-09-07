@@ -25,7 +25,8 @@ import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
-import { navigate, sectionHref, useRoute, type Section } from '@/lib/router';
+import { atRoute, navigate, sectionHref, useRoute, type Section } from '@/lib/router';
+import { scrollPageToTop } from '@/lib/scroll';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
 import { Button } from '@/components/ui/button';
@@ -975,10 +976,20 @@ function MobileNav({ active }: { active: Section }) {
           // had to be read at the top of a screen of statistics to get
           // anywhere — a page consulted now and then, opened every time
           // anyone reached for training.
-          () => (section === 'puzzles' ? navigate('puzzles', 'hub') : navigate(section)),
+          () => {
+            const target = section === 'puzzles' ? sectionHref('puzzles', 'hub') : sectionHref(section);
+            // Already here: the second tap goes back to the top of the
+            // page, which is what a tab bar's current tab does on both
+            // platforms. `navigate` would do nothing on the same hash.
+            if (atRoute(target)) scrollPageToTop();
+            else if (section === 'puzzles') navigate('puzzles', 'hub');
+            else navigate(section);
+          },
         ),
       )}
-      {tab('more', 'More', Ellipsis, inMore, () => navigate('more'))}
+      {tab('more', 'More', Ellipsis, inMore, () =>
+        atRoute(sectionHref('more')) ? scrollPageToTop() : navigate('more'),
+      )}
     </nav>
   );
 }

@@ -137,6 +137,18 @@ let pendingNavigate = false;
 export const sectionHref = (section: Section, ...params: string[]): string =>
   `#/${[section, ...params].join('/')}`;
 
+/**
+ * Whether the address bar already says `href`. Both sides are read the
+ * way `parse` reads them, so `#/`, `#` and `#/home` are one place.
+ */
+export function atRoute(href: string): boolean {
+  const norm = (h: string): string => {
+    const segs = h.replace(/^#\/?/, '').split('/').filter(Boolean);
+    return (segs.length ? segs : ['home']).join('/');
+  };
+  return norm(window.location.hash) === norm(href);
+}
+
 export function navigateNow(section: Section, ...params: string[]): void {
   const target = sectionHref(section, ...params);
   // Same hash fires no hashchange, so the mark would sit unconsumed and
