@@ -46,15 +46,23 @@ export function ReviewButton() {
  * the phone's toast all draw this, so the three cannot drift. The look is
  * the toast's own action (the registry's outline sm Button), which the
  * band adopted so a reader meets one button in three places.
+ *
+ * Below md the word goes and the glyph stays, the way the document
+ * header's Edit does: in the toast the sentence beside it already says
+ * what is reviewed, and with the label the sentence wrapped to three
+ * lines beside a 120px button (lanph3re's call). The microscope is the
+ * review's own glyph everywhere in the app, and the name stays on the
+ * button for a screen reader (`reviewOfferLabel`).
  */
 function reviewOfferChildren(): ReactNode {
   return (
     <>
-      <Microscope className="size-3.5" data-icon="inline-start" />
-      {t('Review game')}
+      <Microscope className="size-3.5 md:mr-1" />
+      <span className="max-md:hidden">{t('Review game')}</span>
     </>
   );
 }
+const reviewOfferLabel = (): string => t('Review game');
 
 function getRootHasMoves(s: { tree: { rootId: string; nodes: unknown } }): boolean {
   // Cheap check without importing tree helpers: the root node's children.
@@ -127,7 +135,11 @@ export function ReviewStrip({
       timeout: 8000,
       // The same button the band draws (reviewOfferChildren); the toast
       // carries the registry's X beside it.
-      actionProps: { children: reviewOfferChildren(), onClick: () => void run() },
+      actionProps: {
+        children: reviewOfferChildren(),
+        'aria-label': reviewOfferLabel(),
+        onClick: () => void run(),
+      },
     });
     // The offer belongs to this game on this page. Leaving either takes
     // it down: a toast outlives the component that raised it, and this
@@ -149,7 +161,7 @@ export function ReviewStrip({
         <p className={cn('text-muted-foreground min-w-0 flex-1 text-sm', !panel && 'truncate')}>
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
-        <Button variant="outline" size="sm" onClick={() => void run()}>
+        <Button variant="outline" size="sm" aria-label={reviewOfferLabel()} onClick={() => void run()}>
           {reviewOfferChildren()}
         </Button>
         {!panel && (
