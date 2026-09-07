@@ -208,6 +208,8 @@ function DemoBanner({ section, params }: { section: Section; params: string[] })
       // by matching its own sentence, which meant the images depended on
       // a string nobody would think to check when editing it.
       data-demo-banner
+      // A landmark of its own, so nothing on the page sits outside one.
+      role="status"
       // 10%, not 14%: this is --warn read against a wash of --warn, and at
       // 14% the sentence came to 4.39:1 in light — under the floor, on the
       // first thing anyone sees after clicking "Try the demo". 10% reads
