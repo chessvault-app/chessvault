@@ -47,6 +47,9 @@ updates/
 dist-demo/
 dist-site/
 
+# Screenshot grids from `npm run shots:grid`: proof for one change, not an artefact.
+.shots/
+
 # The starter reference games that ship inside an installer. Derived like
 # everything in data/, and built by the desktop workflow at release time —
 # see the `starter-db` job in .github/workflows/desktop.yml. Build one
