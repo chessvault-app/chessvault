@@ -184,6 +184,16 @@ derive each box from the component it stands in; never shift them along
 with the text. Rhythm copied out of the note editor belongs in `em`
 against the editor's own font size, not in the px it resolved to once.
 
+The mono role goes on the figure, not the sentence. "30 games" was one
+`font-mono` span, so the word wore the mono face beside the digits, and
+in Korean the same span read "게임 30개" with the hangul falling through
+to Pretendard inside it: two typefaces in one word. Mono is for what is
+scanned as a column or copied as a literal; a count's noun is neither.
+`components/figures.tsx` wraps only the digit runs of a translated
+sentence in the role (tabular, so a column of them still lines up) and
+leaves the words in the sentence's own face. Where the whole cell IS a
+number (an Elo, a date, an eval) the cell stays mono as before.
+
 ## Density
 
 How much of a vault fits on the screen is a setting, not a constant. It

@@ -20,6 +20,7 @@ import { navigate } from '@/lib/router';
 import { api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
+import { Figures } from '@/components/figures';
 import { openQuickSwitcher } from '@/components/quick-switcher';
 import { useMediaQuery } from '@/lib/media';
 import { EmptyState } from '@/components/empty-state';
@@ -507,8 +508,8 @@ function RecentGamesCard({
         {/* The collection's size, where a tile used to carry it, with
             its noun: a bare "30" beside a list of three read as a badge
             count. */}
-        <span className="text-muted-foreground font-mono text-xs">
-          {t('{n} games', { n: compact.format(total) })}
+        <span className="text-muted-foreground text-xs">
+          <Figures text={t('{n} games', { n: compact.format(total) })} />
         </span>
       </div>
       {games.map((g) => (
@@ -1554,8 +1555,8 @@ export function HomePage() {
                       <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
                       <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
                     </span>
-                    <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-                      {t('{a} of {b}', { a: b.solved, b: b.puzzles })}
+                    <span className="text-muted-foreground shrink-0 text-xs">
+                      <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>

@@ -17,6 +17,7 @@ import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { describeTheme } from './ThemesPage';
 import { t } from '@/lib/i18n';
+import { Figures } from '@/components/figures';
 import { TitleTip } from '@/components/title-tip';
 
 /**
@@ -421,8 +422,8 @@ export function DashboardPage() {
                   {/* "11 of 17", not "11/17": a fraction beside a striped
                       bar read as a score, and nothing said the stripe
                       was the failed part. */}
-                  <span className="text-muted-foreground w-16 text-right font-mono text-xs tabular-nums">
-                    {inBand.length > 0 ? t('{a} of {b}', { a: wins, b: inBand.length }) : '—'}
+                  <span className="text-muted-foreground w-16 text-right text-xs">
+                    {inBand.length > 0 ? <Figures text={t('{a} of {b}', { a: wins, b: inBand.length })} /> : '—'}
                   </span>
                 </div>
               );
@@ -525,8 +526,8 @@ export function DashboardPage() {
                     )}
                     {/* The bands' spelling, for the same reason: this sits
                         beside the same bar. */}
-                    <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-                      {t('{a} of {b}', { a: b.solved, b: b.puzzles })}
+                    <span className="text-muted-foreground shrink-0 text-xs">
+                      <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
                     </span>
                     <ProgressBar
                       total={b.puzzles}

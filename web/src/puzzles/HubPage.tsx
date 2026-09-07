@@ -22,6 +22,7 @@ import { PageShell } from '@/components/page-shell';
 import { ProgressBar } from '@/components/progress-bar';
 import { Skeleton, SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
+import { Figures } from '@/components/figures';
 import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/components/king-icon';
 import { bandOf, difficultyQuery, storedDifficulty, useDifficultyWord } from './bands';
@@ -502,8 +503,8 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
             decorative
           />
         </span>
-        <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-          {t('{a} of {b}', { a: weak.wins, b: weak.attempts })}
+        <span className="text-muted-foreground shrink-0 text-xs">
+          <Figures text={t('{a} of {b}', { a: weak.wins, b: weak.attempts })} />
         </span>
         <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
       </ListRow>
@@ -536,8 +537,8 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
             <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
             <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
           </span>
-          <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
-            {t('{a} of {b}', { a: b.solved, b: b.puzzles })}
+          <span className="text-muted-foreground shrink-0 text-xs">
+            <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
           </span>
           <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
         </ListRow>
