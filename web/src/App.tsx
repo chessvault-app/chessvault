@@ -78,15 +78,21 @@ const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((
 // the phone's bottom bar through a filter: an entry that ALSO appears in
 // More is a sidebar row and not a tab. The opening map is the case that
 // filter exists for — it earns a top-level row beside the collections,
-// but the bar already carries Home + four + More, and a seventh tab on a
-// 360px phone gives every tab about 50px to hold the longest label in
-// the app. So the phone keeps reaching it through More.
+// but the bar holds five tabs: Home, three collections and More. Five is
+// where the platform guidance stops (Material 3 says three to five, and
+// lichess ships five), and the sixth tab this bar used to carry left each
+// label about 60px on a 360px phone and went screen-reader-only under
+// 320. So the phone reaches the map, Books and Notes through More.
 const NAV: { section: Section; label: string; icon: typeof Folder }[] = [
   // The three that a wiki link can name take their icon from the shared
   // table, so the dialog that offers to create one draws the same picture
   // this row does. The rest are only ever drawn here.
   { section: 'games', label: 'Games', icon: SECTION_ICON.games },
   { section: 'studies', label: 'Studies', icon: SECTION_ICON.studies },
+  // Notes is the collection the bar gave up to stay at five tabs: it is
+  // mostly entered from a game or a study by a link, and it is a Home
+  // tile, so the phone is never more than one tap from it. Listed in
+  // More, which is what takes it off the bar.
   { section: 'notes', label: 'Notes', icon: SECTION_ICON.notes },
   // Books is a collection like the three above it, so it is a sidebar
   // row; like the opening map it also appears in More, which is what
@@ -815,8 +821,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
 }
 
 /** The More page groups the destinations the bottom bar doesn't carry:
-    the Tools boards, and Settings. Board and Editor are not primary nav on
-    a phone (the chess.com/Lichess pattern), so they live here. */
+    the Tools boards, Notes, Books, Databases and Settings. Board and
+    Editor are not primary nav on a phone (the chess.com/Lichess pattern),
+    so they live here; Notes and Books are collections the five-tab bar
+    has no room for. */
 const MORE_GROUPS: {
   heading: string;
   items: { section: Section; param?: string; label: string; icon: typeof Folder; blurb: string }[];
@@ -834,8 +842,10 @@ const MORE_GROUPS: {
   {
     heading: 'App',
     items: [
-      // Books is a sidebar row on a desktop; here it sits with the app's
-      // other pages rather than under a heading of its own.
+      // Notes and Books are sidebar rows on a desktop; here they sit with
+      // the app's other pages rather than under a heading of their own.
+      // Notes' blurb is Home's, so two places never describe it two ways.
+      { section: 'notes', label: 'Notes', icon: SECTION_ICON.notes, blurb: 'Markdown with live boards' },
       { section: 'books', label: 'Books', icon: BookOpen, blurb: 'Read your chess books beside a board' },
       { section: 'databases', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
@@ -877,6 +887,19 @@ function MorePage() {
   );
 }
 
+/**
+ * The phone's tab bar: Home, three collections and More. Five tabs is
+ * where the platform guidance stops and the count lichess ships. The
+ * current tab wears the pill the sidebar's current row wears, a muted
+ * fill with a primary/30 inset ring behind the icon, so the two
+ * navigations speak one vocabulary, and its label goes semibold with it.
+ *
+ * The pill is 28px tall in a 56px track and the vertical padding came
+ * down from 8px to 4px to pay for it: py-1 + 28 + gap-1 + a 16px label
+ * line is 56px against 54.4px before. Within 2px, which is what keeps
+ * the Fab, the toast offset (both 4.5rem up) and the board shells'
+ * bottom padding where they were.
+ */
 function MobileNav({ active }: { active: Section }) {
   const inMore = active === 'more' || MORE_SECTIONS.some((m) => m.section === active);
   // Desktop reaches home through the sidebar's logo; the bottom bar needs
@@ -885,6 +908,40 @@ function MobileNav({ active }: { active: Section }) {
     { section: 'home' as Section, label: 'Home', icon: House },
     ...NAV.filter(({ section }) => !MORE_SECTIONS.some((m) => m.section === section)),
   ];
+
+  const tab = (
+    key: string,
+    label: string,
+    Icon: typeof House,
+    isActive: boolean,
+    onClick: () => void,
+  ) => (
+    <button
+      key={key}
+      type="button"
+      onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
+      className={cn(
+        // min-h-11: the bar's own coarse-pointer floor (DESIGN.md, Buttons).
+        'flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-1 text-xs font-medium',
+        'transition-colors duration-150',
+        isActive ? 'text-primary font-semibold' : 'text-muted-foreground',
+      )}
+    >
+      <span
+        className={cn(
+          'grid h-7 w-14 place-items-center rounded-full transition-colors duration-150',
+          isActive && 'bg-muted ring-primary/30 ring-1 ring-inset',
+        )}
+      >
+        <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
+      </span>
+      {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
+          and went screen-reader-only there; five fit at 320 with 20px to
+          spare on the widest, so the name stays on screen at every width. */}
+      <span>{t(label)}</span>
+    </button>
+  );
 
   return (
     <nav
@@ -906,47 +963,22 @@ function MobileNav({ active }: { active: Section }) {
         'keyboard:hidden',
       )}
     >
-      {tabs.map(({ section, label, icon: Icon }) => {
-        const isActive = section === active;
-        return (
-          <button
-            key={section}
-            type="button"
-            // Phones: the Puzzles tab lands on the hub, a launcher whose
-            // buttons sit on the bottom edge where a thumb already is.
-            // It landed on the dashboard until that page's own shortcuts
-            // had to be read at the top of a screen of statistics to get
-            // anywhere — a page consulted now and then, opened every time
-            // anyone reached for training.
-            onClick={() => (section === 'puzzles' ? navigate('puzzles', 'hub') : navigate(section))}
-            aria-current={isActive ? 'page' : undefined}
-            className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
-              'transition-colors duration-150',
-              isActive ? 'text-primary' : 'text-muted-foreground',
-            )}
-          >
-            <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
-            {/* Under 320px (a 390 phone zoomed to 200%) six labels
-                overprint each other; the glyph stays and the name goes to
-                the reader. */}
-            <span className="max-[319px]:sr-only">{t(label)}</span>
-          </button>
-        );
-      })}
-        <button
-          type="button"
-          onClick={() => navigate('more')}
-          aria-current={inMore ? 'page' : undefined}
-          className={cn(
-            'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
-            'transition-colors duration-150',
-            inMore ? 'text-primary' : 'text-muted-foreground',
-          )}
-        >
-          <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
-          <span className="max-[319px]:sr-only">{t('More')}</span>
-        </button>
+      {tabs.map(({ section, label, icon }) =>
+        tab(
+          section,
+          label,
+          icon,
+          section === active,
+          // Phones: the Puzzles tab lands on the hub, a launcher whose
+          // buttons sit on the bottom edge where a thumb already is.
+          // It landed on the dashboard until that page's own shortcuts
+          // had to be read at the top of a screen of statistics to get
+          // anywhere — a page consulted now and then, opened every time
+          // anyone reached for training.
+          () => (section === 'puzzles' ? navigate('puzzles', 'hub') : navigate(section)),
+        ),
+      )}
+      {tab('more', 'More', Ellipsis, inMore, () => navigate('more'))}
     </nav>
   );
 }
