@@ -19,11 +19,12 @@ import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
+import { backupApi } from './backup.ts';
 import { tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
-import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
+import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_CONFIG, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -253,6 +254,19 @@ app.route('/api', tablebaseApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', booksApi());
 app.route('/api', storageApi());
+// The vault as one file, named after the vault. Not in mountVault: the
+// demo's vault is a tab, and a download of it would be the seed.
+app.route(
+  '/api',
+  backupApi(undefined, () => {
+    try {
+      const { name } = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as { name?: unknown };
+      return typeof name === 'string' ? name : null;
+    } catch {
+      return null;
+    }
+  }),
+);
 app.route('/api', settingsApi());
 app.route('/api', lichessStudiesApi());
 

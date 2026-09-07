@@ -109,8 +109,8 @@ export const ko: Record<string, string> = {
     '이 책에는 이미 퍼즐 {n}개가 있습니다. 가져오기에서 어떻게 할까요?',
   'every page is scanned for diagrams; nothing leaves this device, and you can keep using the app while it runs':
     '모든 페이지에서 다이어그램을 찾습니다. 이 기기 밖으로는 아무것도 나가지 않으며, 진행되는 동안에도 앱을 계속 쓸 수 있습니다',
-  'Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so back up first.':
-    '보관함의 모든 게임, 스터디, 노트, 퍼즐, 가져온 책을 변경 이력까지 지웁니다. 비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 백업하세요.',
+  'Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so download a copy first.':
+    '보관함의 모든 게임, 스터디, 노트, 퍼즐, 가져온 책을 변경 이력까지 지웁니다. 비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.',
   'Wiping…': '지우는 중…',
   'Wipe everything': '전부 지우기',
   'Nothing entered yet. Find the first move on the board.':
@@ -2153,4 +2153,8 @@ export const ko: Record<string, string> = {
   'Path copied': '경로를 복사했습니다',
   'Could not copy the path': '경로를 복사하지 못했습니다',
   'Show in the file manager': '파일 관리자에서 보기',
+  'Download a copy': '사본 내려받기',
+  'Download a copy ({size})': '사본 내려받기 ({size})',
+  'The copy is one tar file of every document and the change history. Settings and tokens stay on the server.':
+    '사본은 모든 문서와 변경 기록을 담은 tar 파일 하나입니다. 설정과 토큰은 서버에 남습니다.',
 };

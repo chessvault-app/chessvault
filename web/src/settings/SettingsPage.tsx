@@ -411,6 +411,10 @@ function useVaultRows(): { rows: VaultRow[]; folders: number } | null {
   return state;
 }
 
+/** What the download weighs: the documents and the history, not the
+    config the archive leaves out. */
+const vaultBytes = (rows: VaultRow[]): number => rows.filter((r) => r.path !== 'config.json').reduce((s, r) => s + r.bytes, 0);
+
 /** The desktop shell's bridge, where there is one (desktop/preload.cjs). */
 function revealVault(): (() => Promise<boolean>) | null {
   const shell = (window as unknown as { vaultShell?: { revealVault?: () => Promise<boolean> } }).vaultShell;
@@ -482,11 +486,21 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
           the card grows once rather than in steps. */}
       {vault && <VaultTree path={settings.vaultPath} rows={vault.rows} />}
       <div className="flex flex-wrap items-center gap-2">
+        {/* The backup verb (server/backup.ts): a plain link, since the
+            session is a cookie and the browser's own download handles a
+            vault of books without holding it in memory. Its size is on
+            the button because on a phone that is the decision. */}
+        <Button variant="secondary" render={<a href="/api/storage/backup" download />} nativeButton={false}>
+          {vault ? t('Download a copy ({size})', { size: size(vaultBytes(vault.rows)) }) : t('Download a copy')}
+        </Button>
         <Button variant="secondary" onClick={() => void copyPath()}>{t('Copy the path')}</Button>
         {reveal && (
           <Button variant="secondary" onClick={() => void reveal()}>{t('Show in the file manager')}</Button>
         )}
       </div>
+      <p className="text-muted-foreground text-sm">
+        {t('The copy is one tar file of every document and the change history. Settings and tokens stay on the server.')}
+      </p>
     </Card>
   );
 }
@@ -2399,7 +2413,7 @@ function DangerCard({ gate }: { gate: boolean }) {
   return (
     <Card icon={Trash2} title={t('Danger zone')}>
       <p className="text-muted-foreground text-sm leading-relaxed">
-        {t('Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so back up first.')}
+        {t('Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so download a copy first.')}
       </p>
       <div className="flex items-center gap-2">
         <ClearableInput

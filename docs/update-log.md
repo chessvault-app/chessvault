@@ -7,6 +7,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Back up from the app.** Settings → Vault gains “Download a copy”:
+  one tar file of every document and the change history, named after
+  the vault and the day, that any OS opens. Settings and tokens stay on
+  the server. The Danger zone had said “back up first” with no way to.
 - **A scheme that follows the board.** Settings → Appearance → Colours
   gains “Follow the board”: the accent takes the chosen board's colour,
   so a Blue board makes a blue scheme and a Rosewood board a rose one,
