@@ -2122,4 +2122,10 @@ export const ko: Record<string, string> = {
   // The note card's link count (notes/NotesView).
   '1 link': '링크 1개',
   '{n} links': '링크 {n}개',
+  // The quick switcher (components/quick-switcher).
+  'Open anything': '무엇이든 열기',
+  'Open anything…': '무엇이든 열기…',
+  'Open anything by name': '이름으로 무엇이든 열기',
+  'Nothing by that name.': '그 이름의 항목이 없습니다.',
+  'Go to': '이동',
 };

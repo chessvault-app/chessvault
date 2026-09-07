@@ -11,6 +11,7 @@ import {
   RotateCcw,
   SlidersHorizontal,
   X,
+  Search,
 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrandMark } from '@/components/brand-mark';
@@ -19,6 +20,7 @@ import { navigate } from '@/lib/router';
 import { api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
+import { openQuickSwitcher } from '@/components/quick-switcher';
 import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
 import { MiniBoard } from '@/components/mini-board';
@@ -976,14 +978,30 @@ export function HomePage() {
           and Continue's card sat 8px under the name while the Games
           page's tabs sat 16px under theirs (lanph3re, comparing on the
           phone). */}
-      <h1 className="flex min-h-11 items-center gap-2.5 justify-self-start max-md:mb-4 md:sr-only">
-        {/* The mark bare, not on the sidebar's primary tile (lanph3re):
-            a page header is type, and a filled tile beside it read as a
-            button. currentColor keeps it in the heading's own ink. */}
-        <BrandMark className="size-6 shrink-0" />
-        {/* text-2xl: the phone's large-title rung, PageHeader's own. */}
-        <span className="text-2xl font-semibold tracking-tight">{t('Chess Vault')}</span>
-      </h1>
+      {/* The phone's title row: the name, and at its far end the one
+          action Home has, the quick switcher (components/quick-switcher),
+          which a keyboard reaches with Ctrl/⌘ K and a thumb reaches here.
+          `md:contents` dissolves the row on a desktop, where the h1 is
+          the sidebar's and the button has a key. */}
+      <div className="flex w-full items-center justify-self-start max-md:mb-4 md:contents">
+        <h1 className="flex min-h-11 items-center gap-2.5 md:sr-only">
+          {/* The mark bare, not on the sidebar's primary tile (lanph3re):
+              a page header is type, and a filled tile beside it read as a
+              button. currentColor keeps it in the heading's own ink. */}
+          <BrandMark className="size-6 shrink-0" />
+          {/* text-2xl: the phone's large-title rung, PageHeader's own. */}
+          <span className="text-2xl font-semibold tracking-tight">{t('Chess Vault')}</span>
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto md:hidden"
+          title={t('Open anything')}
+          onClick={openQuickSwitcher}
+        >
+          <Search className="size-3.5" />
+        </Button>
+      </div>
       {/* A column, so the phone can reorder without drawing anything
           twice: the checklist is first-run content and a returning vault
           has done most of it, so below md it takes `order-1` and lands

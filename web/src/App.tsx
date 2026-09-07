@@ -32,6 +32,7 @@ import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-act
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
+import { QuickSwitcher } from '@/components/quick-switcher';
 import { LeaveDialog } from '@/components/leave-dialog';
 import { WikiUnresolved } from '@/notes/WikiUnresolved';
 import { SECTION_ICON } from '@/lib/sectionIcon';
@@ -332,6 +333,7 @@ function Shell() {
 
       <MobileBottom active={section} />
       <ShortcutsHelp />
+      <QuickSwitcher />
       {/* Global for the same reason: the question is asked by the router,
           which does not know which view is up, and a sheet owned by the
           view being left would have to outlive it. */}
