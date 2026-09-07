@@ -41,6 +41,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   stay white. Dark mode's cards lose their hairline the same way and
   stand on their tone. High contrast keeps its white page and its card
   edges in both modes.
+- **Second actions are fills.** Cancel, Close, Copy the path and the
+  other second buttons on a page are a filled grey button rather than an
+  outlined one; the outline is kept for fields and the icon buttons
+  beside them.
+- **The board bar's glyphs grew on a phone.** The first, previous, next
+  and last arrows under the board are 22px under a thumb; a mouse keeps
+  the smaller ones.
+- **A shelf card's title is the button.** A screen reader reads the
+  study's or game's name as the link, not the whole card's text.
+- **The workspace's games band loses Import.** The Games page has it;
+  the band shows the collection.
 - **Toasts are the registry's own.** The cards that offer Undo after a
   removal, the review on a phone and the result of collecting a game are
   shadcn's Toast on Base UI now: the button and the X are the app's own
