@@ -1360,7 +1360,12 @@ export function HomePage() {
               type="button"
               onClick={() => navigate(...nav)}
               className={cn(
-                'flex rounded-xl p-3.5 text-left transition-colors duration-100',
+                // No colour transition: the tile is drawn below md, under a
+                // thumb, so there is no hover to ease, and the one change it
+                // did ease was the lead filling when its figure landed. Fill
+                // and ink eased together and met in the middle, so the words
+                // vanished for two frames on every launch.
+                'flex rounded-xl p-3.5 text-left',
                 lead ? 'col-span-full items-center gap-3' : 'flex-col items-start gap-2',
                 filled
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
