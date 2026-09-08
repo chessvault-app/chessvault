@@ -412,7 +412,13 @@ export function GameTableRow({
       title={t('{white} vs {black}', { white: game.white, black: game.black })}
       className={cn(
         GRID,
-        'group hover:bg-accent relative min-h-[2.125rem] cursor-pointer py-1 transition-colors duration-100',
+        // Height and padding from the density tokens, not literals: this
+        // is the widest game list in the app and the one a reader with
+        // four hundred games turns the knob for. It was `min-h-[2.125rem]
+        // py-1`, which is what the two resolve to at the comfortable rung,
+        // so compact tightened every other list on the page and left this
+        // one where it was.
+        'group hover:bg-accent relative min-h-(--row-h-table) cursor-pointer py-(--row-py-tight) transition-colors duration-100',
         // Selection over zebra: the accent wash because the details
         // panel is describing this exact line.
         selected && 'bg-accent',

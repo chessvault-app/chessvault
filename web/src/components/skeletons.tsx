@@ -891,8 +891,10 @@ export function SkeletonGameRows({
    * Measured on the games page in table mode: six placeholders at 85px
    * against six rows at 34, so everything below the list dropped 305px
    * the moment the games arrived. The row is GameTable's own geometry
-   * (`min-h-[2.125rem] py-1`, its GRID's px-3), which is where the 34
-   * comes from.
+   * (`min-h-(--row-h-table) py-(--row-py-tight)`, its GRID's px-3), which
+   * is where the 34 comes from — and both are density tokens, so the
+   * placeholder tightens with the rows it stands in for rather than
+   * measuring against them at one rung only.
    */
   dense?: boolean;
   className?: string;
@@ -902,7 +904,7 @@ export function SkeletonGameRows({
     return (
       <Loading className={cn('divide-border divide-y', className)}>
         {Array.from({ length: rows }, (_, i) => (
-          <div key={i} className="flex min-h-[2.125rem] items-center gap-2 px-3 py-1">
+          <div key={i} className="flex min-h-(--row-h-table) items-center gap-2 px-3 py-(--row-py-tight)">
             <Skeleton className={cn('h-2.5', names[i % names.length])} />
             <Skeleton className="ml-auto h-2.5 w-10 shrink-0" />
             <Skeleton className="h-2.5 w-8 shrink-0" />

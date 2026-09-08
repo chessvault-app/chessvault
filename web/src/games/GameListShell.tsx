@@ -212,7 +212,7 @@ export function GameListShell({
                 // the real height once a row has rendered.
                 '[&>li]:[content-visibility:auto]',
                 dense
-                  ? '[&>li]:[contain-intrinsic-size:auto_2.125rem]'
+                  ? '[&>li]:[contain-intrinsic-size:auto_var(--row-h-table)]'
                   : '[&>li]:[contain-intrinsic-size:auto_3.25rem]',
                 // In the table wrapper the ul keeps the columns' own
                 // minimum (that is what makes the wrapper scroll

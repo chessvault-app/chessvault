@@ -208,6 +208,23 @@
      padding without it would have left every branch guide pointing above
      or below its own move. */
   --move-elbow-h: calc(var(--row-py-tight) + 0.625rem);
+
+  /* The games table's row floor. The table row is the one tabular surface
+     that states a height as well as a padding: its cells are not all the
+     same height (the ECO chip sets a 1.5rem line, a game with no ECO sets
+     1.25rem), so without a floor a list of games comes out ragged. The
+     floor is nearly touching — measured 34px against a 33px natural row —
+     which is why it went unnoticed that it was a literal: it changed the
+     comfortable rung by a pixel and pinned the compact one entirely,
+     holding the table at its comfortable height while every other list on
+     the page tightened.
+
+     Derived from the tight rung for the reason --move-elbow-h is: a floor
+     that did not follow the padding would simply re-bind at compact and
+     the knob would go on doing nothing here. 1.625rem is the row's content
+     box at the comfortable rung, kept so that turning this into a token
+     moves nothing at the default density. */
+  --row-h-table: calc(1.625rem + 2 * var(--row-py-tight));
 }
 
 /* Comfortable carries no attribute — it is what :root says above. */
