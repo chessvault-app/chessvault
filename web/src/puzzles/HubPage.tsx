@@ -344,7 +344,6 @@ function HubSkeletonPanels({ history, books }: { history: boolean; books: boolea
   return (
     <>
       {history && <HubSkeletonHistoryPanel />}
-      {history && books && <div role="presentation" className="bg-border/70 mx-8 h-px shrink-0" />}
       {books && <HubSkeletonBookRow />}
     </>
   );
@@ -1015,20 +1014,6 @@ function Hub() {
       {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks} />}
       {showHistory &&
         (historyIn ? <HistoryPanel attempts={history} /> : <HubSkeletonHistoryPanel />)}
-      {/* The line between what you have DONE and what there is to do
-          next — the book row belongs with the cards under it, not with
-          the log above it. It sits in the column's own gap, so the small
-          space either side of it comes for free and stays equal.
-
-          Inset, and quieter than the panels it divides — nearer the
-          page behind it than to their edges. Full width in their own
-          border colour it was a third hairline the same length as the
-          two 8px away, which reads as a smudge. Being SHORTER than what
-          it divides is what makes it legible as a rule, which is what
-          then lets the colour drop back rather than having to shout. */}
-      {showHistory && showBooks && (
-        <div role="presentation" className="bg-border/70 mx-8 h-px shrink-0" />
-      )}
       {showBooks &&
         (slot === 'books' ? (
           <BookShelfPanel books={books} />
