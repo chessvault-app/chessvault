@@ -54,7 +54,7 @@ export function Disclosure({
         )}
       >
         <ChevronRight
-          className={cn('size-3.5 transition-transform duration-150', open && 'rotate-90')}
+          className={cn('size-3.5 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', open && 'rotate-90')}
         />
         {t(label)}
       </button>

@@ -698,7 +698,8 @@ rule every call site then has to re-derive.
 
 One clock, and it is a spring. Every state motion the app draws (the
 pane turn and its indicator line, the tab bar's sliding pill, the page
-title's collapse, and the phone's route cross-fade) reads two tokens,
+title's collapse, the phone's route cross-fade, and a disclosure's
+chevron) reads two tokens,
 `--pane-turn` and `--pane-turn-ease`, and those are a damped spring
 sampled into a CSS `linear()` easing: stiffness 380, damping ratio 0.92,
 unit mass, settling within 0.1% in 337ms with no overshoot, 90% of the
@@ -742,6 +743,22 @@ dozen boards.
 `duration-150` beside them is a second tempo on the same screen.
 Hover and colour changes are not motion and keep their own short
 transitions; `prefers-reduced-motion` flattens all of it to the swap.
+
+The rule is about a *state* moving, which is narrower than every
+transition with a duration on it, and the difference is worth writing
+down because the list above was read as exhaustive once and was not.
+Three kinds sit outside it and stay on their own numbers. A **value
+being tracked** is not a state change: the eval bar, the review strip's
+progress and its marker, a book scan's bar all follow a number that
+moves on its own, and a spring restarting every time the engine reports
+would be worse than the short fixed tempo they have. **Press and hover
+feedback** is the sentence above. And one real state motion keeps its
+own clock **by decision**: the sidebar's fold is a 150ms width change
+matched to the rows' own colour timing, because the width, the label's
+fade and the row's padding move as one gesture and the row carries its
+hover colour on the same declaration — putting the width on the spring
+alone would pull the gesture apart, and putting all of it there would
+give a hover a 337ms fade. It says so where it is written.
 
 ## Do's and Don'ts
 

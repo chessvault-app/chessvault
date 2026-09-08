@@ -254,7 +254,7 @@ export function AnnotationPane({
         )}
       >
         <ChevronDown
-          className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
+          className={cn('size-3.5 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', paletteOpen && 'rotate-180')}
         />
       </button>
     </TitleTip>

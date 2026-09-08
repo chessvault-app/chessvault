@@ -214,7 +214,7 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
       >
         <ChevronRight
           className={cn(
-            'text-muted-foreground size-3.5 shrink-0 transition-transform duration-150',
+            'text-muted-foreground size-3.5 shrink-0 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)',
             open && 'rotate-90',
           )}
         />

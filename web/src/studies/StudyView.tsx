@@ -784,7 +784,7 @@ function ChapterRow({
                 className="hover:text-foreground -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
               >
                 <ChevronDown
-                  className={cn('size-3 transition-transform duration-100', isFolded && '-rotate-90')}
+                  className={cn('size-3 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', isFolded && '-rotate-90')}
                 />
               </span>
             </TitleTip>
