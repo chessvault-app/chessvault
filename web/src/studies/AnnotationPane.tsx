@@ -405,8 +405,15 @@ function NagButton({
       className={cn(
         // Coarse pointers get a thumb-sized target (these annotate on a
         // phone too); a mouse keeps the compact glyph row.
+        //
+        // Height to the app's 36px coarse floor, width held at 32: twelve
+        // glyphs already measure 476px in a 390px viewport, so ChipRow is
+        // scrolling the row, and widening every one of them would add
+        // another 48px to a row that cannot be seen at once as it is.
+        // The 4px of height comes off the move table above — it is
+        // min-h-0 flex-1 and yields it — so the board pays nothing.
         'h-6 min-w-6 rounded-sm px-1 font-mono text-sm font-semibold transition-colors duration-100',
-        'pointer-coarse:h-8 pointer-coarse:min-w-8',
+        'pointer-coarse:h-9 pointer-coarse:min-w-8',
         active
           ? 'bg-muted text-primary'
           : 'text-muted-foreground hover:bg-accent hover:text-foreground',
