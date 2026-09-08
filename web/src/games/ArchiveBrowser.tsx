@@ -248,34 +248,6 @@ const ArchiveRow = memo(function ArchiveRow({
   // Through the scheme guard (see shared.tsx): a stored link that is not
   // http(s) offers no View online at all rather than a live window.open.
   const link = safeLink(game.link);
-  // The card rows keep the Add button standing: on a phone there is no
-  // panel beside the list to carry it. The checkbox leads the row
-  // instead (the `leading` slot below) — the table's selection column
-  // sits leftmost for the same reason, and ticking marks the ROW, not
-  // one more control in the trailing furniture.
-  const standing = (
-    <>
-      <Button
-        variant={inCollection ? 'ghost' : 'secondary'}
-        size="sm"
-        disabled={inCollection}
-        className="w-16 shrink-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          onCollect(game);
-        }}
-      >
-        {inCollection ? (
-          t('Added')
-        ) : (
-          <>
-            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-            {t('Add')}
-          </>
-        )}
-      </Button>
-    </>
-  );
   return (
     <GameRow
       game={game}
@@ -285,6 +257,18 @@ const ArchiveRow = memo(function ArchiveRow({
       // The whole game in a sheet — what the wide layouts show in the
       // details panel, for the rows that are cards.
       menu={[
+        // Add leads: it is what this list is for, and the same verb the
+        // table's rows have carried in their own menu all along. It was
+        // a standing button, which is the width a card row cannot spare
+        // — 64px plus its gap, on the narrowest rows in the app. Adding
+        // is two taps now rather than one; the checkbox and the bulk Add
+        // above the list are still the one-pass way to take a month.
+        {
+          label: 'Add to collection',
+          icon: Plus,
+          disabled: inCollection,
+          onSelect: () => onCollect(game),
+        },
         { label: 'Game details', icon: Info, onSelect: () => onDetails(game) },
         ...(link
           ? [
@@ -306,7 +290,6 @@ const ArchiveRow = memo(function ArchiveRow({
       // thing down the whole page in the width the opening family
       // needed. It is on the game's own details, which the ⋯ opens.
       showTimeControl={false}
-      standing={standing}
       leading={checkbox || undefined}
     />
   );
