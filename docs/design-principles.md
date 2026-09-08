@@ -148,6 +148,7 @@ usage moved up a rung instead:
 | --- | --- | --- |
 | the last rung, below type | `text-micro` | 10px |
 | captions | `text-xs` | 12px |
+| a small control's label (the registry's) | `text-[0.8rem]` | 12.8px |
 | body, list rows, panel text | `text-sm` | 14px |
 | titles, setting rows | `text-base` | 16px |
 | page titles (`PageHeader`, desktop) | `text-xl` | 20px |
@@ -175,7 +176,19 @@ a comment above it; `check:repo` refuses a new one without that
 sentence. (The 11px variation text is not a literal but the bottom rung
 of the annotation-size setting, kept in `store/prefs.ts`.)
 `web/src/components/ui/` has its own, which are the registry's and not
-ours to name.
+ours to name — with one exception, now in the table above, because a
+rung a reader meets on every page is a rung whatever directory it is
+declared in. shadcn's `sm` size sets `text-[0.8rem]` on Button, Toggle
+and the calendar's cells: 12.8px, between captions and body. It reaches
+further than the word "exception" suggests, since `size="sm"` is what a
+toolbar uses — measured on the editor's FEN panel, three text sizes on
+one screen and the middle one is this. It keeps the registry's value,
+for the reason the component section gives: what this app adds to a
+registry file is behaviour, not geometry. What changed is only that the
+table stopped saying the ladder has six rungs where the app renders
+seven. Note that `check:repo` cannot hold this one, since the literal
+lives in the directory the check exempts — the table is the only record
+of it there is.
 
 Placeholders are what a scale change breaks. A skeleton line box must
 equal the real line-height, and line-heights do not all move together —

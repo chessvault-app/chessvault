@@ -72,6 +72,10 @@ typography:
     fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1rem
+  control-sm:
+    fontFamily: "'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.8rem"
+    fontWeight: 500
   mono:
     fontFamily: "'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono', Menlo, monospace"
     fontSize: "0.875rem"
@@ -371,6 +375,13 @@ setting them in mono made every one of them look like a terminal.
   (`docs/design-principles.md`, "A panel's header").
 - **Body** (400, 14px / `text-sm`): body copy, list rows, panel text.
 - **Label** (500, 12px / `text-xs`): captions and dense labels only.
+- **Small control** (500, 12.8px / `text-[0.8rem]`): the label inside a
+  `size="sm"` Button, Toggle or calendar cell. The registry's own value,
+  kept because what this app adds to a registry file is behaviour and not
+  geometry — but a rung all the same, and one a reader meets on every
+  toolbar, so it is written down rather than left as a literal nobody
+  named. `check:repo` cannot see it: it lives in
+  `web/src/components/ui/`, which the check exempts.
 - **Micro** (10px / `text-micro`): the last rung, and the only one below
   the label. A number or a mark read off a dense surface and never a
   sentence — the eval bar's readout, the PV peek's move label, a solved
@@ -408,10 +419,13 @@ title is 16px there and 20px everywhere else, and why the density knob
 leaves the reader's toolbar bands alone — they are not rows.
 
 **The Named Tier Rule.** A magic `text-[…]` literal means a tier exists
-that nobody named. Three survive in app code — the heat map's cell
-label, the result bar's digits, the puzzle tile's corner mark — each
-sized to a physical thing it sits on, which is the only excuse a literal
-has, and each says so in a comment on the line above it. `check:repo`
+that nobody named. Two survive in app code — the result bar's digits and
+the puzzle tile's corner mark — each sized to a physical thing it sits
+on, which is the only excuse a literal has, and each says so in a
+comment on the line above it. (A third `text-[…]` is in `store/prefs.ts`
+and is not one of these: it is the bottom rung of the annotation-size
+setting, a user preference with its own scale. The heat map's cell label
+was listed here and is not a literal at all.) `check:repo`
 holds that: a `text-[…]`, `rounded-[…]` or `shadow-[…]` literal outside
 the registry files is a finding unless it reads a `var(--…)` or the
 lines above it say what it is fitted to.
