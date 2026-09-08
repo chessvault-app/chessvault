@@ -1,4 +1,4 @@
-import { Globe, Info, Play, Plus } from 'lucide-react';
+import { ExternalLink, Globe, Info, Play, Plus } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
@@ -20,7 +20,7 @@ import { SkeletonGameRows } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
-import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
+import { GameRow, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
@@ -245,6 +245,9 @@ const ArchiveRow = memo(function ArchiveRow({
       />
     );
   }
+  // Through the scheme guard (see shared.tsx): a stored link that is not
+  // http(s) offers no View online at all rather than a live window.open.
+  const link = safeLink(game.link);
   // The card rows keep the Add button standing: on a phone there is no
   // panel beside the list to carry it. The checkbox leads the row
   // instead (the `leading` slot below) — the table's selection column
@@ -281,7 +284,24 @@ const ArchiveRow = memo(function ArchiveRow({
       actions={null}
       // The whole game in a sheet — what the wide layouts show in the
       // details panel, for the rows that are cards.
-      menu={[{ label: 'Game details', icon: Info, onSelect: () => onDetails(game) }]}
+      menu={[
+        { label: 'Game details', icon: Info, onSelect: () => onDetails(game) },
+        ...(link
+          ? [
+              {
+                label: 'View online',
+                icon: ExternalLink,
+                onSelect: () => window.open(link, '_blank', 'noreferrer'),
+              },
+            ]
+          : []),
+      ]}
+      // Folded into the ⋯, the way the collection's rows carry it. As a
+      // standing icon it was 44px under a thumb on the one list that can
+      // least afford them: these rows already stand an Add button, and
+      // the width came off the detail line, which is why the archive was
+      // the only tab showing a clipped code and no opening name at all.
+      showLink={false}
       standing={standing}
       leading={checkbox || undefined}
     />
