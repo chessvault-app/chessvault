@@ -192,7 +192,7 @@ function GameDetailsContent({
             className="flex min-w-0 items-baseline gap-1.5"
             title={summary.opening?.name ?? undefined}
           >
-            <EcoChip eco={summary.opening?.eco ?? summary.eco!} />
+            <EcoChip eco={summary.opening?.eco ?? summary.eco!} flush />
             {summary.opening && (
               <EcoName
                 eco={summary.opening.eco}

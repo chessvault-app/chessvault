@@ -477,7 +477,7 @@ export function GameRow({
             className="text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-sm"
             title={openingLabel}
           >
-            {(game.opening || game.eco) && <EcoChip eco={game.opening?.eco ?? game.eco!} />}
+            {(game.opening || game.eco) && <EcoChip eco={game.opening?.eco ?? game.eco!} flush />}
             {game.opening && (
               <EcoName
                 eco={game.opening.eco}
@@ -670,10 +670,21 @@ const ecoLightness = (eco: string, base: string): string => {
  * different code ("B20" came out "B2C") rather than as something cut.
  * Measured on the demo at 320px: the box was 6px against the chip's 30.
  */
-export function EcoChip({ eco }: { eco: string }) {
+export function EcoChip({ eco, flush = false }: { eco: string; flush?: boolean }) {
   return (
     <span
-      className="inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
+      className={cn(
+        'inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4',
+        // `flush`: pull the box left by exactly its own padding, so what
+        // lines up with the column above is the CODE and not the wash
+        // behind it. A chip that leads a line under the two side dots
+        // read 4px indented from them, which is what px-1 is; the eye
+        // columns the letters, not the tint. Off in the table, whose ECO
+        // sits in a column of its own with a header over it and no dots
+        // to answer to. Kept here rather than as a class at the call
+        // sites, so it cannot drift from the padding it undoes.
+        flush && '-ml-1',
+      )}
       // Lightness and chroma from the theme (index.css), the step from
       // the ECO letter: the same tag was written once for the dark page
       // and was a pale wash on the light one.
