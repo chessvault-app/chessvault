@@ -277,12 +277,13 @@ export function SkeletonBookCards({
   className?: string;
 }) {
   const card = (i: number) => (
-    // border, not ring: BookCard is `border p-3` on both shelves, and
-    // a ring is a box-shadow that costs no layout — so the placeholder
-    // measured 120px against the card’s 122.
+    // ring, as BookCard: it is `ring-1 p-3` on both shelves now, and a
+    // ring is a box-shadow that costs no layout, so the two agree at
+    // 120px. While the card carried a border they were 120 against 122,
+    // which is the whole reason the card's edge stopped being a border.
     <div
       key={i}
-      className="bg-card border-card-ring flex w-full items-stretch gap-3 rounded-xl border p-3"
+      className="bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 p-3"
     >
       {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
           the size it will be rather than the size it looks like. */}

@@ -749,7 +749,15 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   rule outranks the registry's own strokes too: a card's footer band takes
   `--card-ring`, and every window, dialog, popover, menu and toast, takes
   `--window-ring`, the card ring in light and the plain hairline in dark,
-  where a shadow is invisible and a window's fill is a card's), and the structural
+  where a shadow is invisible and a window's fill is a card's), and which
+  PROPERTY carries that colour is not a free choice either: a card takes
+  `ring-1`, as the registry's Card does, and a border is for a stroke on
+  one side or on a filled well or a thumbnail. A ring is a box-shadow and
+  costs no layout; a border is 2px of box. Cards drawn both ways look
+  identical and measure 2px apart, so nothing reports it and every
+  placeholder that stands in for a card rediscovers it by measuring —
+  `skeletons.tsx` carried three separate comments recording the same 2px,
+  one per shelf, before the shelves' cards moved to the ring, and the structural
   strokes had moved as a set while it was, because the hairline was then
   the only structure there was: `--border` rests at 88% rather than
   92.2% (1.26:1 on white was not visible on a phone at all; 1.44:1 now),

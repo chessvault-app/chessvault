@@ -185,7 +185,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   return (
     <NodeViewWrapper
       className={cn(
-        'border-card-ring bg-card my-3 flex flex-col gap-2 rounded-xl border p-2 sm:flex-row',
+        'ring-card-ring bg-card my-3 flex flex-col gap-2 rounded-xl ring-1 p-2 sm:flex-row',
         // The box wraps the board, not the page: on a phone the block is a
         // board with its moves under it, and a border stretched to the
         // note's full width around a much narrower board read as an empty

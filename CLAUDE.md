@@ -119,8 +119,16 @@ hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
 <name>`; keep its look, add only behaviour, with one standing exception,
 an edge: where the tonal rule ("The component layer" in
 `docs/design-principles.md`) and a registry stroke disagree, the rule wins.
-A surface whose fill already separates it draws `border-card-ring`, a
-window `ring-window-ring`, never the bare border colour. A hand-rolled popover, menu,
+A surface whose fill already separates it draws the card-ring colour and
+never the bare border colour, and *how* it draws it follows the box, not
+taste: a card resting on the page takes `ring-1 ring-card-ring`, as the
+registry's own Card does, because a ring costs no layout; a stroke that
+is one side (a divider, a sticky header's underline), or that belongs to
+a filled well or a thumbnail, takes `border-card-ring`. A window takes
+`ring-window-ring`. Cards drawn both ways is a 2px difference nothing
+looks wrong about, and every placeholder standing in for one then has to
+rediscover it by measuring: three comments in `skeletons.tsx` recorded
+the same 2px separately before the rule said this. A hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in

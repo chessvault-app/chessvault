@@ -527,10 +527,13 @@ function BookCard({
         onClick={open}
         {...swipe.handlers}
         className={cn(
-          // border-card-ring, as the shared shelf card: the card's fill is its
-          // edge on the toned page, and the hairline returns under High contrast.
-          'bg-card border-card-ring group relative flex h-full cursor-pointer items-stretch gap-3',
-          'overflow-hidden rounded-xl border p-3 text-left transition-colors duration-100',
+          // ring-1 ring-card-ring, as the registry's own Card: the card's
+          // fill is its edge on the toned page, and the hairline returns
+          // under High contrast. A ring, not a border, because a border is
+          // 2px of box and a ring is none - the placeholders that stand in
+          // for these cards had to be hand-corrected for exactly that.
+          'bg-card ring-card-ring group relative flex h-full cursor-pointer items-stretch gap-3',
+          'overflow-hidden rounded-xl ring-1 p-3 text-left transition-colors duration-100',
           'hover:bg-accent',
           // The whole indicator that a book is kept, and it costs no width
           // — see the shelves and the games rows.

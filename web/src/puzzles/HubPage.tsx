@@ -206,8 +206,8 @@ function PuzzleCard({
       // slack around a shape that already has its own margins, while the
       // horizontal padding is still holding the text off the edge.
       className={cn(
-        'bg-card border-card-ring hover:bg-accent flex w-full items-stretch gap-3',
-        'rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100',
+        'bg-card ring-card-ring hover:bg-accent flex w-full items-stretch gap-3',
+        'rounded-xl ring-1 px-2.5 py-1.5 text-left transition-colors duration-100',
         // Sharing the leftover height between the cards puts it into the
         // BOARDS, where it is worth something, instead of into the gaps
         // between them, where it is just distance.
@@ -366,7 +366,7 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
         // border, not ring: PuzzleCard's own geometry is `border
         // px-2.5 py-1.5`, and a ring costs no layout — so each slot
         // stood 2px short of the card that replaced it.
-        'bg-card border-card-ring flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
+        'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
         fill && 'min-h-0 flex-1',
       )}
     >
@@ -436,8 +436,8 @@ function EmptySlot({
   );
   // PuzzleCard's geometry exactly; only the hover and the press differ.
   const shape = cn(
-    'bg-card border-card-ring flex w-full items-stretch gap-3',
-    'rounded-xl border px-2.5 py-1.5 text-left',
+    'bg-card ring-card-ring flex w-full items-stretch gap-3',
+    'rounded-xl ring-1 px-2.5 py-1.5 text-left',
     fill && 'min-h-0 flex-1',
   );
   return go ? (
