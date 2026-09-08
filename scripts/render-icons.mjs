@@ -144,7 +144,7 @@ console.log('web/public/favicon.ico  16+32+48');
  * which is the same flash this exists to remove, only reversed.
  */
 const SCHEMES = {
-  light: { bg: '#ffffff', fg: '#0a0a0a' },
+  light: { bg: '#f5f5f5', fg: '#0a0a0a' },
   dark: { bg: '#0a0a0a', fg: '#ffffff' },
 };
 

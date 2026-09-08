@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { rememberGround } from './theme';
 
 /**
  * Per-device display preferences (Settings > Appearance). Deliberately
@@ -481,6 +482,8 @@ const applyScheme = ({ hue, tint, accent, accentTint = 1, contrast = 0 }: Scheme
   el.style.setProperty('--accent-hue', String(accent));
   el.style.setProperty('--accent-tint', String(accentTint));
   el.style.setProperty('--ui-contrast', String(contrast));
+  // The ground these resolve to is what the next launch pins; see theme.ts.
+  rememberGround();
 };
 
 export const usePrefs = create<PrefsState>()(

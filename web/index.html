@@ -118,13 +118,17 @@
          the app's first styled frame — module chunks still loading, a
          first install on a cold cache — is this colour, never the
          unstyled document's own white. These two are --background
-         resolved by hand, so they move when it does: under the default
-         scheme (shadcn's neutral, both tints 0) the light ground IS
-         #ffffff, which is the app's colour rather than the absence of
-         one. The media query follows the OS for the
-         no-JS case; the theme script below then pins the STORED
-         preference inline, which wins, so an app set to light on a dark
-         phone gets light, not the OS's guess.
+         resolved by hand for the default scheme (shadcn's neutral, both
+         tints 0, contrast 0): oklch 97% is #f5f5f5, not white, and
+         oklch 14.5% is #0a0a0a. They move when the tokens do. The media
+         query follows the OS for the no-JS case; the theme script below
+         then pins the STORED preference inline, which wins, so an app set
+         to light on a dark phone gets light, not the OS's guess — and
+         pins the ground the page itself last resolved to under its
+         chosen scheme (store/theme.ts rememberGround), because a tinted
+         or High contrast scheme is not this colour, and a default pinned
+         under it showed for one frame before the page's own ground
+         painted over it.
 
          This is ALL that bridges launch now. There used to be an in-page
          launch screen here — a knight over this same ground, taken down
@@ -136,7 +140,7 @@
          splash after the OS's own is a second handover, and every
          handover is a seam. The OS startup image (head links above) and
          a quiet app-coloured ground have no seam to show. */
-      html { background-color: #ffffff; }
+      html { background-color: #f5f5f5; }
       @media (prefers-color-scheme: dark) {
         html { background-color: #0a0a0a; }
       }
@@ -162,7 +166,12 @@
           // Pin the page's ground to the RESOLVED theme (inline style beats
           // the media query above): the stored preference can disagree with
           // the OS, and the ground must be the app's colour, not the OS's.
-          document.documentElement.style.backgroundColor = dark ? '#0a0a0a' : '#ffffff';
+          // The colour is the one the page last resolved to under its
+          // scheme, where the app has stored one; the default otherwise.
+          var grounds = localStorage.getItem('chess-vault:ground');
+          var ground = grounds ? JSON.parse(grounds)[dark ? 'dark' : 'light'] : null;
+          document.documentElement.style.backgroundColor =
+            typeof ground === 'string' && ground ? ground : dark ? '#0a0a0a' : '#f5f5f5';
         } catch (e) {
           /* first run, or storage blocked — fall through to light */
         }

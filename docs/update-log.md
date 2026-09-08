@@ -7,6 +7,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Opening the app on a phone no longer flickers.** Two things did, both
+  caught on a screen recording. The ground the startup image dissolved
+  into was pinned to the default scheme's colour, so a phone on a tinted
+  scheme, High contrast or Follow the board saw the default for one frame
+  before its own ground painted over it; the page now remembers the ground
+  it settled on and pins that at the next launch. In light mode the pin
+  and the startup image were white against a page that is not, for
+  everyone; both are the page's own tone now. And the home page's lead
+  tile eased its fill and its ink together when its figure arrived, so
+  the two met in the middle and the words vanished for two frames; the
+  fill snaps.
 - **Loading placeholders hold their pages still again.** The page-header
   and shelf work had let a few placeholders drift from what replaces them.
   Every shelf (studies, notes, books, puzzle books, themes) dropped 24px
