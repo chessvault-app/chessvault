@@ -1,6 +1,7 @@
 import { LayoutDashboard } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { getNode, pathTo } from '@shared/tree';
+import { PageGate } from '@/components/page-gate';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { AnalysisMoveBox } from '@/board/MoveBox';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -57,31 +58,27 @@ export function WorkspaceView() {
  */
 function WorkspaceGate() {
   return (
-    <div className="optical-center h-full p-8">
-      <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-        <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
-          <LayoutDashboard className="size-6" strokeWidth={1.75} />
-        </div>
-        <h1 className="text-xl font-semibold tracking-tight">{t('Workspace')}</h1>
-        <p className="text-muted-foreground text-base leading-relaxed">
-          {t(
-            'The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.',
-          )}
-        </p>
-        {/* Both secondary: the error card this borrowed from RECOMMENDS
-            Reload over Go home, but Board and Games are equal
-            destinations here, and an emphasized first button claimed a
-            preference nobody argued (lanph3re's question). */}
-        <div className="mt-1 flex gap-2">
+    <PageGate
+      icon={LayoutDashboard}
+      title={t('Workspace')}
+      body={t(
+        'The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.',
+      )}
+      // Both secondary: the error gate this shape came from RECOMMENDS
+      // Reload over Go home, but Board and Games are equal destinations
+      // here, and an emphasized first button claimed a preference nobody
+      // argued (lanph3re's question).
+      actions={
+        <>
           <Button variant="secondary" onClick={() => navigate('board')}>
             {t('Board')}
           </Button>
           <Button variant="secondary" onClick={() => navigate('games')}>
             {t('Games')}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }
 

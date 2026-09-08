@@ -35,6 +35,7 @@ import { BrandMark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { QuickSwitcher } from '@/components/quick-switcher';
 import { LeaveDialog } from '@/components/leave-dialog';
+import { PageGate } from '@/components/page-gate';
 import { WikiUnresolved } from '@/notes/WikiUnresolved';
 import { SECTION_ICON } from '@/lib/sectionIcon';
 import { PageShell } from '@/components/page-shell';
@@ -1106,23 +1107,19 @@ class RouteErrorBoundary extends Component<{ at: string; children: ReactNode }, 
   override render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div className="optical-center h-full p-8">
-        <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-          <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
-            <Wrench className="size-6" strokeWidth={1.75} />
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight">{t('Something went wrong')}</h1>
-          <p className="text-muted-foreground text-base leading-relaxed">
-            {t('This page hit an error it could not recover from. Reloading usually clears it, and nothing in your vault is affected.')}
-          </p>
-          <div className="mt-1 flex gap-2">
+      <PageGate
+        icon={Wrench}
+        title={t('Something went wrong')}
+        body={t('This page hit an error it could not recover from. Reloading usually clears it, and nothing in your vault is affected.')}
+        actions={
+          <>
             <Button variant="secondary" onClick={() => location.reload()}>{t('Reload')}</Button>
             <Button variant="ghost" onClick={() => navigate('home')}>
               {t('Go home')}
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
     );
   }
 }
@@ -1132,14 +1129,11 @@ class RouteErrorBoundary extends Component<{ at: string; children: ReactNode }, 
     future section without a handler degrades gracefully instead of blanking. */
 function Placeholder({ section }: { section: Section }) {
   return (
-    <div className="optical-center h-full p-8">
-      <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-        <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
-          <Folder className="size-6" strokeWidth={1.75} />
-        </div>
-        <h1 className="text-xl font-semibold tracking-tight capitalize">{section}</h1>
-        <p className="text-muted-foreground text-base leading-relaxed">{t("This page isn't available.")}</p>
-      </div>
-    </div>
+    <PageGate
+      icon={Folder}
+      title={section}
+      titleClassName="capitalize"
+      body={t("This page isn't available.")}
+    />
   );
 }
