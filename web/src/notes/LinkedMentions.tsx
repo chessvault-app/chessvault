@@ -204,7 +204,12 @@ export function LinkedMentions({
                 <button
                   type="button"
                   onClick={() => openSource(m)}
-                  className="hover:bg-accent focus-visible:ring-ring flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left focus-visible:ring-2 focus-visible:outline-none"
+                  // No ring classes: a bare button takes the page's own
+                  // :focus-visible outline, which is the app's one focus
+                  // style. These rows drew `ring-2 ring-ring` over
+                  // `outline-none` instead — 2px at full strength against
+                  // the 3px at 50% every other control wears.
+                  className="hover:bg-accent flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left"
                 >
                   <span className="flex items-center gap-1.5 text-sm font-medium">
                     <SourceIcon m={m} className="text-muted-foreground size-3.5 shrink-0" />
@@ -251,7 +256,7 @@ export function LinkedMentions({
                         <button
                           type="button"
                           onClick={() => openSource(m)}
-                          className="focus-visible:ring-ring block max-w-full truncate rounded-sm text-left text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
+                          className="block max-w-full truncate rounded-sm text-left text-sm font-medium"
                         >
                           {m.from.split('/').at(-1)}
                         </button>

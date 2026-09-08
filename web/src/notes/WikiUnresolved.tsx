@@ -108,7 +108,12 @@ export function WikiUnresolved() {
                   <button
                     type="button"
                     onClick={() => open(section, id)}
-                    className="hover:bg-accent focus-visible:ring-ring flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm focus-visible:ring-2 focus-visible:outline-none"
+                    // No ring classes: a bare button takes the page's own
+                    // :focus-visible outline, which is the app's one focus
+                    // style. These rows drew `ring-2 ring-ring` over
+                    // `outline-none` instead — 2px at full strength against
+                    // the 3px at 50% every other control wears.
+                    className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm"
                   >
                     <Icon className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="truncate">{id}</span>
@@ -133,7 +138,7 @@ export function WikiUnresolved() {
                 type="button"
                 disabled={creating}
                 onClick={() => void create(section)}
-                className="hover:bg-accent focus-visible:ring-ring flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm disabled:opacity-50"
               >
                 {/* The section's own icon rather than three identical
                     plusses: which of the three this row makes is the whole
