@@ -174,33 +174,22 @@ const RefRow = memo(function RefRow({
       onPreview={onPreview}
       loadPreview={() => loadPreview(game)}
       actions={null}
-      menu={[{ label: 'Game details', icon: Info, onSelect: () => onDetails(game) }]}
+      // Add leads, the way it does on the archive's rows and in this
+      // list's own table: the two lists take turns in one 210px column,
+      // and a 64px button standing at the end of every row was worth
+      // more to the two player names than it was as one tap. Dimmed
+      // rather than absent once the game is in, which is what the
+      // button's "Added" used to say from the row itself.
+      menu={[
+        {
+          label: 'Add to collection',
+          icon: Plus,
+          disabled: inCollection,
+          onSelect: () => onCollect(game),
+        },
+        { label: 'Game details', icon: Info, onSelect: () => onDetails(game) },
+      ]}
       showLink={false}
-      standing={
-        /* w-16 and a bare word when it is done, exactly like the
-           archive's rows: the two lists take turns in one 210px column,
-           and 20 characters of player name is worth more than a tick
-           beside a word that is already past tense. */
-        <Button
-          variant={inCollection ? 'ghost' : 'secondary'}
-          size="sm"
-          className="w-16 shrink-0"
-          disabled={inCollection}
-          onClick={(e) => {
-            e.stopPropagation();
-            onCollect(game);
-          }}
-        >
-          {inCollection ? (
-            t('Added')
-          ) : (
-            <>
-              <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-              {t('Add')}
-            </>
-          )}
-        </Button>
-      }
     />
   );
 });
