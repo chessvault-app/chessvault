@@ -740,10 +740,12 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               className={cn(
                 NAV_ROW,
                 isActive
-                  ? // Fill, outline and rail together: on the darker page
-                    // the soft fill alone was close enough to the sidebar
-                    // that the current section had to be looked for.
-                    'bg-muted text-primary ring-primary/30 font-semibold ring-1 ring-inset'
+                  ? // Tonal fill and rail: the fill is the pill the phone's tab
+                    // bar draws (bg-nav-pill in index.css), so both navigations
+                    // say "you are here" the same way. The outline it wore
+                    // read as a chip's, and the tonal fill stands off the dark
+                    // sidebar on its own where --muted alone did not.
+                    'bg-nav-pill text-primary font-semibold'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
@@ -1040,7 +1042,7 @@ function MobileNav({ active }: { active: Section }) {
           sits 4px down (the tab's py-1) at the icon's height. */}
       <span
         aria-hidden
-        className="bg-muted ring-primary/30 pointer-events-none absolute top-1 h-7 w-14 rounded-full ring-1 ring-inset transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)"
+        className="bg-nav-pill pointer-events-none absolute top-1 h-7 w-14 rounded-full transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)"
         style={{ left: `calc(${(activeIndex + 0.5) * 20}% - 1.75rem)` }}
       />
       {tabs.map(({ section, label, icon }) =>

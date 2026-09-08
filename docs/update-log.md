@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The current section's pill is a tonal fill.** On the phone's tab bar
+  and in the sidebar the pill behind the current icon was a grey fill
+  with a thin outline, which read as a chip and, in the dark, as mostly
+  outline. It is now 12% of the scheme's primary over the card, so a
+  tinted scheme colours it and the neutral one keeps a quiet grey.
 - **Opening the app on a phone no longer flickers.** Two things did, both
   caught on a screen recording. The ground the startup image dissolved
   into was pinned to the default scheme's colour, so a phone on a tinted

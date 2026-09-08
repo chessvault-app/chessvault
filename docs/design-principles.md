@@ -417,8 +417,8 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   Games, Studies, Puzzles, More — the count where Material 3's guidance
   stops and the one lichess ships; Notes, Books and the opening map are
   reached through More and the Home tiles. The current tab wears the
-  sidebar's current-row pill (`bg-muted`, a `primary/30` inset ring
-  behind the icon, a semibold label), so both navigations say "you are
+  sidebar's current-row pill (`bg-nav-pill`, 12% of primary over the
+  card behind the icon, a semibold label), so both navigations say "you are
   here" the same way. The bar stays docked and pinned: the floating
   capsule is iOS 26's idiom alone, and hiding on scroll would resize
   every page, since the bar is a flex sibling of `main`. It is the

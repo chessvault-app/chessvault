@@ -1208,6 +1208,18 @@
   }
 }
 
+/* The current-section pill, behind the sidebar row and the phone tab bar's
+   icon: 12% of primary over the card, Material 3's tonal indicator. It was
+   --muted with a primary/30 inset ring, and the ring read as a chip's
+   outline, grey on grey under the neutral scheme and the most visible part
+   of the pill in the dark. A tonal fill separates on its own: under a tinted
+   scheme it takes the scheme's colour, under neutral it is a grey a step
+   past --muted, and in the dark, where primary is light, it stands off the
+   card more than --muted did. */
+@utility bg-nav-pill {
+  background-color: color-mix(in oklch, var(--primary) 12%, var(--card));
+}
+
 /* Optical centring, for content that sits alone in a frame-scale box —
    empty states, the desktop dialog. The perceived middle of a frame is
    ABOVE its geometric middle (the vertical-bisection illusion; "optical
