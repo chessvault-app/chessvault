@@ -317,7 +317,7 @@ export function Shelf() {
       className={cn('shrink-0', className)}
       onClick={() => setMarkedOnly((v) => !v)}
     >
-      <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+      <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
     </Button>
   );
 

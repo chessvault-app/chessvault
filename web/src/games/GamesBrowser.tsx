@@ -466,7 +466,7 @@ export function GamesBrowser({
         className="shrink-0"
         onClick={() => setMarkedOnly((v) => !v)}
       >
-        <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+        <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
       </Button>
     </>
   );
@@ -534,7 +534,7 @@ export function GamesBrowser({
                   <Bookmark
                     className={cn(
                       'size-3.5',
-                      bookmarks.has(gameKey(colSelGame)) && 'fill-warn text-warn',
+                      bookmarks.has(gameKey(colSelGame)) && 'fill-current text-primary',
                     )}
                   />
                 </Button>

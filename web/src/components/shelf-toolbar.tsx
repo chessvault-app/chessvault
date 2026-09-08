@@ -169,7 +169,12 @@ export function ShelfToolbar({
       className={cn('shrink-0', className)}
       onClick={() => onMarkedOnly(!markedOnly)}
     >
-      <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+      {/* In the accent, not amber, for the reason the game row's kept edge
+          gives (games/shared.tsx): amber is caution everywhere else in the
+          app, and a bookmark is not a warning. The row edge and the shelf
+          card were moved first and these toolbar icons were left behind,
+          so one hue meant two things on the same screen. */}
+      <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
     </Button>
   );
 

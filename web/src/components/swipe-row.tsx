@@ -119,7 +119,9 @@ export function useSwipeRow({
  * background read as an error message printed on the row — the row still
  * looked like itself, with a warning in it. Filling the uncovered strip
  * makes the gesture legible as one thing: the card is sliding off
- * something, and the something is red — or, going the other way, amber.
+ * something, and the something is red — or, going the other way, the
+ * accent. Not amber, which it was: amber is caution app-wide, and the
+ * row this strip is under says a kept game with the accent already.
  *
  * Its width follows the finger exactly, so the fill IS the strip the
  * contents have vacated — no colour showing where the card still is, none
@@ -155,8 +157,8 @@ export function SwipeTrack({ dx, bookmarked = false }: { dx: number; bookmarked?
             ? 'bg-destructive text-destructive-foreground'
             : 'bg-destructive/55 text-destructive-foreground'
           : armed
-            ? 'bg-warn text-warn-foreground'
-            : 'bg-warn/55 text-warn-foreground',
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-primary/55 text-primary-foreground',
       )}
       style={{ width: Math.abs(dx) }}
       aria-hidden

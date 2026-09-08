@@ -130,7 +130,7 @@ const CollectionRow = memo(function CollectionRow({
             onToggleBookmark(game);
           }}
         >
-          <Bookmark className={cn('size-3.5', bookmarked && 'fill-warn text-warn')} />
+          <Bookmark className={cn('size-3.5', bookmarked && 'fill-current text-primary')} />
         </Button>
       }
       menu={[
