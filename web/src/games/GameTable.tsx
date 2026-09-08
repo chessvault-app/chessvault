@@ -13,7 +13,7 @@ import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
 import { separatorKey } from '@/components/separator-keys';
 import { t } from '@/lib/i18n';
 
-import { OpeningTag, ResultScore, type GameSummary } from './shared';
+import { EcoChip, ResultScore, type GameSummary } from './shared';
 import { TitleTip } from '@/components/title-tip';
 
 /**
@@ -443,7 +443,7 @@ export function GameTableRow({
         {game.plyCount > 0 ? moveCount(game.plyCount) : ''}
       </span>
       <span className="truncate">
-        {game.opening ? <OpeningTag eco={game.opening.eco} /> : game.eco ? <OpeningTag eco={game.eco} /> : null}
+        {game.opening ? <EcoChip eco={game.opening.eco} /> : game.eco ? <EcoChip eco={game.eco} /> : null}
       </span>
       <span className={quiet} title={game.event ?? undefined}>
         {isNoiseEvent(game.event) ? '' : (game.event ?? '')}

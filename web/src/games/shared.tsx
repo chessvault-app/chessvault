@@ -438,16 +438,28 @@ export function GameRow({
               chip and the family (the name before its colon) are what a
               row is scanned by; the full name stays in the title, and
               the date sits at the end in its own box. */}
-          <span className="text-muted-foreground flex min-w-0 items-baseline text-sm" title={openingLabel}>
-            {game.opening ? (
-              <span className="min-w-0 truncate">
-                <OpeningTag eco={game.opening.eco} name={openingFamily(game.opening.name)} />
-              </span>
-            ) : game.eco ? (
-              <OpeningTag eco={game.eco} />
-            ) : null}
+          {/* One shape for every list: code, family, then the date, spaced
+              by the row's own gap rather than by a space inside a string
+              (a leading space at the start of a flex item is collapsed
+              away, so the archive's rows read "B20· 2026" where the
+              collection's read "B20 Sicilian Defense · 2026"). The code
+              is shrink-0 and outside the truncating box, so the box that
+              gives way is the name's alone and every family starts at
+              the same x. */}
+          <span
+            className="text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-sm"
+            title={openingLabel}
+          >
+            {(game.opening || game.eco) && <EcoChip eco={game.opening?.eco ?? game.eco!} />}
+            {game.opening && (
+              <EcoName
+                eco={game.opening.eco}
+                name={openingFamily(game.opening.name)}
+                className="min-w-0 truncate"
+              />
+            )}
             <span className="shrink-0 truncate">
-              {(game.opening || game.eco) && ' · '}
+              {(game.opening || game.eco) && '· '}
               {game.date}
               {customName ? ` · ${t('{white} vs {black}', { white: game.white, black: game.black })}` : ''}
               {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
@@ -613,26 +625,47 @@ export function openingFamily(name: string): string {
   return colon > 0 ? name.slice(0, colon) : name;
 }
 
-export function OpeningTag({ eco, name }: { eco: string; name?: string | null }) {
+/** The family's step along the lightness ladder, as a colour expression. */
+const ecoLightness = (eco: string, base: string): string => {
   const step = ECO_STEP[eco[0]?.toUpperCase() ?? ''] ?? 0;
-  const l = (base: string): string => `calc(var(${base}) + var(--eco-dir) * ${step * 2}%)`;
+  return `calc(var(${base}) + var(--eco-dir) * ${step * 2}%)`;
+};
+
+/**
+ * The code, as its own box.
+ *
+ * Kept apart from the name because the two answer to different widths:
+ * a code is three characters and either legible or wrong, and a name is
+ * what gives way. They used to be one run inside one truncating box, so
+ * a narrow row clipped the code itself — half a glyph, which reads as a
+ * different code ("B20" came out "B2C") rather than as something cut.
+ * Measured on the demo at 320px: the box was 6px against the chip's 30.
+ */
+export function EcoChip({ eco }: { eco: string }) {
   return (
-    <>
-      <span
-        className="mr-1.5 inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
-        // Lightness and chroma from the theme (index.css), the step from
-        // the ECO letter: the same tag was written once for the dark page
-        // and was a pale wash on the light one.
-        style={{
-          color: `oklch(${l('--eco-l')} var(--eco-c) ${ECO_HUE})`,
-          backgroundColor: `oklch(${l('--eco-l')} var(--eco-c) ${ECO_HUE} / var(--eco-wash))`,
-        }}
-      >
-        {eco}
-      </span>
-      {name && (
-        <span style={{ color: `oklch(${l('--eco-name-l')} var(--eco-name-c) ${ECO_HUE})` }}>{name}</span>
-      )}
-    </>
+    <span
+      className="inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
+      // Lightness and chroma from the theme (index.css), the step from
+      // the ECO letter: the same tag was written once for the dark page
+      // and was a pale wash on the light one.
+      style={{
+        color: `oklch(${ecoLightness(eco, '--eco-l')} var(--eco-c) ${ECO_HUE})`,
+        backgroundColor: `oklch(${ecoLightness(eco, '--eco-l')} var(--eco-c) ${ECO_HUE} / var(--eco-wash))`,
+      }}
+    >
+      {eco}
+    </span>
+  );
+}
+
+/** The opening's family, in the code's own hue a step lighter. */
+export function EcoName({ eco, name, className }: { eco: string; name: string; className?: string }) {
+  return (
+    <span
+      className={className}
+      style={{ color: `oklch(${ecoLightness(eco, '--eco-name-l')} var(--eco-name-c) ${ECO_HUE})` }}
+    >
+      {name}
+    </span>
   );
 }

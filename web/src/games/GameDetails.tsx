@@ -27,7 +27,8 @@ import { t } from '@/lib/i18n';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import {
   ResultScore,
-  OpeningTag,
+  EcoChip,
+  EcoName,
   formatTimeControl,
   safeLink,
   type GameSummary,
@@ -183,12 +184,21 @@ function GameDetailsContent({
       </div>
 
       <div className="text-muted-foreground -mt-1 flex flex-col gap-0.5 text-xs">
+        {/* The same shape the rows draw: the code is its own box and only
+            the name gives way, so a narrow sheet cannot clip a code down
+            to a different code. */}
         {(summary.opening || summary.eco) && (
-          <p className="truncate" title={summary.opening?.name ?? undefined}>
-            {summary.opening ? (
-              <OpeningTag eco={summary.opening.eco} name={summary.opening.name} />
-            ) : (
-              <OpeningTag eco={summary.eco!} />
+          <p
+            className="flex min-w-0 items-baseline gap-1.5"
+            title={summary.opening?.name ?? undefined}
+          >
+            <EcoChip eco={summary.opening?.eco ?? summary.eco!} />
+            {summary.opening && (
+              <EcoName
+                eco={summary.opening.eco}
+                name={summary.opening.name}
+                className="min-w-0 truncate"
+              />
             )}
           </p>
         )}
