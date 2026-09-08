@@ -7,6 +7,92 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A disclosure's chevron turns at the app's own tempo.** Five panels
+  draw a chevron that is the whole of that gesture's motion, and each ran
+  on a duration written by hand: four at 150ms and the studies chapter
+  list at 100, the same gesture at two tempos with nothing to choose
+  between them. All five read the shared state-motion tokens now,
+  measured at 0.337s on the spring's curve. The sidebar's fold keeps its
+  150ms by decision: its width, its label's fade and the rows' hover
+  colour are one declaration, and the spring would give a hover a 337ms
+  fade.
+- **A card's edge is drawn one way.** The card edge colour was carried by
+  two different properties, a ring in 32 places and a border in 32
+  others. The two look identical and measure 2px apart, so every loading
+  placeholder standing in for a card had to rediscover that by hand, and
+  three separate comments in one file recorded the same 2px. A card
+  resting on the page takes the ring now; a stroke that is one side, or
+  that belongs to a filled well or a thumbnail, takes the border. Both
+  shelves' book cards, the puzzle hub's cards, the note editor's chess
+  block and the password gate moved: a shelf's book card is 120px where
+  it was 122, and its placeholder, already 120, agrees with it without
+  being hand-corrected.
+- **Amber means caution, and only caution.** A filled amber bookmark sat
+  in the same view as an amber "offline, cached months only" notice, one
+  colour saying two things a row apart. The bookmark was already the
+  accent on a game row's edge and on a shelf's card; six filter and
+  toggle icons and the swipe-to-bookmark strip had been left behind, so
+  the same shelf drew the mark in the accent on the card and in amber in
+  the toolbar above it. They are the accent now. What is left on amber is
+  the engine-guess tier, an offline notice, a stale index, and a count
+  that could not be read.
+- **The move glyph palette meets the app's touch floor.** Its buttons
+  were 32px under a coarse pointer, four short of the 36px every other
+  control reaches, and twelve of them sit 4px apart in one scrolling row
+  with a single glyph to aim at. Height only: the row already measures
+  476px of glyphs in a 390px viewport, so widening all twelve would have
+  added another 48px to a row that cannot be seen at once as it is. A
+  mouse still gets 24px, and the 4px comes off the move table above the
+  pane rather than off the board.
+- **The backlink rows take the app's own focus ring.** Four rows in the
+  two wiki-link panels switched the page's ring off and drew their own,
+  2px at full strength where every other control in the app wears 3px at
+  half. They draw what a control anywhere else draws now, through the
+  same rule.
+- **The density control reaches the games table.** Compact took the home
+  page's rows from 37px to 31 and the phone's game cards from 85 to 79,
+  and left the desktop games table at 34: the widest game list in the app
+  and the surface the control was added for. That row stated its height
+  and its padding as fixed numbers. Both are exactly what the tokens
+  resolve to at the comfortable setting, so nothing moves there; at
+  compact the row is 30px, all 30 rows hold one height, and the list
+  shows 21 rows where it showed 19.
+- **The ECO code stands clear of the name beside it.** The code and the
+  opening family were one run inside one box that truncates, so a row
+  short of width clipped the code rather than the name: "B20" came out
+  "B2C" and "A00" came out "A0C", and at 320px what stood in for the code
+  was a 6px sliver. The code is its own box now, only the name gives way,
+  and every family name starts at the same place. The code also lines up
+  with the two side dots that head the row, letters under letters, where
+  before its box lined up and its letters sat 4px in. The desktop table,
+  whose code has a column and a header of its own, is untouched.
+- **The four games tabs draw one row.** The Chess.com and Lichess rows
+  stood an external link and an Add button at the end of every row, on
+  the narrowest rows in the app, and the reference database stood an Add
+  of its own; the collection had folded both into the row's overflow menu
+  long ago. All of them are in that menu now, which is where each list's
+  desktop table has always kept them. What it bought is the detail line.
+  On a phone it was 0px wide on the online rows, which is why they showed
+  no code and no opening where every other tab showed both, and player
+  names truncated to four characters; it is 226px on all three lists now,
+  handles read in full, and the opening family arrives whole where it
+  fits. The online rows drop their clock as well, since every game in a
+  month is played at the same time control, and the clock is still on the
+  game's own details. Two costs, both real: adding one game is two taps
+  rather than one, with the checkbox and the bulk Add above the list
+  still the one-pass way to take a month, and a row no longer says
+  "Added" on its face. A warm edge down the row's left says a game is
+  kept instead, which is what the collection's rows already use and which
+  costs no width.
+- **Two panels lose an edge that had nothing to answer to.** The phone's
+  puzzle hub drew a thin rule in the gap between the history log and the
+  book row, a third horizontal line among two card edges 8px away. Both
+  panels read as two panels without it, and the placeholder that drew the
+  same rule loses it too, so nothing shifts by 9px the moment the answers
+  land. And the tinted block holding the engine picker and its five
+  sliders drew square corners inside a rounded window, inset 16px on
+  every side with nothing to be square against; it takes the 10px radius
+  the app's other filled inner blocks use.
 - **The current section's pill is a tonal fill.** On the phone's tab bar
   and in the sidebar the pill behind the current icon was a grey fill
   with a thin outline, which read as a chip and, in the dark, as mostly
