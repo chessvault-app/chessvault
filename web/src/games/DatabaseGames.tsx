@@ -190,6 +190,10 @@ const RefRow = memo(function RefRow({
         { label: 'Game details', icon: Info, onSelect: () => onDetails(game) },
       ]}
       showLink={false}
+      // Already in the collection: the edge down the row's left,
+      // which is what the standing Add button used to say by
+      // reading "Added".
+      kept={inCollection}
     />
   );
 });

@@ -169,6 +169,7 @@ export function GameRow({
   onSwipeAway,
   onBookmark,
   bookmarked = false,
+  kept = false,
   contextMenu = false,
   menu,
   standing,
@@ -236,6 +237,16 @@ export function GameRow({
   /** Touch: swiping right marks it. Omitted where a row cannot be marked. */
   onBookmark?: () => void;
   bookmarked?: boolean;
+  /**
+   * This game is already in the collection: the lists that offer Add.
+   *
+   * Draws the same left edge `bookmarked` does, and cannot collide
+   * with it: only the collection's rows are bookmarkable and only the
+   * archive's and the database's can be added, so no row is ever
+   * eligible for both. On whichever list you are reading, a lit edge
+   * means the one thing: this one is in your vault already.
+   */
+  kept?: boolean;
   /**
    * A right-click (or a long press) on the row opens the same verbs as
    * the ⋯, at the pointer — the collection's rows, where those verbs are
@@ -351,7 +362,12 @@ export function GameRow({
         // the same grey as the hairlines between rows.
         // In the accent, not amber: amber is caution everywhere else in
         // the app, and a bookmark is not a warning.
-        bookmarked && 'before:bg-primary before:absolute before:inset-y-0 before:left-0 before:w-0.5',
+        // `kept` says it for the archive and the reference database,
+        // which is what their Add button used to say by reading
+        // "Added" from the end of the row. Same edge, same reason: it
+        // costs no width, and those rows had none to spare.
+        (bookmarked || kept) &&
+          'before:bg-primary before:absolute before:inset-y-0 before:left-0 before:w-0.5',
       )}
     >
       {onSwipeAway && <SwipeTrack dx={swipe.dx} bookmarked={bookmarked} />}

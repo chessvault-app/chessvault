@@ -286,6 +286,10 @@ const ArchiveRow = memo(function ArchiveRow({
       // the width came off the detail line, which is why the archive was
       // the only tab showing a clipped code and no opening name at all.
       showLink={false}
+      // Already in the collection: the edge down the row's left,
+      // which is what the standing Add button used to say by
+      // reading "Added".
+      kept={inCollection}
       // Every game in a month is the same clock, so it said the same
       // thing down the whole page in the width the opening family
       // needed. It is on the game's own details, which the ⋯ opens.
