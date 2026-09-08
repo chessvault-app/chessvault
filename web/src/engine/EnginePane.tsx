@@ -378,7 +378,7 @@ function EngineSettings() {
   const maxThreads = Math.max(1, navigator.hardwareConcurrency || 4);
 
   return (
-    <div className="bg-muted/50 grid gap-3 px-3 py-3">
+    <div className="bg-muted/50 grid gap-3 rounded-lg px-3 py-3">
       <EngineRow />
       <Slider
         label="Threads"
