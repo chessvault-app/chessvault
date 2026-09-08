@@ -165,6 +165,7 @@ export function GameRow({
   renaming = false,
   onRename,
   showLink = true,
+  showTimeControl = true,
   onSwipeAway,
   onBookmark,
   bookmarked = false,
@@ -220,6 +221,16 @@ export function GameRow({
   onRename?: (to: string) => void;
   /** Collection rows fold the external link into their row menu. */
   showLink?: boolean;
+  /**
+   * Whether the clock belongs on the detail line.
+   *
+   * Off for the archive, whose rows are the narrowest in the app and
+   * the only ones that carry it: every game in a month is the same
+   * 10 min, so it repeated down the page in the width the opening
+   * family needed. The collection keeps it, where a row is a game
+   * you chose to keep and the clock is part of what it was.
+   */
+  showTimeControl?: boolean;
   /** Touch: swiping the row's contents left removes it (undoably). */
   onSwipeAway?: () => void;
   /** Touch: swiping right marks it. Omitted where a row cannot be marked. */
@@ -462,7 +473,9 @@ export function GameRow({
               {(game.opening || game.eco) && '· '}
               {game.date}
               {customName ? ` · ${t('{white} vs {black}', { white: game.white, black: game.black })}` : ''}
-              {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
+              {showTimeControl && game.timeControl
+                ? ` · ${formatTimeControl(game.timeControl)}`
+                : ''}
             </span>
           </span>
         </button>

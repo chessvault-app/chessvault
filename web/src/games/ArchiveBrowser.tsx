@@ -302,6 +302,10 @@ const ArchiveRow = memo(function ArchiveRow({
       // the width came off the detail line, which is why the archive was
       // the only tab showing a clipped code and no opening name at all.
       showLink={false}
+      // Every game in a month is the same clock, so it said the same
+      // thing down the whole page in the width the opening family
+      // needed. It is on the game's own details, which the ⋯ opens.
+      showTimeControl={false}
       standing={standing}
       leading={checkbox || undefined}
     />
