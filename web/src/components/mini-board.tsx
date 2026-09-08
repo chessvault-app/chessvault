@@ -28,6 +28,26 @@ declare module 'react' {
  * other way, and the card showed through as a black line across the
  * middle of every thumbnail. A gradient has no seams to round.
  *
+ * That paragraph will tempt the next person, so: on iOS these thumbnails
+ * appear to twitch for one frame when the page changes, and it is NOT
+ * this file. Measured off a 60fps recording — the board's box is identical
+ * to the pixel before and after, the square colours are identical, and
+ * putting the element on its own compositing layer moves 14 of its 36,864
+ * pixels against a control of 0. Nothing here is rounding.
+ *
+ * It is the View Transition handing back (lib/router): during the fade the
+ * new page is a rasterised still, and when the pseudo-elements are torn
+ * down the live DOM paints again. Everything on the card re-rasterises in
+ * that frame — every glyph of the title re-antialiases too, and nobody
+ * notices, because a checkerboard is eight parallel high-contrast
+ * horizontal edges and a sentence is not. Confirmed by Reduce Motion,
+ * which skips the transition outright (startViewTransition: 1 call
+ * without it, 0 with) and takes the twitch with it. It does not reproduce
+ * in Chromium.
+ *
+ * So it is a WebKit repaint, seen here because this is the highest
+ * contrast thing on the page. Do not chase it in this file.
+ *
  * The pieces are chessground's own `piece` elements, which is how the
  * thumbnail wears the piece set chosen in Settings: the art is CSS keyed
  * on `.cg-wrap piece.<role>.<colour>` under `<html data-pieces>`, loaded

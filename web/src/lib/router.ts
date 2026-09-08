@@ -167,6 +167,12 @@ let inFlight: Promise<void> | null = null;
  * in that window rose twice: once frozen mid-entrance in the snapshot,
  * once for real. Whatever wants to appear after a route change awaits
  * this first; with no transition in flight it resolves at once.
+ *
+ * The tear-down has a second, cosmetic consequence worth knowing before
+ * someone goes hunting for it elsewhere: on iOS the whole page
+ * re-rasterises in that one frame, so a shelf's board thumbnails appear
+ * to twitch. It is a repaint and not a layout change, and it is written
+ * up where it is seen (components/mini-board).
  */
 export function routeSettled(): Promise<void> {
   return inFlight ?? Promise.resolve();
