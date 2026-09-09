@@ -5,6 +5,22 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **An opening name is dropped rather than clipped to a stray character.**
+  The family name on a game row is the one thing that gives way as the row
+  narrows, and under about 11px the browser stops drawing the ellipsis and
+  clips the glyph instead: "Caro-Kann Defense" came out as a lone "("
+  between the B12 chip and the date, which reads as a character somebody
+  typed rather than as a name cut short. A name now needs two letters and
+  the ellipsis, 27.9px on the 14px line it is set in, or it is not drawn at
+  all. The zero-width box it used to leave behind is gone with it, so a
+  320px row reads "B12 · 2026.12.12" with the gap every other pair of
+  values has. Worst in a 360 to 400px window on a mouse, where the row's
+  hover controls appear and take 30px back from the name; the phone rows
+  at 375px are unchanged, and nothing wider than 430px ever reached the
+  floor.
+
 ## 0.9.3
 
 The games rows draw one shape across the four tabs: the verbs moved into

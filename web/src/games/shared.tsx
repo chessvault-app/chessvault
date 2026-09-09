@@ -4,7 +4,7 @@ import {
   MoreHorizontal,
   NotebookPen,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Board } from '@/board/Board';
 
@@ -698,11 +698,91 @@ export function EcoChip({ eco, flush = false }: { eco: string; flush?: boolean }
   );
 }
 
-/** The opening's family, in the code's own hue a step lighter. */
+/**
+ * The narrowest box a name may be given before it is dropped instead, in
+ * the name's own em.
+ *
+ * MEASURED on the demo at 14px: the ellipsis alone is 10.7px, and "Ca…"
+ * is 27.9px. Under the first, Chrome draws no ellipsis at all and clips
+ * the glyph instead — "Caro-Kann Defense" in the 10.3px box a 390px
+ * window gave it came out as a lone "(" between the B12 chip and the
+ * date, which reads as a stray character rather than as a name cut
+ * short. That is the misread the CODE used to give (see EcoChip), one
+ * box further along, and it takes the same answer: a run too narrow to
+ * say anything true says nothing, and the chip beside it is already the
+ * whole of what a list is scanned by. Between the two widths you get
+ * "C…", which is honest and empty. So the floor is two letters and the
+ * ellipsis, in em rather than px so the 12px detail block in the game
+ * sheet gets the same rule at its own size.
+ */
+const NAME_FLOOR_EM = 2;
+
+/**
+ * The opening's family, in the code's own hue a step lighter — and
+ * nothing at all in a box under NAME_FLOOR_EM.
+ *
+ * WHY THE ROOM IS MEASURED. Flexbox shrinks an item to whatever is left
+ * over; there is no way to tell it "this width or none". A container
+ * query cannot ask either, because the box whose width is in question is
+ * the one that would have to be the container. So the room is read off
+ * the LINE, and never off this span once it has been withdrawn: a
+ * display:none box has no width, and a name that gave way would never be
+ * given anything back.
+ */
 export function EcoName({ eco, name, className }: { eco: string; name: string; className?: string }) {
+  const self = useRef<HTMLSpanElement>(null);
+  // The same answer as `room`, readable from inside measure() without
+  // rebuilding it (and the observer holding it) on every flip.
+  const shown = useRef(true);
+  const [room, setRoom] = useState(true);
+
+  const measure = useCallback((): void => {
+    const el = self.current;
+    const line = el?.parentElement;
+    if (!el || !line) return;
+    // A row scrolled out of view is skipped by `content-visibility`
+    // (GameListShell) and lays nothing out. Keep the last answer rather
+    // than take a width of zero for one.
+    if (!line.clientWidth) return;
+    const gap = parseFloat(getComputedStyle(line).columnGap) || 0;
+    let width: number;
+    if (shown.current) {
+      width = el.getBoundingClientRect().width;
+    } else {
+      // Withdrawn: the space left at the end of the line, one gap short
+      // of it. Everything else on the line is shrink-0, so that is the
+      // width the name would be handed back.
+      const start = line.getBoundingClientRect().left + line.clientLeft;
+      let used = 0;
+      for (const kid of line.children) {
+        if (kid !== el) used = Math.max(used, kid.getBoundingClientRect().right - start);
+      }
+      width = line.clientWidth - used - gap;
+    }
+    const fits = width >= NAME_FLOOR_EM * parseFloat(getComputedStyle(el).fontSize);
+    if (fits === shown.current) return;
+    shown.current = fits;
+    setRoom(fits);
+  }, []);
+
+  // Every render: a rename or a density change rewrites the boxes beside
+  // the name without resizing the line, and this is also the first read.
+  useLayoutEffect(measure);
+  useLayoutEffect(() => {
+    const line = self.current?.parentElement;
+    if (!line) return;
+    // The LINE is what is watched. It is a block-level flex container, so
+    // it holds its parent's width whatever is inside it: withdrawing the
+    // name cannot resize it, and there is no loop to guard against.
+    const watch = new ResizeObserver(measure);
+    watch.observe(line);
+    return () => watch.disconnect();
+  }, [measure]);
+
   return (
     <span
-      className={className}
+      ref={self}
+      className={cn(className, !room && 'hidden')}
       style={{ color: `oklch(${ecoLightness(eco, '--eco-name-l')} var(--eco-name-c) ${ECO_HUE})` }}
     >
       {name}
