@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
@@ -202,6 +202,8 @@ export function PdfPage({
       Turned, it is the finished result at the old raster's sharpness. */
   const [rasterRot, setRasterRot] = useState<Rotation>(rotation);
   const taskRef = useRef<RenderTask | null>(null);
+  /** The page this slot has open, so leaving can hand it back. */
+  const held = useRef<PDFPageProxy | null>(null);
   /** A finished raster waiting for its blit — see the note at the render
       completion. The newest landing wins; the blit clears it. */
   const pending = useRef<HTMLCanvasElement | null>(null);
@@ -213,7 +215,49 @@ export function PdfPage({
     canvas.width = off.width;
     canvas.height = off.height;
     canvas.getContext('2d')!.drawImage(off, 0, 0);
+    // The bitmap is on the visible canvas now, so the one it was rastered
+    // into is a full page of backing store nothing points at. Zeroing it
+    // hands that back at once rather than at the collector's convenience,
+    // which is what pdf.js's own viewer does with the canvas it replaces
+    // (`prevCanvas.width = prevCanvas.height = 0`, web/pdf_viewer.mjs).
+    off.width = 0;
+    off.height = 0;
   });
+  /**
+   * Giving the page back when the slot leaves the column.
+   *
+   * Its own effect, with no dependencies, because it must run when the
+   * slot UNMOUNTS and never between renders: the render effect's cleanup
+   * runs on every zoom and every turn, and a canvas zeroed there would
+   * blank the page for the beat before the fresh raster lands, which is
+   * the flicker the whole offscreen-then-blit dance exists to avoid.
+   *
+   * What it gives back is what pdf.js's own viewer gives back when its
+   * page buffer evicts a view (`PDFPageView.destroy` calls `reset()`,
+   * which zeroes the canvas, then `pdfPage.cleanup()`): the canvas'
+   * backing store, and the page's worker-side resources — its operator
+   * list and its decoded images, which on a scanned page is the whole of
+   * it. Neither was handed back before. The canvas waited on the
+   * collector and the worker's copy waited on nothing at all, since
+   * pdf.js holds a page it has been asked for until it is told not to.
+   * `cleanup()` defers itself while a render is in flight, so cancelling
+   * first is not a precaution against it; it is just not paying for a
+   * raster nobody will see.
+   */
+  useEffect(
+    () => () => {
+      taskRef.current?.cancel();
+      taskRef.current = null;
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
+      held.current?.cleanup();
+      held.current = null;
+    },
+    [],
+  );
   // A page that is slow to arrive — the first of a book over a slow link,
   // a heavy scan — shows a spinner in its slot rather than a blank.
   const slow = useSlowLoad(size === null);
@@ -226,6 +270,7 @@ export function PdfPage({
     const timer = setTimeout(() => void (async () => {
       const [page, pdfjs] = await Promise.all([doc.getPage(pageNo), loadPdfjs()]);
       if (!live) return;
+      held.current = page;
       const base = page.getViewport({ scale: 1, rotation });
       const cssW = Math.max(1, Math.round(width * zoom));
       const cssH = Math.max(1, Math.round((base.height / base.width) * cssW));
