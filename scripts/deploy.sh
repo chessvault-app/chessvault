@@ -10,6 +10,7 @@
 #   CHESS_APP_DIR=/srv/chess-vault-app # checkout on the server
 #   CHESS_SERVICE=chess-vault          # service to restart (see below)
 #   CHESS_REMOTE_PATH=/opt/node/bin    # prepended to PATH on the server
+#   CHESS_PORT=8787                    # the port the health check asks on
 #
 # APP_DIR and SERVICE default to the layout the README describes, so an
 # unmodified copy of that layout needs neither. They are variables rather than
@@ -32,6 +33,11 @@ KEY="${CHESS_VAULT_KEY:-}"
 APP_DIR="${CHESS_APP_DIR:-/srv/chess-vault-app}"
 SERVICE="${CHESS_SERVICE:-chess-vault}"
 REMOTE_PATH="${CHESS_REMOTE_PATH:-}"
+# What the health check asks, and how long it waits. The app reads PORT
+# itself (server/index.ts); the wait is long enough for a first start
+# after `npm ci` to open its databases.
+PORT="${CHESS_PORT:-8787}"
+HEALTH_TRIES="${CHESS_HEALTH_TRIES:-45}"
 SSH_KEY=(); [ -n "$KEY" ] && SSH_KEY=(-i "$KEY")
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -58,7 +64,7 @@ rm -f "$BUNDLE" "$DIST"
 # remote shell by printf %q, so a path holding a quote or a space is still
 # one value there. Interpolating them into the script text would put local
 # quoting rules in charge of a remote path.
-REMOTE_ENV="APP_DIR=$(printf %q "$APP_DIR") SERVICE=$(printf %q "$SERVICE") REMOTE_PATH=$(printf %q "$REMOTE_PATH") STAGE=$(printf %q "$STAGE")"
+REMOTE_ENV="APP_DIR=$(printf %q "$APP_DIR") SERVICE=$(printf %q "$SERVICE") REMOTE_PATH=$(printf %q "$REMOTE_PATH") STAGE=$(printf %q "$STAGE") PORT=$(printf %q "$PORT") HEALTH_TRIES=$(printf %q "$HEALTH_TRIES")"
 # Git Bash on Windows rewrites any argument that looks like a POSIX path
 # before a Windows program sees it, and the remote command below starts
 # with one: APP_DIR=/Users/... arrived at the server as
@@ -110,17 +116,50 @@ fi
 # Restart, then prove it came back — a deploy that leaves the service down
 # and says "deployed" is the worst of the failure modes.
 if [ "$(uname)" = "Darwin" ]; then
-  # A per-user LaunchAgent: no sudo, and none available — a Mac does not
+  # A per-user LaunchAgent: no sudo, and none available. A Mac does not
   # have passwordless sudo unless somebody went and configured it, so a
   # `sudo` here would hang the deploy on a password prompt instead of
   # failing. `kickstart -k` stops the job and starts it again.
   launchctl kickstart -k "gui/$(id -u)/$SERVICE"
-  sleep 3
-  launchctl print "gui/$(id -u)/$SERVICE" | grep -qE '^[[:space:]]*(state = running|pid = [0-9]+)'
 else
   sudo systemctl restart "$SERVICE"
-  sleep 3
-  systemctl is-active "$SERVICE"
+fi
+
+# Ask the SERVICE, not its supervisor.
+#
+# This used to read the supervisor's opinion three seconds after the
+# restart, and it once said "deployed" over a service that was down and
+# did not come back. launchd could not spawn the job at all: the stdout
+# file named in its plist had been rotated by newsyslog and recreated as
+# root, so a job running as the user could not open it. The state that
+# failure leaves behind is neither what the old grep looked for nor its
+# complement, because "spawn scheduled" is a job waiting to be retried,
+# and it reads as neither running nor stopped.
+#
+# So ask the question a deploy actually wants answered: does the thing
+# serve HTTP. Polled rather than slept at, because a first start after
+# `npm ci` opens the databases and is not instant, and a fixed sleep is
+# either too short to be true or too long to be free.
+#
+# node rather than curl: this is a node app, so node is on the PATH by
+# construction, and one less thing to be missing on a stripped-down box.
+answers=""
+for _ in $(seq 1 "$HEALTH_TRIES"); do
+  if node -e 'const http=require("http");const req=http.get({host:"127.0.0.1",port:Number(process.env.PORT),timeout:3000},(res)=>process.exit(res.statusCode&&res.statusCode<500?0:1));req.on("error",()=>process.exit(1));req.on("timeout",()=>{req.destroy();process.exit(1)});' 2>/dev/null; then
+    answers=1
+    break
+  fi
+  sleep 1
+done
+if [ -z "$answers" ]; then
+  echo "deploy: the service did not answer on port $PORT within ${HEALTH_TRIES}s" >&2
+  echo "        the commit and dist are in place; the service is NOT serving them" >&2
+  if [ "$(uname)" = "Darwin" ]; then
+    launchctl print "gui/$(id -u)/$SERVICE" 2>&1 | grep -E "state =|last exit code" >&2 || true
+  else
+    systemctl status "$SERVICE" --no-pager -n 20 >&2 || true
+  fi
+  exit 1
 fi
 REMOTE
 echo "deployed to $HOST"
