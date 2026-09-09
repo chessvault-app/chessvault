@@ -5,7 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.9.3
+
+The games rows draw one shape across the four tabs: the verbs moved into
+the row's menu, and the phone rows that showed neither an ECO code nor an
+opening now show both. Opening the app on a phone no longer flickers, and
+ten pages settle at the height their placeholders drew. Amber is caution
+again and nothing else, the current section's pill is a tonal fill, and a
+card's edge is drawn one way throughout.
 
 - **A disclosure's chevron turns at the app's own tempo.** Five panels
   draw a chevron that is the whole of that gesture's motion, and each ran
