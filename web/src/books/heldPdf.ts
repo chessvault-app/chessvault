@@ -19,7 +19,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
  * the trade being made. The reader's own rule about memory is that a
  * phone's tab survives or does not on exactly this, so a second book
  * replaces the first rather than joining it. A book is held until
- * another is opened, the page is reloaded, or the file behind it changes.
+ * another is opened, the reader has been away from it for `HOLD_MS`, the
+ * page is reloaded, or the file behind it changes.
  *
  * What it buys, on a 5 Mbit link at 80 ms: opening that book cold took
  * 31.8 s and 470 range requests, and going to the shelf and back took
@@ -30,7 +31,27 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
  * while a reader is holding it, because a reader holding it means it is
  * not in here.
  */
-let held: { key: string; doc: PDFDocumentProxy } | null = null;
+let held: { key: string; doc: PDFDocumentProxy; timer: ReturnType<typeof setTimeout> } | null =
+  null;
+
+/**
+ * How long a book stays held with nobody reading it.
+ *
+ * The document is worth keeping for an errand and not worth keeping for
+ * the rest of the session: looking a game up, answering a note, checking
+ * the shelf for the next title are all a minute or two, and coming back
+ * to the book after any of them should be free. Beyond that the reader
+ * has moved on, and what is left is 20 MB held against a return that is
+ * not coming.
+ *
+ * Five minutes rather than a tighter figure because the cost of guessing
+ * short is the whole 30 s open again, and the cost of guessing long is
+ * 20 MB for a few more minutes. A backgrounded tab needs nothing extra:
+ * a browser throttles the timers of a tab nobody is looking at, so the
+ * clock runs late there rather than early, which is the direction that
+ * errs towards still having the book.
+ */
+export const HOLD_MS = 5 * 60_000;
 
 /**
  * What makes two opens the same open: the book, and the file behind it.
@@ -41,18 +62,24 @@ let held: { key: string; doc: PDFDocumentProxy } | null = null;
  */
 export const pdfKey = (id: string, bytes: number): string => `${id}:${bytes}`;
 
-/** Keep this document for the next visit, destroying whatever was held. */
+/**
+ * Keep this document for the next visit, destroying whatever was held,
+ * and start the clock on it.
+ */
 export function holdPdf(key: string, doc: PDFDocumentProxy): void {
+  // Already held and already counting down: holding it again is not a
+  // fresh errand, so it does not buy the book another five minutes.
   if (held?.doc === doc) return;
   const previous = held;
-  held = { key, doc };
-  if (previous) void previous.doc.loadingTask.destroy();
+  held = { key, doc, timer: setTimeout(() => dropPdf(), HOLD_MS) };
+  if (previous) close(previous);
 }
 
 /** The held document for this key, now the caller's, or null. */
 export function takePdf(key: string): PDFDocumentProxy | null {
   if (held?.key !== key) return null;
-  const { doc } = held;
+  const { doc, timer } = held;
+  clearTimeout(timer);
   held = null;
   return doc;
 }
@@ -64,9 +91,14 @@ export function takePdf(key: string): PDFDocumentProxy | null {
 export function dropPdf(id?: string): void {
   if (!held) return;
   if (id !== undefined && !held.key.startsWith(`${id}:`)) return;
-  const { doc } = held;
+  const going = held;
   held = null;
-  void doc.loadingTask.destroy();
+  close(going);
+}
+
+function close(entry: { doc: PDFDocumentProxy; timer: ReturnType<typeof setTimeout> }): void {
+  clearTimeout(entry.timer);
+  void entry.doc.loadingTask.destroy();
 }
 
 /** The book whose document is held, if any. For tests. */
