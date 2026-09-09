@@ -7,18 +7,6 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-- **Flinging through a big book no longer throws the phone's memory
-  away.** Every page the column passed was given a canvas, and a canvas
-  in the reader is a compositor layer of its own — a texture the size of
-  the page. One two-second flick through the 380 MB scan drew 75 of them,
-  74 for pages nobody looked at. None of it showed in the JS heap, which
-  is why it went unnoticed: the cost is texture memory, and texture
-  memory is what a phone kills a tab over. lanph3re had the white flash
-  and a reload, on the big books and not the small ones. Pages are drawn
-  where the column stops now, not on the way past: the same flick draws
-  6. Reading is untouched, because the signal is how fast the window is
-  moving rather than how far it went — a page turn draws in 62ms, a
-  one-screen scroll in 22, and asking for a page still draws it at once.
 - **The page number opens a sheet on a phone.** Tapping it raised the
   keyboard and the keyboard put it straight back down. The reader's page
   field was the one field in the app that sat in the phone's bottom bar,

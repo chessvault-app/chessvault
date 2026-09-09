@@ -387,12 +387,6 @@ export function PdfPage({
 const PAGE_GAP = 12;
 /** Pages kept rendered either side of the visible ones. */
 const RENDER_MARGIN = 1;
-/**
- * How long the column must hold still before a page it was flung past is
- * drawn. Long enough that a flick draws nothing on its way, short enough
- * that letting go and looking feels like the page was already there.
- */
-const FLING_SETTLE = 150;
 
 /**
  * The whole book as one scrolling column, the way a PDF reader scrolls:
@@ -710,52 +704,11 @@ export function PdfScroller({
 
   const from = Math.max(1, first - RENDER_MARGIN);
   const to = Math.min(pages, last + RENDER_MARGIN);
-  /**
-   * The pages actually given a canvas: the window, once the column has
-   * agreed to stop somewhere.
-   *
-   * A page drawn is a canvas, and a canvas here is a compositor layer of
-   * its own (translateZ above) — a GPU texture the size of the page. One
-   * hard flick through the 380 MB scan drew 181 of them in 3.7 seconds,
-   * one for every page it passed and 180 of them never looked at. None of
-   * that shows in the JS heap, which is why it was invisible: the cost is
-   * texture memory, and texture memory is what a phone kills a tab over.
-   * lanph3re: "hard scrolling flickers white screen then the whole page
-   * reloads", on the big books and not the small ones.
-   *
-   * The signal is how fast the window is MOVING, not how far it went. A
-   * reader crossing into the next page has not moved the window for at
-   * least a beat, and draws at once; a finger throwing the column crosses
-   * several pages a frame, and every one of those is a page that would
-   * be gone before its canvas arrived. So: a move that follows another
-   * within FLING_SETTLE waits for the column to hold still, and any other
-   * move draws immediately — which covers both a reader turning a page
-   * and somebody asking to go to one.
-   */
-  const [drawnFrom, setDrawnFrom] = useState(from);
-  const [drawnTo, setDrawnTo] = useState(to);
-  const lastJump = useRef(0);
-  useEffect(() => {
-    if (from === drawnFrom && to === drawnTo) return;
-    const now = performance.now();
-    const flinging = now - lastJump.current < FLING_SETTLE;
-    lastJump.current = now;
-    const draw = (): void => {
-      setDrawnFrom(from);
-      setDrawnTo(to);
-    };
-    if (!flinging) {
-      draw();
-      return;
-    }
-    const timer = setTimeout(draw, FLING_SETTLE);
-    return () => clearTimeout(timer);
-  }, [from, to, drawnFrom, drawnTo]);
   const rendered = useMemo(() => {
     const list: number[] = [];
-    for (let n = drawnFrom; n <= drawnTo; n++) list.push(n);
+    for (let n = from; n <= to; n++) list.push(n);
     return list;
-  }, [drawnFrom, drawnTo]);
+  }, [from, to]);
 
   return (
     <div
