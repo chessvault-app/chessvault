@@ -7,6 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The diagram buttons are visible on a light page again.** A book's page
+  is paper, and the canvas it is drawn on is white in both themes for that
+  reason. The buttons over it were not: they took the theme's own surface
+  colour, which is a dark chip in the dark theme and an almost-white one in
+  the light, so on a scanned page in the light theme they were white on
+  white. They are the dark chip in both themes now, which is the one the
+  paper was always going to be read against.
 - **The page number opens a sheet on a phone.** Tapping it raised the
   keyboard and the keyboard put it straight back down. The reader's page
   field was the one field in the app that sat in the phone's bottom bar,

@@ -1089,7 +1089,9 @@ function PdfPane({
         )}
         {goingTo && (
           <PromptDialog
-            label={t('Go to page')}
+            // The key, not the translation: every other caller passes one,
+            // and the window translates the label itself.
+            label="Go to page"
             initial={String(pageNo || 1)}
             inputMode="numeric"
             onSubmit={(value) => {

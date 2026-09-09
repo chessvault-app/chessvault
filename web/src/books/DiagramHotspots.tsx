@@ -248,7 +248,23 @@ export function DiagramHotspots({
             size="icon-sm"
             // pointer-events-auto: the overlay this sits in lets the pointer
             // through to the page's text (pdfViewer); the button takes it back.
-            className={cn('pointer-events-auto absolute shadow-md', 'pointer-coarse:size-9')}
+            //
+            // The colours do not follow the theme, because what this sits on
+            // does not: a scanned page is paper, and the canvas under it is
+            // `bg-white` in both themes for that reason. Themed, the button
+            // took `--secondary`, which is oklch(0.269) in the dark and
+            // oklch(0.97) in the light — a dark chip on white paper, and then
+            // a white one. lanph3re, in the light theme: the overlays are
+            // white, which makes them invisible. So both themes get the chip
+            // the dark theme was already drawing, since that is the one the
+            // paper was always going to be read against.
+            className={cn(
+              'pointer-events-auto absolute shadow-md',
+              'pointer-coarse:size-9',
+              s.ok
+                ? 'bg-neutral-800 text-neutral-50 hover:bg-neutral-700'
+                : 'border-neutral-500 bg-white/85 text-neutral-800 hover:bg-white',
+            )}
             style={style}
             title={s.ok ? t('Set up this position') : t('Edit position')}
           >
