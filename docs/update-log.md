@@ -7,6 +7,27 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A big book opens in seconds instead of minutes.** Opening a PDF was
+  fetching most of a hundred megabytes before it could draw a page. pdf.js
+  finishes an open by fetching the book's LAST page, which walks the page
+  tree and touches every page object in the file; those objects are a few
+  hundred bytes each and sit one per page, spread evenly through the file,
+  so each one was costing a whole 256 KB chunk. A 380 MB, 448-page scan
+  pulled 111.8 MB in 448 requests, which on a 5 Mbit connection is 231
+  seconds of waiting before the first page. Reading 8 KB at a time instead
+  pulls 3.7 MB for the same open and has the page up in 32 seconds. Turning
+  pages pays nothing for the smaller read, because the chunks a page
+  actually needs sit next to each other and are asked for together, and the
+  pages themselves are unchanged: page 16 and page 240 of that book render
+  pixel for pixel the same as before, 0 of 2,940,000 differing.
+- **Leaving a book does not close it.** The open is the expensive part and
+  it is the same every time, so going to the shelf to check a title was
+  costing as much as opening the book had. The reader keeps its document
+  now: on that same 5 Mbit connection, opening the 380 MB scan cold is 31.8
+  seconds and 470 requests, and going to the shelf and back is 0.02 seconds
+  and none. One book is kept, not a few, and it is let go after five
+  minutes with nobody reading it, because keeping it costs about 20 MB and
+  a phone's tab surviving turns on exactly that.
 - **An opening name is dropped rather than clipped to a stray character.**
   The family name on a game row is the one thing that gives way as the row
   narrows, and under about 11px the browser stops drawing the ellipsis and
