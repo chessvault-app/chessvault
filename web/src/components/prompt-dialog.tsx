@@ -17,6 +17,7 @@ export function PromptDialog({
   label,
   initial,
   submitLabel = 'Done',
+  inputMode,
   extra,
   error,
   closeOnSubmit = true,
@@ -26,6 +27,12 @@ export function PromptDialog({
   label: string;
   initial: string;
   submitLabel?: string;
+  /**
+   * The keyboard the field asks a phone for. Opt-in, and only ever the
+   * caller's business: a prompt for a page number wants digits, and every
+   * other prompt in the app wants the letters it gets by default.
+   */
+  inputMode?: 'numeric' | 'decimal';
   /** One control above the field — a collection picker, say. Anything
       taller than that belongs in a Modal, not in a prompt. */
   extra?: ReactNode;
@@ -64,6 +71,7 @@ export function PromptDialog({
         {extra}
         <ClearableInput
           aria-labelledby={titleId}
+          inputMode={inputMode}
           autoFocus={autoFocusField()}
           value={draft}
           onFocus={(e) => e.target.select()}

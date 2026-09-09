@@ -12,6 +12,7 @@ import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { PromptDialog } from '@/components/prompt-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { MobileActionBar } from '@/components/mobile-action-bar';
@@ -983,6 +984,21 @@ function PdfPane({
   // The page number is a field: typing one and pressing Enter goes there,
   // which is the go-to every reader knows without a label.
   const [typed, setTyped] = useState<string | null>(null);
+  /**
+   * The phone asks for the page in a sheet, not in the bar.
+   *
+   * The bar is hidden the moment a keyboard comes up (`keyboard:hidden`,
+   * App.tsx) because the shell then ends where the keyboard begins and a
+   * bar pinned to its bottom edge would sit on the keys. That rule was
+   * written on the assumption that nothing on a phone asks for typing
+   * except a sheet — and this field, alone in the app, sat in the bar. So
+   * tapping it raised the keyboard, the keyboard hid the bar, the browser
+   * dropped the focus of a field inside a hidden box, and the keyboard
+   * went straight back down (lanph3re: "it's gone as just as it's up").
+   * The sheet is where every other question in the app is asked, and it
+   * is the one place a phone keyboard is known to survive.
+   */
+  const [goingTo, setGoingTo] = useState(false);
   const size = compact ? 'icon' : 'icon-sm';
   // A narrow pane cannot hold the whole row: the page field is the one
   // thing that must not squash, so the view controls fold into a "…"
@@ -1037,28 +1053,52 @@ function PdfPane({
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>
-        <TitleTip title={t('Go to page')}>
-          <Input
-            inputSize="sm"
-            inputMode="numeric"
-            className="w-12 text-center tabular-nums"
-            value={typed ?? String(pageNo || 1)}
+        {compact ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-12 tabular-nums"
             aria-label={t('Go to page')}
-            onFocus={(e) => e.currentTarget.select()}
-            onChange={(e) => setTyped(e.target.value)}
-            onBlur={() => {
-              if (typed !== null && typed.trim() !== '') goTo(Number(typed));
-              setTyped(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-              if (e.key === 'Escape') {
+            onClick={() => setGoingTo(true)}
+          >
+            {pageNo || 1}
+          </Button>
+        ) : (
+          <TitleTip title={t('Go to page')}>
+            <Input
+              inputSize="sm"
+              inputMode="numeric"
+              className="w-12 text-center tabular-nums"
+              value={typed ?? String(pageNo || 1)}
+              aria-label={t('Go to page')}
+              onFocus={(e) => e.currentTarget.select()}
+              onChange={(e) => setTyped(e.target.value)}
+              onBlur={() => {
+                if (typed !== null && typed.trim() !== '') goTo(Number(typed));
                 setTyped(null);
-                e.currentTarget.blur();
-              }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+                if (e.key === 'Escape') {
+                  setTyped(null);
+                  e.currentTarget.blur();
+                }
+              }}
+            />
+          </TitleTip>
+        )}
+        {goingTo && (
+          <PromptDialog
+            label={t('Go to page')}
+            initial={String(pageNo || 1)}
+            inputMode="numeric"
+            onSubmit={(value) => {
+              const n = Number(value);
+              if (Number.isFinite(n) && n > 0) goTo(n);
             }}
+            onClose={() => setGoingTo(false)}
           />
-        </TitleTip>
+        )}
         <span className="text-muted-foreground px-1 text-sm tabular-nums">
           {pages > 0 ? `/ ${pages}` : ''}
         </span>

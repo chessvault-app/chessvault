@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The page number opens a sheet on a phone.** Tapping it raised the
+  keyboard and the keyboard put it straight back down. The reader's page
+  field was the one field in the app that sat in the phone's bottom bar,
+  and that bar is hidden whenever a keyboard is up: the shell ends where
+  the keyboard begins, so a bar pinned to its bottom edge would sit on the
+  keys. Hiding it took the focused field with it, the browser dropped the
+  focus of a field inside a hidden box, and the keyboard closed as fast as
+  it had opened. The number is a button now, and it opens the same kind of
+  sheet every other question in the app is asked in, which is the one
+  place a phone keyboard is known to survive. Nothing changed on a
+  desktop: the field is still in the toolbar, and the reader at 1400x900
+  is the same to the pixel, 0 of 1,260,000 differing.
 - **A big book opens in seconds instead of minutes.** Opening a PDF was
   fetching most of a hundred megabytes before it could draw a page. pdf.js
   finishes an open by fetching the book's LAST page, which walks the page
