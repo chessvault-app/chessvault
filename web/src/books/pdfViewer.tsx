@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
 
 import { pdfUrl } from './data';
+import { dropPdf, holdPdf, pdfKey, takePdf } from './heldPdf';
 import './text-layer.css';
 import { isCoarsePointer } from '@/lib/media';
 
@@ -53,6 +54,13 @@ const RANGE_CHUNK = 8 * 1024;
  * the file is never held whole in a phone's memory. `disableAutoFetch`
  * keeps it from quietly downloading the rest in the background once the
  * first page is up.
+ *
+ * Leaving the book does not close it. The open is the expensive part and
+ * it is the same every time (see `RANGE_CHUNK`), so the document is
+ * handed to `heldPdf` on the way out and taken back on the way in: going
+ * to the shelf and returning costs nothing, and the page is up on the
+ * frame the reader mounts rather than after the file has been read again.
+ * One book is held, and only one; see that file for what it retains.
  */
 export function useBookPdf(
   id: string,
@@ -70,35 +78,62 @@ export function useBookPdf(
   useEffect(() => {
     let live = true;
     let task: ReturnType<typeof import('pdfjs-dist').getDocument> | null = null;
-    setDoc(null);
+    // The document this run owns, held rather than destroyed when it ends.
+    // Set only once the open has finished: a half-open document is not
+    // something the next visit could use.
+    let owned: PDFDocumentProxy | null = null;
     setError(null);
-    if (bytes === null) return;
-    void (async () => {
-      try {
-        const pdfjs = await loadPdfjs();
-        if (!live) return;
-        task = pdfjs.getDocument({
-          url: pdfUrl(id, bytes),
-          rangeChunkSize: RANGE_CHUNK,
-          disableAutoFetch: true,
-          ...PDF_OPTIONS,
-        });
-        const opened = await task.promise;
-        if (!live) {
-          void task.destroy();
-          return;
+    if (bytes === null) {
+      setDoc(null);
+      return;
+    }
+    const key = pdfKey(id, bytes);
+    const kept = takePdf(key);
+    if (kept) {
+      owned = kept;
+      setDoc(kept);
+    } else {
+      setDoc(null);
+      void (async () => {
+        try {
+          const pdfjs = await loadPdfjs();
+          if (!live) return;
+          task = pdfjs.getDocument({
+            url: pdfUrl(id, bytes),
+            rangeChunkSize: RANGE_CHUNK,
+            disableAutoFetch: true,
+            ...PDF_OPTIONS,
+          });
+          const opened = await task.promise;
+          if (!live) {
+            // The reader left mid-open. Keeping it would hold a document
+            // nothing asked for; the next visit opens it again.
+            void task.destroy();
+            return;
+          }
+          owned = opened;
+          setDoc(opened);
+        } catch (e) {
+          if (live) setError((e as Error).message || 'could not open');
         }
-        setDoc(opened);
-      } catch (e) {
-        if (live) setError((e as Error).message || 'could not open');
-      }
-    })();
+      })();
+    }
     return () => {
       live = false;
-      void task?.destroy();
+      if (owned) holdPdf(key, owned);
+      else void task?.destroy();
     };
   }, [id, bytes, attempt]);
-  return { doc, error, retry: () => setAttempt((n) => n + 1) };
+  return {
+    doc,
+    error,
+    retry: () => {
+      // A retry is a fresh open by definition: whatever is held for this
+      // book is what failed to be useful.
+      dropPdf(id);
+      setAttempt((n) => n + 1);
+    },
+  };
 }
 
 /**

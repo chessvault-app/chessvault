@@ -1,5 +1,6 @@
 import { api, apiErrorMessage, apiUpload } from '@/lib/api';
 import { inspectPdf } from '@/puzzles/ocr/pdfPage';
+import { dropPdf } from './heldPdf';
 
 /**
  * The book library's model and the one module every library page shares:
@@ -206,6 +207,9 @@ export async function replaceBookPdf(
   }
   // A different file's pages: the server dropped its record, so does this.
   diagramMemory.delete(id);
+  // And the reader's open copy of the old file, which a replacement of
+  // exactly the same length would otherwise still answer from.
+  dropPdf(id);
   forgetLibrary();
 }
 
@@ -217,6 +221,7 @@ export async function renameBook(id: string, title: string): Promise<void> {
 export async function removeBook(id: string): Promise<void> {
   await api(`/api/books/${encodeURIComponent(id)}`, { method: 'DELETE' });
   diagramMemory.delete(id);
+  dropPdf(id);
   forgetLibrary();
 }
 
