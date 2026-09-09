@@ -13,6 +13,37 @@ import './text-layer.css';
 import { isCoarsePointer } from '@/lib/media';
 
 /**
+ * How much of the file one missing byte costs.
+ *
+ * pdf.js reads a chunk at a time, and opening a document is not a read of
+ * the front of the file: it finishes by fetching the LAST page, which
+ * walks the page tree and touches every page object in the book. Those
+ * objects are tiny and spread evenly through the file, one per page, so
+ * in a big scan they land one to a chunk and the chunk size is what is
+ * actually paid. A 380 MB, 448-page scan opened at 256 KB fetched
+ * 111.8 MB in 448 requests before it could draw a page.
+ *
+ * The requests go out in one burst, so what the reader waits for is the
+ * bytes, and the bytes are almost all over-fetch. Opening that book and
+ * drawing page 16, over a 5 Mbit link at 80 ms:
+ *
+ *      chunk   open   five turns   requests / MB
+ *     256 KB   230s            .     448 / 111.8
+ *      32 KB    50s         7.9s     460 /  16.3
+ *      16 KB    34s         9.7s     467 /   9.9
+ *       8 KB    30s         8.1s     477 /   5.8
+ *       4 KB    30s         8.4s     498 /   4.0
+ *
+ * Below 8 KB the time stops falling and only the request count grows: the
+ * floor is the round trips, not the transfer. Page turns do not pay for
+ * the small chunk, because pdf.js groups the chunks a contiguous read
+ * needs into one range request. And the pages are the same pages: page 16
+ * and page 240 rendered pixel-for-pixel identically at 256 KB and at
+ * 8 KB, 0 of 2,940,000 pixels differing.
+ */
+const RANGE_CHUNK = 8 * 1024;
+
+/**
  * The pdf.js half of the book reader: opening a library book by URL and
  * drawing one page of it.
  *
@@ -48,7 +79,7 @@ export function useBookPdf(
         if (!live) return;
         task = pdfjs.getDocument({
           url: pdfUrl(id, bytes),
-          rangeChunkSize: 256 * 1024,
+          rangeChunkSize: RANGE_CHUNK,
           disableAutoFetch: true,
           ...PDF_OPTIONS,
         });
