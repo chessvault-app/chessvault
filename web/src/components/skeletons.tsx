@@ -5,6 +5,7 @@ import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { panelStoredHeight } from '@/components/panel';
+import { VaultNote, VaultPath } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 
 /**
@@ -965,15 +966,25 @@ export function SkeletonGameRows({
  * placeholder cannot drift from the listing when either moves, and the
  * only numbers here are which bar goes where.
  *
+ * Two of its parts are not drawn at all but printed: the path, which the
+ * page knows from its settings before it asks what the vault weighs, and
+ * the closing sentence, which is the same sentence for every vault. A bar
+ * over either would be standing in for something already in hand, and
+ * printing them is also what makes the box's height exact rather than
+ * measured (`VaultPath` and `VaultNote`, components/vault-tree).
+ *
  * Its bars are `bg-accent` and not the Skeleton's own fill, because that
  * fill is `bg-muted` and this box IS bg-muted: the default draws a grey
  * bar on the identical grey and nothing appears at all. Accent is the
  * rung above muted, and a rung is what the two were tuned to be apart.
  */
 export function SkeletonVaultTree({
+  path,
   rows = 8,
   className,
 }: {
+  /** Where the folder is, as the listing itself takes it. */
+  path: string | null;
   /**
    * Eight, which is what a vault in use lists: the ten rows the card can
    * draw (settings/SettingsPage `VAULT_ROWS`) less the two book folders,
@@ -986,13 +997,10 @@ export function SkeletonVaultTree({
 }) {
   return (
     <Loading className={cn('vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5', className)}>
-      {/* The folder line: its icon, the path, and the totals at the end,
-          all on the 20px line box of the text-sm they stand for. */}
+      {/* The folder line: the real path, and a bar where the totals go,
+          on the 20px line box of the text-sm they will be. */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
-        <div className="flex h-5 items-center gap-2">
-          <Skeleton className="bg-accent size-4 shrink-0 rounded-sm" />
-          <Skeleton className="bg-accent h-2.5 w-44" />
-        </div>
+        <VaultPath path={path} />
         <div className="flex h-5 items-center">
           <Skeleton className="bg-accent h-2.5 w-24" />
         </div>
@@ -1029,16 +1037,7 @@ export function SkeletonVaultTree({
           </li>
         ))}
       </ul>
-      {/* The closing sentence: its own divider, then bars on the 22.75px
-          line box that text-sm leading-relaxed resolves to. Three lines on
-          a desktop card, five on a phone. */}
-      <div className="mt-2.5 border-t border-[var(--border-strong)] pt-2">
-        {TAIL_LINES.map((line, i) => (
-          <div key={i} className={cn('h-[22.75px] items-center', line.narrow ? 'hidden @max-[30rem]:flex' : 'flex')}>
-            <Skeleton className={cn('bg-accent h-2', line.w)} />
-          </div>
-        ))}
-      </div>
+      <VaultNote />
     </Loading>
   );
 }
@@ -1063,11 +1062,3 @@ const VAULT_SHAPE: { path: string; gloss: string; wraps?: boolean }[] = [
   { path: 'w-24', gloss: 'w-32' },
 ];
 
-/** The closing sentence's lines: three of them wide, five stacked. */
-const TAIL_LINES: { w: string; narrow?: boolean }[] = [
-  { w: 'w-full' },
-  { w: 'w-full' },
-  { w: 'w-2/5 @max-[30rem]:w-full' },
-  { w: 'w-full', narrow: true },
-  { w: 'w-2/5', narrow: true },
-];

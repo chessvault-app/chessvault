@@ -439,7 +439,7 @@ function DemoVaultCard() {
   const slow = useSlowLoad(vault === null);
   return (
     <Card icon={BrandMark} title={t('Vault')} anchor="vault">
-      {vault ? <VaultTree path={null} rows={vault.rows} /> : slow ? <SkeletonVaultTree rows={7} /> : null}
+      {vault ? <VaultTree path={null} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={null} rows={7} /> : null}
       <p className="text-muted-foreground text-sm">
         {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
       </p>
@@ -495,7 +495,7 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
           which on a vault of books is the slowest wait on this page, and the
           box used to appear from nothing and push the buttons under it down
           by its whole height. */}
-      {vault ? <VaultTree path={settings.vaultPath} rows={vault.rows} /> : slow ? <SkeletonVaultTree /> : null}
+      {vault ? <VaultTree path={settings.vaultPath} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={settings.vaultPath} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         {/* The backup verb (server/backup.ts): a plain link, since the
             session is a cookie and the browser's own download handles a

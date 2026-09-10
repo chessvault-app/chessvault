@@ -64,10 +64,7 @@ export function VaultTree({
           rule). The folder count is not said: the rows below are the
           folders. The open folder is what the ruler hangs from. */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
-        <span className="text-foreground flex min-w-0 items-center gap-2 font-mono text-sm">
-          <FolderOpen className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 break-all">{path ?? t('The demo vault, in this tab')}</span>
-        </span>
+        <VaultPath path={path} />
         <span className="text-muted-foreground text-sm whitespace-nowrap">
           <Figures text={`${size(bytes)} · ${t('{n} files', { n: files })}`} />
         </span>
@@ -97,16 +94,45 @@ export function VaultTree({
           );
         })}
       </ul>
-      {/* border-strong, the divider that survives a busy surface: on the muted
-          box the plain hairline measured 1.07:1 in dark. */}
-      <p className="text-muted-foreground mt-2.5 border-t border-[var(--border-strong)] pt-2 text-sm leading-relaxed">
-        <Figures
-          text={t(
-            'Plain files. Any editor opens them and any backup tool copies them; nothing here needs this app to stay readable. The puzzle database, reference games and indexes live outside it and can be rebuilt.',
-          )}
-        />
-      </p>
+      <VaultNote />
     </div>
+  );
+}
+
+/**
+ * Where the vault is, behind the open folder the ruler hangs from.
+ *
+ * Its own component because the placeholder draws it too: the path comes
+ * from the settings the page already has, so it is known before the walk
+ * that counts the rows is, and a bar standing in for a string we can
+ * print is a worse answer than the string.
+ */
+export function VaultPath({ path }: { path: string | null }) {
+  return (
+    <span className="text-foreground flex min-w-0 items-center gap-2 font-mono text-sm">
+      <FolderOpen className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+      <span className="min-w-0 break-all">{path ?? t('The demo vault, in this tab')}</span>
+    </span>
+  );
+}
+
+/**
+ * The sentence that closes the box, which says the same thing whatever
+ * the vault holds. The placeholder prints it rather than drawing bars
+ * over it, for the same reason: nothing about it is waiting on the walk.
+ *
+ * border-strong, the divider that survives a busy surface: on the muted
+ * box the plain hairline measured 1.07:1 in dark.
+ */
+export function VaultNote() {
+  return (
+    <p className="text-muted-foreground mt-2.5 border-t border-[var(--border-strong)] pt-2 text-sm leading-relaxed">
+      <Figures
+        text={t(
+          'Plain files. Any editor opens them and any backup tool copies them; nothing here needs this app to stay readable. The puzzle database, reference games and indexes live outside it and can be rebuilt.',
+        )}
+      />
+    </p>
   );
 }
 
