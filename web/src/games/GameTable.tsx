@@ -408,12 +408,13 @@ export function GameTableRow({
   const name = (player: string, side: 'white' | 'black') => {
     const className = cn(
       'min-w-0 truncate text-sm font-medium',
-      // The selected row's second cue, since its fill is the one hover
-      // already wears — see the row's own classes below. Semibold on the
-      // two names rather than a colour, because in the default Neutral
-      // scheme `--primary` (20.5%) and `--foreground` (14.5%) are almost
-      // the same ink and a colour change would say nothing there, while
-      // a weight step reads in every scheme and at every contrast knob.
+      // Reinforces the selected row's wash — see the row's own classes
+      // below, and the sidebar's current row, which also changes a fill
+      // and goes semibold. Weight rather than a colour, because in the
+      // default Neutral scheme `--primary` (20.5%) and `--foreground`
+      // (14.5%) are almost the same ink and a colour change would say
+      // nothing there, while a weight step reads in every scheme and at
+      // every contrast knob.
       selected && 'font-semibold',
       game.userSide === side && 'text-primary',
     );
@@ -465,31 +466,35 @@ export function GameTableRow({
         // py-1`, which is what the two resolve to at the comfortable rung,
         // so compact tightened every other list on the page and left this
         // one where it was.
-        'group hover:bg-accent relative min-h-(--row-h-table) cursor-pointer py-(--row-py-tight) transition-colors duration-100',
-        // Selection over zebra: the accent wash because the details
-        // panel is describing this exact line. The wash alone is not the
-        // whole cue, because it is the same fill as `hover:bg-accent`
-        // above it — `--accent` is `--surface-3` (index.css), so a
-        // selected row and a row under the pointer measure 1.00:1
-        // against each other, and in the ordinary case (you have just
-        // clicked, the pointer is still in the list) two rows look
-        // selected while the panel describes one. The names carry the
-        // difference; see `name()` below.
+        // Hover LIFTS, to the rung above the page, so that it and the
+        // selected row's wash sit on opposite sides of the page tone
+        // instead of sharing one fill. `var(--surface)` rather than
+        // `bg-card`, because the page-framed browser remaps `--card` to
+        // `--background` (Box, above) so that a child which would draw a
+        // white card blends into the page instead; a row's lift is the
+        // one thing here that wants the real raised rung, and `--surface`
+        // is what `--card` maps to everywhere the remap is not in force.
+        'group hover:bg-[var(--surface)] relative min-h-(--row-h-table) cursor-pointer py-(--row-py-tight) transition-colors duration-100',
+        // Selection SINKS: the accent wash, a rung below the page, while
+        // hover lifts a rung above it. The two states used to share this
+        // one fill — `hover:bg-accent` and `selected && 'bg-accent'`,
+        // and `--accent` is `--surface-3` (index.css) — so a selected
+        // row and a row under the pointer measured 1.00:1 against each
+        // other, and in the ordinary case (you have just clicked, the
+        // pointer is still in the list) two rows looked selected while
+        // the panel described one.
         //
-        // Why the second cue is type and not a fill, a stroke or a rung:
-        // every other list in the app that marks a current row sits on a
-        // card, where the ladder has two fills to spend (`--muted` at
-        // 97% against `--card` at 100%) and the app's own grammar is
-        // `bg-muted text-primary` against `hover:bg-accent` (App.tsx's
-        // sidebar rows). This table stands on the PAGE, which is itself
-        // 97%, so `--muted` is a no-op here and `--accent` is the only
-        // fill a row can take — hover has it. A ring was tried and
-        // reverted: `--card-ring` is transparent at rest and becomes a
-        // hairline only at the top of the contrast knob, so a fixed
-        // stroke at the 3:1 a state indicator owes was the loudest thing
-        // on a flat page and read as a different design. Type is the
-        // app's other current-item device and answers to no knob
-        // (CurrentLine's `text-primary font-semibold`).
+        // Two things were tried before the fills were sent in opposite
+        // directions. An inset primary ring: reverted, because
+        // `--card-ring` is transparent at rest and becomes a hairline
+        // only at the top of the contrast knob, so a fixed stroke at
+        // the 3:1 a state indicator owes was the loudest thing on a
+        // flat page. Type alone: correct but very quiet, because the
+        // whole neutral ladder spans about 1.07:1. Sending hover up is
+        // what gives each state a fill of its own without inventing a
+        // rung, and it keeps the semibold below as reinforcement, which
+        // is what the sidebar's current row does too (a fill change and
+        // semibold together — DESIGN.md, Navigation).
         selected && 'bg-accent',
         // The kept-game mark the card rows carry, unchanged: a warm edge
         // down the left that costs no width (painted, not bordered — see
@@ -501,7 +506,7 @@ export function GameTableRow({
         // Pinned to the pane's left edge: the checkbox must stay in
         // reach however far the table is scrolled. Opaque, following
         // the row's hover so the pin reads as part of its row.
-        <span className="bg-card group-hover:bg-accent sticky left-0 z-[1] flex items-center self-stretch transition-colors duration-100">
+        <span className="bg-card group-hover:bg-[var(--surface)] sticky left-0 z-[1] flex items-center self-stretch transition-colors duration-100">
           {standing}
         </span>
       )}
