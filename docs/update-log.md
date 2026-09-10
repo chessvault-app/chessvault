@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Settings page shows its rows while it loads.** The placeholder
+  that stands in for the settings drew every row in the same grey as the
+  box around it, so a slow load showed a page of empty outlines with
+  nothing in them. The rows, and the switch at the end of each, are
+  visible now.
 - **The vault's listing is drawn with icons.** The Vault card in Settings
   lists what your vault holds, and every row used to hang off a drawn
   branch with a slash after each folder's name. The rows run down one

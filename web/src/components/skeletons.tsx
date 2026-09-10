@@ -821,18 +821,25 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
                 key={i}
                 className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
               >
+                {/* Everything inside the well is bg-accent, since the well
+                    is bg-muted and so is a Skeleton: the three bars in here
+                    were drawn in the well's own fill and could not be seen
+                    at all, leaving a page of empty outlines for the whole
+                    wait. Accent is the rung above muted, which is the
+                    distance the two were tuned to. The bars outside, on the
+                    card, keep the default. */}
                 <div className="min-w-0">
                   <div className="flex h-6 items-center">
-                    <Skeleton className="h-3.5 w-32" />
+                    <Skeleton className="bg-accent h-3.5 w-32" />
                   </div>
                   <div className="flex h-5 items-center">
-                    <Skeleton className="h-2 w-44" />
+                    <Skeleton className="bg-accent h-2 w-44" />
                   </div>
                 </div>
                 {/* Where a Switch stands, at the size the registry draws
                     one: 18.4 x 32 (components/ui/switch), not the h-5 w-9
                     this claimed was "its own size". */}
-                <Skeleton className="h-[18.4px] w-8 shrink-0 rounded-full" />
+                <Skeleton className="bg-accent h-[18.4px] w-8 shrink-0 rounded-full" />
               </div>
             ))}
           </div>
