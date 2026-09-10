@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
+import { Skeleton, SkeletonForm, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
@@ -432,10 +432,14 @@ function revealVault(): (() => Promise<boolean>) | null {
  */
 function DemoVaultCard() {
   const vault = useVaultRows();
-  if (!vault) return null;
+  // The demo answers in the page, so the placeholder is a formality
+  // here (useSlowLoad holds it back for longer than the answer takes);
+  // it is drawn all the same, so the shape is proved on the one vault
+  // everybody can see. The whole card used to be withheld.
+  const slow = useSlowLoad(vault === null);
   return (
     <Card icon={BrandMark} title={t('Vault')} anchor="vault">
-      <VaultTree path={null} rows={vault.rows} />
+      {vault ? <VaultTree path={null} rows={vault.rows} /> : slow ? <SkeletonVaultTree rows={7} /> : null}
       <p className="text-muted-foreground text-sm">
         {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
       </p>
@@ -448,6 +452,7 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
   const [note, setNote] = useState<Note>(null);
   const folder = settings.vaultPath.split(/[\\/]/).filter(Boolean).pop() ?? settings.vaultPath;
   const vault = useVaultRows();
+  const slow = useSlowLoad(vault === null);
   const reveal = revealVault();
   const copyPath = async (): Promise<void> => {
     try {
@@ -486,9 +491,11 @@ function VaultCard({ settings, onSaved }: { settings: Settings; onSaved: () => P
         <Feedback note={note} />
       </div>
       {/* The vault as a folder: where it is, what it weighs, what lives in
-          it (components/vault-tree). Held back until the answer is in, so
-          the card grows once rather than in steps. */}
-      {vault && <VaultTree path={settings.vaultPath} rows={vault.rows} />}
+          it (components/vault-tree). /api/storage walks the vault to answer,
+          which on a vault of books is the slowest wait on this page, and the
+          box used to appear from nothing and push the buttons under it down
+          by its whole height. */}
+      {vault ? <VaultTree path={settings.vaultPath} rows={vault.rows} /> : slow ? <SkeletonVaultTree /> : null}
       <div className="flex flex-wrap items-center gap-2">
         {/* The backup verb (server/backup.ts): a plain link, since the
             session is a cookie and the browser's own download handles a

@@ -13,6 +13,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   ruler now, each behind the icon for what it is: a folder, the history
   store, or the config file. The slashes are gone, because the icon says
   it.
+- **The vault's listing holds its place while it is counted.** Knowing
+  what a vault weighs means walking all of it, and on a vault of books
+  that takes long enough to see: the listing arrived from nothing and
+  pushed the buttons under it down the page. A placeholder of the same
+  size stands there until the figures land, so nothing moves when they
+  do.
 - **A swipe under a board turns the panel, not its card.** On a phone the
   panels beside a board become one panel at a time under a tab strip, and a
   sideways swipe turns them. The card itself used to travel: part-way

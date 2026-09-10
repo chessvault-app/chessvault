@@ -950,3 +950,124 @@ export function SkeletonGameRows({
     </Loading>
   );
 }
+
+/**
+ * The Vault card's listing: the folder line, the ruled rows under it, and
+ * the sentence that closes the box (components/vault-tree).
+ *
+ * It waits on /api/storage, which walks the whole vault, so on a vault of
+ * books it is the slowest thing on the Settings page and the card used to
+ * grow by the height of the box the moment it answered, pushing the
+ * download and reveal buttons down with it.
+ *
+ * It borrows `.vault-tree` itself rather than approximating the geometry:
+ * the rows, the ruler and the container query are that class's, so the
+ * placeholder cannot drift from the listing when either moves, and the
+ * only numbers here are which bar goes where.
+ *
+ * Its bars are `bg-accent` and not the Skeleton's own fill, because that
+ * fill is `bg-muted` and this box IS bg-muted: the default draws a grey
+ * bar on the identical grey and nothing appears at all. Accent is the
+ * rung above muted, and a rung is what the two were tuned to be apart.
+ */
+export function SkeletonVaultTree({
+  rows = 8,
+  className,
+}: {
+  /**
+   * Eight, which is what a vault in use lists: the ten rows the card can
+   * draw (settings/SettingsPage `VAULT_ROWS`) less the two book folders,
+   * which exist only once a PDF has been imported. Empty rows are
+   * dropped, so a fresh vault lists fewer and a reading one all ten; the
+   * caller can say so where it knows better.
+   */
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <Loading className={cn('vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5', className)}>
+      {/* The folder line: its icon, the path, and the totals at the end,
+          all on the 20px line box of the text-sm they stand for. */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
+        <div className="flex h-5 items-center gap-2">
+          <Skeleton className="bg-accent size-4 shrink-0 rounded-sm" />
+          <Skeleton className="bg-accent h-2.5 w-44" />
+        </div>
+        <div className="flex h-5 items-center">
+          <Skeleton className="bg-accent h-2.5 w-24" />
+        </div>
+      </div>
+      <ul>
+        {VAULT_SHAPE.slice(0, rows).map((row, i) => (
+          <li key={i}>
+            {/* Every cell is centred rather than left to the row's baseline
+                alignment: a bar has no text, so its baseline is its own
+                bottom edge, and three bars of three heights pushed the row
+                a pixel taller than the row of text it stands for. */}
+            <span className="icon">
+              <Skeleton className="bg-accent size-4 rounded-sm" />
+            </span>
+            <div className="path flex h-5 items-center self-center">
+              <Skeleton className={cn('bg-accent h-2.5', row.path)} />
+            </div>
+            <div className="gloss self-center">
+              <div className="flex h-5 items-center">
+                <Skeleton className={cn('bg-accent h-2', row.gloss)} />
+              </div>
+              {/* Stacked under the name below 30rem, where the longer
+                  glosses take a second line; beside it above, where none
+                  of them do. */}
+              {row.wraps && (
+                <div className="hidden h-5 items-center @max-[30rem]:flex">
+                  <Skeleton className="bg-accent h-2 w-2/5" />
+                </div>
+              )}
+            </div>
+            <div className="size flex h-5 items-center self-center">
+              <Skeleton className="bg-accent h-2.5 w-24" />
+            </div>
+          </li>
+        ))}
+      </ul>
+      {/* The closing sentence: its own divider, then bars on the 22.75px
+          line box that text-sm leading-relaxed resolves to. Three lines on
+          a desktop card, five on a phone. */}
+      <div className="mt-2.5 border-t border-[var(--border-strong)] pt-2">
+        {TAIL_LINES.map((line, i) => (
+          <div key={i} className={cn('h-[22.75px] items-center', line.narrow ? 'hidden @max-[30rem]:flex' : 'flex')}>
+            <Skeleton className={cn('bg-accent h-2', line.w)} />
+          </div>
+        ))}
+      </div>
+    </Loading>
+  );
+}
+
+/**
+ * One entry per row the Vault card can list, in its order, so any prefix
+ * of it is the shape of a vault that has fewer: the bars are the widths
+ * that row's own name and gloss come to at text-sm (`VAULT_ROWS` supplies
+ * both), and `wraps` marks the three glosses long enough to take a second
+ * line once they stack under the name.
+ */
+const VAULT_SHAPE: { path: string; gloss: string; wraps?: boolean }[] = [
+  { path: 'w-10', gloss: 'w-80', wraps: true },
+  { path: 'w-14', gloss: 'w-72', wraps: true },
+  { path: 'w-10', gloss: 'w-48' },
+  { path: 'w-10', gloss: 'w-64', wraps: true },
+  { path: 'w-24', gloss: 'w-48' },
+  { path: 'w-14', gloss: 'w-56' },
+  { path: 'w-20', gloss: 'w-52' },
+  { path: 'w-14', gloss: 'w-32' },
+  { path: 'w-28', gloss: 'w-36' },
+  { path: 'w-24', gloss: 'w-32' },
+];
+
+/** The closing sentence's lines: three of them wide, five stacked. */
+const TAIL_LINES: { w: string; narrow?: boolean }[] = [
+  { w: 'w-full' },
+  { w: 'w-full' },
+  { w: 'w-2/5 @max-[30rem]:w-full' },
+  { w: 'w-full', narrow: true },
+  { w: 'w-2/5', narrow: true },
+];
