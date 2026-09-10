@@ -52,10 +52,16 @@ export { CoverParent };
  *     iOS's own keyboard animation. The jump had one cause: the ONE sheet
  *     that raises the keyboard as it opens (soleTextField) has its height
  *     changed under it mid-slide, and a `100%` translate is measured from
- *     that height. So that sheet alone skips the entrance (`data-no-enter`,
- *     set in the same ref callback that focuses the field, before the
- *     first paint); the keyboard's own slide is its motion. The exit still
- *     plays, since by then the keyboard is down or on its way.
+ *     that height. For one release that sheet skipped the entrance
+ *     altogether (`data-no-enter`, set in the same ref callback that
+ *     focuses the field, before the first paint), which made it the one
+ *     sheet that appeared rather than rose. It now rises from a length
+ *     the keyboard cannot change, the viewport's own height: a slide
+ *     measured in dvh starts fully off screen whatever the sheet's box
+ *     does under it, so the jump has nothing to measure from. Not yet
+ *     checked against a real iOS keyboard; if it jumps, the cause is not
+ *     the one this fixed. The exit plays as it always did, since by then
+ *     the keyboard is down or on its way.
  *
  * The desktop keeps one structural departure from the stock file: the
  * Popup renders INSIDE the Backdrop, which is the layout box. On a phone
@@ -525,9 +531,10 @@ function DialogContent({
         const field = soleTextField(node);
         if (field) {
           // This window will raise the keyboard as it opens, and its
-          // height will change under the entrance: no slide for it (see
-          // the note at the top). Set before the first paint, which is
-          // when the primitive's starting style is read.
+          // height will change under the entrance: its slide is measured
+          // in viewport height, not its own (see the note at the top).
+          // Set before the first paint, which is when the animation's
+          // start is read.
           node.dataset.noEnter = '';
           field.focus();
         }
@@ -770,8 +777,9 @@ function DialogContent({
                 'animate-in slide-in-from-bottom',
                 'data-ending-style:transform-[translate3d(0,100%,0)] data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
                 'data-swiping:duration-0 data-swiping:select-none',
-                // The keyboard sheet: in place from the first frame.
-                'data-no-enter:animate-none',
+                // The keyboard sheet: the same rise, from a length the
+                // keyboard cannot change.
+                'data-no-enter:[--tw-enter-translate-y:100dvh]',
               )}
               {...props}
             >
