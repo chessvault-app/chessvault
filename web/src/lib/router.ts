@@ -23,7 +23,7 @@ export interface Route {
   params: string[];
 }
 
-function parse(hash: string): Route {
+export function parse(hash: string): Route {
   const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const [head = 'home', ...params] = segments;
   // An unknown hash lands on Home, which explains itself — it used to
@@ -83,7 +83,7 @@ export function useRoute(): Route {
         pendingNavigate = false;
         pendingTraverse = false;
         pendingDirection = null;
-        swapRoute(() => setRoute(parse(next)), appDriven, nav);
+        swapRoute(() => setRoute(parse(next)), appDriven, nav, next);
         return;
       }
       /**
@@ -139,13 +139,37 @@ export function useRoute(): Route {
  * browser's, which has already animated it or, on a desktop, would
  * never have.
  */
-function swapRoute(commit: () => void, appDriven: boolean, nav: Nav): void {
+function swapRoute(commit: () => void, appDriven: boolean, nav: Nav, to: string): void {
   const phone = window.matchMedia('(max-width: 47.9375rem)').matches;
   if (!appDriven || !phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
     commit();
     disarmSharedBoard();
     return;
   }
+  // The new page has to exist before it can slide in. A section's chunk
+  // is fetched the first time it is drawn (lib/lazyRoute), and a route
+  // whose chunk is still on the wire commits as an empty box: the
+  // transition then snapshots the old page and slides a bare ground in
+  // beside it, black on a dark theme, and the board arrives only after
+  // the slide has finished. Seen on a phone over 5G, opening a game
+  // from the games list. So the transition waits for the chunk, capped
+  // (CHUNK_WAIT_MS), and a route that has moved on in the meantime is
+  // left to its own hashchange.
+  const wait = routePending?.(to);
+  if (wait) {
+    const token = (waitToken = {});
+    void Promise.race([wait, new Promise<void>((r) => setTimeout(r, CHUNK_WAIT_MS))]).then(() => {
+      if (waitToken !== token) return;
+      if (window.location.hash !== to) return;
+      swapRouteNow(commit, nav);
+    });
+    return;
+  }
+  swapRouteNow(commit, nav);
+}
+let waitToken: object | null = null;
+
+function swapRouteNow(commit: () => void, nav: Nav): void {
   // The direction, for the stylesheet: a tab switch fades through, a
   // push slides the new page in over the old, a pop slides the old one
   // back out. Stamped on the root before the snapshot so the first frame
@@ -209,6 +233,25 @@ export function shapeOf(from: string, to: string): Nav {
 let inFlight: Promise<void> | null = null;
 
 /**
+ * What the app knows and the router does not: whether the section a hash
+ * names has its chunk yet. Registered by App, which owns the lazy routes;
+ * null means it will draw on the next render.
+ */
+let routePending: ((hash: string) => Promise<void> | null) | null = null;
+export function registerRoutePending(fn: (hash: string) => Promise<void> | null): void {
+  routePending = fn;
+}
+
+/**
+ * How long a page change waits for its chunk before moving anyway. A
+ * chunk on a good link is here in tens of milliseconds and the wait is
+ * unfelt; on a bad one the cap keeps the tap answered, and the page
+ * slides in blank the way it did before there was a wait, which is the
+ * failure it always had rather than a new one.
+ */
+const CHUNK_WAIT_MS = 400;
+
+/**
  * Resolves once the page change in flight, if any, has finished drawing.
  *
  * Anything that appears during a View Transition is captured in the
@@ -226,6 +269,17 @@ let inFlight: Promise<void> | null = null;
  */
 export function routeSettled(): Promise<void> {
   return inFlight ?? Promise.resolve();
+}
+
+/**
+ * Whether a page change is being drawn right now. A placeholder that
+ * waits its usual beat before admitting to a load (useSlowLoad) has no
+ * flash to avoid while the page it stands in is still sliding in, and
+ * a page that draws nothing during the slide is a bare ground moving
+ * across the screen; so a wait that begins here shows at once.
+ */
+export function routeChanging(): boolean {
+  return inFlight !== null;
 }
 
 /**

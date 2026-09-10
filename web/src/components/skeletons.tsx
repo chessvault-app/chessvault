@@ -22,6 +22,7 @@ import { t } from '@/lib/i18n';
  *    fast enough that the right thing to show is nothing at all.
  */
 import { Skeleton } from '@/components/ui/skeleton';
+import { routeChanging } from '@/lib/router';
 export { Skeleton };
 
 /**
@@ -40,10 +41,17 @@ export function useSlowLoad(active: boolean, delay = 180, minVisible = 400): boo
   useEffect(() => {
     if (active) {
       if (shown) return;
+      // No beat while the page is arriving: a phone's push slides the
+      // new page in over 337ms, and a page that draws nothing until its
+      // record lands slid in as a bare ground (black on a dark theme,
+      // seen on a phone over 5G opening a game). The slide is what
+      // hides a flash, so the placeholder can be there from the first
+      // frame; the minimum stay still applies.
+      const wait = routeChanging() ? 0 : delay;
       const timer = setTimeout(() => {
         shownAt.current = Date.now();
         setShown(true);
-      }, delay);
+      }, wait);
       return () => clearTimeout(timer);
     }
     if (!shown) return;

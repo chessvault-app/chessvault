@@ -1,4 +1,4 @@
-import { createElement, useEffect, useState, type ComponentProps, type ComponentType } from 'react';
+import { createElement, useEffect, useState, type ComponentProps, type ComponentType, type FunctionComponent } from 'react';
 
 /**
  * A lazily-loaded route that survives the app being redeployed under it.
@@ -48,9 +48,21 @@ const COOLDOWN_MS = 10_000;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React's own
 // lazy() was typed this way; narrowing it here would reject valid components.
+export type LazyRouteComponent<P> = FunctionComponent<P> & {
+  /**
+   * Whether the chunk is already in hand, and if not, the promise of it.
+   * Null when the route will draw on its next render; otherwise the
+   * import, started here if it has not been. The router asks before a
+   * phone's page transition (lib/router, swapRoute): a route that draws
+   * blank until its chunk lands slides a bare ground in, and nobody
+   * wants to watch that.
+   */
+  pending: () => Promise<void> | null;
+};
+
 export function lazyRoute<T extends ComponentType<any>>(
   load: () => Promise<{ default: T }>,
-): ComponentType<ComponentProps<T>> {
+): LazyRouteComponent<ComponentProps<T>> {
   // Module-level, so a section visited twice draws immediately the second
   // time and the import is never asked for twice.
   let ready: T | null = null;
@@ -82,7 +94,7 @@ export function lazyRoute<T extends ComponentType<any>>(
         },
       ));
 
-  return function Route(props: ComponentProps<T>) {
+  const Route: FunctionComponent<ComponentProps<T>> = function Route(props: ComponentProps<T>) {
     const [, redraw] = useState(0);
     // In render, not in an effect: effects run after the paint, and the
     // chunk should be asked for while the browser is already fetching the
@@ -106,4 +118,5 @@ export function lazyRoute<T extends ComponentType<any>>(
     // anything more would be a skeleton nobody sees.
     return ready ? createElement(ready, props) : null;
   };
+  return Object.assign(Route, { pending: () => (ready || failure ? null : fetchModule()) });
 }

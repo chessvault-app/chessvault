@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
-import { atRoute, navigate, sectionHref, useRoute, type Section } from '@/lib/router';
+import { atRoute, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { PasswordGate } from '@/auth/PasswordGate';
@@ -72,6 +72,41 @@ const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ def
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })));
+
+// Which chunk a hash draws, for the phone's page transition to wait on
+// (lib/router, swapRoute). The same table as the switch in AppShell's
+// render, read the other way; a section not listed draws eagerly.
+registerRoutePending((hash) => {
+  const { section, params } = parse(hash);
+  switch (section) {
+    case 'board':
+      return AnalysisView.pending();
+    case 'workspace':
+      return WorkspaceView.pending();
+    case 'editor':
+      return EditorView.pending();
+    case 'studies':
+      return StudiesView.pending();
+    case 'games':
+      return GamesView.pending();
+    case 'notes':
+      return NotesView.pending();
+    case 'puzzles':
+      return PuzzlesView.pending();
+    case 'books':
+      return BooksView.pending();
+    case 'repertoire':
+      return RepertoireView.pending();
+    case 'openingmap':
+      return OpeningMapView.pending();
+    case 'databases':
+      return DatabasesPage.pending();
+    case 'settings':
+      return params[0] === 'licenses' ? LicensesPage.pending() : SettingsPage.pending();
+    default:
+      return null;
+  }
+});
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
 const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
