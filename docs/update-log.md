@@ -7,6 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A board's pane strip stands where it will be while the page loads.**
+  On a phone the strip that switches the panes under a board is drawn as
+  the top of the pane card. Its placeholder was still drawing the
+  floating pill the strip used to be, in a grey that could not be told
+  from the track it sat on, so the wait showed an empty strip of the
+  wrong shape that also stood 13px taller than the real one. It is the
+  same header now, marked at the pane that will open.
 - **The Settings page shows its rows while it loads.** The placeholder
   that stands in for the settings drew every row in the same grey as the
   box around it, so a slow load showed a page of empty outlines with

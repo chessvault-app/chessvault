@@ -706,14 +706,38 @@ export function SkeletonBoard({
         )}
       >
         <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden">{titleRow}</div>
-        {/* What a phone has instead of the panels: the pane switcher.
-            TabsList's own box — h-8 and p-[3px] on the muted track, no
-            border and no gap — rather than something that looks like it.
-            Measured at 28px against the strip's 32. */}
-        <div className="bg-muted flex h-8 shrink-0 rounded-lg p-[3px] lg:hidden">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-full flex-1 rounded-md" />
+        {/* What a phone has instead of the panels: the pane switcher, in
+            the face every board page gives it (components/pane-tabs,
+            `header`) rather than the floating pill it drew. Two things
+            were wrong with the pill. It is a muted track, and a Skeleton
+            is bg-muted, so its four tabs were drawn in the track's own
+            fill and the strip stood empty for the whole wait; the header
+            is the card's surface, where the default fill is the one the
+            rest of this column uses. And the header hangs over the card
+            below it, swallowing the column's gap and a pixel more, which
+            the pill did not: 32px and a 12px gap where the real strip
+            costs 19, so everything under it sat 13px low until the board
+            arrived.
+
+            Icon tabs, because every caller's are (a label needs a line box
+            a glyph does not), and the open one is the first: all three
+            pages open on their first pane. Three of them, or four for a
+            study, which is the one caller that says. The trainers have two
+            or three, and the tabs divide the width however many there are,
+            so the count is the icons' spacing and nothing else. */}
+        <div className="bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden">
+          {Array.from({ length: chapters ? 4 : 3 }, (_, i) => (
+            <div key={i} className="flex flex-1 items-center justify-center">
+              <Skeleton className="size-3.5 rounded-sm" />
+            </div>
           ))}
+          {/* The line that marks the open pane, which the strip draws
+              itself and a swipe moves. */}
+          <span
+            aria-hidden
+            className="bg-foreground absolute bottom-0 left-0 h-0.5 rounded-full"
+            style={{ width: `${100 / (chapters ? 4 : 3)}%` }}
+          />
         </div>
         {/* The panels below are the wide layout's: a phone shows one pane
             at a time behind the tabs above, and that one is the panel that
