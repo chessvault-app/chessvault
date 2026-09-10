@@ -15,6 +15,34 @@ import { gestureHaptic } from '@/board/sound';
 const EDGE_PX = 32;
 
 /**
+ * There is deliberately no guard on the other edge, the one Android's home
+ * and quick-switch gestures own.
+ *
+ * That band is the bottom 48dp of the screen, an app cannot opt out of it
+ * the way it can out of the back gesture, and from Chrome 135 the viewport
+ * extends into it on a small screen — for ordinary tabs, not only an
+ * installed app, and this app asks for that outright with
+ * `viewport-fit=cover`. So part of the bar really is inside it. Measured
+ * against a 24dp gesture-nav inset, up from the screen's bottom edge: the
+ * tab row spans 24-80px, so 24 of its 56px are in the band; but the pill
+ * spans 48-76 and the icon 53-71, both clear of it, and only the label
+ * (28-44) is inside. A thumb aimed where the gesture is drawn is already
+ * above the band.
+ *
+ * And a gesture the system does claim arrives here as `touchcancel`, which
+ * `abandon` treats as choosing nothing: the pill goes home, the click is
+ * swallowed, the route does not move. Refusing to START in the bottom 48px
+ * would buy nothing for that and would cost the gesture on iOS, where the
+ * band does not exist and 48 of the row's 56px would be dead.
+ *
+ * What is still owed to a device: whether a phone reports the 24dp inset
+ * this assumes (Android publishes no number and tells apps to ask
+ * `getMandatorySystemGestureInsets()`), and whether quick switch really
+ * fires from a touch that starts above the band. A smaller inset moves the
+ * icon down into it.
+ */
+
+/**
  * How far above or below the bar a finger may be when it lifts and still
  * be choosing a tab.
  *
