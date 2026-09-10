@@ -75,12 +75,15 @@ export function useRoute(): Route {
       // and this is the app agreeing with it.
       if (next === current) return;
       if (!leaveIsBlocked()) {
+        const from = current;
         current = next;
         arrivedByNavigate = pendingNavigate;
         const appDriven = pendingNavigate || pendingTraverse;
+        const nav = pendingDirection ?? shapeOf(from, next);
         pendingNavigate = false;
         pendingTraverse = false;
-        swapRoute(() => setRoute(parse(next)), appDriven);
+        pendingDirection = null;
+        swapRoute(() => setRoute(parse(next)), appDriven, nav);
         return;
       }
       /**
@@ -136,13 +139,18 @@ export function useRoute(): Route {
  * browser's, which has already animated it or, on a desktop, would
  * never have.
  */
-function swapRoute(commit: () => void, appDriven: boolean): void {
+function swapRoute(commit: () => void, appDriven: boolean, nav: Nav): void {
   const phone = window.matchMedia('(max-width: 47.9375rem)').matches;
   if (!appDriven || !phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
     commit();
     disarmSharedBoard();
     return;
   }
+  // The direction, for the stylesheet: a tab switch fades through, a
+  // push slides the new page in over the old, a pop slides the old one
+  // back out. Stamped on the root before the snapshot so the first frame
+  // is already the right animation, and cleared once it has played.
+  document.documentElement.dataset.nav = nav;
   const transition = document.startViewTransition(() => {
     flushSync(commit);
   });
@@ -151,9 +159,40 @@ function swapRoute(commit: () => void, appDriven: boolean): void {
   // tap armed has flown.
   const settled = transition.finished.catch(() => undefined).then(() => {
     disarmSharedBoard();
-    if (inFlight === settled) inFlight = null;
+    if (inFlight === settled) {
+      inFlight = null;
+      delete document.documentElement.dataset.nav;
+    }
   });
   inFlight = settled;
+}
+
+/**
+ * The shape of a page change: `tab` between two top-level pages, `push`
+ * down into a leaf, `pop` back up. The CSS is under `[data-nav]` in
+ * index.css.
+ *
+ * Read off the two routes, not off which function the page called: a
+ * leaf's back chevron may `navigate` to its list (the study page does,
+ * so a bookmarked study still has somewhere to go) and that is still a
+ * step up. Only the app's own history moves (`traverse`) name their
+ * direction outright, since Back is a pop wherever it lands.
+ */
+type Nav = 'tab' | 'push' | 'pop';
+
+/** How deep a route is: its parameter count, with the puzzles hub at the
+    top, since that is where the Puzzles tab lands. */
+function depth(hash: string): number {
+  const { section, params } = parse(hash);
+  return section === 'puzzles' && params[0] === 'hub' ? 0 : params.length;
+}
+
+function shapeOf(from: string, to: string): Nav {
+  const a = depth(from);
+  const b = depth(to);
+  if (b > a) return 'push';
+  if (b < a) return 'pop';
+  return b === 0 ? 'tab' : 'push';
 }
 
 let inFlight: Promise<void> | null = null;
@@ -169,10 +208,10 @@ let inFlight: Promise<void> | null = null;
  * this first; with no transition in flight it resolves at once.
  *
  * The tear-down has a second, cosmetic consequence worth knowing before
- * someone goes hunting for it elsewhere: on iOS the whole page
- * re-rasterises in that one frame, so a shelf's board thumbnails appear
- * to twitch. It is a repaint and not a layout change, and it is written
- * up where it is seen (components/mini-board).
+ * someone goes hunting for it elsewhere: on iOS the snapshot rasterises
+ * a shelf's board thumbnails about a device pixel off the live page, so
+ * they hop when it hands back. It is a raster and not a layout change,
+ * and it is written up where it is seen (components/mini-board).
  */
 export function routeSettled(): Promise<void> {
   return inFlight ?? Promise.resolve();
@@ -195,15 +234,19 @@ export function returnedThroughHistory(): boolean {
 let arrivedByNavigate = true;
 let pendingNavigate = false;
 let pendingTraverse = false;
+/** Which way a pending history move goes, for the transition's shape;
+    a plain navigate leaves it null and the routes decide (shapeOf). */
+let pendingDirection: 'push' | 'pop' | null = null;
 
 /**
  * Back or Forward, asked for by the app: the chevron on a leaf page,
  * the arrows in the desktop title bar. Marked so the hashchange it
- * causes still gets the cross-fade (swapRoute), as against the same move
+ * causes still gets the transition (swapRoute), as against the same move
  * made from the browser's own chrome, which does not.
  */
 export function traverse(delta: -1 | 1): void {
   pendingTraverse = true;
+  pendingDirection = delta < 0 ? 'pop' : 'push';
   window.history.go(delta);
 }
 

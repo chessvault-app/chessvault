@@ -49,6 +49,12 @@ export interface SpringTrace {
   ms: number;
   /** The `linear()` easing that traces it over that time. */
   easing: string;
+  /** The same trace run backwards: slow off the mark, arriving at the
+      spring's own peak speed. An exit (a sheet dismissed, a page popped)
+      takes this one, because a thing leaving on a decelerating curve
+      lingers at the edge; both platforms' guidance ends an exit at full
+      speed. One physics, two directions. */
+  exit: string;
   /** How far past the end it goes, as a share of the trip. */
   overshoot: number;
 }
@@ -75,12 +81,21 @@ export function springTrace(v0 = 0, spring: { stiffness: number; ratio: number }
     if (p > peak) peak = p;
   }
   settle += 1;
-  const samples: string[] = [];
-  for (let i = 0; i <= STEPS; i++) {
-    const p = springAt((settle / 1000) * (i / STEPS), key, spring);
-    samples.push(i === 0 ? '0' : i === STEPS ? '1' : `${p.toFixed(4)} ${((100 * i) / STEPS).toFixed(1)}%`);
-  }
-  const trace = { ms: settle, easing: `linear(${samples.join(', ')})`, overshoot: peak - 1 };
+  const sample = (at: (i: number) => number): string => {
+    const samples: string[] = [];
+    for (let i = 0; i <= STEPS; i++) {
+      const p = at(i);
+      samples.push(i === 0 ? '0' : i === STEPS ? '1' : `${p.toFixed(4)} ${((100 * i) / STEPS).toFixed(1)}%`);
+    }
+    return `linear(${samples.join(', ')})`;
+  };
+  const at = (share: number): number => springAt((settle / 1000) * share, key, spring);
+  const trace = {
+    ms: settle,
+    easing: sample((i) => at(i / STEPS)),
+    exit: sample((i) => 1 - at(1 - i / STEPS)),
+    overshoot: peak - 1,
+  };
   if (spring === SPRING) traces.set(key, trace);
   return trace;
 }

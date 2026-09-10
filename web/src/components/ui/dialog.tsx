@@ -44,10 +44,18 @@ export { CoverParent };
  *   - A touch on a text field is a caret and a touch on a canvas is that
  *     canvas's own business — neither may become a drag (the guard on the
  *     sheet below; the Drawer's engine only excuses buttons and links).
- *   - Open and close are not transitioned on a phone: animating against
- *     iOS's own keyboard animation is what made earlier attempts jump
- *     about. Only the swipe's snap-back animates (180ms), matching the
- *     retired hook's release.
+ *   - The sheet rises from the bottom edge on the app's spring and leaves
+ *     faster on the same spring run backwards (`--pane-turn`,
+ *     `--pane-turn-ease-out`); the scrim fades on the same clock, and the
+ *     panel itself never fades (a bottom sheet is a slab, not a ghost).
+ *     It used to snap into place, because an earlier slide jumped against
+ *     iOS's own keyboard animation. The jump had one cause: the ONE sheet
+ *     that raises the keyboard as it opens (soleTextField) has its height
+ *     changed under it mid-slide, and a `100%` translate is measured from
+ *     that height. So that sheet alone skips the entrance (`data-no-enter`,
+ *     set in the same ref callback that focuses the field, before the
+ *     first paint); the keyboard's own slide is its motion. The exit still
+ *     plays, since by then the keyboard is down or on its way.
  *
  * The desktop keeps one structural departure from the stock file: the
  * Popup renders INSIDE the Backdrop, which is the layout box. On a phone
@@ -95,15 +103,37 @@ export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenCha
   onOpenChange?: (open: boolean) => void;
 }
 
-function Dialog({ onOpenChange, ...props }: DialogProps) {
+function Dialog({ onOpenChange, open, onOpenChangeComplete, ...props }: DialogProps) {
   const phone = useMediaQuery(PHONE);
   const guards = React.useRef<DialogGuards | null>(null);
-  const close = React.useCallback(() => onOpenChange?.(false), [onOpenChange]);
+  // The sheet's exit, held here. Nearly every window in the app mounts
+  // its Root already open and unmounts it the moment the caller hears
+  // onOpenChange(false), so the primitive never sees `open` flip and its
+  // ending style, which is where the slide-out lives, never runs. On a
+  // phone a close request flips the primitive's OWN open first, the
+  // sheet leaves, and the caller is told once the primitive reports the
+  // leave complete. Then `leaving` is reset: a caller that unmounted is
+  // gone, one that set open=false is closed either way, and one that
+  // refused (kept open=true) gets its sheet back, with the entrance.
+  const [leaving, setLeaving] = React.useState(false);
+  const onOpenChangeRef = React.useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+  const close = React.useCallback(() => {
+    if (phone && open) setLeaving(true);
+    else onOpenChangeRef.current?.(false);
+  }, [phone, open]);
+  const handleOpenChangeComplete = (isOpen: boolean): void => {
+    onOpenChangeComplete?.(isOpen);
+    if (!isOpen && leaving) {
+      onOpenChangeRef.current?.(false);
+      setLeaving(false);
+    }
+  };
   const handleOpenChange = (
-    open: boolean,
+    nextOpen: boolean,
     details: DialogPrimitive.Root.ChangeEventDetails | DrawerPrimitive.Root.ChangeEventDetails,
   ): void => {
-    if (!open && guards.current) {
+    if (!nextOpen && guards.current) {
       // Escape: cancel keeps Base from closing AND from preventDefaulting
       // the keydown, so where CloseWatcher exists it still hears the same
       // press — the one door (see useCloseWatcher). Everywhere else the
@@ -130,14 +160,20 @@ function Dialog({ onOpenChange, ...props }: DialogProps) {
       // 'swipe' — the sheet pushed away — falls through: a drag past the
       // threshold closes the window outright, as the retired hook did.
     }
-    onOpenChange?.(open);
+    if (nextOpen) onOpenChange?.(true);
+    else close();
   };
   const Root = phone ? DrawerPrimitive.Root : DialogPrimitive.Root;
   return (
     <SheetContext.Provider value={phone}>
       <DialogCloseContext.Provider value={close}>
         <DialogGuardContext.Provider value={guards}>
-          <Root onOpenChange={handleOpenChange} {...props} />
+          <Root
+            open={open === undefined ? undefined : open && !leaving}
+            onOpenChange={handleOpenChange}
+            onOpenChangeComplete={handleOpenChangeComplete}
+            {...props}
+          />
         </DialogGuardContext.Provider>
       </DialogCloseContext.Provider>
     </SheetContext.Provider>
@@ -485,7 +521,17 @@ function DialogContent({
     coverRef(node);
     if (node && node !== armed.current) {
       armed.current = node;
-      if (!node.contains(document.activeElement)) soleTextField(node)?.focus();
+      if (!node.contains(document.activeElement)) {
+        const field = soleTextField(node);
+        if (field) {
+          // This window will raise the keyboard as it opens, and its
+          // height will change under the entrance: no slide for it (see
+          // the note at the top). Set before the first paint, which is
+          // when the primitive's starting style is read.
+          node.dataset.noEnter = '';
+          field.focus();
+        }
+      }
     }
   };
 
@@ -639,6 +685,10 @@ function DialogContent({
             data-slot="dialog-overlay"
             className={cn(
               'vv-band fixed inset-0 isolate z-50 flex items-end justify-center bg-black/10 supports-backdrop-filter:backdrop-blur-xs',
+              // The scrim arrives and leaves on the sheet's own clock
+              // (below): the dim and the blur used to snap on with it.
+              'transition-opacity duration-(--pane-turn) ease-(--pane-turn-ease) animate-in fade-in-0',
+              'data-ending-style:opacity-0 data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out)',
               // Parked under a page: out of sight, but still laid out, so
               // the page over it can read the height it is matching.
               covered > 0 && 'invisible',
@@ -704,10 +754,24 @@ function DialogContent({
                     (fill ? 'h-[var(--sheet-band)]' : 'max-h-[88%]'),
                 // The Drawer's swipe, consumed: the engine publishes the
                 // drag as a CSS variable and the release as data states.
-                // Open and close do not animate (see the note at the top);
-                // the snap-back keeps the retired hook's 180ms.
-                'transform-[translate3d(0,var(--drawer-swipe-movement-y,0px),0)] transition-transform duration-[180ms] ease-in-out will-change-transform',
-                'data-swiping:duration-0 data-swiping:select-none data-starting-style:duration-0 data-ending-style:duration-0',
+                // The entrance and a swipe's snap-back both ride the
+                // spring (the snap-back was 180ms ease-in-out; the spring
+                // is 90% home at 180ms, so the arrival reads the same and
+                // only the tail is softer). The exit, a button or a swipe
+                // past the threshold, is shorter and on the spring run
+                // backwards (see the note at the top).
+                'transform-[translate3d(0,var(--drawer-swipe-movement-y,0px),0)] transition-transform duration-(--pane-turn) ease-(--pane-turn-ease) will-change-transform',
+                // The entrance is an ANIMATION on mount, not the
+                // primitive's starting style: nearly every window here
+                // mounts its Root already open, so the primitive never
+                // sees `open` flip and never marks a start. The exit is
+                // the primitive's ending style, which the Dialog wrapper
+                // above makes it see (see `leaving` there).
+                'animate-in slide-in-from-bottom',
+                'data-ending-style:transform-[translate3d(0,100%,0)] data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
+                'data-swiping:duration-0 data-swiping:select-none',
+                // The keyboard sheet: in place from the first frame.
+                'data-no-enter:animate-none',
               )}
               {...props}
             >

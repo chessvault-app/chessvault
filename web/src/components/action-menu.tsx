@@ -316,7 +316,9 @@ function ActionSheetBody({
               className={cn(
                 // A sheet row is a touch target: a whole row to be tapped in.
                 'flex items-center gap-3 rounded-lg px-2 py-3 text-left text-base transition-colors duration-100',
-                danger ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-accent',
+                danger
+                  ? 'text-destructive hover:bg-destructive/10 active:bg-destructive/10'
+                  : 'text-foreground hover:bg-accent active:bg-accent',
                 // The registry's own two, so a dimmed sheet row and a
                 // dimmed dropdown row are dimmed the same amount.
                 'disabled:pointer-events-none disabled:opacity-50',

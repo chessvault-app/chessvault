@@ -7,6 +7,27 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A phone's sheets rise and leave.** A bottom sheet used to be simply
+  there, in one frame, and gone the same way; the dimming behind it
+  snapped on and off with it. It now rises from the bottom edge and the
+  dimming fades in with it, and a dismissal, whether a button, the scrim,
+  Android's Back or a swipe past the threshold, slides it out faster
+  than it came. The one sheet that opens the keyboard as it appears (a
+  name to type) stays put, because the keyboard's own slide is its
+  motion and animating against it was what made an earlier attempt jump.
+- **Pages on a phone move the way they were entered.** Opening a game, a
+  study or a puzzle slides the new page in from the right while the one
+  behind it slips a third of the way out and darkens; the back chevron
+  plays that in reverse. Switching tabs fades the old page fully out and
+  the new one in, instead of blending the two, so the text of two pages
+  is never on screen at once. Reduced motion still cuts straight to the
+  new page.
+- **What replaces a placeholder fades in.** Once a page has shown its
+  grey placeholder, the notes, studies or licences that arrive fade in
+  over it on a phone rather than popping into place.
+- **A touch shows on a button.** A pressed button or row on a phone takes
+  the same tint it shows under a mouse. It used to show only a 1px nudge,
+  which under a thumb reads as nothing happening.
 - **A long press on a phone selects your own words, and nothing else.**
   Headings, stats, coordinates and rows stopped raising the selection
   handles a release ago, but that rule named the tags it knew about and
