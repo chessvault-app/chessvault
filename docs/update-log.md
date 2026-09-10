@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A sheet's corners match the cards behind it.** On a phone every
+  window is a bottom sheet, and its top corners sat one rung below the
+  cards it opens over: 4px shy of them at the default Corners setting
+  and 6.4px at Large, since both follow that one knob. The same window
+  already drew the cards' corner on a desktop, so it changed rung
+  whenever it changed shape. It takes the cards' rung now, on both.
 - **The diagram buttons are visible on a light page again.** A book's page
   is paper, and the canvas it is drawn on is white in both themes for that
   reason. The buttons over it were not: they took the theme's own surface

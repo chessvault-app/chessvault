@@ -680,7 +680,14 @@ function DialogContent({
                 // the finish, and its reclaim margins (DialogFooter,
                 // AlertDialogFooter, and any sticky bar marked
                 // sheet-footer) are written against that number.
-                'rounded-t-lg pb-[calc(3.25rem+var(--safe-b))]',
+                //
+                // xl, the rung the cards under it take and the rung this
+                // same window takes on a desktop (below). It was lg for
+                // one sweep, which put the sheet on the menus' rung: a
+                // corner 4px shy of every card behind it at the default
+                // knob, and 6.4px at Large, in a component that changed
+                // rung when it changed shape.
+                'rounded-t-xl pb-[calc(3.25rem+var(--safe-b))]',
                 'has-data-[slot=dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 'has-data-[slot=alert-dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 'has-data-[slot=sheet-footer]:pb-[calc(1.25rem+var(--safe-b))]',

@@ -777,6 +777,25 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   border-strong) are variables, not utilities. A preset theme pasted over `:root` would
   override the roles but not the ladder they derive from, so the knobs in
   Settings would stop reaching them — re-express a theme in the ladder.
+- **Which rung of the corner ladder a surface takes follows what it
+  is.** A window takes `xl`: the cards, the desktop dialog, and the
+  phone sheet that same dialog becomes. A menu takes `lg`: Popover,
+  DropdownMenu, ContextMenu, Select's list, and the text fields beside
+  them. What sits INSIDE one of those takes `md`: a menu row, a select
+  row, the icon chip in an alert, the tooltip (a label, not a surface),
+  and the buttons, which cap the rung at 10 or 12px where a full one
+  measured too round for its row. Toast is the one deliberate exception
+  at `2xl`: it floats over everything and belongs to no page. This is
+  written down because the sheet spent 0.4.7 to 0.9.3 on the menus'
+  rung. It had been `rounded-t-2xl`, and the sweep that replaced
+  app-chosen values with the registry's stock ones could not tell a
+  deliberate corner from a leftover and dropped it two rungs, while
+  `sm:rounded-xl` on the next line survived untouched because `xl` was
+  already stock. One component then changed rung when it changed shape,
+  and the sheet sat 4px shy of every card behind it at the default knob
+  and 6.4px at Large, since both sides scale off `--radius` (put back on
+  `xl` 2026-09-10). A new surface takes the rung its kind already has;
+  one that wants another says why, here.
 - **One focus ring, the registry's.** Components draw shadcn's
   `focus-visible:ring-3 ring-ring/50` and turn the outline off; everything
   that is not a component (a bare button, a link) gets the same ring from
