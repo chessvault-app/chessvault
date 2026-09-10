@@ -58,6 +58,37 @@ export function useSlowLoad(active: boolean, delay = 180, minVisible = 400): boo
   return shown;
 }
 
+/**
+ * The box a placeholder and the content it stands for share: once a
+ * skeleton has been shown, what replaces it fades in (150ms, phones
+ * only) instead of popping. Both platforms' guidance says the same:
+ * placeholders first, then a quick fade on top of them, never a cut. A
+ * load that finished inside `useSlowLoad`'s delay never showed a
+ * skeleton and mounts its content the way it always did.
+ *
+ * `pending` is the same boolean the skeleton is drawn on. The class is
+ * off while it is true and back on once it is false, so a second wait
+ * (a refresh) fades its arrival again. Nothing is keyed, so the content
+ * keeps its state.
+ */
+export function Arrival({
+  pending,
+  children,
+  className,
+}: {
+  pending: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const shown = useRef(false);
+  if (pending) shown.current = true;
+  return (
+    <div className={cn(!pending && shown.current && 'max-sm:animate-in max-sm:fade-in-0 max-sm:duration-150', className)}>
+      {children}
+    </div>
+  );
+}
+
 /** Wrapper that announces itself to screen readers exactly once. */
 function Loading({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

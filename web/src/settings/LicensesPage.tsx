@@ -5,7 +5,7 @@ import { FilterChip } from '@/components/filter-chip';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { SearchInput } from '@/components/text-fields';
-import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
+import { Arrival, SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -162,6 +162,7 @@ export function LicensesPage() {
           </ChipRow>
         </div>
       )}
+      <Arrival pending={slow}>
       {failed ? (
         <p className="text-muted-foreground text-sm">{t('The licence list could not be loaded.')}</p>
       ) : !inventory ? (
@@ -175,6 +176,7 @@ export function LicensesPage() {
           ))}
         </ul>
       )}
+      </Arrival>
     </PageShell>
   );
 }

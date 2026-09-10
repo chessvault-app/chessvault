@@ -23,7 +23,7 @@ import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } f
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl, FabSpacer } from '@/components/fab';
-import { SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
   shelfHasShape,
@@ -188,6 +188,7 @@ function StudyList() {
         </p>
       )}
 
+      <Arrival pending={pending}>
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
         // that fills in — but only once the wait is long enough to
@@ -268,6 +269,7 @@ function StudyList() {
           onRemove={dropStudy}
         />
       )}
+      </Arrival>
 
 
       <FabSpacer />
