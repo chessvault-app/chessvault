@@ -181,10 +181,15 @@ function swapRoute(commit: () => void, appDriven: boolean, nav: Nav): void {
 type Nav = 'tab' | 'push' | 'pop';
 
 /** How deep a route is: its parameter count, with the puzzles hub at the
-    top, since that is where the Puzzles tab lands. */
+    top, since that is where the Puzzles tab lands, and the bare trainer
+    (`#/puzzles`, what the hub's Next puzzle card opens) one step under
+    it. Counted by parameters alone the trainer sat level with the hub,
+    so the card faded through like a tab switch while the Failed and
+    theme cards beside it pushed. */
 function depth(hash: string): number {
   const { section, params } = parse(hash);
-  return section === 'puzzles' && params[0] === 'hub' ? 0 : params.length;
+  if (section !== 'puzzles') return params.length;
+  return params[0] === 'hub' ? 0 : Math.max(1, params.length);
 }
 
 function shapeOf(from: string, to: string): Nav {
