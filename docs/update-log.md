@@ -7,6 +7,19 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The hub's Next puzzle card pushes.** It faded through like a tab
+  switch while the Failed and theme cards beside it slid in, because the
+  trainer's address has no parameters and was counted level with the
+  hub. It now slides in, and the trainer's back chevron slides it out.
+- **The phone's search sheet rises like the others.** It was the one
+  sheet that appeared in place, kept that way because a slide measured
+  against its own height jumped when the keyboard changed that height.
+  The slide is now measured against the screen, which the keyboard
+  cannot change. Not yet checked against a real iPhone keyboard.
+- **Swiping a row sideways no longer drags the page with it.** The rows
+  tell the browser they will handle the sideways axis themselves, so a
+  drag it reads as horizontal is left to the row alone. A vertical drag
+  scrolls as before.
 - **The phone's round button fans out.** Its choices used to appear in
   one frame and vanish the same way. They now grow out of the disc on the
   app's spring, the one by your thumb first and the next a beat behind,
