@@ -141,6 +141,7 @@ function Box({
  */
 export function GamesBrowser({
   table,
+  besideDetails = false,
   frame,
   inPlace = false,
   onSelect,
@@ -152,6 +153,15 @@ export function GamesBrowser({
       Explicit, never inferred: the Games page passes its own width
       flag, the workspace is always wide enough. */
   table: boolean;
+  /**
+   * Whether a details panel stands beside this pane right now. The pane
+   * does not draw it — the host does — but the table gives up its
+   * Notation column while it is there, because the panel that took the
+   * width is printing the same move list in full (GameTable's
+   * DROPPED_WITH_DETAILS). The workspace's band has no such panel and
+   * passes nothing.
+   */
+  besideDetails?: boolean;
   /**
    * What stands around the browser. `panel`: its own Panel, the tab
    * strip as the card's title, for a host that sets it among other
@@ -653,6 +663,7 @@ export function GamesBrowser({
             shape={shape}
             table={table}
             merged={merged}
+            besideDetails={besideDetails}
             inPlace={inPlace}
             onSelect={setDbSel}
             selectedKey={dbSel?.key ?? null}
@@ -662,6 +673,7 @@ export function GamesBrowser({
             shape={shape}
             table={table}
             merged={merged}
+            besideDetails={besideDetails}
             inPlace={inPlace}
             site={tab}
             collectionKeys={collectionKeys}
@@ -675,6 +687,7 @@ export function GamesBrowser({
             shape={shape}
             table={table}
             merged={merged}
+            besideDetails={besideDetails}
             games={games}
             loaded={loaded}
             bookmarks={bookmarks}

@@ -209,6 +209,7 @@ export function CollectionList({
   search,
   searchIssues,
   merged = false,
+  besideDetails = false,
   shape,
   onSelect,
   selectedKey,
@@ -244,6 +245,10 @@ export function CollectionList({
   searchIssues?: ReactNode;
   /** One-row chrome by measured pane width - see DatabaseGames. */
   merged?: boolean;
+  /** Whether a details panel stands beside this pane — the table gives
+      up its Notation column while it does (GameTable's
+      DROPPED_WITH_DETAILS). */
+  besideDetails?: boolean;
   /** Table mode: a click makes this row the details panel's subject;
       null (Escape) clears it. */
   onSelect?: (game: GameSummary | null) => void;
@@ -355,7 +360,7 @@ export function CollectionList({
 
   // ↑/↓/Enter/Escape drive the table selection over the filtered rows.
   const tableNav = useTableNav(table && onSelect !== undefined);
-  const tableVars = useGameTableVars();
+  const tableVars = useGameTableVars(false, !besideDetails);
   tableNav.current = {
     move: (delta) => {
       const at = visible.findIndex((g) => gameKey(g) === selectedKey);
@@ -579,7 +584,7 @@ export function CollectionList({
           </span>
         )
       }
-      listHeader={table ? <GameTableHeader /> : undefined}
+      listHeader={table ? <GameTableHeader withNotation={!besideDetails} /> : undefined}
       listVars={table ? tableVars : undefined}
       dense={table}
       // The wait, in the shape of the strip and rows that are coming —
@@ -597,6 +602,7 @@ export function CollectionList({
                 <GameTableRow
                   key={gameKey(game)}
                   game={game}
+                  withNotation={!besideDetails}
                   selected={selectedKey === gameKey(game)}
                   onSelect={() => onSelect?.(game)}
                   onOpen={() => onOpen(game)}

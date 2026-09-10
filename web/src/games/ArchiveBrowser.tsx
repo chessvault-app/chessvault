@@ -185,6 +185,7 @@ const MAX_ROWS = 1000;
  */
 const ArchiveRow = memo(function ArchiveRow({
   game,
+  withNotation = true,
   table,
   selecting,
   picked,
@@ -198,6 +199,9 @@ const ArchiveRow = memo(function ArchiveRow({
   onSelectRow,
 }: {
   game: GameSummary;
+  /** False while a details panel stands beside the table, so the
+      Notation column is not drawn — see GameTable. */
+  withNotation?: boolean;
   table: boolean;
   selecting: boolean;
   picked: boolean;
@@ -231,6 +235,7 @@ const ArchiveRow = memo(function ArchiveRow({
     return (
       <GameTableRow
         game={game}
+        withNotation={withNotation}
         selected={selectedRow}
         onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
@@ -309,6 +314,7 @@ export function ArchiveBrowser({
   selectedKey,
   inPlace = false,
   merged = false,
+  besideDetails = false,
   shape,
 }: {
   collectionKeys: Set<string>;
@@ -334,6 +340,10 @@ export function ArchiveBrowser({
   inPlace?: boolean;
   /** One-row chrome by measured pane width - see DatabaseGames. */
   merged?: boolean;
+  /** Whether a details panel stands beside this pane — the table gives
+      up its Notation column while it does (GameTable's
+      DROPPED_WITH_DETAILS). */
+  besideDetails?: boolean;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -812,7 +822,7 @@ export function ArchiveBrowser({
   const [details, setDetails] = useState<GameSummary | null>(null);
   // The pinned column exists only while selecting (checkbox-only) —
   // outside selection mode the archive table is the plain ten columns.
-  const tableVars = useGameTableVars(selecting);
+  const tableVars = useGameTableVars(selecting, !besideDetails);
   const rowToggle = useCallback((key: string, on: boolean) => {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -1161,6 +1171,7 @@ export function ArchiveBrowser({
         <ArchiveRow
           key={gameKey(game)}
           game={game}
+          withNotation={!besideDetails}
           table={table}
           selecting={selecting}
           picked={picked.has(gameKey(game))}
@@ -1215,7 +1226,7 @@ export function ArchiveBrowser({
           band popped in on top. */}
       {!month && loading === 'months' && (
         <div className="border-border min-h-0 flex-1 border-t" style={table ? tableVars : undefined}>
-          {table && <GameTableHeader withStanding={selecting} />}
+          {table && <GameTableHeader withStanding={selecting} withNotation={!besideDetails} />}
           <SkeletonGameRows rows={6} dense={table} />
         </div>
       )}
@@ -1265,7 +1276,7 @@ export function ArchiveBrowser({
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}
-      listHeader={table && rows ? <GameTableHeader withStanding={selecting} /> : undefined}
+      listHeader={table && rows ? <GameTableHeader withStanding={selecting} withNotation={!besideDetails} /> : undefined}
       listVars={table && rows ? tableVars : undefined}
       dense={table}
       list={rows}

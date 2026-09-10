@@ -130,6 +130,7 @@ interface RefGame {
  */
 const RefRow = memo(function RefRow({
   game,
+  withNotation = true,
   summary,
   table,
   selected,
@@ -142,6 +143,9 @@ const RefRow = memo(function RefRow({
   onDetails,
 }: {
   game: RefGame;
+  /** False while a details panel stands beside the table, so the
+      Notation column is not drawn — see GameTable. */
+  withNotation?: boolean;
   summary: GameSummary;
   table: boolean;
   selected: boolean;
@@ -157,6 +161,7 @@ const RefRow = memo(function RefRow({
     return (
       <GameTableRow
         game={summary}
+        withNotation={withNotation}
         selected={selected}
         onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
@@ -400,6 +405,7 @@ export function DatabaseGames({
   selectedKey,
   inPlace = false,
   merged = false,
+  besideDetails = false,
   shape,
 }: {
   /** Where the list stands — see GameListShell. */
@@ -422,6 +428,10 @@ export function DatabaseGames({
       free-wrapping row between the two read as ragged lines rather
       than bands. */
   merged?: boolean;
+  /** Whether a details panel stands beside this pane — the table gives
+      up its Notation column while it does (GameTable's
+      DROPPED_WITH_DETAILS). */
+  besideDetails?: boolean;
 }) {
   // `databases` present = the server's directory mount, where databases
   // are named, picked, built and deleted. Absent = a single-database
@@ -532,7 +542,7 @@ export function DatabaseGames({
   // ↑/↓/Enter/Escape drive the table selection; the ref is filled below
   // the early returns, once the rows on screen are known.
   const tableNav = useTableNav(table);
-  const tableVars = useGameTableVars();
+  const tableVars = useGameTableVars(false, !besideDetails);
 
   const searchSeq = useRef(0);
   /** What the text rows last answered — closing a hunt refetches only
@@ -1362,6 +1372,7 @@ export function DatabaseGames({
     <RefRow
       key={g.id}
       game={g}
+      withNotation={!besideDetails}
       summary={summaryOf(g)}
       table={table}
       selected={selectedKey === refGameKey(g.id)}
@@ -1724,7 +1735,7 @@ export function DatabaseGames({
       }
       filters={filtersInRow ? undefined : filters}
       countBand={merged ? undefined : countBand}
-      listHeader={table ? <GameTableHeader /> : undefined}
+      listHeader={table ? <GameTableHeader withNotation={!besideDetails} /> : undefined}
       listVars={table ? tableVars : undefined}
       dense={table}
       // undefined when empty, or the bare bordered ul doubles the empty

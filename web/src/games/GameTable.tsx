@@ -67,8 +67,33 @@ const COLUMNS: GameColumn[] = [
 // names lose nothing (the Add-button column that used to lead was the
 // thing that pushed the row's identity off its left edge).
 const STANDING: GameColumn = { id: 'standing', label: '', width: 40, min: 36 };
-const colsOf = (withStanding: boolean): GameColumn[] =>
-  withStanding ? [STANDING, ...COLUMNS] : COLUMNS;
+/**
+ * The one column the table gives up, and only while a details panel
+ * stands beside it.
+ *
+ * The panel takes a flat 368px (432 above 1740) out of the pane, and the
+ * table does not shed — it scrolls sideways to reach its columns — so
+ * opening the panel used to push 226px off the right edge at 1440 and
+ * 642px at 1024, with nothing drawn at the clip to say so: the Result
+ * column was sliced through the middle of its badge at 1100, and six of
+ * ten columns were gone at 1024. Notation is the column to give up
+ * because the panel that took the room is itself printing the move
+ * list, in full and untruncated, two inches to the right — the table's
+ * copy is the same information, cut off at 220px. So this is not a
+ * width heuristic and must not become one: it is "the panel is saying
+ * this already".
+ *
+ * Last in COLUMNS on purpose, which is what lets the row keep rendering
+ * its cells positionally — dropping the final grid track disturbs none
+ * of the others.
+ */
+const DROPPED_WITH_DETAILS = 'notation';
+const colsOf = (withStanding: boolean, withNotation = true): GameColumn[] => {
+  const base = withNotation
+    ? COLUMNS
+    : COLUMNS.filter((c) => c.id !== DROPPED_WITH_DETAILS);
+  return withStanding ? [STANDING, ...base] : base;
+};
 
 /**
  * The dragged column widths, shared by every table on the device the
@@ -116,9 +141,9 @@ const COL_MAX = 800;
  * columns are exact px; the text columns keep a share of any slack, so
  * a wide pane spends its width on names and notation.
  */
-export function useGameTableVars(withStanding = false): CSSProperties {
+export function useGameTableVars(withStanding = false, withNotation = true): CSSProperties {
   const stored = useColWidths();
-  const list = colsOf(withStanding);
+  const list = colsOf(withStanding, withNotation);
   const template = list
     .map((c) => {
       const w = widthOf(c, stored);
@@ -211,7 +236,17 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
   return nav;
 }
 
-export function GameTableHeader({ withStanding = false }: { withStanding?: boolean }) {
+export function GameTableHeader({
+  withStanding = false,
+  withNotation = true,
+}: {
+  withStanding?: boolean;
+  /** False while a details panel stands beside the table — see
+      DROPPED_WITH_DETAILS. The header, the rows and the grid template
+      all have to be told the same thing, or they disagree about which
+      cell is which. */
+  withNotation?: boolean;
+}) {
   // The cells' widths arrive through the grid template variable the pane
   // sets; the subscription here is for the handles' aria-valuenow, which
   // has to say the width a keystroke just set.
@@ -253,7 +288,7 @@ export function GameTableHeader({ withStanding = false }: { withStanding?: boole
       <div
         className={cn(GRID, 'text-muted-foreground min-h-7 py-1 text-xs font-medium')}
       >
-        {colsOf(withStanding).map((c) =>
+        {colsOf(withStanding, withNotation).map((c) =>
           c.id === 'standing' ? (
             // Pinned like the rows' own standing cell (see below), and
             // without a resize handle — a pinned column's width is the
@@ -351,6 +386,7 @@ export function GameTableRow({
   menu,
   bookmarked = false,
   standing,
+  withNotation = true,
 }: {
   game: GameSummary;
   selected: boolean;
@@ -364,6 +400,10 @@ export function GameTableRow({
   bookmarked?: boolean;
   /** The archive's leading column: the select checkbox and Add. */
   standing?: ReactNode;
+  /** False while a details panel stands beside the table — see
+      DROPPED_WITH_DETAILS. Must agree with what the header and
+      useGameTableVars were told. */
+  withNotation?: boolean;
 }) {
   const name = (player: string, side: 'white' | 'black') => {
     const className = cn(
@@ -481,9 +521,11 @@ export function GameTableRow({
         {isNoiseEvent(game.event) ? '' : (game.event ?? '')}
       </span>
       <span className={cn(quiet, 'tabular-nums')}>{game.date}</span>
-      <span className={cn(quiet, 'font-moves')}>
-        {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
-      </span>
+      {withNotation && (
+        <span className={cn(quiet, 'font-moves')}>
+          {game.sanPrefix ? numberedSan(game.sanPrefix, game.plyCount > 24) : ''}
+        </span>
+      )}
     </li>
   );
 

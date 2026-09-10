@@ -181,6 +181,7 @@ export function CollectionView() {
             it is a second surface standing beside the first. */}
         <GamesBrowser
           table={wide}
+          besideDetails={showDetails}
           frame="page"
           onSelect={setSelection}
           clearRef={clearSelection}
