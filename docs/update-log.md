@@ -14,15 +14,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   bottom bar, a study's subtitle, or anything in a menu or a window: of
   the 1183 visible texts across seventeen pages, 346 still selected under
   a finger. It reads the other way round now. Nothing selects unless it
-  came out of your vault: a name you gave a file, words you wrote, a
-  header from a PGN you imported, a move, a FEN. Counts, dates, sizes,
-  labels and the app's own descriptions do not, and neither do the
-  opening and theme names it supplies. Fields and the note editor are
-  always selectable, a read-only note included, and so is a book's text.
-  Where a long press already opens a row's action sheet, in a game list
-  and in a move list, the sheet keeps it; the same headers select in Game
-  details. On an iPhone a long press no longer offers to save an image or
-  copy a link either.
+  came out of your vault: a name you gave a file, words you wrote, an
+  annotation, a header from a PGN you imported, a FEN. Counts, dates,
+  sizes, labels and the app's own descriptions do not, and neither do the
+  theme names it ships. Fields and the note editor are always selectable,
+  a read-only note included, and so is a book's text. On an iPhone a long
+  press no longer offers to save an image or copy a link either.
 - **Placeholders hold still for a reader who asks for less motion.** The
   grey blocks that stand in for a page while it loads pulse gently. Under
   the system's reduced-motion setting the app flattened that pulse to

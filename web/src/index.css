@@ -1027,25 +1027,37 @@
      sheet and dialog, because Base UI portals them to the body.
 
      So the default is off and the words opt in. `data-user-text` marks
-     text that came out of the vault verbatim - a name someone gave a
-     file, words they wrote, a header from a PGN they imported, a move, a
-     FEN - and user-select inherits, so one attribute covers a subtree.
-     What the app itself says is not marked: labels, headings, counts,
-     dates it formatted, sizes, engine output, the canned theme and
-     opening names. Fields and editable regions are always on, which
-     keeps a read-only note selectable, since contenteditable="false"
-     still matches the attribute; so is a PDF's text layer.
+     text that came out of the vault - a name someone gave a file, words
+     they wrote, an annotation, a header from a PGN they imported, a FEN
+     - and user-select inherits, so one attribute covers a subtree. What
+     the app says on its own account is not marked: labels, headings,
+     counts, sizes, dates it formatted, engine output, the theme names it
+     ships. The line it marks is the record's, not the field's, so where
+     the app annotates a record in place the annotation goes with it: a
+     game row's opening and ECO code come from a book rather than from
+     the PGN, and they select with the names they sit beside, because on
+     that line they are part of what the row says about that game. Fields
+     and editable regions are always on, which keeps a read-only note
+     selectable, since contenteditable="false" still matches the
+     attribute; so is a PDF's text layer. Moves are not marked: they are
+     a row of buttons, a phone cannot drag a selection across them, and
+     what someone wants from a game's notation is the whole of it, which
+     is what Copy gives.
 
      A drift here fails the safe way round. Content that forgets the
      attribute does not select, which is a missing convenience; UI text
      that forgets to be excluded WOULD select, which is the bug this
      exists to stop, and only a blocklist can have it.
 
-     `data-press-menu` hands the press back where something already
-     claims it: a long press on a game row or a move opens that thing's
-     action sheet (components/action-menu), and a phone gives a finger
-     one gesture, not two. Those names stay one tap away - Game details
-     shows the same headers, and its panel is marked.
+     Nothing is handed back to a long-press menu, because a phone has
+     none. ActionContextMenu answers the platform's `contextmenu` event,
+     and iOS Safari has not fired that since iOS 13 - no long press in
+     this app has ever opened a sheet on an iPhone, only the row's own
+     visible menu button. A carve-out for it was written and removed: on
+     iOS it cost every name in the games list and protected a gesture
+     that was not there, and on Android it would have taken the press off
+     the names to repeat what that button already does, permanently
+     visible on a touch screen.
 
      The callout is the other half of a long press: on iOS an image or a
      link raises a Save / Copy sheet that user-select does not withhold.
@@ -1060,10 +1072,6 @@
     :is(input, textarea, [contenteditable], .textLayer, [data-user-text]) {
       user-select: text;
       -webkit-touch-callout: default;
-    }
-    :is([data-press-menu] [data-user-text], [data-press-menu][data-user-text]) {
-      user-select: none;
-      -webkit-touch-callout: none;
     }
   }
 

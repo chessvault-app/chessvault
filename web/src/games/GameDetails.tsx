@@ -176,9 +176,8 @@ function GameDetailsContent({
           on the PAIR of players, so it sits level with the pair, not
           with whoever happens to be White. */}
       <div className="flex items-center justify-between gap-3">
-        {/* The headers as the PGN printed them, and nothing here answers
-            a long press, so this is where the names are copied from on a
-            phone when the list they came from cannot (index.css). */}
+        {/* The headers as the PGN printed them, so a long press selects
+            them here as it does in the list they came from (index.css). */}
         <div className="min-w-0 flex-1" data-user-text>
           {player(summary.white, summary.whiteElo, 'white')}
           {player(summary.black, summary.blackElo, 'black')}

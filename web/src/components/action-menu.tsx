@@ -206,7 +206,6 @@ export function ActionContextMenu({
             press and still leave the menu shut. */}
         <ContextMenuTrigger
           render={children}
-          data-press-menu=""
           onContextMenu={(event) => {
             if (beforeOpen && !beforeOpen(event)) event.preventBaseUIHandler();
           }}
@@ -225,11 +224,11 @@ export function ActionContextMenu({
 
   return (
     <>
-      {/* The press is this menu's, so the marked content under it does
-          not also select: one gesture, one answer (index.css, the
-          long-press rule). */}
+      {/* Touch, in principle. iOS Safari has fired no contextmenu event
+          since iOS 13, so on an iPhone this branch never runs and the
+          row's own visible menu is the only way in - which is why the
+          long-press rule in index.css hands nothing back to it. */}
       <RenderChild
-        data-press-menu=""
         onContextMenu={(e: React.MouseEvent) => {
           if (beforeOpen && !beforeOpen(e)) return;
           e.preventDefault();

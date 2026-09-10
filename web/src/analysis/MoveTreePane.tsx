@@ -288,9 +288,8 @@ export function MainlineTable({
     out.push(
       <p
         key="root-comment"
-        // An annotation is what someone wrote about the move, so it is
-        // marked as theirs. On a phone the panel's own long press opens
-        // the move's action sheet instead - see index.css.
+        // An annotation is what someone wrote about the move, so a long
+        // press selects it (index.css).
         data-user-text
         className={commentRow(annotation.mainline)}
       >

@@ -389,9 +389,7 @@ export function GameRow({
             the press from reaching it twice. A button holds phrasing
             content only, so the lines are spans, not p. */}
         {/* The game's own record - the names, the ratings, the opening,
-            the date - so it selects on a long press (index.css). In a
-            list whose rows answer a press with their action sheet the
-            sheet wins; the same headers select in Game details. */}
+            the date - so it selects on a long press (index.css). */}
         <button
           type="button"
           data-user-text
