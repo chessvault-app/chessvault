@@ -1642,6 +1642,15 @@ cg-board square.check {
   }
 }
 
+/* The bottom bar's pill while a finger is scrubbing the bar
+   (hooks/use-tab-scrub): it is not settling anywhere, it IS the finger, so
+   it has no clock. Letting go puts the attribute back and the pill walks
+   to the tab it landed on over the app's own turn, which is the same
+   motion a tap has always made. */
+[data-nav-scrub] [data-nav-pill] {
+  transition: none;
+}
+
 /* ---------------------------------------------------------------------------
    Note editor typography. Tiptap renders semantic HTML; these give it the
    reading rhythm of a document without pulling in a typography plugin. */

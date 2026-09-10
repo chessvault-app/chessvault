@@ -41,6 +41,29 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   pushed the buttons under it down the page. A placeholder of the same
   size stands there until the figures land, so nothing moves when they
   do.
+- **The Settings page reads the vault's sizes once.** The Vault card and
+  the Storage used card both say what is on disk, and each asked the
+  server for its own walk of the vault: a stat per file, twice on every
+  visit, with the second walk waiting on the first. They read one answer
+  now. Measured on a vault of 664 files, the page waits 106 ms on those
+  figures instead of 138 ms, and the Storage used total is on screen
+  256 ms after you arrive instead of 349 ms. Clearing a cache still
+  re-reads them, and both cards keep the figures they have while the new
+  ones come, a failed re-read included. In the demo the row of card names
+  at the top now includes Vault, which was missing while that card waited
+  on an answer of its own.
+- **Drag along the phone's tab bar to pick a tab.** Press the bar and
+  slide: the pill follows your finger, the tab under it lights, and the
+  app moves when you let go. Nothing happens before that, so a tab reached
+  by mistake is fixed by sliding on to the right one rather than by
+  navigating twice. It chooses rather than pages, which is why one gesture
+  can cross the whole bar: you land on the tab under your finger, not on
+  the next one along. A tap is exactly what it was. A gesture that starts
+  on the screen edge is left to the browser's own Back, and one that ends
+  away from the bar chooses nothing. Each tab ticks as it passes under
+  your finger, on the phones that have a buzz to give. Under the system's
+  reduce-motion setting the pill stays where it is and the tabs light on
+  their own.
 - **A swipe under a board turns the panel, not its card.** On a phone the
   panels beside a board become one panel at a time under a tab strip, and a
   sideways swipe turns them. The card itself used to travel: part-way
