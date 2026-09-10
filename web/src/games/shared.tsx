@@ -344,6 +344,7 @@ export function GameRow({
       // numbers printed on top of each other at widths it did.
       className={cn(
         'group hover:bg-accent relative flex cursor-pointer flex-wrap items-center gap-3',
+        onSwipeAway && 'touch-pan-y',
         // py from the density token, not a literal: this row is every
         // game list in the app, which is the list a density knob is for.
         'overflow-hidden px-3 py-(--row-py) transition-colors duration-100',

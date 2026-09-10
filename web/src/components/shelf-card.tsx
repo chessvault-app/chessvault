@@ -95,7 +95,7 @@ export function ShelfCard({
         onClick={open}
         {...swipe.handlers}
         className={cn(
-          'bg-card group relative flex h-full cursor-pointer gap-3',
+          'bg-card group relative flex h-full cursor-pointer gap-3 touch-pan-y',
           'overflow-hidden rounded-xl ring-1 ring-card-ring',
           // Lifts a little under the pointer. A card that only changed its
           // edge read as selected; one that rises reads as reachable.

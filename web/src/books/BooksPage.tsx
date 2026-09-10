@@ -527,6 +527,7 @@ function BookCard({
         onClick={open}
         {...swipe.handlers}
         className={cn(
+          'touch-pan-y',
           // ring-1 ring-card-ring, as the registry's own Card: the card's
           // fill is its edge on the toned page, and the hairline returns
           // under High contrast. A ring, not a border, because a border is
