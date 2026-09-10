@@ -5,6 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **Switching the opening map to the constellation no longer flashes it
+  at the tree's zoom.** The dots moved to their new places in one paint
+  and the viewport caught up in the next, so for a frame or more the
+  constellation sat under the tree's pan and zoom, still, before snapping
+  into place. The layout and the view that fits it now land together.
+
 ## 0.9.4
 
 A phone moves the way it is handled: sheets rise and leave, a pushed page
