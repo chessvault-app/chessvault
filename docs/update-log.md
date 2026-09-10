@@ -20,6 +20,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   third of the way to commit, the same spring released at the speed your
   thumb let go at. Nothing at rest moved by a pixel, because none of this
   is on the page until a finger is on it.
+- **The ends of the pane strip push back.** On the first tab and the last
+  there is no pane that way, and the swipe says so by giving a little and
+  stopping. It had been computing that give and moving nothing: the pane
+  to move was marked only when a neighbouring pane arrived, and at either
+  end none ever does, so the one gesture whose whole job is to answer had
+  nothing to show for itself. A swipe past either end now carries the
+  panel's contents a fifth of the way the finger goes, to 24px, inside a
+  card that stays put, and springs back on the clock a turn settles on. It
+  still cannot turn a pane, however fast it is flicked.
 - **The diagram buttons are visible on a light page again.** A book's page
   is paper, and the canvas it is drawn on is white in both themes for that
   reason. The buttons over it were not: they took the theme's own surface

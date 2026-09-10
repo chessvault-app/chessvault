@@ -58,10 +58,17 @@ const FLICK_PX_PER_MS = 0.5;
  * The same gesture at an end of the strip, where the swipe has nowhere to
  * go.
  *
- * A wall the finger can still feel: the pane gives a little and stops,
- * which is the only cue that this is the first tab or the last. It is also
- * what an overshoot past the arriving pane meets, so one gesture can never
- * turn two panes at once.
+ * A wall the finger can still feel: what the pane holds gives a fifth of
+ * the way, to 24px, and stops inside a card that has not moved, which is
+ * the only cue that this is the first tab or the last. It is also what an
+ * overshoot past the arriving pane meets, so one gesture can never turn
+ * two panes at once.
+ *
+ * A fifth and 24px are what a rubber band is for: enough that a thumb
+ * reads it as an answer, too little to be mistaken for a turn that is
+ * going to happen. Releasing it springs back on the same clock a turn
+ * settles on, and can never land on a pane, because there is no pane that
+ * way to land on.
  */
 const WALL_FOLLOW = 0.2;
 const WALL_PX = 24;
@@ -408,18 +415,28 @@ export function usePaneSwipe<T extends string>({
    * Re-read on every frame that has no row standing yet, rather than once
    * per gesture, so a pane switched at the strip during the last turn's
    * settle cannot leave this pointing at the wrong panel.
+   *
+   * Marking it is part of noting it, and has to be: a gesture at either
+   * end of the strip never asks for a neighbour, so if the mark waited for
+   * one to arrive (which is where it used to be set) the wall's offset
+   * would be written to a column with nothing wired to move by it. That
+   * was the whole of the wall for two releases — `--pane-dx: 24px` on the
+   * column, measured, and not a pixel of movement to show for it, on the
+   * one gesture whose only job is to say there is nothing that way.
    */
   const noteOpenPane = (col: HTMLElement): void => {
     const shown = panesOnScreen(col);
-    if (shown.length !== 1) {
+    const node = shown.length === 1 ? shown[0]! : null;
+    if (node !== open.current) open.current?.removeAttribute('data-pane-open');
+    if (!node) {
       open.current = null;
       geom.current = null;
       return;
     }
-    const node = shown[0]!;
     const colBox = col.getBoundingClientRect();
     const box = node.getBoundingClientRect();
     open.current = node;
+    node.dataset.paneOpen = '';
     // Against the column's own content, not the viewport: the neighbour
     // will be positioned inside a box that may itself be scrolled.
     geom.current = {
@@ -453,7 +470,8 @@ export function usePaneSwipe<T extends string>({
     col.style.setProperty('--pane-left', `${box.left}px`);
     col.style.setProperty('--pane-width', `${box.width}px`);
     col.style.setProperty('--pane-height', `${box.height}px`);
-    from.dataset.paneOpen = '';
+    // `from` carries its mark already: noting which pane is open is what
+    // marks it, and nothing reaches here without that having happened.
     node.dataset.panePeek = '';
     peek.current = node;
   };
