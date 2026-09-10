@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -289,7 +289,11 @@ export function MapCanvas({
   const liveRef = useRef(live);
   liveRef.current = live;
   const sim = useRef<LiveSim | null>(null);
-  useEffect(() => {
+  // A layout effect, like the fit below and for the same reason: the
+  // setLive here re-renders the tree off the dragged desk, and that
+  // render has to land in the same paint as the arrangement it belongs
+  // to. See the fit for what a passive effect let through.
+  useLayoutEffect(() => {
     // The ref too, synchronously: the fit effect below runs in this same
     // commit and reads liveRef — left to the setLive re-render, a switch
     // of arrangement would fit the OLD desk instead of the new layout.
@@ -535,6 +539,17 @@ export function MapCanvas({
    * switching arrangements moves every dot at once, and the pan and zoom
    * you had were answers to where things used to be: staying put left the
    * tree half off-screen with the middle of nowhere centred.
+   *
+   * A LAYOUT effect, not a passive one. The fit is a setState, and a
+   * setState issued from a passive effect is an ordinary update: React
+   * renders it at default priority in a task of its own. Between the
+   * commit that drew the other arrangement and that task the browser is
+   * free to paint, and did — traced on the demo (2026-09-11) under CPU
+   * throttling, one switch in four painted the constellation under the
+   * tree's pan and zoom, at rest with no drift, and held it for a frame
+   * or more before the fit snapped it into place. A setState from a
+   * layout effect is flushed synchronously before paint, so the new
+   * arrangement and the viewport that fits it are one picture.
    */
   const nodeCount = graph.nodes.length;
   /** The Align count the last fit answered, so a fit can tell being ASKED from arriving. */
@@ -552,7 +567,7 @@ export function MapCanvas({
    * window gets its size; a ResizeObserver is what does.
    */
   const [sized, setSized] = useState(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = host.current;
     if (!el) return;
     const box = el.getBoundingClientRect();
