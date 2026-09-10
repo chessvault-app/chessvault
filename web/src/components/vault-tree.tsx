@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
+import { FileJson, Folder, FolderGit2, FolderOpen } from 'lucide-react';
 import { Figures } from '@/components/figures';
 import { t } from '@/lib/i18n';
 
@@ -14,17 +16,33 @@ import { t } from '@/lib/i18n';
  * navigates by kind, and a second navigation shaped like a folder would
  * be two answers to "where is my study".
  *
- * The rails are borders, not glyphs (index.css, `.vault-tree`): a
- * parent's rail runs through its rows unbroken and stops at the middle
- * of the last one. Below 30rem each row stacks its gloss under the path,
- * the way the landing page's listing does under 18.75rem: one odd row
- * out of nine would read as breakage, nine stacked rows read as a list.
+ * One ruler and an icon per row, not drawn branches (index.css,
+ * `.vault-tree`). The elbows this replaces were a terminal's tree in a
+ * card that is not a terminal, and they carried nothing the eye could
+ * not already see from the indent; the icon in their place carries what
+ * the trailing slash used to say, so the names are the names. The
+ * landing page's listing keeps its elbows, where looking like a shell is
+ * the point. Below 30rem each row stacks its gloss under the path, the
+ * way that listing does under 18.75rem: one odd row out of nine would
+ * read as breakage, nine stacked rows read as a list.
  */
+
+/**
+ * What a row is. It picks the icon, and whether the row counts its files:
+ * a folder's count is a number of the user's own documents, while the
+ * history store's is a number of git objects, which is not the same
+ * question and is not asked.
+ */
+export type VaultKind = 'folder' | 'git' | 'json';
+
+const ICONS: Record<VaultKind, LucideIcon> = { folder: Folder, git: FolderGit2, json: FileJson };
+
 export interface VaultRow {
-  /** The path as the folder shows it: `games/`, `config.json`. */
+  /** The name as the folder shows it, bare: `games`, `config.json`. */
   path: string;
   /** What kind of file lives there, in plain words. */
   gloss: string;
+  kind: VaultKind;
   bytes: number;
   files: number;
 }
@@ -44,31 +62,40 @@ export function VaultTree({
       {/* The path is the one literal here and wears the mono face; the
           totals are a sentence, so only their figures do (the Figures
           rule). The folder count is not said: the rows below are the
-          folders. */}
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
-        <span className="text-foreground min-w-0 break-all font-mono text-sm">{path ?? t('The demo vault, in this tab')}</span>
+          folders. The open folder is what the ruler hangs from. */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
+        <span className="text-foreground flex min-w-0 items-center gap-2 font-mono text-sm">
+          <FolderOpen className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 break-all">{path ?? t('The demo vault, in this tab')}</span>
+        </span>
         <span className="text-muted-foreground text-sm whitespace-nowrap">
           <Figures text={`${size(bytes)} · ${t('{n} files', { n: files })}`} />
         </span>
       </div>
       <ul>
-        {rows.map((r) => (
-          <li key={r.path}>
-            <span className="text-foreground font-mono text-sm whitespace-nowrap">{r.path}</span>
-            <span className="text-muted-foreground min-w-0 text-sm">{r.gloss}</span>
-            <span className="text-muted-foreground font-mono text-sm tabular-nums whitespace-nowrap">
-              {/* A folder counts its files; a file is one, and says so by
-                  not counting. */}
-              {r.files > 0 && r.path.endsWith('/') && (
-                <>
-                  {r.files === 1 ? t('1 file') : t('{n} files', { n: r.files })}
-                  {' · '}
-                </>
-              )}
-              {size(r.bytes)}
-            </span>
-          </li>
-        ))}
+        {rows.map((r) => {
+          const Icon = ICONS[r.kind];
+          return (
+            <li key={r.path}>
+              <span className="icon text-muted-foreground">
+                <Icon className="size-4" aria-hidden="true" />
+              </span>
+              <span className="path text-foreground font-mono text-sm whitespace-nowrap">{r.path}</span>
+              <span className="gloss text-muted-foreground min-w-0 text-sm">{r.gloss}</span>
+              <span className="size text-muted-foreground font-mono text-sm tabular-nums whitespace-nowrap">
+                {/* A folder counts its files; a file is one, and says so by
+                    not counting. */}
+                {r.files > 0 && r.kind === 'folder' && (
+                  <>
+                    {r.files === 1 ? t('1 file') : t('{n} files', { n: r.files })}
+                    {' · '}
+                  </>
+                )}
+                {size(r.bytes)}
+              </span>
+            </li>
+          );
+        })}
       </ul>
       {/* border-strong, the divider that survives a busy surface: on the muted
           box the plain hairline measured 1.07:1 in dark. */}

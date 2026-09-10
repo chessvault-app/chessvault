@@ -10,7 +10,7 @@ import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
-import { VaultTree, type VaultRow } from '@/components/vault-tree';
+import { VaultTree, type VaultKind, type VaultRow } from '@/components/vault-tree';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -378,17 +378,17 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
  * in the folder's own order. A row shows only where there is something
  * in it; the demo's vault has no books, a new vault has nothing.
  */
-const VAULT_ROWS: { path: string; gloss: string; keys: string[] }[] = [
-  { path: 'games/', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
-  { path: 'studies/', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
-  { path: 'notes/', gloss: 'markdown, boards in the text', keys: ['notes'] },
-  { path: 'books/', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
-  { path: 'puzzlebooks/', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
-  { path: 'puzzles/', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
-  { path: 'repertoire/', gloss: 'the opening map and its drills', keys: ['repertoire'] },
-  { path: 'sources/', gloss: 'PGN files you added', keys: ['sources'] },
-  { path: '.history.git', gloss: 'every earlier version', keys: ['history'] },
-  { path: 'config.json', gloss: 'settings and tokens', keys: ['config'] },
+const VAULT_ROWS: { path: string; gloss: string; kind: VaultKind; keys: string[] }[] = [
+  { path: 'games', kind: 'folder', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
+  { path: 'studies', kind: 'folder', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
+  { path: 'notes', kind: 'folder', gloss: 'markdown, boards in the text', keys: ['notes'] },
+  { path: 'books', kind: 'folder', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
+  { path: 'puzzlebooks', kind: 'folder', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
+  { path: 'puzzles', kind: 'folder', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
+  { path: 'repertoire', kind: 'folder', gloss: 'the opening map and its drills', keys: ['repertoire'] },
+  { path: 'sources', kind: 'folder', gloss: 'PGN files you added', keys: ['sources'] },
+  { path: '.history.git', kind: 'git', gloss: 'every earlier version', keys: ['history'] },
+  { path: 'config.json', kind: 'json', gloss: 'settings and tokens', keys: ['config'] },
 ];
 
 /** What the card needs from /api/storage, fetched once. */
@@ -403,6 +403,7 @@ function useVaultRows(): { rows: VaultRow[]; folders: number } | null {
         by.config = { key: 'config', bytes: body.vault?.config ?? 0, files: body.vault?.config ? 1 : 0 };
         const rows = VAULT_ROWS.map((r) => ({
           path: r.path,
+          kind: r.kind,
           gloss: t(r.gloss),
           bytes: r.keys.reduce((s, k) => s + (by[k]?.bytes ?? 0), 0),
           files: r.keys.reduce((s, k) => s + (by[k]?.files ?? 0), 0),

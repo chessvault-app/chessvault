@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The vault's listing is drawn with icons.** The Vault card in Settings
+  lists what your vault holds, and every row used to hang off a drawn
+  branch with a slash after each folder's name. The rows run down one
+  ruler now, each behind the icon for what it is: a folder, the history
+  store, or the config file. The slashes are gone, because the icon says
+  it.
 - **A swipe under a board turns the panel, not its card.** On a phone the
   panels beside a board become one panel at a time under a tab strip, and a
   sideways swipe turns them. The card itself used to travel: part-way
