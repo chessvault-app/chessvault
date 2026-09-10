@@ -147,7 +147,7 @@ export function ShelfCard({
               // rows stepped on a shelf with short names beside long ones
               // (lanph3re's report). The column reserves the fullest
               // card's text, the title line (1.5rem) + the meta line
-              // (1rem) + its mt-1 (0.25rem) + one preview line (1.35rem),
+              // (1rem) + its mt-1 (0.25rem) + one preview line (1.375rem),
               // and centres what it has, so a title with no preview stays
               // packed against its meta line rather than pinned to the top
               // of an empty box. Measured at 1280 on the demo's shelf:
@@ -159,7 +159,15 @@ export function ShelfCard({
               // From sm up only: below it the grid is one column, where no
               // card has a neighbour to stay level with, so a phone card
               // is as tall as its own words.
-              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[4.1rem]',
+              //
+              // 66px, and the preview line 22px, so the column is an even
+              // whole number: the card is then 90px, every card on the
+              // shelf starts on a whole pixel, and the 64px board centred
+              // in the column starts 1px down, on a whole pixel too. They
+              // were 65.6 and 21.6, which put the board 12.8px into a
+              // card 89.59px tall. See mini-board for what a board at a
+              // fractional device pixel costs on a phone's route change.
+              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[4.125rem]',
             )}
           >
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
@@ -216,7 +224,7 @@ export function ShelfCard({
               {meta}
             </p>
             {preview && layout === 'grid' && (
-              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.35rem] opacity-90">
+              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.375rem] opacity-90">
                 {preview}
               </p>
             )}

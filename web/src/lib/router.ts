@@ -169,10 +169,10 @@ let inFlight: Promise<void> | null = null;
  * this first; with no transition in flight it resolves at once.
  *
  * The tear-down has a second, cosmetic consequence worth knowing before
- * someone goes hunting for it elsewhere: on iOS the whole page
- * re-rasterises in that one frame, so a shelf's board thumbnails appear
- * to twitch. It is a repaint and not a layout change, and it is written
- * up where it is seen (components/mini-board).
+ * someone goes hunting for it elsewhere: on iOS the snapshot rasterises
+ * a shelf's board thumbnails about a device pixel off the live page, so
+ * they hop when it hands back. It is a raster and not a layout change,
+ * and it is written up where it is seen (components/mini-board).
  */
 export function routeSettled(): Promise<void> {
   return inFlight ?? Promise.resolve();

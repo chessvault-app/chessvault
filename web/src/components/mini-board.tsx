@@ -29,24 +29,30 @@ declare module 'react' {
  * middle of every thumbnail. A gradient has no seams to round.
  *
  * That paragraph will tempt the next person, so: on iOS these thumbnails
- * appear to twitch for one frame when the page changes, and it is NOT
- * this file. Measured off a 60fps recording — the board's box is identical
- * to the pixel before and after, the square colours are identical, and
- * putting the element on its own compositing layer moves 14 of its 36,864
- * pixels against a control of 0. Nothing here is rounding.
+ * move by about a device pixel for a few frames around a phone's page
+ * change, and the page change is the View Transition (lib/router). Read
+ * off a 60fps recording of the Studies tab tapped twice (2026-09-10),
+ * the board has two rasterisations. The live page draws one. The other
+ * shows for exactly one frame at the tap, when the transition captures
+ * the page, and again for the last four frames of the 150ms fade, when
+ * the new page's snapshot is on screen; the tear-down then paints the
+ * live one, and that is the hop. Against the live frame the snapshot's
+ * board fits best one device pixel up and still differs across its
+ * whole area (mean 3.6 grey levels against 0.1 for the settled page);
+ * the card's title in the same snapshot is identical in both. Reduce
+ * Motion skips the transition (startViewTransition: 1 call without it,
+ * 0 with) and takes it with it. It does not reproduce in Chromium, nor
+ * in Playwright's WebKit with the fade slowed to 4s.
  *
- * It is the View Transition handing back (lib/router): during the fade the
- * new page is a rasterised still, and when the pseudo-elements are torn
- * down the live DOM paints again. Everything on the card re-rasterises in
- * that frame — every glyph of the title re-antialiases too, and nobody
- * notices, because a checkerboard is eight parallel high-contrast
- * horizontal edges and a sentence is not. Confirmed by Reduce Motion,
- * which skips the transition outright (startViewTransition: 1 call
- * without it, 0 with) and takes the twitch with it. It does not reproduce
- * in Chromium.
- *
- * So it is a WebKit repaint, seen here because this is the highest
- * contrast thing on the page. Do not chase it in this file.
+ * The reading: a snapshot and the live page rasterise a repeating
+ * gradient at different sub-pixel phases when its box starts on a
+ * fraction of a device pixel, and text does not care because both paths
+ * snap a baseline. The board was at 197.8px, from a card 89.59px tall
+ * and a 12.8px centring offset (the 1.35rem preview line); the card is
+ * now 90 and the offset 1 (shelf-card), so every board starts on a
+ * whole pixel. Measured in Chromium at 390 and 1280, all boards on
+ * whole pixels after; whether that is enough on the phone is
+ * UNVERIFIED as of 2026-09-10, and the next recording decides it.
  *
  * The pieces are chessground's own `piece` elements, which is how the
  * thumbnail wears the piece set chosen in Settings: the art is CSS keyed

@@ -201,7 +201,7 @@ export function SkeletonCards({
           // the card would centre one. From sm up only, as on the card:
           // the one-column phone shelf reserves nothing, and its card is
           // the height of these lines.
-          grid && 'flex flex-col justify-center sm:min-h-[4.1rem]',
+          grid && 'flex flex-col justify-center sm:min-h-[4.125rem]',
         )}
       >
         {/* Title on a 24px line, then the quiet stat line on 16. */}
@@ -213,10 +213,10 @@ export function SkeletonCards({
         </div>
         {grid && (
           // One line of excerpt, the card's own line-clamp-1, on the
-          // card's 1.35rem line. The column's min-height above sets the
+          // card's 1.375rem line. The column's min-height above sets the
           // card's 90px either way; this line is what the placeholder
           // looks like.
-          <div className="mt-1 flex h-[1.35rem] items-center">
+          <div className="mt-1 flex h-[1.375rem] items-center">
             <Skeleton className="h-2 w-2/3" />
           </div>
         )}
