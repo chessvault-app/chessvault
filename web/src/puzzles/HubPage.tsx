@@ -533,7 +533,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
             </span>
           )}
           <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
+            <span data-user-text className="text-foreground truncate text-sm font-medium">{b.title}</span>
             <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
           </span>
           <span className="text-muted-foreground shrink-0 text-xs">

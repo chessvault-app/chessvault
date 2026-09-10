@@ -521,8 +521,11 @@ function BookCard({
           <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
             {/* pr keeps a long title clear of the corner control */}
             <span className="min-w-0 pr-7">
+              {/* The book's own name selects on a long press; the size
+                  and the counts under it are the app's (index.css). */}
               <button
                 type="button"
+                data-user-text
                 className="text-foreground block w-full truncate text-left text-base font-medium"
                 onClick={(e) => {
                   e.stopPropagation();

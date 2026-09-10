@@ -993,7 +993,7 @@ function SourceList({
                 strip, so a row that changes height when the strip is
                 pressed reads as two templates rather than two lists. */}
             <div className="flex min-w-0 flex-1 flex-col gap-1 md:contents">
-              <span className="text-foreground min-w-0 truncate md:flex-1">{s.name}</span>
+              <span data-user-text className="text-foreground min-w-0 truncate md:flex-1">{s.name}</span>
               <span className="text-muted-foreground shrink-0">{fmtBytes(s.bytes)}</span>
             </div>
           </label>
@@ -1077,7 +1077,7 @@ function AddToWindow({
                         })
                       }
                     />
-                    <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
+                    <span data-user-text className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
                     <span className="text-muted-foreground shrink-0">{fmtBytes(s.bytes)}</span>
                   </label>
                 </li>

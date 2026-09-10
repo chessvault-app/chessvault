@@ -669,7 +669,14 @@ function ReaderHeader({
         <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
           <ChevronLeft className="size-3.5" />
         </Button>
-        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{title}</h1>
+        {/* The book's own name; the page's text selects through the
+            reader's text layer (index.css). */}
+        <h1
+          data-user-text
+          className="text-foreground min-w-0 flex-1 truncate text-base font-semibold"
+        >
+          {title}
+        </h1>
         {menu}
       </div>
     );

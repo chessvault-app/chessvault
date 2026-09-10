@@ -1015,17 +1015,63 @@
     touch-action: pan-x pan-y;
   }
 
-  /* A long press on a phone selects nothing that is not prose. Headings,
-     stat labels, the board's coordinates and any row that acts as a
-     control brought up the selection handles on a long press, and on
-     Home every visible text was selectable (measured 12 of 12 leaves;
-     the board 21 of 21). Words someone would copy stay selectable:
-     inputs, the note editor, a PDF's text layer, and anything an editable
-     region contains are not matched. Coarse pointers only, so a desktop
-     can still drag across a heading. */
+  /* A long press on a phone selects the user's own words and nothing
+     else. The rule before this was an allowlist of the elements that had
+     raised the handles - headings, definition lists, coordinates,
+     buttons, the ARIA control roles - scoped to #main, and an allowlist
+     only covers what is on it: measured over the demo at 375x812 with a
+     coarse pointer, 346 of the 1183 visible text leaves across seventeen
+     routes still selected. Every label on the bottom tab bar, because
+     the bar is a sibling of #main and not in it. Every study subtitle
+     and game caption, because a span is none of those tags. Every menu,
+     sheet and dialog, because Base UI portals them to the body.
+
+     So the default is off and the words opt in. `data-user-text` marks
+     text that came out of the vault - a name someone gave a file, words
+     they wrote, an annotation, a header from a PGN they imported, a FEN
+     - and user-select inherits, so one attribute covers a subtree. What
+     the app says on its own account is not marked: labels, headings,
+     counts, sizes, dates it formatted, engine output, the theme names it
+     ships. The line it marks is the record's, not the field's, so where
+     the app annotates a record in place the annotation goes with it: a
+     game row's opening and ECO code come from a book rather than from
+     the PGN, and they select with the names they sit beside, because on
+     that line they are part of what the row says about that game. Fields
+     and editable regions are always on, which keeps a read-only note
+     selectable, since contenteditable="false" still matches the
+     attribute; so is a PDF's text layer. Moves are not marked: they are
+     a row of buttons, a phone cannot drag a selection across them, and
+     what someone wants from a game's notation is the whole of it, which
+     is what Copy gives.
+
+     A drift here fails the safe way round. Content that forgets the
+     attribute does not select, which is a missing convenience; UI text
+     that forgets to be excluded WOULD select, which is the bug this
+     exists to stop, and only a blocklist can have it.
+
+     Nothing is handed back to a long-press menu, because a phone has
+     none. ActionContextMenu answers the platform's `contextmenu` event,
+     and iOS Safari has not fired that since iOS 13 - no long press in
+     this app has ever opened a sheet on an iPhone, only the row's own
+     visible menu button. A carve-out for it was written and removed: on
+     iOS it cost every name in the games list and protected a gesture
+     that was not there, and on Android it would have taken the press off
+     the names to repeat what that button already does, permanently
+     visible on a touch screen.
+
+     The callout is the other half of a long press: on iOS an image or a
+     link raises a Save / Copy sheet that user-select does not withhold.
+     Chromium has no such menu, so that half follows Safari's documented
+     behaviour rather than anything measured here. Coarse pointers only,
+     so a desktop can still drag across a heading. */
   @media (pointer: coarse) {
-    #main :is(h1, h2, h3, h4, dt, dd, coords, button, [role='button'], [role='tab'], [role='option'], [role='menuitem']):not([contenteditable] *) {
+    body {
       user-select: none;
+      -webkit-touch-callout: none;
+    }
+    :is(input, textarea, [contenteditable], .textLayer, [data-user-text]) {
+      user-select: text;
+      -webkit-touch-callout: default;
     }
   }
 

@@ -224,6 +224,10 @@ export function ActionContextMenu({
 
   return (
     <>
+      {/* Touch, in principle. iOS Safari has fired no contextmenu event
+          since iOS 13, so on an iPhone this branch never runs and the
+          row's own visible menu is the only way in - which is why the
+          long-press rule in index.css hands nothing back to it. */}
       <RenderChild
         onContextMenu={(e: React.MouseEvent) => {
           if (beforeOpen && !beforeOpen(e)) return;

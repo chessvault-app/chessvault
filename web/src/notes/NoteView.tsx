@@ -560,6 +560,8 @@ function NoteTitle({ id, hidden = false }: { id: string; hidden?: boolean }) {
           setEditing(true);
         }}
         title={failure ?? id}
+        // The name the note was given, so a long press selects it.
+        data-user-text
         // Hidden, not removed: it keeps its place in the row so the
         // buttons stay put, and fades in over the bar's own duration.
         className={cn(

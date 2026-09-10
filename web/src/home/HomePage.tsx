@@ -520,7 +520,10 @@ function RecentGamesCard({
           onClick={() => navigate('games', encodeURIComponent(collectionDocId(g)))}
           className="text-sm"
         >
-          <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+          {/* The pairing and the date below are the game's own record and
+              select on a long press; the result badge is a chip and the
+              chevron is furniture (index.css). */}
+          <span data-user-text className="text-foreground min-w-0 flex-1 truncate font-medium">
             {g.white} – {g.black}
           </span>
           {/* An unfinished game ("*") wears no badge — ResultBadge
@@ -532,7 +535,10 @@ function RecentGamesCard({
           {/* The PGN's dotted date written the way the Continue row
               writes the same date off a filename: one format on one
               screen. */}
-          <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+          <span
+            data-user-text
+            className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums"
+          >
             {g.date.replaceAll('.', '-')}
           </span>
           <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
@@ -755,6 +761,13 @@ export function HomePage() {
      */
     tail?: string;
     detail: string;
+    /**
+     * Whether the label is a name out of the vault rather than something
+     * the app says. Two of these rows are a study and a game by name and
+     * select on a long press; "Resume training" is the app talking and
+     * does not (index.css).
+     */
+    content?: boolean;
     go: () => void;
     /**
      * Drawn on a phone and not on a desktop, which has somewhere better
@@ -780,6 +793,7 @@ export function HomePage() {
                   icon: Library,
                   label: baseName(data.lastStudy.id),
                   detail: t('Continue study'),
+                  content: true,
                   go: () => navigate('studies', encodeURIComponent(data.lastStudy!.id)),
                 },
               ]
@@ -790,6 +804,7 @@ export function HomePage() {
                   icon: Folder,
                   ...splitDated(baseName(data.lastGame.id)),
                   detail: t('Last game'),
+                  content: true,
                   go: () => navigate('games', encodeURIComponent(data.lastGame!.id)),
                 },
               ]
@@ -1176,7 +1191,7 @@ export function HomePage() {
                 <ChevronRight className="text-muted-foreground size-3.5 shrink-0 max-[319px]:hidden" />
               </button>
             )}
-            {continueRows.map(({ icon: Icon, label, tail, detail, go, phoneOnly }) => (
+            {continueRows.map(({ icon: Icon, label, tail, detail, go, phoneOnly, content }) => (
               <ListRow
                 key={label + detail}
                 divided
@@ -1184,7 +1199,10 @@ export function HomePage() {
                 className={cn('text-sm', phoneOnly && 'md:hidden')}
               >
                 <Icon className="text-muted-foreground size-3.5 shrink-0" />
-                <span className="text-foreground flex min-w-0 flex-1 items-baseline gap-1.5 font-medium">
+                <span
+                  data-user-text={content || undefined}
+                  className="text-foreground flex min-w-0 flex-1 items-baseline gap-1.5 font-medium"
+                >
                   <span className="min-w-0 truncate">{label}</span>
                   {tail && (
                     <span className="text-muted-foreground shrink-0 font-mono text-xs font-normal tabular-nums">

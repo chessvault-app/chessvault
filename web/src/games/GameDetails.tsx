@@ -176,14 +176,16 @@ function GameDetailsContent({
           on the PAIR of players, so it sits level with the pair, not
           with whoever happens to be White. */}
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        {/* The headers as the PGN printed them, so a long press selects
+            them here as it does in the list they came from (index.css). */}
+        <div className="min-w-0 flex-1" data-user-text>
           {player(summary.white, summary.whiteElo, 'white')}
           {player(summary.black, summary.blackElo, 'black')}
         </div>
         <ResultScore result={summary.result} userSide={summary.userSide} />
       </div>
 
-      <div className="text-muted-foreground -mt-1 flex flex-col gap-0.5 text-xs">
+      <div className="text-muted-foreground -mt-1 flex flex-col gap-0.5 text-xs" data-user-text>
         {/* The same shape the rows draw: the code is its own box and only
             the name gives way, so a narrow sheet cannot clip a code down
             to a different code. */}
