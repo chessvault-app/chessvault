@@ -181,13 +181,21 @@ function swapRoute(commit: () => void, appDriven: boolean, nav: Nav): void {
 type Nav = 'tab' | 'push' | 'pop';
 
 /** How deep a route is: its parameter count, with the puzzles hub at the
-    top, since that is where the Puzzles tab lands. */
+    top, since that is where the Puzzles tab lands, and the opening map's
+    colour not counted at all. `#/openingmap/black` is the same page as
+    `#/openingmap` in the other colour, not a leaf under it: read as a
+    push, the black map slid in from the right over the white one and
+    slid back out on the way back, which is a page opening under a page
+    rather than one map giving way to its twin. Two depths of zero make
+    it a tab, the fade-through. */
 function depth(hash: string): number {
   const { section, params } = parse(hash);
-  return section === 'puzzles' && params[0] === 'hub' ? 0 : params.length;
+  if (section === 'puzzles' && params[0] === 'hub') return 0;
+  if (section === 'openingmap' && (params[0] === 'black' || params[0] === 'white')) return 0;
+  return params.length;
 }
 
-function shapeOf(from: string, to: string): Nav {
+export function shapeOf(from: string, to: string): Nav {
   const a = depth(from);
   const b = depth(to);
   if (b > a) return 'push';
