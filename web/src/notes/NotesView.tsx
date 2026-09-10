@@ -21,7 +21,7 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { CreateControl, FabSpacer } from '@/components/fab';
-import { SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
   shelfHasShape,
@@ -259,6 +259,7 @@ function NoteList() {
         </p>
       )}
 
+      <Arrival pending={pending}>
       {!loaded ? (
         // A vault seen empty reserves nothing: its settle is the
         // EmptyState, and invented cards would be the jump the other way.
@@ -339,6 +340,7 @@ function NoteList() {
           onRemove={dropNote}
         />
       )}
+      </Arrival>
 
 
       <FabSpacer />

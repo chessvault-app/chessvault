@@ -1560,6 +1560,12 @@ cg-board square.check {
 :root {
   --pane-turn: 337ms;
   --pane-turn-ease: linear(0, 0.0317 4.2%, 0.1075 8.3%, 0.2055 12.5%, 0.3112 16.7%, 0.4154 20.8%, 0.5125 25.0%, 0.5998 29.2%, 0.6759 33.3%, 0.7409 37.5%, 0.7953 41.7%, 0.8401 45.8%, 0.8766 50.0%, 0.9059 54.2%, 0.9290 58.3%, 0.9472 62.5%, 0.9613 66.7%, 0.9720 70.8%, 0.9802 75.0%, 0.9863 79.2%, 0.9907 83.3%, 0.9940 87.5%, 0.9963 91.7%, 0.9979 95.8%, 1);
+  /* The same trace backwards, for an exit: slow off the mark, gone at
+     the spring's own peak speed. A sheet dismissed or a page popped on
+     the entrance curve lingered at the edge; Apple and Material both end
+     an exit at full speed, and this is that on the one physics the app
+     has. Printed by the same script, held by the same test. */
+  --pane-turn-ease-out: linear(0, 0.0021 4.2%, 0.0037 8.3%, 0.0060 12.5%, 0.0093 16.7%, 0.0137 20.8%, 0.0198 25.0%, 0.0280 29.2%, 0.0387 33.3%, 0.0528 37.5%, 0.0710 41.7%, 0.0941 45.8%, 0.1234 50.0%, 0.1599 54.2%, 0.2047 58.3%, 0.2591 62.5%, 0.3241 66.7%, 0.4002 70.8%, 0.4875 75.0%, 0.5846 79.2%, 0.6888 83.3%, 0.7945 87.5%, 0.8925 91.7%, 0.9683 95.8%, 1);
 }
 
 [data-pane-swipe] {
@@ -2202,11 +2208,29 @@ cg-board square.check {
   }
 }
 
-/* A phone's page change is a 150ms cross-fade through the browser's own
-   View Transitions (lib/router, swapRoute). The UA's default is a 250ms
-   fade; this one takes the pane-turn's clock so a tab and a pane land at
-   the same tempo. Reduced motion takes the cut: the router never starts
-   one, and this covers a transition started by anything else. */
+/* A phone's page change goes through the browser's own View Transitions
+   (lib/router, swapRoute), in one of three shapes the router stamps on
+   the root as `data-nav`:
+
+   - `tab`, between two top-level pages: a fade-through. The old page
+     fades fully out and THEN the new one fades in, 60ms and 90ms on the
+     spring's two curves. It was a 150ms cross-fade, which has frames
+     where both pages are half there and text blurs; a fade-through has
+     none, and Material names it for exactly this move. Still 150ms in
+     all, so a tab and a pane land at the same tempo.
+   - `push`, down into a leaf: the new page slides in from the right on
+     the spring while the old one slides a third of the way out under it
+     and darkens. No fade on either: this is the platform's own shape on
+     iPhone, where the app is tested.
+   - `pop`, back up: the mirror. The old page slides out to the right on
+     the spring run backwards, over the new one coming back from a third
+     of the way left.
+
+   The UA's default is a 250ms cross-fade with `plus-lighter` blending;
+   the slides set blending back to normal or the two pages add up where
+   they overlap. Reduced motion takes the cut: the router never starts
+   one, and the block at the end covers a transition started by anything
+   else. */
 ::view-transition-group(root),
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -2220,6 +2244,69 @@ cg-board square.check {
    phone-emulated Chromium, opening a game from a games row: the
    transition finished 366ms after the tap before this, and the board and
    the toast could only appear after it. */
+:root[data-nav='tab']::view-transition-old(root) {
+  animation: vt-fade-out 60ms var(--pane-turn-ease-out) both;
+}
+:root[data-nav='tab']::view-transition-new(root) {
+  animation: vt-fade-in 90ms var(--pane-turn-ease) 60ms both;
+}
+:root[data-nav='push']::view-transition-group(root),
+:root[data-nav='pop']::view-transition-group(root) {
+  animation-duration: var(--pane-turn);
+}
+:root[data-nav='push']::view-transition-old(root),
+:root[data-nav='push']::view-transition-new(root),
+:root[data-nav='pop']::view-transition-old(root),
+:root[data-nav='pop']::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+:root[data-nav='push']::view-transition-old(root) {
+  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
+}
+:root[data-nav='push']::view-transition-new(root) {
+  animation: vt-slide-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+:root[data-nav='pop']::view-transition-old(root) {
+  animation: vt-slide-out var(--pane-turn) var(--pane-turn-ease-out) both;
+  /* The leaving page is on top: the UA paints the new image over the
+     old, which is right for a push and backwards for a pop. */
+  z-index: 1;
+}
+:root[data-nav='pop']::view-transition-new(root) {
+  animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-slide-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-under-out {
+  to {
+    transform: translateX(-33%);
+    filter: brightness(0.85);
+  }
+}
+@keyframes vt-under-in {
+  from {
+    transform: translateX(-33%);
+    filter: brightness(0.85);
+  }
+}
 /* The shared board (lib/shared-board): the group carrying it moves and
    resizes on the spring, and the two boards do not cross-fade on the
    way, which blurred the pieces mid-flight; the new one is shown as soon

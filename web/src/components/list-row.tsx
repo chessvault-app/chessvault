@@ -59,7 +59,7 @@ export function ListRow({
         // select-none as the registry's Button has it: a long press on a
         // phone should open nothing and select nothing in a control.
         'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100 select-none pointer-coarse:min-h-11',
-        'enabled:hover:bg-accent disabled:opacity-60',
+        'enabled:hover:bg-accent enabled:pointer-coarse:active:bg-accent disabled:opacity-60',
         // The registry's ring, drawn INSET. Every panel these rows sit in
         // is `overflow-hidden rounded-xl`, and the global outline is drawn
         // outside the row, so on a full-width row three of its four sides

@@ -671,6 +671,50 @@ Any change here requires an on-device test loop — desktop cannot
 reproduce it, and the automated browser cannot either. The keyboard-bar
 palette looked correct on an iPad and was wrong on an iPhone.
 
+## Motion
+
+One spring, two directions. Everything that moves from one resting
+state to another (the pane turn, the strip's pill, a sheet rising, a
+page sliding in) settles on the spring in `lib/spring.ts`, sampled into
+`--pane-turn` and `--pane-turn-ease`. Everything that leaves (a sheet
+dismissed, a page popped, the old page under a tab switch) takes the
+same trace run backwards, `--pane-turn-ease-out`: slow off the mark and
+gone at the spring's own peak speed. A thing leaving on the entrance
+curve lingers at the edge; both Apple's and Material's guidance ends an
+exit at full speed, and this is that without a second physics. Exits are
+shorter than entrances (200ms against 337ms). A test holds both tokens
+to the spring.
+
+The phone's three page changes, chosen against the two platform guides
+and measured on the demo: a **tab** switch fades the old page fully out
+and then the new one in, inside 150ms, because a cross-fade has frames
+where two pages' text is half there at once; a **push** slides the new
+page in from the right over the old one, which slips a third of the way
+out and darkens, with no fade on either, the way iPhone does it; a
+**pop** is that in reverse. The router reads the shape off the two
+routes' depth, so a chevron that `navigate`s to its list still plays as
+a step up. A browser-driven history move (the iPhone edge swipe) plays
+no transition, because Safari has already played its own.
+
+A **sheet** slides from the bottom edge and does not fade; only the
+scrim fades. The one sheet that raises the keyboard as it opens does
+not slide, because its height changes under it while the keyboard rises
+and a slide measured from that height jumps: the keyboard's own motion
+is its entrance. Its exit still plays. See the note at the top of
+`components/ui/dialog.tsx` for how the wrapper makes the primitive see
+the close.
+
+A **press** is colour, not scale: a touched button or row takes the
+tint it would have under a mouse, plus the registry's 1px nudge. A
+control that shrinks under the thumb is a hover idiom the thumb hides.
+Content that replaces a **placeholder** fades in over it (150ms, phones
+only); content that never showed a placeholder mounts as it always did.
+
+Reduced motion: the router never starts a page transition, the global
+clamp flattens every transition and animation to a cut, and only the
+gesture-tracked motion (a drag under the finger) and the two status
+indicators keep moving. Nothing new may escape that block.
+
 ## The component layer
 
 The app is a shadcn/ui project (`components.json`: the base-nova style,

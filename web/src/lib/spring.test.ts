@@ -16,6 +16,26 @@ describe('spring', () => {
     const rest = springTrace(0);
     expect(css).toContain(`--pane-turn: ${rest.ms}ms;`);
     expect(css).toContain(`--pane-turn-ease: ${rest.easing};`);
+    expect(css).toContain(`--pane-turn-ease-out: ${rest.exit};`);
+  });
+
+  it('exits on the same trace run backwards', () => {
+    const rest = springTrace(0);
+    const points = (easing: string): number[] =>
+      easing
+        .slice('linear('.length, -1)
+        .split(', ')
+        .map((s) => Number(s.split(' ')[0]));
+    const enter = points(rest.easing);
+    const exit = points(rest.exit);
+    expect(exit).toHaveLength(enter.length);
+    for (let i = 0; i < enter.length; i++) {
+      expect(exit[i]).toBeCloseTo(1 - (enter[enter.length - 1 - i] ?? NaN), 4);
+    }
+    // Slow off the mark, most of the trip in the second half: the mirror
+    // of an entrance that has 88% done by halfway.
+    expect(exit[1]).toBeLessThan(0.02);
+    expect(exit[Math.floor(exit.length / 2)]).toBeLessThan(0.15);
   });
 
   it('starts at 0, ends at 1, and does not visibly overshoot within the clamp', () => {
