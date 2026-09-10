@@ -1219,6 +1219,19 @@
     [data-motion='status'] {
       animation-duration: 2s !important;
     }
+
+    /* And the placeholders stop, which is the other half of that
+       argument. A skeleton is not moving in order to say anything: it
+       says a page is loading by standing where the content will be, and
+       its pulse is the decoration on top. Left to the 0.01ms above it
+       was an infinite animation restarting a few hundred times a frame,
+       so it flickered the same way, on the largest blocks in the app (a
+       board's placeholder is the board). Held at the fill it starts on.
+       It also makes a screenshot of a wait deterministic, which the
+       shot grid takes with this query on. */
+    [data-slot='skeleton'] {
+      animation: none !important;
+    }
   }
 }
 

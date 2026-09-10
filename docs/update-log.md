@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Placeholders hold still for a reader who asks for less motion.** The
+  grey blocks that stand in for a page while it loads pulse gently. Under
+  the system's reduced-motion setting the app flattened that pulse to
+  nothing, which for a looping animation means starting it again a few
+  hundred times a second: they flickered instead of stopping, on blocks as
+  large as a whole board. They stand still now. The spinner and the puzzle
+  build's progress bar still turn, slower, because they are the only thing
+  on screen saying the app is still there.
 - **A board's pane strip stands where it will be while the page loads.**
   On a phone the strip that switches the panes under a board is drawn as
   the top of the pane card. Its placeholder was still drawing the
