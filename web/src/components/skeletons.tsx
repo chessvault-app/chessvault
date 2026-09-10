@@ -634,15 +634,33 @@ export function SkeletonBoard({
   // read per render like everything else here; the wait it stands
   // through cannot change it.
   const chapterH = chapters ? panelStoredHeight('study-chapters') : null;
+  /**
+   * Everything this draws on the PAGE rather than in a card is bg-accent
+   * and not the Skeleton's own bg-muted, because on a board page the page
+   * is muted: --background and --muted are both the 97% rung at the
+   * default Contrast (index.css), so in the light theme the board square,
+   * the title row and the player bars were drawn in the ground's exact
+   * colour. Sampled on the demo at 375: page 245,245,245 and board
+   * placeholder 245,245,245, which is a phone waiting on a study with a
+   * pane strip and a panel on an empty page. It showed in the dark (10
+   * against 33) and at any Contrast above the default, which is why it
+   * stood so long.
+   *
+   * Accent is the rung above both, so it separates from the ground in
+   * either theme. It is brighter in the dark than the muted block it
+   * replaces, and closer for it: the board it stands in for is 218,231,240
+   * there. The bars in the cards below keep the default, where the card is
+   * the ground and muted is already a rung off it.
+   */
   const titleRow = (
     // A way back, the name, the edit toggle and the save state. Drawn at
     // the top of the page on a phone and in the side column on a wide
     // screen, which is why it is written once and placed twice.
     <>
-      <Skeleton className="size-7 shrink-0 rounded-md" />
-      <Skeleton className="h-3.5 min-w-0 flex-1" />
-      <Skeleton className="size-7 shrink-0 rounded-md" />
-      <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+      <Skeleton className="bg-accent size-7 shrink-0 rounded-md" />
+      <Skeleton className="bg-accent h-3.5 min-w-0 flex-1" />
+      <Skeleton className="bg-accent size-7 shrink-0 rounded-md" />
+      <Skeleton className="bg-accent h-6 w-16 shrink-0 rounded-md" />
     </>
   );
   const playerBar = (
@@ -652,8 +670,8 @@ export function SkeletonBoard({
     // arrives.
     <BoardLane>
       <div className="board-box flex h-6 items-center gap-2">
-        <Skeleton className="size-2 shrink-0 rounded-full" />
-        <Skeleton className="h-3 w-32" />
+        <Skeleton className="bg-accent size-2 shrink-0 rounded-full" />
+        <Skeleton className="bg-accent h-3 w-32" />
       </div>
     </BoardLane>
   );
@@ -683,7 +701,7 @@ export function SkeletonBoard({
             {players && playerBar}
           </div>
           <BoardLane>
-            <Skeleton className="board-box aspect-square rounded-xl" />
+            <Skeleton className="bg-accent board-box aspect-square rounded-xl" />
           </BoardLane>
           {players && playerBar}
         </div>

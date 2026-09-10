@@ -14,11 +14,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   from the track it sat on, so the wait showed an empty strip of the
   wrong shape that also stood 13px taller than the real one. It is the
   same header now, marked at the pane that will open.
-- **The Settings page shows its rows while it loads.** The placeholder
-  that stands in for the settings drew every row in the same grey as the
-  box around it, so a slow load showed a page of empty outlines with
-  nothing in them. The rows, and the switch at the end of each, are
-  visible now.
+- **You can see what a page is waiting for.** A placeholder was drawn in
+  the same grey as the surface under it in two places, so what stood
+  there while the page loaded could not be seen at all. The Settings page
+  showed a column of empty outlines with no rows in them, and a board
+  page in the light theme showed its panel and nothing else: no board, no
+  title, on a page the same colour as the block that was standing in for
+  them. Both are a shade off their ground now, in either theme.
 - **The vault's listing is drawn with icons.** The Vault card in Settings
   lists what your vault holds, and every row used to hang off a drawn
   branch with a slash after each folder's name. The rows run down one
