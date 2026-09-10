@@ -170,8 +170,15 @@ export function SkeletonCards({
     <div
       key={i}
       className={cn(
-        'bg-card flex gap-3 overflow-hidden rounded-xl ring-1 ring-card-ring',
-        grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
+        // Centred in both layouts, as the card centres its board and its
+        // glyph against the text column (shelf-card). The grid card was
+        // top-aligned, which put its board 0.8px above the real one on
+        // every card of the phone's studies shelf, cold and warm, and its
+        // glyph 24.8px above the note card's: a hop on every thumbnail the
+        // moment the list landed, 2 to 3 device pixels at 3x. Measured
+        // on the demo at 390px with the list request held.
+        'bg-card flex items-center gap-3 overflow-hidden rounded-xl ring-1 ring-card-ring',
+        grid ? 'px-4 py-3' : 'px-3 py-2',
       )}
       // The card's settled height where the shelf measured it last visit
       // (shelf-reservation says why a measurement and not a line count).
