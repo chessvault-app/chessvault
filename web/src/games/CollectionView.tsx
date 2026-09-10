@@ -55,6 +55,29 @@ const PIN_KEY = 'vault:games-details-pinned';
 const PIN_FREE_MQ = '(min-width: 1680px)';
 
 /**
+ * Where the details column stops being 23rem and takes 27rem.
+ *
+ * The track was `minmax(20rem,23rem)` at every width, so a 1920px window
+ * gave the table 1104px and left the panel on the same 368px a 1024px
+ * window gets — the one width where the panel costs the table nothing
+ * was also the width where it refused the room. 368px is tight for what
+ * the panel is for: the opening name, the thing a reader actually wants
+ * off it, truncates there ("…: Exchange Variation, Reshevs…") and reads
+ * in full on a 390px phone's sheet.
+ *
+ * The threshold is the same arithmetic PIN_FREE_MQ states, with the
+ * panel's new maximum in it: the table's own minimum (`--gt-min`, 1026
+ * at the default column widths), the grid's 16px gap, 432 for a 27rem
+ * panel, the sidebar's 208 unfolded and the shell's 48 of md gutters,
+ * which is 1730 — plus the 10px the thin scrollbar takes out of the
+ * scroller's content box, the same 10 that put PIN_FREE_MQ at 1680
+ * rather than its arithmetic's 1666. So 1740, and below it the panel
+ * stays 23rem, because a wider panel there is paid for in the table's
+ * columns and that is exactly what the 1680 line exists to stop.
+ */
+const PANEL_WIDE_MQ = '(min-width: 1740px)';
+
+/**
  * The Games page: the tabbed games browser (see GamesBrowser, which owns
  * the tabs, the collection and all its verbs) with a details column
  * standing beside it at lg. A thin host on purpose — this file used to
@@ -77,6 +100,8 @@ export function CollectionView() {
     return stored === null ? null : stored === '1';
   });
   const roomy = useMediaQuery(PIN_FREE_MQ);
+  /** Whether the panel's track may take its wider maximum — see PANEL_WIDE_MQ. */
+  const roomier = useMediaQuery(PANEL_WIDE_MQ);
   const pinned = choice ?? roomy;
   const togglePin = (): void => {
     const next = !pinned;
@@ -138,13 +163,16 @@ export function CollectionView() {
           at and never grows past a reading width. The browser's own
           overlays (preview, FAB, import dialog) are fixed or portaled,
           so the pane is its only in-flow child here. */}
-      {/* Complete class literals, both of them: the Tailwind scanner reads
-          names out of this file and would never emit one assembled from
-          fragments. */}
+      {/* Complete class literals, all three of them: the Tailwind scanner
+          reads names out of this file and would never emit one assembled
+          from fragments. */}
       <div
         className={cn(
           'grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] items-stretch gap-4',
-          showDetails && 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,23rem)]',
+          showDetails &&
+            (roomier
+              ? 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,27rem)]'
+              : 'lg:grid-cols-[minmax(0,1fr)_minmax(20rem,23rem)]'),
         )}
       >
         {/* On the page, not in a card: the strip, the search row and the
