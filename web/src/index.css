@@ -1219,6 +1219,19 @@
     [data-motion='status'] {
       animation-duration: 2s !important;
     }
+
+    /* And the placeholders stop, which is the other half of that
+       argument. A skeleton is not moving in order to say anything: it
+       says a page is loading by standing where the content will be, and
+       its pulse is the decoration on top. Left to the 0.01ms above it
+       was an infinite animation restarting a few hundred times a frame,
+       so it flickered the same way, on the largest blocks in the app (a
+       board's placeholder is the board). Held at the fill it starts on.
+       It also makes a screenshot of a wait deterministic, which the
+       shot grid takes with this query on. */
+    [data-slot='skeleton'] {
+      animation: none !important;
+    }
   }
 }
 
@@ -2230,71 +2243,64 @@ cg-board square.check {
   }
 }
 
-/* The Vault card's listing (components/vault-tree). The rails are
-   borders, not glyphs: a border runs the full height of its row, so a
-   parent's rail passes every row unbroken and stops at the middle of the
-   last one; `--rail-mid` is the first line's centre, the row's top
-   padding plus half a line of the path's own 14px. The same construction
-   as the landing page's listing. Below 30rem each row stacks its gloss
-   under the path, indented past the tick. */
+/* The Vault card's listing (components/vault-tree). One ruler down the
+   left of the list, an icon per row, and no drawn branches: the ruler is
+   the ul's own left border, so it runs the whole list unbroken instead of
+   being redrawn per row, and it hangs from the middle of the root's own
+   icon (0.5rem, half of a 16px icon). What the elbows and the trailing
+   slashes used to say is now the icon's job.
+
+   An icon takes more room than the elbow it replaces, and this listing
+   had little to give: the longest gloss cleared its row by 2px before
+   this. So the ruler sits 6px off the icons rather than the 8 they take
+   from the name, which buys back the room that keeps that row one line.
+
+   The icon is positioned rather than given a column so the grid stays the
+   two areas it was, and it is offset by the row's top padding and held to
+   the path's 20px line box, which centres it on the first line rather
+   than on a row whose gloss has wrapped under it. Below 30rem each row
+   stacks its gloss under the path. */
 .vault-tree {
   container-type: inline-size;
 }
 .vault-tree ul {
   list-style: none;
-  margin: 0;
-  padding: 0;
+  margin: 0 0 0 0.5rem;
+  padding: 0 0 0 0.375rem;
+  border-left: 1px solid var(--border-strong);
 }
 .vault-tree li {
-  --rail-pad: 0.3rem;
-  --rail-mid: calc(var(--rail-pad) + 0.75 * 0.875rem);
+  --row-pad: 0.3rem;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas:
-    'path n'
+    'path size'
     'gloss gloss';
   column-gap: 1rem;
   align-items: baseline;
-  padding: var(--rail-pad) 0 var(--rail-pad) 1.1rem;
+  padding: var(--row-pad) 0 var(--row-pad) 1.5rem;
 }
-.vault-tree li > :nth-child(1) {
+.vault-tree li > .icon {
+  position: absolute;
+  top: var(--row-pad);
+  left: 0;
+  display: flex;
+  height: 1.25rem;
+  align-items: center;
+}
+.vault-tree li > .path {
   grid-area: path;
 }
-.vault-tree li > :nth-child(2) {
+.vault-tree li > .gloss {
   grid-area: gloss;
-  padding-left: 0.85rem;
 }
-.vault-tree li > :nth-child(3) {
-  grid-area: n;
-}
-.vault-tree li::before,
-.vault-tree li::after {
-  content: '';
-  position: absolute;
-  left: 0.3rem;
-  border: 0 solid var(--muted-foreground);
-}
-.vault-tree li::before {
-  top: 0;
-  bottom: 0;
-  border-left-width: 1px;
-}
-.vault-tree li:last-child::before {
-  bottom: auto;
-  height: var(--rail-mid);
-}
-.vault-tree li::after {
-  top: var(--rail-mid);
-  width: 0.55rem;
-  border-top-width: 1px;
+.vault-tree li > .size {
+  grid-area: size;
 }
 @container (width >= 30rem) {
   .vault-tree li {
     grid-template-columns: auto 1fr auto;
-    grid-template-areas: 'path gloss n';
-  }
-  .vault-tree li > :nth-child(2) {
-    padding-left: 0;
+    grid-template-areas: 'path gloss size';
   }
 }

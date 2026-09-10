@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
+import { Skeleton, SkeletonForm, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
@@ -10,7 +10,7 @@ import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
-import { VaultTree, type VaultRow } from '@/components/vault-tree';
+import { VaultTree, type VaultKind, type VaultRow } from '@/components/vault-tree';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -178,9 +178,11 @@ export function SettingsPage() {
   return (
     <PageShell width="narrow">
         <PageHeader title={t('Settings')} back={() => up('home')} />
-        {/* Read again when the storage answer lands: in the demo the
-            Vault card is not on the page until its listing is in, and a
-            row that read the page once was a row with no Vault in it. */}
+        {/* Read again when the storage answer lands. Every card that
+            waits on a fetch has to be a dep here, or the row is missing
+            its name until a reload: the demo's Vault card used to be
+            withheld entirely and went unnamed, and a card that draws a
+            placeholder first can still change its title when it settles. */}
         <JumpList dep={storage ?? settings} />
 
         {/* Appearance is the only card that works without a server: it
@@ -428,17 +430,17 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
  * in the folder's own order. A row shows only where there is something
  * in it; the demo's vault has no books, a new vault has nothing.
  */
-const VAULT_ROWS: { path: string; gloss: string; keys: string[] }[] = [
-  { path: 'games/', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
-  { path: 'studies/', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
-  { path: 'notes/', gloss: 'markdown, boards in the text', keys: ['notes'] },
-  { path: 'books/', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
-  { path: 'puzzlebooks/', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
-  { path: 'puzzles/', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
-  { path: 'repertoire/', gloss: 'the opening map and its drills', keys: ['repertoire'] },
-  { path: 'sources/', gloss: 'PGN files you added', keys: ['sources'] },
-  { path: '.history.git', gloss: 'every earlier version', keys: ['history'] },
-  { path: 'config.json', gloss: 'settings and tokens', keys: ['config'] },
+const VAULT_ROWS: { path: string; gloss: string; kind: VaultKind; keys: string[] }[] = [
+  { path: 'games', kind: 'folder', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
+  { path: 'studies', kind: 'folder', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
+  { path: 'notes', kind: 'folder', gloss: 'markdown, boards in the text', keys: ['notes'] },
+  { path: 'books', kind: 'folder', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
+  { path: 'puzzlebooks', kind: 'folder', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
+  { path: 'puzzles', kind: 'folder', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
+  { path: 'repertoire', kind: 'folder', gloss: 'the opening map and its drills', keys: ['repertoire'] },
+  { path: 'sources', kind: 'folder', gloss: 'PGN files you added', keys: ['sources'] },
+  { path: '.history.git', kind: 'git', gloss: 'every earlier version', keys: ['history'] },
+  { path: 'config.json', kind: 'json', gloss: 'settings and tokens', keys: ['config'] },
 ];
 
 /** The card's listing, read off the page's one /api/storage answer
@@ -449,6 +451,7 @@ function vaultRows(report: StorageReport): { rows: VaultRow[]; folders: number }
   by.config = { bytes: report.vault?.config ?? 0, files: report.vault?.config ? 1 : 0 };
   const rows = VAULT_ROWS.map((r) => ({
     path: r.path,
+    kind: r.kind,
     gloss: t(r.gloss),
     bytes: r.keys.reduce((s, k) => s + (by[k]?.bytes ?? 0), 0),
     files: r.keys.reduce((s, k) => s + (by[k]?.files ?? 0), 0),
@@ -472,11 +475,17 @@ function revealVault(): (() => Promise<boolean>) | null {
  * MADE of, which is worth showing somebody deciding whether to install.
  */
 function DemoVaultCard({ storage }: { storage: StorageReport | null }) {
-  if (!storage) return null;
-  const vault = vaultRows(storage);
+  const vault = storage && vaultRows(storage);
+  // The demo answers in the page, so the placeholder is a formality
+  // here (useSlowLoad holds it back for longer than the answer takes);
+  // it is drawn all the same, so the shape is proved on the one vault
+  // everybody can see. The whole card used to be withheld until the
+  // listing was in, which is what left the jump row above with no Vault
+  // in it.
+  const slow = useSlowLoad(vault === null);
   return (
     <Card icon={BrandMark} title={t('Vault')} anchor="vault">
-      <VaultTree path={null} rows={vault.rows} />
+      {vault ? <VaultTree path={null} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={null} rows={7} /> : null}
       <p className="text-muted-foreground text-sm">
         {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
       </p>
@@ -500,6 +509,7 @@ function VaultCard({
   // this page updates this listing too: browsed games are counted under
   // games/ here, and the tree used to keep the size it read at mount.
   const vault = storage && vaultRows(storage);
+  const slow = useSlowLoad(vault === null);
   const reveal = revealVault();
   const copyPath = async (): Promise<void> => {
     try {
@@ -538,9 +548,11 @@ function VaultCard({
         <Feedback note={note} />
       </div>
       {/* The vault as a folder: where it is, what it weighs, what lives in
-          it (components/vault-tree). Held back until the answer is in, so
-          the card grows once rather than in steps. */}
-      {vault && <VaultTree path={settings.vaultPath} rows={vault.rows} />}
+          it (components/vault-tree). /api/storage walks the vault to answer,
+          which on a vault of books is the slowest wait on this page, and the
+          box used to appear from nothing and push the buttons under it down
+          by its whole height. */}
+      {vault ? <VaultTree path={settings.vaultPath} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={settings.vaultPath} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         {/* The backup verb (server/backup.ts): a plain link, since the
             session is a cookie and the browser's own download handles a

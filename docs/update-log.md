@@ -7,6 +7,40 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Placeholders hold still for a reader who asks for less motion.** The
+  grey blocks that stand in for a page while it loads pulse gently. Under
+  the system's reduced-motion setting the app flattened that pulse to
+  nothing, which for a looping animation means starting it again a few
+  hundred times a second: they flickered instead of stopping, on blocks as
+  large as a whole board. They stand still now. The spinner and the puzzle
+  build's progress bar still turn, slower, because they are the only thing
+  on screen saying the app is still there.
+- **A board's pane strip stands where it will be while the page loads.**
+  On a phone the strip that switches the panes under a board is drawn as
+  the top of the pane card. Its placeholder was still drawing the
+  floating pill the strip used to be, in a grey that could not be told
+  from the track it sat on, so the wait showed an empty strip of the
+  wrong shape that also stood 13px taller than the real one. It is the
+  same header now, marked at the pane that will open.
+- **You can see what a page is waiting for.** A placeholder was drawn in
+  the same grey as the surface under it in two places, so what stood
+  there while the page loaded could not be seen at all. The Settings page
+  showed a column of empty outlines with no rows in them, and a board
+  page in the light theme showed its panel and nothing else: no board, no
+  title, on a page the same colour as the block that was standing in for
+  them. Both are a shade off their ground now, in either theme.
+- **The vault's listing is drawn with icons.** The Vault card in Settings
+  lists what your vault holds, and every row used to hang off a drawn
+  branch with a slash after each folder's name. The rows run down one
+  ruler now, each behind the icon for what it is: a folder, the history
+  store, or the config file. The slashes are gone, because the icon says
+  it.
+- **The vault's listing holds its place while it is counted.** Knowing
+  what a vault weighs means walking all of it, and on a vault of books
+  that takes long enough to see: the listing arrived from nothing and
+  pushed the buttons under it down the page. A placeholder of the same
+  size stands there until the figures land, so nothing moves when they
+  do.
 - **The Settings page reads the vault's sizes once.** The Vault card and
   the Storage used card both say what is on disk, and each asked the
   server for its own walk of the vault: a stat per file, twice on every

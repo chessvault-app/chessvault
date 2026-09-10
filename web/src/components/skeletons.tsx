@@ -5,6 +5,7 @@ import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { panelStoredHeight } from '@/components/panel';
+import { VaultNote, VaultPath } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 
 /**
@@ -633,15 +634,33 @@ export function SkeletonBoard({
   // read per render like everything else here; the wait it stands
   // through cannot change it.
   const chapterH = chapters ? panelStoredHeight('study-chapters') : null;
+  /**
+   * Everything this draws on the PAGE rather than in a card is bg-accent
+   * and not the Skeleton's own bg-muted, because on a board page the page
+   * is muted: --background and --muted are both the 97% rung at the
+   * default Contrast (index.css), so in the light theme the board square,
+   * the title row and the player bars were drawn in the ground's exact
+   * colour. Sampled on the demo at 375: page 245,245,245 and board
+   * placeholder 245,245,245, which is a phone waiting on a study with a
+   * pane strip and a panel on an empty page. It showed in the dark (10
+   * against 33) and at any Contrast above the default, which is why it
+   * stood so long.
+   *
+   * Accent is the rung above both, so it separates from the ground in
+   * either theme. It is brighter in the dark than the muted block it
+   * replaces, and closer for it: the board it stands in for is 218,231,240
+   * there. The bars in the cards below keep the default, where the card is
+   * the ground and muted is already a rung off it.
+   */
   const titleRow = (
     // A way back, the name, the edit toggle and the save state. Drawn at
     // the top of the page on a phone and in the side column on a wide
     // screen, which is why it is written once and placed twice.
     <>
-      <Skeleton className="size-7 shrink-0 rounded-md" />
-      <Skeleton className="h-3.5 min-w-0 flex-1" />
-      <Skeleton className="size-7 shrink-0 rounded-md" />
-      <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+      <Skeleton className="bg-accent size-7 shrink-0 rounded-md" />
+      <Skeleton className="bg-accent h-3.5 min-w-0 flex-1" />
+      <Skeleton className="bg-accent size-7 shrink-0 rounded-md" />
+      <Skeleton className="bg-accent h-6 w-16 shrink-0 rounded-md" />
     </>
   );
   const playerBar = (
@@ -651,8 +670,8 @@ export function SkeletonBoard({
     // arrives.
     <BoardLane>
       <div className="board-box flex h-6 items-center gap-2">
-        <Skeleton className="size-2 shrink-0 rounded-full" />
-        <Skeleton className="h-3 w-32" />
+        <Skeleton className="bg-accent size-2 shrink-0 rounded-full" />
+        <Skeleton className="bg-accent h-3 w-32" />
       </div>
     </BoardLane>
   );
@@ -682,7 +701,7 @@ export function SkeletonBoard({
             {players && playerBar}
           </div>
           <BoardLane>
-            <Skeleton className="board-box aspect-square rounded-xl" />
+            <Skeleton className="bg-accent board-box aspect-square rounded-xl" />
           </BoardLane>
           {players && playerBar}
         </div>
@@ -705,14 +724,38 @@ export function SkeletonBoard({
         )}
       >
         <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden">{titleRow}</div>
-        {/* What a phone has instead of the panels: the pane switcher.
-            TabsList's own box — h-8 and p-[3px] on the muted track, no
-            border and no gap — rather than something that looks like it.
-            Measured at 28px against the strip's 32. */}
-        <div className="bg-muted flex h-8 shrink-0 rounded-lg p-[3px] lg:hidden">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-full flex-1 rounded-md" />
+        {/* What a phone has instead of the panels: the pane switcher, in
+            the face every board page gives it (components/pane-tabs,
+            `header`) rather than the floating pill it drew. Two things
+            were wrong with the pill. It is a muted track, and a Skeleton
+            is bg-muted, so its four tabs were drawn in the track's own
+            fill and the strip stood empty for the whole wait; the header
+            is the card's surface, where the default fill is the one the
+            rest of this column uses. And the header hangs over the card
+            below it, swallowing the column's gap and a pixel more, which
+            the pill did not: 32px and a 12px gap where the real strip
+            costs 19, so everything under it sat 13px low until the board
+            arrived.
+
+            Icon tabs, because every caller's are (a label needs a line box
+            a glyph does not), and the open one is the first: all three
+            pages open on their first pane. Three of them, or four for a
+            study, which is the one caller that says. The trainers have two
+            or three, and the tabs divide the width however many there are,
+            so the count is the icons' spacing and nothing else. */}
+        <div className="bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden">
+          {Array.from({ length: chapters ? 4 : 3 }, (_, i) => (
+            <div key={i} className="flex flex-1 items-center justify-center">
+              <Skeleton className="size-3.5 rounded-sm" />
+            </div>
           ))}
+          {/* The line that marks the open pane, which the strip draws
+              itself and a swipe moves. */}
+          <span
+            aria-hidden
+            className="bg-foreground absolute bottom-0 left-0 h-0.5 rounded-full"
+            style={{ width: `${100 / (chapters ? 4 : 3)}%` }}
+          />
         </div>
         {/* The panels below are the wide layout's: a phone shows one pane
             at a time behind the tabs above, and that one is the panel that
@@ -820,18 +863,25 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
                 key={i}
                 className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
               >
+                {/* Everything inside the well is bg-accent, since the well
+                    is bg-muted and so is a Skeleton: the three bars in here
+                    were drawn in the well's own fill and could not be seen
+                    at all, leaving a page of empty outlines for the whole
+                    wait. Accent is the rung above muted, which is the
+                    distance the two were tuned to. The bars outside, on the
+                    card, keep the default. */}
                 <div className="min-w-0">
                   <div className="flex h-6 items-center">
-                    <Skeleton className="h-3.5 w-32" />
+                    <Skeleton className="bg-accent h-3.5 w-32" />
                   </div>
                   <div className="flex h-5 items-center">
-                    <Skeleton className="h-2 w-44" />
+                    <Skeleton className="bg-accent h-2 w-44" />
                   </div>
                 </div>
                 {/* Where a Switch stands, at the size the registry draws
                     one: 18.4 x 32 (components/ui/switch), not the h-5 w-9
                     this claimed was "its own size". */}
-                <Skeleton className="h-[18.4px] w-8 shrink-0 rounded-full" />
+                <Skeleton className="bg-accent h-[18.4px] w-8 shrink-0 rounded-full" />
               </div>
             ))}
           </div>
@@ -950,3 +1000,114 @@ export function SkeletonGameRows({
     </Loading>
   );
 }
+
+/**
+ * The Vault card's listing: the folder line, the ruled rows under it, and
+ * the sentence that closes the box (components/vault-tree).
+ *
+ * It waits on /api/storage, which walks the whole vault, so on a vault of
+ * books it is the slowest thing on the Settings page and the card used to
+ * grow by the height of the box the moment it answered, pushing the
+ * download and reveal buttons down with it.
+ *
+ * It borrows `.vault-tree` itself rather than approximating the geometry:
+ * the rows, the ruler and the container query are that class's, so the
+ * placeholder cannot drift from the listing when either moves, and the
+ * only numbers here are which bar goes where.
+ *
+ * Two of its parts are not drawn at all but printed: the path, which the
+ * page knows from its settings before it asks what the vault weighs, and
+ * the closing sentence, which is the same sentence for every vault. A bar
+ * over either would be standing in for something already in hand, and
+ * printing them is also what makes the box's height exact rather than
+ * measured (`VaultPath` and `VaultNote`, components/vault-tree).
+ *
+ * Its bars are `bg-accent` and not the Skeleton's own fill, because that
+ * fill is `bg-muted` and this box IS bg-muted: the default draws a grey
+ * bar on the identical grey and nothing appears at all. Accent is the
+ * rung above muted, and a rung is what the two were tuned to be apart.
+ */
+export function SkeletonVaultTree({
+  path,
+  rows = 8,
+  className,
+}: {
+  /** Where the folder is, as the listing itself takes it. */
+  path: string | null;
+  /**
+   * Eight, which is what a vault in use lists: the ten rows the card can
+   * draw (settings/SettingsPage `VAULT_ROWS`) less the two book folders,
+   * which exist only once a PDF has been imported. Empty rows are
+   * dropped, so a fresh vault lists fewer and a reading one all ten; the
+   * caller can say so where it knows better.
+   */
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <Loading className={cn('vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5', className)}>
+      {/* The folder line: the real path, and a bar where the totals go,
+          on the 20px line box of the text-sm they will be. */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
+        <VaultPath path={path} />
+        <div className="flex h-5 items-center">
+          <Skeleton className="bg-accent h-2.5 w-24" />
+        </div>
+      </div>
+      <ul>
+        {VAULT_SHAPE.slice(0, rows).map((row, i) => (
+          <li key={i}>
+            {/* Every cell is centred rather than left to the row's baseline
+                alignment: a bar has no text, so its baseline is its own
+                bottom edge, and three bars of three heights pushed the row
+                a pixel taller than the row of text it stands for. */}
+            <span className="icon">
+              <Skeleton className="bg-accent size-4 rounded-sm" />
+            </span>
+            <div className="path flex h-5 items-center self-center">
+              <Skeleton className={cn('bg-accent h-2.5', row.path)} />
+            </div>
+            <div className="gloss self-center">
+              <div className="flex h-5 items-center">
+                <Skeleton className={cn('bg-accent h-2', row.gloss)} />
+              </div>
+              {/* Stacked under the name below 30rem, where the longer
+                  glosses take a second line; beside it above, where none
+                  of them do. */}
+              {row.wraps && (
+                <div className="hidden h-5 items-center @max-[30rem]:flex">
+                  <Skeleton className="bg-accent h-2 w-2/5" />
+                </div>
+              )}
+            </div>
+            <div className="size flex h-5 items-center self-center">
+              <Skeleton className="bg-accent h-2.5 w-24" />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <VaultNote />
+    </Loading>
+  );
+}
+
+/**
+ * One entry per row the Vault card can list, in its order, so any prefix
+ * of it is the shape of a vault that has fewer: the bars are the widths
+ * that row's own name and gloss come to at text-sm (`VAULT_ROWS` supplies
+ * both), and `wraps` marks the three glosses long enough to take a second
+ * line once they stack under the name.
+ */
+const VAULT_SHAPE: { path: string; gloss: string; wraps?: boolean }[] = [
+  { path: 'w-10', gloss: 'w-80', wraps: true },
+  { path: 'w-14', gloss: 'w-72', wraps: true },
+  { path: 'w-10', gloss: 'w-48' },
+  { path: 'w-10', gloss: 'w-64', wraps: true },
+  { path: 'w-24', gloss: 'w-48' },
+  { path: 'w-14', gloss: 'w-56' },
+  { path: 'w-20', gloss: 'w-52' },
+  { path: 'w-14', gloss: 'w-32' },
+  { path: 'w-28', gloss: 'w-36' },
+  { path: 'w-24', gloss: 'w-32' },
+];
+
