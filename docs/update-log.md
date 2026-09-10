@@ -7,6 +7,28 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A swipe under a board turns the panel, not its card.** On a phone the
+  panels beside a board become one panel at a time under a tab strip, and a
+  sideways swipe turns them. The card itself used to travel: part-way
+  through a turn there were two cards a gutter apart with the page showing
+  black between them, under a tab strip that had stayed where it was, still
+  drawn as the top edge of a card that had slid out from under it, its own
+  line running unbroken across the gap. The card stays put now, and what
+  travels is what it holds, clipped at the card's edge with a band of the
+  card's own surface between the panel leaving and the one arriving. The
+  gesture is otherwise unchanged: the same one-to-one travel, the same
+  third of the way to commit, the same spring released at the speed your
+  thumb let go at. Nothing at rest moved by a pixel, because none of this
+  is on the page until a finger is on it.
+- **The ends of the pane strip push back.** On the first tab and the last
+  there is no pane that way, and the swipe says so by giving a little and
+  stopping. It had been computing that give and moving nothing: the pane
+  to move was marked only when a neighbouring pane arrived, and at either
+  end none ever does, so the one gesture whose whole job is to answer had
+  nothing to show for itself. A swipe past either end now carries the
+  panel's contents a fifth of the way the finger goes, to 24px, inside a
+  card that stays put, and springs back on the clock a turn settles on. It
+  still cannot turn a pane, however fast it is flicked.
 - **A sheet's corners match the cards behind it.** On a phone every
   window is a bottom sheet, and its top corners sat one rung below the
   cards it opens over: 4px shy of them at the default Corners setting

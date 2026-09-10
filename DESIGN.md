@@ -722,8 +722,8 @@ already read.
 start from rest: the row is already moving under the finger when it
 lets go. So the hook (hooks/use-pane-swipe) asks `lib/spring` for the
 trace released at that speed, in trips per second towards rest, and
-sets it on the column as this turn's `--pane-turn` pair; the pane, its
-neighbour and the strip's line take it together, and it comes off with
+sets it on the column as this turn's `--pane-turn` pair; what the two
+panes hold and the strip's line take it together, and it comes off with
 the offset. A slow release is the rest curve, which is the tokens. A
 flick at 10/s arrives in 294ms instead of 337 and overshoots by 0.08%;
 past 20/s the curve is clamped, where the overshoot is 0.73% and stops
