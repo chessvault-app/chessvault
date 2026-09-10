@@ -687,8 +687,7 @@ function ReaderHeader({
         className="min-w-0 flex-1"
         title={title}
         back={onBack}
-        backVisible="always"
-        collapse={false}
+        backVisible="always"
         truncate
         actions={menu}
       />

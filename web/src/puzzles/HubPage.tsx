@@ -1004,7 +1004,7 @@ function Hub() {
       {/* mb-2 on top of the column's gap-2: the title row keeps the
           shell's 16px to the panel under it while the panels below stay
           8px apart, which is the room this page fights for. */}
-      <PageHeader title={t('Puzzles')} className="mb-2" collapse={false} />
+      <PageHeader title={t('Puzzles')} className="mb-2" />
 
       {/* History first, then the book. Which one stretches is a property
           of the panels themselves (`flex-1` against `shrink-0`), not of

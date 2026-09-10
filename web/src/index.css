@@ -2284,17 +2284,6 @@ cg-board square.check {
   }
 }
 
-/* A phone's page bar is sticky over the page's own scroller, so an element
-   focused from the keyboard (or a row scrolled to) can land under it.
-   scroll-padding keeps the top 44px of the scroller (the compact bar) out
-   of the target area; the bottom bar is a sibling of `main`, outside every
-   scroller, so it needs nothing. WCAG 2.2, focus not obscured. */
-@media (width < 48rem) {
-  [data-page-scroll] {
-    scroll-padding-top: 2.75rem;
-  }
-}
-
 /* A phone's page change goes through the browser's own View Transitions
    (lib/router, swapRoute), in one of three shapes the router stamps on
    the root as `data-nav`:

@@ -1,8 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { searchRowClass } from '@/components/text-fields';
-import { useScrollCollapse } from '@/hooks/use-scroll-collapse';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -13,21 +12,24 @@ import { t } from '@/lib/i18n';
  *
  * One name, two rungs. On a desktop the title is `text-xl` on one line
  * with the actions. On a phone it is a large title, `text-2xl` in a 44px
- * row, and the row is a bar: sticky at the top of the page's scroller,
- * where it takes the page's background, scales to two thirds (24px to 16px) and draws a
- * hairline once the page has scrolled under it (the iOS large title, the
- * Material 3 medium app bar). The actions stay on the title's line in both
- * states, so a phone's bookmark toggle or a desktop's sort menu never
- * moves between rest and scrolled.
+ * row, and the row scrolls away with the page like any other row. It
+ * was a sticky bar for two releases (the iOS large title that shrinks
+ * into the top bar as you scroll, Material 3's medium app bar): it took
+ * the page's background, scaled the name to two thirds and drew a
+ * hairline once the page had scrolled under it. Taken out at
+ * lanph3re's call: on a phone the bar cost 44px of every scrolled list
+ * to keep a name on screen that the tab bar under the thumb already
+ * gives, and the shrink was one more thing moving while a list was
+ * being read. A page's actions live on the title's row still, so they
+ * scroll away with it; anything a page needs from anywhere in its list
+ * is the Fab's, which is fixed.
  *
- * The bar has to be a direct child of the column that scrolls: `sticky`
- * holds an element inside its parent's box, so a header wrapped in a div
- * with its search row scrolls away with that div. That is why this
- * component returns SIBLINGS rather than one box: the header, then a
- * `subtitle` (the count line, tight under the title), a `description`
+ * This component returns SIBLINGS rather than one box: the header, then
+ * a `subtitle` (the count line, tight under the title), a `description`
  * (the explanatory paragraph), and the `search` row, each spaced by the
- * column's own gap. Pages that hand PageShell their own margins instead
- * of using its gap cannot hold a header with any of those three.
+ * column's own gap. That shape was forced by the bar (`sticky` holds an
+ * element inside its parent's box) and is kept because every page is
+ * written against it.
  *
  * `subtitle` is what a page has (12 studies); `description` is what a
  * page is for. A `search` is the page's find-or-filter field, full width
@@ -46,7 +48,6 @@ export function PageHeader({
   meta,
   actions,
   search,
-  collapse = true,
   className,
 }: {
   title: string;
@@ -75,39 +76,17 @@ export function PageHeader({
   actions?: ReactNode;
   /** The page's search or filter field. The row's first child; see searchRowClass. */
   search?: ReactNode;
-  /**
-   * Whether the phone's row is the sticky bar described above. Off for a
-   * header that is not at the top of a scrolling column: a launcher whose
-   * blocks are pinned to the bottom edge, or a leaf's side column, where a
-   * bar that bleeds to the gutters has no gutters to bleed into.
-   */
-  collapse?: boolean;
   className?: string;
 }) {
-  const ref = useRef<HTMLElement>(null);
-  const compact = useScrollCollapse(ref, collapse);
   return (
     <>
       <header
-        ref={ref}
-        data-compact={compact ? '' : undefined}
         className={cn(
-          'group/header flex items-center gap-x-3 gap-y-2',
+          'flex items-center gap-x-3 gap-y-2',
           truncate ? 'flex-nowrap' : 'flex-wrap',
-          // The phone's row: 44px, the coarse-pointer floor for a bar.
+          // The phone's row: 44px, the coarse-pointer floor for a row of
+          // controls.
           'max-md:min-h-11',
-          collapse && [
-            // Sticky over the page, bleeding into the gutters so the
-            // hairline runs edge to edge and nothing scrolls past its
-            // sides. z-20: under the Fab (z-30) and every dialog.
-            // At rest the row is the page; scrolled under, it becomes a
-            // bar, which on the tonal page means the bars' white (the tab
-            // bar's fill) rather than a hairline on the page's own tone.
-            // The hairline returns under High contrast with the bars'.
-            'max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-4 max-md:px-4 max-md:bg-background',
-            'max-md:transition-colors max-md:duration-(--pane-turn) max-md:ease-(--pane-turn-ease) data-compact:max-md:bg-card',
-            'max-md:border-b max-md:border-transparent data-compact:max-md:border-card-ring',
-          ],
           className,
         )}
       >
@@ -125,16 +104,6 @@ export function PageHeader({
         <h1
           className={cn(
             'text-2xl font-semibold tracking-tight md:text-xl',
-            // The large title shrinks in place once the page is under the
-            // bar: scaled from its left edge to two thirds (24px to 16px),
-            // not re-set at a smaller size. Animating font-size relaid
-            // the line out on every frame and read as a reflow; a
-            // transform is composited and reads as the title moving.
-            // Only the size moves; the row keeps its 44px.
-            // On the app's one motion clock (the pane turn's spring), so the
-            // title, the pill and the panes settle at the same tempo.
-            'max-md:origin-left max-md:transition-transform max-md:duration-(--pane-turn) max-md:ease-(--pane-turn-ease)',
-            'group-data-compact/header:max-md:scale-[0.667]',
             truncate && 'min-w-0 flex-1 truncate',
           )}
         >

@@ -217,8 +217,7 @@ export function PuzzleEntry({
             className="min-w-0 flex-1"
             title={`${t(replace ? 'Fix' : 'Add')} #${number}`}
             back={onCancel}
-            backVisible="always"
-            collapse={false}
+            backVisible="always"
             truncate
           />
         </div>

@@ -335,21 +335,19 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   every pixel it is given at any size.
 - **One page title**: `PageHeader` — one name, two rungs. On a desktop
   it is `text-xl font-semibold tracking-tight` with the actions pushed
-  right. On a phone the name is a `text-2xl` large title in a 44px row,
-  and the row is the page's bar: sticky at the top of the scroller, it
-  takes the page background, scales the name to two thirds (24px to 16px, not re-set at a smaller size) and takes
-  the bars' white once the page has scrolled under it (the iOS large
-  title, Material 3's medium app bar; on the tonal page the fill is the
-  bar, and a hairline is drawn only under High contrast), with the
-  actions staying on the name's
-  line in both states. The phone-only back chevron sits where a page is
+  right. On a phone the name is a `text-2xl` large title in a 44px row
+  that scrolls away with the page. For two releases that row was a
+  sticky bar that shrank the name to two thirds and took the bars'
+  white once the page had scrolled under it (the iOS large title,
+  Material 3's medium app bar); it came out because it cost 44px of
+  every scrolled list to keep a name on screen that the tab bar already
+  gives, and the shrink was one more thing moving while a list was
+  being read. The phone-only back chevron sits where a page is
   reached through More. `subtitle` (what the page has: 12 studies),
   `description` (what it is for) and `search` (its find-or-filter
   field, full width on a phone and `max-w-sm` on a desktop) are slots
-  of the header, rendered as SIBLINGS spaced by the column's gap:
-  `sticky` holds an element inside its parent's box, so a header
-  wrapped up with its search row scrolls away with the wrapper, which is
-  also why a page that hands the shell its own margins cannot hold one.
+  of the header, rendered as SIBLINGS spaced by the column's gap, a
+  shape the bar forced and every page is now written against.
   `ShelfToolbar`, Books, the puzzle shelf, Themes, Licences and
   `CanvasShell` are built on it. (Four title sizes had accumulated; a
   page's name is one voice.)
