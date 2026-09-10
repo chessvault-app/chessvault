@@ -7,6 +7,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Drag along the phone's tab bar to pick a tab.** Press the bar and
+  slide: the pill follows your finger, the tab under it lights, and the
+  app moves when you let go. Nothing happens before that, so a tab reached
+  by mistake is fixed by sliding on to the right one rather than by
+  navigating twice. It chooses rather than pages, which is why one gesture
+  can cross the whole bar: you land on the tab under your finger, not on
+  the next one along. A tap is exactly what it was. A gesture that starts
+  on the screen edge is left to the browser's own Back, and one that ends
+  away from the bar chooses nothing. Each tab ticks as it passes under
+  your finger, on the phones that have a buzz to give. Under the system's
+  reduce-motion setting the pill stays where it is and the tabs light on
+  their own.
 - **A swipe under a board turns the panel, not its card.** On a phone the
   panels beside a board become one panel at a time under a tab strip, and a
   sideways swipe turns them. The card itself used to travel: part-way
