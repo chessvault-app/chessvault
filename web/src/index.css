@@ -1560,6 +1560,12 @@ cg-board square.check {
 :root {
   --pane-turn: 337ms;
   --pane-turn-ease: linear(0, 0.0317 4.2%, 0.1075 8.3%, 0.2055 12.5%, 0.3112 16.7%, 0.4154 20.8%, 0.5125 25.0%, 0.5998 29.2%, 0.6759 33.3%, 0.7409 37.5%, 0.7953 41.7%, 0.8401 45.8%, 0.8766 50.0%, 0.9059 54.2%, 0.9290 58.3%, 0.9472 62.5%, 0.9613 66.7%, 0.9720 70.8%, 0.9802 75.0%, 0.9863 79.2%, 0.9907 83.3%, 0.9940 87.5%, 0.9963 91.7%, 0.9979 95.8%, 1);
+  /* The same trace backwards, for an exit: slow off the mark, gone at
+     the spring's own peak speed. A sheet dismissed or a page popped on
+     the entrance curve lingered at the edge; Apple and Material both end
+     an exit at full speed, and this is that on the one physics the app
+     has. Printed by the same script, held by the same test. */
+  --pane-turn-ease-out: linear(0, 0.0021 4.2%, 0.0037 8.3%, 0.0060 12.5%, 0.0093 16.7%, 0.0137 20.8%, 0.0198 25.0%, 0.0280 29.2%, 0.0387 33.3%, 0.0528 37.5%, 0.0710 41.7%, 0.0941 45.8%, 0.1234 50.0%, 0.1599 54.2%, 0.2047 58.3%, 0.2591 62.5%, 0.3241 66.7%, 0.4002 70.8%, 0.4875 75.0%, 0.5846 79.2%, 0.6888 83.3%, 0.7945 87.5%, 0.8925 91.7%, 0.9683 95.8%, 1);
 }
 
 [data-pane-swipe] {
