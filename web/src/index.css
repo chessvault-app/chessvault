@@ -1694,6 +1694,47 @@ cg-board square.check {
   }
 }
 
+/* The Fab's fan (components/fab), on the same spring. Material's FAB
+   menu: each pill grows out of the disc rather than appearing beside it,
+   the one nearest the thumb first and the rest a beat behind, so the
+   column reads as coming FROM the button. Origin bottom-right because
+   that is where the disc is. The stagger is set per pill from the
+   component (--fab-i counts up from the disc); 40ms a step is M3's, and
+   with three pills the last starts inside the first's own rise.
+
+   Closing is the same trace backwards on the exit curve: the pills are
+   held mounted until the farthest one has finished (the component
+   listens for its animationend), which is the only way a leave gets
+   drawn at all. Under reduced motion the base block cuts both to
+   nothing; the delay is not a duration, so it is flattened here. */
+@keyframes fab-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.8);
+  }
+}
+@keyframes fab-item-out {
+  to {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.8);
+  }
+}
+[data-slot='fab-item'] {
+  transform-origin: bottom right;
+  animation: fab-item-in var(--pane-turn) var(--pane-turn-ease) both;
+  animation-delay: calc(var(--fab-i) * 40ms);
+}
+[data-slot='fab-item'][data-state='closed'] {
+  animation: fab-item-out var(--pane-turn) var(--pane-turn-ease-out) both;
+  animation-delay: calc(var(--fab-i) * 40ms);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot='fab-item'] {
+    animation-delay: 0s !important;
+  }
+}
+
 /* The bottom bar's pill while a finger is scrubbing the bar
    (hooks/use-tab-scrub): it is not settling anywhere, it IS the finger, so
    it has no clock. Letting go puts the attribute back and the pill walks

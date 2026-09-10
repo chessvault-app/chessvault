@@ -1,5 +1,5 @@
 import { ChevronDown, Plus, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -114,6 +114,16 @@ export function Fab({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // The pills outlive `open` by one exit animation. They mount on open
+  // and fan in; on close they stay, marked closed, until the farthest
+  // pill's leave has finished (index.css, fab-item-out). Nothing else
+  // in the app unmounts on an animationend, but nothing else in the app
+  // is a fixed column of hand-rolled buttons with no Base UI transition
+  // behind it either.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (open) setShown(true);
+  }, [open]);
   const host = useRef<HTMLDivElement>(null);
   const single = actions.length === 1 ? actions[0] : null;
 
@@ -148,12 +158,18 @@ export function Fab({
         className,
       )}
     >
-      {open &&
-        actions.map(({ label: itemLabel, icon: Icon, onSelect, disabled }) => (
+      {shown &&
+        actions.map(({ label: itemLabel, icon: Icon, onSelect, disabled }, i) => (
           <button
             key={itemLabel}
             type="button"
             disabled={disabled}
+            data-slot="fab-item"
+            data-state={open ? 'open' : 'closed'}
+            // Counted from the disc: the last in the array is drawn
+            // nearest it and moves first, in and out.
+            style={{ '--fab-i': actions.length - 1 - i } as CSSProperties}
+            onAnimationEnd={i === 0 && !open ? () => setShown(false) : undefined}
             onClick={() => {
               setOpen(false);
               onSelect();
@@ -203,7 +219,23 @@ export function Fab({
           'shadow-lg transition-opacity duration-100 active:opacity-80',
         )}
       >
-        {open ? <X className="size-6" /> : <Icon className="size-6" strokeWidth={2.5} />}
+        {/* The glyph TURNS into the close mark rather than swapping: both
+            sit in one cell and the cell rotates a quarter turn on the
+            spring while they cross-fade, which is Material's FAB-to-close
+            and reads as the same button changing its mind. */}
+        <span
+          aria-hidden
+          className={cn(
+            'grid transition-[rotate] duration-(--pane-turn) ease-(--pane-turn-ease) *:col-start-1 *:row-start-1',
+            open && 'rotate-90',
+          )}
+        >
+          <Icon
+            className={cn('size-6 transition-opacity duration-(--pane-turn)', open && 'opacity-0')}
+            strokeWidth={2.5}
+          />
+          <X className={cn('size-6 transition-opacity duration-(--pane-turn)', !open && 'opacity-0')} />
+        </span>
       </button>
     </div>
   );

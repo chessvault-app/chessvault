@@ -5,6 +5,16 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The phone's round button fans out.** Its choices used to appear in
+  one frame and vanish the same way. They now grow out of the disc on the
+  app's spring, the one by your thumb first and the next a beat behind,
+  and leave the same way in reverse; the plus turns into the close mark
+  instead of being swapped for it. This is Material's FAB menu motion on
+  the one physics the app already has. Reduced motion cuts it to the
+  swap it was.
+
 ## 0.9.4
 
 A phone moves the way it is handled: sheets rise and leave, a pushed page
