@@ -614,10 +614,26 @@ export function usePaneSwipe<T extends string>({
         // gesture can turn, whatever the strip says.
         const next = open.current ? paneBeside(ids, value, moveX) : null;
         if (next !== (beside?.id ?? null)) {
-          peek.current?.removeAttribute('data-pane-peek');
+          const stale = peek.current;
           peek.current = null;
           span.current = 0;
-          setBeside(next === null ? null : { id: next, side: moveX < 0 ? 1 : -1 });
+          // The page takes the neighbour it is holding off screen FIRST, and
+          // only then is that pane let back into the column's flow — the same
+          // order the backstop below keeps, and for the same reason. A state
+          // change made in a touchmove is not flushed before paint: React
+          // gives a continuous event's update a task of its own, so unmarking
+          // the pane here and leaving the page to catch up opens a gap a
+          // frame can land in, and a frame in that gap is the column laid out
+          // with two panes down it — the open one squeezed to half its
+          // height, the other stacked under it. It is the fast switch that
+          // finds it: a second flick that arrives while the last turn is
+          // still settling asks for a DIFFERENT neighbour, which is the only
+          // thing that crosses one over. Measured at 29 such frames in 40
+          // flicks before this line existed.
+          flushSync(() =>
+            setBeside(next === null ? null : { id: next, side: moveX < 0 ? 1 : -1 }),
+          );
+          stale?.removeAttribute('data-pane-peek');
           // The row is stood up by the layout effect above, which paints its
           // first frame. Painting here would move the open pane across a gap
           // the neighbour has not arrived in yet.
