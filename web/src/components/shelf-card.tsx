@@ -97,12 +97,14 @@ export function ShelfCard({
         className={cn(
           'bg-card group relative flex h-full cursor-pointer gap-3 touch-pan-y',
           'overflow-hidden rounded-xl ring-1 ring-card-ring',
-          // Lifts a little under the pointer. A card that only changed its
-          // edge read as selected; one that rises reads as reachable.
-          'transition-[box-shadow,transform,background-color] duration-150',
-          'hover:shadow-md md:hover:-translate-y-px',
-          // A finger gets the tint the rows get, not the lift: a card
-          // rising under a thumb is a hover idiom, and the thumb hides it.
+          // The tint every other row and card in the app answers a
+          // pointer with (the games row, the book shelves). This one
+          // lifted a pixel and grew a shadow instead, on the theory that
+          // a card that rises reads as reachable; two shelves lifting
+          // while every list beside them tinted was one idiom too many
+          // (lanph3re's call), and a card that moves under the pointer
+          // moves the text being read.
+          'transition-colors duration-100 hover:bg-accent',
           'pointer-coarse:active:bg-accent',
           layout === 'grid' ? 'px-4 py-3' : 'items-center px-3 py-2',
           // A bookmarked card says so before it is read: an edge down the
