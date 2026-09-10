@@ -5,7 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.9.4
+
+A phone moves the way it is handled: sheets rise and leave, a pushed page
+slides in and the back chevron reverses it, a touch shows on a button,
+and a long press selects your own words and nothing the app wrote. A big
+book opens in seconds instead of minutes and stays open when you leave
+it. Placeholders hold still and can be seen, the games table tells a
+selected row from a pointed-at one, and a draw wears no chip.
 
 - **A phone's sheets rise and leave.** A bottom sheet used to be simply
   there, in one frame, and gone the same way; the dimming behind it
@@ -179,6 +186,59 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   hover controls appear and take 30px back from the name; the phone rows
   at 375px are unchanged, and nothing wider than 430px ever reached the
   floor.
+- **A draw wears no chip.** In the Result column a draw took the same
+  filled chip a win does, in the neutral fill that a selected or hovered
+  row also takes, so on exactly the row being read about the chip's shape
+  measured 1.00:1 against its row and vanished; at rest it was 1.13:1 in
+  light and 1.91:1 in dark, barely a shape anywhere. Nothing on the
+  neutral ladder can hold that boundary without turning to ink, so the
+  fill goes, and the reading is the better one: only a decisive game has
+  a verdict to carry. The draw keeps its width and centring, so its
+  glyphs sit where a winner's do. The glyphs on a plain row now read
+  6.04:1 in light and 8.62:1 in dark where the chip read 5.33 and 4.52.
+  The cost is that a collection of master games loses most of its pills,
+  which a reader used to one on every row will notice.
+- **The selected row and the pointed-at row look different.** Both took
+  the same fill, so in the ordinary case, one click made and the pointer
+  still in the list, two rows looked selected while the details panel
+  described one of them. Hover now lifts a row to the rung above the
+  page and the selection keeps the accent wash below it, and the selected
+  row is also set in the app's current-item type rather than the stroke
+  an earlier attempt drew around it, which was the loudest line on a page
+  of quiet fills. Measured in light: page 245, hovered 255, selected 231;
+  in dark, 10, 23 and 64.
+- **The details panel takes a wide window's slack, and the table stops
+  paying for it.** The panel was 368px on a 1024px window and still 368
+  on a 1920 one, so the one width where it costs the table nothing was
+  also the width where it refused the room, and the opening name, the one
+  thing the row beside it cannot show in full, truncated there and read
+  in full on a phone's sheet. Above 1740 it takes 432. And the table did
+  not shed for it: it scrolled sideways, with the Result badge sliced
+  through the middle at 1100 and six of ten columns gone at 1024, with
+  nothing drawn at the edge to say so. It now gives up Notation while a
+  panel stands beside it, because the panel prints the same moves in full
+  two inches to the right. Hidden width with the panel open falls from
+  386 to 158px at 1280 and to nothing from 1440 up; 1024 and 1100 still
+  scroll, which a full shed order across every column would fix and this
+  does not.
+- **A second flick, or a tap, during a pane turn.** On a phone a flick
+  that landed while the last turn was still settling could paint one
+  frame with two panes down the column, the open one squeezed to half
+  its height. And a tap on the strip while a turn ran was left to the
+  turn's own timer, so the card the tap opened, usually the pane a thumb
+  had just left, stood empty until it fired. The turn now ends inside the
+  frame the tap or the flick lands in.
+- **Shelf cards stop hopping when a bookmark or a tab change lands.** A
+  bookmarked study's board and title jumped 2px right a moment after the
+  Studies shelf drew, because the mark was a border that pushes the card's
+  contents inward and the shelf learns which cards are marked in a request
+  of its own, on every return. The mark is a strip laid over the edge now,
+  on the Studies, Books and puzzle book shelves alike. Separately, on an
+  iPhone the thumbnails hopped by about a device pixel around a tab
+  change, and a recording traced it to the boards standing on a fraction
+  of a pixel; every card is 90px and every board starts a whole pixel in.
+  Whether that is enough on an iPhone is unverified until the next
+  recording says so.
 
 ## 0.9.3
 
