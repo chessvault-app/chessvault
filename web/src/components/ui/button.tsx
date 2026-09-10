@@ -45,13 +45,18 @@ const buttonVariants = cva(
         // white text's floor (3.88:1 measured on the Blue board's accent).
         // The token is a darker rung of the same hue in light and a
         // lighter one in dark, and the contrast knob reaches it.
-        default: 'bg-primary text-primary-foreground hover:bg-(--primary-hover)',
+        // Each hover tint again under `pointer-coarse:active:`: a finger
+        // never hovers, so on a phone a pressed button showed only the
+        // 1px nudge below, which reads as unresponsive. The press takes
+        // the colour the mouse would have had, and nothing new.
+        default:
+          'bg-primary text-primary-foreground hover:bg-(--primary-hover) pointer-coarse:active:bg-(--primary-hover)',
         outline:
-          'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
+          'border-border bg-background hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 dark:pointer-coarse:active:bg-input/50',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] pointer-coarse:active:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         ghost:
-          'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+          'hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:pointer-coarse:active:bg-muted/50',
         // The ink follows the fill on hover, the way the ghost and outline
         // variants above take hover:text-foreground with their hover:bg.
         // Here it is not a look but the readability floor: this variant is
@@ -64,10 +69,10 @@ const buttonVariants = cva(
         // the same declaration darkens the light theme and lightens the
         // dark one.
         destructive:
-          'bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25 dark:focus-visible:ring-destructive/40',
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] pointer-coarse:active:bg-destructive/20 pointer-coarse:active:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25 dark:pointer-coarse:active:bg-destructive/25 dark:focus-visible:ring-destructive/40',
         'destructive-solid':
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-coarse:active:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20',
+        link: 'text-primary underline-offset-4 hover:underline pointer-coarse:active:underline',
       },
       size: {
         default:

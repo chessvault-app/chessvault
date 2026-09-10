@@ -425,7 +425,7 @@ function SelectField({
                       }}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-base',
-                        'hover:bg-accent transition-colors duration-100',
+                        'hover:bg-accent active:bg-accent transition-colors duration-100',
                         option.value === value ? 'font-medium' : 'text-foreground',
                         mono && 'font-mono',
                       )}

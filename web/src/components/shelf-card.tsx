@@ -99,8 +99,11 @@ export function ShelfCard({
           'overflow-hidden rounded-xl ring-1 ring-card-ring',
           // Lifts a little under the pointer. A card that only changed its
           // edge read as selected; one that rises reads as reachable.
-          'transition-[box-shadow,transform] duration-150',
+          'transition-[box-shadow,transform,background-color] duration-150',
           'hover:shadow-md md:hover:-translate-y-px',
+          // A finger gets the tint the rows get, not the lift: a card
+          // rising under a thumb is a hover idiom, and the thumb hides it.
+          'pointer-coarse:active:bg-accent',
           layout === 'grid' ? 'px-4 py-3' : 'items-center px-3 py-2',
           // A bookmarked card says so before it is read: an edge down the
           // left in the accent, plus the small glyph on the meta line
