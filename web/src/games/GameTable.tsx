@@ -420,7 +420,33 @@ export function GameTableRow({
         // one where it was.
         'group hover:bg-accent relative min-h-(--row-h-table) cursor-pointer py-(--row-py-tight) transition-colors duration-100',
         // Selection over zebra: the accent wash because the details
-        // panel is describing this exact line.
+        // panel is describing this exact line, AND an inset ring,
+        // because the wash alone was the same fill as `hover:bg-accent`
+        // above it — `--accent` is `--surface-3` (index.css), so a
+        // selected row and a row under the pointer measured 1.00:1
+        // against each other, and in the ordinary case (you have just
+        // clicked, the pointer is still in the list) two rows looked
+        // selected while the panel described one. The canon's own
+        // ladder would put hover a rung down on `--muted`, but that is
+        // `--surface-2`, which in light is the 97% of the page these
+        // rows sit on: on this page a muted hover is no hover at all.
+        // So the second cue is not a fill. It is the sidebar's
+        // current-row treatment (DESIGN.md, Navigation: a fill with a
+        // primary inset ring), and a ring rather than the left edge
+        // `bookmarked` owns below, because this table scrolls sideways
+        // — at 1024px 642px of it is off-screen, and a left edge
+        // scrolls away with the columns while a ring's top and bottom
+        // stay across the window at every scroll position.
+        //
+        // 50%, not the sidebar's 30%: that tab carries a fill change and
+        // semibold text beside its ring, and here the fill is the one
+        // thing selection cannot use, so the ring is the whole cue and
+        // owes the 3:1 a non-text indicator owes. Measured off the
+        // built demo at the default knobs, composited on `--accent`:
+        // 3.24:1 in light and 3.37:1 in dark, and against the rows
+        // either side of it 3.67:1 and 6.44:1. 45% was 2.83:1 in light
+        // and under the floor.
+        selected && 'ring-primary/50 ring-1 ring-inset',
         selected && 'bg-accent',
         // The kept-game mark the card rows carry, unchanged: a warm edge
         // down the left that costs no width (painted, not bordered — see
