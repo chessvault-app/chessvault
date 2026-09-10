@@ -7,6 +7,28 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A phone's page title scrolls away with the page.** It was a bar
+  that stuck to the top and shrank the name as you scrolled, the iOS
+  large title. It cost 44px of every list to keep a name on screen the
+  tab bar already gives, and the shrink was one more thing moving while
+  a list was being read. A note's own header, with its back chevron and
+  formatting palette, still pins.
+- **A page slides in with something on it.** Opening a game from the
+  games list slid a bare ground in, black on a dark theme, and the
+  board arrived only once the slide had finished: the page waits a beat
+  before showing its placeholder so a fast load never flashes one, and
+  the slide was longer than the beat. The placeholder now shows at once
+  while a page change is being drawn, since the slide is what hides a
+  flash. A section visited for the first time also has its code waited
+  for, briefly, before the slide starts, so it does not slide in empty.
+- **A mouse resting on a row no longer stops the list scrolling.** Every
+  truncated name in a list told the browser to keep scrolling to itself,
+  and Chromium obliged: a wheel over a game's opening or a study's title
+  moved nothing while the gutter beside it scrolled. Text that hides its
+  overflow now hands the wheel on to the list.
+- **Notes and studies answer a pointer the way every other list does.**
+  Their cards lifted a pixel and grew a shadow; they now take the same
+  tint a game row or a book takes.
 - **The hub's Next puzzle card pushes.** It faded through like a tab
   switch while the Failed and theme cards beside it slid in, because the
   trainer's address has no parameters and was counted level with the
