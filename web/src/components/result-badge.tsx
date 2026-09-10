@@ -14,6 +14,31 @@ const fmt = (result: string): string => result.replaceAll('1/2', '½');
  * pointer, and a translucent chip let that fill through and took the
  * pair below the contrast floor — see --good-tint in index.css.
  *
+ * A DRAW WEARS NO FILL, and neither does a result that could not be
+ * read. Only a decisive game has a verdict to carry, so only a decisive
+ * game gets a chip; the draw keeps the width, the corner and the mono
+ * centring, so its glyphs sit exactly where a winner's do and the
+ * column still reads as one.
+ *
+ * That is the design reason. The measured one is that a neutral chip
+ * cannot hold a boundary in this palette. It was `bg-accent`, and
+ * `--accent` is `--surface-3`, which is also what a row fills with — so
+ * the chip's shape measured 1.000:1 against a selected table row and
+ * against a hovered card row, vanishing on exactly the row being
+ * pointed at or read about, and only 1.13:1 in light and 1.91:1 in dark
+ * at rest, so it was barely a shape anywhere. Nothing on the neutral
+ * ladder fixes it: the ladder spans about 1.07:1 end to end, and 3:1
+ * against `--surface-3` needs a fill at 61.5% lightness or below, which
+ * is ink rather than a surface and fails the chip's own text. A mockup
+ * over the demo settled the alternatives — a darker grey chip made a
+ * draw louder than a win, worst in dark, and a hairline was invisible in
+ * dark at 1.16:1. Dropping the fill also returns the text contrast the
+ * chip was costing, measured on the demo: on a plain row the glyphs read
+ * 6.04:1 in light and 8.62:1 in dark where the old chip read 5.33 and
+ * 4.52. The worst case is unchanged and is the row that fills with
+ * `--accent`, where 4.52:1 in dark is the same figure the chip gave,
+ * since the ink now sits on the fill the chip used to copy.
+ *
  * It used to be two vocabularies: the explorer
  * wore the eval bar's white/black scheme while the games lists wore
  * this one, and the same result read as two different chips one pane
@@ -41,7 +66,7 @@ export function ResultBadge({
   // unfinished games stay grey.
   const tone =
     parts.length !== 2 || !winner
-      ? 'bg-accent text-muted-foreground'
+      ? 'text-muted-foreground'
       : userSide
         ? userSide === winner
           ? 'bg-good-tint text-good'
