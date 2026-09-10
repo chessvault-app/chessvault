@@ -480,7 +480,12 @@
   /* 45% at knob 0, 41% at knob 1: like the semantic four, the tag has to
      follow --ui-contrast or High contrast closes the gap on it. The
      contrast walk's light + High contrast row (the one it did not use to
-     have) caught the C family at 4.24:1 on a hovered row. */
+     have) caught the C family at 4.24:1 on a row filled with --accent.
+     Which row that is depends on the list: on the CARD rows (GameRow) it
+     is the row under the pointer, and on the dense table (GameTableRow)
+     it is the SELECTED row, whose hover lifts to --surface instead. The
+     card row is the case to reproduce, since it is the tighter of the
+     two — a chip on the table's lifted row only gains. */
   --eco-l: calc(45% + (41% - 45%) * var(--ui-contrast));
   /* Which way the family step goes (games/shared.tsx): down in light,
      where a darker chip reads better on the page, up in dark. Each step
@@ -671,7 +676,7 @@
   /* 85%, not 80%, and the five points are the hover state nobody had
      measured. An ECO chip is its own colour on a 15% wash of itself, and
      that pair was checked against the card it sits on. It also sits on
-     the row, and a row under the pointer fills with --accent: on the
+     the row, and a card row under the pointer fills with --accent: on the
      games list, hovered, A05 measured 4.11:1 at 12px. 84% is where it
      crosses 4.5; this is that with a little margin, at 4.65:1 hovered
      and better everywhere else, since a lighter chip on a dark page only
@@ -679,7 +684,17 @@
 
      Light is untouched: the same chip on the same hovered row there
      measures 5.37:1, because --accent is a light grey and the chip's ink
-     is already dark. */
+     is already dark.
+
+     Where to reproduce it, since the two game lists no longer agree on
+     which row wears --accent: on the CARD rows (GameRow) it is still the
+     row under the pointer, and on the dense table (GameTableRow) it is
+     the SELECTED row, whose hover lifts to --surface instead. The accent
+     fill is the tighter case either way and the figures above stand for
+     it. Re-measured on the demo at the default knobs as a cross-check,
+     one ECO family on the accent fill reads the same 8.57:1 in light and
+     8.19:1 in dark whether it is the table's selected row or the card
+     row's hovered one, and the table's lifted hover only gains. */
   --eco-l: 85%;
   --eco-dir: 1;
   --eco-c: 0.08;
