@@ -114,7 +114,16 @@ export function ShelfCard({
           // screen reader and a deuteranopic reader both miss. The glyph
           // costs one caption-height on the line that was already there,
           // not the 28px corner the old filled star took from every card.
-          marked && 'border-l-primary border-l-2',
+          // The edge is a strip laid over the card, not a border on it. A
+          // 2px border moved everything on the card 2px right, and a
+          // card is drawn before it knows it is marked: the shelf asks
+          // for its bookmarks in a request of their own and keeps its
+          // list across visits, so on a phone the marked cards' boards
+          // and titles jumped from 32 to 34px when that answer landed
+          // (one frame after the shelf drew on a revisit, measured on the
+          // demo at 390px). Over the swipe track, as the border was.
+          marked &&
+            "before:bg-primary before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
         )}
       >
         {/* The card stays; its contents slide off it. */}
@@ -141,7 +150,7 @@ export function ShelfCard({
               // rows stepped on a shelf with short names beside long ones
               // (lanph3re's report). The column reserves the fullest
               // card's text, the title line (1.5rem) + the meta line
-              // (1rem) + its mt-1 (0.25rem) + one preview line (1.35rem),
+              // (1rem) + its mt-1 (0.25rem) + one preview line (1.375rem),
               // and centres what it has, so a title with no preview stays
               // packed against its meta line rather than pinned to the top
               // of an empty box. Measured at 1280 on the demo's shelf:
@@ -153,7 +162,15 @@ export function ShelfCard({
               // From sm up only: below it the grid is one column, where no
               // card has a neighbour to stay level with, so a phone card
               // is as tall as its own words.
-              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[4.1rem]',
+              //
+              // 66px, and the preview line 22px, so the column is an even
+              // whole number: the card is then 90px, every card on the
+              // shelf starts on a whole pixel, and the 64px board centred
+              // in the column starts 1px down, on a whole pixel too. They
+              // were 65.6 and 21.6, which put the board 12.8px into a
+              // card 89.59px tall. See mini-board for what a board at a
+              // fractional device pixel costs on a phone's route change.
+              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[4.125rem]',
             )}
           >
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
@@ -210,7 +227,7 @@ export function ShelfCard({
               {meta}
             </p>
             {preview && layout === 'grid' && (
-              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.35rem] opacity-90">
+              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.375rem] opacity-90">
                 {preview}
               </p>
             )}

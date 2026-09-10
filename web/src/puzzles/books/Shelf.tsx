@@ -494,9 +494,12 @@ function BookCard({
           'bg-card ring-card-ring group relative flex h-full cursor-pointer items-stretch gap-3',
           'overflow-hidden rounded-xl ring-1 p-3 text-left transition-colors duration-100',
           'hover:bg-accent',
-          // The whole indicator that a book is kept, and it costs no width
-          // — see the shelves and the games rows.
-          marked && 'border-l-warn hover:border-l-warn border-l-2',
+          // The whole indicator that a book is kept. A strip over the
+          // card, not a border on it: the bookmarks arrive in a request
+          // of their own, and a border moved the marked cards' contents
+          // 2px right when it landed (components/shelf-card).
+          marked &&
+            "before:bg-warn before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
         )}
       >
         <SwipeTrack dx={swipe.dx} bookmarked={marked} />
