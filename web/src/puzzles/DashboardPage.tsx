@@ -520,7 +520,9 @@ export function DashboardPage() {
                     onClick={() => navigate('puzzles', 'books', b.slug)}
                     className="text-sm"
                   >
-                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">{b.title}</span>
+                    <span data-user-text className="text-foreground min-w-0 flex-1 truncate font-medium">
+                      {b.title}
+                    </span>
                     {(b.due ?? 0) > 0 && (
                       <span className="text-info shrink-0 text-xs">{t('{n} due', { n: b.due! })}</span>
                     )}

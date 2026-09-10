@@ -648,7 +648,11 @@ export function EditorView({
           {validity.legal && (
             <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
           )}
-          <code className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs" title={fen}>
+          <code
+            data-user-text
+            className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs"
+            title={fen}
+          >
             {fen}
           </code>
           <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
@@ -932,7 +936,11 @@ export function EditorView({
                 {validity.legal && (
                   <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
                 )}
-                <code className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs" title={fen}>
+                <code
+                  data-user-text
+                  className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs"
+                  title={fen}
+                >
                   {fen}
                 </code>
                 <Button variant="ghost" size="sm" onClick={() => void copyFen()}>

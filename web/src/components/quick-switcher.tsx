@@ -138,7 +138,11 @@ export function QuickSwitcher() {
                         onSelect={() => go(() => navigate(section, encodeURIComponent(id)))}
                       >
                         <Icon />
-                        <span className="truncate">{id}</span>
+                        {/* The document's own name, so a long press
+                            selects it (index.css). */}
+                        <span data-user-text className="truncate">
+                          {id}
+                        </span>
                       </CommandItem>
                     ))}
                   </CommandGroup>

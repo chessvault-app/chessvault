@@ -354,7 +354,13 @@ function MoveStrip({
 
   const root = getNode(tree, tree.rootId);
   if (root.children.length === 0) {
-    return <p className="text-muted-foreground px-1 text-sm">{t('Play moves on the board, or paste a FEN/PGN.')}</p>;
+    // The app talking, inside an editable region that selects: it says so
+    // for itself, so a long press on a phone passes over it (index.css).
+    return (
+      <p className="text-muted-foreground px-1 text-sm select-none">
+        {t('Play moves on the board, or paste a FEN/PGN.')}
+      </p>
+    );
   }
   renderLine(root.children[0]!);
   // Variations off the root come after the mainline rendering handles them —

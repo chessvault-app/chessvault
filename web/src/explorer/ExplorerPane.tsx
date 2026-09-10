@@ -1358,7 +1358,7 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
                     onClick={() => void open(g)}
                     className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-(--row-py-tight) text-left text-sm"
                   >
-                    <span className="text-foreground min-w-0 flex-1 truncate">
+                    <span data-user-text className="text-foreground min-w-0 flex-1 truncate">
                       {g.white} – {g.black}
                     </span>
                     <ResultBadge result={g.result} />
@@ -1479,7 +1479,7 @@ function TopGamesList({
                     'text-left text-sm transition-colors duration-100',
                   )}
                 >
-                  <span className="min-w-0 flex-1 truncate">
+                  <span data-user-text className="min-w-0 flex-1 truncate">
                     {/* align-[1px]: an 8px dot whose bottom sits 1px above
                         the baseline is centred on the cap height; at -1px
                         both dots hung below the line's visual centre. */}

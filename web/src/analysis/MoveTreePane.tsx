@@ -288,6 +288,10 @@ export function MainlineTable({
     out.push(
       <p
         key="root-comment"
+        // An annotation is what someone wrote about the move, so it is
+        // marked as theirs. On a phone the panel's own long press opens
+        // the move's action sheet instead - see index.css.
+        data-user-text
         className={commentRow(annotation.mainline)}
       >
         <WikiText text={rootComment} />
@@ -362,6 +366,7 @@ export function MainlineTable({
             // Size is Settings > Appearance > Annotation size, and is flat at
             // every width — see prefs for what replaced the `stacked:` lift
             // that used to live on this line.
+            data-user-text
             className={commentRow(annotation.mainline)}
           >
             <WikiText text={child.comment} />
@@ -557,6 +562,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
       items.push(
         <p
           key={`${mainChildId}-comment`}
+          data-user-text
           className={cn(
             'text-muted-foreground border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
@@ -648,6 +654,7 @@ function VariationBranch({
           so its comment has to be emitted here too or it would be dropped. */}
       {node.comment && (
         <p
+          data-user-text
           className={cn(
             'text-muted-foreground border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,

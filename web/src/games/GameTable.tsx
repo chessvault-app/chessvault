@@ -457,6 +457,10 @@ export function GameTableRow({
       // takes it. The shell's zebra rule reads it here; the button
       // inside carries aria-current for what a screen reader hears.
       data-selected={selected || undefined}
+      // Every cell is the game's own record, so the row selects on a long
+      // press (index.css) - unless it is a row with an action sheet, and
+      // then the press is the sheet's.
+      data-user-text
       title={t('{white} vs {black}', { white: game.white, black: game.black })}
       className={cn(
         GRID,

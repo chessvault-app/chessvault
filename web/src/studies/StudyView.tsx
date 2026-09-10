@@ -102,8 +102,17 @@ export function StudyView({
       [analysisTree, analysisCursor],
     ),
   );
+  // A chapter's name is the user's own and is marked as such: it selects
+  // on a long press, and passing it as a node rather than a string also
+  // keeps it out of t(), which has no business translating a name.
   const movesTitle =
-    kind === 'game' ? (openingName ?? t('Starting position')) : chapterName || t('Moves');
+    kind === 'game' ? (
+      (openingName ?? t('Starting position'))
+    ) : chapterName ? (
+      <span data-user-text>{chapterName}</span>
+    ) : (
+      t('Moves')
+    );
   const error = useStudy((s) => s.error);
   const [failed, setFailed] = useState(false);
   // Small screens show one pane at a time under the board.
@@ -545,6 +554,8 @@ function TitleEditor({
           setDraft(name);
           setEditing(true);
         }}
+        // The name the study was given, so a long press selects it.
+        data-user-text
         title={failure ?? id}
         className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
       >

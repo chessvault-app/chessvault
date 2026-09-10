@@ -168,8 +168,12 @@ export function ShelfCard({
                 you can pick a study by. This app's tooltip IS the title
                 attribute, so the name is one hover away instead of one
                 open-and-close. */}
+            {/* The name is the user's, so it selects on a long press
+                even though the line is a control (index.css). The stat
+                line under it is the app counting, and does not. */}
             <button
               type="button"
+              data-user-text
               title={title}
               onClick={(e) => {
                 // The surface has the same click; one open, not two.
@@ -207,7 +211,10 @@ export function ShelfCard({
               {meta}
             </p>
             {preview && layout === 'grid' && (
-              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.35rem] opacity-90">
+              <p
+                data-user-text
+                className="text-muted-foreground mt-1 line-clamp-1 text-sm leading-[1.35rem] opacity-90"
+              >
                 {preview}
               </p>
             )}
