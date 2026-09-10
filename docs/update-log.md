@@ -7,6 +7,19 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A swipe under a board turns the panel, not its card.** On a phone the
+  panels beside a board become one panel at a time under a tab strip, and a
+  sideways swipe turns them. The card itself used to travel: part-way
+  through a turn there were two cards a gutter apart with the page showing
+  black between them, under a tab strip that had stayed where it was, still
+  drawn as the top edge of a card that had slid out from under it, its own
+  line running unbroken across the gap. The card stays put now, and what
+  travels is what it holds, clipped at the card's edge with a band of the
+  card's own surface between the panel leaving and the one arriving. The
+  gesture is otherwise unchanged: the same one-to-one travel, the same
+  third of the way to commit, the same spring released at the speed your
+  thumb let go at. Nothing at rest moved by a pixel, because none of this
+  is on the page until a finger is on it.
 - **The diagram buttons are visible on a light page again.** A book's page
   is paper, and the canvas it is drawn on is white in both themes for that
   reason. The buttons over it were not: they took the theme's own surface

@@ -19,14 +19,16 @@ const SLOP = 8;
 const EDGE_PX = 32;
 
 /**
- * The gutter between two panes while they travel together.
+ * The gutter between two panes' contents while they travel together.
  *
- * The row is a row of separate panels, not a filmstrip cut from one image,
- * and a gap is what says so: part-way through a turn the page shows the
- * edge of the pane being left and the edge of the one arriving with the
- * column's own background between them. Matched to the column's vertical
- * `gap-3`, so the spacing between two panes reads the same whichever way
- * they are stacked.
+ * What is turning is two panels' worth of reading, not a filmstrip cut
+ * from one image, and a band of empty surface is what says so: without it
+ * the last rows of the pane being left and the first of the one arriving
+ * meet edge to edge and read as one column of text. It is the card's own
+ * fill now rather than the page behind it, because the card no longer
+ * travels — see the frame's note in index.css. Matched to the column's
+ * vertical `gap-3`, so the spacing between two panes reads the same
+ * whichever way they are stacked.
  */
 const GAP_PX = 12;
 
@@ -220,13 +222,22 @@ const PROPS = [
  * what says how many panes there are and which one is open — so a swipe
  * and a tap are the same act.
  *
- * The panes travel as a ROW. The pane being left and the pane arriving are
- * both on screen for the whole gesture, a gutter apart, and they follow the
- * finger one to one across the full width of the column; letting go pulls
- * in whatever gap is left, or puts the row back where it was. Before this
- * the pane leaned 32px and swapped on release, which is a different claim
- * about what these panels are: a row you are holding, rather than a panel
- * that nods at you and then changes.
+ * The CONTENTS travel as a row, inside a card that does not. What the
+ * pane being left holds and what the pane arriving holds are both on
+ * screen for the whole gesture, a gutter apart, and they follow the finger
+ * one to one across the full width of the column; letting go pulls in
+ * whatever gap is left, or puts the row back where it was. The card around
+ * them — its fill, its ring, and the tab strip drawn as its top edge —
+ * stays exactly where it was, and clips them as they cross it.
+ *
+ * Two earlier cuts of this are what that sentence is worth. The pane first
+ * leaned 32px and swapped on release, which is a panel that nods at you
+ * and then changes rather than a page you are turning. Then the pane
+ * itself travelled, card and all (0.8.5), and that cut the page open: the
+ * strip stayed, full width, still claiming to be the top of the card,
+ * while two cards a gutter apart slid under it with the page showing black
+ * between them and the strip's line running unbroken across the gap. A
+ * header cannot belong to a body that has slid out from under it.
  *
  * Two things make that possible without gathering the panes into one
  * sliding track — which cannot be done, because they are separate elements
@@ -240,10 +251,12 @@ const PROPS = [
  *    hides, or a condition that renders. It changes twice in a turn, not
  *    sixty times a second.
  *  - The neighbour is then lifted out of the column's flow and stood at
- *    the open pane's own box, one span to the side, by the rule in
- *    index.css that `data-pane-peek` switches on. The column carries the
- *    numbers as custom properties, so a column that has never laid out two
- *    panes at once still does not.
+ *    the open pane's own box — the same box, not beside it — by the rule
+ *    in index.css that `data-pane-peek` switches on, which also takes its
+ *    fill and its ring off so the card underneath goes on being the one
+ *    card on screen. What stands one span to the side is what it holds.
+ *    The column carries the numbers as custom properties, so a column that
+ *    has never laid out two panes at once still does not.
  *
  * Which child is which is not read from the DOM order — it cannot be, the
  * trainers render their panes in a different order from their strip — but
@@ -418,8 +431,9 @@ export function usePaneSwipe<T extends string>({
   };
 
   /**
-   * Stand the neighbour beside the open pane: the open pane's own box,
-   * lifted out of the column's flow, one span to the given side.
+   * Stand the neighbour ON the open pane: the open pane's own box, lifted
+   * out of the column's flow, with what it holds one span to the given
+   * side. The box is shared so that one card frames both.
    *
    * That box rather than the neighbour's own, because the panes are not
    * interchangeable — an explorer with a dragged height and a move panel

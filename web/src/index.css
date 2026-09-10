@@ -1471,18 +1471,32 @@ cg-board square.check {
 /* ---------------------------------------------------------------------------
    The pane swipe's motion — the CSS half of hooks/use-pane-swipe.
 
-   A turn moves TWO panes: the one being left and the one arriving, held a
-   gutter apart and dragged as a row. The hook marks them `data-pane-open`
-   and `data-pane-peek`, switches these rules on with `data-pane-swipe` on
-   the column, and carries every number the pair needs as custom properties
-   there — `--pane-dx` is where the finger has the row, `--pane-span` is the
-   whole trip (a pane's width plus the gutter) and `--pane-side` is which
-   side of the open pane the arriving one stands on.
+   A turn moves what is INSIDE two panes: the contents of the one being
+   left and of the one arriving, held a gutter apart and dragged as a row
+   across a card that does not move. The hook marks the two panes
+   `data-pane-open` and `data-pane-peek`, switches these rules on with
+   `data-pane-swipe` on the column, and carries every number the pair needs
+   as custom properties there — `--pane-dx` is where the finger has the
+   row, `--pane-span` is the whole trip (a pane's width plus the gutter)
+   and `--pane-side` is which side of the open pane the arriving one
+   stands on.
 
-   Only those two move. Everything else in the column is fixed furniture the
-   turn is measured against — the tab strip, the control row at the floor —
-   and it says so with `data-pane-strip`, which is also how the hook knows
-   what is a pane when it goes looking for the one that just arrived.
+   The FRAME stays. The open pane's card — its fill, its ring, its corners,
+   and the tab strip drawn as its top edge — is the shell both sets of
+   contents travel inside, and the arriving pane, stood at that same box,
+   gives up its own fill and ring so as not to draw the same edge twice
+   over the top of it. Moving the cards instead was the first cut of this
+   (0.8.5) and it cut the page open: a fixed full-width strip claiming to
+   be the top of a card, and under it two cards a gutter apart with the
+   page showing black between them, the strip's own line running unbroken
+   across the gap. A header cannot belong to a body that has slid out from
+   under it. What a reader is turning is the pane's contents, so that is
+   what moves.
+
+   Everything else in the column is fixed furniture the turn is measured
+   against — the tab strip, the control row at the floor — and it says so
+   with `data-pane-strip`, which is also how the hook knows what is a pane
+   when it goes looking for the one that just arrived.
 
    The arriving pane is taken out of the column's flow and stood at the open
    pane's own box, because these columns have never laid out two panes at
@@ -1525,7 +1539,19 @@ cg-board square.check {
   position: relative;
 }
 
-[data-pane-swipe] > [data-pane-open] {
+/* Both panes clip what they hold to their own box for the length of the
+   turn, which is what makes the shell a shell: contents leave at its edge
+   rather than past it. `clip` in place of the card's own `overflow-hidden`
+   because hidden is a scroll container, and a container holding a child
+   parked a screen to the side is one the browser will scroll to reach it
+   — a focus landing in the arriving pane would scroll the card there and
+   leave it there. */
+[data-pane-swipe] > [data-pane-open],
+[data-pane-swipe] > [data-pane-peek] {
+  overflow: clip;
+}
+
+[data-pane-swipe] > [data-pane-open] > * {
   transform: translate3d(var(--pane-dx, 0px), 0, 0);
 }
 
@@ -1536,6 +1562,14 @@ cg-board square.check {
   width: var(--pane-width, 100%);
   height: var(--pane-height, auto);
   margin: 0;
+  /* Standing at the open pane's box, over the card that is the shell: its
+     own surface would hide the pane being left, and its ring would draw
+     that card's edge a second time in the same place. */
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-pane-swipe] > [data-pane-peek] > * {
   transform: translate3d(
     calc(var(--pane-dx, 0px) + var(--pane-side, 1) * var(--pane-span, 0px)),
     0,
@@ -1543,8 +1577,8 @@ cg-board square.check {
   );
 }
 
-[data-pane-swipe='settle'] > [data-pane-open],
-[data-pane-swipe='settle'] > [data-pane-peek] {
+[data-pane-swipe='settle'] > [data-pane-open] > *,
+[data-pane-swipe='settle'] > [data-pane-peek] > * {
   transition: transform var(--pane-turn) var(--pane-turn-ease);
 }
 
