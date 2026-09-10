@@ -7,6 +7,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The Settings page reads the vault's sizes once.** The Vault card and
+  the Storage used card both say what is on disk, and each asked the
+  server for its own walk of the vault: a stat per file, twice on every
+  visit, with the second walk waiting on the first. They read one answer
+  now. Measured on a vault of 664 files, the page waits 106 ms on those
+  figures instead of 138 ms, and the Storage used total is on screen
+  256 ms after you arrive instead of 349 ms. Clearing a cache still
+  re-reads them, and both cards keep the figures they have while the new
+  ones come, a failed re-read included. In the demo the row of card names
+  at the top now includes Vault, which was missing while that card waited
+  on an answer of its own.
 - **Drag along the phone's tab bar to pick a tab.** Press the bar and
   slide: the pill follows your finger, the tab under it lights, and the
   app moves when you let go. Nothing happens before that, so a tab reached
