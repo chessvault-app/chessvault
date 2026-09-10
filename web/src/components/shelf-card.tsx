@@ -111,7 +111,16 @@ export function ShelfCard({
           // screen reader and a deuteranopic reader both miss. The glyph
           // costs one caption-height on the line that was already there,
           // not the 28px corner the old filled star took from every card.
-          marked && 'border-l-primary border-l-2',
+          // The edge is a strip laid over the card, not a border on it. A
+          // 2px border moved everything on the card 2px right, and a
+          // card is drawn before it knows it is marked: the shelf asks
+          // for its bookmarks in a request of their own and keeps its
+          // list across visits, so on a phone the marked cards' boards
+          // and titles jumped from 32 to 34px when that answer landed
+          // (one frame after the shelf drew on a revisit, measured on the
+          // demo at 390px). Over the swipe track, as the border was.
+          marked &&
+            "before:bg-primary before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
         )}
       >
         {/* The card stays; its contents slide off it. */}
