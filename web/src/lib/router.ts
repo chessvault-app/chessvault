@@ -185,14 +185,20 @@ type Nav = 'tab' | 'push' | 'pop';
     (`#/puzzles`, what the hub's Next puzzle card opens) one step under
     it. Counted by parameters alone the trainer sat level with the hub,
     so the card faded through like a tab switch while the Failed and
-    theme cards beside it pushed. */
+    theme cards beside it pushed. The opening map's colour is not counted
+    at all: `#/openingmap/black` is the same page as `#/openingmap` in
+    the other colour, not a leaf under it. Read as a push, the black map
+    slid in from the right over the white one and slid back out on the
+    way back, a page opening under a page rather than one map giving way
+    to its twin. Two depths of zero make it a tab, the fade-through. */
 function depth(hash: string): number {
   const { section, params } = parse(hash);
+  if (section === 'openingmap' && (params[0] === 'black' || params[0] === 'white')) return 0;
   if (section !== 'puzzles') return params.length;
   return params[0] === 'hub' ? 0 : Math.max(1, params.length);
 }
 
-function shapeOf(from: string, to: string): Nav {
+export function shapeOf(from: string, to: string): Nav {
   const a = depth(from);
   const b = depth(to);
   if (b > a) return 'push';
