@@ -402,7 +402,9 @@ export function SkeletonBookCards({
                   <Skeleton className="h-2.5 w-28" />
                 </div>
               ) : (
-                stack(n, groups.root + f)
+                // The cards drawn BEFORE this collection, as SkeletonCards
+                // counts them (its comment says why the ordinal is wrong).
+                stack(n, groups.root + groups.folders.slice(0, f).reduce((a, b) => a + b, 0))
               )}
             </section>
           ))}
