@@ -13,8 +13,7 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { inspectPdf } from '@/puzzles/ocr/pdfPage';
 
-import { MAX_PDF_BYTES, replaceBookPdf, suggestTitle, uploadBook } from './data';
-import { fileSize } from './BooksPage';
+import { MAX_PDF_BYTES, fileSize, replaceBookPdf, suggestTitle, uploadBook } from './data';
 
 /**
  * Adding a book to the library — the same window shape as the puzzle

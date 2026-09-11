@@ -33,6 +33,8 @@ import { cn } from '@/lib/utils';
 import {
   coverUrl,
   createCollection,
+  fileSize,
+  type LibraryBook,
   libraryMemory,
   loadBooks,
   moveBook,
@@ -40,7 +42,6 @@ import {
   removeCollection,
   renameBook,
   renameCollection,
-  type LibraryBook,
 } from './data';
 import { UploadBookDialog } from './UploadBookDialog';
 import { useDiagramJob } from './diagramJob';
@@ -114,13 +115,6 @@ function useLibrarySort(): {
     dir: state.dir,
     setDir: (dir) => setState((prev) => ({ ...prev, dir })),
   };
-}
-
-/** Bytes as a shelf would say them. */
-export function fileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /** See `reservedShelf` below: the library's grouped shape, last visit. */

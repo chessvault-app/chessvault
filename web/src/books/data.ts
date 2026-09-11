@@ -50,6 +50,13 @@ export interface PageDiagramRecord {
  */
 export const MAX_PDF_BYTES = 500 * 1024 * 1024;
 
+/** Bytes as a shelf would say them. */
+export function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 /**
  * The shelf's list, remembered between pages the way the puzzle shelf's
  * is: going to a book and back must not redraw the shelf from nothing.
