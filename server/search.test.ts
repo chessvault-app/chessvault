@@ -83,8 +83,10 @@ describe('rank', () => {
   it('elides a long text on both sides of the match', () => {
     const long = `${'before '.repeat(40)}target ${'after '.repeat(40)}`.trim();
     const [hit] = rank([entry('notes', 'Long', [{ text: long }])], 'target').content;
-    expect(hit!.snippet.before.startsWith('…')).toBe(true);
-    expect(hit!.snippet.after.endsWith('…')).toBe(true);
+    // Cut at a word on each side, with words of context kept, not just
+    // the fragment nearest the match: that was what a first version did.
+    expect(hit!.snippet.before).toBe(`…${'before '.repeat(6)}`);
+    expect(hit!.snippet.after).toBe(` ${'after '.repeat(16).trim()}…`);
     expect(hit!.snippet.match).toBe('target');
   });
 });

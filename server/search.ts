@@ -136,13 +136,15 @@ export function snippetAt(
   const text = original.length === folded.length ? original : folded;
   let start = Math.max(0, at - SNIPPET_BEFORE);
   let end = Math.min(text.length, at + length + SNIPPET_AFTER);
+  // Begin at the first whole word inside the window and end at the last,
+  // so a cut never lands mid-word. The match itself is never trimmed.
   if (start > 0) {
-    const space = text.lastIndexOf(' ', at - 1);
-    if (space >= start) start = space + 1;
+    const space = text.indexOf(' ', start);
+    if (space >= 0 && space < at) start = space + 1;
   }
   if (end < text.length) {
-    const space = text.indexOf(' ', at + length);
-    if (space >= 0 && space <= end) end = space;
+    const space = text.lastIndexOf(' ', end);
+    if (space > at + length) end = space;
   }
   const oneLine = (s: string): string => s.replace(/\s+/g, ' ');
   return {
