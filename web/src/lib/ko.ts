@@ -779,7 +779,6 @@ export const ko: Record<string, string> = {
     '체크메이트. 첫 수부터 마지막 수까지 승리를 지켰습니다.',
   '{san} lets the win slip. {best} keeps it.':
     '{san}은(는) 승리를 놓치는 수입니다. {best}이(가) 승리를 지킵니다.',
-  'Mate in {n}': '{n}수 메이트',
   'Open Settings': '설정 열기',
   'Next ending': '다음 엔드게임',
   'Back to endgame drills': '엔드게임 드릴 목록으로',

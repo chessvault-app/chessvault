@@ -208,9 +208,6 @@ function Drill({ classId }: { classId: string }) {
   const [error, setError] = useState<{ message: string; settings: boolean } | null>(null);
   /** The move that would have kept it, once one has been thrown. */
   const [best, setBest] = useState<{ uci: string; san: string } | null>(null);
-  /** Mate distance in plies for the position now faced, where the
-      table knows one. A distance, never a score. */
-  const [dtm, setDtm] = useState<number | null>(null);
   // Reviewing an earlier ply (null = live), via the panel or the bar.
   const [review, setReview] = useState<number | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -238,7 +235,6 @@ function Drill({ classId }: { classId: string }) {
     setStart(null);
     setUcis([]);
     setBest(null);
-    setDtm(null);
     setReview(null);
     setFlipped(false);
     setError(null);
@@ -248,12 +244,11 @@ function Drill({ classId }: { classId: string }) {
       return;
     }
     try {
-      const body = await api<{ fen: string; side: Color; dtm: number | null }>(
+      const body = await api<{ fen: string; side: Color }>(
         `/api/endgames/draw?spec=${encodeURIComponent(spec)}`,
       );
       if (mine !== seq.current) return;
       setStart({ fen: body.fen, side: body.side });
-      setDtm(body.dtm);
       setPhase('playing');
     } catch (e) {
       if (mine !== seq.current) return;
@@ -316,7 +311,6 @@ function Drill({ classId }: { classId: string }) {
       fen: string;
       best?: { uci: string; san: string };
       reply?: { uci: string; san: string };
-      dtm?: number | null;
     };
     try {
       verdict = await api('/api/endgames/move', { method: 'POST', json: { fen: live.fen, uci } });
@@ -338,7 +332,6 @@ function Drill({ classId }: { classId: string }) {
       return;
     }
     const reply = verdict.reply!;
-    setDtm(verdict.dtm ?? null);
     // One animation's grace before the reply lands, so the two moves
     // are seen as two.
     after(Math.max(450, boardAnimMs()), () => {
@@ -500,13 +493,6 @@ function Drill({ classId }: { classId: string }) {
           <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
             {statusLine.text}
           </p>
-          {/* A distance the small tables know, said as a fact about the
-              position rather than a hint about the move. */}
-          {dtm !== null && (phase === 'playing' || phase === 'replying') && (
-            <p className="text-muted-foreground text-xs">
-              {t('Mate in {n}', { n: Math.ceil(dtm / 2) })}
-            </p>
-          )}
         </div>
 
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">

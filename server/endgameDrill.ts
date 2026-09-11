@@ -132,8 +132,6 @@ export function endgameDrillApi(
         fen,
         side: fen.split(' ')[1] === 'b' ? 'black' : 'white',
         source: source.source,
-        dtz: answer.dtz,
-        dtm: answer.dtm,
       });
     }
     if (probed > 0 && held === 0) return noTable(c);
@@ -205,9 +203,6 @@ export function endgameDrillApi(
       san,
       reply: { uci: chosen.uci, san: replySan },
       fen: makeFen(pos.toSetup()),
-      // How far the solver now has to go, where the small tables know
-      // it as a mate distance; null otherwise. A distance, not a score.
-      dtm: chosen.dtm,
     });
   });
 
