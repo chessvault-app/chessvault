@@ -144,7 +144,7 @@ jobs:
 
       # Keyed by the month, so a second release in the same month reuses it
       # instead of downloading 80 MB and spending the CPU again.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: cache
         with:
           path: assets
@@ -257,7 +257,7 @@ jobs:
       #
       # Cached by the lockfile, restored BEFORE the build: a release that
       # changed no crate reuses the whole 48-crate compile.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry

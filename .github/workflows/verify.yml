@@ -98,7 +98,7 @@ jobs:
       # rustup and stable Rust. Cached by the lockfile so a push that
       # changed no crate reuses the whole compile, test and release
       # profiles both.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
