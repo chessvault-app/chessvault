@@ -1323,6 +1323,23 @@
     .cg-wrap cg-container {
       transition-property: none !important;
     }
+
+    /* The document's ground leaves it for the same reason. store/theme.ts
+       applies a theme by toggling `.dark` and then READS the colour it has
+       just applied: off the body for the launch pin (rememberGround, which
+       is what chess-vault:ground stores) and off the root for the
+       theme-color metas. Under the clamp that read came back one theme
+       behind — measured on the demo, switching to dark: `oklab(0.97 0 0)`,
+       the light ground, where the settled value is `oklch(0.145 0 264)` —
+       so the phone's browser chrome kept the old colour, and the next
+       launch pinned the previous theme's ground behind the startup image,
+       which is the flash that cache exists to prevent. With motion allowed
+       the same read is already correct. The colour still arrives in one
+       step; what goes is the 10-microsecond fade under it. */
+    html,
+    body {
+      transition-property: none !important;
+    }
   }
 }
 
