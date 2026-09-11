@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   earliestExits,
   exitSplit,
+  familyOf,
   moveOfPly,
   openingRows,
   scorePct,
@@ -33,6 +34,7 @@ const CELLS: InsightsCell[] = [
   cell({ games: 4, w: 2, d: 1, l: 1, exits: 3, exitPlySum: 6 + 8 + 10, exitPlyMin: 6, youLeft: 2, theyLeft: 1 }),
   cell({ side: 'black', games: 2, w: 1, l: 1, exits: 2, exitPlySum: 7 + 9, exitPlyMin: 7, youLeft: 1, theyLeft: 1 }),
   cell({ speed: 'rapid', eco: 'B90', name: 'Sicilian Defense: Najdorf', games: 3, w: 1, d: 2, exits: 1, exitPlySum: 14, exitPlyMin: 14, theyLeft: 1 }),
+  cell({ eco: 'B22', name: 'Sicilian Defense: Alapin Variation', games: 2, w: 2 }),
   cell({ speed: 'unknown', eco: 'D00', name: null, games: 1, l: 1 }),
 ];
 
@@ -43,17 +45,25 @@ describe('insights arithmetic', () => {
   });
 
   it('sums every cell, and by colour and time control', () => {
-    expect(totals(CELLS)).toEqual({ games: 10, w: 4, d: 3, l: 3 });
+    expect(totals(CELLS)).toEqual({ games: 12, w: 6, d: 3, l: 3 });
     expect(tallyBy(CELLS, 'side')).toEqual([
-      { key: 'white', tally: { games: 8, w: 3, d: 3, l: 2 } },
+      { key: 'white', tally: { games: 10, w: 5, d: 3, l: 2 } },
       { key: 'black', tally: { games: 2, w: 1, d: 0, l: 1 } },
     ]);
     expect(tallyBy(CELLS, 'speed').map((r) => r.key)).toEqual(['blitz', 'rapid', 'unknown']);
   });
 
-  it('gathers an opening across colours and keeps the earliest exit', () => {
+  it('names the family a catalogue line belongs to', () => {
+    expect(familyOf('Sicilian Defense: Najdorf Variation, English Attack')).toBe('Sicilian Defense');
+    expect(familyOf("King's Gambit")).toBe("King's Gambit");
+  });
+
+  it('gathers a family across colours and lines, and keeps the earliest exit', () => {
     const rows = openingRows(CELLS);
-    expect(rows.map((r) => r.eco)).toEqual(['C50', 'B90', 'D00']);
+    expect(rows.map((r) => r.name)).toEqual(['Italian Game', 'Sicilian Defense', null]);
+    // A family shows no code; the nameless row keeps its header ECO.
+    expect(rows.map((r) => r.eco)).toEqual([null, null, 'D00']);
+    expect(rows[1]!.games).toBe(5);
     const italian = rows[0]!;
     expect(italian.games).toBe(6);
     expect(italian.exits).toBe(5);
@@ -67,7 +77,7 @@ describe('insights arithmetic', () => {
   it('ranks where my own moves leave the catalogue soonest', () => {
     const rows = earliestExits(openingRows(CELLS));
     // The Najdorf's only exit was the opponent's; the unnamed row never left.
-    expect(rows.map((r) => r.eco)).toEqual(['C50']);
+    expect(rows.map((r) => r.name)).toEqual(['Italian Game']);
   });
 
   it('drops one-game rows only when there are enough rows to spare', () => {
@@ -75,7 +85,7 @@ describe('insights arithmetic', () => {
       cell({ eco: `A0${i}`, name: `Line ${i}`, games: 1, w: 1, exits: 1, exitPlySum: i, exitPlyMin: i, youLeft: 1 }),
     );
     const solid = cell({ eco: 'B20', name: 'Solid', games: 5, w: 5, exits: 4, exitPlySum: 40, exitPlyMin: 8, youLeft: 4 });
-    expect(earliestExits(openingRows([...many, solid])).map((r) => r.eco)).toEqual(['B20']);
+    expect(earliestExits(openingRows([...many, solid])).map((r) => r.name)).toEqual(['Solid']);
     expect(earliestExits(openingRows(many.slice(0, 3))).length).toBe(3);
   });
 

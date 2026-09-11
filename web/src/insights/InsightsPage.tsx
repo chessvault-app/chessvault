@@ -318,7 +318,7 @@ function Tables({ report }: { report: Report }) {
           <CardTitle>{t('Openings')}</CardTitle>
           <CardDescription>
             {report.named
-              ? t('Named from the deepest catalogued position each game reached. Most played first.')
+              ? t('One row per opening family, named from the deepest catalogued position each game reached. Most played first.')
               : t('The opening catalogue is missing from this install, so games are grouped by their ECO header.')}
           </CardDescription>
         </CardHeader>

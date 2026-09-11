@@ -2189,8 +2189,8 @@ export const ko: Record<string, string> = {
   'By colour': '진영별',
   'By time control': '시간제별',
   'Openings': '오프닝',
-  'Named from the deepest catalogued position each game reached. Most played first.':
-    '각 게임이 도달한 가장 깊은 카탈로그 포지션으로 이름을 붙입니다. 많이 둔 순서입니다.',
+  'One row per opening family, named from the deepest catalogued position each game reached. Most played first.':
+    '오프닝 계열마다 한 줄씩, 각 게임이 도달한 가장 깊은 카탈로그 포지션으로 이름을 붙입니다. 많이 둔 순서입니다.',
   'The opening catalogue is missing from this install, so games are grouped by their ECO header.':
     '이 설치에는 오프닝 카탈로그가 없어서 게임을 ECO 헤더로 묶습니다.',
   'Score': '점수',

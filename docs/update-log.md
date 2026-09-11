@@ -14,7 +14,7 @@ An Insights page sums your own games.
   a phone, reads the same corpus the explorer's My games source does:
   your collection plus every Chess.com and Lichess month you have
   browsed. It shows your score overall, by colour and by time control,
-  a table of openings with a won/drew/lost bar for each, and where each
+  a table of opening families with a won/drew/lost bar for each, and where each
   game left the opening catalogue, with whose move it was and the
   openings where your own move leaves earliest. The filters are the
   explorer's (side, time control, kept only) plus a quick date range

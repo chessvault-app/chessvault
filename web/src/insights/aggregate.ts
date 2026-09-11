@@ -61,8 +61,23 @@ export function tallyBy<K extends 'side' | 'speed'>(
   return [...out].map(([k, tally]) => ({ key: k, tally })).sort((a, b) => b.tally.games - a.tally.games);
 }
 
+/**
+ * The family a catalogue name belongs to: what stands before the first
+ * colon. The lichess catalogue writes every line as "Family: Variation,
+ * Sub-variation", so "Sicilian Defense: Najdorf Variation, English
+ * Attack" is the Sicilian's. A name with no colon is its own family.
+ */
+export function familyOf(name: string): string {
+  const colon = name.indexOf(':');
+  return colon < 0 ? name.trim() : name.slice(0, colon).trim();
+}
+
 export interface OpeningRow extends Tally {
+  /** The header ECO of a row with no name; null on a named family, which
+      spans codes (the Sicilian runs B20 to B99) or would show one code
+      beside families that cannot. */
   eco: string | null;
+  /** The family, or null for games that reached no named position. */
   name: string | null;
   /** Games whose indexed prefix left the catalogue. */
   exits: number;
@@ -74,18 +89,22 @@ export interface OpeningRow extends Tally {
 }
 
 /**
- * Cells summed by opening across colour and time control, most played
- * first. Two openings are the same row when their ECO and name agree;
- * a game that reached no named position keeps its header ECO and a null
- * name, so those gather under the ECO alone.
+ * Cells summed by opening FAMILY across colour and time control, most
+ * played first. The catalogue names three thousand lines, and a vault
+ * of a few hundred games put nearly every game in a row of its own
+ * (lanph3re's report), so rows are families: every Najdorf, Dragon and
+ * Alapin is one Sicilian row. A game that reached no named position
+ * keeps its header ECO and a null name, so those gather under the ECO
+ * alone.
  */
 export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
   const out = new Map<string, OpeningRow & { exitPlySum: number }>();
   for (const cell of cells) {
-    const id = `${cell.eco ?? ''}\t${cell.name ?? ''}`;
+    const family = cell.name === null ? null : familyOf(cell.name);
+    const id = family === null ? `${cell.eco ?? ''}\t` : `\t${family}`;
     const row = out.get(id) ?? {
-      eco: cell.eco,
-      name: cell.name,
+      eco: family === null ? cell.eco : null,
+      name: family,
       games: 0,
       w: 0,
       d: 0,
@@ -116,7 +135,7 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
       ...row,
       meanExitPly: row.exits === 0 ? null : exitPlySum / row.exits,
     }))
-    .sort((a, b) => b.games - a.games || (a.eco ?? '').localeCompare(b.eco ?? ''));
+    .sort((a, b) => b.games - a.games || (a.name ?? a.eco ?? '').localeCompare(b.name ?? b.eco ?? ''));
 }
 
 /**
