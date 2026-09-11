@@ -1,12 +1,9 @@
-import { BarChart3, Check, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Cpu, Eye, FlipVertical2, History, Info, LayoutGrid, ListOrdered, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
+import { BarChart3, Check, ChevronLeft, ChevronRight, Eye, History, LayoutGrid, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
-import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
-import { EngineBlock } from '@/engine/EnginePane';
-import { PaneTabs } from '@/components/pane-tabs';
-import { usePaneSwipe } from '@/hooks/use-pane-swipe';
-import { useEngine } from '@/store/engine';
+import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
+import { useAnalyseInPlace } from '@/hooks/use-analyse-in-place';
 
 import { parseFen } from 'chessops/fen';
 
@@ -24,27 +21,22 @@ import {
   updateNode,
 } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
-import { BOARD_MAX_W } from '@/board/boardSize';
-import { publishBoardHeight } from '@/board/boardBlock';
 import { Board, boardAnimMs } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
-import { EvalBarSlot } from '@/engine/EvalBar';
-import { playSound } from '@/board/sound';
+import { useMoveSound } from '@/board/useMoveSound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 
-import { api } from '@/lib/api';
+import { api, retryOnce } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { navigate } from '@/lib/router';
-import { useAnalysis } from '@/store/analysis';
 
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { MobileActionBar } from '@/components/mobile-action-bar';
 
 import { Panel, PanelHeader } from '@/components/panel';
 import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
@@ -103,29 +95,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
    * page stays, the board becomes the analysis board and the panel above
    * the moves becomes the engine. Navigating to Board instead left the
    * book behind — the way back was the browser's, and the puzzle you had
-   * just failed was three taps away.
-   *
-   * The engine is switched ON by the act of asking to analyse, and off
-   * again on the way out, including by unmount.
+   * just failed was three taps away. The hook is called below, once the
+   * tree it seeds from exists.
    */
-  const [analysing, setAnalysing] = useState(false);
-  /** Which pane the phone shows. A desktop shows all of them. */
-  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
-  /**
-   * And which one it can actually show. The engine pane exists only once
-   * the answer is in, so a phone left on it when the next one starts falls
-   * back rather than facing an empty column — the effect above resets the
-   * choice, and this is what makes the render between the two harmless.
-   */
-  const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
-  const analysingRef = useRef(false);
-  analysingRef.current = analysing;
-  useEffect(
-    () => () => {
-      if (analysingRef.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
   // The shared gate (board/usePromotion); the chosen piece re-enters the
   // ordinary free-entry path below.
   const promotion = usePromotion((orig, dest, role) => applyMove(orig, dest, roleToChar(role)));
@@ -215,13 +187,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       )
         .then((body) => body ?? {})
         .catch(() => null);
-    // One quiet retry — same reasoning as the trainer's report(): a blip
-    // at the moment of solving must not silently lose the attempt.
-    let body = await send();
-    if (!body) {
-      await new Promise((r) => setTimeout(r, 2000));
-      body = await send();
-    }
+    // One quiet retry — see retryOnce: a blip at the moment of solving
+    // must not silently lose the attempt.
+    const body = await retryOnce(send);
     // Fold the server's own new entry into the cache, so the grid and
     // "next unsolved" are right on the next puzzle without a refetch.
     // The cycles ride along: this attempt may have closed the open pass.
@@ -364,44 +332,21 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     timers.current.push(setTimeout(step, 400));
   };
 
-  const analyse = (): void => {
-    if (!node || !tree) return;
-    // The tree as played, not just the position: the solution's moves stay
-    // navigable behind the cursor, which is the whole point of analysing a
-    // puzzle you have just seen the answer to.
-    useAnalysis.setState({
-      tree,
-      cursorId,
-      orientation,
-      pendingPromotion: null,
-      loadError: null,
-      gameHeaders: null,
-    });
-    useEngine.getState().setEnabled(true);
-    setAnalysing(true);
-  };
-
   /**
    * A solved puzzle analyses itself — there is no Analyse button on either
-   * layout now. The phone STAYS on the puzzle's own pane, though: it was
-   * moved to the engine on the theory that the evaluation is what you came
-   * back for, and what it actually did was answer the puzzle by replacing
-   * the panel that says whether you got it right (lanph3re). The engine
-   * tab is one tap away and is now a choice. Leaving the puzzle undoes all
-   * of it, engine included: an evaluation still up while the next one is
-   * being solved IS the next one's answer.
+   * layout now (hooks/use-analyse-in-place has the rules). The tree as
+   * played, not just the position: the solution's moves stay navigable
+   * behind the cursor, which is the whole point of analysing a puzzle
+   * you have just seen the answer to.
    */
-  useEffect(() => {
-    if (phase === 'done' && node && !analysing) {
-      analyse();
-    }
-    if (phase !== 'done' && analysing) {
-      setAnalysing(false);
-      setPane('info');
-      useEngine.getState().setEnabled(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, node, analysing]);
+  const inPlace = useAnalyseInPlace({
+    wide,
+    infoLabel: t('Puzzle'),
+    done: phase === 'done',
+    ready: node !== null && tree !== null,
+    seed: () => ({ tree: tree!, cursorId, orientation }),
+  });
+  const { analysing, paneSwipe } = inPlace;
 
   const nextUnsolved = (): string | null => {
     if (!book) return null;
@@ -431,38 +376,12 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // Sound per rendered position (see PuzzlesView for the mechanism).
-  const prevPieces = useRef<number | null>(null);
-  useEffect(() => {
-    if (!node || !pos) return;
-    const pieces = node.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
-    const prev = prevPieces.current;
-    prevPieces.current = pieces;
-    if (prev === null || !node.uci) return;
-    playSound(pieces < prev ? 'capture' : 'move');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.fen]);
+  // Sound per rendered position; the root (no move reached it) is silent.
+  useMoveSound(node && pos ? node.fen : null, Boolean(node?.uci));
 
   // Declared before the early return below — hooks must run in the same
   // order every render, and the branch it feeds is one of the returns.
   const pending = useSlowLoad(book === null || !puzzle || !tree || !node || !pos);
-
-  // One list for the strip and for the swipe that turns it — see the
-  // puzzle trainer, the same column and the same reason. Above the early
-  // return for the same reason `pending` is.
-  const panes = [
-    { id: 'info' as const, label: t('Puzzle'), icon: Info },
-    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
-    // The engine is what a puzzle is FOR — offered when the answer
-    // is in, not while it is being looked for.
-    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-  ];
-  const paneSwipe = usePaneSwipe({
-    panes,
-    value: shownPane,
-    onChange: setPane,
-    enabled: !wide,
-  });
 
   if (book === null || !puzzle || !tree || !node || !pos) {
     // A puzzle needs BOTH the book and the solutions, which arrive in two
@@ -844,42 +763,26 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       {!wide && header}
       {/* Once the puzzle is over the board becomes the analysis board, so
           the pieces move freely and the eval bar is the one every other
-          board page draws. */}
-      {analysing ? (
-        <AnalysisBoard />
-      ) : (
-        <div className={BOARD_WIDE_COLUMN}>
-          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-            <div className="hidden w-full items-end wide:flex wide:h-10" />
-            {/* The eval bar's width, held open before there is an eval bar:
-                when the puzzle ends this board is replaced by AnalysisBoard,
-                which draws one, and without the same reservation here the
-                board lost 24px and stepped right at exactly that moment. */}
-            <div className="flex w-full items-stretch gap-2">
-              <EvalBarSlot />
-              <div className="relative min-w-0 flex-1">
-                <Board
-                  fen={node.fen}
-                  orientation={orientation}
-                  dests={dests}
-                  lastMove={moveSquares(node)}
-                  check={pos.isCheck()}
-                  onMove={onMove}
-                />
-                {promotion.pending && (
-                  <PromotionPicker
-                    color={promotion.pending.color}
-                    dest={promotion.pending.dest}
-                    orientation={orientation}
-                    onSelect={promotion.complete}
-                    onCancel={promotion.cancel}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          board page draws — see TrainerBoard. */}
+      <TrainerBoard analysing={analysing}>
+        <Board
+          fen={node.fen}
+          orientation={orientation}
+          dests={dests}
+          lastMove={moveSquares(node)}
+          check={pos.isCheck()}
+          onMove={onMove}
+        />
+        {promotion.pending && (
+          <PromotionPicker
+            color={promotion.pending.color}
+            dest={promotion.pending.dest}
+            orientation={orientation}
+            onSelect={promotion.complete}
+            onCancel={promotion.cancel}
+          />
+        )}
+      </TrainerBoard>
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
@@ -896,16 +799,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             read while solving and the engine docks on top of them the
             moment it is over. One at a time on a phone, behind the
             switcher. */}
-        {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
-        {(wide || paneSwipe.shows('moves')) && movesPanel}
-        {!wide && analysing && paneSwipe.shows('engine') && (
-          <Panel className="min-h-0 flex-1">
-            <EngineBlock standalone />
-          </Panel>
-        )}
-        {(wide || paneSwipe.shows('info')) && puzzlePanel}
-        {/* Once the puzzle is over — see the puzzle trainer's copy. */}
-        {analysing && <ColumnControls className="wide:hidden" />}
+        <TrainerPanes wide={wide} view={inPlace} moves={movesPanel} info={puzzlePanel} />
 
       </div>
 
@@ -917,29 +811,18 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           analysis store rather than this component's tree, so these
           buttons moved nothing — the same dead bar the puzzle trainer had.
           AnalysisBoard itself owns the arrow keys. */}
-      <MobileActionBar>
-        {analysing ? (
-          <BoardControls className="py-1.5" />
-        ) : (
-        <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(tree.rootId)} title={t('Start')}>
-            <ChevronFirst className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(node.parentId ?? undefined)} title={t('Back')}>
-            <ChevronLeft className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={node.children.length === 0} onClick={() => goTo(node.children[0])} title={t('Forward')}>
-            <ChevronRight className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={cursorId === tipId} onClick={() => goTo(tipId)} title={t('Go to the end')}>
-            <ChevronLast className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
-            <FlipVertical2 className="size-[1.1rem]" />
-          </Button>
-        </div>
-        )}
-      </MobileActionBar>
+      <TrainerNavBar
+        analysing={analysing}
+        startDisabled={atRoot}
+        forwardDisabled={node.children.length === 0}
+        lastDisabled={cursorId === tipId}
+        firstTitle={t('Start')}
+        onFirst={() => goTo(tree.rootId)}
+        onBack={() => goTo(node.parentId ?? undefined)}
+        onForward={() => goTo(node.children[0])}
+        onLast={() => goTo(tipId)}
+        onFlip={() => setFlipped((f) => !f)}
+      />
     </div>
   );
 }

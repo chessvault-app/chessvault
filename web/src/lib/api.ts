@@ -217,6 +217,23 @@ export function apiUpload<T = unknown>(
 }
 
 /**
+ * One quiet retry a moment later. A blip at exactly the "Solved!" moment
+ * used to lose the attempt for good — streak and history under-counted
+ * with nothing said (and a thrown fetch escaped as an unhandled rejection
+ * besides) — so both trainers send their attempt twice before giving up.
+ * `send` answers null for a failure.
+ */
+export async function retryOnce<T>(
+  send: () => Promise<T | null>,
+  delayMs = 2000,
+): Promise<T | null> {
+  const first = await send();
+  if (first !== null) return first;
+  await new Promise((r) => setTimeout(r, delayMs));
+  return send();
+}
+
+/**
  * The error's message when it is an ApiError, a generic line otherwise.
  *
  * Translated HERE rather than at the call site. The server's own error

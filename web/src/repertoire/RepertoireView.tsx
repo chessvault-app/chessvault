@@ -2,15 +2,9 @@
 import {
   BookmarkPlus,
   BookOpen,
-  ChevronFirst,
-  ChevronLast,
   ChevronLeft,
   ChevronRight,
-  Cpu,
   Eraser,
-  FlipVertical2,
-  Info,
-  ListOrdered,
   Network,
   Play,
   RotateCcw,
@@ -31,13 +25,11 @@ import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker'
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import type { DrawShape } from '@lichess-org/chessground/draw';
-import { BOARD_MAX_W } from '@/board/boardSize';
-import { ColumnControls } from '@/board/AnalysisBoard';
-import { BoardLane, EvalBarSlot } from '@/engine/EvalBar';
-import { publishBoardHeight } from '@/board/boardBlock';
+import { BoardLane } from '@/engine/EvalBar';
+import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
+import { useAnalyseInPlace } from '@/hooks/use-analyse-in-place';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
-import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
 import { formatUntil } from '@/lib/dates';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
@@ -46,7 +38,6 @@ import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
-import { MobileActionBar } from '@/components/mobile-action-bar';
 import { rememberDrill, rememberedDrill } from '@/lib/training';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -58,14 +49,9 @@ import { SideDot } from '@/components/side-dot';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/components/panel';
 import { PageHeader } from '@/components/page-header';
-import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
-import { EngineBlock } from '@/engine/EnginePane';
-import { PaneTabs } from '@/components/pane-tabs';
-import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { useWideLayout } from '@/lib/media';
-import { useEngine } from '@/store/engine';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { Select } from '@/components/ui/select';
 import { t } from '@/lib/i18n';
 
@@ -986,55 +972,21 @@ export function RepertoireView() {
    * again on the way out, including by unmount.
    */
   const wide = useWideLayout();
-  const [analysing, setAnalysing] = useState(false);
-  /** Which pane the phone shows. A desktop shows all of them. */
-  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
-  /**
-   * And which one it can actually show. The engine pane exists only once
-   * the answer is in, so a phone left on it when the next one starts falls
-   * back rather than facing an empty column — the effect above resets the
-   * choice, and this is what makes the render between the two harmless.
-   */
-  const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
-  const analysingRef = useRef(false);
-  analysingRef.current = analysing;
-  useEffect(
-    () => () => {
-      if (analysingRef.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
-
   /**
    * A finished line analyses itself, on both layouts, so there is no
-   * Analyse button left to press. Starting another game undoes it, engine
-   * included — an evaluation still up while the next line is played is
-   * that line's answer.
+   * Analyse button left to press (hooks/use-analyse-in-place has the
+   * rules). Starting another game undoes it, engine included.
    */
-  useEffect(() => {
-    if (phase === 'ended' && !analysing) {
-      useAnalysis.setState({
-        tree,
-        cursorId: tipId,
-        orientation: userColor,
-        pendingPromotion: null,
-        loadError: null,
-        gameHeaders: null,
-      });
-      useEngine.getState().setEnabled(true);
-      setAnalysing(true);
-      // The phone STAYS on the Game pane: that is where the line's own
-      // ending is written, with the score, Save line to study and New
-      // game on it, and switching to the engine put the reader in front
-      // of a search instead (lanph3re). The engine tab is one tap away.
-    }
-    if (phase !== 'ended' && analysing) {
-      setAnalysing(false);
-      setPane('info');
-      useEngine.getState().setEnabled(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, analysing]);
+  const inPlace = useAnalyseInPlace({
+    wide,
+    infoLabel: t('Game'),
+    done: phase === 'ended',
+    seed: () => ({ tree, cursorId: tipId, orientation: userColor }),
+    // Only while a game is on: the idle column is the setup form, which
+    // is not a row of panes and has no strip above it.
+    swipeEnabled: phase !== 'idle',
+  });
+  const { analysing, paneSwipe } = inPlace;
 
   const newGame = (): void => {
     // Back to setup. The runId bump drops any in-flight reply; the idle
@@ -1792,75 +1744,49 @@ export function RepertoireView() {
   />
   );
 
-  // One list for the strip and for the swipe that turns it — see the
-  // puzzle trainer, the same column and the same reason.
-  const panes = [
-    { id: 'info' as const, label: t('Game'), icon: Info },
-    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
-    // The engine is what a line is FOR — offered when the answer is in,
-    // not while it is being looked for.
-    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-  ];
-  // Only while a game is on: the idle column is the setup form, which is
-  // not a row of panes and has no strip above it.
-  const paneSwipe = usePaneSwipe({
-    panes,
-    value: shownPane,
-    onChange: setPane,
-    enabled: !wide && phase !== 'idle',
-  });
-
   return (
     <div className={BOARD_SCROLL_SHELL}>
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">{header(true)}</div>
 
       {/* Once the line has ended the board becomes the analysis board, so
-          the pieces move freely and the eval bar is the shared one. */}
-      {analysing ? (
-        <AnalysisBoard />
-      ) : (
-        <div className={BOARD_WIDE_COLUMN}>
-          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-            {/* wide:h-10 + the column's gap-2 equals the other board pages'
-                top strip, so this board's top edge sits level with theirs
-                (and with the side column's first panel: h-9 + gap-3).
+          the pieces move freely and the eval bar is the shared one — see
+          TrainerBoard. */}
+      <TrainerBoard
+        analysing={analysing}
+        strip={
+          /* wide:h-10 + the column's gap-2 equals the other board pages'
+             top strip, so this board's top edge sits level with theirs
+             (and with the side column's first panel: h-9 + gap-3).
 
-                The height belongs to this BOX, and the name row sits at the
-                bottom of it — AnalysisBoard's strip exactly. The two must be
-                built the same way, not merely add up to the same number: the
-                row is 24px inside a 40px strip, so where its contents end up
-                is the row's business, and a slot stretched to 40px itself put
-                them 7px lower than every other board page's. */}
-            <div className="flex w-full items-end wide:h-10">
-              <BoardLane>
-                <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
-              </BoardLane>
-            </div>
-            {/* The eval bar's width, held open before there is an eval bar:
-                when the line ends this board is replaced by AnalysisBoard,
-                which draws one, and without the same reservation here the
-                board lost 24px and stepped right at exactly that moment. */}
-            <div className="flex w-full items-stretch gap-2">
-              <EvalBarSlot />
-              <div className="min-w-0 flex-1">
-                <Board
-                  apiRef={boardApi}
-                  fen={node.fen}
-                  orientation={orientation}
-                  dests={dests}
-                  lastMove={moveSquares(node)}
-                  autoShapes={gapArrow}
-                  check={pos.isCheck()}
-                  onMove={onMove}
-                />
-              </div>
-            </div>
+             The height belongs to this BOX, and the name row sits at the
+             bottom of it — AnalysisBoard's strip exactly. The two must be
+             built the same way, not merely add up to the same number: the
+             row is 24px inside a 40px strip, so where its contents end up
+             is the row's business, and a slot stretched to 40px itself put
+             them 7px lower than every other board page's. */
+          <div className="flex w-full items-end wide:h-10">
             <BoardLane>
-              <PlayerSlot side={orientation} fen={node.fen} />
+              <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
             </BoardLane>
           </div>
-        </div>
-      )}
+        }
+        below={
+          <BoardLane>
+            <PlayerSlot side={orientation} fen={node.fen} />
+          </BoardLane>
+        }
+      >
+        <Board
+          apiRef={boardApi}
+          fen={node.fen}
+          orientation={orientation}
+          dests={dests}
+          lastMove={moveSquares(node)}
+          autoShapes={gapArrow}
+          check={pos.isCheck()}
+          onMove={onMove}
+        />
+      </TrainerBoard>
 
       {/* stacked:flex-none with min-h-max — the page column is what scrolls
           on a phone, so this one takes the height its content needs and no
@@ -1923,42 +1849,21 @@ export function RepertoireView() {
           <>
             {/* Moves above the game on a desktop; one pane at a time on a
                 phone, the engine chosen for you when the line ends. */}
-            {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
-            {(wide || paneSwipe.shows('moves')) && movesPanel}
-            {!wide && analysing && paneSwipe.shows('engine') && (
-              <Panel className="min-h-0 flex-1">
-                <EngineBlock standalone />
-              </Panel>
-            )}
-            {(wide || paneSwipe.shows('info')) && gamePanel}
-            {/* Only while analysing: a drill is driven by this component's
-                own cursor, not the analysis store — see the puzzle
-                trainer's copy. */}
-            {analysing && <ColumnControls className="wide:hidden" />}
+            <TrainerPanes wide={wide} view={inPlace} moves={movesPanel} info={gamePanel} />
           </>
         )}
       </div>
 
       {phase !== 'idle' && (
-        <MobileActionBar>
-          <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-            <Button variant="ghost" size="icon" disabled={cursorIndex <= 0} onClick={() => goTo(0)} title={t('First move')}>
-              <ChevronFirst className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={cursorIndex <= 0} onClick={() => goTo(cursorIndex - 1)} title={t('Back')}>
-              <ChevronLeft className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(cursorIndex + 1)} title={t('Forward')}>
-              <ChevronRight className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(line.length - 1)} title={t('Go to the end')}>
-              <ChevronLast className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
-              <FlipVertical2 className="size-[1.1rem]" />
-            </Button>
-          </div>
-        </MobileActionBar>
+        <TrainerNavBar
+          startDisabled={cursorIndex <= 0}
+          forwardDisabled={atTip}
+          onFirst={() => goTo(0)}
+          onBack={() => goTo(cursorIndex - 1)}
+          onForward={() => goTo(cursorIndex + 1)}
+          onLast={() => goTo(line.length - 1)}
+          onFlip={() => setFlipped((f) => !f)}
+        />
       )}
 
       {/* The New game fields as a window — which on a phone is the bottom

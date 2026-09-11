@@ -1,17 +1,12 @@
 import {
   BarChart3,
-  ChevronFirst,
-  ChevronLast,
   ChevronLeft,
   ChevronRight,
   Cpu,
   Eye,
-  FlipVertical2,
-  Info,
   LayoutGrid,
   Lightbulb,
   ExternalLink,
-  ListOrdered,
   RotateCcw,
   RotateCw,
   Settings2,
@@ -21,34 +16,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
 import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
-import { BOARD_MAX_W } from '@/board/boardSize';
-import { publishBoardHeight } from '@/board/boardBlock';
-import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { Board, boardAnimMs } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
-import { playSound } from '@/board/sound';
+import { useMoveSound } from '@/board/useMoveSound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
-import { PaneTabs } from '@/components/pane-tabs';
-import { usePaneSwipe } from '@/hooks/use-pane-swipe';
+import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
+import { useAnalyseInPlace } from '@/hooks/use-analyse-in-place';
 import { mainlineFrom } from '@shared/tree';
-import { EngineBlock } from '@/engine/EnginePane';
-import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
-import { api, apiErrorMessage } from '@/lib/api';
+import { api, apiErrorMessage, retryOnce } from '@/lib/api';
 import { SquareBadge } from '@/board/square-overlay';
 import { outcomeTone } from './outcome';
 import { cn } from '@/lib/utils';
-import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { navigate } from '@/lib/router';
-import { useAnalysis } from '@/store/analysis';
-import { useEngine } from '@/store/engine';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
 import { BooksView } from './BooksView';
@@ -258,15 +245,8 @@ function Trainer({
           method: 'POST',
           json: { id, win, counted: mode === 'fresh' },
         }).catch(() => null);
-      // One quiet retry a moment later: a blip at exactly the "Solved!"
-      // moment used to lose the attempt for good — streak and history
-      // under-counted with nothing said (and a thrown fetch escaped as an
-      // unhandled rejection besides).
-      let data = await send();
-      if (!data) {
-        await new Promise((r) => setTimeout(r, 2000));
-        data = await send();
-      }
+      // One quiet retry a moment later — see retryOnce.
+      const data = await retryOnce(send);
       if (data) {
         const { user } = data;
         setMeta((m) => (m ? { ...m, user } : m));
@@ -415,22 +395,9 @@ function Trainer({
     setReview(clamped >= plies ? null : clamped);
   };
 
-  // Sound per rendered position (live or review). No SAN here, so a
-  // capture is detected by the piece count dropping; a fresh puzzle (no
+  // Sound per rendered position (live or review); a fresh puzzle (no
   // lastMove) stays silent.
-  const prevPieces = useRef<number | null>(null);
-  useEffect(() => {
-    if (!displayed) {
-      prevPieces.current = null;
-      return;
-    }
-    const pieces = displayed.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
-    const prev = prevPieces.current;
-    prevPieces.current = pieces;
-    if (prev === null || !displayed.lastMove) return;
-    playSound(pieces < prev ? 'capture' : 'move');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayed?.fen]);
+  useMoveSound(displayed?.fen, Boolean(displayed?.lastMove));
 
   const finish = (p: ApiPuzzle, finalPlies: number): void => {
     setPhase('done');
@@ -537,61 +504,11 @@ function Trainer({
 
   // In-place analysis (lanph3re's call: no jump to the Analysis tab): the final
   // position loads into the shared analysis store and the trainer swaps to
-  // the real analysis board + merged engine/moves panel. Entering is an
-  // explicit "analyse" act, so the engine comes on; leaving turns it off.
-  const [analysing, setAnalysing] = useState(false);
+  // the real analysis board + merged engine/moves panel. The rules all
+  // three trainers share are in hooks/use-analyse-in-place.
   /** Whether a desktop has asked for the engine block; see dockEngine. */
   const [engineOpen, setEngineOpen] = useState(false);
-  /** Which pane the phone is showing. A desktop shows all three at once. */
-  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
-  /**
-   * And which one it can actually show. The engine pane exists only once
-   * the answer is in, so a phone left on it when the next one starts falls
-   * back rather than facing an empty column — the effect above resets the
-   * choice, and this is what makes the render between the two harmless.
-   */
-  const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
-  const analysingRef = useRef(false);
-  analysingRef.current = analysing;
-  useEffect(
-    () => () => {
-      if (analysingRef.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
-
   const wide = useWideLayout();
-
-  const analyse = (): void => {
-    if (!puzzle) return;
-    // Seed the analysis tree with the whole played line (lanph3re's call), so
-    // the puzzle moves are navigable, with the cursor on the final
-    // position. An off-script mating finish isn't in the scripted line and
-    // is left out — the engine will show the mate anyway.
-    const { tree, lastId } = puzzleTree(puzzle, plies);
-    useAnalysis.setState({
-      tree,
-      cursorId: lastId,
-      orientation,
-      pendingPromotion: null,
-      loadError: null,
-      gameHeaders: null,
-    });
-    setAnalysing(true);
-  };
-
-  /**
-   * Whether the engine is on follows what is showing it. A phone has an
-   * engine tab, so analysing turns it on there; a desktop docks the block
-   * above the move list only once it is asked for (`engineOpen`), and an
-   * engine running behind a block that is not on screen is heat for
-   * nothing. `analysing` going false is handled below, where the engine
-   * is switched off with everything else.
-   */
-  useEffect(() => {
-    if (analysing) useEngine.getState().setEnabled(!wide || engineOpen);
-  }, [analysing, wide, engineOpen]);
-
   /**
    * A finished puzzle on a desktop loads itself into the analysis board,
    * so the played line is navigable and the pieces move freely. The
@@ -600,30 +517,27 @@ function Trainer({
    * the Puzzle panel needed for its own actions — at 1280x720 the panel
    * body was 183px holding 209px, Try again and Next puzzle 14px under
    * its fold. The block is a toggle on the Puzzle panel's header now,
-   * the same choice the phone's Engine tab is.
+   * the same choice the phone's Engine tab is: a phone has an engine
+   * tab, so analysing turns the engine on there, and an engine running
+   * behind a block that is not on screen is heat for nothing.
    */
-  useEffect(() => {
-    if (phase === 'done' && puzzle && !analysing) {
-      analyse();
-      // A phone STAYS on the puzzle's own pane. It used to be moved to the
-      // engine — the answer being what you came back for — but that panel
-      // is also where the verdict, the difficulty and the themes are, and
-      // swapping it out at the exact moment the puzzle resolves answers a
-      // question with a different one (lanph3re). The engine tab is one
-      // tap away, and now it is a choice.
-    }
-    // A new puzzle un-does all of it, engine included: an evaluation on
-    // screen while the next one is being solved IS the next one's answer.
-    if (phase !== 'done' && analysing) {
-      setAnalysing(false);
-      setPane('info');
-      setEngineOpen(false);
-      useEngine.getState().setEnabled(false);
-    }
-    // analyse() closes over the current puzzle; the guards above are what
-    // keep this from re-running on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, puzzle, analysing]);
+  const inPlace = useAnalyseInPlace({
+    wide,
+    infoLabel: t('Puzzle'),
+    done: phase === 'done',
+    ready: puzzle !== null,
+    // Seed the analysis tree with the whole played line (lanph3re's call), so
+    // the puzzle moves are navigable, with the cursor on the final
+    // position. An off-script mating finish isn't in the scripted line and
+    // is left out — the engine will show the mate anyway.
+    seed: () => {
+      const { tree, lastId } = puzzleTree(puzzle!, plies);
+      return { tree, cursorId: lastId, orientation };
+    },
+    engineOn: !wide || engineOpen,
+    onLeave: () => setEngineOpen(false),
+  });
+  const { analysing, paneSwipe } = inPlace;
 
 
 
@@ -645,27 +559,6 @@ function Trainer({
             : [{ orig, dest: uci.slice(2, 4) as DrawShape['orig'], brush: 'blue' }];
         })()
       : [];
-
-  // One list, read by the strip and by the swipe that turns it: the two
-  // are the same row, and an array written twice is an order that drifts.
-  // Above the early return below — a hook must run in the same order on
-  // every render, the database-setup screen included.
-  const panes = [
-    { id: 'info' as const, label: t('Puzzle'), icon: Info },
-    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
-    // The engine is what a puzzle is FOR — offered when the answer
-    // is in, not while it is being looked for.
-    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-  ];
-  // Swipe the column sideways to turn to the next pane — the strip's own
-  // page turn, made where the thumb already is. Only where the panes ARE
-  // a row: a wide layout stands them all in the column at once.
-  const paneSwipe = usePaneSwipe({
-    panes,
-    value: shownPane,
-    onChange: setPane,
-    enabled: !wide,
-  });
 
   // The setup card's place while meta is in the air, where the stored
   // hint says that is the page coming — see dbWasReady. `metaAnswered`
@@ -1103,84 +996,65 @@ function Trainer({
         <h1 className="text-foreground text-base font-semibold">{title}
         </h1>
       </div>
-      {/* Board column, matching the shared budget so the board sits where
-          every other view puts it. Once the puzzle is over it becomes the
-          analysis board itself, so the pieces move freely and the eval bar
-          is the one every other board page draws. */}
-      {analysing ? (
-        <AnalysisBoard />
-      ) : (
-        <div className={BOARD_WIDE_COLUMN}>
-          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-            <div className="hidden w-full items-end wide:flex wide:h-10" />
-          {/* The eval bar's width, held open before there is an eval bar.
-              When the puzzle ends this board is replaced by AnalysisBoard,
-              which draws one — and without the same reservation here the
-              board narrowed by 20px and stepped right at the exact moment
-              the answer appeared (lanph3re's two screenshots). */}
-          <div className="flex w-full items-stretch gap-2">
-            <EvalBarSlot />
-            <div className="relative min-w-0 flex-1">
-              {displayed ? (
-                <Board
-                  fen={displayed.fen}
-                  orientation={orientation}
-                  dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
-                  lastMove={displayed.lastMove}
-                  check={displayed.check}
-                  autoShapes={hintShapes}
-                  onMove={onMove}
-                />
-              ) : error && metaAnswered ? (
-                // What happened, and a way to go again — a dead end here
-                // used to need a full page reload to recover from.
-                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-card-ring">
-                  <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                    <p className="text-muted-foreground text-sm" role="alert">
-                      {error}
-                    </p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void loadNext(theme, difficulty)}
-                    >
-                      <RotateCw className="size-3.5" data-icon="inline-start" />
-                      {t('Try again')}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                // The bare Skeleton and not SkeletonBoard: the page around
-                // this is already drawn — its header, its panel, its bottom
-                // band — and only the board itself is still missing. A whole
-                // page's skeleton dropped into a board's slot would draw a
-                // second header inside the first.
-                // `board-box`, like the Board that replaces it: the box
-                // rounds its width down to a whole number of squares and
-                // centres in what is left, so a w-full square was 2px
-                // wider and started a pixel further left than the board.
-                <Skeleton className="board-box aspect-square rounded-xl" />
-              )}
-              {promotion.pending && (
-                <PromotionPicker
-                  color={promotion.pending.color}
-                  dest={promotion.pending.dest}
-                  orientation={orientation}
-                  onSelect={promotion.complete}
-                  onCancel={promotion.cancel}
-                />
-              )}
-              {!reviewing && phase === 'wrong' && (
-                <MoveBadge kind="bad" view={view} orientation={orientation} />
-              )}
-              {!reviewing && phase === 'done' && !failed && (
-                <MoveBadge kind="good" view={view} orientation={orientation} />
-              )}
+      {/* The board column, matching the shared budget, or the analysis
+          board itself once the puzzle is over — see TrainerBoard. */}
+      <TrainerBoard analysing={analysing}>
+        {displayed ? (
+          <Board
+            fen={displayed.fen}
+            orientation={orientation}
+            dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
+            lastMove={displayed.lastMove}
+            check={displayed.check}
+            autoShapes={hintShapes}
+            onMove={onMove}
+          />
+        ) : error && metaAnswered ? (
+          // What happened, and a way to go again — a dead end here
+          // used to need a full page reload to recover from.
+          <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-card-ring">
+            <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
+              <p className="text-muted-foreground text-sm" role="alert">
+                {error}
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void loadNext(theme, difficulty)}
+              >
+                <RotateCw className="size-3.5" data-icon="inline-start" />
+                {t('Try again')}
+              </Button>
             </div>
           </div>
-          </div>
-        </div>
-      )}
+        ) : (
+          // The bare Skeleton and not SkeletonBoard: the page around
+          // this is already drawn — its header, its panel, its bottom
+          // band — and only the board itself is still missing. A whole
+          // page's skeleton dropped into a board's slot would draw a
+          // second header inside the first.
+          // `board-box`, like the Board that replaces it: the box
+          // rounds its width down to a whole number of squares and
+          // centres in what is left, so a w-full square was 2px
+          // wider and started a pixel further left than the board.
+          <Skeleton className="board-box aspect-square rounded-xl" />
+        )}
+        {promotion.pending && (
+          <PromotionPicker
+            color={promotion.pending.color}
+            dest={promotion.pending.dest}
+            orientation={orientation}
+            onSelect={promotion.complete}
+            onCancel={promotion.cancel}
+          />
+        )}
+        {!reviewing && phase === 'wrong' && (
+          <MoveBadge kind="bad" view={view} orientation={orientation} />
+        )}
+        {!reviewing && phase === 'done' && !failed && (
+          <MoveBadge kind="good" view={view} orientation={orientation} />
+        )}
+      </TrainerBoard>
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
@@ -1221,20 +1095,7 @@ function Trainer({
             desktop. The switcher is the phone's whole navigation here:
             analysing used to replace the page, and going back for the
             puzzle's own text meant leaving the analysis. */}
-        {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
-        {(wide || paneSwipe.shows('moves')) && movesPanel}
-        {!wide && analysing && paneSwipe.shows('engine') && (
-          <Panel className="min-h-0 flex-1">
-            <EngineBlock standalone />
-          </Panel>
-        )}
-        {(wide || paneSwipe.shows('info')) && puzzlePanel}
-        {/* One strip at the column's floor while the panes are tabs, and
-            only once the puzzle is over: until then the board is this
-            component's own tree, not the analysis store these buttons
-            drive (see AnswerPanel), and the answer panel carries its own
-            navigation. */}
-        {analysing && <ColumnControls className="wide:hidden" />}
+        <TrainerPanes wide={wide} view={inPlace} moves={movesPanel} info={puzzlePanel} />
 
 
 
@@ -1252,29 +1113,16 @@ function Trainer({
           and so did Flip. The analysis pages' own control strip is what
           moves that board, and AnalysisBoard itself owns the arrow
           keys. */}
-      <MobileActionBar>
-        {analysing ? (
-          <BoardControls className="py-1.5" />
-        ) : (
-        <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(1)} title={t('First move')}>
-            <ChevronFirst className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly((review ?? plies) - 1)} title={t('Back')}>
-            <ChevronLeft className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly((review ?? plies) + 1)} title={t('Forward')}>
-            <ChevronRight className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title={t('Go to the end')}>
-            <ChevronLast className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
-            <FlipVertical2 className="size-[1.1rem]" />
-          </Button>
-        </div>
-        )}
-      </MobileActionBar>
+      <TrainerNavBar
+        analysing={analysing}
+        startDisabled={plies === 0}
+        forwardDisabled={review === null}
+        onFirst={() => goToPly(1)}
+        onBack={() => goToPly((review ?? plies) - 1)}
+        onForward={() => goToPly((review ?? plies) + 1)}
+        onLast={() => goToPly(plies)}
+        onFlip={() => setFlipped((f) => !f)}
+      />
     </div>
   );
 }
