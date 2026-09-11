@@ -66,6 +66,10 @@ export interface InsightsTally {
   w: number;
   d: number;
   l: number;
+  /** The engine pass's per-game accuracy over the row's analysed
+      games, a sum and a count; both nought until the pass reaches one. */
+  accSum: number;
+  accN: number;
 }
 
 /** The report's other cuts of the same games, each a small list. */
@@ -132,10 +136,10 @@ export interface InsightsAnalysis {
   depth: number | null;
   accuracy: AccMean;
   acpl: AccMean;
-  bySide: ({ side: 'white' | 'black' } & AccMean)[];
-  bySpeed: ({ speed: Speed | 'unknown' } & AccMean)[];
+  /** Colour, time control, month and the other bands ride on the cells
+      and the tally lists themselves (accSum/accN); only the cuts with
+      no row of their own are here. */
   byOutcome: ({ outcome: 'w' | 'd' | 'l' } & AccMean)[];
-  byMonth: ({ month: string } & AccMean)[];
   /** 0 opening, 1 middlegame, 2 endgame; move-level. */
   byPhase: ({ phase: number } & AccMean)[];
   /** By the move's number, in tens: the band's floor (1, 11, 21…); move-level. */
@@ -960,10 +964,7 @@ class MyGamesIndex {
       depth: null,
       accuracy: { sum: 0, n: 0 },
       acpl: { sum: 0, n: 0 },
-      bySide: [],
-      bySpeed: [],
       byOutcome: [],
-      byMonth: [],
       byPhase: [],
       byMove: [],
       quality: { book: 0, good: 0, brilliant: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
@@ -1027,11 +1028,20 @@ class MyGamesIndex {
     // straight off the rows. Each is a map keyed by its band, turned
     // into an ordered list at the end.
     const tally = <K>(): Map<K, InsightsTally> => new Map();
-    const bump = <K>(into: Map<K, InsightsTally>, key: K, mine: number): void => {
-      const t = into.get(key) ?? { w: 0, d: 0, l: 0 };
+    const bump = <K>(
+      into: Map<K, InsightsTally>,
+      key: K,
+      mine: number,
+      accuracy: number | null,
+    ): void => {
+      const t = into.get(key) ?? { w: 0, d: 0, l: 0, accSum: 0, accN: 0 };
       if (mine > 0) t.w += 1;
       else if (mine < 0) t.l += 1;
       else t.d += 1;
+      if (accuracy !== null) {
+        t.accSum += accuracy;
+        t.accN += 1;
+      }
       into.set(key, t);
     };
     const months = tally<string>();
@@ -1041,17 +1051,18 @@ class MyGamesIndex {
     const lengths = tally<number>();
     for (const g of kept.values()) {
       const mine = g.user_side === 'white' ? g.result : -g.result;
+      const acc = recordOf(g)?.accuracy ?? null;
       if (g.date) {
-        bump(months, g.date.slice(0, 7), mine);
+        bump(months, g.date.slice(0, 7), mine, acc);
         // Noon UTC, so no zone can push the date across midnight.
         const day = new Date(`${g.date}T12:00:00Z`).getUTCDay();
-        if (Number.isFinite(day)) bump(weekdays, day, mine);
+        if (Number.isFinite(day)) bump(weekdays, day, mine, acc);
       }
       const theirs = g.user_side === 'white' ? g.black_elo : g.white_elo;
-      if (theirs > 0) bump(opponents, Math.floor(theirs / 200) * 200, mine);
-      if (g.ending) bump(endings, g.ending, mine);
+      if (theirs > 0) bump(opponents, Math.floor(theirs / 200) * 200, mine, acc);
+      if (g.ending) bump(endings, g.ending, mine, acc);
       // Whole moves, in bands of twenty: under 20, 20 to 39, and so on.
-      if (g.plies !== null) bump(lengths, Math.floor(Math.ceil(g.plies / 2) / 20) * 20, mine);
+      if (g.plies !== null) bump(lengths, Math.floor(Math.ceil(g.plies / 2) / 20) * 20, mine, acc);
     }
     const listed = <N extends string, K extends string | number>(
       from: Map<K, InsightsTally>,
@@ -1077,10 +1088,7 @@ class MyGamesIndex {
       m.n += weight;
       into.set(key, m);
     };
-    const accSide = means<'white' | 'black'>();
-    const accSpeed = means<Speed | 'unknown'>();
     const accOutcome = means<'w' | 'd' | 'l'>();
-    const accMonth = means<string>();
     const accPhase = means<number>();
     const accMove = means<number>();
     for (const g of kept.values()) {
@@ -1093,10 +1101,7 @@ class MyGamesIndex {
       analysis.acpl.sum += record.acpl;
       analysis.acpl.n += 1;
       const mine = g.user_side === 'white' ? g.result : -g.result;
-      addTo(accSide, g.user_side, record.accuracy);
-      addTo(accSpeed, g.speed ?? 'unknown', record.accuracy);
       addTo(accOutcome, mine > 0 ? 'w' : mine < 0 ? 'l' : 'd', record.accuracy);
-      if (g.date) addTo(accMonth, g.date.slice(0, 7), record.accuracy);
       for (const [ply, acc, nag, phase, book] of record.perMove) {
         if (book) {
           analysis.quality.book += 1;
@@ -1118,10 +1123,7 @@ class MyGamesIndex {
       [...from]
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
         .map(([key, m]) => ({ ...({ [name]: key } as Record<N, K>), ...m }));
-    analysis.bySide = listedMeans(accSide, 'side');
-    analysis.bySpeed = listedMeans(accSpeed, 'speed');
     analysis.byOutcome = listedMeans(accOutcome, 'outcome');
-    analysis.byMonth = listedMeans(accMonth, 'month');
     analysis.byPhase = listedMeans(accPhase, 'phase');
     analysis.byMove = listedMeans(accMove, 'band');
 

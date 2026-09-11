@@ -45,15 +45,15 @@ const CELLS: InsightsCell[] = [
 
 describe('insights arithmetic', () => {
   it('scores wins plus half the draws', () => {
-    expect(scorePct({ games: 4, w: 2, d: 1, l: 1 })).toBe(62.5);
-    expect(scorePct({ games: 0, w: 0, d: 0, l: 0 })).toBeNull();
+    expect(scorePct({ games: 4, w: 2, d: 1, l: 1, accSum: 0, accN: 0 })).toBe(62.5);
+    expect(scorePct({ games: 0, w: 0, d: 0, l: 0, accSum: 0, accN: 0 })).toBeNull();
   });
 
   it('sums every cell, and by colour and time control', () => {
-    expect(totals(CELLS)).toEqual({ games: 12, w: 6, d: 3, l: 3 });
+    expect(totals(CELLS)).toEqual({ games: 12, w: 6, d: 3, l: 3, accSum: 170, accN: 2 });
     expect(tallyBy(CELLS, 'side')).toEqual([
-      { key: 'white', tally: { games: 10, w: 5, d: 3, l: 2 } },
-      { key: 'black', tally: { games: 2, w: 1, d: 0, l: 1 } },
+      { key: 'white', tally: { games: 10, w: 5, d: 3, l: 2, accSum: 170, accN: 2 } },
+      { key: 'black', tally: { games: 2, w: 1, d: 0, l: 1, accSum: 0, accN: 0 } },
     ]);
     expect(tallyBy(CELLS, 'speed').map((r) => r.key)).toEqual(['blitz', 'rapid', 'unknown']);
   });
@@ -132,7 +132,7 @@ describe('insights arithmetic', () => {
 
   it('turns a band list into tally rows', () => {
     expect(bandRows([{ band: 1600, w: 1, l: 1 }])).toEqual([
-      { band: 1600, tally: { games: 2, w: 1, d: 0, l: 1 } },
+      { band: 1600, tally: { games: 2, w: 1, d: 0, l: 1, accSum: 0, accN: 0 } },
     ]);
   });
 

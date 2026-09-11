@@ -570,7 +570,7 @@ describe('my games insights', () => {
     games: number;
     named: boolean;
     partial: boolean;
-    months: { month: string; w: number; d: number; l: number }[];
+    months: { month: string; w: number; d: number; l: number; accSum: number; accN: number }[];
     weekdays: { day: number; w: number; d: number; l: number }[];
     opponents: { band: number; w: number; d: number; l: number }[];
     endings: { ending: string; w: number; d: number; l: number }[];
@@ -579,9 +579,7 @@ describe('my games insights', () => {
       games: number;
       depth: number | null;
       accuracy: { sum: number; n: number };
-      bySide: unknown[];
       byOutcome: unknown[];
-      byMonth: unknown[];
       byPhase: unknown[];
       byMove: unknown[];
       quality: Record<string, number>;
@@ -666,28 +664,28 @@ describe('my games insights', () => {
   it('cuts the same games by month, weekday, opponent band, ending and length', async () => {
     const r = await report();
     expect(r.months).toEqual([
-      { month: '2026-05', w: 1, d: 0, l: 1 },
-      { month: '2026-06', w: 0, d: 1, l: 0 },
+      { month: '2026-05', w: 1, d: 0, l: 1, accSum: 0, accN: 0 },
+      { month: '2026-06', w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
     ]);
     // 1 May 2026 is a Friday (5), 2 May a Saturday (6), 10 June a Wednesday (3).
     expect(r.weekdays).toEqual([
-      { day: 3, w: 0, d: 1, l: 0 },
-      { day: 5, w: 1, d: 0, l: 0 },
-      { day: 6, w: 0, d: 0, l: 1 },
+      { day: 3, w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
+      { day: 5, w: 1, d: 0, l: 0, accSum: 0, accN: 0 },
+      { day: 6, w: 0, d: 0, l: 1, accSum: 0, accN: 0 },
     ]);
     // The opponent's rating, not mine: 1650 and 1710 share the 1600 band.
     expect(r.opponents).toEqual([
-      { band: 1400, w: 0, d: 1, l: 0 },
-      { band: 1600, w: 1, d: 0, l: 1 },
+      { band: 1400, w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
+      { band: 1600, w: 1, d: 0, l: 1, accSum: 0, accN: 0 },
     ]);
     expect(r.endings).toEqual([
-      { ending: 'agreement', w: 0, d: 1, l: 0 },
+      { ending: 'agreement', w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
       // The undated game names no ending and is decisive: a resignation.
-      { ending: 'resignation', w: 2, d: 0, l: 0 },
-      { ending: 'timeout', w: 0, d: 0, l: 1 },
+      { ending: 'resignation', w: 2, d: 0, l: 0, accSum: 0, accN: 0 },
+      { ending: 'timeout', w: 0, d: 0, l: 1, accSum: 0, accN: 0 },
     ]);
     // Every fixture game is under twenty moves.
-    expect(r.lengths).toEqual([{ band: 0, w: 2, d: 1, l: 1 }]);
+    expect(r.lengths).toEqual([{ band: 0, w: 2, d: 1, l: 1, accSum: 0, accN: 0 }]);
   });
 
   /** A record the client would put: my two Italian games, judged. */
@@ -737,12 +735,12 @@ describe('my games insights', () => {
     expect(r.analysis.games).toBe(2);
     expect(r.analysis.depth).toBe(12);
     expect(r.analysis.accuracy).toEqual({ sum: 160, n: 2 });
-    expect(r.analysis.bySide).toEqual([{ side: 'white', sum: 160, n: 2 }]);
+    // Colour rides on the cells, month on the months list.
+    expect(r.months.find((m) => m.month === '2026-05')).toMatchObject({ accSum: 160, accN: 2 });
     expect(r.analysis.byOutcome).toEqual([
       { outcome: 'l', sum: 88.5, n: 1 },
       { outcome: 'w', sum: 71.5, n: 1 },
     ]);
-    expect(r.analysis.byMonth).toEqual([{ month: '2026-05', sum: 160, n: 2 }]);
     // Book moves are counted, never averaged; the rest by phase and by move.
     expect(r.analysis.quality).toEqual({ book: 6, good: 1, brilliant: 0, inaccuracy: 1, mistake: 1, blunder: 0 });
     expect(r.analysis.byPhase).toEqual([
@@ -810,10 +808,7 @@ describe('my games insights', () => {
         depth: null,
         accuracy: { sum: 0, n: 0 },
         acpl: { sum: 0, n: 0 },
-        bySide: [],
-        bySpeed: [],
         byOutcome: [],
-        byMonth: [],
         byPhase: [],
         byMove: [],
         quality: { book: 0, good: 0, brilliant: 0, inaccuracy: 0, mistake: 0, blunder: 0 },

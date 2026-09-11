@@ -31,6 +31,7 @@ import {
   scorePct,
   tallyBy,
   totals,
+  accuracyOf,
   meanOf,
   type AccMean,
   type InsightsCell,
@@ -127,21 +128,18 @@ interface Report {
   partial: boolean;
   cells: InsightsCell[];
   /** The other cuts of the same games; see server/myGames.ts InsightsExtras. */
-  months: { month: string; w: number; d: number; l: number }[];
-  weekdays: { day: number; w: number; d: number; l: number }[];
-  opponents: { band: number; w: number; d: number; l: number }[];
+  months: { month: string; w: number; d: number; l: number; accSum: number; accN: number }[];
+  weekdays: { day: number; w: number; d: number; l: number; accSum: number; accN: number }[];
+  opponents: { band: number; w: number; d: number; l: number; accSum: number; accN: number }[];
   endings: { ending: Ending; w: number; d: number; l: number }[];
-  lengths: { band: number; w: number; d: number; l: number }[];
+  lengths: { band: number; w: number; d: number; l: number; accSum: number; accN: number }[];
   /** The engine pass's cuts; see server/myGames.ts InsightsAnalysis. */
   analysis: {
     games: number;
     depth: number | null;
     accuracy: AccMean;
     acpl: AccMean;
-    bySide: ({ side: 'white' | 'black' } & AccMean)[];
-    bySpeed: ({ speed: Speed | 'unknown' } & AccMean)[];
     byOutcome: ({ outcome: 'w' | 'd' | 'l' } & AccMean)[];
-    byMonth: ({ month: string } & AccMean)[];
     byPhase: ({ phase: number } & AccMean)[];
     byMove: ({ band: number } & AccMean)[];
     quality: {
@@ -359,6 +357,23 @@ function Tables({ report }: { report: Report }) {
               })}
             </span>
           </div>
+          {report.analysis.games > 0 && (
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-muted-foreground text-sm font-medium">{t('Accuracy')}</span>
+              <span className="text-foreground text-2xl font-semibold tabular-nums">
+                {`${(meanOf(report.analysis.accuracy) ?? 0).toFixed(1)}%`}
+              </span>
+              <span className="text-muted-foreground text-sm tabular-nums">
+                {t('{n} of {total} games analysed at depth {d}', {
+                  n: exact.format(report.analysis.games),
+                  total: exact.format(report.games),
+                  d: report.analysis.depth ?? PASS_DEPTH,
+                })}
+                {meanOf(report.analysis.acpl) !== null &&
+                  ` · ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
+              </span>
+            </div>
+          )}
           <ResultBar w={all.w} d={all.d} b={all.l} pov="mine" />
           {/* Stacked, not side by side: in a grid the two-row table was
               stretched to the four-row one's height, and with no divider
@@ -378,8 +393,7 @@ function Tables({ report }: { report: Report }) {
       </Card>
 
       <EnginePassCard total={report.games} />
-      <AccuracyCard analysis={report.analysis} total={report.games} />
-      <MoveQualityCard quality={report.analysis.quality} />
+      <MoveQualityCard analysis={report.analysis} />
 
       <Card>
         <CardHeader>
@@ -508,7 +522,7 @@ function Tables({ report }: { report: Report }) {
       </Card>
 
       <ActivityCard report={report} />
-      <EndingsCard endings={report.endings} />
+      <EndingsCard endings={report.endings} byOutcome={report.analysis.byOutcome} />
       <LengthCard lengths={report.lengths} />
       <OpponentsCard opponents={report.opponents} />
     </div>
@@ -540,7 +554,9 @@ function ActivityCard({ report }: { report: Report }) {
     return monthName.format(new Date(y, mo - 1, 1));
   };
   // Sunday first, as the server numbers them; only days with games.
-  const week = bandRows(report.weekdays.map((w) => ({ band: w.day, w: w.w, d: w.d, l: w.l })));
+  const week = bandRows(
+    report.weekdays.map((w) => ({ band: w.day, w: w.w, d: w.d, l: w.l, accSum: w.accSum, accN: w.accN })),
+  );
   const dayLabel = (day: number): string => dayName.format(new Date(2026, 1, 1 + day));
   return (
     <Card>
@@ -643,7 +659,13 @@ function ActivityCard({ report }: { report: Report }) {
  * parted by a gap of the card's own ground, and a slice too thin to
  * part is drawn whole rather than vanishing.
  */
-function EndingsCard({ endings }: { endings: Report['endings'] }) {
+function EndingsCard({
+  endings,
+  byOutcome,
+}: {
+  endings: Report['endings'];
+  byOutcome: Report['analysis']['byOutcome'];
+}) {
   const columns: { key: 'w' | 'd' | 'l'; title: string; ink: string }[] = [
     { key: 'w', title: 'Won by', ink: 'text-good' },
     { key: 'd', title: 'Drew by', ink: 'text-muted-foreground' },
@@ -662,9 +684,18 @@ function EndingsCard({ endings }: { endings: Report['endings'] }) {
         {columns.map(({ key, title, ink }) => {
           const shares = endingShares(endings, key);
           const total = shares.reduce((n, s) => n + s.games, 0);
+          const acc = byOutcome.find((o) => o.outcome === key);
+          const accuracy = acc ? meanOf(acc) : null;
           return (
             <figure key={key} className="flex min-w-0 flex-col gap-3">
-              <figcaption className="text-muted-foreground text-xs font-medium">{t(title)}</figcaption>
+              <figcaption className="text-muted-foreground flex items-baseline justify-between gap-2 text-xs font-medium">
+                <span>{t(title)}</span>
+                {accuracy !== null && (
+                  <span className="font-mono tabular-nums">
+                    {t('{n}% accuracy', { n: accuracy.toFixed(1) })}
+                  </span>
+                )}
+              </figcaption>
               {shares.length === 0 ? (
                 <p className="text-muted-foreground text-sm">{t('None')}</p>
               ) : (
@@ -902,94 +933,6 @@ function EnginePassCard({ total }: { total: number }) {
 }
 
 const PHASE_LABEL: Record<number, string> = { 0: 'Opening', 1: 'Middlegame', 2: 'Endgame' };
-const OUTCOME_LABEL: Record<'w' | 'd' | 'l', string> = {
-  w: 'When you won',
-  d: 'When you drew',
-  l: 'When you lost',
-};
-
-/**
- * Accuracy, from the engine pass, cut the ways the results are cut and
- * two more the pass alone can answer: the phase of the game and the
- * move number. Absent until the pass has reached a game; the pass card
- * above says why.
- */
-function AccuracyCard({ analysis, total }: { analysis: Report['analysis']; total: number }) {
-  const lang = useLang();
-  const monthName = useMemo(
-    () => new Intl.DateTimeFormat(lang === 'ko' ? 'ko' : 'en', { month: 'short', year: 'numeric' }),
-    [lang],
-  );
-  if (analysis.games === 0) return null;
-  const accuracy = meanOf(analysis.accuracy);
-  const acpl = meanOf(analysis.acpl);
-  const rows = <R extends AccMean>(
-    list: readonly R[],
-    key: (r: R) => string | number,
-    label: (r: R) => string,
-  ) => list.map((r) => ({ key: String(key(r)), label: label(r), mean: meanOf(r), n: r.n }));
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('Accuracy')}</CardTitle>
-        <CardDescription>
-          {t(
-            'How close your moves came to the engine\'s, on the scale Lichess and chess.com use. Book moves are not judged.',
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-muted-foreground text-sm font-medium">{t('Accuracy')}</span>
-          <span className="text-foreground text-2xl font-semibold tabular-nums">
-            {accuracy === null ? '' : `${accuracy.toFixed(1)}%`}
-          </span>
-          <span className="text-muted-foreground text-sm tabular-nums">
-            {t('{n} of {total} games analysed at depth {d}', {
-              n: exact.format(analysis.games),
-              total: exact.format(total),
-              d: analysis.depth ?? PASS_DEPTH,
-            })}
-            {acpl !== null && ` · ${t('{n} centipawns lost per move', { n: Math.round(acpl) })}`}
-          </span>
-        </div>
-        <div className="flex flex-col gap-4">
-          <MeanTable
-            caption={t('By colour')}
-            rows={rows(analysis.bySide, (r) => r.side, (r) => t(SIDE_LABEL[r.side]))}
-          />
-          <MeanTable
-            caption={t('By time control')}
-            rows={rows(analysis.bySpeed, (r) => r.speed, (r) => t(SPEED_LABEL[r.speed]))}
-          />
-          <MeanTable
-            caption={t('By outcome')}
-            rows={rows(analysis.byOutcome, (r) => r.outcome, (r) => t(OUTCOME_LABEL[r.outcome]))}
-          />
-          <MeanTable
-            caption={t('By phase')}
-            rows={rows(analysis.byPhase, (r) => r.phase, (r) => t(PHASE_LABEL[r.phase] ?? 'Middlegame'))}
-            unit="moves"
-          />
-          <MeanTable
-            caption={t('By move number')}
-            rows={rows(analysis.byMove, (r) => r.band, (r) => t('Moves {a} to {b}', { a: r.band, b: r.band + 9 }))}
-            unit="moves"
-          />
-          {analysis.byMonth.length > 1 && (
-            <MeanTable
-              caption={t('By month')}
-              rows={rows(analysis.byMonth, (r) => r.month, (r) => {
-                const [y, mo] = r.month.split('-').map(Number) as [number, number];
-                return monthName.format(new Date(y, mo - 1, 1));
-              })}
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 /**
  * A label, a count and a mean accuracy drawn as a bar the width of its
@@ -1064,16 +1007,24 @@ const QUALITY: { key: keyof Report['analysis']['quality']; label: string; ink: s
  * legend beneath. "Good" is a judged move with no mark against it;
  * theory is counted, never judged.
  */
-function MoveQualityCard({ quality }: { quality: Report['analysis']['quality'] }) {
+function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
+  const { quality } = analysis;
   const total = QUALITY.reduce((n, q) => n + quality[q.key], 0);
   if (total === 0) return null;
+  const rows = <R extends AccMean>(
+    list: readonly R[],
+    key: (r: R) => string | number,
+    label: (r: R) => string,
+  ) => list.map((r) => ({ key: String(key(r)), label: label(r), mean: meanOf(r), n: r.n }));
   return (
     <Card>
       <CardHeader>
         <CardTitle>{t('Move quality')}</CardTitle>
-        <CardDescription>{t('Every move you played in the analysed games, by the engine\'s verdict.')}</CardDescription>
+        <CardDescription>
+          {t('Every move you played in the analysed games, by the engine\'s verdict, and how accurate they were by phase and by move number.')}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-4">
         {/* The chip corner, as the result bar's. */}
         <div className="flex h-4 w-full gap-px overflow-hidden rounded-[4px]" role="img" aria-label={t('Move quality')}>
           {QUALITY.filter((q) => quality[q.key] > 0).map((q) => (
@@ -1118,6 +1069,16 @@ function MoveQualityCard({ quality }: { quality: Report['analysis']['quality'] }
             ))}
           </tbody>
         </table>
+        <MeanTable
+          caption={t('By phase')}
+          rows={rows(analysis.byPhase, (r) => r.phase, (r) => t(PHASE_LABEL[r.phase] ?? 'Middlegame'))}
+          unit="moves"
+        />
+        <MeanTable
+          caption={t('By move number')}
+          rows={rows(analysis.byMove, (r) => r.band, (r) => t('Moves {a} to {b}', { a: r.band, b: r.band + 9 }))}
+          unit="moves"
+        />
       </CardContent>
     </Card>
   );
@@ -1147,6 +1108,9 @@ function TallyTable({
       bar then prints fewer of its figures, which its tooltip still has. */
   dense?: boolean;
 }) {
+  // The engine pass's column appears once it has reached a row's game,
+  // on every tally table alike, the way the openings table shows it.
+  const withAccuracy = rows.some((r) => r.tally.accN > 0);
   return (
     <table className="w-full table-fixed text-sm">
       {/* A header row, not a bare caption: a number with no word over
@@ -1166,6 +1130,11 @@ function TallyTable({
           <th scope="col" className="w-12 py-1 text-right font-medium whitespace-nowrap">
             {t('Score')}
           </th>
+          {withAccuracy && (
+            <th scope="col" className="w-16 py-1 pl-2 text-right font-medium whitespace-nowrap">
+              {t('Accuracy')}
+            </th>
+          )}
         </tr>
       </thead>
       <tbody>
@@ -1182,6 +1151,11 @@ function TallyTable({
               <ResultBar w={row.tally.w} d={row.tally.d} b={row.tally.l} pov="mine" />
             </td>
             <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row.tally))}</td>
+            {withAccuracy && (
+              <td className="w-16 py-(--row-py-tight) pl-2 text-right font-mono tabular-nums">
+                {accuracyOf(row.tally) === null ? '' : `${accuracyOf(row.tally)!.toFixed(1)}%`}
+              </td>
+            )}
           </tr>
         ))}
       </tbody>

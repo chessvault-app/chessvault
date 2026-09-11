@@ -28,10 +28,12 @@ An Insights page sums your own games.
   the app; a progress bar says how far it is and how long is left, Pause
   and Resume do what they say, and a reload or a later visit picks up
   where it stopped, since the server keeps every game finished. With
-  games analysed the page adds accuracy overall and by colour, time
-  control, outcome, phase, move number and month, the share of your
-  moves the engine calls good, inaccurate, a mistake or a blunder, and
-  an accuracy column on the openings table. The findings are kept apart
+  games analysed the page shows accuracy beside the score and adds an
+  accuracy column to every table it already has (colour, time control,
+  opening, weekday, length, opponent band), the accuracy of your won,
+  drawn and lost games under each ending chart, and a card of move
+  quality: the share of your moves the engine calls good, inaccurate, a
+  mistake or a blunder, with accuracy by phase and by move number. The findings are kept apart
   from the games index, so a reindex never costs the engine's hours. The filters are the
   explorer's (side, time control, kept only) plus a quick date range
   (the last week, month, or three, six or twelve months, or two dates

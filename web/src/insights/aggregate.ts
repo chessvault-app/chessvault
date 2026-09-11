@@ -48,6 +48,9 @@ export interface Tally {
   w: number;
   d: number;
   l: number;
+  /** The engine pass's per-game accuracy over the row's analysed games. */
+  accSum: number;
+  accN: number;
 }
 
 /** Wins plus half the draws, as a percentage of the games; null with none. */
@@ -55,10 +58,22 @@ export function scorePct(t: Tally): number | null {
   return t.games === 0 ? null : (100 * (t.w + t.d / 2)) / t.games;
 }
 
-const EMPTY: Tally = { games: 0, w: 0, d: 0, l: 0 };
+const EMPTY: Tally = { games: 0, w: 0, d: 0, l: 0, accSum: 0, accN: 0 };
 
 function add(into: Tally, cell: Tally): Tally {
-  return { games: into.games + cell.games, w: into.w + cell.w, d: into.d + cell.d, l: into.l + cell.l };
+  return {
+    games: into.games + cell.games,
+    w: into.w + cell.w,
+    d: into.d + cell.d,
+    l: into.l + cell.l,
+    accSum: into.accSum + cell.accSum,
+    accN: into.accN + cell.accN,
+  };
+}
+
+/** A row's mean accuracy, or null before the pass has reached it. */
+export function accuracyOf(t: Pick<Tally, 'accSum' | 'accN'>): number | null {
+  return t.accN === 0 ? null : t.accSum / t.accN;
 }
 
 export function totals(cells: readonly InsightsCell[]): Tally {
@@ -152,10 +167,10 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
     out.set(id, row);
   }
   return [...out.values()]
-    .map(({ exitPlySum, accSum, accN, ...row }) => ({
+    .map(({ exitPlySum, ...row }) => ({
       ...row,
       meanExitPly: row.exits === 0 ? null : exitPlySum / row.exits,
-      accuracy: accN === 0 ? null : accSum / accN,
+      accuracy: row.accN === 0 ? null : row.accSum / row.accN,
     }))
     .sort((a, b) => b.games - a.games || (a.name ?? a.eco ?? '').localeCompare(b.name ?? b.eco ?? ''));
 }
@@ -228,7 +243,7 @@ export function monthSeries(
     const w = got?.w ?? 0;
     const d = got?.d ?? 0;
     const l = got?.l ?? 0;
-    out.push({ month: key, games: w + d + l, w, d, l });
+    out.push({ month: key, games: w + d + l, w, d, l, accSum: got?.accSum ?? 0, accN: got?.accN ?? 0 });
     m += 1;
     if (m > 12) {
       m = 1;
@@ -265,6 +280,9 @@ export function bandRows<K extends string | number>(
     const w = b.w ?? 0;
     const d = b.d ?? 0;
     const l = b.l ?? 0;
-    return { band: b.band, tally: { games: w + d + l, w, d, l } };
+    return {
+      band: b.band,
+      tally: { games: w + d + l, w, d, l, accSum: b.accSum ?? 0, accN: b.accN ?? 0 },
+    };
   });
 }
