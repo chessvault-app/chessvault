@@ -105,6 +105,15 @@
  *     the knob that nothing had noticed. So: outside the registry files,
  *     a literal that does not read a `var(--…)` needs the word "fitted",
  *     "chip corner" or "pixel cap" in the five lines above it.
+ *
+ * 13. No `title` attribute on a raw element. `title` is the app's own
+ *     tooltip on every registry primitive and, through TitleTip, on
+ *     anything else, so a `title=` on a lowercase JSX tag is the
+ *     browser's bubble instead: a different shape and delay, nothing on
+ *     keyboard focus, and a second tip overlapping the themed one when
+ *     the element sits inside a control. An audit found twenty-four of
+ *     these beside 235 themed ones. A `title` on a component is a prop,
+ *     usually a heading, and is not checked.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -725,6 +734,39 @@ if (existsSync(DICTIONARY)) {
       });
     }
   });
+}
+
+// No `title` attribute on a raw element (13): the app's tooltip is the
+// themed one, reached through a primitive's `title` prop or TitleTip.
+// The enclosing open tag is the last `<name` whose `>` has not yet come
+// outside a brace expression; a lowercase name is a DOM element.
+const RAW_TITLE_WHY = 'a title attribute on a raw element is the browser\'s tooltip; wrap it in TitleTip (web/src/components/title-tip.tsx)';
+for (const file of tracked) {
+  if (!/^web\/src\/.*\.tsx$/.test(file) || /\.test\.tsx$/.test(file)) continue;
+  let code: string;
+  try {
+    code = blankComments(readFileSync(file, 'utf-8'));
+  } catch {
+    continue;
+  }
+  for (const m of code.matchAll(/\btitle=/g)) {
+    const before = code.slice(0, m.index);
+    const open = [...before.matchAll(/<([A-Za-z][\w.]*)/g)].pop();
+    if (!open) continue;
+    let depth = 0;
+    let closed = false;
+    for (const ch of before.slice(open.index! + open[0].length)) {
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
+      else if (ch === '>' && depth === 0) {
+        closed = true;
+        break;
+      }
+    }
+    if (closed || !/^[a-z]/.test(open[1]!)) continue;
+    const line = before.split('\n').length;
+    findings.push({ file, line, text: code.split('\n')[line - 1]!.trim().slice(0, 120), why: RAW_TITLE_WHY });
+  }
 }
 
 if (findings.length === 0) {
