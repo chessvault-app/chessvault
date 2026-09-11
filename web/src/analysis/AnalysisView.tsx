@@ -1,6 +1,6 @@
 import { ChevronLeft, Check, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrdered, Microscope, MoreHorizontal, RotateCcw, Table2, Trash2 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { getNode, INITIAL_FEN } from '@shared/tree';
 import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
 import { AnalysisMoveBox } from '@/board/MoveBox';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -10,7 +10,6 @@ import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useMediaQuery, useTabbedPanes } from '@/lib/media';
 import { up } from '@/lib/router';
-import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
 import { toast } from '@/components/ui/toast';
@@ -27,6 +26,7 @@ import { Panel, PanelHeader } from '@/components/panel';
 import { PaneTabs } from '@/components/pane-tabs';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { useUndoable } from '@/hooks/use-undoable';
+import { LineTitle } from './LineTitle';
 import { MoveTreePane, promoteActions, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 import { t } from '@/lib/i18n';
@@ -34,15 +34,6 @@ import { t } from '@/lib/i18n';
 type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
 export function AnalysisView({ params = [] }: { params?: string[] }) {
-  const openingTree = useAnalysis((s) => s.tree);
-  const openingCursor = useAnalysis((s) => s.cursorId);
-  const openingName = useOpeningName(
-    useMemo(
-      () => pathTo(openingTree, openingCursor).map((id) => getNode(openingTree, id).fen),
-      [openingTree, openingCursor],
-    ),
-  );
-
   // Reached as Tools > Explorer (navigate('board', 'explorer')): open
   // straight to the opening explorer instead of the move list.
   const wantExplorer = params[0] === 'explorer';
@@ -172,10 +163,10 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           {!tabbed && <EngineBlock />}
           <PanelHeader
             // The line's own name rather than the word "Moves", which every
-            // panel in the app could have been called. It updates as you
-            // play and is looked up by position, so transpositions arrive
-            // at the right name.
-            title={openingName ?? t('Starting position')}
+            // panel in the app could have been called. Its own component:
+            // it is the one thing up here that follows the cursor (see
+            // LineTitle for what subscribing the page to it cost).
+            title={<LineTitle />}
             actions={
               <>
                 <SidelinesToggle />

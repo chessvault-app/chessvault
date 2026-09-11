@@ -11,15 +11,14 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { getNode, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
-import { useOpeningName } from '@/lib/opening';
 import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
 import { AnalysisMoveBox } from '@/board/MoveBox';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
+import { LineTitle } from '@/analysis/LineTitle';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
@@ -94,20 +93,14 @@ export function StudyView({
   const aliasHeader = useStudy((s) => s.chapters[0]?.headers['Aliases'] ?? '');
   const aliases = useMemo(() => splitAliasList(aliasHeader), [aliasHeader]);
   const setAliases = useStudy((s) => s.setAliases);
-  const analysisTree = useAnalysis((s) => s.tree);
-  const analysisCursor = useAnalysis((s) => s.cursorId);
-  const openingName = useOpeningName(
-    useMemo(
-      () => pathTo(analysisTree, analysisCursor).map((nodeId) => getNode(analysisTree, nodeId).fen),
-      [analysisTree, analysisCursor],
-    ),
-  );
   // A chapter's name is the user's own and is marked as such: it selects
   // on a long press, and passing it as a node rather than a string also
   // keeps it out of t(), which has no business translating a name.
+  // A game's title follows the cursor and is its own component, so that
+  // this page does not (see LineTitle).
   const movesTitle =
     kind === 'game' ? (
-      (openingName ?? t('Starting position'))
+      <LineTitle />
     ) : chapterName ? (
       <span data-user-text>{chapterName}</span>
     ) : (
