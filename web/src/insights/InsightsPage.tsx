@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
 import type { Speed } from '@shared/gameIndex';
 import { isSymmetricMaterial, mirrorMaterialSpec } from '@shared/scanMatch';
-import type { MotifSide } from '@shared/scanMotif';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { navigate } from '@/lib/router';
@@ -19,7 +18,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select } from '@/components/ui/select';
 import { FilterRow, SideSelect, type SideFilter } from '@/games/GameFilters';
 import ENDGAMES from '@/games/endgames.json';
-import MOTIFS from '@/games/motifs.json';
 import STRUCTURES from '@/games/structures.json';
 import { hasMyFilters, myFilterQuery, type MyGamesFilters } from '@/store/explorer';
 import {
@@ -43,8 +41,8 @@ import { DATE_RANGES, DATE_RANGE_LABEL, rangeFrom, type DateRange } from './date
  * one game at a time; neither could say how the Italian has gone for you
  * as White in blitz, or where your own preparation runs out. This page
  * asks the server for the sums (server/myGames.ts, insights) under the
- * same filters the explorer's My games source takes, plus one of the
- * Databases browser's situations, and regroups the answer four ways
+ * same filters the explorer's My games source takes, plus the
+ * Databases browser's endgame and pawn-structure presets, and regroups the answer four ways
  * (insights/aggregate.ts). Nothing here is a verdict on the player: the
  * tables are counts of what happened, and a rating is nowhere on them.
  */
@@ -52,15 +50,18 @@ import { DATE_RANGES, DATE_RANGE_LABEL, rangeFrom, type DateRange } from './date
 /** The explorer's filters plus the situation, which is the browser's
     preset id with a side where the preset takes one. */
 interface InsightsFilters extends MyGamesFilters {
-  /** `endgame:<id>`, `motif:<id>`, `structure:<id>`, or 'none'. */
+  /** `endgame:<id>`, `structure:<id>`, or 'none'. The browser's motif
+      presets are not offered: a motif is a hunt for a game, and this
+      page sums seasons. */
   situation: string;
-  situationSide: MotifSide;
+  /** Whose side an asymmetric endgame preset describes. */
+  situationSide: 'white' | 'black';
   /** A quick range, or 'custom' for whatever `from` and `to` hold. */
   range: DateRange;
 }
 
 const NONE = 'none';
-const EMPTY_FILTERS: InsightsFilters = { situation: NONE, situationSide: 'either', range: 'any' };
+const EMPTY_FILTERS: InsightsFilters = { situation: NONE, situationSide: 'white', range: 'any' };
 const FILTERS_KEY = 'vault:insights-filters';
 
 const SPEEDS: { id: Speed; label: string }[] = [
@@ -92,7 +93,12 @@ function readFilters(): InsightsFilters {
     const raw = localStorage.getItem(FILTERS_KEY);
     if (!raw) return EMPTY_FILTERS;
     const parsed = JSON.parse(raw) as Partial<InsightsFilters>;
-    return { ...EMPTY_FILTERS, ...parsed };
+    const merged = { ...EMPTY_FILTERS, ...parsed };
+    // A choice this build no longer offers (a motif, from an earlier
+    // build) or a side it no longer takes falls back to the default.
+    if (merged.situation.startsWith('motif:')) merged.situation = NONE;
+    if (merged.situationSide !== 'black') merged.situationSide = 'white';
+    return merged;
   } catch {
     return EMPTY_FILTERS;
   }
@@ -113,18 +119,6 @@ function situationQuery(f: InsightsFilters): URLSearchParams {
       const spec = f.situationSide === 'black' ? mirrorMaterialSpec(preset.spec) : preset.spec;
       params.set('material', JSON.stringify({ ...spec, stable: 1 }));
     }
-  } else if (kind === 'motif') {
-    const motif = MOTIFS.find((m) => m.id === id);
-    if (motif) {
-      params.set(
-        'motif',
-        JSON.stringify({
-          id: motif.id,
-          side: motif.side ? f.situationSide : 'either',
-          stable: motif.held ? motif.stable : 1,
-        }),
-      );
-    }
   } else if (kind === 'structure') {
     const structure = STRUCTURES.find((s) => s.id === id);
     if (structure) {
@@ -135,15 +129,13 @@ function situationQuery(f: InsightsFilters): URLSearchParams {
   return params;
 }
 
-/** Whether the picked situation has a side to choose, and which choices. */
-function situationSides(situation: string): 'two' | 'three' | null {
+/** Whether the picked situation has a side to choose: an endgame preset
+    that reads differently from each side. */
+function situationTakesSide(situation: string): boolean {
   const [kind, id] = situation.split(':');
-  if (kind === 'endgame') {
-    const preset = ENDGAMES.find((p) => p.id === id);
-    return preset && !isSymmetricMaterial(preset.spec) ? 'two' : null;
-  }
-  if (kind === 'motif') return MOTIFS.find((m) => m.id === id)?.side ? 'three' : null;
-  return null;
+  if (kind !== 'endgame') return false;
+  const preset = ENDGAMES.find((p) => p.id === id);
+  return preset !== undefined && !isSymmetricMaterial(preset.spec);
 }
 
 interface Report {
@@ -208,12 +200,11 @@ export function InsightsPage() {
   const clear = (): void => setFilters({ ...EMPTY_FILTERS, side: undefined, speeds: [], from: undefined, to: undefined, collectionOnly: undefined });
 
   const speeds = filters.speeds ?? [];
-  const sides = situationSides(filters.situation);
+  const takesSide = situationTakesSide(filters.situation);
   const situationGroups = useMemo(
     () => [
       { options: [{ value: NONE, label: t('Any situation') }] },
       { label: t('Endgames'), options: ENDGAMES.map((p) => ({ value: `endgame:${p.id}`, label: t(p.label) })) },
-      { label: t('Motifs'), options: MOTIFS.map((m) => ({ value: `motif:${m.id}`, label: t(m.label) })) },
       {
         label: t('Pawn structures'),
         options: STRUCTURES.map((s) => ({ value: `structure:${s.id}`, label: t(s.label) })),
@@ -262,23 +253,22 @@ export function InsightsPage() {
         />
         <Select
           value={filters.situation}
-          onValueChange={(v) => setFilters({ situation: v, situationSide: 'either' })}
+          onValueChange={(v) => setFilters({ situation: v, situationSide: 'white' })}
           ariaLabel={t('Situation')}
           size="sm"
           className="w-44 flex-none"
           groups={situationGroups}
         />
-        {sides && (
+        {takesSide && (
           <Select
-            value={sides === 'two' && filters.situationSide === 'either' ? 'white' : filters.situationSide}
-            onValueChange={(v) => setFilters({ situationSide: v as MotifSide })}
-            ariaLabel={sides === 'two' ? t('Which side has it') : t('Whose motif')}
+            value={filters.situationSide}
+            onValueChange={(v) => setFilters({ situationSide: v as 'white' | 'black' })}
+            ariaLabel={t('Which side has it')}
             size="sm"
             className="w-28 flex-none"
             groups={[
               {
                 options: [
-                  ...(sides === 'three' ? [{ value: 'either', label: t('Either side') }] : []),
                   { value: 'white', label: t('White') },
                   { value: 'black', label: t('Black') },
                 ],

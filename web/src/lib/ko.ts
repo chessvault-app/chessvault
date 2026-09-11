@@ -2177,8 +2177,6 @@ export const ko: Record<string, string> = {
   'Any situation': '모든 상황',
   'Situation': '상황',
   'Endgames': '엔드게임',
-  'Motifs': '모티프',
-  'Whose motif': '누구의 모티프인지',
   'Correspondence': '통신',
   'No time control': '시간제 없음',
   'The report could not be loaded.': '보고서를 불러오지 못했습니다.',
