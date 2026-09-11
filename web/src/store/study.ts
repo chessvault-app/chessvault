@@ -226,6 +226,24 @@ function loadIntoAnalysis(chapter: Chapter): void {
 }
 
 export const useStudy = create<StudyState>()((set, get) => {
+  /**
+   * One write, then the list again. The refresh runs whether the write
+   * landed or not — a failure may still have changed the list (or proved
+   * it stale) — and the returned string is the caller's to show. Six
+   * actions carried this shell by hand and `create` had drifted: it
+   * returned before the refresh, so a name refused as taken left the
+   * shelf showing a list that might no longer be true.
+   */
+  const mutate = async (url: string, init: Parameters<typeof api>[1]): Promise<string | null> => {
+    let failure: string | null = null;
+    try {
+      await api(url, init);
+    } catch (e) {
+      failure = apiErrorMessage(e);
+    }
+    await get().refresh();
+    return failure;
+  };
   /** Pull the live tree (and board side) out of the analysis store. */
   const stashCurrent = (): Chapter[] => {
     const { openId, chapters, chapterIndex } = get();
@@ -269,30 +287,9 @@ export const useStudy = create<StudyState>()((set, get) => {
       }
     },
 
-    createFolder: async (name) => {
-      // The refresh runs whether the write landed or not — a failure may
-      // still have changed the list (or proved it stale), and the returned
-      // string is the caller's to show.
-      let failure: string | null = null;
-      try {
-        await api('/api/studies/folders', { method: 'POST', json: { name } });
-      } catch (e) {
-        failure = apiErrorMessage(e);
-      }
-      await get().refresh();
-      return failure;
-    },
+    createFolder: async (name) => mutate('/api/studies/folders', { method: 'POST', json: { name } }),
 
-    move: async (from, to) => {
-      let failure: string | null = null;
-      try {
-        await api('/api/studies/move', { method: 'POST', json: { from, to } });
-      } catch (e) {
-        failure = apiErrorMessage(e);
-      }
-      await get().refresh();
-      return failure;
-    },
+    move: async (from, to) => mutate('/api/studies/move', { method: 'POST', json: { from, to } }),
 
     renameOpen: async (newName) => {
       const { openId, openBase } = get();
@@ -327,48 +324,13 @@ export const useStudy = create<StudyState>()((set, get) => {
       return { id: to };
     },
 
-    moveFolder: async (from, to) => {
-      let failure: string | null = null;
-      try {
-        await api('/api/studies/folders/move', { method: 'POST', json: { from, to } });
-      } catch (e) {
-        failure = apiErrorMessage(e);
-      }
-      await get().refresh();
-      return failure;
-    },
+    moveFolder: async (from, to) => mutate('/api/studies/folders/move', { method: 'POST', json: { from, to } }),
 
-    removeFolder: async (name) => {
-      let failure: string | null = null;
-      try {
-        await api(`/api/studies/folders/${encodeURIComponent(name)}`, { method: 'DELETE' });
-      } catch (e) {
-        failure = apiErrorMessage(e);
-      }
-      await get().refresh();
-      return failure;
-    },
+    removeFolder: async (name) => mutate(`/api/studies/folders/${encodeURIComponent(name)}`, { method: 'DELETE' }),
 
-    create: async (name, pgn) => {
-      try {
-        await api('/api/studies', { method: 'POST', json: { name, ...(pgn && { pgn }) } });
-      } catch (e) {
-        return apiErrorMessage(e);
-      }
-      await get().refresh();
-      return null;
-    },
+    create: async (name, pgn) => mutate('/api/studies', { method: 'POST', json: { name, ...(pgn && { pgn }) } }),
 
-    remove: async (id) => {
-      let failure: string | null = null;
-      try {
-        await api(`/api/studies/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      } catch (e) {
-        failure = apiErrorMessage(e);
-      }
-      await get().refresh();
-      return failure;
-    },
+    remove: async (id) => mutate(`/api/studies/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
     open: async (id, base = 'studies') => {
       try {
