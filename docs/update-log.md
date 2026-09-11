@@ -107,6 +107,13 @@ builds and the board's arrow keys do less per request.
   it is folded. Setting a diagram on the board or opening the editor
   unfolds it, and the choice is remembered on this device.
 
+- **The reader's toolbar buttons show the pointer on them in the light
+  theme.** They stand on the page itself rather than in a card, and the
+  hover fill was the page's own grey, so nothing changed under the
+  pointer. They now hover a rung up, the way the sidebar's rows on the
+  same ground do, and the moves-strip switch shows it is on by its ink,
+  as the diagram-buttons switch beside it already did.
+
 ## 0.9.5
 
 The name beside the knight is one lowercase word. A phone's page title
