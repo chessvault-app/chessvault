@@ -98,6 +98,8 @@ registerRoutePending((hash) => {
       return BooksView.pending();
     case 'repertoire':
       return RepertoireView.pending();
+    case 'endgames':
+      return EndgamesView.pending();
     case 'openingmap':
       return OpeningMapView.pending();
     case 'databases':
@@ -109,6 +111,7 @@ registerRoutePending((hash) => {
   }
 });
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
+const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })));
 const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
 
@@ -167,12 +170,15 @@ const TOOLS_SUBNAV: {
   // panes" without twinning anything else in the sidebar.
   { key: 'workspace', label: 'Workspace', icon: LayoutDashboard, nav: ['workspace'], active: (s) => s === 'workspace' },
   { key: 'repertoire', label: 'Repertoire', icon: Layers, nav: ['repertoire'], active: (s) => s === 'repertoire' },
+  // A board you play on, like the rest of the group: a won ending against
+  // the tablebase's defence.
+  { key: 'endgames', label: 'Endgame drills', icon: Crown, nav: ['endgames'], active: (s) => s === 'endgames' },
 ];
 // Databases is deliberately NOT in Tools: the entries there are boards
 // you play on, and it is where their data is looked after — so it stands
 // on its own row below the group, beside nothing.
 const inTools = (s: Section): boolean =>
-  s === 'board' || s === 'workspace' || s === 'editor' || s === 'repertoire';
+  s === 'board' || s === 'workspace' || s === 'editor' || s === 'repertoire' || s === 'endgames';
 
 export function App() {
   return (
@@ -210,13 +216,14 @@ function demoBannerBelongs(section: Section, params: string[]): boolean {
     case 'studies':
     case 'notes':
     case 'books':
+    case 'endgames':
       return params.length === 0;
     case 'puzzles':
       return (
         params[0] === 'hub' ||
         params[0] === 'dashboard' ||
         params[0] === 'themes' ||
-        ((params[0] === 'books' || params[0] === 'endgames') && params.length === 1)
+        (params[0] === 'books' && params.length === 1)
       );
     default:
       return false;
@@ -413,6 +420,8 @@ function Shell() {
           <BooksView params={params} />
         ) : section === 'repertoire' ? (
           <RepertoireView />
+        ) : section === 'endgames' ? (
+          <EndgamesView params={params} />
         ) : section === 'openingmap' ? (
           <OpeningMapView params={params} />
         ) : section === 'databases' ? (
@@ -559,7 +568,6 @@ const PUZZLE_SUBNAV = [
   // of its own, and this is the shelf of puzzles read out of them.
   { param: 'books', label: 'Puzzle books', icon: BookMarked },
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
-  { param: 'endgames', label: 'Endgames', icon: Crown },
 ] as const;
 
 /**
@@ -949,6 +957,7 @@ const MORE_GROUPS: {
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: Layers, blurb: 'Practise an opening against real games' },
+      { section: 'endgames', label: 'Endgame drills', icon: Crown, blurb: 'Play won endings against the tablebase' },
       { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
     ],
   },

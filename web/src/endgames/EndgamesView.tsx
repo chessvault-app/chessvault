@@ -3,26 +3,36 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   Crown,
-  FlipVertical2,
+  Info,
+  ListOrdered,
   RotateCcw,
   RotateCw,
   Settings,
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
-import { roleToChar } from 'chessops/util';
+import { parseUci, roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
+import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { Board, boardAnimMs } from '@/board/Board';
+import { MoveBox } from '@/board/MoveBox';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { SquareBadge } from '@/board/square-overlay';
+import { PaneTabs } from '@/components/pane-tabs';
+import { usePaneSwipe } from '@/hooks/use-pane-swipe';
+import { addMove, createTree, getNode, mainlineFrom } from '@shared/tree';
+import type { MoveTree, NodeId } from '@shared/types';
+import { EngineBlock } from '@/engine/EnginePane';
 import { EvalBarSlot } from '@/engine/EvalBar';
+import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
@@ -30,6 +40,8 @@ import { useWideLayout } from '@/lib/media';
 import { navigate } from '@/lib/router';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/utils';
+import { useAnalysis } from '@/store/analysis';
+import { useEngine } from '@/store/engine';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
@@ -40,35 +52,40 @@ import { PageShell } from '@/components/page-shell';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
 import { CustomMaterialWindow } from '@/games/CustomMaterialWindow';
-import { outcomeTone } from './outcome';
+import { AnswerPanel } from '@/puzzles/AnswerPanel';
+import { outcomeTone } from '@/puzzles/outcome';
 import {
   CUSTOM_CLASS,
   DRILL_PRESETS,
-  afterMove,
   classLabel,
   positionOf,
   readCustomDraft,
   specFor,
-  squaresOf,
   writeCustomDraft,
   type DrillPosition,
 } from './drill';
 
 /**
  * The endgame drill: a won ending drawn at random, played out against
- * the tablebase's best defence, under Puzzles beside the trainer.
+ * the tablebase's best defence.
  *
- * Two pages. `#/puzzles/endgames` is the class picker, a list of the
- * material presets the games hunt already knows with how each has gone;
- * `#/puzzles/endgames/<class>` is the drill itself, the trainer's shape
- * (board column, one panel, the phone's bottom bar stepping through the
- * moves) with one difference in what it says: there is no answer to
- * find, only a win to keep. The verdict on every move is the server's
- * (server/endgameDrill.ts), which asks the tablebase; the page never
- * grades anything itself.
+ * Two pages. The picker is a list of the material presets the games
+ * hunt already knows; the drill itself is the trainer's page in every
+ * part that is not the puzzle: the same board column, the same Moves
+ * panel with its typed move box, the same pane strip and swipe on a
+ * phone, the same in-place analysis board and engine once the attempt
+ * is over, the same bottom bar. Two trainers that differ only where the
+ * task differs is what keeps them one page to learn. What differs: there
+ * is no answer to find, only a win to keep, and the verdict on every
+ * move is the server's (server/endgameDrill.ts), which asks the
+ * tablebase; the page grades nothing itself.
  */
 
-export function EndgameDrillPage({ params }: { params: string[] }) {
+/** Where the picker lives, and where the drill goes back to: a section
+    of its own, listed under Tools. */
+const PICKER = ['endgames'] as const;
+
+export function EndgamesView({ params }: { params: string[] }) {
   const classId = params[0];
   if (!classId) return <EndgamePicker />;
   return <Drill key={classId} classId={classId} />;
@@ -91,38 +108,36 @@ function EndgamePicker() {
     <PageShell width="medium">
       <PageHeader
         title={t('Endgame drills')}
-        back={() => navigate('puzzles', 'hub')}
+        back={() => navigate('more')}
         description={t(
           'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.',
         )}
       />
       <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-        {rows.map((id) => {
-          return (
-            <ListRow
-              key={id}
-              divided
-              onClick={() => {
-                // The custom class opens its editor first: a drill of
-                // nothing in particular is not a drill.
-                if (id === CUSTOM_CLASS) setEditing(true);
-                else navigate('puzzles', 'endgames', id);
-              }}
-            >
-              <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
-                {id === CUSTOM_CLASS ? (
-                  <SlidersHorizontal className="size-3.5" />
-                ) : (
-                  <Crown className="size-3.5" />
-                )}
-              </span>
-              <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
-                {t(classLabel(id))}
-              </span>
-              <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-            </ListRow>
-          );
-        })}
+        {rows.map((id) => (
+          <ListRow
+            key={id}
+            divided
+            onClick={() => {
+              // The custom class opens its editor first: a drill of
+              // nothing in particular is not a drill.
+              if (id === CUSTOM_CLASS) setEditing(true);
+              else navigate(...PICKER, id);
+            }}
+          >
+            <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
+              {id === CUSTOM_CLASS ? (
+                <SlidersHorizontal className="size-3.5" />
+              ) : (
+                <Crown className="size-3.5" />
+              )}
+            </span>
+            <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
+              {t(classLabel(id))}
+            </span>
+            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+          </ListRow>
+        ))}
       </div>
       {editing && (
         <CustomMaterialWindow
@@ -130,7 +145,7 @@ function EndgamePicker() {
           onApply={(draft) => {
             writeCustomDraft(draft);
             setEditing(false);
-            navigate('puzzles', 'endgames', CUSTOM_CLASS);
+            navigate(...PICKER, CUSTOM_CLASS);
           }}
           onClose={() => setEditing(false)}
         />
@@ -147,13 +162,6 @@ type Phase =
   | 'won'
   | 'threw'
   | 'error';
-
-/** One ply of the line, as the board shows it afterwards. */
-interface Step {
-  fen: string;
-  san: string;
-  lastMove: [string, string];
-}
 
 /**
  * What a failed request means for the reader, by the server's reason,
@@ -190,9 +198,23 @@ function explain(error: unknown): { message: string; settings: boolean } {
   }
 }
 
+/** The line so far as a move tree, the same shape the trainer's answer
+    panel and the analysis store take, so both read it unchanged. */
+function lineTree(fen: string, ucis: string[]): { tree: MoveTree; lastId: NodeId } {
+  let tree = createTree(fen);
+  let lastId = tree.rootId;
+  for (const uci of ucis) {
+    const result = addMove(tree, lastId, parseUci(uci)!);
+    tree = result.tree;
+    lastId = result.nodeId;
+  }
+  return { tree, lastId };
+}
+
 function Drill({ classId }: { classId: string }) {
   const [start, setStart] = useState<{ fen: string; side: Color } | null>(null);
-  const [steps, setSteps] = useState<Step[]>([]);
+  /** The line played, solver and defender alternating. */
+  const [ucis, setUcis] = useState<string[]>([]);
   const [phase, setPhase] = useState<Phase>('loading');
   const [error, setError] = useState<{ message: string; settings: boolean } | null>(null);
   /** The move that would have kept it, once one has been thrown. */
@@ -200,7 +222,7 @@ function Drill({ classId }: { classId: string }) {
   /** Mate distance in plies for the position now faced, where the
       table knows one. A distance, never a score. */
   const [dtm, setDtm] = useState<number | null>(null);
-  // Reviewing an earlier ply (null = live), via the bottom bar.
+  // Reviewing an earlier ply (null = live), via the panel or the bar.
   const [review, setReview] = useState<number | null>(null);
   const [flipped, setFlipped] = useState(false);
   const promotion = usePromotion((orig, dest, role) => void play(orig + dest + roleToChar(role)));
@@ -225,7 +247,7 @@ function Drill({ classId }: { classId: string }) {
     promotion.cancel();
     setPhase('loading');
     setStart(null);
-    setSteps([]);
+    setUcis([]);
     setBest(null);
     setDtm(null);
     setReview(null);
@@ -268,23 +290,29 @@ function Drill({ classId }: { classId: string }) {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     promotion.cancel();
-    setSteps([]);
+    setUcis([]);
     setBest(null);
     setReview(null);
     setPhase('playing');
   };
 
-  const live: DrillPosition | null = (() => {
-    if (!start) return null;
-    const last = steps[steps.length - 1];
-    return last ? positionOf(last.fen, last.lastMove) : positionOf(start.fen);
-  })();
-  const displayed: DrillPosition | null =
-    review !== null && start
-      ? review === 0
-        ? positionOf(start.fen)
-        : positionOf(steps[review - 1]!.fen, steps[review - 1]!.lastMove)
-      : live;
+  // The line as a tree, for the Moves panel and the analysis store; the
+  // ids down its mainline index the plies the bar walks.
+  const line = useMemo(() => (start ? lineTree(start.fen, ucis) : null), [start, ucis]);
+  const lineIds = useMemo(
+    () => (line ? mainlineFrom(line.tree, line.tree.rootId) : []),
+    [line],
+  );
+  const plies = ucis.length;
+  const positionAtPly = (ply: number): DrillPosition | null => {
+    if (!line) return null;
+    const fen = getNode(line.tree, ply === 0 ? line.tree.rootId : lineIds[ply - 1]!).fen;
+    const uci = ply === 0 ? null : ucis[ply - 1]!;
+    return positionOf(fen, uci ? [uci.slice(0, 2), uci.slice(2, 4)] : undefined);
+  };
+  const live = positionAtPly(plies);
+  const shownPly = review ?? plies;
+  const displayed = positionAtPly(shownPly);
   const reviewing = review !== null;
   const solverSide: Color = start?.side ?? 'white';
   const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
@@ -310,13 +338,7 @@ function Drill({ classId }: { classId: string }) {
       return;
     }
     if (mine !== seq.current) return;
-    // A won or thrown move is the line's last, and the server's FEN is
-    // the position it leaves; a held move is followed by the reply, so
-    // the server's FEN is the position after BOTH and the one in between
-    // is rebuilt from the move itself, for the bottom bar's walk.
-    const ownFen = verdict.verdict === 'held' ? (afterMove(live.fen, uci) ?? verdict.fen) : verdict.fen;
-    const own: Step = { fen: ownFen, san: verdict.san, lastMove: squaresOf(uci) };
-    setSteps((s) => [...s, own]);
+    setUcis((u) => [...u, uci]);
     if (verdict.verdict === 'won') {
       setPhase('won');
       return;
@@ -332,7 +354,7 @@ function Drill({ classId }: { classId: string }) {
     // are seen as two.
     after(Math.max(450, boardAnimMs()), () => {
       if (mine !== seq.current) return;
-      setSteps((s) => [...s, { fen: verdict.fen, san: reply.san, lastMove: squaresOf(reply.uci) }]);
+      setUcis((u) => [...u, reply.uci]);
       setPhase('playing');
     });
   };
@@ -351,7 +373,7 @@ function Drill({ classId }: { classId: string }) {
   }, [phase]);
 
   // Any progress snaps the board back to live.
-  useEffect(() => setReview(null), [steps.length, phase]);
+  useEffect(() => setReview(null), [plies, phase]);
 
   // Sound per shown position: a capture is the piece count dropping.
   const prevPieces = useRef<number | null>(null);
@@ -369,13 +391,53 @@ function Drill({ classId }: { classId: string }) {
   }, [displayed?.fen]);
 
   const goToPly = (target: number): void => {
-    const clamped = Math.max(0, Math.min(target, steps.length));
-    setReview(clamped >= steps.length ? null : clamped);
+    const clamped = Math.max(0, Math.min(target, plies));
+    setReview(clamped >= plies ? null : clamped);
   };
+
+  // In-place analysis once the attempt is over, the trainer's own: the
+  // line loads into the shared analysis store, the board becomes the
+  // analysis board and the panel column takes the moves and the engine.
+  // Entering is what turns the engine on; leaving turns it off.
+  const [analysing, setAnalysing] = useState(false);
+  const [engineOpen, setEngineOpen] = useState(false);
+  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
+  const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
+  const analysingRef = useRef(false);
+  analysingRef.current = analysing;
+  useEffect(
+    () => () => {
+      if (analysingRef.current) useEngine.getState().setEnabled(false);
+    },
+    [],
+  );
+  const ended = phase === 'won' || phase === 'threw';
+  useEffect(() => {
+    if (ended && line && !analysing) {
+      useAnalysis.setState({
+        tree: line.tree,
+        cursorId: line.lastId,
+        orientation,
+        pendingPromotion: null,
+        loadError: null,
+        gameHeaders: null,
+      });
+      setAnalysing(true);
+    }
+    if (!ended && analysing) {
+      setAnalysing(false);
+      setPane('info');
+      setEngineOpen(false);
+      useEngine.getState().setEnabled(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ended, line, analysing]);
+  useEffect(() => {
+    if (analysing) useEngine.getState().setEnabled(!wide || engineOpen);
+  }, [analysing, wide, engineOpen]);
 
   const label = t(classLabel(classId));
   const title = t('Endgame drill');
-  const ended = phase === 'won' || phase === 'threw';
   // The move that kept the win, drawn on the board once it was missed.
   const bestShapes: DrawShape[] =
     phase === 'threw' && best && !reviewing
@@ -388,6 +450,19 @@ function Drill({ classId }: { classId: string }) {
         ]
       : [];
 
+  const panes = [
+    { id: 'info' as const, label: t('Drill'), icon: Info },
+    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
+    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
+  ];
+  const paneSwipe = usePaneSwipe({
+    panes,
+    value: shownPane,
+    onChange: setPane,
+    enabled: !wide,
+  });
+
+  const lastSan = line && plies > 0 ? (getNode(line.tree, lineIds[plies - 1]!).san ?? '') : '';
   const status = (): { text: string; tone?: string } => {
     switch (phase) {
       case 'loading':
@@ -401,46 +476,90 @@ function Drill({ classId }: { classId: string }) {
       case 'threw':
         return {
           text: best
-            ? t('{san} lets the win slip. {best} keeps it.', {
-                san: steps[steps.length - 1]?.san ?? '',
-                best: best.san,
-              })
+            ? t('{san} lets the win slip. {best} keeps it.', { san: lastSan, best: best.san })
             : t('The win slipped'),
           tone: outcomeTone('missed'),
         };
       case 'error':
-        // The board's own box carries the sentence; the panel keeps
-        // the actions, so it is not said twice on one screen.
+        // The board's own box carries the sentence, as the trainer's does.
         return { text: '' };
     }
   };
-  const line = status();
+  const statusLine = status();
 
-  const panel = (
+  const dockEngine = wide && analysing && engineOpen;
+  const movesPanel = analysing ? (
+    <AnalysisMovesPanel engine={dockEngine} className="min-h-32 flex-auto" />
+  ) : line ? (
+    <AnswerPanel
+      className="min-h-32 flex-1 shrink"
+      tree={line.tree}
+      cursorId={lineIds[shownPly - 1] ?? line.tree.rootId}
+      onSelect={(id) => goToPly(id === line.tree.rootId ? 0 : lineIds.indexOf(id) + 1)}
+      onFlip={() => setFlipped((f) => !f)}
+      moveBox={
+        live && (
+          <MoveBox
+            fen={live.fen}
+            disabled={phase !== 'playing' || reviewing}
+            onMove={(uci) => void play(uci)}
+          />
+        )
+      }
+    />
+  ) : (
+    <Panel className="min-h-32 flex-1 shrink">
+      <PanelHeader title={t('Moves')} />
+      <p className="text-muted-foreground px-3 py-2.5 text-sm">{t('Finding a won ending…')}</p>
+    </Panel>
+  );
+
+  const drillPanel = (
     <Panel>
       <PanelHeader
         title={title}
         actions={
-          <span className="text-muted-foreground truncate text-xs">{label}</span>
+          <>
+            <span className="text-muted-foreground truncate text-xs">{label}</span>
+            {wide && analysing && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                active={engineOpen}
+                title={t('Engine')}
+                onClick={() => setEngineOpen((v) => !v)}
+              >
+                <Cpu className="size-3.5" />
+              </Button>
+            )}
+            {/* The way to the list, where the trainer has its dashboard. */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('All endings')}
+              onClick={() => navigate(...PICKER)}
+            >
+              <Crown className="size-3.5" />
+            </Button>
+          </>
         }
       />
       <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
         <div className="flex flex-col gap-0.5">
           {start && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
-              {solverSide === 'white' ? t('You play White') : t('You play Black')}
+              {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
           ) : phase === 'loading' ? (
             <div className="flex h-8 items-center">
               <Skeleton className="h-4 w-28" />
             </div>
           ) : null}
-          <p className={cn('text-sm leading-relaxed', line.tone ?? 'text-muted-foreground')}>
-            {line.text}
+          <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
+            {statusLine.text}
           </p>
           {/* A distance the small tables know, said as a fact about the
-              position rather than a hint about the move: it tells the
-              solver the win is getting closer or is not. */}
+              position rather than a hint about the move. */}
           {dtm !== null && (phase === 'playing' || phase === 'replying') && (
             <p className="text-muted-foreground text-xs">
               {t('Mate in {n}', { n: Math.ceil(dtm / 2) })}
@@ -448,55 +567,8 @@ function Drill({ classId }: { classId: string }) {
           )}
         </div>
 
-        {/* The line so far, in the moves face. Numbered from the side
-            that started, so a drill Black begins reads "1... Kd4"; the
-            numbers sit outside the buttons, since a space inside one is
-            whitespace a button collapses. */}
-        {steps.length > 0 && (
-          <p className="font-moves text-foreground flex flex-wrap items-baseline gap-x-1 gap-y-0.5 text-sm leading-relaxed">
-            {steps.map((step, i) => {
-              const ply = i + (solverSide === 'black' ? 1 : 0);
-              const number = Math.floor(ply / 2) + 1;
-              const prefix = ply % 2 === 0 ? `${number}.` : i === 0 ? `${number}...` : null;
-              return (
-                <span key={i} className="flex items-baseline gap-x-1">
-                  {prefix && <span className="text-muted-foreground">{prefix}</span>}
-                  <button
-                    type="button"
-                    className={cn(
-                      'rounded-sm px-1 py-0.5 transition-colors duration-100 hover:bg-accent',
-                      (review ?? steps.length) === i + 1 && 'bg-accent',
-                    )}
-                    onClick={() => goToPly(i + 1)}
-                  >
-                    {step.san}
-                  </button>
-                </span>
-              );
-            })}
-          </p>
-        )}
-
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
-          {phase === 'error' ? (
-            <>
-              {error?.settings && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="me-auto"
-                  onClick={() => navigate('settings', 'tablebase')}
-                >
-                  <Settings className="size-3.5" data-icon="inline-start" />
-                  {t('Open Settings')}
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" onClick={() => void draw()}>
-                <RotateCw className="size-3.5" data-icon="inline-start" />
-                {t('Try again')}
-              </Button>
-            </>
-          ) : ended ? (
+          {ended ? (
             <>
               <Button variant="secondary" size="sm" onClick={retry}>
                 <RotateCcw className="size-3.5" data-icon="inline-start" />
@@ -532,114 +604,130 @@ function Drill({ classId }: { classId: string }) {
           size="icon-sm"
           className="md:hidden"
           title={t('Back to endgame drills')}
-          onClick={() => navigate('puzzles', 'endgames')}
+          onClick={() => navigate(...PICKER)}
         >
           <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-foreground text-base font-semibold">{title}</h1>
       </div>
-      <div className={BOARD_WIDE_COLUMN}>
-        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-          <div className="hidden w-full items-end wide:flex wide:h-10" />
-          {/* The eval bar's lane, held open as the trainer holds it, so
-              this board sits where that one does. */}
-          <div className="flex w-full items-stretch gap-2">
-            <EvalBarSlot />
-            <div className="relative min-w-0 flex-1">
-              {displayed ? (
-                <Board
-                  fen={displayed.fen}
-                  orientation={orientation}
-                  dests={phase === 'playing' && !reviewing ? displayed.dests : new Map()}
-                  lastMove={displayed.lastMove}
-                  check={displayed.check}
-                  autoShapes={bestShapes}
-                  onMove={onMove}
-                />
-              ) : phase === 'error' ? (
-                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-card-ring">
-                  <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                    <p className="text-muted-foreground text-sm" role="alert">
-                      {error?.message}
-                    </p>
-                    {/* The way out is on the panel's footer, where every
-                        other action on this page is; the box only says
-                        what happened. */}
+      {analysing ? (
+        <AnalysisBoard />
+      ) : (
+        <div className={BOARD_WIDE_COLUMN}>
+          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+            <div className="hidden w-full items-end wide:flex wide:h-10" />
+            <div className="flex w-full items-stretch gap-2">
+              <EvalBarSlot />
+              <div className="relative min-w-0 flex-1">
+                {displayed ? (
+                  <Board
+                    fen={displayed.fen}
+                    orientation={orientation}
+                    dests={phase === 'playing' && !reviewing ? displayed.dests : new Map()}
+                    lastMove={displayed.lastMove}
+                    check={displayed.check}
+                    autoShapes={bestShapes}
+                    onMove={onMove}
+                  />
+                ) : phase === 'error' ? (
+                  // What happened, and a way to go again, in the trainer's
+                  // own box; the way to Settings joins it where that is the fix.
+                  <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-card-ring">
+                    <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
+                      <p className="text-muted-foreground text-sm" role="alert">
+                        {error?.message}
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {error?.settings && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => navigate('settings', 'tablebase')}
+                          >
+                            <Settings className="size-3.5" data-icon="inline-start" />
+                            {t('Open Settings')}
+                          </Button>
+                        )}
+                        <Button variant="secondary" size="sm" onClick={() => void draw()}>
+                          <RotateCw className="size-3.5" data-icon="inline-start" />
+                          {t('Try again')}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Skeleton className="board-box aspect-square rounded-xl" />
-              )}
-              {promotion.pending && (
-                <PromotionPicker
-                  color={promotion.pending.color}
-                  dest={promotion.pending.dest}
-                  orientation={orientation}
-                  onSelect={promotion.complete}
-                  onCancel={promotion.cancel}
-                />
-              )}
-              {!reviewing && phase === 'threw' && displayed?.lastMove && (
-                <SquareBadge
-                  square={displayed.lastMove[1]}
-                  orientation={orientation}
-                  className="bg-nag-blunder"
-                >
-                  ??
-                </SquareBadge>
-              )}
-              {!reviewing && phase === 'won' && displayed?.lastMove && (
-                <SquareBadge
-                  square={displayed.lastMove[1]}
-                  orientation={orientation}
-                  className="bg-nag-good"
-                >
-                  !
-                </SquareBadge>
-              )}
+                ) : (
+                  <Skeleton className="board-box aspect-square rounded-xl" />
+                )}
+                {promotion.pending && (
+                  <PromotionPicker
+                    color={promotion.pending.color}
+                    dest={promotion.pending.dest}
+                    orientation={orientation}
+                    onSelect={promotion.complete}
+                    onCancel={promotion.cancel}
+                  />
+                )}
+                {!reviewing && phase === 'threw' && displayed?.lastMove && (
+                  <SquareBadge
+                    square={displayed.lastMove[1]}
+                    orientation={orientation}
+                    className="bg-nag-blunder"
+                  >
+                    ??
+                  </SquareBadge>
+                )}
+                {!reviewing && phase === 'won' && displayed?.lastMove && (
+                  <SquareBadge
+                    square={displayed.lastMove[1]}
+                    orientation={orientation}
+                    className="bg-nag-good"
+                  >
+                    !
+                  </SquareBadge>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        {...paneSwipe.column}
       >
         <div className="hidden h-9 shrink-0 items-center gap-2 pr-[13px] wide:flex">
           <h1 className="text-foreground text-base font-semibold">{title}</h1>
-          <span className="min-w-0 flex-1" />
-          {wide && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('puzzles', 'endgames')}
-            >
-              <ChevronLeft className="size-3.5" data-icon="inline-start" />
-              {t('All endings')}
-            </Button>
-          )}
         </div>
-        {panel}
+        {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
+        {(wide || paneSwipe.shows('moves')) && movesPanel}
+        {!wide && analysing && paneSwipe.shows('engine') && (
+          <Panel className="min-h-0 flex-1">
+            <EngineBlock standalone />
+          </Panel>
+        )}
+        {(wide || paneSwipe.shows('info')) && drillPanel}
+        {analysing && <ColumnControls className="wide:hidden" />}
       </div>
 
       <MobileActionBar>
-        <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-          <Button variant="ghost" size="icon" disabled={steps.length === 0} onClick={() => goToPly(0)} title={t('First move')}>
-            <ChevronFirst className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={steps.length === 0} onClick={() => goToPly((review ?? steps.length) - 1)} title={t('Back')}>
-            <ChevronLeft className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly((review ?? steps.length) + 1)} title={t('Forward')}>
-            <ChevronRight className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(steps.length)} title={t('Go to the end')}>
-            <ChevronLast className="size-[1.1rem]" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
-            <FlipVertical2 className="size-[1.1rem]" />
-          </Button>
-        </div>
+        {analysing ? (
+          <BoardControls className="py-1.5" />
+        ) : (
+          <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
+            <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(0)} title={t('First move')}>
+              <ChevronFirst className="size-[1.1rem]" />
+            </Button>
+            <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(shownPly - 1)} title={t('Back')}>
+              <ChevronLeft className="size-[1.1rem]" />
+            </Button>
+            <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(shownPly + 1)} title={t('Forward')}>
+              <ChevronRight className="size-[1.1rem]" />
+            </Button>
+            <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title={t('Go to the end')}>
+              <ChevronLast className="size-[1.1rem]" />
+            </Button>
+          </div>
+        )}
       </MobileActionBar>
     </div>
   );

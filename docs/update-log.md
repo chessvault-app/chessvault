@@ -15,7 +15,7 @@ the game list's, and the vault path copies in the isolated build. An audit
 of the code for wasted work made the games list, reference search, index
 builds and the board's arrow keys do less per request.
 
-- **Endgame drills, under Puzzles.** Puzzles → Endgames lists the
+- **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
   against a rook, rook and pawns against a rook, and the rest, or a
   custom material of your own) with how each has gone. Opening one draws
@@ -25,8 +25,10 @@ builds and the board's arrow keys do less per request.
   one that keeps the win is answered, one that lets it slip ends the
   attempt and draws the move that would have kept it, and checkmate
   ends it the other way. Nothing is recorded: the drill is there to be
-  played, not tracked, and the phone's puzzle hub reaches it with a
-  fifth tile. The drill asks
+  played, not tracked. The page is the puzzle trainer's, board column,
+  moves panel with the typed move box, the phone's pane strip and bottom
+  bar, and the same in-place analysis board and engine once the attempt
+  is over. The drill asks
   whichever tablebase Settings names, the public Lichess server, a
   server of your own or your Syzygy files, and says plainly which of
   the three cases it is when none can answer, with a button that lands

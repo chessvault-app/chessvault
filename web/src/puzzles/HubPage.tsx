@@ -3,7 +3,6 @@ import {
   BookMarked,
   Check,
   ChevronRight,
-  Crown,
   Database,
   LayoutGrid,
   Puzzle,
@@ -911,7 +910,6 @@ function Hub() {
    * a few rows under it rather than a stub. Both moved up 1rem when the
    * phone's page header became a 44px row (it was the title's 28px):
    * at 812 the old history threshold left the column 7px over. The
-   * endgame drill's entry is the fifth tile, which costs no height; the
    * cards are capped and the three slots always drawn (see PuzzleCard),
    * and with those the same 51rem measures clean on the demo at 390
    * wide, banner dismissed: no overflow from 568 to 932, and the gap
@@ -1201,11 +1199,8 @@ function Hub() {
           />
         )}
 
-        {/* All five in one row, Train among them rather than a slab of
-            its own, and the endgame drill among them rather than a row
-            of its own: a full-width row above the buttons read as a
-            record to keep up with, and a drill is a thing to play when
-            an ending is what you feel like (lanph3re's call). It keeps the primary fill, because being the thing
+        {/* All four in one row, Train among them rather than a slab of
+            its own. It keeps the primary fill, because being the thing
             you came here to press is a fact about it that survives being
             the same size as its neighbours — and the board card above is
             still the larger invitation.
@@ -1221,16 +1216,15 @@ function Hub() {
             buttons over a skeleton page are an offer to press something on
             a page that is still deciding what it says — Train in
             particular, whose word underneath ("adaptive", a difficulty)
-            arrives with the answers. The row is the same five 64px tiles
+            arrives with the answers. The row is the same four 64px tiles
             either way, so nothing moves when they become real. At 320px
-            (the narrowest phone) five across leaves 51px a tile, which
-            nothing fits, so the row folds to three and two there and
-            only there (20.0625rem because Tailwind's max-* is exclusive:
-            `width < 321px` is what includes 320); from 321 up the label
-            steps down a size under 408px (see the tile's classes). */}
+            (the narrowest phone) four across leaves 66px a tile, which
+            "Puzzle books" does not fit, so the row folds to two by two
+            there and only there (20.0625rem because Tailwind's max-* is
+            exclusive: `width < 321px` is what includes 320). */}
         {skeleton && (
-          <div className="grid grid-cols-5 gap-2 max-[20.0625rem]:grid-cols-3">
-            {[0, 1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
                 className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-card-ring"
@@ -1242,13 +1236,12 @@ function Hub() {
           </div>
         )}
         {settled && (
-          <div className="grid grid-cols-5 gap-2 max-[20.0625rem]:grid-cols-3">
+          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
             {(
               [
                 ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
                 ['Puzzle books', BookMarked, false, () => navigate('puzzles', 'books')],
                 ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
-                ['Endgames', Crown, false, () => navigate('puzzles', 'endgames')],
                 [
                   ready ? 'Train' : 'Set up',
                   ready ? Puzzle : Database,
@@ -1270,11 +1263,7 @@ function Hub() {
                 onClick={go}
                 className={cn(
                   'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
-                  // text-xs under 408px: five across leaves a 65px tile on a
-                  // 390 phone, and "Dashboard" and "Endgames" at text-sm
-                  // need 68 (measured, 2 to 6px over from 360 to 390);
-                  // at 408 the tile is 69 and the size comes back.
-                  'px-1 text-center text-sm font-medium leading-tight transition-colors max-[25.4375rem]:text-xs',
+                  'px-1 text-center text-sm font-medium leading-tight transition-colors',
                   primary
                     ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
                     : 'bg-card border-card-ring hover:bg-accent',

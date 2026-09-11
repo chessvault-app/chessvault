@@ -751,9 +751,9 @@ export const ko: Record<string, string> = {
   // --- endgame drill ---------------------------------------------------
   // "Endgames" is the sidebar's sub-entry and the tile; the drill itself
   // and its picker share one word, 드릴, as the concept rule asks.
-  Endgames: '엔드게임',
   'Endgame drills': '엔드게임 드릴',
   'Endgame drill': '엔드게임 드릴',
+  'Play won endings against the tablebase': '테이블베이스를 상대로 이기는 엔드게임을 둡니다',
   'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.':
     '무작위 엔드게임에서 이기는 진영을 맡아 테이블베이스를 상대로 둡니다. 승리를 놓치는 수를 두면 시도가 끝나고, 승리를 지키는 수를 보여 줍니다.',
   'The demo reaches no tablebase. In the app, the drill plays against whichever tablebase Settings names.':
@@ -777,8 +777,6 @@ export const ko: Record<string, string> = {
     '체크메이트. 첫 수부터 마지막 수까지 승리를 지켰습니다.',
   '{san} lets the win slip. {best} keeps it.':
     '{san}은(는) 승리를 놓치는 수입니다. {best}이(가) 승리를 지킵니다.',
-  'You play White': '백 진영을 맡습니다',
-  'You play Black': '흑 진영을 맡습니다',
   'Mate in {n}': '{n}수 메이트',
   'Open Settings': '설정 열기',
   'Next ending': '다음 엔드게임',
