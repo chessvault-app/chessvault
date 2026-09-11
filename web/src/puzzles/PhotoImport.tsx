@@ -338,6 +338,10 @@ export function PhotoImport({
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
+                  // Cleared, so the same file can be chosen again: a
+                  // picture that would not decode leaves this box
+                  // standing, and picking it a second time fired nothing.
+                  e.target.value = '';
                   if (file) pick(file);
                 }}
               />

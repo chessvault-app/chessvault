@@ -510,6 +510,11 @@ export function PdfImport({
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
+                  // Cleared, so the same file can be chosen again: a PDF
+                  // this window refuses (unreadable, too big) leaves the
+                  // box standing, and a second pick of the file it just
+                  // refused fired no event at all.
+                  e.target.value = '';
                   if (file) void begin(file);
                 }}
               />

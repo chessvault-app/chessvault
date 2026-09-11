@@ -563,7 +563,14 @@ function CreateMenu() {
               type="file"
               accept=".pgn,application/x-chess-pgn,text/plain"
               className="hidden"
-              onChange={(e) => void pickFile(e.target.files?.[0])}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                // Cleared, so the same file can be chosen again: the PGN
+                // box is editable, and re-choosing the file it came from
+                // was the obvious way back to it and did nothing.
+                e.target.value = '';
+                void pickFile(file);
+              }}
             />
             {failure && (
               <p className="text-destructive text-sm" role="alert">
