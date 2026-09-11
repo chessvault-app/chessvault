@@ -21,7 +21,18 @@ An Insights page sums your own games.
   draw kinds, read from the move text and the file's termination line),
   results by game length and by the opponent's rating band. The last
   two need the game's length and ending in the index, so an existing
-  vault reindexes once on the first visit. The filters are the
+  vault reindexes once on the first visit.
+- **An engine pass judges your games in the background.** Start it from
+  the Insights page and the app's own engine walks every game of yours
+  move by move at a fixed depth, in the window, while you use the rest of
+  the app; a progress bar says how far it is and how long is left, Pause
+  and Resume do what they say, and a reload or a later visit picks up
+  where it stopped, since the server keeps every game finished. With
+  games analysed the page adds accuracy overall and by colour, time
+  control, outcome, phase, move number and month, the share of your
+  moves the engine calls good, inaccurate, a mistake or a blunder, and
+  an accuracy column on the openings table. The findings are kept apart
+  from the games index, so a reindex never costs the engine's hours. The filters are the
   explorer's (side, time control, kept only) plus a quick date range
   (the last week, month, or three, six or twelve months, or two dates
   of your own). The sums are made on the server in one pass over the
