@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { nativeBinary } from './nativeCore.ts';
-import { normalizeTablebase, type LichessTablebaseResponse, type TablebaseProbe } from './tablebase.ts';
+import { normalizeTablebase, type LichessTablebaseResponse, type TablebaseProbe } from './tablebaseAnswer.ts';
 
 /**
  * The tablebase answered from this machine's own Syzygy files.
