@@ -17,6 +17,7 @@ import { Field } from '@/components/ui/field';
 import { Globe } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { FilePicker } from '@/components/file-picker';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
@@ -329,7 +330,6 @@ function CreateMenu() {
   const [folder, setFolder] = useState('');
   const [pgnText, setPgnText] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
-  const filePick = useRef<HTMLInputElement>(null);
 
   // Import feedback: how many chapters the pasted/chosen PGN parses into.
   // Memoized — a Lichess export can be huge, and this component re-renders
@@ -548,30 +548,15 @@ function CreateMenu() {
               {/* Under the field it belongs to, left-aligned with it: it is
                   the other way to fill that box, not an action of the window,
                   and it sat in a row of its own arguing with Cancel/Import. */}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="mt-1 self-start"
-                onClick={() => filePick.current?.click()}
+              <FilePicker
+                accept=".pgn,application/x-chess-pgn,text/plain"
+                onFiles={([file]) => void pickFile(file)}
+                render={<Button variant="secondary" size="sm" className="mt-1 self-start" />}
               >
                 <FileUp className="size-3.5" data-icon="inline-start" />
                 {t('Choose file')}
-              </Button>
+              </FilePicker>
             </Field>
-            <input
-              ref={filePick}
-              type="file"
-              accept=".pgn,application/x-chess-pgn,text/plain"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                // Cleared, so the same file can be chosen again: the PGN
-                // box is editable, and re-choosing the file it came from
-                // was the obvious way back to it and did nothing.
-                e.target.value = '';
-                void pickFile(file);
-              }}
-            />
             {failure && (
               <p className="text-destructive text-sm" role="alert">
                 {failure}
