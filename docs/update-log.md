@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The licences page holds its shape while the list loads.** It drew
+  its name, one line of description and a stack of generic rows, then
+  grew the copyright line, the search field and the group chips when
+  the list arrived, and every row moved down to make room: 117px on a
+  desktop, 145px on a phone. Those now have their place from the first
+  paint, and the placeholder rows are the licence row's own height.
 - **A phone's page title scrolls away with the page.** It was a bar
   that stuck to the top and shrank the name as you scrolled, the iOS
   large title. It cost 44px of every list to keep a name on screen the

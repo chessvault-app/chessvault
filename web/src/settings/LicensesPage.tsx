@@ -5,7 +5,7 @@ import { FilterChip } from '@/components/filter-chip';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { SearchInput } from '@/components/text-fields';
-import { Arrival, SkeletonRows, useSlowLoad } from '@/components/skeletons';
+import { Arrival, Skeleton, SkeletonLicenceRows, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,14 @@ import { cn } from '@/lib/utils';
  *
  * In `vite dev` the plugin serves the same paths, so the page is never a
  * dead end before something has been built.
+ *
+ * Everything the inventory adds to the page has its place held before it
+ * lands: the copyright line under the title (year and holder as bars, the
+ * licence link live since its file is a fixed path), the search field,
+ * the chip row, and rows in the row's own shape. The page used to draw
+ * only the title, one line of description and a generic list placeholder,
+ * then grew the rest when the JSON arrived: measured on the demo, the
+ * list dropped 117px on a desktop and 145px on a phone at that moment.
  */
 
 interface Entry {
@@ -109,10 +117,20 @@ export function LicensesPage() {
         description={
           <>
             {t('Everything this app is built from, and the terms it is used under.')}
-            {inventory && (
+            {!failed && (
               <>
                 {' '}
-                Chess Vault © {inventory.year} {inventory.holder}.{' '}
+                Chess Vault ©{' '}
+                {inventory ? (
+                  `${inventory.year} ${inventory.holder}`
+                ) : (
+                  // A year and a holder's name, as words in the sentence.
+                  <>
+                    <Skeleton className="inline-block h-2.5 w-8 align-middle" />{' '}
+                    <Skeleton className="inline-block h-2.5 w-36 align-middle" />
+                  </>
+                )}
+                .{' '}
                 <a
                   className="text-primary underline underline-offset-2"
                   href={`${BASE}GPL-3.0.txt`}
@@ -122,20 +140,24 @@ export function LicensesPage() {
                   {t('GNU General Public License v3')}
                 </a>
                 {' · '}
-                <a
-                  className="text-primary underline underline-offset-2"
-                  href={inventory.repo}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t('Source code')}
-                </a>
+                {inventory ? (
+                  <a
+                    className="text-primary underline underline-offset-2"
+                    href={inventory.repo}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('Source code')}
+                  </a>
+                ) : (
+                  <span>{t('Source code')}</span>
+                )}
               </>
             )}
           </>
         }
         search={
-          inventory && (
+          !failed && (
             <SearchInput
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -146,19 +168,41 @@ export function LicensesPage() {
           )
         }
       />
-      {inventory && (
+      {!failed && (
         <div className="flex flex-col gap-2">
           <ChipRow>
-            <FilterChip label="All" count={total} active={group === ''} onClick={() => setGroup('')} />
-            {groups.map(([g, n]) => (
-              <FilterChip
-                key={g}
-                label={g}
-                count={n}
-                active={group === g}
-                onClick={() => setGroup(group === g ? '' : g)}
-              />
-            ))}
+            {inventory ? (
+              <>
+                <FilterChip label="All" count={total} active={group === ''} onClick={() => setGroup('')} />
+                {groups.map(([g, n]) => (
+                  <FilterChip
+                    key={g}
+                    label={g}
+                    count={n}
+                    active={group === g}
+                    onClick={() => setGroup(group === g ? '' : g)}
+                  />
+                ))}
+              </>
+            ) : (
+              // The All chip with its count still to come, and two group
+              // chips' worth of pill (a chip is text-sm, py-1 and its
+              // border; 36px under a coarse pointer).
+              <>
+                <FilterChip
+                  label={
+                    <>
+                      {t('All')}
+                      <Skeleton className="ml-1 inline-block h-2.5 w-6 align-middle" />
+                    </>
+                  }
+                  active
+                  onClick={() => {}}
+                />
+                <Skeleton className="h-7.5 w-24 shrink-0 rounded-full pointer-coarse:h-9" />
+                <Skeleton className="h-7.5 w-20 shrink-0 rounded-full pointer-coarse:h-9" />
+              </>
+            )}
           </ChipRow>
         </div>
       )}
@@ -166,7 +210,7 @@ export function LicensesPage() {
       {failed ? (
         <p className="text-muted-foreground text-sm">{t('The licence list could not be loaded.')}</p>
       ) : !inventory ? (
-        slow && <SkeletonRows rows={10} />
+        slow && <SkeletonLicenceRows rows={10} />
       ) : shown.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('Nothing matches this filter.')}</p>
       ) : (

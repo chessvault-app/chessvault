@@ -144,6 +144,40 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
 }
 
 /**
+ * The licences page's rows: a chevron, a package name, its version and a
+ * licence pill on the page's own `min-h-9 px-2 py-1.5` button, which is
+ * not ListRow's dense rung. The page drew SkeletonRows for a while, and
+ * the demo measured the difference: ten placeholders at 33px against rows
+ * of 37 on a desktop, and 44 (the ListRow coarse-pointer floor that
+ * SkeletonRows carries) against the same 37 on a phone, where this row
+ * keeps to the 36px floor.
+ *
+ * Two boxes a row, as the page draws it: the hairline is the list item's
+ * and the 36px floor is the button's inside it. With the floor on the
+ * divided box itself, the border came out of the 36 and every row was a
+ * pixel short.
+ */
+export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; className?: string }) {
+  return (
+    <Loading className={cn('divide-border divide-y', className)}>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i}>
+          <div className="flex min-h-9 items-center gap-2 px-2 py-1.5">
+            <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+            <div className="flex h-5 min-w-0 flex-1 items-center">
+              <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+            </div>
+            <Skeleton className="h-2.5 w-10 shrink-0" />
+            {/* The licence pill: one text-xs line, py-px and its border. */}
+            <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </Loading>
+  );
+}
+
+/**
  * The count line under a page title ("12 studies"), while the count is
  * not known. PageHeader draws that line only when given one, and every
  * shelf gave it nothing until its list had arrived: the search field and
