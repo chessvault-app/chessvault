@@ -22,8 +22,13 @@ An Insights page sums your own games.
   and results by game length. The last two need the game's length and
   ending in the index, so an existing vault reindexes once on the first
   visit.
-- **An engine pass judges your games in the background.** Start it from
-  the Insights page and the app's own engine walks every game of yours
+- **An engine pass judges your games in the background, and the page
+  waits for it.** Insights shows its tables only once every game of
+  yours has been through the engine, so no figure on it mixes judged
+  and unjudged games; until then, and while a run is going, the page
+  draws its outline and a strip under the title says how far the pass
+  is. Start it from the page's header and the app's own engine walks
+  every game of yours
   move by move at a fixed depth, in the window, while you use the rest of
   the app; a progress bar says how far it is and how long is left, Pause
   and Resume do what they say, and a reload or a later visit picks up

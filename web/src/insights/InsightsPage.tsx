@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { PASS_DEPTH, useAnalysisJob } from './analysisJob';
 import { ChartColumn } from 'lucide-react';
@@ -195,15 +195,22 @@ export function InsightsPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  // The engine pass changes the answer while the page is open: every
-  // game it finishes moves the accuracy figures. Re-asked a beat after
-  // each, coalesced, so a fast pass does not ask once per second.
-  const analysed = useAnalysisJob((s) => s.analysed);
+  // The page is GATED on the engine pass (lanph3re's call): its tables
+  // stand only once every game of yours has been through the engine, so
+  // no figure on it is ever a mixture of judged and unjudged games. Until
+  // the pass has answered how far it is, while games are owed, and while
+  // a run is going, the page draws its outline and the strip under the
+  // header says how far along the pass is. When the gate opens the
+  // report is asked again, since it was fetched before the last games
+  // landed.
+  const job = useAnalysisJob();
+  const owed = Math.max(0, job.total - job.analysed);
+  const gated = !job.known || job.status === 'running' || (job.total > 0 && owed > 0);
+  const wasGated = useRef(gated);
   useEffect(() => {
-    if (analysed === 0) return;
-    const timer = setTimeout(() => setAttempt((n) => n + 1), 1500);
-    return () => clearTimeout(timer);
-  }, [analysed]);
+    if (wasGated.current && !gated) setAttempt((n) => n + 1);
+    wasGated.current = gated;
+  }, [gated]);
   useEffect(() => {
     const controller = new AbortController();
     let again: ReturnType<typeof setTimeout> | null = null;
@@ -229,6 +236,13 @@ export function InsightsPage() {
       if (again) clearTimeout(again);
     };
   }, [query, attempt]);
+
+  // The pass's count is asked again with every report: the first answer
+  // can come while the index is still walking a big vault, and the
+  // report's own re-ask (see `partial`) is when the totals settle.
+  useEffect(() => {
+    if (report !== null) void useAnalysisJob.getState().refresh();
+  }, [report]);
 
   const [shape] = useState(readShape);
   useEffect(() => {
@@ -338,8 +352,8 @@ export function InsightsPage() {
             {t('Retry')}
           </Button>
         </div>
-      ) : report === null ? (
-        slow && <InsightsSkeleton shape={shape} />
+      ) : report === null || (gated && job.total > 0) ? (
+        (slow || gated) && <InsightsSkeleton shape={shape} />
       ) : report.games === 0 ? (
         narrowed ? (
           <EmptyState
@@ -886,7 +900,9 @@ function PassStrip() {
   const running = job.status === 'running';
   const paused = job.status === 'paused' && owed > 0;
   const failed = job.status === 'error';
-  if (!running && !paused && !failed) return null;
+  // Idle with games owed: the page is gated on them, and says so here.
+  const waiting = !running && !paused && !failed && job.known && owed > 0;
+  if (!running && !paused && !failed && !waiting) return null;
   const share = job.total === 0 ? 0 : (100 * job.analysed) / job.total;
   const minutesLeft =
     running && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
@@ -904,6 +920,13 @@ function PassStrip() {
           <span>{minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}</span>
         )}
         {paused && <span>{t('Paused')}</span>}
+        {waiting && (
+          <span>
+            {t('This page fills once every game has been through the engine pass: {n} to go.', {
+              n: exact.format(owed),
+            })}
+          </span>
+        )}
         {failed && job.error && (
           <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
         )}

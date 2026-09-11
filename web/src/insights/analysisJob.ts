@@ -47,7 +47,10 @@ export type PassStatus = 'idle' | 'running' | 'paused' | 'done' | 'error';
 
 interface PassState {
   status: PassStatus;
-  /** From the server: games with a record that fits, and games owed. */
+  /** From the server: games with a record that fits, and games owed.
+      `known` is false until the first answer, so a page gated on the
+      pass does not draw its tables for the beat before it arrives. */
+  known: boolean;
   analysed: number;
   total: number;
   /** This run's own count and clock, for the rate. */
@@ -77,6 +80,7 @@ interface Owed {
 
 export const useAnalysisJob = create<PassState>()((set, get) => ({
   status: 'idle',
+  known: false,
   analysed: 0,
   total: 0,
   doneThisRun: 0,
@@ -89,6 +93,7 @@ export const useAnalysisJob = create<PassState>()((set, get) => ({
     try {
       const status = await api<{ analysed: number; total: number }>('/api/mygames/analysis/status');
       set((s) => ({
+        known: true,
         analysed: status.analysed,
         total: status.total,
         // A pass that finished stays "done" until something is owed again.

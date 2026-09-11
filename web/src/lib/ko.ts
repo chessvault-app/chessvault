@@ -2268,4 +2268,5 @@ export const ko: Record<string, string> = {
   'Analyse games': '게임 분석',
   'Resume analysis': '분석 이어서 하기',
   'Paused': '일시정지됨',
+  'This page fills once every game has been through the engine pass: {n} to go.': '이 페이지는 모든 게임이 엔진 분석을 거치면 채워집니다. {n}개 남았습니다.',
 };
