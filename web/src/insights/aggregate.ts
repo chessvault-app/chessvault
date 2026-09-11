@@ -102,9 +102,10 @@ export function familyOf(name: string): string {
 }
 
 export interface OpeningRow extends Tally {
-  /** The header ECO of a row with no name; null on a named family, which
-      spans codes (the Sicilian runs B20 to B99) or would show one code
-      beside families that cannot. */
+  /** The ECO code the row's games share, or the range a family spans
+      ("B20\u2013B99" for the Sicilian): the app prints the code with the
+      name everywhere (lib/opening.ts), and a range is what a family's
+      code is. Null only for a nameless row with no header code. */
   eco: string | null;
   /** The family, or null for games that reached no named position. */
   name: string | null;
@@ -129,12 +130,13 @@ export interface OpeningRow extends Tally {
  * alone.
  */
 export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
-  const out = new Map<string, OpeningRow & { exitPlySum: number; accSum: number; accN: number }>();
+  const out = new Map<string, OpeningRow & { exitPlySum: number; accSum: number; accN: number; ecos: Set<string> }>();
   for (const cell of cells) {
     const family = cell.name === null ? null : familyOf(cell.name);
     const id = family === null ? `${cell.eco ?? ''}\t` : `\t${family}`;
     const row = out.get(id) ?? {
-      eco: family === null ? cell.eco : null,
+      eco: cell.eco,
+      ecos: new Set<string>(),
       name: family,
       games: 0,
       w: 0,
@@ -150,6 +152,7 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
       accN: 0,
       accuracy: null,
     };
+    if (cell.eco !== null) row.ecos.add(cell.eco);
     row.accSum += cell.accSum;
     row.accN += cell.accN;
     row.games += cell.games;
@@ -167,11 +170,20 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
     out.set(id, row);
   }
   return [...out.values()]
-    .map(({ exitPlySum, ...row }) => ({
-      ...row,
-      meanExitPly: row.exits === 0 ? null : exitPlySum / row.exits,
-      accuracy: row.accN === 0 ? null : row.accSum / row.accN,
-    }))
+    .map(({ exitPlySum, ecos, ...row }) => {
+      const codes = [...ecos].sort();
+      return {
+        ...row,
+        eco:
+          codes.length === 0
+            ? null
+            : codes.length === 1
+              ? codes[0]!
+              : `${codes[0]}\u2013${codes[codes.length - 1]}`,
+        meanExitPly: row.exits === 0 ? null : exitPlySum / row.exits,
+        accuracy: row.accN === 0 ? null : row.accSum / row.accN,
+      };
+    })
     .sort((a, b) => b.games - a.games || (a.name ?? a.eco ?? '').localeCompare(b.name ?? b.eco ?? ''));
 }
 

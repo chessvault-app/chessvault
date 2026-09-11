@@ -2201,9 +2201,6 @@ export const ko: Record<string, string> = {
   'Your move left book first in {you} of {n} games, on average at move {m}.':
     '{n}게임 중 {you}게임에서 내 수가 먼저 북을 벗어났고, 평균 {m}수째였습니다.',
   'No game of yours has left the catalogue by your own move yet.': '아직 내 수로 카탈로그를 벗어난 게임이 없습니다.',
-  'Leaves at': '벗어나는 수',
-  'You / them': '나 / 상대',
-  'move {n}': '{n}수째',
   // The quick date ranges on the insights rail.
   'Played within': '기간',
   'Any time': '모든 기간',
@@ -2253,7 +2250,6 @@ export const ko: Record<string, string> = {
   '{n} centipawns lost per move': '한 수당 평균 {n}센티폰 손실',
   'By phase': '단계별',
   'By move number': '수 번호별',
-  'Moves {a} to {b}': '{a}수에서 {b}수',
   'Move quality': '수의 질',
   'Verdict': '판정',
   'Share': '비율',
@@ -2272,4 +2268,7 @@ export const ko: Record<string, string> = {
   'This page fills once your games have been through the engine pass. It runs in this window while the app is open, and picks up where it stopped.': '이 페이지는 내 게임이 엔진 분석을 거치면 채워집니다. 앱이 열려 있는 동안 이 창에서 돌아가며, 멈춘 곳에서 이어서 합니다.',
   'Analyse new games': '새 게임 분석',
   '{n} newer games are not analysed yet: their results count, their accuracy does not.': '새로 생긴 게임 {n}개는 아직 분석하지 않았습니다. 결과는 집계되지만 정확도에는 들어가지 않습니다.',
+  'Leaves at move': '벗어나는 수',
+  'You': '나',
+  'Them': '상대',
 };

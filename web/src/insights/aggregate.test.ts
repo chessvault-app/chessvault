@@ -66,8 +66,9 @@ describe('insights arithmetic', () => {
   it('gathers a family across colours and lines, and keeps the earliest exit', () => {
     const rows = openingRows(CELLS);
     expect(rows.map((r) => r.name)).toEqual(['Italian Game', 'Sicilian Defense', null]);
-    // A family shows no code; the nameless row keeps its header ECO.
-    expect(rows.map((r) => r.eco)).toEqual([null, null, 'D00']);
+    // One line, its code; two Sicilian lines, the range they span; the
+    // nameless row keeps its header ECO.
+    expect(rows.map((r) => r.eco)).toEqual(['C50', 'B22\u2013B90', 'D00']);
     expect(rows[1]!.games).toBe(5);
     // Accuracy averages over the analysed games alone.
     expect(rows[1]!.accuracy).toBe(85);

@@ -552,11 +552,14 @@ function Tables({ report }: { report: Report }) {
                   <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap">
                     {t('Games')}
                   </th>
-                  <th scope="col" className="w-24 py-1 pr-2 text-right font-medium whitespace-nowrap">
-                    {t('Leaves at')}
+                  <th scope="col" className="w-28 py-1 pr-2 text-right font-medium whitespace-nowrap">
+                    {t('Leaves at move')}
                   </th>
-                  <th scope="col" className="w-28 py-1 text-right font-medium whitespace-nowrap">
-                    {t('You / them')}
+                  <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap">
+                    {t('You')}
+                  </th>
+                  <th scope="col" className="w-12 py-1 text-right font-medium whitespace-nowrap">
+                    {t('Them')}
                   </th>
                 </tr>
               </thead>
@@ -569,12 +572,11 @@ function Tables({ report }: { report: Report }) {
                     <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
                       {exact.format(row.exits)}
                     </td>
-                    <td className="py-(--row-py-tight) pr-2 text-right tabular-nums">
-                      {row.meanExitPly === null ? '' : t('move {n}', { n: moveOfPly(row.meanExitPly).toFixed(1) })}
+                    <td className="py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                      {row.meanExitPly === null ? '' : moveOfPly(row.meanExitPly).toFixed(1)}
                     </td>
-                    <td className="py-(--row-py-tight) text-right font-mono tabular-nums">
-                      {row.youLeft} / {row.theyLeft}
-                    </td>
+                    <td className="py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">{row.youLeft}</td>
+                    <td className="py-(--row-py-tight) text-right font-mono tabular-nums">{row.theyLeft}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1075,11 +1077,14 @@ function MeanTable({
   caption,
   rows,
   unit = 'games',
+  mono = false,
 }: {
   caption: string;
   rows: { key: string; label: string; mean: number | null; n: number }[];
   /** What the count counts: analysed games, or the owner's judged moves. */
   unit?: 'games' | 'moves';
+  /** A label that is a figure (a range of move numbers) takes the mono face. */
+  mono?: boolean;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -1103,7 +1108,7 @@ function MeanTable({
       <tbody>
         {rows.map((row, at) => (
           <tr key={row.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
-            <td className="py-(--row-py-tight) pr-2">{row.label}</td>
+            <td className={cn('py-(--row-py-tight) pr-2', mono && 'font-mono tabular-nums')}>{row.label}</td>
             <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
               {exact.format(row.n)}
             </td>
@@ -1123,13 +1128,16 @@ function MeanTable({
   );
 }
 
-const QUALITY: { key: keyof Report['analysis']['quality']; label: string; ink: string }[] = [
-  { key: 'brilliant', label: 'Brilliant', ink: 'bg-nag-brilliant' },
-  { key: 'good', label: 'Good', ink: 'bg-nag-good' },
-  { key: 'book', label: 'Theory', ink: 'bg-nag-book' },
-  { key: 'inaccuracy', label: 'Inaccuracy', ink: 'bg-nag-dubious' },
-  { key: 'mistake', label: 'Mistake', ink: 'bg-nag-mistake' },
-  { key: 'blunder', label: 'Blunder', ink: 'bg-nag-blunder' },
+/** The verdicts, in the inks the move tree and the review strip give
+    them, with the strip's own glyph beside each word so the two read as
+    one vocabulary. Good is a judged move with no mark; theory has none. */
+const QUALITY: { key: keyof Report['analysis']['quality']; label: string; glyph: string; ink: string }[] = [
+  { key: 'brilliant', label: 'Brilliant', glyph: '!!', ink: 'bg-nag-brilliant' },
+  { key: 'good', label: 'Good', glyph: '', ink: 'bg-nag-good' },
+  { key: 'book', label: 'Theory', glyph: '', ink: 'bg-nag-book' },
+  { key: 'inaccuracy', label: 'Inaccuracy', glyph: '?!', ink: 'bg-nag-dubious' },
+  { key: 'mistake', label: 'Mistake', glyph: '?', ink: 'bg-nag-mistake' },
+  { key: 'blunder', label: 'Blunder', glyph: '??', ink: 'bg-nag-blunder' },
 ];
 
 /**
@@ -1188,6 +1196,7 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
                   <span className="flex items-center gap-2">
                     <span aria-hidden className={cn('inline-block size-2.5 shrink-0 rounded-xs', q.ink)} />
                     {t(q.label)}
+                    {q.glyph && <span className="text-muted-foreground font-mono text-xs">{q.glyph}</span>}
                   </span>
                 </td>
                 <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
@@ -1207,8 +1216,9 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
         />
         <MeanTable
           caption={t('By move number')}
-          rows={rows(analysis.byMove, (r) => r.band, (r) => t('Moves {a} to {b}', { a: r.band, b: r.band + 9 }))}
+          rows={rows(analysis.byMove, (r) => r.band, (r) => `${r.band}\u2013${r.band + 9}`)}
           unit="moves"
+          mono
         />
       </CardContent>
     </Card>
