@@ -539,24 +539,42 @@ describe('my games insights', () => {
   let dir: string;
   let app: Hono;
 
-  const g = (o: { white: string; black: string; result: string; tc: string; moves: string }): string =>
-    `[White "${o.white}"]\n[Black "${o.black}"]\n[Result "${o.result}"]\n[UTCDate "2026.05.01"]\n[TimeControl "${o.tc}"]\n\n${o.moves} ${o.result}\n`;
+  const g = (o: {
+    white: string;
+    black: string;
+    result: string;
+    tc: string;
+    moves: string;
+    date?: string;
+    elo?: [number, number];
+    ended?: string;
+  }): string =>
+    `[White "${o.white}"]\n[Black "${o.black}"]\n[Result "${o.result}"]\n[UTCDate "${o.date ?? '2026.05.01'}"]\n[TimeControl "${o.tc}"]\n` +
+    (o.elo ? `[WhiteElo "${o.elo[0]}"]\n[BlackElo "${o.elo[1]}"]\n` : '') +
+    (o.ended ? `[Termination "${o.ended}"]\n` : '') +
+    `\n${o.moves} ${o.result}\n`;
 
   const ARCHIVE = [
     // As White, rapid, won. 4.Ke2 is nobody's theory: I leave book at ply 6.
-    g({ white: 'me', black: 'foe', result: '1-0', tc: '600', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. Ke2 d6' }),
-    // As White, rapid, lost. 4...Kf8 is theirs: they leave at ply 7.
-    g({ white: 'me', black: 'foe', result: '0-1', tc: '600', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. Nc3 Kf8 5. d3' }),
-    // As Black, blitz, drawn, queens off by move 4: the material fixture.
-    g({ white: 'foe', black: 'me', result: '1/2-1/2', tc: '180+2', moves: '1. d4 d5 2. c4 dxc4 3. Qa4+ Qd7 4. Qxd7+ Nxd7 5. Nf3' }),
-    // As Black, no time control, won, with an en passant capture.
-    g({ white: 'foe', black: 'me', result: '0-1', tc: '-', moves: '1. e4 Nf6 2. e5 d5 3. exd6 exd6' }),
+    // A Friday in May, a 1650 opponent, a resignation the header names.
+    g({ white: 'me', black: 'foe', result: '1-0', tc: '600', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. Ke2 d6', date: '2026.05.01', elo: [1500, 1650], ended: 'me won by resignation' }),
+    // As White, rapid, lost. 4...Kf8 is theirs: they leave at ply 7. On time.
+    g({ white: 'me', black: 'foe', result: '0-1', tc: '600', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. Nc3 Kf8 5. d3', date: '2026.05.02', elo: [1500, 1710], ended: 'foe won on time' }),
+    // As Black, blitz, drawn: a different colour, speed and opening. June.
+    g({ white: 'foe', black: 'me', result: '1/2-1/2', tc: '180+2', moves: '1. d4 d5 2. c4 dxc4 3. Qa4+ Qd7 4. Qxd7+ Nxd7 5. Nf3', date: '2026.06.10', elo: [1420, 1500], ended: 'Game drawn by agreement' }),
+    // As Black, no time control, no date, no ratings, won.
+    g({ white: 'foe', black: 'me', result: '0-1', tc: '-', moves: '1. e4 Nf6 2. e5 d5 3. exd6 exd6', date: '????.??.??' }),
   ].join('\n');
 
   const report = async (query = ''): Promise<{
     games: number;
     named: boolean;
     partial: boolean;
+    months: { month: string; w: number; d: number; l: number }[];
+    weekdays: { day: number; w: number; d: number; l: number }[];
+    opponents: { band: number; w: number; d: number; l: number }[];
+    endings: { ending: string; w: number; d: number; l: number }[];
+    lengths: { band: number; w: number; d: number; l: number }[];
     cells: {
       side: string;
       speed: string;
@@ -629,6 +647,45 @@ describe('my games insights', () => {
     expect([italian.youLeft, italian.theyLeft]).toEqual([1, 1]);
   });
 
+  it('cuts the same games by month, weekday, opponent band, ending and length', async () => {
+    const r = await report();
+    expect(r.months).toEqual([
+      { month: '2026-05', w: 1, d: 0, l: 1 },
+      { month: '2026-06', w: 0, d: 1, l: 0 },
+    ]);
+    // 1 May 2026 is a Friday (5), 2 May a Saturday (6), 10 June a Wednesday (3).
+    expect(r.weekdays).toEqual([
+      { day: 3, w: 0, d: 1, l: 0 },
+      { day: 5, w: 1, d: 0, l: 0 },
+      { day: 6, w: 0, d: 0, l: 1 },
+    ]);
+    // The opponent's rating, not mine: 1650 and 1710 share the 1600 band.
+    expect(r.opponents).toEqual([
+      { band: 1400, w: 0, d: 1, l: 0 },
+      { band: 1600, w: 1, d: 0, l: 1 },
+    ]);
+    expect(r.endings).toEqual([
+      { ending: 'agreement', w: 0, d: 1, l: 0 },
+      // The undated game names no ending and is decisive: a resignation.
+      { ending: 'resignation', w: 2, d: 0, l: 0 },
+      { ending: 'timeout', w: 0, d: 0, l: 1 },
+    ]);
+    // Every fixture game is under twenty moves.
+    expect(r.lengths).toEqual([{ band: 0, w: 2, d: 1, l: 1 }]);
+  });
+
+  it('reindexes a database that predates the length and ending columns', async () => {
+    expect((await report()).games).toBe(4);
+    const old = new Database(join(dir, 'index.sqlite'));
+    old.exec('ALTER TABLE games DROP COLUMN plies');
+    old.exec('ALTER TABLE games DROP COLUMN ending');
+    old.close();
+    app = new Hono().route('/api', myGamesApi(join(dir, 'games'), join(dir, 'index.sqlite')));
+    const r = await report();
+    expect(r.games).toBe(4);
+    expect(r.endings.length).toBe(3);
+  });
+
   it('takes the same filters as the explorer', async () => {
     expect((await report('side=black')).cells.every((c) => c.side === 'black')).toBe(true);
     expect((await report('speeds=blitz')).games).toBe(1);
@@ -641,6 +698,16 @@ describe('my games insights', () => {
     const res = await solo.request('/api/mygames/insights');
     expect(res.status).toBe(200);
     // Named is the catalogue's presence, not the vault's: it ships with the app.
-    expect(await res.json()).toEqual({ games: 0, named: true, partial: false, cells: [] });
+    expect(await res.json()).toEqual({
+      games: 0,
+      named: true,
+      partial: false,
+      cells: [],
+      months: [],
+      weekdays: [],
+      opponents: [],
+      endings: [],
+      lengths: [],
+    });
   });
 });

@@ -7,7 +7,7 @@ import { parseFen } from 'chessops/fen';
 import { PgnParser } from 'chessops/pgn';
 import { makeSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
-import { indexGame, pathUser, type Speed } from '../shared/gameIndex.ts';
+import { indexGame, pathUser, type Ending, type Speed } from '../shared/gameIndex.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { openingForKey, openingsBook } from './openings.ts';
 import { resolve } from 'node:path';
@@ -52,6 +52,29 @@ export interface MyGamesFilters {
   to?: string;
   /** Only the curated collection, rather than every archived game. */
   collectionOnly?: boolean;
+}
+
+/** Wins, draws and losses from the owner's side, under one key. */
+export interface InsightsTally {
+  w: number;
+  d: number;
+  l: number;
+}
+
+/** The report's other cuts of the same games, each a small list. */
+export interface InsightsExtras {
+  /** Games per calendar month, `YYYY-MM`, in order; months with no
+      games are absent (the page fills them). */
+  months: ({ month: string } & InsightsTally)[];
+  /** Games per day of the week, 0 = Sunday, only days that have any. */
+  weekdays: ({ day: number } & InsightsTally)[];
+  /** Games by the OPPONENT's header rating, in 200-point bands named by
+      their floor; games whose opponent had no rating are absent. */
+  opponents: ({ band: number } & InsightsTally)[];
+  /** How the games ended, per outcome from the owner's side. */
+  endings: { ending: Ending; w: number; d: number; l: number }[];
+  /** Games by length, in whole moves: the band's floor in moves. */
+  lengths: ({ band: number } & InsightsTally)[];
 }
 
 /** One aggregate cell of the insights report: a colour, a time control
@@ -121,7 +144,12 @@ const SCHEMA = `
     site TEXT,
     /* One game, two files — see stamp(). The losing copy stays indexed
        and answers nothing: every query goes through where(). */
-    shadowed INTEGER NOT NULL DEFAULT 0
+    shadowed INTEGER NOT NULL DEFAULT 0,
+    /* The whole game's length and how it ended (shared/gameIndex.ts),
+       for the insights page. Null on rows indexed before the columns
+       existed; open() reindexes those. */
+    plies INTEGER,
+    ending TEXT
   );
   CREATE TABLE IF NOT EXISTS plies (
     pos INTEGER NOT NULL,
@@ -198,6 +226,16 @@ class MyGamesIndex {
       if (!columns.some((c) => c.name === 'shadowed')) {
         db.exec('ALTER TABLE games ADD COLUMN shadowed INTEGER NOT NULL DEFAULT 0');
         this.stamp(db);
+      }
+      // `plies` and `ending` came later still. Unlike `shadowed` they
+      // cannot be stamped from what is in the table: both are read from
+      // the PGN. So the files table is emptied, which makes the next
+      // sync treat every file as new and reindex it, at the first-sync
+      // cost the header quotes, once, and mostly in the background walk.
+      if (!columns.some((c) => c.name === 'plies')) {
+        db.exec('ALTER TABLE games ADD COLUMN plies INTEGER');
+        db.exec('ALTER TABLE games ADD COLUMN ending TEXT');
+        db.exec('DELETE FROM files');
       }
       const max = db.prepare('SELECT MAX(id) AS id FROM games').get() as { id: number | null };
       this.nextId = (max.id ?? 0) + 1;
@@ -377,8 +415,8 @@ class MyGamesIndex {
     const user = pathUser(rel);
     const collection = rel.startsWith('collection/') ? 1 : 0;
     const insertGame = db.prepare(`
-      INSERT INTO games (id, file, idx, white, black, white_elo, black_elo, result, date, speed, eco, user_side, collection, site)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO games (id, file, idx, white, black, white_elo, black_elo, result, date, speed, eco, user_side, collection, site, plies, ending)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const insertPly = db.prepare('INSERT INTO plies (pos, uci, game_id, ply) VALUES (?, ?, ?, ?)');
 
@@ -410,6 +448,8 @@ class MyGamesIndex {
           indexed.userSide,
           collection,
           indexed.site,
+          indexed.plyCount,
+          indexed.ending,
         );
         for (const p of indexed.plies) insertPly.run(toDbKey(p.hash), p.uci, id, p.ply);
       });
@@ -853,9 +893,12 @@ class MyGamesIndex {
    * games, one for their plies, the walk in JS). The page asks once per
    * filter change, not per keystroke.
    */
-  insights(filters: MyGamesFilters): { games: number; named: boolean; partial: boolean; cells: InsightsCell[] } {
+  insights(
+    filters: MyGamesFilters,
+  ): { games: number; named: boolean; partial: boolean; cells: InsightsCell[] } & InsightsExtras {
+    const none = (): InsightsExtras => ({ months: [], weekdays: [], opponents: [], endings: [], lengths: [] });
     const db = this.open();
-    if (!db) return { games: 0, named: false, partial: false, cells: [] };
+    if (!db) return { games: 0, named: false, partial: false, cells: [], ...none() };
     // The first sync of a big vault hands most of it to the background
     // walk (see sync), and a report asked for during the walk sums what
     // is indexed so far. Said outright, so the page can ask again once
@@ -865,7 +908,7 @@ class MyGamesIndex {
     const { sql, binds } = this.where(filters);
     const games = db
       .prepare(
-        `SELECT id, user_side, speed, result, eco
+        `SELECT id, user_side, speed, result, eco, date, white_elo, black_elo, plies, ending
          FROM games g WHERE g.user_side IS NOT NULL${sql}`,
       )
       .all(...binds) as {
@@ -874,10 +917,62 @@ class MyGamesIndex {
       speed: Speed | null;
       result: number;
       eco: string | null;
+      date: string | null;
+      white_elo: number;
+      black_elo: number;
+      plies: number | null;
+      ending: Ending | null;
     }[];
     const kept = new Map<number, (typeof games)[number]>();
     for (const g of games) kept.set(g.id, g);
-    if (kept.size === 0) return { games: 0, named: openingsBook() !== null, partial, cells: [] };
+    if (kept.size === 0) {
+      return { games: 0, named: openingsBook() !== null, partial, cells: [], ...none() };
+    }
+
+    // The other cuts need nothing from the plies, so they are summed
+    // straight off the rows. Each is a map keyed by its band, turned
+    // into an ordered list at the end.
+    const tally = <K>(): Map<K, InsightsTally> => new Map();
+    const bump = <K>(into: Map<K, InsightsTally>, key: K, mine: number): void => {
+      const t = into.get(key) ?? { w: 0, d: 0, l: 0 };
+      if (mine > 0) t.w += 1;
+      else if (mine < 0) t.l += 1;
+      else t.d += 1;
+      into.set(key, t);
+    };
+    const months = tally<string>();
+    const weekdays = tally<number>();
+    const opponents = tally<number>();
+    const endings = tally<Ending>();
+    const lengths = tally<number>();
+    for (const g of kept.values()) {
+      const mine = g.user_side === 'white' ? g.result : -g.result;
+      if (g.date) {
+        bump(months, g.date.slice(0, 7), mine);
+        // Noon UTC, so no zone can push the date across midnight.
+        const day = new Date(`${g.date}T12:00:00Z`).getUTCDay();
+        if (Number.isFinite(day)) bump(weekdays, day, mine);
+      }
+      const theirs = g.user_side === 'white' ? g.black_elo : g.white_elo;
+      if (theirs > 0) bump(opponents, Math.floor(theirs / 200) * 200, mine);
+      if (g.ending) bump(endings, g.ending, mine);
+      // Whole moves, in bands of twenty: under 20, 20 to 39, and so on.
+      if (g.plies !== null) bump(lengths, Math.floor(Math.ceil(g.plies / 2) / 20) * 20, mine);
+    }
+    const listed = <N extends string, K extends string | number>(
+      from: Map<K, InsightsTally>,
+      name: N,
+    ): (Record<N, K> & InsightsTally)[] =>
+      [...from]
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, t]) => ({ ...({ [name]: key } as Record<N, K>), ...t }));
+    const extras: InsightsExtras = {
+      months: listed(months, 'month'),
+      weekdays: listed(weekdays, 'day'),
+      opponents: listed(opponents, 'band'),
+      endings: listed(endings, 'ending'),
+      lengths: listed(lengths, 'band'),
+    };
 
     // Every indexed ply of every admitted game, in one query, grouped in
     // JS: the filter's WHERE does the admitting.
@@ -972,6 +1067,7 @@ class MyGamesIndex {
       named: book !== null,
       partial,
       cells: [...cells.values()].sort((a, b) => b.games - a.games),
+      ...extras,
     };
   }
 

@@ -60,11 +60,60 @@ export interface IndexedGame {
   /** Which side the vault's owner played, when it can be determined. */
   userSide: 'white' | 'black' | null;
   site: string | null;
+  /** The whole mainline's length, past the MAX_PLY the index keeps. */
+  plyCount: number;
+  ending: Ending;
   /** (position before the move, move played), in order. */
   plies: { hash: bigint; uci: string; ply: number }[];
 }
 
 export type Speed = 'bullet' | 'blitz' | 'rapid' | 'classical' | 'correspondence';
+
+/**
+ * How a game ended, as far as a PGN can say.
+ *
+ * Chess.com writes it out ("Hikaru won by resignation", "Game drawn by
+ * repetition"); Lichess writes a class ("Normal", "Time forfeit",
+ * "Abandoned") and leaves mate to the move text; an OTB file usually
+ * writes nothing. So the move text is read first, since a final `#` is
+ * the one fact every source agrees on, then the header, and a decisive
+ * game that neither explains is taken as a resignation, which is what a
+ * decisive game with no mate on the board nearly always is. A draw that
+ * neither explains stays 'unknown' rather than guessed: agreement,
+ * repetition and a dead position all look alike from the outside.
+ */
+export const ENDINGS = [
+  'mate',
+  'resignation',
+  'timeout',
+  'abandoned',
+  'stalemate',
+  'agreement',
+  'repetition',
+  'insufficient',
+  'fifty',
+  'unknown',
+] as const;
+export type Ending = (typeof ENDINGS)[number];
+
+export function endingOf(
+  termination: string | undefined,
+  lastSan: string | undefined,
+  score: Score,
+): Ending {
+  if (lastSan?.endsWith('#')) return 'mate';
+  const said = (termination ?? '').toLowerCase();
+  if (said.includes('checkmate')) return 'mate';
+  if (said.includes('stalemate')) return 'stalemate';
+  if (said.includes('insufficient')) return 'insufficient';
+  if (said.includes('repetition')) return 'repetition';
+  if (said.includes('agreement')) return 'agreement';
+  if (said.includes('50') || said.includes('fifty')) return 'fifty';
+  if (said.includes('abandon')) return 'abandoned';
+  if (said.includes('time')) return 'timeout';
+  if (said.includes('resign')) return 'resignation';
+  return score === 0 ? 'unknown' : 'resignation';
+}
 
 /**
  * The username an archive path names, or null.
@@ -160,6 +209,15 @@ export function indexGame(
   const plies: IndexedGame['plies'] = [];
   const pos = Chess.default();
   let ply = 0;
+  // Counted and remembered past the replay's cap: the length and the
+  // last move are facts about the whole game, and the walk below stops
+  // at MAX_PLY. Iterating the node chain costs nothing next to replaying.
+  let plyCount = 0;
+  let lastSan: string | undefined;
+  for (const data of game.moves.mainline()) {
+    plyCount += 1;
+    lastSan = data.san;
+  }
   for (const data of game.moves.mainline()) {
     if (ply >= MAX_PLY) break;
     const move = parseSan(pos, data.san);
@@ -187,6 +245,8 @@ export function indexGame(
     eco: h('ECO') ?? null,
     userSide: userSideOf(white, black, h('VaultSide'), where.user),
     site: h('Link') ?? (h('Site')?.startsWith('http') ? h('Site')! : null),
+    plyCount,
+    ending: endingOf(h('Termination'), lastSan, score),
     plies,
   };
 }
