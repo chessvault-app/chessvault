@@ -44,6 +44,22 @@
  * its surroundings is exempt — the fill is the separator there, and the
  * stroke is decoration (a dark chip does not need its border seen).
  *
+ * AND THE FOCUS RING IS HELD TO 3:1, which is a different floor and a
+ * different reason. The hairline floors above are about a flat design's
+ * structure; a focus indicator is what tells a keyboard user where they
+ * are, and WCAG 1.4.11 asks 3:1 of it under PRODUCT.md's yardstick. This
+ * file forced :focus-visible from the day it was written and still could
+ * not see the ring: it never read `outline` at all, so every bare button
+ * and link was invisible to it, and a ring drawn as a box-shadow was
+ * scored against the 1.3/1.2 hairline floor, which a 50% wash clears
+ * without being visible. The ring measured 1.35 to 1.88:1 everywhere.
+ * So a stroke drawn in the --ring colour — box-shadow, outline, or the
+ * SVG stroke the opening map draws round a focused node — is scored at
+ * 3:1 against what is behind it, with no fill exemption (a focused
+ * button whose fill already separates it still has to show the ring),
+ * and an inset ring is scored against the element's own fill, which is
+ * what it is drawn on. Everything else keeps the hairline floors.
+ *
  * AND THE PHONE WIDTH, because the chrome that only exists on a phone —
  * the bottom bar, the pane tabs — was exactly where the invisible
  * boundary shipped, and a 1280px walk never renders it.
@@ -137,8 +153,13 @@ interface Finding {
   color: string;
   /** 0 marks a stroke finding; text has a real size. */
   fontPx: number;
-  kind: 'text' | 'stroke';
+  kind: 'text' | 'stroke' | 'focus';
 }
+
+/** What the in-page scans return: the stroke scan names its own kind. */
+type ScanHit = Omit<Finding, 'route' | 'theme' | 'state' | 'kind'> & {
+  kind?: Finding['kind'];
+};
 
 // ---------------------------------------------------------------------------
 // The static server. The demo is a folder of files; nothing here needs an API.
@@ -259,6 +280,13 @@ const SCAN = `(() => {
  * white, and nobody needs its border. Without this the check drowns in
  * exactly those chips.
  *
+ * The focus ring is the exception to both of those. A stroke in the
+ * --ring colour is a focus indicator, so it takes the 3:1 floor rather
+ * than the hairline one, keeps no fill exemption, and is scored against
+ * the element's own fill when it is drawn inset. The ring colour is
+ * resolved off a probe element, because --ring is a calc() over the
+ * scheme knobs and cannot be parsed here.
+ *
  * Two escapes, both narrow. A stroke under 8% alpha is skipped as a
  * wash rather than a line — forcing every hover and focus rule at once
  * leaves 3%-alpha ring fragments on buttons that no real state shows,
@@ -271,6 +299,7 @@ const SCAN = `(() => {
  */
 const STROKE_SCAN = (floor: number) => `(() => {
   const floor = ${floor};
+  const FOCUS_FLOOR = 3;
   const cv = document.createElement('canvas'); cv.width = cv.height = 4;
   const ctx = cv.getContext('2d', { willReadFrequently: true });
   const paint = (css, under) => {
@@ -300,6 +329,18 @@ const STROKE_SCAN = (floor: number) => `(() => {
     let acc = layer(getComputedStyle(document.body).backgroundColor).pre;
     for (const l of stack.reverse()) acc = over(l, acc);
     return acc;
+  };
+  // The focus indicator's own colour. --ring is a calc() over the scheme
+  // knobs, so it is read back off a probe rather than parsed.
+  const probe = document.createElement('span');
+  probe.style.color = 'var(--ring)';
+  document.documentElement.appendChild(probe);
+  const ringLayer = layer(getComputedStyle(probe).color);
+  probe.remove();
+  const isRing = (css) => {
+    const l = layer(css);
+    return Math.abs(l.a - ringLayer.a) < 0.02
+      && l.pre.every((c, i) => Math.abs(c - ringLayer.pre[i]) <= 2);
   };
   // Top-level commas only: a shadow list nests commas inside its colours.
   const splitShadows = (s) => {
@@ -335,17 +376,23 @@ const STROKE_SCAN = (floor: number) => `(() => {
     const outside = el.parentElement ? bgOf(el.parentElement) : bgOf(el);
     if (!outside) continue;
     // The exemption: a fill that clears the floor is the real boundary.
+    // It does not reach the focus ring, which has to be seen on a control
+    // whose fill is already separating it.
     const own = layer(cs.backgroundColor);
-    if (own.a > 0.02) {
-      const comp = over(own, outside);
-      if (ratio(rel(comp), rel(outside)) >= floor) continue;
-    }
-    const score = (colorCss) => {
+    const inside = own.a > 0.001 ? over(own, outside) : outside;
+    const exempt = own.a > 0.02 && ratio(rel(inside), rel(outside)) >= floor;
+    const score = (colorCss, opts) => {
       const l = layer(colorCss);
       if (l.a < 0.08) return;                      // under 8% alpha it is a wash, not a line
-      const comp = over(l, outside);
-      const rr = ratio(rel(comp), rel(outside));
-      if (rr < floor) out.push({ text: ident(el), ratio: +rr.toFixed(2), needs: floor, color: colorCss, fontPx: 0 });
+      const focus = isRing(colorCss);
+      if (!focus && exempt) return;
+      const need = focus ? FOCUS_FLOOR : floor;
+      // An inset ring lies on the element's own fill; everything else is
+      // scored against the edge it draws, which is what is outside it.
+      const under = opts && opts.inset ? inside : outside;
+      const comp = over(l, under);
+      const rr = ratio(rel(comp), rel(under));
+      if (rr < need) out.push({ text: ident(el), ratio: +rr.toFixed(2), needs: need, color: colorCss, fontPx: 0, kind: focus ? 'focus' : 'stroke' });
     };
     const seen = new Set();
     for (const [w, st, col] of [
@@ -362,8 +409,18 @@ const STROKE_SCAN = (floor: number) => `(() => {
         if (!col) continue;
         const nums = seg.replace(col, '').trim().split(/\\s+/).map(parseFloat).filter((n) => !isNaN(n));
         const [, , blur = 0, spread = 0] = nums;
-        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col); }
+        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col, { inset: /inset/.test(seg) }); }
       }
+    }
+    // The outline, which nothing here used to read — and it is how every
+    // control that is not a registry component draws the one focus ring.
+    if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && isRing(cs.outlineColor)) {
+      score(cs.outlineColor);
+    }
+    // And the same ring drawn as an SVG stroke: the opening map rings a
+    // focused node dot itself, at screen size, so it survives the zoom.
+    if (el.ownerSVGElement && cs.stroke && cs.stroke !== 'none' && isRing(cs.stroke)) {
+      score(cs.stroke);
     }
   }
   return out;
@@ -446,13 +503,11 @@ async function walkStatic(page: Page, base: string, scheme: 'light' | 'dark'): P
       if (state !== 'rest') await page.evaluate(FORCE_STATES);
       await page.waitForTimeout(80);
       const hits = (await page.evaluate(SCAN)) as Omit<Finding, 'route' | 'theme' | 'state' | 'kind'>[];
-      const strokes = (await page.evaluate(STROKE_SCAN(floor))) as Omit<
-        Finding,
-        'route' | 'theme' | 'state' | 'kind'
-      >[];
+      const strokes = (await page.evaluate(STROKE_SCAN(floor))) as ScanHit[];
       if (state !== 'rest') await page.evaluate(UNFORCE);
       for (const h of hits) found.push({ ...h, kind: 'text', route, theme: scheme, state });
-      for (const h of strokes) found.push({ ...h, kind: 'stroke', route, theme: scheme, state });
+      for (const h of strokes)
+        found.push({ ...h, kind: h.kind ?? 'stroke', route, theme: scheme, state });
     }
   };
 
@@ -500,15 +555,12 @@ async function walk(
         Finding,
         'route' | 'theme' | 'state' | 'kind'
       >[];
-      const strokes = (await page.evaluate(STROKE_SCAN(theme.strokeFloor))) as Omit<
-        Finding,
-        'route' | 'theme' | 'state' | 'kind'
-      >[];
+      const strokes = (await page.evaluate(STROKE_SCAN(theme.strokeFloor))) as ScanHit[];
       if (state !== 'rest') await page.evaluate(UNFORCE);
       for (const h of hits)
         found.push({ ...h, kind: 'text', route: route + at, theme: theme.name, state });
       for (const h of strokes)
-        found.push({ ...h, kind: 'stroke', route: route + at, theme: theme.name, state });
+        found.push({ ...h, kind: h.kind ?? 'stroke', route: route + at, theme: theme.name, state });
     }
   }
   return found;
@@ -589,7 +641,7 @@ try {
 // ---------------------------------------------------------------------------
 if (!findings.length) {
   console.log(
-    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text and strokes, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
+    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text, strokes and focus rings, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
   );
   process.exit(0);
 }
@@ -619,7 +671,7 @@ for (const { worst, where } of ordered) {
   const seen = [...where];
   const shown = seen.slice(0, 3).join(', ');
   console.error(
-    `${worst.ratio.toFixed(2)}:1 (needs ${worst.needs})  ${worst.kind === 'stroke' ? 'stroke' : `${worst.fontPx}px`}  ${worst.color}\n` +
+    `${worst.ratio.toFixed(2)}:1 (needs ${worst.needs})  ${worst.kind === 'text' ? `${worst.fontPx}px` : worst.kind === 'focus' ? 'focus ring' : 'stroke'}  ${worst.color}\n` +
       `    "${worst.text}"\n` +
       `    ${shown}${seen.length > 3 ? ` and ${seen.length - 3} more` : ''}`,
   );
