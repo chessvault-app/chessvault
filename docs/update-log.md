@@ -5,7 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.9.5
+
+The name beside the knight is one lowercase word. A phone's page title
+scrolls away with the page instead of pinning and shrinking, a page
+opened from a list slides in with its placeholder already on it, and the
+round button fans its choices out of the disc. Placeholders show in the
+light theme again, and a mouse resting on a truncated name no longer
+stops the list scrolling.
 
 - **The name beside the knight is set as one lowercase word.** The
   sidebar, the phone's home title, the lock screen, the desktop's
