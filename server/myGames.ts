@@ -79,9 +79,6 @@ export interface InsightsExtras {
   months: ({ month: string } & InsightsTally)[];
   /** Games per day of the week, 0 = Sunday, only days that have any. */
   weekdays: ({ day: number } & InsightsTally)[];
-  /** Games by the OPPONENT's header rating, in 200-point bands named by
-      their floor; games whose opponent had no rating are absent. */
-  opponents: ({ band: number } & InsightsTally)[];
   /** How the games ended, per outcome from the owner's side. */
   endings: { ending: Ending; w: number; d: number; l: number }[];
   /** Games by length, in whole moves: the band's floor in moves. */
@@ -958,7 +955,7 @@ class MyGamesIndex {
     cells: InsightsCell[];
     analysis: InsightsAnalysis;
   } & InsightsExtras {
-    const none = (): InsightsExtras => ({ months: [], weekdays: [], opponents: [], endings: [], lengths: [] });
+    const none = (): InsightsExtras => ({ months: [], weekdays: [], endings: [], lengths: [] });
     const noAnalysis = (): InsightsAnalysis => ({
       games: 0,
       depth: null,
@@ -1046,7 +1043,6 @@ class MyGamesIndex {
     };
     const months = tally<string>();
     const weekdays = tally<number>();
-    const opponents = tally<number>();
     const endings = tally<Ending>();
     const lengths = tally<number>();
     for (const g of kept.values()) {
@@ -1058,8 +1054,6 @@ class MyGamesIndex {
         const day = new Date(`${g.date}T12:00:00Z`).getUTCDay();
         if (Number.isFinite(day)) bump(weekdays, day, mine, acc);
       }
-      const theirs = g.user_side === 'white' ? g.black_elo : g.white_elo;
-      if (theirs > 0) bump(opponents, Math.floor(theirs / 200) * 200, mine, acc);
       if (g.ending) bump(endings, g.ending, mine, acc);
       // Whole moves, in bands of twenty: under 20, 20 to 39, and so on.
       if (g.plies !== null) bump(lengths, Math.floor(Math.ceil(g.plies / 2) / 20) * 20, mine, acc);
@@ -1074,7 +1068,6 @@ class MyGamesIndex {
     const extras: InsightsExtras = {
       months: listed(months, 'month'),
       weekdays: listed(weekdays, 'day'),
-      opponents: listed(opponents, 'band'),
       endings: listed(endings, 'ending'),
       lengths: listed(lengths, 'band'),
     };

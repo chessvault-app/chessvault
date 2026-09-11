@@ -19,9 +19,9 @@ An Insights page sums your own games.
   openings where your own move leaves earliest, games per month and per
   weekday, how the games ended (checkmate, resignation, time and the
   draw kinds, read from the move text and the file's termination line),
-  results by game length and by the opponent's rating band. The last
-  two need the game's length and ending in the index, so an existing
-  vault reindexes once on the first visit.
+  and results by game length. The last two need the game's length and
+  ending in the index, so an existing vault reindexes once on the first
+  visit.
 - **An engine pass judges your games in the background.** Start it from
   the Insights page and the app's own engine walks every game of yours
   move by move at a fixed depth, in the window, while you use the rest of
@@ -30,7 +30,7 @@ An Insights page sums your own games.
   where it stopped, since the server keeps every game finished. With
   games analysed the page shows accuracy beside the score and adds an
   accuracy column to every table it already has (colour, time control,
-  opening, weekday, length, opponent band), the accuracy of your won,
+  opening, weekday, length), the accuracy of your won,
   drawn and lost games under each ending chart, and a card of move
   quality: the share of your moves the engine calls good, inaccurate, a
   mistake or a blunder, with accuracy by phase and by move number. The findings are kept apart

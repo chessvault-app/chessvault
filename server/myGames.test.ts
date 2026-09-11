@@ -572,7 +572,6 @@ describe('my games insights', () => {
     partial: boolean;
     months: { month: string; w: number; d: number; l: number; accSum: number; accN: number }[];
     weekdays: { day: number; w: number; d: number; l: number }[];
-    opponents: { band: number; w: number; d: number; l: number }[];
     endings: { ending: string; w: number; d: number; l: number }[];
     lengths: { band: number; w: number; d: number; l: number }[];
     analysis: {
@@ -672,11 +671,6 @@ describe('my games insights', () => {
       { day: 3, w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
       { day: 5, w: 1, d: 0, l: 0, accSum: 0, accN: 0 },
       { day: 6, w: 0, d: 0, l: 1, accSum: 0, accN: 0 },
-    ]);
-    // The opponent's rating, not mine: 1650 and 1710 share the 1600 band.
-    expect(r.opponents).toEqual([
-      { band: 1400, w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
-      { band: 1600, w: 1, d: 0, l: 1, accSum: 0, accN: 0 },
     ]);
     expect(r.endings).toEqual([
       { ending: 'agreement', w: 0, d: 1, l: 0, accSum: 0, accN: 0 },
@@ -815,7 +809,6 @@ describe('my games insights', () => {
       },
       months: [],
       weekdays: [],
-      opponents: [],
       endings: [],
       lengths: [],
     });

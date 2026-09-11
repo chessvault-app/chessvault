@@ -2213,7 +2213,7 @@ export const ko: Record<string, string> = {
   'Last 6 months': '최근 6개월',
   'Last 12 months': '최근 12개월',
   'Custom dates': '직접 지정',
-  // The insights page's other cuts: activity, endings, length, opponents.
+  // The insights page's other cuts: activity, endings and length.
   'Activity': '활동',
   'Games per month, won over drew over lost, and the week.': '월별 게임 수를 승·무·패 순으로 쌓았고, 요일별도 보여 줍니다.',
   'Games per month': '월별 게임',
@@ -2238,9 +2238,6 @@ export const ko: Record<string, string> = {
   'By length': '길이별',
   'Under {n} moves': '{n}수 미만',
   '{a} to {b} moves': '{a}수에서 {b}수',
-  'Opponents': '상대',
-  'Results by the rating the opponent held in the game, in bands of 200.': '그 게임에서 상대가 가졌던 레이팅을 200점 단위로 묶은 성적입니다.',
-  'By opponent rating': '상대 레이팅별',
   // The engine pass and what it measures.
   'Engine pass': '엔진 분석',
   'Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.': '엔진이 내 모든 게임을 깊이 {n}으로 한 수씩 판정합니다. 앱이 열려 있는 동안 이 창에서 돌아가며, 멈춘 곳에서 이어서 합니다.',

@@ -130,7 +130,6 @@ interface Report {
   /** The other cuts of the same games; see server/myGames.ts InsightsExtras. */
   months: { month: string; w: number; d: number; l: number; accSum: number; accN: number }[];
   weekdays: { day: number; w: number; d: number; l: number; accSum: number; accN: number }[];
-  opponents: { band: number; w: number; d: number; l: number; accSum: number; accN: number }[];
   endings: { ending: Ending; w: number; d: number; l: number }[];
   lengths: { band: number; w: number; d: number; l: number; accSum: number; accN: number }[];
   /** The engine pass's cuts; see server/myGames.ts InsightsAnalysis. */
@@ -510,7 +509,6 @@ function Tables({ report }: { report: Report }) {
       <ActivityCard report={report} />
       <EndingsCard endings={report.endings} byOutcome={report.analysis.byOutcome} />
       <LengthCard lengths={report.lengths} />
-      <OpponentsCard opponents={report.opponents} />
     </div>
   );
 }
@@ -791,35 +789,6 @@ function LengthCard({ lengths }: { lengths: Report['lengths'] }) {
         <TallyTable
           caption={t('By length')}
           rows={rows.map((r) => ({ key: String(r.band), label: label(r.band), tally: r.tally }))}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
-/**
- * Results by the opponent's rating band. The figures are the games'
- * own header ratings, the record of who was played, set in the mono
- * face every rating column wears; nothing here rates the owner.
- */
-function OpponentsCard({ opponents }: { opponents: Report['opponents'] }) {
-  const rows = bandRows(opponents);
-  if (rows.length === 0) return null;
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('Opponents')}</CardTitle>
-        <CardDescription>{t('Results by the rating the opponent held in the game, in bands of 200.')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <TallyTable
-          caption={t('By opponent rating')}
-          mono
-          rows={rows.map((r) => ({
-            key: String(r.band),
-            label: `${r.band}\u2013${r.band + 199}`,
-            tally: r.tally,
-          }))}
         />
       </CardContent>
     </Card>
