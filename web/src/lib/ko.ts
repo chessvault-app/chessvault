@@ -2136,8 +2136,10 @@ export const ko: Record<string, string> = {
   'Open anything': '무엇이든 열기',
   'Open anything…': '무엇이든 열기…',
   'Open anything by name': '이름으로 무엇이든 열기',
-  'Nothing by that name.': '그 이름의 항목이 없습니다.',
+  'Nothing matches.': '일치하는 항목이 없습니다.',
   'Go to': '이동',
+  // Documents whose text holds the words typed, under the name matches.
+  'In the text': '본문에서',
   // The document tools' menu (components/document-tools).
   Document: '문서',
   // The Vault card's listing (components/vault-tree, settings/SettingsPage).

@@ -1,4 +1,4 @@
-import { Folder, Library, NotebookPen } from 'lucide-react';
+import { BookMarked, BookOpen, Folder, Library, NotebookPen } from 'lucide-react';
 import type { LinkSection } from '@shared/wikiLinks';
 
 /**
@@ -15,9 +15,17 @@ import type { LinkSection } from '@shared/wikiLinks';
  *
  * The sidebar's are the ones that win: they are what the app is navigated
  * by, and they were here first.
+ *
+ * The two shelves of books are here too, for the quick switcher, which
+ * lists a book's title beside a document's name: the same two icons
+ * Home's tiles use for them (home/destinations).
  */
-export const SECTION_ICON: Record<LinkSection, typeof Folder> = {
+export type IconSection = LinkSection | 'books' | 'puzzlebooks';
+
+export const SECTION_ICON: Record<IconSection, typeof Folder> = {
   games: Folder,
   studies: Library,
   notes: NotebookPen,
+  books: BookOpen,
+  puzzlebooks: BookMarked,
 };
