@@ -41,7 +41,7 @@ import {
   residentScan,
   residentStatus,
 } from './refgamesResident.ts';
-import { openingForKey, openingKeysNamed, type Opening } from './openings.ts';
+import { openingForKey, openingKeysNamed, openingsIndex, type Opening } from './openings.ts';
 import { TOP_GAMES_MIN_GAMES, positionIndexInfo } from './refgamesIndex.ts';
 import { closeQueries, isAbortedQuery, queryFor, type Query } from './refgamesQuery.ts';
 import type { Context } from 'hono';
@@ -1536,6 +1536,12 @@ export function refGamesApi(
     return { plyCount: sans.length, sanPrefix: sans.slice(0, SAN_PREFIX_PLIES).join(' ') };
   };
   const deriveOpening = (moves: string): Opening | null => {
+    // The index is fetched once per game, not once per ply: each
+    // openingForKey() stats the index file to see whether it changed,
+    // and 24 stats a row made a 50-row page 1,200 stats (as games.ts
+    // found for its own replay).
+    const index = openingsIndex();
+    if (!index) return null;
     const pos = Chess.default();
     let found: Opening | null = null;
     const sans = moves.split(' ');
@@ -1543,8 +1549,8 @@ export function refGamesApi(
       const move = parseSan(pos, sans[i]!);
       if (!move) break;
       pos.play(move);
-      const hit = openingForKey(hashSetup(pos.toSetup()).toString(16));
-      if (hit) found = hit;
+      const entry = index[hashSetup(pos.toSetup()).toString(16)];
+      if (entry) found = { eco: entry[0], name: entry[1] };
     }
     return found;
   };
