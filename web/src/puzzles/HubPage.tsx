@@ -516,33 +516,6 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   );
 }
 
-/**
- * The endgame drill: the way to it, and nothing else.
- *
- * It carried a progress bar and a held-of-attempted count for a day,
- * which made the row read as something to keep up with; a drill is a
- * thing to play when you feel like an ending, not a record to tend
- * (lanph3re's call). So this is a plain row, a crown and a name and a
- * chevron, the same size whether the record is empty or long; the
- * picker still shows how each class has gone, one tap away, for whoever
- * asks. No heading strip either (see the height notes on the page).
- */
-function DrillRow() {
-  return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <ListRow onClick={() => navigate('puzzles', 'endgames')}>
-        <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
-          <Crown className="size-3.5" />
-        </span>
-        <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
-          {t('Endgame drills')}
-        </span>
-        <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-      </ListRow>
-    </div>
-  );
-}
-
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
     <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
@@ -938,15 +911,11 @@ function Hub() {
    * a few rows under it rather than a stub. Both moved up 1rem when the
    * phone's page header became a 44px row (it was the title's 28px):
    * at 812 the old history threshold left the column 7px over. The
-   * endgame drill's row (about 48px with the column's gap) moved the
-   * history threshold again, and the cards' cap and the three always-
-   * drawn slots moved it back: measured on the demo at 390 wide with its
-   * 33px banner dismissed, with the history in over the book row the
-   * column overflowed by 24px at 844 and fitted at 868, so 54.25rem is
-   * the threshold. Below the book row's own threshold the history would
-   * need 769 and never has it, so one number serves. Between the two
-   * thresholds the three cards grow to their cap and the gap under the
-   * header stays at its 22px everywhere from 568 to 932.
+   * endgame drill's entry is the fifth tile, which costs no height; the
+   * cards are capped and the three slots always drawn (see PuzzleCard),
+   * and with those the same 51rem measures clean on the demo at 390
+   * wide, banner dismissed: no overflow from 568 to 932, and the gap
+   * under the header is the header's own 22px at every height.
    *
    * There is deliberately no threshold for the BOARD size. Where there
    * is no history the cards share the leftover height between them and
@@ -960,11 +929,11 @@ function Hub() {
    *   568 (SE 1)      launcher only
    *   667 (SE 2/8)    launcher only
    *   736 (8 Plus)    launcher only
-   *   800 / 812 / 844 + book row
-   *   868 and up      + book row and history (884, 904, 932 checked)
+   *   800 / 812     + book row
+   *   816 and up    + book row and history (844, 904, 932 checked)
    */
   const roomForBooks = useMediaQuery('(min-height: 47rem)');
-  const roomForHistory = useMediaQuery('(min-height: 54.25rem)');
+  const roomForHistory = useMediaQuery('(min-height: 51rem)');
   // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
@@ -1232,15 +1201,18 @@ function Hub() {
           />
         )}
 
-        {/* All four in one row, Train among them rather than a slab of
-            its own. It keeps the primary fill, because being the thing
+        {/* All five in one row, Train among them rather than a slab of
+            its own, and the endgame drill among them rather than a row
+            of its own: a full-width row above the buttons read as a
+            record to keep up with, and a drill is a thing to play when
+            an ending is what you feel like (lanph3re's call). It keeps the primary fill, because being the thing
             you came here to press is a fact about it that survives being
             the same size as its neighbours — and the board card above is
             still the larger invitation.
 
             The buttons wait for the same threshold everything else waits
             for. They used to draw immediately, so a slow vault showed a
-            row of four on an otherwise bare page, and the placeholders
+            row of tiles on an otherwise bare page, and the placeholders
             arrived under them a fifth of a second later and moved them.
             Now the page goes from empty to whole, once: below the
             threshold the answers are in before anything is drawn, and
@@ -1249,19 +1221,16 @@ function Hub() {
             buttons over a skeleton page are an offer to press something on
             a page that is still deciding what it says — Train in
             particular, whose word underneath ("adaptive", a difficulty)
-            arrives with the answers. The row is the same four 64px tiles
+            arrives with the answers. The row is the same five 64px tiles
             either way, so nothing moves when they become real. At 320px
-            (the narrowest phone) four across leaves 66px a tile, which
-            "Puzzle books" does not fit, so the row folds to two by two
-            there and only there (20.0625rem because Tailwind's max-* is
-            exclusive: `width < 321px` is what includes 320). */}
-        {/* The drill's row, between the boards and the buttons. It waits
-            on nothing, so it is drawn with the skeleton and stays put. */}
-        {(skeleton || settled) && <DrillRow />}
-
+            (the narrowest phone) five across leaves 51px a tile, which
+            nothing fits, so the row folds to three and two there and
+            only there (20.0625rem because Tailwind's max-* is exclusive:
+            `width < 321px` is what includes 320); from 321 up the label
+            steps down a size under 408px (see the tile's classes). */}
         {skeleton && (
-          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
-            {[0, 1, 2, 3].map((i) => (
+          <div className="grid grid-cols-5 gap-2 max-[20.0625rem]:grid-cols-3">
+            {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-card-ring"
@@ -1273,12 +1242,13 @@ function Hub() {
           </div>
         )}
         {settled && (
-          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
+          <div className="grid grid-cols-5 gap-2 max-[20.0625rem]:grid-cols-3">
             {(
               [
                 ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
                 ['Puzzle books', BookMarked, false, () => navigate('puzzles', 'books')],
                 ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
+                ['Endgames', Crown, false, () => navigate('puzzles', 'endgames')],
                 [
                   ready ? 'Train' : 'Set up',
                   ready ? Puzzle : Database,
@@ -1300,7 +1270,11 @@ function Hub() {
                 onClick={go}
                 className={cn(
                   'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
-                  'px-1 text-center text-sm font-medium leading-tight transition-colors',
+                  // text-xs under 408px: five across leaves a 65px tile on a
+                  // 390 phone, and "Dashboard" and "Endgames" at text-sm
+                  // need 68 (measured, 2 to 6px over from 360 to 390);
+                  // at 408 the tile is 69 and the size comes back.
+                  'px-1 text-center text-sm font-medium leading-tight transition-colors max-[25.4375rem]:text-xs',
                   primary
                     ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
                     : 'bg-card border-card-ring hover:bg-accent',
