@@ -35,7 +35,7 @@ import { useUndoable } from '@/hooks/use-undoable';
 
 import { t } from '@/lib/i18n';
 import type { FilterConstraints } from '@shared/searchQuery';
-import { GamePreview, docId, gameKey, type GameSummary, type Preview } from './shared';
+import { GamePreview, collectionKey, docId, gameKey, type GameSummary, type Preview } from './shared';
 import { CollectionList, customName } from './CollectionList';
 import {
   catalogSuggest,
@@ -446,7 +446,7 @@ export function GamesBrowser({
 
   // Built once and shared: the archive renders twice (beside the
   // collection, and in the phone's window) and each copy needs it.
-  const collectionKeys = new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`));
+  const collectionKeys = new Set(games.map((g) => collectionKey(g)));
 
   /**
    * Search, then the bookmark switch — the pair that narrows the

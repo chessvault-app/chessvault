@@ -53,7 +53,7 @@ import { announce } from '@/lib/announce';
 const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
-import { GamePreview, GameRow, type GameSummary, type Preview } from './shared';
+import { GamePreview, GameRow, collectionKey, type GameSummary, type Preview } from './shared';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
@@ -1034,11 +1034,11 @@ export function DatabaseGames({
   const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
   useEffect(() => {
     void loadCollection()
-      .then((games) => setCollectionKeys(new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))))
+      .then((games) => setCollectionKeys(new Set(games.map((g) => collectionKey(g)))))
       .catch(() => {});
   }, []);
   const inCollection = (g: RefGame): boolean =>
-    added.has(refGameKey(g.id)) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
+    added.has(refGameKey(g.id)) || collectionKeys.has(collectionKey(g));
   const collect = async (game: RefGame): Promise<boolean> => {
     let pgn: string;
     try {

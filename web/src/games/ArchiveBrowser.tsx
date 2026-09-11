@@ -20,7 +20,7 @@ import { SkeletonGameRows } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
-import { GameRow, gameKey, safeLink, type GameSummary, type Preview } from './shared';
+import { GameRow, collectionKey, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
@@ -667,7 +667,7 @@ export function ArchiveBrowser({
   const uncollected = useMemo(
     () =>
       visibleMonthGames.filter(
-        (g) => !added.has(gameKey(g)) && !collectionKeys.has(`${g.white}|${g.black}|${g.date}`),
+        (g) => !added.has(gameKey(g)) && !collectionKeys.has(collectionKey(g)),
       ),
     [visibleMonthGames, added, collectionKeys],
   );
@@ -774,7 +774,7 @@ export function ArchiveBrowser({
         <ArchiveRowActions
           inCollection={
             added.has(gameKey(game)) ||
-            collectionKeys.has(`${game.white}|${game.black}|${game.date}`)
+            collectionKeys.has(collectionKey(game))
           }
           onOpen={() => void openInAnalysis(game)}
           onCollect={() => collect(game)}
@@ -1177,7 +1177,7 @@ export function ArchiveBrowser({
           picked={picked.has(gameKey(game))}
           inCollection={
             added.has(gameKey(game)) ||
-            collectionKeys.has(`${game.white}|${game.black}|${game.date}`)
+            collectionKeys.has(collectionKey(game))
           }
           onOpen={rowOpen}
           onPreview={onPreview}

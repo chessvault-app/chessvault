@@ -52,6 +52,15 @@ export interface GameSummary {
 
 export const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
 
+/**
+ * The identity a game keeps across sources: the two names and the date.
+ * Whether a reference or archive game is "already in the collection" is
+ * answered by this key on both sides. Six sites built it by hand and two
+ * disagreed on a null date, so a dateless game never matched itself.
+ */
+export const collectionKey = (g: { white: string; black: string; date: string | null }): string =>
+  `${g.white}|${g.black}|${g.date ?? ''}`;
+
 /** Collection file -> document id (the path the studies-style API speaks). */
 export const docId = (g: Pick<GameSummary, 'file'>): string =>
   g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
