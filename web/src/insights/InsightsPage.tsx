@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { ResultBar } from '@/components/result-bar';
 import { TitleTip } from '@/components/title-tip';
-import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
+import { Skeleton, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
@@ -61,6 +61,32 @@ interface InsightsFilters extends MyGamesFilters {
 
 const EMPTY_FILTERS: InsightsFilters = { range: 'any' };
 const FILTERS_KEY = 'vault:insights-filters';
+/** What the page drew last visit: how many opening and leaving-book rows,
+    and whether the book summary line stood. The skeleton reserves that,
+    the way the Databases page reserves its list, so the answer lands on
+    the outline instead of moving it. */
+const SHAPE_KEY = 'vault:insights-shape';
+interface Shape {
+  openings: number;
+  book: number;
+  summary: boolean;
+}
+const DEFAULT_SHAPE: Shape = { openings: 8, book: 4, summary: false };
+function readShape(): Shape {
+  try {
+    const raw = localStorage.getItem(SHAPE_KEY);
+    if (!raw) return DEFAULT_SHAPE;
+    const p = JSON.parse(raw) as Partial<Shape>;
+    return {
+      openings: Math.min(OPENING_FOLD, Math.max(0, Number(p.openings) || 0)),
+      book: Math.max(0, Number(p.book) || 0),
+      summary: p.summary === true,
+    };
+  } catch {
+    return DEFAULT_SHAPE;
+  }
+}
+
 const SPEEDS: { id: Speed; label: string }[] = [
   { id: 'bullet', label: 'Bullet' },
   { id: 'blitz', label: 'Blitz' },
@@ -204,6 +230,22 @@ export function InsightsPage() {
     };
   }, [query, attempt]);
 
+  const [shape] = useState(readShape);
+  useEffect(() => {
+    if (report === null) return;
+    const openings = openingRows(report.cells);
+    const next: Shape = {
+      openings: Math.min(OPENING_FOLD, openings.length),
+      book: earliestExits(openings).length,
+      summary: exitSplit(report.cells).exits > 0,
+    };
+    try {
+      localStorage.setItem(SHAPE_KEY, JSON.stringify(next));
+    } catch {
+      // Nothing to reserve next time; the default outline serves.
+    }
+  }, [report]);
+
   // The previous answer stays on the page while the next is fetched, so
   // a chip press changes the numbers rather than blanking the tables.
   const slow = useSlowLoad(report === null && !failed);
@@ -220,8 +262,10 @@ export function InsightsPage() {
         title={t('Insights')}
         back={() => navigate('more')}
         subtitle={
-          report !== null && (
+          report !== null ? (
             <span className="tabular-nums">{t('{n} games', { n: exact.format(report.games) })}</span>
+          ) : (
+            slow && <SkeletonSubtitle />
           )
         }
         description={t(
@@ -295,7 +339,7 @@ export function InsightsPage() {
           </Button>
         </div>
       ) : report === null ? (
-        slow && <SkeletonRows rows={8} />
+        slow && <InsightsSkeleton shape={shape} />
       ) : report.games === 0 ? (
         narrowed ? (
           <EmptyState
@@ -898,6 +942,74 @@ function StartOver() {
         {t('Cancel')}
       </Button>
     </span>
+  );
+}
+
+/**
+ * The page's own outline while the first report is out: the Results
+ * card with its three tables, the openings card and the leaving-book
+ * card, each in the frames and row heights the loaded page draws, so
+ * nothing moves when the answer lands. The filter rail is not here: it
+ * needs no data and is already on the page above this.
+ */
+function InsightsSkeleton({ shape }: { shape: Shape }) {
+  const table = (rows: number, key: string) => (
+    <div key={key} className="flex flex-col">
+      <div className="flex h-6 items-center gap-2">
+        <Skeleton className="h-2 w-16" />
+        <Skeleton className="ml-auto h-2 w-8" />
+        <Skeleton className="h-2 w-10" />
+        <Skeleton className="ml-20 h-2 w-8" />
+      </div>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex h-7 items-center gap-2">
+          <Skeleton className={cn('h-2.5', ['w-24', 'w-20', 'w-28', 'w-16'][i % 4])} />
+          <Skeleton className="ml-auto h-2.5 w-6" />
+          {/* The result bar's box: its 16px track and the chip corner. */}
+          <Skeleton className="h-4 w-36 rounded-[4px]" />
+          <Skeleton className="h-2.5 w-8" />
+        </div>
+      ))}
+    </div>
+  );
+  // The card header's own line boxes, measured on the loaded page: a
+  // 22px title line and 20px description lines over the header's 4px gap.
+  // One description box however many lines it wraps to: two boxes took
+  // the header's gap between them, and the loaded page has none there.
+  const card = (key: string, lines: 1 | 2, body: React.ReactNode, gap: 'gap-3' | 'gap-4' = 'gap-4') => (
+    <Card key={key}>
+      <CardHeader>
+        <div className="flex h-5.5 items-center">
+          <Skeleton className="h-3.5 w-24" />
+        </div>
+        <div className={cn('flex flex-col justify-around', lines === 2 ? 'h-10' : 'h-5')}>
+          <Skeleton className="h-2.5 w-72 max-w-full" />
+          {lines === 2 && <Skeleton className="h-2.5 w-40" />}
+        </div>
+      </CardHeader>
+      <CardContent className={cn('flex flex-col', gap)}>{body}</CardContent>
+    </Card>
+  );
+  return (
+    <div className="flex flex-col gap-4" role="status" aria-label={t('Loading')} aria-live="polite">
+      {card('results', 1, [1, 2, 4].map((rows, i) => table(rows, `results-${i}`)))}
+      {card('openings', 2, table(shape.openings, 'openings'))}
+      {card(
+        'book',
+        2,
+        <>
+          {/* The "Your move left book first…" line: one text-sm line. */}
+          {shape.summary && (
+            <div className="flex h-5 items-center">
+              <Skeleton className="h-2.5 w-80 max-w-full" />
+            </div>
+          )}
+          {table(shape.book, 'book')}
+        </>,
+        // That card's content is the tighter rung.
+        'gap-3',
+      )}
+    </div>
   );
 }
 
