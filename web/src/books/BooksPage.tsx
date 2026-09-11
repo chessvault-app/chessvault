@@ -1,11 +1,10 @@
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, MoreHorizontal, Pencil, SearchX, Trash2, Upload, X } from 'lucide-react';
+import { BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, Pencil, SearchX, Trash2, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { ActionMenu } from '@/components/action-menu';
+import { BookCoverCard } from '@/components/book-cover-card';
 import { EmptyState } from '@/components/empty-state';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { MoveToDialog } from '@/components/move-to-dialog';
-import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
@@ -17,13 +16,12 @@ import {
   shelfShapeFromCollections,
   storedShelfShape,
 } from '@/components/shelf-reservation';
-import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
-import { SearchInput } from '@/components/text-fields';
+import { ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useBookmarks } from '@/hooks/use-bookmarks';
 import { useUndoable } from '@/hooks/use-undoable';
-import { api, apiErrorMessage } from '@/lib/api';
+import { apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
@@ -67,55 +65,20 @@ import { decodeImages } from '@/lib/media';
  * shelves' view settings; a new sort starts in its own natural direction.
  */
 type LibrarySort = 'title' | 'added' | 'size' | 'read';
-type LibraryDir = 'asc' | 'desc';
 
-const LIBRARY_SORTS: { value: LibrarySort; label: string }[] = [
+const LIBRARY_SORTS: ShelfSorts<LibrarySort> = [
   { value: 'title', label: 'Title' },
   { value: 'added', label: 'Added' },
   { value: 'size', label: 'Size' },
   { value: 'read', label: 'Last read' },
 ];
 
-const NATURAL: Record<LibrarySort, LibraryDir> = {
+const NATURAL: Record<LibrarySort, ShelfDir> = {
   title: 'asc',
   added: 'desc',
   size: 'desc',
   read: 'desc',
 };
-
-function useLibrarySort(): {
-  sort: LibrarySort;
-  setSort: (sort: LibrarySort) => void;
-  dir: LibraryDir;
-  setDir: (dir: LibraryDir) => void;
-} {
-  const key = 'chess-vault:shelf-library';
-  const [state, setState] = useState<{ sort: LibrarySort; dir: LibraryDir }>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
-        sort: LibrarySort;
-        dir: LibraryDir;
-      }>;
-      const sort = LIBRARY_SORTS.some((s) => s.value === saved.sort) ? saved.sort! : 'added';
-      return { sort, dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : NATURAL[sort] };
-    } catch {
-      return { sort: 'added', dir: NATURAL.added };
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(state));
-    } catch {
-      /* private mode — the shelf just forgets between visits */
-    }
-  }, [state]);
-  return {
-    sort: state.sort,
-    setSort: (sort) => setState({ sort, dir: NATURAL[sort] }),
-    dir: state.dir,
-    setDir: (dir) => setState((prev) => ({ ...prev, dir })),
-  };
-}
 
 /** See `reservedShelf` below: the library's grouped shape, last visit. */
 const LIBRARY_SHELF_KEY = 'vault:library-shelf';
@@ -130,7 +93,7 @@ export function BooksPage() {
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
   const pending = useSlowLoad(books === null);
-  const view = useLibrarySort();
+  const view = useShelfOrder('chess-vault:shelf-library', LIBRARY_SORTS, NATURAL, 'added');
   // The grouped shape this shelf had last visit, per device
   // (components/shelf-reservation). The floor is EMPTY_SHELF, not the
   // welcome one: nothing seeds a book, so a device that has never seen
@@ -150,38 +113,8 @@ export function BooksPage() {
 
   // Bookmarks, kept in the vault beside the books — the same store and the
   // same reasoning as the other shelves.
-  const [marked, setMarked] = useState<Set<string>>(new Set());
+  const { marked, toggle: toggleMark } = useBookmarks('/api/books');
   const [markedOnly, setMarkedOnly] = useState(false);
-  useEffect(() => {
-    void api<{ ids: string[] } | undefined>('/api/books/bookmarks')
-      .then((body) => setMarked(new Set(body?.ids ?? [])))
-      .catch(() => {});
-  }, []);
-  const toggleMark = async (id: string): Promise<void> => {
-    setMarked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-    // Optimistic: the set above is already flipped, so a failure here is
-    // swallowed rather than allowed to escape as an unhandled rejection.
-    await api('/api/books/bookmarks/toggle', { method: 'POST', json: { id } }).catch(() => {});
-  };
-  // The same switch in both its homes — see ShelfToolbar's bookmark.
-  const bookmarkToggle = (className?: string): React.ReactNode => (
-    <Button
-      variant="secondary"
-      size="icon-sm"
-      active={markedOnly}
-      aria-pressed={markedOnly}
-      title={markedOnly ? t('Show all') : t('Show bookmarked only')}
-      className={cn('shrink-0', className)}
-      onClick={() => setMarkedOnly((v) => !v)}
-    >
-      <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
-    </Button>
-  );
 
   const load = useCallback(async (force = true): Promise<void> => {
     try {
@@ -321,63 +254,31 @@ export function BooksPage() {
           }}
         />
       )}
-      <PageHeader
+      <ShelfToolbar
         title={t('Books')}
         subtitle={
           books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
         }
-        search={
-          <SearchInput
-            inputSize="sm"
-            value={query}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-            placeholder={t('Search books…')}
-            aria-label={t('Search books…')}
-            className="min-w-0 flex-1"
+        query={query}
+        onQuery={setQuery}
+        placeholder={t('Search books…')}
+        markedOnly={markedOnly}
+        onMarkedOnly={setMarkedOnly}
+        sorts={LIBRARY_SORTS}
+        sort={view.sort}
+        onSort={view.setSort}
+        dir={view.dir}
+        onDir={view.setDir}
+        create={
+          <CreateControl
+            // Import, not Create: a book is brought in, never made
+            // here, and the empty state beside this already said so.
+            label="Import"
+            actions={[
+              { label: 'Import a PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
+              { label: 'New folder', icon: FolderIcon, onSelect: () => setNewFolder(true) },
+            ]}
           />
-        }
-        actions={
-          <>
-            {bookmarkToggle()}
-            <Select
-              value={view.sort}
-              onValueChange={(value) => view.setSort(value as LibrarySort)}
-              ariaLabel={t('Sort by')}
-              size="sm"
-              align="end"
-              steady
-              className="hidden shrink-0 sm:flex"
-              groups={[
-                { options: LIBRARY_SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
-              ]}
-            />
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              title={
-                view.dir === 'asc'
-                  ? t('Ascending. Press for descending.')
-                  : t('Descending. Press for ascending.')
-              }
-              className="hidden shrink-0 sm:inline-flex"
-              onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
-            >
-              {view.dir === 'asc' ? (
-                <ArrowUpNarrowWide className="size-3.5" />
-              ) : (
-                <ArrowDownWideNarrow className="size-3.5" />
-              )}
-            </Button>
-            <CreateControl
-              // Import, not Create: a book is brought in, never made
-              // here, and the empty state beside this already said so.
-              label="Import"
-              actions={[
-                { label: 'Import a PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
-                { label: 'New folder', icon: FolderIcon, onSelect: () => setNewFolder(true) },
-              ]}
-            />
-          </>
         }
       />
 
@@ -484,8 +385,6 @@ function BookCard({
   onChanged: () => void;
   onError: (message: string) => void;
 }) {
-  const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
-  const [menuOpen, setMenuOpen] = useState(false);
   const job = useDiagramJob();
   const reading = job.bookId === book.id && job.status === 'running';
   const [renaming, setRenaming] = useState(false);
@@ -513,179 +412,108 @@ function BookCard({
         : null;
 
   return (
-    <li className="h-full">
-      <div
-        // A surface, not a button: the title below is the control, so the
-        // ⋯ and the dialogs inside are not nested in one (WCAG 4.1.2; see
-        // components/shelf-card).
-        onClick={open}
-        {...swipe.handlers}
-        className={cn(
-          'touch-pan-y',
-          // ring-1 ring-card-ring, as the registry's own Card: the card's
-          // fill is its edge on the toned page, and the hairline returns
-          // under High contrast. A ring, not a border, because a border is
-          // 2px of box and a ring is none - the placeholders that stand in
-          // for these cards had to be hand-corrected for exactly that.
-          'bg-card ring-card-ring group relative flex h-full cursor-pointer items-stretch gap-3',
-          'overflow-hidden rounded-xl ring-1 p-3 text-left transition-colors duration-100',
-          'hover:bg-accent',
-          // The whole indicator that a book is kept. A strip over the
-          // card, not a border on it: the bookmarks arrive in a request
-          // of their own, and a border moved the marked cards' contents
-          // 2px right when it landed (components/shelf-card).
-          marked &&
-            "before:bg-warn before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
-        )}
-      >
-        <SwipeTrack dx={swipe.dx} bookmarked={marked} />
-        <div className="flex min-w-0 flex-1 items-stretch gap-3" style={swipe.style}>
-          {book.cover ? (
-            <img
-              src={coverUrl(book.id, book.bytes)}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="border-border h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
-            />
+    <BookCoverCard
+      title={book.title}
+      cover={book.cover ? coverUrl(book.id, book.bytes) : null}
+      icon={BookText}
+      marked={marked}
+      onOpen={open}
+      onSwipeAway={onRemove}
+      onToggleMark={onToggleMark}
+      meta={
+        <>
+          {fileSize(book.bytes)}
+          {where ? ` · ${where}` : ''}
+        </>
+      }
+      footer={
+        <span className={cn('flex items-center gap-1.5 text-sm', reading ? 'text-primary' : 'text-muted-foreground')}>
+          {reading ? (
+            <Spinner className="size-3 shrink-0" />
           ) : (
-            <span
-              className="bg-muted border-card-ring grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border"
-            >
-              <BookText className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
-            </span>
+            <BookOpen className="size-3 shrink-0" />
           )}
-          <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
-            <span className="min-w-0 pr-7">
-              {/* The book's own name selects on a long press; the size
-                  and the counts under it are the app's (index.css). */}
-              <button
-                type="button"
-                data-user-text
-                className="text-foreground block w-full truncate text-left text-base font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  open();
-                }}
-              >
-                {book.title}
-              </button>
-              <span className="text-muted-foreground block text-sm">
-                {fileSize(book.bytes)}
-                {where ? ` · ${where}` : ''}
+          {reading
+            ? t('Reading diagrams, page {page} of {pages}', { page: job.page, pages: job.pages })
+            : book.lastPage
+              ? t('Carry on reading')
+              : t('Read')}
+          {book.puzzleBook && !reading && (
+            // Read into the puzzle shelf: the same mark that shelf wears,
+            // so the two halves of one book recognise each other. The
+            // mark says THAT there is one; the tip says which.
+            <TitleTip title={t('Puzzle book: {title}', { title: book.puzzleBook.title })}>
+              <span className="text-foreground/80 ml-auto inline-flex items-center gap-1">
+                <BookMarked className="size-3 shrink-0" />
+                {t('Puzzle book')}
               </span>
-            </span>
-            <span className={cn('flex items-center gap-1.5 text-sm', reading ? 'text-primary' : 'text-muted-foreground')}>
-              {reading ? (
-                <Spinner className="size-3 shrink-0" />
-              ) : (
-                <BookOpen className="size-3 shrink-0" />
-              )}
-              {reading
-                ? t('Reading diagrams, page {page} of {pages}', { page: job.page, pages: job.pages })
-                : book.lastPage
-                  ? t('Carry on reading')
-                  : t('Read')}
-              {book.puzzleBook && !reading && (
-                // Read into the puzzle shelf: the same mark that shelf wears,
-                // so the two halves of one book recognise each other. The
-                // mark says THAT there is one; the tip says which.
-                <TitleTip title={t('Puzzle book: {title}', { title: book.puzzleBook.title })}>
-                  <span className="text-foreground/80 ml-auto inline-flex items-center gap-1">
-                    <BookMarked className="size-3 shrink-0" />
-                    {t('Puzzle book')}
-                  </span>
-                </TitleTip>
-              )}
-            </span>
-          </span>
-        </div>
-
-        <ActionMenu
-          title={book.title}
-          open={menuOpen}
-          onOpenChange={setMenuOpen}
-          actions={[
-            { label: 'Read', icon: BookOpen, onSelect: open },
-            ...(book.puzzleBook
-              ? [
-                  {
-                    label: 'Open the puzzle book',
-                    icon: BookMarked,
-                    onSelect: () => navigate('puzzles', 'books', book.puzzleBook!.slug),
-                  },
-                ]
-              : []),
-            {
-              label: marked ? 'Remove bookmark' : 'Bookmark',
-              icon: Bookmark,
-              onSelect: onToggleMark,
-            },
-            { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-            { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
-            ...(job.status !== 'running'
-              ? [
-                  {
-                    label: 'Read diagrams',
-                    icon: ScanSearch,
-                    onSelect: () => void useDiagramJob.getState().start(book.id),
-                  },
-                ]
-              : []),
-            { label: 'Replace PDF…', icon: FileUp, onSelect: () => setReplacing(true) },
-            { label: 'Remove from the shelf', icon: Trash2, danger: true, onSelect: onRemove },
-          ]}
-        >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('More')}
-            active={menuOpen}
-            style={swipe.style}
-            className={cn(
-              'absolute right-2 top-2 opacity-0 transition-opacity',
-              'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
-              menuOpen && 'opacity-100',
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreHorizontal className="size-3.5" />
-          </Button>
-        </ActionMenu>
-
-        {renaming && (
-          <PromptDialog
-            label={t('Rename this book')}
-            initial={book.title}
-            onSubmit={(value) => void rename(value)}
-            onClose={() => setRenaming(false)}
-          />
-        )}
-        {moving && (
-          <MoveToDialog
-            currentFolder={book.collection ?? ''}
-            folders={folders}
-            onPick={(target) => {
-              setMoving(false);
-              void moveBook(book.id, target || null)
-                .then(onChanged)
-                .catch((e) => onError(apiErrorMessage(e)));
-            }}
-            onClose={() => setMoving(false)}
-          />
-        )}
-        {replacing && (
-          <UploadBookDialog
-            replace={{ id: book.id, title: book.title }}
-            onClose={() => setReplacing(false)}
-            onUploaded={(id) => {
-              setReplacing(false);
-              onChanged();
-              void useDiagramJob.getState().start(id);
-            }}
-          />
-        )}
-      </div>
-    </li>
+            </TitleTip>
+          )}
+        </span>
+      }
+      actions={[
+        { label: 'Read', icon: BookOpen, onSelect: open },
+        ...(book.puzzleBook
+          ? [
+              {
+                label: 'Open the puzzle book',
+                icon: BookMarked,
+                onSelect: () => navigate('puzzles', 'books', book.puzzleBook!.slug),
+              },
+            ]
+          : []),
+        {
+          label: marked ? 'Remove bookmark' : 'Bookmark',
+          icon: Bookmark,
+          onSelect: onToggleMark,
+        },
+        { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+        { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
+        ...(job.status !== 'running'
+          ? [
+              {
+                label: 'Read diagrams',
+                icon: ScanSearch,
+                onSelect: () => void useDiagramJob.getState().start(book.id),
+              },
+            ]
+          : []),
+        { label: 'Replace PDF…', icon: FileUp, onSelect: () => setReplacing(true) },
+        { label: 'Remove from the shelf', icon: Trash2, danger: true, onSelect: onRemove },
+      ]}
+    >
+      {renaming && (
+        <PromptDialog
+          label={t('Rename this book')}
+          initial={book.title}
+          onSubmit={(value) => void rename(value)}
+          onClose={() => setRenaming(false)}
+        />
+      )}
+      {moving && (
+        <MoveToDialog
+          currentFolder={book.collection ?? ''}
+          folders={folders}
+          onPick={(target) => {
+            setMoving(false);
+            void moveBook(book.id, target || null)
+              .then(onChanged)
+              .catch((e) => onError(apiErrorMessage(e)));
+          }}
+          onClose={() => setMoving(false)}
+        />
+      )}
+      {replacing && (
+        <UploadBookDialog
+          replace={{ id: book.id, title: book.title }}
+          onClose={() => setReplacing(false)}
+          onUploaded={(id) => {
+            setReplacing(false);
+            onChanged();
+            void useDiagramJob.getState().start(id);
+          }}
+        />
+      )}
+    </BookCoverCard>
   );
 }

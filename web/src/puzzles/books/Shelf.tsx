@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, Bookmark, BookMarked, FileUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Bookmark, BookMarked, FileUp, Pencil, Trash2 } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -13,19 +13,16 @@ import {
 } from '@/components/shelf-reservation';
 import { navigate } from '@/lib/router';
 
-import { ActionMenu } from '@/components/action-menu';
-
+import { BookCoverCard } from '@/components/book-cover-card';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
+import { ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
 
-import { SearchInput } from '@/components/text-fields';
-import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { PromptDialog } from '@/components/prompt-dialog';
-import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 
 import { CreateControl, FabSpacer } from '@/components/fab';
+import { useBookmarks } from '@/hooks/use-bookmarks';
 import { useUndoable } from '@/hooks/use-undoable';
 
 import { useImportJob } from '../importJob';
@@ -50,52 +47,15 @@ import { decodeImages } from '@/lib/media';
  * byte size worth ordering by — what it has is a count and a score.
  */
 type BookSort = 'title' | 'puzzles' | 'progress';
-type BookDir = 'asc' | 'desc';
 
-const BOOK_SORTS: { value: BookSort; label: string }[] = [
+const BOOK_SORTS: ShelfSorts<BookSort> = [
   { value: 'title', label: 'Title' },
   { value: 'puzzles', label: 'Puzzles' },
   { value: 'progress', label: 'Progress' },
 ];
 
 /** The direction each sort starts in — the one its name means. */
-const NATURAL: Record<BookSort, BookDir> = { title: 'asc', puzzles: 'desc', progress: 'desc' };
-
-/** Remembered on the device, like the other shelves' view settings. */
-function useBookSort(): {
-  sort: BookSort;
-  setSort: (sort: BookSort) => void;
-  dir: BookDir;
-  setDir: (dir: BookDir) => void;
-} {
-  const key = 'chess-vault:shelf-books';
-  const [state, setState] = useState<{ sort: BookSort; dir: BookDir }>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
-        sort: BookSort;
-        dir: BookDir;
-      }>;
-      const sort = BOOK_SORTS.some((s) => s.value === saved.sort) ? saved.sort! : 'title';
-      return { sort, dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : NATURAL[sort] };
-    } catch {
-      return { sort: 'title', dir: NATURAL.title };
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(state));
-    } catch {
-      /* private mode — the shelf just forgets between visits */
-    }
-  }, [state]);
-  return {
-    sort: state.sort,
-    // A new sort starts in its own natural direction — see ShelfToolbar.
-    setSort: (sort) => setState({ sort, dir: NATURAL[sort] }),
-    dir: state.dir,
-    setDir: (dir) => setState((prev) => ({ ...prev, dir })),
-  };
-}
+const NATURAL: Record<BookSort, ShelfDir> = { title: 'asc', puzzles: 'desc', progress: 'desc' };
 
 /**
  * Throw away saved scans whose book is gone.
@@ -208,28 +168,9 @@ export function Shelf() {
   // confirmed: it leaves the shelf at once and the DELETE waits.
   // Bookmarks, kept in the vault beside the books — the same store and the
   // same reasoning as the other two shelves.
-  const [markedSlugs, setMarked] = useState<Set<string>>(new Set());
+  const { marked: markedSlugs, toggle: toggleMark } = useBookmarks('/api/puzzlebooks', 'slug');
   const [markedOnly, setMarkedOnly] = useState(false);
   const [query, setQuery] = useState('');
-  useEffect(() => {
-    void api<{ slugs: string[] } | undefined>('/api/puzzlebooks/bookmarks')
-      .then((body) => setMarked(new Set(body?.slugs ?? [])))
-      .catch(() => {});
-  }, []);
-  const toggleMark = async (slug: string): Promise<void> => {
-    setMarked((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      return next;
-    });
-    // Optimistic: the set above is already flipped, so a failure here is
-    // swallowed rather than allowed to escape as an unhandled rejection.
-    await api('/api/puzzlebooks/bookmarks/toggle', {
-      method: 'POST',
-      json: { slug },
-    }).catch(() => {});
-  };
 
   const dropBook = (slug: string, title: string): void => {
     const unhide = (): void =>
@@ -269,7 +210,7 @@ export function Shelf() {
     return saved ? { page: saved.page, pages: saved.pages, live: false } : undefined;
   };
 
-  const view = useBookSort();
+  const view = useShelfOrder('chess-vault:shelf-books', BOOK_SORTS, NATURAL, 'title');
   const frac = (b: BookSummary): number => (b.puzzles ? b.solved / b.puzzles : 0);
   const flip = view.dir === 'desc' ? -1 : 1;
   const visibleBooks = (books ?? [])
@@ -306,81 +247,30 @@ export function Shelf() {
     }
   };
 
-  // The same switch in both its homes — see ShelfToolbar's bookmark.
-  const bookmarkToggle = (className?: string): React.ReactNode => (
-    <Button
-      variant="secondary"
-      size="icon-sm"
-      active={markedOnly}
-      aria-pressed={markedOnly}
-      title={markedOnly ? t('Show all') : t('Show bookmarked only')}
-      className={cn('shrink-0', className)}
-      onClick={() => setMarkedOnly((v) => !v)}
-    >
-      <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
-    </Button>
-  );
-
   return (
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium">
-        {/* The other shelves' two-row shape: the heading row carries what
-            is ABOUT the shelf — filter, order, create — and the search
-            gets a full-width line of its own underneath, exactly as in
-            ShelfToolbar. */}
-        <PageHeader
+        <ShelfToolbar
           title={t('Puzzle books')}
           back={() => navigate('puzzles', 'hub')}
           subtitle={
             books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
           }
-          search={
-            <SearchInput
-              inputSize="sm"
-              value={query}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-              placeholder={t('Search books…')}
-              aria-label={t('Search books…')}
-              className="min-w-0 flex-1"
+          query={query}
+          onQuery={setQuery}
+          placeholder={t('Search books…')}
+          markedOnly={markedOnly}
+          onMarkedOnly={setMarkedOnly}
+          sorts={BOOK_SORTS}
+          sort={view.sort}
+          onSort={view.setSort}
+          dir={view.dir}
+          onDir={view.setDir}
+          create={
+            <CreateControl
+              actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
             />
-          }
-          actions={
-            <>
-              {bookmarkToggle()}
-            <Select
-              value={view.sort}
-              onValueChange={(value) => view.setSort(value as BookSort)}
-              ariaLabel={t('Sort by')}
-              size="sm"
-              align="end"
-              steady
-              className="hidden shrink-0 sm:flex"
-              groups={[
-                { options: BOOK_SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
-              ]}
-            />
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              title={
-                view.dir === 'asc'
-                  ? t('Ascending. Press for descending.')
-                  : t('Descending. Press for ascending.')
-              }
-              className="hidden shrink-0 sm:inline-flex"
-              onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
-            >
-              {view.dir === 'asc' ? (
-                <ArrowUpNarrowWide className="size-3.5" />
-              ) : (
-                <ArrowDownWideNarrow className="size-3.5" />
-              )}
-            </Button>
-              <CreateControl
-                actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
-              />
-            </>
           }
         />
 
@@ -455,9 +345,8 @@ function BookCard({
       the checkpoint it stopped at. */
   scan?: { page: number; pages: number; live: boolean };
 }) {
-  const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
-  const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const open = (): void => navigate('puzzles', 'books', book.slug);
 
   // The same PATCH the book's own header uses: the title changes, the
   // slug (the folder, the URL, the progress key) stays put.
@@ -478,157 +367,85 @@ function BookCard({
   };
 
   return (
-    <li className="h-full">
-      <div
-        // A surface, not a button: the title below is the control, so the
-        // ⋯ and the dialogs inside are not nested in one (WCAG 4.1.2; see
-        // components/shelf-card).
-        onClick={() => navigate('puzzles', 'books', book.slug)}
-        {...swipe.handlers}
-        className={cn(
-          'touch-pan-y',
-          // ring-1 ring-card-ring, as the registry's own Card: the card's
-          // fill is its edge on the toned page, and the hairline returns
-          // under High contrast. A ring, not a border, because a border is
-          // 2px of box and a ring is none - the placeholders that stand in
-          // for these cards had to be hand-corrected for exactly that.
-          'bg-card ring-card-ring group relative flex h-full cursor-pointer items-stretch gap-3',
-          'overflow-hidden rounded-xl ring-1 p-3 text-left transition-colors duration-100',
-          'hover:bg-accent',
-          // The whole indicator that a book is kept. A strip over the
-          // card, not a border on it: the bookmarks arrive in a request
-          // of their own, and a border moved the marked cards' contents
-          // 2px right when it landed (components/shelf-card).
-          marked &&
-            "before:bg-warn before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
-        )}
-      >
-        <SwipeTrack dx={swipe.dx} bookmarked={marked} />
-
-        <div className="flex min-w-0 flex-1 items-stretch gap-3" style={swipe.style}>
-          {book.cover ? (
-            <img
-              src={diagramUrl(book.slug, 'cover.jpg')}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="border-border h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
-            />
-          ) : (
-            <span className="bg-muted border-card-ring grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
-              <BookMarked className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
+    <BookCoverCard
+      title={book.title}
+      cover={book.cover ? diagramUrl(book.slug, 'cover.jpg') : null}
+      icon={BookMarked}
+      marked={marked}
+      onOpen={open}
+      onSwipeAway={onRemove}
+      onToggleMark={onToggleMark}
+      meta={
+        <>
+          {t('{n} puzzles', { n: book.puzzles })}
+          {/* The schedule's ask, beside the size — the one number
+              on this card that wants something done today. */}
+          {(book.due ?? 0) > 0 && (
+            <span className="text-info"> · {t('{n} due', { n: book.due! })}</span>
+          )}
+          {/* Where the rotation stands, for a book mid-pass — the
+              ordinal and the pass's own count, not the all-time
+              figures the bar below already draws. */}
+          {book.cycle && (
+            <span>
+              {' · '}
+              {t('Cycle {n}', { n: book.cycle.n })} · {book.cycle.attempted}/{book.puzzles}
             </span>
           )}
-          <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
-            {/* pr keeps a long title clear of the corner control */}
-            <span className="min-w-0 pr-7">
-              {/* The book's own name selects on a long press; the size
-                  and the counts under it are the app's (index.css). */}
-              <button
-                type="button"
-                data-user-text
-                className="text-foreground block w-full truncate text-left text-base font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('puzzles', 'books', book.slug);
-                }}
-              >
-                {book.title}
-              </button>
-              <span className="text-muted-foreground block text-sm">
-                {t('{n} puzzles', { n: book.puzzles })}
-                {/* The schedule's ask, beside the size — the one number
-                    on this card that wants something done today. */}
-                {(book.due ?? 0) > 0 && (
-                  <span className="text-info"> · {t('{n} due', { n: book.due! })}</span>
-                )}
-                {/* Where the rotation stands, for a book mid-pass — the
-                    ordinal and the pass's own count, not the all-time
-                    figures the bar below already draws. */}
-                {book.cycle && (
-                  <span>
-                    {' · '}
-                    {t('Cycle {n}', { n: book.cycle.n })} · {book.cycle.attempted}/{book.puzzles}
-                  </span>
-                )}
-              </span>
-            </span>
-            {scan ? (
-              /*
-                A book being read is not a book you can train from, so the
-                shelf says so instead of showing a progress bar over
-                puzzles that are still arriving. Opening the book is the
-                way back to the import — the card already does that on
-                click, so this is a line, not another control competing
-                with it.
-              */
-              <span className="flex items-center gap-1.5">
-                {scan.live ? (
-                  <Spinner className="text-primary size-3 shrink-0" />
-                ) : (
-                  <FileUp className="text-warn size-3 shrink-0" />
-                )}
-                <span className={cn('truncate text-sm', scan.live ? 'text-primary' : 'text-warn')}>
-                  {scan.live
-                    ? t('reading, page {page} of {pages}', { page: scan.page, pages: scan.pages })
-                    : t('unfinished, {page} of {pages} pages, tap to carry on', {
-                        page: scan.page,
-                        pages: scan.pages,
-                      })}
-                </span>
-              </span>
+        </>
+      }
+      footer={
+        scan ? (
+          /*
+            A book being read is not a book you can train from, so the
+            shelf says so instead of showing a progress bar over
+            puzzles that are still arriving. Opening the book is the
+            way back to the import — the card already does that on
+            click, so this is a line, not another control competing
+            with it.
+          */
+          <span className="flex items-center gap-1.5">
+            {scan.live ? (
+              <Spinner className="text-primary size-3 shrink-0" />
             ) : (
-              <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} />
+              <FileUp className="text-warn size-3 shrink-0" />
             )}
+            <span className={cn('truncate text-sm', scan.live ? 'text-primary' : 'text-warn')}>
+              {scan.live
+                ? t('reading, page {page} of {pages}', { page: scan.page, pages: scan.pages })
+                : t('unfinished, {page} of {pages} pages, tap to carry on', {
+                    page: scan.page,
+                    pages: scan.pages,
+                  })}
+            </span>
           </span>
-        </div>
-
-        <ActionMenu
-          title={book.title}
-          open={menuOpen}
-          onOpenChange={setMenuOpen}
-          actions={[
-            {
-              label: marked ? 'Remove bookmark' : 'Bookmark',
-              icon: Bookmark,
-              onSelect: onToggleMark,
-            },
-            { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-            {
-              label: 'Remove this book and its progress',
-              icon: Trash2,
-              danger: true,
-              onSelect: onRemove,
-            },
-          ]}
-        >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('More')}
-            active={menuOpen}
-            style={swipe.style}
-            className={cn(
-              'absolute right-2 top-2 opacity-0 transition-opacity',
-              'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
-              menuOpen && 'opacity-100',
-            )}
-            // A press on the ⋯ is the menu's, not the card's.
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreHorizontal className="size-3.5" />
-          </Button>
-        </ActionMenu>
-
-        {renaming && (
-          <PromptDialog
-            label={t('Rename this book')}
-            initial={book.title}
-            onSubmit={(value) => void rename(value)}
-            onClose={() => setRenaming(false)}
-          />
-        )}
-      </div>
-    </li>
+        ) : (
+          <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} />
+        )
+      }
+      actions={[
+        {
+          label: marked ? 'Remove bookmark' : 'Bookmark',
+          icon: Bookmark,
+          onSelect: onToggleMark,
+        },
+        { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+        {
+          label: 'Remove this book and its progress',
+          icon: Trash2,
+          danger: true,
+          onSelect: onRemove,
+        },
+      ]}
+    >
+      {renaming && (
+        <PromptDialog
+          label={t('Rename this book')}
+          initial={book.title}
+          onSubmit={(value) => void rename(value)}
+          onClose={() => setRenaming(false)}
+        />
+      )}
+    </BookCoverCard>
   );
 }
