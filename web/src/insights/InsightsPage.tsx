@@ -311,10 +311,10 @@ function Tables({ report }: { report: Report }) {
       <Card>
         <CardHeader>
           <CardTitle>{t('Results')}</CardTitle>
-          <CardDescription>{t('Score counts a draw as half a win.')}</CardDescription>
+          <CardDescription>{t('Score is wins plus half the draws, out of the games played.')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-baseline gap-3">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-muted-foreground text-sm font-medium">{t('Score')}</span>
             <span className="text-foreground text-2xl font-semibold tabular-nums">{pct(scorePct(all))}</span>
             <span className="text-muted-foreground text-sm tabular-nums">
@@ -326,7 +326,11 @@ function Tables({ report }: { report: Report }) {
             </span>
           </div>
           <ResultBar w={all.w} d={all.d} b={all.l} pov="mine" />
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Stacked, not side by side: in a grid the two-row table was
+              stretched to the four-row one's height, and with no divider
+              the six headers read as one row of columns (lanph3re's
+              report). One under the other, each table is its own block. */}
+          <div className="flex flex-col gap-4">
             <TallyTable
               caption={t('By colour')}
               rows={byColour.map((r) => ({ key: r.key, label: t(SIDE_LABEL[r.key]), tally: r.tally }))}

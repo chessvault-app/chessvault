@@ -2183,7 +2183,7 @@ export const ko: Record<string, string> = {
   'Games count here once your side in them is known. Keep a game with your side marked, or browse one of your Chess.com or Lichess months on the Games page.':
     '게임에서 내 진영이 확인되면 여기에 집계됩니다. 내 진영을 표시해 게임을 담아 두거나, 게임 페이지에서 내 Chess.com 또는 Lichess 월 기보를 열어 보세요.',
   'Loosen a filter above, or clear them all.': '위의 필터를 느슨하게 하거나 모두 지우세요.',
-  'Score counts a draw as half a win.': '점수는 무승부를 반 승으로 셉니다.',
+  'Score is wins plus half the draws, out of the games played.': '점수는 승리에 무승부의 절반을 더해 전체 게임 수로 나눈 값입니다.',
   '{w} won, {d} drew, {l} lost': '{w}승 {d}무 {l}패',
   'Won {w}% · Drew {d}% · Lost {b}%': '승 {w}% · 무 {d}% · 패 {b}%',
   'By colour': '진영별',
