@@ -352,8 +352,24 @@ export function InsightsPage() {
             {t('Retry')}
           </Button>
         </div>
-      ) : report === null || (gated && job.total > 0) ? (
-        (slow || gated) && <InsightsSkeleton shape={shape} />
+      ) : report === null ? (
+        slow && <InsightsSkeleton shape={shape} />
+      ) : gated && job.total > 0 && job.status !== 'running' && job.analysed === 0 ? (
+        // Nothing analysed yet: the empty state every shelf uses, with the
+        // press that fills it, rather than an outline of tables that no
+        // press on the page would fill by itself.
+        <EmptyState
+          icon={ChartColumn}
+          title="Not analysed yet"
+          body="This page fills once your games have been through the engine pass. It runs in this window while the app is open, and picks up where it stopped."
+          action={
+            <Button variant="default" size="sm" onClick={() => void job.start()}>
+              {t('Analyse games')}
+            </Button>
+          }
+        />
+      ) : gated && job.total > 0 ? (
+        <InsightsSkeleton shape={shape} />
       ) : report.games === 0 ? (
         narrowed ? (
           <EmptyState
@@ -880,6 +896,8 @@ function PassButton() {
     );
   }
   if (owed === 0) return null;
+  // Before any game is analysed the empty state carries the press.
+  if (job.analysed === 0 && job.status !== 'paused') return null;
   return (
     <Button
       variant="secondary"
@@ -904,15 +922,17 @@ function PassStrip() {
   const running = job.status === 'running';
   const paused = job.status === 'paused' && owed > 0;
   const failed = job.status === 'error';
-  // Idle with games owed: the page is gated on them, and says so here.
-  const waiting = !running && !paused && !failed && job.known && owed > 0;
+  // Idle with games owed after a pass: the page stands, and this says
+  // what is missing from it. Before any pass the empty state says it.
+  const waiting = !running && !paused && !failed && job.known && owed > 0 && job.analysed > 0;
   if (!running && !paused && !failed && !waiting) return null;
   const share = job.total === 0 ? 0 : (100 * job.analysed) / job.total;
   const minutesLeft =
     running && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
   return (
     <div className="flex flex-col gap-1.5">
-      <Progress value={share} aria-label={t('Games analysed')} />
+      {/* A bar is progress; the notice is a fact, and gets none. */}
+      {!waiting && <Progress value={share} aria-label={t('Games analysed')} />}
       <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs tabular-nums">
         <span>
           {t('{done} of {total} games analysed', {
@@ -924,20 +944,13 @@ function PassStrip() {
           <span>{minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}</span>
         )}
         {paused && <span>{t('Paused')}</span>}
-        {waiting &&
-          (job.analysed === 0 ? (
-            <span>
-              {t('This page fills once every game has been through the engine pass: {n} to go.', {
-                n: exact.format(owed),
-              })}
-            </span>
-          ) : (
-            <span>
-              {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
-                n: exact.format(owed),
-              })}
-            </span>
-          ))}
+        {waiting && (
+          <span>
+            {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
+              n: exact.format(owed),
+            })}
+          </span>
+        )}
         {failed && job.error && (
           <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
         )}
