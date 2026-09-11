@@ -74,14 +74,26 @@ export function useSwipeRow({
   // once on the way over (and once on the way back), not every frame.
   const wasArmed = useRef(false);
 
-  const end = (): void => {
-    if (dx <= -THRESHOLD) onRemove();
-    else if (dx >= THRESHOLD) onBookmark?.();
+  /** Put the row back and let the gesture go, without doing anything it
+      was pointing at. */
+  const forget = (): void => {
     setDx(0);
     start.current = null;
     axis.current = null;
     rightward.current = false;
     wasArmed.current = false;
+  };
+
+  const end = (): void => {
+    // `start` is what says the gesture is still this hook's: a pinch it
+    // stood down from leaves it null, and a release must then do nothing.
+    // The ref rather than `dx`, because a touchmove's setState is given a
+    // task of its own and the 0 it wrote may not be in this closure yet.
+    if (start.current) {
+      if (dx <= -THRESHOLD) onRemove();
+      else if (dx >= THRESHOLD) onBookmark?.();
+    }
+    forget();
   };
 
   return {
@@ -92,12 +104,20 @@ export function useSwipeRow({
     },
     handlers: {
       onTouchStart: (e) => {
+        // A second finger is a pinch, never a swipe. The row follows one
+        // touch and, until this line, never asked how many were down, so a
+        // spread read as one finger travelling: measured on a note card at
+        // 390px, the finger being followed went 120px left, past the
+        // threshold below, and the note was removed.
+        if (e.touches.length !== 1) return forget();
         const touch = e.touches[0]!;
         start.current = { x: touch.clientX, y: touch.clientY };
         rightward.current = Boolean(onBookmark) && touch.clientX > EDGE_PX;
       },
       onTouchMove: (e) => {
         if (!start.current) return;
+        // The same pinch, arriving one finger at a time.
+        if (e.touches.length !== 1) return forget();
         const touch = e.touches[0]!;
         const moveX = touch.clientX - start.current.x;
         const moveY = touch.clientY - start.current.y;
