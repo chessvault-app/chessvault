@@ -321,3 +321,27 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
   };
 });
 
+/**
+ * A board, kept so it can be put back: the document, and where the reader
+ * was standing in it.
+ *
+ * Four fields, not the whole state. `pendingPromotion` is a dialog
+ * mid-question and `loadError` is a complaint about the last load; neither
+ * describes the board anyone would want back, and both are cleared by the
+ * act a snapshot exists to reverse.
+ */
+export type BoardSnapshot = Pick<AnalysisState, 'tree' | 'cursorId' | 'gameHeaders' | 'orientation'>;
+
+/**
+ * The board as it stands. Put it back with `useAnalysis.setState(snapshot)`.
+ *
+ * Two undos read the board this way (the move tree's destructive verbs, and
+ * the Board page starting over), and they have to agree about what a board
+ * IS: an undo that forgets the orientation hands back a game from the wrong
+ * side, and one that forgets the headers hands back a game with no players.
+ */
+export function snapshotBoard(): BoardSnapshot {
+  const { tree, cursorId, gameHeaders, orientation } = useAnalysis.getState();
+  return { tree, cursorId, gameHeaders, orientation };
+}
+

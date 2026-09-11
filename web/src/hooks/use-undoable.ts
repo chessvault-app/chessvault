@@ -30,6 +30,19 @@ export function useUndoable(): {
    * answers.
    */
   remove: (label: string, commit: () => void, undo?: () => void) => void;
+  /**
+   * The same offer in other words, for a loss that is not a removal: the
+   * Board page starting over says what happened and offers the board back
+   * (analysis/AnalysisView). `title` is the whole sentence, `action` the
+   * button; everything else — the grace period, the announcement, the
+   * commit on leave — is the removal's, because the question is the same
+   * one and an app that asks it twice in two shapes has two answers.
+   */
+  offer: (
+    wording: { title: string; action: string },
+    commit: () => void,
+    undo?: () => void,
+  ) => void;
 } {
   const pending = useRef<{ id: string; commit: () => void } | null>(null);
 
@@ -52,17 +65,17 @@ export function useUndoable(): {
     };
   }, [flush]);
 
-  const remove = useCallback(
-    (label: string, commit: () => void, undo?: () => void) => {
+  const offer = useCallback(
+    (wording: { title: string; action: string }, commit: () => void, undo?: () => void) => {
       flush();
-      const message = t('Removed “{name}”', { name: label });
+      const message = wording.title;
       announce(message);
       const entry = { id: '', commit };
       entry.id = toast.add({
         title: message,
         timeout: GRACE_MS,
         actionProps: {
-          children: t('Undo'),
+          children: wording.action,
           onClick: () => {
             if (pending.current === entry) pending.current = null;
             undo?.();
@@ -84,5 +97,12 @@ export function useUndoable(): {
     [flush],
   );
 
-  return { remove };
+  const remove = useCallback(
+    (label: string, commit: () => void, undo?: () => void) => {
+      offer({ title: t('Removed “{name}”', { name: label }), action: t('Undo') }, commit, undo);
+    },
+    [offer],
+  );
+
+  return { remove, offer };
 }

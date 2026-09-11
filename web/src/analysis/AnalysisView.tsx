@@ -13,7 +13,7 @@ import { up } from '@/lib/router';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
 import { toast } from '@/components/ui/toast';
-import { useAnalysis } from '@/store/analysis';
+import { snapshotBoard, useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -337,11 +337,11 @@ function useTreeUndo(): {
 } {
   const undoable = useUndoable();
   const capture = (label: string): void => {
-    const { tree, cursorId, gameHeaders, orientation } = useAnalysis.getState();
+    const board = snapshotBoard();
     undoable.remove(
       label,
       () => {},
-      () => useAnalysis.setState({ tree, cursorId, gameHeaders, orientation }),
+      () => useAnalysis.setState(board),
     );
   };
   return { undoable, capture };
