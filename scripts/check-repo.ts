@@ -520,9 +520,21 @@ function tCallKeys(code: string): { text: string; index: number }[] {
     let depth = 1;
     let i = m.index + m[0].length;
     const start = i;
+    // A quote opens a string that runs to its unescaped twin, and nothing
+    // inside it is a bracket or the argument-ending comma. Without this
+    // the scan cut the first argument at the first comma of the SENTENCE
+    // ("Your results by colour, time control…") and the rest of the key
+    // was never seen, so every multi-clause string went unchecked.
+    let quote: string | null = null;
     for (; i < code.length && depth > 0; i++) {
       const c = code[i]!;
-      if (c === '(' || c === '[' || c === '{') depth++;
+      if (quote) {
+        if (c === '\\') i++;
+        else if (c === quote) quote = null;
+        continue;
+      }
+      if (c === "'" || c === '"' || c === '`') quote = c;
+      else if (c === '(' || c === '[' || c === '{') depth++;
       else if (c === ')' || c === ']' || c === '}') depth--;
       else if (c === ',' && depth === 1) break;
     }
