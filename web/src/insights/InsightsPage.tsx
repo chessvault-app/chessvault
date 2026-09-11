@@ -61,7 +61,6 @@ interface InsightsFilters extends MyGamesFilters {
 
 const EMPTY_FILTERS: InsightsFilters = { range: 'any' };
 const FILTERS_KEY = 'vault:insights-filters';
-
 const SPEEDS: { id: Speed; label: string }[] = [
   { id: 'bullet', label: 'Bullet' },
   { id: 'blitz', label: 'Blitz' },
@@ -228,7 +227,9 @@ export function InsightsPage() {
         description={t(
           'Your results by colour, time control and opening, and where each game left the opening catalogue. The filters narrow every table below.',
         )}
+        actions={<PassButton />}
       />
+      <PassStrip />
 
       <FilterRow className="px-0 py-0">
         <SideSelect
@@ -363,21 +364,23 @@ function Tables({ report }: { report: Report }) {
             rows={bySpeed.map((r) => ({ key: r.key, label: t(SPEED_LABEL[r.key]), tally: r.tally }))}
           />
           {report.analysis.games > 0 && (
-            <p className="text-muted-foreground text-xs tabular-nums">
-              {t('Accuracy from {n} of {total} games analysed at depth {d}', {
-                n: exact.format(report.analysis.games),
-                total: exact.format(report.games),
-                d: report.analysis.depth ?? PASS_DEPTH,
-              })}
-              {meanOf(report.analysis.acpl) !== null &&
-                `, ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
-              .
+            <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-2 text-xs tabular-nums">
+              <span>
+                {t('Accuracy from {n} of {total} games analysed at depth {d}', {
+                  n: exact.format(report.analysis.games),
+                  total: exact.format(report.games),
+                  d: report.analysis.depth ?? PASS_DEPTH,
+                })}
+                {meanOf(report.analysis.acpl) !== null &&
+                  `, ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
+                .
+              </span>
+              <StartOver />
             </p>
           )}
         </CardContent>
       </Card>
 
-      <EnginePassCard total={report.games} />
       <MoveQualityCard analysis={report.analysis} />
 
       <Card>
@@ -796,94 +799,105 @@ function LengthCard({ lengths }: { lengths: Report['lengths'] }) {
 }
 
 /**
- * The engine pass's controls and progress: what is done of what is owed,
- * the rate this run is going at, and Start, Pause, Resume and Start
- * over. The pass itself lives in analysisJob.ts and outlives this card;
- * the card only reads it and presses its buttons.
+ * The engine pass, as a page action rather than a card: a control panel
+ * is not a statistic, and a card that stood on the page for ever said
+ * so (lanph3re's call). The button lives in the header's actions slot;
+ * while a run is going a thin strip under the header carries the bar,
+ * the count and the time left; once every game is analysed nothing is
+ * drawn here at all, and Start over sits in the Results footnote beside
+ * the figures it would change. The pass itself is analysisJob.ts and
+ * outlives the page.
  */
-function EnginePassCard({ total }: { total: number }) {
+function PassButton() {
   const job = useAnalysisJob();
-  const [arming, setArming] = useState(false);
   useEffect(() => {
     void useAnalysisJob.getState().refresh();
   }, []);
   const owed = Math.max(0, job.total - job.analysed);
+  if (job.status === 'running') {
+    return (
+      <Button variant="secondary" size="sm" onClick={() => job.pause()}>
+        {t('Pause')}
+      </Button>
+    );
+  }
+  if (owed === 0) return null;
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      title={t('Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.', { n: PASS_DEPTH })}
+      onClick={() => void job.start()}
+    >
+      {job.analysed > 0 || job.status === 'paused' ? t('Resume analysis') : t('Analyse games')}
+    </Button>
+  );
+}
+
+/** The run's progress, drawn only while there is a run to report on:
+    going, paused part way, or stopped by an error. */
+function PassStrip() {
+  const job = useAnalysisJob();
+  const owed = Math.max(0, job.total - job.analysed);
+  const running = job.status === 'running';
+  const paused = job.status === 'paused' && owed > 0;
+  const failed = job.status === 'error';
+  if (!running && !paused && !failed) return null;
   const share = job.total === 0 ? 0 : (100 * job.analysed) / job.total;
   const minutesLeft =
-    job.status === 'running' && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
-  const running = job.status === 'running';
+    running && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('Engine pass')}</CardTitle>
-        <CardDescription>
-          {t(
-            'Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.',
-            { n: PASS_DEPTH },
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <Progress value={share} aria-label={t('Games analysed')} />
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-          <span className="tabular-nums">
-            {t('{done} of {total} games analysed', {
-              done: exact.format(job.analysed),
-              total: exact.format(Math.max(job.total, total)),
-            })}
-          </span>
-          {minutesLeft !== null && (
-            <span className="text-muted-foreground tabular-nums">
-              {minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}
-            </span>
-          )}
-          {job.status === 'done' && owed === 0 && (
-            <span className="text-muted-foreground">{t('Every game is analysed.')}</span>
-          )}
-          {job.status === 'error' && job.error && (
-            <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {running ? (
-            <Button variant="secondary" size="sm" onClick={() => job.pause()}>
-              {t('Pause')}
-            </Button>
-          ) : (
-            owed > 0 && (
-              <Button variant="default" size="sm" onClick={() => void job.start()}>
-                {job.status === 'paused' || job.analysed > 0 ? t('Resume') : t('Start')}
-              </Button>
-            )
-          )}
-          {!running && job.analysed > 0 && !arming && (
-            <Button variant="ghost" size="sm" onClick={() => setArming(true)}>
-              {t('Start over')}
-            </Button>
-          )}
-          {arming && (
-            <>
-              <span className="text-muted-foreground text-sm">
-                {t('Forget {n} analysed games and start again?', { n: exact.format(job.analysed) })}
-              </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  setArming(false);
-                  void job.startOver();
-                }}
-              >
-                {t('Start over')}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setArming(false)}>
-                {t('Cancel')}
-              </Button>
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-1.5">
+      <Progress value={share} aria-label={t('Games analysed')} />
+      <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs tabular-nums">
+        <span>
+          {t('{done} of {total} games analysed', {
+            done: exact.format(job.analysed),
+            total: exact.format(job.total),
+          })}
+        </span>
+        {minutesLeft !== null && (
+          <span>{minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}</span>
+        )}
+        {paused && <span>{t('Paused')}</span>}
+        {failed && job.error && (
+          <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
+        )}
+      </p>
+    </div>
+  );
+}
+
+/** Forget every record and run the pass again: a two-step press, since
+    it throws away hours on a big vault. */
+function StartOver() {
+  const job = useAnalysisJob();
+  const [arming, setArming] = useState(false);
+  if (job.status === 'running') return null;
+  if (!arming) {
+    return (
+      <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setArming(true)}>
+        {t('Start over')}
+      </Button>
+    );
+  }
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <span>{t('Forget {n} analysed games and start again?', { n: exact.format(job.analysed) })}</span>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => {
+          setArming(false);
+          void job.startOver();
+        }}
+      >
+        {t('Start over')}
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setArming(false)}>
+        {t('Cancel')}
+      </Button>
+    </span>
   );
 }
 

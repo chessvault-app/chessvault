@@ -2239,13 +2239,11 @@ export const ko: Record<string, string> = {
   'Under {n} moves': '{n}수 미만',
   '{a} to {b} moves': '{a}수에서 {b}수',
   // The engine pass and what it measures.
-  'Engine pass': '엔진 분석',
   'Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.': '엔진이 내 모든 게임을 깊이 {n}으로 한 수씩 판정합니다. 앱이 열려 있는 동안 이 창에서 돌아가며, 멈춘 곳에서 이어서 합니다.',
   'Games analysed': '분석한 게임',
   '{done} of {total} games analysed': '게임 {total}개 중 {done}개 분석',
   'under a minute left': '1분 미만 남음',
   'about {m} min left': '약 {m}분 남음',
-  'Every game is analysed.': '모든 게임을 분석했습니다.',
   'The pass stopped: {error}': '분석이 멈췄습니다: {error}',
   'Resume': '이어서',
   'Forget {n} analysed games and start again?': '분석한 게임 {n}개를 지우고 다시 시작할까요?',
@@ -2267,4 +2265,7 @@ export const ko: Record<string, string> = {
   'Blunder': '블런더',
   "Every move you played in the analysed games, by the engine's verdict, and how accurate they were by phase and by move number.": '분석한 게임에서 내가 둔 모든 수를 엔진의 판정별로 묶고, 단계별과 수 번호별로 얼마나 정확했는지 보여 줍니다.',
   '{n}% accuracy': '정확도 {n}%',
+  'Analyse games': '게임 분석',
+  'Resume analysis': '분석 이어서 하기',
+  'Paused': '일시정지됨',
 };
