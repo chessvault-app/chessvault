@@ -75,8 +75,12 @@ export interface SearchResult {
 export const NAME_CAP = 50;
 export const CONTENT_CAP = 20;
 
-/** Characters of context either side of the matched words. */
-const SNIPPET_BEFORE = 48;
+/**
+ * Characters of context either side of the matched words. Short before,
+ * because a phone's row shows about fifty characters and the match has
+ * to be one of them: at 48 the demo's rows cut off before the word.
+ */
+const SNIPPET_BEFORE = 24;
 const SNIPPET_AFTER = 96;
 
 const SECTION_ORDER: readonly SearchSection[] = ['studies', 'notes', 'games', 'books', 'puzzlebooks'];
@@ -342,7 +346,10 @@ export function readEntry(seen: Seen): SearchEntry | null {
   }
   const byChapter = new Map<number, string[]>();
   for (const span of commentSpans(file)) {
-    const text = commentText(span.text);
+    // A comment holds wiki links as a note does; show them by their text.
+    const text = commentText(span.text)
+      .replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, '$2')
+      .replace(/\[\[([^\]]*)\]\]/g, '$1');
     if (!text) continue;
     const list = byChapter.get(span.chapter);
     if (list) list.push(text);

@@ -85,7 +85,7 @@ describe('rank', () => {
     const [hit] = rank([entry('notes', 'Long', [{ text: long }])], 'target').content;
     // Cut at a word on each side, with words of context kept, not just
     // the fragment nearest the match: that was what a first version did.
-    expect(hit!.snippet.before).toBe(`…${'before '.repeat(6)}`);
+    expect(hit!.snippet.before).toBe(`…${'before '.repeat(3)}`);
     expect(hit!.snippet.after).toBe(` ${'after '.repeat(16).trim()}…`);
     expect(hit!.snippet.match).toBe('target');
   });
@@ -127,7 +127,10 @@ describe('search index', () => {
       join(studies, 'Najdorf.pgn'),
       '[Event "One"]\n\n1. e4 {The English attack [%eval 0.3]} c5 *\n\n[Event "Two"]\n\n1. d4 {The rook goes to c8} d5 *\n',
     );
-    writeFileSync(join(games, 'Kasparov vs Topalov.pgn'), '[Event "Wijk"]\n\n1. e4 {A rook sacrifice} d6 *\n');
+    writeFileSync(
+      join(games, 'Kasparov vs Topalov.pgn'),
+      '[Event "Wijk"]\n\n1. e4 {A rook sacrifice, see [[Openings/Sicilian|the Sicilian]]} d6 *\n',
+    );
     writeFileSync(join(books, 'b1', 'book.json'), JSON.stringify({ title: 'Rook endgames explained', name: 'x.pdf' }));
     writeFileSync(join(puzzleBooks, 'p1', 'book.json'), JSON.stringify({ title: 'Combinations' }));
     app = new Hono().route('/api', searchApi({ notes, studies, games, books, puzzleBooks }, file));
@@ -162,6 +165,8 @@ describe('search index', () => {
     const [hit] = (await search('c8')).content;
     expect(hit).toMatchObject({ section: 'studies', id: 'Najdorf', chapter: 1 });
     expect((await search('e4')).content).toEqual([]);
+    const [link] = (await search('sicilian')).content;
+    expect(link!.snippet.before).toBe('…sacrifice, see the ');
   });
 
   it('lists a puzzle book by its title', async () => {
