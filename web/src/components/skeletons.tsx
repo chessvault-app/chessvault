@@ -5,7 +5,7 @@ import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { panelStoredHeight } from '@/components/panel';
-import { VaultNote, VaultPath } from '@/components/vault-tree';
+import { VAULT_ROWS, VaultNote, VaultPath } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 
 /**
@@ -1047,7 +1047,7 @@ export function SkeletonVaultTree({
   path?: string | null;
   /**
    * Eight, which is what a vault in use lists: the ten rows the card can
-   * draw (settings/SettingsPage `VAULT_ROWS`) less the two book folders,
+   * draw (components/vault-tree `VAULT_ROWS`) less the two book folders,
    * which exist only once a PDF has been imported. Empty rows are
    * dropped, so a fresh vault lists fewer and a reading one all ten; the
    * caller can say so where it knows better.
@@ -1072,7 +1072,7 @@ export function SkeletonVaultTree({
         </div>
       </div>
       <ul>
-        {VAULT_SHAPE.slice(0, rows).map((row, i) => (
+        {VAULT_ROWS.slice(0, rows).map((row, i) => (
           <li key={i}>
             {/* Every cell is centred rather than left to the row's baseline
                 alignment: a bar has no text, so its baseline is its own
@@ -1082,20 +1082,19 @@ export function SkeletonVaultTree({
               <Skeleton className="size-4 rounded-sm" />
             </span>
             <div className="path flex h-5 items-center self-center">
-              <Skeleton className={cn('h-2.5', row.path)} />
+              <Skeleton className={cn('h-2.5', PATH_WIDTHS[i % PATH_WIDTHS.length])} />
             </div>
-            <div className="gloss self-center">
-              <div className="flex h-5 items-center">
-                <Skeleton className={cn('h-2', row.gloss)} />
-              </div>
-              {/* Stacked under the name below 30rem, where the longer
-                  glosses take a second line; beside it above, where none
-                  of them do. */}
-              {row.wraps && (
-                <div className="hidden h-5 items-center @max-[30rem]:flex">
-                  <Skeleton className="h-2 w-2/5" />
-                </div>
-              )}
+            {/* The gloss is the one cell that wraps, stacked under the
+                name below 30rem, and how many lines it takes is a fact
+                about the words in the reader's language: three of the
+                English glosses take two lines at 390px and one of the
+                Korean ones does. A list of wrap marks measured in one
+                language stood the Korean tree 40px tall. So the real
+                gloss is laid out here invisibly, at the size it will be,
+                and a bar is drawn over its first line. */}
+            <div className="gloss relative min-w-0 self-center text-sm">
+              <span className="invisible">{t(row.gloss)}</span>
+              <Skeleton className="absolute top-1.5 left-0 h-2 w-3/4 max-w-full" />
             </div>
             <div className="size flex h-5 items-center self-center">
               <Skeleton className="h-2.5 w-24" />
@@ -1109,22 +1108,10 @@ export function SkeletonVaultTree({
 }
 
 /**
- * One entry per row the Vault card can list, in its order, so any prefix
- * of it is the shape of a vault that has fewer: the bars are the widths
- * that row's own name and gloss come to at text-sm (`VAULT_ROWS` supplies
- * both), and `wraps` marks the three glosses long enough to take a second
- * line once they stack under the name.
+ * The width each row's name comes to in the mono face, in `VAULT_ROWS`
+ * order, so any prefix of the list is the shape of a vault with fewer
+ * rows. The names never wrap; the gloss beside each is laid out from its
+ * own words above.
  */
-const VAULT_SHAPE: { path: string; gloss: string; wraps?: boolean }[] = [
-  { path: 'w-10', gloss: 'w-80', wraps: true },
-  { path: 'w-14', gloss: 'w-72', wraps: true },
-  { path: 'w-10', gloss: 'w-48' },
-  { path: 'w-10', gloss: 'w-64', wraps: true },
-  { path: 'w-24', gloss: 'w-48' },
-  { path: 'w-14', gloss: 'w-56' },
-  { path: 'w-20', gloss: 'w-52' },
-  { path: 'w-14', gloss: 'w-32' },
-  { path: 'w-28', gloss: 'w-36' },
-  { path: 'w-24', gloss: 'w-32' },
-];
+const PATH_WIDTHS = ['w-10', 'w-14', 'w-10', 'w-10', 'w-24', 'w-14', 'w-20', 'w-14', 'w-28', 'w-24'];
 

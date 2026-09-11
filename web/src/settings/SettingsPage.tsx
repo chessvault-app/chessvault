@@ -10,7 +10,7 @@ import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
-import { VaultTree, type VaultKind, type VaultRow } from '@/components/vault-tree';
+import { VAULT_ROWS, VaultTree, type VaultRow } from '@/components/vault-tree';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -292,8 +292,16 @@ const VAULT_COPY_NOTE =
   'The copy is one tar file of every document and the change history. Settings and tokens stay on the server.';
 const PROFILE_NOTE = 'Usernames pre-fill the archive browser on the Games page.';
 
-/** Ragged widths for the section links, so the row does not read as a ruler. */
-const JUMP_WIDTHS = ['w-8', 'w-6', 'w-6', 'w-14', 'w-6', 'w-12', 'w-10', 'w-16', 'w-6', 'w-10', 'w-12', 'w-8', 'w-6', 'w-14', 'w-6'];
+/**
+ * The names the section links will carry, in card order, one list per
+ * start (the render above is the source; the desktop shell adds one
+ * card, "Desktop app", and the lag build another). The placeholder lays
+ * them out invisibly, because how many lines the row takes is a fact
+ * about the words: nine Korean names fit one line at the narrow width
+ * and the same nine in English take two.
+ */
+const JUMP_NAMES_DEMO = ['Vault', 'Documents', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'This is a demo', 'Version'];
+const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess token', 'Tablebase', 'Browsed games', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'Danger zone', 'Version'];
 
 /**
  * The page while the settings answer is out.
@@ -321,14 +329,16 @@ function SettingsPlaceholder() {
       <div className="flex h-7 items-center max-md:h-11">
         <Skeleton className="h-4 w-28" />
       </div>
-      {/* The section links, as JumpList draws them: text-sm names, py-2
-          and mb-1, and no row at all below md. Nine cards on the demo,
-          fifteen on a server. */}
-      <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 md:flex">
-        {(isDemo() ? JUMP_WIDTHS.slice(0, 9) : JUMP_WIDTHS).map((w, i) => (
-          <div key={i} className="flex h-5 items-center px-1">
-            <Skeleton className={cn('h-2.5', w)} />
-          </div>
+      {/* The section links, as JumpList draws them: text-sm names in
+          px-1 buttons, py-2 and mb-1, and no row at all below md. Each
+          name is laid out invisibly and barred over, so the row wraps
+          where the real one will. */}
+      <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex">
+        {(isDemo() ? JUMP_NAMES_DEMO : JUMP_NAMES_SERVER).map((name) => (
+          <span key={name} className="relative px-1">
+            <span className="invisible">{t(name)}</span>
+            <Skeleton className="absolute inset-x-1 top-1/2 h-2.5 -translate-y-1/2" />
+          </span>
         ))}
       </div>
       {isDemo() ? (
@@ -551,24 +561,6 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
 // person's, and two name fields side by side read as one thing. The
 // placeholder is what the sidebar shows without a name, so blanking the
 // field is not a mystery.
-
-/**
- * The rows the Vault card lists, from the areas /api/storage reports,
- * in the folder's own order. A row shows only where there is something
- * in it; the demo's vault has no books, a new vault has nothing.
- */
-const VAULT_ROWS: { path: string; gloss: string; kind: VaultKind; keys: string[] }[] = [
-  { path: 'games', kind: 'folder', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
-  { path: 'studies', kind: 'folder', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
-  { path: 'notes', kind: 'folder', gloss: 'markdown, boards in the text', keys: ['notes'] },
-  { path: 'books', kind: 'folder', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
-  { path: 'puzzlebooks', kind: 'folder', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
-  { path: 'puzzles', kind: 'folder', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
-  { path: 'repertoire', kind: 'folder', gloss: 'the opening map and its drills', keys: ['repertoire'] },
-  { path: 'sources', kind: 'folder', gloss: 'PGN files you added', keys: ['sources'] },
-  { path: '.history.git', kind: 'git', gloss: 'every earlier version', keys: ['history'] },
-  { path: 'config.json', kind: 'json', gloss: 'settings and tokens', keys: ['config'] },
-];
 
 /** The card's listing, read off the page's one /api/storage answer
     (useStorage). config.json is a file rather than an area, so its
