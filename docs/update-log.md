@@ -11,7 +11,9 @@ The quick switcher searches what a document says, not only its name.
 Six things that were true in one copy of a page and not in its twin, found
 by auditing the code for duplicates: an installed desktop app now finds the
 vault's own tablebase files, a puzzle's hover preview wears the same edge as
-the game list's, and the vault path copies in the isolated build.
+the game list's, and the vault path copies in the isolated build. An audit
+of the code for wasted work made the games list, reference search, index
+builds and the board's arrow keys do less per request.
 
 - **Open anything by what it says, not only by its name.** The
   Ctrl/⌘ K window, and the search button in Home's phone bar, now search
@@ -48,6 +50,29 @@ the game list's, and the vault path copies in the isolated build.
 - **A study whose name was refused leaves the shelf current.** Creating a
   study the vault already had returned the error without re-reading the
   list, as every other change to the shelf does.
+
+- **A large collection lists as fast as a small one.** Past 256 kept games,
+  every visit to the games list and to Home re-read and replayed the whole
+  collection, because its files shared a cache sized for archive months.
+  The collection has its own cache now: a 600-game list took 356 ms a
+  request and takes 17.
+- **A reference search page names openings without touching the disk.** A
+  page of games with no opening header looked the openings index up once
+  per move, and each lookup checked the index file on disk: 1,200 checks a
+  page. It is read once per game now. The fast search also no longer
+  counts the whole games table for its total on every hunt.
+- **Index builds hash positions without allocating.** Position hashing and
+  the key index's entries were built from 64-bit BigInt arithmetic, which
+  allocates at every step, once per move of every game. Both are plain
+  32-bit arithmetic now and produce the same bytes, held to the old
+  implementation on 235,019 positions and by the native core's own
+  fixtures: 1,650 ns a position down to 220, and 50 ns an entry down to 2.
+- **Stepping through a game does less each step.** The analysis and study
+  pages re-rendered whole on every arrow key, for a title that follows
+  the cursor, and mounted two engine panels with one hidden. The title is
+  its own piece now, one engine panel is mounted per layout, the move
+  table's cells and the engine review's opening walk are batched, and a
+  step on a 63-move game costs a third of the script time it did.
 
 ## 0.9.5
 
