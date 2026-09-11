@@ -923,11 +923,12 @@ function PassStrip() {
   const minutesLeft =
     running && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
   if (waiting) {
-    // The notice: the info-tinted box a page uses for a fact about its
-    // own data (the photo import's, the search box's issues), the
-    // sentence in the reading face, and the press that answers it.
+    // The notice: the amber box the app's cautions wear (the search
+    // box's issues, the PDF import's), since a figure missing some games
+    // is a caution in the colour grammar, and blue is for trusted marks.
+    // The sentence in the reading face, and the press that answers it.
     return (
-      <div className="border-info/40 bg-info/10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border px-3 py-2 text-sm">
+      <div className="border-warn/40 bg-warn/10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border px-3 py-2 text-sm">
         <span className="min-w-0 flex-1">
           {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
             n: exact.format(owed),

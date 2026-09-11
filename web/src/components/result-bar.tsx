@@ -44,7 +44,7 @@ export function ResultBar({
     { value: pct(d), className: 'bg-accent text-muted-foreground' },
     {
       value: pct(b),
-      className: mine ? 'bg-destructive/10 text-destructive' : 'bg-eval-black text-on-eval-black',
+      className: mine ? 'bg-destructive-tint text-destructive' : 'bg-eval-black text-on-eval-black',
     },
   ];
   return (
