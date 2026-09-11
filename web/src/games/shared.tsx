@@ -7,6 +7,7 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Board } from '@/board/Board';
+import { BoardPeekCard, PEEK_CARD } from '@/components/board-peek-card';
 
 import { cn } from '@/lib/utils';
 import { placeNear } from '@/lib/floating';
@@ -77,18 +78,6 @@ export const docId = (g: Pick<GameSummary, 'file'>): string =>
 export const safeLink = (link?: string | null): string | undefined =>
   link && /^https?:\/\//i.test(link) ? link : undefined;
 
-/**
- * The peek card, MEASURED rather than derived: it is `w-44` with `p-1`,
- * so the width is 176 and the board inside it should make the height 176
- * too — but chessground floors a board to a whole number of device pixels
- * per square, so what it actually comes out at is 170 (measured in the
- * running app at 1x). The old numbers here assumed 184 and centred the
- * card 7px above the row it was pointing at. The same card is drawn by
- * the puzzle list's preview, which keeps its own copy of this for the
- * same reason a peek is not yet one component.
- */
-const PEEK_CARD = { width: 176, height: 170 };
-
 export interface Preview {
   fen: string;
   orientation: 'white' | 'black';
@@ -136,13 +125,13 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     );
   }
   return (
-    <div
-      ref={card}
-      style={{ top: preview.top, left: preview.left }}
-      className="bg-popover ring-window-ring pointer-events-none fixed z-50 w-44 rounded-lg p-1 shadow-lg ring-1"
-    >
-      <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-sm" />
-    </div>
+    <BoardPeekCard
+      cardRef={card}
+      top={preview.top}
+      left={preview.left}
+      fen={preview.fen}
+      orientation={preview.orientation}
+    />
   );
 }
 

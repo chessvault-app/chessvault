@@ -1,6 +1,6 @@
 import { Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Board } from '@/board/Board';
+import { BoardPeekCard, PEEK_CARD } from '@/components/board-peek-card';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -9,14 +9,6 @@ import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { isCoarsePointer } from '@/lib/media';
-
-/**
- * Same card, same measured size, as the game list's peek — `w-44` with
- * `p-1`, whose board chessground floors to 162 rather than the 168 the
- * padding leaves it. See games/shared.tsx: the two keep their own copies
- * until the card itself is one component.
- */
-const PEEK_CARD = { width: 176, height: 170 };
 
 /**
  * Peeking at a puzzle from a list of them.
@@ -161,21 +153,12 @@ export function usePuzzlePreview(): {
           }}
         />
       )}
-      <div
-        style={{ top: preview.top, left: preview.left }}
-        className={cn(
-          'border-window-ring bg-card pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
-          'shadow-lg',
-        )}
-      >
-        <Board
-          fen={preview.fen}
-          orientation={preview.orientation}
-          viewOnly
-          coordinates={false}
-          className="rounded-sm"
-        />
-      </div>
+      <BoardPeekCard
+        top={preview.top}
+        left={preview.left}
+        fen={preview.fen}
+        orientation={preview.orientation}
+      />
     </>
   );
 

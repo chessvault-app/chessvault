@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { placeNear } from '@/lib/floating';
-import { Board } from '@/board/Board';
+import { BoardPeekCard } from '@/components/board-peek-card';
 import type { PvPly } from './pv.ts';
 
 /**
@@ -151,25 +151,14 @@ export function PvPeek({
   return createPortal(
     // Portalled, because a panel with a transform or an overflow clip
     // between here and the body would capture a `fixed` card.
-    <div
-      style={{ top, left, width: CARD_W }}
-      className="bg-popover ring-window-ring pointer-events-none fixed z-50 rounded-lg p-1 shadow-lg ring-1"
-    >
-      <Board
-        fen={peek.fen}
-        orientation={orientation}
-        viewOnly
-        coordinates={false}
-        lastMove={peek.ply.squares}
-        className="rounded-sm"
-      />
+    <BoardPeekCard top={top} left={left} width={CARD_W} fen={peek.fen} orientation={orientation} lastMove={peek.ply.squares}>
       {/* The label, always — including on Black's moves, where the line
           itself prints none. On the board there is no line to read the
           number off, so "exd4" alone would not say which move this is. */}
       <p className="text-muted-foreground font-moves pt-1 text-center text-micro">
         {peek.ply.label} {peek.ply.san}
       </p>
-    </div>,
+    </BoardPeekCard>,
     document.body,
   );
 }
