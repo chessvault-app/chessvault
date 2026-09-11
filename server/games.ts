@@ -130,9 +130,9 @@ function replaySummary(game: Game<PgnNodeData>): {
  * Both parse caches hold whole parsed months and never used to evict:
  * every archive month ever browsed stayed in server memory for the
  * process's life. Bounded now, least-recently-USED out first (a Map
- * iterates in insertion order, and a hit re-inserts) — the collection's
- * own files plus a browsing session's months fit comfortably under
- * these, and an evicted month costs one re-parse.
+ * iterates in insertion order, and a hit re-inserts) — a browsing
+ * session's months fit comfortably under these, and an evicted month
+ * costs one re-parse. The collection has its own map below.
  */
 const LIST_CACHE_MAX = 256;
 const GAMES_CACHE_MAX = 64;
@@ -150,12 +150,24 @@ function touchLru<K, V>(cache: Map<K, V>, key: K, max: number, value?: V): V | u
 
 // Summaries parsed per file and cached by mtime — plain files stay fast
 // without a database.
-const listCache = new Map<string, { mtimeMs: number; games: GameSummary[] }>();
+type SummaryEntry = { mtimeMs: number; games: GameSummary[] };
+const listCache = new Map<string, SummaryEntry>();
+// The collection is one FILE per game, so it does not share the months'
+// cap: a sequential pass over more files than the cap misses on every
+// one (each access evicts the entry the next request needs first), and
+// every /games and every Home load re-parsed and replayed the whole
+// collection once it passed 256 games — 356 ms a request at 600 games
+// against 5 ms cached. A summary is a few hundred bytes, so the
+// collection bounds this map by itself.
+const collectionCache = new Map<string, SummaryEntry>();
 
 function parseFileSummaries(dir: string, path: string): GameSummary[] {
   const stat = statSync(path);
   const rel = relative(dir, path).split(sep).join('/');
-  const cached = touchLru(listCache, rel, LIST_CACHE_MAX);
+  const inCollection = rel.startsWith('collection/');
+  const cached = inCollection
+    ? collectionCache.get(rel)
+    : touchLru(listCache, rel, LIST_CACHE_MAX);
   if (cached && cached.mtimeMs === stat.mtimeMs) return cached.games;
 
   // Archive files live at chesscom/<user>/<month>.pgn — the path names the
@@ -200,7 +212,9 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
     });
   });
   parser.parse(readFileSync(path, 'utf-8'));
-  touchLru(listCache, rel, LIST_CACHE_MAX, { mtimeMs: stat.mtimeMs, games });
+  const entry = { mtimeMs: stat.mtimeMs, games };
+  if (inCollection) collectionCache.set(rel, entry);
+  else touchLru(listCache, rel, LIST_CACHE_MAX, entry);
   return games;
 }
 
