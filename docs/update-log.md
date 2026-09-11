@@ -5,6 +5,20 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **Open anything by what it says, not only by its name.** The
+  Ctrl/⌘ K window, and the search button in Home's phone bar, now search
+  the vault's text: a note's body, the comments in a study or an
+  annotated game, and the titles of your books and puzzle books. Names
+  that match list first, as before; under them, "In the text" lists the
+  documents that hold every word typed, each with the sentence the words
+  sit in and the match set in bold. Opening one lands on that document,
+  and on the right chapter of a study. The index is derived data kept
+  under the data directory, rebuilt from any file whose modification
+  time changed and safe to delete; a search waits for a pause in typing
+  and lists at most fifty names and twenty text matches.
+
 ## 0.9.5
 
 The name beside the knight is one lowercase word. A phone's page title

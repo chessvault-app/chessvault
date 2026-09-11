@@ -168,7 +168,7 @@ is one connected body of work, and the links are what make it that.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
 end · `f` flip board · `Enter` play the typed move · `Ctrl/⌘ S` save ·
-`Esc` close the open window · `Ctrl/⌘ K` open anything by name · `?` this
+`Esc` close the open window · `Ctrl/⌘ K` open anything by name or by its text · `?` this
 list, inside the app.
 
 ## Two ways to run it
