@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { memo, useEffect, useRef, type ReactNode } from 'react';
 import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, NodeId } from '@shared/types';
 import { useAnalysis } from '@/store/analysis';
@@ -26,7 +26,9 @@ import { figurine } from './notation';
  * Clickable all the same, because a strip of moves that cannot be stepped
  * through is a picture of a list.
  */
-export function CurrentLine({ className }: { className?: string }) {
+// Memoised on its one prop: mounted under the engine's lines, it was re-rendered at every
+// engine flush (up to 11 a second) and rebuilt a chip per ply of a line that had not changed.
+export const CurrentLine = memo(function CurrentLine({ className }: { className?: string }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const setCursor = useAnalysis((s) => s.setCursor);
@@ -162,4 +164,4 @@ export function CurrentLine({ className }: { className?: string }) {
       <div className="flex flex-wrap items-baseline gap-x-0.5 gap-y-1">{out}</div>
     </div>
   );
-}
+});

@@ -102,11 +102,12 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   // Swipe the column sideways to turn to the next pane — the strip's own
   // page turn, made where the thumb already is. Off above `lg`, where the
   // column shows every pane at once and there is no row to turn.
+  const tabbed = useTabbedPanes();
   const paneSwipe = usePaneSwipe({
     panes,
     value: pane,
     onChange: setPane,
-    enabled: useTabbedPanes(),
+    enabled: tabbed,
   });
 
   return (
@@ -163,8 +164,12 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           )}
         >
           {/* Engine docks in the Moves panel on desktop; on phones it is its
-              own tab (below), so hide the docked copy there. */}
-          <EngineBlock className="max-lg:hidden" />
+              own tab (below). Mounted for one layout at a time, not hidden
+              by CSS for the other: both copies subscribed to the engine's
+              lines and replayed every variation at each flush, so a hidden
+              block did the visible one's work again. Same query as the
+              swipe's, so the two agree on where the boundary is. */}
+          {!tabbed && <EngineBlock />}
           <PanelHeader
             // The line's own name rather than the word "Moves", which every
             // panel in the app could have been called. It updates as you
@@ -199,13 +204,12 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
               carries the buttons; below it they belong to the column. */}
           <PaneControls className="max-lg:hidden" />
         </Panel>
-        {/* Engine as its own phone tab — desktop shows it docked above, so
-            this whole pane is lg:hidden. */}
-        <Panel
-          className={cn('flex-1 min-h-0 lg:hidden', !paneSwipe.shows('engine') && 'max-lg:hidden')}
-        >
-          <EngineBlock standalone />
-        </Panel>
+        {/* Engine as its own phone tab — desktop shows it docked above. */}
+        {tabbed && (
+          <Panel className={cn('flex-1 min-h-0', !paneSwipe.shows('engine') && 'max-lg:hidden')}>
+            <EngineBlock standalone />
+          </Panel>
+        )}
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}
         <ExplorerPane
