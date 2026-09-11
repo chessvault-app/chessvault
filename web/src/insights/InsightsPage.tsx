@@ -895,21 +895,14 @@ function PassButton() {
       </Button>
     );
   }
-  if (owed === 0) return null;
-  // Before any game is analysed the empty state carries the press.
-  if (job.analysed === 0 && job.status !== 'paused') return null;
+  // Every other press lives in the body, where the app keeps a page's
+  // own actions (the empty state before any pass, the notice after one,
+  // the strip while paused): a filled button in the header corner reads
+  // as chrome, as the repertoire's header note says.
+  if (owed === 0 || job.status !== 'paused') return null;
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      title={t('Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.', { n: PASS_DEPTH })}
-      onClick={() => void job.start()}
-    >
-      {job.status === 'paused'
-        ? t('Resume analysis')
-        : job.analysed > 0
-          ? t('Analyse new games')
-          : t('Analyse games')}
+    <Button variant="secondary" size="sm" onClick={() => void job.start()}>
+      {t('Resume analysis')}
     </Button>
   );
 }
@@ -929,10 +922,26 @@ function PassStrip() {
   const share = job.total === 0 ? 0 : (100 * job.analysed) / job.total;
   const minutesLeft =
     running && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
+  if (waiting) {
+    // The notice: the info-tinted box a page uses for a fact about its
+    // own data (the photo import's, the search box's issues), the
+    // sentence in the reading face, and the press that answers it.
+    return (
+      <div className="border-info/40 bg-info/10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border px-3 py-2 text-sm">
+        <span className="min-w-0 flex-1">
+          {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
+            n: exact.format(owed),
+          })}
+        </span>
+        <Button variant="outline" size="sm" onClick={() => void job.start()}>
+          {t('Analyse new games')}
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-1.5">
-      {/* A bar is progress; the notice is a fact, and gets none. */}
-      {!waiting && <Progress value={share} aria-label={t('Games analysed')} />}
+      <Progress value={share} aria-label={t('Games analysed')} />
       <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs tabular-nums">
         <span>
           {t('{done} of {total} games analysed', {
@@ -944,13 +953,6 @@ function PassStrip() {
           <span>{minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}</span>
         )}
         {paused && <span>{t('Paused')}</span>}
-        {waiting && (
-          <span>
-            {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
-              n: exact.format(owed),
-            })}
-          </span>
-        )}
         {failed && job.error && (
           <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
         )}
@@ -1243,16 +1245,19 @@ function TallyTable({
     <table className="w-full table-fixed text-sm">
       {/* A header row, not a bare caption: a number with no word over
           it is a number the reader has to guess at (lanph3re's report),
-          and the openings table already names its columns this way. */}
+          and the openings table already names its columns this way.
+          The label column is sized to its words and the bar takes what
+          is left: the other way round put a hand's width of nothing
+          between "As White" and its count on a wide page. */}
       <thead className="text-muted-foreground text-xs">
         <tr>
-          <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
+          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', !dense && 'w-44')}>
             {caption}
           </th>
           <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap">
             {t('Games')}
           </th>
-          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', dense ? 'w-20' : 'w-36')}>
+          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', dense && 'w-20')}>
             {t('Results')}
           </th>
           <th scope="col" className="w-12 py-1 text-right font-medium whitespace-nowrap">
@@ -1275,7 +1280,7 @@ function TallyTable({
             {/* The bar's own label threshold was measured against the
                 explorer's column; narrower and a 13% segment clips its
                 figure, so this is that width. */}
-            <td className={cn('py-(--row-py-tight) pr-2', dense ? 'w-20' : 'w-36')}>
+            <td className={cn('py-(--row-py-tight) pr-2', dense && 'w-20')}>
               <ResultBar w={row.tally.w} d={row.tally.d} b={row.tally.l} pov="mine" />
             </td>
             <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row.tally))}</td>
