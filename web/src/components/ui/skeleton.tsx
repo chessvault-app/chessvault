@@ -15,7 +15,10 @@ import { cn } from '@/lib/utils';
  * a card. Sampled on the demo's licences page at 390: bar 245,245,245 on
  * a ground of 245,245,245; with accent, 237 on 245. Accent is the rung
  * above the page, above a muted well, and two rungs under a white card,
- * so one fill reads everywhere and nothing needs to override it.
+ * so one fill reads everywhere but on a surface that is already accent:
+ * a lit chip, or the primary/10 well of home's Continue row, which in
+ * light composites to the same 231. Those two sites pass the primary at
+ * 20%, the rung deeper in the well's own ink.
  */
 function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="skeleton" className={cn('bg-accent animate-pulse rounded-md', className)} {...props} />;
