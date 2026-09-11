@@ -33,15 +33,6 @@ function splitmix64(seed: bigint): () => bigint {
   };
 }
 
-const ROLE_INDEX: Record<Role, number> = {
-  pawn: 0,
-  knight: 1,
-  bishop: 2,
-  rook: 3,
-  queen: 4,
-  king: 5,
-};
-
 const next = splitmix64(0x63686573735f7661n); // 'chess_va'
 
 /** piece keys: [color(2) × role(6) × square(64)] */
@@ -52,17 +43,94 @@ const CASTLING = Array.from({ length: 64 }, next);
 const EP_FILE = Array.from({ length: 8 }, next);
 const BLACK_TO_MOVE = next();
 
+/**
+ * The tables split into 32-bit halves, so the hot loop XORs int32s.
+ *
+ * A BigInt XOR allocates, and the board iterator yields a fresh tuple
+ * and a fresh Piece per occupied square; the index pass hashes every
+ * ply of every game (the Gigabase is ~1.4 billion positions), so the
+ * per-position cost was ~32 tuples, ~32 pieces and ~33 BigInts. The
+ * halves are read from each colour-and-role bitboard's own `lo`/`hi`
+ * words instead, and the one BigInt is built at the end. Same key:
+ * XOR is order-independent, and the tables are the same numbers.
+ */
+function halves(keys: bigint[]): [Int32Array, Int32Array] {
+  const lo = new Int32Array(keys.length);
+  const hi = new Int32Array(keys.length);
+  keys.forEach((k, i) => {
+    lo[i] = Number(k & 0xffffffffn) | 0;
+    hi[i] = Number(k >> 32n) | 0;
+  });
+  return [lo, hi];
+}
+const [PIECE_LO, PIECE_HI] = halves(PIECE);
+const [CASTLING_LO, CASTLING_HI] = halves(CASTLING);
+const [EP_FILE_LO, EP_FILE_HI] = halves(EP_FILE);
+const BLACK_LO = Number(BLACK_TO_MOVE & 0xffffffffn) | 0;
+const BLACK_HI = Number(BLACK_TO_MOVE >> 32n) | 0;
+
+/** Table order: [color(2) x role(6) x square(64)], roles in this order. */
+const ROLES: Role[] = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
+
+/** The two words of the key, left here by `mix` (no result object per call). */
+let accLo = 0;
+let accHi = 0;
+
+function mix(setup: Setup): void {
+  let lo = 0;
+  let hi = 0;
+  const board = setup.board;
+  for (let color = 0; color < 2; color += 1) {
+    const side = color === 0 ? board.white : board.black;
+    for (let role = 0; role < 6; role += 1) {
+      const base = color * 384 + role * 64;
+      const set = board[ROLES[role]!];
+      let bits = side.lo & set.lo;
+      while (bits !== 0) {
+        const idx = 31 - Math.clz32(bits & -bits);
+        bits ^= 1 << idx;
+        lo ^= PIECE_LO[base + idx]!;
+        hi ^= PIECE_HI[base + idx]!;
+      }
+      bits = side.hi & set.hi;
+      while (bits !== 0) {
+        const idx = 31 - Math.clz32(bits & -bits);
+        bits ^= 1 << idx;
+        lo ^= PIECE_LO[base + 32 + idx]!;
+        hi ^= PIECE_HI[base + 32 + idx]!;
+      }
+    }
+  }
+  for (const rook of setup.castlingRights) {
+    lo ^= CASTLING_LO[rook]!;
+    hi ^= CASTLING_HI[rook]!;
+  }
+  if (setup.epSquare !== undefined) {
+    const file = squareFile(setup.epSquare);
+    lo ^= EP_FILE_LO[file]!;
+    hi ^= EP_FILE_HI[file]!;
+  }
+  if (setup.turn === 'black') {
+    lo ^= BLACK_LO;
+    hi ^= BLACK_HI;
+  }
+  accLo = lo;
+  accHi = hi;
+}
+
 /** Zobrist key of a (normalised) setup. See the consistency rule above. */
 export function hashSetup(setup: Setup): bigint {
-  let h = 0n;
-  for (const [square, piece] of setup.board) {
-    const colorOffset = piece.color === 'white' ? 0 : 384;
-    h ^= PIECE[colorOffset + ROLE_INDEX[piece.role] * 64 + square]!;
-  }
-  for (const rook of setup.castlingRights) h ^= CASTLING[rook]!;
-  if (setup.epSquare !== undefined) h ^= EP_FILE[squareFile(setup.epSquare)]!;
-  if (setup.turn === 'black') h ^= BLACK_TO_MOVE;
-  return h;
+  mix(setup);
+  return (BigInt(accHi >>> 0) << 32n) | BigInt(accLo >>> 0);
+}
+
+/**
+ * The key's low 32 bits as a number: what the scan pack stores per
+ * position (shared/scanPack.ts), with no BigInt built at all.
+ */
+export function hashSetupLow32(setup: Setup): number {
+  mix(setup);
+  return accLo >>> 0;
 }
 
 /** The hash as SQLite stores it: signed 64-bit, for INTEGER column binds. */

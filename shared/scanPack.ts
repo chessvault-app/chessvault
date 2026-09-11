@@ -3,7 +3,7 @@ import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';
 import { squareFile } from 'chessops/util';
 import type { Role } from 'chessops/types';
-import { hashSetup } from './zobrist.ts';
+import { hashSetupLow32 } from './zobrist.ts';
 
 /**
  * The packed scan-index: one blob per game, everything a deep scan
@@ -105,8 +105,6 @@ const ROLE_CODE: Record<Role, number> = {
   king: 0, // never captured, never promoted to — encoded as none
 };
 
-const MASK32 = 0xffffffffn;
-
 /** The pawn-files hash of a board — see the header for the exact
     arithmetic, which the Rust twin repeats digit for digit. */
 export function pawnFilesHash(board: Board): number {
@@ -133,7 +131,7 @@ export const packLength = (npos: number): number => 13 + 6 * npos;
     chessops pipeline as every other consumer, full depth. */
 export function encodeScanPack(moves: string): Uint8Array {
   const pos = Chess.default();
-  const keys: number[] = [Number(hashSetup(pos.toSetup()) & MASK32)];
+  const keys: number[] = [hashSetupLow32(pos.toSetup())];
   const pawns: number[] = [pawnFilesHash(pos.board)];
   const events: number[] = [];
   // The envelope's extremes, per piece per side plus the totals — read
@@ -180,7 +178,7 @@ export function encodeScanPack(moves: string): Uint8Array {
     }
     pos.play(move);
     events.push(event);
-    keys.push(Number(hashSetup(pos.toSetup()) & MASK32));
+    keys.push(hashSetupLow32(pos.toSetup()));
     pawns.push(pawnFilesHash(pos.board));
     envelope(pos.board);
   }
