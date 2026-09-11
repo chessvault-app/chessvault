@@ -571,12 +571,24 @@ function ActivityCard({ report }: { report: Report }) {
   );
 }
 
-/** How the games ended, per outcome: three short lists side by side. */
+/**
+ * How the games ended, per outcome: a donut for each, with its list
+ * beside it as the legend.
+ *
+ * Each donut wears its outcome's ink, the result bar's own (good for
+ * won, the muted ink for drew, destructive for lost), with the slices
+ * stepped in opacity largest first; a second hue per slice would have
+ * meant six categorical colours the app does not have. Identity never
+ * rests on the opacity alone: every slice is in the legend with its
+ * word, count and share, and carries them as its tooltip. Slices are
+ * parted by a gap of the card's own ground, and a slice too thin to
+ * part is drawn whole rather than vanishing.
+ */
 function EndingsCard({ endings }: { endings: Report['endings'] }) {
-  const columns: { key: 'w' | 'd' | 'l'; title: string }[] = [
-    { key: 'w', title: 'Won by' },
-    { key: 'd', title: 'Drew by' },
-    { key: 'l', title: 'Lost by' },
+  const columns: { key: 'w' | 'd' | 'l'; title: string; ink: string }[] = [
+    { key: 'w', title: 'Won by', ink: 'text-good' },
+    { key: 'd', title: 'Drew by', ink: 'text-muted-foreground' },
+    { key: 'l', title: 'Lost by', ink: 'text-destructive' },
   ];
   if (endings.length === 0) return null;
   return (
@@ -587,34 +599,96 @@ function EndingsCard({ endings }: { endings: Report['endings'] }) {
           {t('Read from the move text and the file\'s own termination line. A decisive game that names neither is counted as a resignation.')}
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-3">
-        {columns.map(({ key, title }) => {
+      <CardContent className="grid gap-6 sm:grid-cols-3">
+        {columns.map(({ key, title, ink }) => {
           const shares = endingShares(endings, key);
+          const total = shares.reduce((n, s) => n + s.games, 0);
           return (
-            <table key={key} className="w-full table-fixed text-sm">
-              <caption className="text-muted-foreground pb-1 text-left text-xs font-medium">{t(title)}</caption>
-              <tbody>
-                {shares.length === 0 ? (
-                  <tr>
-                    <td className="text-muted-foreground py-(--row-py-tight)">{t('None')}</td>
-                  </tr>
-                ) : (
-                  shares.map((s, at) => (
-                    <tr key={s.ending} className={cn(at % 2 === 1 && 'bg-muted/50')}>
-                      <td className="py-(--row-py-tight) pr-2">{t(ENDING_LABEL[s.ending])}</td>
-                      <td className="text-muted-foreground w-10 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
-                        {exact.format(s.games)}
-                      </td>
-                      <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(s.share)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <figure key={key} className="flex min-w-0 flex-col gap-3">
+              <figcaption className="text-muted-foreground text-xs font-medium">{t(title)}</figcaption>
+              {shares.length === 0 ? (
+                <p className="text-muted-foreground text-sm">{t('None')}</p>
+              ) : (
+                <>
+                  <Donut shares={shares} ink={ink} total={total} />
+                  <table className="w-full table-fixed text-sm">
+                    <tbody>
+                      {shares.map((s, at) => (
+                        <tr key={s.ending}>
+                          <td className="py-(--row-py-tight) pr-2">
+                            <span className="flex items-center gap-2">
+                              <span
+                                aria-hidden
+                                className={cn('inline-block size-2.5 shrink-0 rounded-xs bg-current', ink)}
+                                style={{ opacity: SLICE_OPACITY[Math.min(at, SLICE_OPACITY.length - 1)] }}
+                              />
+                              <span className="min-w-0 truncate">{t(ENDING_LABEL[s.ending])}</span>
+                            </span>
+                          </td>
+                          <td className="text-muted-foreground w-10 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                            {exact.format(s.games)}
+                          </td>
+                          <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(s.share)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </figure>
           );
         })}
       </CardContent>
     </Card>
+  );
+}
+
+/** The slices' steps, largest share first; past the sixth they share
+    the last step, which the legend still tells apart. */
+const SLICE_OPACITY = [1, 0.72, 0.5, 0.36, 0.26, 0.18];
+
+/**
+ * A donut of shares in one ink. A circle of radius 100/2pi has a
+ * circumference of exactly 100, so a share in percent is its dash
+ * length and the offsets are running sums; the gap is taken off each
+ * slice's own length and the ring's stroke is the card's ground, which
+ * is what parts them. The centre carries the total.
+ */
+function Donut({ shares, ink, total }: { shares: { ending: Ending; games: number; share: number }[]; ink: string; total: number }) {
+  const R = 100 / (2 * Math.PI);
+  const GAP = 2;
+  let offset = 0;
+  return (
+    <div className="relative mx-auto size-28">
+      <svg viewBox="0 0 40 40" className={cn('size-full -rotate-90', ink)} role="img" aria-label={t('{n} games', { n: exact.format(total) })}>
+        {shares.map((s, at) => {
+          const start = offset;
+          offset += s.share;
+          // A slice thinner than the gap is drawn whole; one that is
+          // the whole ring needs no gap at all.
+          const drawn = shares.length === 1 ? 100 : Math.max(s.share - GAP, Math.min(s.share, 1));
+          return (
+            <circle
+              key={s.ending}
+              cx="20"
+              cy="20"
+              r={R}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="6"
+              strokeDasharray={`${drawn} ${100 - drawn}`}
+              strokeDashoffset={-(start + (shares.length === 1 ? 0 : GAP / 2))}
+              style={{ opacity: SLICE_OPACITY[Math.min(at, SLICE_OPACITY.length - 1)] }}
+            >
+              <title>{`${t(ENDING_LABEL[s.ending])}: ${exact.format(s.games)} (${pct(s.share)})`}</title>
+            </circle>
+          );
+        })}
+      </svg>
+      <span className="text-foreground absolute inset-0 grid place-items-center text-lg font-semibold tabular-nums">
+        {exact.format(total)}
+      </span>
+    </div>
   );
 }
 
