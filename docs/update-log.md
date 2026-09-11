@@ -5,6 +5,29 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+An Insights page sums your own games.
+
+- **Insights sums your own games by colour, time control and opening.**
+  A new page, on the sidebar beside the opening map and under More on
+  a phone, reads the same corpus the explorer's My games source does:
+  your collection plus every Chess.com and Lichess month you have
+  browsed. It shows your score overall, by colour and by time control,
+  a table of openings with a won/drew/lost bar for each, and where each
+  game left the opening catalogue, with whose move it was and the
+  openings where your own move leaves earliest. The filters are the
+  explorer's (side, time control, kept only, dates) plus the Databases
+  browser's situations, so a rook ending or an isolated queen's pawn
+  narrows every table. The sums are made on the server in one pass over
+  the index (116 ms over 3,000 games, measured); a situation replays
+  the games and costs about half a second more. Names come from the
+  positions each game reaches, not from the file's ECO header, so a
+  chess.com export and a Lichess export land in the same row.
+- **The demo carries an archive month.** The static demo's vault now
+  holds a Chess.com month for its owner, so Insights, the explorer's My
+  games source and the archive browser have games to show there.
+
 ## 0.9.5
 
 The name beside the knight is one lowercase word. A phone's page title
