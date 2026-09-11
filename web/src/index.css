@@ -1020,15 +1020,18 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
-    /* Neither a double tap nor a pinch zooms the app. A second tap on a
-       heading, or two fingers on the gap beside the board, zoomed the page
-       in on iOS, which no app does. Pans only: `manipulation` left the
-       pinch, and the viewport's user-scalable=no (index.html) is what a
-       Safari tab ignores, so this rule is the one that reaches it. The
-       reader's own pinch is untouched: it listens for the touches and
-       gesture events, which touch-action never withholds, and its scroller
-       already declares the same value. */
-    touch-action: pan-x pan-y;
+    /* A double tap does not zoom the app; a pinch does. `manipulation` is
+       that pair exactly: it declines the double tap, which zoomed the page
+       in on iOS when a second tap landed on a heading or beside the board,
+       and leaves the pinch to the browser. The value was `pan-x pan-y`,
+       which withholds the pinch app-wide — on a Safari tab it was the half
+       of the lock the viewport meta could not reach — and taking the pinch
+       away is refusing WCAG 1.4.4 to everyone to be rid of a gesture that
+       no one has to make. Surfaces that read their own touches decline it
+       one by one instead (the board, the reader's scroller, the evidence
+       pages, the opening map, the bottom bar), so a pinch there still does
+       their job rather than the page's. */
+    touch-action: manipulation;
   }
 
   /* A long press on a phone selects the user's own words and nothing

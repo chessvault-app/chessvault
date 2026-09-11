@@ -541,9 +541,9 @@ function indexPage(
       .field { position: relative; display: flex; flex: 1 1 auto; min-width: 0; }
       #q {
         /* 16px exactly. iOS zooms the whole page in when a focused field's
-           text is smaller than that, and the app's own answer — capping
-           maximum-scale in the viewport meta — is not something a static
-           page should do, because it takes pinch-zoom away with it. */
+           text is smaller than that. The floor is the whole answer, here
+           and in the app: capping maximum-scale in the viewport meta would
+           decline that zoom by taking pinch-zoom away with it. */
         flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1rem;
         padding: .45rem 2rem .45rem .7rem; border-radius: .5rem;
         border: 1px solid rgba(128,128,128,.45); background: transparent; color: inherit;

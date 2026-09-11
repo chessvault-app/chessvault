@@ -38,13 +38,15 @@ const EDGE_PX = 32;
  * Touch only. A mouse has the row's own menu, and a horizontal drag with a
  * mouse is a text selection.
  *
- * The host also declares `touch-pan-y`. The handlers are passive, so
- * nothing here can take a gesture away from the browser once it has
- * begun; without the declaration the page kept the vertical pan through
+ * The host also declares `touch-pan-y touch-pinch-zoom`. The handlers are
+ * passive, so nothing here can take a gesture away from the browser once
+ * it has begun; without the pan-y the page kept the vertical pan through
  * a sideways drag and the list crept while the row opened. pan-y hands
  * the browser only the axis it may have: a drag it judges horizontal is
  * left entirely to these handlers, and one it judges vertical scrolls as
- * before, with the axis lock below standing the row down.
+ * before, with the axis lock below standing the row down. pinch-zoom sits
+ * beside it because a row is words someone may need bigger, and the
+ * second finger that asks for that is one this hook stands down for.
  */
 export function useSwipeRow({
   onRemove,
