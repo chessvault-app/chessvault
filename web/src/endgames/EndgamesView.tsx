@@ -161,6 +161,7 @@ type Phase =
   | 'replying' // the move held; the defender's reply is on its way
   | 'won'
   | 'threw'
+  | 'stopped' // ended by hand, to look at the position with the engine
   | 'error';
 
 /**
@@ -411,7 +412,7 @@ function Drill({ classId }: { classId: string }) {
     },
     [],
   );
-  const ended = phase === 'won' || phase === 'threw';
+  const ended = phase === 'won' || phase === 'threw' || phase === 'stopped';
   useEffect(() => {
     if (ended && line && !analysing) {
       useAnalysis.setState({
@@ -480,6 +481,8 @@ function Drill({ classId }: { classId: string }) {
             : t('The win slipped'),
           tone: outcomeTone('missed'),
         };
+      case 'stopped':
+        return { text: t('Stopped. The position is on the analysis board, with the engine.') };
       case 'error':
         // The board's own box carries the sentence, as the trainer's does.
         return { text: '' };
@@ -580,16 +583,38 @@ function Drill({ classId }: { classId: string }) {
               </Button>
             </>
           ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="me-auto pointer-coarse:h-11"
-              disabled={phase === 'loading'}
-              onClick={() => void draw()}
-            >
-              <X className="size-3.5" data-icon="inline-start" />
-              {t('Skip')}
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="me-auto pointer-coarse:h-11"
+                disabled={phase === 'loading'}
+                onClick={() => void draw()}
+              >
+                <X className="size-3.5" data-icon="inline-start" />
+                {t('Skip')}
+              </Button>
+              {/* Where the trainer offers the solution, this ends the
+                  attempt by hand: the line so far goes to the analysis
+                  board and the engine comes on, the same swap a finished
+                  attempt makes. Nothing is graded; a stop is a stop. */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="pointer-coarse:h-11"
+                disabled={phase !== 'playing'}
+                onClick={() => {
+                  ++seq.current;
+                  promotion.cancel();
+                  setReview(null);
+                  setPhase('stopped');
+                }}
+                title={t('Ends the attempt and opens the engine')}
+              >
+                <Cpu className="size-3.5" data-icon="inline-start" />
+                {t('Analyse')}
+              </Button>
+            </>
           )}
         </CardFooter>
       </div>
