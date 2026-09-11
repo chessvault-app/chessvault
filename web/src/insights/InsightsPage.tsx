@@ -346,49 +346,35 @@ function Tables({ report }: { report: Report }) {
           <CardDescription>{t('Score is wins plus half the draws, out of the games played.')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-muted-foreground text-sm font-medium">{t('Score')}</span>
-            <span className="text-foreground text-2xl font-semibold tabular-nums">{pct(scorePct(all))}</span>
-            <span className="text-muted-foreground text-sm tabular-nums">
-              {t('{w} won, {d} drew, {l} lost', {
-                w: exact.format(all.w),
-                d: exact.format(all.d),
-                l: exact.format(all.l),
-              })}
-            </span>
-          </div>
+          {/* The whole corpus is the first row of the same table shape the
+              cuts below use, not a headline: two large figures over a bare
+              bar read as a banner, and the bar did not read as the total
+              (lanph3re's report). One row with the same columns says
+              "this is the sum of those" by its shape alone. */}
+          <TallyTable
+            caption={t('Overall')}
+            rows={[{ key: 'all', label: t('All games'), tally: all }]}
+          />
+          <TallyTable
+            caption={t('By colour')}
+            rows={byColour.map((r) => ({ key: r.key, label: t(SIDE_LABEL[r.key]), tally: r.tally }))}
+          />
+          <TallyTable
+            caption={t('By time control')}
+            rows={bySpeed.map((r) => ({ key: r.key, label: t(SPEED_LABEL[r.key]), tally: r.tally }))}
+          />
           {report.analysis.games > 0 && (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-muted-foreground text-sm font-medium">{t('Accuracy')}</span>
-              <span className="text-foreground text-2xl font-semibold tabular-nums">
-                {`${(meanOf(report.analysis.accuracy) ?? 0).toFixed(1)}%`}
-              </span>
-              <span className="text-muted-foreground text-sm tabular-nums">
-                {t('{n} of {total} games analysed at depth {d}', {
-                  n: exact.format(report.analysis.games),
-                  total: exact.format(report.games),
-                  d: report.analysis.depth ?? PASS_DEPTH,
-                })}
-                {meanOf(report.analysis.acpl) !== null &&
-                  ` · ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
-              </span>
-            </div>
+            <p className="text-muted-foreground text-xs tabular-nums">
+              {t('Accuracy from {n} of {total} games analysed at depth {d}', {
+                n: exact.format(report.analysis.games),
+                total: exact.format(report.games),
+                d: report.analysis.depth ?? PASS_DEPTH,
+              })}
+              {meanOf(report.analysis.acpl) !== null &&
+                `, ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
+              .
+            </p>
           )}
-          <ResultBar w={all.w} d={all.d} b={all.l} pov="mine" />
-          {/* Stacked, not side by side: in a grid the two-row table was
-              stretched to the four-row one's height, and with no divider
-              the six headers read as one row of columns (lanph3re's
-              report). One under the other, each table is its own block. */}
-          <div className="flex flex-col gap-4">
-            <TallyTable
-              caption={t('By colour')}
-              rows={byColour.map((r) => ({ key: r.key, label: t(SIDE_LABEL[r.key]), tally: r.tally }))}
-            />
-            <TallyTable
-              caption={t('By time control')}
-              rows={bySpeed.map((r) => ({ key: r.key, label: t(SPEED_LABEL[r.key]), tally: r.tally }))}
-            />
-          </div>
         </CardContent>
       </Card>
 
