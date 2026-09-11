@@ -17,8 +17,9 @@ An Insights page sums your own games.
   a table of openings with a won/drew/lost bar for each, and where each
   game left the opening catalogue, with whose move it was and the
   openings where your own move leaves earliest. The filters are the
-  explorer's (side, time control, kept only, dates) plus the Databases
-  browser's situations, so a rook ending or an isolated queen's pawn
+  explorer's (side, time control, kept only) plus a quick date range
+  (the last week, month, or three, six or twelve months, or two dates
+  of your own) and the Databases browser's situations, so a rook ending or an isolated queen's pawn
   narrows every table. The sums are made on the server in one pass over
   the index (116 ms over 3,000 games, measured); a situation replays
   the games and costs about half a second more. Names come from the

@@ -34,6 +34,7 @@ import {
   type OpeningRow,
   type Tally,
 } from './aggregate';
+import { DATE_RANGES, DATE_RANGE_LABEL, rangeFrom, type DateRange } from './dateRange';
 
 /**
  * Your own games, summed.
@@ -54,10 +55,12 @@ interface InsightsFilters extends MyGamesFilters {
   /** `endgame:<id>`, `motif:<id>`, `structure:<id>`, or 'none'. */
   situation: string;
   situationSide: MotifSide;
+  /** A quick range, or 'custom' for whatever `from` and `to` hold. */
+  range: DateRange;
 }
 
 const NONE = 'none';
-const EMPTY_FILTERS: InsightsFilters = { situation: NONE, situationSide: 'either' };
+const EMPTY_FILTERS: InsightsFilters = { situation: NONE, situationSide: 'either', range: 'any' };
 const FILTERS_KEY = 'vault:insights-filters';
 
 const SPEEDS: { id: Speed; label: string }[] = [
@@ -97,7 +100,12 @@ function readFilters(): InsightsFilters {
 
 /** Which preset the situation names, and what the server is asked. */
 function situationQuery(f: InsightsFilters): URLSearchParams {
-  const params = new URLSearchParams(myFilterQuery(f));
+  // A quick range replaces the pickers' dates; custom keeps them.
+  const dates =
+    f.range === 'custom'
+      ? { from: f.from, to: f.to }
+      : { from: rangeFrom(f.range) ?? undefined, to: undefined };
+  const params = new URLSearchParams(myFilterQuery({ ...f, ...dates }));
   const [kind, id] = f.situation.split(':');
   if (kind === 'endgame') {
     const preset = ENDGAMES.find((p) => p.id === id);
@@ -193,7 +201,10 @@ export function InsightsPage() {
   // The previous answer stays on the page while the next is fetched, so
   // a chip press changes the numbers rather than blanking the tables.
   const slow = useSlowLoad(report === null && !failed);
-  const narrowed = hasMyFilters(filters) || filters.situation !== NONE;
+  const narrowed =
+    hasMyFilters({ ...filters, from: undefined, to: undefined }) ||
+    filters.situation !== NONE ||
+    filters.range !== 'any';
   const clear = (): void => setFilters({ ...EMPTY_FILTERS, side: undefined, speeds: [], from: undefined, to: undefined, collectionOnly: undefined });
 
   const speeds = filters.speeds ?? [];
@@ -275,23 +286,33 @@ export function InsightsPage() {
             ]}
           />
         )}
-        <span className="flex items-center gap-2">
-          <DatePicker
-            value={filters.from ?? ''}
-            onValueChange={(v) => setFilters({ from: v || undefined })}
-            aria-label={t('From date')}
-            className="w-[9.5rem]"
-          />
-          <span className="text-muted-foreground" aria-hidden>
-            –
+        <Select
+          value={filters.range}
+          onValueChange={(v) => setFilters({ range: v as DateRange })}
+          ariaLabel={t('Played within')}
+          size="sm"
+          className="w-36 flex-none"
+          groups={[{ options: DATE_RANGES.map((r) => ({ value: r, label: t(DATE_RANGE_LABEL[r]) })) }]}
+        />
+        {filters.range === 'custom' && (
+          <span className="flex items-center gap-2">
+            <DatePicker
+              value={filters.from ?? ''}
+              onValueChange={(v) => setFilters({ from: v || undefined })}
+              aria-label={t('From date')}
+              className="w-[9.5rem]"
+            />
+            <span className="text-muted-foreground" aria-hidden>
+              –
+            </span>
+            <DatePicker
+              value={filters.to ?? ''}
+              onValueChange={(v) => setFilters({ to: v || undefined })}
+              aria-label={t('To date')}
+              className="w-[9.5rem]"
+            />
           </span>
-          <DatePicker
-            value={filters.to ?? ''}
-            onValueChange={(v) => setFilters({ to: v || undefined })}
-            aria-label={t('To date')}
-            className="w-[9.5rem]"
-          />
-        </span>
+        )}
         {narrowed && (
           <Button variant="ghost" size="sm" onClick={clear}>
             {t('Clear filters')}

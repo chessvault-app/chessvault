@@ -2209,4 +2209,13 @@ export const ko: Record<string, string> = {
   'Leaves at': '벗어나는 수',
   'You / them': '나 / 상대',
   'move {n}': '{n}수째',
+  // The quick date ranges on the insights rail.
+  'Played within': '기간',
+  'Any time': '모든 기간',
+  'Last 7 days': '최근 7일',
+  'Last 30 days': '최근 30일',
+  'Last 3 months': '최근 3개월',
+  'Last 6 months': '최근 6개월',
+  'Last 12 months': '최근 12개월',
+  'Custom dates': '직접 지정',
 };
