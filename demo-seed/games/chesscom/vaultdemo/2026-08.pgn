@@ -9,6 +9,7 @@
 [BlackElo "1498"]
 [ECO "C54"]
 [TimeControl "600"]
+[Termination "vaultdemo won by checkmate"]
 [UTCDate "2026.08.01"]
 [Link "https://www.chess.com/game/live/1400000001"]
 
@@ -25,6 +26,7 @@
 [BlackElo "1498"]
 [ECO "C50"]
 [TimeControl "180"]
+[Termination "rook_and_roll won by resignation"]
 [UTCDate "2026.08.02"]
 [Link "https://www.chess.com/game/live/1400000002"]
 
@@ -41,6 +43,7 @@
 [BlackElo "1498"]
 [ECO "C67"]
 [TimeControl "600"]
+[Termination "Game drawn by insufficient material"]
 [UTCDate "2026.08.03"]
 [Link "https://www.chess.com/game/live/1400000003"]
 
@@ -57,6 +60,7 @@
 [BlackElo "1498"]
 [ECO "C45"]
 [TimeControl "60"]
+[Termination "vaultdemo won by checkmate"]
 [UTCDate "2026.08.05"]
 [Link "https://www.chess.com/game/live/1400000004"]
 
@@ -73,6 +77,7 @@
 [BlackElo "1498"]
 [ECO "B90"]
 [TimeControl "600"]
+[Termination "najdorf_nina won by resignation"]
 [UTCDate "2026.08.06"]
 [Link "https://www.chess.com/game/live/1400000005"]
 
@@ -89,6 +94,7 @@
 [BlackElo "1498"]
 [ECO "B31"]
 [TimeControl "180"]
+[Termination "vaultdemo won by timeout"]
 [UTCDate "2026.08.08"]
 [Link "https://www.chess.com/game/live/1400000006"]
 
@@ -105,6 +111,7 @@
 [BlackElo "1498"]
 [ECO "C18"]
 [TimeControl "900+10"]
+[Termination "vaultdemo won by resignation"]
 [UTCDate "2026.08.10"]
 [Link "https://www.chess.com/game/live/1400000007"]
 
@@ -121,6 +128,7 @@
 [BlackElo "1512"]
 [ECO "B96"]
 [TimeControl "180"]
+[Termination "vaultdemo won by resignation"]
 [UTCDate "2026.08.12"]
 [Link "https://www.chess.com/game/live/1400000008"]
 
@@ -137,6 +145,7 @@
 [BlackElo "1512"]
 [ECO "B19"]
 [TimeControl "600"]
+[Termination "quiet_bishop won by timeout"]
 [UTCDate "2026.08.14"]
 [Link "https://www.chess.com/game/live/1400000009"]
 
@@ -153,6 +162,7 @@
 [BlackElo "1512"]
 [ECO "D37"]
 [TimeControl "600"]
+[Termination "Game drawn by agreement"]
 [UTCDate "2026.08.16"]
 [Link "https://www.chess.com/game/live/1400000010"]
 
@@ -169,6 +179,7 @@
 [BlackElo "1512"]
 [ECO "E97"]
 [TimeControl "180"]
+[Termination "vaultdemo won by resignation"]
 [UTCDate "2026.08.18"]
 [Link "https://www.chess.com/game/live/1400000011"]
 
@@ -185,6 +196,7 @@
 [BlackElo "1512"]
 [ECO "D02"]
 [TimeControl "60"]
+[Termination "french_fry_fred won by timeout"]
 [UTCDate "2026.08.20"]
 [Link "https://www.chess.com/game/live/1400000012"]
 
@@ -201,6 +213,7 @@
 [BlackElo "1512"]
 [ECO "A29"]
 [TimeControl "900+10"]
+[Termination "vaultdemo won by resignation"]
 [UTCDate "2026.08.22"]
 [Link "https://www.chess.com/game/live/1400000013"]
 
@@ -217,6 +230,7 @@
 [BlackElo "1512"]
 [ECO "C57"]
 [TimeControl "180"]
+[Termination "rook_and_roll won by resignation"]
 [UTCDate "2026.08.24"]
 [Link "https://www.chess.com/game/live/1400000014"]
 
@@ -233,6 +247,7 @@
 [BlackElo "1498"]
 [ECO "C42"]
 [TimeControl "600"]
+[Termination "vaultdemo won by timeout"]
 [UTCDate "2026.08.26"]
 [Link "https://www.chess.com/game/live/1400000015"]
 
@@ -249,6 +264,7 @@
 [BlackElo "1512"]
 [ECO "B22"]
 [TimeControl "60"]
+[Termination "Game drawn by agreement"]
 [UTCDate "2026.08.28"]
 [Link "https://www.chess.com/game/live/1400000016"]
 

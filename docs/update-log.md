@@ -14,9 +14,14 @@ An Insights page sums your own games.
   a phone, reads the same corpus the explorer's My games source does:
   your collection plus every Chess.com and Lichess month you have
   browsed. It shows your score overall, by colour and by time control,
-  a table of opening families with a won/drew/lost bar for each, and where each
+  a table of opening families with a won/drew/lost bar for each, where each
   game left the opening catalogue, with whose move it was and the
-  openings where your own move leaves earliest. The filters are the
+  openings where your own move leaves earliest, games per month and per
+  weekday, how the games ended (checkmate, resignation, time and the
+  draw kinds, read from the move text and the file's termination line),
+  results by game length and by the opponent's rating band. The last
+  two need the game's length and ending in the index, so an existing
+  vault reindexes once on the first visit. The filters are the
   explorer's (side, time control, kept only) plus a quick date range
   (the last week, month, or three, six or twelve months, or two dates
   of your own). The sums are made on the server in one pass over the
