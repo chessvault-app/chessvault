@@ -1,4 +1,4 @@
-import type { Speed } from '@shared/gameIndex';
+import type { Ending, Speed } from '@shared/gameIndex';
 
 /**
  * The insights page's arithmetic over the server's cells, kept apart from
@@ -174,4 +174,75 @@ export function exitSplit(cells: readonly InsightsCell[]): {
     move 4. Fractional for a mean, so "move 6.5" reads as between two. */
 export function moveOfPly(ply: number): number {
   return ply / 2 + 1;
+}
+
+/** One month of the activity chart, `YYYY-MM`. */
+export interface MonthTally extends Tally {
+  month: string;
+}
+
+/**
+ * The server's months, with the empty ones between the first and the
+ * last filled in as zeros, so a bar chart shows a gap where nothing
+ * was played instead of butting July against November. Capped to the
+ * most recent `max` months: a chart of a decade at one bar a month is
+ * unreadable, and the date filter is how an older year is asked about.
+ */
+export function monthSeries(
+  months: readonly ({ month: string } & Partial<Tally>)[],
+  max = 36,
+): MonthTally[] {
+  if (months.length === 0) return [];
+  const by = new Map(months.map((m) => [m.month, m]));
+  const sorted = [...by.keys()].sort();
+  const [firstYear, firstMonth] = sorted[0]!.split('-').map(Number) as [number, number];
+  const [lastYear, lastMonth] = sorted[sorted.length - 1]!.split('-').map(Number) as [number, number];
+  const out: MonthTally[] = [];
+  let y = firstYear;
+  let m = firstMonth;
+  while (y < lastYear || (y === lastYear && m <= lastMonth)) {
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    const got = by.get(key);
+    const w = got?.w ?? 0;
+    const d = got?.d ?? 0;
+    const l = got?.l ?? 0;
+    out.push({ month: key, games: w + d + l, w, d, l });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out.slice(-max);
+}
+
+/** How the games of one outcome ended, largest share first. */
+export interface EndingShare {
+  ending: Ending;
+  games: number;
+  /** Of the games with this outcome. */
+  share: number;
+}
+
+export function endingShares(
+  endings: readonly { ending: Ending; w: number; d: number; l: number }[],
+  outcome: 'w' | 'd' | 'l',
+): EndingShare[] {
+  const total = endings.reduce((n, e) => n + e[outcome], 0);
+  return endings
+    .filter((e) => e[outcome] > 0)
+    .map((e) => ({ ending: e.ending, games: e[outcome], share: (100 * e[outcome]) / total }))
+    .sort((a, b) => b.games - a.games);
+}
+
+/** A banded tally list (opponent bands, length bands) as Tally rows. */
+export function bandRows<K extends string | number>(
+  bands: readonly ({ band: K } & Partial<Tally>)[],
+): { band: K; tally: Tally }[] {
+  return bands.map((b) => {
+    const w = b.w ?? 0;
+    const d = b.d ?? 0;
+    const l = b.l ?? 0;
+    return { band: b.band, tally: { games: w + d + l, w, d, l } };
+  });
 }

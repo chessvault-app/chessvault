@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
-import type { Speed } from '@shared/gameIndex';
+import type { Ending, Speed } from '@shared/gameIndex';
 import { api } from '@/lib/api';
-import { t } from '@/lib/i18n';
+import { t, useLang } from '@/lib/i18n';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { DatePicker } from '@/components/date-picker';
@@ -18,14 +18,18 @@ import { Select } from '@/components/ui/select';
 import { FilterRow, SideSelect, type SideFilter } from '@/games/GameFilters';
 import { hasMyFilters, myFilterQuery, type MyGamesFilters } from '@/store/explorer';
 import {
+  bandRows,
   earliestExits,
+  endingShares,
   exitSplit,
+  monthSeries,
   moveOfPly,
   openingRows,
   scorePct,
   tallyBy,
   totals,
   type InsightsCell,
+  type MonthTally,
   type OpeningRow,
   type Tally,
 } from './aggregate';
@@ -70,6 +74,20 @@ const SPEED_LABEL: Record<Speed | 'unknown', string> = {
 
 const SIDE_LABEL = { white: 'As White', black: 'As Black' } as const;
 
+/** English, as the key t() looks up; the words the sites use. */
+const ENDING_LABEL: Record<Ending, string> = {
+  mate: 'Checkmate',
+  resignation: 'Resignation',
+  timeout: 'Time',
+  abandoned: 'Abandoned',
+  stalemate: 'Stalemate',
+  agreement: 'Agreement',
+  repetition: 'Repetition',
+  insufficient: 'Insufficient material',
+  fifty: 'Fifty-move rule',
+  unknown: 'Not recorded',
+};
+
 /** How many opening rows show before "Show all". */
 const OPENING_FOLD = 20;
 
@@ -103,6 +121,12 @@ interface Report {
   /** Summed while the index was still walking the vault; ask again. */
   partial: boolean;
   cells: InsightsCell[];
+  /** The other cuts of the same games; see server/myGames.ts InsightsExtras. */
+  months: { month: string; w: number; d: number; l: number }[];
+  weekdays: { day: number; w: number; d: number; l: number }[];
+  opponents: { band: number; w: number; d: number; l: number }[];
+  endings: { ending: Ending; w: number; d: number; l: number }[];
+  lengths: { band: number; w: number; d: number; l: number }[];
 }
 
 export function InsightsPage() {
@@ -428,7 +452,222 @@ function Tables({ report }: { report: Report }) {
           )}
         </CardContent>
       </Card>
+
+      <ActivityCard report={report} />
+      <EndingsCard endings={report.endings} />
+      <LengthCard lengths={report.lengths} />
+      <OpponentsCard opponents={report.opponents} />
     </div>
+  );
+}
+
+/**
+ * Games per month as a stacked bar, won over drew over lost, the same
+ * three inks as the result bar. Bars are thin with a two-pixel gap and
+ * a rounded top; the figure is read off the bar's own tooltip and the
+ * table behind it, never printed on every bar. Months with no games
+ * stand as gaps, and the chart keeps the last three years at most (the
+ * date filter reaches further back). Beside it, the week.
+ */
+function ActivityCard({ report }: { report: Report }) {
+  const lang = useLang();
+  const series = useMemo(() => monthSeries(report.months), [report.months]);
+  const peak = Math.max(1, ...series.map((m) => m.games));
+  const monthName = useMemo(
+    () => new Intl.DateTimeFormat(lang === 'ko' ? 'ko' : 'en', { month: 'short', year: 'numeric' }),
+    [lang],
+  );
+  const dayName = useMemo(
+    () => new Intl.DateTimeFormat(lang === 'ko' ? 'ko' : 'en', { weekday: 'short' }),
+    [lang],
+  );
+  const label = (m: MonthTally): string => {
+    const [y, mo] = m.month.split('-').map(Number) as [number, number];
+    return monthName.format(new Date(y, mo - 1, 1));
+  };
+  // Sunday first, as the server numbers them; only days with games.
+  const week = bandRows(report.weekdays.map((w) => ({ band: w.day, w: w.w, d: w.d, l: w.l })));
+  const dayLabel = (day: number): string => dayName.format(new Date(2026, 1, 1 + day));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Activity')}</CardTitle>
+        <CardDescription>{t('Games per month, won over drew over lost, and the week.')}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-6 md:grid-cols-[1fr_16rem]">
+        {series.length > 0 && (
+          <figure className="min-w-0">
+            <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="img" aria-label={t('Games per month')}>
+              {series.map((m) => (
+                <div
+                  key={m.month}
+                  className="flex h-full min-w-2 flex-1 flex-col justify-end"
+                  title={
+                    m.games === 0
+                      ? label(m)
+                      : `${label(m)}: ${t('{w} won, {d} drew, {l} lost', { w: m.w, d: m.d, l: m.l })}`
+                  }
+                >
+                  {/* Won on top, lost at the foot; the gap between segments is
+                      the page's own ground. The bar's corner is the chip
+                      corner, off the radius knob on purpose. */}
+                  <div
+                    className="bg-good-tint rounded-t-[4px]"
+                    style={{ height: `${(100 * m.w) / peak}%` }}
+                  />
+                  <div className="bg-accent mt-px" style={{ height: `${(100 * m.d) / peak}%` }} />
+                  <div className="bg-destructive/10 mt-px" style={{ height: `${(100 * m.l) / peak}%` }} />
+                </div>
+              ))}
+            </div>
+            <figcaption className="text-muted-foreground mt-1 flex justify-between text-xs tabular-nums">
+              <span>{label(series[0]!)}</span>
+              {series.length > 1 && <span>{label(series[series.length - 1]!)}</span>}
+            </figcaption>
+            <ul className="text-muted-foreground mt-2 flex gap-3 text-xs" aria-hidden>
+              {[
+                ['bg-good-tint', 'Won'],
+                ['bg-accent', 'Drew'],
+                ['bg-destructive/10', 'Lost'],
+              ].map(([ink, word]) => (
+                <li key={word} className="flex items-center gap-1.5">
+                  <span className={cn('inline-block size-2.5 rounded-xs', ink)} />
+                  {t(word!)}
+                </li>
+              ))}
+            </ul>
+            {/* The same numbers as a table, for a reader the bars cannot reach. */}
+            <table className="sr-only">
+              <caption>{t('Games per month')}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t('Month')}</th>
+                  <th scope="col">{t('Won')}</th>
+                  <th scope="col">{t('Drew')}</th>
+                  <th scope="col">{t('Lost')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {series.map((m) => (
+                  <tr key={m.month}>
+                    <td>{label(m)}</td>
+                    <td>{m.w}</td>
+                    <td>{m.d}</td>
+                    <td>{m.l}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </figure>
+        )}
+        {week.length > 0 && (
+          <TallyTable
+            caption={t('By weekday')}
+            rows={week.map((r) => ({ key: String(r.band), label: dayLabel(r.band), tally: r.tally }))}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** How the games ended, per outcome: three short lists side by side. */
+function EndingsCard({ endings }: { endings: Report['endings'] }) {
+  const columns: { key: 'w' | 'd' | 'l'; title: string }[] = [
+    { key: 'w', title: 'Won by' },
+    { key: 'd', title: 'Drew by' },
+    { key: 'l', title: 'Lost by' },
+  ];
+  if (endings.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('How games ended')}</CardTitle>
+        <CardDescription>
+          {t('Read from the move text and the file\'s own termination line. A decisive game that names neither is counted as a resignation.')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-3">
+        {columns.map(({ key, title }) => {
+          const shares = endingShares(endings, key);
+          return (
+            <table key={key} className="w-full table-fixed text-sm">
+              <caption className="text-muted-foreground pb-1 text-left text-xs font-medium">{t(title)}</caption>
+              <tbody>
+                {shares.length === 0 ? (
+                  <tr>
+                    <td className="text-muted-foreground py-(--row-py-tight)">{t('None')}</td>
+                  </tr>
+                ) : (
+                  shares.map((s, at) => (
+                    <tr key={s.ending} className={cn(at % 2 === 1 && 'bg-muted/50')}>
+                      <td className="py-(--row-py-tight) pr-2">{t(ENDING_LABEL[s.ending])}</td>
+                      <td className="text-muted-foreground w-10 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                        {exact.format(s.games)}
+                      </td>
+                      <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(s.share)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Results by how long the game ran, in bands of twenty moves. */
+function LengthCard({ lengths }: { lengths: Report['lengths'] }) {
+  const rows = bandRows(lengths);
+  if (rows.length === 0) return null;
+  const label = (band: number): string =>
+    band === 0
+      ? t('Under {n} moves', { n: 20 })
+      : t('{a} to {b} moves', { a: band, b: band + 19 });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Game length')}</CardTitle>
+        <CardDescription>{t('Results by how many moves the game ran.')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <TallyTable
+          caption={t('By length')}
+          rows={rows.map((r) => ({ key: String(r.band), label: label(r.band), tally: r.tally }))}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Results by the opponent's rating band. The figures are the games'
+ * own header ratings, the record of who was played, set in the mono
+ * face every rating column wears; nothing here rates the owner.
+ */
+function OpponentsCard({ opponents }: { opponents: Report['opponents'] }) {
+  const rows = bandRows(opponents);
+  if (rows.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Opponents')}</CardTitle>
+        <CardDescription>{t('Results by the rating the opponent held in the game, in bands of 200.')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <TallyTable
+          caption={t('By opponent rating')}
+          mono
+          rows={rows.map((r) => ({
+            key: String(r.band),
+            label: `${r.band}\u2013${r.band + 199}`,
+            tally: r.tally,
+          }))}
+        />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -441,14 +680,23 @@ function OpeningName({ row }: { row: OpeningRow }) {
   );
 }
 
-function TallyTable({ caption, rows }: { caption: string; rows: { key: string; label: string; tally: Tally }[] }) {
+function TallyTable({
+  caption,
+  rows,
+  mono = false,
+}: {
+  caption: string;
+  rows: { key: string; label: string; tally: Tally }[];
+  /** A label that is a figure (a rating band) takes the mono face. */
+  mono?: boolean;
+}) {
   return (
     <table className="w-full table-fixed text-sm">
       <caption className="text-muted-foreground pb-1 text-left text-xs font-medium">{caption}</caption>
       <tbody>
         {rows.map((row, at) => (
           <tr key={row.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
-            <td className="py-(--row-py-tight) pr-2">{row.label}</td>
+            <td className={cn('py-(--row-py-tight) pr-2', mono && 'font-mono tabular-nums')}>{row.label}</td>
             <td className="text-muted-foreground w-12 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
               {exact.format(row.tally.games)}
             </td>

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bandRows,
   earliestExits,
+  endingShares,
   exitSplit,
   familyOf,
+  monthSeries,
   moveOfPly,
   openingRows,
   scorePct,
@@ -92,6 +95,40 @@ describe('insights arithmetic', () => {
   it('splits the exits between me and them', () => {
     expect(exitSplit(CELLS)).toEqual({ exits: 6, youLeft: 3, meanPly: 9 });
     expect(exitSplit([])).toEqual({ exits: 0, youLeft: 0, meanPly: null });
+  });
+
+  it('fills the empty months between the first and the last', () => {
+    const series = monthSeries([
+      { month: '2025-11', w: 1, d: 0, l: 0 },
+      { month: '2026-02', w: 0, d: 0, l: 2 },
+    ]);
+    expect(series.map((m) => m.month)).toEqual(['2025-11', '2025-12', '2026-01', '2026-02']);
+    expect(series.map((m) => m.games)).toEqual([1, 0, 0, 2]);
+    expect(monthSeries([])).toEqual([]);
+    // Capped to the most recent months.
+    expect(monthSeries([{ month: '2020-01' }, { month: '2026-01' }], 12).length).toBe(12);
+  });
+
+  it('shares each outcome out among its endings', () => {
+    const shares = endingShares(
+      [
+        { ending: 'mate', w: 3, d: 0, l: 1 },
+        { ending: 'resignation', w: 1, d: 0, l: 0 },
+        { ending: 'agreement', w: 0, d: 2, l: 0 },
+      ],
+      'w',
+    );
+    expect(shares.map((s) => [s.ending, s.games, s.share])).toEqual([
+      ['mate', 3, 75],
+      ['resignation', 1, 25],
+    ]);
+    expect(endingShares([], 'd')).toEqual([]);
+  });
+
+  it('turns a band list into tally rows', () => {
+    expect(bandRows([{ band: 1600, w: 1, l: 1 }])).toEqual([
+      { band: 1600, tally: { games: 2, w: 1, d: 0, l: 1 } },
+    ]);
   });
 
   it('turns a ply into its move number', () => {
