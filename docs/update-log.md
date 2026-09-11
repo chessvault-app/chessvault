@@ -101,6 +101,12 @@ builds and the board's arrow keys do less per request.
   the same chip every button does, on keyboard focus as well as hover,
   and the repo check keeps a raw `title` from coming back.
 
+- **The book reader's board folds away on a desktop.** The last button on
+  the page's toolbar, "Hide the board", gives the page the whole row for a
+  stretch of prose with no diagrams in it, and reads "Show the board" while
+  it is folded. Setting a diagram on the board or opening the editor
+  unfolds it, and the choice is remembered on this device.
+
 ## 0.9.5
 
 The name beside the knight is one lowercase word. A phone's page title

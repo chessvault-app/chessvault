@@ -2053,6 +2053,8 @@ export const ko: Record<string, string> = {
   'Show the diagram buttons': '다이어그램 버튼 보기',
   'Show the moves under the board': '보드 아래 수 보기',
   'Hide the moves under the board': '보드 아래 수 숨기기',
+  'Show the board': '보드 보기',
+  'Hide the board': '보드 숨기기',
   'Who is to move?': '차례',
   'Reading diagrams, page {page} of {pages}': '다이어그램 읽는 중, {pages}쪽 중 {page}쪽',
   'Black to move': '흑 차례',

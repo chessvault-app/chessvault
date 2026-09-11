@@ -1,4 +1,4 @@
-import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, List, Maximize2, MoreHorizontal, MoveHorizontal, Percent, RotateCcw, RotateCw, Search, SquarePen, TableOfContents, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, List, Maximize2, MoreHorizontal, MoveHorizontal, PanelRightClose, PanelRightOpen, Percent, RotateCcw, RotateCw, Search, SquarePen, TableOfContents, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -90,6 +90,14 @@ const ZOOM_MIN = 0.25;
 const HOTSPOTS_KEY = 'vault:reader:hotspots';
 /** Whether the line strip is drawn under the board at wide; remembered on the device. */
 const STRIP_KEY = 'vault:reader:strip';
+/** Whether the board side is drawn at wide at all; remembered on the device. */
+const BOARD_KEY = 'vault:reader:board';
+/**
+ * The page's column once the board is folded away: the pane's own drag
+ * ceiling (hardMax), centred. A page fitted to the whole row of a wide
+ * monitor is a page too wide to read, and the fold is for reading.
+ */
+const FOLDED_PAGE_MAX = 'max-w-[75rem]';
 /**
  * What the strip takes off the board's height budget when it is shown:
  * three lines (the engine tab's cap, max-h-24) plus the gap above it. A
@@ -224,6 +232,15 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       return !on;
     });
   const rotate = (): void => setRotation((r) => (((r + 90) % 360) as Rotation));
+  // The board side can be folded away on a desktop, for a stretch of prose
+  // with no diagrams in it: the page then takes the row. Setting a diagram
+  // or opening the editor unfolds it, since both put something on the
+  // board side to be looked at.
+  const [boardShown, setBoardShown] = useState(() => localStorage.getItem(BOARD_KEY) !== 'off');
+  const showBoard = (on: boolean): void => {
+    localStorage.setItem(BOARD_KEY, on ? 'on' : 'off');
+    setBoardShown(on);
+  };
 
   // Text search: hits are boxes on the pages; the current one is shown.
   const search = usePdfSearch(doc, goTo);
@@ -261,12 +278,15 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const openEditor = (fen: string) => {
     setEditing(fen);
     if (!wide) setTab('editor');
+    else if (!boardShown) showBoard(true);
   };
   // The board-over-panel arrangement beside the PDF: one pane at a time
   // under the board, as the phone does, rather than a panel that scrolls.
   const [loadOpen, setLoadOpen] = useState(false);
   const [stackedPane, stackedPaneW] = useElementWidth();
   const [wideRow, wideRowW] = useElementWidth();
+  // The page's column while the board is folded (see BOARD_KEY).
+  const [foldedPane, foldedPaneW] = useElementWidth();
   // The editor takes the board side; where that is too narrow for its
   // board and panel side by side, it stacks (see `force-stacked`).
   const [region, regionW] = useElementWidth();
@@ -291,6 +311,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             rotation={rotation}
             onSet={() => {
               if (!wide) setTab('board');
+              else if (!boardShown) showBoard(true);
             }}
             onEdit={openEditor}
           />
@@ -326,6 +347,8 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       reading={reading}
       hotspots={hotspots}
       onToggleHotspots={toggleHotspots}
+      boardShown={compact ? null : boardShown}
+      onToggleBoard={() => showBoard(!boardShown)}
       reservedAspect={reservedPage?.aspect ?? null}
       onAspect={rememberPage}
     />
@@ -528,6 +551,17 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       )}
     </div>
   );
+
+  if (wide && !boardShown) {
+    return (
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] flex-col">
+        {header(false)}
+        <div ref={foldedPane} className={cn('mx-auto flex min-h-0 w-full flex-1 flex-col', FOLDED_PAGE_MAX)}>
+          {pdfPane(foldedPaneW, false)}
+        </div>
+      </div>
+    );
+  }
 
   if (wide) {
     return (
@@ -818,6 +852,8 @@ function PdfPane({
   reading,
   hotspots,
   onToggleHotspots,
+  boardShown,
+  onToggleBoard,
   reservedAspect,
   onAspect,
 }: {
@@ -856,6 +892,10 @@ function PdfPane({
   /** Whether the diagram buttons are drawn over the pages. */
   hotspots: boolean;
   onToggleHotspots: () => void;
+  /** Whether the board side is drawn beside the page; null where there
+      is no side to fold (a phone's tabs). */
+  boardShown: boolean | null;
+  onToggleBoard: () => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   // Rebound when the document arrives: the viewport is the scroller's
@@ -1190,6 +1230,22 @@ function PdfPane({
               <MoreHorizontal className={icon} />
             </Button>
           </ActionMenu>
+        )}
+        {/* The board side's fold, last and outside the "…": it is not a
+            way of showing the page but of giving it the row, and it must
+            stay reachable while folded, when this row is the only one. */}
+        {boardShown !== null && (
+          <>
+            <span className="bg-border mx-1 h-4 w-px" />
+            <Button
+              variant="ghost"
+              size={size}
+              onClick={onToggleBoard}
+              title={boardShown ? t('Hide the board') : t('Show the board')}
+            >
+              {boardShown ? <PanelRightClose className={icon} /> : <PanelRightOpen className={icon} />}
+            </Button>
+          </>
         )}
       </div>
     </>
