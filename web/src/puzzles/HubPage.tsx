@@ -217,8 +217,12 @@ function PuzzleCard({
         'rounded-xl ring-1 px-2.5 py-1.5 text-left transition-colors duration-100',
         // Sharing the leftover height between the cards puts it into the
         // BOARDS, where it is worth something, instead of into the gaps
-        // between them, where it is just distance.
-        fill && 'min-h-0 flex-1',
+        // between them, where it is just distance. Capped at the board's
+        // own ceiling (max-h-40) plus the card's padding: a vault with one
+        // card, no database and no books had that card absorb the whole
+        // column (a 1,200px placeholder on a tall phone-width window). Past
+        // the cap the slack goes above the cluster (justify-end, below).
+        fill && 'min-h-0 max-h-[10.75rem] flex-1',
       )}
     >
       <Board
@@ -374,7 +378,7 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
         // px-2.5 py-1.5`, and a ring costs no layout — so each slot
         // stood 2px short of the card that replaced it.
         'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
-        fill && 'min-h-0 flex-1',
+        fill && 'min-h-0 max-h-[10.75rem] flex-1',
       )}
     >
       <Skeleton
@@ -445,7 +449,7 @@ function EmptySlot({
   const shape = cn(
     'bg-card ring-card-ring flex w-full items-stretch gap-3',
     'rounded-xl ring-1 px-2.5 py-1.5 text-left',
-    fill && 'min-h-0 flex-1',
+    fill && 'min-h-0 max-h-[10.75rem] flex-1',
   );
   return go ? (
     <button
@@ -1107,7 +1111,10 @@ function Hub() {
       <div
         className={cn(
           'flex flex-col gap-2',
-          historyBlock ? 'shrink-0' : 'flex-1',
+          // justify-end: once every card is at its cap, what is left sits
+          // under the header rather than under the buttons, which stay on
+          // the bottom edge.
+          historyBlock ? 'shrink-0' : 'flex-1 justify-end',
         )}
       >
         {skeleton && (
