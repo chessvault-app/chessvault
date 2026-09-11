@@ -2282,9 +2282,10 @@ export function refGamesApi(
           }
         }
       }
-      const total = ids
-        ? ids.length
-        : (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+      // Unfiltered, the total is the table's size, which the meta row
+      // already records: a COUNT(*) here held the main handle for 80 ms
+      // (warm, 10.36M games) per search for a number the cache holds.
+      const total = ids ? ids.length : tableCount(found.name, db);
       const headerStmt = db.prepare(
         `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
          FROM games WHERE id = ?`,
