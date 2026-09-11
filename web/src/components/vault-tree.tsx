@@ -47,6 +47,26 @@ export interface VaultRow {
   files: number;
 }
 
+/**
+ * The rows the Vault card lists, from the areas /api/storage reports, in
+ * the folder's own order. A row shows only where there is something in
+ * it; the demo's vault has no books, a new vault has nothing. The
+ * placeholder reads the same list, so the words a row's gloss wraps to
+ * are the words it reserves.
+ */
+export const VAULT_ROWS: { path: string; gloss: string; kind: VaultKind; keys: string[] }[] = [
+  { path: 'games', kind: 'folder', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
+  { path: 'studies', kind: 'folder', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
+  { path: 'notes', kind: 'folder', gloss: 'markdown, boards in the text', keys: ['notes'] },
+  { path: 'books', kind: 'folder', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
+  { path: 'puzzlebooks', kind: 'folder', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
+  { path: 'puzzles', kind: 'folder', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
+  { path: 'repertoire', kind: 'folder', gloss: 'the opening map and its drills', keys: ['repertoire'] },
+  { path: 'sources', kind: 'folder', gloss: 'PGN files you added', keys: ['sources'] },
+  { path: '.history.git', kind: 'git', gloss: 'every earlier version', keys: ['history'] },
+  { path: 'config.json', kind: 'json', gloss: 'settings and tokens', keys: ['config'] },
+];
+
 export function VaultTree({
   path,
   rows,

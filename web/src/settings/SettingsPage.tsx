@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Skeleton, SkeletonForm, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
+import { Skeleton, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
@@ -10,7 +10,7 @@ import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
-import { VaultTree, type VaultKind, type VaultRow } from '@/components/vault-tree';
+import { VAULT_ROWS, VaultTree, type VaultRow } from '@/components/vault-tree';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Disclosure } from '@/components/disclosure';
-import { SettingRow } from '@/components/setting-row';
+import { SettingRow, SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
@@ -166,7 +166,7 @@ export function SettingsPage() {
     // settings landed and the page header — which the skeleton did not
     // stand in for at all — appeared from nowhere and pushed every card
     // down the height of a title.
-    return <PageShell width="narrow">{pending && <SkeletonForm groups={3} />}</PageShell>;
+    return <PageShell width="narrow">{pending && <SettingsPlaceholder />}</PageShell>;
   }
 
   // Nothing here knows about the keyboard any more. This box used to pad
@@ -281,6 +281,143 @@ export function SettingsPage() {
           </p>
         )}
     </PageShell>
+  );
+}
+
+/** The sentences the first cards print, shared with the placeholder that prints them too. */
+const DEMO_VAULT_NOTE = 'This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.';
+const VAULT_NAME_NOTE =
+  'Names this vault at the foot of the sidebar and in the window title. Every device that opens it sees the same name.';
+const VAULT_COPY_NOTE =
+  'The copy is one tar file of every document and the change history. Settings and tokens stay on the server.';
+const PROFILE_NOTE = 'Usernames pre-fill the archive browser on the Games page.';
+
+/**
+ * The names the section links will carry, in card order, one list per
+ * start (the render above is the source; the desktop shell adds one
+ * card, "Desktop app", and the lag build another). The placeholder lays
+ * them out invisibly, because how many lines the row takes is a fact
+ * about the words: nine Korean names fit one line at the narrow width
+ * and the same nine in English take two.
+ */
+const JUMP_NAMES_DEMO = ['Vault', 'Documents', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'This is a demo', 'Version'];
+const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess token', 'Tablebase', 'Browsed games', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'Danger zone', 'Version'];
+
+/**
+ * The page while the settings answer is out.
+ *
+ * It used to be three generic form cards of 212px each, which is the
+ * shape of no page here: the first card is the Vault, a listing of the
+ * folder that stands 446px on a desktop and 663 on a phone, and on a
+ * desktop a row of section links sits between the title and the cards.
+ * Measured on the demo at 1280 and 390 before this: the first card
+ * dropped 56px when the settings landed and the second 290 on a desktop
+ * and 451 on a phone. So this is the top of the page as it settles: the
+ * title, the link row, and the first three cards in the order the page
+ * draws them (the demo and a server start differently), the card frames
+ * real and what waits on the answer drawn as bars. The sentences a card
+ * prints whatever the answer are printed here too, as the Vault card's
+ * own placeholder does with its path. The third card ends under the
+ * fold at both widths, and what follows settles under it.
+ */
+function SettingsPlaceholder() {
+  return (
+    <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
+      {/* The page title: text-xl on a desktop, whose line box is 28px;
+          below md the header is the phone's 44px bar (PageHeader's
+          min-h-11), whatever it holds. */}
+      <div className="flex h-7 items-center max-md:h-11">
+        <Skeleton className="h-4 w-28" />
+      </div>
+      {/* The section links, as JumpList draws them: text-sm names in
+          px-1 buttons, py-2 and mb-1, and no row at all below md. Each
+          name is laid out invisibly and barred over, so the row wraps
+          where the real one will. */}
+      <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex">
+        {(isDemo() ? JUMP_NAMES_DEMO : JUMP_NAMES_SERVER).map((name) => (
+          <span key={name} className="relative px-1">
+            <span className="invisible">{t(name)}</span>
+            <Skeleton className="absolute inset-x-1 top-1/2 h-2.5 -translate-y-1/2" />
+          </span>
+        ))}
+      </div>
+      {isDemo() ? (
+        <>
+          <Card icon={BrandMark} title={t('Vault')}>
+            <SkeletonVaultTree path={null} rows={7} />
+            <p className="text-muted-foreground text-sm">{t(DEMO_VAULT_NOTE)}</p>
+          </Card>
+          <Card icon={Save} title={t('Documents')}>
+            <SkeletonSettingRow blurbLines={2} />
+          </Card>
+          <Card icon={Palette} title={t('Appearance')}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <FieldPlaceholder key={i} control="select" />
+            ))}
+            <SkeletonSettingRow />
+            <SkeletonSettingRow />
+            <DisclosurePlaceholder />
+          </Card>
+        </>
+      ) : (
+        <>
+          <Card icon={User} title={t('Profile')}>
+            <FieldPlaceholder control="input" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldPlaceholder control="input" />
+              <FieldPlaceholder control="input" />
+            </div>
+            <p className="text-muted-foreground text-sm">{t(PROFILE_NOTE)}</p>
+            <ButtonPlaceholder className="w-28" />
+          </Card>
+          <Card icon={BrandMark} title={t('Vault')}>
+            <FieldPlaceholder control="input" />
+            <p className="text-muted-foreground text-sm">{t(VAULT_NAME_NOTE)}</p>
+            <ButtonPlaceholder className="w-24" />
+            <SkeletonVaultTree />
+            <div className="flex flex-wrap items-center gap-2">
+              <ButtonPlaceholder className="w-40" />
+              <ButtonPlaceholder className="w-28" />
+            </div>
+            <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>
+          </Card>
+          <Card icon={Save} title={t('Documents')}>
+            <SkeletonSettingRow blurbLines={2} />
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A labelled control's box: the label's line (text-sm at leading-snug,
+ * which an inline bar takes from the line box rather than guessing at)
+ * over the control, a lg input at h-9 or a select trigger at h-8, both
+ * h-9 under a coarse pointer.
+ */
+function FieldPlaceholder({ control }: { control: 'input' | 'select' }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-sm leading-snug">
+        <Skeleton className="inline-block h-2.5 w-24 align-middle" />
+      </div>
+      <Skeleton className={cn('rounded-md', control === 'input' ? 'h-9' : 'h-8 pointer-coarse:h-9')} />
+    </div>
+  );
+}
+
+/** A default button's box: h-8, and h-9 under a coarse pointer, at about its label's width. */
+function ButtonPlaceholder({ className }: { className: string }) {
+  return <Skeleton className={cn('h-8 rounded-lg pointer-coarse:h-9', className)} />;
+}
+
+/** The closed "More options" row of a Disclosure: one text-sm line, 36px under a coarse pointer. */
+function DisclosurePlaceholder() {
+  return (
+    <div className="flex h-5 items-center pointer-coarse:h-9">
+      <Skeleton className="h-2.5 w-24" />
+    </div>
   );
 }
 
@@ -410,7 +547,7 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
           <ClearableInput inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess username')} autoCapitalize="none" />
         </Field>
       </div>
-      <p className="text-muted-foreground text-sm">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
+      <p className="text-muted-foreground text-sm">{t(PROFILE_NOTE)}</p>
       <div className="flex items-center gap-3">
         <Button variant="default" onClick={() => void save()}>{t('Save profile')}</Button>
         <Feedback note={note} />
@@ -424,24 +561,6 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
 // person's, and two name fields side by side read as one thing. The
 // placeholder is what the sidebar shows without a name, so blanking the
 // field is not a mystery.
-
-/**
- * The rows the Vault card lists, from the areas /api/storage reports,
- * in the folder's own order. A row shows only where there is something
- * in it; the demo's vault has no books, a new vault has nothing.
- */
-const VAULT_ROWS: { path: string; gloss: string; kind: VaultKind; keys: string[] }[] = [
-  { path: 'games', kind: 'folder', gloss: 'one PGN per game, and the archives you browsed', keys: ['games', 'gamesCache'] },
-  { path: 'studies', kind: 'folder', gloss: 'one study per PGN file, chapters inside it', keys: ['studies'] },
-  { path: 'notes', kind: 'folder', gloss: 'markdown, boards in the text', keys: ['notes'] },
-  { path: 'books', kind: 'folder', gloss: 'your PDFs, and what was read from them', keys: ['books'] },
-  { path: 'puzzlebooks', kind: 'folder', gloss: 'puzzle books read from scans', keys: ['puzzlebooks'] },
-  { path: 'puzzles', kind: 'folder', gloss: 'every attempt, and where you are', keys: ['puzzles'] },
-  { path: 'repertoire', kind: 'folder', gloss: 'the opening map and its drills', keys: ['repertoire'] },
-  { path: 'sources', kind: 'folder', gloss: 'PGN files you added', keys: ['sources'] },
-  { path: '.history.git', kind: 'git', gloss: 'every earlier version', keys: ['history'] },
-  { path: 'config.json', kind: 'json', gloss: 'settings and tokens', keys: ['config'] },
-];
 
 /** The card's listing, read off the page's one /api/storage answer
     (useStorage). config.json is a file rather than an area, so its
@@ -486,9 +605,7 @@ function DemoVaultCard({ storage }: { storage: StorageReport | null }) {
   return (
     <Card icon={BrandMark} title={t('Vault')} anchor="vault">
       {vault ? <VaultTree path={null} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={null} rows={7} /> : null}
-      <p className="text-muted-foreground text-sm">
-        {t('This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.')}
-      </p>
+      <p className="text-muted-foreground text-sm">{t(DEMO_VAULT_NOTE)}</p>
     </Card>
   );
 }
@@ -540,9 +657,7 @@ function VaultCard({
       <Field label="Vault name">
         <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={folder} maxLength={60} />
       </Field>
-      <p className="text-muted-foreground text-sm">
-        {t('Names this vault at the foot of the sidebar and in the window title. Every device that opens it sees the same name.')}
-      </p>
+      <p className="text-muted-foreground text-sm">{t(VAULT_NAME_NOTE)}</p>
       <div className="flex items-center gap-3">
         <Button variant="default" onClick={() => void save()}>{t('Save name')}</Button>
         <Feedback note={note} />
@@ -566,9 +681,7 @@ function VaultCard({
           <Button variant="secondary" onClick={() => void reveal()}>{t('Show in the file manager')}</Button>
         )}
       </div>
-      <p className="text-muted-foreground text-sm">
-        {t('The copy is one tar file of every document and the change history. Settings and tokens stay on the server.')}
-      </p>
+      <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>
     </Card>
   );
 }

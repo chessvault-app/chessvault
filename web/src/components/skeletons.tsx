@@ -5,7 +5,7 @@ import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { panelStoredHeight } from '@/components/panel';
-import { VaultNote, VaultPath } from '@/components/vault-tree';
+import { VAULT_ROWS, VaultNote, VaultPath } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 
 /**
@@ -899,69 +899,6 @@ export function SkeletonBoard({
 }
 
 /**
- * Labelled controls stacked in cards — the settings shape.
- *
- * Shaped against what Settings actually draws, which it was not: a card is
- * components/setting-row strips, each a bordered box holding a title at text-base
- * over a blurb at text-sm, and this drew two bare bars in the open. The
- * card came out around 118px against the real 194, so the page grew by
- * about half a card each as the settings landed.
- *
- * It owns no width or padding of its own any more — the caller puts it in
- * the same PageShell the settled page uses, so the column and the gutters
- * cannot disagree, and the leading box stands in for the page header
- * rather than for nothing.
- */
-export function SkeletonForm({ groups = 3, className }: { groups?: number; className?: string }) {
-  return (
-    <Loading className={cn('flex flex-col gap-4', className)}>
-      {/* The page title is text-xl on a desktop, whose line box is 28px.
-          Below md the header is the phone's 44px bar (PageHeader's
-          min-h-11), whatever it holds. */}
-      <div className="flex h-7 items-center max-md:h-11">
-        <Skeleton className="h-4 w-28" />
-      </div>
-      {Array.from({ length: groups }, (_, g) => (
-        <div key={g} className="bg-card rounded-xl ring-1 ring-card-ring p-4">
-          {/* The card's heading: an icon beside a title, on a 24px line. */}
-          <div className="mb-3 flex h-6 items-center gap-2">
-            <Skeleton className="size-4 shrink-0 rounded-sm" />
-            <Skeleton className="h-3 w-28" />
-          </div>
-          <div className="flex flex-col gap-3">
-            {Array.from({ length: 2 }, (_, i) => (
-              <div
-                key={i}
-                className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
-              >
-                {/* The well is bg-muted, which is what a Skeleton was
-                    filled with for a while: the three bars in here were
-                    drawn in the well's own fill and could not be seen at
-                    all, leaving a page of empty outlines for the whole
-                    wait. The default fill is accent now, the rung above
-                    the well, so these draw it. */}
-                <div className="min-w-0">
-                  <div className="flex h-6 items-center">
-                    <Skeleton className="h-3.5 w-32" />
-                  </div>
-                  <div className="flex h-5 items-center">
-                    <Skeleton className="h-2 w-44" />
-                  </div>
-                </div>
-                {/* Where a Switch stands, at the size the registry draws
-                    one: 18.4 x 32 (components/ui/switch), not the h-5 w-9
-                    this claimed was "its own size". */}
-                <Skeleton className="h-[18.4px] w-8 shrink-0 rounded-full" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </Loading>
-  );
-}
-
-/**
  * The filter strip a list of games wears above its rows: three narrow
  * selects and a button, on the same 28px trigger height (36 under a
  * coarse pointer) inside the same px-3 py-2 as GameFilters' FilterRow.
@@ -1102,11 +1039,15 @@ export function SkeletonVaultTree({
   rows = 8,
   className,
 }: {
-  /** Where the folder is, as the listing itself takes it. */
-  path: string | null;
+  /**
+   * Where the folder is, as the listing itself takes it: null is the
+   * demo's wording, and undefined is a path the settings answer has not
+   * brought yet, drawn as a bar the width of one.
+   */
+  path?: string | null;
   /**
    * Eight, which is what a vault in use lists: the ten rows the card can
-   * draw (settings/SettingsPage `VAULT_ROWS`) less the two book folders,
+   * draw (components/vault-tree `VAULT_ROWS`) less the two book folders,
    * which exist only once a PDF has been imported. Empty rows are
    * dropped, so a fresh vault lists fewer and a reading one all ten; the
    * caller can say so where it knows better.
@@ -1119,13 +1060,19 @@ export function SkeletonVaultTree({
       {/* The folder line: the real path, and a bar where the totals go,
           on the 20px line box of the text-sm they will be. */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
-        <VaultPath path={path} />
+        {path === undefined ? (
+          <div className="flex h-5 items-center">
+            <Skeleton className="h-2.5 w-56" />
+          </div>
+        ) : (
+          <VaultPath path={path} />
+        )}
         <div className="flex h-5 items-center">
           <Skeleton className="h-2.5 w-24" />
         </div>
       </div>
       <ul>
-        {VAULT_SHAPE.slice(0, rows).map((row, i) => (
+        {VAULT_ROWS.slice(0, rows).map((row, i) => (
           <li key={i}>
             {/* Every cell is centred rather than left to the row's baseline
                 alignment: a bar has no text, so its baseline is its own
@@ -1135,20 +1082,19 @@ export function SkeletonVaultTree({
               <Skeleton className="size-4 rounded-sm" />
             </span>
             <div className="path flex h-5 items-center self-center">
-              <Skeleton className={cn('h-2.5', row.path)} />
+              <Skeleton className={cn('h-2.5', PATH_WIDTHS[i % PATH_WIDTHS.length])} />
             </div>
-            <div className="gloss self-center">
-              <div className="flex h-5 items-center">
-                <Skeleton className={cn('h-2', row.gloss)} />
-              </div>
-              {/* Stacked under the name below 30rem, where the longer
-                  glosses take a second line; beside it above, where none
-                  of them do. */}
-              {row.wraps && (
-                <div className="hidden h-5 items-center @max-[30rem]:flex">
-                  <Skeleton className="h-2 w-2/5" />
-                </div>
-              )}
+            {/* The gloss is the one cell that wraps, stacked under the
+                name below 30rem, and how many lines it takes is a fact
+                about the words in the reader's language: three of the
+                English glosses take two lines at 390px and one of the
+                Korean ones does. A list of wrap marks measured in one
+                language stood the Korean tree 40px tall. So the real
+                gloss is laid out here invisibly, at the size it will be,
+                and a bar is drawn over its first line. */}
+            <div className="gloss relative min-w-0 self-center text-sm">
+              <span className="invisible">{t(row.gloss)}</span>
+              <Skeleton className="absolute top-1.5 left-0 h-2 w-3/4 max-w-full" />
             </div>
             <div className="size flex h-5 items-center self-center">
               <Skeleton className="h-2.5 w-24" />
@@ -1162,22 +1108,10 @@ export function SkeletonVaultTree({
 }
 
 /**
- * One entry per row the Vault card can list, in its order, so any prefix
- * of it is the shape of a vault that has fewer: the bars are the widths
- * that row's own name and gloss come to at text-sm (`VAULT_ROWS` supplies
- * both), and `wraps` marks the three glosses long enough to take a second
- * line once they stack under the name.
+ * The width each row's name comes to in the mono face, in `VAULT_ROWS`
+ * order, so any prefix of the list is the shape of a vault with fewer
+ * rows. The names never wrap; the gloss beside each is laid out from its
+ * own words above.
  */
-const VAULT_SHAPE: { path: string; gloss: string; wraps?: boolean }[] = [
-  { path: 'w-10', gloss: 'w-80', wraps: true },
-  { path: 'w-14', gloss: 'w-72', wraps: true },
-  { path: 'w-10', gloss: 'w-48' },
-  { path: 'w-10', gloss: 'w-64', wraps: true },
-  { path: 'w-24', gloss: 'w-48' },
-  { path: 'w-14', gloss: 'w-56' },
-  { path: 'w-20', gloss: 'w-52' },
-  { path: 'w-14', gloss: 'w-32' },
-  { path: 'w-28', gloss: 'w-36' },
-  { path: 'w-24', gloss: 'w-32' },
-];
+const PATH_WIDTHS = ['w-10', 'w-14', 'w-10', 'w-10', 'w-24', 'w-14', 'w-20', 'w-14', 'w-28', 'w-24'];
 

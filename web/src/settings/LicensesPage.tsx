@@ -193,7 +193,11 @@ export function LicensesPage() {
                   label={
                     <>
                       {t('All')}
-                      <Skeleton className="ml-1 inline-block h-2.5 w-6 align-middle" />
+                      {/* The lit chip is filled accent, the fill a bar has
+                          everywhere else, so this one was invisible in
+                          both themes: the primary at 20% is the rung
+                          deeper in the same ink. */}
+                      <Skeleton className="bg-primary/20 ml-1 inline-block h-2.5 w-6 align-middle" />
                     </>
                   }
                   active
