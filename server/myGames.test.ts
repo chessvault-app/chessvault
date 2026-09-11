@@ -527,3 +527,141 @@ describe('my games index', () => {
     expect((await res.json()).moves).toEqual([]);
   });
 });
+
+/**
+ * The insights report: results by colour, time control and opening,
+ * and where each game left the catalogue. A second fixture beside the
+ * first, because the four games above never leave book — every line
+ * ends inside the catalogue — and a report that shows no exit proves
+ * nothing about the exit arithmetic.
+ */
+describe('my games insights', () => {
+  let dir: string;
+  let app: Hono;
+
+  const g = (o: { white: string; black: string; result: string; tc: string; moves: string }): string =>
+    `[White "${o.white}"]\n[Black "${o.black}"]\n[Result "${o.result}"]\n[UTCDate "2026.05.01"]\n[TimeControl "${o.tc}"]\n\n${o.moves} ${o.result}\n`;
+
+  const ARCHIVE = [
+    // As White, rapid, won. 4.Ke2 is nobody's theory: I leave book at ply 6.
+    g({ white: 'me', black: 'foe', result: '1-0', tc: '600', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. Ke2 d6' }),
+    // As White, rapid, lost. 4...Kf8 is theirs: they leave at ply 7.
+    g({ white: 'me', black: 'foe', result: '0-1', tc: '600', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. Nc3 Kf8 5. d3' }),
+    // As Black, blitz, drawn, queens off by move 4: the material fixture.
+    g({ white: 'foe', black: 'me', result: '1/2-1/2', tc: '180+2', moves: '1. d4 d5 2. c4 dxc4 3. Qa4+ Qd7 4. Qxd7+ Nxd7 5. Nf3' }),
+    // As Black, no time control, won, with an en passant capture.
+    g({ white: 'foe', black: 'me', result: '0-1', tc: '-', moves: '1. e4 Nf6 2. e5 d5 3. exd6 exd6' }),
+  ].join('\n');
+
+  const report = async (query = ''): Promise<{
+    games: number;
+    named: boolean;
+    cells: {
+      side: string;
+      speed: string;
+      eco: string | null;
+      name: string | null;
+      games: number;
+      w: number;
+      d: number;
+      l: number;
+      exits: number;
+      exitPlySum: number;
+      exitPlyMin: number | null;
+      youLeft: number;
+      theyLeft: number;
+    }[];
+  }> => {
+    const res = await app.request(`/api/mygames/insights?${query}`);
+    expect(res.status).toBe(200);
+    return (await res.json()) as never;
+  };
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'mygames-insights-'));
+    const games = join(dir, 'games');
+    mkdirSync(join(games, 'lichess', 'me'), { recursive: true });
+    writeFileSync(join(games, 'lichess', 'me', '2026-05.pgn'), ARCHIVE);
+    app = new Hono().route('/api', myGamesApi(games, join(dir, 'index.sqlite')));
+  });
+
+  afterAll(() => {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // See above.
+    }
+  });
+
+  it('scores every game from my side, by colour and time control', async () => {
+    const { games, named, cells } = await report();
+    expect(games).toBe(4);
+    expect(named).toBe(true);
+    const sum = (key: 'games' | 'w' | 'd' | 'l', side?: string): number =>
+      cells.filter((c) => !side || c.side === side).reduce((n, c) => n + c[key], 0);
+    expect([sum('w'), sum('d'), sum('l')]).toEqual([2, 1, 1]);
+    expect([sum('games', 'white'), sum('games', 'black')]).toEqual([2, 2]);
+    // The 0-1 I played as Black is MY win, not White's loss.
+    expect(sum('w', 'black')).toBe(1);
+    expect(cells.map((c) => c.speed).sort()).toEqual(['blitz', 'rapid', 'unknown']);
+  });
+
+  it('names the opening from the deepest catalogued position', async () => {
+    const { cells } = await report();
+    const italian = cells.find((c) => c.side === 'white')!;
+    expect([italian.eco, italian.name]).toEqual(['C50', 'Italian Game: Giuoco Piano']);
+    // Both Italian games are one row: same colour, speed and name.
+    expect(italian.games).toBe(2);
+    const qga = cells.find((c) => c.speed === 'blitz')!;
+    expect(qga.name).toBe("Queen's Gambit Accepted: Accelerated Mannheim Variation");
+  });
+
+  it('records the leaving move, its ply and whose it was', async () => {
+    const { cells } = await report();
+    const italian = cells.find((c) => c.side === 'white')!;
+    // 4.Ke2 at ply 6 (mine) and 4...Kf8 at ply 7 (theirs).
+    expect(italian.exits).toBe(2);
+    expect(italian.exitPlyMin).toBe(6);
+    expect(italian.exitPlySum).toBe(13);
+    expect([italian.youLeft, italian.theyLeft]).toEqual([1, 1]);
+  });
+
+  it('takes the same filters as the explorer', async () => {
+    expect((await report('side=black')).cells.every((c) => c.side === 'black')).toBe(true);
+    expect((await report('speeds=blitz')).games).toBe(1);
+    expect((await report('outcome=win')).games).toBe(2);
+  });
+
+  it('narrows to a material situation by replaying the PGN', async () => {
+    const queenless = JSON.stringify({ white: { q: [0, 0] }, black: { q: [0, 0] }, stable: 1 });
+    const { games, cells } = await report(`material=${encodeURIComponent(queenless)}`);
+    expect(games).toBe(1);
+    expect(cells[0]!.speed).toBe('blitz');
+  });
+
+  it('narrows to a motif and to a pawn structure', async () => {
+    const ep = JSON.stringify({ id: 'en-passant', side: 'either', stable: 1 });
+    expect((await report(`motif=${encodeURIComponent(ep)}`)).games).toBe(1);
+    // The pawn skeleton after 1.e4 e5: the two Italian games and nothing else.
+    const sketch = '8/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/8 w - - 0 1';
+    expect((await report(`fen=${encodeURIComponent(sketch)}&match=structure`)).games).toBe(2);
+  });
+
+  it('refuses a malformed or mixed situation the way deep-search does', async () => {
+    const ask = (q: string) => app.request(`/api/mygames/insights?${q}`);
+    expect((await ask('material=%7B')).status).toBe(400);
+    expect((await ask('motif=%7B%22id%22%3A%22nope%22%7D')).status).toBe(400);
+    expect((await ask('fen=x&material=%7B%7D')).status).toBe(400);
+    expect((await ask('fen=8/8/8/8/8/8/8/8%20w%20-%20-%200%201')).status).toBe(400);
+    expect((await ask('match=sideways')).status).toBe(400);
+  });
+
+  it('answers a vault with no games of mine', async () => {
+    const empty = mkdtempSync(join(tmpdir(), 'mygames-insights-empty-'));
+    const solo = new Hono().route('/api', myGamesApi(join(empty, 'games'), join(empty, 'index.sqlite')));
+    const res = await solo.request('/api/mygames/insights');
+    expect(res.status).toBe(200);
+    // Named is the catalogue's presence, not the vault's: it ships with the app.
+    expect(await res.json()).toEqual({ games: 0, named: true, cells: [] });
+  });
+});

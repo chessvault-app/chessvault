@@ -9,7 +9,16 @@ import { makeSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import { indexGame, pathUser, type Speed } from '../shared/gameIndex.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
-import { openingForKey } from './openings.ts';
+import { MATCH_MODES, parseMaterialSpec, type MatchMode, type MaterialSpec } from '../shared/scanMatch.ts';
+import { parseMotifSpec, type MotifSpec } from '../shared/scanMotif.ts';
+import { openingForKey, openingsBook } from './openings.ts';
+import {
+  positionTarget,
+  replayMaterialHit,
+  replayMotifHit,
+  replayPositionHit,
+  type PositionTarget,
+} from './refgamesScan.ts';
 import { resolve } from 'node:path';
 import { DATA, DATA_MYGAMES, VAULT_GAMES } from './paths.ts';
 
@@ -52,6 +61,41 @@ export interface MyGamesFilters {
   to?: string;
   /** Only the curated collection, rather than every archived game. */
   collectionOnly?: boolean;
+}
+
+/**
+ * A situation the insights page narrows to: the Databases browser's
+ * three hunts, in the shapes it already sends to /refgames/deep-search
+ * (a material spec, a motif spec, or a position with a match rung),
+ * so the presets in web/src/games/*.json serve both corpora unchanged.
+ */
+export type Situation =
+  | { kind: 'material'; spec: MaterialSpec }
+  | { kind: 'motif'; spec: MotifSpec }
+  | { kind: 'position'; target: PositionTarget };
+
+/** One aggregate cell of the insights report: a colour, a time control
+    and an opening, with the results and the book exits summed. */
+export interface InsightsCell {
+  side: 'white' | 'black';
+  /** The indexed speed, or 'unknown' when the PGN carried no time control. */
+  speed: Speed | 'unknown';
+  eco: string | null;
+  name: string | null;
+  games: number;
+  /** From the owner's point of view. */
+  w: number;
+  d: number;
+  l: number;
+  /** Games whose indexed prefix left the catalogue, the sum of the plies
+      at which they did (the ply of the leaving move), and the earliest. */
+  exits: number;
+  exitPlySum: number;
+  exitPlyMin: number | null;
+  /** Of those exits, how many were the owner's move and how many the
+      opponent's. */
+  youLeft: number;
+  theyLeft: number;
 }
 
 interface MoveRow {
@@ -796,6 +840,226 @@ class MyGamesIndex {
   }
 
   /**
+   * The SAN of every game in a file, by the game's position in it — what
+   * the situation hunts replay. The index keeps sixty plies of UCI, and
+   * a rook ending is rarely inside them, so a hunt reads the PGN again.
+   * Parsed per file and kept by mtime, as the games list does; a few
+   * hundred files of a browsing session fit easily, and past the cap the
+   * oldest go first.
+   */
+  private sansCache = new Map<string, { mtimeMs: number; sans: string[] }>();
+  private static readonly SANS_CACHE_MAX = 512;
+
+  private sansOf(rel: string): string[] {
+    let mtimeMs: number;
+    try {
+      mtimeMs = statSync(`${this.gamesDir}/${rel}`).mtimeMs;
+    } catch {
+      return [];
+    }
+    const cached = this.sansCache.get(rel);
+    if (cached && cached.mtimeMs === mtimeMs) {
+      // Refresh its place in the insertion order, which is the eviction order.
+      this.sansCache.delete(rel);
+      this.sansCache.set(rel, cached);
+      return cached.sans;
+    }
+    let text: string;
+    try {
+      text = readFileSync(`${this.gamesDir}/${rel}`, 'utf-8');
+    } catch {
+      return [];
+    }
+    const sans: string[] = [];
+    new PgnParser((game, err) => {
+      if (err) {
+        sans.push('');
+        return;
+      }
+      const moves: string[] = [];
+      for (const data of game.moves.mainline()) moves.push(data.san);
+      sans.push(moves.join(' '));
+    }).parse(text);
+    if (this.sansCache.size >= MyGamesIndex.SANS_CACHE_MAX) {
+      const oldest = this.sansCache.keys().next().value;
+      if (oldest !== undefined) this.sansCache.delete(oldest);
+    }
+    this.sansCache.set(rel, { mtimeMs, sans });
+    return sans;
+  }
+
+  /** Whether one game reaches the situation, by the same replay the
+      reference scan's JS path runs. */
+  private reaches(rel: string, idx: number, situation: Situation): boolean {
+    const moves = this.sansOf(rel)[idx];
+    if (!moves) return false;
+    const hit =
+      situation.kind === 'material'
+        ? replayMaterialHit(moves, situation.spec)
+        : situation.kind === 'motif'
+          ? replayMotifHit(moves, situation.spec)
+          : replayPositionHit(moves, situation.target);
+    return hit !== null;
+  }
+
+  /**
+   * Your results summed by colour, time control and opening, with where
+   * each game left the catalogue — the insights page's whole answer, in
+   * one pass over the games the filters admit.
+   *
+   * The opening is read off the positions, not the PGN's ECO header: the
+   * deepest catalogued position the game reaches names it, which is the
+   * same name the explorer gives that position and does not depend on
+   * which site exported the game (chess.com writes an ECO and a URL,
+   * Lichess an ECO and a name, a hand import often nothing). A game that
+   * never reaches a named position keeps its header ECO, so it still
+   * lands in a row rather than vanishing.
+   *
+   * "Left book" is the first move after which the position is no longer
+   * anywhere in the catalogue's lines (openings.ts's membership set, the
+   * analysis views' own book test). The ply is the leaving move's, and
+   * whose move it was is what the page's "you / them" split reports. A
+   * game whose whole indexed prefix stays inside is counted in the row
+   * and in no exit: the catalogue's longest line is under forty plies
+   * and the index holds sixty, so in practice that is a game the index
+   * cut short by an illegal move.
+   *
+   * Only games whose side is known can answer: a reference game kept in
+   * the collection has no "you" to score for, and is left out rather
+   * than guessed at, exactly as the outcome filter does.
+   *
+   * MEASURED on this machine over 3,000 generated 80-ply games in 30
+   * files: no situation, 116 ms the first ask and 100 ms the second (one
+   * query for the games, one for their plies, the walk in JS). A material
+   * situation over the same games, 643 ms the first ask and 528 ms with
+   * the SAN cached, so the replay itself is most of it; a motif, 397 ms.
+   * The page asks once per filter change, not per keystroke.
+   */
+  insights(
+    filters: MyGamesFilters,
+    situation: Situation | null,
+  ): { games: number; named: boolean; cells: InsightsCell[] } {
+    const db = this.open();
+    if (!db) return { games: 0, named: false, cells: [] };
+    const { sql, binds } = this.where(filters);
+    const games = db
+      .prepare(
+        `SELECT id, file, idx, user_side, speed, result, eco
+         FROM games g WHERE g.user_side IS NOT NULL${sql}`,
+      )
+      .all(...binds) as {
+      id: number;
+      file: string;
+      idx: number;
+      user_side: 'white' | 'black';
+      speed: Speed | null;
+      result: number;
+      eco: string | null;
+    }[];
+    const kept = new Map<number, (typeof games)[number]>();
+    for (const g of games) {
+      if (situation && !this.reaches(g.file, g.idx, situation)) continue;
+      kept.set(g.id, g);
+    }
+    if (kept.size === 0) return { games: 0, named: openingsBook() !== null, cells: [] };
+
+    // Every indexed ply of every admitted game, in one query, grouped in
+    // JS: the filter's WHERE does the admitting, and games the situation
+    // dropped are skipped by id.
+    const plies = db
+      .prepare(
+        `SELECT p.game_id AS game_id, CAST(p.pos AS TEXT) AS pos
+         FROM plies p JOIN games g ON g.id = p.game_id
+         WHERE g.user_side IS NOT NULL${sql}
+         ORDER BY p.game_id, p.ply`,
+      )
+      .all(...binds) as { game_id: number; pos: string }[];
+
+    const book = openingsBook();
+    const cells = new Map<string, InsightsCell>();
+    const finish = (game: (typeof games)[number], positions: string[]): void => {
+      // positions[k] is the position BEFORE ply k; the deepest named one
+      // names the game, and the first one outside the catalogue marks
+      // the move before it as the leaving move.
+      let eco = game.eco;
+      let name: string | null = null;
+      let exit: number | null = null;
+      if (book) {
+        for (let k = 1; k < positions.length; k += 1) {
+          const key = positions[k]!;
+          const entry = book.byKey[key];
+          if (entry) {
+            eco = entry[0];
+            name = entry[1];
+          }
+          if (!book.members.has(key)) {
+            exit = k - 1;
+            break;
+          }
+        }
+      }
+      const side = game.user_side;
+      const speed = game.speed ?? 'unknown';
+      const id = `${side}\t${speed}\t${eco ?? ''}\t${name ?? ''}`;
+      let cell = cells.get(id);
+      if (!cell) {
+        cell = {
+          side,
+          speed,
+          eco,
+          name,
+          games: 0,
+          w: 0,
+          d: 0,
+          l: 0,
+          exits: 0,
+          exitPlySum: 0,
+          exitPlyMin: null,
+          youLeft: 0,
+          theyLeft: 0,
+        };
+        cells.set(id, cell);
+      }
+      cell.games += 1;
+      const mine = side === 'white' ? game.result : -game.result;
+      if (mine > 0) cell.w += 1;
+      else if (mine < 0) cell.l += 1;
+      else cell.d += 1;
+      if (exit !== null) {
+        cell.exits += 1;
+        cell.exitPlySum += exit;
+        cell.exitPlyMin = cell.exitPlyMin === null ? exit : Math.min(cell.exitPlyMin, exit);
+        if ((exit % 2 === 0) === (side === 'white')) cell.youLeft += 1;
+        else cell.theyLeft += 1;
+      }
+    };
+
+    let current: (typeof games)[number] | null = null;
+    let positions: string[] = [];
+    const seen = new Set<number>();
+    for (const row of plies) {
+      if (current === null || row.game_id !== current.id) {
+        if (current) finish(current, positions);
+        current = kept.get(row.game_id) ?? null;
+        positions = [];
+        if (current) seen.add(current.id);
+      }
+      if (!current) continue;
+      positions.push(BigInt.asUintN(64, BigInt(row.pos)).toString(16));
+    }
+    if (current) finish(current, positions);
+    // A game with no ply rows cannot exist (indexGame drops it), but the
+    // count must still be the games admitted, not the games walked.
+    for (const game of kept.values()) if (!seen.has(game.id)) finish(game, []);
+
+    return {
+      games: kept.size,
+      named: book !== null,
+      cells: [...cells.values()].sort((a, b) => b.games - a.games),
+    };
+  }
+
+  /**
    * Row counts, for the pane's "indexed N games" line.
    *
    * `matching` answers the filter window's question — how many games the
@@ -994,6 +1258,60 @@ export function myGamesApi(
       band,
     );
     return c.json({ banded, rows });
+  });
+
+  /**
+   * Your results by colour, time control and opening, and where each
+   * game left the catalogue — see insights(). Takes the same filters as
+   * every other route here, plus at most one situation in the shapes
+   * /refgames/deep-search reads: material=, motif=, or fen= with an
+   * optional match= rung. The refusals are that route's, for the same
+   * reason it refuses: a constraint silently dropped would be an answer
+   * about games nobody asked about.
+   */
+  api.get('/mygames/insights', (c) => {
+    const fen = c.req.query('fen')?.trim();
+    const matchRaw = c.req.query('match');
+    const materialRaw = c.req.query('material');
+    const motifRaw = c.req.query('motif');
+    if (materialRaw !== undefined && (fen !== undefined || matchRaw !== undefined)) {
+      return c.json({ error: 'material search takes no fen or match' }, 400);
+    }
+    if (
+      motifRaw !== undefined &&
+      (fen !== undefined || matchRaw !== undefined || materialRaw !== undefined)
+    ) {
+      return c.json({ error: 'motif search takes no fen, match or material' }, 400);
+    }
+    if (matchRaw !== undefined && !(MATCH_MODES as readonly string[]).includes(matchRaw)) {
+      return c.json({ error: 'bad match mode' }, 400);
+    }
+    let situation: Situation | null = null;
+    if (materialRaw !== undefined) {
+      const spec = parseMaterialSpec(materialRaw);
+      if (!spec) return c.json({ error: 'bad material spec' }, 400);
+      situation = { kind: 'material', spec };
+    } else if (motifRaw !== undefined) {
+      const spec = parseMotifSpec(motifRaw);
+      if (!spec) return c.json({ error: 'bad motif spec' }, 400);
+      situation = { kind: 'motif', spec };
+    } else if (fen !== undefined) {
+      const mode = (matchRaw as MatchMode | undefined) ?? 'exact';
+      const setup = parseFen(fen);
+      if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
+      const position = Chess.fromSetup(setup.unwrap());
+      // A kingless pawn sketch is a legitimate target on the relaxed
+      // rungs and never on the exact one (refgames.ts says why).
+      if (position.isErr && mode === 'exact') return c.json({ error: 'bad position' }, 400);
+      situation = {
+        kind: 'position',
+        target: position.isErr
+          ? positionTarget(setup.unwrap(), mode)
+          : positionTarget(position.unwrap(), mode),
+      };
+    }
+    index.sync();
+    return c.json(index.insights(parseFilters((key) => c.req.query(key)), situation));
   });
 
   /** What the index holds — and a way to make it catch up on demand. */
