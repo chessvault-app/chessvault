@@ -45,6 +45,8 @@ export interface VaultRoutes {
   refgamesDb?: string;
   /** The live index over the vault's own games. Derived, rebuildable. */
   myGamesDb?: string;
+  /** The engine pass's findings over those games. */
+  myGamesAnalysisDb?: string;
   /** Directory holding the repertoire drill history. */
   repertoireState?: string;
 }
@@ -97,7 +99,12 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   app.route('/api', gamesApi(games, resolve(games, '..', 'config.json')));
   // The vault's own games, explorable under filters. Not a book: see
   // server/myGames.ts for why they are indexed rather than compiled.
-  app.route('/api', paths.myGamesDb ? myGamesApi(games, paths.myGamesDb) : myGamesApi(games));
+  app.route(
+    '/api',
+    paths.myGamesDb
+      ? myGamesApi(games, paths.myGamesDb, undefined, paths.myGamesAnalysisDb)
+      : myGamesApi(games),
+  );
   app.route(
     '/api',
     paths.puzzlesDb || paths.puzzlesState

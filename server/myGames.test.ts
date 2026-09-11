@@ -575,12 +575,25 @@ describe('my games insights', () => {
     opponents: { band: number; w: number; d: number; l: number }[];
     endings: { ending: string; w: number; d: number; l: number }[];
     lengths: { band: number; w: number; d: number; l: number }[];
+    analysis: {
+      games: number;
+      depth: number | null;
+      accuracy: { sum: number; n: number };
+      bySide: unknown[];
+      byOutcome: unknown[];
+      byMonth: unknown[];
+      byPhase: unknown[];
+      byMove: unknown[];
+      quality: Record<string, number>;
+    };
     cells: {
       side: string;
       speed: string;
       eco: string | null;
       name: string | null;
       games: number;
+      accSum: number;
+      accN: number;
       w: number;
       d: number;
       l: number;
@@ -601,7 +614,10 @@ describe('my games insights', () => {
     const games = join(dir, 'games');
     mkdirSync(join(games, 'lichess', 'me'), { recursive: true });
     writeFileSync(join(games, 'lichess', 'me', '2026-05.pgn'), ARCHIVE);
-    app = new Hono().route('/api', myGamesApi(games, join(dir, 'index.sqlite')));
+    app = new Hono().route(
+      '/api',
+      myGamesApi(games, join(dir, 'index.sqlite'), undefined, join(dir, 'analysis.sqlite')),
+    );
   });
 
   afterAll(() => {
@@ -674,6 +690,92 @@ describe('my games insights', () => {
     expect(r.lengths).toEqual([{ band: 0, w: 2, d: 1, l: 1 }]);
   });
 
+  /** A record the client would put: my two Italian games, judged. */
+  const record = (index: number, accuracy: number, perMove: number[][], site: string | null = null) => ({
+    file: 'lichess/me/2026-05.pgn',
+    index,
+    side: 'white',
+    site,
+    plies: index === 0 ? 8 : 9,
+    depth: 12,
+    accuracy,
+    acpl: 30,
+    moves: 4,
+    inaccuracies: 0,
+    mistakes: 1,
+    blunders: 0,
+    brilliancies: 0,
+    bookMoves: 3,
+    perMove,
+  });
+  const put = (body: unknown) =>
+    app.request('/api/mygames/analysis', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  it('queues every owner game for the engine pass and counts what is done', async () => {
+    let status = await (await app.request('/api/mygames/analysis/status')).json();
+    expect(status).toEqual({ analysed: 0, total: 4 });
+    const queue = await (await app.request('/api/mygames/analysis/queue?limit=2')).json();
+    expect(queue.games.length).toBe(2);
+    expect(queue.games[0]).toMatchObject({ file: 'lichess/me/2026-05.pgn', side: 'black' });
+
+    // Ply 0 e4 (book), 2 Nf3 (book), 4 Bc4 (book), 6 Ke2: the mistake.
+    expect((await put(record(0, 71.5, [[0, 100, 0, 0, 1], [2, 100, 0, 0, 1], [4, 100, 0, 0, 1], [6, 40, 2, 0, 0]]))).status).toBe(200);
+    status = await (await app.request('/api/mygames/analysis/status')).json();
+    expect(status).toEqual({ analysed: 1, total: 4 });
+    const left = await (await app.request('/api/mygames/analysis/queue?limit=10')).json();
+    expect(left.games.map((g: { index: number }) => g.index).sort()).toEqual([1, 2, 3]);
+  });
+
+  it('merges the records into the report, game by game and move by move', async () => {
+    await put(record(0, 71.5, [[0, 100, 0, 0, 1], [2, 100, 0, 0, 1], [4, 100, 0, 0, 1], [6, 40, 2, 0, 0]]));
+    await put(record(1, 88.5, [[0, 100, 0, 0, 1], [2, 100, 0, 0, 1], [4, 100, 0, 0, 1], [6, 95, 0, 1, 0], [8, 82, 6, 2, 0]]));
+    const r = await report();
+    expect(r.analysis.games).toBe(2);
+    expect(r.analysis.depth).toBe(12);
+    expect(r.analysis.accuracy).toEqual({ sum: 160, n: 2 });
+    expect(r.analysis.bySide).toEqual([{ side: 'white', sum: 160, n: 2 }]);
+    expect(r.analysis.byOutcome).toEqual([
+      { outcome: 'l', sum: 88.5, n: 1 },
+      { outcome: 'w', sum: 71.5, n: 1 },
+    ]);
+    expect(r.analysis.byMonth).toEqual([{ month: '2026-05', sum: 160, n: 2 }]);
+    // Book moves are counted, never averaged; the rest by phase and by move.
+    expect(r.analysis.quality).toEqual({ book: 6, good: 1, brilliant: 0, inaccuracy: 1, mistake: 1, blunder: 0 });
+    expect(r.analysis.byPhase).toEqual([
+      { phase: 0, sum: 40, n: 1 },
+      { phase: 1, sum: 95, n: 1 },
+      { phase: 2, sum: 82, n: 1 },
+    ]);
+    expect(r.analysis.byMove).toEqual([{ band: 1, sum: 217, n: 3 }]);
+    const italian = r.cells.find((c) => c.side === 'white')!;
+    expect([italian.accSum, italian.accN]).toEqual([160, 2]);
+    // The filter narrows the analysis too.
+    expect((await report('side=black')).analysis.games).toBe(0);
+  });
+
+  it('drops a record that no longer fits the game at its key', async () => {
+    // A record for a game with another URL: the month was rewritten.
+    await put(record(0, 71.5, [], 'https://lichess.org/abcdefgh'));
+    expect((await (await app.request('/api/mygames/analysis/status')).json()).analysed).toBe(0);
+    // And a length that does not match, for a game with no URL.
+    await put({ ...record(0, 71.5, []), plies: 99 });
+    expect((await (await app.request('/api/mygames/analysis/status')).json()).analysed).toBe(0);
+    await put(record(0, 71.5, []));
+    expect((await (await app.request('/api/mygames/analysis/status')).json()).analysed).toBe(1);
+    // Starting over forgets it.
+    expect((await (await app.request('/api/mygames/analysis', { method: 'DELETE' })).json()).analysed).toBe(0);
+  });
+
+  it('refuses a record with holes', async () => {
+    expect((await put({ file: 'x' })).status).toBe(400);
+    expect((await put({ ...record(0, 71.5, []), accuracy: 101 })).status).toBe(400);
+    expect((await put({ ...record(0, 71.5, [[0, 100, 9, 0, 1]]) })).status).toBe(400);
+  });
+
   it('reindexes a database that predates the length and ending columns', async () => {
     expect((await report()).games).toBe(4);
     const old = new Database(join(dir, 'index.sqlite'));
@@ -703,6 +805,19 @@ describe('my games insights', () => {
       named: true,
       partial: false,
       cells: [],
+      analysis: {
+        games: 0,
+        depth: null,
+        accuracy: { sum: 0, n: 0 },
+        acpl: { sum: 0, n: 0 },
+        bySide: [],
+        bySpeed: [],
+        byOutcome: [],
+        byMonth: [],
+        byPhase: [],
+        byMove: [],
+        quality: { book: 0, good: 0, brilliant: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+      },
       months: [],
       weekdays: [],
       opponents: [],

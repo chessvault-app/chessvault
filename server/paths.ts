@@ -68,6 +68,9 @@ export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 export const DATA_OPENINGS = resolve(DATA, 'openings.json');
 /** The live index over the vault's own games (see server/myGames.ts). */
 export const DATA_MYGAMES = resolve(DATA, 'mygames.sqlite');
+/** What the engine pass found in those games (server/myGamesAnalysis.ts).
+    Derived too, but hours of engine time: kept apart from the index. */
+export const DATA_MYGAMES_ANALYSIS = resolve(DATA, 'mygames-analysis.sqlite');
 export const DATA_EXPLORER_CACHE = resolve(DATA, 'explorer-cache');
 /** Endgame verdicts, kept for good — see server/tablebase.ts on why this
     one has no expiry. */

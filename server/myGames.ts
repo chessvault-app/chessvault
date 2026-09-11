@@ -10,8 +10,15 @@ import { parseUci } from 'chessops/util';
 import { indexGame, pathUser, type Ending, type Speed } from '../shared/gameIndex.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { openingForKey, openingsBook } from './openings.ts';
+import {
+  AnalysisStore,
+  analysisKey,
+  parseRecord,
+  recordFits,
+  type AnalysisRecord,
+} from './myGamesAnalysis.ts';
 import { resolve } from 'node:path';
-import { DATA, DATA_MYGAMES, VAULT_GAMES } from './paths.ts';
+import { DATA, DATA_MYGAMES, DATA_MYGAMES_ANALYSIS, VAULT_GAMES } from './paths.ts';
 
 /**
  * Your own games, explorable at any position, under any filter.
@@ -99,6 +106,49 @@ export interface InsightsCell {
       opponent's. */
   youLeft: number;
   theyLeft: number;
+  /** The engine pass's per-game accuracy over the games it has reached:
+      a sum and a count, so the client takes the mean it wants. */
+  accSum: number;
+  accN: number;
+}
+
+/** A running mean: what the analysis cuts are made of. */
+export interface AccMean {
+  sum: number;
+  n: number;
+}
+
+/**
+ * What the engine pass adds to the report, over the admitted games it
+ * has reached. Per-game figures (accuracy, centipawn loss) are averaged
+ * game by game, as chess.com's average accuracy is; per-move figures
+ * (phase, move number, quality) are summed over the owner's own moves.
+ */
+export interface InsightsAnalysis {
+  /** Admitted games with a record that still fits them. */
+  games: number;
+  /** The shallowest search depth among those records, or null with none:
+      the number the page quotes for what "accuracy" was measured at. */
+  depth: number | null;
+  accuracy: AccMean;
+  acpl: AccMean;
+  bySide: ({ side: 'white' | 'black' } & AccMean)[];
+  bySpeed: ({ speed: Speed | 'unknown' } & AccMean)[];
+  byOutcome: ({ outcome: 'w' | 'd' | 'l' } & AccMean)[];
+  byMonth: ({ month: string } & AccMean)[];
+  /** 0 opening, 1 middlegame, 2 endgame; move-level. */
+  byPhase: ({ phase: number } & AccMean)[];
+  /** By the move's number, in tens: the band's floor (1, 11, 21…); move-level. */
+  byMove: ({ band: number } & AccMean)[];
+  /** The owner's moves by verdict. `good` is a judged move with no NAG. */
+  quality: {
+    book: number;
+    good: number;
+    brilliant: number;
+    inaccuracy: number;
+    mistake: number;
+    blunder: number;
+  };
 }
 
 interface MoveRow {
@@ -189,6 +239,8 @@ class MyGamesIndex {
   constructor(
     private readonly gamesDir: string,
     private readonly dbPath: string,
+    /** The engine pass's findings, merged into the insights report. */
+    private readonly analysis: AnalysisStore,
   ) {}
 
   /**
@@ -895,10 +947,31 @@ class MyGamesIndex {
    */
   insights(
     filters: MyGamesFilters,
-  ): { games: number; named: boolean; partial: boolean; cells: InsightsCell[] } & InsightsExtras {
+  ): {
+    games: number;
+    named: boolean;
+    partial: boolean;
+    cells: InsightsCell[];
+    analysis: InsightsAnalysis;
+  } & InsightsExtras {
     const none = (): InsightsExtras => ({ months: [], weekdays: [], opponents: [], endings: [], lengths: [] });
+    const noAnalysis = (): InsightsAnalysis => ({
+      games: 0,
+      depth: null,
+      accuracy: { sum: 0, n: 0 },
+      acpl: { sum: 0, n: 0 },
+      bySide: [],
+      bySpeed: [],
+      byOutcome: [],
+      byMonth: [],
+      byPhase: [],
+      byMove: [],
+      quality: { book: 0, good: 0, brilliant: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+    });
     const db = this.open();
-    if (!db) return { games: 0, named: false, partial: false, cells: [], ...none() };
+    if (!db) {
+      return { games: 0, named: false, partial: false, cells: [], analysis: noAnalysis(), ...none() };
+    }
     // The first sync of a big vault hands most of it to the background
     // walk (see sync), and a report asked for during the walk sums what
     // is indexed so far. Said outright, so the page can ask again once
@@ -908,11 +981,14 @@ class MyGamesIndex {
     const { sql, binds } = this.where(filters);
     const games = db
       .prepare(
-        `SELECT id, user_side, speed, result, eco, date, white_elo, black_elo, plies, ending
+        `SELECT id, file, idx, site, user_side, speed, result, eco, date, white_elo, black_elo, plies, ending
          FROM games g WHERE g.user_side IS NOT NULL${sql}`,
       )
       .all(...binds) as {
       id: number;
+      file: string;
+      idx: number;
+      site: string | null;
       user_side: 'white' | 'black';
       speed: Speed | null;
       result: number;
@@ -926,8 +1002,26 @@ class MyGamesIndex {
     const kept = new Map<number, (typeof games)[number]>();
     for (const g of games) kept.set(g.id, g);
     if (kept.size === 0) {
-      return { games: 0, named: openingsBook() !== null, partial, cells: [], ...none() };
+      return {
+        games: 0,
+        named: openingsBook() !== null,
+        partial,
+        cells: [],
+        analysis: noAnalysis(),
+        ...none(),
+      };
     }
+
+    // The engine pass's record for each admitted game, where one exists
+    // and still fits (see myGamesAnalysis.ts on why it might not).
+    const records = this.analysis.all();
+    const recordOf = (g: { file: string; idx: number; site: string | null; plies: number | null }): AnalysisRecord | null => {
+      const r = records.get(analysisKey(g.file, g.idx));
+      // A record with no judged move (a game the pass could not replay)
+      // marks the game done for the queue and says nothing here: an
+      // accuracy of nought over nothing is not a figure to average in.
+      return r && r.moves > 0 && recordFits(r, g) ? r : null;
+    };
 
     // The other cuts need nothing from the plies, so they are summed
     // straight off the rows. Each is a map keyed by its band, turned
@@ -973,6 +1067,63 @@ class MyGamesIndex {
       endings: listed(endings, 'ending'),
       lengths: listed(lengths, 'band'),
     };
+
+    // The analysis cuts, over the admitted games the pass has reached.
+    const analysis = noAnalysis();
+    const means = <K>(): Map<K, AccMean> => new Map();
+    const addTo = <K>(into: Map<K, AccMean>, key: K, value: number, weight = 1): void => {
+      const m = into.get(key) ?? { sum: 0, n: 0 };
+      m.sum += value;
+      m.n += weight;
+      into.set(key, m);
+    };
+    const accSide = means<'white' | 'black'>();
+    const accSpeed = means<Speed | 'unknown'>();
+    const accOutcome = means<'w' | 'd' | 'l'>();
+    const accMonth = means<string>();
+    const accPhase = means<number>();
+    const accMove = means<number>();
+    for (const g of kept.values()) {
+      const record = recordOf(g);
+      if (!record) continue;
+      analysis.games += 1;
+      analysis.depth = analysis.depth === null ? record.depth : Math.min(analysis.depth, record.depth);
+      analysis.accuracy.sum += record.accuracy;
+      analysis.accuracy.n += 1;
+      analysis.acpl.sum += record.acpl;
+      analysis.acpl.n += 1;
+      const mine = g.user_side === 'white' ? g.result : -g.result;
+      addTo(accSide, g.user_side, record.accuracy);
+      addTo(accSpeed, g.speed ?? 'unknown', record.accuracy);
+      addTo(accOutcome, mine > 0 ? 'w' : mine < 0 ? 'l' : 'd', record.accuracy);
+      if (g.date) addTo(accMonth, g.date.slice(0, 7), record.accuracy);
+      for (const [ply, acc, nag, phase, book] of record.perMove) {
+        if (book) {
+          analysis.quality.book += 1;
+          continue;
+        }
+        addTo(accPhase, phase, acc);
+        addTo(accMove, Math.floor(ply / 2 / 10) * 10 + 1, acc);
+        if (nag === 3) analysis.quality.brilliant += 1;
+        else if (nag === 6) analysis.quality.inaccuracy += 1;
+        else if (nag === 2) analysis.quality.mistake += 1;
+        else if (nag === 4) analysis.quality.blunder += 1;
+        else analysis.quality.good += 1;
+      }
+    }
+    const listedMeans = <N extends string, K extends string | number>(
+      from: Map<K, AccMean>,
+      name: N,
+    ): (Record<N, K> & AccMean)[] =>
+      [...from]
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, m]) => ({ ...({ [name]: key } as Record<N, K>), ...m }));
+    analysis.bySide = listedMeans(accSide, 'side');
+    analysis.bySpeed = listedMeans(accSpeed, 'speed');
+    analysis.byOutcome = listedMeans(accOutcome, 'outcome');
+    analysis.byMonth = listedMeans(accMonth, 'month');
+    analysis.byPhase = listedMeans(accPhase, 'phase');
+    analysis.byMove = listedMeans(accMove, 'band');
 
     // Every indexed ply of every admitted game, in one query, grouped in
     // JS: the filter's WHERE does the admitting.
@@ -1027,10 +1178,17 @@ class MyGamesIndex {
           exitPlyMin: null,
           youLeft: 0,
           theyLeft: 0,
+          accSum: 0,
+          accN: 0,
         };
         cells.set(id, cell);
       }
       cell.games += 1;
+      const record = recordOf(game);
+      if (record) {
+        cell.accSum += record.accuracy;
+        cell.accN += 1;
+      }
       const mine = side === 'white' ? game.result : -game.result;
       if (mine > 0) cell.w += 1;
       else if (mine < 0) cell.l += 1;
@@ -1067,8 +1225,64 @@ class MyGamesIndex {
       named: book !== null,
       partial,
       cells: [...cells.values()].sort((a, b) => b.games - a.games),
+      analysis,
       ...extras,
     };
+  }
+
+  /**
+   * What the engine pass still owes, newest first: the owner's games the
+   * filters admit whose record is missing or no longer fits. The client
+   * asks for a page at a time, does them, puts each back, and asks again.
+   */
+  analysisQueue(
+    limit: number,
+  ): { file: string; index: number; side: 'white' | 'black'; site: string | null; plies: number }[] {
+    const db = this.open();
+    if (!db) return [];
+    const records = this.analysis.all();
+    const rows = db
+      .prepare(
+        `SELECT file, idx, user_side, site, plies FROM games g
+         WHERE g.user_side IS NOT NULL AND g.shadowed = 0 AND g.plies IS NOT NULL
+         ORDER BY g.date DESC, g.id DESC`,
+      )
+      .all() as { file: string; idx: number; user_side: 'white' | 'black'; site: string | null; plies: number }[];
+    const out: ReturnType<MyGamesIndex['analysisQueue']> = [];
+    for (const r of rows) {
+      const record = records.get(analysisKey(r.file, r.idx));
+      if (record && recordFits(record, r)) continue;
+      out.push({ file: r.file, index: r.idx, side: r.user_side, site: r.site, plies: r.plies });
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  /** How far the pass has got over the whole vault: done and owed. */
+  analysisStatus(): { analysed: number; total: number } {
+    const db = this.open();
+    if (!db) return { analysed: 0, total: 0 };
+    const records = this.analysis.all();
+    const rows = db
+      .prepare(
+        `SELECT file, idx, site, plies FROM games g
+         WHERE g.user_side IS NOT NULL AND g.shadowed = 0 AND g.plies IS NOT NULL`,
+      )
+      .all() as { file: string; idx: number; site: string | null; plies: number }[];
+    let analysed = 0;
+    for (const r of rows) {
+      const record = records.get(analysisKey(r.file, r.idx));
+      if (record && recordFits(record, r)) analysed += 1;
+    }
+    return { analysed, total: rows.length };
+  }
+
+  putAnalysis(record: AnalysisRecord): void {
+    this.analysis.put(record);
+  }
+
+  clearAnalysis(): void {
+    this.analysis.clear();
   }
 
   /**
@@ -1135,8 +1349,10 @@ export function myGamesApi(
   dbPath: string = DATA_MYGAMES,
   /** Where /mygames/compare finds reference databases (tests override). */
   refgamesDir: string = resolve(DATA, 'refgames'),
+  /** The engine pass's findings (the demo and tests point this elsewhere). */
+  analysisPath: string = DATA_MYGAMES_ANALYSIS,
 ): Hono {
-  const index = new MyGamesIndex(gamesDir, dbPath);
+  const index = new MyGamesIndex(gamesDir, dbPath, new AnalysisStore(analysisPath));
   const api = new Hono();
 
   api.get('/mygames', (c) => {
@@ -1280,6 +1496,35 @@ export function myGamesApi(
   api.get('/mygames/insights', (c) => {
     index.sync();
     return c.json(index.insights(parseFilters((key) => c.req.query(key))));
+  });
+
+  /**
+   * The engine pass's bookkeeping. The pass itself runs in the client
+   * (see myGamesAnalysis.ts); these four routes are how it learns what is
+   * owed, hands back what it found, reports how far it is, and starts
+   * over. A record must fit the game at its key to count.
+   */
+  api.get('/mygames/analysis/status', (c) => {
+    index.sync();
+    return c.json(index.analysisStatus());
+  });
+
+  api.get('/mygames/analysis/queue', (c) => {
+    const limit = Math.min(200, Math.max(1, Number(c.req.query('limit')) || 25));
+    index.sync();
+    return c.json({ games: index.analysisQueue(limit) });
+  });
+
+  api.put('/mygames/analysis', async (c) => {
+    const record = parseRecord(await c.req.json().catch(() => null));
+    if (!record) return c.json({ error: 'expected an analysis record' }, 400);
+    index.putAnalysis(record);
+    return c.json({ ok: true });
+  });
+
+  api.delete('/mygames/analysis', (c) => {
+    index.clearAnalysis();
+    return c.json(index.analysisStatus());
   });
 
   /** What the index holds — and a way to make it catch up on demand. */
