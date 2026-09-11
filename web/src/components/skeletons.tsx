@@ -715,32 +715,23 @@ export function SkeletonBoard({
   // through cannot change it.
   const chapterH = chapters ? panelStoredHeight('study-chapters') : null;
   /**
-   * Everything this draws on the PAGE rather than in a card is bg-accent
-   * and not the Skeleton's own bg-muted, because on a board page the page
-   * is muted: --background and --muted are both the 97% rung at the
-   * default Contrast (index.css), so in the light theme the board square,
-   * the title row and the player bars were drawn in the ground's exact
-   * colour. Sampled on the demo at 375: page 245,245,245 and board
-   * placeholder 245,245,245, which is a phone waiting on a study with a
-   * pane strip and a panel on an empty page. It showed in the dark (10
-   * against 33) and at any Contrast above the default, which is why it
-   * stood so long.
-   *
-   * Accent is the rung above both, so it separates from the ground in
-   * either theme. It is brighter in the dark than the muted block it
-   * replaces, and closer for it: the board it stands in for is 218,231,240
-   * there. The bars in the cards below keep the default, where the card is
-   * the ground and muted is already a rung off it.
+   * The board square, the title row and the player bars are drawn on the
+   * PAGE rather than in a card, and were the first placeholders found
+   * painted in the ground's exact colour once the light theme went
+   * tonal (page 245,245,245 and board placeholder 245,245,245, sampled
+   * on the demo at 375). They carried their own accent fill for a while;
+   * the Skeleton's default is accent now (components/ui/skeleton), which
+   * is the same fill, so they draw it like everything else.
    */
   const titleRow = (
     // A way back, the name, the edit toggle and the save state. Drawn at
     // the top of the page on a phone and in the side column on a wide
     // screen, which is why it is written once and placed twice.
     <>
-      <Skeleton className="bg-accent size-7 shrink-0 rounded-md" />
-      <Skeleton className="bg-accent h-3.5 min-w-0 flex-1" />
-      <Skeleton className="bg-accent size-7 shrink-0 rounded-md" />
-      <Skeleton className="bg-accent h-6 w-16 shrink-0 rounded-md" />
+      <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Skeleton className="h-3.5 min-w-0 flex-1" />
+      <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
     </>
   );
   const playerBar = (
@@ -750,8 +741,8 @@ export function SkeletonBoard({
     // arrives.
     <BoardLane>
       <div className="board-box flex h-6 items-center gap-2">
-        <Skeleton className="bg-accent size-2 shrink-0 rounded-full" />
-        <Skeleton className="bg-accent h-3 w-32" />
+        <Skeleton className="size-2 shrink-0 rounded-full" />
+        <Skeleton className="h-3 w-32" />
       </div>
     </BoardLane>
   );
@@ -781,7 +772,7 @@ export function SkeletonBoard({
             {players && playerBar}
           </div>
           <BoardLane>
-            <Skeleton className="bg-accent board-box aspect-square rounded-xl" />
+            <Skeleton className="board-box aspect-square rounded-xl" />
           </BoardLane>
           {players && playerBar}
         </div>
@@ -808,10 +799,10 @@ export function SkeletonBoard({
             the face every board page gives it (components/pane-tabs,
             `header`) rather than the floating pill it drew. Two things
             were wrong with the pill. It is a muted track, and a Skeleton
-            is bg-muted, so its four tabs were drawn in the track's own
-            fill and the strip stood empty for the whole wait; the header
-            is the card's surface, where the default fill is the one the
-            rest of this column uses. And the header hangs over the card
+            was bg-muted then, so its four tabs were drawn in the track's
+            own fill and the strip stood empty for the whole wait; the
+            header is the card's surface, where the default fill is the
+            one the rest of this column uses. And the header hangs over the card
             below it, swallowing the column's gap and a pixel more, which
             the pill did not: 32px and a 12px gap where the real strip
             costs 19, so everything under it sat 13px low until the board
@@ -943,25 +934,24 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
                 key={i}
                 className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
               >
-                {/* Everything inside the well is bg-accent, since the well
-                    is bg-muted and so is a Skeleton: the three bars in here
-                    were drawn in the well's own fill and could not be seen
-                    at all, leaving a page of empty outlines for the whole
-                    wait. Accent is the rung above muted, which is the
-                    distance the two were tuned to. The bars outside, on the
-                    card, keep the default. */}
+                {/* The well is bg-muted, which is what a Skeleton was
+                    filled with for a while: the three bars in here were
+                    drawn in the well's own fill and could not be seen at
+                    all, leaving a page of empty outlines for the whole
+                    wait. The default fill is accent now, the rung above
+                    the well, so these draw it. */}
                 <div className="min-w-0">
                   <div className="flex h-6 items-center">
-                    <Skeleton className="bg-accent h-3.5 w-32" />
+                    <Skeleton className="h-3.5 w-32" />
                   </div>
                   <div className="flex h-5 items-center">
-                    <Skeleton className="bg-accent h-2 w-44" />
+                    <Skeleton className="h-2 w-44" />
                   </div>
                 </div>
                 {/* Where a Switch stands, at the size the registry draws
                     one: 18.4 x 32 (components/ui/switch), not the h-5 w-9
                     this claimed was "its own size". */}
-                <Skeleton className="bg-accent h-[18.4px] w-8 shrink-0 rounded-full" />
+                <Skeleton className="h-[18.4px] w-8 shrink-0 rounded-full" />
               </div>
             ))}
           </div>
@@ -1102,10 +1092,10 @@ export function SkeletonGameRows({
  * printing them is also what makes the box's height exact rather than
  * measured (`VaultPath` and `VaultNote`, components/vault-tree).
  *
- * Its bars are `bg-accent` and not the Skeleton's own fill, because that
- * fill is `bg-muted` and this box IS bg-muted: the default draws a grey
- * bar on the identical grey and nothing appears at all. Accent is the
- * rung above muted, and a rung is what the two were tuned to be apart.
+ * This box IS bg-muted, which the Skeleton's fill was for a while: the
+ * bars in it drew grey on the identical grey and nothing appeared at all.
+ * The fill is accent now, the rung above the well, so the bars need no
+ * override of their own.
  */
 export function SkeletonVaultTree({
   path,
@@ -1131,7 +1121,7 @@ export function SkeletonVaultTree({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
         <VaultPath path={path} />
         <div className="flex h-5 items-center">
-          <Skeleton className="bg-accent h-2.5 w-24" />
+          <Skeleton className="h-2.5 w-24" />
         </div>
       </div>
       <ul>
@@ -1142,26 +1132,26 @@ export function SkeletonVaultTree({
                 bottom edge, and three bars of three heights pushed the row
                 a pixel taller than the row of text it stands for. */}
             <span className="icon">
-              <Skeleton className="bg-accent size-4 rounded-sm" />
+              <Skeleton className="size-4 rounded-sm" />
             </span>
             <div className="path flex h-5 items-center self-center">
-              <Skeleton className={cn('bg-accent h-2.5', row.path)} />
+              <Skeleton className={cn('h-2.5', row.path)} />
             </div>
             <div className="gloss self-center">
               <div className="flex h-5 items-center">
-                <Skeleton className={cn('bg-accent h-2', row.gloss)} />
+                <Skeleton className={cn('h-2', row.gloss)} />
               </div>
               {/* Stacked under the name below 30rem, where the longer
                   glosses take a second line; beside it above, where none
                   of them do. */}
               {row.wraps && (
                 <div className="hidden h-5 items-center @max-[30rem]:flex">
-                  <Skeleton className="bg-accent h-2 w-2/5" />
+                  <Skeleton className="h-2 w-2/5" />
                 </div>
               )}
             </div>
             <div className="size flex h-5 items-center self-center">
-              <Skeleton className="bg-accent h-2.5 w-24" />
+              <Skeleton className="h-2.5 w-24" />
             </div>
           </li>
         ))}

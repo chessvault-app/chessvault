@@ -7,6 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Placeholders show on the page in the light theme.** The grey bars a
+  page draws while it waits took the same grey as the page itself once
+  the light theme went tonal, so a page waiting on its own ground, the
+  licences list among them, showed nothing but its dividers until the
+  content came. The bars now take the next rung up, the fill the
+  component library gives them, which reads on the page, in a card and
+  in a well alike.
 - **The licences page holds its shape while the list loads.** It drew
   its name, one line of description and a stack of generic rows, then
   grew the copyright line, the search field and the group chips when
