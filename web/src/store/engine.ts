@@ -74,14 +74,16 @@ let engine: StockfishEngine | null = null;
 /** Position requested while the worker was still booting. */
 let pendingFen: string | null = null;
 /**
- * The fen a live search was last STARTED for. Two EngineBlocks are
- * mounted at once (desktop docked + phone tab, one CSS-hidden) and both
- * run the re-analyse effect, so every position change used to arrive
+ * The fen a live search was last STARTED for. Two EngineBlocks used to
+ * be mounted at once (desktop docked + phone tab, one CSS-hidden) and
+ * both ran the re-analyse effect, so every position change arrived
  * here twice: the second call saw a running search and go→stop→go'd the
  * SAME fen — a flash of shallow "finished" eval and a wasted restart.
- * A repeat of the fen already being searched is dropped instead. Reset
- * wherever the search stops being live, so a remounted pane (navigate
- * away and back) re-analyses the same position.
+ * A repeat of the fen already being searched is dropped instead. The
+ * pages mount one block per layout now, and the guard stays for any
+ * other page that mounts two. Reset wherever the search stops being
+ * live, so a remounted pane (navigate away and back) re-analyses the
+ * same position.
  */
 let requestedFen: string | null = null;
 

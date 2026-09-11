@@ -232,11 +232,12 @@ export function StudyView({
     ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters', icon: Files }] : []),
     { id: 'explorer' as const, label: 'Explorer', icon: Table2 },
   ];
+  const tabbed = useTabbedPanes();
   const paneSwipe = usePaneSwipe({
     panes,
     value: pane,
     onChange: setPane,
-    enabled: useTabbedPanes(),
+    enabled: tabbed,
   });
 
   if (failed) {
@@ -403,8 +404,11 @@ export function StudyView({
             !paneSwipe.shows('moves') && 'max-lg:hidden',
           )}
         >
-          {/* Docked on desktop; its own tab on phones (below). */}
-          <EngineBlock className="max-lg:hidden" />
+          {/* Docked on desktop; its own tab on phones (below). One copy
+              mounted per layout, as on the analysis page: a CSS-hidden
+              twin did the visible one's work at every flush and every
+              cursor step. */}
+          {!tabbed && <EngineBlock />}
           <PanelHeader
             // A study's moves belong to a chapter, and the chapter's name
             // is the useful thing to see while reading it — the study's own
@@ -454,11 +458,11 @@ export function StudyView({
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
           />
         </Panel>
-        <Panel
-          className={cn('flex-1 min-h-0 lg:hidden', !paneSwipe.shows('engine') && 'max-lg:hidden')}
-        >
-          <EngineBlock standalone />
-        </Panel>
+        {tabbed && (
+          <Panel className={cn('flex-1 min-h-0', !paneSwipe.shows('engine') && 'max-lg:hidden')}>
+            <EngineBlock standalone />
+          </Panel>
+        )}
         <ExplorerPane
           resizeKey="study-explorer"
           className={cn(

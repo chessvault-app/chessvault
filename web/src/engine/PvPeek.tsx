@@ -50,6 +50,8 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
   const [peek, setPeek] = useState<PvPeekState | null>(null);
   const timer = useRef<number | null>(null);
   const open = useRef(false);
+  /** Whether `peek` is non-null, readable from a callback without a dep. */
+  const live = useRef(false);
 
   const cancel = useCallback(() => {
     if (timer.current !== null) window.clearTimeout(timer.current);
@@ -59,6 +61,12 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
   const close = useCallback(() => {
     cancel();
     open.current = false;
+    // No state write when nothing is up: the engine block calls this on
+    // every position change, and setting null over null still rendered
+    // the block a second time per cursor step (React runs the component
+    // to find the state unchanged; only skipping the set skips that).
+    if (!live.current) return;
+    live.current = false;
     setPeek(null);
   }, [cancel]);
 
@@ -78,11 +86,13 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
       // Already up: track the pointer along the line immediately. The
       // delay guards the first open, not every move after it.
       if (open.current) {
+        live.current = true;
         setPeek(next);
         return;
       }
       timer.current = window.setTimeout(() => {
         open.current = true;
+        live.current = true;
         setPeek(next);
       }, OPEN_DELAY_MS);
     },
