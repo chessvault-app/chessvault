@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonForm, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
+import { copyText } from '@/lib/clipboard';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
 import { Button } from '@/components/ui/button';
@@ -512,12 +513,10 @@ function VaultCard({
   const slow = useSlowLoad(vault === null);
   const reveal = revealVault();
   const copyPath = async (): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(settings.vaultPath);
-      toast.add({ title: t('Path copied'), timeout: 3000 });
-    } catch {
-      toast.add({ title: t('Could not copy the path'), timeout: 4000 });
-    }
+    // copyText, not the bare Clipboard API: the isolated build denies
+    // that one (lib/clipboard.ts says why) and this button failed there.
+    if (await copyText(settings.vaultPath)) toast.add({ title: t('Path copied'), timeout: 3000 });
+    else toast.add({ title: t('Could not copy the path'), timeout: 4000 });
   };
 
   const save = async (): Promise<void> => {
