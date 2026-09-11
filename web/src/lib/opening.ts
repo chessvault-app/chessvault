@@ -44,7 +44,7 @@ const inFlight = new Map<string, Promise<void>>();
  * every caller's await resolves only once the answer is actually in
  * `known`, which the review's sequential book walk depends on.
  */
-function lookupMany(fens: string[]): Promise<void> {
+export function lookupMany(fens: string[]): Promise<void> {
   const waits: Promise<void>[] = [];
   const fresh: string[] = [];
   const queued = new Set<string>();

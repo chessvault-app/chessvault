@@ -10,7 +10,7 @@ import { judgeLine, summarise, type Score, type SideSummary } from '@/engine/rev
 import { detectSacrifices } from '@/engine/sacrifice';
 import { terminalScore } from '@/engine/terminal';
 import { toWhitePov, winningChances } from '@/engine/uci';
-import { isBookPosition, NAMED_PLIES } from '@/lib/opening';
+import { isBookPosition, lookupMany, NAMED_PLIES } from '@/lib/opening';
 import { isDemo } from '@/lib/demo';
 import { inTablebaseRange, probeTablebase, type Category } from '@/explorer/tablebase';
 import { usePrefs } from './prefs';
@@ -125,6 +125,14 @@ export const useReview = create<ReviewState>()((set, get) => ({
       // misses immediately and has no book phase, and if the catalogue is
       // unreachable the lookups all miss — the review just judges from
       // move one, which is what it did before it knew about books.
+      //
+      // Asked for in one request first: the walk below awaits each ply
+      // in turn, and with a cold cache (a study opened at its root) that
+      // was up to thirty sequential round trips before the engine
+      // started, the strip showing zero the whole while. Once the line
+      // is in the cache every await resolves at once.
+      await lookupMany(fens.slice(1, NAMED_PLIES + 1));
+      if (get().status !== 'running') return;
       let bookPlies = 0;
       while (bookPlies < line.length && bookPlies < NAMED_PLIES) {
         if (!(await isBookPosition(fens[bookPlies + 1]!))) break;
