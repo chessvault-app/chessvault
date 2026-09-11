@@ -1,7 +1,7 @@
 import { Database, ExternalLink, RotateCw, ScanSearch, SearchCheck, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
-import { api } from '@/lib/api';
+import { api, apiStream } from '@/lib/api';
 import { useLineOpening } from '@/lib/opening';
 import { navigate, navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
@@ -1232,27 +1232,12 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     try {
       const query = new URLSearchParams({ fen, db });
       const filterQuery = refFilterQuery(refFilters);
-      const res = await fetch(
+      type Frame =
+        | ({ type: 'game' } & DeepHit)
+        | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+      const ended = await apiStream<Frame>(
         `/api/refgames/deep-search?${query}${filterQuery ? `&${filterQuery}` : ''}`,
-      );
-      if (!res.ok || !res.body) throw new Error('deep search failed');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (seq.current !== mine) {
-          void reader.cancel();
-          return;
-        }
-        buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
-        const lines = buffer.split('\n');
-        buffer = done ? '' : (lines.pop() ?? '');
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const frame = JSON.parse(line) as
-            | ({ type: 'game' } & DeepHit)
-            | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+        (frame) => {
           if (frame.type === 'game') {
             const { type: _type, ...hit } = frame;
             setHits((prev) => [...(prev ?? []), hit]);
@@ -1265,9 +1250,10 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
               setExhaustive(exhaustive);
             }
           }
-        }
-        if (done) break;
-      }
+        },
+        () => seq.current === mine,
+      );
+      if (!ended) return;
     } catch {
       // offline, or the route refused — failed, not empty
     }

@@ -7,7 +7,7 @@ import { pgnToChapters } from '@shared/pgn';
 import { isSymmetricMaterial, mirrorMaterialSpec, type MatchMode } from '@shared/scanMatch';
 import type { MotifSide } from '@shared/scanMotif';
 
-import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { api, ApiError, apiErrorMessage, apiStream } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
@@ -789,35 +789,12 @@ export function DatabaseGames({
       } else {
         params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
       }
-      const res = await fetch(`/api/refgames/deep-search?${params.toString()}`);
-      if (res.status === 400) {
-        // The one refusal a user can cause from here is a FEN that is
-        // not a position; say that instead of a generic failure.
-        if (huntSeq.current === mine) {
-          setHunting(false);
-          setHuntFailed(huntKind === 'position' ? 'bad-fen' : 'failed');
-          announce(t('The search failed.'));
-        }
-        return;
-      }
-      if (!res.ok || !res.body) throw new Error('deep search failed');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (huntSeq.current !== mine) {
-          void reader.cancel();
-          return;
-        }
-        buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
-        const lines = buffer.split('\n');
-        buffer = done ? '' : (lines.pop() ?? '');
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const frame = JSON.parse(line) as
-            | ({ type: 'game'; ply: number } & RefGame)
-            | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+      type Frame =
+        | ({ type: 'game'; ply: number } & RefGame)
+        | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+      const ended = await apiStream<Frame>(
+        `/api/refgames/deep-search?${params.toString()}`,
+        (frame) => {
           if (frame.type === 'game') {
             const { type: _type, ply: _ply, ...game } = frame;
             setHuntRows((prev) => [...(prev ?? []), game]);
@@ -830,10 +807,21 @@ export function DatabaseGames({
               setHuntExhaustive(exhaustive);
             }
           }
+        },
+        () => huntSeq.current === mine,
+      );
+      if (!ended) return;
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 400) {
+        // The one refusal a user can cause from here is a FEN that is
+        // not a position; say that instead of a generic failure.
+        if (huntSeq.current === mine) {
+          setHunting(false);
+          setHuntFailed(huntKind === 'position' ? 'bad-fen' : 'failed');
+          announce(t('The search failed.'));
         }
-        if (done) break;
+        return;
       }
-    } catch {
       // offline, or the route refused — failed, not empty
     }
     if (huntSeq.current === mine) {

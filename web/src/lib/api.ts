@@ -79,18 +79,26 @@ export async function api<T = unknown>(
   const { json, ...rest } = init ?? {};
   const lag = lagMs();
   if (lag > 0) await new Promise((resolve) => setTimeout(resolve, lag));
+  const res = await request(
+    url,
+    json === undefined
+      ? rest
+      : {
+          ...rest,
+          headers: { 'content-type': 'application/json', ...(rest.headers ?? {}) },
+          body: JSON.stringify(json),
+        },
+  );
+  if (!res.ok) throw await refusal(res);
+  // Routes that answer with no body (or plain ok) parse to undefined.
+  return (await res.json().catch(() => undefined)) as T;
+}
+
+/** The server's answer, as a Response. Throws for the network, relocks on a 401. */
+async function request(url: string, init?: RequestInit): Promise<Response> {
   let res: Response;
   try {
-    res = await fetch(
-      url,
-      json === undefined
-        ? rest
-        : {
-            ...rest,
-            headers: { 'content-type': 'application/json', ...(rest.headers ?? {}) },
-            body: JSON.stringify(json),
-          },
-    );
+    res = await fetch(url, init);
   } catch {
     throw new ApiError(
       0,
@@ -99,19 +107,59 @@ export async function api<T = unknown>(
     );
   }
   if (res.status === 401) onUnauthorized?.();
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as {
-      error?: string;
-      offline?: boolean;
-    } | null;
-    throw new ApiError(
-      res.status,
-      body?.error ?? t('Request failed ({status})', { status: res.status }),
-      body?.offline === true,
-    );
+  return res;
+}
+
+/** A refused request's error, carrying the server's own words when it sent any. */
+async function refusal(res: Response): Promise<ApiError> {
+  const body = (await res.json().catch(() => null)) as {
+    error?: string;
+    offline?: boolean;
+  } | null;
+  return new ApiError(
+    res.status,
+    body?.error ?? t('Request failed ({status})', { status: res.status }),
+    body?.offline === true,
+  );
+}
+
+/**
+ * A newline-delimited JSON answer, one frame at a time as it arrives.
+ *
+ * The deep search streams its hits, and the two places that read it
+ * each carried this loop by hand and bypassed api(), so an expired
+ * session met a silent failure there instead of the lock screen. Same
+ * errors as api(): ApiError for the network and for a refusal.
+ *
+ * `live` is asked after every read; a caller whose interest has moved on
+ * (a newer search) answers false, the body is cancelled and the result
+ * is false. True means the stream ended on its own.
+ */
+export async function apiStream<T>(
+  url: string,
+  onFrame: (frame: T) => void,
+  live: () => boolean = () => true,
+): Promise<boolean> {
+  const res = await request(url);
+  if (!res.ok || !res.body) throw await refusal(res);
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (!live()) {
+      void reader.cancel();
+      return false;
+    }
+    buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+    const lines = buffer.split('\n');
+    buffer = done ? '' : (lines.pop() ?? '');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      onFrame(JSON.parse(line) as T);
+    }
+    if (done) return true;
   }
-  // Routes that answer with no body (or plain ok) parse to undefined.
-  return (await res.json().catch(() => undefined)) as T;
 }
 
 /**
