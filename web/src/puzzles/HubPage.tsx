@@ -3,6 +3,7 @@ import {
   BookMarked,
   Check,
   ChevronRight,
+  Crown,
   Database,
   LayoutGrid,
   Puzzle,
@@ -90,6 +91,12 @@ interface HistoryEntry {
   /** Curation data — read only to pick the WORD for it, never shown. */
   puzzleRating: number;
   at: string;
+}
+
+/** How the endgame drill has gone, from /api/endgames/progress. */
+interface DrillProgress {
+  classes: Record<string, { attempts: number; wins: number; lastAt: string }>;
+  last: { class: string; at: string } | null;
 }
 
 interface BookSummary {
@@ -317,10 +324,10 @@ function HubSkeletonHistoryPanel() {
  * it, so the placeholder stood about 31px short and the cards above it
  * took the difference when the answer arrived.
  */
-function HubSkeletonBookRow() {
+function HubSkeletonBookRow({ heading = true }: { heading?: boolean }) {
   return (
     <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <SkeletonPanelHeading width="w-20" />
+      {heading && <SkeletonPanelHeading width="w-20" />}
       {/* py from the density token, like the ListRow this stands for. */}
       <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
@@ -511,6 +518,55 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   );
 }
 
+/**
+ * The endgame drill: the way to it, with how the drills have gone.
+ *
+ * One row and no heading strip. It had the book row's strip (measured at
+ * 390 wide: the page overflowed by 12px at 568 tall and by 92 at 844,
+ * where the history panel had been fitting), and the strip's 31px were
+ * the difference. The row names itself instead, with every class's
+ * count together on the right; the picker has them one by one. Always
+ * drawn, at one size:
+ * a section that appears only once it has content teaches nobody that
+ * it exists, and a vault that has never tried one is offered the
+ * picker. Held against thrown, as counts; no rate.
+ */
+function DrillPanel({ progress }: { progress: DrillProgress | null }) {
+  // Every class together: a row without a class name on it has no
+  // business showing one class's count.
+  const { held, attempts } = Object.values(progress?.classes ?? {}).reduce(
+    (sum, c) => ({ held: sum.held + c.wins, attempts: sum.attempts + c.attempts }),
+    { held: 0, attempts: 0 },
+  );
+  return (
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
+      <ListRow onClick={() => navigate('puzzles', 'endgames')}>
+        <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+          <Crown className="size-3.5" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-foreground truncate text-sm font-medium">{t('Endgame drills')}</span>
+          <ProgressBar
+            total={attempts}
+            solved={held}
+            failed={attempts - held}
+            showEmpty
+            decorative
+          />
+        </span>
+        <span className="text-muted-foreground shrink-0 whitespace-nowrap text-xs">
+          {attempts === 0 ? (
+            t('Not tried yet')
+          ) : (
+            <Figures text={t('{a} of {b} held', { a: held, b: attempts })} />
+          )}
+        </span>
+        <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+      </ListRow>
+    </div>
+  );
+}
+
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
     <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
@@ -659,7 +715,7 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
 
 /**
  * How many of the page's answers are still outstanding, counted down as
- * each settles — six requests, five of which decide part of the layout.
+ * each settles — seven requests, five of which decide part of the layout.
  *
  * Everything above the launcher shares ONE column of spare height, so a
  * block that arrives late does not appear beside the others: it resizes
@@ -683,7 +739,7 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
  * cluster above either grows into the empty band or hands its slack to
  * the history panel.
  */
-const ANSWERS = 6;
+const ANSWERS = 7;
 
 /**
  * How long they are allowed to wait for each other.
@@ -725,6 +781,7 @@ function Hub() {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [drill, setDrill] = useState<DrillProgress | null>(null);
   const [settled, setSettled] = useState(false);
   /**
    * Whether each card's own answer is in.
@@ -739,6 +796,7 @@ function Hub() {
   const [reviewIn, setReviewIn] = useState(false);
   const [bookIn, setBookIn] = useState(false);
   const [historyIn, setHistoryIn] = useState(false);
+  const [drillIn, setDrillIn] = useState(false);
   const [booksIn, setBooksIn] = useState(false);
   const [metaIn, setMetaIn] = useState(false);
   const [slotWasFilled] = useState(() => localStorage.getItem(SLOT_FILLED_KEY) === '1');
@@ -814,6 +872,16 @@ function Hub() {
       } catch {
         // No panel; the dashboard tile still reaches the full log.
       } finally {
+        done();
+      }
+    })();
+    void (async () => {
+      try {
+        setDrill(await api<DrillProgress>('/api/endgames/progress'));
+      } catch {
+        // The row still opens the picker; only the count is missing.
+      } finally {
+        if (live) setDrillIn(true);
         done();
       }
     })();
@@ -905,7 +973,12 @@ function Hub() {
    * again — it only earns a place once there is room for a caption and
    * a few rows under it rather than a stub. Both moved up 1rem when the
    * phone's page header became a 44px row (it was the title's 28px):
-   * at 812 the old history threshold left the column 7px over.
+   * at 812 the old history threshold left the column 7px over. The
+   * endgame drill's row (about 48px with the column's gap) moved the
+   * history threshold again, measured on the demo at 390 wide with its
+   * 33px banner dismissed: with the history in, the column overflowed
+   * by 59px at 844 (92 with the banner up) and fitted at 904, so
+   * 56.5rem is the threshold.
    *
    * There is deliberately no threshold for the BOARD size. Where there
    * is no history the cards share the leftover height between them and
@@ -919,11 +992,11 @@ function Hub() {
    *   568 (SE 1)      launcher only
    *   667 (SE 2/8)    launcher only
    *   736 (8 Plus)    launcher only
-   *   800 / 812       + book row
-   *   844 (14) / 932  + book row and history
+   *   800 / 812 / 844 + book row
+   *   932 (Pro Max)   + book row and history
    */
   const roomForBooks = useMediaQuery('(min-height: 47rem)');
-  const roomForHistory = useMediaQuery('(min-height: 51rem)');
+  const roomForHistory = useMediaQuery('(min-height: 56.5rem)');
   // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
@@ -1183,6 +1256,13 @@ function Hub() {
             "Puzzle books" does not fit, so the row folds to two by two
             there and only there (20.0625rem because Tailwind's max-* is
             exclusive: `width < 321px` is what includes 320). */}
+        {/* The drill's row, between the boards and the buttons: a block
+            of known height (the book row's, without its strip), reserved
+            as a skeleton until its count is in, so the tiles under it
+            never move. */}
+        {skeleton && <HubSkeletonBookRow heading={false} />}
+        {settled && (drillIn ? <DrillPanel progress={drill} /> : <HubSkeletonBookRow heading={false} />)}
+
         {skeleton && (
           <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
             {[0, 1, 2, 3].map((i) => (

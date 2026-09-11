@@ -1,4 +1,4 @@
-import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
+import { BookMarked, Check, ChevronRight, Crown, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
 import { parseDashboardShape, storedDashboardShape } from './reservation';
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -18,6 +18,7 @@ import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { describeTheme } from './ThemesPage';
 import { t } from '@/lib/i18n';
 import { Figures } from '@/components/figures';
+import { classLabel } from './drill';
 import { TitleTip } from '@/components/title-tip';
 
 /**
@@ -547,6 +548,8 @@ export function DashboardPage() {
           </Panel>
         )}
 
+        <EndgameDrillsPanel />
+
         <Panel>
           <PanelHeader
             // Filtered to the pool, the title says so. The header once
@@ -739,6 +742,73 @@ export function DashboardPage() {
       </span>
       {preview.layer}
     </PageShell>
+  );
+}
+
+/**
+ * The endgame drill on the desktop's hub: one row of known height that
+ * says what was last drilled and how the drills have gone, and the way
+ * to the picker, where each class has its own bar. One row rather than
+ * the list, because this page reserves its shape before its answers
+ * arrive and a list whose length depends on the record would move the
+ * log under it. The count is held against attempted; there is no rate.
+ */
+function EndgameDrillsPanel() {
+  const [progress, setProgress] = useState<{
+    classes: Record<string, { attempts: number; wins: number }>;
+    last: { class: string; at: string } | null;
+  } | null>(null);
+  useEffect(() => {
+    void api<NonNullable<typeof progress>>('/api/endgames/progress')
+      .then(setProgress)
+      // The row still opens the picker; only the count is missing.
+      .catch(() => setProgress({ classes: {}, last: null }));
+  }, []);
+  const totals = Object.values(progress?.classes ?? {}).reduce(
+    (sum, c) => ({ held: sum.held + c.wins, attempts: sum.attempts + c.attempts }),
+    { held: 0, attempts: 0 },
+  );
+  return (
+    <Panel className="mb-4">
+      <PanelHeader
+        title={t('Endgame drills')}
+        actions={
+          <Button variant="ghost" size="sm" onClick={() => navigate('puzzles', 'endgames')}>
+            <Crown className="size-3.5" data-icon="inline-start" />
+            {t('All endings')}
+          </Button>
+        }
+      />
+      <ListRow onClick={() => navigate('puzzles', 'endgames')} className="text-sm">
+        <span className="text-foreground min-w-0 flex-1 truncate">
+          {progress === null ? (
+            <Skeleton className="h-2.5 w-40" />
+          ) : progress.last ? (
+            t('Last drilled: {class}, {when}', {
+              class: t(classLabel(progress.last.class)),
+              when: formatAgo(progress.last.at),
+            })
+          ) : (
+            t('Not tried yet')
+          )}
+        </span>
+        {progress !== null && totals.attempts > 0 && (
+          <>
+            <span className="text-muted-foreground shrink-0 text-xs">
+              <Figures text={t('{a} of {b} held', { a: totals.held, b: totals.attempts })} />
+            </span>
+            <ProgressBar
+              total={totals.attempts}
+              solved={totals.held}
+              failed={totals.attempts - totals.held}
+              decorative
+              className="w-24 shrink-0"
+            />
+          </>
+        )}
+        <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+      </ListRow>
+    </Panel>
   );
 }
 
