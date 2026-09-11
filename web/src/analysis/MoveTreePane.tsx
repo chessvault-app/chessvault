@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WikiText } from '@/notes/WikiText';
 import { ArrowUpToLine, BookOpen, ChevronUp, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
@@ -274,8 +274,11 @@ export function MainlineTable({
   const reviewed = useReview((s) => s.points !== null);
   const bookIds = useBookTags(tree, reviewed);
   const annotation = ANNOTATION_CLASS[usePrefs((s) => s.annotationSize)];
-  const keep = (ids: NodeId[]): NodeId[] =>
-    currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
+  // Stable while its inputs are, so a memoised branch below can bail out.
+  const keep = useCallback(
+    (ids: NodeId[]): NodeId[] => (currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids),
+    [currentLineOnly, onPath],
+  );
 
   const out: React.ReactNode[] = [];
 
@@ -301,6 +304,29 @@ export function MainlineTable({
   let row: RowState | null = null;
   const blackFirst = blackToMoveAtRoot(tree);
 
+  // A cell's props are primitives and references that hold across renders
+  // (a node that did not change keeps its `nags` array; `onSelect` is the
+  // store's action), so on a cursor step only the two cells whose
+  // `active` flipped render. Every cell used to: the table rebuilt every
+  // element per step, and holding an arrow key on a long game reconciled
+  // hundreds of buttons a step for two that changed.
+  const cell = (entry: RowState['white']): React.ReactNode => {
+    if (entry === null) return <span />;
+    if (entry === 'ellipsis') {
+      return <span className="text-muted-foreground flex items-center px-3 py-(--row-py-tight)">…</span>;
+    }
+    return (
+      <MoveCell
+        id={entry.id}
+        san={entry.node.san ?? '?'}
+        nags={entry.node.nags}
+        active={entry.id === cursorId}
+        book={bookIds.has(entry.id)}
+        onSelect={onSelect}
+      />
+    );
+  };
+
   const flushRow = (): void => {
     if (!row) return;
     const { number, white, black } = row;
@@ -312,8 +338,8 @@ export function MainlineTable({
         <span className="bg-muted/60 border-border text-muted-foreground flex items-center justify-center border-r font-mono text-xs">
           {number}
         </span>
-        <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
-        <MoveCell entry={black} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
+        {cell(white)}
+        {cell(black)}
       </div>,
     );
     row = null;
@@ -418,24 +444,22 @@ export function MainlineTable({
   return <div>{out}</div>;
 }
 
-function MoveCell({
-  entry,
-  cursorId,
+const MoveCell = memo(function MoveCell({
+  id,
+  san,
+  nags,
+  active,
+  book,
   onSelect,
-  bookIds,
 }: {
-  entry: { id: NodeId; node: MoveNode } | 'ellipsis' | null;
-  cursorId: NodeId;
+  id: NodeId;
+  san: string;
+  nags: number[];
+  active: boolean;
+  /** Classified as book by the engine review. */
+  book: boolean;
   onSelect: (id: NodeId) => void;
-  /** Mainline nodes the engine review classified as book. */
-  bookIds: Set<NodeId>;
 }) {
-  if (entry === null) return <span />;
-  if (entry === 'ellipsis') {
-    return <span className="text-muted-foreground flex items-center px-3 py-(--row-py-tight)">…</span>;
-  }
-  const { id, node } = entry;
-  const active = id === cursorId;
   return (
     <button
       type="button"
@@ -448,13 +472,11 @@ function MoveCell({
         active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
       )}
     >
-      <span className="font-moves">{figurine(node.san ?? '?')}</span>
-      {node.nags.length > 0 && (
-        <span className={cn('font-semibold', !active && nagClass(node.nags))}>
-          {nagText(node.nags)}
-        </span>
+      <span className="font-moves">{figurine(san)}</span>
+      {nags.length > 0 && (
+        <span className={cn('font-semibold', !active && nagClass(nags))}>{nagText(nags)}</span>
       )}
-      {bookIds.has(id) && (
+      {book && (
         <TitleTip title={t('Book move')}>
           <span role="img" aria-label={t('Book move')} className="self-center">
             <BookOpen className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')} />
@@ -463,7 +485,7 @@ function MoveCell({
       )}
     </button>
   );
-}
+});
 
 interface LineProps {
   tree: MoveTree;
@@ -551,7 +573,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
         hasComment={Boolean(child.comment)}
         active={mainChildId === cursorId}
         book={bookIds.has(mainChildId)}
-        onClick={() => onSelect(mainChildId)}
+        onSelect={onSelect}
       />,
     );
 
@@ -647,7 +669,7 @@ function VariationBranch({
         hasComment={Boolean(node.comment)}
         active={startId === cursorId}
         book={bookIds.has(startId)}
-        onClick={() => onSelect(startId)}
+        onSelect={onSelect}
       />
       {/* The variation's own first move is rendered here rather than by `Line`,
           so its comment has to be emitted here too or it would be dropped. */}
@@ -683,16 +705,18 @@ interface MoveChipProps {
   hasComment: boolean;
   active: boolean;
   book?: boolean;
-  onClick: () => void;
+  onSelect: (id: NodeId) => void;
 }
 
-function MoveChip({ id, label, number, nags, hasComment, active, book = false, onClick }: MoveChipProps) {
+// Memoised for the same reason as MoveCell: a cursor step changes two
+// chips, and the rest compare equal on primitives and held references.
+const MoveChip = memo(function MoveChip({ id, label, number, nags, hasComment, active, book = false, onSelect }: MoveChipProps) {
   return (
     <span className="inline-flex items-baseline gap-1">
       {number && <span className="text-muted-foreground font-mono text-xs">{number}</span>}
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => onSelect(id)}
         data-active={active}
         // What the pane's context menu reads to know which move was pressed.
         data-node={id}
@@ -732,4 +756,4 @@ function MoveChip({ id, label, number, nags, hasComment, active, book = false, o
       </button>
     </span>
   );
-}
+});
