@@ -116,8 +116,8 @@ number stays only when it changes the decision (a 300 MB download does).
 app's measured behaviour on top — the phone sheet, the page/layer chevron,
 the keyboard band, the sole-field focus, Android Back, the coarse-pointer
 hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
-<name>`; keep its look, add only behaviour, with one standing exception,
-an edge: where the tonal rule ("The component layer" in
+<name>`; keep its look, add only behaviour, with two standing exceptions,
+both edges. The first: where the tonal rule ("The component layer" in
 `docs/design-principles.md`) and a registry stroke disagree, the rule wins.
 A surface whose fill already separates it draws the card-ring colour and
 never the bare border colour, and *how* it draws it follows the box, not
@@ -128,7 +128,14 @@ a filled well or a thumbnail, takes `border-card-ring`. A window takes
 `ring-window-ring`. Cards drawn both ways is a 2px difference nothing
 looks wrong about, and every placeholder standing in for one then has to
 rediscover it by measuring: three comments in `skeletons.tsx` recorded
-the same 2px separately before the rule said this. A hand-rolled popover, menu,
+the same 2px separately before the rule said this. The second exception
+is the focus ring's STRENGTH, and only its strength: the registry draws
+`ring-ring/50`, a 50% wash, which measured 1.35 to 1.88:1 against what
+it lay on over 1,636 tabbed stops here, and WCAG 1.4.11 asks 3:1 of a
+focus indicator under PRODUCT.md's yardstick. So the app draws
+`ring-ring` at full alpha, in the registry's own shape (3px, the same
+colour, the border taking it too), and `--ring` is placed by
+measurement, with `check:contrast` holding it to 3:1. A hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in

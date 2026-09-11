@@ -1183,7 +1183,7 @@ export function HomePage() {
                   'border-border border-l-primary bg-primary/10 hover:bg-accent flex w-full items-center gap-3 border-b border-l-2 px-3 py-3 text-left transition-colors duration-100',
                   // The ring inset, for the reason ListRow gives: the card
                   // clips an outline drawn outside a full-width row.
-                  'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset focus-visible:outline-none',
+                  'focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none',
                   // Under 320px (200% zoom on a 390 phone) the board is
                   // `shrink-0` and the title beside it was one glyph
                   // wide; the title goes under the board instead.

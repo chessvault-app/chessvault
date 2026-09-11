@@ -366,7 +366,24 @@
   --primary-hover: oklch(calc(var(--primary-hover-l) + (22% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
   --primary-foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) 0 0);
   --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(calc(70.8% + (50% - 70.8%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* The focus ring, and the one colour in this file held to a RATIO and
+     not to a look: WCAG 1.4.11 asks 3:1 of the mark that says where the
+     keyboard is, and PRODUCT.md takes 2.2 AA as the yardstick. At the
+     registry's 50% alpha it measured 1.35 to 1.60:1 against whatever it
+     lay on, over 1,636 tabbed stops on 22 routes in four schemes, and
+     High contrast, the scheme chosen for legibility, only reached 2.14.
+     So the wash is gone (`ring-ring`, never `ring-ring/50`, and the
+     global outline below matches) and the lightness moved.
+
+     59%, not 70.8%, and --surface-3 (92.8%) is what binds it: the
+     selected and hovered fill, which an inset ring is drawn straight
+     onto, and where a neutral ring crosses 3:1 at 61.5%. The two points
+     under that are the margin a tinted scheme eats, since an accent at
+     full chroma is lighter than the grey of the same L; they leave the
+     worst shipped scheme at 3.17:1 and the worst corner of the knob
+     grid at 3.13:1. The knob keeps its direction: 50% at the top, where
+     --surface-3 has darkened to 90%. */
+  --ring: oklch(calc(59% + (50% - 59%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   /* The semantic four stay out of --ui-tint and --accent-tint, for the
      reason given at the top of this file. They do NOT stay out of
@@ -648,7 +665,15 @@
   --primary-hover: oklch(calc(var(--primary-hover-l) + (92% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
   --primary-foreground: oklch(calc(20.5% + (0% - 20.5%) * var(--ui-contrast)) calc(0.025 * var(--accent-tint)) 235);
   --primary-soft: oklch(calc(30% + (20% - 30%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(calc(55.6% + (100% - 55.6%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* 66%, not 55.6%: the same 3:1 the light block explains, and here
+     --accent (37%) binds it rather than --surface-3. The dark hover and
+     selection fill sits a rung above the ladder (see its note below),
+     an inset ring on a hovered row is drawn onto it, and a neutral ring
+     crosses 3:1 there at 63.2%; the rest is the margin a tinted accent
+     eats, leaving the worst shipped scheme at 3.18:1 and the worst
+     corner of the grid at 3.09:1. At 55.6% behind a 50% wash the ring
+     measured 1.72 to 1.88:1. 100% at the top of the knob, as before. */
+  --ring: oklch(calc(66% + (100% - 66%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   --good: oklch(72% 0.16 152);
   /* 72, not the registry's 70.4: 4.39:1 on --surface-3, and a failed
@@ -953,7 +978,7 @@
 @layer base {
   * {
     border-color: var(--border);
-    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    outline-color: var(--ring);
   }
 
   html {
@@ -1197,9 +1222,11 @@
     font-family: var(--font-sans);
   }
 
-  /* Only show focus rings for keyboard users, but never suppress them entirely. */
+  /* Only show focus rings for keyboard users, but never suppress them
+     entirely. At full alpha, as every component's ring is: the token
+     carries the 3:1 (see --ring), and half of it is half the ratio. */
   :focus-visible {
-    outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
+    outline: 3px solid var(--ring);
     outline-offset: 0;
   }
 

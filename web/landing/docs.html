@@ -55,7 +55,7 @@
         --border: oklch(88% 0 0);
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
-        --ring: oklch(70.8% 0 0);
+        --ring: oklch(59% 0 0);
         --hairline: oklch(88% 0 0);
         --radius: 0.625rem;
         --radius-md: calc(var(--radius) - 2px);
@@ -115,7 +115,7 @@
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);
-          --ring: oklch(55.6% 0 0);
+          --ring: oklch(66% 0 0);
           --hairline: oklch(98.5% 0 0 / 10%);
         }
       }
@@ -130,7 +130,9 @@
         -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; }
-      :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+      /* Full alpha, as in the app and on the landing page: a 50% wash of
+         --ring measured about 1.5:1 where WCAG 1.4.11 asks 3. */
+      :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
       .btn:focus-visible { border-color: var(--ring); }
       /* Forced colours drop box-shadow and honour `outline: none`, so the
          two rules above compose to no focus indicator at all under Windows

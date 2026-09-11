@@ -32,8 +32,8 @@ colors:
   primary-hover-dark: "oklch(85% 0 0)"
   primary-soft: "oklch(94% 0 0)"
   primary-soft-dark: "oklch(30% 0 0)"
-  ring: "oklch(70.8% 0 0)"
-  ring-dark: "oklch(55.6% 0 0)"
+  ring: "oklch(59% 0 0)"
+  ring-dark: "oklch(66% 0 0)"
   good: "oklch(50% 0.141 150)"
   good-dark: "oklch(72% 0.16 152)"
   warn: "oklch(52% 0.112 75)"
@@ -252,7 +252,13 @@ what you grep for.
   text tier — labels, secondary values.
 - **text-subtle** (`oklch(51.5% 0 0)` / `oklch(69.5% 0 0)`): the third tier,
   for text that is present but not being read.
-- **ring** (`oklch(70.8% 0 0)` / `oklch(55.6% 0 0)`): the focus ring, at 50% alpha.
+- **ring** (`oklch(59% 0 0)` / `oklch(66% 0 0)`): the focus ring, at full
+  alpha. Placed by measurement, not by eye: 3:1 against every surface it
+  can land on, in both themes and at every point of the contrast knob,
+  which is what WCAG 1.4.11 asks of a focus indicator. The registry's
+  50% wash measured 1.35 to 1.88:1 and was no indicator at all. The
+  binding surface is the selected fill an inset ring is drawn onto —
+  surface-3 in light, accent in dark.
 
 ### Semantic
 
@@ -595,7 +601,7 @@ hit areas, `title` as a tooltip. Composites live in
 - **Destructive:** a 10% destructive wash with destructive text, *not* a
   solid red fill — `destructive-solid` exists separately for the rare
   action that must shout.
-- **States:** `focus-visible:ring-3 ring-ring/50` with the border taking
+- **States:** `focus-visible:ring-3 ring-ring` with the border taking
   the ring colour; a 1px downward translate on press, suppressed for
   anything with a popup; 50% opacity and no pointer events when disabled.
 - **Icons:** 16px by default, 12px at xs and 14px at sm, marked with
@@ -620,7 +626,7 @@ hit areas, `title` as a tooltip. Composites live in
   field is defined by its stroke, not a fill. Dark mode takes shadcn's
   translucent `input/30`.
 - **Sizes:** 28 / 32 / 36px; sm bumps to 36px on coarse pointers.
-- **Focus:** border to the ring colour plus `ring-3 ring-ring/50`.
+- **Focus:** border to the ring colour plus `ring-3 ring-ring`.
 - **Invalid:** destructive border and a destructive ring at 20% (40% in dark).
 - **Disabled:** translucent input fill, 50% opacity, no pointer events.
 - Text is 16px on small viewports and 14px from `md` up — the 16px floor
@@ -683,10 +689,13 @@ over anything and leaves focus where it was — and is hand-rolled on
 purpose.
 
 **The One Focus Ring Rule.** Components draw shadcn's
-`focus-visible:ring-3 ring-ring/50` and turn the outline off; anything
+`focus-visible:ring-3` and turn the outline off; anything
 that is not a component gets the same ring from the global
 `:focus-visible` outline in the same colour. A page has one focus style
-whichever kind of control has it.
+whichever kind of control has it. The colour is `ring-ring` at full
+alpha, and `--ring` is held to 3:1 against every surface it lands on
+(WCAG 1.4.11) rather than to a look: the registry's 50% wash measured
+1.35 to 1.88:1, which is not an indicator.
 
 **The Behaviour-Not-Geometry Rule.** "Owned" registry files may gain
 behaviour and must not quietly lose geometry. Card is the worked example

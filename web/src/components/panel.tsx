@@ -217,7 +217,7 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
               // pb and this would then overshoot by --card-spacing.)
               'border-border/60 hover:bg-accent mt-auto -mb-(--card-floor) hidden h-2.5 shrink-0 touch-none',
               'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
-              'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+              'outline-none focus-visible:ring-3 focus-visible:ring-ring',
             )}
           >
             <div className="bg-border h-[3px] w-8 rounded-full" />

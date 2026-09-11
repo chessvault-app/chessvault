@@ -513,7 +513,7 @@ function JumpList({ dep }: { dep: unknown }) {
         <button
           key={c.title}
           type="button"
-          className="text-muted-foreground hover:text-foreground rounded-md px-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="text-muted-foreground hover:text-foreground rounded-md px-1 outline-none focus-visible:ring-3 focus-visible:ring-ring"
           onClick={() => c.el.scrollIntoView({ block: 'start' })}
         >
           {c.title}

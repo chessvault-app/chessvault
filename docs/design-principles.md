@@ -850,11 +850,23 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   and 6.4px at Large, since both sides scale off `--radius` (put back on
   `xl` 2026-09-10). A new surface takes the rung its kind already has;
   one that wants another says why, here.
-- **One focus ring, the registry's.** Components draw shadcn's
-  `focus-visible:ring-3 ring-ring/50` and turn the outline off; everything
-  that is not a component (a bare button, a link) gets the same ring from
-  the global `:focus-visible` outline in the same colour, so a page has
-  one focus style whichever kind of control has it.
+- **One focus ring, the registry's shape at the app's strength.**
+  Components draw shadcn's `focus-visible:ring-3` and turn the outline
+  off; everything that is not a component (a bare button, a link) gets
+  the same ring from the global `:focus-visible` outline in the same
+  colour, so a page has one focus style whichever kind of control has
+  it. The colour is `ring-ring` at FULL alpha, not the registry's
+  `ring-ring/50`, and `--ring` is placed by measurement rather than by
+  eye: 3:1 against every surface the ring can land on (page, card,
+  popover, muted, surface-3), in both themes, at every point of the
+  contrast knob and in every tinted scheme. WCAG 1.4.11 asks that of a
+  focus indicator and PRODUCT.md's yardstick is 2.2 AA; the 50% wash
+  measured 1.35 to 1.60:1 in light and 1.72 to 1.88 in dark over 1,636
+  tabbed stops, which on a bright screen is no indicator at all. What
+  binds the token is the selected fill an inset ring is drawn straight
+  onto (`--surface-3` in light, `--accent` in dark), and
+  `check:contrast` now holds a focus indicator to 3:1, so the next
+  retune of a surface cannot quietly take it back.
 
 ## The mark
 

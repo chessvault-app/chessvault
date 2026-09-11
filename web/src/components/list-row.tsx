@@ -66,7 +66,7 @@ export function ListRow({
         // were clipped by the panel and the fourth lay on the hairline.
         // Measured on the phone home: tabbing to the Continue rows moved
         // nothing visible. Inside the row the ring survives the clip.
-        'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset focus-visible:outline-none',
+        'focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-inset focus-visible:outline-none',
         divided && 'border-border border-b last:border-b-0',
         dense ? 'py-(--row-py-dense)' : 'py-(--row-py)',
         className,
