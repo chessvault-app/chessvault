@@ -4,7 +4,7 @@ import { parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { SCAN_PACK_META, SCAN_PACK_VERSION, encodeScanPack, PACK_KEYS_AT } from '../shared/scanPack.ts';
-import { KEY_INDEX_META, KEY_INDEX_VERSION, keyEntry } from '../shared/keyIndex.ts';
+import { KEY_INDEX_META, KEY_INDEX_VERSION, keyEntry, keyEntryHi, keyEntryLo } from '../shared/keyIndex.ts';
 import { endianness } from 'node:os';
 
 /**
@@ -214,6 +214,11 @@ function buildKeyIndex(
     starts[bucket + 1] = starts[bucket]! + counts[bucket]!;
   }
   const entries = new BigUint64Array(total);
+  const littleEndian = endianness() === 'LE';
+  // On a little-endian host each entry is written as two u32 words into
+  // the same buffer, which is the u64 the sort below reads; the BigInt
+  // form is kept for the other byte order and as the definition.
+  const words = littleEndian ? new Uint32Array(entries.buffer) : null;
   const cursor = starts.slice(0, 65536);
   seen = 0;
   phase.enter('keys-fill');
@@ -227,14 +232,19 @@ function buildKeyIndex(
       const key32 =
         (pack[o]! | (pack[o + 1]! << 8) | (pack[o + 2]! << 16) | (pack[o + 3]! << 24)) >>> 0;
       const bucket = key32 >>> 16;
-      entries[cursor[bucket]!] = keyEntry(key32, row.game_id, at);
-      cursor[bucket] = cursor[bucket]! + 1;
+      const slot = cursor[bucket]!;
+      if (words) {
+        words[slot * 2] = keyEntryLo(row.game_id, at);
+        words[slot * 2 + 1] = keyEntryHi(key32, row.game_id);
+      } else {
+        entries[slot] = keyEntry(key32, row.game_id, at);
+      }
+      cursor[bucket] = slot + 1;
     }
     seen += 1;
     if (seen % KEY_INDEX_REPORT_EVERY === 0) phase.step(seen, packs, 'games');
   }
   const insert = db.prepare('INSERT INTO key_index (bucket, entries) VALUES (?, ?)');
-  const littleEndian = endianness() === 'LE';
   phase.enter('keys-write');
   db.exec('BEGIN');
   for (let bucket = 0; bucket < 65536; bucket += 1) {

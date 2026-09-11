@@ -37,6 +37,19 @@ export const keyBucket = (key32: number): number => key32 >>> 16;
 export const keyEntry = (key32: number, gameId: number, ply: number): bigint =>
   (BigInt(key32 & 0xffff) << 48n) | (BigInt(gameId) << 16n) | BigInt(Math.min(ply, 65535));
 
+/**
+ * The same entry as its two little-endian 32-bit words, for the fill
+ * loop: `keyEntry` is seven allocating BigInt operations per position,
+ * and the fill runs once per position in every pack (~1.4 billion on
+ * the Gigabase). A host that writes the words straight into the entry
+ * array's buffer builds no BigInt at all. `keyEntry` stays the
+ * definition; the test holds the two to each other.
+ */
+export const keyEntryLo = (gameId: number, ply: number): number =>
+  ((gameId << 16) | Math.min(ply, 65535)) >>> 0;
+export const keyEntryHi = (key32: number, gameId: number): number =>
+  (((key32 & 0xffff) << 16) | (gameId >>> 16)) >>> 0;
+
 export const entryGameId = (entry: bigint): number => Number((entry >> 16n) & 0xffffffffn);
 
 /** The [from, to) bounds of one low16's run, for a bucket's entries. */
