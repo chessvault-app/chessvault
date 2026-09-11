@@ -5,6 +5,38 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+Six things that were true in one copy of a page and not in its twin, found
+by auditing the code for duplicates: an installed desktop app now finds the
+vault's own tablebase files, a puzzle's hover preview wears the same edge as
+the game list's, and the vault path copies in the isolated build.
+
+- **An installed desktop app reads the vault's own tablebase files.** The
+  installer puts the native core beside the bundled server, and the search
+  and index jobs looked there, but the tablebase prober looked only in a
+  repository build directory. An installed app answered every endgame from
+  the network even with the Syzygy files on disk. One lookup serves both.
+- **A puzzle's hover preview has the same edge as the game list's.** The
+  card that pops beside a puzzle in the dashboard's log and the hub's rows
+  drew a border where the game list's and the engine line's draw the window
+  ring, which made it two pixels wider. The three cards are one now.
+- **Copying the vault path works in the isolated build.** The button on
+  the storage card called the browser's clipboard directly, which the
+  cross-origin isolation the engine needs denies; it reported "Could not
+  copy the path" there. It copies the way every other copy button does.
+- **A reference game with no date shows as already kept.** The key that
+  says whether a game is in the collection was spelled two ways for a
+  missing date, so such a game never matched itself and offered "Add to
+  collection" again.
+- **The library's placeholder lays its collections out as they will be.**
+  While the books load, the cards standing in for a second or third
+  collection took the rows of the one before it, so a shelf with a full
+  collection stood a few pixels off where it would settle.
+- **A study whose name was refused leaves the shelf current.** Creating a
+  study the vault already had returned the error without re-reading the
+  list, as every other change to the shelf does.
+
 ## 0.9.5
 
 The name beside the knight is one lowercase word. A phone's page title
