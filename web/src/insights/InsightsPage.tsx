@@ -195,17 +195,17 @@ export function InsightsPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  // The page is GATED on the engine pass (lanph3re's call): its tables
-  // stand only once every game of yours has been through the engine, so
-  // no figure on it is ever a mixture of judged and unjudged games. Until
-  // the pass has answered how far it is, while games are owed, and while
-  // a run is going, the page draws its outline and the strip under the
-  // header says how far along the pass is. When the gate opens the
-  // report is asked again, since it was fetched before the last games
-  // landed.
+  // The page is GATED on the engine pass (lanph3re's call): until the
+  // first game of yours has been through the engine, and again while a
+  // run is going, the page draws its outline and the strip under the
+  // header says how far along the pass is. Games that arrive AFTER a pass
+  // do not close the gate: the page stands, their results count, and the
+  // strip says their accuracy is still owed, with the header offering to
+  // analyse just them (the queue is only ever what has no record). When
+  // the gate opens the report is asked again, since it was fetched before
+  // the last games landed.
   const job = useAnalysisJob();
-  const owed = Math.max(0, job.total - job.analysed);
-  const gated = !job.known || job.status === 'running' || (job.total > 0 && owed > 0);
+  const gated = !job.known || job.status === 'running' || (job.total > 0 && job.analysed === 0);
   const wasGated = useRef(gated);
   useEffect(() => {
     if (wasGated.current && !gated) setAttempt((n) => n + 1);
@@ -887,7 +887,11 @@ function PassButton() {
       title={t('Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.', { n: PASS_DEPTH })}
       onClick={() => void job.start()}
     >
-      {job.analysed > 0 || job.status === 'paused' ? t('Resume analysis') : t('Analyse games')}
+      {job.status === 'paused'
+        ? t('Resume analysis')
+        : job.analysed > 0
+          ? t('Analyse new games')
+          : t('Analyse games')}
     </Button>
   );
 }
@@ -920,13 +924,20 @@ function PassStrip() {
           <span>{minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}</span>
         )}
         {paused && <span>{t('Paused')}</span>}
-        {waiting && (
-          <span>
-            {t('This page fills once every game has been through the engine pass: {n} to go.', {
-              n: exact.format(owed),
-            })}
-          </span>
-        )}
+        {waiting &&
+          (job.analysed === 0 ? (
+            <span>
+              {t('This page fills once every game has been through the engine pass: {n} to go.', {
+                n: exact.format(owed),
+              })}
+            </span>
+          ) : (
+            <span>
+              {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
+                n: exact.format(owed),
+              })}
+            </span>
+          ))}
         {failed && job.error && (
           <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
         )}

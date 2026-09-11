@@ -2269,4 +2269,6 @@ export const ko: Record<string, string> = {
   'Resume analysis': '분석 이어서 하기',
   'Paused': '일시정지됨',
   'This page fills once every game has been through the engine pass: {n} to go.': '이 페이지는 모든 게임이 엔진 분석을 거치면 채워집니다. {n}개 남았습니다.',
+  'Analyse new games': '새 게임 분석',
+  '{n} newer games are not analysed yet: their results count, their accuracy does not.': '새로 생긴 게임 {n}개는 아직 분석하지 않았습니다. 결과는 집계되지만 정확도에는 들어가지 않습니다.',
 };

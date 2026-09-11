@@ -23,11 +23,12 @@ An Insights page sums your own games.
   ending in the index, so an existing vault reindexes once on the first
   visit.
 - **An engine pass judges your games in the background, and the page
-  waits for it.** Insights shows its tables only once every game of
-  yours has been through the engine, so no figure on it mixes judged
-  and unjudged games; until then, and while a run is going, the page
-  draws its outline and a strip under the title says how far the pass
-  is. Start it from the page's header and the app's own engine walks
+  waits for it.** Insights shows its tables only once your games have
+  been through the engine; until then, and while a run is going, the
+  page draws its outline and a strip under the title says how far the
+  pass is. Games that arrive after a pass do not hide the page: the
+  strip says how many are not analysed yet, and the header offers to
+  analyse just those, since every game already done is kept. Start it from the page's header and the app's own engine walks
   every game of yours
   move by move at a fixed depth, in the window, while you use the rest of
   the app; a progress bar says how far it is and how long is left, Pause
