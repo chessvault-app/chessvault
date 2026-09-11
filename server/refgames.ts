@@ -47,6 +47,7 @@ import { closeQueries, isAbortedQuery, queryFor, type Query } from './refgamesQu
 import type { Context } from 'hono';
 import { REFGAMES_LOOKUPS } from '../scripts/lib/db-tuning.ts';
 import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
+import { nativeBinary } from './nativeCore.ts';
 
 /**
  * Reference games — whole games with movetext, browsable and searchable
@@ -68,27 +69,6 @@ const PAGE = 50;
     path stops here, and native/src/deep.rs carries the same number (the
     goldens hold the two together). */
 export const DEEP_SEARCH_CAP = 200;
-
-/**
- * The native pipeline binary, when one is present — the heavy jobs and
- * the deep-search scan prefer it (measured on an Elite month: build
- * 71.8 s vs ~180 s, deep search 1.3 s vs 12.7 s, both answering
- * byte-identically; see native/). Nothing requires it: a fresh checkout,
- * the demo and the tests all run the JS children exactly as before, and
- * CHESS_NATIVE=0 forces that path when comparing the two is the point.
- * Looked up per spawn so a binary built mid-session is picked up.
- */
-function nativeBinary(): string | null {
-  if (process.env.CHESS_NATIVE === '0') return null;
-  const exe = process.platform === 'win32' ? 'chessvault-core.exe' : 'chessvault-core';
-  for (const candidate of [
-    resolve(REPO_ROOT, 'server', exe), // packaged beside the bundled .mjs children
-    resolve(REPO_ROOT, 'native', 'target', 'release', exe), // a repo cargo build
-  ]) {
-    if (existsSync(candidate)) return candidate;
-  }
-  return null;
-}
 
 /**
  * The deep-scan request keys that are NOT gamesWhere filters: the

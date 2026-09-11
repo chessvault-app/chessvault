@@ -165,7 +165,7 @@ console.log('query worker bundled');
 /**
  * The native fast path, when this machine has built one.
  *
- * `nativeBinary()` in server/refgames.ts looks beside the bundled .mjs
+ * `nativeBinary()` in server/nativeCore.ts looks beside the bundled .mjs
  * children first, which is exactly here — so dropping the binary in is
  * the whole of shipping it. Built for the HOST architecture by cargo,
  * which is why each platform's packaging job builds its own rather than

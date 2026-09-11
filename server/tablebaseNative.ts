@@ -1,7 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { REPO_ROOT } from './paths.ts';
+import { nativeBinary } from './nativeCore.ts';
 import { normalizeTablebase, type LichessTablebaseResponse, type TablebaseProbe } from './tablebase.ts';
 
 /**
@@ -30,13 +29,6 @@ import { normalizeTablebase, type LichessTablebaseResponse, type TablebaseProbe 
 /** Long enough for a cold page fault off a slow disk, short enough that
     a wedged child is noticed rather than waited on for ever. */
 const ANSWER_TIMEOUT_MS = 10_000;
-
-export function nativeBinary(): string | null {
-  if (process.env.CHESS_NATIVE === '0') return null;
-  const exe = process.platform === 'win32' ? 'chessvault-core.exe' : 'chessvault-core';
-  const path = resolve(REPO_ROOT, 'native', 'target', 'release', exe);
-  return existsSync(path) ? path : null;
-}
 
 interface Pending {
   resolve: (value: LichessTablebaseResponse) => void;
