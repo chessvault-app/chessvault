@@ -14,6 +14,7 @@ import { lazyRoute } from '@/lib/lazyRoute';
 import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
+import { TitleTip } from '@/components/title-tip';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
@@ -551,7 +552,8 @@ function NoteCard({
       // fact a reader wants beside a note's name is how connected it is.
       // A note with no links says only when it was edited.
       meta={
-        <span title={formatWhen(note.updatedAt)}>
+        <TitleTip title={formatWhen(note.updatedAt)}>
+        <span>
           {links > 0 && (
             <>
               {links === 1 ? t('1 link') : t('{n} links', { n: links })} ·{' '}
@@ -559,6 +561,7 @@ function NoteCard({
           )}
           {t('edited {when}', { when: formatAgo(note.updatedAt) })}
         </span>
+        </TitleTip>
       }
       // What the note is actually about. A shelf of markdown files whose
       // names are all "Opening prep checklist 3" tells you nothing; its

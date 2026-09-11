@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ChipRow } from '@/components/chip-row';
+import { TitleTip } from '@/components/title-tip';
 import { FilterChip } from '@/components/filter-chip';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
@@ -272,12 +273,11 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
         {entry.version && (
           <span className="text-muted-foreground shrink-0 font-mono text-xs">{entry.version}</span>
         )}
-        <span
-          className="text-muted-foreground border-border max-w-[45%] shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap"
-          title={entry.license}
-        >
-          {entry.license}
-        </span>
+        <TitleTip title={entry.license}>
+          <span className="text-muted-foreground border-border max-w-[45%] shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap">
+            {entry.license}
+          </span>
+        </TitleTip>
       </button>
       {open && (
         <div className="flex flex-col gap-2 px-2 pt-1 pb-3">

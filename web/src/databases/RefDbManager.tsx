@@ -8,6 +8,7 @@ import { t } from '@/lib/i18n';
 import { forgetRefDbs } from '@/openingmap/useGaps';
 
 import { Button } from '@/components/ui/button';
+import { TitleTip } from '@/components/title-tip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
@@ -747,9 +748,9 @@ function DbRow({
           line it always was, with the same children in the same order and
           the same columns. */}
       <div className="flex min-w-0 flex-1 flex-col gap-1 md:contents">
-        <span className="text-foreground min-w-0 truncate font-medium md:flex-1" title={d.sources}>
-          {d.name}
-        </span>
+        <TitleTip title={d.sources}>
+          <span className="text-foreground min-w-0 truncate font-medium md:flex-1">{d.name}</span>
+        </TitleTip>
         {/* The phone's second line. It wraps, because two index badges
             beside both figures outrun a phone's width. */}
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 md:contents">

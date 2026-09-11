@@ -701,12 +701,11 @@ export function DashboardPage() {
                       {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
                     </span>
                     <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-                    <span
-                      className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
-                      title={formatWhen(h.at)}
-                    >
-                      {formatAgo(h.at)}
-                    </span>
+                    <TitleTip title={formatWhen(h.at)}>
+                      <span className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums">
+                        {formatAgo(h.at)}
+                      </span>
+                    </TitleTip>
                   </ListRow>
                   {/* Reached by Right from its row, never by Tab. */}
                   <PreviewEye eye={preview.eyeProps(h.id)} tabIndex={-1} />

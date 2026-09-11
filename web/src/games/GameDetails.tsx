@@ -18,6 +18,7 @@ import { Board } from '@/board/Board';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
+import { TitleTip } from '@/components/title-tip';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -190,10 +191,8 @@ function GameDetailsContent({
             the name gives way, so a narrow sheet cannot clip a code down
             to a different code. */}
         {(summary.opening || summary.eco) && (
-          <p
-            className="flex min-w-0 items-baseline gap-1.5"
-            title={summary.opening?.name ?? undefined}
-          >
+          <TitleTip title={summary.opening?.name ?? undefined}>
+          <p className="flex min-w-0 items-baseline gap-1.5">
             <EcoChip eco={summary.opening?.eco ?? summary.eco!} flush />
             {summary.opening && (
               <EcoName
@@ -203,12 +202,15 @@ function GameDetailsContent({
               />
             )}
           </p>
+          </TitleTip>
         )}
         {summary.event && (
-          <p className="truncate" title={summary.event}>
-            {summary.event}
-            {summary.round ? ` · ${t('round {n}', { n: summary.round })}` : ''}
-          </p>
+          <TitleTip title={summary.event}>
+            <p className="truncate">
+              {summary.event}
+              {summary.round ? ` · ${t('round {n}', { n: summary.round })}` : ''}
+            </p>
+          </TitleTip>
         )}
         {detail.length > 0 && (
           <p className="truncate">

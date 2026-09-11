@@ -6,6 +6,7 @@ import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { usePrefs } from '@/store/prefs';
 import { Button } from '@/components/ui/button';
+import { TitleTip } from '@/components/title-tip';
 import { ClearableInput } from '@/components/text-fields';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl, type SaveState } from '@/components/save-control';
@@ -554,12 +555,12 @@ function NoteTitle({ id, hidden = false }: { id: string; hidden?: boolean }) {
 
   return (
     <>
+      <TitleTip title={failure ?? id}>
       <h1
         onDoubleClick={() => {
           setDraft(name);
           setEditing(true);
         }}
-        title={failure ?? id}
         // The name the note was given, so a long press selects it.
         data-user-text
         // Hidden, not removed: it keeps its place in the row so the
@@ -574,6 +575,7 @@ function NoteTitle({ id, hidden = false }: { id: string; hidden?: boolean }) {
         {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}
       </h1>
+      </TitleTip>
     </>
   );
 }

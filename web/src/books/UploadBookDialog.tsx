@@ -2,6 +2,7 @@ import { BookText, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { TitleTip } from '@/components/title-tip';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -195,9 +196,9 @@ export function UploadBookDialog({
                   />
                 </Field>
               )}
-              <p className="text-muted-foreground truncate text-sm" title={file.name}>
-                {file.name}
-              </p>
+              <TitleTip title={file.name}>
+                <p className="text-muted-foreground truncate text-sm">{file.name}</p>
+              </TitleTip>
               <p className="text-muted-foreground text-sm">
                 {looked
                   ? `${t('{n} pages', { n: looked.pages })} · ${fileSize(file.size)}`

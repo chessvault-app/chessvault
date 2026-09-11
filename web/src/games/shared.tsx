@@ -471,10 +471,8 @@ export function GameRow({
               is shrink-0 and outside the truncating box, so the box that
               gives way is the name's alone and every family starts at
               the same x. */}
-          <span
-            className="text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-sm"
-            title={openingLabel}
-          >
+          <TitleTip title={openingLabel}>
+          <span className="text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-sm">
             {(game.opening || game.eco) && <EcoChip eco={game.opening?.eco ?? game.eco!} flush />}
             {game.opening && (
               <EcoName
@@ -492,6 +490,7 @@ export function GameRow({
                 : ''}
             </span>
           </span>
+          </TitleTip>
         </button>
         <ResultScore result={game.result} userSide={game.userSide} />
       </div>

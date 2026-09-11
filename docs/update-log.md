@@ -93,6 +93,13 @@ builds and the board's arrow keys do less per request.
   its own piece now, one engine panel is mounted per layout, the move
   table's cells and the engine review's opening walk are batched, and a
   step on a 63-move game costs a third of the script time it did.
+- **Every hover tip is the app's own.** Twenty-four places still showed
+  the browser's bubble: the name on a shelf card, the tag rows in the
+  opening map, the tablebase and game list rows, a truncated opening or
+  event name, an exact time behind "edited 3 days ago", the FEN readouts
+  in the editor, a note or study's full name in its header. They now open
+  the same chip every button does, on keyboard focus as well as hover,
+  and the repo check keeps a raw `title` from coming back.
 
 ## 0.9.5
 

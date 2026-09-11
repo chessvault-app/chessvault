@@ -1208,10 +1208,10 @@ function NodePanel({
                 className="border-border flex items-center gap-2 rounded-lg border px-2 py-1.5"
               >
                 <Icon className={broken ? 'text-destructive size-4 shrink-0' : 'text-muted-foreground size-4 shrink-0'} />
+                <TitleTip title={tag.id}>
                 <button
                   type="button"
                   className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-sm"
-                  title={tag.id}
                   onClick={() => {
                     // A study opens ON this node's position, not at its
                     // first chapter's first move — that is what following
@@ -1230,6 +1230,7 @@ function NodePanel({
                   {tag.id.split('/').pop()}
                   {tag.chapter ? ` · ${tag.chapter}` : ''}
                 </button>
+                </TitleTip>
                 {broken && <span className="text-destructive shrink-0 text-sm">{t('Missing')}</span>}
                 {/* Was a bare 14px glyph — the row has room, so this is
                     the app's own icon button rather than a hand-rolled

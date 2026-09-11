@@ -459,8 +459,11 @@ export function GameTableRow({
       data-selected={selected || undefined}
       // Every cell is the game's own record, so the row selects on a long
       // press (index.css).
+      // No tip on the row: its cells already say who played, and a row's
+      // tip is the browser fallback while the event cell shows its own,
+      // which is two tips at once (title-tip.tsx). The names travel with
+      // the context menu's label instead.
       data-user-text
-      title={t('{white} vs {black}', { white: game.white, black: game.black })}
       className={cn(
         GRID,
         // Height and padding from the density tokens, not literals: this
@@ -528,9 +531,9 @@ export function GameTableRow({
       <span className="truncate">
         {game.opening ? <EcoChip eco={game.opening.eco} /> : game.eco ? <EcoChip eco={game.eco} /> : null}
       </span>
-      <span className={quiet} title={game.event ?? undefined}>
-        {isNoiseEvent(game.event) ? '' : (game.event ?? '')}
-      </span>
+      <TitleTip title={game.event ?? undefined}>
+        <span className={quiet}>{isNoiseEvent(game.event) ? '' : (game.event ?? '')}</span>
+      </TitleTip>
       <span className={cn(quiet, 'tabular-nums')}>{game.date}</span>
       {withNotation && (
         <span className={cn(quiet, 'font-moves')}>

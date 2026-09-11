@@ -546,6 +546,7 @@ function TitleEditor({
 
   return (
     <>
+      <TitleTip title={failure ?? id}>
       <h1
         onDoubleClick={() => {
           setDraft(name);
@@ -553,13 +554,13 @@ function TitleEditor({
         }}
         // The name the study was given, so a long press selects it.
         data-user-text
-        title={failure ?? id}
         className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
       >
         {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}
         {failure ? `: ${failure}` : ''}
       </h1>
+      </TitleTip>
     </>
   );
 }

@@ -338,12 +338,11 @@ export function ExplorerPane({
                 <span className="text-muted-foreground shrink-0 font-mono text-xs font-semibold">
                   {lineOpening.eco}
                 </span>
-                <span
-                  className="text-foreground min-w-0 truncate text-sm font-medium"
-                  title={`${lineOpening.eco} ${lineOpening.name}`}
-                >
-                  {lineOpening.name}
-                </span>
+                <TitleTip title={`${lineOpening.eco} ${lineOpening.name}`}>
+                  <span className="text-foreground min-w-0 truncate text-sm font-medium">
+                    {lineOpening.name}
+                  </span>
+                </TitleTip>
               </>
             ) : (
               <span className="text-muted-foreground text-sm">
@@ -1133,12 +1132,11 @@ function MoveRow({
           {move.san}
         </button>
       </td>
-      <td
-        className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums"
-        title={t('{n} games', { n: exact.format(move.total) })}
-      >
-        {compact.format(move.total)}
-      </td>
+      <TitleTip title={t('{n} games', { n: exact.format(move.total) })}>
+        <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+          {compact.format(move.total)}
+        </td>
+      </TitleTip>
       <td className="py-(--row-py-tight) pr-3">
         <ResultBar w={move.w} d={move.d} b={move.b} />
       </td>

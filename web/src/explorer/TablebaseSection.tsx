@@ -192,7 +192,6 @@ function MoveRow({
         'hover:bg-accent cursor-pointer transition-colors duration-100',
         alt && 'bg-muted/50',
       )}
-      title={categoryLabel(move.category)}
     >
       <td className="text-foreground font-moves w-14 py-(--row-py-tight) pl-3 pr-1 font-semibold">
         {/* The move is the row's button (see ExplorerPane's MoveRow). */}
@@ -208,14 +207,18 @@ function MoveRow({
         </button>
       </td>
       <td className="py-(--row-py-tight) pr-2">
-        <span
-          className={cn(
-            'inline-block rounded-sm px-1.5 py-0.5 text-xs font-semibold leading-4',
-            TONE[categoryTone(move.category)],
-          )}
-        >
-          {categoryChip(move.category)}
-        </span>
+        {/* On the chip, not the row: the row holds a button, and a row's
+            tip would open together with anything inside it (title-tip.tsx). */}
+        <TitleTip title={categoryLabel(move.category)}>
+          <span
+            className={cn(
+              'inline-block rounded-sm px-1.5 py-0.5 text-xs font-semibold leading-4',
+              TONE[categoryTone(move.category)],
+            )}
+          >
+            {categoryChip(move.category)}
+          </span>
+        </TitleTip>
       </td>
       <td className="text-muted-foreground py-(--row-py-tight) pr-3 text-right font-mono text-xs tabular-nums">
         {dist?.text ?? ''}

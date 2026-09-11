@@ -483,12 +483,9 @@ function VaultLabel() {
   const name = displayName(info);
   if (!name) return null;
   return (
-    <span
-      className="text-foreground block truncate text-sm"
-      title={info.path ? t('Vault folder: {path}', { path: info.path }) : undefined}
-    >
-      {name}
-    </span>
+    <TitleTip title={info.path ? t('Vault folder: {path}', { path: info.path }) : undefined}>
+      <span className="text-foreground block truncate text-sm">{name}</span>
+    </TitleTip>
   );
 }
 
@@ -534,9 +531,11 @@ function ConnectionLabel() {
   const host = location.hostname;
   const local = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
   return (
-    <span className="text-muted-foreground hidden truncate text-sm lg:block" title={location.origin}>
-      {!online ? t('Offline') : local ? t('This device') : host}
-    </span>
+    <TitleTip title={location.origin}>
+      <span className="text-muted-foreground hidden truncate text-sm lg:block">
+        {!online ? t('Offline') : local ? t('This device') : host}
+      </span>
+    </TitleTip>
   );
 }
 

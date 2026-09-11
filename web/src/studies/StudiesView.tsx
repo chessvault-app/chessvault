@@ -8,6 +8,7 @@ import { formatAgo, formatWhen } from '@/lib/dates';
 import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/components/ui/button';
+import { TitleTip } from '@/components/title-tip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select } from '@/components/ui/select';
 import { ClearableInput } from '@/components/text-fields';
@@ -878,10 +879,12 @@ function StudyCard({
       icon={Library}
       title={name}
       meta={
-        <span title={formatWhen(study.updatedAt)}>
+        <TitleTip title={formatWhen(study.updatedAt)}>
+        <span>
           {t('{n} chapters', { n: study.chapters })} ·{' '}
           {t('edited {when}', { when: formatAgo(study.updatedAt) })}
         </span>
+        </TitleTip>
       }
       // A study with no position worth showing still gets a board — an
       // empty one. The shelf reads as a shelf of boards either way, and

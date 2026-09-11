@@ -17,6 +17,7 @@ import { useMediaQuery } from '@/lib/media';
 import { INITIAL_FEN } from '@shared/tree';
 import { Board } from '@/board/Board';
 import { PageHeader } from '@/components/page-header';
+import { TitleTip } from '@/components/title-tip';
 import { ListRow } from '@/components/list-row';
 import { PageShell } from '@/components/page-shell';
 import { ProgressBar } from '@/components/progress-bar';
@@ -625,12 +626,11 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
               merely unlikely. */}
           <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
           <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-          <span
-            className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
-            title={formatWhen(h.at)}
-          >
-            {formatAgo(h.at)}
-          </span>
+          <TitleTip title={formatWhen(h.at)}>
+            <span className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums">
+              {formatAgo(h.at)}
+            </span>
+          </TitleTip>
         </ListRow>
         <PreviewEye eye={preview.eyeProps(h.id)} />
         </div>

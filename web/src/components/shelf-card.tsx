@@ -3,6 +3,7 @@ import { useState, type ReactNode, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { nameSharedBoard } from '@/lib/shared-board';
 import { Button } from '@/components/ui/button';
+import { TitleTip } from '@/components/title-tip';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { MiniBoard } from '@/components/mini-board';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
@@ -187,16 +188,16 @@ export function ShelfCard({
             {/* `title` because the line above truncates and had no way
                 back: measured on the Studies shelf, four of five names
                 were cut, and "Prophylaxis - Nimzowits…" is not something
-                you can pick a study by. This app's tooltip IS the title
-                attribute, so the name is one hover away instead of one
-                open-and-close. */}
+                you can pick a study by. The tip is the app's own, not
+                the browser's bubble (title-tip.tsx), so the name is one
+                hover or one focus away instead of one open-and-close. */}
             {/* The name is the user's, so it selects on a long press
                 even though the line is a control (index.css). The stat
                 line under it is the app counting, and does not. */}
+            <TitleTip title={title}>
             <button
               type="button"
               data-user-text
-              title={title}
               onClick={(e) => {
                 // The surface has the same click; one open, not two.
                 e.stopPropagation();
@@ -217,6 +218,7 @@ export function ShelfCard({
             >
               {title}
             </button>
+            </TitleTip>
             {/* Three steps, not two: the name is the brightest thing on the
                 card, the stat line is the quietest, and the note's own
                 words sit between them. One line of those words: the card
