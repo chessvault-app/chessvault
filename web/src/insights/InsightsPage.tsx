@@ -11,6 +11,7 @@ import { FilterChip } from '@/components/filter-chip';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { ResultBar } from '@/components/result-bar';
+import { TitleTip } from '@/components/title-tip';
 import { SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -313,7 +314,8 @@ function Tables({ report }: { report: Report }) {
           <CardDescription>{t('Score counts a draw as half a win.')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-baseline gap-3">
+            <span className="text-muted-foreground text-sm font-medium">{t('Score')}</span>
             <span className="text-foreground text-2xl font-semibold tabular-nums">{pct(scorePct(all))}</span>
             <span className="text-muted-foreground text-sm tabular-nums">
               {t('{w} won, {d} drew, {l} lost', {
@@ -494,30 +496,34 @@ function ActivityCard({ report }: { report: Report }) {
         <CardTitle>{t('Activity')}</CardTitle>
         <CardDescription>{t('Games per month, won over drew over lost, and the week.')}</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-6 md:grid-cols-[1fr_16rem]">
+      <CardContent className="grid gap-6 md:grid-cols-[1fr_18rem]">
         {series.length > 0 && (
           <figure className="min-w-0">
             <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="img" aria-label={t('Games per month')}>
               {series.map((m) => (
-                <div
+                // The app's tooltip, as on the result bar, never the
+                // browser's `title` bubble: the two differ in shape and
+                // delay, and one page was showing both.
+                <TitleTip
                   key={m.month}
-                  className="flex h-full min-w-2 flex-1 flex-col justify-end"
                   title={
                     m.games === 0
                       ? label(m)
                       : `${label(m)}: ${t('{w} won, {d} drew, {l} lost', { w: m.w, d: m.d, l: m.l })}`
                   }
                 >
-                  {/* Won on top, lost at the foot; the gap between segments is
-                      the page's own ground. The bar's corner is the chip
-                      corner, off the radius knob on purpose. */}
-                  <div
-                    className="bg-good-tint rounded-t-[4px]"
-                    style={{ height: `${(100 * m.w) / peak}%` }}
-                  />
-                  <div className="bg-accent mt-px" style={{ height: `${(100 * m.d) / peak}%` }} />
-                  <div className="bg-destructive/10 mt-px" style={{ height: `${(100 * m.l) / peak}%` }} />
-                </div>
+                  <div className="flex h-full min-w-2 flex-1 flex-col justify-end">
+                    {/* Won on top, lost at the foot; the gap between segments is
+                        the page's own ground. The bar's corner is the chip
+                        corner, off the radius knob on purpose. */}
+                    <div
+                      className="bg-good-tint rounded-t-[4px]"
+                      style={{ height: `${(100 * m.w) / peak}%` }}
+                    />
+                    <div className="bg-accent mt-px" style={{ height: `${(100 * m.d) / peak}%` }} />
+                    <div className="bg-destructive/10 mt-px" style={{ height: `${(100 * m.l) / peak}%` }} />
+                  </div>
+                </TitleTip>
               ))}
             </div>
             <figcaption className="text-muted-foreground mt-1 flex justify-between text-xs tabular-nums">
@@ -563,6 +569,7 @@ function ActivityCard({ report }: { report: Report }) {
         {week.length > 0 && (
           <TallyTable
             caption={t('By weekday')}
+            dense
             rows={week.map((r) => ({ key: String(r.band), label: dayLabel(r.band), tally: r.tally }))}
           />
         )}
@@ -668,24 +675,29 @@ function Donut({ shares, ink, total }: { shares: { ending: Ending; games: number
           // the whole ring needs no gap at all.
           const drawn = shares.length === 1 ? 100 : Math.max(s.share - GAP, Math.min(s.share, 1));
           return (
-            <circle
+            <TitleTip
               key={s.ending}
-              cx="20"
-              cy="20"
-              r={R}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="6"
-              strokeDasharray={`${drawn} ${100 - drawn}`}
-              strokeDashoffset={-(start + (shares.length === 1 ? 0 : GAP / 2))}
-              style={{ opacity: SLICE_OPACITY[Math.min(at, SLICE_OPACITY.length - 1)] }}
+              title={`${t(ENDING_LABEL[s.ending])}: ${exact.format(s.games)} (${pct(s.share)})`}
             >
-              <title>{`${t(ENDING_LABEL[s.ending])}: ${exact.format(s.games)} (${pct(s.share)})`}</title>
-            </circle>
+              <circle
+                cx="20"
+                cy="20"
+                r={R}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="6"
+                strokeDasharray={`${drawn} ${100 - drawn}`}
+                strokeDashoffset={-(start + (shares.length === 1 ? 0 : GAP / 2))}
+                style={{ opacity: SLICE_OPACITY[Math.min(at, SLICE_OPACITY.length - 1)] }}
+              />
+            </TitleTip>
           );
         })}
       </svg>
-      <span className="text-foreground absolute inset-0 grid place-items-center text-lg font-semibold tabular-nums">
+      {/* Over the hole only in looks: the pointer must pass through to the
+          slices, or the total's box, which spans the whole ring, takes
+          every hover and no slice tip ever opens. */}
+      <span className="text-foreground pointer-events-none absolute inset-0 grid place-items-center text-lg font-semibold tabular-nums">
         {exact.format(total)}
       </span>
     </div>
@@ -758,15 +770,38 @@ function TallyTable({
   caption,
   rows,
   mono = false,
+  dense = false,
 }: {
   caption: string;
   rows: { key: string; label: string; tally: Tally }[];
   /** A label that is a figure (a rating band) takes the mono face. */
   mono?: boolean;
+  /** In a narrow column the bar gives up width rather than the words:
+      at 18rem the full bar left the label column sixteen pixels. The
+      bar then prints fewer of its figures, which its tooltip still has. */
+  dense?: boolean;
 }) {
   return (
     <table className="w-full table-fixed text-sm">
-      <caption className="text-muted-foreground pb-1 text-left text-xs font-medium">{caption}</caption>
+      {/* A header row, not a bare caption: a number with no word over
+          it is a number the reader has to guess at (lanph3re's report),
+          and the openings table already names its columns this way. */}
+      <thead className="text-muted-foreground text-xs">
+        <tr>
+          <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
+            {caption}
+          </th>
+          <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap">
+            {t('Games')}
+          </th>
+          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', dense ? 'w-20' : 'w-36')}>
+            {t('Results')}
+          </th>
+          <th scope="col" className="w-12 py-1 text-right font-medium whitespace-nowrap">
+            {t('Score')}
+          </th>
+        </tr>
+      </thead>
       <tbody>
         {rows.map((row, at) => (
           <tr key={row.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
@@ -777,7 +812,7 @@ function TallyTable({
             {/* The bar's own label threshold was measured against the
                 explorer's column; narrower and a 13% segment clips its
                 figure, so this is that width. */}
-            <td className="w-36 py-(--row-py-tight) pr-2">
+            <td className={cn('py-(--row-py-tight) pr-2', dense ? 'w-20' : 'w-36')}>
               <ResultBar w={row.tally.w} d={row.tally.d} b={row.tally.l} pov="mine" />
             </td>
             <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row.tally))}</td>
