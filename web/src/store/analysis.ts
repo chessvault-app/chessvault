@@ -345,3 +345,17 @@ export function snapshotBoard(): BoardSnapshot {
   return { tree, cursorId, gameHeaders, orientation };
 }
 
+/**
+ * Whether throwing this board away would lose anything: moves played, a
+ * game loaded, or a starting position that is not the standard one.
+ *
+ * A board that is none of those is exactly what a fresh entry builds, so
+ * offering to put it back would be offering to change nothing. An
+ * orientation on its own does not count: flipping is one key, and a toast
+ * about it would fire on every visit that ever pressed f.
+ */
+export function holdsWork(board: BoardSnapshot): boolean {
+  const root = getNode(board.tree, board.tree.rootId);
+  return root.children.length > 0 || board.gameHeaders !== null || root.fen !== INITIAL_FEN;
+}
+

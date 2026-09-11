@@ -13,7 +13,7 @@ import { up } from '@/lib/router';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
 import { toast } from '@/components/ui/toast';
-import { snapshotBoard, useAnalysis } from '@/store/analysis';
+import { holdsWork, snapshotBoard, useAnalysis, type BoardSnapshot } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -33,6 +33,22 @@ import { t } from '@/lib/i18n';
 
 type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
+/**
+ * The board the last visit left behind, kept for exactly one offer.
+ *
+ * Module scope rather than the store, because the store is the thing a
+ * fresh entry throws away, and this has to survive that. Written when the
+ * page unmounts, read and cleared by the next entry: one offer per visit,
+ * and a reload starts with nothing to put back.
+ *
+ * Written on the way OUT rather than read on the way in, because the store
+ * is shared: a study chapter, a solved puzzle's line and a game opened in
+ * the workspace all load into it (store/study.ts, hooks/use-analyse-in-place),
+ * so the board standing in it when the page opens is often someone else's
+ * document. What the reader wants back is the board they left.
+ */
+let lastBoard: BoardSnapshot | null = null;
+
 export function AnalysisView({ params = [] }: { params?: string[] }) {
   // Reached as Tools > Explorer (navigate('board', 'explorer')): open
   // straight to the opening explorer instead of the move list.
@@ -49,20 +65,34 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   // Stateless page (lanph3re's call): entering analysis always starts a fresh
   // board with the engine off and the explorer at its default — UNLESS a
   // view just handed a position over (editor, games, puzzles), marked by
-  // the handoff flag. The ref makes the decision once per real mount:
+  // the handoff flag. That still holds; what it no longer does is take the
+  // last board away without a word (lanph3re's call, 2026-09-12). A visit
+  // that replaces a board holding anything offers it back for a few
+  // seconds, through the same undo offer the destructive verbs raise.
+  // The ref makes the decision once per real mount:
   // StrictMode runs the effect twice, and the second run must not treat
   // the just-consumed flag as "no handoff" and wipe the board.
   const entered = useRef(false);
+  // The board this entry replaced, waiting for the offer below.
+  const replaced = useRef<BoardSnapshot | null>(null);
+  const { offer } = useUndoable();
   // useLayoutEffect, not useEffect: reset BEFORE the browser paints, so a
   // stale board handed over by a previous page never flashes on screen.
   useLayoutEffect(() => {
     if (entered.current) return;
     entered.current = true;
+    // Taken on both paths, and cleared as it is read: one offer per visit,
+    // or a later entry could hand back a board from two pages ago.
+    const left = lastBoard;
+    lastBoard = null;
     const analysis = useAnalysis.getState();
     if (analysis.handoff) {
       useAnalysis.setState({ handoff: false });
       return;
     }
+    // Nothing to lose, nothing to ask about: a board with no moves, no
+    // game and the standard position is what this reset is about to build.
+    if (left && holdsWork(left)) replaced.current = left;
     analysis.reset();
     const engine = useEngine.getState();
     if (engine.enabled) engine.setEnabled(false);
@@ -75,6 +105,47 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
     // safety lives in that key, in another file — hence this note.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The offer, raised from a microtask rather than from the effect above:
+  // StrictMode rehearses a mount by unmounting it, and that rehearsal's
+  // cleanup flushes every pending offer (hooks/use-undoable) — so an offer
+  // raised on the first pass is closed before it is seen, in development
+  // only, which is the worst place to find out. A microtask lands after
+  // the rehearsal, so the pass that stays is the one that asks.
+  useEffect(() => {
+    let live = true;
+    queueMicrotask(() => {
+      const board = replaced.current;
+      if (!live || !board) return;
+      replaced.current = null;
+      offer(
+        { title: t('Started a new board'), action: t('Restore') },
+        // Nothing to commit: the reset already happened, and letting the
+        // offer expire is simply not taking it back.
+        () => {},
+        // The moves and the cursor come back. The engine does NOT: an
+        // engine already running on arrival is exactly what the fresh
+        // entry exists to prevent, and an undo is not a licence to undo
+        // that too. On the explorer route the pane follows the cursor, so
+        // restoring the board points it at the restored position.
+        () => useAnalysis.setState(board),
+      );
+    });
+    return () => {
+      live = false;
+    };
+  }, [offer]);
+
+  // Leaving puts the board away for the next entry to offer back. Its own
+  // effect, not the mount's cleanup: the mount returns early on
+  // StrictMode's second pass, and a cleanup registered only on the first
+  // would be gone by the time the reader actually leaves.
+  useLayoutEffect(
+    () => () => {
+      lastBoard = snapshotBoard();
+    },
+    [],
+  );
 
   // A game review left running would walk the whole game on background
   // threads with no visible sign anywhere else in the app — abort it on
