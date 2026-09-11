@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChartColumn } from 'lucide-react';
 import type { Speed } from '@shared/gameIndex';
-import { isSymmetricMaterial, mirrorMaterialSpec } from '@shared/scanMatch';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { navigate } from '@/lib/router';
@@ -17,8 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { FilterRow, SideSelect, type SideFilter } from '@/games/GameFilters';
-import ENDGAMES from '@/games/endgames.json';
-import STRUCTURES from '@/games/structures.json';
 import { hasMyFilters, myFilterQuery, type MyGamesFilters } from '@/store/explorer';
 import {
   earliestExits,
@@ -41,27 +38,18 @@ import { DATE_RANGES, DATE_RANGE_LABEL, rangeFrom, type DateRange } from './date
  * one game at a time; neither could say how the Italian has gone for you
  * as White in blitz, or where your own preparation runs out. This page
  * asks the server for the sums (server/myGames.ts, insights) under the
- * same filters the explorer's My games source takes, plus the
- * Databases browser's endgame and pawn-structure presets, and regroups the answer four ways
- * (insights/aggregate.ts). Nothing here is a verdict on the player: the
+ * same filters the explorer's My games source takes, plus a quick date
+ * range, and regroups the answer four ways (insights/aggregate.ts). Nothing here is a verdict on the player: the
  * tables are counts of what happened, and a rating is nowhere on them.
  */
 
-/** The explorer's filters plus the situation, which is the browser's
-    preset id with a side where the preset takes one. */
+/** The explorer's filters plus the quick date range. */
 interface InsightsFilters extends MyGamesFilters {
-  /** `endgame:<id>`, `structure:<id>`, or 'none'. The browser's motif
-      presets are not offered: a motif is a hunt for a game, and this
-      page sums seasons. */
-  situation: string;
-  /** Whose side an asymmetric endgame preset describes. */
-  situationSide: 'white' | 'black';
   /** A quick range, or 'custom' for whatever `from` and `to` hold. */
   range: DateRange;
 }
 
-const NONE = 'none';
-const EMPTY_FILTERS: InsightsFilters = { situation: NONE, situationSide: 'white', range: 'any' };
+const EMPTY_FILTERS: InsightsFilters = { range: 'any' };
 const FILTERS_KEY = 'vault:insights-filters';
 
 const SPEEDS: { id: Speed; label: string }[] = [
@@ -93,49 +81,20 @@ function readFilters(): InsightsFilters {
     const raw = localStorage.getItem(FILTERS_KEY);
     if (!raw) return EMPTY_FILTERS;
     const parsed = JSON.parse(raw) as Partial<InsightsFilters>;
-    const merged = { ...EMPTY_FILTERS, ...parsed };
-    // A choice this build no longer offers (a motif, from an earlier
-    // build) or a side it no longer takes falls back to the default.
-    if (merged.situation.startsWith('motif:')) merged.situation = NONE;
-    if (merged.situationSide !== 'black') merged.situationSide = 'white';
-    return merged;
+    return { ...EMPTY_FILTERS, ...parsed };
   } catch {
     return EMPTY_FILTERS;
   }
 }
 
-/** Which preset the situation names, and what the server is asked. */
-function situationQuery(f: InsightsFilters): URLSearchParams {
-  // A quick range replaces the pickers' dates; custom keeps them.
+/** What the server is asked: the explorer's query, with a quick range
+    standing in for the pickers' dates (custom keeps them). */
+function filterQuery(f: InsightsFilters): string {
   const dates =
     f.range === 'custom'
       ? { from: f.from, to: f.to }
       : { from: rangeFrom(f.range) ?? undefined, to: undefined };
-  const params = new URLSearchParams(myFilterQuery({ ...f, ...dates }));
-  const [kind, id] = f.situation.split(':');
-  if (kind === 'endgame') {
-    const preset = ENDGAMES.find((p) => p.id === id);
-    if (preset) {
-      const spec = f.situationSide === 'black' ? mirrorMaterialSpec(preset.spec) : preset.spec;
-      params.set('material', JSON.stringify({ ...spec, stable: 1 }));
-    }
-  } else if (kind === 'structure') {
-    const structure = STRUCTURES.find((s) => s.id === id);
-    if (structure) {
-      params.set('fen', structure.fen);
-      params.set('match', 'structure');
-    }
-  }
-  return params;
-}
-
-/** Whether the picked situation has a side to choose: an endgame preset
-    that reads differently from each side. */
-function situationTakesSide(situation: string): boolean {
-  const [kind, id] = situation.split(':');
-  if (kind !== 'endgame') return false;
-  const preset = ENDGAMES.find((p) => p.id === id);
-  return preset !== undefined && !isSymmetricMaterial(preset.spec);
+  return myFilterQuery({ ...f, ...dates });
 }
 
 interface Report {
@@ -160,7 +119,7 @@ export function InsightsPage() {
     });
   }, []);
 
-  const query = useMemo(() => situationQuery(filters).toString(), [filters]);
+  const query = useMemo(() => filterQuery(filters), [filters]);
   const [report, setReport] = useState<Report | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -194,24 +153,10 @@ export function InsightsPage() {
   // a chip press changes the numbers rather than blanking the tables.
   const slow = useSlowLoad(report === null && !failed);
   const narrowed =
-    hasMyFilters({ ...filters, from: undefined, to: undefined }) ||
-    filters.situation !== NONE ||
-    filters.range !== 'any';
+    hasMyFilters({ ...filters, from: undefined, to: undefined }) || filters.range !== 'any';
   const clear = (): void => setFilters({ ...EMPTY_FILTERS, side: undefined, speeds: [], from: undefined, to: undefined, collectionOnly: undefined });
 
   const speeds = filters.speeds ?? [];
-  const takesSide = situationTakesSide(filters.situation);
-  const situationGroups = useMemo(
-    () => [
-      { options: [{ value: NONE, label: t('Any situation') }] },
-      { label: t('Endgames'), options: ENDGAMES.map((p) => ({ value: `endgame:${p.id}`, label: t(p.label) })) },
-      {
-        label: t('Pawn structures'),
-        options: STRUCTURES.map((s) => ({ value: `structure:${s.id}`, label: t(s.label) })),
-      },
-    ],
-    [],
-  );
 
   return (
     <PageShell width="medium">
@@ -251,31 +196,6 @@ export function InsightsPage() {
           active={filters.collectionOnly === true}
           onClick={() => setFilters({ collectionOnly: filters.collectionOnly ? undefined : true })}
         />
-        <Select
-          value={filters.situation}
-          onValueChange={(v) => setFilters({ situation: v, situationSide: 'white' })}
-          ariaLabel={t('Situation')}
-          size="sm"
-          className="w-44 flex-none"
-          groups={situationGroups}
-        />
-        {takesSide && (
-          <Select
-            value={filters.situationSide}
-            onValueChange={(v) => setFilters({ situationSide: v as 'white' | 'black' })}
-            ariaLabel={t('Which side has it')}
-            size="sm"
-            className="w-28 flex-none"
-            groups={[
-              {
-                options: [
-                  { value: 'white', label: t('White') },
-                  { value: 'black', label: t('Black') },
-                ],
-              },
-            ]}
-          />
-        )}
         <Select
           value={filters.range}
           onValueChange={(v) => setFilters({ range: v as DateRange })}

@@ -2174,9 +2174,6 @@ export const ko: Record<string, string> = {
   'Your results by colour, time control and opening': '진영, 시간제, 오프닝별 내 성적',
   'Your results by colour, time control and opening, and where each game left the opening catalogue. The filters narrow every table below.':
     '진영, 시간제, 오프닝별 내 성적과 각 게임이 오프닝 카탈로그를 벗어난 지점입니다. 필터는 아래의 모든 표를 좁힙니다.',
-  'Any situation': '모든 상황',
-  'Situation': '상황',
-  'Endgames': '엔드게임',
   'Correspondence': '통신',
   'No time control': '시간제 없음',
   'The report could not be loaded.': '보고서를 불러오지 못했습니다.',

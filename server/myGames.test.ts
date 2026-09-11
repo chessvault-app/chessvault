@@ -635,30 +635,6 @@ describe('my games insights', () => {
     expect((await report('outcome=win')).games).toBe(2);
   });
 
-  it('narrows to a material situation by replaying the PGN', async () => {
-    const queenless = JSON.stringify({ white: { q: [0, 0] }, black: { q: [0, 0] }, stable: 1 });
-    const { games, cells } = await report(`material=${encodeURIComponent(queenless)}`);
-    expect(games).toBe(1);
-    expect(cells[0]!.speed).toBe('blitz');
-  });
-
-  it('narrows to a motif and to a pawn structure', async () => {
-    const ep = JSON.stringify({ id: 'en-passant', side: 'either', stable: 1 });
-    expect((await report(`motif=${encodeURIComponent(ep)}`)).games).toBe(1);
-    // The pawn skeleton after 1.e4 e5: the two Italian games and nothing else.
-    const sketch = '8/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/8 w - - 0 1';
-    expect((await report(`fen=${encodeURIComponent(sketch)}&match=structure`)).games).toBe(2);
-  });
-
-  it('refuses a malformed or mixed situation the way deep-search does', async () => {
-    const ask = (q: string) => app.request(`/api/mygames/insights?${q}`);
-    expect((await ask('material=%7B')).status).toBe(400);
-    expect((await ask('motif=%7B%22id%22%3A%22nope%22%7D')).status).toBe(400);
-    expect((await ask('fen=x&material=%7B%7D')).status).toBe(400);
-    expect((await ask('fen=8/8/8/8/8/8/8/8%20w%20-%20-%200%201')).status).toBe(400);
-    expect((await ask('match=sideways')).status).toBe(400);
-  });
-
   it('answers a vault with no games of mine', async () => {
     const empty = mkdtempSync(join(tmpdir(), 'mygames-insights-empty-'));
     const solo = new Hono().route('/api', myGamesApi(join(empty, 'games'), join(empty, 'index.sqlite')));

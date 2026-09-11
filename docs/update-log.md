@@ -19,10 +19,8 @@ An Insights page sums your own games.
   openings where your own move leaves earliest. The filters are the
   explorer's (side, time control, kept only) plus a quick date range
   (the last week, month, or three, six or twelve months, or two dates
-  of your own) and the Databases browser's endgame and pawn-structure presets, so a rook ending or
-  a Carlsbad structure narrows every table. The sums are made on the server in one pass over
-  the index (116 ms over 3,000 games, measured); a situation replays
-  the games and costs about half a second more. Names come from the
+  of your own). The sums are made on the server in one pass over the
+  index (116 ms over 3,000 games, measured). Names come from the
   positions each game reaches, not from the file's ECO header, so a
   chess.com export and a Lichess export land in the same row.
 - **The demo carries an archive month.** The static demo's vault now
