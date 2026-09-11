@@ -7,7 +7,7 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-An Insights page sums your own games. The quick switcher searches what a document says, not only its name.
+An Insights page sums your own games, and endgame drills have you play won endings against the tablebase. The quick switcher searches what a document says, not only its name.
 Six things that were true in one copy of a page and not in its twin, found
 by auditing the code for duplicates: an installed desktop app now finds the
 vault's own tablebase files, a puzzle's hover preview wears the same edge as
@@ -18,13 +18,14 @@ builds and the board's arrow keys do less per request.
 - **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
   against a rook, rook and pawns against a rook, and the rest, or a
-  custom material of your own) with how each has gone. Opening one draws
+  custom material of your own). Opening one draws
   a random position the tablebase calls a win for the side to move, and
   you play that side while the tablebase defends with the move that
   takes longest to lose. Every move is graded by the table's own word:
   one that keeps the win is answered, one that lets it slip ends the
   attempt and draws the move that would have kept it, and checkmate
-  ends it the other way. Nothing is recorded: the drill is there to be
+  ends it the other way. The Analyse button ends it by hand, with no
+  grade. Nothing is recorded: the drill is there to be
   played, not tracked. The page is the puzzle trainer's, board column,
   moves panel with the typed move box, the phone's pane strip and bottom
   bar, and the same in-place analysis board and engine once the attempt
