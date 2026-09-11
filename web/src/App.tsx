@@ -32,7 +32,7 @@ import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
 import { Button } from '@/components/ui/button';
-import { BrandMark } from '@/components/brand-mark';
+import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { QuickSwitcher } from '@/components/quick-switcher';
 import { LeaveDialog } from '@/components/leave-dialog';
@@ -752,7 +752,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                 so the button keeps its name from its text: a tip does not
                 name a button the way `title` once did. Not truncated,
                 since an ellipsis would show past the mark on the rail. */}
-            <span className={cn('text-base font-semibold tracking-tight', navLabel(folded))}>{t('Chess Vault')}</span>
+            <Wordmark className={cn('text-base', navLabel(folded))} />
           </button>
         </TitleTip>
         {!folded && foldSwitch}

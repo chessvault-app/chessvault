@@ -28,7 +28,6 @@ export const ko: Record<string, string> = {
   // before this file loads) and are folded in here so they translate.
   ...UNTITLED_NAMES.ko,
   // --- shell, navigation ---------------------------------------------------
-  'Chess Vault': 'Chess Vault',
   'Your chess, in plain files.': '내 체스를, 평범한 파일로.',
   Home: '홈',
   Games: '게임',

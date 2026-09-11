@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+
 /**
  * The app's mark: a knight's head as one open line, ear to base. Straight
  * where a horse has bone (the forehead, the ear, the two mane steps, the
@@ -16,6 +18,23 @@
  * KnightIcon, the cburnett piece; the two are different enough in
  * construction that they do not read as one thing.
  */
+/**
+ * The logotype beside the mark: the name joined and lowercased, at
+ * medium weight. The name itself stays "Chess Vault" everywhere it is
+ * written rather than drawn (the window title, the installer, the
+ * settings row, the site's own title and og tags); this is how the name
+ * is set when it stands next to the knight. Semibold with tight tracking
+ * and two capitals read rigid beside the 7-unit stroke, and the two
+ * lowercase words with a space read as a phrase rather than a name. One
+ * token at medium keeps it a name and lets the mark carry the weight.
+ * Not translated: Korean keeps the Latin, as the dictionary did.
+ * `className` sets the size: text-base on the sidebar, text-2xl on the
+ * phone's home title and the lock screen.
+ */
+export function Wordmark({ className }: { className?: string }) {
+  return <span className={cn('font-medium', className)}>chessvault</span>;
+}
+
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 80 80" className={className} fill="none" aria-hidden>

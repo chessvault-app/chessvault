@@ -1,7 +1,7 @@
 import { ChevronLeft, Lock, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { BrandMark } from '@/components/brand-mark';
+import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
@@ -122,7 +122,9 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             only on the icons an OS composites onto grounds the image
             cannot see (apple-touch, the desktop installers). */}
         <BrandMark className="mb-5 size-10" />
-        <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+        <h1 className="text-foreground text-2xl">
+          <Wordmark />
+        </h1>
         <p className="text-muted-foreground mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 
         <form

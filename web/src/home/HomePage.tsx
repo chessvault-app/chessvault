@@ -14,7 +14,7 @@ import {
   Search,
 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState, useRef } from 'react';
-import { BrandMark } from '@/components/brand-mark';
+import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { api } from '@/lib/api';
@@ -1015,7 +1015,7 @@ export function HomePage() {
               button. currentColor keeps it in the heading's own ink. */}
           <BrandMark className="size-6 shrink-0" />
           {/* text-2xl: the phone's large-title rung, PageHeader's own. */}
-          <span className="text-2xl font-semibold tracking-tight">{t('Chess Vault')}</span>
+          <Wordmark className="text-2xl" />
         </h1>
         <Button
           variant="ghost"

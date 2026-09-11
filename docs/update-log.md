@@ -7,6 +7,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The name beside the knight is set as one lowercase word.** The
+  sidebar, the phone's home title, the lock screen, the desktop's
+  chooser window and the site's header now read "chessvault" at medium
+  weight, where they read "Chess Vault" in semibold with tight tracking.
+  Two capitals in a bold face beside the mark's heavy stroke read rigid,
+  and two lowercase words with a space read as a phrase rather than a
+  name, so the words are joined. The name itself is unchanged wherever
+  it is written rather than drawn: the window title, the installer, the
+  settings row and the site's title.
 - **Placeholders show on the page in the light theme.** The grey bars a
   page draws while it waits took the same grey as the page itself once
   the light theme went tonal, so a page waiting on its own ground, the
