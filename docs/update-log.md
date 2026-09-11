@@ -24,9 +24,9 @@ builds and the board's arrow keys do less per request.
   takes longest to lose. Every move is graded by the table's own word:
   one that keeps the win is answered, one that lets it slip ends the
   attempt and draws the move that would have kept it, and checkmate
-  ends it the other way. Attempts are recorded per class, as held
-  against thrown and never as a rate, and the phone's puzzle hub and
-  the dashboard each carry one row of that record. The drill asks
+  ends it the other way. Nothing is recorded: the drill is there to be
+  played, not tracked, and the phone's puzzle hub reaches it with a
+  fifth tile. The drill asks
   whichever tablebase Settings names, the public Lichess server, a
   server of your own or your Syzygy files, and says plainly which of
   the three cases it is when none can answer, with a button that lands

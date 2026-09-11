@@ -1,13 +1,10 @@
-import { appendFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { Hono, type Context } from 'hono';
 import { Chess } from 'chessops/chess';
 import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
 import { parseUci } from 'chessops/util';
-import type { Color } from 'chessops/types';
-import { canonicalMaterial, mirrorMaterialSpec, parseMaterialSpec } from '../shared/scanMatch.ts';
-import { DATA_TABLEBASE_CACHE, VAULT } from './paths.ts';
+import { mirrorMaterialSpec, parseMaterialSpec } from '../shared/scanMatch.ts';
+import { DATA_TABLEBASE_CACHE } from './paths.ts';
 import { cachedProbe, type TablebaseAnswer, type TablebaseProbe } from './tablebase.ts';
 import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
 
@@ -22,7 +19,7 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  * cache: every position it draws or plays through is a fact kept for
  * good, and the explorer will find it there.
  *
- * Three routes carry a drill, and the verdict is never the client's:
+ * Two routes carry a drill, and the verdict is never the client's:
  *
  *  - `draw` proposes random positions of a material class
  *    (server/endgamePositions.ts) and keeps the first the table calls a
@@ -32,9 +29,10 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  *    away, and the answer names the move that would have kept it. A
  *    held move gets the defender's reply, the move the table ranks
  *    best for a lost side: the one that takes longest to lose.
- *  - `attempt` records how it went, per class, so the hub can say how
- *    each class is going. Like the puzzle history, an append-only log
- *    in the vault (puzzles/endgames.jsonl), tolerant of a torn line.
+ *
+ * Nothing is recorded. A drill is a thing to play when an ending is what
+ * you feel like, not a record to tend (lanph3re's call), so there is no
+ * attempt log and no progress to show.
  *
  * No source, no drill: with nothing to ask, the routes say so and name
  * the setting, and the page carries that to the person who can change
@@ -46,51 +44,12 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
     server answers each in a fraction of a second. */
 const DRAW_TRIES = 40;
 
-/** One line of the record. `spec` is kept only for custom material,
-    where the class id says nothing about what was played. */
-interface DrillAttempt {
-  class: string;
-  spec?: string;
-  side: Color;
-  fen: string;
-  win: boolean;
-  /** How many of the solver's moves were played before it ended. */
-  plies: number;
-  at: string;
-}
-
-export interface ClassProgress {
-  attempts: number;
-  wins: number;
-  lastAt: string;
-}
-
-/** What one class's record adds up to, and which was played last. */
-export function summarise(entries: DrillAttempt[]): {
-  classes: Record<string, ClassProgress>;
-  last: { class: string; at: string } | null;
-} {
-  const classes: Record<string, ClassProgress> = {};
-  let last: { class: string; at: string } | null = null;
-  for (const entry of entries) {
-    const seen = classes[entry.class] ?? { attempts: 0, wins: 0, lastAt: entry.at };
-    seen.attempts += 1;
-    if (entry.win) seen.wins += 1;
-    if (entry.at > seen.lastAt) seen.lastAt = entry.at;
-    classes[entry.class] = seen;
-    if (!last || entry.at > last.at) last = { class: entry.class, at: entry.at };
-  }
-  return { classes, last };
-}
-
 /** Whether a move keeps the win. `maybe-win` is the server unsure only
     about the fifty-move rounding, which is not a mistake the solver
     made; `cursed-win` is a win the rule has already turned into a draw,
     and counts as thrown. */
 export const holds = (category: TablebaseAnswer['category']): boolean =>
   category === 'win' || category === 'maybe-win';
-
-const isColor = (value: unknown): value is Color => value === 'white' || value === 'black';
 
 /** The three ways a probe can fail to answer, each as the status and
     reason the page turns into a sentence and a way to Settings. */
@@ -122,46 +81,17 @@ const unreachable = (c: Context) =>
   );
 
 /**
- * @param stateDir where the record lives; the puzzle state directory,
- *   since the drill is a kind of training and its history belongs beside
- *   the trainer's.
  * @param prober how to reach the tablebase, per request so a source
  *   chosen in Settings takes effect at once; null means this deployment
  *   has none (the demo), and the drill says so.
  * @param random the dice, seeded by the tests.
  */
 export function endgameDrillApi(
-  stateDir: string = resolve(VAULT, 'puzzles'),
   prober: (() => TablebaseProbe | null) | null = null,
   cacheDir: string = DATA_TABLEBASE_CACHE,
   random: Rng = Math.random,
 ): Hono {
   const api = new Hono();
-  const recordPath = resolve(stateDir, 'endgames.jsonl');
-
-  const entries = (): DrillAttempt[] => {
-    let raw: string;
-    try {
-      raw = readFileSync(recordPath, 'utf-8');
-    } catch {
-      return [];
-    }
-    return raw
-      .trimEnd()
-      .split('\n')
-      .flatMap((line) => {
-        try {
-          const entry = JSON.parse(line) as DrillAttempt;
-          return typeof entry?.class === 'string' &&
-            typeof entry?.win === 'boolean' &&
-            typeof entry?.at === 'string'
-            ? [entry]
-            : [];
-        } catch {
-          return [];
-        }
-      });
-  };
 
   api.get('/endgames/draw', async (c) => {
     const spec = parseMaterialSpec(c.req.query('spec') ?? '');
@@ -279,52 +209,6 @@ export function endgameDrillApi(
       // it as a mate distance; null otherwise. A distance, not a score.
       dtm: chosen.dtm,
     });
-  });
-
-  api.post('/endgames/attempt', async (c) => {
-    const body = (await c.req.json().catch(() => null)) as Partial<DrillAttempt> | null;
-    if (
-      !body ||
-      typeof body.class !== 'string' ||
-      body.class === '' ||
-      body.class.length > 80 ||
-      !isColor(body.side) ||
-      typeof body.fen !== 'string' ||
-      body.fen.length > 100 ||
-      typeof body.win !== 'boolean' ||
-      typeof body.plies !== 'number' ||
-      !Number.isInteger(body.plies) ||
-      body.plies < 0
-    ) {
-      return c.json({ error: 'expected { class, side, fen, win, plies }' }, 400);
-    }
-    let spec: string | undefined;
-    if (typeof body.spec === 'string') {
-      const parsedSpec = parseMaterialSpec(body.spec);
-      if (!parsedSpec) return c.json({ error: 'spec does not parse' }, 400);
-      spec = canonicalMaterial(parsedSpec);
-    }
-    const entry: DrillAttempt = {
-      class: body.class,
-      ...(spec !== undefined && { spec }),
-      side: body.side,
-      fen: body.fen,
-      win: body.win,
-      plies: body.plies,
-      at: new Date().toISOString(),
-    };
-    mkdirSync(stateDir, { recursive: true });
-    appendFileSync(recordPath, `${JSON.stringify(entry)}\n`);
-    return c.json({ ok: true, ...summarise(entries()) });
-  });
-
-  api.get('/endgames/progress', (c) => c.json(summarise(entries())));
-
-  // Forget every drill ever played; the tablebase cache is not touched,
-  // since the answers in it are facts about positions, not about you.
-  api.post('/endgames/reset', (c) => {
-    rmSync(recordPath, { force: true });
-    return c.json({ ok: true });
   });
 
   return api;

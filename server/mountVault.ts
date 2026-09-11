@@ -132,12 +132,9 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
       ? puzzlesApi(paths.puzzlesDb ?? DATA_PUZZLES, paths.puzzlesState ?? resolve(VAULT, 'puzzles'))
       : puzzlesApi(),
   );
-  // The endgame drill's record sits beside the puzzle history; its
-  // tablebase is whatever the deployment hands it, none for the demo.
-  app.route(
-    '/api',
-    endgameDrillApi(paths.puzzlesState ?? resolve(VAULT, 'puzzles'), paths.tablebase ?? null),
-  );
+  // The endgame drill's tablebase is whatever the deployment hands it,
+  // none for the demo.
+  app.route('/api', endgameDrillApi(paths.tablebase ?? null));
   app.route('/api', paths.refgamesDb ? refGamesApi(paths.refgamesDb) : refGamesApi());
   // The repertoire drill's record: which prepared positions were recalled.
   app.route('/api', repertoireApi(repertoire));

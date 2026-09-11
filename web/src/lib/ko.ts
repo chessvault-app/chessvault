@@ -756,12 +756,6 @@ export const ko: Record<string, string> = {
   'Endgame drill': '엔드게임 드릴',
   'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.':
     '무작위 엔드게임에서 이기는 진영을 맡아 테이블베이스를 상대로 둡니다. 승리를 놓치는 수를 두면 시도가 끝나고, 승리를 지키는 수를 보여 줍니다.',
-  'Not tried yet': '아직 시도하지 않음',
-  '{a} of {b} held': '{b}번 중 {a}번 지킴',
-  'Last drilled: {class}, {when}': '마지막 드릴: {class}, {when}',
-  'Forget the drill record': '드릴 기록 지우기',
-  'Forget {n} drill attempts?': '드릴 시도 {n}번을 지울까요?',
-  'Forget them': '지우기',
   'The demo reaches no tablebase. In the app, the drill plays against whichever tablebase Settings names.':
     '데모는 테이블베이스에 접근하지 않습니다. 앱에서는 설정에서 지정한 테이블베이스를 상대로 드릴을 진행합니다.',
   'No tablebase is answering. Choose a source under Settings, Tablebase.':

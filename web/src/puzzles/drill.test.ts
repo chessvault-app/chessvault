@@ -7,7 +7,6 @@ import {
   DRILL_PRESETS,
   classLabel,
   positionOf,
-  solverPlies,
   specFor,
   squaresOf,
   writeCustomDraft,
@@ -80,12 +79,8 @@ describe('positions', () => {
     expect(positionOf('8/8/8/4k3/4K3/8/8/8 w - - 0 1')).toBeNull();
   });
 
-  it('counts the solver\'s moves down a line of alternating steps', () => {
+  it('reads the two squares off a move', () => {
     expect(squaresOf('e2e4')).toEqual(['e2', 'e4']);
     expect(squaresOf('e7e8q')).toEqual(['e7', 'e8']);
-    expect(solverPlies(0)).toBe(0);
-    expect(solverPlies(1)).toBe(1);
-    expect(solverPlies(2)).toBe(1);
-    expect(solverPlies(3)).toBe(2);
   });
 });

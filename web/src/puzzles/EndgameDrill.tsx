@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
-  Eraser,
   FlipVertical2,
   RotateCcw,
   RotateCw,
@@ -31,18 +30,14 @@ import { useWideLayout } from '@/lib/media';
 import { navigate } from '@/lib/router';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/utils';
-import { formatAgo } from '@/lib/dates';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
-import { ConfirmDialog } from '@/components/confirm-dialog';
-import { Figures } from '@/components/figures';
 import { ListRow } from '@/components/list-row';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Panel, PanelHeader } from '@/components/panel';
-import { ProgressBar } from '@/components/progress-bar';
 import { Skeleton } from '@/components/skeletons';
 import { CustomMaterialWindow } from '@/games/CustomMaterialWindow';
 import { outcomeTone } from './outcome';
@@ -53,7 +48,6 @@ import {
   classLabel,
   positionOf,
   readCustomDraft,
-  solverPlies,
   specFor,
   squaresOf,
   writeCustomDraft,
@@ -74,11 +68,6 @@ import {
  * grades anything itself.
  */
 
-interface Progress {
-  classes: Record<string, { attempts: number; wins: number; lastAt: string }>;
-  last: { class: string; at: string } | null;
-}
-
 export function EndgameDrillPage({ params }: { params: string[] }) {
   const classId = params[0];
   if (!classId) return <EndgamePicker />;
@@ -89,25 +78,14 @@ export function EndgameDrillPage({ params }: { params: string[] }) {
  * Which ending to drill.
  *
  * Every row is a preset from endgames.json that fits under seven men,
- * with the bar the book shelf and the theme row wear: held against
- * thrown, and the counts in words beside it. No rate: how often you
- * have kept a rook ending is a fact, how well you play them is not
- * something this page hands back. The rows are static, so the page has
- * its shape before the record arrives and nothing moves when it does.
+ * and a row is a name and a chevron. Nothing here is kept: a drill is a
+ * thing to play when an ending is what you feel like, not a record to
+ * tend, so no bar, no count, no history (lanph3re's call). The rows are
+ * static and the page waits on nothing.
  */
 function EndgamePicker() {
-  const [progress, setProgress] = useState<Progress | null>(null);
   const [editing, setEditing] = useState(false);
-  const load = useCallback(() => {
-    void api<Progress>('/api/endgames/progress')
-      .then(setProgress)
-      // No record shown; the rows still open a drill.
-      .catch(() => setProgress({ classes: {}, last: null }));
-  }, []);
-  useEffect(load, [load]);
-
   const rows = [...DRILL_PRESETS.map((p) => p.id), CUSTOM_CLASS];
-  const total = Object.values(progress?.classes ?? {}).reduce((n, c) => n + c.attempts, 0);
 
   return (
     <PageShell width="medium">
@@ -120,9 +98,6 @@ function EndgamePicker() {
       />
       <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
         {rows.map((id) => {
-          const record = progress?.classes[id];
-          const held = record?.wins ?? 0;
-          const attempts = record?.attempts ?? 0;
           return (
             <ListRow
               key={id}
@@ -141,63 +116,14 @@ function EndgamePicker() {
                   <Crown className="size-3.5" />
                 )}
               </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-foreground truncate text-sm font-medium">
-                  {t(classLabel(id))}
-                </span>
-                {progress === null ? (
-                  <Skeleton className="h-1 w-full rounded-full" />
-                ) : (
-                  <ProgressBar
-                    total={attempts}
-                    solved={held}
-                    failed={attempts - held}
-                    showEmpty
-                    decorative
-                  />
-                )}
-              </span>
-              <span className="text-muted-foreground shrink-0 text-xs">
-                {progress === null ? (
-                  <Skeleton className="h-2.5 w-8" />
-                ) : attempts === 0 ? (
-                  t('Not tried yet')
-                ) : (
-                  <Figures text={t('{a} of {b} held', { a: held, b: attempts })} />
-                )}
+              <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
+                {t(classLabel(id))}
               </span>
               <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
             </ListRow>
           );
         })}
       </div>
-      {progress?.last && (
-        <p className="text-muted-foreground mt-3 text-xs">
-          {t('Last drilled: {class}, {when}', {
-            class: t(classLabel(progress.last.class)),
-            when: formatAgo(progress.last.at),
-          })}
-        </p>
-      )}
-      {/* Last on the page, like the dashboard's own wipe: the one
-          irreversible thing here, and not something to reach past. */}
-      {total > 0 && (
-        <div className="mt-4 flex justify-end">
-          <ConfirmDialog
-            icon={Eraser}
-            triggerTone="quiet"
-            label={t('Forget the drill record')}
-            triggerTitle="Forget every endgame drill played"
-            question={t('Forget {n} drill attempts?', { n: total })}
-            confirmLabel={t('Forget them')}
-            onConfirm={() => {
-              void api('/api/endgames/reset', { method: 'POST' })
-                .catch(() => {})
-                .finally(load);
-            }}
-          />
-        </div>
-      )}
       {editing && (
         <CustomMaterialWindow
           initial={readCustomDraft()}
@@ -335,7 +261,7 @@ function Drill({ classId }: { classId: string }) {
     void draw();
   }, [draw]);
 
-  /** The same position again, from the top. Practice: nothing is recorded. */
+  /** The same position again, from the top. */
   const retry = (): void => {
     if (!start) return;
     ++seq.current;
@@ -346,23 +272,6 @@ function Drill({ classId }: { classId: string }) {
     setBest(null);
     setReview(null);
     setPhase('playing');
-  };
-
-  const record = (win: boolean, plies: number): void => {
-    if (!start) return;
-    void api('/api/endgames/attempt', {
-      method: 'POST',
-      json: {
-        class: classId,
-        ...(classId === CUSTOM_CLASS && spec ? { spec } : {}),
-        side: start.side,
-        fen: start.fen,
-        win,
-        plies,
-      },
-    }).catch(() => {
-      // A lost record is a row that does not move; the drill itself is done.
-    });
   };
 
   const live: DrillPosition | null = (() => {
@@ -407,17 +316,14 @@ function Drill({ classId }: { classId: string }) {
     // is rebuilt from the move itself, for the bottom bar's walk.
     const ownFen = verdict.verdict === 'held' ? (afterMove(live.fen, uci) ?? verdict.fen) : verdict.fen;
     const own: Step = { fen: ownFen, san: verdict.san, lastMove: squaresOf(uci) };
-    const played = steps.length + 1;
     setSteps((s) => [...s, own]);
     if (verdict.verdict === 'won') {
       setPhase('won');
-      record(true, solverPlies(played));
       return;
     }
     if (verdict.verdict === 'threw') {
       setBest(verdict.best ?? null);
       setPhase('threw');
-      record(false, solverPlies(played));
       return;
     }
     const reply = verdict.reply!;
@@ -592,7 +498,6 @@ function Drill({ classId }: { classId: string }) {
             </>
           ) : ended ? (
             <>
-              {/* Practice, not a second attempt: nothing is recorded. */}
               <Button variant="secondary" size="sm" onClick={retry}>
                 <RotateCcw className="size-3.5" data-icon="inline-start" />
                 {t('Try again')}

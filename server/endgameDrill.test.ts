@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chess } from 'chessops/chess';
@@ -8,7 +8,7 @@ import { parseFen } from 'chessops/fen';
 import { makeSan } from 'chessops/san';
 import { makeUci, parseUci } from 'chessops/util';
 import type { Color } from 'chessops/types';
-import { endgameDrillApi, holds, summarise } from './endgameDrill.ts';
+import { endgameDrillApi, holds } from './endgameDrill.ts';
 import type { TablebaseAnswer, TablebaseMove, TablebaseProbe } from './tablebase.ts';
 
 /**
@@ -77,7 +77,7 @@ describe('endgame drill', () => {
   let probes: string[];
   const build = (prober: (() => TablebaseProbe | null) | null) => {
     app = new Hono();
-    app.route('/api', endgameDrillApi(join(dir, 'state'), prober, join(dir, 'cache'), rng(1)));
+    app.route('/api', endgameDrillApi(prober, join(dir, 'cache'), rng(1)));
   };
   const get = (path: string) => app.request(path);
   const post = (path: string, body: unknown) =>
@@ -229,68 +229,6 @@ describe('endgame drill', () => {
       build(null);
       const res = await post('/api/endgames/move', { fen: KQK_WHITE, uci: legal(KQK_WHITE)[0] });
       expect(res.status).toBe(503);
-    });
-  });
-
-  describe('the record', () => {
-    it('keeps attempts per class and says which was last', async () => {
-      const okay = await post('/api/endgames/attempt', {
-        class: 'queen',
-        side: 'white',
-        fen: KQK_WHITE,
-        win: true,
-        plies: 9,
-      });
-      expect(okay.status).toBe(200);
-      await post('/api/endgames/attempt', { class: 'queen', side: 'black', fen: KQK_WHITE, win: false, plies: 2 });
-      await post('/api/endgames/attempt', {
-        class: 'custom',
-        spec: JSON.stringify({ white: { r: [1, 1] }, black: {} }),
-        side: 'white',
-        fen: KQK_WHITE,
-        win: true,
-        plies: 4,
-      });
-      const progress = (await (await get('/api/endgames/progress')).json()) as {
-        classes: Record<string, { attempts: number; wins: number }>;
-        last: { class: string } | null;
-      };
-      expect(progress.classes.queen).toMatchObject({ attempts: 2, wins: 1 });
-      expect(progress.classes.custom).toMatchObject({ attempts: 1, wins: 1 });
-      expect(progress.last?.class).toBe('custom');
-      // The custom spec is stored in its canonical form, not as sent.
-      const lines = readFileSync(join(dir, 'state', 'endgames.jsonl'), 'utf-8').trimEnd().split('\n');
-      expect(lines).toHaveLength(3);
-      expect(JSON.parse(lines[2]!).spec).toBe(
-        JSON.stringify({ white: { r: [1, 1] }, black: {}, diff: {}, stable: 1 }),
-      );
-    });
-
-    it('refuses a malformed attempt', async () => {
-      expect((await post('/api/endgames/attempt', { class: 'queen', win: true })).status).toBe(400);
-      expect(
-        (await post('/api/endgames/attempt', { class: 'x', side: 'white', fen: KQK_WHITE, win: true, plies: -1 }))
-          .status,
-      ).toBe(400);
-    });
-
-    it('can be forgotten from the app', async () => {
-      await post('/api/endgames/attempt', { class: 'queen', side: 'white', fen: KQK_WHITE, win: true, plies: 9 });
-      expect((await post('/api/endgames/reset', {})).status).toBe(200);
-      const progress = (await (await get('/api/endgames/progress')).json()) as { classes: object; last: null };
-      expect(progress).toEqual({ classes: {}, last: null });
-    });
-
-    it('drops a torn line and keeps the rest', () => {
-      expect(
-        summarise([
-          { class: 'rook', side: 'white', fen: KQK_WHITE, win: false, plies: 1, at: '2026-09-01T00:00:00Z' },
-          { class: 'rook', side: 'white', fen: KQK_WHITE, win: true, plies: 12, at: '2026-09-02T00:00:00Z' },
-        ]),
-      ).toEqual({
-        classes: { rook: { attempts: 2, wins: 1, lastAt: '2026-09-02T00:00:00Z' } },
-        last: { class: 'rook', at: '2026-09-02T00:00:00Z' },
-      });
     });
   });
 

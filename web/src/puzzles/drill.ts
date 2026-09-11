@@ -106,12 +106,6 @@ export function positionOf(fen: string, lastMove?: [string, string]): DrillPosit
 export const squaresOf = (uci: string): [string, string] => [uci.slice(0, 2), uci.slice(2, 4)];
 
 /**
- * How many of the solver's moves a line of steps holds. Steps alternate
- * solver, defender, solver, so the solver's are the odd-numbered ones.
- */
-export const solverPlies = (steps: number): number => Math.ceil(steps / 2);
-
-/**
  * The position one legal move leaves, or null where the FEN or the move
  * is refused. The server answers a held move with the position after
  * the defender's reply; the bottom bar walks every ply, so the one in

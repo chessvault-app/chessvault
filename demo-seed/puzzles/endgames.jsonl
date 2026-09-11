@@ -1,8 +1,0 @@
-{"class":"queen","side":"white","fen":"8/8/3k4/8/8/2Q5/8/4K3 w - - 0 1","win":true,"plies":9,"at":"2026-08-28T19:12:04.000Z"}
-{"class":"queen","side":"black","fen":"4k3/8/8/8/8/8/5q2/2K5 b - - 0 1","win":true,"plies":7,"at":"2026-08-28T19:15:41.000Z"}
-{"class":"rook","side":"white","fen":"8/8/8/4k3/8/8/R7/4K3 w - - 0 1","win":false,"plies":3,"at":"2026-08-30T20:02:17.000Z"}
-{"class":"rook","side":"white","fen":"8/8/8/8/3k4/8/8/R3K3 w - - 0 1","win":true,"plies":14,"at":"2026-08-30T20:09:52.000Z"}
-{"class":"rook","side":"black","fen":"3k4/8/8/8/8/8/r7/3K4 b - - 0 1","win":true,"plies":12,"at":"2026-09-02T18:44:09.000Z"}
-{"class":"pawn","side":"white","fen":"8/8/8/3k4/8/3P4/3K4/8 w - - 0 1","win":false,"plies":2,"at":"2026-09-05T21:30:26.000Z"}
-{"class":"pawn","side":"white","fen":"8/8/8/8/2k5/8/2PK4/8 w - - 0 1","win":true,"plies":11,"at":"2026-09-05T21:36:48.000Z"}
-{"class":"rook-and-pawns-vs-rook","side":"white","fen":"8/8/8/2k5/8/2P5/2K5/R6r w - - 0 1","win":false,"plies":5,"at":"2026-09-08T19:58:31.000Z"}
