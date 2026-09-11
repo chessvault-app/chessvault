@@ -21,7 +21,7 @@ import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
 import { engineNetsApi } from './engineNets.ts';
 import { backupApi } from './backup.ts';
-import { tablebaseApi } from './tablebase.ts';
+import { proberFor, tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
@@ -223,7 +223,7 @@ app.use('/api/*', requireAuth());
 // Everything that reads or writes the vault. Shared with the static demo,
 // which mounts the same list over an in-memory filesystem — see
 // server/mountVault.ts for why that list is not written twice any more.
-mountVault(app);
+mountVault(app, { tablebase: () => proberFor(VAULT_CONFIG) });
 
 /**
  * The safety net, started here so recovery can force a commit before it

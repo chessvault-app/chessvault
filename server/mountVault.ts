@@ -6,6 +6,8 @@ import { linksApi, linkRenamer } from './links.ts';
 import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
+import { endgameDrillApi } from './endgameDrill.ts';
+import type { TablebaseProbe } from './tablebase.ts';
 import { refGamesApi, refgamesBuildRunning } from './refgames.ts';
 import { openingMapApi, remapMapTags } from './openingMap.ts';
 import { repertoireApi } from './repertoire.ts';
@@ -54,6 +56,9 @@ export interface VaultRoutes {
   puzzleBooks?: string;
   /** The full-text index file. Derived, rebuildable. */
   searchIndex?: string;
+  /** How the endgame drill reaches a tablebase, or nothing: the demo
+      has no source to offer and its drill says so. */
+  tablebase?: () => TablebaseProbe | null;
 }
 
 export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
@@ -126,6 +131,12 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
     paths.puzzlesDb || paths.puzzlesState
       ? puzzlesApi(paths.puzzlesDb ?? DATA_PUZZLES, paths.puzzlesState ?? resolve(VAULT, 'puzzles'))
       : puzzlesApi(),
+  );
+  // The endgame drill's record sits beside the puzzle history; its
+  // tablebase is whatever the deployment hands it, none for the demo.
+  app.route(
+    '/api',
+    endgameDrillApi(paths.puzzlesState ?? resolve(VAULT, 'puzzles'), paths.tablebase ?? null),
   );
   app.route('/api', paths.refgamesDb ? refGamesApi(paths.refgamesDb) : refGamesApi());
   // The repertoire drill's record: which prepared positions were recalled.

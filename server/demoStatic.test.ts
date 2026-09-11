@@ -71,7 +71,9 @@ describe('the static demo keeps up with the app', () => {
     // The list itself is server/mountVault.ts, so the routes in it cannot
     // drift. What CAN drift is a caller quietly dropping the call — then
     // every vault route disappears from the demo at once.
-    expect(read('server/index.ts')).toContain('mountVault(app)');
+    // `mountVault(app` and not `mountVault(app)`: the server hands the
+    // list its tablebase source as a second argument.
+    expect(read('server/index.ts')).toContain('mountVault(app');
     expect(read('web/src/demo/server.ts')).toContain('mountVault(app,');
   });
 
