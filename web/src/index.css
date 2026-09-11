@@ -1294,6 +1294,35 @@
     [data-slot='skeleton'] {
       animation: none !important;
     }
+
+    /* And the board's box leaves the clamp altogether, because for it
+       0.01ms is not a cut. The rule above sets a DURATION and leaves
+       `transition-property` at its initial `all`, so under this query
+       every inline write of a size becomes a 10-microsecond transition —
+       and a transition that short is still a transition: a read in the
+       same task returns the size from BEFORE the write, which is what
+       code that writes a size and measures the result gets back.
+
+       chessground resizes exactly that way. Its ResizeObserver writes
+       cg-container's width and height (updateBounds) and then lays all
+       32 pieces out from cg-board's rect (renderResized) in the same
+       callback, so the pieces went onto the grid the board had before it
+       was resized and stayed there: nothing re-renders afterwards, and
+       Board.tsx's settle() finds the container the size it asked for and
+       agrees. Measured on the demo under this query, before this rule:
+       28 of 32 pieces off their squares in the reader's board after "Set
+       up this position", 11 of 32 outside the board when the workspace's
+       engine bar opens, and up to 4 hanging outside a puzzle thumbnail
+       after a phone resize. With motion allowed all of them were 0.
+
+       It costs no motion: nothing in the app transitions the container
+       on purpose, and chessground animates pieces from
+       requestAnimationFrame (see boardAnimMs in board/Board.tsx, which
+       is already 0 here), so what this takes away is only the
+       accidental transition this block was creating. */
+    .cg-wrap cg-container {
+      transition-property: none !important;
+    }
   }
 }
 

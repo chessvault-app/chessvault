@@ -713,6 +713,17 @@ clamp flattens every transition and animation to a cut, and only the
 gesture-tracked motion (a drag under the finger) and the two status
 indicators keep moving. Nothing new may escape that block.
 
+The clamp sets a duration, though, not a property list, so what it
+leaves behind is a 0.01ms transition on `all` — and that is a cut to the
+eye but not to a script. Code that writes a size and reads it back in
+the same task gets the value from BEFORE its write, because the
+transition it just started is at its first frame. So the one place that
+measures its own writes is exempt from the block rather than clamped by
+it: the board's `cg-container`, which chessground resizes and then lays
+all 32 pieces out from in one ResizeObserver callback. An exemption of
+that shape takes motion away rather than granting it; it is the other
+direction the block still closes.
+
 ## The component layer
 
 The app is a shadcn/ui project (`components.json`: the base-nova style,
