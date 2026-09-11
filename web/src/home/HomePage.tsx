@@ -1065,11 +1065,19 @@ export function HomePage() {
             {reserved.board && (
               <div className="border-border border-l-primary bg-primary/10 flex items-center gap-3 border-b border-l-2 px-3 py-3">
                 {/* 96px, and 128 from xl: the MiniBoard below is sized the same way,
-                    and one size here stood 32px short of it on a desktop. */}
-                <Skeleton className="size-24 shrink-0 rounded-sm xl:size-32" />
+                    and one size here stood 32px short of it on a desktop.
+                    The three bars take the primary at 20%, not the accent
+                    a bar is filled with elsewhere: this well is the
+                    primary at 10%, which in the light theme composites to
+                    the accent rung exactly (both 231,231,231, sampled
+                    with the pulse frozen), so the board and the title
+                    were a flat block for the whole wait. At 20% the bars
+                    sit 42 levels off the well in light and 37 in dark,
+                    in the well's own ink. */}
+                <Skeleton className="bg-primary/20 size-24 shrink-0 rounded-sm xl:size-32" />
                 <span className="min-w-0 flex-1">
-                  <Skeleton className="h-5 w-44 max-w-full" />
-                  <Skeleton className="mt-1.5 h-4 w-24 max-w-full" />
+                  <Skeleton className="bg-primary/20 h-5 w-44 max-w-full" />
+                  <Skeleton className="bg-primary/20 mt-1.5 h-4 w-24 max-w-full" />
                 </span>
               </div>
             )}

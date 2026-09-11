@@ -7,11 +7,23 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+The quick switcher searches what a document says, not only its name.
 Six things that were true in one copy of a page and not in its twin, found
 by auditing the code for duplicates: an installed desktop app now finds the
 vault's own tablebase files, a puzzle's hover preview wears the same edge as
 the game list's, and the vault path copies in the isolated build.
 
+- **Open anything by what it says, not only by its name.** The
+  Ctrl/⌘ K window, and the search button in Home's phone bar, now search
+  the vault's text: a note's body, the comments in a study or an
+  annotated game, and the titles of your books and puzzle books. Names
+  that match list first, as before; under them, "In the text" lists the
+  documents that hold every word typed, each with the sentence the words
+  sit in and the match set in bold. Opening one lands on that document,
+  and on the right chapter of a study. The index is derived data kept
+  under the data directory, rebuilt from any file whose modification
+  time changed and safe to delete; a search waits for a pause in typing
+  and lists at most fifty names and twenty text matches.
 - **An installed desktop app reads the vault's own tablebase files.** The
   installer puts the native core beside the bundled server, and the search
   and index jobs looked there, but the tablebase prober looked only in a
