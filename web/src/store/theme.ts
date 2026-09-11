@@ -32,6 +32,19 @@ const resolve = (p: ThemePreference): 'light' | 'dark' =>
  * class is set the stylesheet owns the ground, so the pin comes off, and
  * the theme-color metas (media-query only, so they followed the OS, not
  * the choice) take the colour the root actually resolved to.
+ *
+ * That last step does not land yet, and the reduced-motion clamp is not
+ * why. index.html's inline `html { background-color }` is unlayered, so
+ * it outranks index.css's layered `html { background-color:
+ * var(--background) }`, and with the pin off the root resolves to the OS
+ * scheme's colour rather than the chosen theme's. Measured on the demo,
+ * reading the root after a load and after a switch, with reduced motion
+ * and without: OS light gives rgb(245, 245, 245) and OS dark
+ * rgb(10, 10, 10) under BOTH themes, so the metas still carry the OS's
+ * answer and so does the band that root paints. Not fixed here, and it is
+ * the inline rule in index.html that has to move, not this file. The body
+ * is a separate read and is correct, which is why rememberGround below
+ * takes the ground from there.
  */
 /**
  * Where index.html's launch script finds the ground the page will settle

@@ -1326,16 +1326,25 @@
 
     /* The document's ground leaves it for the same reason. store/theme.ts
        applies a theme by toggling `.dark` and then READS the colour it has
-       just applied: off the body for the launch pin (rememberGround, which
-       is what chess-vault:ground stores) and off the root for the
-       theme-color metas. Under the clamp that read came back one theme
-       behind — measured on the demo, switching to dark: `oklab(0.97 0 0)`,
-       the light ground, where the settled value is `oklch(0.145 0 264)` —
-       so the phone's browser chrome kept the old colour, and the next
-       launch pinned the previous theme's ground behind the startup image,
-       which is the flash that cache exists to prevent. With motion allowed
-       the same read is already correct. The colour still arrives in one
-       step; what goes is the 10-microsecond fade under it. */
+       just applied, off the BODY, to pin the next launch: rememberGround,
+       which is what chess-vault:ground stores. Under the clamp that read
+       came back one theme behind. Measured on the demo, driving Settings >
+       Appearance > App theme to Dark with this rule neutralised: the store
+       took `oklab(0.97 0 0)`, the light ground, under its `dark` key, where
+       the page itself settles on `oklch(0.145 0 264)`. The next launch then
+       pinned the previous theme's colour behind the startup image, which is
+       the flash that pin exists to prevent. With motion allowed the same
+       read is already correct. The colour still arrives in one step; what
+       goes is the 10-microsecond fade under it.
+
+       apply() reads the ROOT as well, for the theme-color metas, and this
+       rule does not reach that read. index.html's inline `html {
+       background-color }` is unlayered, so it outranks the layered rule in
+       this file and the metas take the OS scheme's colour rather than the
+       chosen theme's, under either motion setting: across that same switch,
+       with this rule and without it, the metas and the root's computed
+       colour both stayed rgb(245, 245, 245). That is a separate bug, older
+       than this block, and nothing here fixes it. */
     html,
     body {
       transition-property: none !important;
