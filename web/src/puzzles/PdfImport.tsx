@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
+import { FilePicker } from '@/components/file-picker';
 import { Skeleton } from '@/components/skeletons';
 import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
@@ -494,7 +495,11 @@ export function PdfImport({
           )}
 
           {!mine && !saved && (
-            <label
+            <FilePicker
+              accept="application/pdf"
+              onFiles={([file]) => {
+                if (file) void begin(file);
+              }}
               {...pdfDrop.handlers}
               className={cn(
                 'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center',
@@ -504,27 +509,13 @@ export function PdfImport({
                   : 'border-border hover:border-border hover:bg-accent',
               )}
             >
-              <input
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  // Cleared, so the same file can be chosen again: a PDF
-                  // this window refuses (unreadable, too big) leaves the
-                  // box standing, and a second pick of the file it just
-                  // refused fired no event at all.
-                  e.target.value = '';
-                  if (file) void begin(file);
-                }}
-              />
               <span className="text-muted-foreground text-base">
                 {t('Choose the book’s PDF')}
               <span className="text-muted-foreground block text-sm">
                   {t('every page is scanned for diagrams; nothing leaves this device, and you can keep using the app while it runs')}
                 </span>
               </span>
-            </label>
+            </FilePicker>
           )}
 
           {/*

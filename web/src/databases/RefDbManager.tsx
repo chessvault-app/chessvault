@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { TitleTip } from '@/components/title-tip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { FilePicker } from '@/components/file-picker';
 import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -1148,7 +1149,11 @@ function UploadWindow({
       }}
     >
       <DialogContent title="Upload PGN files" icon={Upload}>
-        <label
+        <FilePicker
+          accept=".pgn"
+          multiple
+          disabled={uploading !== null}
+          onFiles={onFiles}
           {...drop.handlers}
           className={cn(
             'text-muted-foreground flex min-h-40 cursor-pointer flex-col items-center justify-center',
@@ -1159,17 +1164,6 @@ function UploadWindow({
               : 'border-border hover:border-primary/40 hover:bg-accent',
           )}
         >
-          <input
-            type="file"
-            accept=".pgn"
-            multiple
-            className="hidden"
-            disabled={uploading !== null}
-            onChange={(e) => {
-              onFiles(e.target.files ?? []);
-              e.target.value = '';
-            }}
-          />
           {uploading ? (
             <>
               <Spinner className="size-6" />
@@ -1186,7 +1180,7 @@ function UploadWindow({
               </span>
             </>
           )}
-        </label>
+        </FilePicker>
         <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
             'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.',

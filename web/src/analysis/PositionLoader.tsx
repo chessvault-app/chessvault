@@ -6,6 +6,7 @@ import type { Template } from '@/puzzles/ocr/classify';
 import { Suspense, lazy } from 'react';
 
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
+import { FilePicker } from '@/components/file-picker';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -263,7 +264,11 @@ export function LoadPositionForm({
 
       {/* The photo half of the ONE load dialog (lanph3re's call): click,
           drop, or paste an image; the corner-adjust flow takes over. */}
-      <label
+      <FilePicker
+        accept="image/*"
+        onFiles={([file]) => {
+          if (file) onImage(file);
+        }}
         className={cn(
           'border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
           fill && 'sm:h-44 sm:justify-center',
@@ -278,17 +283,7 @@ export function LoadPositionForm({
         <ImagePlus className="size-4" />
         {t('…or read the position from a picture')}
         <span className="text-xs">{t('click to choose, drop a file, or paste an image')}</span>
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = '';
-            if (file) onImage(file);
-          }}
-        />
-      </label>
+      </FilePicker>
       {/* Under the last field, not sunk to the window's floor (lanph3re). */}
       <div className="mt-1 flex justify-end gap-2">
         {onCancel && (
