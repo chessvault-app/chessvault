@@ -247,13 +247,62 @@ export function readTablebaseConfig(configPath: string): TablebaseConfig {
  * server rather than stop answering. Settings says when that is
  * happening, so the fallback is visible instead of silent.
  */
-function proberFor(configPath: string): TablebaseProbe {
+export function proberFor(configPath: string): TablebaseProbe {
   const { source, url, dir } = readTablebaseConfig(configPath);
   if (source === 'files' && dir) {
     const local = nativeTablebase(dir);
     if (local) return local;
   }
   return syzygyServer(source === 'server' ? url : DEFAULT_TABLEBASE);
+}
+
+/**
+ * One position's answer, from the cache where it is there and from the
+ * prober where it is not — the route's body, and the endgame drill's.
+ *
+ * The drill asks the same question the explorer's pane asks, of the same
+ * source, so it goes through the same cache: a position drawn for a
+ * drill is a position the explorer will not have to ask about again,
+ * and a source that has once said "nothing here" is not asked twice.
+ * The serialised body is what is kept and returned, so the route and
+ * this stay one representation; `cachedProbe` is the parsed form.
+ *
+ * Throws where the prober does — the source could not be reached —
+ * because a caller has to tell that from "reached, holds nothing".
+ */
+export async function cachedProbeBody(
+  cacheDir: string,
+  prober: TablebaseProbe,
+  key: string,
+): Promise<string> {
+  const path = cachePath(cacheDir, prober.source, key);
+  try {
+    return readFileSync(path, 'utf-8');
+  } catch {
+    // Not cached yet; ask.
+  }
+  const answer = await prober.probe(key);
+  const body = JSON.stringify(
+    answer ? { available: true, source: prober.source, ...answer } : { available: false },
+  );
+  mkdirSync(resolve(cacheDir, prober.source), { recursive: true });
+  writeFileSync(path, body);
+  return body;
+}
+
+/** The same, parsed: null where no table holds the position. `fen` is
+    any FEN; positions no table can hold answer null without a probe. */
+export async function cachedProbe(
+  cacheDir: string,
+  prober: TablebaseProbe,
+  fen: string,
+): Promise<TablebaseAnswer | null> {
+  const key = tablebaseFen(fen);
+  if (!key) return null;
+  const body = JSON.parse(await cachedProbeBody(cacheDir, prober, key)) as
+    | { available: false }
+    | ({ available: true; source: string } & TablebaseAnswer);
+  return body.available ? body : null;
 }
 
 export function tablebaseApi(
@@ -283,20 +332,8 @@ export function tablebaseApi(
       return c.json({ available: false });
     }
 
-    const path = cachePath(cacheDir, prober.source, key);
     try {
-      return c.body(readFileSync(path, 'utf-8'), 200, { 'content-type': 'application/json' });
-    } catch {
-      // Not cached yet; ask.
-    }
-
-    try {
-      const answer = await prober.probe(key);
-      const body = JSON.stringify(
-        answer ? { available: true, source: prober.source, ...answer } : { available: false },
-      );
-      mkdirSync(resolve(cacheDir, prober.source), { recursive: true });
-      writeFileSync(path, body);
+      const body = await cachedProbeBody(cacheDir, prober, key);
       return c.body(body, 200, { 'content-type': 'application/json' });
     } catch {
       return c.json(
