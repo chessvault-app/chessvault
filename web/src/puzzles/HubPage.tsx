@@ -979,10 +979,14 @@ function Hub() {
    * phone's page header became a 44px row (it was the title's 28px):
    * at 812 the old history threshold left the column 7px over. The
    * endgame drill's row (about 48px with the column's gap) moved the
-   * history threshold again, measured on the demo at 390 wide with its
-   * 33px banner dismissed: with the history in, the column overflowed
-   * by 59px at 844 (92 with the banner up) and fitted at 904, so
-   * 56.5rem is the threshold.
+   * history threshold again, and the cards' cap and the three always-
+   * drawn slots moved it back: measured on the demo at 390 wide with its
+   * 33px banner dismissed, with the history in over the book row the
+   * column overflowed by 24px at 844 and fitted at 868, so 54.25rem is
+   * the threshold. Below the book row's own threshold the history would
+   * need 769 and never has it, so one number serves. Between the two
+   * thresholds the three cards grow to their cap and the gap under the
+   * header stays at its 22px everywhere from 568 to 932.
    *
    * There is deliberately no threshold for the BOARD size. Where there
    * is no history the cards share the leftover height between them and
@@ -997,10 +1001,10 @@ function Hub() {
    *   667 (SE 2/8)    launcher only
    *   736 (8 Plus)    launcher only
    *   800 / 812 / 844 + book row
-   *   932 (Pro Max)   + book row and history
+   *   868 and up      + book row and history (884, 904, 932 checked)
    */
   const roomForBooks = useMediaQuery('(min-height: 47rem)');
-  const roomForHistory = useMediaQuery('(min-height: 56.5rem)');
+  const roomForHistory = useMediaQuery('(min-height: 54.25rem)');
   // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
@@ -1160,6 +1164,24 @@ function Hub() {
               navigate('puzzles');
             }}
           />
+        ) : settled && !ready ? (
+          // No database yet: the slot the next puzzle will take, offering
+          // the build. The page keeps its three slots whatever the vault
+          // holds, so a fresh vault and a full one put every target in
+          // the same place (the review slot's rule, applied here).
+          <EmptySlot
+            fill={!historyBlock}
+            title={t('No puzzle database yet')}
+            detail={t('Download and build it to start training.')}
+            go={() => navigate('puzzles')}
+          />
+        ) : settled ? (
+          <EmptySlot
+            fill={!historyBlock}
+            title={t('No puzzle to draw')}
+            detail={t('The pool answered with nothing. Try again in a moment.')}
+            go={() => navigate('puzzles')}
+          />
         ) : null}
 
         {/* The review queue, as the position you actually got wrong — and
@@ -1223,6 +1245,16 @@ function Hub() {
           // one when it lands.
           <HubSkeletonCard fill={!historyBlock} />
         ) : null}
+        {settled && bookIn && !bookNext && (
+          // No book, or a finished one: the slot stays, and is the way to
+          // the shelf where a PDF becomes one.
+          <EmptySlot
+            fill={!historyBlock}
+            title={t('No puzzle book yet')}
+            detail={t('Import a tactics book you own from its PDF.')}
+            go={() => navigate('puzzles', 'books')}
+          />
+        )}
         {settled && bookNext && (
           <PuzzleCard
             fen={bookNext.puzzle.fen}
