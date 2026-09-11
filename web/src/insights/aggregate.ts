@@ -27,6 +27,20 @@ export interface InsightsCell {
   exitPlyMin: number | null;
   youLeft: number;
   theyLeft: number;
+  /** The engine pass's per-game accuracy over the games it has reached. */
+  accSum: number;
+  accN: number;
+}
+
+/** A running mean, as the server sends one. */
+export interface AccMean {
+  sum: number;
+  n: number;
+}
+
+/** The mean, or null with nothing to average. */
+export function meanOf(m: AccMean): number | null {
+  return m.n === 0 ? null : m.sum / m.n;
 }
 
 export interface Tally {
@@ -86,6 +100,8 @@ export interface OpeningRow extends Tally {
   earliestExitPly: number | null;
   youLeft: number;
   theyLeft: number;
+  /** Mean accuracy over the family's analysed games, or null with none. */
+  accuracy: number | null;
 }
 
 /**
@@ -98,7 +114,7 @@ export interface OpeningRow extends Tally {
  * alone.
  */
 export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
-  const out = new Map<string, OpeningRow & { exitPlySum: number }>();
+  const out = new Map<string, OpeningRow & { exitPlySum: number; accSum: number; accN: number }>();
   for (const cell of cells) {
     const family = cell.name === null ? null : familyOf(cell.name);
     const id = family === null ? `${cell.eco ?? ''}\t` : `\t${family}`;
@@ -115,7 +131,12 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
       earliestExitPly: null,
       youLeft: 0,
       theyLeft: 0,
+      accSum: 0,
+      accN: 0,
+      accuracy: null,
     };
+    row.accSum += cell.accSum;
+    row.accN += cell.accN;
     row.games += cell.games;
     row.w += cell.w;
     row.d += cell.d;
@@ -131,9 +152,10 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
     out.set(id, row);
   }
   return [...out.values()]
-    .map(({ exitPlySum, ...row }) => ({
+    .map(({ exitPlySum, accSum, accN, ...row }) => ({
       ...row,
       meanExitPly: row.exits === 0 ? null : exitPlySum / row.exits,
+      accuracy: accN === 0 ? null : accSum / accN,
     }))
     .sort((a, b) => b.games - a.games || (a.name ?? a.eco ?? '').localeCompare(b.name ?? b.eco ?? ''));
 }

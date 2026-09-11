@@ -28,6 +28,8 @@ const cell = (o: Partial<InsightsCell>): InsightsCell => ({
   exitPlyMin: null,
   youLeft: 0,
   theyLeft: 0,
+  accSum: 0,
+  accN: 0,
   ...o,
 });
 
@@ -37,7 +39,7 @@ const CELLS: InsightsCell[] = [
   cell({ games: 4, w: 2, d: 1, l: 1, exits: 3, exitPlySum: 6 + 8 + 10, exitPlyMin: 6, youLeft: 2, theyLeft: 1 }),
   cell({ side: 'black', games: 2, w: 1, l: 1, exits: 2, exitPlySum: 7 + 9, exitPlyMin: 7, youLeft: 1, theyLeft: 1 }),
   cell({ speed: 'rapid', eco: 'B90', name: 'Sicilian Defense: Najdorf', games: 3, w: 1, d: 2, exits: 1, exitPlySum: 14, exitPlyMin: 14, theyLeft: 1 }),
-  cell({ eco: 'B22', name: 'Sicilian Defense: Alapin Variation', games: 2, w: 2 }),
+  cell({ eco: 'B22', name: 'Sicilian Defense: Alapin Variation', games: 2, w: 2, accSum: 170, accN: 2 }),
   cell({ speed: 'unknown', eco: 'D00', name: null, games: 1, l: 1 }),
 ];
 
@@ -67,6 +69,9 @@ describe('insights arithmetic', () => {
     // A family shows no code; the nameless row keeps its header ECO.
     expect(rows.map((r) => r.eco)).toEqual([null, null, 'D00']);
     expect(rows[1]!.games).toBe(5);
+    // Accuracy averages over the analysed games alone.
+    expect(rows[1]!.accuracy).toBe(85);
+    expect(rows[0]!.accuracy).toBeNull();
     const italian = rows[0]!;
     expect(italian.games).toBe(6);
     expect(italian.exits).toBe(5);

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Progress } from '@/components/ui/progress';
+import { PASS_DEPTH, useAnalysisJob } from './analysisJob';
 import { ChartColumn } from 'lucide-react';
 import type { Ending, Speed } from '@shared/gameIndex';
 import { api } from '@/lib/api';
@@ -29,6 +31,8 @@ import {
   scorePct,
   tallyBy,
   totals,
+  meanOf,
+  type AccMean,
   type InsightsCell,
   type MonthTally,
   type OpeningRow,
@@ -128,6 +132,27 @@ interface Report {
   opponents: { band: number; w: number; d: number; l: number }[];
   endings: { ending: Ending; w: number; d: number; l: number }[];
   lengths: { band: number; w: number; d: number; l: number }[];
+  /** The engine pass's cuts; see server/myGames.ts InsightsAnalysis. */
+  analysis: {
+    games: number;
+    depth: number | null;
+    accuracy: AccMean;
+    acpl: AccMean;
+    bySide: ({ side: 'white' | 'black' } & AccMean)[];
+    bySpeed: ({ speed: Speed | 'unknown' } & AccMean)[];
+    byOutcome: ({ outcome: 'w' | 'd' | 'l' } & AccMean)[];
+    byMonth: ({ month: string } & AccMean)[];
+    byPhase: ({ phase: number } & AccMean)[];
+    byMove: ({ band: number } & AccMean)[];
+    quality: {
+      book: number;
+      good: number;
+      brilliant: number;
+      inaccuracy: number;
+      mistake: number;
+      blunder: number;
+    };
+  };
 }
 
 export function InsightsPage() {
@@ -148,6 +173,15 @@ export function InsightsPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // The engine pass changes the answer while the page is open: every
+  // game it finishes moves the accuracy figures. Re-asked a beat after
+  // each, coalesced, so a fast pass does not ask once per second.
+  const analysed = useAnalysisJob((s) => s.analysed);
+  useEffect(() => {
+    if (analysed === 0) return;
+    const timer = setTimeout(() => setAttempt((n) => n + 1), 1500);
+    return () => clearTimeout(timer);
+  }, [analysed]);
   useEffect(() => {
     const controller = new AbortController();
     let again: ReturnType<typeof setTimeout> | null = null;
@@ -343,6 +377,10 @@ function Tables({ report }: { report: Report }) {
         </CardContent>
       </Card>
 
+      <EnginePassCard total={report.games} />
+      <AccuracyCard analysis={report.analysis} total={report.games} />
+      <MoveQualityCard quality={report.analysis.quality} />
+
       <Card>
         <CardHeader>
           <CardTitle>{t('Openings')}</CardTitle>
@@ -368,6 +406,11 @@ function Tables({ report }: { report: Report }) {
                 <th scope="col" className="w-14 py-1 text-right font-medium whitespace-nowrap">
                   {t('Score')}
                 </th>
+                {report.analysis.games > 0 && (
+                  <th scope="col" className="w-20 py-1 pl-2 text-right font-medium whitespace-nowrap">
+                    {t('Accuracy')}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -383,6 +426,11 @@ function Tables({ report }: { report: Report }) {
                     <ResultBar w={row.w} d={row.d} b={row.l} pov="mine" />
                   </td>
                   <td className="py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row))}</td>
+                  {report.analysis.games > 0 && (
+                    <td className="py-(--row-py-tight) pl-2 text-right font-mono tabular-nums">
+                      {row.accuracy === null ? '' : `${row.accuracy.toFixed(1)}%`}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -756,6 +804,320 @@ function OpponentsCard({ opponents }: { opponents: Report['opponents'] }) {
             tally: r.tally,
           }))}
         />
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * The engine pass's controls and progress: what is done of what is owed,
+ * the rate this run is going at, and Start, Pause, Resume and Start
+ * over. The pass itself lives in analysisJob.ts and outlives this card;
+ * the card only reads it and presses its buttons.
+ */
+function EnginePassCard({ total }: { total: number }) {
+  const job = useAnalysisJob();
+  const [arming, setArming] = useState(false);
+  useEffect(() => {
+    void useAnalysisJob.getState().refresh();
+  }, []);
+  const owed = Math.max(0, job.total - job.analysed);
+  const share = job.total === 0 ? 0 : (100 * job.analysed) / job.total;
+  const minutesLeft =
+    job.status === 'running' && job.msPerGame !== null ? Math.ceil((owed * job.msPerGame) / 60_000) : null;
+  const running = job.status === 'running';
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Engine pass')}</CardTitle>
+        <CardDescription>
+          {t(
+            'Judges every game of yours move by move with the engine, at depth {n}. Runs in this window while the app is open, and picks up where it stopped.',
+            { n: PASS_DEPTH },
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <Progress value={share} aria-label={t('Games analysed')} />
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+          <span className="tabular-nums">
+            {t('{done} of {total} games analysed', {
+              done: exact.format(job.analysed),
+              total: exact.format(Math.max(job.total, total)),
+            })}
+          </span>
+          {minutesLeft !== null && (
+            <span className="text-muted-foreground tabular-nums">
+              {minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}
+            </span>
+          )}
+          {job.status === 'done' && owed === 0 && (
+            <span className="text-muted-foreground">{t('Every game is analysed.')}</span>
+          )}
+          {job.status === 'error' && job.error && (
+            <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {running ? (
+            <Button variant="secondary" size="sm" onClick={() => job.pause()}>
+              {t('Pause')}
+            </Button>
+          ) : (
+            owed > 0 && (
+              <Button variant="default" size="sm" onClick={() => void job.start()}>
+                {job.status === 'paused' || job.analysed > 0 ? t('Resume') : t('Start')}
+              </Button>
+            )
+          )}
+          {!running && job.analysed > 0 && !arming && (
+            <Button variant="ghost" size="sm" onClick={() => setArming(true)}>
+              {t('Start over')}
+            </Button>
+          )}
+          {arming && (
+            <>
+              <span className="text-muted-foreground text-sm">
+                {t('Forget {n} analysed games and start again?', { n: exact.format(job.analysed) })}
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setArming(false);
+                  void job.startOver();
+                }}
+              >
+                {t('Start over')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setArming(false)}>
+                {t('Cancel')}
+              </Button>
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+const PHASE_LABEL: Record<number, string> = { 0: 'Opening', 1: 'Middlegame', 2: 'Endgame' };
+const OUTCOME_LABEL: Record<'w' | 'd' | 'l', string> = {
+  w: 'When you won',
+  d: 'When you drew',
+  l: 'When you lost',
+};
+
+/**
+ * Accuracy, from the engine pass, cut the ways the results are cut and
+ * two more the pass alone can answer: the phase of the game and the
+ * move number. Absent until the pass has reached a game; the pass card
+ * above says why.
+ */
+function AccuracyCard({ analysis, total }: { analysis: Report['analysis']; total: number }) {
+  const lang = useLang();
+  const monthName = useMemo(
+    () => new Intl.DateTimeFormat(lang === 'ko' ? 'ko' : 'en', { month: 'short', year: 'numeric' }),
+    [lang],
+  );
+  if (analysis.games === 0) return null;
+  const accuracy = meanOf(analysis.accuracy);
+  const acpl = meanOf(analysis.acpl);
+  const rows = <R extends AccMean>(
+    list: readonly R[],
+    key: (r: R) => string | number,
+    label: (r: R) => string,
+  ) => list.map((r) => ({ key: String(key(r)), label: label(r), mean: meanOf(r), n: r.n }));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Accuracy')}</CardTitle>
+        <CardDescription>
+          {t(
+            'How close your moves came to the engine\'s, on the scale Lichess and chess.com use. Book moves are not judged.',
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-muted-foreground text-sm font-medium">{t('Accuracy')}</span>
+          <span className="text-foreground text-2xl font-semibold tabular-nums">
+            {accuracy === null ? '' : `${accuracy.toFixed(1)}%`}
+          </span>
+          <span className="text-muted-foreground text-sm tabular-nums">
+            {t('{n} of {total} games analysed at depth {d}', {
+              n: exact.format(analysis.games),
+              total: exact.format(total),
+              d: analysis.depth ?? PASS_DEPTH,
+            })}
+            {acpl !== null && ` · ${t('{n} centipawns lost per move', { n: Math.round(acpl) })}`}
+          </span>
+        </div>
+        <div className="flex flex-col gap-4">
+          <MeanTable
+            caption={t('By colour')}
+            rows={rows(analysis.bySide, (r) => r.side, (r) => t(SIDE_LABEL[r.side]))}
+          />
+          <MeanTable
+            caption={t('By time control')}
+            rows={rows(analysis.bySpeed, (r) => r.speed, (r) => t(SPEED_LABEL[r.speed]))}
+          />
+          <MeanTable
+            caption={t('By outcome')}
+            rows={rows(analysis.byOutcome, (r) => r.outcome, (r) => t(OUTCOME_LABEL[r.outcome]))}
+          />
+          <MeanTable
+            caption={t('By phase')}
+            rows={rows(analysis.byPhase, (r) => r.phase, (r) => t(PHASE_LABEL[r.phase] ?? 'Middlegame'))}
+            unit="moves"
+          />
+          <MeanTable
+            caption={t('By move number')}
+            rows={rows(analysis.byMove, (r) => r.band, (r) => t('Moves {a} to {b}', { a: r.band, b: r.band + 9 }))}
+            unit="moves"
+          />
+          {analysis.byMonth.length > 1 && (
+            <MeanTable
+              caption={t('By month')}
+              rows={rows(analysis.byMonth, (r) => r.month, (r) => {
+                const [y, mo] = r.month.split('-').map(Number) as [number, number];
+                return monthName.format(new Date(y, mo - 1, 1));
+              })}
+            />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * A label, a count and a mean accuracy drawn as a bar the width of its
+ * percentage in one ink, with the figure beside it: magnitude in one
+ * hue, the number always printed, since the bars are read against each
+ * other and a difference of two points has to be legible.
+ */
+function MeanTable({
+  caption,
+  rows,
+  unit = 'games',
+}: {
+  caption: string;
+  rows: { key: string; label: string; mean: number | null; n: number }[];
+  /** What the count counts: analysed games, or the owner's judged moves. */
+  unit?: 'games' | 'moves';
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <table className="w-full table-fixed text-sm">
+      <thead className="text-muted-foreground text-xs">
+        <tr>
+          <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
+            {caption}
+          </th>
+          <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap">
+            {unit === 'games' ? t('Games') : t('Moves')}
+          </th>
+          <th scope="col" className="w-36 py-1 pr-2 text-left font-medium whitespace-nowrap max-sm:hidden">
+            {t('Accuracy')}
+          </th>
+          <th scope="col" className="w-14 py-1 text-right font-medium whitespace-nowrap">
+            <span className="sr-only">{t('Accuracy')}</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, at) => (
+          <tr key={row.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
+            <td className="py-(--row-py-tight) pr-2">{row.label}</td>
+            <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+              {exact.format(row.n)}
+            </td>
+            <td className="w-36 py-(--row-py-tight) pr-2 max-sm:hidden">
+              {/* The chip corner, as the result bar's. */}
+              <div className="bg-muted h-2 w-full overflow-hidden rounded-[4px]">
+                <div className="bg-primary/70 h-full" style={{ width: `${row.mean ?? 0}%` }} />
+              </div>
+            </td>
+            <td className="w-14 py-(--row-py-tight) text-right font-mono tabular-nums">
+              {row.mean === null ? '' : `${row.mean.toFixed(1)}%`}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+const QUALITY: { key: keyof Report['analysis']['quality']; label: string; ink: string }[] = [
+  { key: 'brilliant', label: 'Brilliant', ink: 'bg-nag-brilliant' },
+  { key: 'good', label: 'Good', ink: 'bg-nag-good' },
+  { key: 'book', label: 'Theory', ink: 'bg-nag-book' },
+  { key: 'inaccuracy', label: 'Inaccuracy', ink: 'bg-nag-dubious' },
+  { key: 'mistake', label: 'Mistake', ink: 'bg-nag-mistake' },
+  { key: 'blunder', label: 'Blunder', ink: 'bg-nag-blunder' },
+];
+
+/**
+ * Every move the owner played in the analysed games, by the review's
+ * verdict, as one stacked bar in the move tree's own NAG inks with the
+ * legend beneath. "Good" is a judged move with no mark against it;
+ * theory is counted, never judged.
+ */
+function MoveQualityCard({ quality }: { quality: Report['analysis']['quality'] }) {
+  const total = QUALITY.reduce((n, q) => n + quality[q.key], 0);
+  if (total === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Move quality')}</CardTitle>
+        <CardDescription>{t('Every move you played in the analysed games, by the engine\'s verdict.')}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {/* The chip corner, as the result bar's. */}
+        <div className="flex h-4 w-full gap-px overflow-hidden rounded-[4px]" role="img" aria-label={t('Move quality')}>
+          {QUALITY.filter((q) => quality[q.key] > 0).map((q) => (
+            <TitleTip
+              key={q.key}
+              title={`${t(q.label)}: ${exact.format(quality[q.key])} (${pct((100 * quality[q.key]) / total)})`}
+            >
+              <div className={cn('h-full', q.ink)} style={{ width: `${(100 * quality[q.key]) / total}%` }} />
+            </TitleTip>
+          ))}
+        </div>
+        <table className="w-full table-fixed text-sm">
+          <thead className="text-muted-foreground text-xs">
+            <tr>
+              <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
+                {t('Verdict')}
+              </th>
+              <th scope="col" className="w-16 py-1 pr-2 text-right font-medium whitespace-nowrap">
+                {t('Moves')}
+              </th>
+              <th scope="col" className="w-14 py-1 text-right font-medium whitespace-nowrap">
+                {t('Share')}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {QUALITY.map((q, at) => (
+              <tr key={q.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
+                <td className="py-(--row-py-tight) pr-2">
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className={cn('inline-block size-2.5 shrink-0 rounded-xs', q.ink)} />
+                    {t(q.label)}
+                  </span>
+                </td>
+                <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                  {exact.format(quality[q.key])}
+                </td>
+                <td className="py-(--row-py-tight) text-right font-mono tabular-nums">
+                  {pct((100 * quality[q.key]) / total)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </CardContent>
     </Card>
   );
