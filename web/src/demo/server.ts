@@ -91,6 +91,12 @@ function buildApp(): Hono {
     // seeded vault, the same way the real server builds it from disk.
     myGamesDb: MYGAMES_DB,
     repertoireState: `${VAULT}/repertoire`,
+    // The seeded puzzle book's title is searchable; the library's one book
+    // is drawn by the hand-written route below and has no book.json here.
+    puzzleBooks: `${VAULT}/puzzlebooks`,
+    // Derived, like the real server's: under the vault's .data, which is
+    // where the storage card already points the demo's cache figure.
+    searchIndex: `${VAULT}/.data/search-index.json`,
   });
 
   /**

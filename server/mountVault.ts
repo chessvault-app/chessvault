@@ -9,8 +9,9 @@ import { puzzlesApi } from './puzzles.ts';
 import { refGamesApi, refgamesBuildRunning } from './refgames.ts';
 import { openingMapApi, remapMapTags } from './openingMap.ts';
 import { repertoireApi } from './repertoire.ts';
+import { searchApi } from './search.ts';
 import { studiesApi } from './studies.ts';
-import { DATA_PUZZLES, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
+import { DATA_PUZZLES, DATA_SEARCH_INDEX, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
 
 /**
  * Every route that reads or writes the vault, mounted in one place.
@@ -47,6 +48,12 @@ export interface VaultRoutes {
   myGamesDb?: string;
   /** Directory holding the repertoire drill history. */
   repertoireState?: string;
+  /** Directory of library books (`<id>/book.json`), for their titles. */
+  books?: string;
+  /** Directory of puzzle books (`<slug>/book.json`), for their titles. */
+  puzzleBooks?: string;
+  /** The full-text index file. Derived, rebuildable. */
+  searchIndex?: string;
 }
 
 export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
@@ -92,6 +99,22 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // What points AT a document, derived by reading the notes — the only
   // documents that can hold a [[link]] — and resolving each one.
   app.route('/api', linksApi(notes, studies, resolve(games, 'collection')));
+  // What a document SAYS, for the quick switcher: note bodies, PGN
+  // comments and book titles, over the same directories the link scan
+  // reads, kept fresh by mtime and stored beside the other derived data.
+  app.route(
+    '/api',
+    searchApi(
+      {
+        notes,
+        studies,
+        games: resolve(games, 'collection'),
+        books: paths.books ?? resolve(VAULT, 'books'),
+        puzzleBooks: paths.puzzleBooks ?? resolve(VAULT, 'puzzlebooks'),
+      },
+      paths.searchIndex ?? DATA_SEARCH_INDEX,
+    ),
+  );
   // The vault's own config.json sits beside its games dir — collecting
   // reads the profile from THIS vault, not the module-default one.
   app.route('/api', gamesApi(games, resolve(games, '..', 'config.json')));
