@@ -135,7 +135,9 @@ it lay on over 1,636 tabbed stops here, and WCAG 1.4.11 asks 3:1 of a
 focus indicator under PRODUCT.md's yardstick. So the app draws
 `ring-ring` at full alpha, in the registry's own shape (3px, the same
 colour, the border taking it too), and `--ring` is placed by
-measurement, with `check:contrast` holding it to 3:1. A hand-rolled popover, menu,
+measurement, with `check:contrast` holding it to 3:1 at any alpha the
+ring is drawn at, which is the regression that would otherwise come back
+silently the next time `npx shadcn add` rewrites one of these files. A hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in

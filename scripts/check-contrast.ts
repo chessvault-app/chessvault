@@ -60,6 +60,21 @@
  * and an inset ring is scored against the element's own fill, which is
  * what it is drawn on. Everything else keeps the hairline floors.
  *
+ * AND AT ANY ALPHA, which the first cut of that floor missed while saying
+ * it had not. It matched the ring colour premultiplied, which compares the
+ * alpha too, so a ring at 50% was a different colour to it and fell
+ * through to the hairline floor the wash clears. Pointed at the build that
+ * carried the wash it reported 720 failures, and every one of them was a
+ * registry control's opaque `focus-visible:border-ring` border; not one
+ * was the wash. Matching un-premultiplied finds the wash itself: the same
+ * build now reports 1,892, of which 1,172 carry alpha in the colour, at
+ * 1.41 to 2.14:1 — the defect, at the strength a tab walk measures on the
+ * screen. A BORDER still counts only at the token's own alpha, because the
+ * ring is only ever drawn thinned as a box-shadow, an outline or an SVG
+ * stroke, and dark High contrast paints --ring white, where every
+ * `border-input` hairline (white at 25%) would otherwise be read as a
+ * focus indicator and held to 3:1.
+ *
  * AND THE PHONE WIDTH, because the chrome that only exists on a phone —
  * the bottom bar, the pane tabs — was exactly where the invisible
  * boundary shipped, and a 1280px walk never renders it.
@@ -281,11 +296,14 @@ const SCAN = `(() => {
  * exactly those chips.
  *
  * The focus ring is the exception to both of those. A stroke in the
- * --ring colour is a focus indicator, so it takes the 3:1 floor rather
- * than the hairline one, keeps no fill exemption, and is scored against
- * the element's own fill when it is drawn inset. The ring colour is
- * resolved off a probe element, because --ring is a calc() over the
- * scheme knobs and cannot be parsed here.
+ * --ring colour, AT ANY ALPHA IT IS DRAWN AT, is a focus indicator, so it
+ * takes the 3:1 floor rather than the hairline one, keeps no fill
+ * exemption, and is scored against the element's own fill when it is drawn
+ * inset. What it is scored at is the composite: a ring painted at half
+ * strength is measured as half strength, which is the whole point, since
+ * the wash is the defect. The ring colour is resolved off a probe element,
+ * because --ring is a calc() over the scheme knobs and cannot be parsed
+ * here.
  *
  * Two escapes, both narrow. A stroke under 8% alpha is skipped as a
  * wash rather than a line — forcing every hover and focus rule at once
@@ -337,10 +355,30 @@ const STROKE_SCAN = (floor: number) => `(() => {
   document.documentElement.appendChild(probe);
   const ringLayer = layer(getComputedStyle(probe).color);
   probe.remove();
-  const isRing = (css) => {
+  // Matched at ANY alpha where the ring can be drawn thinned, which is the
+  // whole point: comparing the premultiplied colour compares the alpha too,
+  // so a ring at half strength was a different colour to this check and
+  // fell through to the 1.3/1.2 floor it clears. That is how a 50% wash
+  // certified itself past this file for a release. The comparison is
+  // therefore un-premultiplied, and the alpha is left to score(), where the
+  // under-8% wash escape still ends it. The tolerance widens as the alpha
+  // falls because the readback is 8-bit and dividing by the alpha divides
+  // its rounding error too (about 0.5/a per channel, and the same again
+  // from the alpha's own quantum); it is capped so a near-wash cannot match
+  // any grey it likes.
+  //
+  // The thinnable flag is the shape, and it is what keeps this honest: the
+  // ring is drawn thinned as a box-shadow, an outline or an SVG stroke,
+  // never as a border, so a BORDER counts only at the token's own strength.
+  // Without it, dark High contrast (where --ring is white) reads every
+  // border-input hairline — white at 25% — as a focus indicator and holds a
+  // resting input to 3:1: 21 of them, at 2.03:1.
+  const isRing = (css, thinnable) => {
     const l = layer(css);
-    return Math.abs(l.a - ringLayer.a) < 0.02
-      && l.pre.every((c, i) => Math.abs(c - ringLayer.pre[i]) <= 2);
+    if (l.a < 0.08 || ringLayer.a < 0.08) return false;
+    if (!thinnable && Math.abs(l.a - ringLayer.a) >= 0.02) return false;
+    const tol = Math.min(3 / l.a, 12);
+    return l.pre.every((c, i) => Math.abs(c / l.a - ringLayer.pre[i] / ringLayer.a) <= tol);
   };
   // Top-level commas only: a shadow list nests commas inside its colours.
   const splitShadows = (s) => {
@@ -384,7 +422,7 @@ const STROKE_SCAN = (floor: number) => `(() => {
     const score = (colorCss, opts) => {
       const l = layer(colorCss);
       if (l.a < 0.08) return;                      // under 8% alpha it is a wash, not a line
-      const focus = isRing(colorCss);
+      const focus = isRing(colorCss, opts && opts.thinnable);
       if (!focus && exempt) return;
       const need = focus ? FOCUS_FLOOR : floor;
       // An inset ring lies on the element's own fill; everything else is
@@ -409,18 +447,18 @@ const STROKE_SCAN = (floor: number) => `(() => {
         if (!col) continue;
         const nums = seg.replace(col, '').trim().split(/\\s+/).map(parseFloat).filter((n) => !isNaN(n));
         const [, , blur = 0, spread = 0] = nums;
-        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col, { inset: /inset/.test(seg) }); }
+        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col, { inset: /inset/.test(seg), thinnable: true }); }
       }
     }
     // The outline, which nothing here used to read — and it is how every
     // control that is not a registry component draws the one focus ring.
-    if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && isRing(cs.outlineColor)) {
-      score(cs.outlineColor);
+    if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && isRing(cs.outlineColor, true)) {
+      score(cs.outlineColor, { thinnable: true });
     }
     // And the same ring drawn as an SVG stroke: the opening map rings a
     // focused node dot itself, at screen size, so it survives the zoom.
-    if (el.ownerSVGElement && cs.stroke && cs.stroke !== 'none' && isRing(cs.stroke)) {
-      score(cs.stroke);
+    if (el.ownerSVGElement && cs.stroke && cs.stroke !== 'none' && isRing(cs.stroke, true)) {
+      score(cs.stroke, { thinnable: true });
     }
   }
   return out;

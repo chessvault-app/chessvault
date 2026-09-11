@@ -865,8 +865,9 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   tabbed stops, which on a bright screen is no indicator at all. What
   binds the token is the selected fill an inset ring is drawn straight
   onto (`--surface-3` in light, `--accent` in dark), and
-  `check:contrast` now holds a focus indicator to 3:1, so the next
-  retune of a surface cannot quietly take it back.
+  `check:contrast` now holds a focus indicator to 3:1 at any alpha it is
+  drawn at, so neither the next retune of a surface nor a ring quietly
+  thinned back to a wash can take it away again.
 
 ## The mark
 
