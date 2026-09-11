@@ -15,6 +15,24 @@ the game list's, and the vault path copies in the isolated build. An audit
 of the code for wasted work made the games list, reference search, index
 builds and the board's arrow keys do less per request.
 
+- **Endgame drills, under Puzzles.** Puzzles → Endgames lists the
+  material classes the games hunt already knows (a rook endgame, a queen
+  against a rook, rook and pawns against a rook, and the rest, or a
+  custom material of your own) with how each has gone. Opening one draws
+  a random position the tablebase calls a win for the side to move, and
+  you play that side while the tablebase defends with the move that
+  takes longest to lose. Every move is graded by the table's own word:
+  one that keeps the win is answered, one that lets it slip ends the
+  attempt and draws the move that would have kept it, and checkmate
+  ends it the other way. Attempts are recorded per class, as held
+  against thrown and never as a rate, and the phone's puzzle hub and
+  the dashboard each carry one row of that record. The drill asks
+  whichever tablebase Settings names, the public Lichess server, a
+  server of your own or your Syzygy files, and says plainly which of
+  the three cases it is when none can answer, with a button that lands
+  on the Tablebase card. Settings takes a card as a route now
+  (`#/settings/tablebase`) for that. The demo has no tablebase source
+  and its drill says so.
 - **Open anything by what it says, not only by its name.** The
   Ctrl/⌘ K window, and the search button in Home's phone bar, now search
   the vault's text: a note's body, the comments in a study or an
