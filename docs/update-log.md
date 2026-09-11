@@ -29,10 +29,10 @@ the game list's, and the vault path copies in the isolated build.
   says whether a game is in the collection was spelled two ways for a
   missing date, so such a game never matched itself and offered "Add to
   collection" again.
-- **The library's placeholder lays its collections out as they will be.**
+- **The library's placeholder lays its folders out as they will be.**
   While the books load, the cards standing in for a second or third
-  collection took the rows of the one before it, so a shelf with a full
-  collection stood a few pixels off where it would settle.
+  folder took the rows of the one before it, so a shelf with a full
+  folder stood a few pixels off where it would settle.
 - **A study whose name was refused leaves the shelf current.** Creating a
   study the vault already had returned the error without re-reading the
   list, as every other change to the shelf does.
