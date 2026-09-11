@@ -7,7 +7,7 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-The quick switcher searches what a document says, not only its name.
+An Insights page sums your own games. The quick switcher searches what a document says, not only its name.
 Six things that were true in one copy of a page and not in its twin, found
 by auditing the code for duplicates: an installed desktop app now finds the
 vault's own tablebase files, a puzzle's hover preview wears the same edge as
@@ -114,6 +114,47 @@ builds and the board's arrow keys do less per request.
   same ground do, and the three switches on those toolbars (the moves
   strip, the diagram buttons, a search in progress) show they are on
   with the same fill every other toolbar switch in the app uses.
+- **Insights sums your own games by colour, time control and opening.**
+  A new page, on the sidebar beside the opening map and under More on
+  a phone, reads the same corpus the explorer's My games source does:
+  your collection plus every Chess.com and Lichess month you have
+  browsed. It shows your score overall, by colour and by time control,
+  a table of opening families with a won/drew/lost bar for each, where each
+  game left the opening catalogue, with whose move it was and the
+  openings where your own move leaves earliest, games per month and per
+  weekday, how the games ended (checkmate, resignation, time and the
+  draw kinds, read from the move text and the file's termination line),
+  and results by game length. The last two need the game's length and
+  ending in the index, so an existing vault reindexes once on the first
+  visit.
+- **An engine pass judges your games in the background, and the page
+  waits for it.** Insights shows its tables only once your games have
+  been through the engine; until then, and while a run is going, the
+  page draws its outline and a strip under the title says how far the
+  pass is. Games that arrive after a pass do not hide the page: the
+  strip says how many are not analysed yet, and the header offers to
+  analyse just those, since every game already done is kept. Start it from the page's header and the app's own engine walks
+  every game of yours
+  move by move at a fixed depth, in the window, while you use the rest of
+  the app; a progress bar says how far it is and how long is left, Pause
+  and Resume do what they say, and a reload or a later visit picks up
+  where it stopped, since the server keeps every game finished. With
+  games analysed the page shows accuracy beside the score and adds an
+  accuracy column to every table it already has (colour, time control,
+  opening, weekday, length), the accuracy of your won,
+  drawn and lost games under each ending chart, and a card of move
+  quality: the share of your moves the engine calls good, inaccurate, a
+  mistake or a blunder, with accuracy by phase and by move number. The findings are kept apart
+  from the games index, so a reindex never costs the engine's hours. The filters are the
+  explorer's (side, time control, kept only) plus a quick date range
+  (the last week, month, or three, six or twelve months, or two dates
+  of your own). The sums are made on the server in one pass over the
+  index (116 ms over 3,000 games, measured). Names come from the
+  positions each game reaches, not from the file's ECO header, so a
+  chess.com export and a Lichess export land in the same row.
+- **The demo carries an archive month.** The static demo's vault now
+  holds a Chess.com month for its owner, so Insights, the explorer's My
+  games source and the archive browser have games to show there.
 
 ## 0.9.5
 

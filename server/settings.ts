@@ -3,7 +3,7 @@ import { writeAtomic } from './atomic.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
-import {APP_VERSION, LOOPBACK_ONLY, VAULT, VAULT_CONFIG} from './paths.ts';
+import { APP_VERSION, DATA_MYGAMES_ANALYSIS, LOOPBACK_ONLY, VAULT, VAULT_CONFIG } from './paths.ts';
 import { revokeAllSessions } from './auth.ts';
 import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseTraining } from '../shared/training.ts';
@@ -58,6 +58,17 @@ export interface SettingsDeps {
   /** Whether the client is on the machine the server runs on (see
       LOOPBACK_ONLY in server/paths.ts). Tests say yes. */
   sameMachine?: boolean;
+  /**
+   * Derived files that describe the vault's games and do not notice the
+   * games going: the engine pass's findings (server/myGamesAnalysis.ts).
+   * The games index is not here because it watches the files and forgets
+   * a game whose file is gone; the analysis store is keyed by file and
+   * position and checks a game's URL or length at read time, which is
+   * enough for a month browsed again and not for a wipe followed by a
+   * hand import that lands at the same path and length by coincidence.
+   * Wiped with the vault, so no record can outlive the game it judged.
+   */
+  derived?: string[];
 }
 
 /** A vault name as stored: trimmed, and absent when blank or not a string,
@@ -72,6 +83,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   const configPath = deps.configPath ?? VAULT_CONFIG;
   const vaultDir = deps.vaultDir ?? VAULT;
   const sameMachine = deps.sameMachine ?? LOOPBACK_ONLY;
+  const derived = deps.derived ?? [DATA_MYGAMES_ANALYSIS];
   // The session store lives beside config.json (see auth.ts). The routes
   // that rotate a credential clear it, so "everyone is signed out now"
   // stays true under random per-login tokens.
@@ -406,6 +418,11 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     }
     for (const d of ['studies', 'notes', 'games', 'sources']) {
       mkdirSync(resolve(vaultDir, d), { recursive: true });
+    }
+    // See SettingsDeps.derived. A file (or its sqlite sidecars) that is
+    // not there is nothing to remove.
+    for (const file of derived) {
+      for (const suffix of ['', '-wal', '-shm']) rmSync(`${file}${suffix}`, { force: true });
     }
     // Fresh history repo so the autosave layer keeps working (and carries
     // no pre-wipe data). Best-effort: a vault without git still works.

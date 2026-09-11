@@ -183,6 +183,16 @@ export function openingsIndex(): OpeningsFile['byKey'] | null {
   return loadIndex()?.byKey ?? null;
 }
 
+/**
+ * Names and membership together, fetched ONCE for a walk over many
+ * positions. `openingForKey` and `isBookKey` each stat the index file
+ * per call, which is nothing for one position and a syscall per ply
+ * when the insights walk asks about every position of every game.
+ */
+export function openingsBook(): { byKey: OpeningsFile['byKey']; members: Set<string> } | null {
+  return loadIndex();
+}
+
 /** Whether a position is anywhere in the catalogue's lines — the book test. */
 export function isBookKey(hexKey: string): boolean {
   return loadIndex()?.members.has(hexKey) ?? false;

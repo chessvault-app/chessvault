@@ -26,7 +26,12 @@ beforeEach(() => {
   app = new Hono();
   app.route(
     '/api',
-    settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault, sameMachine: true }),
+    settingsApi({
+      configPath: join(vault, 'config.json'),
+      vaultDir: vault,
+      sameMachine: true,
+      derived: [join(vault, '..', 'analysis.sqlite')],
+    }),
   );
 });
 
@@ -349,9 +354,12 @@ describe('wipe', () => {
     expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' })).status).toBe(403);
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
 
+    // The engine pass's findings sit outside the vault and go with it.
+    writeFileSync(join(vault, '..', 'analysis.sqlite'), 'x');
     const ok = await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'hunter22' });
     expect(ok.status).toBe(200);
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(false);
+    expect(existsSync(join(vault, '..', 'analysis.sqlite'))).toBe(false);
     expect(existsSync(join(vault, 'puzzlebooks'))).toBe(false);
     expect(existsSync(join(vault, 'studies'))).toBe(true); // skeleton back
     expect(config().appPassword).toBe('hunter22');

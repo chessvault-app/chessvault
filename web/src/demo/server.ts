@@ -34,6 +34,8 @@ const PUZZLES_DB = '/demo/puzzles.sqlite';
 const REFGAMES_DB = '/demo/refgames.sqlite';
 /** Built in the page rather than fetched — see the sqlite shim's write path. */
 const MYGAMES_DB = '/demo/mygames.sqlite';
+/** Filled by the engine pass if a visitor runs it; empty on every load. */
+const MYGAMES_ANALYSIS_DB = '/demo/mygames-analysis.sqlite';
 
 /**
  * The sample book: its bytes, and the two things a reader changes about it.
@@ -90,6 +92,7 @@ function buildApp(): Hono {
     // Nothing is fetched for this one: it is built in the page from the
     // seeded vault, the same way the real server builds it from disk.
     myGamesDb: MYGAMES_DB,
+    myGamesAnalysisDb: MYGAMES_ANALYSIS_DB,
     repertoireState: `${VAULT}/repertoire`,
     // The seeded puzzle book's title is searchable; the library's one book
     // is drawn by the hand-written route below and has no book.json here.

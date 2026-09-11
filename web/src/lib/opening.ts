@@ -44,6 +44,8 @@ const inFlight = new Map<string, Promise<void>>();
  * every caller's await resolves only once the answer is actually in
  * `known`, which the review's sequential book walk depends on.
  */
+/** Exported for the engine pass, which warms a whole game's positions
+    in one request before the engine starts on them. */
 export function lookupMany(fens: string[]): Promise<void> {
   const waits: Promise<void>[] = [];
   const fresh: string[] = [];

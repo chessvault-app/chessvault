@@ -5,6 +5,7 @@ import { parseSan } from 'chessops/san';
 import { hashSetup } from './zobrist.ts';
 import {
   MAX_PLY,
+  endingOf,
   indexGame,
   normaliseDate,
   pathUser,
@@ -70,6 +71,24 @@ describe('pathUser / userSideOf', () => {
   });
 });
 
+describe('endingOf', () => {
+  it('trusts the move text over any header', () => {
+    expect(endingOf('Foe won on time', 'Qxf7#', 1)).toBe('mate');
+  });
+
+  it('reads both sites and falls back honestly', () => {
+    expect(endingOf('Hikaru won by resignation', 'Rd1', 1)).toBe('resignation');
+    expect(endingOf('Time forfeit', 'Rd1', -1)).toBe('timeout');
+    expect(endingOf('Game drawn by timeout vs insufficient material', 'Kg2', 0)).toBe('insufficient');
+    expect(endingOf('Game drawn by 50-move rule', 'Kg2', 0)).toBe('fifty');
+    expect(endingOf('Abandoned', 'e4', -1)).toBe('abandoned');
+    // Lichess says only "Normal"; an OTB file says nothing.
+    expect(endingOf('Normal', 'Rd1', 1)).toBe('resignation');
+    expect(endingOf(undefined, 'Rd1', -1)).toBe('resignation');
+    expect(endingOf('Normal', 'Kg2', 0)).toBe('unknown');
+  });
+});
+
 describe('indexGame', () => {
   it('keys each ply by the position BEFORE the move', () => {
     const indexed = indexGame(parse('1. e4 e5 2. Nf3 1-0'), WHERE)!;
@@ -112,6 +131,19 @@ describe('indexGame', () => {
     ).join(' ');
     const indexed = indexGame(parse(`${moves} 1-0`), WHERE)!;
     expect(indexed.plies.length).toBe(MAX_PLY);
+  });
+
+  it('counts the whole game and reads how it ended', () => {
+    const long = Array.from({ length: 70 }, (_, i) => (i % 2 === 0 ? `${i / 2 + 1}. Nf3` : 'Nf6'))
+      .map((s, i) => (i % 4 === 2 ? s.replace('Nf3', 'Ng1') : i % 4 === 3 ? s.replace('Nf6', 'Ng8') : s))
+      .join(' ');
+    const indexed = indexGame(
+      parse(`[White "Me"]\n[Black "Foe"]\n[Result "1/2-1/2"]\n[Termination "Game drawn by repetition"]\n\n${long} 1/2-1/2`),
+      WHERE,
+    )!;
+    expect(indexed.plies.length).toBe(MAX_PLY);
+    expect(indexed.plyCount).toBe(70);
+    expect(indexed.ending).toBe('repetition');
   });
 
   it('carries the metadata every filter reads', () => {

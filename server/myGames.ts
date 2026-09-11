@@ -7,11 +7,18 @@ import { parseFen } from 'chessops/fen';
 import { PgnParser } from 'chessops/pgn';
 import { makeSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
-import { indexGame, pathUser, type Speed } from '../shared/gameIndex.ts';
+import { indexGame, pathUser, type Ending, type Speed } from '../shared/gameIndex.ts';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
-import { openingForKey } from './openings.ts';
+import { openingForKey, openingsBook } from './openings.ts';
+import {
+  AnalysisStore,
+  analysisKey,
+  parseRecord,
+  recordFits,
+  type AnalysisRecord,
+} from './myGamesAnalysis.ts';
 import { resolve } from 'node:path';
-import { DATA, DATA_MYGAMES, VAULT_GAMES } from './paths.ts';
+import { DATA, DATA_MYGAMES, DATA_MYGAMES_ANALYSIS, VAULT_GAMES } from './paths.ts';
 
 /**
  * Your own games, explorable at any position, under any filter.
@@ -52,6 +59,97 @@ export interface MyGamesFilters {
   to?: string;
   /** Only the curated collection, rather than every archived game. */
   collectionOnly?: boolean;
+}
+
+/** Wins, draws and losses from the owner's side, under one key. */
+export interface InsightsTally {
+  w: number;
+  d: number;
+  l: number;
+  /** The engine pass's per-game accuracy over the row's analysed
+      games, a sum and a count; both nought until the pass reaches one. */
+  accSum: number;
+  accN: number;
+}
+
+/** The report's other cuts of the same games, each a small list. */
+export interface InsightsExtras {
+  /** Games per calendar month, `YYYY-MM`, in order; months with no
+      games are absent (the page fills them). */
+  months: ({ month: string } & InsightsTally)[];
+  /** Games per day of the week, 0 = Sunday, only days that have any. */
+  weekdays: ({ day: number } & InsightsTally)[];
+  /** How the games ended, per outcome from the owner's side. */
+  endings: { ending: Ending; w: number; d: number; l: number }[];
+  /** Games by length, in whole moves: the band's floor in moves. */
+  lengths: ({ band: number } & InsightsTally)[];
+}
+
+/** One aggregate cell of the insights report: a colour, a time control
+    and an opening, with the results and the book exits summed. */
+export interface InsightsCell {
+  side: 'white' | 'black';
+  /** The indexed speed, or 'unknown' when the PGN carried no time control. */
+  speed: Speed | 'unknown';
+  eco: string | null;
+  name: string | null;
+  games: number;
+  /** From the owner's point of view. */
+  w: number;
+  d: number;
+  l: number;
+  /** Games whose indexed prefix left the catalogue, the sum of the plies
+      at which they did (the ply of the leaving move), and the earliest. */
+  exits: number;
+  exitPlySum: number;
+  exitPlyMin: number | null;
+  /** Of those exits, how many were the owner's move and how many the
+      opponent's. */
+  youLeft: number;
+  theyLeft: number;
+  /** The engine pass's per-game accuracy over the games it has reached:
+      a sum and a count, so the client takes the mean it wants. */
+  accSum: number;
+  accN: number;
+}
+
+/** A running mean: what the analysis cuts are made of. */
+export interface AccMean {
+  sum: number;
+  n: number;
+}
+
+/**
+ * What the engine pass adds to the report, over the admitted games it
+ * has reached. Per-game figures (accuracy, centipawn loss) are averaged
+ * game by game, as chess.com's average accuracy is; per-move figures
+ * (phase, move number, quality) are summed over the owner's own moves.
+ */
+export interface InsightsAnalysis {
+  /** Admitted games with a record that still fits them. */
+  games: number;
+  /** The shallowest search depth among those records, or null with none:
+      the number the page quotes for what "accuracy" was measured at. */
+  depth: number | null;
+  accuracy: AccMean;
+  acpl: AccMean;
+  /** Colour, time control, month and the other bands ride on the cells
+      and the tally lists themselves (accSum/accN); only the cuts with
+      no row of their own are here. */
+  byOutcome: ({ outcome: 'w' | 'd' | 'l' } & AccMean)[];
+  /** 0 opening, 1 middlegame, 2 endgame; move-level. */
+  byPhase: ({ phase: number } & AccMean)[];
+  /** By the move's number, in tens: the band's floor (1, 11, 21…); move-level. */
+  byMove: ({ band: number } & AccMean)[];
+  /** The owner's moves by verdict. `good` is a judged move with no NAG. */
+  quality: {
+    book: number;
+    good: number;
+    brilliant: number;
+    inaccuracy: number;
+    mistake: number;
+    blunder: number;
+  };
 }
 
 interface MoveRow {
@@ -97,7 +195,12 @@ const SCHEMA = `
     site TEXT,
     /* One game, two files — see stamp(). The losing copy stays indexed
        and answers nothing: every query goes through where(). */
-    shadowed INTEGER NOT NULL DEFAULT 0
+    shadowed INTEGER NOT NULL DEFAULT 0,
+    /* The whole game's length and how it ended (shared/gameIndex.ts),
+       for the insights page. Null on rows indexed before the columns
+       existed; open() reindexes those. */
+    plies INTEGER,
+    ending TEXT
   );
   CREATE TABLE IF NOT EXISTS plies (
     pos INTEGER NOT NULL,
@@ -137,6 +240,8 @@ class MyGamesIndex {
   constructor(
     private readonly gamesDir: string,
     private readonly dbPath: string,
+    /** The engine pass's findings, merged into the insights report. */
+    private readonly analysis: AnalysisStore,
   ) {}
 
   /**
@@ -174,6 +279,16 @@ class MyGamesIndex {
       if (!columns.some((c) => c.name === 'shadowed')) {
         db.exec('ALTER TABLE games ADD COLUMN shadowed INTEGER NOT NULL DEFAULT 0');
         this.stamp(db);
+      }
+      // `plies` and `ending` came later still. Unlike `shadowed` they
+      // cannot be stamped from what is in the table: both are read from
+      // the PGN. So the files table is emptied, which makes the next
+      // sync treat every file as new and reindex it, at the first-sync
+      // cost the header quotes, once, and mostly in the background walk.
+      if (!columns.some((c) => c.name === 'plies')) {
+        db.exec('ALTER TABLE games ADD COLUMN plies INTEGER');
+        db.exec('ALTER TABLE games ADD COLUMN ending TEXT');
+        db.exec('DELETE FROM files');
       }
       const max = db.prepare('SELECT MAX(id) AS id FROM games').get() as { id: number | null };
       this.nextId = (max.id ?? 0) + 1;
@@ -353,8 +468,8 @@ class MyGamesIndex {
     const user = pathUser(rel);
     const collection = rel.startsWith('collection/') ? 1 : 0;
     const insertGame = db.prepare(`
-      INSERT INTO games (id, file, idx, white, black, white_elo, black_elo, result, date, speed, eco, user_side, collection, site)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO games (id, file, idx, white, black, white_elo, black_elo, result, date, speed, eco, user_side, collection, site, plies, ending)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const insertPly = db.prepare('INSERT INTO plies (pos, uci, game_id, ply) VALUES (?, ?, ?, ?)');
 
@@ -386,6 +501,8 @@ class MyGamesIndex {
           indexed.userSide,
           collection,
           indexed.site,
+          indexed.plyCount,
+          indexed.ending,
         );
         for (const p of indexed.plies) insertPly.run(toDbKey(p.hash), p.uci, id, p.ply);
       });
@@ -796,6 +913,374 @@ class MyGamesIndex {
   }
 
   /**
+   * Your results summed by colour, time control and opening, with where
+   * each game left the catalogue — the insights page's whole answer, in
+   * one pass over the games the filters admit. (A first version also
+   * narrowed to the Databases browser's situations by replaying the
+   * PGN; the page dropped the select, and the replay went with it
+   * rather than stay as a path nothing asks for.)
+   *
+   * The opening is read off the positions, not the PGN's ECO header: the
+   * deepest catalogued position the game reaches names it, which is the
+   * same name the explorer gives that position and does not depend on
+   * which site exported the game (chess.com writes an ECO and a URL,
+   * Lichess an ECO and a name, a hand import often nothing). A game that
+   * never reaches a named position keeps its header ECO, so it still
+   * lands in a row rather than vanishing.
+   *
+   * "Left book" is the first move after which the position is no longer
+   * anywhere in the catalogue's lines (openings.ts's membership set, the
+   * analysis views' own book test). The ply is the leaving move's, and
+   * whose move it was is what the page's "you / them" split reports. A
+   * game whose whole indexed prefix stays inside is counted in the row
+   * and in no exit: the catalogue's longest line is under forty plies
+   * and the index holds sixty, so in practice that is a game the index
+   * cut short by an illegal move.
+   *
+   * Only games whose side is known can answer: a reference game kept in
+   * the collection has no "you" to score for, and is left out rather
+   * than guessed at, exactly as the outcome filter does.
+   *
+   * MEASURED on this machine over 3,000 generated 80-ply games in 30
+   * files: 116 ms the first ask and 100 ms the second (one query for the
+   * games, one for their plies, the walk in JS). The page asks once per
+   * filter change, not per keystroke.
+   */
+  insights(
+    filters: MyGamesFilters,
+  ): {
+    games: number;
+    named: boolean;
+    partial: boolean;
+    cells: InsightsCell[];
+    analysis: InsightsAnalysis;
+  } & InsightsExtras {
+    const none = (): InsightsExtras => ({ months: [], weekdays: [], endings: [], lengths: [] });
+    const noAnalysis = (): InsightsAnalysis => ({
+      games: 0,
+      depth: null,
+      accuracy: { sum: 0, n: 0 },
+      acpl: { sum: 0, n: 0 },
+      byOutcome: [],
+      byPhase: [],
+      byMove: [],
+      quality: { book: 0, good: 0, brilliant: 0, inaccuracy: 0, mistake: 0, blunder: 0 },
+    });
+    const db = this.open();
+    if (!db) {
+      return { games: 0, named: false, partial: false, cells: [], analysis: noAnalysis(), ...none() };
+    }
+    // The first sync of a big vault hands most of it to the background
+    // walk (see sync), and a report asked for during the walk sums what
+    // is indexed so far. Said outright, so the page can ask again once
+    // the walk is done rather than show a count that is quietly short:
+    // the demo's first visit counted 16 of 31 games this way.
+    const partial = this.pending.length > 0 || this.walking;
+    const { sql, binds } = this.where(filters);
+    const games = db
+      .prepare(
+        `SELECT id, file, idx, site, user_side, speed, result, eco, date, white_elo, black_elo, plies, ending
+         FROM games g WHERE g.user_side IS NOT NULL${sql}`,
+      )
+      .all(...binds) as {
+      id: number;
+      file: string;
+      idx: number;
+      site: string | null;
+      user_side: 'white' | 'black';
+      speed: Speed | null;
+      result: number;
+      eco: string | null;
+      date: string | null;
+      white_elo: number;
+      black_elo: number;
+      plies: number | null;
+      ending: Ending | null;
+    }[];
+    const kept = new Map<number, (typeof games)[number]>();
+    for (const g of games) kept.set(g.id, g);
+    if (kept.size === 0) {
+      return {
+        games: 0,
+        named: openingsBook() !== null,
+        partial,
+        cells: [],
+        analysis: noAnalysis(),
+        ...none(),
+      };
+    }
+
+    // The engine pass's record for each admitted game, where one exists
+    // and still fits (see myGamesAnalysis.ts on why it might not).
+    const records = this.analysis.all();
+    const recordOf = (g: { file: string; idx: number; site: string | null; plies: number | null }): AnalysisRecord | null => {
+      const r = records.get(analysisKey(g.file, g.idx));
+      // A record with no judged move (a game the pass could not replay)
+      // marks the game done for the queue and says nothing here: an
+      // accuracy of nought over nothing is not a figure to average in.
+      return r && r.moves > 0 && recordFits(r, g) ? r : null;
+    };
+
+    // The other cuts need nothing from the plies, so they are summed
+    // straight off the rows. Each is a map keyed by its band, turned
+    // into an ordered list at the end.
+    const tally = <K>(): Map<K, InsightsTally> => new Map();
+    const bump = <K>(
+      into: Map<K, InsightsTally>,
+      key: K,
+      mine: number,
+      accuracy: number | null,
+    ): void => {
+      const t = into.get(key) ?? { w: 0, d: 0, l: 0, accSum: 0, accN: 0 };
+      if (mine > 0) t.w += 1;
+      else if (mine < 0) t.l += 1;
+      else t.d += 1;
+      if (accuracy !== null) {
+        t.accSum += accuracy;
+        t.accN += 1;
+      }
+      into.set(key, t);
+    };
+    const months = tally<string>();
+    const weekdays = tally<number>();
+    const endings = tally<Ending>();
+    const lengths = tally<number>();
+    for (const g of kept.values()) {
+      const mine = g.user_side === 'white' ? g.result : -g.result;
+      const acc = recordOf(g)?.accuracy ?? null;
+      if (g.date) {
+        bump(months, g.date.slice(0, 7), mine, acc);
+        // Noon UTC, so no zone can push the date across midnight.
+        const day = new Date(`${g.date}T12:00:00Z`).getUTCDay();
+        if (Number.isFinite(day)) bump(weekdays, day, mine, acc);
+      }
+      if (g.ending) bump(endings, g.ending, mine, acc);
+      // Whole moves, in bands of twenty: under 20, 20 to 39, and so on.
+      if (g.plies !== null) bump(lengths, Math.floor(Math.ceil(g.plies / 2) / 20) * 20, mine, acc);
+    }
+    const listed = <N extends string, K extends string | number>(
+      from: Map<K, InsightsTally>,
+      name: N,
+    ): (Record<N, K> & InsightsTally)[] =>
+      [...from]
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, t]) => ({ ...({ [name]: key } as Record<N, K>), ...t }));
+    const extras: InsightsExtras = {
+      months: listed(months, 'month'),
+      weekdays: listed(weekdays, 'day'),
+      endings: listed(endings, 'ending'),
+      lengths: listed(lengths, 'band'),
+    };
+
+    // The analysis cuts, over the admitted games the pass has reached.
+    const analysis = noAnalysis();
+    const means = <K>(): Map<K, AccMean> => new Map();
+    const addTo = <K>(into: Map<K, AccMean>, key: K, value: number, weight = 1): void => {
+      const m = into.get(key) ?? { sum: 0, n: 0 };
+      m.sum += value;
+      m.n += weight;
+      into.set(key, m);
+    };
+    const accOutcome = means<'w' | 'd' | 'l'>();
+    const accPhase = means<number>();
+    const accMove = means<number>();
+    for (const g of kept.values()) {
+      const record = recordOf(g);
+      if (!record) continue;
+      analysis.games += 1;
+      analysis.depth = analysis.depth === null ? record.depth : Math.min(analysis.depth, record.depth);
+      analysis.accuracy.sum += record.accuracy;
+      analysis.accuracy.n += 1;
+      analysis.acpl.sum += record.acpl;
+      analysis.acpl.n += 1;
+      const mine = g.user_side === 'white' ? g.result : -g.result;
+      addTo(accOutcome, mine > 0 ? 'w' : mine < 0 ? 'l' : 'd', record.accuracy);
+      for (const [ply, acc, nag, phase, book] of record.perMove) {
+        if (book) {
+          analysis.quality.book += 1;
+          continue;
+        }
+        addTo(accPhase, phase, acc);
+        addTo(accMove, Math.floor(ply / 2 / 10) * 10 + 1, acc);
+        if (nag === 3) analysis.quality.brilliant += 1;
+        else if (nag === 6) analysis.quality.inaccuracy += 1;
+        else if (nag === 2) analysis.quality.mistake += 1;
+        else if (nag === 4) analysis.quality.blunder += 1;
+        else analysis.quality.good += 1;
+      }
+    }
+    const listedMeans = <N extends string, K extends string | number>(
+      from: Map<K, AccMean>,
+      name: N,
+    ): (Record<N, K> & AccMean)[] =>
+      [...from]
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, m]) => ({ ...({ [name]: key } as Record<N, K>), ...m }));
+    analysis.byOutcome = listedMeans(accOutcome, 'outcome');
+    analysis.byPhase = listedMeans(accPhase, 'phase');
+    analysis.byMove = listedMeans(accMove, 'band');
+
+    // Every indexed ply of every admitted game, in one query, grouped in
+    // JS: the filter's WHERE does the admitting.
+    const plies = db
+      .prepare(
+        `SELECT p.game_id AS game_id, CAST(p.pos AS TEXT) AS pos
+         FROM plies p JOIN games g ON g.id = p.game_id
+         WHERE g.user_side IS NOT NULL${sql}
+         ORDER BY p.game_id, p.ply`,
+      )
+      .all(...binds) as { game_id: number; pos: string }[];
+
+    const book = openingsBook();
+    const cells = new Map<string, InsightsCell>();
+    const finish = (game: (typeof games)[number], positions: string[]): void => {
+      // positions[k] is the position BEFORE ply k; the deepest named one
+      // names the game, and the first one outside the catalogue marks
+      // the move before it as the leaving move.
+      let eco = game.eco;
+      let name: string | null = null;
+      let exit: number | null = null;
+      if (book) {
+        for (let k = 1; k < positions.length; k += 1) {
+          const key = positions[k]!;
+          const entry = book.byKey[key];
+          if (entry) {
+            eco = entry[0];
+            name = entry[1];
+          }
+          if (!book.members.has(key)) {
+            exit = k - 1;
+            break;
+          }
+        }
+      }
+      const side = game.user_side;
+      const speed = game.speed ?? 'unknown';
+      const id = `${side}\t${speed}\t${eco ?? ''}\t${name ?? ''}`;
+      let cell = cells.get(id);
+      if (!cell) {
+        cell = {
+          side,
+          speed,
+          eco,
+          name,
+          games: 0,
+          w: 0,
+          d: 0,
+          l: 0,
+          exits: 0,
+          exitPlySum: 0,
+          exitPlyMin: null,
+          youLeft: 0,
+          theyLeft: 0,
+          accSum: 0,
+          accN: 0,
+        };
+        cells.set(id, cell);
+      }
+      cell.games += 1;
+      const record = recordOf(game);
+      if (record) {
+        cell.accSum += record.accuracy;
+        cell.accN += 1;
+      }
+      const mine = side === 'white' ? game.result : -game.result;
+      if (mine > 0) cell.w += 1;
+      else if (mine < 0) cell.l += 1;
+      else cell.d += 1;
+      if (exit !== null) {
+        cell.exits += 1;
+        cell.exitPlySum += exit;
+        cell.exitPlyMin = cell.exitPlyMin === null ? exit : Math.min(cell.exitPlyMin, exit);
+        if ((exit % 2 === 0) === (side === 'white')) cell.youLeft += 1;
+        else cell.theyLeft += 1;
+      }
+    };
+
+    let current: (typeof games)[number] | null = null;
+    let positions: string[] = [];
+    const seen = new Set<number>();
+    for (const row of plies) {
+      if (current === null || row.game_id !== current.id) {
+        if (current) finish(current, positions);
+        current = kept.get(row.game_id) ?? null;
+        positions = [];
+        if (current) seen.add(current.id);
+      }
+      if (!current) continue;
+      positions.push(BigInt.asUintN(64, BigInt(row.pos)).toString(16));
+    }
+    if (current) finish(current, positions);
+    // A game with no ply rows cannot exist (indexGame drops it), but the
+    // count must still be the games admitted, not the games walked.
+    for (const game of kept.values()) if (!seen.has(game.id)) finish(game, []);
+
+    return {
+      games: kept.size,
+      named: book !== null,
+      partial,
+      cells: [...cells.values()].sort((a, b) => b.games - a.games),
+      analysis,
+      ...extras,
+    };
+  }
+
+  /**
+   * What the engine pass still owes, newest first: the owner's games the
+   * filters admit whose record is missing or no longer fits. The client
+   * asks for a page at a time, does them, puts each back, and asks again.
+   */
+  analysisQueue(
+    limit: number,
+  ): { file: string; index: number; side: 'white' | 'black'; site: string | null; plies: number }[] {
+    const db = this.open();
+    if (!db) return [];
+    const records = this.analysis.all();
+    const rows = db
+      .prepare(
+        `SELECT file, idx, user_side, site, plies FROM games g
+         WHERE g.user_side IS NOT NULL AND g.shadowed = 0 AND g.plies IS NOT NULL
+         ORDER BY g.date DESC, g.id DESC`,
+      )
+      .all() as { file: string; idx: number; user_side: 'white' | 'black'; site: string | null; plies: number }[];
+    const out: ReturnType<MyGamesIndex['analysisQueue']> = [];
+    for (const r of rows) {
+      const record = records.get(analysisKey(r.file, r.idx));
+      if (record && recordFits(record, r)) continue;
+      out.push({ file: r.file, index: r.idx, side: r.user_side, site: r.site, plies: r.plies });
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  /** How far the pass has got over the whole vault: done and owed. */
+  analysisStatus(): { analysed: number; total: number } {
+    const db = this.open();
+    if (!db) return { analysed: 0, total: 0 };
+    const records = this.analysis.all();
+    const rows = db
+      .prepare(
+        `SELECT file, idx, site, plies FROM games g
+         WHERE g.user_side IS NOT NULL AND g.shadowed = 0 AND g.plies IS NOT NULL`,
+      )
+      .all() as { file: string; idx: number; site: string | null; plies: number }[];
+    let analysed = 0;
+    for (const r of rows) {
+      const record = records.get(analysisKey(r.file, r.idx));
+      if (record && recordFits(record, r)) analysed += 1;
+    }
+    return { analysed, total: rows.length };
+  }
+
+  putAnalysis(record: AnalysisRecord): void {
+    this.analysis.put(record);
+  }
+
+  clearAnalysis(): void {
+    this.analysis.clear();
+  }
+
+  /**
    * Row counts, for the pane's "indexed N games" line.
    *
    * `matching` answers the filter window's question — how many games the
@@ -859,8 +1344,10 @@ export function myGamesApi(
   dbPath: string = DATA_MYGAMES,
   /** Where /mygames/compare finds reference databases (tests override). */
   refgamesDir: string = resolve(DATA, 'refgames'),
+  /** The engine pass's findings (the demo and tests point this elsewhere). */
+  analysisPath: string = DATA_MYGAMES_ANALYSIS,
 ): Hono {
-  const index = new MyGamesIndex(gamesDir, dbPath);
+  const index = new MyGamesIndex(gamesDir, dbPath, new AnalysisStore(analysisPath));
   const api = new Hono();
 
   api.get('/mygames', (c) => {
@@ -994,6 +1481,45 @@ export function myGamesApi(
       band,
     );
     return c.json({ banded, rows });
+  });
+
+  /**
+   * Your results by colour, time control and opening, and where each
+   * game left the catalogue — see insights(). The same filters as every
+   * other route here.
+   */
+  api.get('/mygames/insights', (c) => {
+    index.sync();
+    return c.json(index.insights(parseFilters((key) => c.req.query(key))));
+  });
+
+  /**
+   * The engine pass's bookkeeping. The pass itself runs in the client
+   * (see myGamesAnalysis.ts); these four routes are how it learns what is
+   * owed, hands back what it found, reports how far it is, and starts
+   * over. A record must fit the game at its key to count.
+   */
+  api.get('/mygames/analysis/status', (c) => {
+    index.sync();
+    return c.json(index.analysisStatus());
+  });
+
+  api.get('/mygames/analysis/queue', (c) => {
+    const limit = Math.min(200, Math.max(1, Number(c.req.query('limit')) || 25));
+    index.sync();
+    return c.json({ games: index.analysisQueue(limit) });
+  });
+
+  api.put('/mygames/analysis', async (c) => {
+    const record = parseRecord(await c.req.json().catch(() => null));
+    if (!record) return c.json({ error: 'expected an analysis record' }, 400);
+    index.putAnalysis(record);
+    return c.json({ ok: true });
+  });
+
+  api.delete('/mygames/analysis', (c) => {
+    index.clearAnalysis();
+    return c.json(index.analysisStatus());
   });
 
   /** What the index holds — and a way to make it catch up on demand. */
