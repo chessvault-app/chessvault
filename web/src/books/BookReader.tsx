@@ -99,20 +99,6 @@ const BOARD_KEY = 'vault:reader:board';
  */
 const FOLDED_PAGE_MAX = 'max-w-[75rem]';
 /**
- * The reader's toolbars and the board's navigation stand on the page
- * ground, not in a card, and the ghost button's hover fill is the
- * ground's own rung in the light theme: --muted and --background are
- * both 97%, so a hovered button painted oklch(0.97) on oklch(0.97) and
- * nothing showed (measured on both toolbars; on the board page the same
- * buttons sit on a white card and the fill reads). The sidebar's rows
- * stand on the same ground and hover a rung up, with --accent; these do
- * the same, and an open popover's trigger with them. A pressed toggle
- * here is therefore its ink (text-primary, as the diagram-buttons switch
- * already was) and not a fill, since the fill is now what hover says.
- */
-const GROUND_HOVER =
-  '[&_[data-slot=button]:hover]:bg-accent [&_[data-slot=button][aria-expanded=true]]:bg-accent';
-/**
  * What the strip takes off the board's height budget when it is shown:
  * three lines (the engine tab's cap, max-h-24) plus the gap above it. A
  * fixed reserve rather than the strip's measured height, so the board does
@@ -478,7 +464,12 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // It takes the slot the board's player strip would have had (the reader
   // never loads a game), so the board top meets the page top beside it.
   const boardBar = (
-    <div className={cn('flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3', GROUND_HOVER)}>
+    <div
+      // data-ground: these buttons stand on the page, not in a card, and
+      // the ghost variant's hover reads it (components/ui/button).
+      data-ground=""
+      className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3"
+    >
       <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
       <Button
         variant="ghost"
@@ -499,8 +490,8 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       <Button
         variant="ghost"
         size="icon-sm"
+        active={strip}
         aria-pressed={strip}
-        className={cn(strip && 'text-primary')}
         title={strip ? t('Hide the moves under the board') : t('Show the moves under the board')}
         onClick={toggleStrip}
       >
@@ -538,7 +529,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           is paid back on the right — on the nav's centre line below.
           (self-center would un-stretch it and collapse it to nothing.) */}
       <AnalysisBoard strip={false} />
-      <div className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W, GROUND_HOVER)}>
+      <div data-ground="" className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W)}>
         <BoardControls className="-my-1" />
       </div>
       {/* Under the nav, as wide as the board's column and no wider:
@@ -1105,10 +1096,13 @@ function PdfPane({
           the page is cut on when it scrolls, the top edge of a page just
           turned to — on the board's line beside it. */}
       <div
+        // On the page ground at wide (the phone's bar is a card): the
+        // ghost variant's hover reads it (components/ui/button).
+        data-ground={compact ? undefined : ''}
         className={
           compact
             ? 'flex flex-1 items-center justify-center gap-0.5 py-1.5'
-            : cn('flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3', GROUND_HOVER)
+            : 'flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3'
         }
       >
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
@@ -1219,8 +1213,8 @@ function PdfPane({
             <Button
               variant="ghost"
               size={size}
+              active={hotspots}
               aria-pressed={hotspots}
-              className={cn(hotspots && 'text-primary')}
               onClick={onToggleHotspots}
               title={hotspots ? t('Hide the diagram buttons') : t('Show the diagram buttons')}
             >
@@ -1493,8 +1487,8 @@ function SearchPopover({
       variant="ghost"
       size={size}
       title={t('Search the book')}
+      active={active}
       aria-pressed={active}
-      className={cn(active && 'text-primary')}
       onClick={sheet ? () => setOpen(true) : undefined}
     >
       <Search className={icon} />

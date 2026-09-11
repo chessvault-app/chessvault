@@ -55,8 +55,14 @@ const buttonVariants = cva(
           'border-border bg-background hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 dark:pointer-coarse:active:bg-input/50',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] pointer-coarse:active:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        // On the page ground (an ancestor with `data-ground`, the way the
+        // base classes read `data-slot=button-group`) the hover fill is a
+        // rung up, --accent: in light --muted IS the ground's 97% rung, so
+        // a ghost button on the page and not on a card hovered oklch(0.97)
+        // on oklch(0.97) and showed nothing (measured on the book reader's
+        // toolbars). The sidebar's rows hover the same ground the same way.
         ghost:
-          'hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:pointer-coarse:active:bg-muted/50',
+          'hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:pointer-coarse:active:bg-muted/50 in-data-[ground]:hover:bg-accent in-data-[ground]:pointer-coarse:active:bg-accent in-data-[ground]:aria-expanded:bg-accent dark:in-data-[ground]:hover:bg-accent dark:in-data-[ground]:pointer-coarse:active:bg-accent',
         // The ink follows the fill on hover, the way the ghost and outline
         // variants above take hover:text-foreground with their hover:bg.
         // Here it is not a look but the readability floor: this variant is

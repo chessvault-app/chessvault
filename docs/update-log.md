@@ -111,8 +111,9 @@ builds and the board's arrow keys do less per request.
   theme.** They stand on the page itself rather than in a card, and the
   hover fill was the page's own grey, so nothing changed under the
   pointer. They now hover a rung up, the way the sidebar's rows on the
-  same ground do, and the moves-strip switch shows it is on by its ink,
-  as the diagram-buttons switch beside it already did.
+  same ground do, and the three switches on those toolbars (the moves
+  strip, the diagram buttons, a search in progress) show they are on
+  with the same fill every other toolbar switch in the app uses.
 
 ## 0.9.5
 
