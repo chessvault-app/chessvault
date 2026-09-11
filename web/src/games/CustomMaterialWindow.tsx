@@ -47,7 +47,7 @@ export const EMPTY_CUSTOM: CustomDraft = { white: {}, black: {} };
 /** The draft's non-Any picks as the spec the server takes; null when
     nothing is constrained (the server refuses a spec that would match
     every game, and so does the Apply button). */
-function draftToSpec(draft: CustomDraft): CustomSpec | null {
+export function draftToSpec(draft: CustomDraft): CustomSpec | null {
   const side = (from: Record<string, string>): Record<string, [number, number]> => {
     const out: Record<string, [number, number]> = {};
     for (const { letter } of PIECES) {

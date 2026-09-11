@@ -743,6 +743,48 @@ export const ko: Record<string, string> = {
   'Next in your book': '책의 다음 퍼즐',
   'Book puzzle {n}': '책 퍼즐 {n}번',
   'Puzzle history': '퍼즐 기록',
+  // --- endgame drill ---------------------------------------------------
+  // "Endgames" is the sidebar's sub-entry and the tile; the drill itself
+  // and its picker share one word, 드릴, as the concept rule asks.
+  Endgames: '엔드게임',
+  'Endgame drills': '엔드게임 드릴',
+  'Endgame drill': '엔드게임 드릴',
+  'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.':
+    '무작위 엔드게임에서 이기는 진영을 맡아 테이블베이스를 상대로 둡니다. 승리를 놓치는 수를 두면 시도가 끝나고, 승리를 지키는 수를 보여 줍니다.',
+  'Not tried yet': '아직 시도하지 않음',
+  '{a} of {b} held': '{b}번 중 {a}번 지킴',
+  'Last drilled: {class}, {when}': '마지막 드릴: {class}, {when}',
+  'Forget the drill record': '드릴 기록 지우기',
+  'Forget {n} drill attempts?': '드릴 시도 {n}번을 지울까요?',
+  'Forget them': '지우기',
+  'The demo reaches no tablebase. In the app, the drill plays against whichever tablebase Settings names.':
+    '데모는 테이블베이스에 접근하지 않습니다. 앱에서는 설정에서 지정한 테이블베이스를 상대로 드릴을 진행합니다.',
+  'No tablebase is answering. Choose a source under Settings, Tablebase.':
+    '응답하는 테이블베이스가 없습니다. 설정의 테이블베이스에서 출처를 선택하세요.',
+  'The tablebase in use holds no tables for this many pieces. Point Settings, Tablebase at one that does: Lichess’s public server has all seven-piece tables.':
+    '사용 중인 테이블베이스에 이 기물 수의 테이블이 없습니다. 설정의 테이블베이스를 테이블이 있는 곳으로 바꾸세요. Lichess 공개 서버에는 7기물 테이블이 모두 있습니다.',
+  'The tablebase cannot be reached. Check the connection, or pick another source under Settings, Tablebase.':
+    '테이블베이스에 연결할 수 없습니다. 연결을 확인하거나 설정의 테이블베이스에서 다른 출처를 선택하세요.',
+  'This material needs more than seven pieces, which no table holds.':
+    '이 기물 구성은 기물이 7개를 넘어 어떤 테이블에도 없습니다.',
+  'No won position of this material turned up this time.':
+    '이번에는 이 기물 구성에서 이기는 위치가 나오지 않았습니다.',
+  'The win slipped': '승리를 놓쳤습니다',
+  'Finding a won ending…': '이기는 엔드게임을 찾는 중…',
+  'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.':
+    '승리를 지키세요. 테이블베이스가 무승부나 패배로 판정하는 수를 두면 시도가 끝납니다.',
+  'Defending…': '방어 중…',
+  'Checkmate. The win held from the first move to the last.':
+    '체크메이트. 첫 수부터 마지막 수까지 승리를 지켰습니다.',
+  '{san} lets the win slip. {best} keeps it.':
+    '{san}은(는) 승리를 놓치는 수입니다. {best}이(가) 승리를 지킵니다.',
+  'You play White': '백 진영을 맡습니다',
+  'You play Black': '흑 진영을 맡습니다',
+  'Mate in {n}': '{n}수 메이트',
+  'Open Settings': '설정 열기',
+  'Next ending': '다음 엔드게임',
+  'Back to endgame drills': '엔드게임 드릴 목록으로',
+  'All endings': '모든 엔드게임',
   // The Train tile's label while there is no database to train on.
   'Set up': '준비하기',
   'Recently read': '최근 읽은 책',

@@ -40,6 +40,7 @@ import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
+import { EndgameDrillPage } from './EndgameDrill';
 import { HubPage } from './HubPage';
 import { PuzzleDbSetup, PuzzleDbSetupPlaceholder } from './PuzzleDbSetup';
 
@@ -113,7 +114,9 @@ type Phase =
  * Routes: #/puzzles trains across all themes, #/puzzles/hub is the
  * phone's launcher (and the dashboard above phone width), #/puzzles/themes
  * is the category page, #/puzzles/theme/<t> trains one theme,
- * #/puzzles/failed reviews previously failed puzzles (uncounted). The
+ * #/puzzles/failed reviews previously failed puzzles (uncounted), and
+ * #/puzzles/endgames is the endgame drill's class picker, with a class
+ * under it (EndgameDrill.tsx). The
  * trainer is keyed so switching category boots a clean state machine.
  */
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
@@ -121,6 +124,7 @@ export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'themes') return <ThemesPage />;
   if (params[0] === 'dashboard') return <DashboardPage />;
   if (params[0] === 'books') return <BooksView params={params.slice(1)} />;
+  if (params[0] === 'endgames') return <EndgameDrillPage params={params.slice(1)} />;
   if (params[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
   if (params[0] === 'id' && params[1]) {
     return <Trainer key={`id-${params[1]}`} theme="" mode="single" puzzleId={params[1]} />;

@@ -122,7 +122,13 @@ const reauth = (): void => {
   setTimeout(() => window.location.reload(), 1200);
 };
 
-export function SettingsPage() {
+/**
+ * @param anchor a card to open on, by its id (`#/settings/tablebase`):
+ *   how another page sends the reader to one setting rather than to the
+ *   top of a long page. Scrolled to once the cards are drawn, since the
+ *   page has no cards to scroll to until the settings arrive.
+ */
+export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   /** Bumped whenever something on this page frees space, so the cards
@@ -130,6 +136,13 @@ export function SettingsPage() {
   const [storageStamp, setStorageStamp] = useState(0);
   const storage = useStorage(storageStamp);
   const pending = useSlowLoad(settings === null && loadError === null);
+
+  useEffect(() => {
+    if (!anchor || settings === null) return;
+    document.getElementById(anchor)?.scrollIntoView({ block: 'start' });
+    // Once, when the cards land; a later refresh must not scroll again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchor, settings === null]);
 
   const refresh = async (): Promise<void> => {
     // Uncaught, this stranded the page on its skeleton with no way out —

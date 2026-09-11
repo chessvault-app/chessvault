@@ -20,6 +20,7 @@ import {
   Table2,
   Wrench,
   X,
+  Crown,
 } from 'lucide-react';
 import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -211,7 +212,12 @@ function demoBannerBelongs(section: Section, params: string[]): boolean {
     case 'books':
       return params.length === 0;
     case 'puzzles':
-      return params[0] === 'hub' || params[0] === 'dashboard' || params[0] === 'themes' || (params[0] === 'books' && params.length === 1);
+      return (
+        params[0] === 'hub' ||
+        params[0] === 'dashboard' ||
+        params[0] === 'themes' ||
+        ((params[0] === 'books' || params[0] === 'endgames') && params.length === 1)
+      );
     default:
       return false;
   }
@@ -418,7 +424,7 @@ function Shell() {
           params[0] === 'licenses' ? (
             <LicensesPage />
           ) : (
-            <SettingsPage />
+            <SettingsPage anchor={params[0]} />
           )
         ) : section === 'more' ? (
           <MorePage />
@@ -553,6 +559,7 @@ const PUZZLE_SUBNAV = [
   // of its own, and this is the shelf of puzzles read out of them.
   { param: 'books', label: 'Puzzle books', icon: BookMarked },
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
+  { param: 'endgames', label: 'Endgames', icon: Crown },
 ] as const;
 
 /**

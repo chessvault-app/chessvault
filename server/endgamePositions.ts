@@ -3,12 +3,8 @@ import { Chess } from 'chessops/chess';
 import { makeFen } from 'chessops/fen';
 import { SquareSet } from 'chessops/squareSet';
 import type { Color, Role } from 'chessops/types';
-import {
-  materialMenBounds,
-  materialSatisfied,
-  type MaterialSpec,
-  type PieceLetter,
-} from '../shared/scanMatch.ts';
+import { materialSatisfied, type MaterialSpec, type PieceLetter } from '../shared/scanMatch.ts';
+import { MAX_MEN, drillable } from '../shared/endgameDrill.ts';
 
 /**
  * Random legal endgames of a given material, for the endgame drill.
@@ -28,8 +24,9 @@ import {
  * them a branch.
  */
 
-/** Syzygy's ceiling, kings included; see server/tablebase.ts. */
-export const MAX_MEN = 7;
+/** The ceiling and the fit test live in shared/endgameDrill.ts, where
+    the app's class picker reads them too. */
+export { MAX_MEN, drillable };
 
 /** A source of numbers in [0, 1), so the tests can seed it. */
 export type Rng = () => number;
@@ -51,13 +48,6 @@ const ROLE: Record<PieceLetter, Role> = {
  * as written.
  */
 const FREE_CEILING: Record<PieceLetter, number> = { p: 4, n: 2, b: 2, r: 2, q: 1 };
-
-/** Whether kings plus the spec's minimums fit under the ceiling at all.
-    A class that cannot is refused before any table is asked. */
-export function drillable(spec: MaterialSpec): boolean {
-  const { loW, loB } = materialMenBounds(spec);
-  return loW + loB <= MAX_MEN;
-}
 
 const randomInt = (random: Rng, lo: number, hi: number): number =>
   lo + Math.floor(random() * (hi - lo + 1));

@@ -29,15 +29,21 @@ export class ApiError extends Error {
    * flag there was nothing at a call site to tell them apart.
    */
   readonly offline: boolean;
+  /** The server's own name for what went wrong, where a route gives one
+      (`reason` in its error body), so a page can say it in the reader's
+      language rather than relay the English sentence. */
+  readonly reason: string | null;
 
   constructor(
     readonly status: number,
     message: string,
     offline = false,
+    reason: string | null = null,
   ) {
     super(message);
     this.name = 'ApiError';
     this.offline = offline;
+    this.reason = reason;
   }
 }
 
@@ -115,11 +121,13 @@ async function refusal(res: Response): Promise<ApiError> {
   const body = (await res.json().catch(() => null)) as {
     error?: string;
     offline?: boolean;
+    reason?: string;
   } | null;
   return new ApiError(
     res.status,
     body?.error ?? t('Request failed ({status})', { status: res.status }),
     body?.offline === true,
+    typeof body?.reason === 'string' ? body.reason : null,
   );
 }
 
