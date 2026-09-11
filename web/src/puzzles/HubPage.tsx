@@ -93,12 +93,6 @@ interface HistoryEntry {
   at: string;
 }
 
-/** How the endgame drill has gone, from /api/endgames/progress. */
-interface DrillProgress {
-  classes: Record<string, { attempts: number; wins: number; lastAt: string }>;
-  last: { class: string; at: string } | null;
-}
-
 interface BookSummary {
   slug: string;
   title: string;
@@ -328,10 +322,10 @@ function HubSkeletonHistoryPanel() {
  * it, so the placeholder stood about 31px short and the cards above it
  * took the difference when the answer arrived.
  */
-function HubSkeletonBookRow({ heading = true }: { heading?: boolean }) {
+function HubSkeletonBookRow() {
   return (
     <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
-      {heading && <SkeletonPanelHeading width="w-20" />}
+      <SkeletonPanelHeading width="w-20" />
       {/* py from the density token, like the ListRow this stands for. */}
       <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
@@ -523,47 +517,25 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 }
 
 /**
- * The endgame drill: the way to it, with how the drills have gone.
+ * The endgame drill: the way to it, and nothing else.
  *
- * One row and no heading strip. It had the book row's strip (measured at
- * 390 wide: the page overflowed by 12px at 568 tall and by 92 at 844,
- * where the history panel had been fitting), and the strip's 31px were
- * the difference. The row names itself instead, with every class's
- * count together on the right; the picker has them one by one. Always
- * drawn, at one size:
- * a section that appears only once it has content teaches nobody that
- * it exists, and a vault that has never tried one is offered the
- * picker. Held against thrown, as counts; no rate.
+ * It carried a progress bar and a held-of-attempted count for a day,
+ * which made the row read as something to keep up with; a drill is a
+ * thing to play when you feel like an ending, not a record to tend
+ * (lanph3re's call). So this is a plain row, a crown and a name and a
+ * chevron, the same size whether the record is empty or long; the
+ * picker still shows how each class has gone, one tap away, for whoever
+ * asks. No heading strip either (see the height notes on the page).
  */
-function DrillPanel({ progress }: { progress: DrillProgress | null }) {
-  // Every class together: a row without a class name on it has no
-  // business showing one class's count.
-  const { held, attempts } = Object.values(progress?.classes ?? {}).reduce(
-    (sum, c) => ({ held: sum.held + c.wins, attempts: sum.attempts + c.attempts }),
-    { held: 0, attempts: 0 },
-  );
+function DrillRow() {
   return (
     <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
       <ListRow onClick={() => navigate('puzzles', 'endgames')}>
         <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
           <Crown className="size-3.5" />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-foreground truncate text-sm font-medium">{t('Endgame drills')}</span>
-          <ProgressBar
-            total={attempts}
-            solved={held}
-            failed={attempts - held}
-            showEmpty
-            decorative
-          />
-        </span>
-        <span className="text-muted-foreground shrink-0 whitespace-nowrap text-xs">
-          {attempts === 0 ? (
-            t('Not tried yet')
-          ) : (
-            <Figures text={t('{a} of {b} held', { a: held, b: attempts })} />
-          )}
+        <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
+          {t('Endgame drills')}
         </span>
         <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
       </ListRow>
@@ -719,7 +691,7 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
 
 /**
  * How many of the page's answers are still outstanding, counted down as
- * each settles — seven requests, five of which decide part of the layout.
+ * each settles — six requests, five of which decide part of the layout.
  *
  * Everything above the launcher shares ONE column of spare height, so a
  * block that arrives late does not appear beside the others: it resizes
@@ -743,7 +715,7 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
  * cluster above either grows into the empty band or hands its slack to
  * the history panel.
  */
-const ANSWERS = 7;
+const ANSWERS = 6;
 
 /**
  * How long they are allowed to wait for each other.
@@ -785,7 +757,6 @@ function Hub() {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [drill, setDrill] = useState<DrillProgress | null>(null);
   const [settled, setSettled] = useState(false);
   /**
    * Whether each card's own answer is in.
@@ -800,7 +771,6 @@ function Hub() {
   const [reviewIn, setReviewIn] = useState(false);
   const [bookIn, setBookIn] = useState(false);
   const [historyIn, setHistoryIn] = useState(false);
-  const [drillIn, setDrillIn] = useState(false);
   const [booksIn, setBooksIn] = useState(false);
   const [metaIn, setMetaIn] = useState(false);
   const [slotWasFilled] = useState(() => localStorage.getItem(SLOT_FILLED_KEY) === '1');
@@ -876,16 +846,6 @@ function Hub() {
       } catch {
         // No panel; the dashboard tile still reaches the full log.
       } finally {
-        done();
-      }
-    })();
-    void (async () => {
-      try {
-        setDrill(await api<DrillProgress>('/api/endgames/progress'));
-      } catch {
-        // The row still opens the picker; only the count is missing.
-      } finally {
-        if (live) setDrillIn(true);
         done();
       }
     })();
@@ -1295,12 +1255,9 @@ function Hub() {
             "Puzzle books" does not fit, so the row folds to two by two
             there and only there (20.0625rem because Tailwind's max-* is
             exclusive: `width < 321px` is what includes 320). */}
-        {/* The drill's row, between the boards and the buttons: a block
-            of known height (the book row's, without its strip), reserved
-            as a skeleton until its count is in, so the tiles under it
-            never move. */}
-        {skeleton && <HubSkeletonBookRow heading={false} />}
-        {settled && (drillIn ? <DrillPanel progress={drill} /> : <HubSkeletonBookRow heading={false} />)}
+        {/* The drill's row, between the boards and the buttons. It waits
+            on nothing, so it is drawn with the skeleton and stays put. */}
+        {(skeleton || settled) && <DrillRow />}
 
         {skeleton && (
           <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
