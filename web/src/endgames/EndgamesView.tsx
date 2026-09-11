@@ -1,12 +1,8 @@
 import {
-  ChevronFirst,
-  ChevronLast,
   ChevronLeft,
   ChevronRight,
   Cpu,
   Crown,
-  Info,
-  ListOrdered,
   RotateCcw,
   RotateCw,
   Settings,
@@ -17,21 +13,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
 import { parseUci, roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
-import { BOARD_MAX_W } from '@/board/boardSize';
-import { publishBoardHeight } from '@/board/boardBlock';
-import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { Board, boardAnimMs } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
-import { playSound } from '@/board/sound';
+import { useMoveSound } from '@/board/useMoveSound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { SquareBadge } from '@/board/square-overlay';
-import { PaneTabs } from '@/components/pane-tabs';
-import { usePaneSwipe } from '@/hooks/use-pane-swipe';
+import { useAnalyseInPlace } from '@/hooks/use-analyse-in-place';
 import { addMove, createTree, getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
-import { EngineBlock } from '@/engine/EnginePane';
-import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
@@ -40,14 +30,12 @@ import { useWideLayout } from '@/lib/media';
 import { navigate } from '@/lib/router';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/utils';
-import { useAnalysis } from '@/store/analysis';
-import { useEngine } from '@/store/engine';
-import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { ListRow } from '@/components/list-row';
-import { MobileActionBar } from '@/components/mobile-action-bar';
 import { PageHeader } from '@/components/page-header';
+import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
 import { PageShell } from '@/components/page-shell';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
@@ -71,11 +59,11 @@ import {
  *
  * Two pages. The picker is a list of the material presets the games
  * hunt already knows; the drill itself is the trainer's page in every
- * part that is not the puzzle: the same board column, the same Moves
- * panel with its typed move box, the same pane strip and swipe on a
- * phone, the same in-place analysis board and engine once the attempt
- * is over, the same bottom bar. Two trainers that differ only where the
- * task differs is what keeps them one page to learn. What differs: there
+ * part that is not the puzzle, built from the same shell the other
+ * trainers share (components/trainer-shell, hooks/use-analyse-in-place):
+ * the board column, the Moves panel with its typed move box, the pane
+ * strip and swipe on a phone, the in-place analysis board and engine
+ * once the attempt is over, the bottom bar. What differs: there
  * is no answer to find, only a win to keep, and the verdict on every
  * move is the server's (server/endgameDrill.ts), which asks the
  * tablebase; the page grades nothing itself.
@@ -376,66 +364,29 @@ function Drill({ classId }: { classId: string }) {
   // Any progress snaps the board back to live.
   useEffect(() => setReview(null), [plies, phase]);
 
-  // Sound per shown position: a capture is the piece count dropping.
-  const prevPieces = useRef<number | null>(null);
-  useEffect(() => {
-    if (!displayed) {
-      prevPieces.current = null;
-      return;
-    }
-    const pieces = displayed.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
-    const prev = prevPieces.current;
-    prevPieces.current = pieces;
-    if (prev === null || !displayed.lastMove) return;
-    playSound(pieces < prev ? 'capture' : 'move');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayed?.fen]);
+  useMoveSound(displayed?.fen, Boolean(displayed?.lastMove));
 
   const goToPly = (target: number): void => {
     const clamped = Math.max(0, Math.min(target, plies));
     setReview(clamped >= plies ? null : clamped);
   };
 
-  // In-place analysis once the attempt is over, the trainer's own: the
-  // line loads into the shared analysis store, the board becomes the
-  // analysis board and the panel column takes the moves and the engine.
-  // Entering is what turns the engine on; leaving turns it off.
-  const [analysing, setAnalysing] = useState(false);
-  const [engineOpen, setEngineOpen] = useState(false);
-  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
-  const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
-  const analysingRef = useRef(false);
-  analysingRef.current = analysing;
-  useEffect(
-    () => () => {
-      if (analysingRef.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
   const ended = phase === 'won' || phase === 'threw' || phase === 'stopped';
-  useEffect(() => {
-    if (ended && line && !analysing) {
-      useAnalysis.setState({
-        tree: line.tree,
-        cursorId: line.lastId,
-        orientation,
-        pendingPromotion: null,
-        loadError: null,
-        gameHeaders: null,
-      });
-      setAnalysing(true);
-    }
-    if (!ended && analysing) {
-      setAnalysing(false);
-      setPane('info');
-      setEngineOpen(false);
-      useEngine.getState().setEnabled(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ended, line, analysing]);
-  useEffect(() => {
-    if (analysing) useEngine.getState().setEnabled(!wide || engineOpen);
-  }, [analysing, wide, engineOpen]);
+  // In-place analysis once the attempt is over, the trainers' shared
+  // hook: the line so far loads into the analysis store and the board
+  // becomes the analysis board. A desktop docks the engine only once
+  // asked (the header's toggle), as the puzzle trainer does.
+  const [engineOpen, setEngineOpen] = useState(false);
+  const inPlace = useAnalyseInPlace({
+    wide,
+    infoLabel: t('Drill'),
+    done: ended,
+    ready: line !== null,
+    seed: () => ({ tree: line!.tree, cursorId: line!.lastId, orientation }),
+    engineOn: !wide || engineOpen,
+    onLeave: () => setEngineOpen(false),
+  });
+  const { analysing } = inPlace;
 
   const label = t(classLabel(classId));
   const title = t('Endgame drill');
@@ -450,18 +401,6 @@ function Drill({ classId }: { classId: string }) {
           },
         ]
       : [];
-
-  const panes = [
-    { id: 'info' as const, label: t('Drill'), icon: Info },
-    { id: 'moves' as const, label: t('Moves'), icon: ListOrdered },
-    ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
-  ];
-  const paneSwipe = usePaneSwipe({
-    panes,
-    value: shownPane,
-    onChange: setPane,
-    enabled: !wide,
-  });
 
   const lastSan = line && plies > 0 ? (getNode(line.tree, lineIds[plies - 1]!).san ?? '') : '';
   const status = (): { text: string; tone?: string } => {
@@ -635,125 +574,95 @@ function Drill({ classId }: { classId: string }) {
         </Button>
         <h1 className="text-foreground text-base font-semibold">{title}</h1>
       </div>
-      {analysing ? (
-        <AnalysisBoard />
-      ) : (
-        <div className={BOARD_WIDE_COLUMN}>
-          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-            <div className="hidden w-full items-end wide:flex wide:h-10" />
-            <div className="flex w-full items-stretch gap-2">
-              <EvalBarSlot />
-              <div className="relative min-w-0 flex-1">
-                {displayed ? (
-                  <Board
-                    fen={displayed.fen}
-                    orientation={orientation}
-                    dests={phase === 'playing' && !reviewing ? displayed.dests : new Map()}
-                    lastMove={displayed.lastMove}
-                    check={displayed.check}
-                    autoShapes={bestShapes}
-                    onMove={onMove}
-                  />
-                ) : phase === 'error' ? (
-                  // What happened, and a way to go again, in the trainer's
-                  // own box; the way to Settings joins it where that is the fix.
-                  <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-card-ring">
-                    <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                      <p className="text-muted-foreground text-sm" role="alert">
-                        {error?.message}
-                      </p>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {error?.settings && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => navigate('settings', 'tablebase')}
-                          >
-                            <Settings className="size-3.5" data-icon="inline-start" />
-                            {t('Open Settings')}
-                          </Button>
-                        )}
-                        <Button variant="secondary" size="sm" onClick={() => void draw()}>
-                          <RotateCw className="size-3.5" data-icon="inline-start" />
-                          {t('Try again')}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <Skeleton className="board-box aspect-square rounded-xl" />
-                )}
-                {promotion.pending && (
-                  <PromotionPicker
-                    color={promotion.pending.color}
-                    dest={promotion.pending.dest}
-                    orientation={orientation}
-                    onSelect={promotion.complete}
-                    onCancel={promotion.cancel}
-                  />
-                )}
-                {!reviewing && phase === 'threw' && displayed?.lastMove && (
-                  <SquareBadge
-                    square={displayed.lastMove[1]}
-                    orientation={orientation}
-                    className="bg-nag-blunder"
+      <TrainerBoard analysing={analysing}>
+        {displayed ? (
+          <Board
+            fen={displayed.fen}
+            orientation={orientation}
+            dests={phase === 'playing' && !reviewing ? displayed.dests : new Map()}
+            lastMove={displayed.lastMove}
+            check={displayed.check}
+            autoShapes={bestShapes}
+            onMove={onMove}
+          />
+        ) : phase === 'error' ? (
+          // What happened, and a way to go again, in the trainer's
+          // own box; the way to Settings joins it where that is the fix.
+          <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-card-ring">
+            <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
+              <p className="text-muted-foreground text-sm" role="alert">
+                {error?.message}
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {error?.settings && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate('settings', 'tablebase')}
                   >
-                    ??
-                  </SquareBadge>
+                    <Settings className="size-3.5" data-icon="inline-start" />
+                    {t('Open Settings')}
+                  </Button>
                 )}
-                {!reviewing && phase === 'won' && displayed?.lastMove && (
-                  <SquareBadge
-                    square={displayed.lastMove[1]}
-                    orientation={orientation}
-                    className="bg-nag-good"
-                  >
-                    !
-                  </SquareBadge>
-                )}
+                <Button variant="secondary" size="sm" onClick={() => void draw()}>
+                  <RotateCw className="size-3.5" data-icon="inline-start" />
+                  {t('Try again')}
+                </Button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <Skeleton className="board-box aspect-square rounded-xl" />
+        )}
+        {promotion.pending && (
+          <PromotionPicker
+            color={promotion.pending.color}
+            dest={promotion.pending.dest}
+            orientation={orientation}
+            onSelect={promotion.complete}
+            onCancel={promotion.cancel}
+          />
+        )}
+        {!reviewing && phase === 'threw' && displayed?.lastMove && (
+          <SquareBadge
+            square={displayed.lastMove[1]}
+            orientation={orientation}
+            className="bg-nag-blunder"
+          >
+            ??
+          </SquareBadge>
+        )}
+        {!reviewing && phase === 'won' && displayed?.lastMove && (
+          <SquareBadge
+            square={displayed.lastMove[1]}
+            orientation={orientation}
+            className="bg-nag-good"
+          >
+            !
+          </SquareBadge>
+        )}
+      </TrainerBoard>
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
-        {...paneSwipe.column}
+        {...inPlace.paneSwipe.column}
       >
         <div className="hidden h-9 shrink-0 items-center gap-2 pr-[13px] wide:flex">
           <h1 className="text-foreground text-base font-semibold">{title}</h1>
         </div>
-        {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
-        {(wide || paneSwipe.shows('moves')) && movesPanel}
-        {!wide && analysing && paneSwipe.shows('engine') && (
-          <Panel className="min-h-0 flex-1">
-            <EngineBlock standalone />
-          </Panel>
-        )}
-        {(wide || paneSwipe.shows('info')) && drillPanel}
-        {analysing && <ColumnControls className="wide:hidden" />}
+        <TrainerPanes wide={wide} view={inPlace} moves={movesPanel} info={drillPanel} />
       </div>
 
-      <MobileActionBar>
-        {analysing ? (
-          <BoardControls className="py-1.5" />
-        ) : (
-          <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-            <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(0)} title={t('First move')}>
-              <ChevronFirst className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(shownPly - 1)} title={t('Back')}>
-              <ChevronLeft className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(shownPly + 1)} title={t('Forward')}>
-              <ChevronRight className="size-[1.1rem]" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title={t('Go to the end')}>
-              <ChevronLast className="size-[1.1rem]" />
-            </Button>
-          </div>
-        )}
-      </MobileActionBar>
+      <TrainerNavBar
+        analysing={analysing}
+        startDisabled={plies === 0}
+        forwardDisabled={review === null}
+        onFirst={() => goToPly(0)}
+        onBack={() => goToPly(shownPly - 1)}
+        onForward={() => goToPly(shownPly + 1)}
+        onLast={() => goToPly(plies)}
+        onFlip={() => setFlipped((f) => !f)}
+      />
     </div>
   );
 }
