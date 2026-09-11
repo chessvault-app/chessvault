@@ -201,6 +201,7 @@ export const HOME_ENTRY_IDS = [
   'puzzles',
   'openingmap',
   'repertoire',
+  'insights',
   'explorer',
   'databases',
   'puzzlebooks',

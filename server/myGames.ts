@@ -938,9 +938,15 @@ class MyGamesIndex {
   insights(
     filters: MyGamesFilters,
     situation: Situation | null,
-  ): { games: number; named: boolean; cells: InsightsCell[] } {
+  ): { games: number; named: boolean; partial: boolean; cells: InsightsCell[] } {
     const db = this.open();
-    if (!db) return { games: 0, named: false, cells: [] };
+    if (!db) return { games: 0, named: false, partial: false, cells: [] };
+    // The first sync of a big vault hands most of it to the background
+    // walk (see sync), and a report asked for during the walk sums what
+    // is indexed so far. Said outright, so the page can ask again once
+    // the walk is done rather than show a count that is quietly short:
+    // the demo's first visit counted 16 of 31 games this way.
+    const partial = this.pending.length > 0 || this.walking;
     const { sql, binds } = this.where(filters);
     const games = db
       .prepare(
@@ -961,7 +967,7 @@ class MyGamesIndex {
       if (situation && !this.reaches(g.file, g.idx, situation)) continue;
       kept.set(g.id, g);
     }
-    if (kept.size === 0) return { games: 0, named: openingsBook() !== null, cells: [] };
+    if (kept.size === 0) return { games: 0, named: openingsBook() !== null, partial, cells: [] };
 
     // Every indexed ply of every admitted game, in one query, grouped in
     // JS: the filter's WHERE does the admitting, and games the situation
@@ -1055,6 +1061,7 @@ class MyGamesIndex {
     return {
       games: kept.size,
       named: book !== null,
+      partial,
       cells: [...cells.values()].sort((a, b) => b.games - a.games),
     };
   }

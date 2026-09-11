@@ -15,14 +15,37 @@ import { TitleTip } from '@/components/title-tip';
  * of the bar's width, measured against the smallest bar either caller
  * gives it); the rest is the title, which every segment is part of.
  */
-export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
+export function ResultBar({
+  w,
+  d,
+  b,
+  pov = 'colours',
+}: {
+  w: number;
+  d: number;
+  b: number;
+  /**
+   * Whose numbers these are. `colours` (the default) is a book's row:
+   * White's wins, draws, Black's wins, in the board's own two inks.
+   * `mine` is a row of the owner's games seen from their side: won,
+   * drew, lost, in the good and destructive tints the result badge
+   * already uses for a game that went your way or did not. The insights
+   * page asked for the second and the eval inks would have lied on it: a
+   * game won as Black is not a black segment.
+   */
+  pov?: 'colours' | 'mine';
+}) {
   const total = w + d + b;
   if (total === 0) return null;
   const pct = (n: number): number => (100 * n) / total;
+  const mine = pov === 'mine';
   const segments = [
-    { value: pct(w), className: 'bg-eval-white text-on-eval-white' },
+    { value: pct(w), className: mine ? 'bg-good-tint text-good' : 'bg-eval-white text-on-eval-white' },
     { value: pct(d), className: 'bg-accent text-muted-foreground' },
-    { value: pct(b), className: 'bg-eval-black text-on-eval-black' },
+    {
+      value: pct(b),
+      className: mine ? 'bg-destructive/10 text-destructive' : 'bg-eval-black text-on-eval-black',
+    },
   ];
   return (
     // The split the bar cannot print. Through t(), which it was not: the
@@ -34,7 +57,7 @@ export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
     // of text. The 4px corner is the chip corner, off the radius knob on
     // purpose.
     <TitleTip
-      title={t('White {w}% · Draw {d}% · Black {b}%', {
+      title={t(mine ? 'Won {w}% · Drew {d}% · Lost {b}%' : 'White {w}% · Draw {d}% · Black {b}%', {
         w: pct(w).toFixed(1),
         d: pct(d).toFixed(1),
         b: pct(b).toFixed(1),

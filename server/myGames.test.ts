@@ -556,6 +556,7 @@ describe('my games insights', () => {
   const report = async (query = ''): Promise<{
     games: number;
     named: boolean;
+    partial: boolean;
     cells: {
       side: string;
       speed: string;
@@ -594,9 +595,11 @@ describe('my games insights', () => {
   });
 
   it('scores every game from my side, by colour and time control', async () => {
-    const { games, named, cells } = await report();
+    const { games, named, partial, cells } = await report();
     expect(games).toBe(4);
     expect(named).toBe(true);
+    // Four games index inside the request's budget; nothing is pending.
+    expect(partial).toBe(false);
     const sum = (key: 'games' | 'w' | 'd' | 'l', side?: string): number =>
       cells.filter((c) => !side || c.side === side).reduce((n, c) => n + c[key], 0);
     expect([sum('w'), sum('d'), sum('l')]).toEqual([2, 1, 1]);
@@ -662,6 +665,6 @@ describe('my games insights', () => {
     const res = await solo.request('/api/mygames/insights');
     expect(res.status).toBe(200);
     // Named is the catalogue's presence, not the vault's: it ships with the app.
-    expect(await res.json()).toEqual({ games: 0, named: true, cells: [] });
+    expect(await res.json()).toEqual({ games: 0, named: true, partial: false, cells: [] });
   });
 });

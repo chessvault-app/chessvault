@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
+  ChartColumn,
   Database,
   Ellipsis,
   Folder,
@@ -101,6 +102,8 @@ registerRoutePending((hash) => {
       return OpeningMapView.pending();
     case 'databases':
       return DatabasesPage.pending();
+    case 'insights':
+      return InsightsPage.pending();
     case 'settings':
       return params[0] === 'licenses' ? LicensesPage.pending() : SettingsPage.pending();
     default:
@@ -110,6 +113,7 @@ registerRoutePending((hash) => {
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
 const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
+const InsightsPage = lazyRoute(() => import('@/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })));
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
@@ -140,6 +144,10 @@ const NAV: { section: Section; label: string; icon: typeof Folder }[] = [
   { section: 'books', label: 'Books', icon: BookOpen },
   { section: 'puzzles', label: 'Puzzles', icon: Puzzle },
   { section: 'openingmap', label: 'Opening map', icon: Network },
+  // Insights is the map's sibling: a reading of your own games rather
+  // than a collection of documents. A sidebar row on a desktop; listed
+  // in More too, which keeps it off the phone's five-tab bar.
+  { section: 'insights', label: 'Insights', icon: ChartColumn },
 ];
 
 // The Tools group: interactive boards that aren't a "collection". Explorer
@@ -411,6 +419,8 @@ function Shell() {
           <OpeningMapView params={params} />
         ) : section === 'databases' ? (
           <DatabasesPage />
+        ) : section === 'insights' ? (
+          <InsightsPage />
         ) : section === 'settings' ? (
           // A sub-route rather than a section of its own: the licences are
           // read from Settings and belong under it, and the sidebar has no
@@ -943,6 +953,8 @@ const MORE_GROUPS: {
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: Layers, blurb: 'Practise an opening against real games' },
       { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
+      // The blurb is Home's, so two places never describe it two ways.
+      { section: 'insights', label: 'Insights', icon: ChartColumn, blurb: 'Your results by colour, time control and opening' },
     ],
   },
   {

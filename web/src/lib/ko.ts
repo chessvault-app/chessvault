@@ -2166,4 +2166,47 @@ export const ko: Record<string, string> = {
   'Download a copy ({size})': '사본 내려받기 ({size})',
   'The copy is one tar file of every document and the change history. Settings and tokens stay on the server.':
     '사본은 모든 문서와 변경 기록을 담은 tar 파일 하나입니다. 설정과 토큰은 서버에 남습니다.',
+  // --- insights -------------------------------------------------------------
+  // The page's own words. 북 is the opening book, as on the map's deviation
+  // rows ("You left the book with this move"); 카탈로그 is the ECO
+  // catalogue the explorer names positions from; 진영 is a side.
+  'Insights': '인사이트',
+  'Your results by colour, time control and opening': '진영, 시간제, 오프닝별 내 성적',
+  'Your results by colour, time control and opening, and where each game left the opening catalogue. The filters narrow every table below.':
+    '진영, 시간제, 오프닝별 내 성적과 각 게임이 오프닝 카탈로그를 벗어난 지점입니다. 필터는 아래의 모든 표를 좁힙니다.',
+  'Any situation': '모든 상황',
+  'Situation': '상황',
+  'Endgames': '엔드게임',
+  'Motifs': '모티프',
+  'Whose motif': '누구의 모티프인지',
+  'Correspondence': '통신',
+  'No time control': '시간제 없음',
+  'The report could not be loaded.': '보고서를 불러오지 못했습니다.',
+  'Retry': '다시 시도',
+  'Open games': '게임 열기',
+  'No games of yours yet': '아직 내 게임이 없습니다',
+  'Games count here once your side in them is known. Keep a game with your side marked, or browse one of your Chess.com or Lichess months on the Games page.':
+    '게임에서 내 진영이 확인되면 여기에 집계됩니다. 내 진영을 표시해 게임을 담아 두거나, 게임 페이지에서 내 Chess.com 또는 Lichess 월 기보를 열어 보세요.',
+  'Loosen a filter above, or clear them all.': '위의 필터를 느슨하게 하거나 모두 지우세요.',
+  'Score counts a draw as half a win.': '점수는 무승부를 반 승으로 셉니다.',
+  '{w} won, {d} drew, {l} lost': '{w}승 {d}무 {l}패',
+  'Won {w}% · Drew {d}% · Lost {b}%': '승 {w}% · 무 {d}% · 패 {b}%',
+  'By colour': '진영별',
+  'By time control': '시간제별',
+  'Openings': '오프닝',
+  'Named from the deepest catalogued position each game reached. Most played first.':
+    '각 게임이 도달한 가장 깊은 카탈로그 포지션으로 이름을 붙입니다. 많이 둔 순서입니다.',
+  'The opening catalogue is missing from this install, so games are grouped by their ECO header.':
+    '이 설치에는 오프닝 카탈로그가 없어서 게임을 ECO 헤더로 묶습니다.',
+  'Score': '점수',
+  'Unnamed opening': '이름 없는 오프닝',
+  'Leaving book': '북을 벗어난 지점',
+  'The first move after which the position is in no catalogued line, and whose move it was. The openings where your own move leaves earliest come first.':
+    '그 뒤의 포지션이 어떤 카탈로그 라인에도 없는 첫 수와, 그것이 누구의 수였는지입니다. 내 수가 가장 일찍 벗어나는 오프닝이 먼저 옵니다.',
+  'Your move left book first in {you} of {n} games, on average at move {m}.':
+    '{n}게임 중 {you}게임에서 내 수가 먼저 북을 벗어났고, 평균 {m}수째였습니다.',
+  'No game of yours has left the catalogue by your own move yet.': '아직 내 수로 카탈로그를 벗어난 게임이 없습니다.',
+  'Leaves at': '벗어나는 수',
+  'You / them': '나 / 상대',
+  'move {n}': '{n}수째',
 };

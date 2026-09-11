@@ -1,6 +1,7 @@
 import {
   BookMarked,
   BookOpen,
+  ChartColumn,
   Database,
   Folder,
   Grid3x3,
@@ -148,6 +149,14 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     // A schedule, not a size: the tile says how many lines are due and
     // nothing when none are. See TileFigure.
     count: 'repertoire',
+  },
+  insights: {
+    id: 'insights',
+    label: 'Insights',
+    blurb: 'Your results by colour, time control and opening',
+    // A column chart is what the page is: sums, not a board or a list.
+    icon: ChartColumn,
+    nav: ['insights'],
   },
   // Not a page of its own: the board opened straight to its explorer pane.
   explorer: {
