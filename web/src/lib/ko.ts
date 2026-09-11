@@ -2172,8 +2172,8 @@ export const ko: Record<string, string> = {
   // catalogue the explorer names positions from; 진영 is a side.
   'Insights': '인사이트',
   'Your results by colour, time control and opening': '진영, 시간제, 오프닝별 내 성적',
-  'Your results by colour, time control and opening, and where each game left the opening catalogue. The filters narrow every table below.':
-    '진영, 시간제, 오프닝별 내 성적과 각 게임이 오프닝 카탈로그를 벗어난 지점입니다. 필터는 아래의 모든 표를 좁힙니다.',
+  'Your results by colour, time control and opening, and where each game left the opening catalogue.':
+    '진영, 시간제, 오프닝별 내 성적과 각 게임이 오프닝 카탈로그를 벗어난 지점입니다.',
   'Correspondence': '통신',
   'No time control': '시간제 없음',
   'The report could not be loaded.': '보고서를 불러오지 못했습니다.',
@@ -2215,7 +2215,7 @@ export const ko: Record<string, string> = {
   'Games per month, won over drew over lost, and the week.': '월별 게임 수를 승·무·패 순으로 쌓았고, 요일별도 보여 줍니다.',
   'Games per month': '월별 게임',
   'Month': '월',
-  'By weekday': '요일별',
+  'Weekday': '요일',
   'How games ended': '게임이 끝난 방식',
   "Read from the move text and the file's own termination line. A decisive game that names neither is counted as a resignation.": '수순과 파일의 종료 헤더에서 읽습니다. 둘 다 없는 결정전은 기권으로 센니다.',
   'Won by': '승리 방식',
@@ -2271,4 +2271,6 @@ export const ko: Record<string, string> = {
   'Leaves at move': '벗어나는 수',
   'You': '나',
   'Them': '상대',
+  'analysed at depth {d}': '깊이 {d}로 분석함',
+  'Most in a month: {n}': '한 달 최다 {n}개',
 };

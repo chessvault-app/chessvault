@@ -105,6 +105,20 @@ const SPEED_LABEL: Record<Speed | 'unknown', string> = {
 
 const SIDE_LABEL = { white: 'As White', black: 'As Black' } as const;
 
+/**
+ * The one weight an outcome's fill carries on this page wherever it
+ * covers area (the month bars, the donut slices): the outcome ink at
+ * under half strength. The result bar keeps its own tint tokens, which
+ * are the same three hues one rung quieter still; full ink is kept for
+ * text and the small swatches beside it, and never for a filled area,
+ * so no picture on the page shouts over the tables.
+ */
+const OUTCOME_INK = {
+  w: 'bg-good/45',
+  d: 'bg-muted-foreground/35',
+  l: 'bg-destructive/45',
+} as const;
+
 /** English, as the key t() looks up; the words the sites use. */
 const ENDING_LABEL: Record<Ending, string> = {
   mate: 'Checkmate',
@@ -123,7 +137,10 @@ const ENDING_LABEL: Record<Ending, string> = {
 const OPENING_FOLD = 20;
 
 const exact = new Intl.NumberFormat('en');
-const pct = (n: number | null): string => (n === null ? '' : `${Math.round(n)}%`);
+/** A share as a whole percent; under half a percent it says so rather
+    than printing "0%" beside a count of five. */
+const pct = (n: number | null): string =>
+  n === null ? '' : n > 0 && n < 0.5 ? '<1%' : `${Math.round(n)}%`;
 
 function readFilters(): InsightsFilters {
   try {
@@ -277,18 +294,29 @@ export function InsightsPage() {
         back={() => navigate('more')}
         subtitle={
           report !== null ? (
-            <span className="tabular-nums">{t('{n} games', { n: exact.format(report.games) })}</span>
+            <span className="tabular-nums">
+              {t('{n} games', { n: exact.format(report.games) })}
+              {/* The pass's end, where the count already is: the strip
+                  leaves when the last game lands, and this is what says
+                  it did. */}
+              {report.analysis.games > 0 &&
+                report.analysis.games === report.games &&
+                ` · ${t('analysed at depth {d}', { d: report.analysis.depth ?? PASS_DEPTH })}`}
+            </span>
           ) : (
             slow && <SkeletonSubtitle />
           )
         }
         description={t(
-          'Your results by colour, time control and opening, and where each game left the opening catalogue. The filters narrow every table below.',
+          'Your results by colour, time control and opening, and where each game left the opening catalogue.',
         )}
         actions={<PassButton />}
       />
       <PassStrip />
 
+      {/* Not while the gate is closed: eight live controls over a page
+          that cannot yet change read as a broken page. */}
+      {!gated && (
       <FilterRow className="px-0 py-0">
         <SideSelect
           value={(filters.side ?? 'any') as SideFilter}
@@ -344,6 +372,7 @@ export function InsightsPage() {
           </Button>
         )}
       </FilterRow>
+      )}
 
       {failed ? (
         <div className="text-muted-foreground flex items-center gap-3 text-sm">
@@ -417,7 +446,7 @@ function Tables({ report }: { report: Report }) {
       <Card>
         <CardHeader>
           <CardTitle>{t('Results')}</CardTitle>
-          <CardDescription>{t('Score is wins plus half the draws, out of the games played.')}</CardDescription>
+          <CardDescription className="max-w-prose">{t('Score is wins plus half the draws, out of the games played.')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {/* The whole corpus is the first row of the same table shape the
@@ -447,9 +476,8 @@ function Tables({ report }: { report: Report }) {
                 })}
                 {meanOf(report.analysis.acpl) !== null &&
                   `, ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
-                .
+                . <StartOver />
               </span>
-              <StartOver />
             </p>
           )}
         </CardContent>
@@ -460,7 +488,7 @@ function Tables({ report }: { report: Report }) {
       <Card>
         <CardHeader>
           <CardTitle>{t('Openings')}</CardTitle>
-          <CardDescription>
+          <CardDescription className="max-w-prose">
             {report.named
               ? t('One row per opening family, named from the deepest catalogued position each game reached. Most played first.')
               : t('The opening catalogue is missing from this install, so games are grouped by their ECO header.')}
@@ -483,7 +511,7 @@ function Tables({ report }: { report: Report }) {
                   {t('Score')}
                 </th>
                 {report.analysis.games > 0 && (
-                  <th scope="col" className="w-20 py-1 pl-2 text-right font-medium whitespace-nowrap">
+                  <th scope="col" className="w-16 py-1 pl-2 text-right font-medium whitespace-nowrap">
                     {t('Accuracy')}
                   </th>
                 )}
@@ -522,7 +550,7 @@ function Tables({ report }: { report: Report }) {
       <Card>
         <CardHeader>
           <CardTitle>{t('Leaving book')}</CardTitle>
-          <CardDescription>
+          <CardDescription className="max-w-prose">
             {t(
               'The first move after which the position is in no catalogued line, and whose move it was. The openings where your own move leaves earliest come first.',
             )}
@@ -549,10 +577,12 @@ function Tables({ report }: { report: Report }) {
                   <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
                     {t('Opening')}
                   </th>
-                  <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap">
+                  {/* Five fixed columns left the name nothing at 390px; the
+                      count is the least of them and steps aside there. */}
+                  <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap max-sm:hidden">
                     {t('Games')}
                   </th>
-                  <th scope="col" className="w-28 py-1 pr-2 text-right font-medium whitespace-nowrap">
+                  <th scope="col" className="w-24 py-1 pr-2 text-right font-medium whitespace-nowrap">
                     {t('Leaves at move')}
                   </th>
                   <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap">
@@ -569,7 +599,7 @@ function Tables({ report }: { report: Report }) {
                     <td className="py-(--row-py-tight) pr-2">
                       <OpeningName row={row} />
                     </td>
-                    <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                    <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums max-sm:hidden">
                       {exact.format(row.exits)}
                     </td>
                     <td className="py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
@@ -625,11 +655,16 @@ function ActivityCard({ report }: { report: Report }) {
     <Card>
       <CardHeader>
         <CardTitle>{t('Activity')}</CardTitle>
-        <CardDescription>{t('Games per month, won over drew over lost, and the week.')}</CardDescription>
+        <CardDescription className="max-w-prose">{t('Games per month, won over drew over lost, and the week.')}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 md:grid-cols-[1fr_18rem]">
         {series.length > 0 && (
           <figure className="min-w-0">
+            {/* The tallest month's count, once, at the top: the picture
+                has no axis and the figures live in the tooltips. */}
+            <div className="text-muted-foreground mb-1 text-xs tabular-nums">
+              {t('Most in a month: {n}', { n: exact.format(peak) })}
+            </div>
             <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="img" aria-label={t('Games per month')}>
               {series.map((m) => (
                 // The app's tooltip, as on the result bar, never the
@@ -647,12 +682,9 @@ function ActivityCard({ report }: { report: Report }) {
                     {/* Won on top, lost at the foot; the gap between segments is
                         the page's own ground. The bar's corner is the chip
                         corner, off the radius knob on purpose. */}
-                    <div
-                      className="bg-good-tint rounded-t-[4px]"
-                      style={{ height: `${(100 * m.w) / peak}%` }}
-                    />
-                    <div className="bg-accent mt-px" style={{ height: `${(100 * m.d) / peak}%` }} />
-                    <div className="bg-destructive/10 mt-px" style={{ height: `${(100 * m.l) / peak}%` }} />
+                    <div className={cn('rounded-t-[4px]', OUTCOME_INK.w)} style={{ height: `${(100 * m.w) / peak}%` }} />
+                    <div className={cn('mt-px', OUTCOME_INK.d)} style={{ height: `${(100 * m.d) / peak}%` }} />
+                    <div className={cn('mt-px', OUTCOME_INK.l)} style={{ height: `${(100 * m.l) / peak}%` }} />
                   </div>
                 </TitleTip>
               ))}
@@ -663,9 +695,9 @@ function ActivityCard({ report }: { report: Report }) {
             </figcaption>
             <ul className="text-muted-foreground mt-2 flex gap-3 text-xs" aria-hidden>
               {[
-                ['bg-good-tint', 'Won'],
-                ['bg-accent', 'Drew'],
-                ['bg-destructive/10', 'Lost'],
+                [OUTCOME_INK.w, 'Won'],
+                [OUTCOME_INK.d, 'Drew'],
+                [OUTCOME_INK.l, 'Lost'],
               ].map(([ink, word]) => (
                 <li key={word} className="flex items-center gap-1.5">
                   <span className={cn('inline-block size-2.5 rounded-xs', ink)} />
@@ -699,7 +731,7 @@ function ActivityCard({ report }: { report: Report }) {
         )}
         {week.length > 0 && (
           <TallyTable
-            caption={t('By weekday')}
+            caption={t('Weekday')}
             dense
             rows={week.map((r) => ({ key: String(r.band), label: dayLabel(r.band), tally: r.tally }))}
           />
@@ -739,7 +771,7 @@ function EndingsCard({
     <Card>
       <CardHeader>
         <CardTitle>{t('How games ended')}</CardTitle>
-        <CardDescription>
+        <CardDescription className="max-w-prose">
           {t('Read from the move text and the file\'s own termination line. A decisive game that names neither is counted as a resignation.')}
         </CardDescription>
       </CardHeader>
@@ -798,7 +830,7 @@ function EndingsCard({
 
 /** The slices' steps, largest share first; past the sixth they share
     the last step, which the legend still tells apart. */
-const SLICE_OPACITY = [1, 0.72, 0.5, 0.36, 0.26, 0.18];
+const SLICE_OPACITY = [0.45, 0.32, 0.22, 0.15, 0.1, 0.07];
 
 /**
  * A donut of shares in one ink. A circle of radius 100/2pi has a
@@ -843,7 +875,7 @@ function Donut({ shares, ink, total }: { shares: { ending: Ending; games: number
       {/* Over the hole only in looks: the pointer must pass through to the
           slices, or the total's box, which spans the whole ring, takes
           every hover and no slice tip ever opens. */}
-      <span className="text-foreground pointer-events-none absolute inset-0 grid place-items-center text-lg font-semibold tabular-nums">
+      <span className="text-foreground pointer-events-none absolute inset-0 grid place-items-center text-sm font-medium tabular-nums">
         {exact.format(total)}
       </span>
     </div>
@@ -862,7 +894,7 @@ function LengthCard({ lengths }: { lengths: Report['lengths'] }) {
     <Card>
       <CardHeader>
         <CardTitle>{t('Game length')}</CardTitle>
-        <CardDescription>{t('Results by how many moves the game ran.')}</CardDescription>
+        <CardDescription className="max-w-prose">{t('Results by how many moves the game ran.')}</CardDescription>
       </CardHeader>
       <CardContent>
         <TallyTable
@@ -972,7 +1004,7 @@ function StartOver() {
   if (job.status === 'running') return null;
   if (!arming) {
     return (
-      <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setArming(true)}>
+      <Button variant="link" size="sm" className="h-auto p-0 align-baseline text-xs" onClick={() => setArming(true)}>
         {t('Start over')}
       </Button>
     );
@@ -1089,6 +1121,7 @@ function MeanTable({
   if (rows.length === 0) return null;
   return (
     <table className="w-full table-fixed text-sm">
+      <caption className="sr-only">{caption}</caption>
       <thead className="text-muted-foreground text-xs">
         <tr>
           <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
@@ -1159,7 +1192,7 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
     <Card>
       <CardHeader>
         <CardTitle>{t('Move quality')}</CardTitle>
-        <CardDescription>
+        <CardDescription className="max-w-prose">
           {t('Every move you played in the analysed games, by the engine\'s verdict, and how accurate they were by phase and by move number.')}
         </CardDescription>
       </CardHeader>
@@ -1228,7 +1261,8 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
 function OpeningName({ row }: { row: OpeningRow }) {
   return (
     <span className="flex min-w-0 items-baseline gap-2">
-      {row.eco && <span className="text-muted-foreground shrink-0 font-mono text-xs">{row.eco}</span>}
+      {/* Not on a phone: with the code, the name column showed "Slav Def…". */}
+      {row.eco && <span className="text-muted-foreground shrink-0 font-mono text-xs max-sm:hidden">{row.eco}</span>}
       <span className="min-w-0 truncate">{row.name ?? t('Unnamed opening')}</span>
     </span>
   );
@@ -1244,9 +1278,10 @@ function TallyTable({
   rows: { key: string; label: string; tally: Tally }[];
   /** A label that is a figure (a rating band) takes the mono face. */
   mono?: boolean;
-  /** In a narrow column the bar gives up width rather than the words:
-      at 18rem the full bar left the label column sixteen pixels. The
-      bar then prints fewer of its figures, which its tooltip still has. */
+  /** In a narrow column (the week beside the month chart) the bar is
+      not drawn: at 18rem it left the label column sixteen pixels and
+      printed its figures over each other. The score column carries the
+      number. */
   dense?: boolean;
 }) {
   // The engine pass's column appears once it has reached a row's game,
@@ -1254,6 +1289,9 @@ function TallyTable({
   const withAccuracy = rows.some((r) => r.tally.accN > 0);
   return (
     <table className="w-full table-fixed text-sm">
+      {/* The name a screen reader announces for the table; the visible
+          heading below is a column header, and was being read as one. */}
+      <caption className="sr-only">{caption}</caption>
       {/* A header row, not a bare caption: a number with no word over
           it is a number the reader has to guess at (lanph3re's report),
           and the openings table already names its columns this way.
@@ -1262,15 +1300,22 @@ function TallyTable({
           between "As White" and its count on a wide page. */}
       <thead className="text-muted-foreground text-xs">
         <tr>
-          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', !dense && 'w-44')}>
+          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', !dense && 'sm:w-44')}>
             {caption}
           </th>
           <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap">
             {t('Games')}
           </th>
-          <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', dense && 'w-20')}>
-            {t('Results')}
-          </th>
+          {/* Below sm the bar steps aside, as the openings table's does:
+              five fixed columns on a 326px table left it a 2px sliver and
+              overprinted the headers beside it. In the dense table it is
+              not drawn at all: at 80px the bar printed its figures on top
+              of each other and still took the caption's room. */}
+          {!dense && (
+            <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap max-sm:hidden">
+              {t('Results')}
+            </th>
+          )}
           <th scope="col" className="w-12 py-1 text-right font-medium whitespace-nowrap">
             {t('Score')}
           </th>
@@ -1291,9 +1336,11 @@ function TallyTable({
             {/* The bar's own label threshold was measured against the
                 explorer's column; narrower and a 13% segment clips its
                 figure, so this is that width. */}
-            <td className={cn('py-(--row-py-tight) pr-2', dense && 'w-20')}>
-              <ResultBar w={row.tally.w} d={row.tally.d} b={row.tally.l} pov="mine" />
-            </td>
+            {!dense && (
+              <td className="py-(--row-py-tight) pr-2 max-sm:hidden">
+                <ResultBar w={row.tally.w} d={row.tally.d} b={row.tally.l} pov="mine" />
+              </td>
+            )}
             <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row.tally))}</td>
             {withAccuracy && (
               <td className="w-16 py-(--row-py-tight) pl-2 text-right font-mono tabular-nums">
