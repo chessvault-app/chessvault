@@ -233,6 +233,7 @@ export const ko: Record<string, string> = {
   'Select…': '선택…',
   Stop: '중지',
   'Select this game': '이 게임 선택',
+  'Delete selected': '선택한 게임 삭제',
   '{n} selected': '{n}개 선택됨',
   ', still scanning': ', 아직 스캔 중',
   'The scan keeps running': '스캔은 계속 진행됩니다',
@@ -753,6 +754,11 @@ export const ko: Record<string, string> = {
   // "Endgames" is the sidebar's sub-entry and the tile; the drill itself
   // and its picker share one word, 드릴, as the concept rule asks.
   'Endgame drills': '엔드게임 드릴',
+  'Pawns and minor pieces': '폰과 마이너 피스',
+  'Rook endgames': '룩 엔드게임',
+  'Queen and heavy pieces': '퀸과 헤비 피스',
+  'Middlegames and material edges': '미들게임과 기물 우위',
+  'Your own': '직접 지정',
   'Endgame drill': '엔드게임 드릴',
   'Play won endings against the tablebase': '테이블베이스를 상대로 이기는 엔드게임을 둡니다',
   'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.':
@@ -1998,6 +2004,7 @@ export const ko: Record<string, string> = {
   'Remove “{title}” from the shelf? The PDF is deleted; any puzzle book read from it is kept.':
     '“{title}”을(를) 목록에서 제거할까요? PDF는 삭제되고, 이 책에서 읽어 낸 퍼즐 책은 그대로 남습니다.',
   'Drop a PDF here.': 'PDF 파일을 여기에 놓으세요.',
+  'Drop a PDF on this page to import it.': '이 페이지에 PDF 파일을 놓으면 가져옵니다.',
   'That PDF is too big. The limit is {mb} MB.': 'PDF가 너무 큽니다. 최대 {mb} MB입니다.',
   'Uploading…': '올리는 중…',
   'Uploading… {pct}%': '올리는 중… {pct}%',
@@ -2179,6 +2186,12 @@ export const ko: Record<string, string> = {
   'Open anything': '무엇이든 열기',
   'Open anything…': '무엇이든 열기…',
   'Open anything by name': '이름으로 무엇이든 열기',
+  'Fold or unfold the sidebar': '사이드바 접기 또는 펼치기',
+  Actions: '동작',
+  'Follow the system theme': '시스템 테마 따르기',
+  'Comfortable density': '넉넉한 밀도',
+  'Compact density': '촘촘한 밀도',
+  Open: '열기',
   'Nothing matches.': '일치하는 항목이 없습니다.',
   'Go to': '이동',
   // Documents whose text holds the words typed, under the name matches.

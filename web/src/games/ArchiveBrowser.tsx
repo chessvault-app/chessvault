@@ -8,7 +8,6 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { CloudBoardArt } from '@/components/cloud-board-art';
 
 import { Select } from '@/components/ui/select';
@@ -23,6 +22,7 @@ import { t } from '@/lib/i18n';
 import { GameRow, collectionKey, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
 import { TitleTip } from '@/components/title-tip';
@@ -215,15 +215,8 @@ const ArchiveRow = memo(function ArchiveRow({
   selectedRow?: boolean;
   onSelectRow: (game: GameSummary) => void;
 }) {
-  // Outside the hover tray: a selection checkbox that only appears
-  // under the pointer is one you cannot tick with your eyes.
   const checkbox = selecting && (
-    <Checkbox
-      aria-label={t('Select this game')}
-      checked={picked}
-      onClick={(e) => e.stopPropagation()}
-      onCheckedChange={(on) => onToggle(gameKey(game), on === true)}
-    />
+    <SelectRowCheckbox checked={picked} onChange={(on) => onToggle(gameKey(game), on)} />
   );
   if (table) {
     // The wide pane's dense presentation: click selects for the
@@ -1012,14 +1005,7 @@ export function ArchiveBrowser({
                 })
             : t('{n} games', { n: visibleMonthGames.length })}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={pickable.length === 0}
-          onClick={() => setSelecting(true)}
-        >
-          {t('Select…')}
-        </Button>
+        <SelectButton disabled={pickable.length === 0} onClick={() => setSelecting(true)} />
       </>
     ) : undefined;
 
@@ -1037,68 +1023,26 @@ export function ArchiveBrowser({
       !selecting ? (
             merged ? undefined : countGroup
           ) : (
-            /* What is selected on the left, what to do with it on the
-               right. Four controls in one wrapping run gave the count the
-               same weight as the buttons and put Cancel wherever the text
-               happened to end. */
-            <>
-              {/* "New" can be nobody: a master checkbox that ticks nothing
-                  reads as broken unless it says why. The per-row checkboxes
-                  still take deliberate re-adds. */}
-              <TitleTip
-                title={
-                  uncollected.length === 0
-                    ? t('Every game shown is already in the collection')
-                    : undefined
-                }
-              >
-                <label
-                  className={cn(
-                    'flex min-w-0 items-center gap-1.5',
-                    uncollected.length > 0 ? 'cursor-pointer' : 'opacity-60',
-                  )}
-                >
-                  <Checkbox
-                    // Indeterminate is the honest state for a partial
-                    // selection: an unchecked box next to eight ticked rows
-                    // reads as a bug.
-                    checked={uncollected.length > 0 && picked.size === uncollected.length}
-                    indeterminate={
-                      picked.size > 0 && picked.size !== uncollected.length
-                    }
-                    disabled={uncollected.length === 0}
-                    onCheckedChange={(on) =>
-                      setPicked(on === true ? new Set(uncollected.map(gameKey)) : new Set())
-                    }
-                  />
-                  <span className="text-muted-foreground truncate">
-                    {uncollected.length === 0
-                      ? t('Select all new: none are new')
-                      : t('Select all new')}
-                  </span>
-                </label>
-              </TitleTip>
-              {/* A badge, not another grey sentence: it is the one number
-                  that changes as you tick rows. */}
-              <span
-                className={cn(
-                  'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
-                  picked.size > 0 ? 'bg-muted text-primary' : 'bg-accent text-muted-foreground',
-                )}
-              >
-                {t('{n} selected', { n: picked.size })}
-              </span>
-              <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelecting(false);
-                    setPicked(new Set());
-                  }}
-                >
-                  {t('Cancel')}
-                </Button>
+            /* The shared bar (./selection). "New" can be nobody: a
+               master checkbox that ticks nothing reads as broken unless
+               it says why; the per-row checkboxes still take deliberate
+               re-adds. */
+            <SelectionBar
+              all={{
+                total: uncollected.length,
+                label: t('Select all new'),
+                none: {
+                  label: t('Select all new: none are new'),
+                  tip: t('Every game shown is already in the collection'),
+                },
+                onChange: (on) => setPicked(on ? new Set(uncollected.map(gameKey)) : new Set()),
+              }}
+              picked={picked.size}
+              onCancel={() => {
+                setSelecting(false);
+                setPicked(new Set());
+              }}
+              actions={
                 <Button
                   variant="default"
                   size="sm"
@@ -1111,8 +1055,8 @@ export function ArchiveBrowser({
                       : t('Adding…')
                     : t('Add selected')}
                 </Button>
-              </div>
-            </>
+              }
+            />
           )
     ) : undefined;
 

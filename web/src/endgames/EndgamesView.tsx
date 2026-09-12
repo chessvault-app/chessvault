@@ -92,7 +92,12 @@ export function EndgamesView({ params }: { params: string[] }) {
  */
 function EndgamePicker() {
   const [editing, setEditing] = useState(false);
-  const rows = [...DRILL_PRESETS.map((p) => p.id), CUSTOM_CLASS];
+  // By family, in the order the presets first name each one, with the
+  // custom class last on its own: twenty-odd rows read top to bottom
+  // were one list of names, and a list this long is scanned by section.
+  const groups = new Map<string, string[]>();
+  for (const p of DRILL_PRESETS) groups.set(p.group, [...(groups.get(p.group) ?? []), p.id]);
+  groups.set('Your own', [CUSTOM_CLASS]);
 
   return (
     <PageShell width="medium">
@@ -103,32 +108,39 @@ function EndgamePicker() {
           'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.',
         )}
       />
-      <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-        {rows.map((id) => (
-          <ListRow
-            key={id}
-            divided
-            onClick={() => {
-              // The custom class opens its editor first: a drill of
-              // nothing in particular is not a drill.
-              if (id === CUSTOM_CLASS) setEditing(true);
-              else navigate(...PICKER, id);
-            }}
-          >
-            <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
-              {id === CUSTOM_CLASS ? (
-                <SlidersHorizontal className="size-3.5" />
-              ) : (
-                <Crown className="size-3.5" />
-              )}
-            </span>
-            <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
-              {t(classLabel(id))}
-            </span>
-            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-          </ListRow>
-        ))}
-      </div>
+      {[...groups].map(([group, rows]) => (
+        <section key={group} className="flex flex-col gap-2">
+          {/* The count row's voice: the same one a panel's title and a
+              group of settings are named in. */}
+          <h2 className="text-muted-foreground text-sm font-medium">{t(group)}</h2>
+          <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
+            {rows.map((id) => (
+              <ListRow
+                key={id}
+                divided
+                onClick={() => {
+                  // The custom class opens its editor first: a drill of
+                  // nothing in particular is not a drill.
+                  if (id === CUSTOM_CLASS) setEditing(true);
+                  else navigate(...PICKER, id);
+                }}
+              >
+                <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
+                  {id === CUSTOM_CLASS ? (
+                    <SlidersHorizontal className="size-3.5" />
+                  ) : (
+                    <Crown className="size-3.5" />
+                  )}
+                </span>
+                <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
+                  {t(classLabel(id))}
+                </span>
+                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+              </ListRow>
+            ))}
+          </div>
+        </section>
+      ))}
       {editing && (
         <CustomMaterialWindow
           initial={readCustomDraft()}

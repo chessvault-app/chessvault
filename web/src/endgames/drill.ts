@@ -31,6 +31,10 @@ const CUSTOM_KEY = 'vault:endgame-drill:custom';
 export interface DrillPreset {
   id: string;
   label: string;
+  /** The heading it lists under (English, as t() keys it). Data, not
+      code: which family an ending belongs to is a fact about the
+      preset, written beside it. */
+  group: string;
   spec: unknown;
 }
 

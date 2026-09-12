@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
-import { atRoute, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
+import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { PasswordGate } from '@/auth/PasswordGate';
@@ -40,7 +40,7 @@ import { QuickSwitcher } from '@/components/quick-switcher';
 import { LeaveDialog } from '@/components/leave-dialog';
 import { PageGate } from '@/components/page-gate';
 import { WikiUnresolved } from '@/notes/WikiUnresolved';
-import { SECTION_ICON } from '@/lib/sectionIcon';
+import { SECTION_ICON, type IconSection } from '@/lib/sectionIcon';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -50,6 +50,8 @@ import { useMediaQuery, useWorkspaceViewport } from '@/lib/media';
 import { isDemo } from '@/lib/demo';
 import { hasTitleBar, TitleBar } from '@/components/title-bar';
 import { foldedFrom, useSidebar } from '@/store/sidebar';
+import { useRecentOpens } from '@/store/recent';
+import { dialogOpen } from '@/hooks/dialog-focus';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -306,8 +308,57 @@ function DemoBanner({ section, params }: { section: Section; params: string[] })
   );
 }
 
+/**
+ * A document route, as the quick switcher's Recent group records it: the
+ * five sections the search index names documents in, and the id in the
+ * form the index uses (decoded; a book's is its hash and needs none).
+ */
+function recentOpenOf(section: Section, params: string[]): { section: IconSection; id: string } | null {
+  switch (section) {
+    case 'studies':
+    case 'notes':
+    case 'games':
+      return params[0] ? { section, id: decodeSegment(params[0]) } : null;
+    case 'books':
+      return params[0] ? { section, id: params[0] } : null;
+    case 'puzzles':
+      return params[0] === 'books' && params[1] ? { section: 'puzzlebooks', id: params[1] } : null;
+    default:
+      return null;
+  }
+}
+
 function Shell() {
   const { section, params } = useRoute();
+  // What was opened, for the quick switcher's Recent group (store/recent).
+  const recordOpen = useRecentOpens((s) => s.record);
+  const opened = recentOpenOf(section, params);
+  const openedKey = opened ? `${opened.section}/${opened.id}` : null;
+  useEffect(() => {
+    if (opened) recordOpen(opened);
+    // The key, not the object: a new object per render would re-record.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openedKey, recordOpen]);
+  // Ctrl/Cmd B folds and unfolds the sidebar, the registry's own key for
+  // it and VS Code's. Only where there is a sidebar (md), and not while
+  // a window owns the keyboard or a field has it. The switch is the
+  // band's or the sidebar's; the key is the third way to the same store.
+  const lgForFold = useMediaQuery('(min-width: 64rem)');
+  const mdForFold = useMediaQuery('(min-width: 48rem)');
+  useEffect(() => {
+    if (!mdForFold) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() !== 'b' || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+      if (dialogOpen()) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable)) return;
+      e.preventDefault();
+      const { choice, setFolded } = useSidebar.getState();
+      setFolded(!foldedFrom(choice, lgForFold));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mdForFold, lgForFold]);
   // Remount the whole tree when the language changes. Every t() call runs
   // during render, so a re-render is all that is needed — but a keyed
   // remount is what guarantees it reaches a memoised child too, and the

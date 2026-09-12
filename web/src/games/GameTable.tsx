@@ -1,4 +1,4 @@
-import { NotebookPen } from 'lucide-react';
+import { ArrowDown, ArrowUp, NotebookPen } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -236,9 +236,65 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
   return nav;
 }
 
+/** A column a list can be ordered by: every column but the pinned one. */
+export type GameSortKey =
+  | 'white'
+  | 'whiteElo'
+  | 'black'
+  | 'blackElo'
+  | 'result'
+  | 'moves'
+  | 'eco'
+  | 'event'
+  | 'date'
+  | 'notation';
+export interface GameSort {
+  key: GameSortKey;
+  dir: 'asc' | 'desc';
+}
+
+/**
+ * The order a click on a heading asks for first. A date, an Elo and a
+ * length are read newest, strongest and longest first, which is how
+ * every games database lists them; a name and a code read A to Z.
+ */
+export const firstSortDir = (key: GameSortKey): GameSort['dir'] =>
+  key === 'date' || key === 'whiteElo' || key === 'blackElo' || key === 'moves' ? 'desc' : 'asc';
+
+/** The comparison a sort key stands for, ascending; the caller flips it. */
+export function compareGames(key: GameSortKey): (a: GameSummary, b: GameSummary) => number {
+  const text = (pick: (g: GameSummary) => string | null | undefined) => (a: GameSummary, b: GameSummary) =>
+    (pick(a) ?? '').localeCompare(pick(b) ?? '', undefined, { sensitivity: 'base', numeric: true });
+  const num = (pick: (g: GameSummary) => number) => (a: GameSummary, b: GameSummary) => pick(a) - pick(b);
+  switch (key) {
+    case 'white':
+      return text((g) => g.white);
+    case 'black':
+      return text((g) => g.black);
+    case 'whiteElo':
+      return num((g) => g.whiteElo);
+    case 'blackElo':
+      return num((g) => g.blackElo);
+    case 'result':
+      return text((g) => g.result);
+    case 'moves':
+      return num((g) => g.plyCount);
+    case 'eco':
+      return text((g) => g.eco);
+    case 'event':
+      return text((g) => g.event);
+    case 'date':
+      return text((g) => g.date);
+    case 'notation':
+      return text((g) => g.sanPrefix);
+  }
+}
+
 export function GameTableHeader({
   withStanding = false,
   withNotation = true,
+  sort,
+  onSort,
 }: {
   withStanding?: boolean;
   /** False while a details panel stands beside the table — see
@@ -246,6 +302,11 @@ export function GameTableHeader({
       all have to be told the same thing, or they disagree about which
       cell is which. */
   withNotation?: boolean;
+  /** The order the list is in, when the list can be ordered by its
+      headings (the collection); absent where the server decides (the
+      reference browser) and the headings are labels. */
+  sort?: GameSort | null;
+  onSort?: (key: GameSortKey) => void;
 }) {
   // The cells' widths arrive through the grid template variable the pane
   // sets; the subscription here is for the handles' aria-valuenow, which
@@ -303,7 +364,33 @@ export function GameTableHeader({
               c.align === 'center' && 'justify-center',
             )}
           >
-            <span className="truncate">{c.label ? t(c.label) : ''}</span>
+            {onSort ? (
+              // The heading is the sort control, as in every games
+              // database and the registry's data table: one click orders
+              // by it, another reverses. The ordered column carries the
+              // arrow and the page's ink; the rest stay labels until
+              // hovered. aria-sort on the cell says which way to a reader.
+              <button
+                type="button"
+                className={cn(
+                  'hover:text-foreground flex min-w-0 items-center gap-1 truncate outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm',
+                  sort?.key === c.id && 'text-foreground',
+                  c.align === 'right' && 'flex-row-reverse',
+                )}
+                aria-sort={sort?.key === c.id ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                onClick={() => onSort(c.id as GameSortKey)}
+              >
+                <span className="truncate">{c.label ? t(c.label) : ''}</span>
+                {sort?.key === c.id &&
+                  (sort.dir === 'asc' ? (
+                    <ArrowUp className="size-3 shrink-0" aria-hidden />
+                  ) : (
+                    <ArrowDown className="size-3 shrink-0" aria-hidden />
+                  ))}
+              </button>
+            ) : (
+              <span className="truncate">{c.label ? t(c.label) : ''}</span>
+            )}
             {/* The column's edge, draggable: a slim nub standing in the
                 gap between headings. Width is written to the shared
                 store, so every table's rows follow the same template

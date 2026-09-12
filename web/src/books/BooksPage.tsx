@@ -360,6 +360,12 @@ export function BooksPage() {
           ))}
         </div>
       )}
+      {/* The page has taken a dropped PDF since the drop handlers went on
+          it; nothing said so. One line under the shelf, where there is a
+          pointer to drop with, and not on a phone, which has no drag. */}
+      <p className="text-muted-foreground hidden text-sm md:pointer-fine:block">
+        {t('Drop a PDF on this page to import it.')}
+      </p>
       </div>
     </PageShell>
   );

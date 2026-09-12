@@ -191,7 +191,7 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   // keyboard now and the bar hides itself while typing, so padding again
   // only pushed the bottom of the page out of a box with nothing under it.
   return (
-    <PageShell width="narrow">
+    <PageShell width="narrow" className="relative">
         <PageHeader title={t('Settings')} back={() => up('home')} />
         {/* Read again when the storage answer lands. Every card that
             waits on a fetch has to be a dep here, or the row is missing
@@ -349,10 +349,11 @@ function SettingsPlaceholder() {
         <Skeleton className="h-4 w-28" />
       </div>
       {/* The section links, as JumpList draws them: text-sm names in
-          px-1 buttons, py-2 and mb-1, and no row at all below md. Each
-          name is laid out invisibly and barred over, so the row wraps
-          where the real one will. */}
-      <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex">
+          px-1 buttons, py-2 and mb-1, no row at all below md, and none
+          from xl either, where the names stand in the margin and take no
+          room in the column. Each name is laid out invisibly and barred
+          over, so the row wraps where the real one will. */}
+      <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex xl:hidden">
         {(isDemo() ? JUMP_NAMES_DEMO : JUMP_NAMES_SERVER).map((name) => (
           <span key={name} className="relative px-1">
             <span className="invisible">{t(name)}</span>
@@ -482,24 +483,36 @@ function Card({
 }
 
 /**
- * The card names in a row at the top, each a jump to its card.
+ * The card names, each a jump to its card.
  *
  * Settings is fifteen cards in one column, and on a wide window the one
- * you came for could be 1,700px down with nothing to say where. The row
+ * you came for could be 1,700px down with nothing to say where. The list
  * reads the cards that are actually on the page (the demo and a real
- * server show different sets), sticks to the top while the page scrolls,
- * and stays out of the way on a phone, where the page is short enough
- * to thumb and the row would cost a line.
+ * server show different sets) and stays out of the way on a phone, where
+ * the page is short enough to thumb and it would cost a line.
+ *
+ * Two shapes, by width. From xl it is a column in the margin to the left
+ * of the form, the way macOS System Settings, Windows Settings and
+ * Linear list their sections: the form keeps its `narrow` width (a
+ * width is a statement about the content, and a form's is the shortest
+ * line), and the names stand beside it in room the column does not use.
+ * It sticks while the page scrolls and the name of the card under the
+ * top of the window takes the sidebar's current-row pill, so the list
+ * says where you are as well as where you can go. Below xl there is no
+ * margin to stand in, and it is the row it always was, sticky at the
+ * top; that row wrapped to two lines at every desktop width because it
+ * lived inside the 42rem column, which is what the column fixes.
  *
  * `dep` is what to read the page again after. A card that waits on a
  * fetch is not in the DOM when the settings land, so every such answer
- * has to be one, or the row is missing a name until a reload.
+ * has to be one, or the list is missing a name until a reload.
  */
 function JumpList({ dep }: { dep: unknown }) {
   const [cards, setCards] = useState<{ el: HTMLElement; title: string }[]>([]);
   // 60px on one line, 84px once the names wrap to two, and either way the
   // page scrolls a Shift+Tab clear of it (hooks/use-pinned-band).
   const pin = usePinnedBand('top');
+  const [current, setCurrent] = useState(0);
   useEffect(() => {
     const found = [...document.querySelectorAll<HTMLElement>('[data-settings-card]')].map((el) => ({
       el,
@@ -507,24 +520,77 @@ function JumpList({ dep }: { dep: unknown }) {
     }));
     setCards(found.filter((c) => c.title));
   }, [dep]);
+  // Which card is under the top of the window: the last one whose top has
+  // passed the header line, read on the page's own scroller.
+  useEffect(() => {
+    if (cards.length === 0) return;
+    const scroller = cards[0]!.el.closest<HTMLElement>('[data-page-scroll]');
+    if (!scroller) return;
+    const read = (): void => {
+      const line = scroller.getBoundingClientRect().top + 80;
+      let at = 0;
+      cards.forEach((c, i) => {
+        if (c.el.getBoundingClientRect().top <= line) at = i;
+      });
+      setCurrent(at);
+    };
+    read();
+    scroller.addEventListener('scroll', read, { passive: true });
+    return () => scroller.removeEventListener('scroll', read);
+  }, [cards]);
   if (cards.length < 4) return null;
   return (
-    <nav
-      ref={pin}
-      aria-label={t('Settings sections')}
-      className="bg-background/95 sticky top-0 z-10 -mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex"
-    >
-      {cards.map((c) => (
-        <button
-          key={c.title}
-          type="button"
-          className="text-muted-foreground hover:text-foreground rounded-md px-1 outline-none focus-visible:ring-3 focus-visible:ring-ring"
-          onClick={() => c.el.scrollIntoView({ block: 'start' })}
+    <>
+      {/* The row, below xl. */}
+      <nav
+        ref={pin}
+        aria-label={t('Settings sections')}
+        className="bg-background/95 sticky top-0 z-10 -mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex xl:hidden"
+      >
+        {cards.map((c) => (
+          <button
+            key={c.title}
+            type="button"
+            className="text-muted-foreground hover:text-foreground rounded-md px-1 outline-none focus-visible:ring-3 focus-visible:ring-ring"
+            onClick={() => c.el.scrollIntoView({ block: 'start' })}
+          >
+            {c.title}
+          </button>
+        ))}
+      </nav>
+      {/* The column, from xl. A rail the column's full height, stood in
+          the margin (right-full of the column, which is `relative`), so
+          the list inside it can stick; the list's top margin is the
+          column's top, the header row and its gap, which puts it level
+          with the first card at rest and at the top once scrolled. Zero height in the flow,
+          and the gap it would earn is taken back, so the cards sit where
+          they sit with no list at all. */}
+      <div className="pointer-events-none absolute inset-y-0 right-full mr-6 hidden w-40 xl:block" aria-hidden={false}>
+        <nav
+          aria-label={t('Settings sections')}
+          // 68px: the column's 24px top, the 28px title row and the 16px
+          // gap under it, which is where the first card starts (measured).
+          className="pointer-events-auto sticky top-6 mt-17 flex flex-col gap-0.5 text-sm"
         >
-          {c.title}
-        </button>
-      ))}
-    </nav>
+          {cards.map((c, i) => (
+            <button
+              key={c.title}
+              type="button"
+              aria-current={i === current ? 'true' : undefined}
+              className={cn(
+                'flex h-8 items-center rounded-md px-2.5 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring',
+                i === current
+                  ? 'bg-nav-pill text-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+              onClick={() => c.el.scrollIntoView({ block: 'start' })}
+            >
+              <span className="truncate">{c.title}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }
 

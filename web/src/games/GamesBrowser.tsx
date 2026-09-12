@@ -396,6 +396,33 @@ export function GamesBrowser({
     setHidden((prev) => new Set(prev).add(key));
     undoable.remove(customName(game) ?? docId(game), () => void removeGame(game).then(unhide), unhide);
   };
+  // Several rows at once, one undo for the lot: a toast per game for a
+  // dozen games is a dozen toasts, and undoing half a deletion is not a
+  // thing anyone means.
+  const dropGames = (list: GameSummary[]): void => {
+    if (list.length === 0) return;
+    if (list.length === 1) {
+      dropGame(list[0]!);
+      return;
+    }
+    const keys = list.map(gameKey);
+    const unhide = (): void =>
+      setHidden((prev) => {
+        const next = new Set(prev);
+        for (const k of keys) next.delete(k);
+        return next;
+      });
+    setHidden((prev) => {
+      const next = new Set(prev);
+      for (const k of keys) next.add(k);
+      return next;
+    });
+    undoable.remove(
+      t('{n} games', { n: list.length }),
+      () => void Promise.all(list.map((g) => removeGame(g))).then(unhide),
+      unhide,
+    );
+  };
   const renameGame = async (game: GameSummary, to: string): Promise<void> => {
     setRenamingKey(null);
     const from = docId(game);
@@ -698,6 +725,7 @@ export function GamesBrowser({
             onOpen={rowOpen}
             onPreview={setPreview}
             onDrop={rowDrop}
+            onDropMany={dropGames}
             onToggleBookmark={rowBookmark}
             onRename={rowRename}
             onImport={() => setImporting(true)}

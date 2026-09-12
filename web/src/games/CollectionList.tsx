@@ -21,6 +21,8 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
+import { dialogOpen } from '@/hooks/dialog-focus';
+import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
@@ -47,9 +49,39 @@ import {
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import {
+  compareGames,
+  firstSortDir,
+  GameTableHeader,
+  GameTableRow,
+  useGameTableVars,
+  useTableNav,
+  type GameSort,
+  type GameSortKey,
+} from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
+
+/** The table's order, per device (see CollectionList's `sort`). */
+const SORT_KEY = 'vault:collection-sort';
+const SORT_KEYS: readonly GameSortKey[] = [
+  'white', 'whiteElo', 'black', 'blackElo', 'result', 'moves', 'eco', 'event', 'date', 'notation',
+];
+function readSort(): GameSort | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(SORT_KEY) ?? 'null') as GameSort | null;
+    return v && SORT_KEYS.includes(v.key) && (v.dir === 'asc' || v.dir === 'desc') ? v : null;
+  } catch {
+    return null;
+  }
+}
+function writeSort(sort: GameSort): void {
+  try {
+    localStorage.setItem(SORT_KEY, JSON.stringify(sort));
+  } catch {
+    /* the session still has it */
+  }
+}
 
 /** The per-game PGN fetch every list row can offer the details view. */
 export const loadGamePgn =
@@ -84,11 +116,14 @@ const CollectionRow = memo(function CollectionRow({
   onRename,
   onStartRename,
   onDetails,
+  standing,
 }: {
   game: GameSummary;
   bookmarked: boolean;
   customName: string | null;
   renaming: boolean;
+  /** Selection mode's checkbox, in the row's leading slot. */
+  standing?: ReactNode;
   onOpen: (game: GameSummary) => void;
   onPreview: (p: Preview | null) => void;
   onDrop: (game: GameSummary) => void;
@@ -102,6 +137,9 @@ const CollectionRow = memo(function CollectionRow({
   const link = safeLink(game.link);
   return (
     <GameRow
+      // Leading, not standing: a card's checkbox sits at the row's start,
+      // under the bar's master box, as the archive's card rows put it.
+      leading={standing}
       onSwipeAway={() => onDrop(game)}
       onBookmark={() => onToggleBookmark(game)}
       bookmarked={bookmarked}
@@ -201,6 +239,7 @@ export function CollectionList({
   onOpen,
   onPreview,
   onDrop,
+  onDropMany,
   onToggleBookmark,
   onRename,
   onImport,
@@ -230,6 +269,8 @@ export function CollectionList({
   renamingKey: string | null;
   onStartRename: (key: string | null) => void;
   onOpen: (game: GameSummary) => void;
+  /** Several at once, under one undo (see GamesBrowser, dropGames). */
+  onDropMany: (games: GameSummary[]) => void;
   onPreview: (p: Preview | null) => void;
   onDrop: (game: GameSummary) => void;
   onToggleBookmark: (game: GameSummary) => void;
@@ -267,6 +308,23 @@ export function CollectionList({
   // a few dozen games are already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
+  // Selecting several: the archive browser's mode and pieces
+  // (./selection), with this list's verb. Escape leaves it.
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const stopSelecting = (): void => {
+    setSelecting(false);
+    setPicked(new Set());
+  };
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || dialogOpen()) return;
+      stopSelecting();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selecting]);
   // The host's warning box judges the query AGAINST these — reported
   // whenever they change (ownership and notes are vault facts no game
   // header can contradict, so they stay out).
@@ -295,7 +353,17 @@ export function CollectionList({
   // twin of the server's SQL); the remainder is the plain needle.
   const parsedQuery = useMemo(() => parseSearchQuery(query), [query]);
   const needle = parsedQuery.text.trim().toLowerCase();
-  const visible = games.filter((g) => {
+  // The order, from the table's headings. Null is the collection's own
+  // (newest first, as the server lists it); a choice is this device's
+  // and survives a reload the way the column widths do.
+  const [sort, setSort] = useState<GameSort | null>(readSort);
+  const sortBy = (key: GameSortKey): void => {
+    const next: GameSort =
+      sort?.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstSortDir(key) };
+    setSort(next);
+    writeSort(next);
+  };
+  const filtered = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
     if (markedOnly && !bookmarks.has(gameKey(g))) return false;
     if (!matchesSearchTerms(parsedQuery.terms, g)) return false;
@@ -312,6 +380,16 @@ export function CollectionList({
       .toLowerCase()
       .includes(needle);
   });
+  // A stable sort over the filtered rows, so equal keys keep the
+  // collection's own order under them. Only at table density: the card
+  // list has no headings to ask with.
+  const visible =
+    table && sort
+      ? [...filtered].sort((a, b) => {
+          const d = compareGames(sort.key)(a, b);
+          return sort.dir === 'asc' ? d : -d;
+        })
+      : filtered;
   const filtersOn =
     ownFilter !== 'any' ||
     resultFilter !== 'any' ||
@@ -360,7 +438,7 @@ export function CollectionList({
 
   // ↑/↓/Enter/Escape drive the table selection over the filtered rows.
   const tableNav = useTableNav(table && onSelect !== undefined);
-  const tableVars = useGameTableVars(false, !besideDetails);
+  const tableVars = useGameTableVars(selecting, !besideDetails);
   tableNav.current = {
     move: (delta) => {
       const at = visible.findIndex((g) => gameKey(g) === selectedKey);
@@ -548,6 +626,52 @@ export function CollectionList({
     <Skeleton className="h-2.5 w-16" />
   );
 
+  const rowCheckbox = (game: GameSummary): ReactNode => (
+    <SelectRowCheckbox
+      checked={picked.has(gameKey(game))}
+      onChange={(on) =>
+        setPicked((prev) => {
+          const next = new Set(prev);
+          if (on) next.add(gameKey(game));
+          else next.delete(gameKey(game));
+          return next;
+        })
+      }
+    />
+  );
+  // Beside the count, as the archive puts it; nothing to select is
+  // nothing to enter for.
+  const selectEntry = loaded && visible.length > 0 && !selecting ? (
+    <SelectButton onClick={() => setSelecting(true)} />
+  ) : null;
+  // The one verb: delete, through one undo for the lot. "All" is what the
+  // filters show. A batch bookmark was here for a day and went: it is
+  // not a thing anyone reaches for, and the row's own star is one press.
+  const selectionBar = (
+    <SelectionBar
+      all={{
+        total: visible.length,
+        label: t('Select all'),
+        onChange: (on) => setPicked(on ? new Set(visible.map(gameKey)) : new Set()),
+      }}
+      picked={picked.size}
+      onCancel={stopSelecting}
+      actions={
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={picked.size === 0}
+          onClick={() => {
+            onDropMany(visible.filter((g) => picked.has(gameKey(g))));
+            stopSelecting();
+          }}
+        >
+          {t('Delete selected')}
+        </Button>
+      }
+    />
+  );
+
   return (
     <>
     <GameListShell
@@ -566,8 +690,11 @@ export function CollectionList({
             {search}
             {filtersInRow && filterControls}
             {merged && (
-              <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
-                {tally}
+              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
+                  {tally}
+                </span>
+                {selectEntry}
               </span>
             )}
           </div>
@@ -578,13 +705,22 @@ export function CollectionList({
       // count band says it — in card mode; at table the count rides the
       // toolbar row above.
       countBand={
-        merged ? undefined : (
-          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-            {tally}
-          </span>
+        selecting ? (
+          selectionBar
+        ) : merged ? undefined : (
+          <>
+            <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+              {tally}
+            </span>
+            {selectEntry}
+          </>
         )
       }
-      listHeader={table ? <GameTableHeader withNotation={!besideDetails} /> : undefined}
+      listHeader={
+        table ? (
+          <GameTableHeader withStanding={selecting} withNotation={!besideDetails} sort={sort} onSort={sortBy} />
+        ) : undefined
+      }
       listVars={table ? tableVars : undefined}
       dense={table}
       // The wait, in the shape of the strip and rows that are coming —
@@ -603,6 +739,7 @@ export function CollectionList({
                   key={gameKey(game)}
                   game={game}
                   withNotation={!besideDetails}
+                  standing={selecting ? rowCheckbox(game) : undefined}
                   selected={selectedKey === gameKey(game)}
                   onSelect={() => onSelect?.(game)}
                   onOpen={() => onOpen(game)}
@@ -613,6 +750,7 @@ export function CollectionList({
                 <CollectionRow
                   key={gameKey(game)}
                   game={game}
+                  standing={selecting ? rowCheckbox(game) : undefined}
                   bookmarked={bookmarks.has(gameKey(game))}
                   customName={customName(game)}
                   renaming={renamingKey === gameKey(game)}

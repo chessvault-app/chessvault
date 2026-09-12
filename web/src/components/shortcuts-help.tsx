@@ -20,12 +20,25 @@ const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: 'Enter', what: 'Play the typed move (in the move box)' },
   { keys: 'Ctrl/⌘ S', what: 'Save the open document' },
   { keys: 'Ctrl/⌘ K', what: 'Open anything by name' },
+  { keys: 'Ctrl/⌘ B', what: 'Fold or unfold the sidebar' },
   { keys: 'Esc', what: 'Close the open window' },
   { keys: '?', what: 'This list' },
 ];
 
+const OPEN_EVENT = 'chess-vault:shortcuts';
+
+/** Open it from a button or the quick switcher; `?` reaches it on its own. */
+export function openShortcutsHelp(): void {
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
 export function ShortcutsHelp() {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = (): void => setOpen(true);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey) return;

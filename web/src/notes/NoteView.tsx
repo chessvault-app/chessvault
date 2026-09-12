@@ -154,9 +154,18 @@ function NoteEditor({
   /** An earlier version was written over the file; re-read it. */
   onRestored: () => void;
 }) {
-  // Notes open read-only (wiki-links follow on plain click); the header's
-  // Edit button switches the TipTap editor live.
-  const [editable, setEditable] = useState(false);
+  // Where the note opens: editable on a desktop, read-only on a phone.
+  // Notion, Linear and Obsidian's live preview edit in place, and a
+  // separate Edit mode was the one thing on the desktop that read as
+  // older than the rest of the app; the desktop has a caret and a
+  // keyboard, so an editable page costs it nothing. A phone keeps the
+  // mode: a tap on a read-only note is a scroll, on an editable one it
+  // is the keyboard rising over half the page. Reading mode is one press
+  // away on either, and is where a plain click follows a wiki link; while
+  // editing, Ctrl/Cmd+click does (wikiLink.ts). The header's button
+  // switches the TipTap editor live.
+  const opensEditable = useState(() => window.matchMedia('(min-width: 48rem) and (pointer: fine)').matches)[0];
+  const [editable, setEditable] = useState(opensEditable);
   // Whether the note's first block is a level-one heading; read at load
   // and on every edit, since the bar's title depends on it (see below).
   const [leadsWithHeading, setLeadsWithHeading] = useState(false);
@@ -250,6 +259,10 @@ function NoteEditor({
     editorProps: {
       attributes: { class: 'note-editor focus:outline-none' },
     },
+    // Off at birth on every device, and the effect below applies the
+    // opening state: the baseline logic (`takeBaseline`) counts on the
+    // first serialisation, whoever offers it, being the untouched file,
+    // which holds when nothing can type before the editor is live.
     // The canonical serialisation of what was loaded. Node views settle
     // after mount — a chess block normalises itself — and each settling is
     // a transaction, so onUpdate fired on a note nobody had touched and the
@@ -467,7 +480,10 @@ function NoteEditor({
           onClick={() => setEditable((v) => !v)}
         >
           <Pencil className="size-3.5 md:mr-1" />
-          <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
+          {/* Where the note opened editable, leaving is going to read,
+              not finishing; where it opened read-only, Done is what the
+              press means. */}
+          <span className="max-md:hidden">{editable ? (opensEditable ? t('Read') : t('Done')) : t('Edit')}</span>
         </Button>
         <SaveControl
           state={saveState}

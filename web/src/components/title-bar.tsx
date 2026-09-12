@@ -1,8 +1,10 @@
-import { ArrowLeft, ArrowRight, Bug, Expand, FolderSync, Menu, PanelLeft, Percent, Power, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bug, Expand, FolderSync, Menu, PanelLeft, Percent, Power, RefreshCw, Search, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
+import { openQuickSwitcher } from '@/components/quick-switcher';
 import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { traverse } from '@/lib/router';
@@ -31,7 +33,22 @@ import { useTheme } from '@/store/theme';
  * language, and on Windows one that clipped its descenders); the
  * sidebar's fold, which is the sidebar's own switch as well; and back
  * and forward through the app's history, which a browser gives and a
- * window did not.
+ * window did not; and, centred on the window, the way into the quick
+ * switcher. Ctrl/⌘ K reached it before, and nothing on the screen said
+ * so: the one button that opened it was on Home. The band is the one
+ * strip that exists on every page at every width, and centring on the
+ * window rather than on the page keeps it still when the sidebar folds
+ * (VS Code's command centre; Slack's 2023 header). It is a button and
+ * not a field, since typing happens in the window it opens.
+ *
+ * The band is one fill, the sidebar's, from edge to edge. It was two: the
+ * sidebar's white over the sidebar and the page's tone over the page,
+ * which read as two columns that happened to start at the top. One band
+ * with the search on it reads as a top bar with two columns under it,
+ * the shape Windows 11 draws (a TitleBar over a NavigationView) and the
+ * shape the search wants; the sidebar's seam still starts under it. No
+ * rule under the band: the band and the sidebar are one L of card around
+ * the toned page, and a line there was a browser's toolbar.
  */
 
 /** The shell's window-chrome bridge; absent everywhere but the desktop. */
@@ -102,9 +119,14 @@ export function TitleBar() {
   useEffect(() => {
     if (!shell) return;
     const frame = requestAnimationFrame(() => {
-      const cs = getComputedStyle(document.body);
-      const color = toHex(cs.backgroundColor);
-      const symbolColor = toHex(cs.color);
+      // The band's own fill, which is the card's, not the page's: the
+      // caption buttons the OS draws at its right end have to sit on
+      // the colour the band is.
+      const band = document.getElementById('title-bar');
+      const color = toHex(getComputedStyle(band ?? document.body).backgroundColor);
+      // The glyphs keep the page's ink: the band's own text is the muted
+      // tier, and a caption button is a control, not a caption.
+      const symbolColor = toHex(getComputedStyle(document.body).color);
       if (color && symbolColor) void shell.setColors({ color, symbolColor });
     });
     return () => cancelAnimationFrame(frame);
@@ -177,20 +199,19 @@ export function TitleBar() {
       // strip from the shell instead (desktop/main.mjs), so a server whose
       // app predates the band still gives the window something to move by.
       id="title-bar"
-      className="bg-background text-muted-foreground flex shrink-0 items-center"
+      className="bg-card text-muted-foreground relative flex shrink-0 items-center"
       style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* The band over the sidebar is the sidebar's: its ground and its
-          right rule, at its width (App.tsx, Sidebar), so the column runs
-          to the window's top edge instead of stopping under a strip of
-          page ground. Unfolded it holds every control; folded, the rail
-          is 68px and holds the fold switch alone, centred the way the
-          rail centres its icons, and the rest sit past the seam on the
-          page ground. Below md there is no sidebar, and no segment. */}
+      {/* The segment over the sidebar keeps the sidebar's width (App.tsx,
+          Sidebar) so the controls stand over the column they belong to.
+          Unfolded it holds every control; folded, the rail is 68px and
+          holds the fold switch alone, left-aligned the way the rail
+          aligns its icons, and the rest sit past the seam. Below md there
+          is no sidebar, and no segment. */}
       {md && (
         <div
           className={cn(
-            'bg-card border-card-ring flex h-full shrink-0 items-center gap-1 self-stretch border-r',
+            'flex h-full shrink-0 items-center gap-1 self-stretch',
             // 16px, not the band's 14: the switch is a 36px button, so its
             // glyph then centres 34px in, the line the sidebar's row icons
             // sit on below it (NAV_ROW in App.tsx; 11px matched the 29px
@@ -229,6 +250,33 @@ export function TitleBar() {
         >
           {controls}
         </div>
+      )}
+      {/* The way in, centred on the window. 22rem: wide enough to say
+          what it opens and to hold the two keycaps, and no wider than the
+          back-and-forward cluster beside it justifies (measured against
+          28rem, which read as a toolbar). A 28px pill in the 40px band,
+          on the muted fill a pressed row takes, so it reads as a button;
+          the keycaps take the page's ground because the registry's Kbd
+          is itself muted and vanished on the pill. Only where the band
+          has the room: under md the band is the controls' alone. */}
+      {md && (
+        <button
+          type="button"
+          onClick={openQuickSwitcher}
+          className={cn(
+            'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+            'absolute top-1/2 left-1/2 flex h-7 w-88 -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-lg px-2.5 text-sm',
+            'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+            '[-webkit-app-region:no-drag]',
+          )}
+        >
+          <Search className="size-4 shrink-0" />
+          <span className="truncate">{t('Open anything…')}</span>
+          <KbdGroup className="ml-auto">
+            <Kbd className="bg-background">{shell.platform === 'darwin' ? '⌘' : 'Ctrl'}</Kbd>
+            <Kbd className="bg-background">K</Kbd>
+          </KbdGroup>
+        </button>
       )}
     </div>
   );
