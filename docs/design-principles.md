@@ -847,7 +847,17 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   is a rung above `--muted` (the hover fill) instead of the same rung,
   because a pressed toggle on a card was 3% of lightness from its
   surroundings in the light and 6% in the dark and could not be seen —
-  92.8% and 37% now. The dark `--input` is shadcn's own translucent
+  92.8% and 37% now. On the page ground the light tone is a hazard the
+  other way: `--secondary` and `--muted` are the light page's own 97%,
+  so a secondary button, a progress track or an empty state's tile
+  standing on the page rather than on a card drew nothing (1.00:1 on
+  eight pages, 2026-09-12). An element that stands on the page says so
+  with `data-ground` (a page header's rows, a gate, a toolbar), and
+  under that mark `index.css` points both roles one rung up, at
+  `--surface-3`; dark keeps its values, since there the page already
+  sits below the card. The mark goes only on boxes that hold no card,
+  because a card under it would take the rung too; the ghost button's
+  hover read the same mark first. The dark `--input` is shadcn's own translucent
   white, which the chosen tab's pill (`dark:bg-input/30
   dark:border-input`) depends on: over the muted track an opaque grey at
   30% was the track's own colour. In light the page is a 97% tone and

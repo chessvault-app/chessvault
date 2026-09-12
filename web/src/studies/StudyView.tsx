@@ -295,6 +295,9 @@ export function StudyView({
     <div
       className={cn('flex shrink-0 items-center gap-2 wide:h-9', className)}
       data-pane-strip={inColumn ? '' : undefined}
+      // On the page ground in both layouts: the Edit button's secondary
+      // fill is the light page's own tone (index.css, `[data-ground]`).
+      data-ground=""
     >
       <Button
         variant="ghost"

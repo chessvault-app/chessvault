@@ -857,7 +857,10 @@ export function EditorView({
                   applies. Not `active`: its bg-accent is 4% of lightness
                   from the pill's muted ground, the parity DESIGN.md records
                   as unseeable. */}
-              <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(var(--radius-md)+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
+              {/* data-ground: the pill stands on the page, where its wash and
+                  a hovered tool's --muted were both the page's own tone in
+                  light (1.00:1 measured); index.css lifts the rung. */}
+              <div data-ground="" className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(var(--radius-md)+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
                 variant="ghost"
                 size="sm"

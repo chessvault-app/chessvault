@@ -868,6 +868,30 @@
      it is in the light, where surface-3 (92.8%) on white is plain. */
   --accent: oklch(calc(37% + (28% - 37%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 }
+/* The page ground. Under an element that says `data-ground` (a page's
+   header row, a gate, a toolbar standing on the page rather than in a
+   card) the two roles that share the light page's own rung step up one:
+   --secondary and --muted are --surface-2, and in light that is the
+   same 97% the page is, so a secondary button, a progress track, an
+   empty state's tile or a segmented track standing on the page drew
+   nothing at all (1.00:1 measured on eight pages; on a card the same
+   fills are 97% on white, which is the separation the registry's own
+   theme gives them). A rung, not a class: bg-muted and bg-secondary
+   keep the registry's names, and every fill drawn from these roles
+   moves with them, wells and washes included. Dark keeps its values,
+   since there the page (14.5%) sits below the card (20.5%) and the rung
+   already separates (1.31:1 measured). The ground is marked by hand,
+   and only on boxes that hold no card, since a card under it would take
+   the rung too. The ghost button's hover reads the same mark in
+   components/ui/button. */
+[data-ground] {
+  --secondary: var(--surface-3);
+  --muted: var(--surface-3);
+}
+.dark [data-ground] {
+  --secondary: var(--surface-2);
+  --muted: var(--surface-2);
+}
 
 /* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile
    to `var(--surface)` directly, so flipping `.dark` re-themes without a rebuild

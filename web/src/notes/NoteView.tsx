@@ -446,7 +446,13 @@ function NoteEditor({
           editable ? 'pb-1.5' : 'pb-3',
         )}
       >
-      <header className="flex shrink-0 items-center gap-2">
+      <header
+        // On the page ground at rest; once scrolled the bar is a card and
+        // the Edit button's secondary fill separates on its own
+        // (index.css, `[data-ground]`).
+        data-ground={scrolled ? undefined : ''}
+        className="flex shrink-0 items-center gap-2"
+      >
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
         </Button>

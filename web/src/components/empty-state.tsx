@@ -26,6 +26,7 @@ export function EmptyState({
   title,
   body,
   action,
+  ground = false,
   className,
 }: {
   icon: ComponentType<{ className?: string }>;
@@ -33,10 +34,16 @@ export function EmptyState({
   body: string;
   /** The press that resolves it. Always give one if one exists. */
   action?: ReactNode;
+  /**
+   * The state stands on the page rather than in a panel: the tile and a
+   * secondary press take the ground rung (index.css, `[data-ground]`),
+   * since the muted fill is the light page's own tone.
+   */
+  ground?: boolean;
   className?: string;
 }) {
   return (
-    <Empty className={cn('py-12', className)}>
+    <Empty data-ground={ground ? '' : undefined} className={cn('py-12', className)}>
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Icon />
