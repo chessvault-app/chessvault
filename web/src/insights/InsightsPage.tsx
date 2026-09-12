@@ -137,17 +137,18 @@ const SPEED_LABEL: Record<Speed | 'unknown', string> = {
 const SIDE_LABEL = { white: 'As White', black: 'As Black' } as const;
 
 /**
- * The one weight an outcome's fill carries on this page wherever it
- * covers area (the month bars, the donut slices): the outcome ink at
- * under half strength. The result bar keeps its own tint tokens, which
- * are the same three hues one rung quieter still; full ink is kept for
- * text and the small swatches beside it, and never for a filled area,
- * so no picture on the page shouts over the tables.
+ * The month chart's fills, at full ink. The donut slices keep the quiet
+ * weight (their 0.45 opacity, below) because their legend prints word,
+ * count and share; the month chart is the one picture with no visible
+ * table behind it, so its segments are the figures, and at the quiet
+ * weight they measured 1.71 to 2.55:1 against the card in both themes,
+ * under the 3:1 a graphic that carries the content must meet (WCAG
+ * 1.4.11; the sweep's report). The result bar keeps its own tint tokens.
  */
-const OUTCOME_INK = {
-  w: 'bg-good/45',
-  d: 'bg-muted-foreground/35',
-  l: 'bg-destructive/45',
+const MONTH_INK = {
+  w: 'bg-good',
+  d: 'bg-muted-foreground',
+  l: 'bg-destructive',
 } as const;
 
 /**
@@ -739,6 +740,12 @@ function ActivityCard({ report }: { report: Report }) {
     report.weekdays.map((w) => ({ band: w.day, w: w.w, d: w.d, l: w.l, accSum: w.accSum, accN: w.accN })),
   );
   const dayLabel = (day: number): string => dayName.format(new Date(2026, 1, 1 + day));
+  // A month's figures: the tip's text, and the line under the chart for
+  // the month last pressed, since a tip opens on nothing on touch.
+  const figures = (m: MonthTally): string =>
+    m.games === 0 ? label(m) : `${label(m)}: ${t('{w} won, {d} drew, {l} lost', { w: m.w, d: m.d, l: m.l })}`;
+  const [picked, setPicked] = useState<string | null>(null);
+  const pickedMonth = series.find((m) => m.month === picked) ?? null;
   return (
     <Card>
       <CardHeader>
@@ -753,27 +760,32 @@ function ActivityCard({ report }: { report: Report }) {
             <div className="text-muted-foreground mb-1 text-xs tabular-nums">
               {t('Most in a month: {n}', { n: exact.format(peak) })}
             </div>
-            <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="img" aria-label={t('Games per month')}>
+            {/* Each month is a button, not a painted div: a div with a tip
+                opened on mouse hover only, so a keyboard user and anyone on
+                a phone had no way to a month's split. A group, not role=img,
+                since an image's children are presentational and the buttons
+                would vanish from the accessibility tree. */}
+            <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="group" aria-label={t('Games per month')}>
               {series.map((m) => (
                 // The app's tooltip, as on the result bar, never the
                 // browser's `title` bubble: the two differ in shape and
-                // delay, and one page was showing both.
-                <TitleTip
-                  key={m.month}
-                  title={
-                    m.games === 0
-                      ? label(m)
-                      : `${label(m)}: ${t('{w} won, {d} drew, {l} lost', { w: m.w, d: m.d, l: m.l })}`
-                  }
-                >
-                  <div className="flex h-full min-w-2 flex-1 flex-col justify-end">
+                // delay, and one page was showing both. It opens on hover
+                // and on focus; a press prints the figures under the chart.
+                <TitleTip key={m.month} title={figures(m)}>
+                  <button
+                    type="button"
+                    aria-label={figures(m)}
+                    aria-pressed={picked === m.month}
+                    onClick={() => setPicked((p) => (p === m.month ? null : m.month))}
+                    className="focus-visible:ring-ring flex h-full min-w-2 flex-1 flex-col justify-end rounded-t-[4px] outline-none focus-visible:ring-3"
+                  >
                     {/* Won on top, lost at the foot; the gap between segments is
                         the page's own ground. The bar's corner is the chip
                         corner, off the radius knob on purpose. */}
-                    <div className={cn('rounded-t-[4px]', OUTCOME_INK.w)} style={{ height: `${(100 * m.w) / peak}%` }} />
-                    <div className={cn('mt-px', OUTCOME_INK.d)} style={{ height: `${(100 * m.d) / peak}%` }} />
-                    <div className={cn('mt-px', OUTCOME_INK.l)} style={{ height: `${(100 * m.l) / peak}%` }} />
-                  </div>
+                    <div className={cn('w-full rounded-t-[4px]', MONTH_INK.w)} style={{ height: `${(100 * m.w) / peak}%` }} />
+                    <div className={cn('mt-px w-full', MONTH_INK.d)} style={{ height: `${(100 * m.d) / peak}%` }} />
+                    <div className={cn('mt-px w-full', MONTH_INK.l)} style={{ height: `${(100 * m.l) / peak}%` }} />
+                  </button>
                 </TitleTip>
               ))}
             </div>
@@ -781,11 +793,16 @@ function ActivityCard({ report }: { report: Report }) {
               <span>{label(series[0]!)}</span>
               {series.length > 1 && <span>{label(series[series.length - 1]!)}</span>}
             </figcaption>
+            {/* The pressed month's figures, in print: the one place on a
+                phone they can be read. */}
+            <p className="text-foreground mt-1 min-h-4 text-xs tabular-nums" aria-live="polite">
+              {pickedMonth ? figures(pickedMonth) : ''}
+            </p>
             <ul className="text-muted-foreground mt-2 flex gap-3 text-xs" aria-hidden>
               {[
-                [OUTCOME_INK.w, 'Won'],
-                [OUTCOME_INK.d, 'Drew'],
-                [OUTCOME_INK.l, 'Lost'],
+                [MONTH_INK.w, 'Won'],
+                [MONTH_INK.d, 'Drew'],
+                [MONTH_INK.l, 'Lost'],
               ].map(([ink, word]) => (
                 <li key={word} className="flex items-center gap-1.5">
                   <span className={cn('inline-block size-2.5 rounded-xs', ink)} />
