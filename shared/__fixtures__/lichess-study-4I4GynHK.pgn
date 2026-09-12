@@ -139,7 +139,7 @@ It is not typical to play it straight away on move four, however., because White
 [Result "*"]
 [Variant "Standard"]
 [ECO "C67"]
-[Opening "Ruy Lopez: Berlin Defense, lanph3re Gambit Accepted"]
+[Opening "Ruy Lopez: Berlin Defense, Rio Gambit Accepted"]
 [StudyName "Lucas Opening Homework - Ruy Lopez"]
 [ChapterName "Berlin Defense"]
 [ChapterURL "https://lichess.org/study/4I4GynHK/4acTGosV"]
@@ -152,7 +152,7 @@ White has a few options:
 (a) 4. O-O allows black to take the e4 pawn. This is a trade because White can recover the material by applying pressure on the e-file.
 (b) 4 d3 avoid these main Berlin defense continuations. It defends e4 so defuses the threat of 4...Nxe4 but also reinforce White's threat on e5.
 (c) 4 Qe2 is a tricky sideline. It, too, defends e4 so avoid the trade of e-pawns, but also defends f2 defusing the ...Bc5 ... Qd4 ...Qxf2# threat.
-(d) Nxe5 is so-called Halloween attack. It resembles the well-known Halloween gamit but worse becuase Nc3 has been replaced by Bb5, reducing White's space advantage. } 4. O-O { This move is known as lanph3re gambit.
+(d) Nxe5 is so-called Halloween attack. It resembles the well-known Halloween gamit but worse becuase Nc3 has been replaced by Bb5, reducing White's space advantage. } 4. O-O { This move is known as Rio gambit.
 Black has several options
 (a) 4...Nxe4 taking the pawn. This is actually a trade.
 (b) 4...Bc5 the Beverwijk variation is the main alternative to 4...Nxe4. Black pressures f2 and White's castled king. This is sharp because 5. Re1 to defend e4 but un-defends f2. So after 5...Ng4, White finds themselves having to move it back 6. Rf1. White has the choice to capture e5 due to a tactic that arises from the c5 and e5 squares being forkable. More commonly, White plays for c3 and d4 instead.
