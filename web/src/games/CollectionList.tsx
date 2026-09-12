@@ -9,7 +9,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { ListChecks } from 'lucide-react';
 import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
@@ -22,8 +21,8 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { dialogOpen } from '@/hooks/dialog-focus';
+import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
@@ -307,9 +306,8 @@ export function CollectionList({
   // a few dozen games are already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
-  // Selection is a MODE, not a permanent column, the same call the
-  // archive browser made: a checkbox on every row is clutter for the
-  // common case, which is opening one game. Escape leaves it.
+  // Selecting several: the archive browser's mode and pieces
+  // (./selection), with this list's verb. Escape leaves it.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const stopSelecting = (): void => {
@@ -527,15 +525,6 @@ export function CollectionList({
           onChange={setNotesFilter}
           className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          title={selecting ? t('Stop selecting') : t('Select games')}
-          active={selecting}
-          onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
-        >
-          <ListChecks />
-        </Button>
         <MoreFiltersButton
           on={hasStructuredFilters(structured)}
           quick={
@@ -635,78 +624,50 @@ export function CollectionList({
     <Skeleton className="h-2.5 w-16" />
   );
 
-  // Outside the hover tray: a checkbox that only appears under the
-  // pointer is one you cannot tick with your eyes.
   const rowCheckbox = (game: GameSummary): ReactNode => (
-    <Checkbox
-      aria-label={t('Select this game')}
+    <SelectRowCheckbox
       checked={picked.has(gameKey(game))}
-      onClick={(e) => e.stopPropagation()}
-      onCheckedChange={(on) =>
+      onChange={(on) =>
         setPicked((prev) => {
           const next = new Set(prev);
-          if (on === true) next.add(gameKey(game));
+          if (on) next.add(gameKey(game));
           else next.delete(gameKey(game));
           return next;
         })
       }
     />
   );
-  const pickedGames = visible.filter((g) => picked.has(gameKey(g)));
-  const allBookmarked = pickedGames.length > 0 && pickedGames.every((g) => bookmarks.has(gameKey(g)));
-  // What is selected on the left, what to do with it on the right, the
-  // archive browser's bar with the collection's verbs: the two the row
-  // menu has that make sense for many at once. Delete goes through one
-  // undo for the lot; the bookmark press adds to every picked row, or
-  // clears them all once every one is lit.
+  // Beside the count, as the archive puts it; nothing to select is
+  // nothing to enter for.
+  const selectEntry = loaded && visible.length > 0 && !selecting ? (
+    <SelectButton onClick={() => setSelecting(true)} />
+  ) : null;
+  // The one verb: delete, through one undo for the lot. "All" is what the
+  // filters show. A batch bookmark was here for a day and went: it is
+  // not a thing anyone reaches for, and the row's own star is one press.
   const selectionBar = (
-    <>
-      <label className="flex min-w-0 cursor-pointer items-center gap-1.5">
-        <Checkbox
-          checked={visible.length > 0 && picked.size === visible.length}
-          indeterminate={picked.size > 0 && picked.size !== visible.length}
-          disabled={visible.length === 0}
-          onCheckedChange={(on) => setPicked(on === true ? new Set(visible.map(gameKey)) : new Set())}
-        />
-        <span className="text-muted-foreground truncate">{t('Select all')}</span>
-      </label>
-      <span
-        className={cn(
-          'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
-          picked.size > 0 ? 'bg-muted text-primary' : 'bg-accent text-muted-foreground',
-        )}
-      >
-        {t('{n} selected', { n: picked.size })}
-      </span>
-      <div className="ml-auto flex shrink-0 items-center gap-1.5">
-        <Button variant="ghost" size="sm" onClick={stopSelecting}>
-          {t('Cancel')}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={picked.size === 0}
-          onClick={() => {
-            for (const g of pickedGames) {
-              if (allBookmarked || !bookmarks.has(gameKey(g))) onToggleBookmark(g);
-            }
-          }}
-        >
-          {allBookmarked ? t('Remove bookmarks') : t('Bookmark selected')}
-        </Button>
+    <SelectionBar
+      all={{
+        total: visible.length,
+        label: t('Select all'),
+        onChange: (on) => setPicked(on ? new Set(visible.map(gameKey)) : new Set()),
+      }}
+      picked={picked.size}
+      onCancel={stopSelecting}
+      actions={
         <Button
           variant="destructive"
           size="sm"
           disabled={picked.size === 0}
           onClick={() => {
-            onDropMany(pickedGames);
+            onDropMany(visible.filter((g) => picked.has(gameKey(g))));
             stopSelecting();
           }}
         >
           {t('Delete selected')}
         </Button>
-      </div>
-    </>
+      }
+    />
   );
 
   return (
@@ -727,8 +688,11 @@ export function CollectionList({
             {search}
             {filtersInRow && filterControls}
             {merged && (
-              <span className="text-muted-foreground ml-auto min-w-0 shrink-0 truncate text-sm font-medium tabular-nums">
-                {tally}
+              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
+                  {tally}
+                </span>
+                {selectEntry}
               </span>
             )}
           </div>
@@ -742,9 +706,12 @@ export function CollectionList({
         selecting ? (
           selectionBar
         ) : merged ? undefined : (
-          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-            {tally}
-          </span>
+          <>
+            <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+              {tally}
+            </span>
+            {selectEntry}
+          </>
         )
       }
       listHeader={
