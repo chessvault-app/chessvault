@@ -39,7 +39,7 @@ colors:
   warn: "oklch(52% 0.112 75)"
   warn-dark: "oklch(80% 0.15 80)"
   info: "oklch(51% 0.102 230)"
-  info-dark: "oklch(72% 0.13 232)"
+  info-dark: "oklch(74% 0.13 232)"
   destructive: "oklch(52% 0.245 27.3)"
   destructive-dark: "oklch(72% 0.191 22.2)"
   board-light: "oklch(91% 0.035 84)"
@@ -280,8 +280,11 @@ in light mode, where the gap closes. In dark it already opens.
   outcome — failed, lost; and destructive actions.
 - **warn** (`oklch(52% 0.112 75)` / `oklch(80% 0.15 80)`): caution — the
   engine-guess fidelity tier, offline notices.
-- **info** (`oklch(51% 0.102 230)` / `oklch(72% 0.13 232)`): trusted or
-  informational — the book-solution tier, the annotated-game pen.
+- **info** (`oklch(51% 0.102 230)` / `oklch(74% 0.13 232)`): trusted or
+  informational — the book-solution tier, the annotated-game pen. Dark's
+  74 is the one semantic colour raised for the hover fill: it is the only
+  one the app writes as a sentence on a row that fills, and at 72 the
+  puzzle dashboard's due count read 4.29:1 there.
 
 ### Board and reading colours
 

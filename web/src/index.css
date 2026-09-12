@@ -691,7 +691,17 @@
      rather than glanced at. */
   --destructive: oklch(72% 0.191 22.2);
   --warn: oklch(80% 0.15 80);
-  --info: oklch(72% 0.13 232);
+  /* 74, not 72, and the exception above is why it is worth two points:
+     this is the one semantic colour the app puts in a SENTENCE on a row
+     that fills, and a count read on a hovered row is the case that note
+     says check:contrast exists to catch. At 72 the puzzle dashboard's
+     "{n} due" measured 4.29:1 on --accent, under the 4.5 a 12px string
+     needs; at 74 it reads 4.60, and 8.78 on the page, 7.95 on a card,
+     5.60 on --surface-3, up from 8.20, 7.42 and 5.23. The others keep
+     their values because no string wears them there: --good measures
+     4.45 on that fill and --destructive 3.70, and if either ever lands
+     on a row that fills, this check is what will say so. */
+  --info: oklch(74% 0.13 232);
   /* Dark mode's --destructive is a light red; white on it is unreadable. */
   --destructive-foreground: oklch(18% 0.03 25);
   --warn-foreground: oklch(20% 0.04 80);
