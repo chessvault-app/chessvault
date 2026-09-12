@@ -1070,24 +1070,25 @@ function PdfPane({
   // under 520 px, where the measured row began to eat the field.
   const fold = compact || width < 520;
   const [moreOpen, setMoreOpen] = useState(false);
+  // The zoom entries are in the phone's sheet too: pinch is the phone's
+  // quick zoom, and the bar has no room for buttons, but a reader with
+  // one finger, a stylus or a switch has no pinch, and the sheet costs
+  // the bar nothing. Fit stays off a portrait phone by its own guard,
+  // where the width fit already shows the whole page.
   const more: MenuAction[] = fold
     ? [
-        ...(!compact
+        ...(fitPageZoom !== null && (fitPageZoom < 1 || fitted)
           ? [
-              ...(fitPageZoom !== null && (fitPageZoom < 1 || fitted)
-                ? [
-                    {
-                      label: fitted ? 'Fit the width' : 'Fit the whole page',
-                      icon: fitted ? MoveHorizontal : Maximize2,
-                      onSelect: toggleFit,
-                    },
-                  ]
-                : []),
-              { label: 'Zoom in', icon: ZoomIn, onSelect: () => anchoredBump(1.25) },
-              { label: 'Zoom out', icon: ZoomOut, onSelect: () => anchoredBump(1 / 1.25) },
-              { label: 'Reset zoom', icon: Percent, onSelect: () => anchoredBump(1 / zoom) },
+              {
+                label: fitted ? 'Fit the width' : 'Fit the whole page',
+                icon: fitted ? MoveHorizontal : Maximize2,
+                onSelect: toggleFit,
+              },
             ]
           : []),
+        { label: 'Zoom in', icon: ZoomIn, onSelect: () => anchoredBump(1.25) },
+        { label: 'Zoom out', icon: ZoomOut, onSelect: () => anchoredBump(1 / 1.25) },
+        { label: 'Reset zoom', icon: Percent, onSelect: () => anchoredBump(1 / zoom) },
         { label: 'Rotate the page', icon: RotateCw, onSelect: onRotate },
         {
           label: hotspots ? 'Hide the diagram buttons' : 'Show the diagram buttons',
@@ -1183,7 +1184,7 @@ function PdfPane({
         {/* Fit the whole page only where a page can be taller than its
             viewport at the width fit — a desktop pane. A portrait phone
             already shows the whole page at that width, so the button sat
-            disabled there; pinch is the phone's zoom. */}
+            disabled there. */}
         {!fold && (
           <>
             <span className="bg-border mx-1 h-4 w-px" />
@@ -1198,9 +1199,10 @@ function PdfPane({
             </Button>
           </>
         )}
-        {/* Zoom buttons only where there is no pinch: a phone's bar has
-            room for page, fit, rotate and search at touch size, and no
-            more — the measured row overflowed the screen with them. */}
+        {/* Zoom buttons only in the unfolded row: a phone's bar has room
+            for page, contents, search and the "…" at touch size, and no
+            more — the measured row overflowed the screen with them. The
+            fold's menu carries the same three entries. */}
         {!fold && (
           <>
             <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => anchoredBump(1 / 1.25)} title={t('Zoom out')}>
