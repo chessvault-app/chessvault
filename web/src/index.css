@@ -592,6 +592,11 @@
   /* Text sitting ON an eval fill (W/D/B bars, result badges). */
   --on-eval-white: oklch(0% 0 0 / 75%);
   --on-eval-black: oklch(100% 0 0 / 85%);
+  /* The result bar's draw segment and its track edge: one mid grey that
+     stands at least 3:1 off both eval fills (3.3 and 3.4 here) and off the
+     card (3.9), so a small draw share is a segment and a one-colour row
+     is a bar. Measured as drawn in components/result-bar. */
+  --result-draw: oklch(60% 0 0);
 
   /* -------------------------------------------------------------------------
      Theme-invariant chess colours. These deliberately do NOT flip with the
@@ -782,6 +787,8 @@
   --eval-white: oklch(calc(93% + (100% - 93%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
   --eval-black: oklch(calc(27% + (0% - 27%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --eval-border: oklch(100% 0 0 / calc(25% * var(--ui-contrast)));
+  /* 3.5:1 off both eval fills and 4.5:1 off the card (see light). */
+  --result-draw: oklch(58% 0 0);
 
   --shadow-color: var(--ui-hue) 40% 4%;
 }
@@ -884,6 +891,7 @@
   --color-eval-border: var(--eval-border);
   --color-on-eval-white: var(--on-eval-white);
   --color-on-eval-black: var(--on-eval-black);
+  --color-result-draw: var(--result-draw);
 
   --color-side-white: var(--side-white);
   --color-side-white-line: var(--side-white-line);
