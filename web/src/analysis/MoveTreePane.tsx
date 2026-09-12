@@ -1,11 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WikiText } from '@/notes/WikiText';
-import { ArrowUpToLine, BookOpen, ChevronUp, GitBranch } from 'lucide-react';
+import { ArrowUpToLine, BookOpen, ChevronUp, GitBranch, ListOrdered } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/utils';
 import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
+import { Kbd } from '@/components/ui/kbd';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
 import { useReview } from '@/store/review';
@@ -177,10 +179,31 @@ export function MoveTreePane({ className }: { className?: string }) {
               currentLineOnly={currentLineOnly}
             />
           )}
+          {/* The panel with nothing in it yet, in the app's one empty-state
+              shape (Insights, the shelves) rather than a bare sentence: it
+              says what is missing and how it fills. Under it, where there
+              is a keyboard, the two keys this panel answers; the full list
+              is under ?. */}
           {isEmpty && (
-            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
-              {t('Play a move on the board, or load a FEN or PGN.')}
-            </p>
+            <div className="flex flex-col items-center gap-2 px-3">
+              <EmptyState
+                icon={ListOrdered}
+                title="No moves yet"
+                body="Play a move on the board, or load a FEN or PGN."
+                className="py-6"
+              />
+              <div className="text-muted-foreground hidden items-center gap-4 pb-4 text-xs md:flex pointer-coarse:hidden">
+                <span className="flex items-center gap-1.5">
+                  <Kbd>{'\u2190'}</Kbd>
+                  <Kbd>{'\u2192'}</Kbd>
+                  {t('Previous / next move')}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Kbd>f</Kbd>
+                  {t('Flip the board')}
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </ActionContextMenu>
