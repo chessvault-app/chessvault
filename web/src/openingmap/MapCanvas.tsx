@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
+import { useCanvasInset } from '@/components/canvas-shell';
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { openingFamily } from '@/repertoire/drill';
@@ -28,6 +29,15 @@ const clip = (text: string, max: number): string =>
     than the map. Long enough not to fire while panning, short enough to
     feel deliberate rather than broken. */
 const HOLD_MS = 350;
+/** How far inside the uncovered strip a selection is put when the details
+    panel would otherwise be standing on it: the dot's own radius plus
+    this, which is enough for its halo and the near half of its label
+    rather than a hairline of daylight. */
+const CLEAR_PAD = 48;
+/** How long that slide takes. Short enough to read as the map answering
+    the press, long enough that the picture is followed rather than
+    replaced; skipped entirely for reduced motion. */
+const SLIDE_MS = 260;
 /** How far a finger may wander while holding before it counts as a pan
     instead. A press never lands on one pixel and never stays on it. */
 const HOLD_SLOP = 10;
@@ -189,6 +199,52 @@ export function MapCanvas({
   const commitView = (v: View): void => {
     viewRef.current = v;
     setView(v);
+  };
+
+  /**
+   * A viewport change the map makes on its own, taken at walking pace.
+   *
+   * Written the way a drag is — the ref and the <g>'s attribute per frame,
+   * React told once at the end — so a slide costs attribute writes rather
+   * than a reconciliation of every dot per frame. Any gesture cancels it:
+   * a hand on the map outranks the map moving itself.
+   */
+  const sliding = useRef(0);
+  const stopSlide = (): void => {
+    if (!sliding.current) return;
+    cancelAnimationFrame(sliding.current);
+    sliding.current = 0;
+    // Whatever the slide had reached is where the map now is.
+    setView(viewRef.current);
+  };
+  useEffect(() => () => cancelAnimationFrame(sliding.current), []);
+  const slideTo = (to: View): void => {
+    if (sliding.current) cancelAnimationFrame(sliding.current);
+    const from = viewRef.current;
+    if (prefersReducedMotion()) {
+      sliding.current = 0;
+      commitView(to);
+      return;
+    }
+    const start = performance.now();
+    const step = (now: number): void => {
+      const p = Math.min(1, (now - start) / SLIDE_MS);
+      const ease = p * p * (3 - 2 * p);
+      const v = {
+        x: from.x + (to.x - from.x) * ease,
+        y: from.y + (to.y - from.y) * ease,
+        k: to.k,
+      };
+      viewRef.current = v;
+      scene.current?.setAttribute('transform', `translate(${v.x} ${v.y}) scale(${v.k})`);
+      if (p < 1) {
+        sliding.current = requestAnimationFrame(step);
+        return;
+      }
+      sliding.current = 0;
+      commitView(v);
+    };
+    sliding.current = requestAnimationFrame(step);
   };
 
   // The moving parts, addressed directly: the animation loop below writes
@@ -712,6 +768,9 @@ export function MapCanvas({
   const hostRect = (): DOMRect => (hostBox.current ??= host.current!.getBoundingClientRect());
 
   const onPointerDown = (e: React.PointerEvent): void => {
+    // A hand on the map outranks the map moving itself. The dots do not
+    // stop this event, so a press on one lands here too.
+    stopSlide();
     if (alreadyHeld(e.pointerId)) dropNode();
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -762,6 +821,7 @@ export function MapCanvas({
     setView(viewRef.current);
   };
   const onWheel = (e: React.WheelEvent): void => {
+    stopSlide();
     const box = hostRect();
     if (!wheelFrame.current) {
       wheelFrame.current = requestAnimationFrame(() => {
@@ -845,6 +905,46 @@ export function MapCanvas({
     out.set(map.root.id, Math.max(out.get(map.root.id) ?? 0, biggest * 1.25));
     return out;
   }, [graph, shares, map.root.id]);
+
+  /**
+   * Keep the selection out from under the details panel.
+   *
+   * Selecting a dot opens a panel over the right-hand end of the canvas,
+   * and the dot it is about is wherever it already was: often underneath.
+   * The answer to a question, covered by the answer to the question. The
+   * map has a viewport it can move, so it moves it — the least it can,
+   * and only when the dot is actually behind the panel, because a map
+   * that recentres on every press is a map you lose your place in.
+   *
+   * Horizontal only: the panel is the canvas's full height, so there is
+   * no amount of up or down that uncovers anything.
+   *
+   * The shell measures the strip (see `useCanvasInset`), which is how a
+   * phone gets no slide at all — its details are a sheet over everything,
+   * and there is nowhere uncovered to slide to.
+   */
+  const inset = useCanvasInset();
+  useEffect(() => {
+    if (!selectedId || inset <= 0) return;
+    const box = host.current?.getBoundingClientRect();
+    if (!box || box.width === 0) return;
+    const v = viewRef.current;
+    // Where it is DRAWN, drift and all, in the surface's own pixels.
+    const at = v.x + posNow(selectedId).x * v.k;
+    const r = (drawnR.get(selectedId) ?? 0) * v.k;
+    const clear = box.width - inset - CLEAR_PAD - r;
+    if (at <= clear) return;
+    // Never off the far edge instead: a narrow window can leave less free
+    // width than the dot wants, and the left margin is the least bad
+    // place to put it.
+    const to = Math.max(CLEAR_PAD + r, clear);
+    slideTo({ ...v, x: v.x + (to - at) });
+    // The selection and the strip, and nothing else: this answers the
+    // panel opening over a dot, not the map moving underneath one. A pan,
+    // a zoom or a dragged dot is the reader's own arrangement and is left
+    // exactly where they put it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, inset]);
 
   // Labels and badges keep their SCREEN size — dividing by the zoom is
   // what makes them readable at any distance — and the labels fade out

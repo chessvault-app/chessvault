@@ -1,11 +1,37 @@
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+
+/**
+ * How much of the canvas's right edge the floating panel is standing on,
+ * in the surface's own pixels, and 0 whenever no panel is up.
+ *
+ * A canvas under a panel is still a whole canvas: it pans, it draws, and
+ * nothing in it knows which part of it a reader can actually see. So the
+ * one thing that does — this shell, which owns the panel's box — says so,
+ * and a surface that can put something WHERE the reader asked for it (the
+ * map moving its selection out from under the details) has a number to
+ * aim at. Measured off the panel rather than repeated from its classes,
+ * which change at `xl` and would otherwise have to be kept in step by
+ * hand in a file that cannot see them.
+ */
+const CanvasInset = createContext(0);
+export function useCanvasInset(): number {
+  return useContext(CanvasInset);
+}
 
 /**
  * The canvas page family — the third of the three named in `components/layout.ts`.
@@ -70,6 +96,35 @@ export function CanvasShell({
   // Below `md`: the width at which the sidebar appears and the panel stops
   // having anywhere to float that is not on top of the canvas.
   const phone = useMediaQuery('(max-width: 47.9375rem)');
+  // The floating half of the pair, which is the half that stands on the
+  // canvas; the phone's Sheet covers it whole and reserves nothing.
+  const docked = Boolean(panel) && !phone;
+
+  const surface = useRef<HTMLDivElement | null>(null);
+  const [panelEl, setPanelEl] = useState<HTMLElement | null>(null);
+  // Stable, or React detaches and re-attaches the ref every render, and
+  // each of those is a setState: two renders per render, forever.
+  const panelRef = useCallback((el: HTMLElement | null) => setPanelEl(el), []);
+
+  const [inset, setInset] = useState(0);
+  useLayoutEffect(() => {
+    const box = surface.current;
+    if (!panelEl || !box) return;
+    const measure = (): void =>
+      setInset(
+        Math.max(0, box.getBoundingClientRect().right - panelEl.getBoundingClientRect().left),
+      );
+    measure();
+    // The panel's own width is the only thing that moves this edge: the
+    // gutter is a constant, so a resize that leaves the width alone leaves
+    // the covered strip alone.
+    const watch = new ResizeObserver(measure);
+    watch.observe(panelEl);
+    return () => {
+      watch.disconnect();
+      setInset(0);
+    };
+  }, [panelEl]);
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
@@ -100,14 +155,24 @@ export function CanvasShell({
       {/* The surface, and everything that belongs ON it. Positioned, so
           the overlays and the panel measure themselves against the canvas
           rather than against the page. */}
-      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
-        {children}
+      <div ref={surface} className="relative min-h-0 w-full flex-1 overflow-hidden">
+        <CanvasInset.Provider value={inset}>{children}</CanvasInset.Provider>
 
         {/* The surface's own controls, floating on it — kept out of the
             header block so the search row has the left edge to itself,
             and drawn bare, because a canvas is not a toolbar. */}
         {actions && (
-          <div className="absolute right-4 top-3 z-10 flex items-center gap-1 md:right-6">
+          <div
+            // Out of reach while the panel stands on this corner, which it
+            // does at every width it appears at: the icons are behind it
+            // (see the panel's own note below), so they leave the tab
+            // order with it rather than staying as stops that focus
+            // something nobody can see — four of them on the map, in the
+            // middle of the page's own Tab walk. The X in the panel's
+            // header is how you get them back.
+            inert={docked}
+            className="absolute right-4 top-3 z-10 flex items-center gap-1 md:right-6"
+          >
             {actions}
           </div>
         )}
@@ -131,6 +196,7 @@ export function CanvasShell({
             </Dialog>
           ) : (
             <aside
+              ref={panelRef}
               // The Sheet half of this pair announces itself by its label;
               // the floating half is a complementary landmark, and one
               // with no name is a landmark nobody can choose from a list.
@@ -145,9 +211,10 @@ export function CanvasShell({
               // is taller than the screen and scrolls: room the panel
               // needed, spent keeping reachable two icons that a closed
               // panel shows anyway. So the icons go under it while it is
-              // open, and the X in its header is how you get back to
-              // them. What is left is the page's own gutter, and it is
-              // not spacing — it is what makes the corners, the border
+              // open, and out of the tab order with it, and the X in its
+              // header is how you get back to them. What is left is the
+              // page's own gutter, and it is not spacing — it is what
+              // makes the corners, the border
               // and the shadow visible all the way round, so the panel
               // reads as one object over the map rather than as a slab
               // bolted to the window. `overflow-hidden` because a sticky
@@ -167,6 +234,13 @@ export function CanvasShell({
               // button row stop wrapping: at 18rem nearly every line in
               // it broke, which is a panel technically showing you
               // something and practically hiding it.
+              //
+              // What it covers, it also takes out of reach: the corner
+              // icons are `inert` above while this is up, and the canvas
+              // is told how wide this strip is (CanvasInset) so a surface
+              // can keep what the reader just asked about out from under
+              // it. Both beat fighting the stack with z-index, which would
+              // only move the problem to whatever came second.
               className="bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl ring-1 ring-window-ring backdrop-blur-md xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
