@@ -1,6 +1,9 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { announce } from '@/lib/announce';
+import { t } from '@/lib/i18n';
+
 import type { DiagramRect } from './data';
 
 /**
@@ -96,7 +99,16 @@ export function usePdfSearch(
           // three hundred of them back to back would hold the main thread.
           await new Promise((r) => setTimeout(r, 0));
         }
-        if (token.current === mine) setScanning(null);
+        if (token.current !== mine) return;
+        setScanning(null);
+        // Said once, at the end: the count in the box is repainted as
+        // pages are read, which a screen reader does not hear, and the
+        // first hit turned the page under the field without a word.
+        announce(
+          found.length > 0
+            ? t('{n} found, page {page}', { n: found.length, page: found[0]!.page })
+            : t('No matches'),
+        );
       })();
     },
     [doc, onJump],
@@ -115,6 +127,7 @@ export function usePdfSearch(
     const i = (current + delta + hits.length) % hits.length;
     setCurrent(i);
     onJump(hits[i]!.page);
+    announce(t('{k} of {n}, page {page}', { k: i + 1, n: hits.length, page: hits[i]!.page }));
   };
 
   return {

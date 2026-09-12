@@ -179,6 +179,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   }, [book, pageNo]);
   const goTo = useCallback(
     (n: number): void => {
+      // Guarded here, for every caller: a NaN got through the desktop
+      // page field once, and NaN as the page blanked the book, with the
+      // arrows dead after it (NaN plus one is still NaN).
+      if (!Number.isFinite(n)) return;
       const max = pages || Infinity;
       setPageNo(Math.min(Math.max(1, Math.round(n)), max));
     },
@@ -1036,6 +1040,12 @@ function PdfPane({
   // The page number is a field: typing one and pressing Enter goes there,
   // which is the go-to every reader knows without a label.
   const [typed, setTyped] = useState<string | null>(null);
+  // An entry that is not a page number ("p5", "iv") is refused and the
+  // field goes back to the page being read, marked invalid until the
+  // next keystroke; before this it went through as NaN and blanked the
+  // book (goTo now refuses it too).
+  const [badEntry, setBadEntry] = useState(false);
+  useEffect(() => setBadEntry(false), [pageNo]);
   /**
    * The phone asks for the page in a sheet, not in the bar.
    *
@@ -1126,10 +1136,18 @@ function PdfPane({
               className="w-12 text-center tabular-nums"
               value={typed ?? String(pageNo || 1)}
               aria-label={t('Go to page')}
+              aria-invalid={badEntry || undefined}
               onFocus={(e) => e.currentTarget.select()}
-              onChange={(e) => setTyped(e.target.value)}
+              onChange={(e) => {
+                setTyped(e.target.value);
+                setBadEntry(false);
+              }}
               onBlur={() => {
-                if (typed !== null && typed.trim() !== '') goTo(Number(typed));
+                if (typed !== null && typed.trim() !== '') {
+                  const n = Number(typed);
+                  if (Number.isFinite(n) && n > 0) goTo(n);
+                  else setBadEntry(true);
+                }
                 setTyped(null);
               }}
               onKeyDown={(e) => {
