@@ -154,8 +154,15 @@
          leaving the mark. The demo does NOT go any more: it shortens, the
          way it does on the landing page, because it is the one thing in
          the bar that is an action. */
-      @media (max-width: 33rem) { .mark small { display: none; } }
-      @media (max-width: 22rem) { .mark .wordmark { display: none; } }
+      /* Clipped, not display:none. The words are the link's only name:
+         the glyph is aria-hidden, and with both spans gone the name was
+         the &nbsp; between them, which Chrome exposes as one U+00A0 and
+         axe trims to nothing (link-name, serious, at 352px and below).
+         Absolutely positioned, a clipped span is no flex item, so the
+         gap does not count it and the bar measures the same. */
+      .mark { position: relative; }
+      @media (max-width: 33rem) { .mark small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
+      @media (max-width: 22rem) { .mark .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
       /* The bare hex, no tile: next to the squared Contents button a tiled
          logo reads as a second button. currentColor keeps it right in both
          themes. */
