@@ -2,6 +2,7 @@
   {
     "id": "pawn",
     "label": "Pawn endgame",
+    "group": "Pawns and minor pieces",
     "spec": {
       "white": {
         "n": [
@@ -44,6 +45,7 @@
   {
     "id": "knight",
     "label": "Knight endgame",
+    "group": "Pawns and minor pieces",
     "spec": {
       "white": {
         "n": [
@@ -86,6 +88,7 @@
   {
     "id": "bishop",
     "label": "Bishop endgame",
+    "group": "Pawns and minor pieces",
     "spec": {
       "white": {
         "n": [
@@ -128,6 +131,7 @@
   {
     "id": "bishop-vs-knight",
     "label": "Bishop vs knight",
+    "group": "Pawns and minor pieces",
     "spec": {
       "white": {
         "n": [
@@ -184,6 +188,7 @@
   {
     "id": "rook",
     "label": "Rook endgame",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "n": [
@@ -226,6 +231,7 @@
   {
     "id": "double-rook",
     "label": "Double rook endgame",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "n": [
@@ -268,6 +274,7 @@
   {
     "id": "rook-bishop",
     "label": "Rook and bishop endgame",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "n": [
@@ -310,6 +317,7 @@
   {
     "id": "rook-knight",
     "label": "Rook and knight endgame",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "n": [
@@ -352,6 +360,7 @@
   {
     "id": "queen",
     "label": "Queen endgame",
+    "group": "Queen and heavy pieces",
     "spec": {
       "white": {
         "n": [
@@ -394,6 +403,7 @@
   {
     "id": "rook-and-pawns-vs-rook",
     "label": "Rook and pawns vs rook",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "p": [
@@ -444,6 +454,7 @@
   {
     "id": "rook-vs-pawns",
     "label": "Rook vs pawns",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "n": [
@@ -490,6 +501,7 @@
   {
     "id": "queen-vs-rook",
     "label": "Queen vs rook",
+    "group": "Queen and heavy pieces",
     "spec": {
       "white": {
         "n": [
@@ -532,6 +544,7 @@
   {
     "id": "queen-vs-two-rooks",
     "label": "Queen vs two rooks",
+    "group": "Queen and heavy pieces",
     "spec": {
       "white": {
         "n": [
@@ -574,6 +587,7 @@
   {
     "id": "queenless-middlegame",
     "label": "Queenless middlegame",
+    "group": "Middlegames and material edges",
     "spec": {
       "white": {
         "q": [
@@ -602,6 +616,7 @@
   {
     "id": "heavy-pieces",
     "label": "Heavy pieces only",
+    "group": "Queen and heavy pieces",
     "spec": {
       "white": {
         "n": [
@@ -644,6 +659,7 @@
   {
     "id": "pawn-up",
     "label": "A pawn up",
+    "group": "Middlegames and material edges",
     "spec": {
       "diff": {
         "p": [
@@ -672,6 +688,7 @@
   {
     "id": "two-pawns-up",
     "label": "Two pawns up",
+    "group": "Middlegames and material edges",
     "spec": {
       "diff": {
         "p": [
@@ -700,6 +717,7 @@
   {
     "id": "minor-piece-up",
     "label": "A minor piece up",
+    "group": "Middlegames and material edges",
     "spec": {
       "diff": {
         "minor": [
@@ -716,6 +734,7 @@
   {
     "id": "exchange-up",
     "label": "Exchange up",
+    "group": "Middlegames and material edges",
     "spec": {
       "diff": {
         "major": [
@@ -732,6 +751,7 @@
   {
     "id": "rook-up",
     "label": "A rook up",
+    "group": "Middlegames and material edges",
     "spec": {
       "diff": {
         "r": [
@@ -752,6 +772,7 @@
   {
     "id": "queen-up",
     "label": "A queen up",
+    "group": "Middlegames and material edges",
     "spec": {
       "diff": {
         "q": [
@@ -764,6 +785,7 @@
   {
     "id": "two-minors-vs-rook",
     "label": "Two minors vs rook",
+    "group": "Rook endgames",
     "spec": {
       "diff": {
         "minor": [
@@ -780,6 +802,7 @@
   {
     "id": "bishop-pair-vs-bishop-knight",
     "label": "Bishop pair vs bishop and knight",
+    "group": "Pawns and minor pieces",
     "spec": {
       "white": {
         "n": [
@@ -806,6 +829,7 @@
   {
     "id": "bishop-pair-vs-two-knights",
     "label": "Bishop pair vs two knights",
+    "group": "Pawns and minor pieces",
     "spec": {
       "white": {
         "n": [
@@ -832,6 +856,7 @@
   {
     "id": "rook-bishop-vs-rook-knight",
     "label": "Rook and bishop vs rook and knight",
+    "group": "Rook endgames",
     "spec": {
       "white": {
         "n": [
@@ -874,6 +899,7 @@
   {
     "id": "three-minors-vs-queen",
     "label": "Three minor pieces vs queen",
+    "group": "Queen and heavy pieces",
     "spec": {
       "diff": {
         "q": [

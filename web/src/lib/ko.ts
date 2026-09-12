@@ -753,6 +753,11 @@ export const ko: Record<string, string> = {
   // "Endgames" is the sidebar's sub-entry and the tile; the drill itself
   // and its picker share one word, 드릴, as the concept rule asks.
   'Endgame drills': '엔드게임 드릴',
+  'Pawns and minor pieces': '폰과 마이너 피스',
+  'Rook endgames': '룩 엔드게임',
+  'Queen and heavy pieces': '퀸과 헤비 피스',
+  'Middlegames and material edges': '미들게임과 기물 우위',
+  'Your own': '직접 지정',
   'Endgame drill': '엔드게임 드릴',
   'Play won endings against the tablebase': '테이블베이스를 상대로 이기는 엔드게임을 둡니다',
   'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.':
