@@ -1,7 +1,9 @@
-import { Puzzle, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Database, Puzzle, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { navigate } from '@/lib/router';
@@ -101,17 +103,44 @@ const LABELS: Record<string, string> = {
   master: 'Master games',
   oneMove: 'One move',
   killBoxMate: 'Kill box mate',
+  // The possessives, which the id spells without their apostrophe and the
+  // derivation below printed that way: "Morphys mate" on a card.
+  morphysMate: "Morphy's mate",
+  pillsburysMate: "Pillsbury's mate",
+  swallowstailMate: "Swallow's tail mate",
 };
 
-/** camelCase theme id → human label ("hangingPiece" → "Hanging piece"). */
-export function themeLabel(theme: string): string {
-  if (LABELS[theme]) return t(LABELS[theme]);
+/** The label in the app's own English, before translation. */
+function englishLabel(theme: string): string {
+  if (LABELS[theme]) return LABELS[theme];
   const spaced = theme
     .replace(/([A-Z])/g, ' $1')
     .replace(/(\d+)/g, ' $1')
     .toLowerCase()
     .trim();
-  return t(spaced.charAt(0).toUpperCase() + spaced.slice(1));
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/** camelCase theme id → human label ("hangingPiece" → "Hanging piece"). */
+export function themeLabel(theme: string): string {
+  return t(englishLabel(theme));
+}
+
+/**
+ * What a query is matched against, folded: case, spaces, hyphens and
+ * apostrophes dropped on both sides, so "back rank", "backrank" and
+ * "백 랭크" all find the card, and "Anastasia's" its mate. The English
+ * label and the id are in the haystack whatever the UI language, so a
+ * Lichess name typed from memory lands in Korean too, and the group's
+ * title is, so "checkmate" finds the mates.
+ */
+const fold = (s: string): string => s.toLowerCase().replace(/[\s'\u2019-]/g, '');
+export function themeMatches(theme: string, group: string, query: string): boolean {
+  const q = fold(query);
+  if (q === '') return true;
+  return [themeLabel(theme), englishLabel(theme), theme, t(group), group].some((s) =>
+    fold(s).includes(q),
+  );
 }
 
 /**
@@ -193,28 +222,54 @@ export function ThemesPage() {
   const pending = useSlowLoad(themes === null);
   const [total, setTotal] = useState(0);
   const [failed, setFailed] = useState(0);
+  // The server has no puzzle database to count: the zeros are true, and
+  // the page says what to do about them rather than printing them.
+  const [ready, setReady] = useState(true);
 
   // What this device reserves while the answer is in the air — read once;
-  // the wait it stands through cannot change it.
-  const [reserved] = useState(() => parseShape(localStorage.getItem(SHAPE_KEY)));
+  // the wait it stands through cannot change it. Storage a browser has
+  // blocked throws on the read, and a page is not the place to find out.
+  const [reserved] = useState(() => {
+    try {
+      return parseShape(localStorage.getItem(SHAPE_KEY));
+    } catch {
+      return null;
+    }
+  });
 
+  // An outage: the answer did not come. `themes` settles to [] so the
+  // page renders, but nothing on it may then read as a count, which is
+  // what "0 themes" over "Vault server unreachable" did.
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    void api<{ themes?: ThemeCount[]; puzzles?: number; failed?: number }>('/api/puzzles/meta')
+  const load = useCallback(() => {
+    setError(null);
+    setThemes(null);
+    void api<{ ready?: boolean; themes?: ThemeCount[]; puzzles?: number; failed?: number }>(
+      '/api/puzzles/meta',
+    )
       .then((d) => {
         const list = d.themes ?? [];
         setThemes(list);
+        setReady(d.ready !== false);
         setTotal(d.puzzles ?? 0);
         setFailed(d.failed ?? 0);
         // Remembered for the next visit's reservation, above. Query
         // filtering plays no part: this is the page's whole histogram.
+        // A write that fails (storage full, or blocked) costs next
+        // visit its reservation and nothing else: it used to turn this
+        // good answer into "Request failed (?)" over no cards, because
+        // it threw inside the answer's own then.
         const present = new Set(list.map((t) => t.theme));
         const counts = GROUPS.map((g) => g.themes.filter((th) => present.has(th)).length).filter(
           (n) => n > 0,
         );
         const extra = list.filter((t) => !KNOWN.has(t.theme)).length;
         if (extra > 0) counts.push(extra);
-        localStorage.setItem(SHAPE_KEY, JSON.stringify(counts));
+        try {
+          localStorage.setItem(SHAPE_KEY, JSON.stringify(counts));
+        } catch {
+          // See above.
+        }
       })
       // An empty page under an error line, never an immortal skeleton.
       .catch((e: unknown) => {
@@ -222,16 +277,24 @@ export function ThemesPage() {
         setError(apiErrorMessage(e));
       });
   }, []);
+  useEffect(() => load(), [load]);
 
   // The page's only job is finding one theme in ~70 cards; a filter beats
-  // scanning a wall. Matched against the translated label, which is what
-  // is being read.
+  // scanning a wall. See themeMatches for what a query is read against.
   const [query, setQuery] = useState('');
-  const matches = (theme: string): boolean =>
-    query.trim() === '' || themeLabel(theme).toLowerCase().includes(query.trim().toLowerCase());
+  const searching = query.trim() !== '';
 
   const byName = new Map((themes ?? []).map((t) => [t.theme, t.count]));
-  const leftovers = (themes ?? []).filter((t) => !KNOWN.has(t.theme) && matches(t.theme));
+  const groups = GROUPS.map((group) => ({
+    ...group,
+    present: group.themes.filter((th) => byName.has(th) && themeMatches(th, group.title, query)),
+  })).filter((g) => g.present.length > 0);
+  const leftovers = (themes ?? []).filter(
+    (t) => !KNOWN.has(t.theme) && themeMatches(t.theme, 'More', query),
+  );
+  const matched = groups.reduce((n, g) => n + g.present.length, 0) + leftovers.length;
+  // Enter on a search that has come down to one card opens it.
+  const sole = matched === 1 ? (groups[0]?.present[0] ?? leftovers[0]?.theme ?? null) : null;
 
   return (
     <PageShell width="medium">
@@ -242,12 +305,26 @@ export function ThemesPage() {
           title={t('Puzzle themes')}
           back={() => navigate('puzzles', 'hub')}
           subtitle={
-            themes === null ? <SkeletonSubtitle /> : themes.length === 1 ? t('1 theme') : t('{n} themes', { n: themes.length })
+            // The placeholder stays up through an outage: the count is
+            // not known, and a zero would be a count.
+            themes === null || error ? (
+              <SkeletonSubtitle />
+            ) : themes.length === 1 ? (
+              t('1 theme')
+            ) : (
+              t('{n} themes', { n: themes.length })
+            )
           }
           actions={
             error && (
-              <span className="text-destructive text-sm" role="alert">
-                {error}
+              <span className="flex items-center gap-3 text-sm">
+                <span className="text-destructive" role="alert">
+                  {error}
+                </span>
+                <Button variant="secondary" size="sm" onClick={load}>
+                  <RotateCcw className="size-3.5" data-icon="inline-start" />
+                  {t('Try again')}
+                </Button>
               </span>
             )
           }
@@ -256,6 +333,9 @@ export function ThemesPage() {
               inputSize="sm"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && sole) navigate('puzzles', 'theme', sole);
+              }}
               placeholder={t('Find a theme')}
               aria-label={t('Find a theme')}
               className="w-full"
@@ -268,7 +348,7 @@ export function ThemesPage() {
             className="w-full sm:w-auto"
             label={t('All themes')}
             count={total}
-            pending={themes === null}
+            pending={themes === null || Boolean(error)}
             highlight
             onClick={() => navigate('puzzles')}
           />
@@ -278,7 +358,7 @@ export function ThemesPage() {
               Its place is held instead. A vault with nothing failed gives
               the place up when the answer says so, which is the one case
               that cannot be known in advance. */}
-          {themes === null ? (
+          {themes === null || error ? (
             <SkeletonThemeCard className="w-full sm:w-auto" label={t('Review failed puzzles')} />
           ) : failed > 0 ? (
             <ThemeCard
@@ -304,24 +384,57 @@ export function ThemesPage() {
               <SkeletonThemeGroups counts={reserved} />
             ) : null
           ) : null
+        ) : !ready ? (
+          // The server answered, with no database to count. The zeros
+          // above are true; what the page owes is the way to the setup,
+          // which the trainer's page holds.
+          <EmptyState
+            icon={Database}
+            title="No puzzle database yet"
+            body="Download and build it to start training."
+            action={
+              <Button variant="default" size="sm" onClick={() => navigate('puzzles')}>
+                {t('Set up')}
+              </Button>
+            }
+          />
         ) : (
           <>
-            {GROUPS.map((group) => {
-              const present = group.themes.filter((t) => byName.has(t) && matches(t));
-              if (present.length === 0) return null;
-              return (
-                <ThemeGroup key={group.title} title={t(group.title)}>
-                  {present.map((t) => (
-                    <ThemeCard
-                      key={t}
-                      label={themeLabel(t)}
-                      count={byName.get(t)!}
-                      onClick={() => navigate('puzzles', 'theme', t)}
-                    />
-                  ))}
-                </ThemeGroup>
-              );
-            })}
+            {/* What the search found, said once and in a live region,
+                since a card count that changes under a typed query is a
+                status message (WCAG 4.1.3). The subtitle above keeps the
+                page's whole count, as every shelf's does. The line is
+                in the tree while empty so what lands in it is announced;
+                absolute then, so the column's gap does not open for it. */}
+            <p
+              role="status"
+              className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm empty:absolute"
+            >
+              {searching && (
+                <>
+                  <span>
+                    {matched === 0
+                      ? t('No theme matches it.')
+                      : t('{n} of {total} themes match', { n: matched, total: themes.length })}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => setQuery('')}>
+                    {t('Clear search')}
+                  </Button>
+                </>
+              )}
+            </p>
+            {groups.map((group) => (
+              <ThemeGroup key={group.title} title={t(group.title)}>
+                {group.present.map((t) => (
+                  <ThemeCard
+                    key={t}
+                    label={themeLabel(t)}
+                    count={byName.get(t)!}
+                    onClick={() => navigate('puzzles', 'theme', t)}
+                  />
+                ))}
+              </ThemeGroup>
+            ))}
             {leftovers.length > 0 && (
               <ThemeGroup title={t('More')}>
                 {leftovers.map((t) => (
@@ -334,11 +447,6 @@ export function ThemesPage() {
                 ))}
               </ThemeGroup>
             )}
-            {query.trim() !== '' &&
-              leftovers.length === 0 &&
-              GROUPS.every(
-                (g) => g.themes.filter((th) => byName.has(th) && matches(th)).length === 0,
-              ) && <p className="text-muted-foreground text-sm">{t('No theme matches it.')}</p>}
           </>
         )}
     </PageShell>
