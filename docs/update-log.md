@@ -20,7 +20,99 @@ ring can be seen: it measured about 1.5:1 where 3 is the bar. Focus also
 stops going under the app's own chrome: what is pinned over a page now
 tells the page how tall it is, the manual's phone drawer opens the whole
 screen, and the opening map's panel steps aside from the dot you chose.
+A sweep of every page, critiqued and audited one at a time, left a
+backlog of small wrongs, and this is its fix pass: what each page said
+to a screen reader, what a phone's bar held, what a build could not be
+stopped from, what a paste of several games did with the rest of them.
+The rows below are grouped by page.
 
+<!-- I78 (page-ground fills) sends its own line; it goes here. -->
+- **Editor: Reset and Clear can be undone from the toast.** An illegal
+  position says why under the toolbar, and in the Position panel on a
+  wide screen, where a disabled button's tooltip could not; the reason
+  is announced. The armed tool is a pressed toggle rather than a second
+  dark button, and the toolbar's buttons are named by their visible word.
+- **Book reader: search hits land on the matched word** instead of off
+  the page, and the count is announced. A page entry that is not a
+  number is refused and marked, where it used to blank the book. The
+  phone's More sheet gained Zoom in, Zoom out and Reset zoom beside the
+  pinch, and the end of the diagram pass is announced too.
+- **The notes, studies and books shelves say how many cards a search or
+  the bookmark filter leaves** (3 of 12 studies), and the count is read
+  out; the bookmark switch keeps one name. Import PGN no longer accepts
+  text with no moves in it as a one-chapter study: it says “No moves
+  found” and keeps Import off.
+- **Study glyphs are named and show their set state.** The moves panel
+  shows its scrollbar, and starting to edit brings the comment box into
+  view.
+- **Repertoire drill gap notes are filtered by the study's opening,**
+  read from the deepest named position of its line, so 1...c5 is no
+  longer a hole in a Ruy Lopez study. The drill announces replies,
+  refusals, gap notes and endings to a screen reader, and the move box
+  keeps focus while the reply is fetched. The endgame drill's ?? and !
+  badges and the kept-win arrow stay on the analysis board after the
+  attempt ends, the kept-win move is a variation you can step into, and
+  the panel's headline says “You play White” while the attempt runs and
+  the verdict once it ends.
+- **The quick switcher opens the first row on Enter again** after the
+  search answer lands. The sidebar's rows scroll on a short window, with
+  Settings and the theme switch kept in view. Home shows a “Vault server
+  unreachable” card with Retry instead of an empty, unset-up vault when
+  the server does not answer, the Vault card's file sizes stay inside the
+  card on a narrow phone, licence names wrap instead of truncating, and
+  an opened licence text scrolls in its own box with a Close button.
+- **Opening map: labels are drawn whole or dropped instead of fading,**
+  threads and planned rims reach 3:1 as drawn, and the map zooms from the
+  keyboard with + and -, 0 to fit and Shift+arrows to pan, and from Zoom
+  in and Zoom out buttons for a finger or pen that cannot pinch.
+- **The games tables' arrow keys carry the focus with the selection,** so
+  Enter opens the row the ring is on, and one row is the Tab stop.
+  Selecting a game on the Games page no longer refolds the toolbar under
+  the pointer, so a double-click opens the game it was on. Pasting a PGN
+  with several games adds every game and reports how many were added,
+  already present or unreadable. Your seat in a game wears a king beside
+  your name and the winning digit of every result is bold, so a win and a
+  loss no longer differ by colour alone. In the workspace, loading a game
+  over a line you played offers it back with Restore, and the board's
+  jump buttons name Home and End.
+- **Puzzle book: the page keeps its title on a phone and at 200% text,**
+  the due review is its one filled button, and the tiles read 4.8:1 with
+  a green and a red fill (the outcome tints were mixed to pink, on the
+  games list too), step long numbers down on small tiles, and tell a
+  screen reader their state, tier and tries.
+- **A chess fence holding only a FEN draws that position** in the note
+  and on its card, and a fence that cannot be read says so instead of
+  drawing the starting position. The note formatting buttons work from
+  the keyboard, name their shortcuts, and the board button comes first.
+  The other-names dialog has Cancel and Save: closing it or pressing
+  Escape no longer writes, and two Escapes no longer erase the names.
+  Notes search also matches a note's first line and its other names, and
+  typing in it stays responsive on a large vault.
+- **Explorer game links are named, tappable buttons.** The result bar's
+  draw share and edge are visible and the bar is announced as one
+  sentence; board coordinates draw at full ink, and the engine arrow
+  reaches 3:1 on every board.
+- **The manual names controls by the labels the Korean app shows,** with
+  the English at first mention; its home link is named at every width; it
+  has a search box, links to sections (#page/section) and a tab title per
+  page. The download buttons fetch the installer for that OS, the
+  installers' names carry no version, and figures 3 and 6 on the landing
+  page are close crops that can be read.
+- **Puzzle pages tell an outage from an empty vault** (the hub and the
+  themes page), the themes search finds group names and Lichess spellings
+  and announces its result, the phone trainer's bottom bar carries Skip,
+  Hint, Solution and Next puzzle, a hinted solve is no longer recorded as
+  a clean win, and the dashboard's phone log no longer hides its dates
+  under the preview button.
+- **Database builds can be stopped from the manager, and Insights stands
+  during the engine pass.** A running build, Optimise or index pass has a
+  Stop on its band and announces its steps and its end; refusals print
+  inside the Upload and Build windows, which state the name rule; nothing
+  is ticked until you tick it, and a taken name offers Add to it first.
+  Insights keeps its tables while a run is going and holds back only the
+  accuracy figures, the pass is announced as it goes, the month chart's
+  bars can be pressed for their figures, and a Select on a phone is named
+  by its label and value.
 - **A phone's create button is in the page header, not floating over
   the list.** Studies, Notes, Books, Puzzle books and Games draw their
   Create or Import button on the title row at every width now, the way
@@ -207,9 +299,10 @@ screen, and the opening map's panel steps aside from the dot you chose.
   visit.
 - **An engine pass judges your games in the background, and the page
   waits for it.** Insights shows its tables only once your games have
-  been through the engine; until then, and while a run is going, the
-  page draws its outline and a strip under the title says how far the
-  pass is. Games that arrive after a pass do not hide the page: the
+  been through the engine; until then the page draws its outline and a
+  strip under the title says how far the pass is (while a later run is
+  going the tables stand and only the accuracy figures wait, since the
+  sweep's fix pass below). Games that arrive after a pass do not hide the page: the
   strip says how many are not analysed yet, and the header offers to
   analyse just those, since every game already done is kept. Start it from the page's header and the app's own engine walks
   every game of yours
@@ -2740,8 +2833,9 @@ swipe.
   1680 and wider the panel is free (the table measures 1030 against 1030
   beside it) and stays open as it always has; below that it starts closed.
   What it costs is the selection: at 1440 the click that opens the panel
-  narrows the table by 368 pixels and refolds the pane's toolbar 34 pixels
-  taller. That cost is why this is a switch and not simply the new
+  narrows the table by 368 pixels (and, until the sweep's fix pass in the
+  unreleased entry above, refolded the pane's toolbar 34 pixels taller;
+  it no longer refolds). That cost is why this is a switch and not simply the new
   behaviour — a window wide enough to want the panel keeps it.
 - **The move buttons stopped moving.** They lived at the foot of the Moves
   panel — and under the board instead whenever the Moves panel was behind
