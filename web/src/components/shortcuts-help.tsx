@@ -20,6 +20,7 @@ const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: 'Enter', what: 'Play the typed move (in the move box)' },
   { keys: 'Ctrl/⌘ S', what: 'Save the open document' },
   { keys: 'Ctrl/⌘ K', what: 'Open anything by name' },
+  { keys: 'Ctrl/⌘ B', what: 'Fold or unfold the sidebar' },
   { keys: 'Esc', what: 'Close the open window' },
   { keys: '?', what: 'This list' },
 ];

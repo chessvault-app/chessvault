@@ -2179,6 +2179,7 @@ export const ko: Record<string, string> = {
   'Open anything': '무엇이든 열기',
   'Open anything…': '무엇이든 열기…',
   'Open anything by name': '이름으로 무엇이든 열기',
+  'Fold or unfold the sidebar': '사이드바 접기 또는 펼치기',
   Actions: '동작',
   'Follow the system theme': '시스템 테마 따르기',
   'Comfortable density': '넉넉한 밀도',

@@ -51,6 +51,7 @@ import { isDemo } from '@/lib/demo';
 import { hasTitleBar, TitleBar } from '@/components/title-bar';
 import { foldedFrom, useSidebar } from '@/store/sidebar';
 import { useRecentOpens } from '@/store/recent';
+import { dialogOpen } from '@/hooks/dialog-focus';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -338,6 +339,26 @@ function Shell() {
     // The key, not the object: a new object per render would re-record.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openedKey, recordOpen]);
+  // Ctrl/Cmd B folds and unfolds the sidebar, the registry's own key for
+  // it and VS Code's. Only where there is a sidebar (md), and not while
+  // a window owns the keyboard or a field has it. The switch is the
+  // band's or the sidebar's; the key is the third way to the same store.
+  const lgForFold = useMediaQuery('(min-width: 64rem)');
+  const mdForFold = useMediaQuery('(min-width: 48rem)');
+  useEffect(() => {
+    if (!mdForFold) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() !== 'b' || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+      if (dialogOpen()) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable)) return;
+      e.preventDefault();
+      const { choice, setFolded } = useSidebar.getState();
+      setFolded(!foldedFrom(choice, lgForFold));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mdForFold, lgForFold]);
   // Remount the whole tree when the language changes. Every t() call runs
   // during render, so a re-render is all that is needed — but a keyed
   // remount is what guarantees it reaches a memoised child too, and the
