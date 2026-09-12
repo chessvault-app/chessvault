@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { parsePgn, parseComment, walk, type PgnNodeData } from 'chessops/pgn';
 import {
   blankCommands,
+  chapterIsBlank,
   chaptersToPgn,
   commentSpans,
   commentText,
@@ -439,5 +440,31 @@ describe('commentSpans', () => {
     expect(blanked).toHaveLength(text.length);
     expect(blanked).not.toContain('[%');
     expect(blanked.indexOf('point')).toBe(text.indexOf('point'));
+  });
+});
+
+describe('chapterIsBlank', () => {
+  const only = (pgn: string) => {
+    const chapters = pgnToChapters(pgn);
+    expect(chapters).toHaveLength(1);
+    return chapters[0]!;
+  };
+  it('calls prose a blank chapter: the parser makes one game of any text', () => {
+    expect(chapterIsBlank(only('hello world, this is not a pgn'))).toBe(true);
+    expect(chapterIsBlank(only('   *   '))).toBe(true);
+  });
+  it('keeps a chapter with a move, a position, a comment on the start, or a tag of its own', () => {
+    expect(chapterIsBlank(only('1. e4 e5 2. Nf3'))).toBe(false);
+    expect(chapterIsBlank(only('[FEN "8/8/8/8/8/8/8/K6k w - - 0 1"]\n\n*'))).toBe(false);
+    expect(chapterIsBlank(only('{ A note before the first move. } *'))).toBe(false);
+    // An export's empty chapter is tagged, and prose is not.
+    expect(chapterIsBlank(only('[Event "Study: Chapter 3"]\n[ChapterName "Chapter 3"]\n\n*'))).toBe(false);
+  });
+  it('counts a mixed file by its chapters with something in them', () => {
+    const mixed = '[Event "x"]\n\n1. d4 *\n\nsome stray prose after the game';
+    expect(pgnToChapters(mixed).filter((c) => !chapterIsBlank(c))).toHaveLength(1);
+  });
+  it('sees every chapter of the fixture as real', () => {
+    expect(pgnToChapters(fixture).filter(chapterIsBlank)).toHaveLength(0);
   });
 });
