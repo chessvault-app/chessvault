@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
-import { git, historyGitDir } from './vaultGit.ts';
+import { git, historyGitDir, unsafeHistoryRepo } from './vaultGit.ts';
 
 /**
  * Reading the vault's safety net back out, from inside the app.
@@ -117,8 +117,13 @@ export function vaultHistoryApi(
   const api = new Hono();
   const run =
     options.run ?? ((args: string[]): Promise<string> => git(historyGitDir(vaultDir), vaultDir, args));
+  // A repo this app did not make can run code when git reads it, so an
+  // unsafe one is reported the same way a missing one is: recovery is
+  // unavailable, and the page says so. See unsafeHistoryRepo.
   const haveHistory = (): boolean =>
-    options.available ? options.available() : existsSync(historyGitDir(vaultDir));
+    options.available
+      ? options.available()
+      : existsSync(historyGitDir(vaultDir)) && unsafeHistoryRepo(historyGitDir(vaultDir)) === null;
 
   /** Whether this deployment can offer recovery at all. The UI asks first. */
   api.get('/history', async (c) => {
