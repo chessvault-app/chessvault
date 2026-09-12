@@ -23,8 +23,9 @@ import { t } from '@/lib/i18n';
  * the trailing slash used to say, so the names are the names. The
  * landing page's listing keeps its elbows, where looking like a shell is
  * the point. Below 30rem each row stacks its gloss under the path, the
- * way that listing does under 18.75rem: one odd row out of nine would
- * read as breakage, nine stacked rows read as a list.
+ * way that listing does under 18.75rem, and below 22rem its size as
+ * well: one odd row out of nine would read as breakage, nine stacked
+ * rows read as a list.
  */
 
 /**
@@ -99,16 +100,21 @@ export function VaultTree({
               </span>
               <span className="path text-foreground font-mono text-sm whitespace-nowrap">{r.path}</span>
               <span className="gloss text-muted-foreground min-w-0 text-sm">{r.gloss}</span>
-              <span className="size text-muted-foreground font-mono text-sm tabular-nums whitespace-nowrap">
-                {/* A folder counts its files; a file is one, and says so by
-                    not counting. */}
-                {r.files > 0 && r.kind === 'folder' && (
-                  <>
-                    {r.files === 1 ? t('1 file') : t('{n} files', { n: r.files })}
-                    {' · '}
-                  </>
-                )}
-                {size(r.bytes)}
+              {/* A sentence with figures in it, like the header's: "31
+                  files" was one mono span, so the noun wore the mono face
+                  too, and in Korean ("파일 31개") fell through to the UI
+                  face inside it. Figures gives the digits the role and
+                  leaves the words in the sentence's own face. */}
+              <span className="size text-muted-foreground text-sm whitespace-nowrap">
+                <Figures
+                  text={
+                    // A folder counts its files; a file is one, and says so
+                    // by not counting.
+                    r.files > 0 && r.kind === 'folder'
+                      ? `${r.files === 1 ? t('1 file') : t('{n} files', { n: r.files })} · ${size(r.bytes)}`
+                      : size(r.bytes)
+                  }
+                />
               </span>
             </li>
           );

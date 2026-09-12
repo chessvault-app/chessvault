@@ -75,6 +75,10 @@ export const COPYRIGHT_YEAR = '2026';
  */
 const ASSETS: {
   name: string;
+  /** What the name alone does not say: which set, which build. Its own
+      field so the app's page can set it in the quieter face after the
+      name, rather than truncating a name that is mostly parenthesis. */
+  note?: string;
   version: string;
   license: string;
   url: string;
@@ -91,37 +95,37 @@ const ASSETS: {
   // into that PDF from this same set (scripts/build-demo-book.mjs), so the
   // artwork is conveyed there too, and GPL-2.0-or-later wants its notice with
   // every copy.
-  { name: 'cburnett (piece set; the UI glyphs, and the diagrams in the demo book)', version: '—', license: 'GPL-2.0-or-later',
+  { name: 'cburnett', note: 'piece set; the UI glyphs, and the diagrams in the demo book', version: '—', license: 'GPL-2.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/cburnett', file: 'GPL-2.0.txt' },
-  { name: 'merida (piece set)', version: '—', license: 'GPL-2.0-or-later',
+  { name: 'merida', note: 'piece set', version: '—', license: 'GPL-2.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/merida', file: 'GPL-2.0.txt' },
-  { name: 'chessnut (piece set)', version: '—', license: 'Apache-2.0',
+  { name: 'chessnut', note: 'piece set', version: '—', license: 'Apache-2.0',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/chessnut', file: 'Apache-2.0.txt' },
-  { name: 'pirouetti (piece set)', version: '—', license: 'AGPL-3.0-or-later',
+  { name: 'pirouetti', note: 'piece set', version: '—', license: 'AGPL-3.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/pirouetti', file: 'AGPL-3.0.txt' },
-  { name: 'fantasy, spatial, celtic (piece sets)', version: '—', license: 'MIT',
+  { name: 'fantasy, spatial, celtic', note: 'piece sets', version: '—', license: 'MIT',
     url: 'https://github.com/maurimo/chess-art', file: 'MIT-chess-art.txt' },
   // The component layer's SOURCE, not a package: `npx shadcn add` writes the
   // registry's files into web/src/components/ui and they ship in every
   // bundle, while the `shadcn` package that wrote them is a dev dependency
   // the dependency walk never sees. MIT wants its notice in all copies.
-  { name: 'shadcn/ui (component sources in web/src/components/ui)', version: '—', license: 'MIT',
+  { name: 'shadcn/ui', note: 'component sources in web/src/components/ui', version: '—', license: 'MIT',
     url: 'https://github.com/shadcn-ui/ui', file: 'MIT-shadcn.txt' },
-  { name: 'kiwen-suwi (piece set)', version: '—', license: 'CC-BY-4.0',
+  { name: 'kiwen-suwi', note: 'piece set', version: '—', license: 'CC-BY-4.0',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/kiwen-suwi', file: 'CC-BY-4.0.txt' },
-  { name: 'mpchess (piece set)', version: '—', license: 'GPL-3.0-or-later',
+  { name: 'mpchess', note: 'piece set', version: '—', license: 'GPL-3.0-or-later',
     url: 'https://github.com/chupinmaxime/mpchess', file: 'GPL-3.0.txt' },
-  { name: 'rhosgfx (piece set)', version: '—', license: 'CC0-1.0',
+  { name: 'rhosgfx', note: 'piece set', version: '—', license: 'CC0-1.0',
     url: 'https://rhosgfx.itch.io/', file: null },
-  { name: 'Stockfish (WASM engine; 19 via the Lichess build, 18 single-threaded fallback)', version: '19 / 18', license: 'GPL-3.0-or-later',
+  { name: 'Stockfish', note: 'WASM engine; 19 via the Lichess build, 18 single-threaded fallback', version: '19 / 18', license: 'GPL-3.0-or-later',
     url: 'https://github.com/official-stockfish/Stockfish', file: 'GPL-3.0-Stockfish.txt' },
-  { name: 'stockfish-web (Lichess’s WebAssembly build of Stockfish, with the size-optimised small network)', version: '0.5.0', license: 'AGPL-3.0-or-later',
+  { name: 'stockfish-web', note: 'Lichess’s WebAssembly build of Stockfish, with the size-optimised small network', version: '0.5.0', license: 'AGPL-3.0-or-later',
     url: 'https://github.com/lichess-org/stockfish-web', file: 'AGPL-3.0.txt' },
   { name: 'ECO opening names', version: '—', license: 'CC0-1.0',
     url: 'https://github.com/lichess-org/chess-openings', file: null },
   { name: 'Lichess puzzle database', version: '—', license: 'CC0-1.0',
     url: 'https://database.lichess.org/#puzzles', file: null },
-  { name: 'Reference games (derived from the Lichess database)', version: '—', license: 'CC0-1.0',
+  { name: 'Reference games', note: 'derived from the Lichess database', version: '—', license: 'CC0-1.0',
     url: 'https://database.lichess.org/', file: null },
   { name: 'Move and capture sounds', version: '—', license: 'GPL-3.0-only (ours)',
     url: 'https://github.com/chessvault-app/chess-sounds-gen', file: null },
@@ -133,7 +137,7 @@ const ASSETS: {
   // generated from native/Cargo.lock by scripts/collect-crate-licenses.ts
   // and committed, because the builds that must ship the notice (and the
   // ones that must not) have no cargo to ask.
-  { name: 'chessvault-core Rust crates (native core, desktop app)', version: '—',
+  { name: 'chessvault-core Rust crates', note: 'native core, desktop app', version: '—',
     license: 'MIT / Apache-2.0 / GPL-3.0-or-later / Zlib',
     url: 'https://crates.io', file: 'rust-crates.txt', desktopOnly: true },
 ];
@@ -413,6 +417,8 @@ const escapeHtml = (s: string): string =>
 
 interface Row {
   name: string;
+  /** An asset's qualifier, kept apart from its name (see ASSETS). */
+  note?: string;
   version: string;
   license: string;
   url: string;
@@ -423,12 +429,16 @@ interface Row {
   lazy?: number;
 }
 
+/** The standalone page prints an asset's note after its name, as one
+    line, which is what that page has always read. */
+const fullName = (r: Row): string => (r.note ? `${r.name} (${r.note})` : r.name);
+
 function rowHtml(r: Row, index: number, lazy: boolean): string {
   const body = lazy
     ? '<pre data-lazy="' + index + '">…</pre>'
     : `<pre>${escapeHtml(r.text ?? `No licence file ships with this component. It is under ${r.license}.`)}</pre>`;
-  return `      <details class="dep" data-name="${escapeHtml(r.name.toLowerCase())}" data-license="${escapeHtml(r.license)}" data-group="${escapeHtml(r.group)}">
-        <summary><span class="nm">${escapeHtml(r.name)}</span>${
+  return `      <details class="dep" data-name="${escapeHtml(fullName(r).toLowerCase())}" data-license="${escapeHtml(r.license)}" data-group="${escapeHtml(r.group)}">
+        <summary><span class="nm">${escapeHtml(fullName(r))}</span>${
           r.version ? `<span class="ver">${escapeHtml(r.version)}</span>` : ''
         }<span class="lic">${escapeHtml(r.license)}</span></summary>
         ${r.url ? `<p class="src"><a href="${escapeHtml(r.url)}" rel="noreferrer">${escapeHtml(r.url)}</a></p>` : ''}
@@ -449,6 +459,7 @@ function entries(deps: Dep[], chrome: Chromium | null, desktop: boolean): Row[] 
     // something they did not — the same reason Chromium is not listed there.
     ...ASSETS.filter((a) => desktop || !a.desktopOnly).map((a) => ({
       name: a.name,
+      ...(a.note ? { note: a.note } : {}),
       // ASSETS writes "—" for "no version"; a row shows nothing for that.
       version: a.version === '—' ? '' : a.version,
       license: a.license,

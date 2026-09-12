@@ -1,5 +1,5 @@
 import { Keyboard, Moon, PanelLeft, Rows3, Sun, SunMoon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { openShortcutsHelp } from '@/components/shortcuts-help';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
@@ -257,6 +257,43 @@ function QuickSwitcherWindow({
     const name = `${t(d.label)} ${d.label}`.normalize('NFC').toLowerCase();
     return tokens.every((w) => name.includes(w));
   });
+  const names = result
+    ? DOCUMENT_SECTIONS.flatMap(({ section }) => result.names.filter((n) => n.section === section))
+    : [];
+  const content = result?.content ?? [];
+
+  // Which row Enter opens, held here rather than left to cmdk.
+  //
+  // cmdk keeps its own selection and moves it to the first row when the
+  // QUERY changes; it does not move it when the ROWS change under a query
+  // that has not. Here the rows arrive later than the query (the debounce
+  // and the round trip), so the row it picked at the last keystroke was
+  // one of the previous answer's, and when the new answer replaced that
+  // list the selection pointed at a row that was gone: two rows on
+  // screen, none of them highlighted, and Enter opening nothing. Measured
+  // at every typing pace with a 120ms server, and with no latency at all
+  // for a word whose answer differs from the last letter's. cmdk's
+  // unmount hook does re-select, but only when the LAST row to unmount
+  // was the selected one, which is one row out of the whole list.
+  //
+  // So the value is controlled: cmdk reports the row the keys or the
+  // pointer chose, and whenever the rows rendered no longer include it
+  // the first of them is chosen, which is what a fresh query gets too.
+  const [value, setValue] = useState('');
+  const values = [
+    ...recent.map((hit) => `recent ${hit.section} ${hit.id}`),
+    ...destinations.map((d) => `go ${d.id}`),
+    ...actions.map((a) => `action ${a.id}`),
+    ...names.map((hit) => `${hit.section} ${hit.id}`),
+    ...content.map((hit) => `text ${hit.section} ${hit.id}`),
+  ];
+  // The list as one string, so a same list is a same dependency.
+  const rendered = values.join('\n');
+  useLayoutEffect(() => {
+    if (values.includes(value)) return;
+    setValue(values[0] ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rendered, value]);
 
   return (
     <Dialog
@@ -277,7 +314,13 @@ function QuickSwitcherWindow({
           had the sheet stopping at about half the screen with sixty rows
           scrolling in a box. */}
       <DialogContent className="sm:p-0" fill aria-label={t('Open anything')}>
-        <Command loop shouldFilter={false} className="max-sm:min-h-0 max-sm:flex-1 max-sm:p-0">
+        <Command
+          loop
+          shouldFilter={false}
+          value={value}
+          onValueChange={setValue}
+          className="max-sm:min-h-0 max-sm:flex-1 max-sm:p-0"
+        >
           <CommandInput placeholder={t('Open anything…')} value={query} onValueChange={setQuery} />
           <CommandList className="max-sm:min-h-0 max-sm:max-h-none max-sm:flex-1">
             <CommandEmpty>{t('Nothing matches.')}</CommandEmpty>
@@ -329,7 +372,7 @@ function QuickSwitcherWindow({
             )}
             {result &&
               DOCUMENT_SECTIONS.map(({ section, heading }) => {
-                const hits = result.names.filter((n) => n.section === section);
+                const hits = names.filter((n) => n.section === section);
                 if (hits.length === 0) return null;
                 const Icon = SECTION_ICON[section];
                 return (
@@ -351,9 +394,9 @@ function QuickSwitcherWindow({
                   </CommandGroup>
                 );
               })}
-            {result && result.content.length > 0 && (
+            {content.length > 0 && (
               <CommandGroup heading={t('In the text')}>
-                {result.content.map((hit) => {
+                {content.map((hit) => {
                   const Icon = SECTION_ICON[hit.section];
                   return (
                     <CommandItem

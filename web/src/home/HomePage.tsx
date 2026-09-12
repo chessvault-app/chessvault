@@ -10,6 +10,7 @@ import {
   Puzzle,
   RotateCcw,
   SlidersHorizontal,
+  Unplug,
   X,
   Search,
 } from 'lucide-react';
@@ -17,7 +18,7 @@ import { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
-import { api } from '@/lib/api';
+import { ApiError, api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Figures } from '@/components/figures';
@@ -559,6 +560,15 @@ const PHONE_GAMES = 3;
 
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
+  // Why there is no data, when the reason is the server and not the vault:
+  // the sentence the card says. Null while the answer is in the air or has
+  // landed. `attempt` counts Retry presses; both fetches key on it.
+  const [outage, setOutage] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  // The placeholders' condition. Not `data === null` alone: an unreachable
+  // server leaves data null for good, and a page of bars over it would be
+  // a promise nothing is going to keep.
+  const loading = data === null && outage === null;
   // What this device says the page looks like; null until it has ever
   // been said. Read synchronously, so the first paint is the page you have.
   const [layout, setLayout] = useState<HomeLayout | null>(readLayout);
@@ -608,19 +618,29 @@ export function HomePage() {
         recentGames: Array.isArray(games?.games) ? games.games.slice(0, DASH_MAX.games) : [],
       });
     })();
-  }, []);
+  }, [attempt]);
 
   useEffect(() => {
     // Navigating away mid-flight: React 18 makes the setStates no-ops, and
     // `live` keeps everything after the await from running once the page
     // is gone.
     let live = true;
+    // A route that fails answers null, and the page reads it as a vault
+    // with nothing in it, which is right for one route on an old server
+    // and wrong when it is every route: that is the server gone, or a
+    // proxy answering 502 for it, and the page then told the owner of a
+    // full vault to set it up. So the failures are counted, and when
+    // nothing at all answered the page says so instead (`outage`).
+    let asked = 0;
+    const failures: unknown[] = [];
     const grab = async (url: string): Promise<unknown> => {
+      asked += 1;
       try {
         // `?? null`: the null checks below (settings !== null) predate
         // api(), which parses an empty body to undefined instead.
         return (await api(url)) ?? null;
-      } catch {
+      } catch (e) {
+        failures.push(e);
         return null;
       }
     };
@@ -646,6 +666,17 @@ export function HomePage() {
         fetchSolvedToday(),
       ]);
       if (!live) return;
+      if (asked > 0 && failures.length === asked) {
+        // The network's own sentence where the network failed (api.ts
+        // tells "unreachable" from "no internet"); a server that answered
+        // with a failure for everything is unreachable in every sense
+        // that matters here.
+        const first = failures[0];
+        setOutage(
+          first instanceof ApiError && first.status === 0 ? first.message : t('Vault server unreachable'),
+        );
+        return;
+      }
       const docs = (v: unknown): number | undefined =>
         Array.isArray((v as { studies?: unknown[] })?.studies)
           ? (v as { studies: unknown[] }).studies.length
@@ -726,7 +757,7 @@ export function HomePage() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [attempt]);
 
   /** Apply and store, in one press. Reset removes the stored value rather
       than writing today's defaults, so a device put back to default is a
@@ -1044,13 +1075,38 @@ export function HomePage() {
           beside it runs to 96rem. Two-up cards at lg already, so the
           width goes to the cards and the Continue board. */}
       <div className="flex w-full max-w-lg flex-col md:max-w-2xl lg:max-w-3xl xl:max-w-5xl">
+        {/* The server did not answer. One card in place of everything the
+            answer would have drawn (Continue, the checklist, the tiles'
+            figures, the dashboard), with the press that asks again. Not a
+            toast: the whole page is what is missing. */}
+        {outage !== null && (
+          <div role="alert" className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-card-ring">
+            <EmptyState
+              icon={Unplug}
+              title={outage}
+              body="Nothing could be read from the vault. The page fills itself once the server answers."
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setOutage(null);
+                    setAttempt((n) => n + 1);
+                  }}
+                >
+                  {t('Retry')}
+                </Button>
+              }
+            />
+          </div>
+        )}
         {/* Continue — the best retention surface on the page. A returning
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
             skeleton rows — or, on a device that has never opened this
             vault, at the size every vault's welcome study makes — so the
             page does not jump when it fills in. */}
-        {show('continue') && data === null && reserved !== null && (
+        {show('continue') && loading && reserved !== null && (
           <div
             role="status"
             aria-label={t('Loading')}
@@ -1269,7 +1325,7 @@ export function HomePage() {
             reserves nothing: unlike Continue and the grid, this card is
             the one thing on the page that a settled vault has finished
             with for good (reservation.ts). */}
-        {show('checklist') && data === null && reservedChecklist && (
+        {show('checklist') && loading && reservedChecklist && (
           <div
             role="status"
             aria-label={t('Loading')}
@@ -1450,7 +1506,7 @@ export function HomePage() {
                   ) : (
                     // Only the tiles that will get a number keep space for
                     // one: Board and Editor are tools and never carry one.
-                    data === null &&
+                    loading &&
                     count !== undefined && (
                       // On the figure's own line, as the figure is: inline beside the
                       // name, the tile grew a 20px line when the number landed.
@@ -1487,7 +1543,7 @@ export function HomePage() {
             furthest was the Continue card above — the one element here
             that was already reserved to the pixel. Measured at 1920x1080:
             306px, upwards, on every launch. */}
-        {(data === null || dash === null) && reservedDash !== null && (
+        {(loading || (data !== null && dash === null)) && reservedDash !== null && (
           <div
             role="status"
             aria-label={t('Loading')}
