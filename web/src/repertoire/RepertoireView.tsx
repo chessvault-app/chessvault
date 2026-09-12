@@ -33,6 +33,7 @@ import { playSound } from '@/board/sound';
 import { navigate, up } from '@/lib/router';
 import { formatUntil } from '@/lib/dates';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { announce } from '@/lib/announce';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/utils';
@@ -595,6 +596,25 @@ export function RepertoireView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, phase, mode, drillChapters, chapterIdx, mapDrill]);
 
+  // The endings and the errors, announced once each as they land. The
+  // replies and the refusals are announced where they happen; these two
+  // arrive from several paths, and one effect is what keeps them all
+  // said. The gap ending's sentence is the callout's own.
+  useEffect(() => {
+    if (phase !== 'ended') return;
+    announce(
+      endKind === 'line'
+        ? t('End of your prepared line. Every move matched the study.')
+        : endKind === 'gap'
+          ? (gap?.text ?? '')
+          : t('This line has run past the database. You are on your own now.'),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+  useEffect(() => {
+    if (error) announce(error);
+  }, [error]);
+
   const node = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
   // mainlineFrom EXCLUDES its starting node — prepend the root so index 0 is
@@ -812,6 +832,20 @@ export function RepertoireView() {
             return;
           }
         }
+        // The reply and the turn, said to assistive tech: the status
+        // line is visual, and on a phone it is not even in the DOM while
+        // the Moves pane is showing. The gap note rides in the same
+        // sentence, since a second announce() would clear the first.
+        announce(
+          [
+            t('Your opponent played {san}. Your move.', {
+              san: getNode(added.tree, added.nodeId).san ?? '',
+            }),
+            note?.text,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        );
         setPhase('playing');
       } catch (err) {
         // The server's own words when it sent any (api() carried them out
@@ -846,9 +880,11 @@ export function RepertoireView() {
           d.missed.add(key);
           recordDrill({ key, result: 'miss', path: sansTo(tree, cursorId), expected, played: san });
         }
-        setDrillNotice(
-          t('Your study plays {moves} here. Try again.', { moves: expected.join(' / ') }),
-        );
+        const notice = t('Your study plays {moves} here. Try again.', {
+          moves: expected.join(' / '),
+        });
+        setDrillNotice(notice);
+        announce(notice);
         // The tree never takes the move, but chessground has already
         // played it on screen. Let it stand for a beat, then snap the
         // board back to the position that is still waiting.

@@ -303,6 +303,7 @@ export const ko: Record<string, string> = {
   // --- repertoire ----------------------------------------------------------
   'Your opponent is replying…': '상대가 두는 중…',
   'Your move.': '둘 차례입니다.',
+  'Your opponent played {san}. Your move.': '상대가 {san}을(를) 두었습니다. 둘 차례입니다.',
   'Reviewing an earlier move. Step to the end to keep playing.':
     '이전 수를 보는 중입니다. 계속 두려면 끝으로 이동하세요.',
   'Leave this line and set up a new game': '이 라인을 떠나 새 게임 시작하기',

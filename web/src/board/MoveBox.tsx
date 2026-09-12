@@ -49,6 +49,7 @@ export function MoveBox({
   if (!shown) return null;
 
   const submit = (): void => {
+    if (disabled) return;
     const raw = typed.trim();
     if (!raw) return;
     const move = typedMove(fen, raw);
@@ -78,7 +79,14 @@ export function MoveBox({
           aria-label={t('Type a move…')}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          disabled={disabled}
+          // Not `disabled`: a disabled input drops focus to <body>, and
+          // the trainers disable this one for the reply after every
+          // accepted move, so the next move typed without refocusing was
+          // lost. Read-only keeps focus and the keystrokes out; submit
+          // guards the Enter, and assistive tech hears the state.
+          readOnly={disabled}
+          aria-disabled={disabled || undefined}
+          className={cn(disabled && 'bg-input/50 opacity-50 dark:bg-input/80')}
           // Enter plays the move, said outright rather than left to the
           // form's implicit submission, which needs a submit button or a
           // key event carrying its character and gets neither from every
