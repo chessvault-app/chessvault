@@ -5,26 +5,16 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.10.0
 
-An Insights page sums your own games, and endgame drills have you play won endings against the tablebase. The quick switcher searches what a document says, not only its name, lists what you opened last and the app's own actions, and the desktop app's title bar carries the way into it. The games table sorts by its headings, and Settings names its sections beside the form.
-Six things that were true in one copy of a page and not in its twin, found
-by auditing the code for duplicates: an installed desktop app now finds the
-vault's own tablebase files, a puzzle's hover preview wears the same edge as
-the game list's, and the vault path copies in the isolated build. An audit
-of the code for wasted work made the games list, reference search, index
-builds and the board's arrow keys do less per request.
-A pinch enlarges the app again, every dashed file box takes a keyboard,
-and coming back to the Board offers back the board you left. The focus
-ring can be seen: it measured about 1.5:1 where 3 is the bar. Focus also
-stops going under the app's own chrome: what is pinned over a page now
-tells the page how tall it is, the manual's phone drawer opens the whole
-screen, and the opening map's panel steps aside from the dot you chose.
-A sweep of every page, critiqued and audited one at a time, left a
-backlog of small wrongs, and this is its fix pass: what each page said
-to a screen reader, what a phone's bar held, what a build could not be
-stopped from, what a paste of several games did with the rest of them.
-The rows below are grouped by page.
+An Insights page sums your own games, and endgame drills have you play
+won endings against the tablebase. The quick switcher searches what a
+document says and lists what you opened last, and the desktop app's
+title bar carries the way into it. The focus ring can be seen: it
+measured about 1.5:1 where 3 is the bar. A pass over every page then
+fixed what each said to a screen reader, what a phone's bar held, what
+a build could not be stopped from, and what a paste of several games
+did with the rest of them. The rows below are grouped by page.
 
 - **Secondary buttons, progress tracks and empty tiles standing on the
   light page are visible again.** They had the page's own tone, 1.00:1
@@ -467,6 +457,8 @@ The rows below are grouped by page.
   it are skipped while it is open, and a dot chosen with the keyboard
   hands focus to the panel and takes it back when the panel closes. At
   1920px nothing was ever covered, and there the map does not move.
+- **Every dependency updated**, Electron 44 and Vitest 5 among them, and
+  the Rust crate notice regenerated from the new lockfile.
 
 ## 0.9.5
 
