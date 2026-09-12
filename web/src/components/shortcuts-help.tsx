@@ -24,8 +24,20 @@ const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: '?', what: 'This list' },
 ];
 
+const OPEN_EVENT = 'chess-vault:shortcuts';
+
+/** Open it from a button or the quick switcher; `?` reaches it on its own. */
+export function openShortcutsHelp(): void {
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
 export function ShortcutsHelp() {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = (): void => setOpen(true);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey) return;

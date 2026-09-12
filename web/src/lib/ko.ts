@@ -2179,6 +2179,11 @@ export const ko: Record<string, string> = {
   'Open anything': '무엇이든 열기',
   'Open anything…': '무엇이든 열기…',
   'Open anything by name': '이름으로 무엇이든 열기',
+  Actions: '동작',
+  'Follow the system theme': '시스템 테마 따르기',
+  'Comfortable density': '넉넉한 밀도',
+  'Compact density': '촘촘한 밀도',
+  Open: '열기',
   'Nothing matches.': '일치하는 항목이 없습니다.',
   'Go to': '이동',
   // Documents whose text holds the words typed, under the name matches.
