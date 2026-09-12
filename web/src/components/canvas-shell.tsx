@@ -3,6 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -31,6 +32,83 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 const CanvasInset = createContext(0);
 export function useCanvasInset(): number {
   return useContext(CanvasInset);
+}
+
+/**
+ * Focus for the floating panel, which is emphatically NOT a dialog: it
+ * has no scrim, the canvas behind it stays live, and Tab must be able to
+ * walk out of it. So it gets neither `useDialogFocus`'s trap nor its
+ * scroll lock, only the two halves a non-modal panel does owe the
+ * keyboard.
+ *
+ * Taking focus is by request, not on sight. A panel that opened because
+ * somebody clicked a dot leaves the pointer alone; one that opened
+ * because somebody pressed Enter on a dot has to bring the keyboard with
+ * it, or it is a thing that appeared elsewhere on the screen while Tab
+ * went on walking the page behind it.
+ *
+ * Handing focus back is the other half, because the alternative is
+ * dropping it on the body: the panel goes away when the selection does,
+ * and what raised it is still there on the canvas. Only the element last
+ * focused OUTSIDE the panel counts, tracked as focus moves rather than
+ * remembered when it opened, so a second dot chosen while it is up is
+ * where focus returns to.
+ */
+function usePanelFocus(node: HTMLElement | null, takeFocus: number, onClose: () => void): void {
+  const outside = useRef<HTMLElement | SVGElement | null>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+
+  useEffect(() => {
+    if (!node) return;
+    // SVG as well as HTML: on the map the thing that opened this panel is
+    // a dot, and a dot is an SVG group.
+    const focusable = (el: EventTarget | null): HTMLElement | SVGElement | null =>
+      el instanceof HTMLElement || el instanceof SVGElement ? el : null;
+    const here = focusable(document.activeElement);
+    if (here && !node.contains(here)) outside.current = here;
+    const onFocusIn = (e: FocusEvent): void => {
+      const el = focusable(e.target);
+      if (el && !node.contains(el)) outside.current = el;
+    };
+    document.addEventListener('focusin', onFocusIn);
+
+    // A native listener rather than React's onKeyDown: the windows a panel
+    // action opens are rendered inside the panel's own children and portal
+    // out of it, so a React handler here would answer their Escape as well
+    // as its own and close the panel underneath them.
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      e.stopPropagation();
+      close.current();
+    };
+    node.addEventListener('keydown', onKey);
+
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      node.removeEventListener('keydown', onKey);
+      const current = document.activeElement;
+      const back = outside.current;
+      // Only what this panel was holding, and only somewhere still real:
+      // focus moved deliberately elsewhere stays where it was put.
+      if (
+        back?.isConnected &&
+        (current === null || current === document.body || node.contains(current))
+      ) {
+        back.focus({ preventScroll: true });
+      }
+    };
+  }, [node]);
+
+  // The Align idiom: a counter and the last one answered, so the same
+  // request can be made twice and a panel that mounts without one is left
+  // alone.
+  const answered = useRef(takeFocus);
+  useEffect(() => {
+    if (takeFocus === answered.current || !node) return;
+    answered.current = takeFocus;
+    node.focus({ preventScroll: true });
+  }, [takeFocus, node]);
 }
 
 /**
@@ -90,7 +168,17 @@ export function CanvasShell({
    * leave neither half usable. One prop rather than three so a panel can
    * never arrive without the label its Sheet needs.
    */
-  panel?: { label: string; content: ReactNode; onClose: () => void } | null;
+  panel?: {
+    label: string;
+    content: ReactNode;
+    onClose: () => void;
+    /**
+     * Bumped to ask the panel to take the keyboard with it. See
+     * `usePanelFocus`: a selection made with the keyboard leaves focus in
+     * the panel it just opened, one made with the pointer does not.
+     */
+    takeFocus?: number;
+  } | null;
   children: ReactNode;
 }) {
   // Below `md`: the width at which the sidebar appears and the panel stops
@@ -105,6 +193,7 @@ export function CanvasShell({
   // Stable, or React detaches and re-attaches the ref every render, and
   // each of those is a setState: two renders per render, forever.
   const panelRef = useCallback((el: HTMLElement | null) => setPanelEl(el), []);
+  usePanelFocus(panelEl, panel?.takeFocus ?? 0, panel?.onClose ?? (() => {}));
 
   const [inset, setInset] = useState(0);
   useLayoutEffect(() => {
@@ -201,6 +290,12 @@ export function CanvasShell({
               // the floating half is a complementary landmark, and one
               // with no name is a landmark nobody can choose from a list.
               aria-label={panel.label}
+              // Focusable, so a keyboard selection can be handed the panel
+              // it just opened and the landmark's own name is what gets
+              // announced — see usePanelFocus. A container rather than a
+              // control, so it wears the ring only while it is itself the
+              // focus, and hands it on to its contents at the next Tab.
+              tabIndex={-1}
               // The canvas's height, less a hairline of it: a card that
               // floats ON the surface, edge to edge but not welded to it.
               //
@@ -241,7 +336,7 @@ export function CanvasShell({
               // can keep what the reader just asked about out from under
               // it. Both beat fighting the stack with z-index, which would
               // only move the problem to whatever came second.
-              className="bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl ring-1 ring-window-ring backdrop-blur-md xl:w-[26rem]"
+              className="bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl outline-none ring-1 ring-window-ring backdrop-blur-md focus-visible:ring-3 focus-visible:ring-ring xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a

@@ -136,8 +136,15 @@ export function MapCanvas({
    * the map instead of the fastest.
    */
   focus: readonly string[];
-  /** A node id, or null for the ground — a press on dead space clears. */
-  onSelect: (id: string | null) => void;
+  /**
+   * A node id, or null for the ground — a press on dead space clears.
+   *
+   * `via` says the choice was made with the keyboard, and it is said only
+   * for the key that MEANS "show me this" (Enter or Space): the arrows
+   * walk the tree and must leave focus on the dots, or the tree cannot be
+   * walked at all.
+   */
+  onSelect: (id: string | null, via?: 'keyboard') => void;
 }) {
   /**
    * A tree wants its depth along the axis with room to spare: sideways on
@@ -1187,7 +1194,9 @@ export function MapCanvas({
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     e.stopPropagation();
-                    onSelect(id);
+                    // The key that means "show me this", so the one that
+                    // hands the keyboard the panel it opens.
+                    onSelect(id, 'keyboard');
                     return;
                   }
                   if (e.key === 'Escape') {
