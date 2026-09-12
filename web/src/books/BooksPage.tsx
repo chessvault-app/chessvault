@@ -299,7 +299,7 @@ export function BooksPage() {
         ) : null
       ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
         books.length === 0 ? (
-          <EmptyState
+          <EmptyState ground
             className={cn(drop.dragging && 'ring-primary ring-2')}
             icon={BookText}
             title="No books yet"
@@ -312,7 +312,7 @@ export function BooksPage() {
             }
           />
         ) : (
-          <EmptyState
+          <EmptyState ground
             className={cn(drop.dragging && 'ring-primary ring-2')}
             icon={SearchX}
             title="Nothing matches that search"

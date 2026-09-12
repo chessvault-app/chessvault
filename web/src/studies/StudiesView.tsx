@@ -221,7 +221,7 @@ function StudyList() {
              only empty collections is NOT this: it has something to show,
              and GroupedStudies below shows it. */
       studies.length === 0 && folders.length === 0 ? (
-        <EmptyState
+        <EmptyState ground
           icon={Library}
           title="No studies yet"
           body="A study is a set of annotated chapters, kept as plain PGN. Start an empty one, or import a PGN you already have."
@@ -248,7 +248,7 @@ function StudyList() {
             through to the list, which draws its collections. */
       filtering && visible.length === 0 ? (
         markedOnly && !needle ? (
-          <EmptyState
+          <EmptyState ground
             icon={Bookmark}
             title="No bookmarked studies yet"
             body="Bookmark a study from the shelf and it is kept here, one press from wherever you are."
@@ -260,7 +260,7 @@ function StudyList() {
             }
           />
         ) : (
-          <EmptyState
+          <EmptyState ground
             icon={SearchX}
             title="Nothing matches that search"
             body={

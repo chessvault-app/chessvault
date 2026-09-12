@@ -315,7 +315,7 @@ function NoteList() {
              only empty collections is NOT this: it has something to show,
              and GroupedNotes below shows it. */
       notes.length === 0 && folders.length === 0 ? (
-        <EmptyState
+        <EmptyState ground
           icon={NotebookPen}
           title="No notes yet"
           body="A note is plain markdown with interactive boards anywhere in the text. An idea, a plan, a game to come back to."
@@ -337,7 +337,7 @@ function NoteList() {
             the list, which draws its collections. */
       filtering && visible.length === 0 ? (
         markedOnly && !needle ? (
-          <EmptyState
+          <EmptyState ground
             icon={Bookmark}
             title="No bookmarked notes yet"
             body="Bookmark a note from the shelf and it is kept here, one press from wherever you are."
@@ -349,7 +349,7 @@ function NoteList() {
             }
           />
         ) : (
-          <EmptyState
+          <EmptyState ground
             icon={SearchX}
             title="Nothing matches that search"
             body={

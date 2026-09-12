@@ -283,7 +283,7 @@ export function Shelf() {
         {books === null ? (
           shelfPending && reservedCards > 0 ? <SkeletonBookCards cards={reservedCards} /> : null
         ) : visibleBooks.length === 0 ? (
-          <EmptyState
+          <EmptyState ground
             icon={BookMarked}
             title="No puzzle books yet"
             body="One per paper book. Enter its puzzles from the board or import the book's own PDF. Solutions and progress live here, not in the back of the book."

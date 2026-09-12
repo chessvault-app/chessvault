@@ -388,7 +388,7 @@ export function ThemesPage() {
           // The server answered, with no database to count. The zeros
           // above are true; what the page owes is the way to the setup,
           // which the trainer's page holds.
-          <EmptyState
+          <EmptyState ground
             icon={Database}
             title="No puzzle database yet"
             body="Download and build it to start training."
