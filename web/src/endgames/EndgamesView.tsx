@@ -11,16 +11,14 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
-import { parseUci, roleToChar } from 'chessops/util';
-import type { DrawShape } from '@lichess-org/chessground/draw';
+import { parseSquare, parseUci, roleToChar } from 'chessops/util';
 import { Board, boardAnimMs } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
 import { useMoveSound } from '@/board/useMoveSound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
-import { SquareBadge } from '@/board/square-overlay';
 import { useAnalyseInPlace } from '@/hooks/use-analyse-in-place';
-import { addMove, createTree, getNode, mainlineFrom } from '@shared/tree';
+import { addMove, createTree, getNode, mainlineFrom, updateNode } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
@@ -383,13 +381,39 @@ function Drill({ classId }: { classId: string }) {
   // hook: the line so far loads into the analysis store and the board
   // becomes the analysis board. A desktop docks the engine only once
   // asked (the header's toggle), as the puzzle trainer does.
+  //
+  // The verdict goes into that tree, as the book trainer's does: the
+  // thrown move wears ?? and the mating move !, so the analysis board's
+  // badge and the move list both show it, and the move that kept the
+  // win is drawn on the thrown position and added beside it as a
+  // variation to step into. Badges and an arrow laid over the drill's
+  // own Board were what this replaced: that Board is gone the frame
+  // the attempt ends, so they showed for one paint and vanished.
+  const seed = (): { tree: MoveTree; cursorId: NodeId; orientation: Color } => {
+    let { tree } = line!;
+    const { lastId } = line!;
+    if (phase === 'won') tree = updateNode(tree, lastId, { nags: [1] });
+    if (phase === 'threw') {
+      tree = updateNode(tree, lastId, { nags: [4] });
+      if (best) {
+        const from = parseSquare(best.uci.slice(0, 2));
+        const to = parseSquare(best.uci.slice(2, 4));
+        if (from !== undefined && to !== undefined) {
+          tree = updateNode(tree, lastId, { shapes: [{ color: 'green', from, to }] });
+        }
+        const kept = parseUci(best.uci);
+        if (kept) tree = addMove(tree, getNode(tree, lastId).parentId ?? tree.rootId, kept).tree;
+      }
+    }
+    return { tree, cursorId: lastId, orientation };
+  };
   const [engineOpen, setEngineOpen] = useState(false);
   const inPlace = useAnalyseInPlace({
     wide,
     infoLabel: t('Drill'),
     done: ended,
     ready: line !== null,
-    seed: () => ({ tree: line!.tree, cursorId: line!.lastId, orientation }),
+    seed,
     engineOn: !wide || engineOpen,
     onLeave: () => setEngineOpen(false),
   });
@@ -397,17 +421,6 @@ function Drill({ classId }: { classId: string }) {
 
   const label = t(classLabel(classId));
   const title = t('Endgame drill');
-  // The move that kept the win, drawn on the board once it was missed.
-  const bestShapes: DrawShape[] =
-    phase === 'threw' && best && !reviewing
-      ? [
-          {
-            orig: best.uci.slice(0, 2) as DrawShape['orig'],
-            dest: best.uci.slice(2, 4) as DrawShape['orig'],
-            brush: 'green',
-          },
-        ]
-      : [];
 
   const lastSan = line && plies > 0 ? (getNode(line.tree, lineIds[plies - 1]!).san ?? '') : '';
   const status = (): { text: string; tone?: string } => {
@@ -419,16 +432,15 @@ function Drill({ classId }: { classId: string }) {
       case 'replying':
         return { text: t('Defending…') };
       case 'won':
-        return { text: t('Checkmate. The win held from the first move to the last.'), tone: outcomeTone('solved') };
+        return { text: t('The win held from the first move to the last.') };
       case 'threw':
         return {
           text: best
             ? t('{san} lets the win slip. {best} keeps it.', { san: lastSan, best: best.san })
-            : t('The win slipped'),
-          tone: outcomeTone('missed'),
+            : '',
         };
       case 'stopped':
-        return { text: t('Stopped. The position is on the analysis board, with the engine.') };
+        return { text: t('The position is on the analysis board, with the engine.') };
       case 'error':
         // The board's own box carries the sentence, as the trainer's does.
         return { text: '' };
@@ -512,9 +524,28 @@ function Drill({ classId }: { classId: string }) {
       />
       <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
         <div className="flex flex-col gap-0.5">
-          {start && phase !== 'loading' ? (
+          {/* The headline. "White to move" was here, as the trainer's,
+              and it was false in four of the five states: the defender
+              replying, the win thrown, the mate delivered, the attempt
+              stopped. This one is true in all of them, and once the
+              attempt is over the verdict takes its place, in the
+              trainers' own verdict line and colour. */}
+          {start && ended ? (
+            <p
+              className={cn(
+                'text-base font-semibold',
+                phase === 'won'
+                  ? outcomeTone('solved')
+                  : phase === 'threw'
+                    ? outcomeTone('missed')
+                    : 'text-foreground',
+              )}
+            >
+              {phase === 'won' ? t('Checkmate') : phase === 'threw' ? t('The win slipped') : t('Stopped')}
+            </p>
+          ) : start && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
-              {solverSide === 'white' ? t('White to move') : t('Black to move')}
+              {solverSide === 'white' ? t('You play White') : t('You play Black')}
             </p>
           ) : phase === 'loading' ? (
             <div className="flex h-8 items-center">
@@ -615,7 +646,6 @@ function Drill({ classId }: { classId: string }) {
             dests={phase === 'playing' && !reviewing ? displayed.dests : new Map()}
             lastMove={displayed.lastMove}
             check={displayed.check}
-            autoShapes={bestShapes}
             onMove={onMove}
           />
         ) : phase === 'error' ? (
@@ -655,24 +685,6 @@ function Drill({ classId }: { classId: string }) {
             onSelect={promotion.complete}
             onCancel={promotion.cancel}
           />
-        )}
-        {!reviewing && phase === 'threw' && displayed?.lastMove && (
-          <SquareBadge
-            square={displayed.lastMove[1]}
-            orientation={orientation}
-            className="bg-nag-blunder"
-          >
-            ??
-          </SquareBadge>
-        )}
-        {!reviewing && phase === 'won' && displayed?.lastMove && (
-          <SquareBadge
-            square={displayed.lastMove[1]}
-            orientation={orientation}
-            className="bg-nag-good"
-          >
-            !
-          </SquareBadge>
         )}
       </TrainerBoard>
 

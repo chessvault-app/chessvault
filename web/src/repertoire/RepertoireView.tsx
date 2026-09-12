@@ -17,7 +17,7 @@ import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
-import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, deepestNamed, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import { DEFAULT_BAND, fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
@@ -33,6 +33,7 @@ import { playSound } from '@/board/sound';
 import { navigate, up } from '@/lib/router';
 import { formatUntil } from '@/lib/dates';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { announce } from '@/lib/announce';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/utils';
@@ -230,10 +231,12 @@ interface DrillScope {
   label: string;
   /** Where the shared lead-in ends — gap relevance turns on it. */
   trunkPly: number;
-  trunkFen: string;
-  /** The trunk end's opening family, fetched once on first need;
-      undefined = not asked yet, null = the position has no name. */
-  subjectFamily?: string | null;
+  /** Every position along the trunk, start first. */
+  trunkFens: string[];
+  /** The subject's opening family and the ply the catalogue stops
+      naming the trunk at, fetched once on first need; undefined = not
+      asked yet, null = no trunk position has a name. */
+  subject?: { family: string; ply: number } | null;
   /** Position key -> opening family, so one deviation asks once. */
   families: Map<string, string | null>;
   missed: Set<string>;
@@ -250,13 +253,13 @@ function makeDrillScope(scope: {
   study: string;
   studies?: string[];
   label: string;
-  trunk: { ply: number; fen: string };
+  trunk: { ply: number; fens: string[] };
 }): DrillScope {
   const { trunk, ...rest } = scope;
   return {
     ...rest,
     trunkPly: trunk.ply,
-    trunkFen: trunk.fen,
+    trunkFens: trunk.fens,
     families: new Map(),
     missed: new Set(),
     gapNoted: new Set(),
@@ -450,6 +453,23 @@ export function RepertoireView() {
     }
   };
 
+  /** The subject: the deepest named position along the trunk, asked
+      for in one request. The trunk's END alone was asked before, and a
+      chapter that never branches ends in a middlegame no catalogue
+      names, which left the subject nameless and let 1...c5 count as a
+      gap in a Berlin study. Failures answer null — no filtering. */
+  const fetchSubject = async (fens: string[]): Promise<{ family: string; ply: number } | null> => {
+    try {
+      const body = await api<{
+        positions?: { fen: string; opening?: { name?: string } | null }[];
+      } | null>('/api/opening/batch', { method: 'POST', json: { fens } });
+      const byFen = new Map((body?.positions ?? []).map((p) => [p.fen, p.opening?.name ?? null]));
+      return deepestNamed(fens.map((fen) => byFen.get(fen)));
+    } catch {
+      return null;
+    }
+  };
+
   /** One drilled position, into the vault. Losing the record must never
       stop the drill, so failures are swallowed. */
   const recordDrill = (entry: {
@@ -576,6 +596,25 @@ export function RepertoireView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, phase, mode, drillChapters, chapterIdx, mapDrill]);
 
+  // The endings and the errors, announced once each as they land. The
+  // replies and the refusals are announced where they happen; these two
+  // arrive from several paths, and one effect is what keeps them all
+  // said. The gap ending's sentence is the callout's own.
+  useEffect(() => {
+    if (phase !== 'ended') return;
+    announce(
+      endKind === 'line'
+        ? t('End of your prepared line. Every move matched the study.')
+        : endKind === 'gap'
+          ? (gap?.text ?? '')
+          : t('This line has run past the database. You are on your own now.'),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+  useEffect(() => {
+    if (error) announce(error);
+  }, [error]);
+
   const node = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
   // mainlineFrom EXCLUDES its starting node — prepend the root so index 0 is
@@ -676,25 +715,31 @@ export function RepertoireView() {
             if (uncovered && probe) {
               // Relevance: a gap is a SIDELINE of the study's subject.
               // Past the trunk the study branches here anyway, so
-              // everything counts; before it, only a deviation that
-              // stays in the trunk end's opening family does — 1...c5
+              // everything counts; so does everything past the ply the
+              // catalogue stops naming the trunk at, since the opening
+              // is settled by then. Before that, only a deviation that
+              // stays in the subject's opening family does — 1...c5
               // is not a hole in a Ruy Lopez study, 3...Nf6 is
               // (lanph3re's point). An unnamed subject gives no basis
               // to filter, so everything counts, as before.
               const probeFen = getNode(probe.tree, probe.nodeId).fen;
               const key = fenKey(probeFen);
-              let relevant = sansTo(curTree, curId).length >= drill.trunkPly;
+              const depth = sansTo(curTree, curId).length;
+              let relevant = depth >= drill.trunkPly;
               if (!relevant) {
-                if (drill.subjectFamily === undefined) {
-                  drill.subjectFamily = await fetchFamily(drill.trunkFen);
+                if (drill.subject === undefined) {
+                  drill.subject = await fetchSubject(drill.trunkFens);
                 }
-                let family = drill.families.get(key);
-                if (family === undefined) {
-                  family = await fetchFamily(probeFen);
-                  drill.families.set(key, family);
+                if (drill.subject === null || depth >= drill.subject.ply) {
+                  relevant = true;
+                } else {
+                  let family = drill.families.get(key);
+                  if (family === undefined) {
+                    family = await fetchFamily(probeFen);
+                    drill.families.set(key, family);
+                  }
+                  relevant = family === drill.subject.family;
                 }
-                relevant =
-                  drill.subjectFamily === null ? true : family === drill.subjectFamily;
               }
               if (relevant) {
                 const pct = Math.round((100 * uncovered.total) / games);
@@ -787,6 +832,20 @@ export function RepertoireView() {
             return;
           }
         }
+        // The reply and the turn, said to assistive tech: the status
+        // line is visual, and on a phone it is not even in the DOM while
+        // the Moves pane is showing. The gap note rides in the same
+        // sentence, since a second announce() would clear the first.
+        announce(
+          [
+            t('Your opponent played {san}. Your move.', {
+              san: getNode(added.tree, added.nodeId).san ?? '',
+            }),
+            note?.text,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        );
         setPhase('playing');
       } catch (err) {
         // The server's own words when it sent any (api() carried them out
@@ -821,9 +880,11 @@ export function RepertoireView() {
           d.missed.add(key);
           recordDrill({ key, result: 'miss', path: sansTo(tree, cursorId), expected, played: san });
         }
-        setDrillNotice(
-          t('Your study plays {moves} here. Try again.', { moves: expected.join(' / ') }),
-        );
+        const notice = t('Your study plays {moves} here. Try again.', {
+          moves: expected.join(' / '),
+        });
+        setDrillNotice(notice);
+        announce(notice);
         // The tree never takes the move, but chessground has already
         // played it on screen. Let it stand for a beat, then snap the
         // board back to the position that is still waiting.
