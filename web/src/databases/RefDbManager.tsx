@@ -631,6 +631,12 @@ export function RefDbManagerSkeleton({ rows }: {
                 <Skeleton className="my-1 h-3 w-24 shrink-0 md:my-0 md:ml-auto md:h-2.5" />
               </div>
               <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
+              {/* From md the row carries four controls here, not the one
+                  a phone shows, so the name column ran 84px past where it
+                  really stops. */}
+              {[0, 1, 2].map((k) => (
+                <Skeleton key={k} className="size-7 shrink-0 max-md:hidden pointer-coarse:size-9" />
+              ))}
             </li>
           ))}
         </ul>

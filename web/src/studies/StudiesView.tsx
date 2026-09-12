@@ -162,7 +162,15 @@ function StudyList() {
         title={t('Studies')}
         subtitle={
           !listLoaded
-            ? <SkeletonSubtitle />
+            ? // Only where a count is coming. This is the one shelf whose
+              // settled state drops the line entirely (an empty shelf has
+              // no "n studies" to print), so on a vault with no studies the
+              // placeholder reserved a line that never arrived and the
+              // search field and every card under it rose 20px. The stored
+              // shape is what knows, the same one the cards below read.
+              shelfHasShape(reservedShelf)
+              ? <SkeletonSubtitle />
+              : undefined
             : studies.length === 0
               ? undefined
               : studies.length === 1

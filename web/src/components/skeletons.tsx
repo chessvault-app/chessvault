@@ -547,7 +547,17 @@ export function SkeletonTiles({
  * 58px cards. The bars were both the wrong shape and the wrong height,
  * so the page rearranged completely as the themes landed.
  */
-export function SkeletonThemeCard({ className }: { className?: string }) {
+export function SkeletonThemeCard({
+  className,
+  label,
+}: {
+  className?: string;
+  /** The word this card will carry, where the card sizes itself to it.
+      In the grid the column sets the width and this is not needed; the
+      review chip is `w-auto` and shrink-wrapped to 84px against the
+      186px its own label gives the card that replaces it. */
+  label?: string;
+}) {
   return (
     <div
       // border, not ring — ThemeCard is `border px-3 py-2.5`, so this
@@ -561,7 +571,14 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
       <div className="min-w-0 flex-1">
         {/* A name at text-sm on a 20px line, over a count on 16. */}
         <div className="flex h-5 items-center">
-          <Skeleton className="h-2.5 w-2/3" />
+          {label ? (
+            <span className="relative">
+              <span className="invisible whitespace-nowrap">{label}</span>
+              <Skeleton className="absolute inset-y-1 left-0 w-full" />
+            </span>
+          ) : (
+            <Skeleton className="h-2.5 w-2/3" />
+          )}
         </div>
         <div className="flex h-4 items-center">
           <Skeleton className="h-2 w-8" />
