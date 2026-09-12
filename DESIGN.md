@@ -686,7 +686,16 @@ mix out of its own two tokens. A light label on a mid-tone dark square
 never reaches 4.5:1 (white itself is 3.7:1 on walnut, 2.3 on tan), so
 the direction is decided by measurement per preset; every one is at or
 above 4.5:1 on both squares in both modes, the tightest charcoal's light
-square at 4.54.
+square at 4.54. That is the label as drawn, not the token: chessground's
+own sheet washes its coordinates to 80%, and through that wash the same
+inks measured 3.6 to 4.4:1 on the dark squares of ten of the twelve board
+states, so the app's sheet restores full ink and `check:contrast`
+composites every preset's label at its rendered opacity, in both modes.
+The app's one mark of its own, the engine's best move and the puzzle
+hint, is the `best` brush: `--arrow-best` per preset at
+`--arrow-best-alpha`, placed to clear 3:1 on both squares, where
+chessground's blue through its 60% layer wash was 2.2:1 on walnut's dark
+square and no colour could do better through it.
 
 ### Named Rules
 

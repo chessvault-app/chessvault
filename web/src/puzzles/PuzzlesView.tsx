@@ -554,8 +554,8 @@ function Trainer({
           const uci = puzzle.moves.split(' ')[plies]!;
           const orig = uci.slice(0, 2) as DrawShape['orig'];
           return hint === 1
-            ? [{ orig, brush: 'blue' }]
-            : [{ orig, dest: uci.slice(2, 4) as DrawShape['orig'], brush: 'blue' }];
+            ? [{ orig, brush: 'best' }]
+            : [{ orig, dest: uci.slice(2, 4) as DrawShape['orig'], brush: 'best' }];
         })()
       : [];
 

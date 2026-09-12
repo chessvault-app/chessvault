@@ -1452,8 +1452,17 @@ function TopGamesList({
             g.file !== undefined && g.index !== undefined
               ? `${g.file}#${g.index}`
               : `${g.white}|${g.black}|${g.date ?? ''}|${g.result}|${g.site ?? ''}`;
+          // The link out is a Button wearing an anchor (nativeButton={false},
+          // the way PuzzlesView's Lichess link is drawn): a bare <a class="p-1">
+          // was a 20px target with no accessible name, flush against the
+          // row's own button (measured: eight unnamed links at 20x20, gap 0,
+          // at 1280, 390 and 320). icon-sm is the size with a coarse-pointer
+          // rung (36px). The name carries the game and the new tab, since
+          // the URL alone is not a purpose; the tooltip keeps the URL, which
+          // is the one thing a pointer wants to see before leaving the app.
+          const host = gameUrl ? new URL(gameUrl).hostname.replace(/^www\./, '') : '';
           return (
-            <li key={key} className="flex items-center">
+            <li key={key} className="flex items-center gap-1">
               <TitleTip title={t('Open this game')}>
                 <button
                   type="button"
@@ -1479,16 +1488,21 @@ function TopGamesList({
                 </button>
               </TitleTip>
               {gameUrl && (
-                <TitleTip title={t('{url} (needs internet)', { url: gameUrl })}>
-                  <a
-                    href={gameUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-muted-foreground hover:text-foreground shrink-0 p-1"
-                  >
-                    <ExternalLink className="size-3" />
-                  </a>
-                </TitleTip>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  nativeButton={false}
+                  render={<a href={gameUrl} target="_blank" rel="noreferrer" />}
+                  title={t('{url} (needs internet)', { url: gameUrl })}
+                  aria-label={t('{white} vs {black} on {host}, opens in a new tab (needs internet)', {
+                    white: g.white,
+                    black: g.black,
+                    host,
+                  })}
+                  className="text-muted-foreground shrink-0"
+                >
+                  <ExternalLink className="size-3.5" />
+                </Button>
               )}
             </li>
           );
