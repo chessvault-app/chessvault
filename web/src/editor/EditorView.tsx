@@ -39,6 +39,7 @@ import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
 import { useMediaQuery } from '@/lib/media';
+import { useUndoable } from '@/hooks/use-undoable';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -372,6 +373,24 @@ export function EditorView({
   const epOptions = useMemo(() => epCandidates(state), [state]);
 
   const patch = (next: Partial<EditorState>): void => setState((s) => ({ ...s, ...next }));
+
+  /**
+   * Reset and Clear throw away a hand-built position in one tap, from two
+   * icon buttons that sit 4.8px apart on a phone (measured at 390 wide),
+   * one of them wearing the arrow that means undo everywhere else. The
+   * undo that stands in for a confirmation (hooks/use-undoable, the Board
+   * page's "Started a new board · Restore"): the board changes at once,
+   * and the toast offers the old position back for the grace period.
+   * Nothing to commit, so expiry is simply not taking it. A tap that
+   * changes nothing (Reset on the start position) offers nothing.
+   */
+  const undoable = useUndoable();
+  const replaceAll = (next: EditorState, wording: string): void => {
+    if (toFen(next) === fen) return;
+    const prev = state;
+    setState(next);
+    undoable.offer({ title: wording, action: t('Undo') }, () => {}, () => setState(prev));
+  };
 
   /** Apply the active tool to a square. No-op in move mode, where drags rule. */
   const applyTool = (squareName: string): void => {
@@ -856,7 +875,7 @@ export function EditorView({
                 variant="ghost"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
-                onClick={() => setState(defaultEditorState())}
+                onClick={() => replaceAll(defaultEditorState(), t('Reset the board'))}
                 title={t('Reset to the starting position')}
                 aria-label={t('Reset')}
               >
@@ -867,7 +886,7 @@ export function EditorView({
                 variant="ghost"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
-                onClick={() => setState(emptyEditorState())}
+                onClick={() => replaceAll(emptyEditorState(), t('Cleared the board'))}
                 title={t('Clear the board')}
                 aria-label={t('Clear')}
               >

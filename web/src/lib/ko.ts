@@ -127,6 +127,8 @@ export const ko: Record<string, string> = {
   // --- analysis, board, editor --------------------------------------------
   'Delete this move and everything after it': '이 수와 그 이후를 모두 삭제',
   'Clear the board': '보드 지우기',
+  'Cleared the board': '보드 지워짐',
+  'Reset the board': '보드 초기화됨',
   'Clear all moves': '모든 수 지우기',
   'all moves': '모든 수',
   'Started a new board': '새 보드로 시작됨',
