@@ -72,6 +72,8 @@ import {
 /** Where the picker lives, and where the drill goes back to: a section
     of its own, listed under Tools. */
 const PICKER = ['endgames'] as const;
+/** The line the drill settles on; the wait reserves its height. */
+const PLAYING_NOTE = 'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.';
 
 export function EndgamesView({ params }: { params: string[] }) {
   const classId = params[0];
@@ -401,7 +403,7 @@ function Drill({ classId }: { classId: string }) {
       case 'loading':
         return { text: t('Finding a won ending…') };
       case 'playing':
-        return { text: t('Keep the win. A move the tablebase calls a draw or a loss ends the attempt.') };
+        return { text: t(PLAYING_NOTE) };
       case 'replying':
         return { text: t('Defending…') };
       case 'won':
@@ -490,9 +492,25 @@ function Drill({ classId }: { classId: string }) {
               <Skeleton className="h-4 w-28" />
             </div>
           ) : null}
-          <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
-            {statusLine.text}
-          </p>
+          {phase === 'loading' ? (
+            // The same reservation the trainer makes, on the shell it
+            // shares: "Keep the win…" wraps to two lines on a phone where
+            // "Finding a won ending…" takes one, so the box is the answer's
+            // and the waiting line sits over it. Without it the footer's
+            // buttons stepped down as the ending arrived.
+            <div className="relative">
+              <p aria-hidden className="invisible text-sm leading-relaxed">
+                {t(PLAYING_NOTE)}
+              </p>
+              <p className="text-muted-foreground absolute inset-0 text-sm leading-relaxed">
+                {statusLine.text}
+              </p>
+            </div>
+          ) : (
+            <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
+              {statusLine.text}
+            </p>
+          )}
         </div>
 
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">

@@ -663,6 +663,11 @@ function Trainer({
             id: puzzleId ?? '',
           })
         : null;
+
+  /** The line the panel settles on, named here because the wait has to
+      reserve its height before it can be shown. */
+  const settledNote =
+    modeNote ?? t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)));
   const puzzlePanel = (
   // No `grow`, on either layout: the panel is the height of what it says.
   // A phone had it stretched to the bottom bar (f1e1757) so the column
@@ -813,23 +818,43 @@ function Trainer({
               <Skeleton className="h-4 w-28" />
             </div>
           ) : null}
-          <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-destructive' : 'text-muted-foreground')}>
-            {phase === 'wrong'
-              ? t('Wrong move. The board rolls back.')
-              : phase === 'setup' || phase === 'opponent'
-              ? t('Opponent is moving…')
-              : phase === 'loading'
-              ? t('Finding a puzzle…')
-              : failed
-                ? // The wrong move was drawn for the 650ms of the rollback
-                  // and then nothing said it had happened: the most common
-                  // event in training had no shape a sighted reader could
-                  // find afterwards. So the line stays, as a fact rather
-                  // than a scold, until the puzzle ends.
-                  t('One wrong try so far. Find the best move.')
-                : (modeNote ??
-                  t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme))))}
-          </p>
+          {phase === 'loading' ? (
+            // The sentence that is about to land, laid out invisible, with
+            // "Finding a puzzle…" over it. That one is a single line and the
+            // answer wraps to two on a phone, so with nothing holding the
+            // second the difficulty row and every action under it stepped
+            // down the moment the puzzle arrived: 23px at 390, and on a
+            // desktop the panel rose 22px instead, its column handing the
+            // room back. The Cycles panel reserves its prose the same way.
+            <div className="relative">
+              <p aria-hidden className="invisible text-sm leading-relaxed">
+                {settledNote}
+              </p>
+              <p className="text-muted-foreground absolute inset-0 text-sm leading-relaxed">
+                {t('Finding a puzzle…')}
+              </p>
+            </div>
+          ) : (
+            <p
+              className={cn(
+                'text-sm leading-relaxed',
+                phase === 'wrong' ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {phase === 'wrong'
+                ? t('Wrong move. The board rolls back.')
+                : phase === 'setup' || phase === 'opponent'
+                  ? t('Opponent is moving…')
+                  : failed
+                    ? // The wrong move was drawn for the 650ms of the rollback
+                      // and then nothing said it had happened: the most common
+                      // event in training had no shape a sighted reader could
+                      // find afterwards. So the line stays, as a fact rather
+                      // than a scold, until the puzzle ends.
+                      t('One wrong try so far. Find the best move.')
+                    : settledNote}
+            </p>
+          )}
         </div>
       )}
 
