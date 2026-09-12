@@ -20,6 +20,32 @@ import {
 } from './data';
 
 /**
+ * What a tile says to assistive technology: the number, the state, the
+ * fidelity tier, the tries. Sighted eyes get the state from the fill and
+ * the glyph, the tier from the corner icon and the tries from the tip;
+ * a screen reader got the digit alone, since the glyph and the icon are
+ * aria-hidden and the tip is neither a label nor a description. The
+ * label carries the tip's two lines too, so nothing is only in the tip.
+ * A never-attempted tile skips the state word: "not attempted" is
+ * already its tries line.
+ */
+function tileLabel(
+  n: number,
+  state: 'new' | 'failed' | 'solved',
+  meta: { label: string } | null,
+  tries: string,
+): string {
+  return [
+    t('Puzzle {n}', { n }),
+    state === 'solved' ? t('solved') : state === 'failed' ? t('failed') : null,
+    meta ? t(meta.label) : null,
+    tries,
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
  * The book's puzzle grid, revealed from the Puzzle panel's header the way
  * the lichess trainer reveals its difficulty row — a jump pad, not a
  * permanent panel. Cards show number, tier and state; the current puzzle
@@ -60,23 +86,23 @@ export function PuzzleGrid({
                 ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
                 : null;
             const prog = progress[p.id];
+            const tries = prog
+              ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
+              : t('not attempted');
             // Two lines, so the tip needs the newline the browser's bubble
             // used to render: TitleTip sets whitespace-pre-line for it.
             return (
               <TitleTip
                 key={p.id}
-                title={[
-                  meta ? `${t(meta.label)}: ${t(meta.title)}` : null,
-                  prog
-                    ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
-                    : t('not attempted'),
-                ]
+                title={[meta ? `${t(meta.label)}: ${t(meta.title)}` : null, tries]
                   .filter(Boolean)
                   .join('\n')}
               >
                 <button
                   ref={current ? currentRef : undefined}
                   type="button"
+                  aria-label={tileLabel(p.number ?? i + 1, last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new', meta, tries)}
+                  aria-current={current ? 'true' : undefined}
                   onClick={() => go(i)}
                   className={cn(
                     'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-colors duration-100 [content-visibility:auto]',
@@ -399,6 +425,9 @@ export function PuzzleList({
               ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
               : null;
           const prog = progress[p.id];
+          const tries = prog
+            ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
+            : t('not attempted');
           // Same two lines as the panel grid, and t() on both halves now:
           // this tile spelled the second one in English in the source while
           // the tile above said it through the dictionary. Same keys, so
@@ -406,17 +435,13 @@ export function PuzzleList({
           return (
             <TitleTip
               key={p.id}
-              title={[
-                meta ? `${t(meta.label)}: ${t(meta.title)}` : null,
-                prog
-                  ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
-                  : t('not attempted'),
-              ]
+              title={[meta ? `${t(meta.label)}: ${t(meta.title)}` : null, tries]
                 .filter(Boolean)
                 .join('\n')}
             >
               <button
                 type="button"
+                aria-label={tileLabel(p.number ?? ordinalOf.get(p.id) ?? 0, state, meta, tries)}
                 onClick={() => {
                   const d = draftIds.has(p.id) ? drafts.find((x) => x.id === p.id) : null;
                   if (d) onDraft(d);

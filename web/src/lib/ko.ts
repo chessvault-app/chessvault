@@ -86,6 +86,7 @@ export const ko: Record<string, string> = {
   Any: '전체',
   On: '켜짐',
   Puzzle: '퍼즐',
+  'Puzzle {n}': '퍼즐 {n}',
   Game: '게임',
   Moves: '수순',
   'Flip board': '보드 뒤집기',
