@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Folder, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Play, Plus, Repeat, Scissors, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Folder, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Play, Plus, Repeat, Scissors, Target, Trash2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -309,12 +309,25 @@ export function OpeningMapView({ params }: { params: string[] }) {
   // than a callback because the fitting belongs to the canvas, which is
   // the only thing that knows how big its box is.
   const [align, setAlign] = useState(0);
+  // One zoom step in or out, for a finger or a pen that cannot pinch and
+  // a mouse without a wheel; the keyboard has + and - on the canvas.
+  const [zoom, setZoom] = useState<{ seq: number; step: 1 | -1 }>({ seq: 0, step: 1 });
   // A line put aside belongs to the arrangement that can show one.
   useEffect(() => {
     if (arrangement !== 'tree') setOnly(null);
   }, [arrangement]);
 
   const mapActions: FabAction[] = [
+    {
+      label: 'Zoom in',
+      icon: ZoomIn,
+      onSelect: () => setZoom((z) => ({ seq: z.seq + 1, step: 1 })),
+    },
+    {
+      label: 'Zoom out',
+      icon: ZoomOut,
+      onSelect: () => setZoom((z) => ({ seq: z.seq + 1, step: -1 })),
+    },
     {
       // Fitting is the answer to "where has it gone" — after a pan into
       // the distance, a zoom, or a line put aside and brought back.
@@ -558,6 +571,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           arrangement={arrangement}
           only={only}
           align={align}
+          zoom={zoom}
           // Pressing the selected dot again lets it go. Selecting is what
           // opens the panel and lights the mainline, so it needs an undo
           // that is the same gesture — hunting for empty canvas to click

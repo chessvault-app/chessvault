@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitView, LABELS_FADE_OUT, LABELS_LEGIBLE, labelOpacity } from './fit';
+import { fitView, LABELS_LEGIBLE, LABELS_SHOWN, labelsShown } from './fit';
 
 const box = { width: 1072, height: 587 };
 
@@ -13,13 +13,15 @@ function onScreen(v: { x: number; y: number; k: number }, b: { minX: number; min
   };
 }
 
-describe('labelOpacity', () => {
-  it('is gone at the fade-out zoom and whole from the legible zoom in', () => {
-    expect(labelOpacity(LABELS_FADE_OUT)).toBe(0);
-    expect(labelOpacity(0.1)).toBe(0);
-    expect(labelOpacity(LABELS_LEGIBLE)).toBe(1);
-    expect(labelOpacity(2)).toBe(1);
-    expect(labelOpacity((LABELS_FADE_OUT + LABELS_LEGIBLE) / 2)).toBeCloseTo(0.5);
+describe('labelsShown', () => {
+  it('draws nothing past the shown zoom and everything it can from there in', () => {
+    expect(labelsShown(0.1)).toBe(false);
+    expect(labelsShown(LABELS_SHOWN - 0.001)).toBe(false);
+    expect(labelsShown(LABELS_SHOWN)).toBe(true);
+    // The demo's arrival on a 1280x900 desktop, which used to sit at 57% ink.
+    expect(labelsShown(0.436)).toBe(true);
+    expect(labelsShown(LABELS_LEGIBLE)).toBe(true);
+    expect(labelsShown(2)).toBe(true);
   });
 });
 
@@ -40,7 +42,7 @@ describe('fitView', () => {
     const bounds = { minX: -826, minY: -826, maxX: 826, maxY: 826 };
     const v = fitView(box, bounds);
     expect(v.k).toBeCloseTo((0.92 * box.height) / 1652);
-    expect(v.k).toBeLessThan(LABELS_FADE_OUT + 0.05);
+    expect(v.k).toBeLessThan(LABELS_SHOWN + 0.05);
     const edges = onScreen(v, bounds);
     expect(edges.top).toBeGreaterThan(0);
     expect(edges.bottom).toBeLessThan(box.height);
@@ -50,7 +52,7 @@ describe('fitView', () => {
     const bounds = { minX: -826, minY: -826, maxX: 826, maxY: 826 };
     const v = fitView(box, bounds, { legible: true, anchor: { x: 0, y: 0 } });
     expect(v.k).toBe(LABELS_LEGIBLE);
-    expect(labelOpacity(v.k)).toBe(1);
+    expect(labelsShown(v.k)).toBe(true);
     // 1652 * 0.54 = 892: narrower than the box, so centred on the root
     // horizontally; taller than it, so the root is centred vertically and
     // the picture runs off both the top and the bottom.

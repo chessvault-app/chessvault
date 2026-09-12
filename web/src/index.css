@@ -549,6 +549,13 @@
    */
   --map-line-l: 55%;
   --map-line-c: 0.09;
+  /* The map's plain threads, and the rim and marks a dot wears: a grey
+     placed at 3:1 on the page with room for the antialiasing of a 1.1px
+     line. The border tone this replaced measured 1.26:1 as drawn (1.31:1
+     dark), which is a thread you infer rather than see, and PRODUCT.md
+     asks 3:1 of a stroke that carries meaning. 60% is 3.6:1 on the 97%
+     page; the contrast knob takes it to 45% (6.8:1). */
+  --map-thread: oklch(calc(60% + (45% - 60%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
 
   /* The transient chip — the undo offer, and anything else that floats
      over the page for a few seconds and must not read as part of it.
@@ -752,6 +759,8 @@
      of 360 hues can carry at that lightness inside sRGB. */
   --map-line-l: 72%;
   --map-line-c: 0.12;
+  /* 52% is 3.6:1 on the 14.5% page; the knob takes it to 72% (8:1). */
+  --map-thread: oklch(calc(52% + (72% - 52%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner

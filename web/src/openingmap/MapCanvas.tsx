@@ -7,7 +7,8 @@ import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { createLiveSim, layoutGraph, layoutTree, PAD, type LiveSim } from './graph';
-import { fitView, labelOpacity as labelOpacityAt } from './fit';
+import { fitView, labelsShown } from './fit';
+import { placeLabels, type LabelCandidate } from './labels';
 import { favouriteChild } from './mainline';
 import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
 import { prefersReducedMotion } from '@/lib/motion';
@@ -52,6 +53,17 @@ const HOLD_SLOP = 10;
  * the part that does show reads as one shape rather than a stray arc.
  */
 const HELD_RING = 26;
+/** One keyboard or button zoom step, the book reader's ratio. */
+const ZOOM_STEP = 1.25;
+/** How far Shift with an arrow pans, in screen px: a comfortable
+    fraction of a phone's width, so a walk to the edge is a few presses. */
+const PAN_STEP = 80;
+const PAN_KEYS: Record<string, readonly [number, number] | undefined> = {
+  ArrowLeft: [PAN_STEP, 0],
+  ArrowRight: [-PAN_STEP, 0],
+  ArrowUp: [0, PAN_STEP],
+  ArrowDown: [0, -PAN_STEP],
+};
 
 /**
  * One focused line wears the grammar's blue, NOT --color-primary: the
@@ -96,6 +108,7 @@ export function MapCanvas({
   arrangement = 'constellation',
   only = null,
   align = 0,
+  zoom,
   onSelect,
 }: {
   map: OpeningMap;
@@ -113,6 +126,10 @@ export function MapCanvas({
   only?: string | null;
   /** Bumped to ask for a re-fit; see the fitting effect below. */
   align?: number;
+  /** Bumped with a direction to ask for one zoom step: 1 in, -1 out.
+      The page's Zoom in and Zoom out buttons, which are how a finger or
+      a pen zooms without a pinch and a mouse without a wheel. */
+  zoom?: { seq: number; step: 1 | -1 };
   coverage?: ReadonlyMap<string, NodeCoverage>;
   /** Field comparison per node id — set only while a source is chosen. */
   gaps?: ReadonlyMap<string, NodeGaps>;
@@ -196,7 +213,7 @@ export function MapCanvas({
    * to remove. A pan now writes this ref and the <g>'s transform
    * attribute directly, and React hears about it once, on release. Zoom
    * stays on state because it legitimately changes per-node values (inv,
-   * labelOpacity) — but it READS the ref, so a wheel or a pinch lands on
+   * which labels fit) — but it READS the ref, so a wheel or a pinch lands on
    * top of the pans React was never told about.
    */
   const viewRef = useRef(view);
@@ -630,6 +647,8 @@ export function MapCanvas({
    * window gets its size; a ResizeObserver is what does.
    */
   const [sized, setSized] = useState(0);
+  /** Bumped by the 0 key: the same fit Align asks for, from the keyboard. */
+  const [refit, setRefit] = useState(0);
   useLayoutEffect(() => {
     const el = host.current;
     if (!el) return;
@@ -688,7 +707,7 @@ export function MapCanvas({
     void asked;
     commitView(fitView(box, { minX, minY, maxX, maxY }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeCount, map.id, arrangement, align, sized]);
+  }, [nodeCount, map.id, arrangement, align, refit, sized]);
 
   /**
    * Every pointer on the surface, wherever it landed — including on a
@@ -827,6 +846,64 @@ export function MapCanvas({
     // so this costs no render then.
     setView(viewRef.current);
   };
+  /**
+   * Zoom and pan without a gesture.
+   *
+   * The wheel zooms a mouse and two fingers pinch a phone; a keyboard
+   * had neither, and a finger or a pen that cannot pinch had nothing.
+   * PRODUCT.md asks a non-gesture way to do anything a gesture does, so:
+   * + and - (= and _ too, they share the keys) step the zoom, 0 refits,
+   * and Shift with an arrow pans, the plain arrows being the tree's. The
+   * page's Zoom in and Zoom out buttons take the same steps through the
+   * `zoom` prop. A step is anchored on the focused dot when the keyboard
+   * is on one, so the dot being read stays where it is, and otherwise on
+   * the middle of the free area.
+   */
+  const focusedId = (): string | null => {
+    const a = document.activeElement;
+    if (!a || !host.current?.contains(a)) return null;
+    for (const [id, el] of nodeEls.current) if (el === a) return id;
+    return null;
+  };
+  const zoomBy = (factor: number): void => {
+    stopSlide();
+    const box = host.current?.getBoundingClientRect();
+    if (!box || box.width === 0) return;
+    const v = viewRef.current;
+    const k = Math.min(3, Math.max(zoomFloor(), v.k * factor));
+    const id = focusedId();
+    const p = id ? posNow(id) : null;
+    const mx = p ? v.x + p.x * v.k : (box.width - inset) / 2;
+    const my = p ? v.y + p.y * v.k : box.height / 2;
+    const scale = k / v.k;
+    commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
+  };
+  const panBy = (dx: number, dy: number): void => {
+    stopSlide();
+    const v = viewRef.current;
+    commitView({ ...v, x: v.x + dx, y: v.y + dy });
+  };
+  const zoomSeen = useRef(zoom?.seq ?? 0);
+  useEffect(() => {
+    if (!zoom || zoom.seq === zoomSeen.current) return;
+    zoomSeen.current = zoom.seq;
+    zoomBy(zoom.step > 0 ? ZOOM_STEP : 1 / ZOOM_STEP);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom]);
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const pan = e.shiftKey ? PAN_KEYS[e.key] : undefined;
+    if (e.key === '+' || e.key === '=') zoomBy(ZOOM_STEP);
+    else if (e.key === '-' || e.key === '_') zoomBy(1 / ZOOM_STEP);
+    else if (e.key === '0') setRefit((n) => n + 1);
+    else if (pan) panBy(pan[0], pan[1]);
+    else return;
+    // Handled here and nowhere else: the board's arrow keys listen on
+    // the window, and the browser's own + and - would zoom the page.
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const onWheel = (e: React.WheelEvent): void => {
     stopSlide();
     const box = hostRect();
@@ -914,7 +991,8 @@ export function MapCanvas({
   }, [graph, shares, map.root.id]);
 
   /**
-   * Keep the selection out from under the details panel.
+   * Keep the selection in the open: out from under the details panel,
+   * and on screen at all when the keyboard chose it.
    *
    * Selecting a dot opens a panel over the right-hand end of the canvas,
    * and the dot it is about is wherever it already was: often underneath.
@@ -923,46 +1001,61 @@ export function MapCanvas({
    * and only when the dot is actually behind the panel, because a map
    * that recentres on every press is a map you lose your place in.
    *
-   * Horizontal only: the panel is the canvas's full height, so there is
-   * no amount of up or down that uncovers anything.
+   * A press is always on screen, so for a pointer only the panel's edge
+   * matters. The arrow keys walk the tree wherever it goes: measured on
+   * the demo after one wheel zoom, six presses put the focused dot at
+   * (496,-312), above the window, and the panel then opened over the one
+   * at 2. Nf3. So a selection the keyboard made is brought inside every
+   * edge of the free area, by the least slide that does it.
    *
    * The shell measures the strip (see `useCanvasInset`), which is how a
-   * phone gets no slide at all — its details are a sheet over everything,
-   * and there is nowhere uncovered to slide to.
+   * phone gets no slide for a tap — its details are a sheet over
+   * everything, and there is nowhere uncovered to slide to. A keyboard
+   * on a phone still gets the four-edge reveal.
    */
   const inset = useCanvasInset();
+  /** Set by the tree's arrow keys just before they select: the reveal
+      below reads and clears it. */
+  const selectedByKey = useRef(false);
   useEffect(() => {
-    if (!selectedId || inset <= 0) return;
+    const byKey = selectedByKey.current;
+    selectedByKey.current = false;
+    if (!selectedId || (inset <= 0 && !byKey)) return;
     const box = host.current?.getBoundingClientRect();
     if (!box || box.width === 0) return;
     const v = viewRef.current;
     // Where it is DRAWN, drift and all, in the surface's own pixels.
-    const at = v.x + posNow(selectedId).x * v.k;
+    const p = posNow(selectedId);
+    const at = { x: v.x + p.x * v.k, y: v.y + p.y * v.k };
     const r = (drawnR.get(selectedId) ?? 0) * v.k;
-    const clear = box.width - inset - CLEAR_PAD - r;
-    if (at <= clear) return;
     // Never off the far edge instead: a narrow window can leave less free
-    // width than the dot wants, and the left margin is the least bad
+    // width than the dot wants, and the near margin is the least bad
     // place to put it.
-    const to = Math.max(CLEAR_PAD + r, clear);
-    slideTo({ ...v, x: v.x + (to - at) });
+    const into = (pos: number, lo: number, hi: number): number =>
+      pos > hi ? Math.max(lo, hi) - pos : pos < lo ? Math.min(lo, hi) - pos : 0;
+    const dx = into(at.x, CLEAR_PAD + r, box.width - inset - CLEAR_PAD - r);
+    const dy = byKey ? into(at.y, CLEAR_PAD + r, box.height - CLEAR_PAD - r) : 0;
+    if (dx === 0 && dy === 0) return;
+    slideTo({ ...v, x: v.x + dx, y: v.y + dy });
     // The selection and the strip, and nothing else: this answers the
-    // panel opening over a dot, not the map moving underneath one. A pan,
-    // a zoom or a dragged dot is the reader's own arrangement and is left
-    // exactly where they put it.
+    // panel opening over a dot and the keyboard walking off the edge,
+    // not the map moving underneath one. A pan, a zoom or a dragged dot
+    // is the reader's own arrangement and is left exactly where they put
+    // it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, inset]);
 
   // Labels and badges keep their SCREEN size — dividing by the zoom is
-  // what makes them readable at any distance — and the labels fade out
-  // as the view pulls back, the graph-view convention: far out you read
-  // the shape, close in you read the names.
+  // what makes them readable at any distance — and they go as the view
+  // pulls back, the graph-view convention: far out you read the shape,
+  // close in you read the names.
   const inv = 1 / view.k;
-  // Soft at the overview of a BIG map (k ≈ 0.4, where 70 labels collide),
-  // fully readable one wheel-notch in, gone only far out. The ramp's ends
-  // live in fit.ts, because the arriving fit floors itself at the readable
-  // one.
-  const labelOpacity = labelOpacityAt(view.k);
+  // Whole or absent, never faded: the threshold lives in fit.ts, and which
+  // labels are drawn from there in is decided below by collision, since
+  // at the overview of a big map most of them would print over each
+  // other. (The fade this replaced measured 57% ink on the desktop
+  // arrival, captions at 2.4:1, four labels printed over each other.)
+  const labelsOn = labelsShown(view.k);
 
   /**
    * The mainline — an answer to something you asked, not a permanent
@@ -1073,6 +1166,48 @@ export function MapCanvas({
     return ids;
   }, [selectedId, resolved]);
 
+  /**
+   * The label text of every dot, and which of them are drawn this render.
+   *
+   * Decided in screen space from the positions this render draws, so a
+   * zoom re-decides it (a zoom is a render) and a pan does not need to
+   * (every box shifts alike). The selection and the search hits are
+   * kept whatever they overlap; the root outweighs everything, the
+   * selected line outweighs the rest, and among the rest a bigger dot,
+   * then an earlier move, wins its place. Past the shown zoom only the
+   * kept labels are candidates at all: a hit names itself however far
+   * out the view is, since reading which dots these are is the point of
+   * the search.
+   */
+  const texts = new Map<string, { move: string; caption: string }>();
+  const cands: LabelCandidate[] = [];
+  for (const { id } of graph.nodes) {
+    const facts = resolved.nodes.get(id)!;
+    const isRoot = facts.parentId === null;
+    const invalid = !isRoot && facts.fen === null;
+    const move = clip(isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${facts.mapNode.san ?? ''}`, 16);
+    const caption = clip(
+      invalid ? t('Not a legal move here') : (facts.mapNode.name ?? labels?.get(id) ?? ''),
+      26,
+    );
+    texts.set(id, { move, caption });
+    const keep = id === selectedId || (matches?.has(id) ?? false);
+    if (!labelsOn && !keep) continue;
+    const { x, y } = posOf(id);
+    const r = drawnR.get(id)!;
+    cands.push({
+      id,
+      x: view.x + x * view.k,
+      y: view.y + y * view.k,
+      r: r * view.k,
+      move,
+      caption,
+      weight: (isRoot ? 1e6 : 0) + (lineage.has(id) ? 1e3 : 0) + r - facts.ply / 1e3,
+      keep,
+    });
+  }
+  const placed = placeLabels(cands);
+
   return (
     <div
       ref={host}
@@ -1082,6 +1217,7 @@ export function MapCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
+      onKeyDown={onKeyDown}
       onClick={() => {
         // The ground was pressed and never dragged: clear the selection.
         // Node presses stop propagation, so they never land here.
@@ -1131,10 +1267,16 @@ export function MapCanvas({
                 // carried by hue alone is a signal somebody cannot see.
                 // Where you came FROM answers in bright foreground, where
                 // the field goes NEXT in its line's own colour, and
-                // everything else is a hairline in the border tone.
-                stroke={lit ? 'var(--color-foreground)' : (main ?? 'var(--color-border)')}
-                strokeOpacity={lit || main ? 1 : 0.85}
-                strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.1) / view.k}
+                // everything else is a hairline in the thread tone: a
+                // grey placed at 3:1 (index.css). It was the border tone
+                // at 85%, which measured 1.26:1 as drawn, a thread you
+                // inferred from the dots rather than saw.
+                stroke={lit ? 'var(--color-foreground)' : (main ?? 'var(--map-thread)')}
+                // 1.5px, not 1.1: a 1.1px line antialiased across two pixel
+                // rows keeps only 2.5 to 3.1:1 of the colour's 3.6:1 as
+                // drawn, and a stroke asked to reach 3:1 has to reach it in
+                // the pixels, not the token.
+                strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.5) / view.k}
                 strokeLinecap="round"
                 opacity={Math.min(dimOf(from), dimOf(to))}
               />
@@ -1154,16 +1296,14 @@ export function MapCanvas({
             const planned = !isRoot && !invalid && coverage !== undefined && !cov?.covered;
             // Odd plies are White's. The opponent's side is the one the map is not for.
             const theirs = !isRoot && !invalid && facts.ply % 2 === (map.color === 'white' ? 0 : 1);
-            const move = isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
-            const caption = invalid
-              ? t('Not a legal move here')
-              : (node.name ?? labels?.get(id) ?? '');
+            const { move, caption } = texts.get(id)!;
+            const label = placed.get(id) ?? { move: false, caption: false };
             const gapCount = gaps?.get(id)?.gaps.length ?? 0;
             const noteTags = (node.tags ?? []).some((tag) => tag.kind === 'note');
             const target = node.depth;
             const reach =
               target !== undefined && cov ? reachedMove(facts.ply, cov.preparedPlies) : undefined;
-            const ring = 2 * Math.PI * (r + 3);
+            const ring = 2 * Math.PI * (r + 3 * inv);
             return (
               <g
                 key={id}
@@ -1203,6 +1343,8 @@ export function MapCanvas({
                     onSelect(null);
                     return;
                   }
+                  // Shift with an arrow is the surface's pan, not a step.
+                  if (e.shiftKey) return;
                   const parent = facts.parentId;
                   const siblings = parent ? (kids.get(parent) ?? []) : [];
                   const idx = siblings.indexOf(id);
@@ -1221,6 +1363,7 @@ export function MapCanvas({
                   // listen on the window and would step a game under it.
                   e.preventDefault();
                   e.stopPropagation();
+                  selectedByKey.current = true;
                   onSelect(next);
                   nodeEls.current.get(next)?.focus();
                 }}
@@ -1361,24 +1504,34 @@ export function MapCanvas({
                         ? 'var(--color-muted-foreground)'
                         : 'transparent'
                   }
-                  strokeWidth={selected ? 2 : 1.2}
-                  strokeDasharray={planned && !selected ? '3 3' : undefined}
+                  // SCREEN widths, like the labels: the rim is what says
+                  // "planned", and at 1.2 world units it was 0.52px on the
+                  // desktop arrival and 0.31px on the phone, a dash the
+                  // antialiasing washed to 1.3-1.7:1 whatever colour it
+                  // was given. The dashes are screen-sized too, so a far
+                  // view does not turn them into a dotted blur.
+                  strokeWidth={(selected ? 2 : 1.5) * inv}
+                  strokeDasharray={planned && !selected ? `${4 * inv} ${3 * inv}` : undefined}
                 />
-                {/* Whose ply: the opponent's replies carry a centre dot in the
-                    board's dark colour, so the two layers of a line can be told
-                    apart at a glance. "Opponent" follows the map's colour, so
-                    on the Black map it is White's moves that carry it. The
-                    centre is the one spot no other mark uses: fills, strokes
-                    and the depth arc all live on the rim, the badges on the
-                    corners. It does not fade with zoom, since it is a shape
-                    cue rather than a detail. */}
+                {/* Whose ply: the opponent's replies carry a centre dot, so
+                    the two layers of a line can be told apart at a glance.
+                    "Opponent" follows the map's colour, so on the Black map
+                    it is White's moves that carry it. The centre is the one
+                    spot no other mark uses: fills, strokes and the depth arc
+                    all live on the rim, the badges on the corners. It does
+                    not go with the labels, since it is a shape cue rather
+                    than a detail. In the foreground at 85%, not the board's
+                    dark square: that colour is whatever board the reader
+                    chose, and on the default it measured 1.5 to 2.4:1 on the
+                    dot's fill, a cue you could not see; the foreground reads
+                    on every fill a dot can have. */}
                 {theirs && (
                   <circle
                     cx={0}
                     cy={0}
                     r={r * 0.42}
-                    fill="var(--board-dark)"
-                    fillOpacity={planned ? 0.6 : 1}
+                    fill="var(--color-foreground)"
+                    fillOpacity={planned ? 0.6 : 0.85}
                     pointerEvents="none"
                   />
                 )}
@@ -1432,10 +1585,11 @@ export function MapCanvas({
                   <circle
                     cx={0}
                     cy={0}
-                    r={r + 3}
+                    // Screen-sized, like the rim it sits outside of.
+                    r={r + 3 * inv}
                     fill="none"
                     stroke={reach < target ? 'var(--color-warn)' : 'var(--color-good)'}
-                    strokeWidth={1.6}
+                    strokeWidth={1.6 * inv}
                     strokeDasharray={`${ring * Math.min(1, reach / Math.max(1, target))} ${ring}`}
                     transform="rotate(-90)"
                   />
@@ -1448,15 +1602,15 @@ export function MapCanvas({
                     badge, which is a number, and a number is something
                     you can only read close up anyway. Far out you read
                     the shape; close in you read the marks. */}
-                {/* Not rendered at all when they would be invisible.
-                    Fully faded marks and labels still cost React a node
-                    each to reconcile, and there are five or six of them
-                    per dot — on a 398-node map that is well over a
-                    thousand elements doing nothing, on exactly the
-                    pulled-back view where the whole map is on screen and
-                    every answer that lands re-renders it. */}
-                {labelOpacity > 0 && (
-                <g opacity={labelOpacity}>
+                {/* Not rendered at all when they are not shown. A hidden
+                    mark or label still costs React a node to reconcile,
+                    and there are five or six of them per dot — on a
+                    398-node map that is well over a thousand elements
+                    doing nothing, on exactly the pulled-back view where
+                    the whole map is on screen and every answer that
+                    lands re-renders it. */}
+                {labelsOn && (
+                <g>
                   {(cov?.reviewCount ?? 0) > 0 && (
                     <circle cx={-r * 0.8} cy={-r * 0.8} r={3 * inv} fill="var(--color-warn)" />
                   )}
@@ -1490,7 +1644,7 @@ export function MapCanvas({
                   )}
                 </g>
                 )}
-                {(labelOpacity > 0 || matches?.has(id)) && (
+                {label.move && (
                 <text
                   x={0}
                   y={r + 12 * inv}
@@ -1504,29 +1658,35 @@ export function MapCanvas({
                   fontSize={12 * inv}
                   fontWeight={600}
                   textAnchor="middle"
-                  // A hit names itself however far out the view is: the
-                  // whole point of the search is reading which dots these
-                  // are, and at a fitted overview the labels are gone.
-                  opacity={matches?.has(id) ? 1 : labelOpacity}
                   fill={invalid ? 'var(--color-destructive)' : 'var(--color-foreground)'}
+                  // A knockout in the page colour under the glyphs, the
+                  // map-label convention: the threads are drawn at 3:1 now
+                  // and one running under a name struck it through.
+                  stroke="var(--color-background)"
+                  strokeWidth={3 * inv}
+                  strokeLinejoin="round"
+                  paintOrder="stroke"
                 >
-                  {clip(move, 16)}
+                  {move}
                 </text>
                 )}
-                {caption && (labelOpacity > 0 || matches?.has(id)) && (
+                {label.caption && (
                   <text
                     x={0}
                     y={r + 24 * inv}
                     fontSize={10 * inv}
                     textAnchor="middle"
-                    opacity={matches?.has(id) ? 1 : labelOpacity}
                     // The registry's word for secondary text — the retired
                     // `--color-subtle` this carried was undefined since the
                     // theme migration, and an undefined var in an SVG fill
                     // paints black: invisible captions on a dark map.
                     fill="var(--color-muted-foreground)"
+                    stroke="var(--color-background)"
+                    strokeWidth={3 * inv}
+                    strokeLinejoin="round"
+                    paintOrder="stroke"
                   >
-                    {clip(caption, 26)}
+                    {caption}
                   </text>
                 )}
               </g>
