@@ -5,14 +5,34 @@ import { t, getLang } from './i18n.ts';
     became wrong the moment the app itself could be Korean. */
 export const locale = (): string => (getLang() === 'ko' ? 'ko-KR' : 'en-US');
 
+/**
+ * One formatter per locale and shape, kept. `toLocaleString(locale,
+ * options)` builds an Intl.DateTimeFormat on every call, and building
+ * one is the expensive half: measured on the demo's studies shelf at CPU
+ * x4, twelve cards' dates cost 17 to 22ms of the page's arrival frame,
+ * almost all of it in the constructor. A shelf of thirty rows formats
+ * thirty dates in the same commit.
+ */
+const formatters = new Map<string, Intl.DateTimeFormat>();
+function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const loc = locale();
+  const key = loc + JSON.stringify(options);
+  let f = formatters.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat(loc, options);
+    formatters.set(key, f);
+  }
+  return f;
+}
+
 export function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString(locale(), {
+  return formatter({
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }).format(new Date(iso));
 }
 
 /** Relative rendering for a moment still coming: "in 3 h", "tomorrow",
@@ -28,11 +48,11 @@ export function formatUntil(iso: string): string {
   if (days === 1) return t('tomorrow');
   if (days < 7) return t('in {n} days', { n: days });
   const sameYear = then.getFullYear() === new Date().getFullYear();
-  return then.toLocaleDateString(locale(), {
+  return formatter({
     month: 'short',
     day: 'numeric',
     ...(sameYear ? {} : { year: 'numeric' }),
-  });
+  }).format(then);
 }
 
 /** Relative rendering for recent activity: "5 min ago", "yesterday" —
@@ -50,9 +70,9 @@ export function formatAgo(iso: string): string {
   const sameYear = then.getFullYear() === new Date().getFullYear();
   // The locale decides the shape of an absolute date, not a dictionary:
   // Korean writes 8월 11일, and no substitution gets there from "Aug 11".
-  return then.toLocaleDateString(locale(), {
+  return formatter({
     month: 'short',
     day: 'numeric',
     ...(sameYear ? {} : { year: 'numeric' }),
-  });
+  }).format(then);
 }

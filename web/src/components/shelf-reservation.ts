@@ -127,6 +127,29 @@ export function readShelfHeights(): number[] | null {
   return [...cards].map((card) => card.getBoundingClientRect().height);
 }
 
+/**
+ * Run `fn` once the page has painted, and hand back a cancel.
+ *
+ * For the shelves' height reads above. Read from the effect that follows
+ * the shelf's commit, the rects are asked for before the browser has laid
+ * the new page out, so the first read pays the whole page's layout on the
+ * spot: measured on the demo's studies shelf at CPU x4, 60 to 80ms in
+ * `getBoundingClientRect`, landing as a 167ms frame while the tab fade
+ * was still due. After the paint the layout is clean and the same reads
+ * cost nothing. A frame callback alone is not "after the paint" (it runs
+ * before it); the timeout it schedules is.
+ */
+export function afterPaint(fn: () => void): () => void {
+  let timer = 0;
+  const frame = requestAnimationFrame(() => {
+    timer = window.setTimeout(fn, 0);
+  });
+  return () => {
+    cancelAnimationFrame(frame);
+    clearTimeout(timer);
+  };
+}
+
 /** Whether a shape has anything to reserve at all. */
 export const shelfHasShape = (shape: ShelfShape): boolean =>
   shape.root > 0 || shape.folders.length > 0;
