@@ -1356,6 +1356,7 @@ export const ko: Record<string, string> = {
   'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.':
     'Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다. 업로드는 스트리밍이라 큰 파일도 보고 있는 동안 계속 올라갑니다.',
   'Build a database': '데이터베이스 만들기',
+  'Replace “{name}”': '“{name}” 바꾸기',
   'Indexing {n} files into one searchable database of whole games.':
     '파일 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name, or leave blank for “{name}”': '이름, 비우면 “{name}”',

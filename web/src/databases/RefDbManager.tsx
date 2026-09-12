@@ -157,9 +157,11 @@ export function RefDbManager({
 }) {
   const [tab, setTab] = useState<Tab>('databases');
   const [query, setQuery] = useState('');
-  // null until the first listing arrives, so "tick everything" happens
-  // once and a user's unticking is never overwritten by a refresh.
-  const [picked, setPicked] = useState<Set<string> | null>(null);
+  // Nothing ticked until the user ticks it, or uploads it. Every file
+  // used to be ticked on mount, so the most expensive press on the page
+  // opened with the whole shelf in it, on every visit, and a blank name
+  // then defaulted to rebuilding "refgames" (the sweep's report).
+  const [picked, setPicked] = useState<Set<string> | null>(new Set());
   const [uploading, setUploading] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
@@ -170,13 +172,6 @@ export function RefDbManager({
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wasRunning = useRef(false);
-
-  // Everything ticked when the first listing lands, and never again:
-  // `picked` stops being null there, so a later refresh cannot undo an
-  // unticking. Same rule as before, moved with the listing it reads.
-  useEffect(() => {
-    if (sources) setPicked((p) => p ?? new Set(sources.map((s) => s.name)));
-  }, [sources]);
 
   // Poll the build while one runs; refresh the lists when it finishes.
   useEffect(() => {
@@ -652,7 +647,7 @@ export function RefDbManager({
       {showBuild && (
         <BuildWindow
           error={error}
-          count={pickedCount}
+          files={[...(picked ?? [])]}
           only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
           existing={databases.map((d) => d.name)}
           onBuild={(name, mode) => void build(name, mode)}
@@ -1323,10 +1318,16 @@ function UploadWindow({
  * made it look like a filter on the list above it. Asked at the moment of
  * building, it reads as what it is — and there is room to say what
  * happens if the name is one that already exists.
+ *
+ * It is the review step before the most expensive press on the page, so
+ * it names the files it is about to index, and a taken name preselects
+ * the answer that keeps the database (Add to it), as the book importer's
+ * own update-or-rebuild choice does. Replace is chosen, never defaulted,
+ * and the press that does it says so in the destructive tone.
  */
 function BuildWindow({
   error,
-  count,
+  files,
   only,
   existing,
   onBuild,
@@ -1334,7 +1335,8 @@ function BuildWindow({
 }: {
   /** The server's refusal, printed under the field it is about. */
   error: string | null;
-  count: number;
+  /** The ticked PGN files, in the order they were ticked. */
+  files: string[];
   /** The single picked file, whose name the build takes when left blank. */
   only?: string;
   /** Databases already on the shelf, for the taken-name choice below. */
@@ -1342,12 +1344,15 @@ function BuildWindow({
   onBuild: (name: string, mode: 'replace' | 'append') => void;
   onClose: () => void;
 }) {
+  const count = files.length;
   const [name, setName] = useState('');
-  const [mode, setMode] = useState<'replace' | 'append'>('replace');
+  const [mode, setMode] = useState<'replace' | 'append'>('append');
   const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
+  const target = name.trim() || derived;
   // The question is asked only when it exists — the same shape as the
   // book importer's update-or-rebuild choice.
-  const taken = existing.includes(name.trim() || derived);
+  const taken = existing.includes(target);
+  const replacing = taken && mode === 'replace';
   const go = (): void => {
     if (count > 0) onBuild(name, taken ? mode : 'replace');
   };
@@ -1367,6 +1372,15 @@ function BuildWindow({
               })
             : t('No PGN files are ticked. Pick them on the PGN files tab first.')}
         </p>
+        {count > 0 && (
+          <ul className="divide-border max-h-40 divide-y overflow-y-auto rounded-md border text-sm">
+            {files.map((file) => (
+              <li key={file} data-user-text className="text-foreground truncate px-3 py-1">
+                {file}
+              </li>
+            ))}
+          </ul>
+        )}
         <ClearableInput
           inputSize="sm"
           value={name}
@@ -1389,15 +1403,15 @@ function BuildWindow({
         {taken ? (
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as 'replace' | 'append')}>
             <Field orientation="horizontal">
-              <RadioGroupItem value="replace" id="build-replace" />
-              <FieldLabel htmlFor="build-replace" className="font-normal">
-                {t('Replace: build this database again from the picked files.')}
-              </FieldLabel>
-            </Field>
-            <Field orientation="horizontal">
               <RadioGroupItem value="append" id="build-append" />
               <FieldLabel htmlFor="build-append" className="font-normal">
                 {t('Add to it: index only the games it does not already hold.')}
+              </FieldLabel>
+            </Field>
+            <Field orientation="horizontal">
+              <RadioGroupItem value="replace" id="build-replace" />
+              <FieldLabel htmlFor="build-replace" className="font-normal">
+                {t('Replace: build this database again from the picked files.')}
               </FieldLabel>
             </Field>
           </RadioGroup>
@@ -1410,9 +1424,13 @@ function BuildWindow({
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button variant="default" size="sm" disabled={count === 0} onClick={go}>
+          <Button variant={replacing ? 'destructive' : 'default'} size="sm" disabled={count === 0} onClick={go}>
             <Database className="size-3.5" data-icon="inline-start" />
-            {taken && mode === 'append' ? t('Add games') : t('Build')}
+            {replacing
+              ? t('Replace “{name}”', { name: target })
+              : taken
+                ? t('Add games')
+                : t('Build')}
           </Button>
         </div>
       </DialogContent>
