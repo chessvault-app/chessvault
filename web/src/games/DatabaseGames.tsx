@@ -1,5 +1,5 @@
 ﻿import { CornerDownLeft, Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { Suspense, lazy, memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -56,6 +56,8 @@ const EditorView = lazy(() =>
 );
 import { GamePreview, GameRow, collectionKey, type GameSummary, type Preview } from './shared';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
+import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
 /**
@@ -142,11 +144,14 @@ const RefRow = memo(function RefRow({
   onPreview,
   loadPreview,
   onDetails,
+  standing,
 }: {
   game: RefGame;
   /** False while a details panel stands beside the table, so the
       Notation column is not drawn — see GameTable. */
   withNotation?: boolean;
+  /** Selection mode's checkbox (games/selection). */
+  standing?: ReactNode;
   summary: GameSummary;
   table: boolean;
   selected: boolean;
@@ -163,6 +168,7 @@ const RefRow = memo(function RefRow({
       <GameTableRow
         game={summary}
         withNotation={withNotation}
+        standing={standing}
         selected={selected}
         onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
@@ -176,6 +182,7 @@ const RefRow = memo(function RefRow({
   return (
     <GameRow
       game={summary}
+      standing={standing}
       onOpen={() => onOpen(game)}
       onPreview={onPreview}
       loadPreview={() => loadPreview(game)}
@@ -415,7 +422,29 @@ export function DatabaseGames({
   // ↑/↓/Enter/Escape drive the table selection; the ref is filled below
   // the early returns, once the rows on screen are known.
   const tableNav = useTableNav(table);
-  const tableVars = useGameTableVars(false, !besideDetails);
+  // Selecting several to add, the archive's mode and pieces
+  // (games/selection). "All" is the games not yet in the collection, the
+  // archive's reading: a row already kept can still be ticked by hand,
+  // but one press on the master box must not re-add a page. Escape
+  // leaves. A batch here is one request per game, each fetching its PGN
+  // then posting it, so the button counts them up as they land.
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState<{ done: number; total: number } | null>(null);
+  const stopSelecting = (): void => {
+    setSelecting(false);
+    setPicked(new Set());
+  };
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || dialogOpen()) return;
+      stopSelecting();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selecting]);
+  const tableVars = useGameTableVars(selecting, !besideDetails);
 
   const searchSeq = useRef(0);
   /** What the text rows last answered — closing a hunt refetches only
@@ -1229,11 +1258,62 @@ export function DatabaseGames({
     clear: () => onSelect?.(null),
   };
 
+  const uncollected = navRows.filter((g) => !inCollection(g));
+  const collectMany = async (): Promise<void> => {
+    const list = navRows.filter((g) => picked.has(refGameKey(g.id)));
+    if (list.length === 0) return;
+    setAdding({ done: 0, total: list.length });
+    let done = 0;
+    for (const g of list) {
+      await collect(g);
+      done += 1;
+      setAdding({ done, total: list.length });
+    }
+    setAdding(null);
+    stopSelecting();
+  };
+  const selectionBar = (
+    <SelectionBar
+      all={{
+        total: uncollected.length,
+        label: t('Select all new'),
+        none: {
+          label: t('Select all new: none are new'),
+          tip: t('Every game shown is already in the collection'),
+        },
+        onChange: (on) => setPicked(on ? new Set(uncollected.map((g) => refGameKey(g.id))) : new Set()),
+      }}
+      picked={picked.size}
+      onCancel={stopSelecting}
+      actions={
+        <Button variant="default" size="sm" disabled={picked.size === 0 || adding !== null} onClick={() => void collectMany()}>
+          {adding ? t('Adding {done}/{total}…', adding) : t('Add selected')}
+        </Button>
+      }
+    />
+  );
+  const selectEntry = navRows.length > 0 && !selecting ? <SelectButton onClick={() => setSelecting(true)} /> : null;
+
   const rowItems = navRows.map((g) => (
     <RefRow
       key={g.id}
       game={g}
       withNotation={!besideDetails}
+      standing={
+        selecting ? (
+          <SelectRowCheckbox
+            checked={picked.has(refGameKey(g.id))}
+            onChange={(on) =>
+              setPicked((prev) => {
+                const next = new Set(prev);
+                if (on) next.add(refGameKey(g.id));
+                else next.delete(refGameKey(g.id));
+                return next;
+              })
+            }
+          />
+        ) : undefined
+      }
       summary={summaryOf(g)}
       table={table}
       selected={selectedKey === refGameKey(g.id)}
@@ -1255,6 +1335,7 @@ export function DatabaseGames({
         {count}
       </span>
       {dbControls}
+      {selectEntry}
     </>
   );
 
@@ -1574,6 +1655,7 @@ export function DatabaseGames({
                   {count}
                 </span>
                 {dbControls}
+                {selectEntry}
               </span>
             )}
           </div>
@@ -1595,8 +1677,8 @@ export function DatabaseGames({
         </div>
       }
       filters={filtersInRow ? undefined : filters}
-      countBand={merged ? undefined : countBand}
-      listHeader={table ? <GameTableHeader withNotation={!besideDetails} /> : undefined}
+      countBand={selecting ? selectionBar : merged ? undefined : countBand}
+      listHeader={table ? <GameTableHeader withStanding={selecting} withNotation={!besideDetails} /> : undefined}
       listVars={table ? tableVars : undefined}
       dense={table}
       // undefined when empty, or the bare bordered ul doubles the empty

@@ -66,7 +66,8 @@ screen, and the opening map's panel steps aside from the dot you chose.
   turns on selection, the same way the online archives already select
   games to add: a checkbox on every row, “Select all”, a count, and
   “Delete selected”, which deletes the lot under one undo. Escape or
-  Cancel leaves it.
+  Cancel leaves it. The reference databases select the same way, to
+  add several games to the collection in one go.
 - **A note opens ready to edit on a desktop.** Click into the text and
   type; the “Read” button goes back to reading, where a plain click
   follows a wiki link (Ctrl/⌘+click follows one while editing). A phone
