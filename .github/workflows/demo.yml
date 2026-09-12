@@ -36,6 +36,13 @@ on:
   push:
     tags: ['v*']
 
+# Read-only, like verify.yml and desktop.yml. Stated rather than left to
+# the repository default, which a setting elsewhere can widen to write
+# without anything in this file changing. The publish step does not use
+# GITHUB_TOKEN at all; it writes to the demo repo with its own deploy key.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -99,7 +106,18 @@ jobs:
           path: dist-site
 
       - name: Publish
-        uses: peaceiris/actions-gh-pages@v4
+        # Pinned to the commit v4.1.0 points at, not to `v4`.
+        #
+        # This is the only third-party action in the repo, and it is the
+        # one step handed DEMO_DEPLOY_KEY, which can write to the public
+        # site. A tag is a label its owner can move, so `@v4` meant
+        # "whatever that account publishes next" ran with a key to a site
+        # this project publishes. A SHA cannot be moved.
+        #
+        # Bump it by resolving the tag again:
+        #   gh api repos/peaceiris/actions-gh-pages/git/ref/tags/v4
+        # then dereference the annotated tag to its commit.
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           deploy_key: ${{ secrets.DEMO_DEPLOY_KEY }}
           external_repository: ${{ vars.DEMO_REPO }}

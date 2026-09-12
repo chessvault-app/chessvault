@@ -197,7 +197,7 @@ function StudyList() {
         </p>
       )}
 
-      <Arrival pending={pending}>
+      <Arrival pending={pending && !listLoaded}>
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
         // that fills in — but only once the wait is long enough to

@@ -105,6 +105,24 @@ export default defineConfig({
     fs: {
       // Allow serving the engine binaries straight out of node_modules in dev.
       allow: [repo],
+      /**
+       * ...but not the vault, which `allow: [repo]` otherwise hands out.
+       *
+       * `host: true` above puts this server on the LAN on purpose, so the
+       * phone can reach it. Together those two meant anyone on the same
+       * network could fetch
+       * `http://<lan>:5173/@fs/<repo>/vault/config.json` and read the
+       * Lichess token, the scrypt password hash and the TOTP secret out
+       * of a running developer's real vault. Vite's own `deny` defaults
+       * cover `.env` and key files; config.json is not one of those
+       * shapes, so it has to be named.
+       *
+       * The whole vault, not just the two files: notes, games and studies
+       * are the user's data and the dev server has no business serving any
+       * of them. `deny` beats `allow`, and the app reads all of this
+       * through the API on 8787 rather than off disk.
+       */
+      deny: ['**/vault/**', '**/vault-backups/**'],
     },
   },
   preview: { port: 4173, headers: crossOriginIsolation },

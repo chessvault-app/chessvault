@@ -94,6 +94,15 @@ const countValidNodes = (n: unknown, isRoot: boolean): number => {
   return count;
 };
 
+/**
+ * A JSON.parse reviver that drops the three key names which are not data.
+ * Returning undefined deletes the key, so what comes back is a plain
+ * document with no way to reach an object's prototype.
+ */
+const PROTOTYPE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const dropPrototypeKeys = (key: string, value: unknown): unknown =>
+  PROTOTYPE_KEYS.has(key) ? undefined : value;
+
 const validDoc = (doc: unknown): doc is MapDoc => {
   if (typeof doc !== 'object' || doc === null) return false;
   const d = doc as Partial<MapDoc>;
@@ -177,7 +186,18 @@ export function openingMapApi(stateDir: string = resolve(VAULT, 'repertoire')): 
   });
 
   api.put('/openingmap', async (c) => {
-    const body = (await c.req.json().catch(() => null)) as unknown;
+    // Parsed with a reviver rather than c.req.json(), so the keys that
+    // mean something to an object cannot get in. validDoc below checks
+    // the SHAPE and the document is then stored verbatim, unknown keys
+    // included, so `{"__proto__": {...}}` round-tripped: JSON.parse makes
+    // that an own property, JSON.stringify writes it back out, and GET
+    // hands it to a browser that may well spread or Object.assign it.
+    // Dropping the three names costs nothing, since none of them is a
+    // field this document has.
+    const body = await c.req
+      .text()
+      .then((raw) => JSON.parse(raw, dropPrototypeKeys) as unknown)
+      .catch(() => null);
     if (!validDoc(body)) return c.json({ error: 'not a valid opening map document' }, 400);
     const text = JSON.stringify(body, null, 2);
     if (text.length > MAX_BYTES) return c.json({ error: 'map too large' }, 400);

@@ -151,7 +151,7 @@ describe('password change', () => {
     const stored = config().appPassword as string;
     expect(isHashedPassword(stored)).toBe(true);
     expect(stored).not.toContain('a-better-password');
-    expect(verifyPassword('a-better-password', stored)).toBe(true);
+    expect(await verifyPassword('a-better-password', stored)).toBe(true);
   });
 
   it('verifies the current password in its hashed form too', async () => {
@@ -165,7 +165,7 @@ describe('password change', () => {
     const ok = await json('POST', '/api/settings/password', { next: 'first-password' });
     expect(ok.status).toBe(200);
     expect(isHashedPassword(config().appPassword as string)).toBe(true);
-    expect(verifyPassword('first-password', config().appPassword as string)).toBe(true);
+    expect(await verifyPassword('first-password', config().appPassword as string)).toBe(true);
   });
 
   it('revokes every stored session — reauth means reauth everywhere', async () => {
@@ -314,6 +314,25 @@ describe('2fa', () => {
     const off = await json('POST', '/api/settings/2fa/disable', { code: totpAt(start.secret, Date.now())! });
     expect(off.status).toBe(200);
     expect(config().totpSecret).toBeUndefined();
+  });
+
+  it('stops answering after ten wrong codes, so the second factor cannot be guessed off', async () => {
+    const start = await (await json('POST', '/api/settings/2fa/start')).json();
+    await json('POST', '/api/settings/2fa/enable', {
+      secret: start.secret,
+      code: totpAt(start.secret, Date.now())!,
+    });
+    // Six digits is a million guesses, and disable is the route that
+    // takes the factor away, so it cannot answer a scripted stream of them.
+    for (let i = 0; i < 10; i++) {
+      expect((await json('POST', '/api/settings/2fa/disable', { code: '111111' })).status).toBe(403);
+    }
+    expect((await json('POST', '/api/settings/2fa/disable', { code: '111111' })).status).toBe(429);
+    // The real code is refused too while the window is open: that is the
+    // point, and the owner waits it out like any lockout.
+    const real = await json('POST', '/api/settings/2fa/disable', { code: totpAt(start.secret, Date.now())! });
+    expect(real.status).toBe(429);
+    expect(config().totpSecret).toBe(start.secret);
   });
 
   it('evicts every session on enable and on disable — 2FA is a credential rotation', async () => {

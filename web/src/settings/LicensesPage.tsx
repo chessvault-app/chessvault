@@ -248,7 +248,7 @@ export function LicensesPage() {
           </ChipRow>
         </div>
       )}
-      <Arrival pending={slow}>
+      <Arrival pending={slow && !inventory && !failed}>
       {failed ? (
         <p className="text-muted-foreground text-sm">{t('The licence list could not be loaded.')}</p>
       ) : !inventory ? (

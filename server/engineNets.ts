@@ -71,6 +71,13 @@ export async function downloadNet(
       const buf = chunk as Buffer;
       hash.update(buf);
       bytes += buf.byteLength;
+      // The expected decoded size is known from NETS and was being used
+      // only to draw a progress bar. The upstream gzip-encodes and fetch
+      // inflates as it streams, so Content-Length bounds nothing: a
+      // compromised or MITM'd net server answering with an endless
+      // inflating body would write until the disk filled. The checksum
+      // below catches a WRONG net, but only after every byte has landed.
+      if (size && bytes > size) throw new Error(`${name} is longer than its published size`);
       if (!out.write(buf)) await new Promise<void>((r) => out.once('drain', r));
       onProgress({ bytes, total });
     }
