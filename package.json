@@ -99,7 +99,7 @@
     "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^6.1.1",
     "concurrently": "^10.0.5",
-    "electron": "^43.7.0",
+    "electron": "^44.3.0",
     "electron-builder": "^26.15.3",
     "gifenc": "^1.0.3",
     "oxlint": "^1.82.0",
