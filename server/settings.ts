@@ -215,7 +215,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // Either form verifies: the scrypt hash every write below leaves, or
     // the plaintext of a config that predates hashing (see password.ts).
     const current = config.appPassword?.trim() || null;
-    if (current && !verifyPassword(body.current ?? '', current)) {
+    if (current && !(await verifyPassword(body.current ?? '', current))) {
       return c.json({ error: 'current password is wrong' }, 403);
     }
     const next = body.next?.trim() ?? '';
@@ -405,7 +405,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // session or CSRF drive-by from destroying data, and is a deliberate
     // friction on an irreversible action. Ungated (local) vaults skip it.
     const gate = readConfig().appPassword?.trim();
-    if (gate && !verifyPassword(body.password ?? '', gate)) {
+    if (gate && !(await verifyPassword(body.password ?? '', gate))) {
       return c.json({ error: 'password required to wipe' }, 403);
     }
     // Everything in the vault goes — games, studies, notes, puzzles, books,

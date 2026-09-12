@@ -151,7 +151,7 @@ describe('password change', () => {
     const stored = config().appPassword as string;
     expect(isHashedPassword(stored)).toBe(true);
     expect(stored).not.toContain('a-better-password');
-    expect(verifyPassword('a-better-password', stored)).toBe(true);
+    expect(await verifyPassword('a-better-password', stored)).toBe(true);
   });
 
   it('verifies the current password in its hashed form too', async () => {
@@ -165,7 +165,7 @@ describe('password change', () => {
     const ok = await json('POST', '/api/settings/password', { next: 'first-password' });
     expect(ok.status).toBe(200);
     expect(isHashedPassword(config().appPassword as string)).toBe(true);
-    expect(verifyPassword('first-password', config().appPassword as string)).toBe(true);
+    expect(await verifyPassword('first-password', config().appPassword as string)).toBe(true);
   });
 
   it('revokes every stored session — reauth means reauth everywhere', async () => {

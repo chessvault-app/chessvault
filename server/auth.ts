@@ -29,6 +29,28 @@ import { verifyTotp } from './totp.ts';
  */
 
 const COOKIE = 'vault_session';
+/**
+ * How many password verifications may be in flight at once, process-wide.
+ *
+ * Node's libuv pool is 4 threads by default and is shared with every
+ * async fs read the server does, so letting scrypt take all of them would
+ * stall unrelated work rather than merely slowing logins down. Four
+ * leaves the pool room to breathe while still letting a household of
+ * devices sign in together; beyond it callers are shed with the same 429
+ * the per-IP throttle uses, which the client already knows how to show.
+ */
+const MAX_CONCURRENT_HASHES = 4;
+let hashing = 0;
+
+async function countedVerify(supplied: string, stored: string): Promise<boolean> {
+  hashing++;
+  try {
+    return await verifyPassword(supplied, stored);
+  } finally {
+    hashing--;
+  }
+}
+
 const ATTEMPT_LIMIT = 10;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 /** Cookie Max-Age and the store's own expiry — one number, so a cookie the
@@ -345,9 +367,18 @@ export function authApi(
 
     const ip = clientIp(peerAddress(c.env), c.req.header('x-forwarded-for'));
     if (isThrottled(ip)) return c.json({ error: 'too many attempts, try again later' }, 429);
+    // The per-IP throttle above counts attempts from ONE caller. This
+    // counts the scrypt work in flight from all of them at once: each
+    // verification occupies a libuv pool thread for tens of milliseconds,
+    // and a flood from many addresses (or a spoofed X-Forwarded-For on a
+    // deployment that trusts one) would fill that pool, which every other
+    // async filesystem read in the process shares. Shed rather than queue.
+    if (hashing >= MAX_CONCURRENT_HASHES) {
+      return c.json({ error: 'too many attempts, try again later' }, 429);
+    }
 
     const body = (await c.req.json().catch(() => ({}))) as { password?: string; code?: string };
-    if (typeof body.password !== 'string' || !verifyPassword(body.password, configured)) {
+    if (typeof body.password !== 'string' || !(await countedVerify(body.password, configured))) {
       recordFailure(ip);
       return c.json({ error: 'wrong password' }, 401);
     }
