@@ -179,6 +179,15 @@ export function SearchInput({
   highlight?: ReactNode;
 }) {
   const [focused, setFocused] = useState(false);
+  // Focus anywhere inside the field's box, which is what Cancel follows.
+  // `focused` is the INPUT's own, and it goes false the instant Tab leaves
+  // the input — including when Tab lands on Cancel, which then narrowed
+  // itself to nothing and hid itself from assistive technology with the
+  // focus already on it. A forward Tab out of an empty search field
+  // reached a button measured at 0x36, opacity 0 and aria-hidden: a stop
+  // that is not there. Focus must never sit inside an aria-hidden subtree,
+  // so the state Cancel is drawn in is the one that includes Cancel.
+  const [within, setWithin] = useState(false);
   // For an uncontrolled caller, which the X still has to know about.
   const [typed, setTyped] = useState('');
   const self = useRef<HTMLInputElement | null>(null);
@@ -207,12 +216,22 @@ export function SearchInput({
 
   return (
     <span
+      // focusin and focusout, which bubble, so this is the whole box's
+      // answer to "is anyone in here" — the input, its X, and Cancel.
+      // relatedTarget is where focus went; inside is still inside.
+      onFocus={() => setWithin(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setWithin(false);
+      }}
       className={cn(
         'relative inline-flex items-center',
         className,
         // The whole line, phones only, and only while it is being used.
         // The row it stands in hides everything beside it meanwhile (see
-        // searchRowClass); this fills the room that opens up.
+        // searchRowClass); this fills the room that opens up. The INPUT's
+        // own focus, matching the row's CSS rule, which reads the same
+        // thing: the two must agree or the field is wide in a row that has
+        // given its width back.
         focused && 'max-sm:w-full',
       )}
     >
@@ -303,11 +322,16 @@ export function SearchInput({
           narrowed to nothing: a button that disappears on blur is a
           button whose own press dismisses it before the click lands.
           preventDefault on the press is the same protection — the field
-          stays focused until the click has run, and then this blurs it. */}
+          stays focused until the click has run, and then this blurs it.
+
+          `within`, not `focused`: narrowing to nothing has to stop short
+          of the one case where this button IS what the focus moved to.
+          It also makes Cancel reachable while the X holds the focus,
+          which a field with text in it had no way to reach at all. */}
       <button
         type="button"
-        tabIndex={focused ? 0 : -1}
-        aria-hidden={!focused}
+        tabIndex={within ? 0 : -1}
+        aria-hidden={!within}
         onPointerDown={(e) => e.preventDefault()}
         onClick={() => empty('leave')}
         className={cn(
@@ -320,7 +344,7 @@ export function SearchInput({
           'bg-foreground/8 hover:bg-foreground/14 ring-border ring-1 ring-inset backdrop-blur-md',
           'transition-[max-width,margin,padding,opacity] duration-150',
           cancelSizes[inputSize ?? 'md'],
-          focused ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',
+          within ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',
         )}
       >
         {t('Cancel')}
