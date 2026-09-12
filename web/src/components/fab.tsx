@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useCloseRequest } from '@/hooks/dialog-focus';
+import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { ActionMenu } from '@/components/action-menu';
 import { t } from '@/lib/i18n';
 
@@ -37,9 +38,21 @@ export interface FabAction {
  * shrink-0 because it lives in a flex column, which would otherwise
  * squash it back to nothing. Gone from md, where the Fab is hidden and
  * the header's Create button takes over.
+ *
+ * The room is also what the page scrolls a focused control into. A thumb
+ * gets a row out from under the disc by scrolling; a keyboard cannot, and
+ * the browser stops scrolling as soon as a control is inside the
+ * scrollport, which the disc's own corner is too - so Tab landed on a
+ * card's more-actions button with the disc on top of it (measured on a
+ * phone-width shelf: 15 of 156 ring pixels visible). This spacer is
+ * already the statement of how much room the disc needs, so it publishes
+ * that same height to the scroller as scroll-padding rather than a second
+ * number saying it again (hooks/use-pinned-band). Zero on a desktop,
+ * where the spacer is not drawn.
  */
 export function FabSpacer() {
-  return <div aria-hidden className="h-[5.5rem] w-full shrink-0 md:hidden" />;
+  const pin = usePinnedBand('bottom');
+  return <div ref={pin} aria-hidden className="h-[5.5rem] w-full shrink-0 md:hidden" />;
 }
 
 /**

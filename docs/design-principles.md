@@ -873,6 +873,24 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   hover halo, which moved with it, and its focus halo, which had to be
   hung on `has-[:focus-visible]` before it painted at all; `slider.tsx`
   records what they measure.
+- **Anything pinned over a scroller tells it so.** A ring at 3:1 is not
+  an indicator if it is painted underneath something. The browser's own
+  scroll for Tab and Shift+Tab stops as soon as a control is inside the
+  scrollport, and a pinned band is inside the scrollport too, so the
+  settings section row hid whatever Shift+Tab landed on at the top of
+  the page (0 of 1,260 ring pixels visible), the note's header hid a
+  board's controls, and a phone's create disc hid a card's and a game
+  row's more-actions button. `scroll-padding` is the property for that,
+  and its number is the band's OWN measured height, published to the
+  scroller by `hooks/use-pinned-band` and read back in `index.css`. So a
+  60px row, the 84px that row becomes when it wraps and a 65px document
+  header all clear themselves with no constant written down: a band that
+  grows grows the clearance, measured live at 60px to 132px as names
+  were added to the settings row. The floating disc is the one that is
+  not inside the scroller, and there the room it already reserves does
+  the telling: the Fab's end spacer publishes its own height, and the
+  games list's `scroll-pb` sits on the same line as the `pb` it matches,
+  so the two cannot drift.
 
 ## The mark
 
