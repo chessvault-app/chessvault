@@ -154,15 +154,17 @@
          leaving the mark. The demo does NOT go any more: it shortens, the
          way it does on the landing page, because it is the one thing in
          the bar that is an action. */
-      /* Clipped, not display:none. The words are the link's only name:
-         the glyph is aria-hidden, and with both spans gone the name was
-         the &nbsp; between them, which Chrome exposes as one U+00A0 and
-         axe trims to nothing (link-name, serious, at 352px and below).
-         Absolutely positioned, a clipped span is no flex item, so the
-         gap does not count it and the bar measures the same. */
-      .mark { position: relative; }
-      @media (max-width: 33rem) { .mark small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
-      @media (max-width: 22rem) { .mark .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
+      /* display:none, and the link's name is its aria-label. The words
+         are the only name the glyph-only link has (the svg is
+         aria-hidden), and with both spans gone the name was the &nbsp;
+         between them, which Chrome exposes as one U+00A0 and axe trims to
+         nothing (link-name, serious, at 352px and below). Clipping the
+         spans instead of removing them was tried and measured: Chromium
+         still reserves a flex gap for an absolutely positioned child, so
+         the link's box grew 8px (35.67 to 43.67 at 320) and the bar
+         shifted with it at 353. The label costs no layout. */
+      @media (max-width: 33rem) { .mark small { display: none; } }
+      @media (max-width: 22rem) { .mark .wordmark { display: none; } }
       /* The bare hex, no tile: next to the squared Contents button a tiled
          logo reads as a second button. currentColor keeps it right in both
          themes. */
@@ -434,9 +436,11 @@
             <line x1="9" y1="4" x2="9" y2="20" />
           </svg>
         </button>
-        <a class="mark" href="./">
+        <a class="mark" href="./" aria-label="chessvault docs" data-ko-label="chessvault 문서">
           <!-- The mark alone, no tile: beside the squared Contents
-               button, two squares in a row read as two buttons. -->
+               button, two squares in a row read as two buttons. The
+               aria-label repeats the visible words (2.5.3) so the name
+               survives the widths that hide them; see the stylesheet. -->
           <svg viewBox="0 0 80 80" fill="none" aria-hidden="true">
             <path d="M22 66 C24 61 27 57 29 54 L19 45 L11 39 L19 29 L33 11 L39 19 L45 15 L52 23 L61 33 C64 41 65 53 64 66" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
