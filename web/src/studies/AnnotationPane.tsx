@@ -122,6 +122,7 @@ export function AnnotationPane({
   );
   const box = useRef<HTMLTextAreaElement>(null);
   const sheetBox = useRef<HTMLTextAreaElement>(null);
+  const pane = useRef<HTMLDivElement>(null);
   // The sheet's field is named by the sheet's title, which is the same text.
   const sheetTitleId = useId();
   const caret = useRef<number | null>(null);
@@ -199,6 +200,20 @@ export function AnnotationPane({
   useEffect(() => {
     localStorage.setItem(PALETTE_KEY, paletteOpen ? 'open' : 'closed');
   }, [paletteOpen]);
+
+  // This pane is the last band of a panel that scrolls once its bands
+  // outgrow it, and turning editing on is what adds it: on a 1280x720
+  // window the comment box arrived entirely below the panel's bottom edge,
+  // 0px of it on screen, on the click that asked for it. So the pane
+  // brings itself into view when it appears, and again when the glyph row
+  // above the box comes or goes (the cursor crossing the root), which is
+  // the other moment it grows. Not on every cursor move: stepping through
+  // the line must not scroll the moves out from under the pointer.
+  // `nearest`, so a pane already in view moves nothing, and before paint.
+  useLayoutEffect(() => {
+    if (!editing) return;
+    pane.current?.scrollIntoView({ block: 'nearest' });
+  }, [editing, atRoot]);
 
   // Keep the draft in step when the cursor moves to another node.
   useEffect(() => {
@@ -338,7 +353,7 @@ export function AnnotationPane({
     ) : null;
 
   return (
-    <div className={cn('border-border flex shrink-0 flex-col gap-1.5 border-t px-3 py-2', className)}>
+    <div ref={pane} className={cn('border-border flex shrink-0 flex-col gap-1.5 border-t px-3 py-2', className)}>
       {!atRoot && paletteOpen && palette}
       <div className="flex items-stretch gap-1">
         {!atRoot && toggle}
