@@ -241,6 +241,27 @@
       }
       nav.side a:hover { background: var(--muted); color: var(--foreground); }
       nav.side a[aria-current='page'] { background: var(--muted); color: var(--foreground); font-weight: 500; }
+      /* ---- The manual's search. A reference is used by lookup, and
+         twenty-three pages behind one visible one gave the reader no
+         way to ask where a word is. The field is the sidebar's first
+         row, in the .btn's box (same height, radius and border) so the
+         two controls at the top of the page agree. While it holds a
+         query the contents list gives way to the hits: page › section,
+         each a #page/section link. ---- */
+      nav.side .search { display: block; margin: 0 var(--s2) var(--s2); }
+      nav.side .search input {
+        width: 100%; height: 2.25rem; padding-inline: 0.75rem;
+        border: 1px solid var(--border); border-radius: var(--radius-lg);
+        background: var(--background); color: var(--foreground);
+        font: inherit; font-size: var(--t-md);
+      }
+      nav.side .search input::placeholder { color: var(--muted-foreground); }
+      nav.side .search input:focus-visible { border-color: var(--ring); }
+      nav.side .hits { display: none; }
+      nav.side.searching > h5, nav.side.searching > a { display: none; }
+      nav.side.searching .hits { display: block; }
+      nav.side .hits a small { display: block; color: var(--muted-foreground); font-size: var(--t-sm); }
+      nav.side .hits p { margin: var(--s2); color: var(--muted-foreground); font-size: var(--t-sm); }
       .scrim { display: none; }
 
       main.content { flex: 1; min-width: 0; }
@@ -356,13 +377,18 @@
 
       /* ---- Pages: one visible at a time once the script is running.
          Without the script every page renders in order, so the document
-         still reads (and prints) as one manual. ---- */
-      body.paged .page { display: none; }
-      body.paged .page.is-active { display: block; }
+         still reads (and prints) as one manual. The script hides the
+         others with hidden="until-found" rather than a display:none
+         class: the browser's own find-in-page then still searches the
+         twenty-two pages that are not on screen, and a match fires
+         beforematch, which the router answers by showing that page.
+         Where the value is unknown the attribute falls back to plain
+         hidden, which is the display:none this replaced. ---- */
       /* An anchored load scrolls the section to the viewport's top, where
          the sticky header covers its heading — this keeps it clear, for
-         the no-script reader and the moment before show() rewinds. */
-      .page { scroll-margin-top: calc(var(--header-h) + var(--s4)); }
+         the no-script reader and the moment before show() rewinds. The
+         headings take it too: #page/section lands on one. */
+      .page, .page h2 { scroll-margin-top: calc(var(--header-h) + var(--s4)); }
 
       .pager { display: flex; justify-content: space-between; gap: var(--s3); margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--border); }
       .pager a {
@@ -436,6 +462,10 @@
 
     <div class="shell">
       <nav class="side" id="side-nav" aria-label="Documentation pages">
+        <form class="search" role="search" onsubmit="return false">
+          <input type="search" id="manual-search" autocomplete="off" placeholder="Search the manual" aria-label="Search the manual" data-ko-label="매뉴얼 검색" data-ko-placeholder="매뉴얼 검색" />
+        </form>
+        <div class="hits" id="search-hits" aria-live="polite"></div>
         <h5 data-ko="첫걸음">Start here</h5>
         <a href="#overview" data-ko="개요">Overview</a>
         <a href="#start" data-ko="시작하기">Getting started</a>
@@ -2923,10 +2953,46 @@
           var link = links.filter(function (a) { return a.getAttribute('href') === '#' + id; })[0];
           return link ? link.textContent : id;
         };
-        var current = function () {
-          var h = location.hash.replace(/^#/, '');
-          return ids.indexOf(h) >= 0 ? h : ids[0];
+        // ---- Section anchors. Every h2 gets an id from its English
+        // text (the pages run before the language switch, so this reads
+        // English whatever the reader chose), unique within its page, and
+        // the hash routes as #page or #page/section. The ids are given
+        // here rather than in the markup so a heading reworded in one
+        // language cannot drift from its anchor in the other.
+        var slug = function (text) {
+          return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         };
+        pages.forEach(function (s) {
+          var used = {};
+          s.querySelectorAll('.doc h2').forEach(function (h) {
+            var id = slug(h.textContent) || 'section';
+            var n = 1;
+            while (used[id]) id = slug(h.textContent) + '-' + ++n;
+            used[id] = true;
+            h.id = s.id + '/' + id;
+          });
+        });
+        var parse = function () {
+          var h = decodeURIComponent(location.hash.replace(/^#/, ''));
+          var slash = h.indexOf('/');
+          var page = slash >= 0 ? h.slice(0, slash) : h;
+          return { page: ids.indexOf(page) >= 0 ? page : ids[0], section: slash >= 0 ? h : '' };
+        };
+        var current = function () {
+          return parse().page;
+        };
+        // ---- The page's title names the page. All twenty-three read
+        // "Chess Vault — docs" in the tab, the history and a screen
+        // reader's page announcement (2.4.2). Re-run by the language
+        // switch so the Korean title follows.
+        var siteTitle = function () {
+          return document.documentElement.lang === 'ko' ? 'Chess Vault 문서' : 'Chess Vault docs';
+        };
+        var setTitle = function () {
+          var id = current();
+          document.title = id === ids[0] ? siteTitle() : labelOf(id) + ' · ' + siteTitle();
+        };
+        window.docsSetTitle = setTitle;
         renderPager = function () {
           var id = current();
           var i = ids.indexOf(id);
@@ -2954,24 +3020,108 @@
           doc.appendChild(nav);
         };
         var show = function () {
-          var id = current();
-          pages.forEach(function (s) { s.classList.toggle('is-active', s.id === id); });
+          var target = parse();
+          var id = target.page;
+          pages.forEach(function (s) {
+            s.classList.toggle('is-active', s.id === id);
+            if (s.id === id) s.removeAttribute('hidden');
+            else s.setAttribute('hidden', 'until-found');
+          });
           links.forEach(function (a) {
             if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'page');
             else a.removeAttribute('aria-current');
           });
           renderPager();
+          setTitle();
           // closeNav, not setNavOpen: a page picked from the drawer leaves
           // focus on a link that is about to be inert. It only moves focus
           // if the drawer was open, so the first call on load takes it
           // from nobody.
           closeNav();
           // After the browser's own anchor scroll, not before it — a page
-          // change starts reading at the top.
-          setTimeout(function () { window.scrollTo(0, 0); }, 0);
+          // change starts reading at the top, and a #page/section link at
+          // its heading (scroll-margin-top keeps it clear of the header).
+          setTimeout(function () {
+            var heading = target.section && document.getElementById(target.section);
+            if (heading) heading.scrollIntoView();
+            else window.scrollTo(0, 0);
+          }, 0);
         };
         window.addEventListener('hashchange', show);
+        // Find-in-page reaching a hidden page: route to it, which shows it.
+        pages.forEach(function (s) {
+          s.addEventListener('beforematch', function () {
+            if (s.id !== current()) location.hash = '#' + s.id;
+          });
+        });
         show();
+
+        // ---- Search: every page's sections, matched on the text the
+        // reader sees (so it follows the language), page heading first.
+        var input = document.getElementById('manual-search');
+        var hits = document.getElementById('search-hits');
+        var nav = document.getElementById('side-nav');
+        var sections = function () {
+          var out = [];
+          pages.forEach(function (s) {
+            var doc = s.querySelector('.doc');
+            if (!doc) return;
+            var head = { page: s.id, id: s.id, title: labelOf(s.id), text: '' };
+            var cur = head;
+            out.push(head);
+            Array.prototype.forEach.call(doc.children, function (el) {
+              if (el.classList.contains('pager')) return;
+              if (el.tagName === 'H2') {
+                cur = { page: s.id, id: el.id, title: el.textContent.trim(), text: '' };
+                out.push(cur);
+              } else cur.text += ' ' + el.textContent;
+            });
+          });
+          return out;
+        };
+        var render = function () {
+          var q = input.value.trim().toLowerCase();
+          nav.classList.toggle('searching', q.length > 0);
+          hits.innerHTML = '';
+          if (!q) return;
+          var found = sections().filter(function (sec) {
+            return sec.title.toLowerCase().indexOf(q) >= 0 || sec.text.toLowerCase().indexOf(q) >= 0;
+          });
+          found.sort(function (a, b) {
+            var ta = a.title.toLowerCase().indexOf(q) >= 0 ? 0 : 1;
+            var tb = b.title.toLowerCase().indexOf(q) >= 0 ? 0 : 1;
+            return ta - tb;
+          });
+          if (!found.length) {
+            var none = document.createElement('p');
+            none.textContent = document.documentElement.lang === 'ko' ? '찾은 곳이 없습니다.' : 'Nothing found.';
+            hits.appendChild(none);
+            return;
+          }
+          found.slice(0, 40).forEach(function (sec) {
+            var a = document.createElement('a');
+            a.href = '#' + sec.id;
+            a.textContent = sec.title;
+            if (sec.id !== sec.page) {
+              var where = document.createElement('small');
+              where.textContent = labelOf(sec.page);
+              a.appendChild(where);
+            }
+            hits.appendChild(a);
+          });
+        };
+        input.addEventListener('input', render);
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') {
+            var first = hits.querySelector('a');
+            if (first) first.click();
+          } else if (event.key === 'Escape' && input.value) {
+            input.value = '';
+            render();
+            event.stopPropagation();
+          }
+        });
+        window.docsRerender = render;
       })();
 
       // ---- The narrow layout's Contents button, its scrim and Escape.
@@ -3019,6 +3169,13 @@
         labels.forEach(function (node) {
           englishLabels.push(node.getAttribute('aria-label') || '');
         });
+        // And the search field's placeholder, the one string in an
+        // attribute that is neither alt nor a name.
+        var placeholders = document.querySelectorAll('[data-ko-placeholder]');
+        var englishPlaceholders = [];
+        placeholders.forEach(function (node) {
+          englishPlaceholders.push(node.getAttribute('placeholder') || '');
+        });
         function apply(lang) {
           nodes.forEach(function (node, i) {
             node.innerHTML = lang === 'ko' ? node.getAttribute('data-ko') : english[i];
@@ -3031,7 +3188,14 @@
             node.setAttribute('aria-label', label);
             if (node.hasAttribute('title')) node.setAttribute('title', label);
           });
+          placeholders.forEach(function (node, i) {
+            node.setAttribute('placeholder', lang === 'ko' ? node.getAttribute('data-ko-placeholder') : englishPlaceholders[i]);
+          });
           document.documentElement.lang = lang;
+          // The title and any open search results are in the page's
+          // language too.
+          if (window.docsSetTitle) window.docsSetTitle();
+          if (window.docsRerender) window.docsRerender();
           document.querySelectorAll('.lang button').forEach(function (button) {
             button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
           });
