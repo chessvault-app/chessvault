@@ -652,7 +652,13 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
 
     let wanted: number[];
     if (body.all) wanted = games.map((_, i) => i);
-    else if (Array.isArray(body.indexes)) wanted = body.indexes;
+    // Deduplicated, which is also what bounds it. The list is the games
+    // the user ticked, so repeats are never meant; unchecked, one request
+    // could name index 0 a million times over and get a million files
+    // written and a million existsSync calls for them, all inside a
+    // single handler. The archive's own length is the natural ceiling and
+    // a Set is how you say so without inventing a number.
+    else if (Array.isArray(body.indexes)) wanted = [...new Set(body.indexes)];
     else if (Number.isInteger(body.index)) wanted = [body.index!];
     else return c.json({ error: 'need index, indexes or all' }, 400);
 

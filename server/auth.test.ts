@@ -363,14 +363,14 @@ describe('auth gate', () => {
 });
 
 describe('plaintext config migration', () => {
-  it('rewrites a plaintext appPassword to its scrypt form, touching nothing else', () => {
+  it('rewrites a plaintext appPassword to its scrypt form, touching nothing else', async () => {
     const cfg = join(dir, 'config.json');
     writeFileSync(cfg, JSON.stringify({ appPassword: 'hunter22', keepMe: 1 }));
     migratePlaintextPassword(cfg);
     const after = JSON.parse(readFileSync(cfg, 'utf-8')) as Record<string, unknown>;
     expect(after.keepMe).toBe(1);
     expect(isHashedPassword(after.appPassword as string)).toBe(true);
-    expect(verifyPassword('hunter22', after.appPassword as string)).toBe(true);
+    expect(await verifyPassword('hunter22', after.appPassword as string)).toBe(true);
     // Idempotent: a second run must not re-hash the hash.
     migratePlaintextPassword(cfg);
     expect((JSON.parse(readFileSync(cfg, 'utf-8')) as Record<string, unknown>).appPassword).toBe(

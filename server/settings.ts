@@ -215,7 +215,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // Either form verifies: the scrypt hash every write below leaves, or
     // the plaintext of a config that predates hashing (see password.ts).
     const current = config.appPassword?.trim() || null;
-    if (current && !verifyPassword(body.current ?? '', current)) {
+    if (current && !(await verifyPassword(body.current ?? '', current))) {
       return c.json({ error: 'current password is wrong' }, 403);
     }
     const next = body.next?.trim() ?? '';
@@ -342,6 +342,33 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   // nothing is stored until /enable proves the authenticator actually has
   // it by verifying a live code. No lockout half-states possible.
 
+  /**
+   * How many wrong authenticator codes these routes take before they stop
+   * answering.
+   *
+   * /auth/login throttles its TOTP check; these two did not, and they are
+   * the ones that TURN 2FA OFF. A code is six digits, so a million
+   * guesses walks the whole space, and the window verifyTotp allows means
+   * roughly three of those are live at any moment. Against an unthrottled
+   * route that is minutes of scripted requests, and the reward is exactly
+   * the second factor the owner added.
+   *
+   * Post-auth, so the caller already holds a session; this is the guard
+   * for when that session is the thing that was stolen. One counter for
+   * the process rather than per address: the attacker chooses the address
+   * and there is only ever one vault owner to inconvenience.
+   */
+  const TOTP_ATTEMPT_LIMIT = 10;
+  const TOTP_WINDOW_MS = 15 * 60 * 1000;
+  let totpFails = { n: 0, resetAt: 0 };
+  const totpLockedOut = (): boolean => Date.now() <= totpFails.resetAt && totpFails.n >= TOTP_ATTEMPT_LIMIT;
+  const recordTotpFailure = (): void => {
+    const now = Date.now();
+    if (now > totpFails.resetAt) totpFails = { n: 1, resetAt: now + TOTP_WINDOW_MS };
+    else totpFails.n++;
+  };
+  const tooManyCodes = { error: 'too many authenticator codes, try again later' };
+
   api.post('/settings/2fa/start', (c) => {
     const config = readConfig();
     if (!config.appPassword?.trim()) {
@@ -359,12 +386,16 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     };
     // Re-enrolment must not be a way around disable's code check: if 2FA is
     // already on, prove possession of the current authenticator first.
+    if (totpLockedOut()) return c.json(tooManyCodes, 429);
     const existing = readConfig().totpSecret?.trim();
     if (existing && !verifyTotp(existing, body.currentCode ?? '')) {
+      recordTotpFailure();
       return c.json({ error: 'enter a code from your current authenticator first' }, 403);
     }
     const secret = body.secret?.trim() ?? '';
     if (!/^[A-Z2-7]{16,}$/.test(secret)) return c.json({ error: 'invalid secret' }, 400);
+    // Not a throttle case: this code proves the QR was scanned, and the
+    // secret is one the caller already has in front of them.
     if (!verifyTotp(secret, body.code ?? '')) {
       return c.json({ error: 'that code does not match, scan the QR again and retype' }, 403);
     }
@@ -382,7 +413,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     const config = readConfig();
     const secret = config.totpSecret?.trim();
     if (!secret) return c.json({ ok: true });
+    if (totpLockedOut()) return c.json(tooManyCodes, 429);
     if (!verifyTotp(secret, body.code ?? '')) {
+      recordTotpFailure();
       return c.json({ error: 'wrong authenticator code' }, 403);
     }
     writeConfig((cfg) => {
@@ -405,7 +438,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // session or CSRF drive-by from destroying data, and is a deliberate
     // friction on an irreversible action. Ungated (local) vaults skip it.
     const gate = readConfig().appPassword?.trim();
-    if (gate && !verifyPassword(body.password ?? '', gate)) {
+    if (gate && !(await verifyPassword(body.password ?? '', gate))) {
       return c.json({ error: 'password required to wipe' }, 403);
     }
     // Everything in the vault goes — games, studies, notes, puzzles, books,

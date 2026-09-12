@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
 import { VAULT } from './paths.ts';
-import { git, historyGitDir, HISTORY_DIR_NAME } from './vaultGit.ts';
+import { git, historyGitDir, HISTORY_DIR_NAME, unsafeHistoryRepo } from './vaultGit.ts';
 
 /**
  * Vault safety net: every change inside vault/ is auto-committed to a
@@ -48,6 +48,17 @@ export async function startVaultBackup(
   debounceMs: number = DEBOUNCE_MS,
 ): Promise<VaultBackup> {
   const gitDir = historyGitDir(dir);
+
+  // Before ANY git command touches it: a history repo that came with the
+  // folder rather than from this server is not run. See unsafeHistoryRepo.
+  const unsafe = existsSync(gitDir) ? unsafeHistoryRepo(gitDir) : null;
+  if (unsafe !== null) {
+    throw new Error(
+      `refusing to use ${HISTORY_DIR_NAME} in this vault: ${unsafe}. ` +
+        `A history repo that did not come from this app can run code when the app commits. ` +
+        `Move or delete ${HISTORY_DIR_NAME} to get the safety net back.`,
+    );
+  }
 
   if (!existsSync(gitDir)) {
     mkdirSync(dir, { recursive: true });

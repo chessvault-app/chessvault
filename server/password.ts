@@ -1,4 +1,4 @@
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scrypt, scryptSync, timingSafeEqual } from 'node:crypto';
 
 /**
  * The app password at rest.
@@ -39,14 +39,37 @@ export function hashPassword(plain: string): string {
  * scrypt-ish but does not parse as the exact form falls through to the
  * plain compare, so no choosable password is ever un-enterable. Both
  * branches compare in constant time.
+ *
+ * Async, and `hashPassword` above is not, which looks inconsistent and is
+ * the point. scrypt is expensive ON PURPOSE — that is what makes an
+ * offline guess costly — and `scryptSync` spends that cost on the event
+ * loop, where nothing else in the process runs meanwhile. Hashing happens
+ * once, after someone has already authenticated or at boot. VERIFYING
+ * happens on /auth/login, which is the one route reachable with no
+ * credential at all: at N=16384 each attempt is tens of milliseconds of
+ * solid block, so a stream of wrong passwords stalled every other request
+ * the server was serving, including the ones that had nothing to do with
+ * auth. The callback form does the work on libuv's pool instead, so the
+ * loop keeps turning. The per-IP throttle in auth.ts limits how many any
+ * one caller gets; this limits what those cost everybody else.
  */
-export function verifyPassword(supplied: string, stored: string): boolean {
+export function verifyPassword(supplied: string, stored: string): Promise<boolean> {
   const match = SCRYPT_FORM.exec(stored);
-  if (match) {
-    const hash = scryptSync(supplied, Buffer.from(match[1]!, 'hex'), KEY_LENGTH, SCRYPT_PARAMS);
-    return timingSafeEqual(hash, Buffer.from(match[2]!, 'hex'));
+  if (!match) {
+    const a = Buffer.from(supplied);
+    const b = Buffer.from(stored);
+    return Promise.resolve(a.length === b.length && timingSafeEqual(a, b));
   }
-  const a = Buffer.from(supplied);
-  const b = Buffer.from(stored);
-  return a.length === b.length && timingSafeEqual(a, b);
+  return new Promise((resolvePromise) => {
+    scrypt(
+      supplied,
+      Buffer.from(match[1]!, 'hex'),
+      KEY_LENGTH,
+      SCRYPT_PARAMS,
+      (error, hash) => {
+        // A scrypt that could not run is not a password that matched.
+        resolvePromise(error ? false : timingSafeEqual(hash, Buffer.from(match[2]!, 'hex')));
+      },
+    );
+  });
 }

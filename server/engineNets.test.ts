@@ -71,6 +71,20 @@ describe('engine networks api', () => {
     expect((await app.request(`/api/engine/nets/${NAME}/file`)).status).toBe(404);
   });
 
+  it('stops writing once a download runs past its published size', async () => {
+    // The upstream gzip-encodes and fetch inflates as it streams, so
+    // Content-Length bounds nothing. A net server that answered with an
+    // endless body would otherwise write until the disk filled: the
+    // checksum below only ever catches a wrong net, and only after every
+    // byte has landed.
+    const app = build(dir, respond(Buffer.concat([BODY, Buffer.alloc(BODY.byteLength, 0x41)])));
+    await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    const done = await settle(app);
+    expect(done.ready).toBe(false);
+    expect(done.error).toContain('longer than its published size');
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
   it('reports a server that answers badly, and lets the next attempt run', async () => {
     let calls = 0;
     const body = matchingBody();

@@ -412,6 +412,15 @@ const SENTENCE_END = /[.!?]/;
 const PARAGRAPH_BREAK = /\n[ \t]*\n/;
 
 /**
+ * How far past the context window paragraphAround keeps looking, so a
+ * break sitting across the window's edge is matched whole rather than
+ * clipped in half. Only a run of more than this many blanks between two
+ * newlines could still be missed, and that run would move the snippet's
+ * edge by a character.
+ */
+const PARAGRAPH_MARGIN = 256;
+
+/**
  * The paragraph a link sits in — the outermost the context may reach.
  *
  * A single newline is just where the text wrapped, so it is not a break: a
@@ -419,10 +428,30 @@ const PARAGRAPH_BREAK = /\n[ \t]*\n/;
  * written, would otherwise have a context of nothing but its own name.
  */
 function paragraphAround(body: string, at: number, end: number): [number, number] {
-  const before = [...body.slice(0, at).matchAll(new RegExp(PARAGRAPH_BREAK, 'g'))].at(-1);
-  const after = PARAGRAPH_BREAK.exec(body.slice(end));
+  // Only the window sentenceAround can actually use is searched. It read
+  // the WHOLE prefix before — `body.slice(0, at)` copied, then matchAll
+  // collected every paragraph break in it just to take the last — which
+  // is O(note) per mention and so O(note x mentions) for the note. A page
+  // of links in a long note is the ordinary case, and the scan runs on
+  // the event loop during indexing.
+  //
+  // Nothing is given up: sentenceAround immediately clamps with
+  // `Math.max(paraFrom, at - CONTEXT_BEFORE)` and
+  // `Math.min(paraTo, end + CONTEXT_AFTER)`, so a break found further out
+  // than the window could never reach the answer. Not finding one now
+  // reports the body's edge, exactly as before, and the clamp picks the
+  // window edge either way.
+  // The window is searched with a margin either side, so a break that
+  // straddles its edge is still seen whole: the pattern is `\n[ \t]*\n`,
+  // which can be as long as the run of blanks between the two newlines.
+  // shared/wikiLinks.test.ts fuzzes this against the old whole-prefix
+  // scan and requires identical output.
+  const windowFrom = Math.max(0, at - CONTEXT_BEFORE - PARAGRAPH_MARGIN);
+  const slice = body.slice(windowFrom, at);
+  const before = [...slice.matchAll(new RegExp(PARAGRAPH_BREAK, 'g'))].at(-1);
+  const after = PARAGRAPH_BREAK.exec(body.slice(end, end + CONTEXT_AFTER + PARAGRAPH_MARGIN));
   return [
-    before ? before.index + before[0].length : 0,
+    before ? windowFrom + before.index + before[0].length : 0,
     after ? end + after.index : body.length,
   ];
 }

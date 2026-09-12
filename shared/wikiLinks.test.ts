@@ -356,6 +356,27 @@ describe('findWikiMentions', () => {
     expect(findWikiMentions('a * b [[C]]')[0]!.context).toBe('a * b C');
   });
 
+  /**
+   * paragraphAround looks only as far as the context window plus a margin,
+   * rather than over the whole note, which is what keeps a note with many
+   * links from costing O(note x links). These two pin the edges of that:
+   * a paragraph still stops the context, and prose beyond the window
+   * never reaches it even with no paragraph break anywhere in the note.
+   */
+  it('stops the context at a paragraph break, near or far', () => {
+    const near = findWikiMentions('old subject.\n\nnew subject [[C]] here')[0]!.context;
+    expect(near).toBe('new subject C here');
+    // The break sits further back than the window, so the window's own
+    // edge is what cuts, and nothing from before it leaks in.
+    const far = `earlier subject.\n\n${'padding '.repeat(40)}[[C]]`;
+    expect(findWikiMentions(far)[0]!.context).not.toContain('earlier subject');
+  });
+
+  it('does not reach past the window in a note with no paragraph breaks', () => {
+    const body = `${'start '.repeat(3)}${'filler '.repeat(60)}[[C]]`;
+    expect(findWikiMentions(body)[0]!.context).not.toContain('start');
+  });
+
   it('finds nothing in a body with no links', () => {
     expect(findWikiMentions('Just prose, and a lone [ bracket.')).toEqual([]);
   });

@@ -115,6 +115,70 @@ describe('crossSiteGuard', () => {
     ).toBe(403);
   });
 
+  it('refuses a state change from another origin, whatever the body looks like', async () => {
+    const app = makeApp();
+    const host = 'vault.tail1234.ts.net:8787';
+    // The shape checks 1 and 2 both miss: no Sec-Fetch-Site (plain http to
+    // a non-loopback host is not a trustworthy url, so browsers omit it)
+    // and no Content-Type at all (a Blob with an empty type sets none).
+    // Declared as JSON, so check 2 would pass it; only the Origin refuses.
+    const drive = await app.request('/api/write', {
+      method: 'POST',
+      headers: { host, origin: 'https://attacker.example', 'content-type': 'application/json' },
+      body: '{"confirm":"wipe everything"}',
+    });
+    expect(drive.status).toBe(403);
+    // The exempted streaming uploads are covered too: this check reads no body.
+    const upload = await app.request('/api/sources', {
+      method: 'POST',
+      headers: { host, origin: 'https://attacker.example', 'content-type': 'application/x-chess-pgn' },
+      body: '[Event "?"]',
+    });
+    expect(upload.status).toBe(403);
+    // An Origin that parses as nothing (a sandboxed iframe) belongs to nobody.
+    const opaque = await app.request('/api/write', {
+      method: 'POST',
+      headers: { host, origin: 'null' },
+      body: '{}',
+    });
+    expect(opaque.status).toBe(403);
+    // Reads are not state changes; checks 1 and 4 cover those.
+    expect(
+      (await app.request('/api/read', { headers: { host, origin: 'https://attacker.example' } }))
+        .status,
+    ).toBe(200);
+  });
+
+  it('admits the origins that are this server', async () => {
+    const app = makeApp();
+    const ok = async (headers: Record<string, string>): Promise<number> =>
+      (
+        await app.request('/api/write', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...headers },
+          body: '{}',
+        })
+      ).status;
+    // The app's own page, port and all.
+    expect(await ok({ host: 'vault.ts.net:8787', origin: 'http://vault.ts.net:8787' })).toBe(200);
+    // Behind a TLS-terminating proxy that rewrites Host. A cross-site page
+    // cannot set X-Forwarded-Host: a custom header forces a preflight.
+    expect(
+      await ok({
+        host: '127.0.0.1:8787',
+        'x-forwarded-host': 'vault.example',
+        origin: 'https://vault.example',
+      }),
+    ).toBe(200);
+    // The Vite dev proxy: changeOrigin rewrites Host, Origin stays the
+    // browser's. Both ends loopback.
+    expect(await ok({ host: '127.0.0.1:8787', origin: 'http://localhost:5173' })).toBe(200);
+    // Another port on the same public host is still somebody else.
+    expect(await ok({ host: 'vault.ts.net:8787', origin: 'http://vault.ts.net:3000' })).toBe(403);
+    // curl and the updater send no Origin at all.
+    expect(await ok({ host: 'vault.ts.net:8787' })).toBe(200);
+  });
+
   it('pins Host to loopback names when loopback-bound', async () => {
     const app = makeApp({ loopbackOnly: true });
     for (const host of ['127.0.0.1:8788', 'localhost:8788', '[::1]:8788']) {
