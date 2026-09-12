@@ -1394,10 +1394,37 @@ export const ko: Record<string, string> = {
   'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.':
     'Lichess Elite 월간이나 Lumbra 내보내기처럼 게임이 담긴 아무 .pgn이면 됩니다. 업로드는 스트리밍이라 큰 파일도 보고 있는 동안 계속 올라갑니다.',
   'Build a database': '데이터베이스 만들기',
+  'Replace “{name}”': '“{name}” 바꾸기',
   'Indexing {n} files into one searchable database of whole games.':
     '파일 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name, or leave blank for “{name}”': '이름, 비우면 “{name}”',
+  'Letters, digits, dots, dashes and underscores, with no spaces.':
+    '영문자, 숫자, 점, 하이픈, 밑줄만 쓸 수 있고 공백은 안 됩니다.',
+  'A file name may use letters, digits, dots, dashes and underscores, with no spaces.':
+    '파일 이름에는 영문자, 숫자, 점, 하이픈, 밑줄만 쓸 수 있고 공백은 안 됩니다.',
   'The build failed.': '만들기에 실패했습니다.',
+  'The build was stopped.': '만들기가 중지되었습니다.',
+  'Stop building “{name}”? What was indexed so far is discarded.':
+    '“{name}” 만들기를 중지할까요? 지금까지 색인한 내용은 버려집니다.',
+  '“{name}” is built.': '“{name}”이(가) 만들어졌습니다.',
+  '“{name}” is optimised.': '“{name}” 최적화가 끝났습니다.',
+  // The running band: verb, database, step and percentage in one line.
+  // Korean puts the name first, so the template reorders the parts.
+  '{verb} {name}: {phase}, {percent}%': '{name} {verb}: {phase}, {percent}%',
+  Building: '만드는 중',
+  Optimising: '최적화하는 중',
+  'Building {name}…': '{name} 만드는 중…',
+  'Optimising {name}…': '{name} 최적화하는 중…',
+  'Indexing {name}…': '{name} 색인하는 중…',
+  'Building {name}: {done} of {total} games': '{name} 만드는 중: 게임 {total}개 중 {done}개',
+  // The index pass's phases, as server/refgamesIndex.ts names them.
+  replaying: '다시 두는 중',
+  'indexing plies': '반수 색인',
+  'summing per move': '수마다 합산',
+  'dropping thin positions': '드문 위치 정리',
+  'indexing the sums': '합계 색인',
+  'ranking top games': '상위 게임 순위 매기기',
+  'inverting keys': '키 반전',
   'Build progress': '만들기 진행 상황',
   'Nothing new for {minutes} minutes. This step is one database operation and reports nothing until it finishes. On a large database that can take an hour.':
     '{minutes}분간 변화가 없습니다. 이 단계는 데이터베이스 작업 하나라서 끝나기 전까지는 아무것도 알리지 않습니다. 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',
@@ -2373,6 +2400,10 @@ export const ko: Record<string, string> = {
   'Not analysed yet': '아직 분석하지 않았습니다',
   'This page fills once your games have been through the engine pass. It runs in this window while the app is open, and picks up where it stopped.': '이 페이지는 내 게임이 엔진 분석을 거치면 채워집니다. 앱이 열려 있는 동안 이 창에서 돌아가며, 멈춘 곳에서 이어서 합니다.',
   'Analyse new games': '새 게임 분석',
+  '{n} games are not analysed yet: their results count, their accuracy does not.':
+    '게임 {n}개는 아직 분석하지 않았습니다. 결과는 집계되지만 정확도에는 들어가지 않습니다.',
+  'Analysis paused.': '분석을 잠시 멈췄습니다.',
+  'All {n} games analysed.': '게임 {n}개를 모두 분석했습니다.',
   '{n} newer games are not analysed yet: their results count, their accuracy does not.': '새로 생긴 게임 {n}개는 아직 분석하지 않았습니다. 결과는 집계되지만 정확도에는 들어가지 않습니다.',
   'Leaves at move': '벗어나는 수',
   'You': '나',

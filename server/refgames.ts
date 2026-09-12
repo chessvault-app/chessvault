@@ -855,11 +855,18 @@ export function gamesWhere(
 
 /** One build at a time, like books — the indexer is CPU-bound. */
 interface BuildJob {
+  /** Which job holds the slot, so the page can say what finished. */
+  kind: 'build' | 'optimize' | 'index';
   name: string;
   startedAt: number;
   running: boolean;
   exitCode: number | null;
   log: string[];
+  /** Set by /build/stop before the child is killed, so the exit that
+      follows reads as a stop and not as a failure. */
+  stopped: boolean;
+  /** The child while it runs — the only handle a stop can reach. */
+  child: ReturnType<typeof spawn> | null;
   /** When the log last grew. The index pass has phases that are one SQL
       statement each — nothing can report from inside one — so how long
       the job has been quiet is the only liveness there is to offer, and
@@ -1067,6 +1074,7 @@ export function refGamesApi(
         settled = true;
         current.running = false;
         current.exitCode = code;
+        current.child = null;
         onClose(code);
       };
       let child: ReturnType<typeof spawn>;
@@ -1080,6 +1088,7 @@ export function refGamesApi(
         finish(-1);
         return;
       }
+      current.child = child;
       const append = (chunk: Buffer): void => {
         for (const line of chunk.toString().split('\n')) {
           if (line.trim()) {
@@ -1100,12 +1109,15 @@ export function refGamesApi(
 
     const startBuild = (name: string, sources: string[], append: boolean): void => {
       const current: BuildJob = {
+        kind: 'build',
         name,
         startedAt: Date.now(),
         running: true,
         exitCode: null,
         log: [],
         lineAt: Date.now(),
+        stopped: false,
+        child: null,
       };
       // An append works on the live file: closing our readonly handle
       // first keeps Windows happy about the WAL sidecars, and there is no
@@ -1130,6 +1142,17 @@ export function refGamesApi(
               renameRetrying(building, fileFor(name));
             } catch {
               current.log.push('could not swap in the new database — rebuild after a restart');
+            }
+          }
+          // A stopped rebuild leaves its part-written file beside the
+          // database it was replacing. sweepUnfinishedBuilds only runs
+          // at startup, so it goes here, with the sidecars a killed
+          // indexer leaves. A stopped append needs nothing removed: the
+          // live file is served as it is, marked "index behind", and
+          // Optimise heals it.
+          if (!append && current.stopped) {
+            for (const path of [building, `${building}-wal`, `${building}-shm`, `${building}-journal`]) {
+              rmSync(path, { force: true });
             }
           }
         },
@@ -1191,12 +1214,15 @@ export function refGamesApi(
         return c.json({ error: 'no such database' }, 400);
       }
       const current: BuildJob = {
+        kind: 'optimize',
         name,
         startedAt: Date.now(),
         running: true,
         exitCode: null,
         log: [],
         lineAt: Date.now(),
+        stopped: false,
+        child: null,
       };
       void close(name); // the job rewrites the live file
       spawnJob(
@@ -1225,12 +1251,15 @@ export function refGamesApi(
         return c.json({ error: 'no such database' }, 400);
       }
       const current: BuildJob = {
+        kind: 'index',
         name,
         startedAt: Date.now(),
         running: true,
         exitCode: null,
         log: [],
         lineAt: Date.now(),
+        stopped: false,
+        child: null,
       };
       spawnJob(
         current,
@@ -1280,13 +1309,33 @@ export function refGamesApi(
       return null;
     };
 
+    /**
+     * Stop the running job from the app. Nothing else can: the server is
+     * the child's only supervisor, so an hour-long mistake needed a shell
+     * (or quitting the app) to end. Killing a rebuild leaves nothing
+     * served changed, since the new file is renamed in only at the end;
+     * killing an append leaves the database served with "index behind",
+     * which Optimise heals; killing an optimise or an index pass rolls
+     * back to the file as it was, because each step is one transaction.
+     */
+    api.post('/refgames/build/stop', (c) => {
+      if (!job?.running || !job.child) return c.json({ error: 'no build is running' }, 409);
+      job.stopped = true;
+      job.log.push('stopped from the app');
+      job.lineAt = Date.now();
+      job.child.kill();
+      return c.json({ stopped: true, name: job.name });
+    });
+
     api.get('/refgames/build/status', (c) =>
       c.json(
         job
           ? {
               running: job.running,
+              kind: job.kind,
               name: job.name,
               exitCode: job.exitCode,
+              stopped: job.stopped,
               seconds: (Date.now() - job.startedAt) / 1000,
               progress: progressOf(job.log),
               phase: phaseOf(job.log),

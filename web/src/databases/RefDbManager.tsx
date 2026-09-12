@@ -1,6 +1,7 @@
-﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Trash2, Upload, Zap } from 'lucide-react';
+﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Square, Trash2, Upload, Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -90,12 +91,53 @@ const fmtBytes = (bytes: number): string => {
  */
 export interface BuildStatus {
   running: boolean;
+  /** Which job holds the slot: a build, Optimise, or the index pass. */
+  kind?: 'build' | 'optimize' | 'index';
+  /** The database the job is about. */
+  name?: string;
   exitCode?: number | null;
+  /** The job was ended from the app; its exit is not a failure. */
+  stopped?: boolean;
   log?: string[];
   phase?: { label: string; percent: number } | null;
+  /** The replay loop's own count, before the phases take over. */
+  progress?: { done: number; total: number } | null;
   /** Seconds since the job last printed anything. */
   quietSeconds?: number;
 }
+
+/** What the running band says, and what is announced when it changes. */
+const jobLine = (status: BuildStatus): string => {
+  const name = status.name ?? '';
+  if (status.phase) {
+    return t('{verb} {name}: {phase}, {percent}%', {
+      verb: t(status.kind === 'optimize' ? 'Optimising' : status.kind === 'index' ? 'Indexing' : 'Building'),
+      name,
+      phase: t(status.phase.label),
+      percent: status.phase.percent,
+    });
+  }
+  if (status.kind === 'optimize') return t('Optimising {name}…', { name });
+  if (status.kind === 'index') return t('Indexing {name}…', { name });
+  if (status.progress) {
+    return t('Building {name}: {done} of {total} games', {
+      name,
+      done: status.progress.done.toLocaleString(),
+      total: status.progress.total.toLocaleString(),
+    });
+  }
+  return t('Building {name}…', { name });
+};
+
+/** What a finished job is announced as. */
+const finishLine = (status: BuildStatus): string => {
+  const name = status.name ?? '';
+  if (status.stopped) return t('The build was stopped.');
+  if (status.exitCode != null && status.exitCode !== 0) return t('The build failed.');
+  if (status.kind === 'optimize') return t('“{name}” is optimised.', { name });
+  if (status.kind === 'index') return t('Indexing finished.');
+  return t('“{name}” is built.', { name });
+};
 
 export function RefDbManager({
   databases,
@@ -115,9 +157,11 @@ export function RefDbManager({
 }) {
   const [tab, setTab] = useState<Tab>('databases');
   const [query, setQuery] = useState('');
-  // null until the first listing arrives, so "tick everything" happens
-  // once and a user's unticking is never overwritten by a refresh.
-  const [picked, setPicked] = useState<Set<string> | null>(null);
+  // Nothing ticked until the user ticks it, or uploads it. Every file
+  // used to be ticked on mount, so the most expensive press on the page
+  // opened with the whole shelf in it, on every visit, and a blank name
+  // then defaulted to rebuilding "refgames" (the sweep's report).
+  const [picked, setPicked] = useState<Set<string> | null>(new Set());
   const [uploading, setUploading] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
@@ -128,13 +172,6 @@ export function RefDbManager({
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wasRunning = useRef(false);
-
-  // Everything ticked when the first listing lands, and never again:
-  // `picked` stops being null there, so a later refresh cannot undo an
-  // unticking. Same rule as before, moved with the listing it reads.
-  useEffect(() => {
-    if (sources) setPicked((p) => p ?? new Set(sources.map((s) => s.name)));
-  }, [sources]);
 
   // Poll the build while one runs; refresh the lists when it finishes.
   useEffect(() => {
@@ -150,6 +187,9 @@ export function RefDbManager({
           // explorer and the map have session answers for.
           forgetRefDbs();
           onChanged();
+          // Said once, here, where the poll sees the end: the band is the
+          // only visible sign, and it simply leaves.
+          announce(finishLine(s));
         }
       } catch {
         // offline hiccup — the next tick asks again
@@ -161,7 +201,38 @@ export function RefDbManager({
   }, [onChanged]);
 
   const running = status?.running === true;
-  const failed = !running && status?.exitCode != null && status.exitCode !== 0;
+  const stopped = !running && status?.stopped === true;
+  const failed = !running && !stopped && status?.exitCode != null && status.exitCode !== 0;
+
+  // A phase change is said once, when it happens, never on the 1.5 s poll:
+  // the index pass names seven phases over hours, and a screen reader that
+  // hears each once knows the job is alive without being read a percentage
+  // every second and a half.
+  const saidPhase = useRef<string | null>(null);
+  useEffect(() => {
+    if (!status?.running) {
+      saidPhase.current = null;
+      return;
+    }
+    const key = status.phase ? `${status.name}:${status.phase.label}` : null;
+    if (key !== null && key !== saidPhase.current) {
+      saidPhase.current = key;
+      announce(jobLine(status));
+    }
+  }, [status]);
+
+  /** Ask the server to kill the running job. The band's own Stop, asked
+      first: a build is minutes to hours of work, and the press that ends
+      it should be as deliberate as the press that started it. */
+  const [askingStop, setAskingStop] = useState(false);
+  const stop = async (): Promise<void> => {
+    setError(null);
+    try {
+      await api('/api/refgames/build/stop', { method: 'POST' });
+    } catch (error) {
+      setError(t(apiErrorMessage(error)));
+    }
+  };
   // The replay loop prints every 25,000 games, which on the biggest
   // corpus built here was ~26 s apart. Two minutes of silence therefore
   // means the job is in one of the phases that cannot report, and saying
@@ -199,8 +270,9 @@ export function RefDbManager({
     // existed for made the finish look like a stall (lanph3re's report).
     // Land on what was just uploaded rather than on whatever tab the
     // window was opened from — the file is the thing that changed. A
-    // rejected or failed upload keeps the window, and the panel's error
-    // line under it says why there is another try.
+    // rejected or failed upload keeps the window, and the reason is
+    // printed INSIDE it: the panel's line under it sat behind the scrim,
+    // blurred for a sighted user and aria-hidden for a screen reader.
     if (uploaded > 0) {
       setShowUpload(false);
       setTab('sources');
@@ -444,12 +516,24 @@ export function RefDbManager({
         {/* The build's own line, where the list would be — it is the one
             thing here that takes minutes, so it says so from the top
             rather than from under whichever tab started it. */}
-        {running && (
+        {running && status && (
           <div className="border-border flex shrink-0 flex-col gap-2 border-b px-3 py-2">
-            <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
+            {/* The line is copy, not the raw log: "Building refgames:
+                summing per move, 42%" names the database and the step in
+                the UI's own language, where the log line was a 12px mono
+                fragment in English under every language. The log's last
+                line still shows under it, since during the replay it is
+                the only place the games count ties to a file. */}
+            <div className="flex items-center gap-2">
               <Spinner className="size-3.5 shrink-0" />
-              <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
-            </p>
+              <p className="text-foreground min-w-0 flex-1 truncate text-sm">{jobLine(status)}</p>
+              {/* Stop is a question, like Delete and Optimise: what was
+                  indexed so far is thrown away. */}
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => setAskingStop(true)}>
+                {t('Stop')}
+              </Button>
+            </div>
+            <p className="text-muted-foreground truncate font-mono text-xs">{status.log?.at(-1) ?? '…'}</p>
             {/* Weighted by phase, not by games: the games count reaches
                 its total when the replay ends, and on a large corpus
                 there are hours of indexing, summing and inverting behind
@@ -474,12 +558,26 @@ export function RefDbManager({
             )}
           </div>
         )}
+        {/* A sentence in the UI face, with the log's last line as the
+            detail: the raw "Error: database is locked" was the whole
+            message, in mono, and nothing marked it as something to hear. */}
         {failed && (
-          <p className="border-border text-destructive shrink-0 border-b px-3 py-2 font-mono text-xs">
-            {status?.log?.at(-1) ?? t('The build failed.')}
+          <p role="alert" className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">
+            {t('The build failed.')}
+            {status?.log?.at(-1) && (
+              <span className="text-muted-foreground mt-0.5 block truncate font-mono text-xs">{status.log.at(-1)}</span>
+            )}
           </p>
         )}
-        {error && (
+        {stopped && (
+          <p role="status" className="border-border text-muted-foreground shrink-0 border-b px-3 py-2 text-sm">
+            {t('The build was stopped.')}
+          </p>
+        )}
+        {/* Only while no window is open: a refusal raised from the Upload
+            or Build window prints inside that window instead, since #root
+            is aria-hidden and blurred under a modal. */}
+        {error && !showUpload && !showBuild && (
           <p role="alert" className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">
             {error}
           </p>
@@ -525,9 +623,21 @@ export function RefDbManager({
         )}
       </Panel>
 
+      <ConfirmDialog
+        icon={Square}
+        open={askingStop}
+        onOpenChange={setAskingStop}
+        question={t('Stop building “{name}”? What was indexed so far is discarded.', {
+          name: status?.name ?? '',
+        })}
+        confirmLabel="Stop"
+        onConfirm={() => void stop()}
+      />
+
       {showUpload && (
         <UploadWindow
           uploading={uploading}
+          error={error}
           onFiles={(files) => void upload(files)}
           onReject={() => setError(t('Only .pgn files can be uploaded here'))}
           onClose={() => setShowUpload(false)}
@@ -536,7 +646,8 @@ export function RefDbManager({
 
       {showBuild && (
         <BuildWindow
-          count={pickedCount}
+          error={error}
+          files={[...(picked ?? [])]}
           only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
           existing={databases.map((d) => d.name)}
           onBuild={(name, mode) => void build(name, mode)}
@@ -1125,11 +1236,14 @@ function AddToWindow({
  */
 function UploadWindow({
   uploading,
+  error,
   onFiles,
   onReject,
   onClose,
 }: {
   uploading: string | null;
+  /** The last refusal, printed in here where it can be seen and heard. */
+  error: string | null;
   onFiles: (files: FileList | File[]) => void;
   onReject: () => void;
   onClose: () => void;
@@ -1181,10 +1295,16 @@ function UploadWindow({
             </>
           )}
         </FilePicker>
+        {error && (
+          <p role="alert" className="text-destructive text-sm leading-relaxed">
+            {error}
+          </p>
+        )}
         <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
             'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.',
-          )}
+          )}{' '}
+          {t('A file name may use letters, digits, dots, dashes and underscores, with no spaces.')}
         </p>
       </DialogContent>
     </Dialog>
@@ -1198,15 +1318,25 @@ function UploadWindow({
  * made it look like a filter on the list above it. Asked at the moment of
  * building, it reads as what it is — and there is room to say what
  * happens if the name is one that already exists.
+ *
+ * It is the review step before the most expensive press on the page, so
+ * it names the files it is about to index, and a taken name preselects
+ * the answer that keeps the database (Add to it), as the book importer's
+ * own update-or-rebuild choice does. Replace is chosen, never defaulted,
+ * and the press that does it says so in the destructive tone.
  */
 function BuildWindow({
-  count,
+  error,
+  files,
   only,
   existing,
   onBuild,
   onClose,
 }: {
-  count: number;
+  /** The server's refusal, printed under the field it is about. */
+  error: string | null;
+  /** The ticked PGN files, in the order they were ticked. */
+  files: string[];
   /** The single picked file, whose name the build takes when left blank. */
   only?: string;
   /** Databases already on the shelf, for the taken-name choice below. */
@@ -1214,12 +1344,15 @@ function BuildWindow({
   onBuild: (name: string, mode: 'replace' | 'append') => void;
   onClose: () => void;
 }) {
+  const count = files.length;
   const [name, setName] = useState('');
-  const [mode, setMode] = useState<'replace' | 'append'>('replace');
+  const [mode, setMode] = useState<'replace' | 'append'>('append');
   const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
+  const target = name.trim() || derived;
   // The question is asked only when it exists — the same shape as the
   // book importer's update-or-rebuild choice.
-  const taken = existing.includes(name.trim() || derived);
+  const taken = existing.includes(target);
+  const replacing = taken && mode === 'replace';
   const go = (): void => {
     if (count > 0) onBuild(name, taken ? mode : 'replace');
   };
@@ -1239,6 +1372,15 @@ function BuildWindow({
               })
             : t('No PGN files are ticked. Pick them on the PGN files tab first.')}
         </p>
+        {count > 0 && (
+          <ul className="divide-border max-h-40 divide-y overflow-y-auto rounded-md border text-sm">
+            {files.map((file) => (
+              <li key={file} data-user-text className="text-foreground truncate px-3 py-1">
+                {file}
+              </li>
+            ))}
+          </ul>
+        )}
         <ClearableInput
           inputSize="sm"
           value={name}
@@ -1248,18 +1390,28 @@ function BuildWindow({
           aria-label={t('Name')}
           placeholder={t('Name, or leave blank for “{name}”', { name: derived })}
         />
+        {/* The rule the server holds the name to, said before it refuses:
+            "invalid database name" on its own left the user guessing. */}
+        <p className="text-muted-foreground -mt-1 text-xs leading-relaxed">
+          {t('Letters, digits, dots, dashes and underscores, with no spaces.')}
+        </p>
+        {error && (
+          <p role="alert" className="text-destructive text-sm leading-relaxed">
+            {error}
+          </p>
+        )}
         {taken ? (
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as 'replace' | 'append')}>
-            <Field orientation="horizontal">
-              <RadioGroupItem value="replace" id="build-replace" />
-              <FieldLabel htmlFor="build-replace" className="font-normal">
-                {t('Replace: build this database again from the picked files.')}
-              </FieldLabel>
-            </Field>
             <Field orientation="horizontal">
               <RadioGroupItem value="append" id="build-append" />
               <FieldLabel htmlFor="build-append" className="font-normal">
                 {t('Add to it: index only the games it does not already hold.')}
+              </FieldLabel>
+            </Field>
+            <Field orientation="horizontal">
+              <RadioGroupItem value="replace" id="build-replace" />
+              <FieldLabel htmlFor="build-replace" className="font-normal">
+                {t('Replace: build this database again from the picked files.')}
               </FieldLabel>
             </Field>
           </RadioGroup>
@@ -1272,9 +1424,13 @@ function BuildWindow({
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button variant="default" size="sm" disabled={count === 0} onClick={go}>
+          <Button variant={replacing ? 'destructive' : 'default'} size="sm" disabled={count === 0} onClick={go}>
             <Database className="size-3.5" data-icon="inline-start" />
-            {taken && mode === 'append' ? t('Add games') : t('Build')}
+            {replacing
+              ? t('Replace “{name}”', { name: target })
+              : taken
+                ? t('Add games')
+                : t('Build')}
           </Button>
         </div>
       </DialogContent>

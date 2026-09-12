@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+
+import { announce } from '@/lib/announce';
 import { Progress } from '@/components/ui/progress';
 import { PASS_DEPTH, useAnalysisJob } from './analysisJob';
 import { CompareCard } from './CompareCard';
@@ -135,18 +137,27 @@ const SPEED_LABEL: Record<Speed | 'unknown', string> = {
 const SIDE_LABEL = { white: 'As White', black: 'As Black' } as const;
 
 /**
- * The one weight an outcome's fill carries on this page wherever it
- * covers area (the month bars, the donut slices): the outcome ink at
- * under half strength. The result bar keeps its own tint tokens, which
- * are the same three hues one rung quieter still; full ink is kept for
- * text and the small swatches beside it, and never for a filled area,
- * so no picture on the page shouts over the tables.
+ * The month chart's fills, at full ink. The donut slices keep the quiet
+ * weight (their 0.45 opacity, below) because their legend prints word,
+ * count and share; the month chart is the one picture with no visible
+ * table behind it, so its segments are the figures, and at the quiet
+ * weight they measured 1.71 to 2.55:1 against the card in both themes,
+ * under the 3:1 a graphic that carries the content must meet (WCAG
+ * 1.4.11; the sweep's report). The result bar keeps its own tint tokens.
  */
-const OUTCOME_INK = {
-  w: 'bg-good/45',
-  d: 'bg-muted-foreground/35',
-  l: 'bg-destructive/45',
+const MONTH_INK = {
+  w: 'bg-good',
+  d: 'bg-muted-foreground',
+  l: 'bg-destructive',
 } as const;
+
+/**
+ * Whether the engine's figures are drawn: the accuracy columns, the
+ * footnote, Move quality and the per-outcome means. False while a run is
+ * going, so the tables stand on the results alone and no row shows one
+ * game's accuracy beside a count of thirty.
+ */
+const AccuracyContext = createContext(true);
 
 /** English, as the key t() looks up; the words the sites use. */
 const ENDING_LABEL: Record<Ending, string> = {
@@ -241,22 +252,52 @@ export function InsightsPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  // The page is GATED on the engine pass (lanph3re's call): until the
-  // first game of yours has been through the engine, and again while a
-  // run is going, the page draws its outline and the strip under the
-  // header says how far along the pass is. Games that arrive AFTER a pass
-  // do not close the gate: the page stands, their results count, and the
-  // strip says their accuracy is still owed, with the header offering to
-  // analyse just them (the queue is only ever what has no record). When
-  // the gate opens the report is asked again, since it was fetched before
-  // the last games landed.
+  // The page is GATED on the engine pass (lanph3re's call) until the
+  // first game of yours has been through the engine: before that it is
+  // the empty state with the press that fills it. The gate was also
+  // closed while a run was going, on the reason that no figure should
+  // mix judged and unjudged games; that reason covers only the engine's
+  // columns, and closing the whole page for the length of a pass hid the
+  // results, the openings, the months and the endings, which never
+  // depend on the engine, while Pause opened it on one game's accuracy
+  // beside thirty games (the sweep's report). So while a run is going
+  // the tables stand and only the engine's figures wait (AccuracyContext
+  // below), with the strip under the header saying how far along the
+  // pass is. Games that arrive AFTER a pass do not close the gate: their
+  // results count, and the strip says their accuracy is still owed, with
+  // the header offering to analyse just them (the queue is only ever what
+  // has no record). When a run ends or pauses the report is asked again,
+  // since it was fetched before those games landed.
   const job = useAnalysisJob();
-  const gated = !job.known || job.status === 'running' || (job.total > 0 && job.analysed === 0);
-  const wasGated = useRef(gated);
+  const running = job.status === 'running';
+  const unanalysed = job.total > 0 && job.analysed === 0 && !running;
+  const gated = !job.known || unanalysed;
+  const wasHeld = useRef(gated || running);
   useEffect(() => {
-    if (wasGated.current && !gated) setAttempt((n) => n + 1);
-    wasGated.current = gated;
-  }, [gated]);
+    const held = gated || running;
+    if (wasHeld.current && !held) setAttempt((n) => n + 1);
+    wasHeld.current = held;
+  }, [gated, running]);
+
+  // The pass is heard as well as seen: its start, every tenth game, a
+  // pause, and its end. The bar and the count line are not live regions
+  // on purpose, since a polite region that changes every game reads the
+  // count over whatever else is being read.
+  const saidCount = useRef(-1);
+  const wasStatus = useRef(job.status);
+  useEffect(() => {
+    if (job.status === 'running') {
+      if (job.analysed !== saidCount.current && (saidCount.current < 0 || job.analysed - saidCount.current >= 10)) {
+        saidCount.current = job.analysed;
+        announce(t('{done} of {total} games analysed', { done: exact.format(job.analysed), total: exact.format(job.total) }));
+      }
+    } else if (wasStatus.current === 'running') {
+      saidCount.current = -1;
+      if (job.status === 'paused') announce(t('Analysis paused.'));
+      else if (job.status === 'done') announce(t('All {n} games analysed.', { n: exact.format(job.analysed) }));
+    }
+    wasStatus.current = job.status;
+  }, [job.status, job.analysed, job.total]);
   useEffect(() => {
     const controller = new AbortController();
     let again: ReturnType<typeof setTimeout> | null = null;
@@ -354,7 +395,8 @@ export function InsightsPage() {
       <PassStrip />
 
       {/* Not while the gate is closed: eight live controls over a page
-          that cannot yet change read as a broken page. */}
+          that cannot yet change read as a broken page. While a run is
+          going the tables stand, so the controls do too. */}
       {!gated && (
       <FilterRow className="px-0 py-0">
         <SideSelect
@@ -422,7 +464,7 @@ export function InsightsPage() {
         </div>
       ) : report === null ? (
         slow && <InsightsSkeleton shape={shape} />
-      ) : gated && job.total > 0 && job.status !== 'running' && job.analysed === 0 ? (
+      ) : unanalysed ? (
         // Nothing analysed yet: the empty state every shelf uses, with the
         // press that fills it, rather than an outline of tables that no
         // press on the page would fill by itself.
@@ -436,7 +478,7 @@ export function InsightsPage() {
             </Button>
           }
         />
-      ) : gated && job.total > 0 ? (
+      ) : gated ? (
         <InsightsSkeleton shape={shape} />
       ) : report.games === 0 ? (
         narrowed ? (
@@ -463,7 +505,9 @@ export function InsightsPage() {
           />
         )
       ) : (
-        <Tables report={report} />
+        <AccuracyContext.Provider value={!running}>
+          <Tables report={report} />
+        </AccuracyContext.Provider>
       )}
     </PageShell>
   );
@@ -479,6 +523,7 @@ function Tables({ report }: { report: Report }) {
   const split = exitSplit(cells);
   const [allOpenings, setAllOpenings] = useState(false);
   const shown = allOpenings ? openings : openings.slice(0, OPENING_FOLD);
+  const judged = useContext(AccuracyContext) && report.analysis.games > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -505,7 +550,7 @@ function Tables({ report }: { report: Report }) {
             caption={t('By time control')}
             rows={bySpeed.map((r) => ({ key: r.key, label: t(SPEED_LABEL[r.key]), tally: r.tally }))}
           />
-          {report.analysis.games > 0 && (
+          {judged && (
             <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-2 text-xs tabular-nums">
               <span>
                 {t('Accuracy from {n} of {total} games analysed at depth {d}', {
@@ -522,7 +567,7 @@ function Tables({ report }: { report: Report }) {
         </CardContent>
       </Card>
 
-      <MoveQualityCard analysis={report.analysis} />
+      {judged && <MoveQualityCard analysis={report.analysis} />}
 
       <Card>
         <CardHeader>
@@ -549,7 +594,7 @@ function Tables({ report }: { report: Report }) {
                 <th scope="col" className="w-14 py-1 text-right font-medium whitespace-nowrap">
                   {t('Score')}
                 </th>
-                {report.analysis.games > 0 && (
+                {judged && (
                   <th scope="col" className="w-16 py-1 pl-2 text-right font-medium whitespace-nowrap">
                     {t('Accuracy')}
                   </th>
@@ -569,7 +614,7 @@ function Tables({ report }: { report: Report }) {
                     <ResultBar w={row.w} d={row.d} b={row.l} pov="mine" />
                   </td>
                   <td className="py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row))}</td>
-                  {report.analysis.games > 0 && (
+                  {judged && (
                     <td className="py-(--row-py-tight) pl-2 text-right font-mono tabular-nums">
                       {row.accuracy === null ? '' : `${row.accuracy.toFixed(1)}%`}
                     </td>
@@ -660,7 +705,7 @@ function Tables({ report }: { report: Report }) {
       <CompareCard />
 
       <ActivityCard report={report} />
-      <EndingsCard endings={report.endings} byOutcome={report.analysis.byOutcome} />
+      <EndingsCard endings={report.endings} byOutcome={judged ? report.analysis.byOutcome : []} />
       <LengthCard lengths={report.lengths} />
     </div>
   );
@@ -695,6 +740,12 @@ function ActivityCard({ report }: { report: Report }) {
     report.weekdays.map((w) => ({ band: w.day, w: w.w, d: w.d, l: w.l, accSum: w.accSum, accN: w.accN })),
   );
   const dayLabel = (day: number): string => dayName.format(new Date(2026, 1, 1 + day));
+  // A month's figures: the tip's text, and the line under the chart for
+  // the month last pressed, since a tip opens on nothing on touch.
+  const figures = (m: MonthTally): string =>
+    m.games === 0 ? label(m) : `${label(m)}: ${t('{w} won, {d} drew, {l} lost', { w: m.w, d: m.d, l: m.l })}`;
+  const [picked, setPicked] = useState<string | null>(null);
+  const pickedMonth = series.find((m) => m.month === picked) ?? null;
   return (
     <Card>
       <CardHeader>
@@ -709,27 +760,32 @@ function ActivityCard({ report }: { report: Report }) {
             <div className="text-muted-foreground mb-1 text-xs tabular-nums">
               {t('Most in a month: {n}', { n: exact.format(peak) })}
             </div>
-            <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="img" aria-label={t('Games per month')}>
+            {/* Each month is a button, not a painted div: a div with a tip
+                opened on mouse hover only, so a keyboard user and anyone on
+                a phone had no way to a month's split. A group, not role=img,
+                since an image's children are presentational and the buttons
+                would vanish from the accessibility tree. */}
+            <div className="flex h-32 items-end gap-0.5 overflow-x-auto" role="group" aria-label={t('Games per month')}>
               {series.map((m) => (
                 // The app's tooltip, as on the result bar, never the
                 // browser's `title` bubble: the two differ in shape and
-                // delay, and one page was showing both.
-                <TitleTip
-                  key={m.month}
-                  title={
-                    m.games === 0
-                      ? label(m)
-                      : `${label(m)}: ${t('{w} won, {d} drew, {l} lost', { w: m.w, d: m.d, l: m.l })}`
-                  }
-                >
-                  <div className="flex h-full min-w-2 flex-1 flex-col justify-end">
+                // delay, and one page was showing both. It opens on hover
+                // and on focus; a press prints the figures under the chart.
+                <TitleTip key={m.month} title={figures(m)}>
+                  <button
+                    type="button"
+                    aria-label={figures(m)}
+                    aria-pressed={picked === m.month}
+                    onClick={() => setPicked((p) => (p === m.month ? null : m.month))}
+                    className="focus-visible:ring-ring flex h-full min-w-2 flex-1 flex-col justify-end rounded-t-[4px] outline-none focus-visible:ring-3"
+                  >
                     {/* Won on top, lost at the foot; the gap between segments is
                         the page's own ground. The bar's corner is the chip
                         corner, off the radius knob on purpose. */}
-                    <div className={cn('rounded-t-[4px]', OUTCOME_INK.w)} style={{ height: `${(100 * m.w) / peak}%` }} />
-                    <div className={cn('mt-px', OUTCOME_INK.d)} style={{ height: `${(100 * m.d) / peak}%` }} />
-                    <div className={cn('mt-px', OUTCOME_INK.l)} style={{ height: `${(100 * m.l) / peak}%` }} />
-                  </div>
+                    <div className={cn('w-full rounded-t-[4px]', MONTH_INK.w)} style={{ height: `${(100 * m.w) / peak}%` }} />
+                    <div className={cn('mt-px w-full', MONTH_INK.d)} style={{ height: `${(100 * m.d) / peak}%` }} />
+                    <div className={cn('mt-px w-full', MONTH_INK.l)} style={{ height: `${(100 * m.l) / peak}%` }} />
+                  </button>
                 </TitleTip>
               ))}
             </div>
@@ -737,11 +793,16 @@ function ActivityCard({ report }: { report: Report }) {
               <span>{label(series[0]!)}</span>
               {series.length > 1 && <span>{label(series[series.length - 1]!)}</span>}
             </figcaption>
+            {/* The pressed month's figures, in print: the one place on a
+                phone they can be read. */}
+            <p className="text-foreground mt-1 min-h-4 text-xs tabular-nums" aria-live="polite">
+              {pickedMonth ? figures(pickedMonth) : ''}
+            </p>
             <ul className="text-muted-foreground mt-2 flex gap-3 text-xs" aria-hidden>
               {[
-                [OUTCOME_INK.w, 'Won'],
-                [OUTCOME_INK.d, 'Drew'],
-                [OUTCOME_INK.l, 'Lost'],
+                [MONTH_INK.w, 'Won'],
+                [MONTH_INK.d, 'Drew'],
+                [MONTH_INK.l, 'Lost'],
               ].map(([ink, word]) => (
                 <li key={word} className="flex items-center gap-1.5">
                   <span className={cn('inline-block size-2.5 rounded-xs', ink)} />
@@ -965,6 +1026,20 @@ function PassButton() {
   useEffect(() => {
     void useAnalysisJob.getState().refresh();
   }, []);
+  // Pause leaves with the run, and focus on it fell to the body: the
+  // keyboard user who pressed it was dropped at the top of the document.
+  // It lands on the page's title instead, which says the pass is done.
+  const wasRunning = useRef(job.status === 'running');
+  useEffect(() => {
+    if (wasRunning.current && job.status !== 'running' && document.activeElement === document.body) {
+      const h1 = document.querySelector<HTMLElement>('main h1');
+      if (h1) {
+        h1.tabIndex = -1;
+        h1.focus({ preventScroll: true });
+      }
+    }
+    wasRunning.current = job.status === 'running';
+  }, [job.status]);
   const owed = Math.max(0, job.total - job.analysed);
   if (job.status === 'running') {
     return (
@@ -1031,7 +1106,15 @@ function PassStrip() {
         {minutesLeft !== null && (
           <span>{minutesLeft <= 1 ? t('under a minute left') : t('about {m} min left', { m: minutesLeft })}</span>
         )}
-        {paused && <span>{t('Paused')}</span>}
+        {paused && (
+          <span>
+            {t('Paused')}
+            {'. '}
+            {t('{n} games are not analysed yet: their results count, their accuracy does not.', {
+              n: exact.format(owed),
+            })}
+          </span>
+        )}
         {failed && job.error && (
           <span className="text-destructive">{t('The pass stopped: {error}', { error: job.error })}</span>
         )}
@@ -1535,7 +1618,7 @@ function TallyTable({
 }) {
   // The engine pass's column appears once it has reached a row's game,
   // on every tally table alike, the way the openings table shows it.
-  const withAccuracy = rows.some((r) => r.tally.accN > 0);
+  const withAccuracy = useContext(AccuracyContext) && rows.some((r) => r.tally.accN > 0);
   return (
     <table className="w-full table-fixed text-sm">
       {/* The name a screen reader announces for the table; the visible
