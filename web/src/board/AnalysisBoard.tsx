@@ -757,8 +757,14 @@ const NAV_ICON = 'size-[1.1rem] pointer-coarse:size-[1.375rem]';
 
 export function BoardControls({
   className,
+  verticalKeys = true,
   ...rest
-}: { className?: string } & React.ComponentProps<'div'>) {
+}: {
+  className?: string;
+  /** Whether ↑/↓ are this board's keys, as AnalysisBoard's own prop
+      says; false names Home/End on the two jump buttons instead. */
+  verticalKeys?: boolean;
+} & React.ComponentProps<'div'>) {
   const goToStart = useAnalysis((s) => s.goToStart);
   const goBack = useAnalysis((s) => s.goBack);
   const goForward = useAnalysis((s) => s.goForward);
@@ -774,7 +780,16 @@ export function BoardControls({
       className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}
       {...rest}
     >
-      <Button variant="ghost" size="icon" onClick={goToStart} title={t('Start (↑)')}>
+      {/* The key named is the one that works here: with verticalKeys
+          off (the workspace) the arrows browse the games band and only
+          Home/End jump the board, and a button that said ↑ was naming
+          the key that replaced the line. */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={goToStart}
+        title={verticalKeys ? t('Start (↑)') : t('Start (Home)')}
+      >
         <ChevronFirst className={NAV_ICON} />
       </Button>
       <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')} {...repeatBack}>
@@ -783,7 +798,12 @@ export function BoardControls({
       <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')} {...repeatForward}>
         <ChevronRight className={NAV_ICON} />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goToEnd} title={t('End (↓)')}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={goToEnd}
+        title={verticalKeys ? t('End (↓)') : t('End (End)')}
+      >
         <ChevronLast className={NAV_ICON} />
       </Button>
       <div className="bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem]" />
