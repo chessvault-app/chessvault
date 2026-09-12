@@ -32,6 +32,38 @@ import type { MiddlewareHandler } from 'hono';
  *    attacker's hostname as Host, so this closes the rebinding read
  *    path that checks 1 and 2 cannot see.
  *
+ * 2b. A state-changing request whose `Origin` is not this server's is
+ *    refused. This is what actually holds the line, because checks 1 and
+ *    2 BOTH lapse on one real deployment: an ungated vault on a LAN or a
+ *    tailnet, over plain http.
+ *
+ *    Check 1 lapses because `Sec-Fetch-Site` is attached only to
+ *    POTENTIALLY TRUSTWORTHY urls — https, or loopback. Over
+ *    `http://100.64.1.5:8787` the header is simply never sent, so line
+ *    99 cannot match. (The same fact is written down in
+ *    web/vite.config.ts, about SharedArrayBuffer; it applies here too.)
+ *
+ *    Check 2 lapsed because it read "a content type that is not JSON",
+ *    and a request can carry NO content type at all: `fetch(url, {method:
+ *    'POST', body: new Blob([json], {type: ''})})` sets none, needs no
+ *    preflight, and Hono's `c.req.json()` parses the body without
+ *    consulting the header. Ungated there is no cookie to miss, so a
+ *    page on any site the owner visited could POST /api/settings/wipe.
+ *
+ *    `Origin` is the one thing a browser always sends on a state change
+ *    and a page cannot forge. Absent means not a browser (curl, the
+ *    updater), which is let by as before. Present and foreign is refused
+ *    whatever the body looks like, so this covers the streaming uploads
+ *    that check 2 has to exempt.
+ *
+ *    Two mismatches are not attacks and are allowed. A reverse proxy
+ *    rewrites Host, so `X-Forwarded-Host` wins when present — a
+ *    cross-site page cannot set it, since a custom header forces a
+ *    preflight this server never answers. And the Vite dev proxy sets
+ *    `changeOrigin` (Host becomes 127.0.0.1:8787) while the browser's
+ *    Origin stays localhost:5173, so loopback-to-loopback is allowed;
+ *    on loopback the url IS trustworthy, so check 1 is doing its job.
+ *
  * 4. The same rebinding, on a server bound to a LAN or a tailnet with
  *    NO password. Check 3 did not apply there, and nothing else could:
  *    after the rebind the page IS same-origin, sends JSON, and needs no
@@ -56,6 +88,30 @@ const VOUCHED_SUFFIXES = ['.local', '.ts.net'];
 /** The Host header without its port. `[::1]:8788` keeps its brackets. */
 function hostName(host: string): string {
   return host.replace(/:\d+$/, '').toLowerCase();
+}
+
+/**
+ * Whether an `Origin` belongs to this server.
+ *
+ * Compared host-and-port against the host this request was addressed to,
+ * so a page on another port of the same machine is still foreign. An
+ * Origin that will not parse — `null`, which a sandboxed iframe and some
+ * redirect chains send — belongs to nobody and is refused.
+ */
+function originIsOurs(origin: string, expected: string | undefined): boolean {
+  if (expected === undefined) return false;
+  let originHost: string;
+  try {
+    originHost = new URL(origin).host.toLowerCase();
+  } catch {
+    return false;
+  }
+  const target = expected.toLowerCase();
+  if (originHost === target) return true;
+  // The dev proxy: Vite rewrites Host and leaves Origin, and both ends of
+  // that pair are this machine. On loopback check 1 is never absent, so
+  // nothing rides in on this.
+  return LOOPBACK_HOSTS.has(hostName(originHost)) && LOOPBACK_HOSTS.has(hostName(target));
 }
 
 export function hostVouchedFor(name: string, allowed: readonly string[]): boolean {
@@ -111,10 +167,18 @@ export function crossSiteGuard(opts: CrossSiteOptions = {}): MiddlewareHandler {
         403,
       );
     }
-    if (STATE_CHANGING.has(c.req.method) && !isRawBodyPath(c.req.method, c.req.path)) {
-      const type = c.req.header('content-type');
-      if (type !== undefined && !type.toLowerCase().includes('application/json')) {
-        return c.json({ error: 'expected application/json' }, 415);
+    if (STATE_CHANGING.has(c.req.method)) {
+      // Check 2b, before check 2: it needs no body and so covers the
+      // streaming uploads the content-type check has to exempt.
+      const origin = c.req.header('origin');
+      if (origin !== undefined && !originIsOurs(origin, c.req.header('x-forwarded-host') ?? host)) {
+        return c.json({ error: 'cross-site request refused' }, 403);
+      }
+      if (!isRawBodyPath(c.req.method, c.req.path)) {
+        const type = c.req.header('content-type');
+        if (type !== undefined && !type.toLowerCase().includes('application/json')) {
+          return c.json({ error: 'expected application/json' }, 415);
+        }
       }
     }
     return next();
