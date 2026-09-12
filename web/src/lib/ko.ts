@@ -1298,7 +1298,8 @@ export const ko: Record<string, string> = {
   'in {n} days': '{n}일 후',
   'edited {when}': '{when} 수정',
   '{n} chapters': '챕터 {n}개',
-  'not parseable': '읽을 수 없음',
+  '1 chapter': '챕터 1개',
+  'No moves found': '수를 찾지 못했습니다',
   'that PGN parses into zero chapters': '이 PGN에서 챕터를 하나도 읽지 못했습니다',
   'Uploading {name}…': '{name} 올리는 중…',
   'Upload PGN files and index them into searchable databases of whole games.':
@@ -1670,6 +1671,7 @@ export const ko: Record<string, string> = {
   '{n} studies': '스터디 {n}개',
   '1 study': '스터디 1개',
   '{n} notes': '노트 {n}개',
+  '{shown} of {count}': '{count} 중 {shown}개',
   '1 note': '노트 1개',
   '{n} books': '책 {n}개',
   '1 book': '책 1개',

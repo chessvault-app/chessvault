@@ -2,6 +2,7 @@ import { makeFen } from 'chessops/fen';
 import {
   ChildNode,
   Node as PgnNode,
+  defaultHeaders,
   makeComment,
   makePgn,
   parseComment,
@@ -446,6 +447,26 @@ export function pgnToChapters(pgn: string): Chapter[] {
       `Chapter ${index + 1}`;
     return { id: nextChapterId(), name, tree: gameToTree(game), headers };
   });
+}
+
+/**
+ * Whether a parsed chapter carries nothing a PGN would have given it.
+ *
+ * The parser is lenient by design: any text at all comes back as one
+ * game, with the seven default tags and a move list of whatever tokens
+ * it could not read as moves, and gameToTree drops those. So "hello
+ * world" is one chapter, named "?", and the import window counted it
+ * green and let it through. A chapter is blank when no move replayed,
+ * no position was set (a FEN tag, or a comment on the start), and not
+ * one tag was written in the text: a header of its own is what tells an
+ * export's empty chapter (Lichess tags every one) from prose.
+ */
+export function chapterIsBlank(chapter: Chapter): boolean {
+  const root = chapter.tree.nodes[chapter.tree.rootId];
+  if (Object.keys(chapter.tree.nodes).length > 1) return false;
+  if (root?.comment || (root?.shapes?.length ?? 0) > 0) return false;
+  const defaults = defaultHeaders();
+  return Object.entries(chapter.headers).every(([key, value]) => defaults.get(key) === value);
 }
 
 /** Serialise chapters back to a single multi-game PGN file. */

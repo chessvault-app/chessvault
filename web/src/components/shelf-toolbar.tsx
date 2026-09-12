@@ -119,6 +119,26 @@ export function sortDocs<T extends { id: string; bytes: number; updatedAt: strin
 }
 
 /**
+ * The count line under a shelf's title: what the shelf holds (`count`,
+ * already worded: "11 notes"), and while a filter is on, how many of
+ * those it is showing ("3 of 11 notes"). The search and the bookmark
+ * switch used to change the cards without a word while this line went on
+ * saying the whole shelf's number over one card.
+ *
+ * A status, so the filter's result is spoken as the count changes, and
+ * mounted from the moment the count is known: a live region announces
+ * what changes inside it, not its own arrival, so wrapping only the
+ * filtered form would have announced nothing.
+ */
+export function ShelfCount({ count, shown }: { count: string; shown: number | null }) {
+  return (
+    <span role="status">
+      {shown === null ? count : t('{shown} of {count}', { shown, count })}
+    </span>
+  );
+}
+
+/**
  * The bar over a shelf: what it is called, how to find one, how to order
  * them, how to look at them, and how to make another.
  *
@@ -183,6 +203,12 @@ export function ShelfToolbar<S extends string = ShelfSort>({
    *
    * Icon only: the pressed state says what a label would, in the width of
    * a button.
+   *
+   * The tooltip names the press ("Show all" once it is on) and the
+   * accessible name stays put: a toggle whose name changes with its state
+   * is heard as "Show all, pressed", the opposite of the screen, which is
+   * why the APG's toggle button keeps one label and lets aria-pressed
+   * carry the state.
    */
   const bookmark = (className?: string): ReactNode => (
     <Button
@@ -190,6 +216,7 @@ export function ShelfToolbar<S extends string = ShelfSort>({
       size="icon-sm"
       active={markedOnly}
       aria-pressed={markedOnly}
+      aria-label={t('Show bookmarked only')}
       title={markedOnly ? t('Show all') : t('Show bookmarked only')}
       className={cn('shrink-0', className)}
       onClick={() => onMarkedOnly(!markedOnly)}

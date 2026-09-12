@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
+import { chapterIsBlank, pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/components/ui/button';
 import { TitleTip } from '@/components/title-tip';
@@ -21,7 +21,7 @@ import { FilePicker } from '@/components/file-picker';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
+import { ShelfCount, ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl } from '@/components/fab';
@@ -180,9 +180,12 @@ function StudyList() {
               : undefined
             : studies.length === 0
               ? undefined
-              : studies.length === 1
-                ? t('1 study')
-                : t('{n} studies', { n: studies.length })
+              : (
+                <ShelfCount
+                  count={studies.length === 1 ? t('1 study') : t('{n} studies', { n: studies.length })}
+                  shown={filtering ? visible.length : null}
+                />
+              )
         }
         query={query}
         onQuery={setQuery}
@@ -329,10 +332,16 @@ function CreateMenu() {
   const [failure, setFailure] = useState<string | null>(null);
 
   // Import feedback: how many chapters the pasted/chosen PGN parses into.
-  // Memoized — a Lichess export can be huge, and this component re-renders
-  // on every keystroke of the NAME field.
+  // Only the chapters that carry something (chapterIsBlank): the parser
+  // makes one game of any text at all, so "hello world" counted as a
+  // chapter, in green, and imported. Memoized — a Lichess export can be
+  // huge, and this component re-renders on every keystroke of the NAME
+  // field.
   const chapterCount = useMemo(
-    () => (mode === 'import' && pgnText.trim() ? pgnToChapters(pgnText).length : 0),
+    () =>
+      mode === 'import' && pgnText.trim()
+        ? pgnToChapters(pgnText).filter((chapter) => !chapterIsBlank(chapter)).length
+        : 0,
     [mode, pgnText],
   );
 
@@ -525,8 +534,12 @@ function CreateMenu() {
               label="PGN"
               hint={
                 pgnText.trim() ? (
-                  <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-destructive')}>
-                    {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
+                  <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-warn')}>
+                    {chapterCount === 0
+                      ? t('No moves found')
+                      : chapterCount === 1
+                        ? t('1 chapter')
+                        : t('{n} chapters', { n: chapterCount })}
                   </span>
                 ) : null
               }
@@ -884,7 +897,7 @@ function StudyCard({
       meta={
         <TitleTip title={formatWhen(study.updatedAt)}>
         <span>
-          {t('{n} chapters', { n: study.chapters })} ·{' '}
+          {study.chapters === 1 ? t('1 chapter') : t('{n} chapters', { n: study.chapters })} ·{' '}
           {t('edited {when}', { when: formatAgo(study.updatedAt) })}
         </span>
         </TitleTip>
