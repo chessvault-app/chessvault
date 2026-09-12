@@ -81,6 +81,24 @@ function fromChooser(event) {
 }
 
 /**
+ * May this sender ask the shell to do something on this machine?
+ *
+ * The chooser, or the vault this window is actually showing. Not "whoever
+ * sent the message", which is what these handlers accepted before: a
+ * frame the page pulled in from somewhere else could open a native folder
+ * dialog and be told the absolute path the user picked, or reveal the
+ * vault, or throw the window back to the chooser. Navigation is already
+ * held to the same origins (will-navigate below), so this closes the
+ * frame that never navigates.
+ *
+ * A sender whose frame has gone by the time the handler runs reports no
+ * url and gets nothing.
+ */
+function fromVaultPage(event) {
+  return fromChooser(event) || isOwnOrigin(event.senderFrame?.url ?? '');
+}
+
+/**
  * A sentence, not electron-updater's stack.
  *
  * Its 404 message is ~2 kB: the URL, an explanation about tokens, then every
@@ -509,14 +527,16 @@ app.whenReady().then(async () => {
   // shell's knowledge of WHERE the vault is meets the page's claim that
   // it is a folder of plain files. Shell configuration, not app surface:
   // the page only asks, and a browser without the bridge shows no button.
-  ipcMain.handle('vault:reveal', async () => {
+  ipcMain.handle('vault:reveal', async (event) => {
+    if (!fromVaultPage(event)) return false;
     const dir = readSettings().vaultDir;
     if (!dir) return false;
     const problem = await shell.openPath(dir);
     return problem === '';
   });
   // The same thing the Vault menu does, reachable from the app's settings.
-  ipcMain.handle('vault:switch', async () => {
+  ipcMain.handle('vault:switch', async (event) => {
+    if (!fromVaultPage(event)) return;
     writeSettings({ mode: null });
     serverProc?.kill();
     serverProc = null;
@@ -526,7 +546,8 @@ app.whenReady().then(async () => {
   // different questions now — where the vault lives, and where a folder
   // of Syzygy tables is. An older bridge passes nothing and gets the
   // vault wording, which is what it always said.
-  ipcMain.handle('vault:pick-folder', async (_e, title) => {
+  ipcMain.handle('vault:pick-folder', async (event, title) => {
+    if (!fromVaultPage(event)) return null;
     // One short line: the page names the question, and the page may be
     // a remote server's, so it does not get a paragraph of its own in a
     // native dialog's title bar.
