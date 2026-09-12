@@ -185,6 +185,9 @@ export function SkeletonRows({
  * divided box itself, the border came out of the 36 and every row was a
  * pixel short.
  */
+/** Leading inventory rows that print no version; see the row below. */
+const VERSIONLESS_LICENCE_ROWS = 9;
+
 export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; className?: string }) {
   return (
     <Loading className={cn('divide-border divide-y', className)}>
@@ -195,7 +198,14 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
             <div className="flex h-5 min-w-0 flex-1 items-center">
               <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
-            <Skeleton className="h-2.5 w-10 shrink-0" />
+            {/* The version, on the rows that have one. The inventory opens
+                with the copied assets (web/vite.licenses.ts ASSETS), which
+                carry no version, and the first installed package is the
+                tenth row: checked against the built index.json, entries 0-8
+                print none and entry 9 is the first that does. A bar on all
+                ten stood where nine settled rows have nothing. Add an asset
+                and this number moves with it. */}
+            {i >= VERSIONLESS_LICENCE_ROWS && <Skeleton className="h-2.5 w-10 shrink-0" />}
             {/* The licence pill: one text-xs line, py-px and its border.
                 Measured at 81-114px across the names that actually stand
                 here (MIT to Apache-2.0), so the widths are ragged rather
@@ -1137,6 +1147,7 @@ export function SkeletonGameRows({
 export function SkeletonVaultTree({
   path,
   rows = 8,
+  paths,
   className,
 }: {
   /**
@@ -1150,11 +1161,22 @@ export function SkeletonVaultTree({
    * draw (components/vault-tree `VAULT_ROWS`) less the two book folders,
    * which exist only once a PDF has been imported. Empty rows are
    * dropped, so a fresh vault lists fewer and a reading one all ten; the
-   * caller can say so where it knows better.
+   * caller can say so where it knows better. Only consulted where
+   * `paths` is absent.
    */
   rows?: number;
+  /**
+   * The rows this vault listed last visit, by path. A count alone takes
+   * the FIRST n, and the rows that go missing are not the last ones: a
+   * vault with no books drops `books` and `puzzlebooks` from the middle
+   * and still lists `.history.git` and `config.json` at the end. Since
+   * each row reserves its own gloss, and the glosses wrap differently,
+   * the wrong eight reserved the wrong words.
+   */
+  paths?: readonly string[];
   className?: string;
 }) {
+  const listed = paths ? VAULT_ROWS.filter((r) => paths.includes(r.path)) : VAULT_ROWS.slice(0, rows);
   return (
     <Loading className={cn('vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5', className)}>
       {/* The folder line: the real path, and a bar where the totals go,
@@ -1172,7 +1194,7 @@ export function SkeletonVaultTree({
         </div>
       </div>
       <ul>
-        {VAULT_ROWS.slice(0, rows).map((row, i) => (
+        {listed.map((row, i) => (
           <li key={i}>
             {/* Every cell is centred rather than left to the row's baseline
                 alignment: a bar has no text, so its baseline is its own

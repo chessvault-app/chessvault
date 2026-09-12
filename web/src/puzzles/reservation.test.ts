@@ -20,7 +20,7 @@ describe('parseDashboardShape', () => {
   });
 
   it('round-trips a stored shape', () => {
-    const shape = { review: 'button' as const, books: 2, attempts: 7 };
+    const shape = { review: 'button' as const, books: 2, attempts: 7, reconcile: true };
     expect(parseDashboardShape(storedDashboardShape(shape))).toEqual(shape);
   });
 
@@ -46,6 +46,18 @@ describe('parseDashboardShape', () => {
 
   it('reads broken counts as zero without losing the rest', () => {
     const shape = parseDashboardShape('{"review":"button","books":-1,"attempts":2.5}');
-    expect(shape).toEqual({ review: 'button', books: 0, attempts: 0 });
+    expect(shape).toEqual({ review: 'button', books: 0, attempts: 0, reconcile: false });
+  });
+
+  it('reads anything but true as no reconciling sentence', () => {
+    expect(parseDashboardShape('{"reconcile":1}').reconcile).toBe(false);
+    expect(parseDashboardShape('{"reconcile":true}').reconcile).toBe(true);
+  });
+
+  it('reserves nothing for a fresh device, which is what leaves the filter row out', () => {
+    // The filter row over the attempt log reads this same field: raise the
+    // floor and a fresh vault reserves a band it will then delete.
+    expect(FRESH_DASHBOARD.attempts).toBe(0);
+    expect(FRESH_DASHBOARD.reconcile).toBe(false);
   });
 });

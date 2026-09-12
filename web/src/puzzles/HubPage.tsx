@@ -1023,7 +1023,12 @@ function Hub() {
           the order they are written in, so this is purely about reading
           order — and it puts the one fixed-size panel next to the cards
           it belongs with, rather than stranded above a panel that grows. */}
-      {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks} />}
+      {/* The book row on the same fact the settled row uses and not merely
+          on there being room: showBooks asks this device what it found last
+          time, so a placeholder drawn on room alone was put up and taken
+          away again on every vault with no book. History keeps room alone,
+          because showHistory has no second condition. */}
+      {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks && slotWasFilled} />}
       {showHistory &&
         (historyIn ? <HistoryPanel attempts={history} /> : <HubSkeletonHistoryPanel />)}
       {showBooks &&

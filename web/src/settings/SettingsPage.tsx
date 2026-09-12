@@ -335,6 +335,10 @@ const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess
  * fold at both widths, and what follows settles under it.
  */
 function SettingsPlaceholder() {
+  // The same record the Vault cards read: this outline draws the tree
+  // too, and reading it only in the cards left the page's own copy on
+  // the first eight rows.
+  const [reservedPaths] = useState(readVaultPaths);
   return (
     <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
       {/* The page title: text-xl on a desktop, whose line box is 28px;
@@ -358,7 +362,7 @@ function SettingsPlaceholder() {
       {isDemo() ? (
         <>
           <Card icon={BrandMark} title={t('Vault')}>
-            <SkeletonVaultTree path={null} rows={7} />
+            <SkeletonVaultTree path={null} rows={7} paths={reservedPaths} />
             <p className="text-muted-foreground text-sm">{t(DEMO_VAULT_NOTE)}</p>
           </Card>
           <Card icon={Save} title={t('Documents')}>
@@ -388,7 +392,7 @@ function SettingsPlaceholder() {
             <FieldPlaceholder control="input" />
             <p className="text-muted-foreground text-sm">{t(VAULT_NAME_NOTE)}</p>
             <ButtonPlaceholder className="w-24" />
-            <SkeletonVaultTree />
+            <SkeletonVaultTree paths={reservedPaths} />
             <div className="flex flex-wrap items-center gap-2">
               <ButtonPlaceholder className="w-40" />
               <ButtonPlaceholder className="w-28" />
@@ -604,12 +608,52 @@ function revealVault(): (() => Promise<boolean>) | null {
 }
 
 /**
+ * Which rows the Vault listing drew last visit, by path.
+ *
+ * The placeholder reserves each row's own gloss, laid out invisible, so
+ * it has to know WHICH rows and not merely how many: a vault with no
+ * books drops two folders from the MIDDLE of the list and still ends on
+ * `.history.git` and `config.json`, and the first eight reserved two
+ * glosses that never arrive and missed the two that do. The same bargain
+ * as the other reservations: a paint hint, wrong by at most one visit,
+ * corrected by whatever /api/storage says.
+ */
+const VAULT_ROWS_KEY = 'vault:storage-rows';
+const readVaultPaths = (): readonly string[] | undefined => {
+  try {
+    const raw = localStorage.getItem(VAULT_ROWS_KEY);
+    if (raw === null) return undefined;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    const known = parsed.filter((v): v is string => typeof v === 'string' && VAULT_ROWS.some((r) => r.path === v));
+    // An empty list is not "nothing listed", it is a record we cannot
+    // use: fall back to the count, as an absent record does.
+    return known.length > 0 ? known : undefined;
+  } catch {
+    return undefined;
+  }
+};
+/** What a settled listing records for the reader above. */
+function useStoredVaultPaths(rows: VaultRow[] | null): void {
+  useEffect(() => {
+    if (rows === null || rows.length === 0) return;
+    try {
+      localStorage.setItem(VAULT_ROWS_KEY, JSON.stringify(rows.map((r) => r.path)));
+    } catch {
+      // Nothing to reserve next time; the count serves.
+    }
+  }, [rows]);
+}
+
+/**
  * The demo's Vault card: the listing and the sentence, without a name to
  * give or a path to show. It is the one card that says what a vault is
  * MADE of, which is worth showing somebody deciding whether to install.
  */
 function DemoVaultCard({ storage }: { storage: StorageReport | null }) {
   const vault = storage && vaultRows(storage);
+  const [reservedPaths] = useState(readVaultPaths);
+  useStoredVaultPaths(vault ? vault.rows : null);
   // The demo answers in the page, so the placeholder is a formality
   // here (useSlowLoad holds it back for longer than the answer takes);
   // it is drawn all the same, so the shape is proved on the one vault
@@ -619,7 +663,11 @@ function DemoVaultCard({ storage }: { storage: StorageReport | null }) {
   const slow = useSlowLoad(vault === null);
   return (
     <Card icon={BrandMark} title={t('Vault')} anchor="vault">
-      {vault ? <VaultTree path={null} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={null} rows={7} /> : null}
+      {vault ? (
+        <VaultTree path={null} rows={vault.rows} />
+      ) : slow ? (
+        <SkeletonVaultTree path={null} rows={7} paths={reservedPaths} />
+      ) : null}
       <p className="text-muted-foreground text-sm">{t(DEMO_VAULT_NOTE)}</p>
     </Card>
   );
@@ -641,6 +689,8 @@ function VaultCard({
   // this page updates this listing too: browsed games are counted under
   // games/ here, and the tree used to keep the size it read at mount.
   const vault = storage && vaultRows(storage);
+  const [reservedPaths] = useState(readVaultPaths);
+  useStoredVaultPaths(vault ? vault.rows : null);
   const slow = useSlowLoad(vault === null);
   const reveal = revealVault();
   const copyPath = async (): Promise<void> => {
@@ -680,7 +730,11 @@ function VaultCard({
           which on a vault of books is the slowest wait on this page, and the
           box used to appear from nothing and push the buttons under it down
           by its whole height. */}
-      {vault ? <VaultTree path={settings.vaultPath} rows={vault.rows} /> : slow ? <SkeletonVaultTree path={settings.vaultPath} /> : null}
+      {vault ? (
+        <VaultTree path={settings.vaultPath} rows={vault.rows} />
+      ) : slow ? (
+        <SkeletonVaultTree path={settings.vaultPath} paths={reservedPaths} />
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         {/* The backup verb (server/backup.ts): a plain link, since the
             session is a cookie and the browser's own download handles a
