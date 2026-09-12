@@ -457,6 +457,8 @@ did with the rest of them. The rows below are grouped by page.
   it are skipped while it is open, and a dot chosen with the keyboard
   hands focus to the panel and takes it back when the panel closes. At
   1920px nothing was ever covered, and there the map does not move.
+- **The keyboard list says Ctrl/⌘ K opens anything by name or text,**
+  which is what the switcher does; the manual quotes the new row.
 - **Every dependency updated**, Electron 44 and Vitest 5 among them, and
   the Rust crate notice regenerated from the new lockfile.
 
