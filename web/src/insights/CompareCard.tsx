@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
 import { navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
@@ -7,25 +8,34 @@ import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
 import { bookLabel } from '@/store/explorer';
 import { FilterChip } from '@/components/filter-chip';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Segmented } from '@/components/segmented';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/skeletons';
-import type { FieldDatabase } from '@/repertoire/field';
-import type { MapColor } from './model';
+import { fieldDatabases, type FieldDatabase } from '@/repertoire/field';
 
 /**
  * The improver's diff, read out loud: every position in your recent
- * games as this colour where YOUR move is one the database's players
+ * games as one colour where YOUR move is one the database's players
  * rarely choose — at your level, when a band is picked. The server walk
  * (`/api/mygames/compare`, see compareAgainst in server/myGames.ts)
  * answers from the reference file's precomputed sums, so the whole
  * report is hash lookups; a row opens its position on the board, where
  * the explorer can take the question further.
  *
- * A map-level report rather than a per-node one: the flags come from
- * your games, which do not care what the map has charted — the most
- * useful finding is often exactly the line you never thought to chart.
+ * It lived on the opening map as a window behind a menu row, because
+ * the map was the page that already knew the databases and a colour.
+ * But it is a report about your games, not about the map — the flags
+ * come from your games, which do not care what the map has charted —
+ * and this page already asks the neighbouring question (where each game
+ * left the catalogue, and whose move did it). So it is a card here,
+ * under the same gate as the rest: Insights shows nothing until the
+ * pass has run, and one card that answered early would make the gate
+ * look broken. The colour the map supplied is a choice on the card.
+ *
+ * The rows print the field's share of a move and your share of yours,
+ * the explorer's own figure about the field. Nothing sums them into a
+ * grade, and nothing here should: that would be the page scoring you.
  */
 
 interface CompareRow {
@@ -45,7 +55,9 @@ const BANDS: { id: string | undefined; label: string }[] = [
   { id: '2000-2399', label: '2000–2399' },
   { id: '2400-', label: '2400+' },
 ];
+/** Kept from the map's window, so a band picked there still holds here. */
 const BAND_KEY = 'vault:openingmap-compare-band';
+const SIDE_KEY = 'vault:insights-compare-side';
 
 const line = (sans: string[]): string =>
   sans.map((san, at) => (at % 2 === 0 ? `${at / 2 + 1}. ${san}` : san)).join(' ');
@@ -56,18 +68,33 @@ const pct = (part: number, total: number): string => {
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 };
 
-export function CompareDialog({
-  color,
-  databases,
-  defaultDb,
-  onClose,
-}: {
-  color: MapColor;
-  databases: FieldDatabase[];
-  defaultDb: string;
-  onClose: () => void;
-}) {
-  const [db, setDb] = useState(defaultDb);
+export function CompareCard() {
+  // The reference databases, the way the map asked for them. None (or
+  // the demo, which has no indexed games behind it) is no card, not an
+  // empty one: a report with nothing to read against is not a report.
+  const [databases, setDatabases] = useState<FieldDatabase[] | null>(null);
+  useEffect(() => {
+    if (isDemo()) {
+      setDatabases([]);
+      return;
+    }
+    void api<Parameters<typeof fieldDatabases>[0]>('/api/refgames')
+      .then((body) => setDatabases(fieldDatabases(body)))
+      .catch(() => setDatabases([]));
+  }, []);
+  if (databases === null || databases.length === 0) return null;
+  return <CompareBody databases={databases} />;
+}
+
+function CompareBody({ databases }: { databases: FieldDatabase[] }) {
+  const [db, setDb] = useState(databases[0]!.name);
+  const [color, setColor] = useState<'white' | 'black'>(() =>
+    localStorage.getItem(SIDE_KEY) === 'black' ? 'black' : 'white',
+  );
+  const pickColor = (c: 'white' | 'black'): void => {
+    setColor(c);
+    localStorage.setItem(SIDE_KEY, c);
+  };
   const [band, setBand] = useState<string | undefined>(() => {
     const stored = localStorage.getItem(BAND_KEY);
     return BANDS.some((b) => b.id === stored) ? (stored ?? undefined) : undefined;
@@ -129,34 +156,43 @@ export function CompareDialog({
   };
 
   return (
-    <Dialog
-      open
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-    >
-      <DialogContent size="sm" title={t('Compare with a database')}>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Compare with a database')}</CardTitle>
+        <CardDescription className="max-w-prose">
           {color === 'white'
             ? t('Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.')
             : t('Your recent games as Black, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.')}
-        </p>
-        {databases.length > 1 && (
-          <Select
-            value={db}
-            onValueChange={setDb}
-            ariaLabel={t('Reference database')}
-            fill
-            groups={[
-              {
-                options: databases.map((b) => ({
-                  value: b.name,
-                  label: b.label ?? bookLabel(b.name),
-                })),
-              },
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmented
+            value={color}
+            onChange={pickColor}
+            ariaLabel="Side"
+            segments={[
+              { value: 'white', label: t('White') },
+              { value: 'black', label: t('Black') },
             ]}
           />
-        )}
+          {databases.length > 1 && (
+            <Select
+              value={db}
+              onValueChange={setDb}
+              ariaLabel={t('Reference database')}
+              className="min-w-0 flex-1 basis-56"
+              groups={[
+                {
+                  options: databases.map((b) => ({
+                    value: b.name,
+                    label: b.label ?? bookLabel(b.name),
+                  })),
+                },
+              ]}
+            />
+          )}
+        </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-muted-foreground text-sm font-medium">{t('At level')}</span>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -177,8 +213,7 @@ export function CompareDialog({
         </div>
         {rows === null ? (
           // The rows are two lines — a move line over a sentence, at
-          // px-2 py-1.5 in a gap-px column — so three of them are 164px,
-          // not the 124 three h-9 bars at gap-2 came to.
+          // px-2 py-1.5 in a gap-px column — so three of them are 164px.
           <div className="flex flex-col gap-px" role="status" aria-label={t('Loading')}>
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex flex-col gap-0.5 px-2 py-1.5">
@@ -202,13 +237,13 @@ export function CompareDialog({
                 : t('Nothing to flag: where this database has a real sample, your recent moves are among its usual answers.')}
           </p>
         ) : (
-          <div className="-mx-1 flex max-h-72 flex-col gap-px overflow-y-auto px-1">
+          <div className="-mx-1 flex max-h-96 flex-col gap-px overflow-y-auto px-1">
             {rows.map((row) => (
               <button
                 key={row.key}
                 type="button"
                 onClick={() => void open(row)}
-                className="hover:bg-accent flex flex-col gap-0.5 rounded-md px-2 py-1.5 text-left"
+                className="hover:bg-accent flex flex-col gap-0.5 rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring"
               >
                 <span className="flex w-full items-baseline gap-2">
                   <span className="text-foreground font-moves min-w-0 flex-1 truncate text-sm font-medium">
@@ -233,12 +268,7 @@ export function CompareDialog({
             ))}
           </div>
         )}
-        <div className="mt-1 flex justify-end">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            {t('Close')}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

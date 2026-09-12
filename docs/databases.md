@@ -232,9 +232,10 @@ What a built database answers, and from where:
 - `/api/mygames/compare` diffs **your own games** against a database:
   every position where your move is rare among what its players answer
   (at your level, when a band is given), aggregated across your recent
-  games. The opening map carries the report — **Compare my moves with a
-  database** — and each flagged line opens on the board at the decision
-  point, where the explorer can take the question further.
+  games. The Insights page carries the report — the **Compare with a
+  database** card, with a colour, a database and a level — and each
+  flagged line opens on the board at the decision point, where the
+  explorer can take the question further.
 
 A device still carrying the single-file era's `data/refgames.sqlite`
 migrates on the server's next start: the file is renamed into the

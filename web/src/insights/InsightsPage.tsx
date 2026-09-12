@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { PASS_DEPTH, useAnalysisJob } from './analysisJob';
+import { CompareCard } from './CompareCard';
 import { ChartColumn } from 'lucide-react';
 import type { Ending, Speed } from '@shared/gameIndex';
 import { api } from '@/lib/api';
@@ -652,6 +653,11 @@ function Tables({ report }: { report: Report }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Your openings against a database's players: the question the
+          card above asks of the catalogue, asked of a field instead. It
+          was the opening map's window; see CompareCard for the move. */}
+      <CompareCard />
 
       <ActivityCard report={report} />
       <EndingsCard endings={report.endings} byOutcome={report.analysis.byOutcome} />

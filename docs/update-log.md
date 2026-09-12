@@ -32,6 +32,13 @@ screen, and the opening map's panel steps aside from the dot you chose.
   disc. The opening map keeps its compass in the corner, since its menu
   acts on a canvas that pans under the finger; the compass opens the
   action sheet too.
+- **“Compare with a database” moved from the opening map to Insights.**
+  The report of positions where your move is one a database's players
+  rarely choose is about your games, not the map, and Insights already
+  asks where each game left the catalogue; it is a card there now, with
+  a colour toggle, the database and the level, shown once the pass has
+  run like the rest of the page. Rows still open on the board at the
+  decision point.
 - **The desktop app's title bar carries the search.** The band at the
   top of the window is one strip in the sidebar's colour, and in its
   middle an “Open anything…” button with its shortcut opens the quick
