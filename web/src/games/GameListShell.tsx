@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Spinner } from '@/components/ui/spinner';
 import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
+import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { FilterRow } from './GameFilters';
 
 /**
@@ -139,6 +140,9 @@ export function GameListShell({
   // controls moves as one; FilterRow carries px-3 of its own, and cn's
   // tailwind-merge lets this override it.
   const bandX = shape === 'page' ? 'px-0' : 'px-3';
+  // The table's own column header pins over the rows, so the wrapper it
+  // pins inside scrolls a focused row's controls clear of it.
+  const pinHeader = usePinnedBand('top');
 
   const bands = (
     <>
@@ -255,7 +259,7 @@ export function GameListShell({
               {/* Sticky, opaque, and as wide as the rows: the header
                   scrolls sideways WITH the table and stays put over a
                   vertical scroll. */}
-              <div className="bg-card sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0">
+              <div ref={pinHeader} className="bg-card sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0">
                 {listHeader}
               </div>
               {rows}

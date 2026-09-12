@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, Pencil } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
@@ -19,6 +19,7 @@ import { wikiSuggestStore } from './wikiLink';
 import { readAliases, writeAliases } from '@shared/frontMatter';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { useScrollCollapse } from '@/hooks/use-scroll-collapse';
+import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -378,6 +379,17 @@ function NoteEditor({
    * screen names it.
    */
   const phone = useMediaQuery('(max-width: 47.9375rem)');
+  // The header is measured twice over: once for whether the note has
+  // scrolled under it, once for how much of the note it covers, so a Tab or
+  // a Shift+Tab onto a board's controls lands below it rather than behind it.
+  const pinHeader = usePinnedBand('top');
+  const setHeader = useCallback(
+    (el: HTMLDivElement | null) => {
+      headerRef.current = el;
+      pinHeader(el);
+    },
+    [pinHeader],
+  );
   const compact = useScrollCollapse(headerRef, phone && leadsWithHeading);
   // Whether the note has scrolled under the header at all, for its fill.
   const scrolled = useScrollCollapse(headerRef, true);
@@ -404,7 +416,7 @@ function NoteEditor({
           bar span the column's full width — inset by the page padding it
           read as narrower than the text it formats. */}
       <div
-        ref={headerRef}
+        ref={setHeader}
         className={cn(
           'sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
           // The page header's grammar: the page's own tone at rest, and the

@@ -32,6 +32,7 @@ import { Slider } from '@/components/ui/slider';
 import { Disclosure } from '@/components/disclosure';
 import { SettingRow, SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
+import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -496,6 +497,9 @@ function Card({
  */
 function JumpList({ dep }: { dep: unknown }) {
   const [cards, setCards] = useState<{ el: HTMLElement; title: string }[]>([]);
+  // 60px on one line, 84px once the names wrap to two, and either way the
+  // page scrolls a Shift+Tab clear of it (hooks/use-pinned-band).
+  const pin = usePinnedBand('top');
   useEffect(() => {
     const found = [...document.querySelectorAll<HTMLElement>('[data-settings-card]')].map((el) => ({
       el,
@@ -506,6 +510,7 @@ function JumpList({ dep }: { dep: unknown }) {
   if (cards.length < 4) return null;
   return (
     <nav
+      ref={pin}
       aria-label={t('Settings sections')}
       className="bg-background/95 sticky top-0 z-10 -mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex"
     >
