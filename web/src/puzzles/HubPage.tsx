@@ -368,9 +368,10 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
   return (
     <div
       className={cn(
-        // border, not ring: PuzzleCard's own geometry is `border
-        // px-2.5 py-1.5`, and a ring costs no layout — so each slot
-        // stood 2px short of the card that replaced it.
+        // PuzzleCard's own geometry, ring and all: a ring costs no
+        // layout, so slot and card are the same box. This note used to
+        // say "border, not ring" and describe the opposite; both sides
+        // have been on the ring for a while.
         'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
         fill && 'min-h-0 max-h-[10.75rem] flex-1',
       )}
@@ -382,6 +383,9 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
         <Skeleton className="h-3 w-1/3" />
         <Skeleton className="h-2.5 w-1/2" />
       </div>
+      {/* The chevron every card and empty slot ends with: kept, not
+          drawn, so the text column stops where it really stops. */}
+      <span aria-hidden className="size-4 shrink-0 self-center" />
     </div>
   );
 }
@@ -1262,11 +1266,15 @@ function Hub() {
                 type="button"
                 onClick={go}
                 className={cn(
-                  'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
+                  // The ring, as every other card on this page and these
+                  // tiles' own placeholders draw it: a border costs 2px of
+                  // layout and a ring costs none, so on a border the tiles
+                  // stood 2px taller than the row that waited for them.
+                  'flex h-16 flex-col items-center justify-center gap-1 rounded-xl',
                   'px-1 text-center text-sm font-medium leading-tight transition-colors',
                   primary
-                    ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
-                    : 'bg-card border-card-ring hover:bg-accent',
+                    ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
+                    : 'bg-card ring-card-ring hover:bg-accent ring-1',
                 )}
               >
                 <Icon className={cn('size-5', primary ? '' : 'text-primary')} />

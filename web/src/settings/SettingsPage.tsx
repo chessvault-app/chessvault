@@ -416,7 +416,8 @@ function FieldPlaceholder({ control }: { control: 'input' | 'select' }) {
       <div className="text-sm leading-snug">
         <Skeleton className="inline-block h-2.5 w-24 align-middle" />
       </div>
-      <Skeleton className={cn('rounded-md', control === 'input' ? 'h-9' : 'h-8 pointer-coarse:h-9')} />
+      {/* Input and Select are both on the lg corner, not md. */}
+      <Skeleton className={cn('rounded-lg', control === 'input' ? 'h-9' : 'h-8 pointer-coarse:h-9')} />
     </div>
   );
 }
@@ -2594,7 +2595,11 @@ function StorageCard({ storage }: { storage: StorageReport | null }) {
       </ul>
       <div className="flex items-center justify-between gap-2">
         {areas === null ? (
-          <Skeleton className="h-2.5 w-24" />
+          // The line box the sentence lands in, not a bare bar: without
+          // it the card stood 10px short of itself.
+          <div className="flex h-5 items-center">
+            <Skeleton className="h-2.5 w-24" />
+          </div>
         ) : (
           <span className="text-muted-foreground text-sm">{t('{size} in total', { size: size(total) })}</span>
         )}
