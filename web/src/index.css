@@ -479,9 +479,19 @@
      than layered, hover and rest are the same measurement — 4.65:1 and
      4.78:1 in light, 6.71 and 5.48 in dark, 7.94 and 6.41 in high
      contrast. Mixed against --card, which is what every list that draws
-     one sits on. */
-  --good-tint: color-mix(in oklch, var(--good) 10%, var(--card));
-  --destructive-tint: color-mix(in oklch, var(--destructive) 10%, var(--card));
+     one sits on.
+
+     In oklab, not oklch. A polar mix interpolates the HUE, and --card is
+     written with one (0 in light, --ui-hue in dark) even though its
+     chroma is 0, so the browser did not treat it as missing: 10% of
+     green's 150 landed the "good" tint at hue 15, a faint pink, and
+     dark's at 253, a blue-grey. Measured on the games list's win chip
+     and the puzzle tiles: both tints were the same colour. A rectangular
+     mix keeps the hue of whichever colour has any; the ratios above
+     move by 0.03 or less (4.87 and 4.83 in light, 6.72 and 5.62 in
+     dark). */
+  --good-tint: color-mix(in oklab, var(--good) 10%, var(--card));
+  --destructive-tint: color-mix(in oklab, var(--destructive) 10%, var(--card));
   /**
    * The ECO tag: one hue per opening family (A–E), two lightnesses per
    * theme.

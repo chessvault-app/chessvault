@@ -20,6 +20,32 @@ import {
 } from './data';
 
 /**
+ * What a tile says to assistive technology: the number, the state, the
+ * fidelity tier, the tries. Sighted eyes get the state from the fill and
+ * the glyph, the tier from the corner icon and the tries from the tip;
+ * a screen reader got the digit alone, since the glyph and the icon are
+ * aria-hidden and the tip is neither a label nor a description. The
+ * label carries the tip's two lines too, so nothing is only in the tip.
+ * A never-attempted tile skips the state word: "not attempted" is
+ * already its tries line.
+ */
+function tileLabel(
+  n: number,
+  state: 'new' | 'failed' | 'solved',
+  meta: { label: string } | null,
+  tries: string,
+): string {
+  return [
+    t('Puzzle {n}', { n }),
+    state === 'solved' ? t('solved') : state === 'failed' ? t('failed') : null,
+    meta ? t(meta.label) : null,
+    tries,
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
  * The book's puzzle grid, revealed from the Puzzle panel's header the way
  * the lichess trainer reveals its difficulty row — a jump pad, not a
  * permanent panel. Cards show number, tier and state; the current puzzle
@@ -60,31 +86,31 @@ export function PuzzleGrid({
                 ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
                 : null;
             const prog = progress[p.id];
+            const tries = prog
+              ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
+              : t('not attempted');
             // Two lines, so the tip needs the newline the browser's bubble
             // used to render: TitleTip sets whitespace-pre-line for it.
             return (
               <TitleTip
                 key={p.id}
-                title={[
-                  meta ? `${t(meta.label)}: ${t(meta.title)}` : null,
-                  prog
-                    ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
-                    : t('not attempted'),
-                ]
+                title={[meta ? `${t(meta.label)}: ${t(meta.title)}` : null, tries]
                   .filter(Boolean)
                   .join('\n')}
               >
                 <button
                   ref={current ? currentRef : undefined}
                   type="button"
+                  aria-label={tileLabel(p.number ?? i + 1, last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new', meta, tries)}
+                  aria-current={current ? 'true' : undefined}
                   onClick={() => go(i)}
                   className={cn(
-                    'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-colors duration-100 [content-visibility:auto]',
+                    'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold leading-none transition-colors duration-100 [content-visibility:auto]',
                     current && 'ring-primary/60 ring-2',
                     last === 'win'
-                      ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
+                      ? 'bg-good-tint border-good/40 text-good'
                       : last === 'loss'
-                        ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
+                        ? 'bg-destructive-tint border-destructive/40 text-destructive'
                         : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
                   )}
                 >
@@ -399,6 +425,10 @@ export function PuzzleList({
               ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
               : null;
           const prog = progress[p.id];
+          const tries = prog
+            ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
+            : t('not attempted');
+          const number = p.number ?? ordinalOf.get(p.id) ?? 0;
           // Same two lines as the panel grid, and t() on both halves now:
           // this tile spelled the second one in English in the source while
           // the tile above said it through the dictionary. Same keys, so
@@ -406,17 +436,13 @@ export function PuzzleList({
           return (
             <TitleTip
               key={p.id}
-              title={[
-                meta ? `${t(meta.label)}: ${t(meta.title)}` : null,
-                prog
-                  ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
-                  : t('not attempted'),
-              ]
+              title={[meta ? `${t(meta.label)}: ${t(meta.title)}` : null, tries]
                 .filter(Boolean)
                 .join('\n')}
             >
               <button
                 type="button"
+                aria-label={tileLabel(number, state, meta, tries)}
                 onClick={() => {
                   const d = draftIds.has(p.id) ? drafts.find((x) => x.id === p.id) : null;
                   if (d) onDraft(d);
@@ -425,17 +451,35 @@ export function PuzzleList({
                 className={cn(
                   // content-visibility: ~1,000 offscreen tiles skip render
                   // work entirely — phones feel it.
-                  'relative flex aspect-square items-center justify-center rounded-lg font-mono text-base font-semibold ring-1 transition-colors duration-100 [content-visibility:auto]',
+                  'relative flex aspect-square items-center justify-center rounded-lg font-mono font-semibold leading-none ring-1 transition-colors duration-100 [content-visibility:auto]',
+                  // The digit steps down with its length below sm, where
+                  // six columns make a 41px tile at 320: four mono digits
+                  // at 16px are 38px wide and ran under the corner icon
+                  // and the glyph (12x10px and 8x3px of overlap measured
+                  // on "5334"), and three did the same. leading-none so
+                  // the digit's box is its em, not a 21px line: the
+                  // corners are what is left over.
+                  String(number).length >= 4
+                    ? 'text-xs sm:text-sm'
+                    : String(number).length === 3
+                      ? 'text-sm sm:text-base'
+                      : 'text-base',
                   // The ring card, with the state in the ring: the colour
                   // grammar's green and red, a glyph beside each (below).
+                  // The opaque tints and the good/destructive ink, not the
+                  // NAG colours over a 15% wash: the NAG green measured
+                  // 2.35:1 and the red 2.71:1 on their own washes in light,
+                  // and the good token on that same wash still only 4.45:1.
+                  // On --good-tint it reads 4.87:1 (dark 6.72:1), which is
+                  // what the tint tokens are for (index.css says so).
                   state === 'solved'
-                    ? 'bg-nag-good/15 ring-nag-good/40 text-nag-good'
+                    ? 'bg-good-tint ring-good/40 text-good'
                     : state === 'failed'
-                      ? 'bg-nag-blunder/15 ring-nag-blunder/40 text-nag-blunder'
+                      ? 'bg-destructive-tint ring-destructive/40 text-destructive'
                       : 'bg-card ring-card-ring text-muted-foreground hover:bg-accent',
                 )}
               >
-                {p.number ?? ordinalOf.get(p.id)}
+                {number}
                 {/* Same glyph redundancy as the panel grid: tint alone is
                     invisible to colour-blind eyes. */}
                 {(state === 'solved' || state === 'failed') && (
@@ -443,9 +487,12 @@ export function PuzzleList({
                     {state === 'solved' ? '✓' : '✗'}
                   </span>
                 )}
+                {/* Smaller and tighter in the corner below sm, for the same
+                    41px tile: at 12px and 8px in it sat on the digit's
+                    line. */}
                 {meta && (
                   <meta.icon
-                    className={cn('absolute right-2 top-2 size-3', meta.iconClass)}
+                    className={cn('absolute right-1 top-1 size-2.5 sm:right-2 sm:top-2 sm:size-3', meta.iconClass)}
                     aria-hidden
                   />
                 )}
