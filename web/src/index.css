@@ -2399,6 +2399,31 @@ cg-board square.check {
     filter: brightness(0.85);
   }
 }
+/* The toasts (components/ui/toast), on a snapshot of their own rather
+   than the page's. A fixed overlay captured with the page is dragged by
+   the page's animation, and the review offer rode a pop clean off the
+   right edge of a phone. Held still and live instead, so a toast plays
+   its own entrance and exit through a page change, where it stands:
+   `::view-transition-new` is the live element and not a still, which is
+   what makes that work, and the old image is dropped rather than
+   cross-faded, or the toast doubles with itself for the length of the
+   slide. The name is taken only while a toast is up, so a page change
+   over an empty layer pays for no second snapshot. */
+[data-slot='toast-layer']:has([data-slot='toast']) {
+  view-transition-name: toasts;
+}
+::view-transition-group(toasts) {
+  animation: none;
+}
+::view-transition-old(toasts) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(toasts) {
+  animation: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
 /* The shared board (lib/shared-board): the group carrying it moves and
    resizes on the spring, and the two boards do not cross-fade on the
    way, which blurred the pieces mid-flight; the new one is shown as soon

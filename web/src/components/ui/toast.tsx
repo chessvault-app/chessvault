@@ -55,6 +55,39 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
   )
 }
 
+/**
+ * The screen the toasts are drawn on, and the app's own: the registry
+ * ships the viewport alone.
+ *
+ * A phone's page change is a View Transition (lib/router), which paints
+ * the whole page as two snapshots while the live DOM is hidden. A fixed
+ * toast is part of that page, so it was captured with it and dragged
+ * across the screen by the slide: leaving a game for the games list, the
+ * review offer travelled 390px to the right with the page it was raised
+ * over and was gone by the time the live one came back (measured on the
+ * demo, 390x844 Chromium, back out of a game: the toast rode the pop
+ * from x 16 to off the right edge, while the live one had already slid
+ * its 146px down unseen).
+ *
+ * Naming this layer lifts it out of the page's snapshot into one of its
+ * own, which index.css then holds still and live (`::view-transition-*
+ * (toasts)`), so a toast leaves the way a toast leaves: straight down,
+ * where it stands. The name is only taken while a toast exists (the
+ * `:has` there), so a page change with nothing to show costs no extra
+ * snapshot. The layer is its own box and not the viewport's, which is a
+ * zero-height strip: named, that one captured nothing and the toast
+ * blinked out at the transition's first frame instead of leaving.
+ */
+function ToastLayer({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="toast-layer"
+      className={cn("pointer-events-none fixed inset-0 z-50", className)}
+      {...props}
+    />
+  )
+}
+
 function Toast({ className, ...props }: ToastPrimitive.Root.Props) {
   return (
     <ToastPrimitive.Root
@@ -235,9 +268,11 @@ function Toaster({
     <ToastProvider toastManager={toastManager} {...props}>
       {children}
       <ToastPortal>
-        <ToastViewport aria-label={t('Notifications')}>
-          <ToastList />
-        </ToastViewport>
+        <ToastLayer>
+          <ToastViewport aria-label={t('Notifications')}>
+            <ToastList />
+          </ToastViewport>
+        </ToastLayer>
       </ToastPortal>
     </ToastProvider>
   )
