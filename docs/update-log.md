@@ -7,7 +7,7 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-An Insights page sums your own games, and endgame drills have you play won endings against the tablebase. The quick switcher searches what a document says, not only its name.
+An Insights page sums your own games, and endgame drills have you play won endings against the tablebase. The quick switcher searches what a document says, not only its name, lists what you opened last and the app's own actions, and the desktop app's title bar carries the way into it. The games table sorts by its headings, and Settings names its sections beside the form.
 Six things that were true in one copy of a page and not in its twin, found
 by auditing the code for duplicates: an installed desktop app now finds the
 vault's own tablebase files, a puzzle's hover preview wears the same edge as
@@ -32,6 +32,36 @@ screen, and the opening map's panel steps aside from the dot you chose.
   disc. The opening map keeps its compass in the corner, since its menu
   acts on a canvas that pans under the finger; the compass opens the
   action sheet too.
+- **The desktop app's title bar carries the search.** The band at the
+  top of the window is one strip in the sidebar's colour, and in its
+  middle an “Open anything…” button with its shortcut opens the quick
+  switcher from any page. In a browser the app has no band and no such
+  button; Ctrl/⌘ K and the button on Home reach the same window.
+- **The quick switcher lists what you opened last, and the app's own
+  actions.** With nothing typed, a Recent group names the documents this
+  device opened last. After the destinations, an Actions group holds the
+  theme, the density, the sidebar's fold and the keyboard list, so each
+  can be reached by name. On a desktop the window ends with its keys:
+  arrows to move, Enter to open, Esc to close.
+- **Ctrl/⌘ B folds and unfolds the sidebar.** The keyboard list under ?
+  names it.
+- **The games table sorts by its headings.** Click a column heading to
+  order the collection by it, click again to reverse; the ordered column
+  carries an arrow. A date, an Elo and a length come newest, strongest
+  and longest first; a name and a code A to Z. The choice is kept on this
+  device with the column widths.
+- **Settings names its sections beside the form.** On a wide window the
+  card names stand in a column to the left of the settings, follow the
+  page as it scrolls, and mark the card under the top of the window. On
+  narrower windows the row of names stays where it was.
+- **The board's empty moves panel says what to do.** A fresh board's
+  side column shows “No moves yet” with the sentence it always had and,
+  where there is a keyboard, the two keys the panel answers.
+- **Endgame drills are listed by family.** Pawns and minor pieces, rook
+  endgames, queen and heavy pieces, middlegames and material edges, and
+  your own material, each under its heading.
+- **The Books shelf says it takes a dropped PDF.** One line under the
+  shelf, where there is a pointer to drop with.
 - **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
   against a rook, rook and pawns against a rook, and the rest, or a

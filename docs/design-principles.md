@@ -456,6 +456,23 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
   back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
   back arrows on top-level pages.
+- **The desktop shell's band is one strip, and the search sits on it.**
+  The title bar the shell draws (`components/title-bar`) is filled edge
+  to edge in the sidebar's colour, with the way into the quick switcher
+  centred on the window and the two keycaps of its shortcut beside the
+  words. It was two fills, the sidebar's over the sidebar and the page's
+  over the page, which read as two columns that started at the top; one
+  band with a control in its middle reads as a top bar over two columns,
+  the shape Windows 11 draws (a title bar over a navigation view) and
+  the one VS Code and Slack settled on, and the band is the one strip
+  that exists on every page at every width. Centred on the window, not
+  the page, so it stays put when the sidebar folds. It is a button, not
+  a field: typing happens in the window it opens. No rule under it, and
+  no glass or Mica behind it: the band and the sidebar are one L of card
+  around the toned page, and a material that samples the wallpaper would
+  put a second ground behind the cards (the tonal rule). A browser build
+  has no band and, by decision, no search control anywhere in its chrome;
+  Ctrl/⌘ K and the Home button reach the same window.
 - **A phone's hub is a launcher, not a dashboard.** The Puzzles tab lands
   on `#/puzzles/hub` (`puzzles/HubPage.tsx`), which is its destinations
   and nothing else. It landed on the dashboard until that page — stats
