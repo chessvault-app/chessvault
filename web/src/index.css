@@ -2561,7 +2561,13 @@ cg-board square.check {
    two areas it was, and it is offset by the row's top padding and held to
    the path's 20px line box, which centres it on the first line rather
    than on a row whose gloss has wrapped under it. Below 30rem each row
-   stacks its gloss under the path. */
+   stacks its gloss under the path, and below 22rem its size too: path
+   and size shared one line by nowrap, and at 320px CSS wide the well's
+   content edge is 274px while "7 files · 130 kB" ended at 328, past the
+   card and the viewport both (five of seven rows past the well in
+   English, three in Korean; at 360 the longest row reached the well's
+   outer edge with no padding left). Real vaults run longer than the
+   demo's, so the size goes under the path there instead of past it. */
 .vault-tree {
   container-type: inline-size;
 }
@@ -2575,13 +2581,22 @@ cg-board square.check {
   --row-pad: 0.3rem;
   position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    'path size'
-    'gloss gloss';
+    'path'
+    'size'
+    'gloss';
   column-gap: 1rem;
   align-items: baseline;
   padding: var(--row-pad) 0 var(--row-pad) 1.5rem;
+}
+@container (width >= 22rem) {
+  .vault-tree li {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'path size'
+      'gloss gloss';
+  }
 }
 .vault-tree li > .icon {
   position: absolute;
