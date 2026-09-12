@@ -317,6 +317,7 @@ export const ko: Record<string, string> = {
   'Chromium (desktop app)': 'Chromium (데스크톱 앱)',
   'The licence list could not be loaded.': '라이선스 목록을 불러오지 못했습니다.',
   'Licence text unavailable.': '라이선스 본문이 없습니다.',
+  'Licence text': '라이선스 본문',
   'Loading…': '불러오는 중…',
   'The licence text could not be loaded.': '라이선스 본문을 불러오지 못했습니다.',
   'No licence file ships with this component. It is under {license}.':

@@ -1,7 +1,8 @@
 import { ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { ChipRow } from '@/components/chip-row';
 import { TitleTip } from '@/components/title-tip';
+import { Button } from '@/components/ui/button';
 import { FilterChip } from '@/components/filter-chip';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
@@ -48,6 +49,9 @@ import { cn } from '@/lib/utils';
 
 interface Entry {
   name: string;
+  /** What the name alone does not say: which set, which build. A bundled
+      asset's, from ASSETS in web/vite.licenses.ts; packages have none. */
+  note?: string;
   version: string;
   license: string;
   url: string;
@@ -124,7 +128,10 @@ export function LicensesPage() {
       .filter(
         ([e]) =>
           (!group || e.group === group) &&
-          (!term || e.name.toLowerCase().includes(term) || e.license.toLowerCase().includes(term)),
+          (!term ||
+            e.name.toLowerCase().includes(term) ||
+            (e.note ?? '').toLowerCase().includes(term) ||
+            e.license.toLowerCase().includes(term)),
       );
   }, [inventory, query, group]);
 
@@ -275,6 +282,7 @@ const chromiumText = (at: number): Promise<string> => {
 };
 
 function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle: () => void }) {
+  const panelId = useId();
   const [lazyText, setLazyText] = useState<string | null>(null);
   useEffect(() => {
     if (!open || entry.lazy === undefined || lazyText !== null) return;
@@ -298,6 +306,7 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
         type="button"
         onClick={onToggle}
         aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
         className="hover:bg-muted/50 flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-100"
       >
         <ChevronRight
@@ -306,18 +315,33 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
             open && 'rotate-90',
           )}
         />
-        <span className="min-w-0 flex-1 truncate font-medium">{entry.name}</span>
-        {entry.version && (
-          <span className="text-muted-foreground shrink-0 font-mono text-xs">{entry.version}</span>
-        )}
-        <TitleTip title={entry.license}>
-          <span className="text-muted-foreground border-border max-w-[45%] shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap">
-            {entry.license}
+        {/* The name wraps, and below sm the version and the licence pill
+            take a line of their own under it. It was one truncated line:
+            at 320px CSS wide 43 of the 204 names were cut, and the two
+            Lichess packages both read "@lichess-o…", with nothing on the
+            page giving the rest. The name is what the page is for. */}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="min-w-0 basis-full font-medium break-words sm:flex-1 sm:basis-0">
+            {entry.name}
+            {entry.note && (
+              <span className="text-muted-foreground font-normal">
+                {' '}
+                {entry.note}
+              </span>
+            )}
           </span>
-        </TitleTip>
+          {entry.version && (
+            <span className="text-muted-foreground shrink-0 font-mono text-xs">{entry.version}</span>
+          )}
+          <TitleTip title={entry.license}>
+            <span className="text-muted-foreground border-border max-w-full shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap">
+              {entry.license}
+            </span>
+          </TitleTip>
+        </span>
       </button>
       {open && (
-        <div className="flex flex-col gap-2 px-2 pt-1 pb-3">
+        <div id={panelId} className="flex flex-col gap-2 px-2 pt-1 pb-3">
           {entry.url && (
             <a
               className="text-primary text-xs break-all underline underline-offset-2"
@@ -328,9 +352,22 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
               {entry.url}
             </a>
           )}
-          <pre className="bg-muted overflow-x-auto rounded-md px-3 py-2 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
+          {/* A well that scrolls, not a text poured into the page: the
+              longest text is 35,799 characters, which stood 13,159px tall
+              on a desktop and 28,935px on a phone, with the only way to
+              close it fourteen to forty screens back up. The well is
+              focusable so the keyboard can scroll it, and named so a
+              reader knows what it has landed in. */}
+          <pre
+            tabIndex={0}
+            aria-label={t('Licence text')}
+            className="bg-muted max-h-[60vh] overflow-auto rounded-md px-3 py-2 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
+          >
             {text}
           </pre>
+          <Button variant="ghost" size="sm" className="self-start" onClick={onToggle}>
+            {t('Close')}
+          </Button>
         </div>
       )}
     </li>
