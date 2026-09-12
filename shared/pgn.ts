@@ -41,7 +41,25 @@ const nextParsedId = (): NodeId => `q${(++parsedNodeCounter).toString(36)}`;
  * last), so without this an imported game shows that machinery as a comment on
  * every move.
  */
-const UNREAD_COMMAND = /\[%[^\]]*\]/g;
+/**
+ * The body is bounded, and that bound is load-bearing rather than tidy.
+ *
+ * Unbounded, this was `\[%[^\]]*\]`, which for every `[%` that has no `]`
+ * after it scans to the end of the comment before giving up. A comment
+ * that is nothing but `[%` repeated therefore costs O(length squared),
+ * and PGN arrives from outside: measured on a comment of `[%` pairs, the
+ * old form took 0.9 s at 64 kB, 15.8 s at 256 kB and minutes at 1 MB, on
+ * the event loop, for a study the importer was asked to read. Bounded it
+ * is 26 ms, 107 ms and 463 ms.
+ *
+ * 400 because the longest real command is `[%cal ...]`, six characters an
+ * arrow, and 400 clears sixty-five of them; 120 was tried and clipped a
+ * thirty-arrow one. A command longer than that is left in the text rather
+ * than stripped, which reads badly and breaks nothing: blankCommands uses
+ * this same pattern, so both halves agree about what a command is and the
+ * backlink offsets stay in step.
+ */
+const UNREAD_COMMAND = /\[%[^\]\n]{0,400}\]/g;
 
 /**
  * Text of a comment once the commands nothing reads are removed.

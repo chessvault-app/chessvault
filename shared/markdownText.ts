@@ -25,12 +25,23 @@ export function markdownToText(markdown: string): string {
       .replace(/^```chess[^\n]*\n[\s\S]*?^```[^\n]*$/gm, '')
       .replace(/^```[^\n]*$/gm, '')
       // ![alt](src) -> alt
-      .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+      //
+      // Both halves bounded, and neither crosses a line. Unbounded, an
+      // `![` with no `)` after it scans to the end of the note before
+      // giving up, so a note made of `![x](` repeated costs O(note
+      // squared): measured, 0.7 s at 64 kB and 11.6 s at 256 kB, on the
+      // event loop, inside the walk that answers GET /api/search.
+      // Bounded the same inputs are 0.1 s and 0.4 s, and a megabyte is
+      // 1.5 s. An inline link's url cannot hold a raw newline, and 300
+      // and 2000 are past any alt text or url a note carries; what
+      // exceeds them stays as typed, which costs a search snippet its
+      // tidiness and nothing else.
+      .replace(/!\[([^\]\n]{0,300})\]\([^)\n]{0,2000}\)/g, '$1')
       // [[target|shown]] -> shown, [[target]] -> target
       .replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, '$2')
       .replace(/\[\[([^\]]*)\]\]/g, '$1')
-      // [text](href) -> text
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      // [text](href) -> text, bounded for the same reason as the image above.
+      .replace(/\[([^\]\n]{0,300})\]\([^)\n]{0,2000}\)/g, '$1')
       // Heading hashes, quote bars, list bullets and rules at a line's start.
       .replace(/^[ \t]*#{1,6}[ \t]+/gm, '')
       .replace(/^[ \t]*>[ \t]?/gm, '')
