@@ -17,9 +17,14 @@ export interface VaultInfo {
   path: string | null;
   /** The name somebody gave it, or null when the folder name stands in. */
   name: string | null;
+  /** Whether the settings answer has been back, either way. The foot
+      reserves its first line until it has: a vault with no name and a
+      vault whose name has not arrived look the same from `name` alone,
+      and only the second should hold a box. */
+  loaded: boolean;
 }
 
-let info: VaultInfo = { path: null, name: null };
+let info: VaultInfo = { path: null, name: null, loaded: false };
 let once: Promise<VaultInfo> | null = null;
 const listeners = new Set<() => void>();
 
@@ -32,10 +37,14 @@ const publish = (next: VaultInfo): void => {
 export const vaultInfo = (): Promise<VaultInfo> =>
   (once ??= api<{ vaultPath?: string; name?: string | null }>('/api/settings')
     .then((s) => {
-      publish({ path: s.vaultPath ?? null, name: s.name ?? null });
+      publish({ path: s.vaultPath ?? null, name: s.name ?? null, loaded: true });
       return info;
     })
-    .catch(() => info));
+    .catch(() => {
+      // No answer is still an answer to the foot: stop holding the line.
+      publish({ ...info, loaded: true });
+      return info;
+    }));
 
 /** The Settings page just saved a name (or cleared it): no refetch. */
 export const setVaultName = (name: string | null): void => {
