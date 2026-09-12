@@ -9,6 +9,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseSquare } from 'chessops/util';
 import type { Color } from 'chessops/types';
+import { chessFencePgn } from '@shared/chessFence';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import {
   addMove,
@@ -37,14 +38,26 @@ interface BlockState {
   headers: Headers;
 }
 
-function parseBlock(pgn: string): BlockState {
+/**
+ * The fence's body as a board, or null where it cannot be read.
+ *
+ * Null, not an empty board: this used to fall through to the starting
+ * position, which is a position nobody wrote, drawn with nothing to say
+ * the fence had been misread, and the first move played on it wrote
+ * "1. e4 *" over the author's text. What a fence may hold, and what
+ * counts as unreadable, is decided once in shared/chessFence, for this
+ * block, its paste box and the shelf card's thumbnail alike.
+ */
+function parseBlock(text: string): BlockState | null {
+  const pgn = chessFencePgn(text);
+  if (pgn === null) return null;
   try {
     const chapter = pgnToChapters(pgn)[0];
     if (chapter) return { tree: chapter.tree, headers: chapter.headers };
   } catch {
-    // fall through to an empty board
+    // an exception is one more way of not reading it
   }
-  return { tree: createTree(), headers: {} };
+  return null;
 }
 
 /**
@@ -72,7 +85,16 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   // attribute changes would feed the board its own output and clobber
   // whatever the user was in the middle of.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initial = useMemo(() => parseBlock(String(node.attrs.pgn ?? '*')), []);
+  const raw = String(node.attrs.pgn ?? '*');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initial = useMemo(() => parseBlock(raw), []);
+  /**
+   * The fence could not be read as a FEN or a PGN. The block then shows
+   * the text as written and no board, and writes nothing back: a board
+   * that cannot be read must not be replaced by one that can. Loading a
+   * position into it, or removing it, is still the author's to do.
+   */
+  const [unreadable, setUnreadable] = useState(initial === null);
   /**
    * Whether the note is being EDITED, which is what decides whether this
    * board can be changed at all: its own tools (paste a position in,
@@ -96,13 +118,13 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
       editor.off('update', sync);
     };
   }, [editor]);
-  const [tree, setTree] = useState<MoveTree>(initial.tree);
+  const [tree, setTree] = useState<MoveTree>(() => initial?.tree ?? createTree());
   // A note board opens at the END of its line — the position the note is
   // talking about — not at the start; step back to replay.
-  const [cursorId, setCursorId] = useState<NodeId>(
-    mainlineFrom(initial.tree, initial.tree.rootId).at(-1) ?? initial.tree.rootId,
+  const [cursorId, setCursorId] = useState<NodeId>(() =>
+    initial ? (mainlineFrom(initial.tree, initial.tree.rootId).at(-1) ?? initial.tree.rootId) : tree.rootId,
   );
-  const headers = useRef<Headers>(initial.headers);
+  const headers = useRef<Headers>(initial?.headers ?? {});
   const [orientation, setOrientation] = useState<Color>('white');
   /**
    * Whether this board is listening for touches yet.
@@ -137,6 +159,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   });
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   const current = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
@@ -165,13 +188,18 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   const loadPasted = (): void => {
     const text = pasteText.trim();
     if (!text) return;
-    // A FEN has no move text; wrap it in PGN headers so one parser serves both.
-    const looksLikeFen = !text.includes('\n') && text.split(' ').length >= 4 && !text.includes('.');
-    const pgn = looksLikeFen ? `[FEN "${text}"]\n[SetUp "1"]\n\n*` : text;
-    const parsed = parseBlock(pgn);
+    // The same reader as the fence itself: a FEN or a PGN, and a refusal
+    // that is said rather than a board that starts from the opening.
+    const parsed = parseBlock(text);
+    if (!parsed) {
+      setPasteError(t('That could not be read as a FEN or a PGN.'));
+      return;
+    }
     headers.current = parsed.headers;
     setPasteOpen(false);
     setPasteText('');
+    setPasteError(null);
+    setUnreadable(false);
     commit(parsed.tree, parsed.tree.rootId);
   };
 
@@ -202,6 +230,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           but not at the note's full width — a board illustrating a
           sentence should not be the whole screen. Capped and centred on a
           phone; the side-by-side split takes over from sm up. */}
+      {!unreadable && (
       <div
         className="relative w-full shrink-0 sm:max-w-[19rem]"
         contentEditable={false}
@@ -237,18 +266,23 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           />
         )}
       </div>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-1" contentEditable={false}>
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={goBack}>
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" title={t('Forward')} onClick={goForward}>
-            <ChevronRight className="size-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" title={t('Flip board')} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
-            <FlipVertical2 className="size-3.5" />
-          </Button>
+          {!unreadable && (
+            <>
+              <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={goBack}>
+                <ChevronLeft className="size-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" title={t('Forward')} onClick={goForward}>
+                <ChevronRight className="size-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" title={t('Flip board')} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
+                <FlipVertical2 className="size-3.5" />
+              </Button>
+            </>
+          )}
           {editable && (
             <Button
               variant="ghost"
@@ -272,12 +306,20 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           <div className="flex flex-col gap-1.5">
             <Textarea
               value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
+              onChange={(e) => {
+                setPasteText(e.target.value);
+                setPasteError(null);
+              }}
               placeholder={t('Paste a FEN or PGN…')}
               aria-label={t('Paste a FEN or PGN…')}
               rows={3}
               className="w-full resize-none font-mono"
             />
+            {pasteError && (
+              <p className="text-destructive text-sm" role="alert">
+                {pasteError}
+              </p>
+            )}
             <div className="flex justify-end">
               <Button variant="default" size="sm" disabled={!pasteText.trim()} onClick={loadPasted}>
                 {t('Load')}
@@ -286,7 +328,19 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           </div>
         )}
 
-        <MoveStrip tree={tree} cursorId={cursorId} onSelect={setCursorId} />
+        {unreadable ? (
+          // The text as written, so the author can see what was misread
+          // and fix it: in the note's source, or by loading a position
+          // into this block (which replaces the text) or removing it.
+          <div className="flex min-w-0 flex-col gap-1 px-1">
+            <p className="text-warn text-sm select-none">{t('This board could not be read.')}</p>
+            <pre className="text-muted-foreground overflow-x-auto font-mono text-xs whitespace-pre-wrap" data-user-text>
+              {raw}
+            </pre>
+          </div>
+        ) : (
+          <MoveStrip tree={tree} cursorId={cursorId} onSelect={setCursorId} />
+        )}
       </div>
     </NodeViewWrapper>
   );

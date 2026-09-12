@@ -343,6 +343,8 @@ export const ko: Record<string, string> = {
   'Remove this board': '이 보드 제거',
   'Paste a FEN or PGN…': 'FEN 또는 PGN 붙여넣기…',
   'Play moves on the board, or paste a FEN/PGN.': '보드에서 수를 두거나, FEN/PGN을 붙여넣으세요.',
+  'This board could not be read.': '이 보드를 읽을 수 없습니다.',
+  'That could not be read as a FEN or a PGN.': 'FEN이나 PGN으로 읽을 수 없습니다.',
 
   // --- studies -------------------------------------------------------------
   'Search studies…': '스터디 검색…',
