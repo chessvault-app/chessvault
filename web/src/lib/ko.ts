@@ -2351,6 +2351,10 @@ export const ko: Record<string, string> = {
   'Not analysed yet': '아직 분석하지 않았습니다',
   'This page fills once your games have been through the engine pass. It runs in this window while the app is open, and picks up where it stopped.': '이 페이지는 내 게임이 엔진 분석을 거치면 채워집니다. 앱이 열려 있는 동안 이 창에서 돌아가며, 멈춘 곳에서 이어서 합니다.',
   'Analyse new games': '새 게임 분석',
+  '{n} games are not analysed yet: their results count, their accuracy does not.':
+    '게임 {n}개는 아직 분석하지 않았습니다. 결과는 집계되지만 정확도에는 들어가지 않습니다.',
+  'Analysis paused.': '분석을 잠시 멈췄습니다.',
+  'All {n} games analysed.': '게임 {n}개를 모두 분석했습니다.',
   '{n} newer games are not analysed yet: their results count, their accuracy does not.': '새로 생긴 게임 {n}개는 아직 분석하지 않았습니다. 결과는 집계되지만 정확도에는 들어가지 않습니다.',
   'Leaves at move': '벗어나는 수',
   'You': '나',
