@@ -1083,6 +1083,8 @@ export const ko: Record<string, string> = {
   'Repeat new password': '새 비밀번호 확인',
   'Lichess token': 'Lichess 토큰',
   '{url} (needs internet)': '{url} (인터넷 필요)',
+  '{white} vs {black} on {host}, opens in a new tab (needs internet)':
+    '{white} 대 {black}, {host}에서 새 탭으로 열림 (인터넷 필요)',
   'White {w}% · Draw {d}% · Black {b}%': '백 {w}% · 무 {d}% · 흑 {b}%',
   'Show token': '토큰 보기',
   'Hide token': '토큰 숨기기',
