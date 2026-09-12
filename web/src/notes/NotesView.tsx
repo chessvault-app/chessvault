@@ -16,7 +16,7 @@ import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { TitleTip } from '@/components/title-tip';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
+import { ShelfCount, ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { MoveToDialog } from '@/components/move-to-dialog';
@@ -238,7 +238,14 @@ function NoteList() {
       <ShelfToolbar
         title={t('Notes')}
         subtitle={
-          !loaded ? <SkeletonSubtitle /> : notes.length === 1 ? t('1 note') : t('{n} notes', { n: notes.length })
+          !loaded ? (
+            <SkeletonSubtitle />
+          ) : (
+            <ShelfCount
+              count={notes.length === 1 ? t('1 note') : t('{n} notes', { n: notes.length })}
+              shown={filtering ? visible.length : null}
+            />
+          )
         }
         query={query}
         onQuery={setQuery}

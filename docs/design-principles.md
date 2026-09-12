@@ -361,7 +361,9 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   every scrolled list to keep a name on screen that the tab bar already
   gives, and the shrink was one more thing moving while a list was
   being read. The phone-only back chevron sits where a page is
-  reached through More. `subtitle` (what the page has: 12 studies),
+  reached through More. `subtitle` (what the page has: 12 studies; while a filter
+  narrows a shelf, how many of those it shows, "3 of 12 studies", as a
+  status so the result is spoken),
   `description` (what it is for) and `search` (its find-or-filter
   field, full width on a phone and `max-w-sm` on a desktop) are slots
   of the header, rendered as SIBLINGS spaced by the column's gap, a

@@ -1668,6 +1668,7 @@ export const ko: Record<string, string> = {
   '{n} studies': '스터디 {n}개',
   '1 study': '스터디 1개',
   '{n} notes': '노트 {n}개',
+  '{shown} of {count}': '{count} 중 {shown}개',
   '1 note': '노트 1개',
   '{n} books': '책 {n}개',
   '1 book': '책 1개',

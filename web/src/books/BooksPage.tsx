@@ -16,7 +16,7 @@ import {
   shelfShapeFromCollections,
   storedShelfShape,
 } from '@/components/shelf-reservation';
-import { ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
+import { ShelfCount, ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useBookmarks } from '@/hooks/use-bookmarks';
@@ -257,7 +257,14 @@ export function BooksPage() {
       <ShelfToolbar
         title={t('Books')}
         subtitle={
-          books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
+          books === null ? (
+            <SkeletonSubtitle />
+          ) : (
+            <ShelfCount
+              count={books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })}
+              shown={needle || markedOnly ? visible.length : null}
+            />
+          )
         }
         query={query}
         onQuery={setQuery}

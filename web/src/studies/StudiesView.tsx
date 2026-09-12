@@ -21,7 +21,7 @@ import { FilePicker } from '@/components/file-picker';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
+import { ShelfCount, ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl } from '@/components/fab';
@@ -180,9 +180,12 @@ function StudyList() {
               : undefined
             : studies.length === 0
               ? undefined
-              : studies.length === 1
-                ? t('1 study')
-                : t('{n} studies', { n: studies.length })
+              : (
+                <ShelfCount
+                  count={studies.length === 1 ? t('1 study') : t('{n} studies', { n: studies.length })}
+                  shown={filtering ? visible.length : null}
+                />
+              )
         }
         query={query}
         onQuery={setQuery}
