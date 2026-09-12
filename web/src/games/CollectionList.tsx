@@ -47,9 +47,39 @@ import {
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import {
+  compareGames,
+  firstSortDir,
+  GameTableHeader,
+  GameTableRow,
+  useGameTableVars,
+  useTableNav,
+  type GameSort,
+  type GameSortKey,
+} from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
+
+/** The table's order, per device (see CollectionList's `sort`). */
+const SORT_KEY = 'vault:collection-sort';
+const SORT_KEYS: readonly GameSortKey[] = [
+  'white', 'whiteElo', 'black', 'blackElo', 'result', 'moves', 'eco', 'event', 'date', 'notation',
+];
+function readSort(): GameSort | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(SORT_KEY) ?? 'null') as GameSort | null;
+    return v && SORT_KEYS.includes(v.key) && (v.dir === 'asc' || v.dir === 'desc') ? v : null;
+  } catch {
+    return null;
+  }
+}
+function writeSort(sort: GameSort): void {
+  try {
+    localStorage.setItem(SORT_KEY, JSON.stringify(sort));
+  } catch {
+    /* the session still has it */
+  }
+}
 
 /** The per-game PGN fetch every list row can offer the details view. */
 export const loadGamePgn =
@@ -295,7 +325,17 @@ export function CollectionList({
   // twin of the server's SQL); the remainder is the plain needle.
   const parsedQuery = useMemo(() => parseSearchQuery(query), [query]);
   const needle = parsedQuery.text.trim().toLowerCase();
-  const visible = games.filter((g) => {
+  // The order, from the table's headings. Null is the collection's own
+  // (newest first, as the server lists it); a choice is this device's
+  // and survives a reload the way the column widths do.
+  const [sort, setSort] = useState<GameSort | null>(readSort);
+  const sortBy = (key: GameSortKey): void => {
+    const next: GameSort =
+      sort?.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstSortDir(key) };
+    setSort(next);
+    writeSort(next);
+  };
+  const filtered = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
     if (markedOnly && !bookmarks.has(gameKey(g))) return false;
     if (!matchesSearchTerms(parsedQuery.terms, g)) return false;
@@ -312,6 +352,16 @@ export function CollectionList({
       .toLowerCase()
       .includes(needle);
   });
+  // A stable sort over the filtered rows, so equal keys keep the
+  // collection's own order under them. Only at table density: the card
+  // list has no headings to ask with.
+  const visible =
+    table && sort
+      ? [...filtered].sort((a, b) => {
+          const d = compareGames(sort.key)(a, b);
+          return sort.dir === 'asc' ? d : -d;
+        })
+      : filtered;
   const filtersOn =
     ownFilter !== 'any' ||
     resultFilter !== 'any' ||
@@ -584,7 +634,7 @@ export function CollectionList({
           </span>
         )
       }
-      listHeader={table ? <GameTableHeader withNotation={!besideDetails} /> : undefined}
+      listHeader={table ? <GameTableHeader withNotation={!besideDetails} sort={sort} onSort={sortBy} /> : undefined}
       listVars={table ? tableVars : undefined}
       dense={table}
       // The wait, in the shape of the strip and rows that are coming —
