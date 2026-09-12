@@ -1998,6 +1998,7 @@ export const ko: Record<string, string> = {
   'Remove “{title}” from the shelf? The PDF is deleted; any puzzle book read from it is kept.':
     '“{title}”을(를) 목록에서 제거할까요? PDF는 삭제되고, 이 책에서 읽어 낸 퍼즐 책은 그대로 남습니다.',
   'Drop a PDF here.': 'PDF 파일을 여기에 놓으세요.',
+  'Drop a PDF on this page to import it.': '이 페이지에 PDF 파일을 놓으면 가져옵니다.',
   'That PDF is too big. The limit is {mb} MB.': 'PDF가 너무 큽니다. 최대 {mb} MB입니다.',
   'Uploading…': '올리는 중…',
   'Uploading… {pct}%': '올리는 중… {pct}%',
