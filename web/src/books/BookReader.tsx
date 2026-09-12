@@ -29,6 +29,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX, type PinchLive, type PinchPoint } from '@/hooks/use-pinch-zoom';
+import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useMediaQuery, useWideLayout } from '@/lib/media';
@@ -275,6 +276,21 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // The book's diagram pass, while it is this book's: shown over the page.
   const job = useDiagramJob();
   const reading = job.bookId === id && job.status === 'running' ? job : null;
+  // The pass's end, said once: the line over the page counts pages as it
+  // goes and then leaves, which a screen reader does not hear, and the
+  // diagram buttons it puts on the page arrive without a word.
+  const wasReading = useRef(false);
+  useEffect(() => {
+    if (job.bookId !== id) return;
+    if (job.status === 'running') {
+      wasReading.current = true;
+      return;
+    }
+    if (!wasReading.current) return;
+    wasReading.current = false;
+    if (job.status === 'done') announce(t('Diagram reading finished.'));
+    else if (job.status === 'failed') announce(t('Diagram reading failed.'));
+  }, [id, job.bookId, job.status]);
 
   const [tab, setTab] = useState<'book' | 'board' | 'editor'>('book');
   // Opening the editor at wide swaps it for the board beside the page; on
@@ -1283,8 +1299,13 @@ function PdfPane({
     <>
       {compact ? toolbarInto && createPortal(toolbar, toolbarInto) : toolbar}
       {reading && (
+        // Not a live region: the line changes on every page, and a long
+        // scan would be read out hundreds of times. The spinner is
+        // decorative beside the sentence (its own role="status" would have
+        // said "Loading" once and nothing after); the pass's end is said
+        // once, by the reader (see the diagram job's effect).
         <div className="text-muted-foreground flex h-7 shrink-0 items-center justify-center gap-1.5 text-xs">
-          <Spinner className="size-3 shrink-0" />
+          <Spinner className="size-3 shrink-0" role="presentation" aria-hidden aria-label={undefined} />
           {t('Reading diagrams, page {page} of {pages}', { page: reading.page, pages: reading.pages })}
         </div>
       )}
