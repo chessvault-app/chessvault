@@ -1266,15 +1266,17 @@ function Hub() {
                 type="button"
                 onClick={go}
                 className={cn(
-                  // The ring, as every other card on this page and these
-                  // tiles' own placeholders draw it: a border costs 2px of
-                  // layout and a ring costs none, so on a border the tiles
-                  // stood 2px taller than the row that waited for them.
-                  'flex h-16 flex-col items-center justify-center gap-1 rounded-xl',
+                  // border and not ring, unlike the cards above: these
+                  // tiles have an explicit h-16, so the border is drawn
+                  // inside the 64px and costs no layout either. The ring's
+                  // reason (a border would make the box 2px bigger) only
+                  // bites on a content-sized box like PuzzleCard, which is
+                  // why that one is on the ring and this is not.
+                  'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
                   'px-1 text-center text-sm font-medium leading-tight transition-colors',
                   primary
-                    ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
-                    : 'bg-card ring-card-ring hover:bg-accent ring-1',
+                    ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
+                    : 'bg-card border-card-ring hover:bg-accent',
                 )}
               >
                 <Icon className={cn('size-5', primary ? '' : 'text-primary')} />
