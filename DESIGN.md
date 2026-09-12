@@ -259,8 +259,11 @@ what you grep for.
   50% wash measured 1.35 to 1.88:1 and was no indicator at all. The
   binding surface is the selected fill an inset ring is drawn onto —
   surface-3 in light, accent in dark. One control paints it without
-  focus: the slider thumb's 1px edge at rest and its hover and active
-  halos, which the move made stronger too (`slider.tsx` measures them).
+  focus as well: the slider thumb's 1px edge at rest and its hover and
+  active halos, which the move made stronger too. Its focus halo is hung
+  on `has-[:focus-visible]`, because the focusable element there is a
+  clipped `input[type=range]` inside the thumb and the registry's
+  `focus-visible:` drew nothing (`slider.tsx` measures all four).
 
 ### Semantic
 

@@ -870,8 +870,9 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   control that is not a registry component, so neither the next retune of
   a surface nor a ring quietly thinned back to a wash can take it away
   again. The same token paints the slider thumb's edge at rest and its
-  hover halo, which moved with it; `slider.tsx` records what they
-  measure.
+  hover halo, which moved with it, and its focus halo, which had to be
+  hung on `has-[:focus-visible]` before it painted at all; `slider.tsx`
+  records what they measure.
 
 ## The mark
 

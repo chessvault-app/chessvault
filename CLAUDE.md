@@ -141,9 +141,15 @@ silently the next time `npx shadcn add` rewrites one of these files.
 Where the registry hangs another state on that same class the exception
 reaches it too, and saying so is part of taking it: the slider thumb
 draws `border-ring` at rest and `ring-ring` for its hover and active
-halos, so all three are stronger now (`slider.tsx` carries the numbers,
-and no pixel grid can show them, because no grid route has a thumb
-inside its viewport). A hand-rolled popover, menu,
+halos, so all three are stronger now, and its FOCUS halo is new rather
+than stronger, because the registry's `focus-visible:ring-3` painted
+nothing on this control at all. The element that takes focus is Base
+UI's own `input[type=range]` inside the thumb, and it is clipped to
+nothing, so neither it nor the thumb around it could show a ring: tabbing
+to the slider changed zero pixels. It hangs on `has-[:focus-visible]`
+instead (`slider.tsx` carries every number, and no pixel grid can show
+them, because no grid route has a thumb inside its viewport). A
+hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in
