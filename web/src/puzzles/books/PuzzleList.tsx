@@ -82,9 +82,9 @@ export function PuzzleGrid({
                     'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-colors duration-100 [content-visibility:auto]',
                     current && 'ring-primary/60 ring-2',
                     last === 'win'
-                      ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
+                      ? 'bg-good-tint border-good/40 text-good'
                       : last === 'loss'
-                        ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
+                        ? 'bg-destructive-tint border-destructive/40 text-destructive'
                         : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
                   )}
                 >
@@ -428,10 +428,16 @@ export function PuzzleList({
                   'relative flex aspect-square items-center justify-center rounded-lg font-mono text-base font-semibold ring-1 transition-colors duration-100 [content-visibility:auto]',
                   // The ring card, with the state in the ring: the colour
                   // grammar's green and red, a glyph beside each (below).
+                  // The opaque tints and the good/destructive ink, not the
+                  // NAG colours over a 15% wash: the NAG green measured
+                  // 2.35:1 and the red 2.71:1 on their own washes in light,
+                  // and the good token on that same wash still only 4.45:1.
+                  // On --good-tint it reads 4.84:1 (dark 6.71:1), which is
+                  // what the tint tokens are for (index.css says so).
                   state === 'solved'
-                    ? 'bg-nag-good/15 ring-nag-good/40 text-nag-good'
+                    ? 'bg-good-tint ring-good/40 text-good'
                     : state === 'failed'
-                      ? 'bg-nag-blunder/15 ring-nag-blunder/40 text-nag-blunder'
+                      ? 'bg-destructive-tint ring-destructive/40 text-destructive'
                       : 'bg-card ring-card-ring text-muted-foreground hover:bg-accent',
                 )}
               >
