@@ -6,10 +6,11 @@ import {
   Database,
   LayoutGrid,
   Puzzle,
+  RotateCcw,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
@@ -21,6 +22,7 @@ import { TitleTip } from '@/components/title-tip';
 import { ListRow } from '@/components/list-row';
 import { PageShell } from '@/components/page-shell';
 import { ProgressBar } from '@/components/progress-bar';
+import { Button } from '@/components/ui/button';
 import { Skeleton, SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 import { Figures } from '@/components/figures';
@@ -565,7 +567,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
  *
  * Difficulty is a word (`bandOf`), never the rating behind it.
  */
-function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
+function HistoryPanel({ attempts, failed = false }: { attempts: HistoryEntry[]; failed?: boolean }) {
   // The same eye the dashboard's log has: an id and a difficulty word do
   // not identify a position you spent two minutes on, but the board does.
   const preview = usePuzzlePreview();
@@ -593,8 +595,9 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
       {attempts.length === 0 && (
+        // An outage is not an empty log: the dashboard's own words for it.
         <p className="text-muted-foreground px-3 py-2.5 text-sm">
-          {t('Nothing solved yet. The puzzles you attempt turn up here.')}
+          {t(failed ? 'Could not load the attempts.' : 'Nothing solved yet. The puzzles you attempt turn up here.')}
         </p>
       )}
       {attempts.map((h) => (
@@ -660,10 +663,18 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
       `/api/puzzles/next${mode === 'failed' ? '?mode=failed' : difficultyQuery(storedDifficulty())}`,
     );
     return body.puzzle;
-  } catch {
-    return null; // 404 empty pool, 503 no database, network gone — no card
+  } catch (e) {
+    // 404 is an empty pool: a card not to draw. Anything else (the
+    // network gone, the server down) is a card that could not be drawn,
+    // which this used to fold into the same null, so an outage read as
+    // "No puzzle to draw" and "No puzzle to review" over a full pool.
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
   }
 }
+
+/** The page's answers, named, for the ones that did not come. */
+type Answer = 'meta' | 'history' | 'next' | 'review' | 'book';
 
 /**
  * How many of the page's answers are still outstanding, counted down as
@@ -749,6 +760,29 @@ function Hub() {
   const [historyIn, setHistoryIn] = useState(false);
   const [booksIn, setBooksIn] = useState(false);
   const [metaIn, setMetaIn] = useState(false);
+  /**
+   * Which answers failed, and what the first failure said. A card whose
+   * answer failed is neither "in" nor "not yet": it is a third thing,
+   * and it used to be drawn as the first (an empty vault) when the
+   * request errored and as the second (a skeleton, for ever) when it
+   * hung. The message goes on one line above the cards with the way to
+   * go again; the amber is for an outage, red for a fault (ApiError).
+   */
+  const [unanswered, setUnanswered] = useState<Set<Answer>>(() => new Set());
+  const [failure, setFailure] = useState<{ message: string; offline: boolean } | null>(null);
+  // Bumped by Try again: the effect below runs once per value.
+  const [attempt, setAttempt] = useState(0);
+  const retry = (): void => {
+    setUnanswered(new Set());
+    setFailure(null);
+    setNextIn(false);
+    setReviewIn(false);
+    setBookIn(false);
+    setHistoryIn(false);
+    setBooksIn(false);
+    setMetaIn(false);
+    setAttempt((n) => n + 1);
+  };
   const [slotWasFilled] = useState(() => localStorage.getItem(SLOT_FILLED_KEY) === '1');
   const [solvedLineToday] = useState(() => localStorage.getItem(SOLVED_TODAY_KEY) === localDay());
 
@@ -773,18 +807,49 @@ function Hub() {
     let live = true;
     let left = ANSWERS;
     let idle: ReturnType<typeof setTimeout>;
+    // The answers still out, by name, so the idle timer can say which
+    // cards it is giving up on rather than leaving them as skeletons.
+    const out = new Set<Answer>(['meta', 'history', 'next', 'review', 'book']);
+    // An answer that lands after the idle timer gave up on it takes its
+    // card back; the notice goes once nothing is outstanding (below).
+    const ok = (which: Answer): void => {
+      if (!live) return;
+      setUnanswered((f) => {
+        if (!f.has(which)) return f;
+        const n = new Set(f);
+        n.delete(which);
+        return n;
+      });
+    };
+    const fail = (which: Answer, e: unknown): void => {
+      if (!live) return;
+      setUnanswered((f) => new Set(f).add(which));
+      setFailure(
+        (f) =>
+          f ?? {
+            message: apiErrorMessage(e),
+            offline: e instanceof ApiError && (e.offline || e.status === 0),
+          },
+      );
+    };
     const arm = (): void => {
       clearTimeout(idle);
       idle = setTimeout(() => {
-        if (live) setSettled(true);
+        if (!live) return;
+        // A request that has not answered by now is not going to be
+        // waited for: the card it owed is drawn as not loaded, with the
+        // way to ask again, and if it does land later it fills in.
+        for (const which of out) fail(which, new ApiError(0, t('Vault server unreachable'), true));
+        setSettled(true);
       }, IDLE_MS);
     };
     arm();
     // Called in a `finally`, always after the state it gates: the page is
     // drawn on the render that settles it, so an answer that reported
     // itself before storing its result would be drawn missing.
-    const done = (): void => {
+    const done = (which?: Answer): void => {
       if (!live) return;
+      if (which) out.delete(which);
       left -= 1;
       if (left <= 0) {
         clearTimeout(idle);
@@ -797,19 +862,22 @@ function Hub() {
     void (async () => {
       try {
         setMeta(await api<Meta>('/api/puzzles/meta'));
-      } catch {
+        ok('meta');
+      } catch (e) {
         // Every button still works; only the review row and the tally
-        // are missing, and both are decoration on a page of links.
+        // are missing. Named all the same, so the slot below does not
+        // record this visit's shape from an answer it never had.
+        fail('meta', e);
       } finally {
         if (live) setMetaIn(true);
-        done();
+        done('meta');
       }
     })();
     void fetchSolvedToday()
       .then((n) => {
         if (n !== null) setSolvedToday(n);
       })
-      .finally(done);
+      .finally(() => done());
     void (async () => {
       try {
         // Already newest-first, and the server caps what it reads — the
@@ -818,26 +886,39 @@ function Hub() {
           `/api/puzzles/history?limit=${HISTORY_ROWS}`,
         );
         setHistory(body.attempts);
-        if (live) setHistoryIn(true);
-      } catch {
-        // No panel; the dashboard tile still reaches the full log.
+        ok('history');
+      } catch (e) {
+        // The panel says so; the dashboard tile still reaches the log.
+        fail('history', e);
       } finally {
-        done();
+        // In the finally, so a failed answer is still an answer: it used
+        // to be set only on success, and the panel's skeleton stood for
+        // as long as the page did.
+        if (live) setHistoryIn(true);
+        done('history');
       }
     })();
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
     void draw('fresh')
-      .then(setNext)
+      .then((p) => {
+        setNext(p);
+        ok('next');
+      })
+      .catch((e: unknown) => fail('next', e))
       .finally(() => {
         if (live) setNextIn(true);
-        done();
+        done('next');
       });
     void draw('failed')
-      .then(setReview)
+      .then((p) => {
+        setReview(p);
+        ok('review');
+      })
+      .catch((e: unknown) => fail('review', e))
       .finally(() => {
         if (live) setReviewIn(true);
-        done();
+        done('review');
       });
     void (async () => {
       try {
@@ -859,29 +940,36 @@ function Hub() {
         // this answer rather than fired alongside it, because which book
         // to ask about is the thing this request just decided.
         const top = shelf[0];
-        if (!top) return;
+        if (!top) {
+          ok('book');
+          return;
+        }
         // 404 is a finished book, which is a card not to draw — api()
         // throws it into the same catch as everything else.
         const one = await api<{ puzzle: BookNext }>(
           `/api/puzzlebooks/${encodeURIComponent(top.slug)}/next`,
         );
         setBookNext({ book: top, puzzle: one.puzzle });
-      } catch {
-        // No panel. The Books tile below still reaches the shelf.
+        ok('book');
+      } catch (e) {
+        // A finished book is a 404 from its /next, and a card not to
+        // draw; anything else is the shelf not loading, which used to be
+        // drawn as "No puzzle book yet" over a vault that has books.
+        if (!(e instanceof ApiError && e.status === 404)) fail('book', e);
       } finally {
         if (live) {
           // Covers a failure before the shelf answered at all.
           setBooksIn(true);
           setBookIn(true);
         }
-        done();
+        done('book');
       }
     })();
     return () => {
       live = false;
       clearTimeout(idle);
     };
-  }, []);
+  }, [attempt]);
 
   // Assume the database is there until told otherwise: it is, for anyone
   // who has ever trained, and making everybody wait to find that out
@@ -972,11 +1060,18 @@ function Hub() {
   const pending = useSlowLoad(!settled);
   const skeleton = !settled && pending;
 
+  // The notice stands only while an answer is missing.
+  useEffect(() => {
+    if (unanswered.size === 0) setFailure(null);
+  }, [unanswered]);
+
   // Remembered once the answers are in, for the next visit to draw from.
   useEffect(() => {
-    if (slot === 'pending') return;
+    // Not from an answer that failed: an outage wrote '0' here and next
+    // visit reserved nothing for a shelf that is there.
+    if (slot === 'pending' || unanswered.has('book') || unanswered.has('meta')) return;
     localStorage.setItem(SLOT_FILLED_KEY, slot === 'none' ? '0' : '1');
-  }, [slot]);
+  }, [slot, unanswered]);
   useEffect(() => {
     if (!settled || solvedToday === null) return;
     if (solvedToday > 0) localStorage.setItem(SOLVED_TODAY_KEY, localDay());
@@ -1017,6 +1112,25 @@ function Hub() {
           shell's 16px to the panel under it while the panels below stay
           8px apart, which is the room this page fights for. */}
       <PageHeader title={t('Puzzles')} className="mb-2" />
+      {/* What did not load, once, with the way to ask again: the same
+          line and button the dashboard draws. Not for a vault with no
+          database, whose draws refuse by design and whose slot below
+          says what to do. */}
+      {settled && failure && ready && (
+        <p
+          role="alert"
+          className={cn(
+            'flex shrink-0 items-center gap-3 text-sm',
+            failure.offline ? 'text-warn' : 'text-destructive',
+          )}
+        >
+          <span className="min-w-0 flex-1">{failure.message}</span>
+          <Button variant="secondary" size="sm" onClick={retry}>
+            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            {t('Try again')}
+          </Button>
+        </p>
+      )}
 
       {/* History first, then the book. Which one stretches is a property
           of the panels themselves (`flex-1` against `shrink-0`), not of
@@ -1030,7 +1144,11 @@ function Hub() {
           because showHistory has no second condition. */}
       {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks && slotWasFilled} />}
       {showHistory &&
-        (historyIn ? <HistoryPanel attempts={history} /> : <HubSkeletonHistoryPanel />)}
+        (historyIn || unanswered.has('history') ? (
+          <HistoryPanel attempts={history} failed={unanswered.has('history')} />
+        ) : (
+          <HubSkeletonHistoryPanel />
+        ))}
       {showBooks &&
         (slot === 'books' ? (
           <BookShelfPanel books={books} />
@@ -1085,8 +1203,10 @@ function Hub() {
             below it would shove the button up mid-reach. Growing upward
             into the empty band costs nothing, because nothing up there is
             being pressed. */}
-        {settled && !nextIn ? (
+        {settled && !nextIn && !unanswered.has('next') ? (
           <HubSkeletonCard fill={!historyBlock} />
+        ) : settled && ready && unanswered.has('next') && !next ? (
+          <EmptySlot fill={!historyBlock} title={t('Could not load the next puzzle.')} go={retry} />
         ) : settled && ready && next ? (
           <PuzzleCard
             // Ply 1: after the opponent's setup move, which is the
@@ -1130,8 +1250,10 @@ function Hub() {
             Three cases, one shape. The middle one — a pool the count says
             is non-empty but a draw that failed anyway — keeps review
             reachable from here, which it would not otherwise be. */}
-        {!settled ? null : !reviewIn ? (
+        {!settled ? null : !reviewIn && !unanswered.has('review') ? (
           <HubSkeletonCard fill={!historyBlock} />
+        ) : unanswered.has('review') && !review ? (
+          <EmptySlot fill={!historyBlock} title={t('Could not load the missed puzzle.')} go={retry} />
         ) : review ? (
           <PuzzleCard
             fen={positionAt(review, 1).fen}
@@ -1175,13 +1297,16 @@ function Hub() {
             Its own endpoint, not the book: opening a book downloads
             every id and every progress entry, and the solutions are 1.7
             MB on the biggest one. A launcher wants one puzzle. */}
-        {settled && !bookNext && !bookIn && books.length > 0 ? (
+        {settled && !bookNext && !bookIn && books.length > 0 && !unanswered.has('book') ? (
           // The shelf answered and named a book; its position is a second
           // request behind that. Hold the card's place rather than adding
           // one when it lands.
           <HubSkeletonCard fill={!historyBlock} />
         ) : null}
-        {settled && bookIn && !bookNext && (
+        {settled && !bookNext && unanswered.has('book') && (
+          <EmptySlot fill={!historyBlock} title={t('Could not load the puzzle books.')} go={retry} />
+        )}
+        {settled && bookIn && !bookNext && !unanswered.has('book') && (
           // No book, or a finished one: the slot stays, and is the way to
           // the shelf where a PDF becomes one.
           <EmptySlot
