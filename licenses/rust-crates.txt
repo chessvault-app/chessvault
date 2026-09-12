@@ -21,21 +21,21 @@ them.
 Crates covered:
   arrayvec 0.7.8
   autocfg 1.5.1
-  bitflags 2.13.1
+  bitflags 2.13.2
   btoi 0.5.0
   bumpalo 3.20.3
   byteorder 1.5.0
-  cc 1.4.4
+  cc 1.4.5
   cfg-if 1.0.4
   fallible-iterator 0.3.0
   fallible-streaming-iterator 0.1.9
-  find-msvc-tools 0.1.11
+  find-msvc-tools 0.1.12
   foldhash 0.2.0
   hashbrown 0.16.1
   hashbrown 0.17.1
-  hashlink 0.12.1
+  hashlink 0.12.2
   itoa 1.0.18
-  js-sys 0.3.104
+  js-sys 0.3.105
   libc 0.2.189
   libsqlite3-sys 0.38.2
   memchr 2.8.3
@@ -58,10 +58,10 @@ Crates covered:
   shakmaty 0.30.1
   shakmaty-syzygy 0.28.1
   shlex 2.0.1
-  smallvec 1.15.2
+  smallvec 1.16.1
   sqlite-wasm-rs 0.5.5
   syn 2.0.119
-  syn 3.0.4
+  syn 3.0.5
   thiserror 2.0.20
   thiserror-impl 2.0.20
   tracing 0.1.44
@@ -69,10 +69,10 @@ Crates covered:
   tracing-core 0.1.36
   unicode-ident 1.0.24
   vcpkg 0.2.15
-  wasm-bindgen 0.2.127
-  wasm-bindgen-macro 0.2.127
-  wasm-bindgen-macro-support 0.2.127
-  wasm-bindgen-shared 0.2.127
+  wasm-bindgen 0.2.128
+  wasm-bindgen-macro 0.2.128
+  wasm-bindgen-macro-support 0.2.128
+  wasm-bindgen-shared 0.2.128
   zmij 1.0.23
 
 ----------------------------------------------------------------------------
@@ -548,7 +548,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-bitflags 2.13.1  (MIT OR Apache-2.0)
+bitflags 2.13.2  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -1290,7 +1290,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-cc 1.4.4  (MIT OR Apache-2.0)
+cc 1.4.5  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -2222,7 +2222,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ----------------------------------------------------------------------------
-find-msvc-tools 0.1.11  (MIT OR Apache-2.0)
+find-msvc-tools 0.1.12  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -2956,7 +2956,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-hashlink 0.12.1  (MIT OR Apache-2.0)
+hashlink 0.12.2  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -3402,7 +3402,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-js-sys 0.3.104  (MIT OR Apache-2.0)
+js-sys 0.3.105  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -6819,7 +6819,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-smallvec 1.15.2  (MIT OR Apache-2.0)
+smallvec 1.16.1  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -7292,7 +7292,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-syn 3.0.4  (MIT OR Apache-2.0)
+syn 3.0.5  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -8502,7 +8502,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-wasm-bindgen 0.2.127  (MIT OR Apache-2.0)
+wasm-bindgen 0.2.128  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -8738,7 +8738,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-wasm-bindgen-macro 0.2.127  (MIT OR Apache-2.0)
+wasm-bindgen-macro 0.2.128  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -8974,7 +8974,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-wasm-bindgen-macro-support 0.2.127  (MIT OR Apache-2.0)
+wasm-bindgen-macro-support 0.2.128  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
@@ -9210,7 +9210,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------------------------------
-wasm-bindgen-shared 0.2.127  (MIT OR Apache-2.0)
+wasm-bindgen-shared 0.2.128  (MIT OR Apache-2.0)
 ----------------------------------------------------------------------------
 
 --- LICENSE-APACHE ---
