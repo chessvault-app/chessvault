@@ -27,6 +27,19 @@
  * the plainest reason: it is not painted. And it only knows the states it
  * is told to force, below.
  *
+ * THE BOARD'S OWN MARKS ARE MEASURED SEPARATELY, because the skip above
+ * hid a real defect for as long as it stood: the coordinate labels are
+ * text players read, their inks were tuned as tokens at 4.5:1 or better,
+ * and chessground's stylesheet washed the labels to 80%, which put the
+ * dark-square label between 3.6 and 4.4:1 on ten of the twelve board
+ * states with nothing here to say so. The board's squares are flat
+ * tokens under the gradient, so a label CAN be scored: ink through its
+ * rendered opacity over the token of the square it sits on. That is done
+ * for every preset on the board route, in both modes, and the engine's
+ * arrow (`--arrow-best` at `--arrow-best-alpha`) is held to 3:1 on both
+ * squares the same way. Analytic, not sampled: the wood grain is a
+ * luminance texture around its token and is not modelled.
+ *
  * STROKES ARE MEASURED TOO, because the defect this file certified its
  * way past was never text: in light mode the page, the card and the
  * panel are all the same white, so the only structure is a 1px border or
@@ -262,7 +275,7 @@ const SCAN = `(() => {
 
   const out = [];
   for (const el of document.querySelectorAll('*')) {
-    if (el.closest('.cg-wrap')) continue;          // the board: gradients and piece art
+    if (el.closest('.cg-wrap')) continue;          // the board: gradients and piece art (its labels: BOARD_SCAN)
     if (el.closest('[aria-hidden="true"]')) continue;  // not text to a reader
     const text = [...el.childNodes]
       .filter((n) => n.nodeType === 3 && n.textContent.trim())
@@ -279,6 +292,75 @@ const SCAN = `(() => {
     const needs = px >= 24 || (bold && px >= 18.66) ? 3 : 4.5;
     const r = ratio(rel(fg), rel(bg));
     if (r < needs) out.push({ text: text.slice(0, 40), ratio: +r.toFixed(2), needs, color: cs.color, fontPx: px });
+  }
+  return out;
+})()`;
+
+/**
+ * The board presets, by the names `data-board` takes (web/src/store/prefs
+ * BOARD_PRESETS); `default` is the adaptive walnut, which is the absence
+ * of the attribute. Listed here rather than imported because that module
+ * pulls the store in with it, and this file runs outside the app.
+ */
+const BOARD_PRESETS = [
+  'default',
+  'green',
+  'brown',
+  'blue',
+  'slate',
+  'lavender',
+  'rosewood',
+  'ink',
+  'wood',
+  'charcoal',
+  'khaki',
+  'tan',
+];
+
+/**
+ * The board's own marks, on the preset the page is wearing: each
+ * coordinate label as drawn (ink through its rendered opacity over the
+ * square's token) held to text's floor, and the engine arrow (its token
+ * at its alpha) held to 3:1 on both squares. See the header.
+ */
+const BOARD_SCAN = `(() => {
+  const wrap = document.querySelector('.cg-wrap');
+  const coords = wrap && wrap.querySelector('coords');
+  if (!wrap || !coords) return [];
+  const cv = document.createElement('canvas'); cv.width = cv.height = 4;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const rgb = (css) => {
+    ctx.clearRect(0,0,4,4); ctx.fillStyle = '#000'; ctx.fillStyle = css; ctx.fillRect(0,0,4,4);
+    const d = ctx.getImageData(2,2,1,1).data; return [d[0], d[1], d[2]];
+  };
+  // A token is read off a probe element inside the wrap, since every
+  // board token is a calc() or a color-mix() that cannot be parsed here.
+  const probe = (css) => { const d = document.createElement('div'); d.style.backgroundColor = css; wrap.appendChild(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return rgb(c); };
+  const rel = (c) => {
+    const [r,g,b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v/12.92 : ((v+0.055)/1.055) ** 2.4; });
+    return 0.2126*r + 0.7152*g + 0.0722*b;
+  };
+  const ratio = (a, b) => { const [hi, lo] = a > b ? [a, b] : [b, a]; return (hi + 0.05) / (lo + 0.05); };
+  const mix = (fg, bg, a) => fg.map((v, i) => v * a + bg[i] * (1 - a));
+  const squares = { light: probe('var(--board-light)'), dark: probe('var(--board-dark)') };
+  const out = [];
+  for (const on of ['light', 'dark']) {
+    const el = wrap.querySelector('coords coord.coord-' + on);
+    if (!el) continue;
+    const cs = getComputedStyle(el);
+    const alpha = Number(getComputedStyle(coords).opacity) * Number(cs.opacity);
+    const ink = mix(rgb(cs.color), squares[on], alpha);
+    const px = parseFloat(cs.fontSize);
+    const bold = Number(cs.fontWeight) >= 700;
+    const needs = px >= 24 || (bold && px >= 18.66) ? 3 : 4.5;
+    const r = ratio(rel(ink), rel(squares[on]));
+    if (r < needs) out.push({ text: 'coordinate label on a ' + on + ' square', ratio: +r.toFixed(2), needs, color: cs.color, fontPx: px, kind: 'text' });
+  }
+  const arrow = probe('var(--arrow-best)');
+  const alpha = Number(getComputedStyle(document.documentElement).getPropertyValue('--arrow-best-alpha')) || 1;
+  for (const on of ['light', 'dark']) {
+    const r = ratio(rel(mix(arrow, squares[on], alpha)), rel(squares[on]));
+    if (r < 3) out.push({ text: 'engine arrow on a ' + on + ' square', ratio: +r.toFixed(2), needs: 3, color: 'var(--arrow-best)', fontPx: 0, kind: 'stroke' });
   }
   return out;
 })()`;
@@ -706,6 +788,31 @@ async function walk(
       for (const h of strokes)
         found.push({ ...h, kind: h.kind ?? 'stroke', route: route + at, theme: theme.name, state });
     }
+
+    // The board's marks, once per preset. Set on the root the way the
+    // preference store sets it; nothing on the route re-asserts it.
+    if (route === '#/board') {
+      for (const preset of BOARD_PRESETS) {
+        await page.evaluate((p) => {
+          const root = document.documentElement;
+          if (p === 'default') delete root.dataset.board;
+          else root.dataset.board = p;
+        }, preset);
+        await page.waitForTimeout(50);
+        const marks = (await page.evaluate(BOARD_SCAN)) as ScanHit[];
+        for (const h of marks)
+          found.push({
+            ...h,
+            kind: h.kind ?? 'text',
+            route: `${route} (${preset} board)${at}`,
+            theme: theme.name,
+            state: 'rest',
+          });
+      }
+      await page.evaluate(() => {
+        delete document.documentElement.dataset.board;
+      });
+    }
   }
   return found;
 }
@@ -785,7 +892,7 @@ try {
 // ---------------------------------------------------------------------------
 if (!findings.length) {
   console.log(
-    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text, strokes and focus rings, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
+    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text, strokes and focus rings, the board's labels and arrow on every preset, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
   );
   process.exit(0);
 }

@@ -3,6 +3,7 @@ import { Chessground } from '@lichess-org/chessground';
 import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
 import type { DrawShape } from '@lichess-org/chessground/draw';
+import { defaults } from '@lichess-org/chessground/state';
 import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
 import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
 import { usePrefs } from '@/store/prefs';
@@ -238,6 +239,20 @@ export function Board({
       drawable: {
         enabled: true,
         onChange: (next) => onShapesRef.current?.(next),
+        // The app's own mark, beside lichess's four: the engine's best
+        // move and the puzzle hint draw it. Its colour and alpha are
+        // per-preset tokens applied in index.css (.cg-shapes), keyed on
+        // this name; the colour here is only the attribute the CSS
+        // outranks, and currentColor is the page's ink, legible on any
+        // board if that sheet were ever missing. Never persisted:
+        // shapes.ts keeps PGN to the four.
+        // Spread over chessground's own four because its type names them:
+        // the config is deep-merged over the defaults anyway, so this
+        // adds `best` and changes nothing else.
+        brushes: {
+          ...defaults().drawable.brushes,
+          best: { key: 'best', color: 'currentColor', opacity: 1, lineWidth: 10 },
+        },
       },
       // A local single-user vault never needs premoves.
       premovable: { enabled: false },

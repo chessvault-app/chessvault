@@ -576,6 +576,17 @@
      its own pair; the numbers are in the commit that added them. */
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  /* The app's own arrow (the engine's best move, the puzzle hint): one
+     ink per preset, placed so that at --arrow-best-alpha it stands at
+     least 3:1 off BOTH squares (WCAG 1.4.11, the mark being the whole of
+     what the engine says on the board). chessground's #003088 at its 60%
+     wash measured 2.2:1 on walnut's dark square and 1.2 on charcoal's,
+     and no colour clears 3:1 through a 60% wash, so the alpha is the
+     app's too (see .cg-shapes below). The numbers are analytic, ink
+     over the square at that alpha, and check:contrast re-derives them
+     for every preset in both modes. */
+  --arrow-best: oklch(30% 0.08 250);
+  --arrow-best-alpha: 0.9;
   --board-frame: oklch(88% calc(0.01 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(83% 0.16 108 / 55%);
   --sq-selected: oklch(62% 0.15 150 / 50%);
@@ -773,6 +784,8 @@
      square at 60% still takes dark ink (4.8:1). */
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
+  /* Both squares are dark here, so the arrow goes light (see :root). */
+  --arrow-best: oklch(96% 0.02 250);
   --board-frame: oklch(27% calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(72% 0.15 110 / 42%);
   --sq-selected: oklch(65% 0.15 152 / 45%);
@@ -1569,6 +1582,15 @@ cg-board square.check {
      panel already has them; chessground's stylesheet uppercases the
      labels and the board read "A B C D" under "1. e4". */
   text-transform: none;
+  /* Full ink. chessground's stylesheet washes coords to 80%, which the
+     per-preset inks below were tuned without: the tokens measure 4.5:1
+     or better on every preset, and as drawn through the wash the
+     dark-square labels were 3.6 to 4.4:1 on ten of the twelve board
+     states (walnut in both modes and the ten presets), under WCAG 1.4.3
+     for text this small. check:contrast measures the label as drawn,
+     ink times this opacity over the square, so the wash cannot come
+     back quietly. */
+  opacity: 1;
   /* The percentages below put the labels INSIDE the board edge, where
      chessground paints pieces at z-index 2 — without a layer of their own
      the a1/h1 corner pieces sit on the labels. Above pieces, still under
@@ -1606,6 +1628,39 @@ cg-board square.check {
 }
 .cg-wrap coords coord.coord-dark {
   color: var(--coord-on-dark);
+}
+
+/* Shapes. chessground washes the whole shape layer to 60%, which is the
+   lichess look for a user's own arrows and stays so: each shape group
+   takes that wash itself. The wash moves off the layer and onto the
+   groups because the app's own mark (brush `best`: the engine's best
+   move, the puzzle hint) cannot be read through it. A layer at 60% caps
+   what any colour can reach against a mid-tone square at about 2.2:1;
+   at --arrow-best-alpha, with --arrow-best placed per preset, the shaft
+   and head clear 3:1 on both squares. (Two of a user's arrows crossing
+   now darken where they overlap, which one shared wash did not; the
+   demo has no route that draws two.)
+
+   cgHash is chessground's own attribute, its shape's facts joined by
+   commas with the brush name after the squares, so `,best` is the
+   app's brush and nothing else. The stroke and the head's fill are set
+   as presentation attributes from the brush's colour, which CSS
+   outranks; the brush is registered in board/Board.tsx. */
+.cg-wrap .cg-shapes {
+  opacity: 1;
+}
+.cg-wrap .cg-shapes g[cgHash] {
+  opacity: 0.6;
+}
+.cg-wrap .cg-shapes g[cgHash*=',best'] {
+  opacity: var(--arrow-best-alpha);
+}
+.cg-wrap .cg-shapes g[cgHash*=',best'] line,
+.cg-wrap .cg-shapes g[cgHash*=',best'] circle {
+  stroke: var(--arrow-best);
+}
+.cg-wrap .cg-shapes marker[cgKey='best'] path {
+  fill: var(--arrow-best);
 }
 
 /* Radius/clip/shadow live on cg-container, not .cg-wrap: chessground floors
@@ -2154,6 +2209,7 @@ cg-board square.check {
   --board-dark: oklch(65% 0.095 135);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(34% 0.1 250);
 }
 
 :root[data-board='brown'],
@@ -2162,6 +2218,7 @@ cg-board square.check {
   --board-dark: oklch(66% 0.065 65);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(34% 0.1 250);
 }
 
 :root[data-board='blue'],
@@ -2170,6 +2227,7 @@ cg-board square.check {
   --board-dark: oklch(62% 0.065 245);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(30% 0.08 250);
 }
 
 :root[data-board='slate'],
@@ -2178,6 +2236,7 @@ cg-board square.check {
   --board-dark: oklch(55% 0.018 260);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-light), white 90%);
+  --arrow-best: oklch(22% 0.08 250);
 }
 
 :root[data-board='lavender'],
@@ -2186,6 +2245,7 @@ cg-board square.check {
   --board-dark: oklch(64% 0.058 300);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(32% 0.1 250);
 }
 
 :root[data-board='rosewood'],
@@ -2194,6 +2254,7 @@ cg-board square.check {
   --board-dark: oklch(61% 0.065 25);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(29% 0.08 250);
 }
 
 /* Paper and ink. The only preset whose two squares are different
@@ -2228,6 +2289,7 @@ cg-board square.check {
   --board-dark: oklch(54% 0.028 250);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
+  --arrow-best: oklch(20% 0.06 250);
 }
 
 /* The one textured board: the ChessBase-style rust brown, with the grain
@@ -2265,6 +2327,7 @@ cg-board square.check {
   --board-dark: oklch(58% 0.135 49);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 85%);
+  --arrow-best: oklch(25% 0.08 250);
   --board-grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='800'%3E%3Cfilter%20id='v'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.004'%20numOctaves='3'%20seed='5'/%3E%3CfeColorMatrix%20values='.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%200%200%200%200%201'/%3E%3C/filter%3E%3Crect%20x='0'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3C/svg%3E");
 }
 
@@ -2279,6 +2342,7 @@ cg-board square.check {
      goes all the way. */
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 90%);
   --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
+  --arrow-best: oklch(92% 0.04 250);
 }
 
 /* Two boards with a near-white light square (#ececec and #f2f2f2)
@@ -2291,6 +2355,7 @@ cg-board square.check {
   --board-dark: oklch(72% 0.024 87);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(39% 0.12 250);
 }
 
 :root[data-board='tan'],
@@ -2299,6 +2364,7 @@ cg-board square.check {
   --board-dark: oklch(75% 0.093 70);
   --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
   --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(42% 0.12 250);
 }
 
 /* An indeterminate progress bar: a segment that sweeps the track.

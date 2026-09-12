@@ -172,7 +172,7 @@ export function AnalysisBoard({
   const engineArrow = useMemo((): DrawShape[] => {
     if (!best || best.length < 4) return [];
     // An auto-shape, so drawing your own arrows never clobbers it.
-    return [{ orig: best.slice(0, 2) as Key, dest: best.slice(2, 4) as Key, brush: 'blue' }];
+    return [{ orig: best.slice(0, 2) as Key, dest: best.slice(2, 4) as Key, brush: 'best' }];
   }, [best]);
 
   // Every rendered move sounds — played AND replayed — like lichess. The
