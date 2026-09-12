@@ -60,11 +60,18 @@ export function AliasEditor({
     if (open) setText(current);
   }, [open, current]);
 
+  // Two ways out, and only one of them writes. Every exit used to save
+  // (the X, the scrim, Escape), which is a dialog with no cancel; and in
+  // Chromium the first Escape on a search-type field clears it before the
+  // second closes the dialog, so pressing Escape twice on a note with
+  // names quietly wrote an empty list over them. Enter and Save write;
+  // the rest leave the names as they were, the way PromptDialog does it.
+  const cancel = (): void => setOpen(false);
   const commit = (): void => {
     setOpen(false);
     const next = text.split(',');
-    // Compared as the cleaned list the caller would store, so closing the
-    // dialog having typed nothing new never writes the document.
+    // Compared as the cleaned list the caller would store, so saving
+    // having typed nothing new never writes the document.
     if (next.map((n) => n.trim()).filter(Boolean).join(', ') !== current) onSave(next);
   };
 
@@ -82,7 +89,7 @@ export function AliasEditor({
           <Tags className="size-3.5" />
         </Button>
       )}
-      <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : commit())}>
+      <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : cancel())}>
         <DialogContent size="sm" title={title}>
           <FieldGroup>
             <Field>
@@ -94,6 +101,7 @@ export function AliasEditor({
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') commit();
+                  if (e.key === 'Escape') cancel();
                 }}
                 placeholder={t('Najdorf, B90')}
               />
@@ -102,6 +110,17 @@ export function AliasEditor({
               </FieldDescription>
             </Field>
           </FieldGroup>
+          {/* The same row PromptDialog draws: Cancel for a desktop, where
+              the scrim does not say it cancels; on a phone the sheet is
+              dragged or tapped away, so Save takes the row alone. */}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" className="max-sm:hidden" onClick={cancel}>
+              {t('Cancel')}
+            </Button>
+            <Button variant="default" size="sm" className="max-sm:flex-1" onClick={commit}>
+              {t('Save')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

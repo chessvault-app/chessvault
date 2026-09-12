@@ -17,6 +17,7 @@ import { resolve, sep } from 'node:path';
 import { VAULT_STUDIES } from './paths.ts';
 import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
 import { validId } from '../shared/vaultNames.ts';
+import { chessFencePgn } from '../shared/chessFence.ts';
 import { mainlineEndFen } from '../shared/pgn.ts';
 
 /**
@@ -156,13 +157,13 @@ function firstBoardFen(body: string[]): string | null {
   if (open < 0) return null;
   const close = body.findIndex((line, at) => at > open && line.trim().startsWith('```'));
   if (close < 0) return null;
-  const fence = body.slice(open + 1, close).join('\n').trim();
-  if (!fence) return null;
-  // A bare move list is not a PGN; the headers make one so a single
-  // parser serves both forms — the same trick the note editor uses.
-  return meaningfulFen(
-    mainlineEndFen(fence.startsWith('[') ? fence : `[Result "*"]\n\n${fence}`),
-  );
+  // What the fence holds (a FEN, moves, a PGN) is the note editor's
+  // reader too, so the card and the open note agree on what a board is.
+  // A bare FEN used to reach the PGN parser as junk movetext here and
+  // come back as the starting position, which meaningfulFen then threw
+  // away: eleven notes, five with a board, eleven cards with a pen.
+  const pgn = chessFencePgn(body.slice(open + 1, close).join('\n'));
+  return pgn === null ? null : meaningfulFen(mainlineEndFen(pgn));
 }
 
 /**

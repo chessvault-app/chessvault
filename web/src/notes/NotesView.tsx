@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -48,7 +48,28 @@ interface NoteMeta {
   excerpt?: string | null;
   /** Where the note's first embedded board starts. */
   fen?: string | null;
+  /** Other names the note answers to, from its front matter. */
+  aliases?: string[];
 }
+
+/**
+ * Whether a search finds this note. By its name, its first line and its
+ * other names: the card shows the first line, and a search that said
+ * "nothing matches" under a card carrying the very word was the shelf
+ * contradicting itself. The body is not searched; the listing does not
+ * carry it.
+ */
+function matchesNote(note: NoteMeta, needle: string): boolean {
+  return (
+    note.id.toLowerCase().includes(needle) ||
+    (note.excerpt?.toLowerCase().includes(needle) ?? false) ||
+    (note.aliases?.some((alias) => alias.toLowerCase().includes(needle)) ?? false)
+  );
+}
+
+/** The folders a filtered shelf draws: none. One list, so a memoised card
+    sees the same array on every keystroke. */
+const NO_FOLDERS: string[] = [];
 
 const API = '/api/notes';
 
@@ -171,29 +192,35 @@ function NoteList() {
    * place the games shelf keeps its own. The state is optimistic: a mark
    * that waits for a round trip before it shows reads as broken.
    */
-  const toggleMark = async (id: string): Promise<void> => {
-    setMarked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-    try {
-      await api(`${API}/bookmarks/toggle`, { method: 'POST', json: { id } });
-    } catch {
-      // The vault disagreed (or was unreachable): put its truth back.
-      await refresh();
-    }
-  };
+  const toggleMark = useCallback(
+    (id: string): void => {
+      setMarked((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      void api(`${API}/bookmarks/toggle`, { method: 'POST', json: { id } }).catch(() => {
+        // The vault disagreed (or was unreachable): put its truth back.
+        void refresh();
+      });
+    },
+    [refresh],
+  );
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const needle = query.trim().toLowerCase();
-  const visible = notes.filter(
-    (n) =>
-      (!markedOnly || markedIds.has(n.id)) && (!needle || n.id.toLowerCase().includes(needle)),
+  // The shelf follows the field a beat behind: filtering and redrawing a
+  // few hundred cards inside the keystroke's own task held the field to
+  // the shelf's pace (a 54 to 66ms task per key at 111 cards, measured
+  // on the demo). Deferred, the key paints first and the shelf catches
+  // up, and a key that lands mid-redraw restarts it rather than queueing.
+  const needle = useDeferredValue(query).trim().toLowerCase();
+  const visible = useMemo(
+    () => notes.filter((n) => (!markedOnly || markedIds.has(n.id)) && (!needle || matchesNote(n, needle))),
+    [notes, markedOnly, markedIds, needle],
   );
   /** Whether anything is narrowing the shelf — the two filters `visible`
       is built from, and the only reason an empty list can be blamed on
@@ -210,26 +237,30 @@ function NoteList() {
       next.delete(id);
       return next;
     });
-  const dropNote = (id: string): void => {
-    setHidden((prev) => new Set(prev).add(id));
-    undoable.remove(
-      id.split('/').at(-1)!,
-      () => {
-        void api(`${API}/${encodeURIComponent(id)}`, { method: 'DELETE' })
-          .then(async () => {
-            unhide(id);
-            await refresh();
-          })
-          .catch((error: unknown) => {
-            // The DELETE never landed, so the note still exists; hiding it
-            // any longer would be the shelf lying about the vault.
-            unhide(id);
-            setError(t(apiErrorMessage(error)));
-          });
-      },
-      () => unhide(id),
-    );
-  };
+  const { remove } = undoable;
+  const dropNote = useCallback(
+    (id: string): void => {
+      setHidden((prev) => new Set(prev).add(id));
+      remove(
+        id.split('/').at(-1)!,
+        () => {
+          void api(`${API}/${encodeURIComponent(id)}`, { method: 'DELETE' })
+            .then(async () => {
+              unhide(id);
+              await refresh();
+            })
+            .catch((error: unknown) => {
+              // The DELETE never landed, so the note still exists; hiding it
+              // any longer would be the shelf lying about the vault.
+              unhide(id);
+              setError(t(apiErrorMessage(error)));
+            });
+        },
+        () => unhide(id),
+      );
+    },
+    [remove, refresh],
+  );
 
   return (
     // The studies shelf's tier, exactly: the two shelves hold the same kind
@@ -338,9 +369,9 @@ function NoteList() {
         <GroupedNotes
           notes={visible.filter((n) => !hidden.has(n.id))}
           linkCounts={linkCounts}
-          allFolders={needle ? [] : folders}
+          allFolders={needle ? NO_FOLDERS : folders}
           markedIds={markedIds}
-          onToggleMark={(id) => void toggleMark(id)}
+          onToggleMark={toggleMark}
           sort={view.sort}
           dir={view.dir}
           layout={view.layout}
@@ -493,10 +524,10 @@ function GroupedNotes({
                   note={note}
                   allFolders={allFolders}
                   marked={markedIds.has(note.id)}
-                  onToggleMark={() => onToggleMark(note.id)}
+                  onToggleMark={onToggleMark}
                   layout={layout}
                   onChanged={onChanged}
-                  onRemove={() => onRemove(note.id)}
+                  onRemove={onRemove}
                 />
               ))}
             </ul>
@@ -507,7 +538,11 @@ function GroupedNotes({
   );
 }
 
-function NoteCard({
+// Memoised, with every callback it takes stable and keyed by id, so a
+// keystroke in the search redraws the cards it removes and none of the
+// ones it keeps. Each card is a tooltip, a menu and a board, and the
+// search field waited on all of them being drawn again per key.
+const NoteCard = memo(function NoteCard({
   note,
   links,
   allFolders,
@@ -522,10 +557,10 @@ function NoteCard({
   links: number;
   allFolders: string[];
   marked: boolean;
-  onToggleMark: () => void;
+  onToggleMark: (id: string) => void;
   layout: ShelfLayout;
   onChanged: () => Promise<void>;
-  onRemove: () => void;
+  onRemove: (id: string) => void;
 }) {
   const [moving, setMoving] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -573,11 +608,11 @@ function NoteCard({
       preview={note.excerpt}
       fen={note.fen}
       marked={marked}
-      onToggleMark={onToggleMark}
+      onToggleMark={() => onToggleMark(note.id)}
       layout={layout}
       error={failure}
       onOpen={() => navigate('notes', encodeURIComponent(note.id))}
-      onSwipeAway={onRemove}
+      onSwipeAway={() => onRemove(note.id)}
       actions={[
         {
           // Touch only: a desktop has the bookmark in the card's own
@@ -585,11 +620,11 @@ function NoteCard({
           label: marked ? 'Remove bookmark' : 'Bookmark',
           icon: Bookmark,
           className: 'pointer-fine:hidden',
-          onSelect: onToggleMark,
+          onSelect: () => onToggleMark(note.id),
         },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
         { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
-        { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
+        { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onRemove(note.id) },
       ]}
     >
       {renaming && (
@@ -614,4 +649,4 @@ function NoteCard({
       )}
     </ShelfCard>
   );
-}
+});

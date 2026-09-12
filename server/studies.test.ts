@@ -349,6 +349,19 @@ describe('notes list excerpts', () => {
     expect(fen('NoBoard')).toBeNull();
   });
 
+  it('draws the board a bare FEN fence names', async () => {
+    // The manual promises "a FEN or moves"; the demo's own "Thinking
+    // process" note is written this way, and its card showed a pen.
+    write('BareFen', '# Rook ending\n\n```chess\n6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1\n```\n');
+    // Not a FEN, not moves: no board, rather than the starting position.
+    write('Junk', '# Junk\n\n```chess\nhello world\n```\n');
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string; fen: string | null }[];
+    };
+    expect(studies.find((s) => s.id === 'BareFen')!.fen).toBe('6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1');
+    expect(studies.find((s) => s.id === 'Junk')!.fen).toBeNull();
+  });
+
   it('draws no board for a position that has not moved', async () => {
     // The picture every game shares is not a thumbnail. Without this the
     // studies shelf drew the same starting board on 32 of 33 cards.

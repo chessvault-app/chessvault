@@ -16,12 +16,19 @@ import { WikiLink } from './wikiLink';
 
 /**
  * Notes are plain markdown on disk. Boards are fenced code blocks with the
- * `chess` info string and a PGN body:
+ * `chess` info string and a body that is a PGN, or a FEN on its own:
  *
  *     ```chess
  *     [FEN "..."]            (optional — omitted for the standard start)
  *     1. e4 c5 (1... e5) *
  *     ```
+ *
+ *     ```chess
+ *     6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1
+ *     ```
+ *
+ * What a body may hold is decided in shared/chessFence, which the block,
+ * its paste box and the shelf card's thumbnail all read through.
  *
  * Any markdown tool shows them as code; this app shows them as boards. The
  * PGN body goes through the same lossless codec as studies, so a note board
