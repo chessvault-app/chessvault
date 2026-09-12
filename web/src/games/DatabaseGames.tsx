@@ -54,7 +54,7 @@ import { announce } from '@/lib/announce';
 const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
-import { GamePreview, GameRow, collectionKey, type GameSummary, type Preview } from './shared';
+import { GamePreview, GameRow, collectionKey, gameKey, type GameSummary, type Preview } from './shared';
 import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { dialogOpen } from '@/hooks/dialog-focus';
@@ -137,6 +137,7 @@ const RefRow = memo(function RefRow({
   summary,
   table,
   selected,
+  tabStop,
   inCollection,
   onSelectRow,
   onOpen,
@@ -155,6 +156,8 @@ const RefRow = memo(function RefRow({
   summary: GameSummary;
   table: boolean;
   selected: boolean;
+  /** Table mode: this row is the table's Tab stop (GameTableRow). */
+  tabStop?: boolean;
   inCollection: boolean;
   onSelectRow: (game: RefGame) => void;
   onOpen: (game: RefGame) => void;
@@ -170,6 +173,7 @@ const RefRow = memo(function RefRow({
         withNotation={withNotation}
         standing={standing}
         selected={selected}
+        tabStop={tabStop}
         onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
         menu={[
@@ -1239,8 +1243,13 @@ export function DatabaseGames({
   // immutable, and Add is its keep verb.
   const navRows = inHunt ? (huntRows ?? []) : rows;
   tableNav.current = {
-    move: (delta) => {
-      const at = navRows.findIndex((g) => refGameKey(g.id) === selectedKey);
+    // A row's button carries the SUMMARY's key (GameTableRow), which is
+    // not the selection's refGameKey; both are resolved here.
+    move: (delta, from) => {
+      const at =
+        from !== undefined
+          ? navRows.findIndex((g) => gameKey(summaryOf(g)) === from)
+          : navRows.findIndex((g) => refGameKey(g.id) === selectedKey);
       const next =
         navRows[
           at < 0
@@ -1251,12 +1260,22 @@ export function DatabaseGames({
         ];
       if (next) selectRow(next);
     },
-    open: () => {
-      const g = navRows.find((g) => refGameKey(g.id) === selectedKey);
+    open: (key) => {
+      const g =
+        key !== undefined
+          ? navRows.find((g) => gameKey(summaryOf(g)) === key)
+          : navRows.find((g) => refGameKey(g.id) === selectedKey);
       if (g) void openGame(g);
     },
     clear: () => onSelect?.(null),
   };
+  // The table's one Tab stop: the selected row while it is on screen,
+  // else the first (GameTableRow's tabStop).
+  const tabStopKey = navRows.some((g) => refGameKey(g.id) === selectedKey)
+    ? selectedKey
+    : navRows[0]
+      ? refGameKey(navRows[0].id)
+      : null;
 
   const uncollected = navRows.filter((g) => !inCollection(g));
   const collectMany = async (): Promise<void> => {
@@ -1317,6 +1336,7 @@ export function DatabaseGames({
       summary={summaryOf(g)}
       table={table}
       selected={selectedKey === refGameKey(g.id)}
+      tabStop={tabStopKey === refGameKey(g.id)}
       inCollection={inCollection(g)}
       onSelectRow={rowSelect}
       onOpen={rowOpen}

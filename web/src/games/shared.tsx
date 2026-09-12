@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 
 import { ResultBadge } from '@/components/result-badge';
 import { SideDot } from '@/components/side-dot';
+import { KingIcon } from '@/components/king-icon';
 
 import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
 import { useCloseRequest } from '@/hooks/dialog-focus';
@@ -424,6 +425,7 @@ export function GameRow({
                     game.userSide === 'white' && 'text-primary',
                   )}
                 >
+                  {game.userSide === 'white' && <SeatMark side="white" />}
                   {game.white}
                 </span>
                 {game.whiteElo ? (
@@ -441,6 +443,7 @@ export function GameRow({
                     game.userSide === 'black' && 'text-primary',
                   )}
                 >
+                  {game.userSide === 'black' && <SeatMark side="black" />}
                   {game.black}
                 </span>
                 {game.blackElo ? (
@@ -601,6 +604,24 @@ export function GameRow({
     >
       {item}
     </ActionContextMenu>
+  );
+}
+
+/**
+ * The reader's own seat, beside their name wherever a game names both
+ * players: the king of the side they played, at text size, and the word
+ * for a screen reader. The name also takes `text-primary`, which was the
+ * whole mark before this and measured 1.10:1 in light and 1.21:1 in dark
+ * against the opponent's ink: a hue nobody was going to see, and the
+ * result chip's verdict (won or lost) hangs on knowing which seat was
+ * yours. A shape, so it reads in every scheme and at every knob.
+ */
+export function SeatMark({ side, className }: { side: 'white' | 'black'; className?: string }) {
+  return (
+    <>
+      <KingIcon side={side} className={cn('mr-1 size-3 align-[-0.1em]', className)} />
+      <span className="sr-only">{t('You')}: </span>
+    </>
   );
 }
 

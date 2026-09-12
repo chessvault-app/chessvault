@@ -14,7 +14,7 @@ import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { handOffPositionHunt } from '@/games/DatabaseGames';
 import { GamesBrowser } from '@/games/GamesBrowser';
 import { type DetailsSelection } from '@/games/GameDetails';
-import { useAnalysis } from '@/store/analysis';
+import { holdsWork, snapshotBoard, useAnalysis, type BoardSnapshot } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -28,6 +28,7 @@ import { Panel, PanelHeader } from '@/components/panel';
 import { Switch } from '@/components/ui/switch';
 import { WORKSPACE_SHELL } from '@/components/layout';
 import { useElementHeight } from '@/hooks/use-element-height';
+import { useUndoable } from '@/hooks/use-undoable';
 import { useElementWidth } from '@/hooks/use-element-width';
 
 /**
@@ -303,6 +304,17 @@ function Workspace() {
   // pick. Keyed on the selection's identity; the packaged loadPgn is a
   // fresh closure every render and must not re-fetch per render.
   const seq = useRef(0);
+  // The board the band last loaded, so the next load can tell a board
+  // that is still that game from one the reader has since worked on. The
+  // band loads freely because the board is throwaway (docs/deferred.md),
+  // and that stays: no question is asked. But a line played by hand and
+  // then replaced by a row's game, with ↓ on the page or a click, was
+  // simply gone (measured: 1.e4 c5 2.Nf3 d6 typed, ↓ on the body, no
+  // toast, nothing to undo). So a load over a board that holds work the
+  // band did not put there offers that board back for a few seconds,
+  // through the same offer the Board page raises on entry.
+  const bandBoard = useRef<BoardSnapshot | null>(null);
+  const { offer } = useUndoable();
   useEffect(() => {
     if (!sel?.loadPgn) return;
     const mine = ++seq.current;
@@ -310,6 +322,7 @@ function Workspace() {
       .loadPgn()
       .then((pgn) => {
         if (!pgn || seq.current !== mine) return;
+        const before = snapshotBoard();
         // A review belongs to the game it judged; a new game clears it
         // the way entering the Board page fresh does.
         useReview.getState().clear();
@@ -318,6 +331,20 @@ function Workspace() {
           // exactly as the archive's own open does.
           useAnalysis.setState({ orientation: sel.summary.userSide });
         }
+        // Trees are immutable, so a tree that is not the one the band
+        // left is one the reader changed (or brought in from the Board).
+        if (holdsWork(before) && before.tree !== bandBoard.current?.tree) {
+          offer(
+            { title: t('Loaded a game over your line'), action: t('Restore') },
+            () => {},
+            () => {
+              useAnalysis.setState(before);
+              bandBoard.current = null;
+              setSel(null);
+            },
+          );
+        }
+        bandBoard.current = snapshotBoard();
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the selection's identity
@@ -409,7 +436,7 @@ function Workspace() {
           <AnalysisMoveBox />
           <BoardControls
             className="border-border -mb-[var(--card-floor,var(--card-spacing))] border-t"
-           
+            verticalKeys={false}
           />
         </Panel>
 

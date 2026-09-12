@@ -196,6 +196,7 @@ const ArchiveRow = memo(function ArchiveRow({
   onCollect,
   onDetails,
   selectedRow = false,
+  tabStop,
   onSelectRow,
 }: {
   game: GameSummary;
@@ -213,6 +214,8 @@ const ArchiveRow = memo(function ArchiveRow({
   onDetails: (game: GameSummary) => void;
   /** Table mode: this row is the details panel's subject. */
   selectedRow?: boolean;
+  /** Table mode: this row is the table's Tab stop (GameTableRow). */
+  tabStop?: boolean;
   onSelectRow: (game: GameSummary) => void;
 }) {
   const checkbox = selecting && (
@@ -230,6 +233,7 @@ const ArchiveRow = memo(function ArchiveRow({
         game={game}
         withNotation={withNotation}
         selected={selectedRow}
+        tabStop={tabStop}
         onSelect={() => onSelectRow(game)}
         onOpen={() => onOpen(game)}
         standing={selecting ? checkbox : undefined}
@@ -787,8 +791,8 @@ export function ArchiveBrowser({
   const tableNav = useTableNav(table && onSelect !== undefined);
   const navRows = visibleMonthGames.slice(0, MAX_ROWS);
   tableNav.current = {
-    move: (delta) => {
-      const at = navRows.findIndex((g) => gameKey(g) === selectedKey);
+    move: (delta, from) => {
+      const at = navRows.findIndex((g) => gameKey(g) === (from ?? selectedKey));
       const next =
         navRows[
           at < 0
@@ -799,12 +803,19 @@ export function ArchiveBrowser({
         ];
       if (next) selectRow(next);
     },
-    open: () => {
-      const g = navRows.find((g) => gameKey(g) === selectedKey);
+    open: (key) => {
+      const g = navRows.find((g) => gameKey(g) === (key ?? selectedKey));
       if (g) void openInAnalysis(g);
     },
     clear: () => onSelect?.(null),
   };
+  // The table's one Tab stop: the selected row while it is on screen,
+  // else the first (GameTableRow's tabStop).
+  const tabStopKey = navRows.some((g) => gameKey(g) === selectedKey)
+    ? selectedKey
+    : navRows[0]
+      ? gameKey(navRows[0])
+      : null;
 
   const rowHandlers = useRef({ openInAnalysis, collect, selectRow });
   rowHandlers.current = { openInAnalysis, collect, selectRow };
@@ -1135,6 +1146,7 @@ export function ArchiveBrowser({
           onCollect={rowCollect}
           onDetails={setDetails}
           selectedRow={selectedKey === gameKey(game)}
+          tabStop={tabStopKey === gameKey(game)}
           onSelectRow={rowSelect}
         />
       ))

@@ -13,7 +13,7 @@ import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
 import { separatorKey } from '@/components/separator-keys';
 import { t } from '@/lib/i18n';
 
-import { EcoChip, ResultScore, type GameSummary } from './shared';
+import { EcoChip, gameKey, ResultScore, SeatMark, type GameSummary } from './shared';
 import { TitleTip } from '@/components/title-tip';
 
 /**
@@ -186,20 +186,27 @@ const isNoiseEvent = (event: string | null): boolean => event === 'Live Chess';
     clear it. The pane fills the ref fresh each render, so the handler
     always speaks about the rows currently on screen. */
 export interface TableNav {
-  move: (delta: 1 | -1) => void;
-  open: () => void;
+  /** `from` is the row the key was pressed on (its data-table-row key),
+      when it was pressed on one: the step starts there, so a Tab that
+      lands on a row and an ↓ that then counts from the top of the list
+      cannot disagree with the ring. */
+  move: (delta: 1 | -1, from?: string) => void;
+  /** `key` is the row Enter was pressed on: that row opens, whether or
+      not it is the selected one. Without it, the selection opens. */
+  open: (key?: string) => void;
   clear: () => void;
 }
 
 /**
  * ↑/↓ move the table's selection, Enter opens it, Escape clears it —
- * page-level keys, because the rows are not focusable (a thousand tab
- * stops is not navigation). Keys aimed at a field, a control, or an
- * open window pass by untouched; ←/→ stay with the details panel's
- * board (GameDetails). The one control the keys do speak over is a
- * row's own button (the white player's name, data-table-row): a Tab
- * that lands on a row and an ↓ that then does nothing would be the
- * worse surprise.
+ * page-level keys, so a mouse user who has just clicked a row can arrow
+ * on from it without the row having to hold focus. The rows' own
+ * buttons (the white player's name, data-table-row) are a ROVING tab
+ * stop: one row is tabbable at a time (the selected one, else the
+ * first), and when ↑/↓ move the selection the focus moves with it, so
+ * the ring, the selection and what Enter opens are one row. Keys aimed
+ * at a field, another control, or an open window pass by untouched;
+ * ←/→ stay with the details panel's board (GameDetails).
  */
 export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null> {
   const nav = useRef<TableNav | null>(null);
@@ -209,23 +216,25 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
       const n = nav.current;
       if (!n) return;
       const target = e.target as HTMLElement | null;
+      const row = target?.closest<HTMLElement>('[data-table-row]');
       if (
-        !target?.closest('[data-table-row]') &&
+        !row &&
         target?.closest(
           'input, textarea, select, button, a, [contenteditable="true"], [role="menuitem"], [role="tab"], [role="option"]',
         )
       )
         return;
       if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      const rowKey = row?.getAttribute('data-table-row') || undefined;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        n.move(1);
+        n.move(1, rowKey);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        n.move(-1);
+        n.move(-1, rowKey);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        n.open();
+        n.open(rowKey);
       } else if (e.key === 'Escape') {
         n.clear();
       }
@@ -474,9 +483,14 @@ export function GameTableRow({
   bookmarked = false,
   standing,
   withNotation = true,
+  tabStop = true,
 }: {
   game: GameSummary;
   selected: boolean;
+  /** Whether this row is the table's one Tab stop — see useTableNav.
+      The caller says which row that is (the selected one, else the
+      first); a row that is not it still takes focus, from the arrows. */
+  tabStop?: boolean;
   /** Single click: the row becomes the details panel's subject — or,
       in a list with no details panel (the archive window), the open. */
   onSelect: () => void;
@@ -492,6 +506,21 @@ export function GameTableRow({
       useGameTableVars were told. */
   withNotation?: boolean;
 }) {
+  const key = gameKey(game);
+  const button = useRef<HTMLButtonElement>(null);
+  // The focus follows the selection while the selection is being driven
+  // from the rows: an ↑/↓ pressed on one row's button selects the next
+  // row, and the ring must go with it or Enter acts on a row the ring is
+  // not on (measured: ring on row 0, ↓ three times, Enter opened row 2).
+  // Only while focus is already on a row, so a click on a row while a
+  // field has focus does not pull the caret out of the field.
+  useEffect(() => {
+    if (!selected) return;
+    const active = document.activeElement;
+    if (active && active !== button.current && active.closest('[data-table-row]')) {
+      button.current?.focus();
+    }
+  }, [selected]);
   const name = (player: string, side: 'white' | 'black') => {
     const className = cn(
       'min-w-0 truncate text-sm font-medium',
@@ -507,6 +536,7 @@ export function GameTableRow({
     );
     const content = (
       <>
+        {game.userSide === side && <SeatMark side={side} />}
         {player}
         {side === 'white' && game.annotated && (
           <NotebookPen className="text-info ml-1 inline size-3" aria-label={t('Annotated')} />
@@ -516,12 +546,22 @@ export function GameTableRow({
     // The white name is the row's button: the one focusable thing per
     // line (the row itself stays a plain li, see useTableNav). A press
     // selects like a press on the row; the keys are useTableNav's,
-    // which lets this button through by its data attribute.
+    // which lets this button through by its data attribute and reads
+    // the row's key off it, so Enter opens THIS row and ↑/↓ step from it.
     return side === 'white' ? (
       <button
+        ref={button}
         type="button"
-        data-table-row
-        aria-label={t('{white} vs {black}', { white: game.white, black: game.black })}
+        data-table-row={key}
+        tabIndex={tabStop ? 0 : -1}
+        // The seat in the name too: the label is all a screen reader
+        // hears of this row, and the SeatMark's own text is inside it.
+        aria-label={
+          t('{white} vs {black}', { white: game.white, black: game.black }) +
+          (game.userSide
+            ? `, ${game.userSide === 'white' ? t('You played white') : t('You played black')}`
+            : '')
+        }
         aria-current={selected ? 'true' : undefined}
         className={cn(className, 'text-left')}
         onClick={(e) => {

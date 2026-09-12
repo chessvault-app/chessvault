@@ -440,8 +440,8 @@ export function CollectionList({
   const tableNav = useTableNav(table && onSelect !== undefined);
   const tableVars = useGameTableVars(selecting, !besideDetails);
   tableNav.current = {
-    move: (delta) => {
-      const at = visible.findIndex((g) => gameKey(g) === selectedKey);
+    move: (delta, from) => {
+      const at = visible.findIndex((g) => gameKey(g) === (from ?? selectedKey));
       const next =
         visible[
           at < 0
@@ -452,12 +452,19 @@ export function CollectionList({
         ];
       if (next) onSelect?.(next);
     },
-    open: () => {
-      const g = visible.find((g) => gameKey(g) === selectedKey);
+    open: (key) => {
+      const g = visible.find((g) => gameKey(g) === (key ?? selectedKey));
       if (g) onOpen(g);
     },
     clear: () => onSelect?.(null),
   };
+  // The table's one Tab stop: the selected row while it is on screen,
+  // else the first (GameTableRow's tabStop).
+  const tabStopKey = visible.some((g) => gameKey(g) === selectedKey)
+    ? selectedKey
+    : visible[0]
+      ? gameKey(visible[0])
+      : null;
 
   // The ⋯ → Game details sheet: the details panel's content where
   // there is no panel.
@@ -741,6 +748,7 @@ export function CollectionList({
                   withNotation={!besideDetails}
                   standing={selecting ? rowCheckbox(game) : undefined}
                   selected={selectedKey === gameKey(game)}
+                  tabStop={tabStopKey === gameKey(game)}
                   onSelect={() => onSelect?.(game)}
                   onOpen={() => onOpen(game)}
                   menu={rowMenu(game)}

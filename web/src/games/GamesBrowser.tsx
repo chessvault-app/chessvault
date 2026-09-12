@@ -2,11 +2,13 @@ import { Bookmark, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type MutableRefObject,
   type ReactNode,
 } from 'react';
+import { parsePgn } from 'chessops/pgn';
 import {
   cachedCollection,
   collectionWasNonEmpty,
@@ -29,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { Panel } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/toast';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { useUndoable } from '@/hooks/use-undoable';
 
@@ -141,6 +144,7 @@ function Box({
 export function GamesBrowser({
   table,
   besideDetails = false,
+  detailsReservePx = 0,
   frame,
   inPlace = false,
   onSelect,
@@ -161,6 +165,19 @@ export function GamesBrowser({
    * passes nothing.
    */
   besideDetails?: boolean;
+  /**
+   * The width a details column will take from this pane when a row is
+   * selected, while none stands (`besideDetails` false): the column's
+   * track plus the grid's gap, in px. The one-row toolbar is decided
+   * against the pane's width LESS this, so that selecting a row, which
+   * mounts the column, never folds the toolbar back to two rows under
+   * the pointer. Measured at 1280x900 before: the first click on a row
+   * moved the list 82px within the double-click interval, so the
+   * second click landed on the next row and opened a game nobody
+   * chose. Zero where the column is pinned or cannot appear, since the
+   * live width already tells the truth there.
+   */
+  detailsReservePx?: number;
   /**
    * What stands around the browser. `panel`: its own Panel, the tab
    * strip as the card's title, for a host that sets it among other
@@ -299,9 +316,26 @@ export function GamesBrowser({
   const [colSelKey, setColSelKey] = useState<string | null>(null);
   const [dbSel, setDbSel] = useState<DetailsSelection | null>(null);
   const [archSel, setArchSel] = useState<DetailsSelection | null>(null);
-  /** The pane's own width — see MERGED_MIN_PX. */
+  /** The pane's own width — see MERGED_MIN_PX and detailsReservePx. */
   const [stripRef, paneW] = useElementWidth();
-  const merged = table && paneW >= MERGED_MIN_PX;
+  // The pane's width with no column standing, remembered: the render
+  // that mounts the column still carries the OLD measurement (the
+  // observer reports a frame later), and deciding from it merged the
+  // toolbar for that frame and folded it back on the next, the very
+  // shift the reserve exists to prevent (measured: 82px up at the first
+  // click, 82px back down by 100ms). While the column stands the
+  // decision takes the smaller of the live width and that remembered
+  // width less the reserve, which are equal once the observer has
+  // caught up. Its one cost: widening the window while a game is
+  // selected does not merge the toolbar until the selection is dropped.
+  const freeW = useRef(0);
+  if (!besideDetails) freeW.current = paneW;
+  const decisiveW = besideDetails
+    ? detailsReservePx > 0
+      ? Math.min(paneW, freeW.current - detailsReservePx)
+      : paneW
+    : paneW - detailsReservePx;
+  const merged = table && decisiveW >= MERGED_MIN_PX;
   /** What the three lists tell the shell — the frame, in its words. */
   const shape: GameListShape = frame === 'panel' ? 'panel' : 'page';
   /** Every tab's selection at once: only one is live, and a tab change
@@ -775,6 +809,15 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   const [busy, setBusy] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const pgnField = useRef<HTMLTextAreaElement>(null);
+  /**
+   * How many games the box holds. A paste can be a whole file, and the
+   * server adds each game as its own document (collect-pgn); the sheet
+   * says so before the press and reports the counts after it, because
+   * it used to keep the first game, drop the rest and close as if all
+   * had gone in. The same lenient parser the server reads with, so the
+   * two agree on what a game is.
+   */
+  const gameCount = useMemo(() => (pgn.trim() ? parsePgn(pgn).length : 0), [pgn]);
 
   /**
    * iOS scrolls a focused field into view by shoving the whole window,
@@ -828,21 +871,42 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
     };
     let text = pgn.trim();
     if (!text) return;
-    // Bare moves get a header block; a full PGN gets its headers overridden.
-    if (!text.startsWith('[')) text = `\n${text}`;
-    const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
-    text = withHeader(text, 'Result', result);
-    text = withHeader(text, 'Event', event);
-    text = withHeader(text, 'BlackElo', blackElo);
-    text = withHeader(text, 'WhiteElo', whiteElo);
-    text = withHeader(text, 'Date', date.trim() ? date.replaceAll('-', '.') : today);
-    text = withHeader(text, 'Black', black.trim() || 'Black');
-    text = withHeader(text, 'White', white.trim() || 'White');
+    // The typed details describe ONE game. Several games each keep their
+    // own headers: writing the first game's players over every game, or
+    // over the first alone, would both be wrong.
+    if (gameCount <= 1) {
+      // Bare moves get a header block; a full PGN gets its headers overridden.
+      if (!text.startsWith('[')) text = `\n${text}`;
+      const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
+      text = withHeader(text, 'Result', result);
+      text = withHeader(text, 'Event', event);
+      text = withHeader(text, 'BlackElo', blackElo);
+      text = withHeader(text, 'WhiteElo', whiteElo);
+      text = withHeader(text, 'Date', date.trim() ? date.replaceAll('-', '.') : today);
+      text = withHeader(text, 'Black', black.trim() || 'Black');
+      text = withHeader(text, 'White', white.trim() || 'White');
+    }
 
     setBusy(true);
     setFailure(null);
     try {
-      await api('/api/games/collect-pgn', { method: 'POST', json: { pgn: text } });
+      const answer = await api<{ imported?: number; duplicates?: number; unreadable?: number }>(
+        '/api/games/collect-pgn',
+        { method: 'POST', json: { pgn: text } },
+      );
+      // One game closing the sheet is its own report; several say what
+      // became of each, since the list alone cannot show what was skipped.
+      if (gameCount > 1) {
+        const skipped = [
+          answer.duplicates ? t('{n} already in the collection', { n: String(answer.duplicates) }) : '',
+          answer.unreadable ? t('{n} could not be read', { n: String(answer.unreadable) }) : '',
+        ].filter(Boolean);
+        toast.add({
+          title: t('Added {n} games', { n: String(answer.imported ?? 0) }),
+          description: skipped.length > 0 ? skipped.join(', ') : undefined,
+          timeout: 6000,
+        });
+      }
       onDone();
     } catch (error) {
       // Including the thrown case: a network blip here used to leave the
@@ -889,6 +953,13 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           aria-label={t('Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …')}
           className="w-full resize-none font-mono placeholder:font-sans"
         />
+        {gameCount > 1 && (
+          <p className="text-muted-foreground text-sm" role="status">
+            {t('{n} games in this paste. Each is added on its own, with its own headers.', {
+              n: String(gameCount),
+            })}
+          </p>
+        )}
 
         {/* Everything a pasted PGN already knows lives behind one line. It
             opens itself when a paste fills something in, so what was read

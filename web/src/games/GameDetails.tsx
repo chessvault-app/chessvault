@@ -32,6 +32,7 @@ import {
   EcoName,
   formatTimeControl,
   safeLink,
+  SeatMark,
   type GameSummary,
 } from './shared';
 import { moveCount, numberedSan } from './GameTable';
@@ -151,6 +152,7 @@ function GameDetailsContent({
           summary.userSide === side && 'text-primary',
         )}
       >
+        {summary.userSide === side && <SeatMark side={side} />}
         {name}
       </span>
       {elo ? (

@@ -168,6 +168,46 @@ describe('games api (collection model)', () => {
     expect(bad.status).toBe(400);
   });
 
+  it('collects every game in a multi-game paste and counts each outcome', async () => {
+    const two =
+      '[White "Alpha"]\n[Black "Beta"]\n[Date "2026.09.12"]\n[Result "1-0"]\n\n1. e4 e5 1-0\n\n' +
+      '[White "Gamma"]\n[Black "Delta"]\n[Date "2026.09.12"]\n[Result "0-1"]\n\n1. d4 d5 0-1\n';
+    const res = await app.request('/api/games/collect-pgn', {
+      method: 'POST',
+      body: JSON.stringify({ pgn: two }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      id: 'Alpha vs Beta 2026-09-12',
+      ids: ['Alpha vs Beta 2026-09-12', 'Gamma vs Delta 2026-09-12'],
+      imported: 2,
+      duplicates: 0,
+      unreadable: 0,
+    });
+    expect(existsSync(join(dir, 'collection', 'Gamma vs Delta 2026-09-12.pgn'))).toBe(true);
+
+    // Sent again with a third, new game: the two are counted as already
+    // there, the one is added, and the answer is still a success.
+    const three = two + '\n[White "Eps"]\n[Black "Zeta"]\n[Date "2026.09.12"]\n\n1. c4 c5 *\n';
+    const again = await app.request('/api/games/collect-pgn', {
+      method: 'POST',
+      body: JSON.stringify({ pgn: three }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(again.status).toBe(200);
+    expect(await again.json()).toMatchObject({ id: 'Eps vs Zeta 2026-09-12', imported: 1, duplicates: 2 });
+
+    // Every game already present is the one-game caller's 409, with counts.
+    const all = await app.request('/api/games/collect-pgn', {
+      method: 'POST',
+      body: JSON.stringify({ pgn: two }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(all.status).toBe(409);
+    expect(await all.json()).toMatchObject({ imported: 0, duplicates: 2 });
+  });
+
   it('serves single games with clock comments intact', async () => {
     const res = await app.request(
       `/api/games/pgn?file=${encodeURIComponent('chesscom/lanph3re/2026-07.pgn')}&index=0`,

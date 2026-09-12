@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 
 /** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
 const fmt = (result: string): string => result.replaceAll('1/2', '½');
@@ -74,6 +75,22 @@ export function ResultBadge({
         : winner === 'white'
           ? 'bg-eval-white text-on-eval-white'
           : 'bg-eval-black text-on-eval-black';
+  // The verdict in words, for whoever cannot read it off the tint: the
+  // green and the red are the only thing that told a win from a loss
+  // (a colour-blind reader saw two tinted chips), and a screen reader
+  // heard four characters. Visually hidden text rather than an
+  // aria-label, because a span has no role and ARIA does not name a
+  // generic element. With no side of the reader's own, the winner.
+  const verdict =
+    parts.length !== 2 || !winner
+      ? null
+      : userSide
+        ? userSide === winner
+          ? t('You won')
+          : t('You lost')
+        : winner === 'white'
+          ? t('White won')
+          : t('Black won');
   // No tip: it said `fmt(result)`, which is exactly the four characters
   // printed inside it. A tooltip that repeats its own trigger is a hover
   // that answers nothing — and this chip sits inside row buttons that
@@ -83,13 +100,27 @@ export function ResultBadge({
     <span
       data-slot="result-badge"
       className={cn(
-        'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-semibold',
+        // Medium, with the WINNING DIGIT bold: the mark the colour
+        // grammar promises (DESIGN.md, "Colour and marks") and the chip
+        // had stopped drawing, so that every chip weighs the same and
+        // the verdict is a shape as well as a hue. Same weight whether
+        // the chip is the reader's own tint or a reference game's eval
+        // colour, so the black chip does not outshout a loss beside it.
+        'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-medium',
         'tabular-nums leading-4',
         tone,
         className,
       )}
     >
-      {fmt(result)}
+      {verdict && <span className="sr-only">{verdict} </span>}
+      {parts.length === 2 && winner ? (
+        <>
+          <span className={cn(winner === 'white' && 'font-bold')}>{fmt(parts[0]!)}</span>-
+          <span className={cn(winner === 'black' && 'font-bold')}>{fmt(parts[1]!)}</span>
+        </>
+      ) : (
+        fmt(result)
+      )}
     </span>
   );
 }
