@@ -360,8 +360,12 @@ export function SkeletonBookCards({
   cards = 4,
   groups,
   className,
+  footer = 'progress',
 }: {
   cards?: number;
+  /** What the card ends with. The puzzle shelf ends on a Progress track;
+      the library ends on a line of text (a size, and where it is kept). */
+  footer?: 'progress' | 'line';
   /** The library's grouped shape, where the caller stored one — same
       contract as SkeletonCards' `groups`. Without it, a flat grid. */
   groups?: { root: number; folders: number[] };
@@ -379,12 +383,30 @@ export function SkeletonBookCards({
       {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
           the size it will be rather than the size it looks like. */}
       <Skeleton className="h-24 w-[4.5rem] shrink-0 rounded-md" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
-        <Skeleton className="h-3.5 w-4/5" />
-        <Skeleton className="h-2.5 w-1/3" />
-        {/* The Progress track’s own h-1, like SkeletonTiles — not the
-            h-1.5 this guessed. */}
-        <Skeleton className="mt-auto h-1 w-full rounded-full" />
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
+        {/* Title and meta share one box with no gap between them, as the
+            card stacks them: a text-base line of 24px over a text-sm line
+            of 20. Set apart with the column's gap-2 they each sat above
+            the words they stand for. */}
+        <span className="min-w-0 pr-7">
+          <span className="flex h-6 items-center">
+            <Skeleton className="h-3.5 w-4/5" />
+          </span>
+          <span className="flex h-5 items-center">
+            <Skeleton className="h-2.5 w-1/3" />
+          </span>
+        </span>
+        {footer === 'progress' ? (
+          /* The Progress track’s own h-1, like SkeletonTiles. */
+          <Skeleton className="h-1 w-full rounded-full" />
+        ) : (
+          /* A text-sm line with its glyph, which is what the library's
+             cards end with; a track there stood for nothing they draw. */
+          <span className="flex h-5 items-center gap-1.5">
+            <Skeleton className="size-3 shrink-0 rounded-sm" />
+            <Skeleton className="h-2.5 w-24" />
+          </span>
+        )}
       </div>
     </div>
   );
@@ -679,8 +701,15 @@ export function SkeletonDocument({ className }: { className?: string }) {
         <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9">
           <Skeleton className="size-7 shrink-0 rounded-md" />
           <Skeleton className="h-3.5 min-w-0 flex-1" />
+          {/* DocumentTools keeps three buttons from md and one on a phone,
+              and the save state stands after Edit. Two of the tools and
+              the state were not reserved, so the title bar ran roughly
+              60px (phone) to 100px (desktop) past where the name stops. */}
           <Skeleton className="size-7 shrink-0 rounded-md" />
+          <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
+          <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
           <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+          <Skeleton className="h-2.5 w-10 shrink-0" />
         </div>
       </div>
       {/* min-h-[60vh] is .note-editor's own floor (index.css): a short
@@ -759,8 +788,13 @@ export function SkeletonBoard({
     <>
       <Skeleton className="size-7 shrink-0 rounded-md" />
       <Skeleton className="h-3.5 min-w-0 flex-1" />
+      {/* As SkeletonDocument's row: three tools from md, then Edit and
+          the save state. */}
       <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
+      <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
       <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+      <Skeleton className="h-2.5 w-10 shrink-0" />
     </>
   );
   const playerBar = (
