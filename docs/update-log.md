@@ -62,6 +62,10 @@ screen, and the opening map's panel steps aside from the dot you chose.
   your own material, each under its heading.
 - **The Books shelf says it takes a dropped PDF.** One line under the
   shelf, where there is a pointer to drop with.
+- **A note opens ready to edit on a desktop.** Click into the text and
+  type; the “Read” button goes back to reading, where a plain click
+  follows a wiki link (Ctrl/⌘+click follows one while editing). A phone
+  still opens a note to read and edits behind “Edit”.
 - **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
   against a rook, rook and pawns against a rook, and the rest, or a
