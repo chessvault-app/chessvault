@@ -866,10 +866,12 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   binds the token is the selected fill an inset ring is drawn straight
   onto (`--surface-3` in light, `--accent` in dark), and
   `check:contrast` now holds a focus indicator to 3:1 at any alpha it is
-  drawn at, so neither the next retune of a surface nor a ring quietly
-  thinned back to a wash can take it away again. The same token paints
-  the slider thumb's edge at rest and its hover halo, which moved with
-  it; `slider.tsx` records what they measure.
+  drawn at, including the one global rule that draws the ring for every
+  control that is not a registry component, so neither the next retune of
+  a surface nor a ring quietly thinned back to a wash can take it away
+  again. The same token paints the slider thumb's edge at rest and its
+  hover halo, which moved with it; `slider.tsx` records what they
+  measure.
 
 ## The mark
 

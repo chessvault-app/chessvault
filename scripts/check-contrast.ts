@@ -23,7 +23,9 @@
  * WHAT IT CANNOT SEE. Text over a background IMAGE or gradient is
  * skipped, not guessed at — the board is drawn that way, and so are the
  * piece sets. Anything `aria-hidden` is skipped because it is not text to
- * a reader. And it only knows the states it is told to force, below.
+ * a reader. A stroke on an element clipped to nothing is skipped too, for
+ * the plainest reason: it is not painted. And it only knows the states it
+ * is told to force, below.
  *
  * STROKES ARE MEASURED TOO, because the defect this file certified its
  * way past was never text: in light mode the page, the card and the
@@ -49,10 +51,12 @@
  * structure; a focus indicator is what tells a keyboard user where they
  * are, and WCAG 1.4.11 asks 3:1 of it under PRODUCT.md's yardstick. This
  * file forced :focus-visible from the day it was written and still could
- * not see the ring: it never read `outline` at all, so every bare button
- * and link was invisible to it, and a ring drawn as a box-shadow was
- * scored against the 1.3/1.2 hairline floor, which a 50% wash clears
- * without being visible. The ring measured 1.35 to 1.88:1 everywhere.
+ * not see the ring, for three separate reasons that each hid it on their
+ * own: it never read `outline` at all, so every bare button and link was
+ * invisible to it; a ring drawn as a box-shadow was scored against the
+ * 1.3/1.2 hairline floor, which a 50% wash clears without being visible;
+ * and the forcing dropped the one rule that draws the global ring (see
+ * FORCE_STATES). The ring measured 1.35 to 1.88:1 everywhere.
  * So a stroke drawn in the --ring colour — box-shadow, outline, or the
  * SVG stroke the opening map draws round a focused node — is scored at
  * 3:1 against what is behind it, with no fill exemption (a focused
@@ -411,6 +415,15 @@ const STROKE_SCAN = (floor: number) => `(() => {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.1) continue;
     if (!el.getClientRects().length) continue;
+    // Clipped to nothing is not painted. Base UI keeps a real <input>
+    // under the visual control and hides it with clip-path: inset(50%) --
+    // the slider's is the only one in this app -- and that input still
+    // COMPUTES the page's focus outline. Under dark High contrast, where
+    // the ring is white and the thumb it sits in is white, four sliders
+    // reported a 1.00:1 focus ring that nothing can see. (The app turns
+    // that outline off as well, in slider.tsx; the forced sheet is
+    // unlayered and overrides it, which is what leaves this to the scan.)
+    if (cs.clipPath && cs.clipPath !== 'none') continue;
     const outside = el.parentElement ? bgOf(el.parentElement) : bgOf(el);
     if (!outside) continue;
     // The exemption: a fill that clears the floor is the real boundary.
@@ -476,17 +489,110 @@ const STROKE_SCAN = (floor: number) => `(() => {
  * Note the traversal: in Chrome every CSSStyleRule carries an empty
  * `cssRules` for nesting, so a naive `if (r.cssRules) recurse` never
  * reaches a single style rule and this quietly forces nothing.
+ *
+ * AND NOTE THE BARE RULE, which is the blind spot that let a thinned ring
+ * pass this file twice. Stripping the pseudo-class off `.foo:focus-visible`
+ * leaves `.foo`, but stripping it off `:focus-visible` leaves nothing, and
+ * an earlier cut dropped a selector that came out empty. The app's ONE
+ * global focus ring is exactly that rule — `:focus-visible { outline: 3px
+ * solid var(--ring) }` in index.css, and `:focus-visible { box-shadow: 0 0
+ * 0 3px var(--ring) }` on both landing pages — so the ring every bare
+ * button, every link, the skip link and both static pages wear was never
+ * forced on and never measured. Thinning it back to a 50% wash left this
+ * check green. An emptied selector now becomes the set of things that can
+ * hold focus, which is what `:focus-visible` means; `*` would be the
+ * literal reading and a wrong one, since it puts a focus ring on every div
+ * on the page and scores it against grounds nothing focusable ever sits on.
+ *
+ * Two shapes needed their own handling and are worth knowing about. A rule
+ * that wraps the state in `:has()` — the FAB flattening its shadows, the
+ * slider thumb's whole focus halo — strips to a bare `:has()`, which is
+ * invalid and drops the rule, so the state was forced on nothing; the
+ * wrapper is removed as a unit instead. And Tailwind escapes the
+ * pseudo-class into the CLASS NAME of an arbitrary variant, so the same
+ * text appears twice in one selector, once escaped and once real: stripping
+ * both leaves a class name that matches nothing. Neither is stripped after
+ * a backslash now.
+ *
+ * A media query that does not apply is skipped rather than flattened in,
+ * which the first cut of the fix above needed and did not have: the
+ * forced-colors block repaints the same bare rule in the system highlight
+ * colour, so the ring came back as rgb(0,120,215) on 62 elements and the
+ * ring matcher did not recognise it. Green, again, for a new reason.
  */
+/**
+ * What `:focus-visible` can match, and deliberately at zero specificity.
+ * The rule it stands in for is a bare `:focus-visible` (0,1,0), which any
+ * component utility beats; a plain list beats them back — `[tabindex]:not(
+ * [tabindex="-1"])` alone is (0,2,0) — and then a control that really does
+ * suppress the page outline is measured wearing one. That is not a
+ * hypothetical: it put a white ring on the slider's clipped input under
+ * dark High contrast and reported it at 1.00:1, four times.
+ */
+const FOCUSABLE =
+  ':where(a[href],area[href],button,input,select,textarea,summary,[contenteditable],[tabindex]:not([tabindex="-1"]))';
+
 const FORCE_STATES = `(() => {
   const decls = [];
+  const FOCUSABLE = ${JSON.stringify(FOCUSABLE)};
+  // Per selector in the list, not over the whole string: ':focus-visible,
+  // .foo:focus-visible' has one part that empties and one that does not.
+  //
+  // NEVER after a backslash. Tailwind escapes the pseudo-class INTO the
+  // class name of an arbitrary variant, so the selector for
+  // \`group-has-[:focus-visible]/fab:shadow-none\` carries the literal text
+  // twice: once escaped in the class, once real in the :has(). A blind
+  // replaceAll ate the escaped one and left a class name that matches
+  // nothing.
+  //
+  // And a state wrapped in :has() is unwrapped rather than stripped: the
+  // FAB flattens its shadows through :has(:focus-visible), the slider
+  // thumb draws its whole focus halo that way, and removing the inner
+  // pseudo-class alone leaves ':has()', which is invalid and drops the
+  // rule -- so those two states were forced on nothing.
+  const strip = (selectorText) => {
+    const parts = [];
+    let depth = 0, cur = '';
+    for (const ch of selectorText) {
+      if (ch === '(' || ch === '[') depth++;
+      if (ch === ')' || ch === ']') depth--;
+      if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; } else cur += ch;
+    }
+    parts.push(cur);
+    const out = [];
+    for (const part of parts) {
+      const bare = /(?<!\\\\):focus-visible/.test(part);
+      const s = part
+        .replace(/(?<!\\\\):has\\(\\s*:(?:focus-visible|hover|active)\\s*\\)/g, '')
+        .replace(/(?<!\\\\):hover/g, '')
+        .replace(/(?<!\\\\):active/g, '')
+        .replace(/(?<!\\\\):focus-visible/g, '');
+      if (s.trim()) out.push(s);
+      else if (bare) out.push(FOCUSABLE);   // the app's one global ring
+      else out.push('*');
+    }
+    return out.join(',');
+  };
   for (const sheet of document.styleSheets) {
     let rules; try { rules = sheet.cssRules; } catch { continue; }
     const walk = (list) => {
       for (const r of list) {
+        // A media query that does not apply is not a state this page can
+        // be in, and flattening one in is how the ring lost its colour:
+        // index.css repaints :focus-visible in the system highlight
+        // colour under forced-colors, and injected unconditionally
+        // that rule won on order, so every forced ring came out
+        // rgb(0,120,215) and the ring matcher -- rightly -- did not know
+        // it. Only media is filtered: @container and @supports keep the
+        // old behaviour, since neither replaced a colour.
+        if (r.media && r.conditionText) {
+          let holds = true;
+          try { holds = matchMedia(r.conditionText).matches; } catch {}
+          if (!holds) continue;
+        }
         if (r.selectorText) {
           if (/:hover|:active|:focus-visible/.test(r.selectorText)) {
-            const sel = r.selectorText
-              .replaceAll(':hover', '').replaceAll(':active', '').replaceAll(':focus-visible', '');
+            const sel = strip(r.selectorText);
             const body = r.cssText.slice(r.cssText.indexOf('{') + 1, r.cssText.lastIndexOf('}'));
             if (sel.trim() && body.trim()) decls.push(sel + '{' + body + '}');
           }
