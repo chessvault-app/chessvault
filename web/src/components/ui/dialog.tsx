@@ -798,7 +798,7 @@ function DialogContent({
                 // exit, a button or a swipe past the threshold, is
                 // shorter and on the spring run backwards (see the note
                 // at the top).
-                'transform-[translate3d(0,calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)),0)] transition-[transform,border-top-left-radius,border-top-right-radius] duration-(--pane-turn) ease-(--pane-turn-ease) will-change-transform',
+                'transform-[translate3d(0,calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)),0)] transition-[transform,border-radius,margin] duration-(--pane-turn) ease-(--pane-turn-ease) will-change-transform',
                 // The entrance is an ANIMATION on mount, not the
                 // primitive's starting style: nearly every window here
                 // mounts its Root already open, so the primitive never

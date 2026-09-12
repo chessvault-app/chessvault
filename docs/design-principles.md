@@ -589,10 +589,12 @@ otherwise covers entirely: the opening map's move panel opens at its
 full height and rests at half the screen when pulled down, with the map
 in view above it. A form is not a candidate; its buttons are at the
 bottom, where a lower rest would put them out of reach. The move between
-two rests rides the same spring as the entrance, and the sheet's top
-corners round further the lower it rests, or the further a finger has
-pulled it, as a multiple of the xl rung, so the Corners setting scales
-the whole curve and Square stays square at every height.
+two rests rides the same spring as the entrance. The lower the sheet
+rests, or the further a finger has pulled it, the more it becomes a
+card: its top corners round further, as a multiple of the xl rung, so
+the Corners setting scales the whole curve and Square stays square at
+every height; it stands a few pixels in from the edges, flush at full
+height; and its bottom corners round from nothing.
 
 The rule was once "never an X in the corner". Since every window became
 shadcn's Dialog, every titled window carries the registry's X on
