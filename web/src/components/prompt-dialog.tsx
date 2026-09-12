@@ -83,13 +83,22 @@ export function PromptDialog({
         />
         {error && <p className="text-destructive text-sm">{error}</p>}
         <div className="flex justify-end gap-2">
-          {/* A way out that is not the scrim. Tapping outside works, but a
-              dialog asking for one value should say so rather than expect
-              you to know. */}
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          {/* On a desktop, a way out that is not the scrim: tapping outside
+              works, but a dialog asking for one value should say so rather
+              than expect you to know. A phone's sheet already says so, with
+              the handle, and is dragged away, tapped away or backed out
+              of; a Cancel beside the one answer was a second button for the
+              thumb to tell apart, so the answer takes the whole row there. */}
+          <Button variant="ghost" size="sm" className="max-sm:hidden" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button variant="default" size="sm" disabled={!draft.trim()} onClick={submit}>
+          <Button
+            variant="default"
+            size="sm"
+            className="max-sm:flex-1"
+            disabled={!draft.trim()}
+            onClick={submit}
+          >
             {t(submitLabel)}
           </Button>
         </div>
