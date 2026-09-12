@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
 import { useMediaQuery } from '@/lib/media';
 import { useUndoable } from '@/hooks/use-undoable';
+import { announce } from '@/lib/announce';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -370,6 +371,31 @@ export function EditorView({
   }, [embedded, state, tool, orientation, sheetOpen]);
   // Reuses the fen memo above — validate would otherwise serialize again.
   const validity = useMemo(() => validate(state, fen), [state, fen]);
+  /**
+   * The legality line's id, for Analyse's aria-describedby: the button
+   * keeps its name and the reason it is locked is its description. It
+   * used to BE the name (the title stands in for one on an icon button),
+   * so "Analyse" was named "Both sides need a king." and nothing on the
+   * page matched the word on it.
+   */
+  const reasonId = useId();
+  /**
+   * Say when the position stops or starts being legal. The line below
+   * appears with no live role, and the sheet's copy is inside a window,
+   * so a screen reader heard nothing change; Analyse simply went quiet.
+   * The app's one polite region (lib/announce), not a role=status here:
+   * the same reason is drawn in up to three places and a region each
+   * would say it three times. Not on mount: an editor that opens on an
+   * illegal position (a hunt's half-filled board) is not a change.
+   */
+  const announced = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const now = validity.legal ? null : (validity.reason ?? '');
+    if (announced.current !== undefined && announced.current !== now) {
+      announce(now === null ? t('Legal position') : t(now));
+    }
+    announced.current = now;
+  }, [validity.legal, validity.reason]);
   const epOptions = useMemo(() => epCandidates(state), [state]);
 
   const patch = (next: Partial<EditorState>): void => setState((s) => ({ ...s, ...next }));
@@ -938,6 +964,7 @@ export function EditorView({
                     : t(validity.reason ?? '')
                 }
                 aria-label={onUse ? useLabel : t('Analyse')}
+                aria-describedby={validity.legal ? undefined : reasonId}
               >
                 {/* Analysis = the game-review microscope; embedded mode records
                     a move list, so the glyph says "list", not "go". */}
@@ -946,6 +973,28 @@ export function EditorView({
               </Button>
               </div>
             </div>
+
+            {/* Why Analyse is locked, where the locking happens. The wide
+                layout says it in the Position panel; stacked, that panel
+                is a sheet, and clearing the board (or loading a FEN from
+                the sheet, which closes it) left a greyed button whose
+                tooltip cannot open. The row stands at its one-line height
+                whether or not there is a reason: the column is centred
+                (stacked:my-auto), and a row that came and went would move
+                the board 14px every time legality flipped, on placing the
+                second king for one. A reason that wraps still shifts it,
+                which is rare and read once. */}
+            <p
+              id={reasonId}
+              className="text-warn flex min-h-5 w-full items-start justify-center gap-1.5 text-sm wide:hidden"
+            >
+              {!validity.legal && (
+                <>
+                  <AlertCircle className="mt-[3px] size-3.5 shrink-0" aria-hidden />
+                  <span>{t(validity.reason ?? '')}</span>
+                </>
+              )}
+            </p>
           </div>
         </div>
       </div>
