@@ -168,8 +168,13 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
               <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
             <Skeleton className="h-2.5 w-10 shrink-0" />
-            {/* The licence pill: one text-xs line, py-px and its border. */}
-            <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
+            {/* The licence pill: one text-xs line, py-px and its border.
+                Measured at 81-114px across the names that actually stand
+                here (MIT to Apache-2.0), so the widths are ragged rather
+                than one 48px stub that ended nowhere near them. */}
+            <Skeleton
+              className={cn('h-5 shrink-0 rounded-full', ['w-20', 'w-24', 'w-28', 'w-20'][i % 4])}
+            />
           </div>
         </div>
       ))}
@@ -937,7 +942,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
       {[0, 1, 2].map((i) => (
         <Skeleton key={i} className="h-7 min-w-0 flex-1 rounded-md pointer-coarse:h-9" />
       ))}
-      <Skeleton className="h-7 w-14 shrink-0 rounded-md pointer-coarse:h-9" />
+      <Skeleton className="size-7 shrink-0 rounded-md pointer-coarse:size-9" />
     </Loading>
   );
 }

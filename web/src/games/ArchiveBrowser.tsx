@@ -1225,7 +1225,10 @@ export function ArchiveBrowser({
           204 of rows (SkeletonGameRows' own measurement), and the 28px
           band popped in on top. */}
       {!month && loading === 'months' && (
-        <div className="border-border min-h-0 flex-1 border-t" style={table ? tableVars : undefined}>
+        // No border of its own: the real table wrapper has none, and the
+        // rule under the header is the list's. Drawn here it doubled the
+        // header's own and left the one under it missing.
+        <div className="min-h-0 flex-1" style={table ? tableVars : undefined}>
           {table && <GameTableHeader withStanding={selecting} withNotation={!besideDetails} />}
           <SkeletonGameRows rows={6} dense={table} />
         </div>

@@ -597,7 +597,7 @@ export function RefDbManagerSkeleton({ rows }: {
             pointer-coarse:h-auto). Measured on a phone at 42 against a
             36px placeholder, which stood the whole list 6px high. */}
         <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
-          <Skeleton className="h-8 w-52 rounded-xl pointer-coarse:h-[42px]" />
+          <Skeleton className="h-8 w-52 rounded-lg pointer-coarse:h-[42px]" />
         </div>
         {/* The search row, and the upload icon beside it. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">

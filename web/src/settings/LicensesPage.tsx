@@ -186,9 +186,12 @@ export function LicensesPage() {
                 ))}
               </>
             ) : (
-              // The All chip with its count still to come, and two group
-              // chips' worth of pill (a chip is text-sm, py-1 and its
-              // border; 36px under a coarse pointer).
+              // The All chip with its count still to come, and the group
+              // chips' own pills (a chip is text-sm, py-1 and its border;
+              // 36px under a coarse pointer). The group names are fixed in
+              // the licence walk, so the widths are theirs: measured 142
+              // and 116px in English, 108 and 90 in Korean, against the 96
+              // and 80 that stood here and left the row short.
               <>
                 <FilterChip
                   label={
@@ -204,8 +207,8 @@ export function LicensesPage() {
                   active
                   onClick={() => {}}
                 />
-                <Skeleton className="h-7.5 w-24 shrink-0 rounded-full pointer-coarse:h-9" />
-                <Skeleton className="h-7.5 w-20 shrink-0 rounded-full pointer-coarse:h-9" />
+                <Skeleton className="h-7.5 w-36 shrink-0 rounded-full pointer-coarse:h-9" />
+                <Skeleton className="h-7.5 w-28 shrink-0 rounded-full pointer-coarse:h-9" />
               </>
             )}
           </ChipRow>
