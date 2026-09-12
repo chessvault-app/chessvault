@@ -365,6 +365,10 @@ function PlaceholderRow({
         <Skeleton className={cn('absolute inset-y-0.5 left-0 max-w-full', width)} />
       </span>
       {trailing && <Skeleton className="h-2.5 w-10 shrink-0" />}
+      {/* The chevron every one of these rows ends with. It is not drawn,
+          only kept: it is part of the width the label truncates inside,
+          and without it the bar ran on past where the words stop. */}
+      <span aria-hidden className="size-3.5 shrink-0" />
     </div>
   );
 }
@@ -404,7 +408,7 @@ function PlaceholderChecklist() {
       {CHECKLIST_LABELS.map((label) => (
         <div
           key={label}
-          className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0"
+          className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0 pointer-coarse:min-h-11"
         >
           <span className="size-3.5 shrink-0" />
           <span className="relative min-w-0 flex-1">
@@ -459,7 +463,7 @@ function PlaceholderPanel({
         books ? (
           <div
             key={i}
-            className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0"
+            className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0 pointer-coarse:min-h-11"
           >
             <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
             <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -467,6 +471,7 @@ function PlaceholderPanel({
               <Skeleton className="h-2 w-full" />
             </span>
             <Skeleton className="h-2.5 w-8 shrink-0" />
+            <span aria-hidden className="size-3.5 shrink-0" />
           </div>
         ) : (
           <PlaceholderRow
@@ -1485,7 +1490,7 @@ export function HomePage() {
             className="grid gap-3 max-md:hidden lg:grid-cols-2"
           >
             {show('training') && reservedDash.training > 0 && (
-              <PlaceholderPanel title={t('Training')} rows={reservedDash.training} />
+              <PlaceholderPanel title={t('Training')} rows={reservedDash.training} trailing={false} />
             )}
             {show('games') && reservedDash.games > 0 && (
               <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} />
