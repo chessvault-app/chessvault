@@ -802,11 +802,22 @@ export function EditorView({
             <div className="flex w-full flex-wrap items-center justify-center gap-2">
               {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
                   so the active tool's highlight sits concentric in its corner. */}
+              {/* The armed tool is a pressed toggle, said so (aria-pressed) and
+                  drawn as the pill-track idiom draws a chosen segment: the
+                  background rung lifted on a shadow (components/segmented,
+                  DESIGN.md "surface"). It wore the primary fill before, the
+                  same near-black as Analyse beside it, so the page's one
+                  action and a mode switch read as two actions, and a screen
+                  reader was told nothing about which tool a board click
+                  applies. Not `active`: its bg-accent is 4% of lightness
+                  from the pill's muted ground, the parity DESIGN.md records
+                  as unseeable. */}
               <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(var(--radius-md)+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
-                variant={tool.kind === 'move' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-full max-sm:w-10 max-sm:px-0"
+                className={cn('h-full max-sm:w-10 max-sm:px-0', ARMED_TOOL)}
+                aria-pressed={tool.kind === 'move'}
                 onClick={() => setTool({ kind: 'move' })}
                 title={t('Move: drag pieces around the board')}
                 aria-label={t('Move')}
@@ -815,9 +826,10 @@ export function EditorView({
                 <span className="hidden sm:inline">{t('Move')}</span>
               </Button>
               <Button
-                variant={tool.kind === 'erase' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-full max-sm:w-10 max-sm:px-0"
+                className={cn('h-full max-sm:w-10 max-sm:px-0', ARMED_TOOL)}
+                aria-pressed={tool.kind === 'erase'}
                 onClick={() => setTool({ kind: 'erase' })}
                 title={t('Erase: click a square to remove its piece')}
                 aria-label={t('Erase')}
@@ -1143,6 +1155,13 @@ function NumberInput({
   );
 }
 
+/**
+ * The lit look of the armed Move or Erase tool inside the toolbar pill:
+ * the pill-track idiom's raised segment (segmented.tsx), keyed on the
+ * pressed state so the look and the state cannot disagree.
+ */
+const ARMED_TOOL = 'aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm';
+
 /** The placement palette: both colours in one row, opponent side first. */
 function PiecePalette({
   colors,
@@ -1176,6 +1195,9 @@ function PiecePalette({
                   <button
                     type="button"
                     aria-label={placeLabel(color, role)}
+                    // The ring is the armed look; this is the armed STATE,
+                    // for whoever cannot see the ring.
+                    aria-pressed={active}
                     onClick={() => onPick({ kind: 'piece', role, color })}
                     // A drag is chessground's from the first pixel; a clean
                     // click (no movement, so no drop) still arms the tool.
