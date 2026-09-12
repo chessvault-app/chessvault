@@ -469,7 +469,7 @@ export function SkeletonTiles({
         // one it is nothing — measured, the header bar sat on the column's
         // edge and the panel had no floor, 16px short of the Panel's.
         <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring pb-(--card-pad)">
-          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad) pointer-coarse:min-h-13">
+          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad)">
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
           </div>
@@ -644,7 +644,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
       {/* pb-3, not the pb-1.5 the header wears while the formatting
           palette is showing: a note opens READ-ONLY, and that is the state
           this stands in for. Measured at 59px against the real 65. */}
-      <div className="border-border -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6">
+      <div className="-mx-4 flex shrink-0 flex-col gap-3 border-b border-transparent px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6">
         {/* pointer-coarse:h-9, like every control the row holds: the back
             chevron and the edit button are icon-sm and sm, which grow to
             36px under a thumb. Pinned at h-7 the row was a button short on
@@ -860,7 +860,7 @@ export function SkeletonBoard({
             )}
             style={chapterH === null ? undefined : { height: chapterH, flex: '0 1 auto' }}
           >
-            <div className="flex min-h-11 shrink-0 items-center px-3 pointer-coarse:min-h-13">
+            <div className="flex min-h-11 shrink-0 items-center px-(--card-pad)">
               <Skeleton className="h-2.5 w-20" />
             </div>
             {/* px-1 and no gap, like the real list: its rows are --row-h
@@ -880,17 +880,31 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-card-ring p-3">
-          {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
-          ))}
+        <div className="bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
+          {/* The panel opens on its header, as the chapters panel above
+              does: the moves title and the row of controls beside it. The
+              bars used to start 12px down a panel whose first 44px is that
+              band, so every move line sat a header too high. */}
+          <div className="flex min-h-11 shrink-0 items-center gap-2 px-(--card-pad)">
+            <Skeleton className="h-2.5 w-24" />
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="size-7" />
+              ))}
+            </span>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
+            {Array.from({ length: 8 }, (_, i) => (
+              <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
+            ))}
+          </div>
         </div>
         {/* Folded to its header, which is where a board page opens it:
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
         {explorer && (
           <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden">
-            <div className="flex min-h-11 items-center px-3 pointer-coarse:min-h-13">
+            <div className="flex min-h-11 items-center px-(--card-pad)">
               <Skeleton className="h-2.5 w-16" />
             </div>
           </div>
