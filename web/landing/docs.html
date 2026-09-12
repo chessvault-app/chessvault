@@ -340,6 +340,17 @@
         font-size: var(--t-md); font-weight: 500;
       }
       .pager a:hover { background: var(--muted); }
+      /* THE ONE CONTROL ON THIS PAGE THAT DREW NO FOCUS RING. The page's
+         ring is a box-shadow and so is this card's hairline, so `.pager a`
+         (0,1,1) beat the bare `:focus-visible` (0,1,0) above and the
+         hairline simply stayed: tabbing to a pager link changed zero
+         pixels, measured at 320, 390 and 1280 in both schemes. It is the
+         same ring every other control here wears, at the same 3px and full
+         strength, and it replaces the hairline rather than stacking on it,
+         the way .btn's border turns the ring's colour. Measured after:
+         4.12:1 in light and 6.36:1 in dark against the page behind it,
+         and 648 to 867 pixels that were not there before. */
+      .pager a:focus-visible { box-shadow: 0 0 0 3px var(--ring); }
       .pager a small { font-weight: 400; color: var(--muted-foreground); }
       .pager .next { margin-left: auto; }
 
