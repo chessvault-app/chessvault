@@ -258,7 +258,9 @@ what you grep for.
   which is what WCAG 1.4.11 asks of a focus indicator. The registry's
   50% wash measured 1.35 to 1.88:1 and was no indicator at all. The
   binding surface is the selected fill an inset ring is drawn onto —
-  surface-3 in light, accent in dark.
+  surface-3 in light, accent in dark. One control paints it without
+  focus: the slider thumb's 1px edge at rest and its hover and active
+  halos, which the move made stronger too (`slider.tsx` measures them).
 
 ### Semantic
 

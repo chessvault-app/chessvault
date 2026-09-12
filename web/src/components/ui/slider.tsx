@@ -45,6 +45,20 @@ function Slider({
             className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"
           />
         </SliderPrimitive.Track>
+        {/*
+          The one control that paints the ring colour AT REST and ON HOVER:
+          `border-ring` is the thumb's own 1px edge, and `ring-ring` fills
+          the hover and active halos, not only the focus one. So the token
+          placed by measuring the focus ring moves this too, and it is a
+          visible change, not a neutral one. On #/settings the resting edge
+          goes rgb(161) to rgb(125) in light (2.58:1 to 4.12:1 against the
+          page) and rgb(115) to rgb(146) in dark (3.78:1 to 5.76:1), and the
+          hover halo stops being a wash: 1.54:1 to 4.12:1 light, 1.87:1 to
+          5.76:1 dark. Both read as clearer, and both were argued for on the
+          focus ring's evidence rather than their own. The pixel grid cannot
+          settle it either way: the only thumbs on a grid route sit at
+          y ~2335 on #/settings, far below the 900px viewport.
+        */}
         {Array.from({ length: _values.length }, (_, index) => (
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
