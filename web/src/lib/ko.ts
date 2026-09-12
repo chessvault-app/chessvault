@@ -781,10 +781,12 @@ export const ko: Record<string, string> = {
   'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.':
     '승리를 지키세요. 테이블베이스가 무승부나 패배로 판정하는 수를 두면 시도가 끝납니다.',
   'Defending…': '방어 중…',
-  'Stopped. The position is on the analysis board, with the engine.': '중지했습니다. 위치가 엔진과 함께 분석 보드에 있습니다.',
+  Stopped: '중지했습니다',
+  'The position is on the analysis board, with the engine.': '위치가 엔진과 함께 분석 보드에 있습니다.',
+  'You play White': '백을 맡습니다',
+  'You play Black': '흑을 맡습니다',
   'Ends the attempt and opens the engine': '시도를 끝내고 엔진을 엽니다',
-  'Checkmate. The win held from the first move to the last.':
-    '체크메이트. 첫 수부터 마지막 수까지 승리를 지켰습니다.',
+  'The win held from the first move to the last.': '첫 수부터 마지막 수까지 승리를 지켰습니다.',
   '{san} lets the win slip. {best} keeps it.':
     '{san}은(는) 승리를 놓치는 수입니다. {best}이(가) 승리를 지킵니다.',
   'Open Settings': '설정 열기',

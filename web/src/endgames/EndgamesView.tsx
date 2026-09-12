@@ -432,16 +432,15 @@ function Drill({ classId }: { classId: string }) {
       case 'replying':
         return { text: t('Defending…') };
       case 'won':
-        return { text: t('Checkmate. The win held from the first move to the last.'), tone: outcomeTone('solved') };
+        return { text: t('The win held from the first move to the last.') };
       case 'threw':
         return {
           text: best
             ? t('{san} lets the win slip. {best} keeps it.', { san: lastSan, best: best.san })
-            : t('The win slipped'),
-          tone: outcomeTone('missed'),
+            : '',
         };
       case 'stopped':
-        return { text: t('Stopped. The position is on the analysis board, with the engine.') };
+        return { text: t('The position is on the analysis board, with the engine.') };
       case 'error':
         // The board's own box carries the sentence, as the trainer's does.
         return { text: '' };
@@ -525,9 +524,28 @@ function Drill({ classId }: { classId: string }) {
       />
       <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
         <div className="flex flex-col gap-0.5">
-          {start && phase !== 'loading' ? (
+          {/* The headline. "White to move" was here, as the trainer's,
+              and it was false in four of the five states: the defender
+              replying, the win thrown, the mate delivered, the attempt
+              stopped. This one is true in all of them, and once the
+              attempt is over the verdict takes its place, in the
+              trainers' own verdict line and colour. */}
+          {start && ended ? (
+            <p
+              className={cn(
+                'text-base font-semibold',
+                phase === 'won'
+                  ? outcomeTone('solved')
+                  : phase === 'threw'
+                    ? outcomeTone('missed')
+                    : 'text-foreground',
+              )}
+            >
+              {phase === 'won' ? t('Checkmate') : phase === 'threw' ? t('The win slipped') : t('Stopped')}
+            </p>
+          ) : start && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
-              {solverSide === 'white' ? t('White to move') : t('Black to move')}
+              {solverSide === 'white' ? t('You play White') : t('You play Black')}
             </p>
           ) : phase === 'loading' ? (
             <div className="flex h-8 items-center">
