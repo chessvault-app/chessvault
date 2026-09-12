@@ -260,7 +260,7 @@ function NoteList() {
         </p>
       )}
 
-      <Arrival pending={pending}>
+      <Arrival pending={pending && !loaded}>
       {!loaded ? (
         // A vault seen empty reserves nothing: its settle is the
         // EmptyState, and invented cards would be the jump the other way.

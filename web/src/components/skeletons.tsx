@@ -74,10 +74,22 @@ export function useSlowLoad(active: boolean, delay = 180, minVisible = 400): boo
  * load that finished inside `useSlowLoad`'s delay never showed a
  * skeleton and mounts its content the way it always did.
  *
- * `pending` is the same boolean the skeleton is drawn on. The class is
- * off while it is true and back on once it is false, so a second wait
- * (a refresh) fades its arrival again. Nothing is keyed, so the content
- * keeps its state.
+ * `pending` is whether the placeholder is on screen RIGHT NOW: the
+ * slow-load flag AND the content not yet here. The class is off while
+ * it is true and on once it is false, so a second wait (a refresh)
+ * fades its arrival again. Nothing is keyed, so the content keeps its
+ * state.
+ *
+ * Not the slow-load flag alone. That flag stays up for its minimum
+ * stay (useSlowLoad's 400ms) after the content has landed, while the
+ * three shelves that use this draw their content the moment it lands;
+ * the class then arrived on a list that had been on screen for a
+ * third of a second, and the list blinked to transparent and faded
+ * back in. Measured on the demo's studies shelf in phone-emulated
+ * Chromium, tapping the Studies tab from home: the list drew at 147ms,
+ * went to opacity 0 at 504ms and was back at 648ms. Gated on the
+ * placeholder itself, the fade rides the commit that mounts the
+ * content, which is the only frame it belongs on.
  */
 export function Arrival({
   pending,

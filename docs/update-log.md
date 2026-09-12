@@ -156,6 +156,14 @@ builds and the board's arrow keys do less per request.
 - **The demo carries an archive month.** The static demo's vault now
   holds a Chess.com month for its owner, so Insights, the explorer's My
   games source and the archive browser have games to show there.
+- **A shelf no longer blinks after it has landed.** On a phone, the
+  studies, notes and licences lists fade in over the placeholder that
+  stood for them, but the fade was timed to the placeholder's minimum
+  stay rather than to the list's arrival: a list that had been on
+  screen for a third of a second went transparent and faded back in.
+  Measured on the studies shelf, opening it from the Home tab: the list
+  drew at 147 ms and vanished at 504 ms. The fade now rides the frame
+  the list appears on.
 
 ## 0.9.5
 
