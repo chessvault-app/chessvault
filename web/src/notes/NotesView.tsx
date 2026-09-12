@@ -26,6 +26,7 @@ import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/compone
 import {
   parseShelfShape,
   shelfHasShape,
+  afterPaint,
   readShelfHeights,
   shelfShapeOf,
   storedShelfShape,
@@ -122,24 +123,23 @@ function NoteList() {
   // only, never an error's empty list.
   useEffect(() => {
     if (!loaded || error !== null) return;
-    localStorage.setItem(
-      NOTES_SHELF_KEY,
-      storedShelfShape(shelfShapeOf(notes.map((n) => n.id), folders), readShelfHeights()),
-    );
+    const shape = shelfShapeOf(notes.map((n) => n.id), folders);
+    const store = (): void =>
+      localStorage.setItem(NOTES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
     // The heights are read off the page after the cards are drawn, and
     // again when the layout switches: a list row and a grid card differ.
     // And once more when the web font is in, since the fallback face
-    // wraps different words (see the studies shelf).
+    // wraps different words (see the studies shelf). Both reads wait
+    // for the paint (afterPaint): asked for in this effect they forced
+    // the new page's layout early, for nothing the user sees.
+    const cancel = afterPaint(store);
     let stale = false;
     void document.fonts?.ready.then(() => {
-      if (stale) return;
-      localStorage.setItem(
-        NOTES_SHELF_KEY,
-        storedShelfShape(shelfShapeOf(notes.map((n) => n.id), folders), readShelfHeights()),
-      );
+      if (!stale) store();
     });
     return () => {
       stale = true;
+      cancel();
     };
   }, [loaded, error, notes, folders, view.layout]);
 

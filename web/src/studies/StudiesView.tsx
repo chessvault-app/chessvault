@@ -28,6 +28,7 @@ import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/compone
 import {
   parseShelfShape,
   shelfHasShape,
+  afterPaint,
   readShelfHeights,
   shelfShapeOf,
   storedShelfShape,
@@ -82,16 +83,21 @@ function StudyList() {
   // face and not in the fallback is a 24px row, and a first visit
   // measured before the font landed stored the fallback's heights (24px
   // over on the phone's studies shelf, on the demo).
+  // Both reads wait for the paint (afterPaint): asked for in this effect
+  // they forced the new page's layout early, for nothing the user sees.
   useEffect(() => {
     if (!listLoaded || error !== null) return;
     const shape = shelfShapeOf(studies.map((s) => s.id), folders);
-    localStorage.setItem(STUDIES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+    const store = (): void =>
+      localStorage.setItem(STUDIES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+    const cancel = afterPaint(store);
     let stale = false;
     void document.fonts?.ready.then(() => {
-      if (!stale) localStorage.setItem(STUDIES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+      if (!stale) store();
     });
     return () => {
       stale = true;
+      cancel();
     };
   }, [listLoaded, error, studies, folders, view.layout]);
   // Bookmarks, kept in the vault exactly as the games shelf keeps its
