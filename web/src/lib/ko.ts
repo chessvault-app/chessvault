@@ -1587,6 +1587,7 @@ export const ko: Record<string, string> = {
   'Play a move on the board.': '보드에서 수를 두세요.',
   'Solved with help': '힌트를 보고 해결',
   'Solved after a wrong try': '틀린 뒤에 해결',
+  'Solved with a hint, not counted': '힌트로 해결, 기록되지 않음',
   'Solution shown': '정답을 봄',
   'Not solved': '해결하지 못함',
   'Checking your answer…': '답을 확인하는 중…',

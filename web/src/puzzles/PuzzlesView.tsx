@@ -31,7 +31,7 @@ import { outcomeTone } from './outcome';
 import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { navigate } from '@/lib/router';
-import { useWideLayout } from '@/lib/media';
+import { useMediaQuery, useWideLayout } from '@/lib/media';
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
@@ -115,6 +115,21 @@ type Phase =
  * #/puzzles/failed reviews previously failed puzzles (uncounted). The
  * trainer is keyed so switching category boots a clean state machine.
  */
+/**
+ * The finished panel's first line and what is announced: one sentence per
+ * outcome, so colour is never the only signal. A hinted solve says it is
+ * not counted, since that is the one thing the solver cannot see.
+ */
+function verdictText(revealed: boolean, failed: boolean, helped: boolean): string {
+  return revealed
+    ? 'Solution shown'
+    : failed
+      ? 'Solved after a wrong try'
+      : helped
+        ? 'Solved with a hint, not counted'
+        : 'Solved';
+}
+
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'hub') return <HubPage />;
   if (params[0] === 'themes') return <ThemesPage />;
@@ -158,6 +173,11 @@ function Trainer({
   // either of these.
   const [revealed, setRevealed] = useState(false);
   const [hint, setHint] = useState(0);
+  // The second hint DRAWS the move, so a solve after it is neither a
+  // clean win nor a failure, and is recorded as neither: it went to the
+  // log as a win, and a review-ladder rung was climbed on a move the app
+  // had pointed at. The first hint (the piece) is a nudge and stays free.
+  const [helped, setHelped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<DifficultyId>(storedDifficulty);
   // Stacked: the difficulty row hides behind the Puzzle panel's gear.
@@ -298,6 +318,7 @@ function Trainer({
       setFailed(false);
       setRevealed(false);
       setHint(0);
+      setHelped(false);
       setError(null);
       promotion.cancel();
       reported.current = false;
@@ -383,7 +404,7 @@ function Trainer({
   useEffect(() => {
     if (phase === 'wrong') announce(t('Wrong move. The board rolls back.'));
     else if (phase === 'done') {
-      announce(revealed ? t('Solution shown') : failed ? t('Solved after a wrong try') : t('Solved'));
+      announce(t(verdictText(revealed, failed, helped)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -402,7 +423,9 @@ function Trainer({
     setPhase('done');
     setPlies(finalPlies);
     setView(positionAt(p, finalPlies));
-    void report(p.id, !failed);
+    // A wrong try was reported when it happened; a hinted solve is not
+    // reported at all (see `helped`).
+    if (!helped) void report(p.id, !failed);
   };
 
   const applyUserMove = (uci: string): void => {
@@ -430,7 +453,7 @@ function Trainer({
         // Off-script mate: show the user's own move as the final position.
         setPhase('done');
         setView(positionWith(puzzle, plies, uci));
-        void report(puzzle.id, !failed);
+        if (!helped) void report(puzzle.id, !failed);
       }
       return;
     }
@@ -496,6 +519,7 @@ function Trainer({
     setFailed(false);
     setRevealed(false);
     setHint(0);
+    setHelped(false);
     setError(null);
     promotion.cancel();
     show(puzzle, ++loadSeq.current);
@@ -508,6 +532,9 @@ function Trainer({
   /** Whether a desktop has asked for the engine block; see dockEngine. */
   const [engineOpen, setEngineOpen] = useState(false);
   const wide = useWideLayout();
+  // The bottom bar's world, `md:hidden` in JavaScript (App.tsx): where the
+  // bar is, it carries the trainer's actions and the panel does not.
+  const phoneBar = useMediaQuery('(max-width: 47.9375rem)');
   /**
    * A finished puzzle on a desktop loads itself into the analysis board,
    * so the played line is navigable and the pieces move freely. The
@@ -667,6 +694,32 @@ function Trainer({
       reserve its height before it can be shown. */
   const settledNote =
     modeNote ?? t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)));
+
+  const solvingActions = solvingActionsOf();
+  /* Practice, not a second attempt — see retry(). */
+  const tryAgainButton = (
+    <Button variant="secondary" size="sm" className="pointer-coarse:h-11" onClick={retry}>
+      <RotateCcw className="size-3.5" data-icon="inline-start" />
+      {t('Try again')}
+    </Button>
+  );
+  const nextButton = (
+    <Button
+      variant="default"
+      size="sm"
+      className="shrink-0 pointer-coarse:h-11"
+      onClick={() =>
+        mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
+      }
+    >
+      <RotateCw className="size-3.5" data-icon="inline-start" />
+      {/* The label folds under 21rem, where it and the analysis strip
+          did not share a 320px bar; the name stays for a screen reader. */}
+      <span className="max-[21rem]:sr-only">
+        {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
+      </span>
+    </Button>
+  );
   const puzzlePanel = (
   // No `grow`, on either layout: the panel is the height of what it says.
   // A phone had it stretched to the bottom bar (f1e1757) so the column
@@ -772,14 +825,10 @@ function Trainer({
               // second go — it was still found — and red only where
               // the answer was handed over. Shared with the book
               // trainer, which had the middle case painted as failure.
-              outcomeTone(revealed ? 'missed' : failed ? 'helped' : 'solved'),
+              outcomeTone(revealed ? 'missed' : failed || helped ? 'helped' : 'solved'),
             )}
           >
-            {revealed
-              ? t('Solution shown')
-              : failed
-                ? t('Solved after a wrong try')
-                : t('Solved')}
+            {t(verdictText(revealed, failed, helped))}
           </p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
             {/* The band, not the number: a rating is how the trainer
@@ -896,6 +945,13 @@ function Trainer({
           the phase made it read as two different rows swapping places on
           the panel's floor. Hint, Solution and Skip end on Skip, which is
           the one that leaves this puzzle. */}
+      {/* On a phone the row is the bottom bar's (TrainerNavBar), so the
+          footer holds only what the bar does not: the link out and Try
+          again after the verdict, nothing while solving. Measured at
+          375x667 before this: the body held 209px in 119, Hint and
+          Solution 22px under the bar, and Next puzzle 138px under the
+          fold once the verdict's text was above it. */}
+      {(phase === 'done' || !phoneBar) && (
       <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
         {phase === 'done' ? (
           <>
@@ -928,23 +984,21 @@ function Trainer({
                 {t('From this game')}
               </Button>
             )}
-            {/* Practice, not a second attempt — see retry(). */}
-            <Button variant="secondary" size="sm" onClick={retry}>
-              <RotateCcw className="size-3.5" data-icon="inline-start" />
-              {t('Try again')}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() =>
-                mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
-              }
-            >
-              <RotateCw className="size-3.5" data-icon="inline-start" />
-              {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
-            </Button>
+            {tryAgainButton}
+            {!phoneBar && nextButton}
           </>
         ) : (
+          solvingActions
+        )}
+      </CardFooter>
+      )}
+    </div>
+  </Panel>
+  );
+  // The pieces of that row, named so the phone's bar and the panel's
+  // footer draw the same buttons.
+  function solvingActionsOf(): React.ReactNode {
+    return (
           <>
             {/* Skip sits at the far end, away from Solution, and is first
                 in the DOM so the reading order is the order on screen.
@@ -976,7 +1030,10 @@ function Trainer({
               size="sm"
               className="pointer-coarse:h-11"
               disabled={phase !== 'solving'}
-              onClick={() => setHint((h) => Math.min(h + 1, 2))}
+              onClick={() => {
+                setHint((h) => Math.min(h + 1, 2));
+                if (hint >= 1) setHelped(true);
+              }}
               title={t('First press marks the piece, second the move (not counted as a fail)')}
             >
               <Lightbulb className="size-3.5" data-icon="inline-start" />
@@ -994,11 +1051,8 @@ function Trainer({
               {t('Solution')}
             </Button>
           </>
-        )}
-      </CardFooter>
-    </div>
-  </Panel>
-  );
+    );
+  }
 
   return (
     // BOARD_HELD_SHELL, not BOARD_SCROLL_SHELL: the side column below owns
@@ -1133,9 +1187,11 @@ function Trainer({
 
       </div>
 
-      {/* Phones: the bottom bar steps through the moves played so far, like
-          every other board page. The puzzle's own actions (hint, solution,
-          skip, next) live in the panel above — no duplicates here.
+      {/* Phones: the bottom bar is the puzzle's own row while it is being
+          solved (Skip, Hint, Solution), and Try again and Next once it is
+          over, beside the analysis strip. See TrainerNavBar for why the
+          stepping buttons gave the row up, and the panel's footer for
+          what it keeps.
 
           Once the puzzle is over the board below is AnalysisBoard and the
           line lives in the analysis store, so the buttons that drive
@@ -1146,6 +1202,18 @@ function Trainer({
           keys. */}
       <TrainerNavBar
         analysing={analysing}
+        actions={
+          phase === 'done' ? (
+            <>
+              <span className="me-auto" />
+              {tryAgainButton}
+              {nextButton}
+            </>
+          ) : (
+            solvingActions
+          )
+        }
+        after={phase === 'done' ? nextButton : undefined}
         startDisabled={plies === 0}
         forwardDisabled={review === null}
         onFirst={() => goToPly(1)}

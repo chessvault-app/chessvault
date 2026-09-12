@@ -100,16 +100,27 @@ export function TrainerPanes({
 
 /**
  * Phones: the bottom bar steps through the line played so far, like every
- * other board page. The trainer's own actions (hint, solution, skip, next)
- * live in its panel — no duplicates here.
+ * other board page, unless the trainer hands it `actions`: then the bar
+ * is the trainer's own row (hint, solution, skip) for as long as the
+ * exercise runs, which is what the design docs say the bar is for
+ * (DESIGN.md, "the bottom bar becomes the open page's controls"). The
+ * puzzle trainer does: measured at 375x667 its panel body held 209px in
+ * 119, so Hint, Solution and Skip sat 22px under the bar while the bar
+ * held First and Back, which do nothing until a line has an exchange to
+ * step through, and Forward and Last, disabled. Opt-in, so the book
+ * trainer and the repertoire drill keep the stepping row they had.
  *
  * Once the exercise is over the board is AnalysisBoard and the line lives
  * in the analysis store, so buttons that drive the trainer's own cursor
  * would drive nothing: the analysis pages' own control strip is what
- * moves that board, and AnalysisBoard itself owns the arrow keys.
+ * moves that board, and AnalysisBoard itself owns the arrow keys. `after`
+ * stands at the end of that strip: the one forward action a finished
+ * puzzle has, which the same 375x667 window kept 138px under its fold.
  */
 export function TrainerNavBar({
   analysing = false,
+  actions,
+  after,
   startDisabled,
   forwardDisabled,
   lastDisabled = forwardDisabled,
@@ -121,6 +132,11 @@ export function TrainerNavBar({
   onFlip,
 }: {
   analysing?: boolean;
+  /** The trainer's own row, in place of the stepping buttons while the
+      exercise runs. */
+  actions?: ReactNode;
+  /** Appended to the analysis strip once the exercise is over. */
+  after?: ReactNode;
   /** First and Back: nothing has been played yet. */
   startDisabled: boolean;
   forwardDisabled: boolean;
@@ -135,7 +151,16 @@ export function TrainerNavBar({
   return (
     <MobileActionBar>
       {analysing ? (
-        <BoardControls className="py-1.5" />
+        after ? (
+          <div className="flex flex-1 items-center gap-1 py-1.5 pe-2">
+            <BoardControls className="min-w-0 w-auto flex-1" />
+            {after}
+          </div>
+        ) : (
+          <BoardControls className="py-1.5" />
+        )
+      ) : actions ? (
+        <div className="flex flex-1 items-center gap-2 px-2 py-1.5">{actions}</div>
       ) : (
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
           <Button variant="ghost" size="icon" disabled={startDisabled} onClick={onFirst} title={firstTitle}>
