@@ -3,11 +3,16 @@
  * without.
  *
  * Two facts about the labels live here rather than in the canvas, because
- * the fit has to know them: the zoom at which the names have faded out
- * entirely, and the zoom at which they are fully drawn. The canvas ramps
- * label opacity between the two; the automatic fit refuses to land below
- * the second. Kept as one pair so the fit cannot drift to a zoom where
- * the labels it fitted for are not there to read.
+ * the fit has to know them: the zoom below which no name is drawn at all,
+ * and the zoom the legible fit floors itself at. The canvas draws a label
+ * at full ink or not at all (labels.ts decides which, by collision); it
+ * used to ramp the opacity between these two zooms, on the premise that
+ * the arriving fit never landed inside the ramp. The arriving fit has
+ * been the plain, whole-map one since 2026-09-03 (see MapCanvas), so a
+ * mid-size map on a desktop rested INSIDE the ramp: every label at 57%
+ * ink, captions at 2.4:1, and nobody had revisited it. A label is either
+ * readable or absent now; the zoom-out transition is the culling, not a
+ * fade.
  */
 
 export interface Box {
@@ -29,17 +34,17 @@ export interface FitView {
 }
 
 /** Pulled back past this, the labels are gone and only the shape reads. */
-export const LABELS_FADE_OUT = 0.3;
-/** From here in the labels are fully drawn: 12px names, 10px captions. */
+export const LABELS_SHOWN = 0.3;
+/** The zoom a legible fit floors at: room for most of a map's names. */
 export const LABELS_LEGIBLE = 0.54;
 /** A small map is not blown up past this, even if it would fit. */
 const FIT_MAX = 2;
 /** The margin a fit keeps around the picture. */
 const FIT_FILL = 0.92;
 
-/** How much of a label to draw at zoom `k`: 0 far out, 1 from LABELS_LEGIBLE in. */
-export function labelOpacity(k: number): number {
-  return Math.max(0, Math.min(1, (k - LABELS_FADE_OUT) / (LABELS_LEGIBLE - LABELS_FADE_OUT)));
+/** Whether any label is drawn at zoom `k`. Which ones is labels.ts's call. */
+export function labelsShown(k: number): boolean {
+  return k >= LABELS_SHOWN;
 }
 
 /**

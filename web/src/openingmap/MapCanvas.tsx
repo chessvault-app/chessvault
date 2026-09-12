@@ -7,7 +7,8 @@ import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { createLiveSim, layoutGraph, layoutTree, PAD, type LiveSim } from './graph';
-import { fitView, labelOpacity as labelOpacityAt } from './fit';
+import { fitView, labelsShown } from './fit';
+import { placeLabels, type LabelCandidate } from './labels';
 import { favouriteChild } from './mainline';
 import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
 import { prefersReducedMotion } from '@/lib/motion';
@@ -196,7 +197,7 @@ export function MapCanvas({
    * to remove. A pan now writes this ref and the <g>'s transform
    * attribute directly, and React hears about it once, on release. Zoom
    * stays on state because it legitimately changes per-node values (inv,
-   * labelOpacity) — but it READS the ref, so a wheel or a pinch lands on
+   * which labels fit) — but it READS the ref, so a wheel or a pinch lands on
    * top of the pans React was never told about.
    */
   const viewRef = useRef(view);
@@ -954,15 +955,16 @@ export function MapCanvas({
   }, [selectedId, inset]);
 
   // Labels and badges keep their SCREEN size — dividing by the zoom is
-  // what makes them readable at any distance — and the labels fade out
-  // as the view pulls back, the graph-view convention: far out you read
-  // the shape, close in you read the names.
+  // what makes them readable at any distance — and they go as the view
+  // pulls back, the graph-view convention: far out you read the shape,
+  // close in you read the names.
   const inv = 1 / view.k;
-  // Soft at the overview of a BIG map (k ≈ 0.4, where 70 labels collide),
-  // fully readable one wheel-notch in, gone only far out. The ramp's ends
-  // live in fit.ts, because the arriving fit floors itself at the readable
-  // one.
-  const labelOpacity = labelOpacityAt(view.k);
+  // Whole or absent, never faded: the threshold lives in fit.ts, and which
+  // labels are drawn from there in is decided below by collision, since
+  // at the overview of a big map most of them would print over each
+  // other. (The fade this replaced measured 57% ink on the desktop
+  // arrival, captions at 2.4:1, four labels printed over each other.)
+  const labelsOn = labelsShown(view.k);
 
   /**
    * The mainline — an answer to something you asked, not a permanent
@@ -1073,6 +1075,48 @@ export function MapCanvas({
     return ids;
   }, [selectedId, resolved]);
 
+  /**
+   * The label text of every dot, and which of them are drawn this render.
+   *
+   * Decided in screen space from the positions this render draws, so a
+   * zoom re-decides it (a zoom is a render) and a pan does not need to
+   * (every box shifts alike). The selection and the search hits are
+   * kept whatever they overlap; the root outweighs everything, the
+   * selected line outweighs the rest, and among the rest a bigger dot,
+   * then an earlier move, wins its place. Past the shown zoom only the
+   * kept labels are candidates at all: a hit names itself however far
+   * out the view is, since reading which dots these are is the point of
+   * the search.
+   */
+  const texts = new Map<string, { move: string; caption: string }>();
+  const cands: LabelCandidate[] = [];
+  for (const { id } of graph.nodes) {
+    const facts = resolved.nodes.get(id)!;
+    const isRoot = facts.parentId === null;
+    const invalid = !isRoot && facts.fen === null;
+    const move = clip(isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${facts.mapNode.san ?? ''}`, 16);
+    const caption = clip(
+      invalid ? t('Not a legal move here') : (facts.mapNode.name ?? labels?.get(id) ?? ''),
+      26,
+    );
+    texts.set(id, { move, caption });
+    const keep = id === selectedId || (matches?.has(id) ?? false);
+    if (!labelsOn && !keep) continue;
+    const { x, y } = posOf(id);
+    const r = drawnR.get(id)!;
+    cands.push({
+      id,
+      x: view.x + x * view.k,
+      y: view.y + y * view.k,
+      r: r * view.k,
+      move,
+      caption,
+      weight: (isRoot ? 1e6 : 0) + (lineage.has(id) ? 1e3 : 0) + r - facts.ply / 1e3,
+      keep,
+    });
+  }
+  const placed = placeLabels(cands);
+
   return (
     <div
       ref={host}
@@ -1154,10 +1198,8 @@ export function MapCanvas({
             const planned = !isRoot && !invalid && coverage !== undefined && !cov?.covered;
             // Odd plies are White's. The opponent's side is the one the map is not for.
             const theirs = !isRoot && !invalid && facts.ply % 2 === (map.color === 'white' ? 0 : 1);
-            const move = isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
-            const caption = invalid
-              ? t('Not a legal move here')
-              : (node.name ?? labels?.get(id) ?? '');
+            const { move, caption } = texts.get(id)!;
+            const label = placed.get(id) ?? { move: false, caption: false };
             const gapCount = gaps?.get(id)?.gaps.length ?? 0;
             const noteTags = (node.tags ?? []).some((tag) => tag.kind === 'note');
             const target = node.depth;
@@ -1448,15 +1490,15 @@ export function MapCanvas({
                     badge, which is a number, and a number is something
                     you can only read close up anyway. Far out you read
                     the shape; close in you read the marks. */}
-                {/* Not rendered at all when they would be invisible.
-                    Fully faded marks and labels still cost React a node
-                    each to reconcile, and there are five or six of them
-                    per dot — on a 398-node map that is well over a
-                    thousand elements doing nothing, on exactly the
-                    pulled-back view where the whole map is on screen and
-                    every answer that lands re-renders it. */}
-                {labelOpacity > 0 && (
-                <g opacity={labelOpacity}>
+                {/* Not rendered at all when they are not shown. A hidden
+                    mark or label still costs React a node to reconcile,
+                    and there are five or six of them per dot — on a
+                    398-node map that is well over a thousand elements
+                    doing nothing, on exactly the pulled-back view where
+                    the whole map is on screen and every answer that
+                    lands re-renders it. */}
+                {labelsOn && (
+                <g>
                   {(cov?.reviewCount ?? 0) > 0 && (
                     <circle cx={-r * 0.8} cy={-r * 0.8} r={3 * inv} fill="var(--color-warn)" />
                   )}
@@ -1490,7 +1532,7 @@ export function MapCanvas({
                   )}
                 </g>
                 )}
-                {(labelOpacity > 0 || matches?.has(id)) && (
+                {label.move && (
                 <text
                   x={0}
                   y={r + 12 * inv}
@@ -1504,29 +1546,24 @@ export function MapCanvas({
                   fontSize={12 * inv}
                   fontWeight={600}
                   textAnchor="middle"
-                  // A hit names itself however far out the view is: the
-                  // whole point of the search is reading which dots these
-                  // are, and at a fitted overview the labels are gone.
-                  opacity={matches?.has(id) ? 1 : labelOpacity}
                   fill={invalid ? 'var(--color-destructive)' : 'var(--color-foreground)'}
                 >
-                  {clip(move, 16)}
+                  {move}
                 </text>
                 )}
-                {caption && (labelOpacity > 0 || matches?.has(id)) && (
+                {label.caption && (
                   <text
                     x={0}
                     y={r + 24 * inv}
                     fontSize={10 * inv}
                     textAnchor="middle"
-                    opacity={matches?.has(id) ? 1 : labelOpacity}
                     // The registry's word for secondary text — the retired
                     // `--color-subtle` this carried was undefined since the
                     // theme migration, and an undefined var in an SVG fill
                     // paints black: invisible captions on a dark map.
                     fill="var(--color-muted-foreground)"
                   >
-                    {clip(caption, 26)}
+                    {caption}
                   </text>
                 )}
               </g>

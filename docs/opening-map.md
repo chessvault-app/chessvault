@@ -227,8 +227,13 @@ they stay, for the session; the stored layout stays deterministic
 either way. (Reduced motion gets the plain version: the held dot moves
 and nothing else.)
 
-Labels keep their screen size and fade out as the view pulls back — far
-out you read the shape, close in you read the names. The search field
+Labels keep their screen size, and each one is drawn whole or not at
+all: pulled back past the labelled zoom they are gone, and from there
+in the names that fit are drawn and the ones that would print over a
+neighbour are dropped, captions first, then the lighter dots' moves —
+far out you read the shape, close in you read the names. (They used to
+fade together instead, which left a mid-size map resting at half ink on
+a desktop.) The search field
 in the top-right corner fades the map back to just its hits — matching
 a move, a name you gave a node, or the catalogue's name for its
 position — and a hit keeps its label whatever the zoom, so the answer
