@@ -1,11 +1,115 @@
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+
+/**
+ * How much of the canvas's right edge the floating panel is standing on,
+ * in the surface's own pixels, and 0 whenever no panel is up.
+ *
+ * A canvas under a panel is still a whole canvas: it pans, it draws, and
+ * nothing in it knows which part of it a reader can actually see. So the
+ * one thing that does — this shell, which owns the panel's box — says so,
+ * and a surface that can put something WHERE the reader asked for it (the
+ * map moving its selection out from under the details) has a number to
+ * aim at. Measured off the panel rather than repeated from its classes,
+ * which change at `xl` and would otherwise have to be kept in step by
+ * hand in a file that cannot see them.
+ */
+const CanvasInset = createContext(0);
+export function useCanvasInset(): number {
+  return useContext(CanvasInset);
+}
+
+/**
+ * Focus for the floating panel, which is emphatically NOT a dialog: it
+ * has no scrim, the canvas behind it stays live, and Tab must be able to
+ * walk out of it. So it gets neither `useDialogFocus`'s trap nor its
+ * scroll lock, only the two halves a non-modal panel does owe the
+ * keyboard.
+ *
+ * Taking focus is by request, not on sight. A panel that opened because
+ * somebody clicked a dot leaves the pointer alone; one that opened
+ * because somebody pressed Enter on a dot has to bring the keyboard with
+ * it, or it is a thing that appeared elsewhere on the screen while Tab
+ * went on walking the page behind it.
+ *
+ * Handing focus back is the other half, because the alternative is
+ * dropping it on the body: the panel goes away when the selection does,
+ * and what raised it is still there on the canvas. Only the element last
+ * focused OUTSIDE the panel counts, tracked as focus moves rather than
+ * remembered when it opened, so a second dot chosen while it is up is
+ * where focus returns to.
+ */
+function usePanelFocus(node: HTMLElement | null, takeFocus: number, onClose: () => void): void {
+  const outside = useRef<HTMLElement | SVGElement | null>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+
+  useEffect(() => {
+    if (!node) return;
+    // SVG as well as HTML: on the map the thing that opened this panel is
+    // a dot, and a dot is an SVG group.
+    const focusable = (el: EventTarget | null): HTMLElement | SVGElement | null =>
+      el instanceof HTMLElement || el instanceof SVGElement ? el : null;
+    const here = focusable(document.activeElement);
+    if (here && !node.contains(here)) outside.current = here;
+    const onFocusIn = (e: FocusEvent): void => {
+      const el = focusable(e.target);
+      if (el && !node.contains(el)) outside.current = el;
+    };
+    document.addEventListener('focusin', onFocusIn);
+
+    // A native listener rather than React's onKeyDown: the windows a panel
+    // action opens are rendered inside the panel's own children and portal
+    // out of it, so a React handler here would answer their Escape as well
+    // as its own and close the panel underneath them.
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      e.stopPropagation();
+      close.current();
+    };
+    node.addEventListener('keydown', onKey);
+
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      node.removeEventListener('keydown', onKey);
+      const current = document.activeElement;
+      const back = outside.current;
+      // Only what this panel was holding, and only somewhere still real:
+      // focus moved deliberately elsewhere stays where it was put.
+      if (
+        back?.isConnected &&
+        (current === null || current === document.body || node.contains(current))
+      ) {
+        back.focus({ preventScroll: true });
+      }
+    };
+  }, [node]);
+
+  // The Align idiom: a counter and the last one answered, so the same
+  // request can be made twice and a panel that mounts without one is left
+  // alone.
+  const answered = useRef(takeFocus);
+  useEffect(() => {
+    if (takeFocus === answered.current || !node) return;
+    answered.current = takeFocus;
+    node.focus({ preventScroll: true });
+  }, [takeFocus, node]);
+}
 
 /**
  * The canvas page family — the third of the three named in `components/layout.ts`.
@@ -64,12 +168,52 @@ export function CanvasShell({
    * leave neither half usable. One prop rather than three so a panel can
    * never arrive without the label its Sheet needs.
    */
-  panel?: { label: string; content: ReactNode; onClose: () => void } | null;
+  panel?: {
+    label: string;
+    content: ReactNode;
+    onClose: () => void;
+    /**
+     * Bumped to ask the panel to take the keyboard with it. See
+     * `usePanelFocus`: a selection made with the keyboard leaves focus in
+     * the panel it just opened, one made with the pointer does not.
+     */
+    takeFocus?: number;
+  } | null;
   children: ReactNode;
 }) {
   // Below `md`: the width at which the sidebar appears and the panel stops
   // having anywhere to float that is not on top of the canvas.
   const phone = useMediaQuery('(max-width: 47.9375rem)');
+  // The floating half of the pair, which is the half that stands on the
+  // canvas; the phone's Sheet covers it whole and reserves nothing.
+  const docked = Boolean(panel) && !phone;
+
+  const surface = useRef<HTMLDivElement | null>(null);
+  const [panelEl, setPanelEl] = useState<HTMLElement | null>(null);
+  // Stable, or React detaches and re-attaches the ref every render, and
+  // each of those is a setState: two renders per render, forever.
+  const panelRef = useCallback((el: HTMLElement | null) => setPanelEl(el), []);
+  usePanelFocus(panelEl, panel?.takeFocus ?? 0, panel?.onClose ?? (() => {}));
+
+  const [inset, setInset] = useState(0);
+  useLayoutEffect(() => {
+    const box = surface.current;
+    if (!panelEl || !box) return;
+    const measure = (): void =>
+      setInset(
+        Math.max(0, box.getBoundingClientRect().right - panelEl.getBoundingClientRect().left),
+      );
+    measure();
+    // The panel's own width is the only thing that moves this edge: the
+    // gutter is a constant, so a resize that leaves the width alone leaves
+    // the covered strip alone.
+    const watch = new ResizeObserver(measure);
+    watch.observe(panelEl);
+    return () => {
+      watch.disconnect();
+      setInset(0);
+    };
+  }, [panelEl]);
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
@@ -100,14 +244,24 @@ export function CanvasShell({
       {/* The surface, and everything that belongs ON it. Positioned, so
           the overlays and the panel measure themselves against the canvas
           rather than against the page. */}
-      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
-        {children}
+      <div ref={surface} className="relative min-h-0 w-full flex-1 overflow-hidden">
+        <CanvasInset.Provider value={inset}>{children}</CanvasInset.Provider>
 
         {/* The surface's own controls, floating on it — kept out of the
             header block so the search row has the left edge to itself,
             and drawn bare, because a canvas is not a toolbar. */}
         {actions && (
-          <div className="absolute right-4 top-3 z-10 flex items-center gap-1 md:right-6">
+          <div
+            // Out of reach while the panel stands on this corner, which it
+            // does at every width it appears at: the icons are behind it
+            // (see the panel's own note below), so they leave the tab
+            // order with it rather than staying as stops that focus
+            // something nobody can see — four of them on the map, in the
+            // middle of the page's own Tab walk. The X in the panel's
+            // header is how you get them back.
+            inert={docked}
+            className="absolute right-4 top-3 z-10 flex items-center gap-1 md:right-6"
+          >
             {actions}
           </div>
         )}
@@ -131,10 +285,17 @@ export function CanvasShell({
             </Dialog>
           ) : (
             <aside
+              ref={panelRef}
               // The Sheet half of this pair announces itself by its label;
               // the floating half is a complementary landmark, and one
               // with no name is a landmark nobody can choose from a list.
               aria-label={panel.label}
+              // Focusable, so a keyboard selection can be handed the panel
+              // it just opened and the landmark's own name is what gets
+              // announced — see usePanelFocus. A container rather than a
+              // control, so it wears the ring only while it is itself the
+              // focus, and hands it on to its contents at the next Tab.
+              tabIndex={-1}
               // The canvas's height, less a hairline of it: a card that
               // floats ON the surface, edge to edge but not welded to it.
               //
@@ -145,9 +306,10 @@ export function CanvasShell({
               // is taller than the screen and scrolls: room the panel
               // needed, spent keeping reachable two icons that a closed
               // panel shows anyway. So the icons go under it while it is
-              // open, and the X in its header is how you get back to
-              // them. What is left is the page's own gutter, and it is
-              // not spacing — it is what makes the corners, the border
+              // open, and out of the tab order with it, and the X in its
+              // header is how you get back to them. What is left is the
+              // page's own gutter, and it is not spacing — it is what
+              // makes the corners, the border
               // and the shadow visible all the way round, so the panel
               // reads as one object over the map rather than as a slab
               // bolted to the window. `overflow-hidden` because a sticky
@@ -167,7 +329,14 @@ export function CanvasShell({
               // button row stop wrapping: at 18rem nearly every line in
               // it broke, which is a panel technically showing you
               // something and practically hiding it.
-              className="bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl ring-1 ring-window-ring backdrop-blur-md xl:w-[26rem]"
+              //
+              // What it covers, it also takes out of reach: the corner
+              // icons are `inert` above while this is up, and the canvas
+              // is told how wide this strip is (CanvasInset) so a surface
+              // can keep what the reader just asked about out from under
+              // it. Both beat fighting the stack with z-index, which would
+              // only move the problem to whatever came second.
+              className="bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl outline-none ring-1 ring-window-ring backdrop-blur-md focus-visible:ring-3 focus-visible:ring-ring xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a

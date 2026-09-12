@@ -396,6 +396,14 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const phone = useMediaQuery('(max-width: 47.9375rem)');
   const [detailsOpen, setDetailsOpen] = useState(false);
   useEffect(() => setDetailsOpen(false), [selectedId]);
+  /**
+   * Bumped when a selection was made with the keyboard, which is the one
+   * case where the panel takes focus: the dot was chosen by pressing
+   * Enter on it, and a panel that opens somewhere else on the screen with
+   * focus left behind on the canvas is a panel the keyboard has to go
+   * looking for. The shell hands focus back to the dot on the way out.
+   */
+  const [takeFocus, setTakeFocus] = useState(0);
 
   const empty = map !== null && map.root.children.length === 0;
   const panelShown = map && resolved && selected && (!phone || detailsOpen);
@@ -541,6 +549,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                   {opened}
                 </>
               ),
+              takeFocus,
               onClose: () => (phone ? setDetailsOpen(false) : setSelectedId(null)),
             }
           : null
@@ -573,7 +582,13 @@ export function OpeningMapView({ params }: { params: string[] }) {
           // opens the panel and lights the mainline, so it needs an undo
           // that is the same gesture — hunting for empty canvas to click
           // is not one, and on a dense map there may not be any.
-          onSelect={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+          onSelect={(id, via) => {
+            const next = selectedId === id ? null : id;
+            setSelectedId(next);
+            // A dot chosen with the keyboard hands the keyboard the panel
+            // it just opened; letting one go opens nothing to hand over.
+            if (next !== null && via === 'keyboard') setTakeFocus((n) => n + 1);
+          }}
         />
       )}
 

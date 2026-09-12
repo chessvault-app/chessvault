@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Spinner } from '@/components/ui/spinner';
 import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
+import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { FilterRow } from './GameFilters';
 
 /**
@@ -139,6 +140,9 @@ export function GameListShell({
   // controls moves as one; FilterRow carries px-3 of its own, and cn's
   // tailwind-merge lets this override it.
   const bandX = shape === 'page' ? 'px-0' : 'px-3';
+  // The table's own column header pins over the rows, so the wrapper it
+  // pins inside scrolls a focused row's controls clear of it.
+  const pinHeader = usePinnedBand('top');
 
   const bands = (
     <>
@@ -225,8 +229,16 @@ export function GameListShell({
                 listHeader != null ? 'min-w-[var(--gt-min)]' : listClassName,
                 // Room to scroll the last row clear of the Games page's
                 // import FAB, which floats over the pane's corner below
-                // md (every host of this shell lives on that page).
-                'max-md:pb-20',
+                // md (every host of this shell lives on that page). The
+                // scroll-padding twin is the same room told to the
+                // browser: a thumb scrolls a row out from under the disc,
+                // a keyboard cannot, and Tab stops as soon as a row is
+                // inside the scrollport, disc or no disc, so a row's Game
+                // actions button was landing underneath it (measured on a
+                // phone: 0 of 156 ring pixels visible, 113 of them behind
+                // the disc). One number on one line, so the two cannot
+                // drift.
+                'max-md:pb-20 max-md:scroll-pb-20',
               )}
             >
               {listLoading ? (
@@ -251,11 +263,14 @@ export function GameListShell({
           );
           if (listHeader == null) return rows;
           return (
-            <div className={cn('flex min-h-0 flex-col overflow-auto', listClassName)} style={listVars}>
+            <div
+              className={cn('flex min-h-0 flex-col overflow-auto max-md:scroll-pb-20', listClassName)}
+              style={listVars}
+            >
               {/* Sticky, opaque, and as wide as the rows: the header
                   scrolls sideways WITH the table and stays put over a
                   vertical scroll. */}
-              <div className="bg-card sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0">
+              <div ref={pinHeader} className="bg-card sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0">
                 {listHeader}
               </div>
               {rows}

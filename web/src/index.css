@@ -1036,6 +1036,18 @@
     overscroll-behavior: contain;
   }
 
+  /* A scroller with something pinned over it keeps that much of its own
+     edge free when it scrolls a focused control into view. The numbers are
+     the pinned band's measured height, published here by
+     hooks/use-pinned-band; the attribute comes with them, so a scroller
+     nothing is pinned over carries no rule at all. Without this the
+     browser stops as soon as a control is inside the scrollport, which the
+     band it is hidden under is too. */
+  [data-pinned] {
+    scroll-padding-top: var(--pin-top, 0px);
+    scroll-padding-bottom: var(--pin-bottom, 0px);
+  }
+
   /* Home-screen launches mis-report the dynamic viewport until the first
      scroll, so 100dvh (and visualViewport) start too short and the native
      window shows through below the page. Standalone mode has no browser

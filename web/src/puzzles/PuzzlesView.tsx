@@ -58,7 +58,6 @@ import {
 import { consumePendingPuzzle } from './handoff';
 import { fetchSolvedToday } from './today';
 import { t } from '@/lib/i18n';
-import { TitleTip } from '@/components/title-tip';
 import {
   judgeMove,
   positionAt,
@@ -902,23 +901,30 @@ function Trainer({
           <>
             {/* An anchor, not a button that navigates: it goes out of the
                 app, to lichess, and middle click and the context menu are
-                how a link is used. */}
+                how a link is used.
+
+                The tip is Button's own `title`, and the anchor is all that
+                `render` is given. A TitleTip there instead put a COMPONENT
+                where `render` wants an element: the button's props were
+                merged onto the wrapper, which reads only `title`, `side`
+                and `children`, so the class, the icon and the label were
+                all lost on the way through. What reached the page was a
+                bare <a>, 0x0, that still took a Tab stop and named
+                nothing. Its tip still opened on that stop and anchored on
+                the 0x0 point, which put the chip over the button beside
+                it: measured 1,232 px of the 2,570 px face of Try again on
+                desktop and 1,585 of 3,449 on a phone. Nothing could hover
+                it at all. TitleTip is for a control that cannot be a
+                Button; this one is one. */}
             {puzzle?.game_url && (
               <Button
                 variant="ghost"
                 size="sm"
                 nativeButton={false}
-                render={
-                  <TitleTip title={t('Opens Lichess (needs internet)')}>
-                    <a
-                      href={puzzle.game_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    />
-                  </TitleTip>
-                }
+                title={t('Opens Lichess (needs internet)')}
+                render={<a href={puzzle.game_url} target="_blank" rel="noreferrer" />}
               >
-                <ExternalLink className="size-3.5" />
+                <ExternalLink className="size-3.5" data-icon="inline-start" />
                 {t('From this game')}
               </Button>
             )}

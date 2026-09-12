@@ -16,7 +16,10 @@ of the code for wasted work made the games list, reference search, index
 builds and the board's arrow keys do less per request.
 A pinch enlarges the app again, every dashed file box takes a keyboard,
 and coming back to the Board offers back the board you left. The focus
-ring can be seen: it measured about 1.5:1 where 3 is the bar.
+ring can be seen: it measured about 1.5:1 where 3 is the bar. Focus also
+stops going under the app's own chrome: what is pinned over a page now
+tells the page how tall it is, the manual's phone drawer opens the whole
+screen, and the opening map's panel steps aside from the dot you chose.
 
 - **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
@@ -258,6 +261,44 @@ ring can be seen: it measured about 1.5:1 where 3 is the bar.
   theme read back the colour it had just applied and got the previous
   one, so the next launch pinned the old theme's colour behind the
   startup image, which is the flash that pin exists to prevent.
+- **Focus stops hiding under whatever is pinned over the page.**
+  Settings' section row, a note's header, the games table's header row
+  and the shelves' create button all sit over their page's scroller, and
+  the browser scrolls a tabbed control to the very top or bottom of that
+  scroller, which is exactly where they are. A band pinned over a
+  scroller now measures its own height and tells the scroller, which
+  keeps that much clear when it scrolls focus into view: 60px under
+  Settings' row, 65px under a note's header, 29px under the games
+  header, 88px above the shelves' button. Nothing states those numbers.
+  Adding names to Settings' row until it wrapped to three lines moved
+  the clearance from 60 to 132 in step. What this does not reach is a
+  control's own tooltip, which still covers about a quarter of an icon
+  button's ring when it opens on focus.
+- **Three places where a tab stop landed on nothing.** The trainer's
+  "From this game" was a link with no size at all, so focus went to a
+  point zero pixels wide and its tooltip opened over "Try again". The
+  puzzle dashboard's attempt log lost its only tab stop whenever a
+  filter left fewer rows than the stop's place in the list. A search
+  field's cancel kept focus while it was zero pixels wide and hidden
+  from a screen reader, so tabbing out of an empty field landed on
+  something that was not there. All three are stops you can see and use
+  now.
+- **The manual's drawer on a phone opens the whole screen, and closes.**
+  Its list of pages could not scroll, so at 320px wide 9 of the 23
+  entries could not be reached at all, and 3 could not at 390px.
+  Opening it left focus on the button underneath it, and Escape did
+  nothing. It is the height of the screen now, scrolls to its end, holds
+  focus while it is open, closes on Escape and hands focus back to the
+  button that opened it. The pager links at the foot of each page also
+  draw the focus ring they were owed: their own shadow was covering it.
+- **The opening map's panel stops standing on what you chose.**
+  Choosing a dot opened the details panel over it: at 1280px the
+  selected dot sat under the panel, and so did four of the toolbar's
+  buttons, which still took tab stops there. The map now moves the
+  selection clear of the panel, 52px clear at 1280px, the buttons under
+  it are skipped while it is open, and a dot chosen with the keyboard
+  hands focus to the panel and takes it back when the panel closes. At
+  1920px nothing was ever covered, and there the map does not move.
 
 ## 0.9.5
 
