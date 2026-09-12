@@ -48,6 +48,23 @@ interface NoteMeta {
   excerpt?: string | null;
   /** Where the note's first embedded board starts. */
   fen?: string | null;
+  /** Other names the note answers to, from its front matter. */
+  aliases?: string[];
+}
+
+/**
+ * Whether a search finds this note. By its name, its first line and its
+ * other names: the card shows the first line, and a search that said
+ * "nothing matches" under a card carrying the very word was the shelf
+ * contradicting itself. The body is not searched; the listing does not
+ * carry it.
+ */
+function matchesNote(note: NoteMeta, needle: string): boolean {
+  return (
+    note.id.toLowerCase().includes(needle) ||
+    (note.excerpt?.toLowerCase().includes(needle) ?? false) ||
+    (note.aliases?.some((alias) => alias.toLowerCase().includes(needle)) ?? false)
+  );
 }
 
 const API = '/api/notes';
@@ -192,8 +209,7 @@ function NoteList() {
 
   const needle = query.trim().toLowerCase();
   const visible = notes.filter(
-    (n) =>
-      (!markedOnly || markedIds.has(n.id)) && (!needle || n.id.toLowerCase().includes(needle)),
+    (n) => (!markedOnly || markedIds.has(n.id)) && (!needle || matchesNote(n, needle)),
   );
   /** Whether anything is narrowing the shelf — the two filters `visible`
       is built from, and the only reason an empty list can be blamed on
