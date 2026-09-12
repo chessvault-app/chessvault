@@ -1359,6 +1359,10 @@ export const ko: Record<string, string> = {
   'Indexing {n} files into one searchable database of whole games.':
     '파일 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name, or leave blank for “{name}”': '이름, 비우면 “{name}”',
+  'Letters, digits, dots, dashes and underscores, with no spaces.':
+    '영문자, 숫자, 점, 하이픈, 밑줄만 쓸 수 있고 공백은 안 됩니다.',
+  'A file name may use letters, digits, dots, dashes and underscores, with no spaces.':
+    '파일 이름에는 영문자, 숫자, 점, 하이픈, 밑줄만 쓸 수 있고 공백은 안 됩니다.',
   'The build failed.': '만들기에 실패했습니다.',
   'The build was stopped.': '만들기가 중지되었습니다.',
   'Stop building “{name}”? What was indexed so far is discarded.':

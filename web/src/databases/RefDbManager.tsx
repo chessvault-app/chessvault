@@ -275,8 +275,9 @@ export function RefDbManager({
     // existed for made the finish look like a stall (lanph3re's report).
     // Land on what was just uploaded rather than on whatever tab the
     // window was opened from — the file is the thing that changed. A
-    // rejected or failed upload keeps the window, and the panel's error
-    // line under it says why there is another try.
+    // rejected or failed upload keeps the window, and the reason is
+    // printed INSIDE it: the panel's line under it sat behind the scrim,
+    // blurred for a sighted user and aria-hidden for a screen reader.
     if (uploaded > 0) {
       setShowUpload(false);
       setTab('sources');
@@ -578,7 +579,10 @@ export function RefDbManager({
             {t('The build was stopped.')}
           </p>
         )}
-        {error && (
+        {/* Only while no window is open: a refusal raised from the Upload
+            or Build window prints inside that window instead, since #root
+            is aria-hidden and blurred under a modal. */}
+        {error && !showUpload && !showBuild && (
           <p role="alert" className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">
             {error}
           </p>
@@ -638,6 +642,7 @@ export function RefDbManager({
       {showUpload && (
         <UploadWindow
           uploading={uploading}
+          error={error}
           onFiles={(files) => void upload(files)}
           onReject={() => setError(t('Only .pgn files can be uploaded here'))}
           onClose={() => setShowUpload(false)}
@@ -646,6 +651,7 @@ export function RefDbManager({
 
       {showBuild && (
         <BuildWindow
+          error={error}
           count={pickedCount}
           only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
           existing={databases.map((d) => d.name)}
@@ -1235,11 +1241,14 @@ function AddToWindow({
  */
 function UploadWindow({
   uploading,
+  error,
   onFiles,
   onReject,
   onClose,
 }: {
   uploading: string | null;
+  /** The last refusal, printed in here where it can be seen and heard. */
+  error: string | null;
   onFiles: (files: FileList | File[]) => void;
   onReject: () => void;
   onClose: () => void;
@@ -1291,10 +1300,16 @@ function UploadWindow({
             </>
           )}
         </FilePicker>
+        {error && (
+          <p role="alert" className="text-destructive text-sm leading-relaxed">
+            {error}
+          </p>
+        )}
         <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
             'Any .pgn of games will do, such as a Lichess Elite month or a Lumbra export. Uploads stream, so a large one keeps going while you watch.',
-          )}
+          )}{' '}
+          {t('A file name may use letters, digits, dots, dashes and underscores, with no spaces.')}
         </p>
       </DialogContent>
     </Dialog>
@@ -1310,12 +1325,15 @@ function UploadWindow({
  * happens if the name is one that already exists.
  */
 function BuildWindow({
+  error,
   count,
   only,
   existing,
   onBuild,
   onClose,
 }: {
+  /** The server's refusal, printed under the field it is about. */
+  error: string | null;
   count: number;
   /** The single picked file, whose name the build takes when left blank. */
   only?: string;
@@ -1358,6 +1376,16 @@ function BuildWindow({
           aria-label={t('Name')}
           placeholder={t('Name, or leave blank for “{name}”', { name: derived })}
         />
+        {/* The rule the server holds the name to, said before it refuses:
+            "invalid database name" on its own left the user guessing. */}
+        <p className="text-muted-foreground -mt-1 text-xs leading-relaxed">
+          {t('Letters, digits, dots, dashes and underscores, with no spaces.')}
+        </p>
+        {error && (
+          <p role="alert" className="text-destructive text-sm leading-relaxed">
+            {error}
+          </p>
+        )}
         {taken ? (
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as 'replace' | 'append')}>
             <Field orientation="horizontal">
