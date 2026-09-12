@@ -82,6 +82,11 @@ export function PageHeader({
   return (
     <>
       <header
+        // data-ground: a page's chrome stands on the page, not in a card
+        // (docs/design-principles.md), and the muted and secondary fills
+        // step a rung up under it (index.css, `[data-ground]`). The search
+        // row below takes it too.
+        data-ground=""
         className={cn(
           'flex items-center gap-x-3 gap-y-2',
           truncate ? 'flex-nowrap' : 'flex-wrap',
@@ -122,7 +127,7 @@ export function PageHeader({
         <p className="text-muted-foreground -mt-2 text-sm leading-relaxed">{description}</p>
       )}
       {search && (
-        <div className={cn('flex items-center gap-2 md:[&>:first-child]:max-w-sm', searchRowClass)}>
+        <div data-ground="" className={cn('flex items-center gap-2 md:[&>:first-child]:max-w-sm', searchRowClass)}>
           {search}
         </div>
       )}

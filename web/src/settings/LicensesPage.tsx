@@ -263,7 +263,9 @@ export function LicensesPage() {
       ) : shown.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('Nothing matches this filter.')}</p>
       ) : (
-        <ul className="divide-border divide-y" aria-label={t('Licences')}>
+        // data-ground: the rows and the text well stand on the page, where
+        // the muted fill is the page's own tone (index.css, `[data-ground]`).
+        <ul data-ground="" className="divide-border divide-y" aria-label={t('Licences')}>
           {shown.map(([e, i]) => (
             <Row key={i} entry={e} open={open.has(i)} onToggle={() => toggle(i)} />
           ))}
@@ -307,7 +309,9 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
         onClick={onToggle}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className="hover:bg-muted/50 flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-100"
+        // The full muted fill, the ghost variant's hover, not a wash of it:
+        // half of the ground rung over the page measured 1.04:1.
+        className="hover:bg-muted flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-100"
       >
         <ChevronRight
           className={cn(

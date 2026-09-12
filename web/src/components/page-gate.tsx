@@ -38,7 +38,9 @@ export function PageGate({
   actions?: ReactNode;
 }) {
   return (
-    <div className="optical-center h-full p-8">
+    // data-ground: the gate owns the viewport, so its tile and buttons
+    // stand on the page and take the ground rung (index.css).
+    <div data-ground="" className="optical-center h-full p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
           <Icon className="size-6" strokeWidth={1.75} />

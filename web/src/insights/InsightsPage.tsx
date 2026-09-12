@@ -469,6 +469,7 @@ export function InsightsPage() {
         // press that fills it, rather than an outline of tables that no
         // press on the page would fill by itself.
         <EmptyState
+          ground
           icon={ChartColumn}
           title="Not analysed yet"
           body="This page fills once your games have been through the engine pass. It runs in this window while the app is open, and picks up where it stopped."
@@ -483,6 +484,7 @@ export function InsightsPage() {
       ) : report.games === 0 ? (
         narrowed ? (
           <EmptyState
+            ground
             icon={ChartColumn}
             title="No games match"
             body="Loosen a filter above, or clear them all."
@@ -494,6 +496,7 @@ export function InsightsPage() {
           />
         ) : (
           <EmptyState
+            ground
             icon={ChartColumn}
             title="No games of yours yet"
             body="Games count here once your side in them is known. Keep a game with your side marked, or browse one of your Chess.com or Lichess months on the Games page."
@@ -1094,7 +1097,9 @@ function PassStrip() {
     );
   }
   return (
-    <div className="flex flex-col gap-1.5">
+    // data-ground: the track stands on the page, where its muted fill is
+    // the light page's own tone (index.css, `[data-ground]`).
+    <div data-ground="" className="flex flex-col gap-1.5">
       <Progress value={share} aria-label={t('Games analysed')} />
       <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs tabular-nums">
         <span>

@@ -61,6 +61,9 @@ const buttonVariants = cva(
         // a ghost button on the page and not on a card hovered oklch(0.97)
         // on oklch(0.97) and showed nothing (measured on the book reader's
         // toolbars). The sidebar's rows hover the same ground the same way.
+        // index.css now lifts --muted itself under that mark, so in light
+        // this rung and the plain hover agree; the class still picks the
+        // dark hover, --accent over the /50 wash.
         ghost:
           'hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:pointer-coarse:active:bg-muted/50 in-data-[ground]:hover:bg-accent in-data-[ground]:pointer-coarse:active:bg-accent in-data-[ground]:aria-expanded:bg-accent dark:in-data-[ground]:hover:bg-accent dark:in-data-[ground]:pointer-coarse:active:bg-accent',
         // The ink follows the fill on hover, the way the ghost and outline
@@ -153,7 +156,14 @@ function Button({
       // form does not submit it.)
       aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
       data-active={active || undefined}
-      className={cn(buttonVariants({ variant, size }), active && 'bg-accent text-accent-foreground', className)}
+      className={cn(
+        buttonVariants({ variant, size }),
+        // On the page ground --secondary is lifted to the --accent rung
+        // (index.css, `[data-ground]`), so a lit secondary button there
+        // steps once more, the way its hover does from its rest.
+        active && 'bg-accent text-accent-foreground in-data-[ground]:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_5%)]',
+        className,
+      )}
       {...props}
     />
   );
