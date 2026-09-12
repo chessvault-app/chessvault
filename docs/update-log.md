@@ -26,7 +26,11 @@ to a screen reader, what a phone's bar held, what a build could not be
 stopped from, what a paste of several games did with the rest of them.
 The rows below are grouped by page.
 
-<!-- I78 (page-ground fills) sends its own line; it goes here. -->
+- **Secondary buttons, progress tracks and empty tiles standing on the
+  light page are visible again.** They had the page's own tone, 1.00:1
+  against it; a page-level row now steps its muted and secondary fills
+  one rung up, and the shelves' empty states take the same rung. Cards
+  keep theirs.
 - **Editor: Reset and Clear can be undone from the toast.** An illegal
   position says why under the toolbar, and in the Position panel on a
   wide screen, where a disabled button's tooltip could not; the reason
