@@ -117,6 +117,16 @@ export interface ButtonProps extends ButtonPrimitive.Props, VariantProps<typeof 
 // Does the button say anything in text? A visible label is already the
 // accessible name — and must stay it, or "click Cancel" stops working for
 // voice control. Only icon-only buttons need naming by other means.
+//
+// Deliberately shallow: a label wrapped in a `<span>` does not count, and
+// the title is stamped over it as the name. Recursing would not fix that
+// site, because the usual reason for the span is a `hidden` breakpoint
+// class, and a display:none label names the phone's icon button nothing.
+// An icon-plus-span button with a title therefore passes `aria-label`
+// itself, equal to the visible word (the editor's toolbar, the study's
+// Edit/Done, the puzzle book's Import PDF), and keeps the title as the
+// tooltip. Measured 2026-09-12: 'Edit' was named 'Show NAGs, comments and
+// move tools', which no voice command matches.
 export function hasTextContent(children: React.ReactNode): boolean {
   if (typeof children === 'string') return children.trim().length > 0;
   if (Array.isArray(children)) return children.some(hasTextContent);

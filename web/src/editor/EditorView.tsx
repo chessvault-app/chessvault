@@ -809,6 +809,7 @@ export function EditorView({
                 className="h-full max-sm:w-10 max-sm:px-0"
                 onClick={() => setTool({ kind: 'move' })}
                 title={t('Move: drag pieces around the board')}
+                aria-label={t('Move')}
               >
                 <MousePointer2 className="size-3.5" />
                 <span className="hidden sm:inline">{t('Move')}</span>
@@ -819,6 +820,7 @@ export function EditorView({
                 className="h-full max-sm:w-10 max-sm:px-0"
                 onClick={() => setTool({ kind: 'erase' })}
                 title={t('Erase: click a square to remove its piece')}
+                aria-label={t('Erase')}
               >
                 <Eraser className="size-3.5" />
                 <span className="hidden sm:inline">{t('Erase')}</span>
@@ -834,13 +836,17 @@ export function EditorView({
               </Button>
               {/* Both of these destroy the position on the board, and as two
                   adjacent anonymous icons they were a coin-flip. Named where
-                  there is room, like Move and Erase beside them. */}
+                  there is room, like Move and Erase beside them.
+                  aria-label on each of the five: the label is a span, which
+                  Button's hasTextContent does not see, so the title became
+                  the name and "click Reset" matched nothing (button.tsx). */}
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
                 onClick={() => setState(defaultEditorState())}
                 title={t('Reset to the starting position')}
+                aria-label={t('Reset')}
               >
                 <RotateCcw className="size-3.5" />
                 <span className="hidden sm:inline">{t('Reset')}</span>
@@ -851,6 +857,7 @@ export function EditorView({
                 className="h-full max-sm:w-10 max-sm:px-0"
                 onClick={() => setState(emptyEditorState())}
                 title={t('Clear the board')}
+                aria-label={t('Clear')}
               >
                 <Trash2 className="size-3.5" />
                 <span className="hidden sm:inline">{t('Clear')}</span>
@@ -899,6 +906,7 @@ export function EditorView({
                       : t('Analyse this position')
                     : t(validity.reason ?? '')
                 }
+                aria-label={onUse ? useLabel : t('Analyse')}
               >
                 {/* Analysis = the game-review microscope; embedded mode records
                     a move list, so the glyph says "list", not "go". */}

@@ -334,6 +334,9 @@ export function StudyView({
         size="sm"
         className="shrink-0"
         title={editing ? t('Hide the editing tools') : t('Show NAGs, comments and move tools')}
+        // The name is the visible word (the span hides it from Button's
+        // hasTextContent, which would otherwise name it by the title).
+        aria-label={editing ? t('Done') : t('Edit')}
         onClick={() => setEditing(!editing)}
       >
         <Pencil className="size-3.5 md:mr-1" />
