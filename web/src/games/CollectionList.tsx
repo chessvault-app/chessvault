@@ -9,6 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { ListChecks } from 'lucide-react';
 import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
@@ -21,6 +22,8 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { dialogOpen } from '@/hooks/dialog-focus';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
@@ -114,11 +117,14 @@ const CollectionRow = memo(function CollectionRow({
   onRename,
   onStartRename,
   onDetails,
+  standing,
 }: {
   game: GameSummary;
   bookmarked: boolean;
   customName: string | null;
   renaming: boolean;
+  /** Selection mode's checkbox, in the row's leading slot. */
+  standing?: ReactNode;
   onOpen: (game: GameSummary) => void;
   onPreview: (p: Preview | null) => void;
   onDrop: (game: GameSummary) => void;
@@ -132,6 +138,7 @@ const CollectionRow = memo(function CollectionRow({
   const link = safeLink(game.link);
   return (
     <GameRow
+      standing={standing}
       onSwipeAway={() => onDrop(game)}
       onBookmark={() => onToggleBookmark(game)}
       bookmarked={bookmarked}
@@ -231,6 +238,7 @@ export function CollectionList({
   onOpen,
   onPreview,
   onDrop,
+  onDropMany,
   onToggleBookmark,
   onRename,
   onImport,
@@ -260,6 +268,8 @@ export function CollectionList({
   renamingKey: string | null;
   onStartRename: (key: string | null) => void;
   onOpen: (game: GameSummary) => void;
+  /** Several at once, under one undo (see GamesBrowser, dropGames). */
+  onDropMany: (games: GameSummary[]) => void;
   onPreview: (p: Preview | null) => void;
   onDrop: (game: GameSummary) => void;
   onToggleBookmark: (game: GameSummary) => void;
@@ -297,6 +307,24 @@ export function CollectionList({
   // a few dozen games are already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
+  // Selection is a MODE, not a permanent column, the same call the
+  // archive browser made: a checkbox on every row is clutter for the
+  // common case, which is opening one game. Escape leaves it.
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const stopSelecting = (): void => {
+    setSelecting(false);
+    setPicked(new Set());
+  };
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || dialogOpen()) return;
+      stopSelecting();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selecting]);
   // The host's warning box judges the query AGAINST these — reported
   // whenever they change (ownership and notes are vault facts no game
   // header can contradict, so they stay out).
@@ -410,7 +438,7 @@ export function CollectionList({
 
   // ↑/↓/Enter/Escape drive the table selection over the filtered rows.
   const tableNav = useTableNav(table && onSelect !== undefined);
-  const tableVars = useGameTableVars(false, !besideDetails);
+  const tableVars = useGameTableVars(selecting, !besideDetails);
   tableNav.current = {
     move: (delta) => {
       const at = visible.findIndex((g) => gameKey(g) === selectedKey);
@@ -499,6 +527,15 @@ export function CollectionList({
           onChange={setNotesFilter}
           className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          title={selecting ? t('Stop selecting') : t('Select games')}
+          active={selecting}
+          onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+        >
+          <ListChecks />
+        </Button>
         <MoreFiltersButton
           on={hasStructuredFilters(structured)}
           quick={
@@ -598,6 +635,80 @@ export function CollectionList({
     <Skeleton className="h-2.5 w-16" />
   );
 
+  // Outside the hover tray: a checkbox that only appears under the
+  // pointer is one you cannot tick with your eyes.
+  const rowCheckbox = (game: GameSummary): ReactNode => (
+    <Checkbox
+      aria-label={t('Select this game')}
+      checked={picked.has(gameKey(game))}
+      onClick={(e) => e.stopPropagation()}
+      onCheckedChange={(on) =>
+        setPicked((prev) => {
+          const next = new Set(prev);
+          if (on === true) next.add(gameKey(game));
+          else next.delete(gameKey(game));
+          return next;
+        })
+      }
+    />
+  );
+  const pickedGames = visible.filter((g) => picked.has(gameKey(g)));
+  const allBookmarked = pickedGames.length > 0 && pickedGames.every((g) => bookmarks.has(gameKey(g)));
+  // What is selected on the left, what to do with it on the right, the
+  // archive browser's bar with the collection's verbs: the two the row
+  // menu has that make sense for many at once. Delete goes through one
+  // undo for the lot; the bookmark press adds to every picked row, or
+  // clears them all once every one is lit.
+  const selectionBar = (
+    <>
+      <label className="flex min-w-0 cursor-pointer items-center gap-1.5">
+        <Checkbox
+          checked={visible.length > 0 && picked.size === visible.length}
+          indeterminate={picked.size > 0 && picked.size !== visible.length}
+          disabled={visible.length === 0}
+          onCheckedChange={(on) => setPicked(on === true ? new Set(visible.map(gameKey)) : new Set())}
+        />
+        <span className="text-muted-foreground truncate">{t('Select all')}</span>
+      </label>
+      <span
+        className={cn(
+          'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
+          picked.size > 0 ? 'bg-muted text-primary' : 'bg-accent text-muted-foreground',
+        )}
+      >
+        {t('{n} selected', { n: picked.size })}
+      </span>
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <Button variant="ghost" size="sm" onClick={stopSelecting}>
+          {t('Cancel')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={picked.size === 0}
+          onClick={() => {
+            for (const g of pickedGames) {
+              if (allBookmarked || !bookmarks.has(gameKey(g))) onToggleBookmark(g);
+            }
+          }}
+        >
+          {allBookmarked ? t('Remove bookmarks') : t('Bookmark selected')}
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={picked.size === 0}
+          onClick={() => {
+            onDropMany(pickedGames);
+            stopSelecting();
+          }}
+        >
+          {t('Delete selected')}
+        </Button>
+      </div>
+    </>
+  );
+
   return (
     <>
     <GameListShell
@@ -628,13 +739,19 @@ export function CollectionList({
       // count band says it — in card mode; at table the count rides the
       // toolbar row above.
       countBand={
-        merged ? undefined : (
+        selecting ? (
+          selectionBar
+        ) : merged ? undefined : (
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
             {tally}
           </span>
         )
       }
-      listHeader={table ? <GameTableHeader withNotation={!besideDetails} sort={sort} onSort={sortBy} /> : undefined}
+      listHeader={
+        table ? (
+          <GameTableHeader withStanding={selecting} withNotation={!besideDetails} sort={sort} onSort={sortBy} />
+        ) : undefined
+      }
       listVars={table ? tableVars : undefined}
       dense={table}
       // The wait, in the shape of the strip and rows that are coming —
@@ -653,6 +770,7 @@ export function CollectionList({
                   key={gameKey(game)}
                   game={game}
                   withNotation={!besideDetails}
+                  standing={selecting ? rowCheckbox(game) : undefined}
                   selected={selectedKey === gameKey(game)}
                   onSelect={() => onSelect?.(game)}
                   onOpen={() => onOpen(game)}
@@ -663,6 +781,7 @@ export function CollectionList({
                 <CollectionRow
                   key={gameKey(game)}
                   game={game}
+                  standing={selecting ? rowCheckbox(game) : undefined}
                   bookmarked={bookmarks.has(gameKey(game))}
                   customName={customName(game)}
                   renaming={renamingKey === gameKey(game)}

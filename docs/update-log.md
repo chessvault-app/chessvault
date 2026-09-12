@@ -62,6 +62,10 @@ screen, and the opening map's panel steps aside from the dot you chose.
   your own material, each under its heading.
 - **The Books shelf says it takes a dropped PDF.** One line under the
   shelf, where there is a pointer to drop with.
+- **Several games at once.** The list-check button beside the
+  collection's filters turns on selection: a checkbox on every row,
+  “Select all”, a count, and the verbs for the lot: bookmark them, or
+  delete them under one undo. Escape or Cancel leaves it.
 - **A note opens ready to edit on a desktop.** Click into the text and
   type; the “Read” button goes back to reading, where a plain click
   follows a wiki link (Ctrl/⌘+click follows one while editing). A phone
