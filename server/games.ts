@@ -720,44 +720,61 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
   }
 
   // Any PGN — an elite reference game, a paste — promoted into the
-  // collection as its own annotatable document.
+  // collection as its own annotatable document. A paste holding several
+  // games adds each as its own document: this used to keep the first
+  // and drop the rest without a word, and the import sheet closed
+  // exactly as it does on a full success (measured: two games pasted,
+  // 30 became 31, the second name nowhere). The answer counts what
+  // happened to every game — `imported`, `duplicates` (already in the
+  // collection), `unreadable` — beside `id`, the first new document,
+  // which is what the one-game callers read. 400 when nothing could be
+  // read at all; 409 when every readable game was already there, so a
+  // one-game caller keeps its "already in" answer.
   api.post('/games/collect-pgn', async (c) => {
     const body = await c.req.json<{ pgn?: string }>().catch(() => null);
     if (!body?.pgn) return c.json({ error: 'need pgn' }, 400);
-    // Collected via array: TS cannot narrow a closure-assigned variable.
     const parsed: Game<PgnNodeData>[] = [];
+    let unreadable = 0;
     const parser = new PgnParser((g, err) => {
-      if (!err && parsed.length === 0) parsed.push(g);
+      if (err) unreadable += 1;
+      else parsed.push(g);
     });
     parser.parse(body.pgn);
-    const game = parsed[0];
-    if (!game) return c.json({ error: 'that PGN could not be read' }, 400);
-    // A result the moves themselves prove (mate, stalemate) fills in when
-    // the paste carries none. Resignations are NOT in the moves — those
-    // still need the token or the picker.
-    const declared = game.headers.get('Result');
-    if (!declared || declared === '*') {
-      const pos = Chess.default();
-      let legal = true;
-      for (const data of game.moves.mainline()) {
-        const move = parseSan(pos, data.san);
-        if (!move) {
-          legal = false;
-          break;
+    if (parsed.length === 0) return c.json({ error: 'that PGN could not be read' }, 400);
+    const ids: string[] = [];
+    let duplicates = 0;
+    for (const game of parsed) {
+      // A result the moves themselves prove (mate, stalemate) fills in when
+      // the paste carries none. Resignations are NOT in the moves — those
+      // still need the token or the picker.
+      const declared = game.headers.get('Result');
+      if (!declared || declared === '*') {
+        const pos = Chess.default();
+        let legal = true;
+        for (const data of game.moves.mainline()) {
+          const move = parseSan(pos, data.san);
+          if (!move) {
+            legal = false;
+            break;
+          }
+          pos.play(move);
         }
-        pos.play(move);
+        if (legal) {
+          if (pos.isCheckmate()) game.headers.set('Result', pos.turn === 'white' ? '0-1' : '1-0');
+          else if (pos.isStalemate() || pos.isInsufficientMaterial()) game.headers.set('Result', '1/2-1/2');
+        }
       }
-      if (legal) {
-        if (pos.isCheckmate()) game.headers.set('Result', pos.turn === 'white' ? '0-1' : '1-0');
-        else if (pos.isStalemate() || pos.isInsufficientMaterial()) game.headers.set('Result', '1/2-1/2');
+      // Same players + same date = same game: a reference game must not pile
+      // up copies (unlike /collect, whose client already dedupes by key).
+      if (existsSync(resolve(collectionDir, `${collectionBaseName(game)}.pgn`))) {
+        duplicates += 1;
+        continue;
       }
+      ids.push(addToCollection(game));
     }
-    // Same players + same date = same game: a reference game must not pile
-    // up copies (unlike /collect, whose client already dedupes by key).
-    if (existsSync(resolve(collectionDir, `${collectionBaseName(game)}.pgn`))) {
-      return c.json({ error: 'already in the collection' }, 409);
-    }
-    return c.json({ id: addToCollection(game) });
+    const counts = { imported: ids.length, duplicates, unreadable };
+    if (ids.length === 0) return c.json({ error: 'already in the collection', ...counts }, 409);
+    return c.json({ id: ids[0], ids, ...counts });
   });
 
   // --- Lichess archive: the public API needs no auth. Months derive from

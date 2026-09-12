@@ -2,11 +2,13 @@ import { Bookmark, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type MutableRefObject,
   type ReactNode,
 } from 'react';
+import { parsePgn } from 'chessops/pgn';
 import {
   cachedCollection,
   collectionWasNonEmpty,
@@ -29,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { Panel } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/toast';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { useUndoable } from '@/hooks/use-undoable';
 
@@ -806,6 +809,15 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   const [busy, setBusy] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const pgnField = useRef<HTMLTextAreaElement>(null);
+  /**
+   * How many games the box holds. A paste can be a whole file, and the
+   * server adds each game as its own document (collect-pgn); the sheet
+   * says so before the press and reports the counts after it, because
+   * it used to keep the first game, drop the rest and close as if all
+   * had gone in. The same lenient parser the server reads with, so the
+   * two agree on what a game is.
+   */
+  const gameCount = useMemo(() => (pgn.trim() ? parsePgn(pgn).length : 0), [pgn]);
 
   /**
    * iOS scrolls a focused field into view by shoving the whole window,
@@ -859,21 +871,42 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
     };
     let text = pgn.trim();
     if (!text) return;
-    // Bare moves get a header block; a full PGN gets its headers overridden.
-    if (!text.startsWith('[')) text = `\n${text}`;
-    const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
-    text = withHeader(text, 'Result', result);
-    text = withHeader(text, 'Event', event);
-    text = withHeader(text, 'BlackElo', blackElo);
-    text = withHeader(text, 'WhiteElo', whiteElo);
-    text = withHeader(text, 'Date', date.trim() ? date.replaceAll('-', '.') : today);
-    text = withHeader(text, 'Black', black.trim() || 'Black');
-    text = withHeader(text, 'White', white.trim() || 'White');
+    // The typed details describe ONE game. Several games each keep their
+    // own headers: writing the first game's players over every game, or
+    // over the first alone, would both be wrong.
+    if (gameCount <= 1) {
+      // Bare moves get a header block; a full PGN gets its headers overridden.
+      if (!text.startsWith('[')) text = `\n${text}`;
+      const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
+      text = withHeader(text, 'Result', result);
+      text = withHeader(text, 'Event', event);
+      text = withHeader(text, 'BlackElo', blackElo);
+      text = withHeader(text, 'WhiteElo', whiteElo);
+      text = withHeader(text, 'Date', date.trim() ? date.replaceAll('-', '.') : today);
+      text = withHeader(text, 'Black', black.trim() || 'Black');
+      text = withHeader(text, 'White', white.trim() || 'White');
+    }
 
     setBusy(true);
     setFailure(null);
     try {
-      await api('/api/games/collect-pgn', { method: 'POST', json: { pgn: text } });
+      const answer = await api<{ imported?: number; duplicates?: number; unreadable?: number }>(
+        '/api/games/collect-pgn',
+        { method: 'POST', json: { pgn: text } },
+      );
+      // One game closing the sheet is its own report; several say what
+      // became of each, since the list alone cannot show what was skipped.
+      if (gameCount > 1) {
+        const skipped = [
+          answer.duplicates ? t('{n} already in the collection', { n: String(answer.duplicates) }) : '',
+          answer.unreadable ? t('{n} could not be read', { n: String(answer.unreadable) }) : '',
+        ].filter(Boolean);
+        toast.add({
+          title: t('Added {n} games', { n: String(answer.imported ?? 0) }),
+          description: skipped.length > 0 ? skipped.join(', ') : undefined,
+          timeout: 6000,
+        });
+      }
       onDone();
     } catch (error) {
       // Including the thrown case: a network blip here used to leave the
@@ -920,6 +953,13 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           aria-label={t('Paste a PGN, or just moves: 1. e4 e5 2. Nf3 …')}
           className="w-full resize-none font-mono placeholder:font-sans"
         />
+        {gameCount > 1 && (
+          <p className="text-muted-foreground text-sm" role="status">
+            {t('{n} games in this paste. Each is added on its own, with its own headers.', {
+              n: String(gameCount),
+            })}
+          </p>
+        )}
 
         {/* Everything a pasted PGN already knows lives behind one line. It
             opens itself when a paste fills something in, so what was read

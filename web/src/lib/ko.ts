@@ -225,6 +225,11 @@ export const ko: Record<string, string> = {
   'Loading more games…': '게임 더 불러오는 중…',
   'offline, cached months only': '오프라인, 저장된 달만',
   'Add to collection': '모음에 추가',
+  '{n} games in this paste. Each is added on its own, with its own headers.':
+    '붙여넣은 내용에 게임 {n}개가 있습니다. 각각 자기 헤더를 가진 별개의 게임으로 추가됩니다.',
+  'Added {n} games': '게임 {n}개를 추가했습니다',
+  '{n} already in the collection': '{n}개는 이미 모음에 있습니다',
+  '{n} could not be read': '{n}개는 읽을 수 없습니다',
   'Select all': '전체 선택',
   'Select all new': '새 게임 전체 선택',
   'Any date': '모든 날짜',
