@@ -79,7 +79,11 @@ export function SelectionBar({
   return (
     <>
       <TitleTip title={empty && all.none ? all.none.tip : undefined}>
-        <label className={cn('flex min-w-0 items-center gap-1.5', empty ? 'opacity-60' : 'cursor-pointer')}>
+        {/* pl-3: the master box stands over the column of row boxes. A
+            table row's pinned cell and a card's leading slot both start
+            12px in from the list's edge, and the band starts at 0
+            (measured: rows at +12 in both modes). */}
+        <label className={cn('flex min-w-0 items-center gap-1.5 pl-3', empty ? 'opacity-60' : 'cursor-pointer')}>
           <Checkbox
             checked={!empty && picked === all.total}
             indeterminate={picked > 0 && picked !== all.total}

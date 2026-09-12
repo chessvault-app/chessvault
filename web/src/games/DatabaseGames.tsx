@@ -182,7 +182,7 @@ const RefRow = memo(function RefRow({
   return (
     <GameRow
       game={summary}
-      standing={standing}
+      leading={standing}
       onOpen={() => onOpen(game)}
       onPreview={onPreview}
       loadPreview={() => loadPreview(game)}

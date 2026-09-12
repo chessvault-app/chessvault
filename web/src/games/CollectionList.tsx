@@ -137,7 +137,9 @@ const CollectionRow = memo(function CollectionRow({
   const link = safeLink(game.link);
   return (
     <GameRow
-      standing={standing}
+      // Leading, not standing: a card's checkbox sits at the row's start,
+      // under the bar's master box, as the archive's card rows put it.
+      leading={standing}
       onSwipeAway={() => onDrop(game)}
       onBookmark={() => onToggleBookmark(game)}
       bookmarked={bookmarked}
