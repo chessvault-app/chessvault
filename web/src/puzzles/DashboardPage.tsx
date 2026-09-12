@@ -199,6 +199,19 @@ export function DashboardPage() {
     }
     return true;
   });
+  // The rows the log actually draws, and the stop clamped to them. The
+  // stop is an INDEX into a list either filter can shorten under it, and
+  // `logStop` is only ever set by a row taking focus, so nothing moved it
+  // back: a reader who walked down the log and then narrowed it left the
+  // stop past the last row, and no row matched it. The log then had no Tab
+  // stop at all and the key handler could not be reached, so Tab went
+  // straight from the filters to Wipe history, past every row on the page.
+  // Measured on the demo vault: 13 of the 15 combinations of the two
+  // filters left a non-empty log with zero tabbable rows. Clamped here
+  // rather than reset on change, so widening the filter again returns the
+  // stop to the row the reader had left it on.
+  const shown = puzzles.slice(0, 200);
+  const rowStop = Math.min(logStop, Math.max(shown.length - 1, 0));
 
   // Remembered for the NEXT visit's reservation, above — only once all
   // three answers are in and none failed: an outage empties `history`
@@ -702,13 +715,13 @@ export function DashboardPage() {
                   and a button cannot sit inside the row's. The row keeps
                   its left padding and gives its right edge to the eye,
                   which the li pads instead. */}
-              {puzzles.slice(0, 200).map((h, i) => (
+              {shown.map((h, i) => (
                 <li key={h.id} className="border-border flex items-center border-b pr-1.5 last:border-b-0">
                   <ListRow
                     dense
                     onClick={() => navigate('puzzles', 'id', h.id)}
                     onFocus={() => setLogStop(i)}
-                    tabIndex={i === logStop ? 0 : -1}
+                    tabIndex={i === rowStop ? 0 : -1}
                     title={t('Replay puzzle #{id}', { id: h.id })}
                     aria-describedby="puzzle-log-row-hint"
                     className="min-w-0 flex-1 pr-1.5 text-sm"
