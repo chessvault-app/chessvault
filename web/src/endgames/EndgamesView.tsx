@@ -72,6 +72,8 @@ import {
 /** Where the picker lives, and where the drill goes back to: a section
     of its own, listed under Tools. */
 const PICKER = ['endgames'] as const;
+/** The line the drill settles on; the wait reserves its height. */
+const PLAYING_NOTE = 'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.';
 
 export function EndgamesView({ params }: { params: string[] }) {
   const classId = params[0];
@@ -401,7 +403,7 @@ function Drill({ classId }: { classId: string }) {
       case 'loading':
         return { text: t('Finding a won ending…') };
       case 'playing':
-        return { text: t('Keep the win. A move the tablebase calls a draw or a loss ends the attempt.') };
+        return { text: t(PLAYING_NOTE) };
       case 'replying':
         return { text: t('Defending…') };
       case 'won':
@@ -445,7 +447,24 @@ function Drill({ classId }: { classId: string }) {
   ) : (
     <Panel className="min-h-32 flex-1 shrink">
       <PanelHeader title={t('Moves')} />
-      <p className="text-muted-foreground px-3 py-2.5 text-sm">{t('Finding a won ending…')}</p>
+      {/* AnswerPanel's own empty shape, which is what lands here: the
+          sentence centred in the scroller rather than set left at a
+          tighter padding, then the two bands that arrive with the ending
+          and used to push the panel's floor down as they did. The move
+          box is md-and-up, as MoveBox's own caller is. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <p className="text-muted-foreground px-3 py-6 text-center text-sm">
+          {t('Finding a won ending…')}
+        </p>
+      </div>
+      <div className="border-border shrink-0 border-t px-3 py-2 max-md:hidden">
+        <Skeleton className="h-9 w-full rounded-lg" />
+      </div>
+      <div className="border-border flex w-full shrink-0 items-center justify-center gap-1 border-t py-1 max-md:hidden">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <span key={i} className="size-7" />
+        ))}
+      </div>
     </Panel>
   );
 
@@ -490,9 +509,25 @@ function Drill({ classId }: { classId: string }) {
               <Skeleton className="h-4 w-28" />
             </div>
           ) : null}
-          <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
-            {statusLine.text}
-          </p>
+          {phase === 'loading' ? (
+            // The same reservation the trainer makes, on the shell it
+            // shares: "Keep the win…" wraps to two lines on a phone where
+            // "Finding a won ending…" takes one, so the box is the answer's
+            // and the waiting line sits over it. Without it the footer's
+            // buttons stepped down as the ending arrived.
+            <div className="relative">
+              <p aria-hidden className="invisible text-sm leading-relaxed">
+                {t(PLAYING_NOTE)}
+              </p>
+              <p className="text-muted-foreground absolute inset-0 text-sm leading-relaxed">
+                {statusLine.text}
+              </p>
+            </div>
+          ) : (
+            <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
+              {statusLine.text}
+            </p>
+          )}
         </div>
 
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">

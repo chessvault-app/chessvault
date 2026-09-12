@@ -597,7 +597,7 @@ export function RefDbManagerSkeleton({ rows }: {
             pointer-coarse:h-auto). Measured on a phone at 42 against a
             36px placeholder, which stood the whole list 6px high. */}
         <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
-          <Skeleton className="h-8 w-52 rounded-xl pointer-coarse:h-[42px]" />
+          <Skeleton className="h-8 w-52 rounded-lg pointer-coarse:h-[42px]" />
         </div>
         {/* The search row, and the upload icon beside it. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
@@ -631,6 +631,12 @@ export function RefDbManagerSkeleton({ rows }: {
                 <Skeleton className="my-1 h-3 w-24 shrink-0 md:my-0 md:ml-auto md:h-2.5" />
               </div>
               <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
+              {/* From md the row carries four controls here, not the one
+                  a phone shows, so the name column ran 84px past where it
+                  really stops. */}
+              {[0, 1, 2].map((k) => (
+                <Skeleton key={k} className="size-7 shrink-0 max-md:hidden pointer-coarse:size-9" />
+              ))}
             </li>
           ))}
         </ul>

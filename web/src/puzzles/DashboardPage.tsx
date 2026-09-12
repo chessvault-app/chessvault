@@ -58,6 +58,11 @@ interface BookSummary {
 
 
 /** See `reserved` below: the page's three variable blocks, last visit. */
+/** The Training panel's last line, named so the wait can reserve the box
+    the words take without printing them twice. */
+const RECONCILE_NOTE =
+  'Training attempts only. Review sessions are not counted, so this can differ from the review pool.';
+
 const DASH_SHAPE_KEY = 'vault:puzzle-dash-shape';
 
 /**
@@ -207,6 +212,7 @@ export function DashboardPage() {
         review: due > 0 || failed > 0 || !nextDue ? 'button' : 'note',
         books: books.length,
         attempts: latestById.size,
+        reconcile: user.attempts !== latestById.size,
       }),
     );
     // latestById is derived from history; keying on it is keying on it.
@@ -386,10 +392,23 @@ export function DashboardPage() {
               numbers actually differ: on a fresh vault it explained a
               discrepancy that did not exist, over three zeros. Held to a
               measure, since it ran 120 characters across a desktop card. */}
-          {user !== null && history !== null && user.attempts !== latestById.size && (
-            <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-xs">
-              {t('Training attempts only. Review sessions are not counted, so this can differ from the review pool.')}
-            </p>
+          {user === null || history === null ? (
+            // Its box while the counts are out, on the vaults that had it
+            // last visit: the panel used to grow by this sentence the
+            // moment they landed. The words themselves set the box, laid
+            // out invisible, because it is one line on a desktop card and
+            // three on a phone.
+            reserved.reconcile && (
+              <p aria-hidden className="invisible mt-2 max-w-prose px-(--card-spacing) text-xs">
+                {t(RECONCILE_NOTE)}
+              </p>
+            )
+          ) : (
+            user.attempts !== latestById.size && (
+              <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-xs">
+                {t(RECONCILE_NOTE)}
+              </p>
+            )
           )}
         </Panel>
 
@@ -464,21 +483,27 @@ export function DashboardPage() {
                   Array.from({ length: reserved.books }, (_, i) => (
                     <div
                       key={i}
-                      className="border-border flex items-center gap-2.5 border-b px-3 py-(--row-py) last:border-b-0 pointer-coarse:min-h-11"
+                      // The hairline on this box and the floor on the row
+                      // inside it, as the real list has them: together on
+                      // one border-box element the border eats a pixel of
+                      // the floor and the row came out 1px short.
+                      className="border-border border-b last:border-b-0"
                     >
                       {/* A row of text-sm, whose line box is 20px — and the
                           padding is the density token, because the ListRow
                           this stands for reads it. Both were wrong in
                           opposite directions: 33px against the real 36. */}
-                      <div className="flex h-5 min-w-0 flex-1 items-center">
-                        <Skeleton className="h-2.5 w-2/5" />
+                      <div className="flex items-center gap-2.5 px-3 py-(--row-py) pointer-coarse:min-h-11">
+                        <div className="flex h-5 min-w-0 flex-1 items-center">
+                          <Skeleton className="h-2.5 w-2/5" />
+                        </div>
+                        <div className="flex h-5 shrink-0 items-center">
+                          <Skeleton className="h-2.5 w-10" />
+                        </div>
+                        {/* The Progress track is h-1. */}
+                        <Skeleton className="h-1 w-24 shrink-0 rounded-full" />
+                        <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                       </div>
-                      <div className="flex h-5 shrink-0 items-center">
-                        <Skeleton className="h-2.5 w-10" />
-                      </div>
-                      {/* The Progress track is h-1. */}
-                      <Skeleton className="h-1 w-24 shrink-0 rounded-full" />
-                      <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                     </div>
                   ))
                 )}
@@ -574,7 +599,13 @@ export function DashboardPage() {
           */}
           {/* No filters over nothing: a fresh vault drew two live menus
               above "No attempts yet", furniture with nothing to sort. */}
-          {(history === null || history.length > 0) && (
+          {/* The wait asks last visit the same question the settled page
+              asks: `history === null` held this row up through it, and a
+              vault with no attempts then watched it be deleted, over the
+              one-line note box the list below already reserves for that
+              vault. Both reads come off `attempts` so the panel cannot
+              reserve a filter band above a note. */}
+          {(history === null ? reserved.attempts > 0 : history.length > 0) && (
           <div className="border-border flex items-center gap-1.5 border-b px-3 py-2">
             <Select
               value={resultFilter}
@@ -630,7 +661,7 @@ export function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <SkeletonRows rows={reserved.attempts} />
+              <SkeletonRows rows={reserved.attempts} nameWidth="w-28 sm:w-32" />
             )
           ) : puzzles.length === 0 ? (
             // An outage is not an empty vault: told "No attempts yet", a

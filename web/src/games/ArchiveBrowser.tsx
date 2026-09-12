@@ -16,7 +16,7 @@ import { SearchInput, searchRowClass } from '@/components/text-fields';
 import { Field } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 
-import { SkeletonGameRows } from '@/components/skeletons';
+import { Skeleton, SkeletonGameRows } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
@@ -1026,8 +1026,14 @@ export function ArchiveBrowser({
   // The shell draws the count band's box, so the two lists that take
   // turns in the games column share it by construction (lanph3re's call,
   // kept from when this row copied the elite panel's by hand).
+  // The shell draws the band's box only when it is given something, so a
+  // month still fetching had no band at all and its whole list rose by
+  // the box's 37px (45 under a coarse pointer) the moment the games
+  // landed. A bar the width of the count holds it.
   const countBand =
-    month && visibleMonthGames.length > 0 ? (
+    month && visibleMonthGames.length === 0 && loading === 'games' ? (
+      <Skeleton className="ml-1 h-2.5 w-24" />
+    ) : month && visibleMonthGames.length > 0 ? (
       !selecting ? (
             merged ? undefined : countGroup
           ) : (
@@ -1225,7 +1231,10 @@ export function ArchiveBrowser({
           204 of rows (SkeletonGameRows' own measurement), and the 28px
           band popped in on top. */}
       {!month && loading === 'months' && (
-        <div className="border-border min-h-0 flex-1 border-t" style={table ? tableVars : undefined}>
+        // No border of its own: the real table wrapper has none, and the
+        // rule under the header is the list's. Drawn here it doubled the
+        // header's own and left the one under it missing.
+        <div className="min-h-0 flex-1" style={table ? tableVars : undefined}>
           {table && <GameTableHeader withStanding={selecting} withNotation={!besideDetails} />}
           <SkeletonGameRows rows={6} dense={table} />
         </div>

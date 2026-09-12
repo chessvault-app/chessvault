@@ -18,7 +18,10 @@
  *    to reserve, so the empty case (every vault that has never imported
  *    a scan) moved in the wrong direction;
  *  - the attempts list draws up to a hard 384px of rows, or a one-line
- *    note, against a flat guess of five.
+ *    note, against a flat guess of five;
+ *  - and the Training panel ends on a sentence reconciling Attempts with
+ *    the pool, said only where the two numbers differ, so on the vaults
+ *    that do differ the panel grew by it when the answers landed.
  *
  * Kept out of DashboardPage.tsx and free of React so it can be tested,
  * for the same reason home's module is.
@@ -30,8 +33,13 @@ export interface DashboardShape {
   review: 'button' | 'note';
   /** Rows the Books panel drew. 0 is the EmptyState, not nothing. */
   books: number;
-  /** Rows the attempts list drew. 0 is its one-line note. */
+  /** Rows the attempts list drew. 0 is its one-line note, and it is also
+      what says the filter row above the list stood: that row is drawn over
+      a list and never over the note, so zero reserves neither. */
   attempts: number;
+  /** Whether the panel ended on the reconciling sentence, which is said
+      only where Attempts and the pool disagree. */
+  reconcile: boolean;
 }
 
 /**
@@ -60,7 +68,13 @@ export const MAX_ATTEMPTS = 12;
  * seeded content here to raise the floor: the welcome study puts
  * nothing on this page.
  */
-export const FRESH_DASHBOARD: DashboardShape = { review: 'button', books: 0, attempts: 0 };
+export const FRESH_DASHBOARD: DashboardShape = {
+  review: 'button',
+  books: 0,
+  attempts: 0,
+  // A fresh vault's counts agree at zero, so the sentence is not said.
+  reconcile: false,
+};
 
 const count = (v: unknown, max: number): number =>
   typeof v === 'number' && Number.isInteger(v) && v >= 0 ? Math.min(v, max) : 0;
@@ -85,6 +99,7 @@ export function parseDashboardShape(raw: string | null): DashboardShape {
     review: value.review === 'note' ? 'note' : 'button',
     books: count(value.books, MAX_BOOKS),
     attempts: count(value.attempts, MAX_ATTEMPTS),
+    reconcile: value.reconcile === true,
   };
 }
 

@@ -128,10 +128,19 @@ export function FieldStats({
               <div className="flex h-5 items-center">
                 <Skeleton className={cn('h-2.5', at % 2 ? 'w-10' : 'w-12')} />
               </div>
-              <Skeleton className="h-1.5 w-full rounded-full" />
-              <div className="flex h-5 items-center justify-end">
-                <Skeleton className="h-2.5 w-8" />
-              </div>
+              {/* ResultBar's own track: 16px, on the chip corner. A 6px
+                  pill stood here, which is not the shape that lands. */}
+              <Skeleton className="h-4 w-full rounded-[4px]" />
+              {/* RowTail's box, not just its figure: the list's third
+                  column is max-content, so a tail 20px narrower than the
+                  real one widened the bar column and the percentage
+                  jumped left as the rows landed. */}
+              <span className="flex shrink-0 items-center gap-1.5">
+                <span className="flex h-5 w-8 items-center justify-end">
+                  <Skeleton className="h-2.5 w-8" />
+                </span>
+                <span className="w-3.5" />
+              </span>
             </div>
           ))}
         </div>

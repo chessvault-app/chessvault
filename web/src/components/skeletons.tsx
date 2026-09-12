@@ -134,21 +134,49 @@ function Loading({ children, className }: { children: React.ReactNode; className
  * the hairline between rows that two of the three callers draw. No
  * padding of its own — none of the three lists has any.
  */
-export function SkeletonRows({ rows = 6, className }: { rows?: number; className?: string }) {
+export function SkeletonRows({
+  rows = 6,
+  className,
+  nameWidth = 'w-16',
+}: {
+  rows?: number;
+  className?: string;
+  /** The name column's own width. The hub's log is an id at `w-16`; the
+      dashboard's is a motif at `w-28 sm:w-32`. Everything else about the
+      two rows is deliberately identical (HubPage's own comment). */
+  nameWidth?: string;
+}) {
   return (
     <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
-        <div
-          key={i}
-          // ListRow's own floor under a coarse pointer: 44px, where these
-          // rows were 33 and the dashboard's list grew 11px a row on a phone.
-          className="flex items-center gap-2.5 px-3 py-(--row-py-dense) pointer-coarse:min-h-11"
-        >
-          <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-          <div className="flex h-5 min-w-0 flex-1 items-center">
-            <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+        // The divider and the floor on different boxes, as the real list
+        // has them: a `li` carries the hairline and the ListRow inside it
+        // carries min-h-11. Both on one border-box element and the border
+        // eats a pixel of the floor, so every row came out 1px short.
+        <div key={i} className="flex items-center pr-1.5">
+          <div
+            // ListRow's own floor under a coarse pointer: 44px, where these
+            // rows were 33 and the dashboard's list grew 11px a row on a phone.
+            className="flex min-w-0 flex-1 items-center gap-2.5 px-3 pr-1.5 py-(--row-py-dense) pointer-coarse:min-h-11"
+          >
+            <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+            {/* Both lists these stand for are five columns, not three: a
+                mark, a name, the difficulty word, a right-aligned time and
+                the eye beside the row. Drawn as three, every row re-laid
+                itself out sideways when the answers came. */}
+            <div className={cn('flex h-5 shrink-0 items-center', nameWidth)}>
+              <Skeleton className={cn('h-2.5 max-w-full', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+            </div>
+            <div className="flex h-5 w-14 shrink-0 items-center">
+              <Skeleton className="h-2.5 w-10" />
+            </div>
+            <div className="ml-auto flex h-5 w-20 shrink-0 items-center justify-end">
+              <Skeleton className="h-2.5 w-12" />
+            </div>
           </div>
-          <Skeleton className="h-2.5 w-10 shrink-0" />
+          {/* PreviewEye is an icon-xs button: size-6, and size-9 under a
+              thumb. Kept, not drawn, as the chevrons elsewhere are. */}
+          <span aria-hidden className="size-6 shrink-0 pointer-coarse:size-9" />
         </div>
       ))}
     </Loading>
@@ -169,6 +197,9 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
  * divided box itself, the border came out of the 36 and every row was a
  * pixel short.
  */
+/** Leading inventory rows that print no version; see the row below. */
+const VERSIONLESS_LICENCE_ROWS = 9;
+
 export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; className?: string }) {
   return (
     <Loading className={cn('divide-border divide-y', className)}>
@@ -179,9 +210,21 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
             <div className="flex h-5 min-w-0 flex-1 items-center">
               <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
-            <Skeleton className="h-2.5 w-10 shrink-0" />
-            {/* The licence pill: one text-xs line, py-px and its border. */}
-            <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
+            {/* The version, on the rows that have one. The inventory opens
+                with the copied assets (web/vite.licenses.ts ASSETS), which
+                carry no version, and the first installed package is the
+                tenth row: checked against the built index.json, entries 0-8
+                print none and entry 9 is the first that does. A bar on all
+                ten stood where nine settled rows have nothing. Add an asset
+                and this number moves with it. */}
+            {i >= VERSIONLESS_LICENCE_ROWS && <Skeleton className="h-2.5 w-10 shrink-0" />}
+            {/* The licence pill: one text-xs line, py-px and its border.
+                Measured at 81-114px across the names that actually stand
+                here (MIT to Apache-2.0), so the widths are ragged rather
+                than one 48px stub that ended nowhere near them. */}
+            <Skeleton
+              className={cn('h-5 shrink-0 rounded-full', ['w-20', 'w-24', 'w-28', 'w-20'][i % 4])}
+            />
           </div>
         </div>
       ))}
@@ -362,8 +405,12 @@ export function SkeletonBookCards({
   cards = 4,
   groups,
   className,
+  footer = 'progress',
 }: {
   cards?: number;
+  /** What the card ends with. The puzzle shelf ends on a Progress track;
+      the library ends on a line of text (a size, and where it is kept). */
+  footer?: 'progress' | 'line';
   /** The library's grouped shape, where the caller stored one — same
       contract as SkeletonCards' `groups`. Without it, a flat grid. */
   groups?: { root: number; folders: number[] };
@@ -381,12 +428,30 @@ export function SkeletonBookCards({
       {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
           the size it will be rather than the size it looks like. */}
       <Skeleton className="h-24 w-[4.5rem] shrink-0 rounded-md" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
-        <Skeleton className="h-3.5 w-4/5" />
-        <Skeleton className="h-2.5 w-1/3" />
-        {/* The Progress track’s own h-1, like SkeletonTiles — not the
-            h-1.5 this guessed. */}
-        <Skeleton className="mt-auto h-1 w-full rounded-full" />
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
+        {/* Title and meta share one box with no gap between them, as the
+            card stacks them: a text-base line of 24px over a text-sm line
+            of 20. Set apart with the column's gap-2 they each sat above
+            the words they stand for. */}
+        <span className="min-w-0 pr-7">
+          <span className="flex h-6 items-center">
+            <Skeleton className="h-3.5 w-4/5" />
+          </span>
+          <span className="flex h-5 items-center">
+            <Skeleton className="h-2.5 w-1/3" />
+          </span>
+        </span>
+        {footer === 'progress' ? (
+          /* The Progress track’s own h-1, like SkeletonTiles. */
+          <Skeleton className="h-1 w-full rounded-full" />
+        ) : (
+          /* A text-sm line with its glyph, which is what the library's
+             cards end with; a track there stood for nothing they draw. */
+          <span className="flex h-5 items-center gap-1.5">
+            <Skeleton className="size-3 shrink-0 rounded-sm" />
+            <Skeleton className="h-2.5 w-24" />
+          </span>
+        )}
       </div>
     </div>
   );
@@ -481,7 +546,7 @@ export function SkeletonTiles({
         // one it is nothing — measured, the header bar sat on the column's
         // edge and the panel had no floor, 16px short of the Panel's.
         <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring pb-(--card-pad)">
-          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad) pointer-coarse:min-h-13">
+          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad)">
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
           </div>
@@ -549,7 +614,17 @@ export function SkeletonTiles({
  * 58px cards. The bars were both the wrong shape and the wrong height,
  * so the page rearranged completely as the themes landed.
  */
-export function SkeletonThemeCard({ className }: { className?: string }) {
+export function SkeletonThemeCard({
+  className,
+  label,
+}: {
+  className?: string;
+  /** The word this card will carry, where the card sizes itself to it.
+      In the grid the column sets the width and this is not needed; the
+      review chip is `w-auto` and shrink-wrapped to 84px against the
+      186px its own label gives the card that replaces it. */
+  label?: string;
+}) {
   return (
     <div
       // border, not ring — ThemeCard is `border px-3 py-2.5`, so this
@@ -563,7 +638,14 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
       <div className="min-w-0 flex-1">
         {/* A name at text-sm on a 20px line, over a count on 16. */}
         <div className="flex h-5 items-center">
-          <Skeleton className="h-2.5 w-2/3" />
+          {label ? (
+            <span className="relative">
+              <span className="invisible whitespace-nowrap">{label}</span>
+              <Skeleton className="absolute inset-y-1 left-0 w-full" />
+            </span>
+          ) : (
+            <Skeleton className="h-2.5 w-2/3" />
+          )}
         </div>
         <div className="flex h-4 items-center">
           <Skeleton className="h-2 w-8" />
@@ -656,7 +738,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
       {/* pb-3, not the pb-1.5 the header wears while the formatting
           palette is showing: a note opens READ-ONLY, and that is the state
           this stands in for. Measured at 59px against the real 65. */}
-      <div className="border-border -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6">
+      <div className="-mx-4 flex shrink-0 flex-col gap-3 border-b border-transparent px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6">
         {/* pointer-coarse:h-9, like every control the row holds: the back
             chevron and the edit button are icon-sm and sm, which grow to
             36px under a thumb. Pinned at h-7 the row was a button short on
@@ -664,8 +746,15 @@ export function SkeletonDocument({ className }: { className?: string }) {
         <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9">
           <Skeleton className="size-7 shrink-0 rounded-md" />
           <Skeleton className="h-3.5 min-w-0 flex-1" />
+          {/* DocumentTools keeps three buttons from md and one on a phone,
+              and the save state stands after Edit. Two of the tools and
+              the state were not reserved, so the title bar ran roughly
+              60px (phone) to 100px (desktop) past where the name stops. */}
           <Skeleton className="size-7 shrink-0 rounded-md" />
+          <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
+          <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
           <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+          <Skeleton className="h-2.5 w-10 shrink-0" />
         </div>
       </div>
       {/* min-h-[60vh] is .note-editor's own floor (index.css): a short
@@ -744,8 +833,13 @@ export function SkeletonBoard({
     <>
       <Skeleton className="size-7 shrink-0 rounded-md" />
       <Skeleton className="h-3.5 min-w-0 flex-1" />
+      {/* As SkeletonDocument's row: three tools from md, then Edit and
+          the save state. */}
       <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
+      <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
       <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+      <Skeleton className="h-2.5 w-10 shrink-0" />
     </>
   );
   const playerBar = (
@@ -872,7 +966,7 @@ export function SkeletonBoard({
             )}
             style={chapterH === null ? undefined : { height: chapterH, flex: '0 1 auto' }}
           >
-            <div className="flex min-h-11 shrink-0 items-center px-3 pointer-coarse:min-h-13">
+            <div className="flex min-h-11 shrink-0 items-center px-(--card-pad)">
               <Skeleton className="h-2.5 w-20" />
             </div>
             {/* px-1 and no gap, like the real list: its rows are --row-h
@@ -892,17 +986,31 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-card-ring p-3">
-          {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
-          ))}
+        <div className="bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
+          {/* The panel opens on its header, as the chapters panel above
+              does: the moves title and the row of controls beside it. The
+              bars used to start 12px down a panel whose first 44px is that
+              band, so every move line sat a header too high. */}
+          <div className="flex min-h-11 shrink-0 items-center gap-2 px-(--card-pad)">
+            <Skeleton className="h-2.5 w-24" />
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="size-7" />
+              ))}
+            </span>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
+            {Array.from({ length: 8 }, (_, i) => (
+              <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
+            ))}
+          </div>
         </div>
         {/* Folded to its header, which is where a board page opens it:
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
         {explorer && (
           <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden">
-            <div className="flex min-h-11 items-center px-3 pointer-coarse:min-h-13">
+            <div className="flex min-h-11 items-center px-(--card-pad)">
               <Skeleton className="h-2.5 w-16" />
             </div>
           </div>
@@ -935,7 +1043,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
       {[0, 1, 2].map((i) => (
         <Skeleton key={i} className="h-7 min-w-0 flex-1 rounded-md pointer-coarse:h-9" />
       ))}
-      <Skeleton className="h-7 w-14 shrink-0 rounded-md pointer-coarse:h-9" />
+      <Skeleton className="size-7 shrink-0 rounded-md pointer-coarse:size-9" />
     </Loading>
   );
 }
@@ -1051,6 +1159,7 @@ export function SkeletonGameRows({
 export function SkeletonVaultTree({
   path,
   rows = 8,
+  paths,
   className,
 }: {
   /**
@@ -1064,11 +1173,22 @@ export function SkeletonVaultTree({
    * draw (components/vault-tree `VAULT_ROWS`) less the two book folders,
    * which exist only once a PDF has been imported. Empty rows are
    * dropped, so a fresh vault lists fewer and a reading one all ten; the
-   * caller can say so where it knows better.
+   * caller can say so where it knows better. Only consulted where
+   * `paths` is absent.
    */
   rows?: number;
+  /**
+   * The rows this vault listed last visit, by path. A count alone takes
+   * the FIRST n, and the rows that go missing are not the last ones: a
+   * vault with no books drops `books` and `puzzlebooks` from the middle
+   * and still lists `.history.git` and `config.json` at the end. Since
+   * each row reserves its own gloss, and the glosses wrap differently,
+   * the wrong eight reserved the wrong words.
+   */
+  paths?: readonly string[];
   className?: string;
 }) {
+  const listed = paths ? VAULT_ROWS.filter((r) => paths.includes(r.path)) : VAULT_ROWS.slice(0, rows);
   return (
     <Loading className={cn('vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5', className)}>
       {/* The folder line: the real path, and a bar where the totals go,
@@ -1086,7 +1206,7 @@ export function SkeletonVaultTree({
         </div>
       </div>
       <ul>
-        {VAULT_ROWS.slice(0, rows).map((row, i) => (
+        {listed.map((row, i) => (
           <li key={i}>
             {/* Every cell is centred rather than left to the row's baseline
                 alignment: a bar has no text, so its baseline is its own

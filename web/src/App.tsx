@@ -491,7 +491,12 @@ function Shell() {
 function VaultLabel() {
   const info = useVaultInfo();
   const name = displayName(info);
-  if (!name) return null;
+  // The foot's first line, held while the settings answer is out. Without
+  // it the connection label under it and the foot's own height stepped
+  // down 8px on every wide route the moment the answer landed. A vault
+  // that turns out to have no name reserves nothing: `loaded` is what
+  // separates the two, since `name` alone cannot.
+  if (!name) return info.loaded ? null : <span className="block h-5" aria-hidden />;
   return (
     <TitleTip title={info.path ? t('Vault folder: {path}', { path: info.path }) : undefined}>
       <span className="text-foreground block truncate text-sm">{name}</span>

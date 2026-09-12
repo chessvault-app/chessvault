@@ -288,7 +288,7 @@ export function BooksPage() {
         // A vault seen without books (or never seen — nothing seeds one)
         // reserves nothing: its settle is the EmptyState.
         pending && shelfHasShape(reservedShelf) ? (
-          <SkeletonBookCards groups={reservedShelf} />
+          <SkeletonBookCards groups={reservedShelf} footer="line" />
         ) : null
       ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
         books.length === 0 ? (

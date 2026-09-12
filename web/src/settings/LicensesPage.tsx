@@ -65,12 +65,31 @@ interface Inventory {
 
 const BASE = `${import.meta.env.BASE_URL}licenses/`;
 
+/**
+ * How many group chips this build drew last time, so the row holds its
+ * place before the inventory lands. The count is a property of the
+ * BUILD, not the vault: the web build has two groups and the desktop
+ * app three, since it adds Chromium's own notices (web/vite.licenses.ts).
+ * A placeholder that always drew two was right on the web and one chip
+ * short in the app. Same bargain as the other reservations: a paint
+ * hint, wrong by at most one visit, corrected by whatever lands.
+ */
+const GROUPS_KEY = 'vault:licences-groups';
+/** What a device that has not seen this page reserves: the web build's. */
+const FRESH_GROUPS = 2;
+const MAX_GROUPS = 6;
+const readGroups = (): number => {
+  const n = Number(localStorage.getItem(GROUPS_KEY));
+  return Number.isInteger(n) && n > 0 ? Math.min(n, MAX_GROUPS) : FRESH_GROUPS;
+};
+
 export function LicensesPage() {
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
   const [open, setOpen] = useState<Set<number>>(() => new Set());
+  const [reservedGroups] = useState(readGroups);
   const slow = useSlowLoad(!inventory && !failed);
 
   useEffect(() => {
@@ -89,6 +108,14 @@ export function LicensesPage() {
     for (const e of inventory?.entries ?? []) counts.set(e.group, (counts.get(e.group) ?? 0) + 1);
     return [...counts];
   }, [inventory]);
+  useEffect(() => {
+    if (groups.length === 0) return;
+    try {
+      localStorage.setItem(GROUPS_KEY, String(groups.length));
+    } catch {
+      // Nothing to reserve next time; the web build's two serve.
+    }
+  }, [groups]);
 
   const shown = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -186,9 +213,12 @@ export function LicensesPage() {
                 ))}
               </>
             ) : (
-              // The All chip with its count still to come, and two group
-              // chips' worth of pill (a chip is text-sm, py-1 and its
-              // border; 36px under a coarse pointer).
+              // The All chip with its count still to come, and the group
+              // chips' own pills (a chip is text-sm, py-1 and its border;
+              // 36px under a coarse pointer). The group names are fixed in
+              // the licence walk, so the widths are theirs: measured 142
+              // and 116px in English, 108 and 90 in Korean, against the 96
+              // and 80 that stood here and left the row short.
               <>
                 <FilterChip
                   label={
@@ -204,8 +234,15 @@ export function LicensesPage() {
                   active
                   onClick={() => {}}
                 />
-                <Skeleton className="h-7.5 w-24 shrink-0 rounded-full pointer-coarse:h-9" />
-                <Skeleton className="h-7.5 w-20 shrink-0 rounded-full pointer-coarse:h-9" />
+                {Array.from({ length: reservedGroups }, (_, i) => (
+                  <Skeleton
+                    key={i}
+                    className={cn(
+                      'h-7.5 shrink-0 rounded-full pointer-coarse:h-9',
+                      ['w-36', 'w-28', 'w-44'][i % 3],
+                    )}
+                  />
+                ))}
               </>
             )}
           </ChipRow>

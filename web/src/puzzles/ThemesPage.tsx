@@ -279,7 +279,7 @@ export function ThemesPage() {
               the place up when the answer says so, which is the one case
               that cannot be known in advance. */}
           {themes === null ? (
-            <SkeletonThemeCard className="w-full sm:w-auto" />
+            <SkeletonThemeCard className="w-full sm:w-auto" label={t('Review failed puzzles')} />
           ) : failed > 0 ? (
             <ThemeCard
               className="w-full sm:w-auto"
