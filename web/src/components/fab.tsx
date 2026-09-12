@@ -152,8 +152,12 @@ export function Fab({
       // Above the phone's bottom bar and its home indicator. Fixed, so a
       // scrolling list never takes it away — making something new is
       // available from anywhere in the list, not only from the top of it.
+      //
+      // `group/fab` is for the focus ring below: the keyboard being
+      // anywhere in here flattens all of it at once, because a pill's ring
+      // lies in the 8px gap its NEIGHBOUR's shadow falls into as well.
       className={cn(
-        'fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
+        'group/fab fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
         'flex flex-col items-end gap-2',
         className,
       )}
@@ -180,9 +184,26 @@ export function Fab({
             // among card-coloured shapes: it read as part of the list
             // rather than as something that had just opened. The opposite
             // of the page needs no help being told from it.
+            //
+            // And the shadow goes while the keyboard is in the fan, because
+            // the ring these wear is the page's own 3px outline, drawn in
+            // the band immediately outside the pill — which is exactly
+            // where `shadow-lg` is darkest. Measured on a phone in light,
+            // tabbing the open fan: on #/openingmap the ground under the
+            // ring ran 213 to 241 where the page under the pill is 245,
+            // and the ring's median contrast was 2.99:1 there, 3.02 on
+            // #/books, 3.10 on #/studies, 3.29 on #/notes, with a quarter
+            // of one pill's ring down at 2.38. With the fan flat every
+            // pill and the disc read 3.776 on #/openingmap and #/books
+            // and 3.776 to 4.116 on #/studies and #/notes, the ring on
+            // clean page. Dark never had the problem (5.57 to 6.43
+            // before) and is unchanged. The resting page is untouched:
+            // no shadow changes until something in here has keyboard
+            // focus.
             className={cn(
               'bg-toast text-toast-foreground flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
               'text-base shadow-lg transition-opacity duration-100 active:opacity-80',
+              'group-has-[:focus-visible]/fab:shadow-none',
               'disabled:opacity-50',
             )}
           >
@@ -213,10 +234,17 @@ export function Fab({
         // thumb is a toy's idea of feedback — the pills above already
         // answer a press with opacity, so the file had both idioms in it
         // and only one of them anywhere else.
+        //
+        // Its shadow goes with the pills' while the keyboard is in the fan,
+        // and for the same measured reason: focused on a phone in light the
+        // disc's own ring read 3.03:1 on #/openingmap and #/books against
+        // its shadow, 3.776 once the shadow is out of the band the ring is
+        // drawn in.
         className={cn(
           'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
           'border border-primary-foreground/30',
           'shadow-lg transition-opacity duration-100 active:opacity-80',
+          'group-has-[:focus-visible]/fab:shadow-none',
         )}
       >
         {/* The glyph TURNS into the close mark rather than swapping: both
