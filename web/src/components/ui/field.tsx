@@ -149,7 +149,12 @@ function Field({
         {...props}
       >
         <div className="flex items-baseline justify-between gap-2">
-          <FieldLabel htmlFor={target}>{t(label)}</FieldLabel>
+          {/* The label carries an id derived from the control's, so a
+              control that names itself from more than the label (the
+              phone Select: label plus value) can point back at it. */}
+          <FieldLabel id={target ? `${target}-label` : undefined} htmlFor={target}>
+            {t(label)}
+          </FieldLabel>
           {hint}
         </div>
         {control}

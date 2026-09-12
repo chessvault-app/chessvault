@@ -346,9 +346,8 @@ function SelectField({
   onOpenChange,
   ...root
 }: SelectProps & { groups: SelectGroup[] }) {
-  // Read for parity with Field (the context still marks a form control),
-  // even though the registry's trigger wears one face in both places.
-  React.useContext(FieldContext);
+  // Under a Field the label names the control by id, on both branches.
+  const inField = React.useContext(FieldContext);
   const phone = useMediaQuery(PHONE);
   const [ownOpen, setOwnOpen] = React.useState(false);
   const open = openProp ?? ownOpen;
@@ -360,6 +359,18 @@ function SelectField({
   const face = (text: string): string => (prefix ? `${t(prefix)}: ${text}` : text);
   const selected = flat.find((o) => o.value === value) ?? null;
   const centered = React.useRef(false);
+  // The trigger's name. A prefix IS the visible label ("Status: All"),
+  // and a Field's <label for> reaches the trigger by id, so either names
+  // the control; a call-site ariaLabel that omits the visible words fails
+  // 2.5.3 Label in Name, and used to override both. It is kept as the
+  // description instead, so its wording is still heard. With neither a
+  // prefix nor a Field the ariaLabel is the name, as before.
+  const fieldLabelId = inField && root.id ? `${root.id}-label` : null;
+  const label = prefix ? t(prefix) : fieldLabelId ? undefined : ariaLabel;
+  const description = ariaLabel && ariaLabel !== label ? ariaLabel : undefined;
+  const ids = React.useId();
+  const labelId = `${ids}-label`;
+  const valueId = `${ids}-value`;
 
   const labelClass = cn(
     'min-w-0 flex-1 text-left',
@@ -376,7 +387,9 @@ function SelectField({
       <span className={cn('flex min-w-0 items-center gap-2', steady && 'col-start-1 row-start-1')}>
         {selected?.thumb}
         {selected?.dot && <OptionDot dot={selected.dot} />}
-        <span className="truncate">{selected ? face(t(selected.short ?? selected.label)) : '—'}</span>
+        <span id={valueId} className="truncate">
+          {selected ? face(t(selected.short ?? selected.label)) : '—'}
+        </span>
       </span>
     </>
   );
@@ -384,14 +397,27 @@ function SelectField({
   if (phone) {
     return (
       <>
+        {/* A plain button's content is its name, and an aria-label
+            replaced it outright: "Played within" with no "Any time" in
+            it, so a screen reader never heard the value. Named from the
+            label and the value together instead: a clipped span for the
+            label (the prefix already prints, so it is skipped), then the
+            value span, or the Field's own label by its id. */}
         <button
           type="button"
-          aria-label={ariaLabel}
+          id={root.id}
+          aria-labelledby={`${label ? labelId : (fieldLabelId ?? '')} ${valueId}`.trim()}
+          aria-description={description}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen(true)}
           className={cn(selectTriggerVariants({ size: size === 'sm' ? 'sm' : 'default' }), mono && 'font-mono', className)}
         >
+          {label && (
+            <span id={labelId} className={prefix ? 'hidden' : 'sr-only'}>
+              {label}:
+            </span>
+          )}
           <span className={labelClass}>{labelInner}</span>
           <ChevronDownIcon className="text-muted-foreground size-4" />
         </button>
@@ -403,8 +429,12 @@ function SelectField({
             }}
           >
             <DialogContent size="sm" title={prefix ?? ariaLabel ?? ''} fill={fill}>
+              {/* The rows are options in a listbox, as Base UI's popover
+                  exposes them: the chosen one was marked only by a weight
+                  and an aria-hidden tick, so nothing said which it was. */}
+              <div role="listbox" aria-labelledby={label ? labelId : fieldLabelId ?? undefined}>
               {groups.map((group, gi) => (
-                <div key={gi}>
+                <div key={gi} role="group">
                   {group.label && (
                     <p className="text-muted-foreground px-2 pb-1 pt-2 text-xs">{t(group.label)}</p>
                   )}
@@ -412,6 +442,8 @@ function SelectField({
                     <button
                       key={option.value}
                       type="button"
+                      role="option"
+                      aria-selected={option.value === value}
                       ref={(el) => {
                         if (el && option.value === value && !centered.current) {
                           centered.current = true;
@@ -438,6 +470,7 @@ function SelectField({
                   ))}
                 </div>
               ))}
+              </div>
             </DialogContent>
           </Dialog>
         )}
@@ -454,7 +487,8 @@ function SelectField({
       {...root}
     >
       <SelectTrigger
-        aria-label={ariaLabel}
+        aria-label={label}
+        aria-description={description}
         size={size === 'sm' ? 'sm' : 'default'}
         className={cn('w-auto min-w-0 shrink', mono && 'font-mono', className)}
       >
