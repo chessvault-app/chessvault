@@ -1583,6 +1583,7 @@ export const ko: Record<string, string> = {
   'Numbered list': '번호 목록',
   Quote: '인용',
   'Insert a board': '보드 넣기',
+  'or type /board on a new line': '또는 새 줄에 /board 입력',
 
   // --- puzzles: trainer feedback ------------------------------------------
   'Play a move on the board.': '보드에서 수를 두세요.',
