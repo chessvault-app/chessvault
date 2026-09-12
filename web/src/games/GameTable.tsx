@@ -13,7 +13,7 @@ import { ActionContextMenu, type MenuAction } from '@/components/action-menu';
 import { separatorKey } from '@/components/separator-keys';
 import { t } from '@/lib/i18n';
 
-import { EcoChip, gameKey, ResultScore, type GameSummary } from './shared';
+import { EcoChip, gameKey, ResultScore, SeatMark, type GameSummary } from './shared';
 import { TitleTip } from '@/components/title-tip';
 
 /**
@@ -536,6 +536,7 @@ export function GameTableRow({
     );
     const content = (
       <>
+        {game.userSide === side && <SeatMark side={side} />}
         {player}
         {side === 'white' && game.annotated && (
           <NotebookPen className="text-info ml-1 inline size-3" aria-label={t('Annotated')} />
@@ -553,7 +554,14 @@ export function GameTableRow({
         type="button"
         data-table-row={key}
         tabIndex={tabStop ? 0 : -1}
-        aria-label={t('{white} vs {black}', { white: game.white, black: game.black })}
+        // The seat in the name too: the label is all a screen reader
+        // hears of this row, and the SeatMark's own text is inside it.
+        aria-label={
+          t('{white} vs {black}', { white: game.white, black: game.black }) +
+          (game.userSide
+            ? `, ${game.userSide === 'white' ? t('You played white') : t('You played black')}`
+            : '')
+        }
         aria-current={selected ? 'true' : undefined}
         className={cn(className, 'text-left')}
         onClick={(e) => {
