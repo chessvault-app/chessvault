@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { BookCoverCard } from '@/components/book-cover-card';
 import { EmptyState } from '@/components/empty-state';
-import { CreateControl, FabSpacer } from '@/components/fab';
+import { CreateControl } from '@/components/fab';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -360,8 +360,6 @@ export function BooksPage() {
           ))}
         </div>
       )}
-
-      <FabSpacer />
       </div>
     </PageShell>
   );

@@ -227,18 +227,6 @@ export function GameListShell({
                 // max-content, which blew the notation column out to
                 // the widest untruncated line.
                 listHeader != null ? 'min-w-[var(--gt-min)]' : listClassName,
-                // Room to scroll the last row clear of the Games page's
-                // import FAB, which floats over the pane's corner below
-                // md (every host of this shell lives on that page). The
-                // scroll-padding twin is the same room told to the
-                // browser: a thumb scrolls a row out from under the disc,
-                // a keyboard cannot, and Tab stops as soon as a row is
-                // inside the scrollport, disc or no disc, so a row's Game
-                // actions button was landing underneath it (measured on a
-                // phone: 0 of 156 ring pixels visible, 113 of them behind
-                // the disc). One number on one line, so the two cannot
-                // drift.
-                'max-md:pb-20 max-md:scroll-pb-20',
               )}
             >
               {listLoading ? (
@@ -264,7 +252,7 @@ export function GameListShell({
           if (listHeader == null) return rows;
           return (
             <div
-              className={cn('flex min-h-0 flex-col overflow-auto max-md:scroll-pb-20', listClassName)}
+              className={cn('flex min-h-0 flex-col overflow-auto', listClassName)}
               style={listVars}
             >
               {/* Sticky, opaque, and as wide as the rows: the header

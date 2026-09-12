@@ -21,6 +21,17 @@ stops going under the app's own chrome: what is pinned over a page now
 tells the page how tall it is, the manual's phone drawer opens the whole
 screen, and the opening map's panel steps aside from the dot you chose.
 
+- **A phone's create button is in the page header, not floating over
+  the list.** Studies, Notes, Books, Puzzle books and Games draw their
+  Create or Import button on the title row at every width now, the way
+  a desktop always did, one word beside the large title. Where a page
+  can make several things (a study, a folder, a PGN import, a Lichess
+  study) the button opens the same action sheet a row's ⋯ opens, in
+  place of the stack of pills the round button fanned over the last
+  rows. The last row of each shelf no longer needs room kept under a
+  disc. The opening map keeps its compass in the corner, since its menu
+  acts on a canvas that pans under the finger; the compass opens the
+  action sheet too.
 - **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
   against a rook, rook and pawns against a rook, and the rest, or a

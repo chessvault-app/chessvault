@@ -1,10 +1,8 @@
 import { ChevronDown, Plus, X } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useCloseRequest } from '@/hooks/dialog-focus';
-import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { ActionMenu } from '@/components/action-menu';
 import { t } from '@/lib/i18n';
 
@@ -19,99 +17,57 @@ export interface FabAction {
 }
 
 /**
- * The room a scrolling page has to leave at its bottom for the Fab.
+ * Making something new: a button in the page header, at every width.
  *
- * A fixed button cannot push anything, so the page has to know about it:
- * the Fab floats 4.5rem off the bottom of the WINDOW and stands 3.5rem
- * tall, which puts its top 8rem up — about 4rem into a page whose own
- * bottom edge is the top of the phone's tab bar. Without this the last
- * row of every shelf sits under it, and the last row is exactly where
- * you end up after scrolling.
+ * It was a header button on a desktop and a round one floating over the
+ * bottom-right corner on a phone, on the argument that the top corner of
+ * a phone is the worst place for the button people press most. Two
+ * things turned that around. The disc fanned its several actions out as
+ * a stack of pills over the last rows of the shelf, which is the shape
+ * every current phone platform has stepped back from (Material 3
+ * Expressive retired the stacked FAB; iOS never had one), and the disc
+ * hid the more-actions button of whichever row Tab or a scroll ended on,
+ * which two rounds of measured clearance only worked around. A shelf's
+ * create verb is not the button people press most on it; the rows are.
+ * So the button sits on the title row on a phone as well, where Studies,
+ * Notes and Books already draw it for a mouse, and the several actions
+ * open as the same action sheet every ⋯ on the page opens.
  *
- * An ELEMENT, not padding-bottom on the scroll container. Browsers drop
- * the bottom padding of a `flex-col` + `overflow-y-auto` box once its
- * content overflows — so the first version of this worked on whichever
- * shelf happened to be short enough not to scroll and silently did
- * nothing on the rest. lanph3re saw the gap on notes and nowhere else,
- * which is exactly that shape. A real box in the flow cannot be dropped.
- *
- * shrink-0 because it lives in a flex column, which would otherwise
- * squash it back to nothing. Gone from md, where the Fab is hidden and
- * the header's Create button takes over.
- *
- * The room is also what the page scrolls a focused control into. A thumb
- * gets a row out from under the disc by scrolling; a keyboard cannot, and
- * the browser stops scrolling as soon as a control is inside the
- * scrollport, which the disc's own corner is too - so Tab landed on a
- * card's more-actions button with the disc on top of it (measured on a
- * phone-width shelf: 15 of 156 ring pixels visible). This spacer is
- * already the statement of how much room the disc needs, so it publishes
- * that same height to the scroller as scroll-padding rather than a second
- * number saying it again (hooks/use-pinned-band). Zero on a desktop,
- * where the spacer is not drawn.
- */
-export function FabSpacer() {
-  const pin = usePinnedBand('bottom');
-  return <div ref={pin} aria-hidden className="h-[5.5rem] w-full shrink-0 md:hidden" />;
-}
-
-/**
- * Making something new: a button in the page header on a desktop, a round
- * one in the bottom-right corner on a phone.
- *
- * Both, from one list of actions. A header is where a mouse expects the
- * page's own controls and there is no reach to worry about; a thumb has
- * the opposite problem, and the top corner of a phone is the worst place
- * on the screen for the button people press most.
+ * The cost is honest: after a long scroll, making something means
+ * scrolling back to the header. The row's own verbs, which are the ones
+ * reached from the middle of a list, are unchanged.
  */
 export function CreateControl({ actions, label = 'Create' }: { actions: FabAction[]; label?: string }) {
   const single = actions.length === 1 ? actions[0] : null;
   const button = (
-    <Button
-      variant="default"
-      size="sm"
-      className="hidden md:inline-flex"
-      onClick={single ? single.onSelect : undefined}
-    >
+    <Button variant="default" size="sm" onClick={single ? single.onSelect : undefined}>
       <Plus className="size-3.5" data-icon="inline-start" />
       {single ? t(single.label) : t(label)}
       {!single && <ChevronDown className="ml-1 size-3" />}
     </Button>
   );
 
+  if (single) return button;
   return (
-    <>
-      {single ? (
-        button
-      ) : (
-        <ActionMenu title={label} actions={actions}>
-          {button}
-        </ActionMenu>
-      )}
-
-      <Fab actions={actions} label={label} className="md:hidden" />
-    </>
+    <ActionMenu title={label} actions={actions}>
+      {button}
+    </ActionMenu>
   );
 }
 
 /**
- * The round button in the corner, phones only (see CreateControl).
+ * The round button in the corner, phones only. One caller: the opening
+ * map, whose verbs act on a canvas that pans under the finger, so a
+ * header would be out of reach the moment the map is in use. A canvas
+ * is where a floating control belongs; a shelf is not (see
+ * CreateControl).
  *
- * One action fires on tap. Several fan upwards as labelled pills, so the
- * choice reads as a list of things you can make rather than a menu to open
- * and then read.
- *
- * These were briefly a bottom sheet, on the theory that one menu idiom per
- * phone beats two. It is the wrong comparison. A row's ⋯ is a menu about
- * that row, and a sheet that covers the list is fine because the row is
- * named at the top of it. This is two or three ways to make one thing, and
- * a sheet for them buys a scrim, a title bar and a handle to answer a
- * question the button already asked. The pills answer it in place, beside
- * the thumb that is still on the button, and the page stays visible behind
- * them — which matters, because what you make lands in that page.
- *
- * What the sheet was actually right about is the PAGES these open, and
- * those stayed sheets.
+ * One action fires on tap. Several open the action sheet, the same one a
+ * row's ⋯ opens, titled with the disc's own label. They fanned upwards as
+ * labelled pills for a while, on the argument that pills answer the
+ * question in place beside the thumb. Over a map the pills stood on the
+ * map, six of them, with no scrim and no title, and the sheet is the one
+ * menu idiom the phone has everywhere else.
  */
 export function Fab({
   actions,
@@ -127,157 +83,71 @@ export function Fab({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  // The pills outlive `open` by one exit animation. They mount on open
-  // and fan in; on close they stay, marked closed, until the farthest
-  // pill's leave has finished (index.css, fab-item-out). Nothing else
-  // in the app unmounts on an animationend, but nothing else in the app
-  // is a fixed column of hand-rolled buttons with no Base UI transition
-  // behind it either.
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    if (open) setShown(true);
-  }, [open]);
-  const host = useRef<HTMLDivElement>(null);
   const single = actions.length === 1 ? actions[0] : null;
 
-  // No scrim, so dismissal is a press anywhere else. Both mousedown and
-  // touchstart: a phone fires touchstart first and would otherwise leave
-  // the pills up until the click landed.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent | TouchEvent): void => {
-      if (!host.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('touchstart', onDown);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('touchstart', onDown);
-    };
-  }, [open]);
-  // Escape, and Android's Back gesture — open pills are the most
-  // Back-shaped thing on the screen while they are up.
-  useCloseRequest(() => setOpen(false), open);
-
-  return (
-    <div
-      ref={host}
+  const disc = (
+    // aria-label and no tip: every call site draws this `md:hidden`, so
+    // the only pointer that reaches it is a thumb — and no tooltip in
+    // this app opens on touch. The title beside it could not be shown
+    // to anyone.
+    <button
+      type="button"
+      aria-label={single ? t(single.label) : t(label)}
+      onClick={single ? single.onSelect : undefined}
       // Above the phone's bottom bar and its home indicator. Fixed, so a
-      // scrolling list never takes it away — making something new is
-      // available from anywhere in the list, not only from the top of it.
+      // panning canvas never takes it away.
       //
-      // `group/fab` is for the focus ring below: the keyboard being
-      // anywhere in here flattens all of it at once, because a pill's ring
-      // lies in the 8px gap its NEIGHBOUR's shadow falls into as well.
+      // The hairline every other floating thing in the app has. A disc
+      // of flat colour with only a shadow under it has no edge of its
+      // own: over a pale panel it ended where the eye guessed, and the
+      // shadow — which is what a phone's own buttons do NOT have — was
+      // carrying the whole job. Drawn in the button's own foreground at
+      // low alpha, so it darkens the rim in dark mode and lightens it
+      // in light, instead of dropping a grey ring on a blue disc.
+      //
+      // Pressed is a dimming, not a squash. active:scale-95 was the only
+      // press-scale in the app, and a control that shrinks under the
+      // thumb is a toy's idea of feedback.
+      //
+      // Its shadow goes while it has keyboard focus: the ring it wears
+      // is the page's own 3px outline, drawn in the band immediately
+      // outside the disc, which is exactly where `shadow-lg` is darkest.
+      // Measured on a phone in light, the disc's ring read 3.03:1
+      // against its shadow on #/openingmap, 3.776 once the shadow is
+      // out of the band the ring is drawn in.
       className={cn(
-        'group/fab fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
-        'flex flex-col items-end gap-2',
+        'fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
+        'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
+        'border border-primary-foreground/30',
+        'shadow-lg transition-opacity duration-100 active:opacity-80',
+        'focus-visible:shadow-none',
         className,
       )}
     >
-      {shown &&
-        actions.map(({ label: itemLabel, icon: Icon, onSelect, disabled }, i) => (
-          <button
-            key={itemLabel}
-            type="button"
-            disabled={disabled}
-            data-slot="fab-item"
-            data-state={open ? 'open' : 'closed'}
-            // Counted from the disc: the last in the array is drawn
-            // nearest it and moves first, in and out.
-            style={{ '--fab-i': actions.length - 1 - i } as CSSProperties}
-            onAnimationEnd={i === 0 && !open ? () => setShown(false) : undefined}
-            onClick={() => {
-              setOpen(false);
-              onSelect();
-            }}
-            // The INVERTED surface, like the undo chip — not `bg-card`,
-            // which is the colour of the cards these float over. A pill in
-            // card colours over a shelf of cards is a card-coloured shape
-            // among card-coloured shapes: it read as part of the list
-            // rather than as something that had just opened. The opposite
-            // of the page needs no help being told from it.
-            //
-            // And the shadow goes while the keyboard is in the fan, because
-            // the ring these wear is the page's own 3px outline, drawn in
-            // the band immediately outside the pill — which is exactly
-            // where `shadow-lg` is darkest. Measured on a phone in light,
-            // tabbing the open fan: on #/openingmap the ground under the
-            // ring ran 213 to 241 where the page under the pill is 245,
-            // and the ring's median contrast was 2.99:1 there, 3.02 on
-            // #/books, 3.10 on #/studies, 3.29 on #/notes, with a quarter
-            // of one pill's ring down at 2.38. With the fan flat every
-            // pill and the disc read 3.776 on #/openingmap and #/books
-            // and 3.776 to 4.116 on #/studies and #/notes, the ring on
-            // clean page. Dark never had the problem (5.57 to 6.43
-            // before) and is unchanged. The resting page is untouched:
-            // no shadow changes until something in here has keyboard
-            // focus.
-            className={cn(
-              'bg-toast text-toast-foreground flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
-              'text-base shadow-lg transition-opacity duration-100 active:opacity-80',
-              'group-has-[:focus-visible]/fab:shadow-none',
-              'disabled:opacity-50',
-            )}
-          >
-            <Icon className="size-4 shrink-0 opacity-70" />
-            {t(itemLabel)}
-          </button>
-        ))}
-
-      {/* aria-label and no tip: every call site draws this `md:hidden`, so
-          the only pointer that reaches it is a thumb — and no tooltip in
-          this app opens on touch. The title beside it could not be shown
-          to anyone. */}
-      <button
-        type="button"
-        aria-label={single ? t(single.label) : t(label)}
-        aria-expanded={single ? undefined : open}
-        onClick={() => (single ? single.onSelect() : setOpen((v) => !v))}
-        // The hairline every other floating thing in the app has. A disc
-        // of flat colour with only a shadow under it has no edge of its
-        // own: over a pale panel it ended where the eye guessed, and the
-        // shadow — which is what a phone's own buttons do NOT have — was
-        // carrying the whole job. Drawn in the button's own foreground at
-        // low alpha, so it darkens the rim in dark mode and lightens it
-        // in light, instead of dropping a grey ring on a blue disc.
-        //
-        // Pressed is a dimming, not a squash. active:scale-95 was the only
-        // press-scale in the app, and a control that shrinks under the
-        // thumb is a toy's idea of feedback — the pills above already
-        // answer a press with opacity, so the file had both idioms in it
-        // and only one of them anywhere else.
-        //
-        // Its shadow goes with the pills' while the keyboard is in the fan,
-        // and for the same measured reason: focused on a phone in light the
-        // disc's own ring read 3.03:1 on #/openingmap and #/books against
-        // its shadow, 3.776 once the shadow is out of the band the ring is
-        // drawn in.
+      {/* The glyph TURNS into the close mark rather than swapping: both
+          sit in one cell and the cell rotates a quarter turn on the
+          spring while they cross-fade, which is Material's FAB-to-close
+          and reads as the same button changing its mind. */}
+      <span
+        aria-hidden
         className={cn(
-          'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
-          'border border-primary-foreground/30',
-          'shadow-lg transition-opacity duration-100 active:opacity-80',
-          'group-has-[:focus-visible]/fab:shadow-none',
+          'grid transition-[rotate] duration-(--pane-turn) ease-(--pane-turn-ease) *:col-start-1 *:row-start-1',
+          open && 'rotate-90',
         )}
       >
-        {/* The glyph TURNS into the close mark rather than swapping: both
-            sit in one cell and the cell rotates a quarter turn on the
-            spring while they cross-fade, which is Material's FAB-to-close
-            and reads as the same button changing its mind. */}
-        <span
-          aria-hidden
-          className={cn(
-            'grid transition-[rotate] duration-(--pane-turn) ease-(--pane-turn-ease) *:col-start-1 *:row-start-1',
-            open && 'rotate-90',
-          )}
-        >
-          <Icon
-            className={cn('size-6 transition-opacity duration-(--pane-turn)', open && 'opacity-0')}
-            strokeWidth={2.5}
-          />
-          <X className={cn('size-6 transition-opacity duration-(--pane-turn)', !open && 'opacity-0')} />
-        </span>
-      </button>
-    </div>
+        <Icon
+          className={cn('size-6 transition-opacity duration-(--pane-turn)', open && 'opacity-0')}
+          strokeWidth={2.5}
+        />
+        <X className={cn('size-6 transition-opacity duration-(--pane-turn)', !open && 'opacity-0')} />
+      </span>
+    </button>
+  );
+
+  if (single) return disc;
+  return (
+    <ActionMenu title={label} actions={actions} open={open} onOpenChange={setOpen}>
+      {disc}
+    </ActionMenu>
   );
 }

@@ -323,8 +323,17 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   controls, a detail panel that becomes a bottom sheet on a phone, and
   `CanvasOverlay` for the centred empty and error states. A canvas
   page's Fab is phone-only, and its actions are one array the corner
-  draws as icons and the Fab fans out as pills, the same
-  two-presentations-one-list shape `CreateControl` uses.
+  draws as icons and the Fab opens as the action sheet, the same
+  two-presentations-one-list shape `CreateControl` uses. It is the one
+  floating disc left in the app: a canvas pans under the finger, so a
+  header is out of reach the moment the map is in use. A shelf's create
+  button is in its header at every width, one word beside a phone's
+  large title, and the several things a shelf can make open as the
+  action sheet its rows already use. The disc fanned them as pills over
+  the last rows for a while, which is the stacked FAB every current
+  phone platform has stepped back from, and it stood on whichever row a
+  scroll or Tab ended on; the cost of the header, a scroll back after a
+  long list, was judged smaller.
   An open panel stands on those corner icons at every width it appears
   at, so while it is up they go `inert`: chrome nobody can see is chrome
   the keyboard must not stop on, and the panel's own X is how it comes
@@ -913,11 +922,10 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   60px row, the 84px that row becomes when it wraps and a 65px document
   header all clear themselves with no constant written down: a band that
   grows grows the clearance, measured live at 60px to 132px as names
-  were added to the settings row. The floating disc is the one that is
-  not inside the scroller, and there the room it already reserves does
-  the telling: the Fab's end spacer publishes its own height, and the
-  games list's `scroll-pb` sits on the same line as the `pb` it matches,
-  so the two cannot drift.
+  were added to the settings row. The shelves' floating disc was the one
+  that is not inside the scroller, and there the room it reserved did
+  the telling, until the disc itself went to the header and the room
+  with it.
 
 ## The mark
 

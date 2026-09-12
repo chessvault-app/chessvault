@@ -21,7 +21,7 @@ import { ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/c
 import { Spinner } from '@/components/ui/spinner';
 import { PromptDialog } from '@/components/prompt-dialog';
 
-import { CreateControl, FabSpacer } from '@/components/fab';
+import { CreateControl } from '@/components/fab';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { useUndoable } from '@/hooks/use-undoable';
 
@@ -311,8 +311,6 @@ export function Shelf() {
             ))}
           </ul>
         )}
-
-        <FabSpacer />
     </PageShell>
   );
 }

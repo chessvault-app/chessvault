@@ -24,7 +24,7 @@ import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
-import { CreateControl, FabSpacer } from '@/components/fab';
+import { CreateControl } from '@/components/fab';
 import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
@@ -286,9 +286,6 @@ function StudyList() {
         />
       )}
       </Arrival>
-
-
-      <FabSpacer />
     </PageShell>
   );
 }
