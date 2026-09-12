@@ -126,17 +126,22 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
   return (
     <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
-        <div
-          key={i}
-          // ListRow's own floor under a coarse pointer: 44px, where these
-          // rows were 33 and the dashboard's list grew 11px a row on a phone.
-          className="flex items-center gap-2.5 px-3 py-(--row-py-dense) pointer-coarse:min-h-11"
-        >
-          <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-          <div className="flex h-5 min-w-0 flex-1 items-center">
-            <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+        // The divider and the floor on different boxes, as the real list
+        // has them: a `li` carries the hairline and the ListRow inside it
+        // carries min-h-11. Both on one border-box element and the border
+        // eats a pixel of the floor, so every row came out 1px short.
+        <div key={i}>
+          <div
+            // ListRow's own floor under a coarse pointer: 44px, where these
+            // rows were 33 and the dashboard's list grew 11px a row on a phone.
+            className="flex items-center gap-2.5 px-3 py-(--row-py-dense) pointer-coarse:min-h-11"
+          >
+            <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+            <div className="flex h-5 min-w-0 flex-1 items-center">
+              <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+            </div>
+            <Skeleton className="h-2.5 w-10 shrink-0" />
           </div>
-          <Skeleton className="h-2.5 w-10 shrink-0" />
         </div>
       ))}
     </Loading>

@@ -1100,6 +1100,28 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
       ))}
     </div>
   );
+  /** The leaving-book row: a name and four figures, and no result bar,
+      which that table has no column for. */
+  const bookTable = (rows: number, key: string) => (
+    <div key={key} className="flex flex-col">
+      <div className="flex h-6 items-center gap-2">
+        <Skeleton className="h-2 w-16" />
+        <Skeleton className="ml-auto h-2 w-8" />
+        <Skeleton className="ml-2 h-2 w-16" />
+        <Skeleton className="ml-2 h-2 w-6" />
+        <Skeleton className="ml-2 h-2 w-8" />
+      </div>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex h-7 items-center gap-2">
+          <Skeleton className={cn('h-2.5', ['w-24', 'w-20', 'w-28', 'w-16'][i % 4])} />
+          <Skeleton className="ml-auto h-2.5 w-6" />
+          <Skeleton className="ml-2 h-2.5 w-10" />
+          <Skeleton className="ml-2 h-2.5 w-6" />
+          <Skeleton className="ml-2 h-2.5 w-6" />
+        </div>
+      ))}
+    </div>
+  );
   /** A table with no result bar: a word, a count, a share. */
   const plain = (rows: number, key: string, head = false) => (
     <div key={key} className="flex flex-col">
@@ -1253,7 +1275,7 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
               </div>
             </div>
           )}
-          {table(shape.book, 'book')}
+          {bookTable(shape.book, 'book')}
         </>,
         'flex flex-col gap-3',
       )}
