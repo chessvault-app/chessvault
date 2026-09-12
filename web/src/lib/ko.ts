@@ -1396,6 +1396,8 @@ export const ko: Record<string, string> = {
   'That PGN could not be read.': 'PGN을 읽을 수 없습니다.',
   'That FEN could not be read.': 'FEN을 읽을 수 없습니다.',
   'Vault server unreachable': '보관함 서버에 연결할 수 없습니다',
+  'Nothing could be read from the vault. The page fills itself once the server answers.':
+    '보관함에서 아무것도 읽을 수 없습니다. 서버가 응답하면 페이지가 다시 채워집니다.',
   'Vault server unreachable, changes not saved': '보관함 서버에 연결할 수 없어 변경이 저장되지 않았습니다',
   'Searching…': '검색 중…',
   Continue: '계속',
