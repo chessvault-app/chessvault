@@ -321,3 +321,41 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
   };
 });
 
+/**
+ * A board, kept so it can be put back: the document, and where the reader
+ * was standing in it.
+ *
+ * Four fields, not the whole state. `pendingPromotion` is a dialog
+ * mid-question and `loadError` is a complaint about the last load; neither
+ * describes the board anyone would want back, and both are cleared by the
+ * act a snapshot exists to reverse.
+ */
+export type BoardSnapshot = Pick<AnalysisState, 'tree' | 'cursorId' | 'gameHeaders' | 'orientation'>;
+
+/**
+ * The board as it stands. Put it back with `useAnalysis.setState(snapshot)`.
+ *
+ * Two undos read the board this way (the move tree's destructive verbs, and
+ * the Board page starting over), and they have to agree about what a board
+ * IS: an undo that forgets the orientation hands back a game from the wrong
+ * side, and one that forgets the headers hands back a game with no players.
+ */
+export function snapshotBoard(): BoardSnapshot {
+  const { tree, cursorId, gameHeaders, orientation } = useAnalysis.getState();
+  return { tree, cursorId, gameHeaders, orientation };
+}
+
+/**
+ * Whether throwing this board away would lose anything: moves played, a
+ * game loaded, or a starting position that is not the standard one.
+ *
+ * A board that is none of those is exactly what a fresh entry builds, so
+ * offering to put it back would be offering to change nothing. An
+ * orientation on its own does not count: flipping is one key, and a toast
+ * about it would fire on every visit that ever pressed f.
+ */
+export function holdsWork(board: BoardSnapshot): boolean {
+  const root = getNode(board.tree, board.tree.rootId);
+  return root.children.length > 0 || board.gameHeaders !== null || root.fen !== INITIAL_FEN;
+}
+

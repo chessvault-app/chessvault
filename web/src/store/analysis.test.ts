@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getNode, INITIAL_FEN } from '@shared/tree';
-import { useAnalysis } from './analysis';
+import { holdsWork, snapshotBoard, useAnalysis } from './analysis';
 
 /**
  * Clearing the moves is the study's only clear — a chapter's starting
@@ -59,6 +59,64 @@ describe('clearMoves', () => {
     useAnalysis.getState().reset();
     const { tree } = useAnalysis.getState();
     expect(getNode(tree, tree.rootId).fen).toBe(INITIAL_FEN);
+  });
+});
+
+/**
+ * The Board page starts over on every visit and offers the board it
+ * replaced back (analysis/AnalysisView). Both halves of that offer are
+ * decided here: what a board IS when it is put away, and whether there was
+ * anything in it worth offering. Get the second wrong and the page either
+ * nags on every visit or silently eats an analysis.
+ */
+describe('holdsWork', () => {
+  const FEN = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 4 4';
+
+  beforeEach(() => {
+    useAnalysis.getState().reset();
+  });
+
+  it('says no to the board a fresh entry builds', () => {
+    expect(holdsWork(snapshotBoard())).toBe(false);
+  });
+
+  it('says no to a flip, which is one key and not an analysis', () => {
+    useAnalysis.getState().flip();
+    expect(holdsWork(snapshotBoard())).toBe(false);
+  });
+
+  it('sees moves', () => {
+    useAnalysis.getState().playSan('e4');
+    expect(holdsWork(snapshotBoard())).toBe(true);
+  });
+
+  it('sees a loaded game, even before a move is played', () => {
+    useAnalysis.setState({ gameHeaders: { White: 'Someone', Black: 'Else' } });
+    expect(holdsWork(snapshotBoard())).toBe(true);
+  });
+
+  it('sees a position that is not the standard start', () => {
+    useAnalysis.getState().reset(FEN);
+    expect(holdsWork(snapshotBoard())).toBe(true);
+  });
+
+  it('puts the board back: the moves, where you stood, the game and the side', () => {
+    useAnalysis.getState().reset(FEN);
+    useAnalysis.setState({ gameHeaders: { White: 'Someone', Black: 'Else' }, orientation: 'black' });
+    useAnalysis.getState().playSan('Bc5');
+    const board = snapshotBoard();
+    const pgn = useAnalysis.getState().exportPgn();
+
+    // What entering the Board page fresh does to it.
+    useAnalysis.getState().reset();
+    expect(holdsWork(snapshotBoard())).toBe(false);
+
+    useAnalysis.setState(board);
+    const state = useAnalysis.getState();
+    expect(state.exportPgn()).toBe(pgn);
+    expect(getNode(state.tree, state.cursorId).san).toBe('Bc5');
+    expect(state.gameHeaders).toEqual({ White: 'Someone', Black: 'Else' });
+    expect(state.orientation).toBe('black');
   });
 });
 

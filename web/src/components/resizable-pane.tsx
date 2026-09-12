@@ -104,7 +104,7 @@ export function ResizablePane({
             'border-border/60 hover:bg-accent flex w-2.5 shrink-0 touch-none',
             'cursor-col-resize items-center justify-center border-l transition-colors',
             // The one focus ring, drawn the way every control draws it.
-            'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+            'outline-none focus-visible:ring-3 focus-visible:ring-ring',
           )}
         >
           {/* The grip, centred on the divider line — same idiom as the

@@ -129,6 +129,7 @@ export const ko: Record<string, string> = {
   'Clear the board': '보드 지우기',
   'Clear all moves': '모든 수 지우기',
   'all moves': '모든 수',
+  'Started a new board': '새 보드로 시작됨',
   'Has a comment': '주석 있음',
   'Play a move on the board, or load a FEN or PGN.':
     '보드에서 수를 두거나, FEN 또는 PGN을 불러오세요.',

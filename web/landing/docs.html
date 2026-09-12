@@ -55,7 +55,7 @@
         --border: oklch(88% 0 0);
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
-        --ring: oklch(70.8% 0 0);
+        --ring: oklch(59% 0 0);
         --hairline: oklch(88% 0 0);
         --radius: 0.625rem;
         --radius-md: calc(var(--radius) - 2px);
@@ -115,7 +115,7 @@
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);
-          --ring: oklch(55.6% 0 0);
+          --ring: oklch(66% 0 0);
           --hairline: oklch(98.5% 0 0 / 10%);
         }
       }
@@ -130,7 +130,9 @@
         -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; }
-      :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+      /* Full alpha, as in the app and on the landing page: a 50% wash of
+         --ring measured about 1.5:1 where WCAG 1.4.11 asks 3. */
+      :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
       .btn:focus-visible { border-color: var(--ring); }
       /* Forced colours drop box-shadow and honour `outline: none`, so the
          two rules above compose to no focus indicator at all under Windows
@@ -868,6 +870,11 @@
                 <kbd>↑</kbd> <kbd>↓</kbd> pick, <kbd>Enter</kbd>/<kbd>Tab</kbd> accept,
                 <kbd>Esc</kbd> dismisses.
               </li>
+              <li data-ko="<strong>파일 고르기</strong> — 파일을 놓는 점선 상자는 모두 버튼입니다. <kbd>Tab</kbd>으로 옮겨 간 뒤 <kbd>Enter</kbd>나 <kbd>Space</kbd>를 누르면 파일 선택 창이 열립니다.">
+                <strong>Choosing a file</strong> — every dashed file box is a button:
+                <kbd>Tab</kbd> to it, then <kbd>Enter</kbd> or <kbd>Space</kbd> opens the file
+                chooser.
+              </li>
               <li data-ko="<strong>사진에서 포지션</strong> — 이미지 대화 상자들은 <kbd>Ctrl+V</kbd> 붙여넣기를 받습니다.">
                 <strong>Position from a picture</strong> — the image dialogs take a
                 <kbd>Ctrl+V</kbd> paste.
@@ -900,6 +907,15 @@
               variations, comments, glyphs, arrows — while the panel beside it tabs between Moves,
               Engine and Explorer. What you learn here carries everywhere a board appears: studies,
               games, books, puzzles.
+            </p>
+            <p data-ko="Board는 열 때마다 새로 시작합니다. 빈 보드, 꺼진 엔진, 기본 상태의 탐색기입니다. 다른 화면이 포지션을 넘겨 준 경우(편집기의 Analyse, 기보의 게임)만 예외입니다. 떠날 때 보드에 수나 불러온 게임이 있었다면, 돌아왔을 때 몇 초 동안 «새 보드로 시작됨» 토스트가 뜹니다. «복원»을 누르면 떠날 때의 수와 서 있던 자리가 그대로 돌아오고, Tools › Explorer로 들어왔다면 탐색기도 그 포지션을 가리킵니다. 엔진은 꺼진 채입니다. 제안은 한 번뿐이며, 페이지를 새로 고치면 사라집니다.">
+              The Board starts fresh every time you open it: an empty board, the engine off, the
+              explorer at its default. The exception is a position handed over by another page (the
+              editor's Analyse, a game from your archive). If the board you left held moves or a
+              loaded game, returning offers it back for a few seconds: “Started a new board”, with
+              “Restore”, which puts back the moves and the move you were standing on — and, when you
+              arrived through Tools › Explorer, points the explorer at that position. The engine
+              stays off. The offer comes once, and reloading the page forgets it.
             </p>
             <figure>
               <picture>
@@ -2700,6 +2716,12 @@
               <li data-ko="리뷰 제안은 수 목록 창의 띠 대신 페이지 위에 몇 초 동안 뜨는 토스트이며 X로 닫습니다.">
                 The review offer is a toast over the page for a few seconds, with an X, instead of a
                 band in the moves pane.
+              </li>
+              <li data-ko="두 손가락으로 벌리면 페이지가 확대됩니다. 브라우저의 확대이므로 어느 페이지에서나 됩니다. 두 손가락을 스스로 읽는 곳은 그대로입니다: 보드, 책의 페이지, 오프닝 맵, 하단 바는 각자의 손짓을 지키고 페이지는 그 자리에 머뭅니다. 카드나 줄 위에서 두 손가락을 쓰면 밀기는 물러납니다.">
+                A two-finger spread enlarges the page, on any page, because it is the browser's own
+                zoom. The places that read two fingers themselves keep them — the board, a book's
+                page, the opening map and the bottom bar hold the page still and do their own job —
+                and a second finger on a card or a row stands its swipe down.
               </li>
               <li data-ko="보드 아래의 처음, 이전, 다음, 마지막 화살표는 손가락 아래에서 22px입니다.">
                 The first, previous, next and last arrows under the board are 22px under a thumb.

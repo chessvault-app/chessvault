@@ -1311,7 +1311,7 @@ export function MapCanvas({
                   cy={0}
                   r={r + 4 / view.k}
                   fill="none"
-                  stroke="color-mix(in oklab, var(--ring) 50%, transparent)"
+                  stroke="var(--ring)"
                   strokeWidth={3 / view.k}
                   className="opacity-0 group-focus-visible/dot:opacity-100"
                   pointerEvents="none"

@@ -88,7 +88,7 @@
         --border: oklch(88% 0 0);
         --primary: oklch(20.5% 0 0);
         --primary-foreground: oklch(98.5% 0 0);
-        --ring: oklch(70.8% 0 0);
+        --ring: oklch(59% 0 0);
         /* The hairline: the border colour, as in the app, where the card
            ring moved off a fixed foreground alpha and onto --border so
            the contrast schemes reach it. It is what makes a white
@@ -162,7 +162,7 @@
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);
-          --ring: oklch(55.6% 0 0);
+          --ring: oklch(66% 0 0);
           --hairline: oklch(98.5% 0 0 / 10%);
         }
       }
@@ -185,9 +185,11 @@
         overflow-wrap: break-word;
       }
       a { color: inherit; }
-      /* One focus ring, the registry's: ring-3 in ring/50, and no outline
-         of its own. */
-      :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+      /* One focus ring, the app's: 3px of --ring at FULL alpha, and no
+         outline of its own. The registry's 50% wash measured about 1.5:1
+         against this page where WCAG 1.4.11 asks 3, so the ring token
+         carries the ratio and nothing thins it (web/src/index.css). */
+      :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
       .btn:focus-visible { border-color: var(--ring); }
       /* AND THE SAME RING BACK AS AN OUTLINE UNDER FORCED COLOURS, because
          the rule above draws it with the one property forced-colors mode

@@ -269,7 +269,7 @@ export function GameTableHeader({
         className={cn(
           'sr-only focus:not-sr-only focus:absolute focus:top-1 focus:left-2 focus:z-10',
           'bg-card text-foreground border-border rounded-md border px-2 py-0.5 text-xs',
-          'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+          'outline-none focus-visible:ring-3 focus-visible:ring-ring',
         )}
         onClick={() => grips.current.find(Boolean)?.focus()}
         // Enter by hand: useTableNav listens on the window and prevents

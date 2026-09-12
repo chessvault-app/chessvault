@@ -207,8 +207,8 @@ export function LinkedMentions({
                   // No ring classes: a bare button takes the page's own
                   // :focus-visible outline, which is the app's one focus
                   // style. These rows drew `ring-2 ring-ring` over
-                  // `outline-none` instead — 2px at full strength against
-                  // the 3px at 50% every other control wears.
+                  // `outline-none` instead — a second focus style, 2px
+                  // where every other control wears the page's 3px.
                   className="hover:bg-accent flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left"
                 >
                   <span className="flex items-center gap-1.5 text-sm font-medium">

@@ -5,13 +5,13 @@ import type { DragEvent } from 'react';
  * Drop a file on it, wherever "it" is.
  *
  * Every place in the app that takes a file — a PGN, a book's PDF, a photo
- * of a board — is a `<label>` wrapping a hidden `<input type=file>`, which
- * gives click-to-choose and nothing else. On a desktop the obvious gesture
- * is to drag the file onto the window, and until now two of those six
- * places implemented it, separately, and the other four silently did
- * nothing: the browser's default is to NAVIGATE to the dropped file, so
- * dropping a PGN on the import window threw the app away and displayed
- * the file instead. That is the worst possible answer.
+ * of a board — goes through FilePicker (components/file-picker), which
+ * answers a press and a keypress and nothing else. On a desktop the
+ * obvious gesture is to drag the file onto the window, and until now two
+ * of those six places implemented it, separately, and the other four
+ * silently did nothing: the browser's default is to NAVIGATE to the
+ * dropped file, so dropping a PGN on the import window threw the app away
+ * and displayed the file instead. That is the worst possible answer.
  *
  * So the behaviour lives here once, including the parts each ad-hoc copy
  * got right or wrong:

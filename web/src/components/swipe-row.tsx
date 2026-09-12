@@ -38,13 +38,15 @@ const EDGE_PX = 32;
  * Touch only. A mouse has the row's own menu, and a horizontal drag with a
  * mouse is a text selection.
  *
- * The host also declares `touch-pan-y`. The handlers are passive, so
- * nothing here can take a gesture away from the browser once it has
- * begun; without the declaration the page kept the vertical pan through
+ * The host also declares `touch-pan-y touch-pinch-zoom`. The handlers are
+ * passive, so nothing here can take a gesture away from the browser once
+ * it has begun; without the pan-y the page kept the vertical pan through
  * a sideways drag and the list crept while the row opened. pan-y hands
  * the browser only the axis it may have: a drag it judges horizontal is
  * left entirely to these handlers, and one it judges vertical scrolls as
- * before, with the axis lock below standing the row down.
+ * before, with the axis lock below standing the row down. pinch-zoom sits
+ * beside it because a row is words someone may need bigger, and the
+ * second finger that asks for that is one this hook stands down for.
  */
 export function useSwipeRow({
   onRemove,
@@ -74,14 +76,26 @@ export function useSwipeRow({
   // once on the way over (and once on the way back), not every frame.
   const wasArmed = useRef(false);
 
-  const end = (): void => {
-    if (dx <= -THRESHOLD) onRemove();
-    else if (dx >= THRESHOLD) onBookmark?.();
+  /** Put the row back and let the gesture go, without doing anything it
+      was pointing at. */
+  const forget = (): void => {
     setDx(0);
     start.current = null;
     axis.current = null;
     rightward.current = false;
     wasArmed.current = false;
+  };
+
+  const end = (): void => {
+    // `start` is what says the gesture is still this hook's: a pinch it
+    // stood down from leaves it null, and a release must then do nothing.
+    // The ref rather than `dx`, because a touchmove's setState is given a
+    // task of its own and the 0 it wrote may not be in this closure yet.
+    if (start.current) {
+      if (dx <= -THRESHOLD) onRemove();
+      else if (dx >= THRESHOLD) onBookmark?.();
+    }
+    forget();
   };
 
   return {
@@ -92,12 +106,20 @@ export function useSwipeRow({
     },
     handlers: {
       onTouchStart: (e) => {
+        // A second finger is a pinch, never a swipe. The row follows one
+        // touch and, until this line, never asked how many were down, so a
+        // spread read as one finger travelling: measured on a note card at
+        // 390px, the finger being followed went 120px left, past the
+        // threshold below, and the note was removed.
+        if (e.touches.length !== 1) return forget();
         const touch = e.touches[0]!;
         start.current = { x: touch.clientX, y: touch.clientY };
         rightward.current = Boolean(onBookmark) && touch.clientX > EDGE_PX;
       },
       onTouchMove: (e) => {
         if (!start.current) return;
+        // The same pinch, arriving one finger at a time.
+        if (e.touches.length !== 1) return forget();
         const touch = e.touches[0]!;
         const moveX = touch.clientX - start.current.x;
         const moveY = touch.clientY - start.current.y;

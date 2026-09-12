@@ -1181,7 +1181,14 @@ function PiecePalette({
                       // never a page scroll.
                       'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
                       'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
-                      active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
+                      // focus-visible:opacity-100 because an element's
+                      // opacity dims its own focus ring with it: at 75% the
+                      // ring measured 2.55:1 on this strip, under the 3:1 it
+                      // is held to, and 3.78 once the piece the keyboard is
+                      // on stops being dimmed.
+                      active
+                        ? 'ring-primary ring-2'
+                        : 'opacity-75 hover:opacity-100 focus-visible:opacity-100',
                     )}
                   >
                     {/* Same sprite-reuse trick as the promotion picker. */}

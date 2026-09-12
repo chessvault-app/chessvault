@@ -2,6 +2,7 @@ import { BookText, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { FilePicker } from '@/components/file-picker';
 import { TitleTip } from '@/components/title-tip';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -118,23 +119,15 @@ export function UploadBookDialog({
     >
       <DialogContent title={replace ? t('Replace PDF') : t('Import a book')} icon={Upload}>
         {!file ? (
-          <label
+          <FilePicker
+            accept="application/pdf"
+            onFiles={([picked]) => setFile(picked ?? null)}
             {...drop.handlers}
             className={cn(
               'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors',
               drop.dragging ? 'border-primary bg-muted' : 'border-border hover:bg-accent',
             )}
           >
-            <input
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => {
-                const picked = e.target.files?.[0];
-                e.target.value = '';
-                if (picked) setFile(picked);
-              }}
-            />
             <span className="text-muted-foreground text-base">
               {t('Choose the book’s PDF')}
               <span className="text-muted-foreground block text-sm">
@@ -145,7 +138,7 @@ export function UploadBookDialog({
                   : t('any chess book, kept in your vault and read here beside a board')}
               </span>
             </span>
-          </label>
+          </FilePicker>
         ) : (
           <div className="flex gap-4">
             {looked?.cover ? (

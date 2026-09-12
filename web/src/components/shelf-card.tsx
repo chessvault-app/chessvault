@@ -96,7 +96,7 @@ export function ShelfCard({
         onClick={open}
         {...swipe.handlers}
         className={cn(
-          'bg-card group relative flex h-full cursor-pointer gap-3 touch-pan-y',
+          'bg-card group relative flex h-full cursor-pointer gap-3 touch-pan-y touch-pinch-zoom',
           'overflow-hidden rounded-xl ring-1 ring-card-ring',
           // The tint every other row and card in the app answers a
           // pointer with (the games row, the book shelves). This one

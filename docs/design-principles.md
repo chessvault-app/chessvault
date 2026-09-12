@@ -713,6 +713,18 @@ clamp flattens every transition and animation to a cut, and only the
 gesture-tracked motion (a drag under the finger) and the two status
 indicators keep moving. Nothing new may escape that block.
 
+The clamp sets a duration, though, not a property list, so what it
+leaves behind is a 0.01ms transition on `all` — and that is a cut to the
+eye but not to a script. Code that writes a size or a colour and reads
+it back in the same task gets the value from BEFORE its write, because
+the transition it just started is at its first frame. So the two places
+that measure their own writes are exempt from the block rather than
+clamped by it: the board's `cg-container`, which chessground resizes and
+then lays all 32 pieces out from in one ResizeObserver callback, and the
+document's ground, which `store/theme.ts` reads back to pin the launch
+colour. An exemption of that shape takes motion away rather than
+granting it; it is the other direction the block still closes.
+
 ## The component layer
 
 The app is a shadcn/ui project (`components.json`: the base-nova style,
@@ -838,11 +850,29 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   and 6.4px at Large, since both sides scale off `--radius` (put back on
   `xl` 2026-09-10). A new surface takes the rung its kind already has;
   one that wants another says why, here.
-- **One focus ring, the registry's.** Components draw shadcn's
-  `focus-visible:ring-3 ring-ring/50` and turn the outline off; everything
-  that is not a component (a bare button, a link) gets the same ring from
-  the global `:focus-visible` outline in the same colour, so a page has
-  one focus style whichever kind of control has it.
+- **One focus ring, the registry's shape at the app's strength.**
+  Components draw shadcn's `focus-visible:ring-3` and turn the outline
+  off; everything that is not a component (a bare button, a link) gets
+  the same ring from the global `:focus-visible` outline in the same
+  colour, so a page has one focus style whichever kind of control has
+  it. The colour is `ring-ring` at FULL alpha, not the registry's
+  `ring-ring/50`, and `--ring` is placed by measurement rather than by
+  eye: 3:1 against every surface the ring can land on (page, card,
+  popover, muted, surface-3), in both themes, at every point of the
+  contrast knob and in every tinted scheme. WCAG 1.4.11 asks that of a
+  focus indicator and PRODUCT.md's yardstick is 2.2 AA; the 50% wash
+  measured 1.35 to 1.60:1 in light and 1.72 to 1.88 in dark over 1,636
+  tabbed stops, which on a bright screen is no indicator at all. What
+  binds the token is the selected fill an inset ring is drawn straight
+  onto (`--surface-3` in light, `--accent` in dark), and
+  `check:contrast` now holds a focus indicator to 3:1 at any alpha it is
+  drawn at, including the one global rule that draws the ring for every
+  control that is not a registry component, so neither the next retune of
+  a surface nor a ring quietly thinned back to a wash can take it away
+  again. The same token paints the slider thumb's edge at rest and its
+  hover halo, which moved with it, and its focus halo, which had to be
+  hung on `has-[:focus-visible]` before it painted at all; `slider.tsx`
+  records what they measure.
 
 ## The mark
 

@@ -1,6 +1,7 @@
 import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { FilePicker } from '@/components/file-picker';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -331,21 +332,18 @@ export function PhotoImport({
 
         {!img ? (
           <>
-            <label className="border-border hover:border-border hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) pick(file);
-                }}
-              />
+            <FilePicker
+              accept="image/*"
+              onFiles={([file]) => {
+                if (file) pick(file);
+              }}
+              className="border-border hover:border-border hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors"
+            >
               <span className="text-muted-foreground text-base">
                 Choose an image of the diagram
                 <span className="text-muted-foreground block text-sm">{t('a screenshot or scan works best')}</span>
               </span>
-            </label>
+            </FilePicker>
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
                 <ClipboardPaste className="size-3.5" data-icon="inline-start" />

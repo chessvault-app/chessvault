@@ -116,8 +116,8 @@ number stays only when it changes the decision (a 300 MB download does).
 app's measured behaviour on top — the phone sheet, the page/layer chevron,
 the keyboard band, the sole-field focus, Android Back, the coarse-pointer
 hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
-<name>`; keep its look, add only behaviour, with one standing exception,
-an edge: where the tonal rule ("The component layer" in
+<name>`; keep its look, add only behaviour, with two standing exceptions,
+both edges. The first: where the tonal rule ("The component layer" in
 `docs/design-principles.md`) and a registry stroke disagree, the rule wins.
 A surface whose fill already separates it draws the card-ring colour and
 never the bare border colour, and *how* it draws it follows the box, not
@@ -128,7 +128,28 @@ a filled well or a thumbnail, takes `border-card-ring`. A window takes
 `ring-window-ring`. Cards drawn both ways is a 2px difference nothing
 looks wrong about, and every placeholder standing in for one then has to
 rediscover it by measuring: three comments in `skeletons.tsx` recorded
-the same 2px separately before the rule said this. A hand-rolled popover, menu,
+the same 2px separately before the rule said this. The second exception
+is the focus ring's STRENGTH, and only its strength: the registry draws
+`ring-ring/50`, a 50% wash, which measured 1.35 to 1.88:1 against what
+it lay on over 1,636 tabbed stops here, and WCAG 1.4.11 asks 3:1 of a
+focus indicator under PRODUCT.md's yardstick. So the app draws
+`ring-ring` at full alpha, in the registry's own shape (3px, the same
+colour, the border taking it too), and `--ring` is placed by
+measurement, with `check:contrast` holding it to 3:1 at any alpha the
+ring is drawn at, which is the regression that would otherwise come back
+silently the next time `npx shadcn add` rewrites one of these files.
+Where the registry hangs another state on that same class the exception
+reaches it too, and saying so is part of taking it: the slider thumb
+draws `border-ring` at rest and `ring-ring` for its hover and active
+halos, so all three are stronger now, and its FOCUS halo is new rather
+than stronger, because the registry's `focus-visible:ring-3` painted
+nothing on this control at all. The element that takes focus is Base
+UI's own `input[type=range]` inside the thumb, and it is clipped to
+nothing, so neither it nor the thumb around it could show a ring: tabbing
+to the slider changed zero pixels. It hangs on `has-[:focus-visible]`
+instead (`slider.tsx` carries every number, and no pixel grid can show
+them, because no grid route has a thumb inside its viewport). A
+hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in

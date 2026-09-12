@@ -2,15 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- maximum-scale=1 and user-scalable=no hold the page at its own size on a
-         phone: Android and the home-screen app on iOS honour them; a Safari tab
-         ignores both, and there body's touch-action (index.css) does the same
-         job. The book reader, the evidence pages and the opening map keep their
-         own pinch, which scales what they show and not the app. -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-    />
+    <!-- Nothing caps the scale: a pinch has to be able to enlarge the app,
+         which is WCAG 1.4.4 and the one way to read a phone screen that is
+         too small for the eyes using it. maximum-scale=1 and
+         user-scalable=no were here until 0.9.6, to stop two fingers on the
+         shell zooming the whole page; the reading now is that a gesture
+         nobody has to use costs less than an app that cannot be enlarged.
+         iOS auto-zoom on a focused field is declined where it is caused
+         instead — components/ui/input gives its fields a 16px font on a
+         coarse pointer — rather than by taking zooming away from everyone.
+         The surfaces that read their own touches hold the page still
+         themselves, in their own touch-action: the board, the book
+         reader's page, the evidence pages, the opening map and the bottom
+         bar. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Chess Vault</title>
     <meta name="description" content="A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles." />
     <meta name="color-scheme" content="light dark" />

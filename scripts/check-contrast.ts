@@ -23,7 +23,9 @@
  * WHAT IT CANNOT SEE. Text over a background IMAGE or gradient is
  * skipped, not guessed at — the board is drawn that way, and so are the
  * piece sets. Anything `aria-hidden` is skipped because it is not text to
- * a reader. And it only knows the states it is told to force, below.
+ * a reader. A stroke on an element clipped to nothing is skipped too, for
+ * the plainest reason: it is not painted. And it only knows the states it
+ * is told to force, below.
  *
  * STROKES ARE MEASURED TOO, because the defect this file certified its
  * way past was never text: in light mode the page, the card and the
@@ -43,6 +45,39 @@
  * stroke on an element whose own fill already clears the floor against
  * its surroundings is exempt — the fill is the separator there, and the
  * stroke is decoration (a dark chip does not need its border seen).
+ *
+ * AND THE FOCUS RING IS HELD TO 3:1, which is a different floor and a
+ * different reason. The hairline floors above are about a flat design's
+ * structure; a focus indicator is what tells a keyboard user where they
+ * are, and WCAG 1.4.11 asks 3:1 of it under PRODUCT.md's yardstick. This
+ * file forced :focus-visible from the day it was written and still could
+ * not see the ring, for three separate reasons that each hid it on their
+ * own: it never read `outline` at all, so every bare button and link was
+ * invisible to it; a ring drawn as a box-shadow was scored against the
+ * 1.3/1.2 hairline floor, which a 50% wash clears without being visible;
+ * and the forcing dropped the one rule that draws the global ring (see
+ * FORCE_STATES). The ring measured 1.35 to 1.88:1 everywhere.
+ * So a stroke drawn in the --ring colour — box-shadow, outline, or the
+ * SVG stroke the opening map draws round a focused node — is scored at
+ * 3:1 against what is behind it, with no fill exemption (a focused
+ * button whose fill already separates it still has to show the ring),
+ * and an inset ring is scored against the element's own fill, which is
+ * what it is drawn on. Everything else keeps the hairline floors.
+ *
+ * AND AT ANY ALPHA, which the first cut of that floor missed while saying
+ * it had not. It matched the ring colour premultiplied, which compares the
+ * alpha too, so a ring at 50% was a different colour to it and fell
+ * through to the hairline floor the wash clears. Pointed at the build that
+ * carried the wash it reported 720 failures, and every one of them was a
+ * registry control's opaque `focus-visible:border-ring` border; not one
+ * was the wash. Matching un-premultiplied finds the wash itself: the same
+ * build now reports 1,892, of which 1,172 carry alpha in the colour, at
+ * 1.41 to 2.14:1 — the defect, at the strength a tab walk measures on the
+ * screen. A BORDER still counts only at the token's own alpha, because the
+ * ring is only ever drawn thinned as a box-shadow, an outline or an SVG
+ * stroke, and dark High contrast paints --ring white, where every
+ * `border-input` hairline (white at 25%) would otherwise be read as a
+ * focus indicator and held to 3:1.
  *
  * AND THE PHONE WIDTH, because the chrome that only exists on a phone —
  * the bottom bar, the pane tabs — was exactly where the invisible
@@ -137,8 +172,13 @@ interface Finding {
   color: string;
   /** 0 marks a stroke finding; text has a real size. */
   fontPx: number;
-  kind: 'text' | 'stroke';
+  kind: 'text' | 'stroke' | 'focus';
 }
+
+/** What the in-page scans return: the stroke scan names its own kind. */
+type ScanHit = Omit<Finding, 'route' | 'theme' | 'state' | 'kind'> & {
+  kind?: Finding['kind'];
+};
 
 // ---------------------------------------------------------------------------
 // The static server. The demo is a folder of files; nothing here needs an API.
@@ -259,6 +299,16 @@ const SCAN = `(() => {
  * white, and nobody needs its border. Without this the check drowns in
  * exactly those chips.
  *
+ * The focus ring is the exception to both of those. A stroke in the
+ * --ring colour, AT ANY ALPHA IT IS DRAWN AT, is a focus indicator, so it
+ * takes the 3:1 floor rather than the hairline one, keeps no fill
+ * exemption, and is scored against the element's own fill when it is drawn
+ * inset. What it is scored at is the composite: a ring painted at half
+ * strength is measured as half strength, which is the whole point, since
+ * the wash is the defect. The ring colour is resolved off a probe element,
+ * because --ring is a calc() over the scheme knobs and cannot be parsed
+ * here.
+ *
  * Two escapes, both narrow. A stroke under 8% alpha is skipped as a
  * wash rather than a line — forcing every hover and focus rule at once
  * leaves 3%-alpha ring fragments on buttons that no real state shows,
@@ -271,6 +321,7 @@ const SCAN = `(() => {
  */
 const STROKE_SCAN = (floor: number) => `(() => {
   const floor = ${floor};
+  const FOCUS_FLOOR = 3;
   const cv = document.createElement('canvas'); cv.width = cv.height = 4;
   const ctx = cv.getContext('2d', { willReadFrequently: true });
   const paint = (css, under) => {
@@ -300,6 +351,38 @@ const STROKE_SCAN = (floor: number) => `(() => {
     let acc = layer(getComputedStyle(document.body).backgroundColor).pre;
     for (const l of stack.reverse()) acc = over(l, acc);
     return acc;
+  };
+  // The focus indicator's own colour. --ring is a calc() over the scheme
+  // knobs, so it is read back off a probe rather than parsed.
+  const probe = document.createElement('span');
+  probe.style.color = 'var(--ring)';
+  document.documentElement.appendChild(probe);
+  const ringLayer = layer(getComputedStyle(probe).color);
+  probe.remove();
+  // Matched at ANY alpha where the ring can be drawn thinned, which is the
+  // whole point: comparing the premultiplied colour compares the alpha too,
+  // so a ring at half strength was a different colour to this check and
+  // fell through to the 1.3/1.2 floor it clears. That is how a 50% wash
+  // certified itself past this file for a release. The comparison is
+  // therefore un-premultiplied, and the alpha is left to score(), where the
+  // under-8% wash escape still ends it. The tolerance widens as the alpha
+  // falls because the readback is 8-bit and dividing by the alpha divides
+  // its rounding error too (about 0.5/a per channel, and the same again
+  // from the alpha's own quantum); it is capped so a near-wash cannot match
+  // any grey it likes.
+  //
+  // The thinnable flag is the shape, and it is what keeps this honest: the
+  // ring is drawn thinned as a box-shadow, an outline or an SVG stroke,
+  // never as a border, so a BORDER counts only at the token's own strength.
+  // Without it, dark High contrast (where --ring is white) reads every
+  // border-input hairline — white at 25% — as a focus indicator and holds a
+  // resting input to 3:1: 21 of them, at 2.03:1.
+  const isRing = (css, thinnable) => {
+    const l = layer(css);
+    if (l.a < 0.08 || ringLayer.a < 0.08) return false;
+    if (!thinnable && Math.abs(l.a - ringLayer.a) >= 0.02) return false;
+    const tol = Math.min(3 / l.a, 12);
+    return l.pre.every((c, i) => Math.abs(c / l.a - ringLayer.pre[i] / ringLayer.a) <= tol);
   };
   // Top-level commas only: a shadow list nests commas inside its colours.
   const splitShadows = (s) => {
@@ -332,20 +415,35 @@ const STROKE_SCAN = (floor: number) => `(() => {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.1) continue;
     if (!el.getClientRects().length) continue;
+    // Clipped to nothing is not painted. Base UI keeps a real <input>
+    // under the visual control and hides it with clip-path: inset(50%) --
+    // the slider's is the only one in this app -- and that input still
+    // COMPUTES the page's focus outline. Under dark High contrast, where
+    // the ring is white and the thumb it sits in is white, four sliders
+    // reported a 1.00:1 focus ring that nothing can see. (The app turns
+    // that outline off as well, in slider.tsx; the forced sheet is
+    // unlayered and overrides it, which is what leaves this to the scan.)
+    if (cs.clipPath && cs.clipPath !== 'none') continue;
     const outside = el.parentElement ? bgOf(el.parentElement) : bgOf(el);
     if (!outside) continue;
     // The exemption: a fill that clears the floor is the real boundary.
+    // It does not reach the focus ring, which has to be seen on a control
+    // whose fill is already separating it.
     const own = layer(cs.backgroundColor);
-    if (own.a > 0.02) {
-      const comp = over(own, outside);
-      if (ratio(rel(comp), rel(outside)) >= floor) continue;
-    }
-    const score = (colorCss) => {
+    const inside = own.a > 0.001 ? over(own, outside) : outside;
+    const exempt = own.a > 0.02 && ratio(rel(inside), rel(outside)) >= floor;
+    const score = (colorCss, opts) => {
       const l = layer(colorCss);
       if (l.a < 0.08) return;                      // under 8% alpha it is a wash, not a line
-      const comp = over(l, outside);
-      const rr = ratio(rel(comp), rel(outside));
-      if (rr < floor) out.push({ text: ident(el), ratio: +rr.toFixed(2), needs: floor, color: colorCss, fontPx: 0 });
+      const focus = isRing(colorCss, opts && opts.thinnable);
+      if (!focus && exempt) return;
+      const need = focus ? FOCUS_FLOOR : floor;
+      // An inset ring lies on the element's own fill; everything else is
+      // scored against the edge it draws, which is what is outside it.
+      const under = opts && opts.inset ? inside : outside;
+      const comp = over(l, under);
+      const rr = ratio(rel(comp), rel(under));
+      if (rr < need) out.push({ text: ident(el), ratio: +rr.toFixed(2), needs: need, color: colorCss, fontPx: 0, kind: focus ? 'focus' : 'stroke' });
     };
     const seen = new Set();
     for (const [w, st, col] of [
@@ -362,8 +460,18 @@ const STROKE_SCAN = (floor: number) => `(() => {
         if (!col) continue;
         const nums = seg.replace(col, '').trim().split(/\\s+/).map(parseFloat).filter((n) => !isNaN(n));
         const [, , blur = 0, spread = 0] = nums;
-        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col); }
+        if (Math.abs(spread) >= 1 && blur <= 1 && !seen.has(col)) { seen.add(col); score(col, { inset: /inset/.test(seg), thinnable: true }); }
       }
+    }
+    // The outline, which nothing here used to read — and it is how every
+    // control that is not a registry component draws the one focus ring.
+    if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && isRing(cs.outlineColor, true)) {
+      score(cs.outlineColor, { thinnable: true });
+    }
+    // And the same ring drawn as an SVG stroke: the opening map rings a
+    // focused node dot itself, at screen size, so it survives the zoom.
+    if (el.ownerSVGElement && cs.stroke && cs.stroke !== 'none' && isRing(cs.stroke, true)) {
+      score(cs.stroke, { thinnable: true });
     }
   }
   return out;
@@ -381,17 +489,110 @@ const STROKE_SCAN = (floor: number) => `(() => {
  * Note the traversal: in Chrome every CSSStyleRule carries an empty
  * `cssRules` for nesting, so a naive `if (r.cssRules) recurse` never
  * reaches a single style rule and this quietly forces nothing.
+ *
+ * AND NOTE THE BARE RULE, which is the blind spot that let a thinned ring
+ * pass this file twice. Stripping the pseudo-class off `.foo:focus-visible`
+ * leaves `.foo`, but stripping it off `:focus-visible` leaves nothing, and
+ * an earlier cut dropped a selector that came out empty. The app's ONE
+ * global focus ring is exactly that rule — `:focus-visible { outline: 3px
+ * solid var(--ring) }` in index.css, and `:focus-visible { box-shadow: 0 0
+ * 0 3px var(--ring) }` on both landing pages — so the ring every bare
+ * button, every link, the skip link and both static pages wear was never
+ * forced on and never measured. Thinning it back to a 50% wash left this
+ * check green. An emptied selector now becomes the set of things that can
+ * hold focus, which is what `:focus-visible` means; `*` would be the
+ * literal reading and a wrong one, since it puts a focus ring on every div
+ * on the page and scores it against grounds nothing focusable ever sits on.
+ *
+ * Two shapes needed their own handling and are worth knowing about. A rule
+ * that wraps the state in `:has()` — the FAB flattening its shadows, the
+ * slider thumb's whole focus halo — strips to a bare `:has()`, which is
+ * invalid and drops the rule, so the state was forced on nothing; the
+ * wrapper is removed as a unit instead. And Tailwind escapes the
+ * pseudo-class into the CLASS NAME of an arbitrary variant, so the same
+ * text appears twice in one selector, once escaped and once real: stripping
+ * both leaves a class name that matches nothing. Neither is stripped after
+ * a backslash now.
+ *
+ * A media query that does not apply is skipped rather than flattened in,
+ * which the first cut of the fix above needed and did not have: the
+ * forced-colors block repaints the same bare rule in the system highlight
+ * colour, so the ring came back as rgb(0,120,215) on 62 elements and the
+ * ring matcher did not recognise it. Green, again, for a new reason.
  */
+/**
+ * What `:focus-visible` can match, and deliberately at zero specificity.
+ * The rule it stands in for is a bare `:focus-visible` (0,1,0), which any
+ * component utility beats; a plain list beats them back — `[tabindex]:not(
+ * [tabindex="-1"])` alone is (0,2,0) — and then a control that really does
+ * suppress the page outline is measured wearing one. That is not a
+ * hypothetical: it put a white ring on the slider's clipped input under
+ * dark High contrast and reported it at 1.00:1, four times.
+ */
+const FOCUSABLE =
+  ':where(a[href],area[href],button,input,select,textarea,summary,[contenteditable],[tabindex]:not([tabindex="-1"]))';
+
 const FORCE_STATES = `(() => {
   const decls = [];
+  const FOCUSABLE = ${JSON.stringify(FOCUSABLE)};
+  // Per selector in the list, not over the whole string: ':focus-visible,
+  // .foo:focus-visible' has one part that empties and one that does not.
+  //
+  // NEVER after a backslash. Tailwind escapes the pseudo-class INTO the
+  // class name of an arbitrary variant, so the selector for
+  // \`group-has-[:focus-visible]/fab:shadow-none\` carries the literal text
+  // twice: once escaped in the class, once real in the :has(). A blind
+  // replaceAll ate the escaped one and left a class name that matches
+  // nothing.
+  //
+  // And a state wrapped in :has() is unwrapped rather than stripped: the
+  // FAB flattens its shadows through :has(:focus-visible), the slider
+  // thumb draws its whole focus halo that way, and removing the inner
+  // pseudo-class alone leaves ':has()', which is invalid and drops the
+  // rule -- so those two states were forced on nothing.
+  const strip = (selectorText) => {
+    const parts = [];
+    let depth = 0, cur = '';
+    for (const ch of selectorText) {
+      if (ch === '(' || ch === '[') depth++;
+      if (ch === ')' || ch === ']') depth--;
+      if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; } else cur += ch;
+    }
+    parts.push(cur);
+    const out = [];
+    for (const part of parts) {
+      const bare = /(?<!\\\\):focus-visible/.test(part);
+      const s = part
+        .replace(/(?<!\\\\):has\\(\\s*:(?:focus-visible|hover|active)\\s*\\)/g, '')
+        .replace(/(?<!\\\\):hover/g, '')
+        .replace(/(?<!\\\\):active/g, '')
+        .replace(/(?<!\\\\):focus-visible/g, '');
+      if (s.trim()) out.push(s);
+      else if (bare) out.push(FOCUSABLE);   // the app's one global ring
+      else out.push('*');
+    }
+    return out.join(',');
+  };
   for (const sheet of document.styleSheets) {
     let rules; try { rules = sheet.cssRules; } catch { continue; }
     const walk = (list) => {
       for (const r of list) {
+        // A media query that does not apply is not a state this page can
+        // be in, and flattening one in is how the ring lost its colour:
+        // index.css repaints :focus-visible in the system highlight
+        // colour under forced-colors, and injected unconditionally
+        // that rule won on order, so every forced ring came out
+        // rgb(0,120,215) and the ring matcher -- rightly -- did not know
+        // it. Only media is filtered: @container and @supports keep the
+        // old behaviour, since neither replaced a colour.
+        if (r.media && r.conditionText) {
+          let holds = true;
+          try { holds = matchMedia(r.conditionText).matches; } catch {}
+          if (!holds) continue;
+        }
         if (r.selectorText) {
           if (/:hover|:active|:focus-visible/.test(r.selectorText)) {
-            const sel = r.selectorText
-              .replaceAll(':hover', '').replaceAll(':active', '').replaceAll(':focus-visible', '');
+            const sel = strip(r.selectorText);
             const body = r.cssText.slice(r.cssText.indexOf('{') + 1, r.cssText.lastIndexOf('}'));
             if (sel.trim() && body.trim()) decls.push(sel + '{' + body + '}');
           }
@@ -446,13 +647,11 @@ async function walkStatic(page: Page, base: string, scheme: 'light' | 'dark'): P
       if (state !== 'rest') await page.evaluate(FORCE_STATES);
       await page.waitForTimeout(80);
       const hits = (await page.evaluate(SCAN)) as Omit<Finding, 'route' | 'theme' | 'state' | 'kind'>[];
-      const strokes = (await page.evaluate(STROKE_SCAN(floor))) as Omit<
-        Finding,
-        'route' | 'theme' | 'state' | 'kind'
-      >[];
+      const strokes = (await page.evaluate(STROKE_SCAN(floor))) as ScanHit[];
       if (state !== 'rest') await page.evaluate(UNFORCE);
       for (const h of hits) found.push({ ...h, kind: 'text', route, theme: scheme, state });
-      for (const h of strokes) found.push({ ...h, kind: 'stroke', route, theme: scheme, state });
+      for (const h of strokes)
+        found.push({ ...h, kind: h.kind ?? 'stroke', route, theme: scheme, state });
     }
   };
 
@@ -500,15 +699,12 @@ async function walk(
         Finding,
         'route' | 'theme' | 'state' | 'kind'
       >[];
-      const strokes = (await page.evaluate(STROKE_SCAN(theme.strokeFloor))) as Omit<
-        Finding,
-        'route' | 'theme' | 'state' | 'kind'
-      >[];
+      const strokes = (await page.evaluate(STROKE_SCAN(theme.strokeFloor))) as ScanHit[];
       if (state !== 'rest') await page.evaluate(UNFORCE);
       for (const h of hits)
         found.push({ ...h, kind: 'text', route: route + at, theme: theme.name, state });
       for (const h of strokes)
-        found.push({ ...h, kind: 'stroke', route: route + at, theme: theme.name, state });
+        found.push({ ...h, kind: h.kind ?? 'stroke', route: route + at, theme: theme.name, state });
     }
   }
   return found;
@@ -589,7 +785,7 @@ try {
 // ---------------------------------------------------------------------------
 if (!findings.length) {
   console.log(
-    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text and strokes, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
+    `contrast: nothing below the floor — ${ROUTES.length} app routes x ${THEMES.length} schemes x ${VIEWPORTS.length} widths, text, strokes and focus rings, plus index.html and every docs.html page in light and dark, at rest and with hover/focus forced`,
   );
   process.exit(0);
 }
@@ -619,7 +815,7 @@ for (const { worst, where } of ordered) {
   const seen = [...where];
   const shown = seen.slice(0, 3).join(', ');
   console.error(
-    `${worst.ratio.toFixed(2)}:1 (needs ${worst.needs})  ${worst.kind === 'stroke' ? 'stroke' : `${worst.fontPx}px`}  ${worst.color}\n` +
+    `${worst.ratio.toFixed(2)}:1 (needs ${worst.needs})  ${worst.kind === 'text' ? `${worst.fontPx}px` : worst.kind === 'focus' ? 'focus ring' : 'stroke'}  ${worst.color}\n` +
       `    "${worst.text}"\n` +
       `    ${shown}${seen.length > 3 ? ` and ${seen.length - 3} more` : ''}`,
   );

@@ -366,7 +366,24 @@
   --primary-hover: oklch(calc(var(--primary-hover-l) + (22% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
   --primary-foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) 0 0);
   --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(calc(70.8% + (50% - 70.8%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* The focus ring, and the one colour in this file held to a RATIO and
+     not to a look: WCAG 1.4.11 asks 3:1 of the mark that says where the
+     keyboard is, and PRODUCT.md takes 2.2 AA as the yardstick. At the
+     registry's 50% alpha it measured 1.35 to 1.60:1 against whatever it
+     lay on, over 1,636 tabbed stops on 22 routes in four schemes, and
+     High contrast, the scheme chosen for legibility, only reached 2.14.
+     So the wash is gone (`ring-ring`, never `ring-ring/50`, and the
+     global outline below matches) and the lightness moved.
+
+     59%, not 70.8%, and --surface-3 (92.8%) is what binds it: the
+     selected and hovered fill, which an inset ring is drawn straight
+     onto, and where a neutral ring crosses 3:1 at 61.5%. The two points
+     under that are the margin a tinted scheme eats, since an accent at
+     full chroma is lighter than the grey of the same L; they leave the
+     worst shipped scheme at 3.17:1 and the worst corner of the knob
+     grid at 3.13:1. The knob keeps its direction: 50% at the top, where
+     --surface-3 has darkened to 90%. */
+  --ring: oklch(calc(59% + (50% - 59%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   /* The semantic four stay out of --ui-tint and --accent-tint, for the
      reason given at the top of this file. They do NOT stay out of
@@ -648,7 +665,15 @@
   --primary-hover: oklch(calc(var(--primary-hover-l) + (92% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
   --primary-foreground: oklch(calc(20.5% + (0% - 20.5%) * var(--ui-contrast)) calc(0.025 * var(--accent-tint)) 235);
   --primary-soft: oklch(calc(30% + (20% - 30%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(calc(55.6% + (100% - 55.6%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* 66%, not 55.6%: the same 3:1 the light block explains, and here
+     --accent (37%) binds it rather than --surface-3. The dark hover and
+     selection fill sits a rung above the ladder (see its note below),
+     an inset ring on a hovered row is drawn onto it, and a neutral ring
+     crosses 3:1 there at 63.2%; the rest is the margin a tinted accent
+     eats, leaving the worst shipped scheme at 3.18:1 and the worst
+     corner of the grid at 3.09:1. At 55.6% behind a 50% wash the ring
+     measured 1.72 to 1.88:1. 100% at the top of the knob, as before. */
+  --ring: oklch(calc(66% + (100% - 66%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   --good: oklch(72% 0.16 152);
   /* 72, not the registry's 70.4: 4.39:1 on --surface-3, and a failed
@@ -666,7 +691,17 @@
      rather than glanced at. */
   --destructive: oklch(72% 0.191 22.2);
   --warn: oklch(80% 0.15 80);
-  --info: oklch(72% 0.13 232);
+  /* 74, not 72, and the exception above is why it is worth two points:
+     this is the one semantic colour the app puts in a SENTENCE on a row
+     that fills, and a count read on a hovered row is the case that note
+     says check:contrast exists to catch. At 72 the puzzle dashboard's
+     "{n} due" measured 4.29:1 on --accent, under the 4.5 a 12px string
+     needs; at 74 it reads 4.60, and 8.78 on the page, 7.95 on a card,
+     5.60 on --surface-3, up from 8.20, 7.42 and 5.23. The others keep
+     their values because no string wears them there: --good measures
+     4.45 on that fill and --destructive 3.70, and if either ever lands
+     on a row that fills, this check is what will say so. */
+  --info: oklch(74% 0.13 232);
   /* Dark mode's --destructive is a light red; white on it is unreadable. */
   --destructive-foreground: oklch(18% 0.03 25);
   --warn-foreground: oklch(20% 0.04 80);
@@ -953,7 +988,7 @@
 @layer base {
   * {
     border-color: var(--border);
-    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    outline-color: var(--ring);
   }
 
   html {
@@ -1020,15 +1055,18 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
-    /* Neither a double tap nor a pinch zooms the app. A second tap on a
-       heading, or two fingers on the gap beside the board, zoomed the page
-       in on iOS, which no app does. Pans only: `manipulation` left the
-       pinch, and the viewport's user-scalable=no (index.html) is what a
-       Safari tab ignores, so this rule is the one that reaches it. The
-       reader's own pinch is untouched: it listens for the touches and
-       gesture events, which touch-action never withholds, and its scroller
-       already declares the same value. */
-    touch-action: pan-x pan-y;
+    /* A double tap does not zoom the app; a pinch does. `manipulation` is
+       that pair exactly: it declines the double tap, which zoomed the page
+       in on iOS when a second tap landed on a heading or beside the board,
+       and leaves the pinch to the browser. The value was `pan-x pan-y`,
+       which withholds the pinch app-wide — on a Safari tab it was the half
+       of the lock the viewport meta could not reach — and taking the pinch
+       away is refusing WCAG 1.4.4 to everyone to be rid of a gesture that
+       no one has to make. Surfaces that read their own touches decline it
+       one by one instead (the board, the reader's scroller, the evidence
+       pages, the opening map, the bottom bar), so a pinch there still does
+       their job rather than the page's. */
+    touch-action: manipulation;
   }
 
   /* A long press on a phone selects the user's own words and nothing
@@ -1194,9 +1232,11 @@
     font-family: var(--font-sans);
   }
 
-  /* Only show focus rings for keyboard users, but never suppress them entirely. */
+  /* Only show focus rings for keyboard users, but never suppress them
+     entirely. At full alpha, as every component's ring is: the token
+     carries the 3:1 (see --ring), and half of it is half the ratio. */
   :focus-visible {
-    outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
+    outline: 3px solid var(--ring);
     outline-offset: 0;
   }
 
@@ -1293,6 +1333,61 @@
        shot grid takes with this query on. */
     [data-slot='skeleton'] {
       animation: none !important;
+    }
+
+    /* And the board's box leaves the clamp altogether, because for it
+       0.01ms is not a cut. The rule above sets a DURATION and leaves
+       `transition-property` at its initial `all`, so under this query
+       every inline write of a size becomes a 10-microsecond transition —
+       and a transition that short is still a transition: a read in the
+       same task returns the size from BEFORE the write, which is what
+       code that writes a size and measures the result gets back.
+
+       chessground resizes exactly that way. Its ResizeObserver writes
+       cg-container's width and height (updateBounds) and then lays all
+       32 pieces out from cg-board's rect (renderResized) in the same
+       callback, so the pieces went onto the grid the board had before it
+       was resized and stayed there: nothing re-renders afterwards, and
+       Board.tsx's settle() finds the container the size it asked for and
+       agrees. Measured on the demo under this query, before this rule:
+       28 of 32 pieces off their squares in the reader's board after "Set
+       up this position", 11 of 32 outside the board when the workspace's
+       engine bar opens, and up to 4 hanging outside a puzzle thumbnail
+       after a phone resize. With motion allowed all of them were 0.
+
+       It costs no motion: nothing in the app transitions the container
+       on purpose, and chessground animates pieces from
+       requestAnimationFrame (see boardAnimMs in board/Board.tsx, which
+       is already 0 here), so what this takes away is only the
+       accidental transition this block was creating. */
+    .cg-wrap cg-container {
+      transition-property: none !important;
+    }
+
+    /* The document's ground leaves it for the same reason. store/theme.ts
+       applies a theme by toggling `.dark` and then READS the colour it has
+       just applied, off the BODY, to pin the next launch: rememberGround,
+       which is what chess-vault:ground stores. Under the clamp that read
+       came back one theme behind. Measured on the demo, driving Settings >
+       Appearance > App theme to Dark with this rule neutralised: the store
+       took `oklab(0.97 0 0)`, the light ground, under its `dark` key, where
+       the page itself settles on `oklch(0.145 0 264)`. The next launch then
+       pinned the previous theme's colour behind the startup image, which is
+       the flash that pin exists to prevent. With motion allowed the same
+       read is already correct. The colour still arrives in one step; what
+       goes is the 10-microsecond fade under it.
+
+       apply() reads the ROOT as well, for the theme-color metas, and this
+       rule does not reach that read. index.html's inline `html {
+       background-color }` is unlayered, so it outranks the layered rule in
+       this file and the metas take the OS scheme's colour rather than the
+       chosen theme's, under either motion setting: across that same switch,
+       with this rule and without it, the metas and the root's computed
+       colour both stayed rgb(245, 245, 245). That is a separate bug, older
+       than this block, and nothing here fixes it. */
+    html,
+    body {
+      transition-property: none !important;
     }
   }
 }
