@@ -70,8 +70,30 @@ interface Shape {
   openings: number;
   book: number;
   summary: boolean;
+  /** Whether the pass had judged anything, so the Move quality card and
+      the Results footnote stood. */
+  quality: boolean;
+  /** Rows in Move quality's by-move-number table. */
+  moveBands: number;
+  /** Rows in the Results card's by-time-control table. */
+  speeds: number;
+  /** Rows in Activity's weekday table and in Game length's. */
+  weekdays: number;
+  lengths: number;
+  /** The longest of the three ending legends. */
+  endings: number;
 }
-const DEFAULT_SHAPE: Shape = { openings: 8, book: 4, summary: false };
+const DEFAULT_SHAPE: Shape = {
+  openings: 8,
+  book: 4,
+  summary: false,
+  quality: true,
+  moveBands: 6,
+  speeds: 3,
+  weekdays: 7,
+  lengths: 6,
+  endings: 4,
+};
 function readShape(): Shape {
   try {
     const raw = localStorage.getItem(SHAPE_KEY);
@@ -81,6 +103,12 @@ function readShape(): Shape {
       openings: Math.min(OPENING_FOLD, Math.max(0, Number(p.openings) || 0)),
       book: Math.max(0, Number(p.book) || 0),
       summary: p.summary === true,
+      quality: p.quality === true,
+      moveBands: Math.max(0, Number(p.moveBands) || 0),
+      speeds: Math.max(0, Number(p.speeds) || 0),
+      weekdays: Math.max(0, Number(p.weekdays) || 0),
+      lengths: Math.max(0, Number(p.lengths) || 0),
+      endings: Math.max(0, Number(p.endings) || 0),
     };
   } catch {
     return DEFAULT_SHAPE;
@@ -265,10 +293,20 @@ export function InsightsPage() {
   useEffect(() => {
     if (report === null) return;
     const openings = openingRows(report.cells);
+    const judged = QUALITY.reduce((n, q) => n + report.analysis.quality[q.key], 0);
     const next: Shape = {
       openings: Math.min(OPENING_FOLD, openings.length),
       book: earliestExits(openings).length,
       summary: exitSplit(report.cells).exits > 0,
+      quality: judged > 0,
+      moveBands: report.analysis.byMove.length,
+      speeds: tallyBy(report.cells, 'speed').length,
+      weekdays: report.weekdays.length,
+      lengths: report.lengths.length,
+      endings: Math.max(
+        0,
+        ...(['w', 'd', 'l'] as const).map((o) => endingShares(report.endings, o).length),
+      ),
     };
     try {
       localStorage.setItem(SHAPE_KEY, JSON.stringify(next));
@@ -1030,13 +1068,19 @@ function StartOver() {
 }
 
 /**
- * The page's own outline while the first report is out: the Results
- * card with its three tables, the openings card and the leaving-book
- * card, each in the frames and row heights the loaded page draws, so
- * nothing moves when the answer lands. The filter rail is not here: it
- * needs no data and is already on the page above this.
+ * The page's own outline while the first report is out: every card the
+ * settled page draws, in its order, with the frames and row heights it
+ * uses, so nothing moves when the answer lands. The filter rail is not
+ * here: it needs no data and is already on the page above this.
+ *
+ * The four cards after Results were added to the page without being
+ * added here, and Move quality sits BETWEEN Results and Openings, so
+ * the two reserved cards under it were pushed down every time a report
+ * arrived. Their row counts come from the shape store, as the openings
+ * and leaving-book counts do.
  */
 function InsightsSkeleton({ shape }: { shape: Shape }) {
+  /** A results row: name, count, the result bar's own box, a figure. */
   const table = (rows: number, key: string) => (
     <div key={key} className="flex flex-col">
       <div className="flex h-6 items-center gap-2">
@@ -1056,43 +1100,220 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
       ))}
     </div>
   );
-  // The card header's own line boxes, measured on the loaded page: a
-  // 22px title line and 20px description lines over the header's 4px gap.
-  // One description box however many lines it wraps to: two boxes took
-  // the header's gap between them, and the loaded page has none there.
-  const card = (key: string, lines: 1 | 2, body: React.ReactNode, gap: 'gap-3' | 'gap-4' = 'gap-4') => (
+  /** A table with no result bar: a word, a count, a share. */
+  const plain = (rows: number, key: string, head = false) => (
+    <div key={key} className="flex flex-col">
+      {head && (
+        <div className="flex h-6 items-center gap-2">
+          <Skeleton className="h-2 w-16" />
+          <Skeleton className="ml-auto h-2 w-10" />
+          <Skeleton className="ml-2 h-2 w-8" />
+        </div>
+      )}
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex h-7 items-center gap-2">
+          <Skeleton className={cn('h-2.5', ['w-20', 'w-24', 'w-16', 'w-28'][i % 4])} />
+          <Skeleton className="ml-auto h-2.5 w-8" />
+          <Skeleton className="ml-2 h-2.5 w-8" />
+        </div>
+      ))}
+    </div>
+  );
+  /**
+   * A card header drawn from the words that are coming: the real title
+   * and description laid out invisible, with bars clipped over them, so
+   * the box is whatever those words wrap to. A fixed line count was
+   * wrong on a phone, where these descriptions take three and four
+   * lines against the desk's one and two.
+   */
+  const card = (
+    key: string,
+    title: string,
+    desc: string,
+    body: React.ReactNode,
+    content = 'flex flex-col gap-4',
+  ) => (
     <Card key={key}>
       <CardHeader>
-        <div className="flex h-5.5 items-center">
-          <Skeleton className="h-3.5 w-24" />
+        <div className="relative">
+          <CardTitle className="invisible">{title}</CardTitle>
+          <div className="absolute inset-0 flex items-center" aria-hidden>
+            <Skeleton className="h-3.5 w-24" />
+          </div>
         </div>
-        <div className={cn('flex flex-col justify-around', lines === 2 ? 'h-10' : 'h-5')}>
-          <Skeleton className="h-2.5 w-72 max-w-full" />
-          {lines === 2 && <Skeleton className="h-2.5 w-40" />}
+        <div className="relative max-w-prose overflow-hidden">
+          <CardDescription className="invisible">{desc}</CardDescription>
+          <div className="absolute inset-0 flex flex-col" aria-hidden>
+            {['w-full', 'w-11/12', 'w-full', 'w-2/3'].map((w, i) => (
+              <div key={i} className="flex h-5 shrink-0 items-center">
+                <Skeleton className={cn('h-2.5', w)} />
+              </div>
+            ))}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className={cn('flex flex-col', gap)}>{body}</CardContent>
+      <CardContent className={content}>{body}</CardContent>
     </Card>
   );
   return (
     <div className="flex flex-col gap-4" role="status" aria-label={t('Loading')} aria-live="polite">
-      {card('results', 1, [1, 2, 4].map((rows, i) => table(rows, `results-${i}`)))}
-      {card('openings', 2, table(shape.openings, 'openings'))}
+      {card(
+        'results',
+        t('Results'),
+        t('Score is wins plus half the draws, out of the games played.'),
+        <>
+          {/* Overall, by colour, by time control. */}
+          {[1, 2, shape.speeds].map((rows, i) => table(rows, `results-${i}`))}
+          {/* The "Accuracy from n of N games analysed at depth d, m
+              centipawns lost per move. Start over" footnote. One line on a
+              desk and three on a phone, so the sentence itself sets the box
+              and a bar sits over its first line, the way the settings link
+              row reserves its words. The figures are tabular, so stand-in
+              digits measure what the real ones will. */}
+          {shape.quality && (
+            <div className="relative">
+              <p
+                aria-hidden
+                className="invisible flex flex-wrap items-baseline gap-x-2 text-xs tabular-nums"
+              >
+                <span>
+                  {t('Accuracy from {n} of {total} games analysed at depth {d}', {
+                    n: '000',
+                    total: '000',
+                    d: '00',
+                  })}
+                  {`, ${t('{n} centipawns lost per move', { n: '00' })}`}.{' '}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 align-baseline text-xs"
+                    tabIndex={-1}
+                  >
+                    {t('Start over')}
+                  </Button>
+                </span>
+              </p>
+              <div className="absolute inset-x-0 top-0 flex h-4 items-center" aria-hidden>
+                <Skeleton className="h-2 w-72 max-w-full" />
+              </div>
+            </div>
+          )}
+        </>,
+      )}
+      {shape.quality &&
+        card(
+          'quality',
+          t('Move quality'),
+          t(
+            "Every move you played in the analysed games, by the engine's verdict, and how accurate they were by phase and by move number.",
+          ),
+          <>
+            {/* The stacked verdict bar: 16px, on the chip corner. */}
+            <Skeleton className="h-4 w-full rounded-[4px]" />
+            {plain(QUALITY.length, 'verdicts', true)}
+            {table(3, 'phase')}
+            {table(shape.moveBands, 'moves')}
+          </>,
+        )}
+      {card(
+        'openings',
+        t('Openings'),
+        t(
+          'One row per opening family, named from the deepest catalogued position each game reached. Most played first.',
+        ),
+        table(shape.openings, 'openings'),
+        'flex flex-col gap-2',
+      )}
       {card(
         'book',
-        2,
+        t('Leaving book'),
+        t(
+          'The first move after which the position is in no catalogued line, and whose move it was. The openings where your own move leaves earliest come first.',
+        ),
         <>
-          {/* The "Your move left book first…" line: one text-sm line. */}
+          {/* The "Your move left book first in n of N games, on average at
+              move m" line. It is one line on a desk and two on a phone, so
+              the sentence itself sets the box and bars are clipped over it;
+              the figures are tabular, so stand-in digits measure the same. */}
           {shape.summary && (
-            <div className="flex h-5 items-center">
-              <Skeleton className="h-2.5 w-80 max-w-full" />
+            <div className="relative overflow-hidden">
+              <p aria-hidden className="invisible text-sm tabular-nums">
+                {t('Your move left book first in {you} of {n} games, on average at move {m}.', {
+                  you: '00',
+                  n: '000',
+                  m: '00',
+                })}
+              </p>
+              <div className="absolute inset-0 flex flex-col" aria-hidden>
+                {['w-full', 'w-2/3'].map((w) => (
+                  <div key={w} className="flex h-5 shrink-0 items-center">
+                    <Skeleton className={cn('h-2.5', w)} />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {table(shape.book, 'book')}
         </>,
-        // That card's content is the tighter rung.
-        'gap-3',
+        'flex flex-col gap-3',
       )}
+      {card(
+        'activity',
+        t('Activity'),
+        t('Games per month, won over drew over lost, and the week.'),
+        <>
+          <div className="min-w-0">
+            {/* The count line over the chart, its caption under it, and
+                the won/drew/lost key: text-xs each, at the figure's own
+                margins. */}
+            <div className="mb-1 flex h-4 items-center">
+              <Skeleton className="h-2 w-24" />
+            </div>
+            <Skeleton className="h-32 w-full" />
+            <div className="mt-1 flex h-4 items-center justify-between">
+              <Skeleton className="h-2 w-16" />
+              <Skeleton className="h-2 w-16" />
+            </div>
+            <div className="mt-2 flex h-4 items-center gap-3">
+              {['w-10', 'w-10', 'w-8'].map((w) => (
+                <Skeleton key={w} className={cn('h-2', w)} />
+              ))}
+            </div>
+          </div>
+          {shape.weekdays > 0 && table(shape.weekdays, 'week')}
+        </>,
+        'grid gap-6 md:grid-cols-[1fr_18rem]',
+      )}
+      {card(
+        'endings',
+        t('How games ended'),
+        t(
+          "Read from the move text and the file's own termination line. A decisive game that names neither is counted as a resignation.",
+        ),
+        <>
+          {['won', 'drew', 'lost'].map((key) => (
+            <div key={key} className="flex min-w-0 flex-col gap-3">
+              {/* The figcaption: a word and an accuracy, text-xs. */}
+              <div className="flex h-4 items-center justify-between">
+                <Skeleton className="h-2 w-10" />
+                <Skeleton className="h-2 w-12" />
+              </div>
+              {/* The donut is size-28 and centred in its column. */}
+              <Skeleton className="mx-auto size-28 rounded-full" />
+              {plain(shape.endings, `legend-${key}`)}
+            </div>
+          ))}
+        </>,
+        'grid gap-6 sm:grid-cols-3',
+      )}
+      {shape.lengths > 0 &&
+        card(
+          'length',
+          t('Game length'),
+          t('Results by how many moves the game ran.'),
+          table(shape.lengths, 'length'),
+          '',
+        )}
     </div>
   );
 }
