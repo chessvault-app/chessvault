@@ -266,7 +266,7 @@ export function TitleBar() {
           className={cn(
             'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
             'absolute top-1/2 left-1/2 flex h-7 w-88 -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-lg px-2.5 text-sm',
-            'outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+            'outline-none focus-visible:ring-3 focus-visible:ring-ring',
             '[-webkit-app-region:no-drag]',
           )}
         >

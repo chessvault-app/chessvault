@@ -382,7 +382,7 @@ export function GameTableHeader({
               <button
                 type="button"
                 className={cn(
-                  'hover:text-foreground flex min-w-0 items-center gap-1 truncate outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm',
+                  'hover:text-foreground flex min-w-0 items-center gap-1 truncate outline-none focus-visible:ring-3 focus-visible:ring-ring rounded-sm',
                   sort?.key === c.id && 'text-foreground',
                   c.align === 'right' && 'flex-row-reverse',
                 )}
