@@ -1463,6 +1463,25 @@
   }
 }
 
+/* The phone sheet's top corners: the xl rung at full height, rounding
+   further as the sheet drops. The drop is what the Drawer publishes, the
+   resting offset of a lower snap point plus whatever a finger has pulled
+   it down by (never up: an overshoot above full height is damped by the
+   engine and squares nothing), and the corner grows by the drop's share
+   of 480px, so a sheet resting a third of a phone down carries a corner
+   about a third rounder than one at the top. The radius the Corners
+   setting chooses (`--radius`, the xl rung of it) is the only length in
+   the sum: Square stays square at every height, and Large grows
+   proportionally. tan(atan2()) is how CSS turns two lengths into a
+   number; calc() will not divide one length by another. */
+@utility sheet-corners {
+  --sheet-drop: calc(
+    var(--drawer-snap-point-offset, 0px) + max(0px, var(--drawer-swipe-movement-y, 0px))
+  );
+  border-top-left-radius: calc(var(--radius-xl) * (1 + tan(atan2(var(--sheet-drop), 480px))));
+  border-top-right-radius: calc(var(--radius-xl) * (1 + tan(atan2(var(--sheet-drop), 480px))));
+}
+
 
 /* ---------------------------------------------------------------------------
    Board theme.

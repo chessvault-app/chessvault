@@ -275,6 +275,13 @@ export function CanvasShell({
             // somewhere different each time you opened it.
             <Dialog
               open
+              // Two heights: its full one, where it opens, and half the
+              // screen, where a drag down leaves it resting with the
+              // canvas in view above it. The canvas is the subject and
+              // the sheet covered every pixel of it; a drag past half
+              // still closes.
+              snapPoints={[0.5, 1]}
+              defaultSnapPoint={1}
               onOpenChange={(open) => {
                 if (!open) panel.onClose();
               }}
