@@ -116,6 +116,12 @@ describe('writeAliases', () => {
     expect(writeAliases('', [])).toBe('');
   });
 
+  it('removes the block when aliases was its only key', () => {
+    // It left `---\n---\n` behind, which the header says it never does.
+    expect(writeAliases('---\naliases: [Old]\n---\n', [])).toBe('');
+    expect(writeAliases('---\r\naliases:\r\n  - Old\r\n---\r\n', [])).toBe('');
+  });
+
   it('leaves the rest of the block untouched', () => {
     const front = '---\ntags: [endgame]\ncssclass: wide\n---\n';
     expect(writeAliases(front, ['A'])).toContain('cssclass: wide');

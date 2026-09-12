@@ -128,5 +128,9 @@ export function writeAliases(front: string, list: string[]): string {
     while (end < lines.length && /^[ \t]+-[ \t]*/.test(lines[end]!)) end += 1;
   }
   lines.splice(at, end - at, ...(kept.length ? [line] : []));
+  // Removing the only key must remove the block: two bare fences are what
+  // the header above promises never to leave, and an empty block on a
+  // note that had none reads as a horizontal rule to any other tool.
+  if (lines.every((l) => l.trim() === '---' || l.trim() === '')) return '';
   return lines.join(eol);
 }
