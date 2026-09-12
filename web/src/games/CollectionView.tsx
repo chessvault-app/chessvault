@@ -140,19 +140,17 @@ export function CollectionView() {
     >
       {/* Import on the title line, where Studies, Notes and Books put
           theirs: the page is a shelf of the reader's own games, and it
-          gets a shelf's header. Below md the browser's FAB is the
-          import button, so this one is not drawn there. */}
+          gets a shelf's header, at every width. Below md it was a disc
+          floating over the list's corner (see CreateControl for why
+          that went); the one word is what fits beside a phone's large
+          title, and the page it sits on already says what is imported. */}
       <PageHeader
         title={t('Games')}
         actions={
-          <Button
-            variant="default"
-            size="default"
-            className="hidden md:inline-flex"
-            onClick={() => openImport.current?.()}
-          >
+          <Button variant="default" size="default" onClick={() => openImport.current?.()}>
             <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
-            {t('Import a game')}
+            <span className="md:hidden">{t('Import')}</span>
+            <span className="max-md:hidden">{t('Import a game')}</span>
           </Button>
         }
       />

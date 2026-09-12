@@ -21,8 +21,9 @@ import { t } from '@/lib/i18n';
  * to keep a name on screen that the tab bar under the thumb already
  * gives, and the shrink was one more thing moving while a list was
  * being read. A page's actions live on the title's row still, so they
- * scroll away with it; anything a page needs from anywhere in its list
- * is the Fab's, which is fixed.
+ * scroll away with it, the create button included since the floating
+ * disc went (see CreateControl); what a page needs from anywhere in its
+ * list is a row's own ⋯, which is on the row.
  *
  * This component returns SIBLINGS rather than one box: the header, then
  * a `subtitle` (the count line, tight under the title), a `description`

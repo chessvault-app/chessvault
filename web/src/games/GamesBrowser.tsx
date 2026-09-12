@@ -29,7 +29,6 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { Panel } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Fab } from '@/components/fab';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { useUndoable } from '@/hooks/use-undoable';
 
@@ -727,17 +726,6 @@ export function GamesBrowser({
       </Box>
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
-
-      {/* Getting a game IN, on a phone: one press, straight to the
-          import sheet — the archives and databases that used to hide
-          behind this button's menu are tabs on the page now, at every
-          width. From md up the Collection toolbar's own Import button
-          takes over and the disc is not drawn. Fixed-positioned, so it
-          is never a layout sibling wherever this pane is hosted. */}
-      <Fab
-        actions={[{ label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) }]}
-        className="md:hidden"
-      />
     </>
   );
 }

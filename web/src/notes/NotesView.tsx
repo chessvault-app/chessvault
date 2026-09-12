@@ -21,7 +21,7 @@ import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PromptDialog } from '@/components/prompt-dialog';
-import { CreateControl, FabSpacer } from '@/components/fab';
+import { CreateControl } from '@/components/fab';
 import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
   parseShelfShape,
@@ -342,9 +342,6 @@ function NoteList() {
         />
       )}
       </Arrival>
-
-
-      <FabSpacer />
     </PageShell>
   );
 }
