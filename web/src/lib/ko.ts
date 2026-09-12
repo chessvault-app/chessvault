@@ -901,7 +901,6 @@ export const ko: Record<string, string> = {
   'The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.':
     '맵을 비교하는 기준 필드입니다. 갭 배지, 점 크기, 통계표가 모두 이 필드를 기준으로 합니다.',
   'Check coverage against': '커버리지 비교 대상',
-  'Compare my moves with a database': '내 수를 데이터베이스와 비교',
   'Compare with a database': '데이터베이스와 비교',
   'Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.':
     '백으로 둔 최근 게임을 이 데이터베이스 플레이어들의 응수와 대조합니다. 그들이 거의 두지 않는 수를 내가 둔 포지션을, 가장 자주 나온 것부터 보여 줍니다.',
