@@ -844,21 +844,23 @@
             <div class="body">
               <figure>
                 <picture>
+                  <!-- A crop of the databases pane (capture-screenshots.mjs,
+                       games-databases), not the whole window: the full
+                       1904px frame shown 446px wide put the app's text at
+                       about 3px, and a figure nobody can read proves
+                       nothing. 796px across for a 446px box is 1.8x. -->
                   <source
                     media="(prefers-color-scheme: dark)"
-                    srcset="shots/games-dark-960.png 960w, shots/games-dark-1280.png 1280w, shots/games-dark.png 1904w"
-                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
+                    srcset="shots/games-databases-dark.png"
                   />
                   <img
-                    src="shots/games.png"
-                    srcset="shots/games-960.png 960w, shots/games-1280.png 1280w, shots/games.png 1904w"
-                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
-                    width="1904"
-                    height="996"
+                    src="shots/games-databases.png"
+                    width="796"
+                    height="827"
                     loading="lazy"
                     decoding="async"
-                    alt="The Games page's Databases tab: a query box, filters, and a table of reference games beside the details panel"
-                    data-ko-alt="게임 페이지의 데이터베이스 탭: 질의 입력란과 필터, 그리고 상세 패널 옆의 참고 게임 표"
+                    alt="The Games page's Databases tab: the search box, the result and rating filters, and the table of a 3,000-game reference database"
+                    data-ko-alt="게임 페이지의 데이터베이스 탭: 검색 상자, 결과와 레이팅 필터, 그리고 3,000 게임짜리 참고 데이터베이스의 표"
                   />
                 </picture>
               </figure>
@@ -939,21 +941,25 @@
             <div class="body">
               <figure>
                 <picture>
+                  <!-- The engine card alone (capture-screenshots.mjs,
+                       board-panel), for the same reason as fig. 3: the
+                       paragraph is about the lines, the opening's name and
+                       the move list, and at 361px the whole board page
+                       showed none of them legibly. The explorer is shut in
+                       the demo (see the board.png note in that script), so
+                       the alt does not claim it. -->
                   <source
                     media="(prefers-color-scheme: dark)"
-                    srcset="shots/board-dark-960.png 960w, shots/board-dark-1280.png 1280w, shots/board-dark.png 1904w"
-                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
+                    srcset="shots/board-panel-dark.png"
                   />
                   <img
-                    src="shots/board.png"
-                    srcset="shots/board-960.png 960w, shots/board-1280.png 1280w, shots/board.png 1904w"
-                    sizes="(min-width: 56rem) 446px, (min-width: 40rem) 520px, calc(100vw - 4.5rem)"
-                    width="1904"
-                    height="996"
+                    src="shots/board-panel.png"
+                    width="566"
+                    height="552"
                     loading="lazy"
                     decoding="async"
-                    alt="The analysis board with the engine and opening explorer"
-                    data-ko-alt="엔진과 오프닝 탐색기를 함께 띄운 분석 보드"
+                    alt="The board page's engine card: three candidate lines with their evaluations, the opening's name and code, the move list, and the move box"
+                    data-ko-alt="보드 페이지의 엔진 카드: 평가치가 붙은 후보 라인 셋, 오프닝의 이름과 코드, 수 목록, 그리고 수 입력 상자"
                   />
                 </picture>
               </figure>

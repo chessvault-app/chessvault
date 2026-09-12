@@ -248,6 +248,38 @@ const TARGETS = [
     wait: 'cg-board',
   },
   { hash: '#/games', out: 'games-phone.png', win: [585, 780], css: 390, wait: '.divide-border' },
+  // Two more landing figures, both crops, for the same reason as the
+  // opening-map panel below: a 1904px frame shown 446px wide puts the
+  // app's 14px text at about 3px, and a figure nobody can read proves
+  // nothing. The databases pane (query box, filters, the table) is 460
+  // css px wide at this layout, and the board page's engine card 327, so
+  // shown at the plate's width each is at or above its own size.
+  //
+  // The tab is the second trigger in the Games page's row: Base UI gives
+  // the triggers no attribute that carries the value. The pane is the
+  // grid cell that holds the database search box.
+  {
+    hash: '#/games',
+    out: 'games-databases.png',
+    win: [1904, 996],
+    css: 1100,
+    wait: '.divide-border',
+    prefs: { 'vault:games-details-pinned': '1' },
+    clicks: ['[data-slot="tabs-trigger"]:nth-of-type(2)'],
+    think: 2500,
+    crop: '.grid > div:has(input[placeholder^="Search database"])',
+  },
+  {
+    hash: '#/board',
+    out: 'board-panel.png',
+    win: [1904, 996],
+    css: 1100,
+    wait: 'cg-board',
+    moves: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6', 'b5a4', 'g8f6', 'e1g1', 'f8e7'],
+    clicks: ['[aria-label="Engine on/off"]'],
+    think: 5000,
+    crop: 'section[data-slot="card"]:has([aria-label="Engine on/off"])',
+  },
   // One node's answer to "what is prepared here" — the half of the feature
   // a picture of the constellation cannot show. Whole, never cut: this
   // panel IS the figure, and a figure with its last rows sliced off is a
@@ -385,7 +417,12 @@ app.whenReady().then(async () => {
   // every shot silently shows yesterday's UI.
   await session.defaultSession.clearCache();
 
-  const shots = TARGETS.flatMap((target) =>
+  // SHOTS=games-phone,board-panel captures only those names (both themes).
+  // A full run is 30 targets and minutes; recapturing the one figure a
+  // change touched should not cost the other 29 their noise.
+  const only = (process.env.SHOTS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const wanted = only.length ? TARGETS.filter((t) => only.includes(t.out.replace(/\.png$/, ''))) : TARGETS;
+  const shots = wanted.flatMap((target) =>
     THEMES.map((theme) => ({
       ...target,
       out: target.out.replace(/\.png$/, `${theme.suffix}.png`),
