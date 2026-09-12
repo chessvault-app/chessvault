@@ -53,6 +53,17 @@ export const LOOPBACK_ONLY = BIND === '127.0.0.1' || BIND === 'localhost' || BIN
 export const TRUSTED_PROXY = process.env.CHESS_TRUSTED_PROXY?.trim() === '1';
 
 /**
+ * Whether the session cookie always gets `Secure`.
+ *
+ * The server works this out on its own where it can: a TLS socket, or an
+ * X-Forwarded-Proto from a proxy it trusts (see secureCookie in auth.ts).
+ * This is for the deployment that is behind https but whose proxy sets no
+ * such header, where neither signal arrives and the cookie would
+ * otherwise be sent in clear text on any plain-http request to the host.
+ */
+export const SECURE_COOKIE = process.env.CHESS_SECURE_COOKIE?.trim() === '1';
+
+/**
  * Host names an ungated server answers to, beyond the ones it can work
  * out for itself (see crossSite.ts). Comma-separated, case-insensitive,
  * no port.

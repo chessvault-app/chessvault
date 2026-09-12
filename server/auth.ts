@@ -2,7 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { writeAtomic } from './atomic.ts';
-import { TRUSTED_PROXY, VAULT_CONFIG, VAULT_SESSIONS } from './paths.ts';
+import { SECURE_COOKIE, TRUSTED_PROXY, VAULT_CONFIG, VAULT_SESSIONS } from './paths.ts';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { verifyTotp } from './totp.ts';
 
@@ -295,6 +295,39 @@ function peerAddress(env: unknown): string | undefined {
   return bindings?.incoming?.socket?.remoteAddress ?? undefined;
 }
 
+/**
+ * Whether the session cookie gets `Secure`, which tells the browser never
+ * to send it over plain http.
+ *
+ * This read `X-Forwarded-Proto === 'https'` and nothing else, which is
+ * wrong in both directions. A TLS-terminating proxy that does not set the
+ * header — and plenty do not unless told — left a year-long session token
+ * with no Secure flag, so one plain-http request to the same host hands
+ * it over in clear text. And the header was believed from any peer at
+ * all, which is the mistake clientIp above was fixed for: a header is
+ * only evidence when something trustworthy put it there.
+ *
+ * Three ways to be sure, in order of directness: the socket really is
+ * TLS; `CHESS_SECURE_COOKIE=1` says the deployment is behind https even
+ * though this hop is not; or a proxy this server trusts said so, under
+ * exactly the rule clientIp uses (a loopback peer is a proxy on this
+ * host, or CHESS_TRUSTED_PROXY names one elsewhere).
+ *
+ * Not `__Host-`, which would be the stronger form: that prefix REQUIRES
+ * Secure, and the deployment this app is mostly used in is a tailnet or
+ * LAN over plain http, where a Secure cookie is never sent back at all.
+ * A prefix that logs those users out is not a hardening.
+ */
+function secureCookie(env: unknown, forwardedProto: string | undefined): boolean {
+  if (SECURE_COOKIE) return true;
+  const socket = (env as { incoming?: { socket?: { encrypted?: boolean } } } | undefined)?.incoming
+    ?.socket;
+  if (socket?.encrypted) return true;
+  const peer = peerAddress(env);
+  const believeHeader = peer === undefined || TRUSTED_PROXY || LOOPBACK_PEER.test(peer);
+  return believeHeader && forwardedProto?.trim().toLowerCase() === 'https';
+}
+
 function cookieToken(header: string | undefined): string | null {
   const match = header?.match(new RegExp(`(?:^|;\\s*)${COOKIE}=([^;]+)`));
   return match?.[1] ?? null;
@@ -412,7 +445,7 @@ export function authApi(
     // for a config that does not exist; never rewrite the real one for them.
     if (passwordOverride === undefined && !isHashedPassword(configured)) migratePlaintextPassword();
 
-    const secure = c.req.header('x-forwarded-proto') === 'https' ? '; Secure' : '';
+    const secure = secureCookie(c.env, c.req.header('x-forwarded-proto')) ? '; Secure' : '';
     c.header(
       'Set-Cookie',
       `${COOKIE}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_MAX_AGE_S}; SameSite=Lax${secure}`,
