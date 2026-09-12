@@ -75,6 +75,10 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   const entered = useRef(false);
   // The board this entry replaced, waiting for the offer below.
   const replaced = useRef<BoardSnapshot | null>(null);
+  // Not the page's only useUndoable: the move tree's destructive verbs hold
+  // their own (useTreeUndo, twice). They share one standing offer, so a
+  // clear raised while this one is up replaces it rather than stacking on
+  // it — see hooks/use-undoable.
   const { offer } = useUndoable();
   // useLayoutEffect, not useEffect: reset BEFORE the browser paints, so a
   // stale board handed over by a previous page never flashes on screen.
