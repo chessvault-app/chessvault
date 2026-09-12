@@ -325,6 +325,15 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   page's Fab is phone-only, and its actions are one array the corner
   draws as icons and the Fab fans out as pills, the same
   two-presentations-one-list shape `CreateControl` uses.
+  An open panel stands on those corner icons at every width it appears
+  at, so while it is up they go `inert`: chrome nobody can see is chrome
+  the keyboard must not stop on, and the panel's own X is how it comes
+  back. The surface is told how wide the covered strip is
+  (`useCanvasInset`) so it can keep what the reader just asked about out
+  from under it — the map slides its viewport the least distance that
+  uncovers the selected dot. Neither is a z-index fight: lifting the
+  selection over the panel would only hand the same problem to whatever
+  came second.
   The header is IN THE FLOW, above the surface. It floated briefly, and
   that put dots and labels behind the page's own title and panned them
   through it on every drag; it also meant the surface could swallow a

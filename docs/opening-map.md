@@ -216,6 +216,10 @@ is barely any bare canvas to find and "don't touch the dots" is not an
 instruction anybody can follow. Pressing a dot selects it and pressing
 it again lets it go, and dragging a dot pulls the web — mouse or touch,
 in the constellation.
+On a pointer device the details panel opens over the right-hand end of
+the canvas, so a dot that would be underneath it slides clear first: the
+map moves itself the least distance that uncovers the dot, and does not
+move at all when the dot is already in the open.
 The held dot follows the finger, its neighbours follow their springs,
 crowding pushes back, and the whole thing coasts to a stop after the
 release instead of freezing mid-swing. Where you leave things is where
