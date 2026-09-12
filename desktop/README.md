@@ -3,8 +3,8 @@
 *English · [한국어](README.ko.md)*
 
 Two modes, chosen on first launch (change later from the Desktop app
-card in Settings, whose Vault row has a Switch… button — or the Vault
-menu, from the ☰ at the left of the title bar):
+card in Settings, whose Vault row has a Switch… button — or Switch
+vault… in the ☰ menu at the left of the title bar):
 
 - **remote** — a window onto a Chess Vault server somewhere else. Pure
   client.
@@ -60,7 +60,8 @@ and delete the ad-hoc hook.
    `release/server/index.mjs`, the database builders beside it
    (`build-refgames.mjs`, `build-puzzles.mjs`,
    `index-refgames-positions.mjs`, `optimize-refgames.mjs`) and the
-   resident scan worker fast search runs in (`scan-worker.mjs`), copies
+   resident scan worker fast search runs in (`scan-worker.mjs`) and the
+   per-database query worker (`query-worker.mjs`), copies
    better-sqlite3 next to them (v13 ships Node-API prebuilds — ABI-stable
    under Electron, no rebuild), and renders `icon.ico`.
 
@@ -98,7 +99,9 @@ packaged app: `build-puzzles.mjs`, `build-refgames.mjs`,
 `index-refgames-positions.mjs` and `optimize-refgames.mjs` ship beside
 the server bundle and the server prefers them over the repo scripts.
 `scan-worker.mjs` ships there too, which is what lets a database with
-fast search turned on hold its packed index in the packaged app —
+fast search turned on hold its packed index in the packaged app, and so
+does `query-worker.mjs`, the child each open reference database runs
+its scanning statements in —
 and prefers the native binary over both, where one shipped. The
 installer seeds a starter reference database (position index included)
 on first run besides.

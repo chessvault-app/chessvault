@@ -214,7 +214,11 @@ it skipped when the OS asks for reduced motion.)
 Wheel zooms to the cursor, dragging the ground pans, two fingers pinch
 — from anywhere, including from two dots, because on a dense map there
 is barely any bare canvas to find and "don't touch the dots" is not an
-instruction anybody can follow. Pressing a dot selects it and pressing
+instruction anybody can follow. The keyboard does the same from the
+surface: `+` and `-` zoom, `0` fits the map, and Shift with an arrow
+pans (the plain arrows are the tree's own steps); Zoom in and Zoom out
+buttons stand among the map's controls for a finger or a pen that
+cannot pinch. Pressing a dot selects it and pressing
 it again lets it go, and dragging a dot pulls the web — mouse or touch,
 in the constellation.
 On a pointer device the details panel opens over the right-hand end of

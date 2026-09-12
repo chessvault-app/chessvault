@@ -127,7 +127,11 @@ is one connected body of work, and the links are what make it that.
   the bundled one included, so it works offline (weighted-random replies,
   seamless hand-off to the engine when the line leaves book) — or drills
   one of your studies against that same field, remembering what you
-  fumble ([how it works](docs/repertoire.md)).
+  fumble ([how it works](docs/repertoire.md)) — and **Endgame drills**,
+  which draw a random won position from a material class (a rook
+  endgame, a queen against a rook, or a material of your own) and have
+  you convert it against the tablebase's most stubborn defence, every
+  move graded by the table's own verdict.
 - **Opening map** — your preparation as a constellation, or as a tree
   when you would rather read it in order: you place the
   moves that define your repertoire, one map per colour, and link the
@@ -149,6 +153,14 @@ is one connected body of work, and the links are what make it that.
   filtered by which side you had, whether you won, the speed, and the
   date. There is nothing to build and nothing to rebuild; games count
   the moment you collect them, and a listed game opens on the board.
+- **Insights** — the same corpus summed: your score overall, by colour
+  and by time control, a table of opening families with a
+  won/drew/lost bar for each, where each game left the opening
+  catalogue, games per month and weekday, how they ended, and results
+  by length. An engine pass over your games, run in the window while
+  you use the rest of the app, adds accuracy to every table and a card
+  of move quality; a **Compare with a database** card lists the
+  positions where your move is one a database's players rarely choose.
 - **Home** — the landing page leads with what you were last doing, and
   is yours to arrange: pick which destinations get a tile and in what
   order, and switch the Continue and setup cards on or off. Anything
@@ -168,8 +180,8 @@ is one connected body of work, and the links are what make it that.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
 end · `f` flip board · `Enter` play the typed move · `Ctrl/⌘ S` save ·
-`Esc` close the open window · `Ctrl/⌘ K` open anything by name or by its text · `?` this
-list, inside the app.
+`Esc` close the open window · `Ctrl/⌘ K` open anything by name or by its text ·
+`Ctrl/⌘ B` fold or unfold the sidebar · `?` this list, inside the app.
 
 ## Two ways to run it
 
@@ -404,7 +416,7 @@ terminal alternative, not the requirement.
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames/*.sqlite` | the Databases browser, the local explorer, the repertoire trainer and the opening map | a starter set comes with the app; more in the app, or `npm run build:refgames` |
+| `data/refgames/*.sqlite` | the Databases browser, the local explorer, the repertoire trainer, the opening map and Insights' database comparison | a starter set comes with the app; more in the app, or `npm run build:refgames` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
 `data/mygames.sqlite` is not in the table because you never build it: the

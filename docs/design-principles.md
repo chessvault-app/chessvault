@@ -446,8 +446,8 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   the header in the side column where it aligns with the board.
 - Phones (`md:hidden` world): the bottom bar holds five tabs — Home,
   Games, Studies, Puzzles, More — the count where Material 3's guidance
-  stops and the one lichess ships; Notes, Books and the opening map are
-  reached through More and the Home tiles. The current tab wears the
+  stops and the one lichess ships; Notes, Books, the opening map and
+  Insights are reached through More and the Home tiles. The current tab wears the
   sidebar's current-row pill (`bg-nav-pill`, 12% of primary over the
   card behind the icon, a semibold label), so both navigations say "you are
   here" the same way. The bar stays docked and pinned: the floating

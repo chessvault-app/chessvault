@@ -168,8 +168,11 @@ flowchart LR
   bundled server against a local folder). Because the UI is HTTP-only,
   the shell is packaging, not architecture. What IPC exists is a narrow,
   optional bridge (`window.vaultShell`, desktop/preload.cjs) that
-  Settings feature-detects: switching vault, the updater, and the native
-  folder dialog for choosing a vault or a folder of tablebase files.
+  Settings feature-detects: switching vault, the updater, the native
+  folder dialog for choosing a vault or a folder of tablebase files, and
+  the window commands behind the title bar the page draws
+  (`components/title-bar`: back, forward, the ☰ menu's reload, zoom
+  and quit).
   Nothing behind it is BEHAVIOUR — every value it produces goes to the
   server over the same HTTP API — and a browser, where the bridge is
   absent, simply does not draw those controls.
