@@ -78,6 +78,19 @@ const PIN_FREE_MQ = '(min-width: 1680px)';
 const PANEL_WIDE_MQ = '(min-width: 1740px)';
 
 /**
+ * What the unpinned details column takes from the pane when it arrives:
+ * the track's maximum (23rem, measured at exactly 368; 27rem past
+ * PANEL_WIDE_MQ) plus the grid's 16px gap. The browser folds its toolbar
+ * against the pane LESS this while no column stands, so a selection
+ * cannot re-fold it (GamesBrowser's detailsReservePx). The maximum
+ * rather than the 20rem floor, because at lg the track is never
+ * squeezed below its maximum (the table's own column is minmax(0,1fr)),
+ * and erring wide only ever means a toolbar folded one row earlier.
+ */
+const DETAILS_RESERVE_PX = 368 + 16;
+const DETAILS_RESERVE_WIDE_PX = 432 + 16;
+
+/**
  * The Games page: the tabbed games browser (see GamesBrowser, which owns
  * the tabs, the collection and all its verbs) with a details column
  * standing beside it at lg. A thin host on purpose — this file used to
@@ -180,6 +193,9 @@ export function CollectionView() {
         <GamesBrowser
           table={wide}
           besideDetails={showDetails}
+          detailsReservePx={
+            wide && !pinned ? (roomier ? DETAILS_RESERVE_WIDE_PX : DETAILS_RESERVE_PX) : 0
+          }
           frame="page"
           onSelect={setSelection}
           clearRef={clearSelection}

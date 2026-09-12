@@ -141,6 +141,7 @@ function Box({
 export function GamesBrowser({
   table,
   besideDetails = false,
+  detailsReservePx = 0,
   frame,
   inPlace = false,
   onSelect,
@@ -161,6 +162,19 @@ export function GamesBrowser({
    * passes nothing.
    */
   besideDetails?: boolean;
+  /**
+   * The width a details column will take from this pane when a row is
+   * selected, while none stands (`besideDetails` false): the column's
+   * track plus the grid's gap, in px. The one-row toolbar is decided
+   * against the pane's width LESS this, so that selecting a row, which
+   * mounts the column, never folds the toolbar back to two rows under
+   * the pointer. Measured at 1280x900 before: the first click on a row
+   * moved the list 82px within the double-click interval, so the
+   * second click landed on the next row and opened a game nobody
+   * chose. Zero where the column is pinned or cannot appear, since the
+   * live width already tells the truth there.
+   */
+  detailsReservePx?: number;
   /**
    * What stands around the browser. `panel`: its own Panel, the tab
    * strip as the card's title, for a host that sets it among other
@@ -299,9 +313,26 @@ export function GamesBrowser({
   const [colSelKey, setColSelKey] = useState<string | null>(null);
   const [dbSel, setDbSel] = useState<DetailsSelection | null>(null);
   const [archSel, setArchSel] = useState<DetailsSelection | null>(null);
-  /** The pane's own width — see MERGED_MIN_PX. */
+  /** The pane's own width — see MERGED_MIN_PX and detailsReservePx. */
   const [stripRef, paneW] = useElementWidth();
-  const merged = table && paneW >= MERGED_MIN_PX;
+  // The pane's width with no column standing, remembered: the render
+  // that mounts the column still carries the OLD measurement (the
+  // observer reports a frame later), and deciding from it merged the
+  // toolbar for that frame and folded it back on the next, the very
+  // shift the reserve exists to prevent (measured: 82px up at the first
+  // click, 82px back down by 100ms). While the column stands the
+  // decision takes the smaller of the live width and that remembered
+  // width less the reserve, which are equal once the observer has
+  // caught up. Its one cost: widening the window while a game is
+  // selected does not merge the toolbar until the selection is dropped.
+  const freeW = useRef(0);
+  if (!besideDetails) freeW.current = paneW;
+  const decisiveW = besideDetails
+    ? detailsReservePx > 0
+      ? Math.min(paneW, freeW.current - detailsReservePx)
+      : paneW
+    : paneW - detailsReservePx;
+  const merged = table && decisiveW >= MERGED_MIN_PX;
   /** What the three lists tell the shell — the frame, in its words. */
   const shape: GameListShape = frame === 'panel' ? 'panel' : 'page';
   /** Every tab's selection at once: only one is live, and a tab change
