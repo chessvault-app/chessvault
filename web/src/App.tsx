@@ -809,7 +809,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
     >
       {/* The brand row: the Home button, and the fold switch beside it
           while there is room. */}
-      <div className="flex h-14 items-center">
+      <div className="flex h-14 shrink-0 items-center">
         {/* A tip and not the aria-label the rows below take: those repeat
             the label already printed beside their icon, and this one does
             not — the wordmark says whose app this is and the tip says
@@ -838,7 +838,20 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         {!folded && foldSwitch}
       </div>
 
-      <div className="flex flex-1 flex-col gap-0.5 p-2">
+      {/* The rows scroll; the brand row above and the footer below do not.
+          The column used to be one clipped box, and under a laptop height
+          (about 709px with the Tools group open, 783px folded, and any
+          zoomed page) the footer's Settings and theme switch stood below
+          the fold with no way to reach them: no wheel, no scrollbar, and a
+          Tab that moved focus to a control the eye could not find.
+          overflow-x stays hidden here because the nav's own clip is what
+          wipes the labels in and out on a fold, and an auto axis would
+          have shown a horizontal bar for the width they keep. `*:shrink-0`
+          because a row clips its own label (NAV_ROW is overflow-hidden),
+          and a flex item that clips has no content minimum: without it
+          the column squeezed sixteen rows into the room instead of
+          scrolling them, 36px rows measured at 25 and 20. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto p-2 *:shrink-0 [scrollbar-width:thin]">
         {folded && foldSwitch}
         {NAV.map(({ section, label, icon: Icon }) => {
           const isActive = section === active;
@@ -967,7 +980,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
 
       <div
         className={cn(
-          'border-border flex items-center gap-1 border-t p-2',
+          'border-border flex shrink-0 items-center gap-1 border-t p-2',
           folded ? 'flex-col' : 'flex-row justify-between px-3',
         )}
       >
