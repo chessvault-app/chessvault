@@ -16,7 +16,8 @@ import { Skeleton, SkeletonRows } from '@/components/skeletons';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { describeTheme } from './ThemesPage';
-import { t } from '@/lib/i18n';
+import { getLang, t } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { Figures } from '@/components/figures';
 import { TitleTip } from '@/components/title-tip';
 
@@ -212,6 +213,16 @@ export function DashboardPage() {
   // stop to the row the reader had left it on.
   const shown = puzzles.slice(0, 200);
   const rowStop = Math.min(logStop, Math.max(shown.length - 1, 0));
+  // The date column is one width for the whole log, so the band column
+  // beside it lines up row to row; a column sized to each row's own text
+  // would not. 5rem holds every relative form and this year's dates
+  // ("6 days ago" 72px, "Aug 11" 46, "8월 11일" 54 at text-sm). A date
+  // from another year is wider ("Dec 31, 2025" 87px, "2025년 12월 31일"
+  // 112), so once the log spans a new year the column takes the width
+  // that language's year date needs, and the name gives it up.
+  const thisYear = new Date().getFullYear();
+  const spansYears = shown.some((h) => new Date(h.at).getFullYear() !== thisYear);
+  const dateCol = !spansYears ? 'w-20' : getLang() === 'ko' ? 'w-29' : 'w-23';
 
   // Remembered for the NEXT visit's reservation, above — only once all
   // three answers are in and none failed: an outage empties `history`
@@ -507,14 +518,19 @@ export function DashboardPage() {
                           this stands for reads it. Both were wrong in
                           opposite directions: 33px against the real 36. */}
                       <div className="flex items-center gap-2.5 px-3 py-(--row-py) pointer-coarse:min-h-11">
-                        <div className="flex h-5 min-w-0 flex-1 items-center">
-                          <Skeleton className="h-2.5 w-2/5" />
+                        {/* The bar under the title below sm, beside it
+                            from there, as the row it stands for. The
+                            Progress track is h-1. */}
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                          <div className="flex h-5 items-center">
+                            <Skeleton className="h-2.5 w-2/5" />
+                          </div>
+                          <Skeleton className="h-1 rounded-full sm:hidden" />
                         </div>
                         <div className="flex h-5 shrink-0 items-center">
                           <Skeleton className="h-2.5 w-10" />
                         </div>
-                        {/* The Progress track is h-1. */}
-                        <Skeleton className="h-1 w-24 shrink-0 rounded-full" />
+                        <Skeleton className="h-1 w-24 shrink-0 rounded-full max-sm:hidden" />
                         <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                       </div>
                     </div>
@@ -558,8 +574,22 @@ export function DashboardPage() {
                     onClick={() => navigate('puzzles', 'books', b.slug)}
                     className="text-sm"
                   >
-                    <span data-user-text className="text-foreground min-w-0 flex-1 truncate font-medium">
-                      {b.title}
+                    {/* On a phone the bar goes under the title, as the
+                        hub's shelf draws it: beside the title, its 6rem
+                        left "A sample book" 54 of its 94px at 320 and
+                        84 in Korean at 360. The figures carry the fact
+                        either way; the bar is decoration. */}
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span data-user-text className="text-foreground truncate font-medium">
+                        {b.title}
+                      </span>
+                      <ProgressBar
+                        total={b.puzzles}
+                        solved={b.solved}
+                        failed={b.failed}
+                        className="sm:hidden"
+                        decorative
+                      />
                     </span>
                     {(b.due ?? 0) > 0 && (
                       <span className="text-info shrink-0 text-xs">{t('{n} due', { n: b.due! })}</span>
@@ -573,7 +603,7 @@ export function DashboardPage() {
                       total={b.puzzles}
                       solved={b.solved}
                       failed={b.failed}
-                      className="w-24 shrink-0"
+                      className="w-24 shrink-0 max-sm:hidden"
                       decorative
                     />
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
@@ -737,16 +767,27 @@ export function DashboardPage() {
                         title, where Replay still quotes it. The id stays
                         on screen only when the database is not there to
                         answer for the themes. */}
-                    {/* 8rem fits "Capturing defender" (122px); on a phone
-                        the fixed columns then summed to 330px in a 316px
-                        row and the date ran 4px under the eye, so the
-                        name gives up a rem there. */}
-                    <span className="text-foreground w-28 shrink-0 truncate sm:w-32">
-                      {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
+                    {/* The name is the one column that gives: it was a
+                        fixed 7rem (8 from sm), and with the band and the
+                        date fixed too the row summed past what a 360px
+                        phone has, so the date ran 18px under the eye
+                        there and 58px at 320, where it was gone. Now it
+                        truncates instead, which is what a name can do and
+                        a date cannot. Below 20.5rem the band drops under
+                        the name: beside it, the name kept 48px. */}
+                    <span className="flex min-w-0 flex-1 items-center gap-2.5 max-[20.5rem]:flex-col max-[20.5rem]:items-start max-[20.5rem]:gap-0">
+                      <span className="text-foreground min-w-0 max-w-full flex-1 truncate">
+                        {describeTheme(h.themes ?? []) ?? <span className="font-mono">#{h.id}</span>}
+                      </span>
+                      <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
                     </span>
-                    <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
                     <TitleTip title={formatWhen(h.at)}>
-                      <span className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums">
+                      <span
+                        className={cn(
+                          'text-muted-foreground shrink-0 whitespace-nowrap text-right tabular-nums',
+                          dateCol,
+                        )}
+                      >
                         {formatAgo(h.at)}
                       </span>
                     </TitleTip>
