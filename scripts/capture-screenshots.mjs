@@ -444,6 +444,23 @@ app.whenReady().then(async () => {
     // One load, then route from inside the page. A second loadURL to the
     // same document with a different hash aborts the first and rejects.
     await win.loadURL(`${BASE}/app/`);
+    // useContentSize asks for the page to be w x h, and on Windows the
+    // constructor has handed back 3px short under some Electron builds
+    // (993 for 996: 43 and 44 disagree), which moved every pixel of a
+    // board page between one recapture and the next. Chromium also keeps
+    // zoom per origin, so a later window starts at the last shot's zoom:
+    // reset it, measure what the page got, and correct the window until
+    // it is the size the table says.
+    win.webContents.setZoomFactor(1);
+    for (let i = 0; i < 3; i++) {
+      const [iw, ih] = await win.webContents.executeJavaScript('[innerWidth, innerHeight]');
+      if (iw === w && ih === h) break;
+      const [cw, ch] = win.getContentSize();
+      win.setContentSize(cw + (w - iw), ch + (h - ih));
+      await sleep(100);
+    }
+
+
     await win.webContents.executeJavaScript(
       `localStorage.setItem('chess-vault:lang', 'en');
        ${Object.entries(prefs)
