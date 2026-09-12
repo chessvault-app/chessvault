@@ -53,6 +53,19 @@ screen, and the opening map's panel steps aside from the dot you chose.
   under the data directory, rebuilt from any file whose modification
   time changed and safe to delete; a search waits for a pause in typing
   and lists at most fifty names and twenty text matches.
+- **The opening map's move panel rests at half the screen on a phone.**
+  It opens at its full height as before; a drag down now stops at half,
+  with the map in view above it, and a drag past that closes it. The
+  move between the two heights rides the same spring as the sheet's
+  entrance. Every phone sheet becomes a little more of a card the lower
+  it rests or the further a finger has pulled it: the top corners round
+  further, scaled off the Corners setting so Square stays square, the
+  sides stand a few pixels in from the edges, and the bottom corners
+  round from nothing. At full height it is flush, as before. The
+  one-field prompts (a new
+  study, a new note, every rename) lose their Cancel on a phone, where
+  the sheet's handle is the way out, and the answer takes the whole
+  row; on a desktop Cancel stays.
 - **An installed desktop app reads the vault's own tablebase files.** The
   installer puts the native core beside the bundled server, and the search
   and index jobs looked there, but the tablebase prober looked only in a

@@ -107,9 +107,27 @@ const DialogGuardContext = React.createContext<React.RefObject<DialogGuards | nu
 export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 'handle'> {
   /** Kept to Radix's one-argument shape: every caller in the app reads only the boolean. */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Where the phone's sheet may rest short of its full height: fractions
+   * of the viewport (`0.5`), pixels, or `rem` strings, low to high, with
+   * `1` the sheet's own full height. A drag stops at the nearest one
+   * instead of closing, so a sheet over a canvas can be pulled down to
+   * half and leave the canvas in view. Ignored on a desktop, where the
+   * window is a centred card with no height to rest at.
+   */
+  snapPoints?: DrawerPrimitive.Root.Props['snapPoints'];
+  /** Which of `snapPoints` the sheet opens at; the first when omitted. */
+  defaultSnapPoint?: DrawerPrimitive.Root.Props['defaultSnapPoint'];
 }
 
-function Dialog({ onOpenChange, open, onOpenChangeComplete, ...props }: DialogProps) {
+function Dialog({
+  onOpenChange,
+  open,
+  onOpenChangeComplete,
+  snapPoints,
+  defaultSnapPoint,
+  ...props
+}: DialogProps) {
   const phone = useMediaQuery(PHONE);
   const guards = React.useRef<DialogGuards | null>(null);
   // The sheet's exit, held here. Nearly every window in the app mounts
@@ -170,6 +188,9 @@ function Dialog({ onOpenChange, open, onOpenChangeComplete, ...props }: DialogPr
     else close();
   };
   const Root = phone ? DrawerPrimitive.Root : DialogPrimitive.Root;
+  // The Dialog primitive has no height to rest at and does not know the
+  // props, so they are handed only to the Drawer.
+  const resting = phone && snapPoints ? { snapPoints, defaultSnapPoint } : undefined;
   return (
     <SheetContext.Provider value={phone}>
       <DialogCloseContext.Provider value={close}>
@@ -178,6 +199,7 @@ function Dialog({ onOpenChange, open, onOpenChangeComplete, ...props }: DialogPr
             open={open === undefined ? undefined : open && !leaving}
             onOpenChange={handleOpenChange}
             onOpenChangeComplete={handleOpenChangeComplete}
+            {...resting}
             {...props}
           />
         </DialogGuardContext.Provider>
@@ -738,13 +760,16 @@ function DialogContent({
                 // AlertDialogFooter, and any sticky bar marked
                 // sheet-footer) are written against that number.
                 //
-                // xl, the rung the cards under it take and the rung this
-                // same window takes on a desktop (below). It was lg for
-                // one sweep, which put the sheet on the menus' rung: a
-                // corner 4px shy of every card behind it at the default
-                // knob, and 6.4px at Large, in a component that changed
-                // rung when it changed shape.
-                'rounded-t-xl pb-[calc(3.25rem+var(--safe-b))]',
+                // The corners are the xl rung at full height, the rung
+                // the cards under it take and the rung this same window
+                // takes on a desktop (below), and they round further as
+                // the sheet drops (a drag, or a lower snap point): see
+                // `sheet-corners` in index.css. It was lg for one sweep,
+                // which put the sheet on the menus' rung: a corner 4px
+                // shy of every card behind it at the default knob, and
+                // 6.4px at Large, in a component that changed rung when
+                // it changed shape.
+                'sheet-corners pb-[calc(3.25rem+var(--safe-b))]',
                 'has-data-[slot=dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 'has-data-[slot=alert-dialog-footer]:pb-[calc(1.25rem+var(--safe-b))]',
                 'has-data-[slot=sheet-footer]:pb-[calc(1.25rem+var(--safe-b))]',
@@ -761,13 +786,19 @@ function DialogContent({
                     (fill ? 'h-[var(--sheet-band)]' : 'max-h-[88%]'),
                 // The Drawer's swipe, consumed: the engine publishes the
                 // drag as a CSS variable and the release as data states.
-                // The entrance and a swipe's snap-back both ride the
-                // spring (the snap-back was 180ms ease-in-out; the spring
-                // is 90% home at 180ms, so the arrival reads the same and
-                // only the tail is softer). The exit, a button or a swipe
-                // past the threshold, is shorter and on the spring run
-                // backwards (see the note at the top).
-                'transform-[translate3d(0,var(--drawer-swipe-movement-y,0px),0)] transition-transform duration-(--pane-turn) ease-(--pane-turn-ease) will-change-transform',
+                // The snap-point offset rides in the same translate: it
+                // is 0px for a sheet with no snap points, and while a
+                // drag is on the engine folds it into the movement, so
+                // the sum is right at rest and mid-drag alike. The
+                // entrance, a swipe's snap-back and a move between two
+                // snap points all ride the spring (the snap-back was
+                // 180ms ease-in-out; the spring is 90% home at 180ms, so
+                // the arrival reads the same and only the tail is
+                // softer), and the corners settle on the same clock. The
+                // exit, a button or a swipe past the threshold, is
+                // shorter and on the spring run backwards (see the note
+                // at the top).
+                'transform-[translate3d(0,calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)),0)] transition-[transform,border-radius,margin] duration-(--pane-turn) ease-(--pane-turn-ease) will-change-transform',
                 // The entrance is an ANIMATION on mount, not the
                 // primitive's starting style: nearly every window here
                 // mounts its Root already open, so the primitive never

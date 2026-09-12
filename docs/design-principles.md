@@ -576,7 +576,25 @@ the same app look like two; the panels' rule went with the old look.)
 The way out is a **Cancel**, stated in words, next to the thing it
 cancels. Escape and the scrim also close, but neither is advertised. A
 window whose changes apply as you make them (the filters) offers
-Cancel — restoring what was there when it opened — beside Done.
+Cancel — restoring what was there when it opened — beside Done. The
+one-field prompt is the exception on a phone: its sheet carries the
+handle, which is the advertised way out there, and a Cancel beside the
+single answer was a second button for the thumb to tell apart, so the
+answer takes the whole row and Cancel is a desktop control.
+
+A sheet may have **resting heights** (`snapPoints` on `Dialog`): a
+drag stops at the nearest one instead of closing, and a drag past the
+lowest still closes. It is for a sheet over a subject that the sheet
+otherwise covers entirely: the opening map's move panel opens at its
+full height and rests at half the screen when pulled down, with the map
+in view above it. A form is not a candidate; its buttons are at the
+bottom, where a lower rest would put them out of reach. The move between
+two rests rides the same spring as the entrance. The lower the sheet
+rests, or the further a finger has pulled it, the more it becomes a
+card: its top corners round further, as a multiple of the xl rung, so
+the Corners setting scales the whole curve and Square stays square at
+every height; it stands a few pixels in from the edges, flush at full
+height; and its bottom corners round from nothing.
 
 The rule was once "never an X in the corner". Since every window became
 shadcn's Dialog, every titled window carries the registry's X on
