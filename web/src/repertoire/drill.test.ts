@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree, getNode } from '@shared/tree';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
-import { advanceCands, buildPosIndex, expectedSans, openingFamily, replayLine, trunkOf, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, deepestNamed, expectedSans, openingFamily, replayLine, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
 
 /** A chapter whose mainline is the given SANs. */
@@ -164,6 +164,28 @@ describe('gap relevance helpers', () => {
     const { posIndex, rootFen, seed } = seedOf(chapters);
     // The trunk is just 1.e4: every reply deviation is at or past it.
     expect(trunkOf(chapters, posIndex, seed, rootFen).ply).toBe(1);
+  });
+
+  it('lists every trunk position, so the subject can be named from the deepest named one', () => {
+    // One chapter, no branch: the whole line is the trunk, and its end
+    // (a middlegame) has no catalogue name. The name must come from the
+    // deepest position along the way that has one.
+    const chapters = [chapterOf('Berlin', ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nf6', 'O-O', 'Nxe4', 'Re1', 'Nd6'])];
+    const { posIndex, rootFen, seed } = seedOf(chapters);
+    const trunk = trunkOf(chapters, posIndex, seed, rootFen);
+    expect(trunk.ply).toBe(10);
+    expect(trunk.fens).toHaveLength(11);
+    expect(trunk.fens[0]).toBe(rootFen);
+    expect(trunk.fens.at(-1)).toBe(trunk.fen);
+  });
+
+  it('names the subject from the deepest named trunk position', () => {
+    expect(deepestNamed([null, 'Italian Game', 'Ruy Lopez: Berlin Defense', null, null])).toEqual({
+      family: 'Ruy Lopez',
+      ply: 2,
+    });
+    expect(deepestNamed([null, null])).toBe(null);
+    expect(deepestNamed([])).toBe(null);
   });
 
   it('splits an opening name into its family', () => {

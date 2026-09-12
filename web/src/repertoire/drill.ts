@@ -117,17 +117,25 @@ export const advanceCands = (
  * the study's own territory; deviations before it are only relevant
  * when they stay in the same opening (see openingFamily) — 1...c5 is
  * not a hole in a Ruy Lopez study, 3...Nf6 is (lanph3re's point).
+ *
+ * `fens` is every position along the trunk, the start first and the
+ * trunk's end last. The subject's opening is read from the DEEPEST of
+ * them that has a name, not from the end alone: a chapter that never
+ * branches has its whole line for a trunk, and an endgame at move 30
+ * has no catalogue row, so reading the end said the subject was nameless
+ * and every deviation from move one was reported as a gap.
  */
 export const trunkOf = (
   chapters: Chapter[],
   posIndex: Map<string, DrillCand[]>,
   seed: DrillCand[],
   startFen: string,
-): { ply: number; fen: string } => {
+): { ply: number; fen: string; fens: string[] } => {
   let game = createTree(startFen);
   let tip = game.rootId;
   let cands = seed;
   let ply = 0;
+  const fens = [startFen];
   for (;;) {
     const exp = expectedSans(chapters, cands);
     if (exp.length !== 1) break;
@@ -138,8 +146,29 @@ export const trunkOf = (
     cands = advanceCands(chapters, posIndex, cands, exp[0]!, fenKey(getNode(game, tip).fen));
     if (cands.length === 0) break;
     ply += 1;
+    fens.push(getNode(game, tip).fen);
   }
-  return { ply, fen: getNode(game, tip).fen };
+  return { ply, fen: getNode(game, tip).fen, fens };
+};
+
+/**
+ * The subject, from the trunk's opening names, start first: the deepest
+ * position that has a name decides the family, and its ply is where the
+ * catalogue stops naming the line. Before that ply the opening is still
+ * being chosen, so a deviation counts only when it stays in the family;
+ * from it on the opening is settled and every deviation is a sideline
+ * of the subject, named or not (a Berlin endgame at move 12 has no row,
+ * and the field's 12...Nf5 there is a hole in a Berlin study). No name
+ * anywhere gives null, which the view reads as "no basis to filter".
+ */
+export const deepestNamed = (
+  names: (string | null | undefined)[],
+): { family: string; ply: number } | null => {
+  for (let i = names.length - 1; i >= 0; i -= 1) {
+    const family = openingFamily(names[i]);
+    if (family) return { family, ply: i };
+  }
+  return null;
 };
 
 /** "Sicilian Defense: Najdorf Variation" -> "Sicilian Defense". */
