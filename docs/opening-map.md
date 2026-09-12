@@ -31,9 +31,10 @@ position. It can carry:
   in words: "Prepared to move 7, target 12".
 - A free-text **note**.
 
-Every dot on the opponent's plies carries a centre dot in the board's dark
+Every dot on the opponent's plies carries a centre dot in the foreground
 colour: on the White map that is every reply, on the Black map every move
-White makes. Your own moves are plain. The rim still says what it always
+White makes. (It was the board's dark square, which is whatever board the
+reader chose and on the default measured under 2.4:1 on the dot's fill.) Your own moves are plain. The rim still says what it always
 said (planned, covered, on the lit line), so the centre is the one mark that
 says whose turn the position was.
 

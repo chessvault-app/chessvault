@@ -1175,10 +1175,16 @@ export function MapCanvas({
                 // carried by hue alone is a signal somebody cannot see.
                 // Where you came FROM answers in bright foreground, where
                 // the field goes NEXT in its line's own colour, and
-                // everything else is a hairline in the border tone.
-                stroke={lit ? 'var(--color-foreground)' : (main ?? 'var(--color-border)')}
-                strokeOpacity={lit || main ? 1 : 0.85}
-                strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.1) / view.k}
+                // everything else is a hairline in the thread tone: a
+                // grey placed at 3:1 (index.css). It was the border tone
+                // at 85%, which measured 1.26:1 as drawn, a thread you
+                // inferred from the dots rather than saw.
+                stroke={lit ? 'var(--color-foreground)' : (main ?? 'var(--map-thread)')}
+                // 1.5px, not 1.1: a 1.1px line antialiased across two pixel
+                // rows keeps only 2.5 to 3.1:1 of the colour's 3.6:1 as
+                // drawn, and a stroke asked to reach 3:1 has to reach it in
+                // the pixels, not the token.
+                strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.5) / view.k}
                 strokeLinecap="round"
                 opacity={Math.min(dimOf(from), dimOf(to))}
               />
@@ -1205,7 +1211,7 @@ export function MapCanvas({
             const target = node.depth;
             const reach =
               target !== undefined && cov ? reachedMove(facts.ply, cov.preparedPlies) : undefined;
-            const ring = 2 * Math.PI * (r + 3);
+            const ring = 2 * Math.PI * (r + 3 * inv);
             return (
               <g
                 key={id}
@@ -1403,24 +1409,34 @@ export function MapCanvas({
                         ? 'var(--color-muted-foreground)'
                         : 'transparent'
                   }
-                  strokeWidth={selected ? 2 : 1.2}
-                  strokeDasharray={planned && !selected ? '3 3' : undefined}
+                  // SCREEN widths, like the labels: the rim is what says
+                  // "planned", and at 1.2 world units it was 0.52px on the
+                  // desktop arrival and 0.31px on the phone, a dash the
+                  // antialiasing washed to 1.3-1.7:1 whatever colour it
+                  // was given. The dashes are screen-sized too, so a far
+                  // view does not turn them into a dotted blur.
+                  strokeWidth={(selected ? 2 : 1.5) * inv}
+                  strokeDasharray={planned && !selected ? `${4 * inv} ${3 * inv}` : undefined}
                 />
-                {/* Whose ply: the opponent's replies carry a centre dot in the
-                    board's dark colour, so the two layers of a line can be told
-                    apart at a glance. "Opponent" follows the map's colour, so
-                    on the Black map it is White's moves that carry it. The
-                    centre is the one spot no other mark uses: fills, strokes
-                    and the depth arc all live on the rim, the badges on the
-                    corners. It does not fade with zoom, since it is a shape
-                    cue rather than a detail. */}
+                {/* Whose ply: the opponent's replies carry a centre dot, so
+                    the two layers of a line can be told apart at a glance.
+                    "Opponent" follows the map's colour, so on the Black map
+                    it is White's moves that carry it. The centre is the one
+                    spot no other mark uses: fills, strokes and the depth arc
+                    all live on the rim, the badges on the corners. It does
+                    not go with the labels, since it is a shape cue rather
+                    than a detail. In the foreground at 85%, not the board's
+                    dark square: that colour is whatever board the reader
+                    chose, and on the default it measured 1.5 to 2.4:1 on the
+                    dot's fill, a cue you could not see; the foreground reads
+                    on every fill a dot can have. */}
                 {theirs && (
                   <circle
                     cx={0}
                     cy={0}
                     r={r * 0.42}
-                    fill="var(--board-dark)"
-                    fillOpacity={planned ? 0.6 : 1}
+                    fill="var(--color-foreground)"
+                    fillOpacity={planned ? 0.6 : 0.85}
                     pointerEvents="none"
                   />
                 )}
@@ -1474,10 +1490,11 @@ export function MapCanvas({
                   <circle
                     cx={0}
                     cy={0}
-                    r={r + 3}
+                    // Screen-sized, like the rim it sits outside of.
+                    r={r + 3 * inv}
                     fill="none"
                     stroke={reach < target ? 'var(--color-warn)' : 'var(--color-good)'}
-                    strokeWidth={1.6}
+                    strokeWidth={1.6 * inv}
                     strokeDasharray={`${ring * Math.min(1, reach / Math.max(1, target))} ${ring}`}
                     transform="rotate(-90)"
                   />
@@ -1547,6 +1564,13 @@ export function MapCanvas({
                   fontWeight={600}
                   textAnchor="middle"
                   fill={invalid ? 'var(--color-destructive)' : 'var(--color-foreground)'}
+                  // A knockout in the page colour under the glyphs, the
+                  // map-label convention: the threads are drawn at 3:1 now
+                  // and one running under a name struck it through.
+                  stroke="var(--color-background)"
+                  strokeWidth={3 * inv}
+                  strokeLinejoin="round"
+                  paintOrder="stroke"
                 >
                   {move}
                 </text>
@@ -1562,6 +1586,10 @@ export function MapCanvas({
                     // theme migration, and an undefined var in an SVG fill
                     // paints black: invisible captions on a dark map.
                     fill="var(--color-muted-foreground)"
+                    stroke="var(--color-background)"
+                    strokeWidth={3 * inv}
+                    strokeLinejoin="round"
+                    paintOrder="stroke"
                   >
                     {caption}
                   </text>
