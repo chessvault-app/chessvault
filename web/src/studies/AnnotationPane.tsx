@@ -10,6 +10,7 @@ import { useAnalysis } from '@/store/analysis';
 import { autoFocusField, isCoarsePointer } from '@/lib/media';
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/components/chip-row';
 import { WikiSuggest } from '@/notes/WikiSuggest';
@@ -21,6 +22,48 @@ import { t } from '@/lib/i18n';
 const QUALITY_NAGS = [1, 2, 3, 4, 5, 6];
 /** Positional-assessment NAGs — also mutually exclusive. */
 const ASSESSMENT_NAGS = [14, 16, 18, 10, 13, 15, 17, 19];
+
+/**
+ * What each glyph means, in words: the palette's fourteen buttons were
+ * named "!" and "⩲" to a screen reader and to a tooltip alike, which is
+ * the punctuation, not the name. A switch of literals rather than a table,
+ * for the reason `rewriteNotice` gives: the translation sweep only sees a
+ * string written inside a `t(` call.
+ */
+function nagName(nag: number): string {
+  switch (nag) {
+    case 1:
+      return t('Good move');
+    case 2:
+      return t('Mistake');
+    case 3:
+      return t('Brilliant move');
+    case 4:
+      return t('Blunder');
+    case 5:
+      return t('Interesting move');
+    case 6:
+      return t('Dubious move');
+    case 10:
+      return t('Equal position');
+    case 13:
+      return t('Unclear position');
+    case 14:
+      return t('White is slightly better');
+    case 15:
+      return t('Black is slightly better');
+    case 16:
+      return t('White is better');
+    case 17:
+      return t('Black is better');
+    case 18:
+      return t('White is winning');
+    case 19:
+      return t('Black is winning');
+    default:
+      return NAG_GLYPH[nag] ?? String(nag);
+  }
+}
 
 /** Whether the glyph palette is unfolded — a preference, so it persists. */
 const PALETTE_KEY = 'vault:nag-palette';
@@ -218,18 +261,18 @@ export function AnnotationPane({
       {QUALITY_NAGS.map((nag) => (
         <NagButton
           key={nag}
-          glyph={NAG_GLYPH[nag]!}
+          nag={nag}
           active={node.nags.includes(nag)}
-          onClick={() => toggleNag(nag, QUALITY_NAGS)}
+          onToggle={() => toggleNag(nag, QUALITY_NAGS)}
         />
       ))}
       <span className="bg-border mx-1 h-4 w-px" />
       {ASSESSMENT_NAGS.map((nag) => (
         <NagButton
           key={nag}
-          glyph={NAG_GLYPH[nag]!}
+          nag={nag}
           active={node.nags.includes(nag)}
-          onClick={() => toggleNag(nag, ASSESSMENT_NAGS)}
+          onToggle={() => toggleNag(nag, ASSESSMENT_NAGS)}
         />
       ))}
     </>
@@ -389,19 +432,31 @@ export function AnnotationPane({
   );
 }
 
+/**
+ * One glyph of the palette: the registry's Toggle, so the button carries
+ * aria-pressed and draws its two fills the way the rest of the app does —
+ * `--muted` under the pointer, `--accent` once it is on. Hand-rolled, it
+ * had those the other way round (set fainter than hovered, so the click
+ * that set a glyph made it paler), and no name: "!" and "⩲" were what a
+ * screen reader was given. The name goes on the tooltip too.
+ */
 function NagButton({
-  glyph,
+  nag,
   active,
-  onClick,
+  onToggle,
 }: {
-  glyph: string;
+  nag: number;
   active: boolean;
-  onClick: () => void;
+  onToggle: () => void;
 }) {
+  const name = nagName(nag);
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Toggle
+      size="none"
+      pressed={active}
+      onPressedChange={onToggle}
+      title={name}
+      aria-label={name}
       className={cn(
         // Coarse pointers get a thumb-sized target (these annotate on a
         // phone too); a mouse keeps the compact glyph row.
@@ -412,14 +467,11 @@ function NagButton({
         // another 48px to a row that cannot be seen at once as it is.
         // The 4px of height comes off the move table above — it is
         // min-h-0 flex-1 and yields it — so the board pays nothing.
-        'h-6 min-w-6 rounded-sm px-1 font-mono text-sm font-semibold transition-colors duration-100',
+        'text-muted-foreground h-6 min-w-6 rounded-sm px-1 font-mono text-sm font-semibold',
         'pointer-coarse:h-9 pointer-coarse:min-w-8',
-        active
-          ? 'bg-muted text-primary'
-          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
       )}
     >
-      {glyph}
-    </button>
+      {NAG_GLYPH[nag]}
+    </Toggle>
   );
 }
