@@ -14,6 +14,9 @@ vault's own tablebase files, a puzzle's hover preview wears the same edge as
 the game list's, and the vault path copies in the isolated build. An audit
 of the code for wasted work made the games list, reference search, index
 builds and the board's arrow keys do less per request.
+A pinch enlarges the app again, every dashed file box takes a keyboard,
+and coming back to the Board offers back the board you left. The focus
+ring can be seen: it measured about 1.5:1 where 3 is the bar.
 
 - **Endgame drills, under Tools.** Tools → Endgame drills lists the
   material classes the games hunt already knows (a rook endgame, a queen
@@ -164,6 +167,97 @@ builds and the board's arrow keys do less per request.
   Measured on the studies shelf, opening it from the Home tab: the list
   drew at 147 ms and vanished at 504 ms. The fade now rides the frame
   the list appears on.
+
+- **A pinch enlarges the app again.** The phone viewport capped the
+  scale and the page declined a two-finger gesture outright, so the app
+  could not be made bigger by anyone whose eyes need it, which is the
+  one thing a small screen has to allow. A spread now zooms any page,
+  because it is the browser's own zoom: measured over the demo at 390px,
+  home, settings, a shelf card, a game row, a book cover and a note all
+  go from 1x to 5x where every one of them held at 1x before. The
+  surfaces that read two fingers themselves keep them and hold the page
+  still, so a pinch there still does their own job: the board while it
+  is playable, a book's page, the evidence pages, the opening map and
+  the bottom bar. A double tap still does not zoom. What it costs is the
+  gesture the cap existed to stop, two fingers zooming the whole shell,
+  and a page zoomed that way stays zoomed until it is pinched back.
+- **A second finger on a card or a row stands its swipe down.** The
+  sideways swipe that removes a note, a game or a book followed one
+  touch and never counted the fingers, so a two-finger spread on a card
+  read as a swipe: measured on the demo at 390px with the page held
+  still, a spread on a note card moved the followed touch 120px, past
+  the 96px threshold, and removed the note. Eleven cards to ten before,
+  eleven to eleven after. A swipe a stray second touch joins now does
+  nothing rather than completing, which is the answer the pane swipe and
+  the bottom bar already give.
+- **A keyboard can choose a file, everywhere the app takes one.** The
+  dashed box in the book importer, the shelf's Import and Replace PDF,
+  the PGN upload window and both picture boxes was a label around a
+  hidden input, which is not something a keyboard can reach: measured on
+  the demo, fourteen Tabs walked those windows without once landing on a
+  box, and Space and Enter opened no chooser at all. The PGN upload
+  window is nothing but its box, so a keyboard could open that window
+  and then only leave it. Every box is a button now, with a tab stop,
+  the app's own focus ring and a name a screen reader reads; the look,
+  the press and the dropped file are unchanged, and the six windows are
+  pixel-identical at rest. Choosing the same file twice in a row works
+  too: three of the boxes kept the first pick, and a browser raises no
+  event for a repeat, so the second try did nothing.
+- **Coming back to the Board offers back the board you left.** The Board
+  starts fresh every time it is opened, which is what it is for, but it
+  took the last board away without a word: 1. e4 e5 2. Nf3 Nc6, a look
+  at Games, back by the sidebar, and the board read "*". The sharpest
+  case was Tools → Explorer, which threw away the very line the explorer
+  was being opened for. A visit that replaces a board holding something
+  now says so for a few seconds, with "Started a new board" and
+  "Restore", and Restore puts back the moves, the move you stood on, the
+  game and the side you were viewing from, and points the explorer at
+  that position. The engine stays off, since an engine already running
+  on arrival is what a fresh entry exists to prevent. Nothing is kept on
+  disk, so a reload has nothing to offer. Only one such offer stands at
+  a time now, wherever on the page it came from: the restore offer and
+  the move tree's "Removed “all moves” · Undo" could stand stacked,
+  which is one board and two questions.
+- **The focus ring can be seen.** Every ring on every control was the
+  component library's own 50% wash, and measured at each Tab stop
+  against the pixel that is there without it, over 1,636 stops on 22
+  routes in four schemes, it read 1.35 to 1.60:1 in light and 1.72 to
+  1.88 in dark. High contrast, the scheme chosen for legibility, reached
+  2.14. WCAG asks 3:1 of the mark that says where the keyboard is, so no
+  control in the app met it, in any scheme. The wash is gone and the
+  ring's colour moved to where the ratio holds on every surface it can
+  land on: re-measured over the same 1,636 stops, every one is 3.33:1 or
+  better. Four places needed more than the colour. The phone's round
+  button and a toast drop their shadow while the keyboard is on them,
+  since a ring drawn in the band a shadow darkens is not on the page it
+  looks like it is on (the toast's ring went from 64% of itself above
+  3:1 to 94%). The editor's piece palette stops dimming the ring along
+  with the piece it is on. And the volume and board sliders have a focus
+  ring at all, which they never did: the thing that takes focus there is
+  clipped to nothing, so tabbing to a slider changed zero pixels. The
+  ring is a plainly darker line in light and a lighter one in dark than
+  before, on every control on every page. `check:contrast` now measures
+  focus indicators, which it never did, so the wash cannot come back
+  unnoticed the next time a component file is rewritten.
+- **The blue a count is written in clears the row it is read on.** In
+  the dark theme, the puzzle dashboard's due count sits on a row that
+  fills under the pointer, and hovered it measured 4.29:1 where a 12px
+  string needs 4.5. The blue is two points lighter: 4.60 there, and 8.78
+  on the page, 7.95 on a card, 5.60 on the selected fill, up from 8.20,
+  7.42 and 5.23. It is visibly lighter wherever dark mode draws it, the
+  annotated-game pen in the games table among them.
+- **A board that resizes keeps its pieces when motion is reduced.** With
+  the system set to reduce motion, every board that changed size laid
+  its pieces out on the grid it had before the resize and left them
+  there. Measured on the demo: 28 of 32 pieces off their squares in the
+  reader's board after "Set up this position", 11 of 32 outside the
+  board entirely when the workspace's engine bar opens, and up to 5
+  hanging outside a puzzle thumbnail after a phone rotation. All of them
+  are 0 now, and none of them ever happened with motion allowed. The
+  same setting also had the app remember the wrong launch colour: the
+  theme read back the colour it had just applied and got the previous
+  one, so the next launch pinned the old theme's colour behind the
+  startup image, which is the flash that pin exists to prevent.
 
 ## 0.9.5
 
