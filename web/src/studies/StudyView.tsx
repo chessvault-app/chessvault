@@ -403,7 +403,12 @@ export function StudyView({
             // It has to apply at every width: a short landscape viewport is
             // above lg and hits this harder than a phone, because the
             // engine block is only rendered there.
-            'overflow-y-auto scrollbar-hidden',
+            //
+            // The scrollbar stays visible, unlike the column's around it:
+            // with it hidden, a 1280x720 window in edit mode held 96px of
+            // panel, the whole comment box, below the fold with nothing on
+            // screen to say so. A gutter appears only while it overflows.
+            'overflow-y-auto',
             !paneSwipe.shows('moves') && 'max-lg:hidden',
           )}
         >

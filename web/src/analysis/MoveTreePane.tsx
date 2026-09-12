@@ -164,7 +164,14 @@ export function MoveTreePane({ className }: { className?: string }) {
             // its overflow, so a floor here pushed the editor out of the panel
             // entirely — visible on game pages, which spend ~56px more than a
             // study on the two player bars.
-            'min-h-0 flex-1 overflow-y-auto text-base leading-relaxed lg:min-h-24',
+            //
+            // Three rows on desktop, not two: a row is 35px, so 96px showed
+            // two moves of a study while its editor was open, which is a
+            // keyhole on the document the page exists to read. Fitted to
+            // exactly three rows (6.5625rem = 105px) rather than the scale's
+            // next step: 112px put a 1280x720 study 1px over its panel in
+            // reading mode, which is a scrollbar for nothing.
+            'min-h-0 flex-1 overflow-y-auto text-base leading-relaxed lg:min-h-[6.5625rem]',
             className,
           )}
         >
