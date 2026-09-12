@@ -46,7 +46,9 @@ export function ResultBar({
    * already uses for a game that went your way or did not. The insights
    * page asked for the second and the eval inks would have lied on it: a
    * game won as Black is not a black segment. The mixes here are deeper
-   * than the badge's 10% tints, which measured 1.01:1 apart, and the
+   * than the badge's 10% tints, which measured 1.01:1 apart, mixed in
+   * oklab because an oklch mix with the card's declared hue walked the
+   * green to tan and the red to purple (measured: #e7c6b7, #413657), and the
    * figures take the page's ink rather than the hue's, which no wash
    * this pale could carry at 4.5:1.
    */
@@ -60,14 +62,14 @@ export function ResultBar({
     {
       value: pct(w),
       className: mine
-        ? 'bg-[color-mix(in_oklch,var(--good)_30%,var(--card))] text-foreground'
+        ? 'bg-[color-mix(in_oklab,var(--good)_30%,var(--card))] text-foreground'
         : 'bg-eval-white text-on-eval-white',
     },
     { value: pct(d), className: 'bg-result-draw text-black' },
     {
       value: pct(b),
       className: mine
-        ? 'bg-[color-mix(in_oklch,var(--destructive)_30%,var(--card))] text-foreground'
+        ? 'bg-[color-mix(in_oklab,var(--destructive)_30%,var(--card))] text-foreground'
         : 'bg-eval-black text-on-eval-black',
     },
   ];
