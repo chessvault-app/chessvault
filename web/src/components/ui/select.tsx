@@ -406,15 +406,17 @@ function SelectField({
         <button
           type="button"
           id={root.id}
-          aria-labelledby={`${label ? labelId : (fieldLabelId ?? '')} ${valueId}`.trim()}
+          aria-labelledby={`${prefix ? '' : label ? labelId : (fieldLabelId ?? '')} ${valueId}`.trim()}
           aria-description={description}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen(true)}
           className={cn(selectTriggerVariants({ size: size === 'sm' ? 'sm' : 'default' }), mono && 'font-mono', className)}
         >
-          {label && (
-            <span id={labelId} className={prefix ? 'hidden' : 'sr-only'}>
+          {/* Not drawn with a prefix: the value span already reads
+              "Status: All", and aria-labelledby reads a hidden node too. */}
+          {label && !prefix && (
+            <span id={labelId} className="sr-only">
               {label}:
             </span>
           )}
@@ -432,7 +434,7 @@ function SelectField({
               {/* The rows are options in a listbox, as Base UI's popover
                   exposes them: the chosen one was marked only by a weight
                   and an aria-hidden tick, so nothing said which it was. */}
-              <div role="listbox" aria-labelledby={label ? labelId : fieldLabelId ?? undefined}>
+              <div role="listbox" aria-labelledby={prefix ? undefined : label ? labelId : (fieldLabelId ?? undefined)}>
               {groups.map((group, gi) => (
                 <div key={gi} role="group">
                   {group.label && (
