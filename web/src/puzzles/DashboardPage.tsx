@@ -636,7 +636,7 @@ export function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <SkeletonRows rows={reserved.attempts} />
+              <SkeletonRows rows={reserved.attempts} nameWidth="w-28 sm:w-32" />
             )
           ) : puzzles.length === 0 ? (
             // An outage is not an empty vault: told "No attempts yet", a

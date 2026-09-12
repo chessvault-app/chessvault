@@ -122,7 +122,18 @@ function Loading({ children, className }: { children: React.ReactNode; className
  * the hairline between rows that two of the three callers draw. No
  * padding of its own — none of the three lists has any.
  */
-export function SkeletonRows({ rows = 6, className }: { rows?: number; className?: string }) {
+export function SkeletonRows({
+  rows = 6,
+  className,
+  nameWidth = 'w-16',
+}: {
+  rows?: number;
+  className?: string;
+  /** The name column's own width. The hub's log is an id at `w-16`; the
+      dashboard's is a motif at `w-28 sm:w-32`. Everything else about the
+      two rows is deliberately identical (HubPage's own comment). */
+  nameWidth?: string;
+}) {
   return (
     <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
@@ -130,18 +141,30 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
         // has them: a `li` carries the hairline and the ListRow inside it
         // carries min-h-11. Both on one border-box element and the border
         // eats a pixel of the floor, so every row came out 1px short.
-        <div key={i}>
+        <div key={i} className="flex items-center pr-1.5">
           <div
             // ListRow's own floor under a coarse pointer: 44px, where these
             // rows were 33 and the dashboard's list grew 11px a row on a phone.
-            className="flex items-center gap-2.5 px-3 py-(--row-py-dense) pointer-coarse:min-h-11"
+            className="flex min-w-0 flex-1 items-center gap-2.5 px-3 pr-1.5 py-(--row-py-dense) pointer-coarse:min-h-11"
           >
             <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-            <div className="flex h-5 min-w-0 flex-1 items-center">
-              <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+            {/* Both lists these stand for are five columns, not three: a
+                mark, a name, the difficulty word, a right-aligned time and
+                the eye beside the row. Drawn as three, every row re-laid
+                itself out sideways when the answers came. */}
+            <div className={cn('flex h-5 shrink-0 items-center', nameWidth)}>
+              <Skeleton className={cn('h-2.5 max-w-full', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
-            <Skeleton className="h-2.5 w-10 shrink-0" />
+            <div className="flex h-5 w-14 shrink-0 items-center">
+              <Skeleton className="h-2.5 w-10" />
+            </div>
+            <div className="ml-auto flex h-5 w-20 shrink-0 items-center justify-end">
+              <Skeleton className="h-2.5 w-12" />
+            </div>
           </div>
+          {/* PreviewEye is an icon-xs button: size-6, and size-9 under a
+              thumb. Kept, not drawn, as the chevrons elsewhere are. */}
+          <span aria-hidden className="size-6 shrink-0 pointer-coarse:size-9" />
         </div>
       ))}
     </Loading>

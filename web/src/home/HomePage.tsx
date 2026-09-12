@@ -1068,7 +1068,12 @@ export function HomePage() {
               {t('Continue')}
             </h2>
             {reserved.board && (
-              <div className="border-border border-l-primary bg-primary/10 flex items-center gap-3 border-b border-l-2 px-3 py-3">
+              // max-[319px]:flex-wrap, as the row itself takes it: under
+              // 320px (200% zoom on a 390 phone) the real title goes under
+              // the board and the row stands ~152px, where this kept them
+              // side by side at 96 and the card grew 56px as the position
+              // landed. The sweep measures 390 and 1280 and never saw it.
+              <div className="border-border border-l-primary bg-primary/10 flex items-center gap-3 border-b border-l-2 px-3 py-3 max-[319px]:flex-wrap">
                 {/* 96px, and 128 from xl: the MiniBoard below is sized the same way,
                     and one size here stood 32px short of it on a desktop.
                     The three bars take the primary at 20%, not the accent
@@ -1080,7 +1085,7 @@ export function HomePage() {
                     sit 42 levels off the well in light and 37 in dark,
                     in the well's own ink. */}
                 <Skeleton className="bg-primary/20 size-24 shrink-0 rounded-sm xl:size-32" />
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 flex-1 max-[319px]:basis-full">
                   <Skeleton className="bg-primary/20 h-5 w-44 max-w-full" />
                   <Skeleton className="bg-primary/20 mt-1.5 h-4 w-24 max-w-full" />
                 </span>
