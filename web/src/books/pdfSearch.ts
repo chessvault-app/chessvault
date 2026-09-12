@@ -1,6 +1,9 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { announce } from '@/lib/announce';
+import { t } from '@/lib/i18n';
+
 import type { DiagramRect } from './data';
 
 /**
@@ -96,7 +99,16 @@ export function usePdfSearch(
           // three hundred of them back to back would hold the main thread.
           await new Promise((r) => setTimeout(r, 0));
         }
-        if (token.current === mine) setScanning(null);
+        if (token.current !== mine) return;
+        setScanning(null);
+        // Said once, at the end: the count in the box is repainted as
+        // pages are read, which a screen reader does not hear, and the
+        // first hit turned the page under the field without a word.
+        announce(
+          found.length > 0
+            ? t('{n} found, page {page}', { n: found.length, page: found[0]!.page })
+            : t('No matches'),
+        );
       })();
     },
     [doc, onJump],
@@ -115,6 +127,7 @@ export function usePdfSearch(
     const i = (current + delta + hits.length) % hits.length;
     setCurrent(i);
     onJump(hits[i]!.page);
+    announce(t('{k} of {n}, page {page}', { k: i + 1, n: hits.length, page: hits[i]!.page }));
   };
 
   return {
@@ -136,28 +149,50 @@ interface Run {
   box: [number, number, number, number];
 }
 
-async function searchPage(doc: PDFDocumentProxy, n: number, needle: string): Promise<SearchHit[]> {
+/** The one thing a box needs from a viewport: user space to viewport px. */
+export interface PointMapper {
+  convertToViewportPoint: (x: number, y: number) => number[];
+}
+
+/**
+ * A text run's box in viewport px, from what pdf.js reports for it.
+ *
+ * `width` and `height` are already in user-space units with the font
+ * size applied (the worker sums the glyph advances and takes the height
+ * off the text matrix), so the matrix's scale must NOT be applied to
+ * them again: pushed through `a` and `d` a second time, a 10.5pt run
+ * came out ten times too wide and sat two page widths to the right.
+ * Only the matrix's DIRECTIONS are used, so rotated or sheared text
+ * still gets a box along its own baseline.
+ */
+export function runBox(
+  transform: number[],
+  width: number,
+  height: number,
+  viewport: PointMapper,
+): [number, number, number, number] {
+  const [a, b, c, d, e, f] = transform as [number, number, number, number, number, number];
+  const na = Math.hypot(a, b) || 1;
+  const nc = Math.hypot(c, d) || 1;
+  const corners = [
+    [0, 0],
+    [width, 0],
+    [0, height],
+    [width, height],
+  ].map(([x, y]) => viewport.convertToViewportPoint(e + (x! * a) / na + (y! * c) / nc, f + (x! * b) / na + (y! * d) / nc));
+  const xs = corners.map((p) => p[0]!);
+  const ys = corners.map((p) => p[1]!);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+}
+
+export async function searchPage(doc: PDFDocumentProxy, n: number, needle: string): Promise<SearchHit[]> {
   const page = await doc.getPage(n);
   const viewport = page.getViewport({ scale: 1 });
   const content = await page.getTextContent();
   const runs: Run[] = [];
   for (const item of content.items) {
     if (!('str' in item) || !item.str) continue;
-    const [a, b, c, d, e, f] = item.transform as number[];
-    // The run's box in user space: origin at the baseline, the font's
-    // height above it, the advance to the right — through the run's own
-    // transform for rotated or sheared text.
-    const w = item.width;
-    const h = item.height;
-    const corners = [
-      [0, 0],
-      [w, 0],
-      [0, h],
-      [w, h],
-    ].map(([x, y]) => viewport.convertToViewportPoint(a! * x! + c! * y! + e!, b! * x! + d! * y! + f!));
-    const xs = corners.map((p) => p[0]);
-    const ys = corners.map((p) => p[1]);
-    runs.push({ str: item.str, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] });
+    runs.push({ str: item.str, box: runBox(item.transform as number[], item.width, item.height, viewport) });
   }
   // Runs joined with a space between: pdf.js splits at line and word
   // boundaries, and a query that crosses one should still match.

@@ -29,6 +29,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX, type PinchLive, type PinchPoint } from '@/hooks/use-pinch-zoom';
+import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useMediaQuery, useWideLayout } from '@/lib/media';
@@ -179,6 +180,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   }, [book, pageNo]);
   const goTo = useCallback(
     (n: number): void => {
+      // Guarded here, for every caller: a NaN got through the desktop
+      // page field once, and NaN as the page blanked the book, with the
+      // arrows dead after it (NaN plus one is still NaN).
+      if (!Number.isFinite(n)) return;
       const max = pages || Infinity;
       setPageNo(Math.min(Math.max(1, Math.round(n)), max));
     },
@@ -271,6 +276,21 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // The book's diagram pass, while it is this book's: shown over the page.
   const job = useDiagramJob();
   const reading = job.bookId === id && job.status === 'running' ? job : null;
+  // The pass's end, said once: the line over the page counts pages as it
+  // goes and then leaves, which a screen reader does not hear, and the
+  // diagram buttons it puts on the page arrive without a word.
+  const wasReading = useRef(false);
+  useEffect(() => {
+    if (job.bookId !== id) return;
+    if (job.status === 'running') {
+      wasReading.current = true;
+      return;
+    }
+    if (!wasReading.current) return;
+    wasReading.current = false;
+    if (job.status === 'done') announce(t('Diagram reading finished.'));
+    else if (job.status === 'failed') announce(t('Diagram reading failed.'));
+  }, [id, job.bookId, job.status]);
 
   const [tab, setTab] = useState<'book' | 'board' | 'editor'>('book');
   // Opening the editor at wide swaps it for the board beside the page; on
@@ -1036,6 +1056,12 @@ function PdfPane({
   // The page number is a field: typing one and pressing Enter goes there,
   // which is the go-to every reader knows without a label.
   const [typed, setTyped] = useState<string | null>(null);
+  // An entry that is not a page number ("p5", "iv") is refused and the
+  // field goes back to the page being read, marked invalid until the
+  // next keystroke; before this it went through as NaN and blanked the
+  // book (goTo now refuses it too).
+  const [badEntry, setBadEntry] = useState(false);
+  useEffect(() => setBadEntry(false), [pageNo]);
   /**
    * The phone asks for the page in a sheet, not in the bar.
    *
@@ -1060,24 +1086,25 @@ function PdfPane({
   // under 520 px, where the measured row began to eat the field.
   const fold = compact || width < 520;
   const [moreOpen, setMoreOpen] = useState(false);
+  // The zoom entries are in the phone's sheet too: pinch is the phone's
+  // quick zoom, and the bar has no room for buttons, but a reader with
+  // one finger, a stylus or a switch has no pinch, and the sheet costs
+  // the bar nothing. Fit stays off a portrait phone by its own guard,
+  // where the width fit already shows the whole page.
   const more: MenuAction[] = fold
     ? [
-        ...(!compact
+        ...(fitPageZoom !== null && (fitPageZoom < 1 || fitted)
           ? [
-              ...(fitPageZoom !== null && (fitPageZoom < 1 || fitted)
-                ? [
-                    {
-                      label: fitted ? 'Fit the width' : 'Fit the whole page',
-                      icon: fitted ? MoveHorizontal : Maximize2,
-                      onSelect: toggleFit,
-                    },
-                  ]
-                : []),
-              { label: 'Zoom in', icon: ZoomIn, onSelect: () => anchoredBump(1.25) },
-              { label: 'Zoom out', icon: ZoomOut, onSelect: () => anchoredBump(1 / 1.25) },
-              { label: 'Reset zoom', icon: Percent, onSelect: () => anchoredBump(1 / zoom) },
+              {
+                label: fitted ? 'Fit the width' : 'Fit the whole page',
+                icon: fitted ? MoveHorizontal : Maximize2,
+                onSelect: toggleFit,
+              },
             ]
           : []),
+        { label: 'Zoom in', icon: ZoomIn, onSelect: () => anchoredBump(1.25) },
+        { label: 'Zoom out', icon: ZoomOut, onSelect: () => anchoredBump(1 / 1.25) },
+        { label: 'Reset zoom', icon: Percent, onSelect: () => anchoredBump(1 / zoom) },
         { label: 'Rotate the page', icon: RotateCw, onSelect: onRotate },
         {
           label: hotspots ? 'Hide the diagram buttons' : 'Show the diagram buttons',
@@ -1126,10 +1153,18 @@ function PdfPane({
               className="w-12 text-center tabular-nums"
               value={typed ?? String(pageNo || 1)}
               aria-label={t('Go to page')}
+              aria-invalid={badEntry || undefined}
               onFocus={(e) => e.currentTarget.select()}
-              onChange={(e) => setTyped(e.target.value)}
+              onChange={(e) => {
+                setTyped(e.target.value);
+                setBadEntry(false);
+              }}
               onBlur={() => {
-                if (typed !== null && typed.trim() !== '') goTo(Number(typed));
+                if (typed !== null && typed.trim() !== '') {
+                  const n = Number(typed);
+                  if (Number.isFinite(n) && n > 0) goTo(n);
+                  else setBadEntry(true);
+                }
                 setTyped(null);
               }}
               onKeyDown={(e) => {
@@ -1165,7 +1200,7 @@ function PdfPane({
         {/* Fit the whole page only where a page can be taller than its
             viewport at the width fit — a desktop pane. A portrait phone
             already shows the whole page at that width, so the button sat
-            disabled there; pinch is the phone's zoom. */}
+            disabled there. */}
         {!fold && (
           <>
             <span className="bg-border mx-1 h-4 w-px" />
@@ -1180,9 +1215,10 @@ function PdfPane({
             </Button>
           </>
         )}
-        {/* Zoom buttons only where there is no pinch: a phone's bar has
-            room for page, fit, rotate and search at touch size, and no
-            more — the measured row overflowed the screen with them. */}
+        {/* Zoom buttons only in the unfolded row: a phone's bar has room
+            for page, contents, search and the "…" at touch size, and no
+            more — the measured row overflowed the screen with them. The
+            fold's menu carries the same three entries. */}
         {!fold && (
           <>
             <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => anchoredBump(1 / 1.25)} title={t('Zoom out')}>
@@ -1263,8 +1299,13 @@ function PdfPane({
     <>
       {compact ? toolbarInto && createPortal(toolbar, toolbarInto) : toolbar}
       {reading && (
+        // Not a live region: the line changes on every page, and a long
+        // scan would be read out hundreds of times. The spinner is
+        // decorative beside the sentence (its own role="status" would have
+        // said "Loading" once and nothing after); the pass's end is said
+        // once, by the reader (see the diagram job's effect).
         <div className="text-muted-foreground flex h-7 shrink-0 items-center justify-center gap-1.5 text-xs">
-          <Spinner className="size-3 shrink-0" />
+          <Spinner className="size-3 shrink-0" role="presentation" aria-hidden aria-label={undefined} />
           {t('Reading diagrams, page {page} of {pages}', { page: reading.page, pages: reading.pages })}
         </div>
       )}
