@@ -53,6 +53,17 @@ const HOLD_SLOP = 10;
  * the part that does show reads as one shape rather than a stray arc.
  */
 const HELD_RING = 26;
+/** One keyboard or button zoom step, the book reader's ratio. */
+const ZOOM_STEP = 1.25;
+/** How far Shift with an arrow pans, in screen px: a comfortable
+    fraction of a phone's width, so a walk to the edge is a few presses. */
+const PAN_STEP = 80;
+const PAN_KEYS: Record<string, readonly [number, number] | undefined> = {
+  ArrowLeft: [PAN_STEP, 0],
+  ArrowRight: [-PAN_STEP, 0],
+  ArrowUp: [0, PAN_STEP],
+  ArrowDown: [0, -PAN_STEP],
+};
 
 /**
  * One focused line wears the grammar's blue, NOT --color-primary: the
@@ -97,6 +108,7 @@ export function MapCanvas({
   arrangement = 'constellation',
   only = null,
   align = 0,
+  zoom,
   onSelect,
 }: {
   map: OpeningMap;
@@ -114,6 +126,10 @@ export function MapCanvas({
   only?: string | null;
   /** Bumped to ask for a re-fit; see the fitting effect below. */
   align?: number;
+  /** Bumped with a direction to ask for one zoom step: 1 in, -1 out.
+      The page's Zoom in and Zoom out buttons, which are how a finger or
+      a pen zooms without a pinch and a mouse without a wheel. */
+  zoom?: { seq: number; step: 1 | -1 };
   coverage?: ReadonlyMap<string, NodeCoverage>;
   /** Field comparison per node id — set only while a source is chosen. */
   gaps?: ReadonlyMap<string, NodeGaps>;
@@ -631,6 +647,8 @@ export function MapCanvas({
    * window gets its size; a ResizeObserver is what does.
    */
   const [sized, setSized] = useState(0);
+  /** Bumped by the 0 key: the same fit Align asks for, from the keyboard. */
+  const [refit, setRefit] = useState(0);
   useLayoutEffect(() => {
     const el = host.current;
     if (!el) return;
@@ -689,7 +707,7 @@ export function MapCanvas({
     void asked;
     commitView(fitView(box, { minX, minY, maxX, maxY }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeCount, map.id, arrangement, align, sized]);
+  }, [nodeCount, map.id, arrangement, align, refit, sized]);
 
   /**
    * Every pointer on the surface, wherever it landed — including on a
@@ -828,6 +846,64 @@ export function MapCanvas({
     // so this costs no render then.
     setView(viewRef.current);
   };
+  /**
+   * Zoom and pan without a gesture.
+   *
+   * The wheel zooms a mouse and two fingers pinch a phone; a keyboard
+   * had neither, and a finger or a pen that cannot pinch had nothing.
+   * PRODUCT.md asks a non-gesture way to do anything a gesture does, so:
+   * + and - (= and _ too, they share the keys) step the zoom, 0 refits,
+   * and Shift with an arrow pans, the plain arrows being the tree's. The
+   * page's Zoom in and Zoom out buttons take the same steps through the
+   * `zoom` prop. A step is anchored on the focused dot when the keyboard
+   * is on one, so the dot being read stays where it is, and otherwise on
+   * the middle of the free area.
+   */
+  const focusedId = (): string | null => {
+    const a = document.activeElement;
+    if (!a || !host.current?.contains(a)) return null;
+    for (const [id, el] of nodeEls.current) if (el === a) return id;
+    return null;
+  };
+  const zoomBy = (factor: number): void => {
+    stopSlide();
+    const box = host.current?.getBoundingClientRect();
+    if (!box || box.width === 0) return;
+    const v = viewRef.current;
+    const k = Math.min(3, Math.max(zoomFloor(), v.k * factor));
+    const id = focusedId();
+    const p = id ? posNow(id) : null;
+    const mx = p ? v.x + p.x * v.k : (box.width - inset) / 2;
+    const my = p ? v.y + p.y * v.k : box.height / 2;
+    const scale = k / v.k;
+    commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
+  };
+  const panBy = (dx: number, dy: number): void => {
+    stopSlide();
+    const v = viewRef.current;
+    commitView({ ...v, x: v.x + dx, y: v.y + dy });
+  };
+  const zoomSeen = useRef(zoom?.seq ?? 0);
+  useEffect(() => {
+    if (!zoom || zoom.seq === zoomSeen.current) return;
+    zoomSeen.current = zoom.seq;
+    zoomBy(zoom.step > 0 ? ZOOM_STEP : 1 / ZOOM_STEP);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom]);
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const pan = e.shiftKey ? PAN_KEYS[e.key] : undefined;
+    if (e.key === '+' || e.key === '=') zoomBy(ZOOM_STEP);
+    else if (e.key === '-' || e.key === '_') zoomBy(1 / ZOOM_STEP);
+    else if (e.key === '0') setRefit((n) => n + 1);
+    else if (pan) panBy(pan[0], pan[1]);
+    else return;
+    // Handled here and nowhere else: the board's arrow keys listen on
+    // the window, and the browser's own + and - would zoom the page.
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const onWheel = (e: React.WheelEvent): void => {
     stopSlide();
     const box = hostRect();
@@ -915,7 +991,8 @@ export function MapCanvas({
   }, [graph, shares, map.root.id]);
 
   /**
-   * Keep the selection out from under the details panel.
+   * Keep the selection in the open: out from under the details panel,
+   * and on screen at all when the keyboard chose it.
    *
    * Selecting a dot opens a panel over the right-hand end of the canvas,
    * and the dot it is about is wherever it already was: often underneath.
@@ -924,33 +1001,47 @@ export function MapCanvas({
    * and only when the dot is actually behind the panel, because a map
    * that recentres on every press is a map you lose your place in.
    *
-   * Horizontal only: the panel is the canvas's full height, so there is
-   * no amount of up or down that uncovers anything.
+   * A press is always on screen, so for a pointer only the panel's edge
+   * matters. The arrow keys walk the tree wherever it goes: measured on
+   * the demo after one wheel zoom, six presses put the focused dot at
+   * (496,-312), above the window, and the panel then opened over the one
+   * at 2. Nf3. So a selection the keyboard made is brought inside every
+   * edge of the free area, by the least slide that does it.
    *
    * The shell measures the strip (see `useCanvasInset`), which is how a
-   * phone gets no slide at all — its details are a sheet over everything,
-   * and there is nowhere uncovered to slide to.
+   * phone gets no slide for a tap — its details are a sheet over
+   * everything, and there is nowhere uncovered to slide to. A keyboard
+   * on a phone still gets the four-edge reveal.
    */
   const inset = useCanvasInset();
+  /** Set by the tree's arrow keys just before they select: the reveal
+      below reads and clears it. */
+  const selectedByKey = useRef(false);
   useEffect(() => {
-    if (!selectedId || inset <= 0) return;
+    const byKey = selectedByKey.current;
+    selectedByKey.current = false;
+    if (!selectedId || (inset <= 0 && !byKey)) return;
     const box = host.current?.getBoundingClientRect();
     if (!box || box.width === 0) return;
     const v = viewRef.current;
     // Where it is DRAWN, drift and all, in the surface's own pixels.
-    const at = v.x + posNow(selectedId).x * v.k;
+    const p = posNow(selectedId);
+    const at = { x: v.x + p.x * v.k, y: v.y + p.y * v.k };
     const r = (drawnR.get(selectedId) ?? 0) * v.k;
-    const clear = box.width - inset - CLEAR_PAD - r;
-    if (at <= clear) return;
     // Never off the far edge instead: a narrow window can leave less free
-    // width than the dot wants, and the left margin is the least bad
+    // width than the dot wants, and the near margin is the least bad
     // place to put it.
-    const to = Math.max(CLEAR_PAD + r, clear);
-    slideTo({ ...v, x: v.x + (to - at) });
+    const into = (pos: number, lo: number, hi: number): number =>
+      pos > hi ? Math.max(lo, hi) - pos : pos < lo ? Math.min(lo, hi) - pos : 0;
+    const dx = into(at.x, CLEAR_PAD + r, box.width - inset - CLEAR_PAD - r);
+    const dy = byKey ? into(at.y, CLEAR_PAD + r, box.height - CLEAR_PAD - r) : 0;
+    if (dx === 0 && dy === 0) return;
+    slideTo({ ...v, x: v.x + dx, y: v.y + dy });
     // The selection and the strip, and nothing else: this answers the
-    // panel opening over a dot, not the map moving underneath one. A pan,
-    // a zoom or a dragged dot is the reader's own arrangement and is left
-    // exactly where they put it.
+    // panel opening over a dot and the keyboard walking off the edge,
+    // not the map moving underneath one. A pan, a zoom or a dragged dot
+    // is the reader's own arrangement and is left exactly where they put
+    // it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, inset]);
 
@@ -1126,6 +1217,7 @@ export function MapCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
+      onKeyDown={onKeyDown}
       onClick={() => {
         // The ground was pressed and never dragged: clear the selection.
         // Node presses stop propagation, so they never land here.
@@ -1251,6 +1343,8 @@ export function MapCanvas({
                     onSelect(null);
                     return;
                   }
+                  // Shift with an arrow is the surface's pan, not a step.
+                  if (e.shiftKey) return;
                   const parent = facts.parentId;
                   const siblings = parent ? (kids.get(parent) ?? []) : [];
                   const idx = siblings.indexOf(id);
@@ -1269,6 +1363,7 @@ export function MapCanvas({
                   // listen on the window and would step a game under it.
                   e.preventDefault();
                   e.stopPropagation();
+                  selectedByKey.current = true;
                   onSelect(next);
                   nodeEls.current.get(next)?.focus();
                 }}
