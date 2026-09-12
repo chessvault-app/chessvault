@@ -130,6 +130,25 @@ describe('opening map api', () => {
     expect((await put(wide)).status).toBe(400);
   });
 
+  it('never stores the key names that mean something to an object', async () => {
+    // The document is checked for shape and then stored verbatim, so an
+    // unknown key survives a round trip. These three must not: GET hands
+    // the document to a browser, and a spread or Object.assign over one
+    // carrying __proto__ is prototype pollution in the page.
+    const res = await app.request('/api/openingmap', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: '{"version":1,"maps":[],"__proto__":{"polluted":true},"constructor":{"x":1}}',
+    });
+    expect(res.status).toBe(200);
+    const stored = readFileSync(join(dir, 'map.json'), 'utf-8');
+    expect(stored).not.toContain('__proto__');
+    expect(stored).not.toContain('polluted');
+    expect(stored).not.toContain('constructor');
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    await put(doc); // these tests share a stored document
+  });
+
   it('a bad save never replaces the stored document', async () => {
     await put({ version: 1, maps: 'nope' });
     const body = await (await app.request('/api/openingmap')).json();

@@ -185,7 +185,14 @@ function sourceUrl(pkg: Record<string, unknown>, name: string): string {
   if (cleaned.startsWith('http')) return cleaned;
   if (cleaned) return `https://github.com/${cleaned}`;
   const home = typeof pkg.homepage === 'string' ? pkg.homepage : '';
-  return home || `https://www.npmjs.com/package/${name}`;
+  // A package's own metadata decides this href, and the licences page is
+  // built by walking node_modules, so the string comes from whatever is
+  // installed rather than from this repo. `javascript:` and `data:` are
+  // hrefs too; npm's registry does not stop a package declaring one, and
+  // the page is shipped inside the desktop app. Only the two schemes a
+  // link to a project's home could need are kept.
+  if (/^https?:\/\//i.test(home)) return home;
+  return `https://www.npmjs.com/package/${name}`;
 }
 
 function readJson(file: string): Record<string, unknown> | null {
