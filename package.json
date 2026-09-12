@@ -173,6 +173,7 @@
     },
     "win": {
       "target": "nsis",
+      "artifactName": "Chess-Vault-Setup.${ext}",
       "icon": "desktop/icon.ico"
     },
     "nsis": {
@@ -181,6 +182,7 @@
     },
     "mac": {
       "target": "dmg",
+      "artifactName": "Chess-Vault-${arch}.${ext}",
       "icon": "desktop/icon-1024.png",
       "category": "public.app-category.games",
       "identity": null
@@ -190,6 +192,7 @@
         "AppImage",
         "deb"
       ],
+      "artifactName": "Chess-Vault-${arch}.${ext}",
       "icon": "desktop/icon.png",
       "category": "Game",
       "synopsis": "Your chess, in plain files",
