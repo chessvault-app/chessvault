@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { Fragment, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -39,6 +39,8 @@ import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
 import { useMediaQuery } from '@/lib/media';
+import { useUndoable } from '@/hooks/use-undoable';
+import { announce } from '@/lib/announce';
 import { OpeningPicker, type OpeningTemplate } from '@/repertoire/OpeningPicker';
 import { replayLine } from '@/repertoire/drill';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -369,9 +371,52 @@ export function EditorView({
   }, [embedded, state, tool, orientation, sheetOpen]);
   // Reuses the fen memo above — validate would otherwise serialize again.
   const validity = useMemo(() => validate(state, fen), [state, fen]);
+  /**
+   * The legality line's id, for Analyse's aria-describedby: the button
+   * keeps its name and the reason it is locked is its description. It
+   * used to BE the name (the title stands in for one on an icon button),
+   * so "Analyse" was named "Both sides need a king." and nothing on the
+   * page matched the word on it.
+   */
+  const reasonId = useId();
+  /**
+   * Say when the position stops or starts being legal. The line below
+   * appears with no live role, and the sheet's copy is inside a window,
+   * so a screen reader heard nothing change; Analyse simply went quiet.
+   * The app's one polite region (lib/announce), not a role=status here:
+   * the same reason is drawn in up to three places and a region each
+   * would say it three times. Not on mount: an editor that opens on an
+   * illegal position (a hunt's half-filled board) is not a change.
+   */
+  const announced = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const now = validity.legal ? null : (validity.reason ?? '');
+    if (announced.current !== undefined && announced.current !== now) {
+      announce(now === null ? t('Legal position') : t(now));
+    }
+    announced.current = now;
+  }, [validity.legal, validity.reason]);
   const epOptions = useMemo(() => epCandidates(state), [state]);
 
   const patch = (next: Partial<EditorState>): void => setState((s) => ({ ...s, ...next }));
+
+  /**
+   * Reset and Clear throw away a hand-built position in one tap, from two
+   * icon buttons that sit 4.8px apart on a phone (measured at 390 wide),
+   * one of them wearing the arrow that means undo everywhere else. The
+   * undo that stands in for a confirmation (hooks/use-undoable, the Board
+   * page's "Started a new board · Restore"): the board changes at once,
+   * and the toast offers the old position back for the grace period.
+   * Nothing to commit, so expiry is simply not taking it. A tap that
+   * changes nothing (Reset on the start position) offers nothing.
+   */
+  const undoable = useUndoable();
+  const replaceAll = (next: EditorState, wording: string): void => {
+    if (toFen(next) === fen) return;
+    const prev = state;
+    setState(next);
+    undoable.offer({ title: wording, action: t('Undo') }, () => {}, () => setState(prev));
+  };
 
   /** Apply the active tool to a square. No-op in move mode, where drags rule. */
   const applyTool = (squareName: string): void => {
@@ -802,23 +847,37 @@ export function EditorView({
             <div className="flex w-full flex-wrap items-center justify-center gap-2">
               {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
                   so the active tool's highlight sits concentric in its corner. */}
+              {/* The armed tool is a pressed toggle, said so (aria-pressed) and
+                  drawn as the pill-track idiom draws a chosen segment: the
+                  background rung lifted on a shadow (components/segmented,
+                  DESIGN.md "surface"). It wore the primary fill before, the
+                  same near-black as Analyse beside it, so the page's one
+                  action and a mode switch read as two actions, and a screen
+                  reader was told nothing about which tool a board click
+                  applies. Not `active`: its bg-accent is 4% of lightness
+                  from the pill's muted ground, the parity DESIGN.md records
+                  as unseeable. */}
               <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(var(--radius-md)+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
-                variant={tool.kind === 'move' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-full max-sm:w-10 max-sm:px-0"
+                className={cn('h-full max-sm:w-10 max-sm:px-0', ARMED_TOOL)}
+                aria-pressed={tool.kind === 'move'}
                 onClick={() => setTool({ kind: 'move' })}
                 title={t('Move: drag pieces around the board')}
+                aria-label={t('Move')}
               >
                 <MousePointer2 className="size-3.5" />
                 <span className="hidden sm:inline">{t('Move')}</span>
               </Button>
               <Button
-                variant={tool.kind === 'erase' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-full max-sm:w-10 max-sm:px-0"
+                className={cn('h-full max-sm:w-10 max-sm:px-0', ARMED_TOOL)}
+                aria-pressed={tool.kind === 'erase'}
                 onClick={() => setTool({ kind: 'erase' })}
                 title={t('Erase: click a square to remove its piece')}
+                aria-label={t('Erase')}
               >
                 <Eraser className="size-3.5" />
                 <span className="hidden sm:inline">{t('Erase')}</span>
@@ -834,13 +893,17 @@ export function EditorView({
               </Button>
               {/* Both of these destroy the position on the board, and as two
                   adjacent anonymous icons they were a coin-flip. Named where
-                  there is room, like Move and Erase beside them. */}
+                  there is room, like Move and Erase beside them.
+                  aria-label on each of the five: the label is a span, which
+                  Button's hasTextContent does not see, so the title became
+                  the name and "click Reset" matched nothing (button.tsx). */}
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
-                onClick={() => setState(defaultEditorState())}
+                onClick={() => replaceAll(defaultEditorState(), t('Reset the board'))}
                 title={t('Reset to the starting position')}
+                aria-label={t('Reset')}
               >
                 <RotateCcw className="size-3.5" />
                 <span className="hidden sm:inline">{t('Reset')}</span>
@@ -849,8 +912,9 @@ export function EditorView({
                 variant="ghost"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
-                onClick={() => setState(emptyEditorState())}
+                onClick={() => replaceAll(emptyEditorState(), t('Cleared the board'))}
                 title={t('Clear the board')}
+                aria-label={t('Clear')}
               >
                 <Trash2 className="size-3.5" />
                 <span className="hidden sm:inline">{t('Clear')}</span>
@@ -899,6 +963,8 @@ export function EditorView({
                       : t('Analyse this position')
                     : t(validity.reason ?? '')
                 }
+                aria-label={onUse ? useLabel : t('Analyse')}
+                aria-describedby={validity.legal ? undefined : reasonId}
               >
                 {/* Analysis = the game-review microscope; embedded mode records
                     a move list, so the glyph says "list", not "go". */}
@@ -907,6 +973,28 @@ export function EditorView({
               </Button>
               </div>
             </div>
+
+            {/* Why Analyse is locked, where the locking happens. The wide
+                layout says it in the Position panel; stacked, that panel
+                is a sheet, and clearing the board (or loading a FEN from
+                the sheet, which closes it) left a greyed button whose
+                tooltip cannot open. The row stands at its one-line height
+                whether or not there is a reason: the column is centred
+                (stacked:my-auto), and a row that came and went would move
+                the board 14px every time legality flipped, on placing the
+                second king for one. A reason that wraps still shifts it,
+                which is rare and read once. */}
+            <p
+              id={reasonId}
+              className="text-warn flex min-h-5 w-full items-start justify-center gap-1.5 text-sm wide:hidden"
+            >
+              {!validity.legal && (
+                <>
+                  <AlertCircle className="mt-[3px] size-3.5 shrink-0" aria-hidden />
+                  <span>{t(validity.reason ?? '')}</span>
+                </>
+              )}
+            </p>
           </div>
         </div>
       </div>
@@ -1135,6 +1223,13 @@ function NumberInput({
   );
 }
 
+/**
+ * The lit look of the armed Move or Erase tool inside the toolbar pill:
+ * the pill-track idiom's raised segment (segmented.tsx), keyed on the
+ * pressed state so the look and the state cannot disagree.
+ */
+const ARMED_TOOL = 'aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm';
+
 /** The placement palette: both colours in one row, opponent side first. */
 function PiecePalette({
   colors,
@@ -1168,6 +1263,9 @@ function PiecePalette({
                   <button
                     type="button"
                     aria-label={placeLabel(color, role)}
+                    // The ring is the armed look; this is the armed STATE,
+                    // for whoever cannot see the ring.
+                    aria-pressed={active}
                     onClick={() => onPick({ kind: 'piece', role, color })}
                     // A drag is chessground's from the first pixel; a clean
                     // click (no movement, so no drop) still arms the tool.

@@ -396,11 +396,25 @@ export function BookPage({ slug }: { slug: string }) {
               <span className="hidden wide:inline">{t('Read')}</span>
             </Button>
           )}
-          <Button variant="secondary" size="sm" title={t('Import a book PDF')} onClick={() => setImporting(true)}>
+          {/* aria-label: the visible word is in a span, which Button's
+              hasTextContent does not see, so the title would be the name. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            title={t('Import a book PDF')}
+            aria-label={t('Import PDF')}
+            onClick={() => setImporting(true)}
+          >
             <FileUp className="size-3.5" />
             <span className="hidden wide:inline">{t('Import PDF')}</span>
           </Button>
-          <Button variant="default" size="sm" title={t('Add a puzzle')} onClick={() => setAdding(true)}>
+          <Button
+            variant="default"
+            size="sm"
+            title={t('Add a puzzle')}
+            aria-label={t('Add puzzle')}
+            onClick={() => setAdding(true)}
+          >
             <Plus className="size-3.5" />
             <span className="hidden wide:inline">{t('Add puzzle')}</span>
           </Button>
