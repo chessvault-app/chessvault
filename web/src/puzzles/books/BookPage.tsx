@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, ChevronRight, CircleStop, FileUp, History, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
+import { BookText, ChevronLeft, ChevronRight, CircleStop, FileUp, History, MoreHorizontal, Pencil, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -11,6 +11,8 @@ import { navigate } from '@/lib/router';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { PageShell } from '@/components/page-shell';
+import { PageHeader } from '@/components/page-header';
+import { ActionMenu, type MenuAction } from '@/components/action-menu';
 
 import { ClearableInput } from '@/components/text-fields';
 
@@ -46,7 +48,6 @@ import {
 } from './data';
 import { PuzzleList } from './PuzzleList';
 import { PuzzleEntry } from './PuzzleEntry';
-import { TitleTip } from '@/components/title-tip';
 
 // ---------------------------------------------------------------------------
 // Book page: numbered grid coloured by result, entry flow
@@ -223,6 +224,9 @@ export function BookPage({ slug }: { slug: string }) {
   // it and none of them are names, so none of them hear about this.
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
+  // The header's menu, and the reset question it opens.
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
   // Still worn by the placeholder name. The rename BUTTON that used to
   // read this is gone; what is left of it is the importer's offer to name
   // the book after the PDF, which only stands while nobody has named it.
@@ -305,6 +309,38 @@ export function BookPage({ slug }: { slug: string }) {
    * "carry on from 77" while the dialog says it stopped at 77 is the kind
    * of disagreement that makes someone distrust both.
    */
+  /**
+   * The header's ⋯: the verbs that act on the book as a whole, in the
+   * order they are wanted, the destructive one last. Read diagrams stays
+   * listed while it runs, dimmed, rather than vanishing (MenuAction says
+   * why); the two reads only exist when there is something to read.
+   */
+  const more: MenuAction[] = [
+    // Below sm the two row verbs are here instead (their buttons are
+    // max-sm:hidden): with them on the row a 320px phone gave the title
+    // 96px, and 200% text gave it none. An empty book still offers both
+    // in its own well, so the way in is never only behind a ⋯.
+    { label: 'Import PDF', icon: FileUp, className: 'sm:hidden', onSelect: () => setImporting(true) },
+    { label: 'Add puzzle', icon: Plus, className: 'sm:hidden', onSelect: () => setAdding(true) },
+    {
+      label: 'Rename',
+      icon: Pencil,
+      onSelect: () => {
+        setTitleDraft(book?.title ?? '');
+        setRenaming(true);
+      },
+    },
+    // The PDF this book was read from, when the library still has it:
+    // reading is the library's job, so this only goes there.
+    ...(book?.pdfBook
+      ? [{ label: 'Read the book', icon: BookText, onSelect: () => navigate('books', book.pdfBook!) }]
+      : []),
+    ...((book?.drafts?.length ?? 0) > 0 && templates.length > 0
+      ? [{ label: 'Read diagrams', icon: ScanSearch, disabled: rereading, onSelect: () => void rereadDrafts() }]
+      : []),
+    { label: 'Reset all progress in this book', icon: RotateCcw, danger: true, onSelect: () => setResetting(true) },
+  ];
+
   const scan =
     scanRunning || stopped
       ? {
@@ -318,16 +354,24 @@ export function BookPage({ slug }: { slug: string }) {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-        <div className="mb-4 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('All books')}
-            onClick={() => navigate('puzzles', 'books')}
-          >
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          {renaming ? (
+        {/* The app's PageHeader, with two verbs on the row and the rest in
+            a ⋯ menu. This used to be a row of its own holding the title
+            and five controls (Read diagrams, Read, Import PDF, Add puzzle,
+            Reset), which at 320px left the name 56px ("A sa…") and at 200%
+            text 0px: the page's identity was the first thing to go. What
+            stays on the row is what fills a book; renaming, reading the
+            source PDF, re-reading the drafts and resetting are in the
+            menu, the reset last and red as ActionMenu places a danger. */}
+        {renaming ? (
+          <div className="mb-4 flex items-center gap-2 max-md:min-h-11">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('All books')}
+              onClick={() => navigate('puzzles', 'books')}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
             <ClearableInput
               autoFocus
               inputSize="sm"
@@ -345,78 +389,60 @@ export function BookPage({ slug }: { slug: string }) {
               className="min-w-0 flex-1"
               inputClassName="text-xl font-semibold tracking-tight"
             />
-          ) : (
-            <>
-              <TitleTip title={t('Double-click to rename')}>
-                <h1
-                  onDoubleClick={() => {
-                    setTitleDraft(book?.title ?? '');
-                    setRenaming(true);
-                  }}
-                  className="text-foreground min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
-                >
-                  {/* The slug is an id, not a name: while the title is in
-                      flight the header holds its place instead of flashing
-                      the folder name. */}
-                  {book?.title ?? ' '}
-                </h1>
-              </TitleTip>
-            </>
-          )}
-          {/* No progress chip here. A scan used to announce itself in this
-              row AND in a banner above it — two spinners, one of them a
-              cryptic "p.67/241 · 299" — while the panel below sat empty
-              claiming there was nothing in the book. Progress belongs in
-              that panel: it is the largest thing on the page, it is doing
-              nothing during a scan, and it is where the result appears. */}
-          {/* Stacked headers drop the button labels — five labelled
-              controls in a phone-width row read as clutter. */}
-          {(book?.drafts?.length ?? 0) > 0 && templates.length > 0 && (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={rereading}
-              title={t('Re-run recognition on every draft with the learned font')}
-              onClick={() => void rereadDrafts()}
-            >
-              {rereading ? <Spinner className="size-3.5" /> : <ScanSearch className="size-3.5" />}
-              <span className="hidden wide:inline">{t('Read diagrams')}</span>
-            </Button>
-          )}
-          {/* The PDF this book was read from, when the library still has
-              it: reading is the library's job, so this only goes there. */}
-          {book?.pdfBook && (
-            <Button
-              variant="secondary"
-              size="sm"
-              title={t('Read the book')}
-              onClick={() => navigate('books', book.pdfBook!)}
-            >
-              <BookText className="size-3.5" />
-              <span className="hidden wide:inline">{t('Read')}</span>
-            </Button>
-          )}
-          <Button variant="secondary" size="sm" title={t('Import a book PDF')} onClick={() => setImporting(true)}>
-            <FileUp className="size-3.5" />
-            <span className="hidden wide:inline">{t('Import PDF')}</span>
-          </Button>
-          <Button variant="default" size="sm" title={t('Add a puzzle')} onClick={() => setAdding(true)}>
-            <Plus className="size-3.5" />
-            <span className="hidden wide:inline">{t('Add puzzle')}</span>
-          </Button>
-          <ConfirmDialog
-            icon={RotateCcw}
-            triggerTone="danger"
-            triggerTitle="Reset all progress in this book"
-            question="Reset all progress in this book?"
-            confirmLabel="Reset"
-            onConfirm={() => void resetProgress()}
+          </div>
+        ) : (
+          <PageHeader
+            className="mb-4"
+            /* The slug is an id, not a name: while the title is in flight
+               the header holds its place instead of flashing the folder
+               name. */
+            title={book?.title ?? ' '}
+            back={() => navigate('puzzles', 'books')}
+            backVisible="always"
+            truncate
+            actions={
+              <>
+                {/* Stacked headers drop the button labels: labelled
+                    controls in a phone-width row read as clutter. Below
+                    sm the buttons go too, into the menu (see `more`). */}
+                <Button variant="secondary" size="sm" className="max-sm:hidden" title={t('Import a book PDF')} onClick={() => setImporting(true)}>
+                  <FileUp className="size-3.5" />
+                  <span className="hidden wide:inline">{t('Import PDF')}</span>
+                </Button>
+                {/* Secondary, no longer the page's filled default: adding
+                    a puzzle by hand is not today's work, the due review
+                    below is, and two filled buttons on one screen rank
+                    nothing. */}
+                <Button variant="secondary" size="sm" className="max-sm:hidden" title={t('Add a puzzle')} onClick={() => setAdding(true)}>
+                  <Plus className="size-3.5" />
+                  <span className="hidden wide:inline">{t('Add puzzle')}</span>
+                </Button>
+                <ActionMenu title={t('Book')} actions={more} open={moreOpen} onOpenChange={setMoreOpen}>
+                  <Button variant="ghost" size="icon-sm" title={t('More')} active={moreOpen}>
+                    <MoreHorizontal className="size-3.5" />
+                  </Button>
+                </ActionMenu>
+              </>
+            }
           />
-        </div>
+        )}
+        {/* Held open by the menu's Reset row, which is gone by the time
+            the question appears. */}
+        <ConfirmDialog
+          open={resetting}
+          onOpenChange={setResetting}
+          icon={RotateCcw}
+          question="Reset all progress in this book?"
+          confirmLabel="Reset"
+          onConfirm={() => void resetProgress()}
+        />
 
+        {/* The page's one default: what is due today. It was secondary
+            under a filled Add puzzle, which made the by-hand entry the
+            loudest thing on a page whose work is the review. */}
         {dueIds.length > 0 && (
           <Button
-            variant="secondary"
+            variant="default"
             size="default"
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'books', slug, dueIds[0]!)}
@@ -430,6 +456,7 @@ export function BookPage({ slug }: { slug: string }) {
           <CyclesPanel
             book={book}
             slug={slug}
+            yielded={dueIds.length > 0}
             onCycles={(cycles) => {
               // The cache first, so the trainer opened next agrees; the
               // state besides, so this page redraws without a refetch.
@@ -571,13 +598,22 @@ export function BookPage({ slug }: { slug: string }) {
 function CyclesPanel({
   book,
   slug,
+  yielded,
   onCycles,
 }: {
   book: BookDetail;
   slug: string;
+  /**
+   * The page already shows its one filled button (the due review above
+   * this panel), so this panel's act draws secondary. Two filled buttons
+   * a card apart rank nothing; with no review due the panel's is the
+   * page's default again.
+   */
+  yielded: boolean;
   onCycles: (cycles: CycleWindow[]) => void;
 }) {
   const open = openCycle(book);
+  const lead = yielded ? 'secondary' : 'default';
   const cycles = book.cycles ?? [];
   const act = async (method: 'POST' | 'DELETE'): Promise<void> => {
     // A refused call changes nothing on screen, which is what the server
@@ -631,7 +667,7 @@ function CyclesPanel({
               </Button>
               {openPass?.next && (
                 <Button
-                  variant="default"
+                  variant={lead}
                   size="sm"
                   onClick={() => navigate('puzzles', 'books', slug, openPass.next!)}
                 >
@@ -641,10 +677,11 @@ function CyclesPanel({
               )}
             </>
           ) : (
-            // The filled default, not secondary: with no pass open this
-            // is the panel's ONE act, and the invitation to keep the
-            // rotation going should look like one.
-            <Button variant="default" size="sm" onClick={() => void act('POST')}>
+            // The filled default, not secondary, unless the page has
+            // yielded it to the review: with no pass open this is the
+            // panel's ONE act, and the invitation to keep the rotation
+            // going should look like one.
+            <Button variant={lead} size="sm" onClick={() => void act('POST')}>
               <Repeat className="size-3.5" data-icon="inline-start" />
               {t(passes.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
             </Button>
