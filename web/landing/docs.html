@@ -244,6 +244,33 @@
         nav.side {
           position: fixed; z-index: 60; top: 0; bottom: 0; left: 0;
           width: min(20rem, 85vw); max-height: none;
+          /* THE DRAWER IS THE SCREEN'S HEIGHT, NOT ITS CONTENTS'. The wide
+             sidebar needs `align-self: flex-start` above, and an
+             out-of-flow flex child keeps it: with both insets set and the
+             height auto, that alignment shrink-wraps the box instead of
+             letting it stretch, so the drawer came out as tall as its own
+             23 entries (980px) and the `overflow-y: auto` it inherits had
+             nothing to scroll. Nine of the 23 were off the bottom of a
+             320x568 screen, three of a 390x844 one, in Chromium and in
+             WebKit alike. An explicit height settles it whatever
+             align-self says. dvh, so a phone's retracting URL bar does not
+             park the last entry underneath itself; vh first for anything
+             that does not know dvh.
+
+             It costs one thing, in the bottom left corner: the CLOSED
+             panel is parked just off the left edge and its 3rem blur has
+             always washed the page's left margin, and that wash now ends
+             at the foot of the screen instead of 412px below it. A 41x52
+             patch, at most 9 of 255 levels different in light and 1 in
+             dark. Every other pixel of the page at rest is identical. */
+          height: 100vh;
+          height: 100dvh;
+          /* And a flick that runs out of list stops there rather than
+             carrying on into the page behind the scrim. Where the browser
+             does not know the property it is simply dropped, and
+             body.nav-open's `overflow: hidden` below is still holding the
+             page still. */
+          overscroll-behavior: contain;
           background: var(--background); border-right: 1px solid var(--border);
           transform: translateX(-105%); transition: transform 0.2s ease;
           box-shadow: 0 0 3rem oklch(0% 0 0 / 0.25);
@@ -2833,11 +2860,41 @@
       // 375px: focus() lands on a link at left=-335). `inert` takes it
       // out while it is closed; on the wide layout the nav is always in
       // view and never inert. Re-applied when the width crosses over.
+      //
+      // The open drawer is modal, and the same switch says so both ways:
+      // what it covers goes inert while it is open. On a 320px screen the
+      // panel is drawn over the whole header, and without this the toggle
+      // and the three stops after it (the wordmark, EN, KO) still took
+      // focus underneath it: 17 of 41 tabbed stops left the drawer, 16 of
+      // them to somewhere the panel was covering, where a focus ring
+      // cannot be seen. The scrim stops the pointer; only inert stops the
+      // keyboard.
       var narrow = window.matchMedia('(max-width: 63.99rem)');
+      var behindDrawer = function () {
+        return [document.querySelector('header'), document.querySelector('main.content')];
+      };
       var setNavOpen = function (open) {
         document.body.classList.toggle('nav-open', open);
         document.getElementById('nav-toggle').setAttribute('aria-expanded', String(open));
         document.getElementById('side-nav').inert = narrow.matches && !open;
+        behindDrawer().forEach(function (el) {
+          if (el) el.inert = narrow.matches && open;
+        });
+      };
+      // Opening puts focus where the reader is in the manual, so the panel
+      // is operable from the keyboard at all and a screen reader is moved
+      // into it. Closing hands focus back to the button that opened it,
+      // which is otherwise lost to the body when its holder goes inert.
+      var openNav = function () {
+        setNavOpen(true);
+        var nav = document.getElementById('side-nav');
+        var here = nav.querySelector('a[aria-current="page"]') || nav.querySelector('a');
+        if (here) here.focus();
+      };
+      var closeNav = function () {
+        var wasOpen = document.body.classList.contains('nav-open');
+        setNavOpen(false);
+        if (wasOpen && narrow.matches) document.getElementById('nav-toggle').focus();
       };
       var syncNavInert = function () {
         setNavOpen(document.body.classList.contains('nav-open'));
@@ -2894,7 +2951,11 @@
             else a.removeAttribute('aria-current');
           });
           renderPager();
-          setNavOpen(false);
+          // closeNav, not setNavOpen: a page picked from the drawer leaves
+          // focus on a link that is about to be inert. It only moves focus
+          // if the drawer was open, so the first call on load takes it
+          // from nobody.
+          closeNav();
           // After the browser's own anchor scroll, not before it — a page
           // change starts reading at the top.
           setTimeout(function () { window.scrollTo(0, 0); }, 0);
@@ -2903,14 +2964,20 @@
         show();
       })();
 
-      // ---- The narrow layout's Contents button and its scrim.
+      // ---- The narrow layout's Contents button, its scrim and Escape.
+      // Escape is what every other panel on the web closes on, and this one
+      // ignored it: the only ways out were the scrim and picking a page.
       (function () {
         var toggle = document.getElementById('nav-toggle');
         toggle.addEventListener('click', function () {
-          setNavOpen(!document.body.classList.contains('nav-open'));
+          if (document.body.classList.contains('nav-open')) closeNav();
+          else openNav();
         });
-        document.getElementById('scrim').addEventListener('click', function () {
-          setNavOpen(false);
+        document.getElementById('scrim').addEventListener('click', closeNav);
+        document.addEventListener('keydown', function (event) {
+          if (event.key !== 'Escape' && event.key !== 'Esc') return;
+          if (!document.body.classList.contains('nav-open')) return;
+          closeNav();
         });
       })();
 
