@@ -1360,6 +1360,28 @@ export const ko: Record<string, string> = {
     '파일 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
   'Name, or leave blank for “{name}”': '이름, 비우면 “{name}”',
   'The build failed.': '만들기에 실패했습니다.',
+  'The build was stopped.': '만들기가 중지되었습니다.',
+  'Stop building “{name}”? What was indexed so far is discarded.':
+    '“{name}” 만들기를 중지할까요? 지금까지 색인한 내용은 버려집니다.',
+  '“{name}” is built.': '“{name}”이(가) 만들어졌습니다.',
+  '“{name}” is optimised.': '“{name}” 최적화가 끝났습니다.',
+  // The running band: verb, database, step and percentage in one line.
+  // Korean puts the name first, so the template reorders the parts.
+  '{verb} {name}: {phase}, {percent}%': '{name} {verb}: {phase}, {percent}%',
+  Building: '만드는 중',
+  Optimising: '최적화하는 중',
+  'Building {name}…': '{name} 만드는 중…',
+  'Optimising {name}…': '{name} 최적화하는 중…',
+  'Indexing {name}…': '{name} 색인하는 중…',
+  'Building {name}: {done} of {total} games': '{name} 만드는 중: 게임 {total}개 중 {done}개',
+  // The index pass's phases, as server/refgamesIndex.ts names them.
+  replaying: '다시 두는 중',
+  'indexing plies': '반수 색인',
+  'summing per move': '수마다 합산',
+  'dropping thin positions': '드문 위치 정리',
+  'indexing the sums': '합계 색인',
+  'ranking top games': '상위 게임 순위 매기기',
+  'inverting keys': '키 반전',
   'Build progress': '만들기 진행 상황',
   'Nothing new for {minutes} minutes. This step is one database operation and reports nothing until it finishes. On a large database that can take an hour.':
     '{minutes}분간 변화가 없습니다. 이 단계는 데이터베이스 작업 하나라서 끝나기 전까지는 아무것도 알리지 않습니다. 큰 데이터베이스에서는 한 시간이 걸릴 수도 있습니다.',

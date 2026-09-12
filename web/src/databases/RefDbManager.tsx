@@ -1,6 +1,7 @@
-﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Trash2, Upload, Zap } from 'lucide-react';
+﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Square, Trash2, Upload, Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -90,12 +91,53 @@ const fmtBytes = (bytes: number): string => {
  */
 export interface BuildStatus {
   running: boolean;
+  /** Which job holds the slot: a build, Optimise, or the index pass. */
+  kind?: 'build' | 'optimize' | 'index';
+  /** The database the job is about. */
+  name?: string;
   exitCode?: number | null;
+  /** The job was ended from the app; its exit is not a failure. */
+  stopped?: boolean;
   log?: string[];
   phase?: { label: string; percent: number } | null;
+  /** The replay loop's own count, before the phases take over. */
+  progress?: { done: number; total: number } | null;
   /** Seconds since the job last printed anything. */
   quietSeconds?: number;
 }
+
+/** What the running band says, and what is announced when it changes. */
+const jobLine = (status: BuildStatus): string => {
+  const name = status.name ?? '';
+  if (status.phase) {
+    return t('{verb} {name}: {phase}, {percent}%', {
+      verb: t(status.kind === 'optimize' ? 'Optimising' : status.kind === 'index' ? 'Indexing' : 'Building'),
+      name,
+      phase: t(status.phase.label),
+      percent: status.phase.percent,
+    });
+  }
+  if (status.kind === 'optimize') return t('Optimising {name}…', { name });
+  if (status.kind === 'index') return t('Indexing {name}…', { name });
+  if (status.progress) {
+    return t('Building {name}: {done} of {total} games', {
+      name,
+      done: status.progress.done.toLocaleString(),
+      total: status.progress.total.toLocaleString(),
+    });
+  }
+  return t('Building {name}…', { name });
+};
+
+/** What a finished job is announced as. */
+const finishLine = (status: BuildStatus): string => {
+  const name = status.name ?? '';
+  if (status.stopped) return t('The build was stopped.');
+  if (status.exitCode != null && status.exitCode !== 0) return t('The build failed.');
+  if (status.kind === 'optimize') return t('“{name}” is optimised.', { name });
+  if (status.kind === 'index') return t('Indexing finished.');
+  return t('“{name}” is built.', { name });
+};
 
 export function RefDbManager({
   databases,
@@ -150,6 +192,9 @@ export function RefDbManager({
           // explorer and the map have session answers for.
           forgetRefDbs();
           onChanged();
+          // Said once, here, where the poll sees the end: the band is the
+          // only visible sign, and it simply leaves.
+          announce(finishLine(s));
         }
       } catch {
         // offline hiccup — the next tick asks again
@@ -161,7 +206,38 @@ export function RefDbManager({
   }, [onChanged]);
 
   const running = status?.running === true;
-  const failed = !running && status?.exitCode != null && status.exitCode !== 0;
+  const stopped = !running && status?.stopped === true;
+  const failed = !running && !stopped && status?.exitCode != null && status.exitCode !== 0;
+
+  // A phase change is said once, when it happens, never on the 1.5 s poll:
+  // the index pass names seven phases over hours, and a screen reader that
+  // hears each once knows the job is alive without being read a percentage
+  // every second and a half.
+  const saidPhase = useRef<string | null>(null);
+  useEffect(() => {
+    if (!status?.running) {
+      saidPhase.current = null;
+      return;
+    }
+    const key = status.phase ? `${status.name}:${status.phase.label}` : null;
+    if (key !== null && key !== saidPhase.current) {
+      saidPhase.current = key;
+      announce(jobLine(status));
+    }
+  }, [status]);
+
+  /** Ask the server to kill the running job. The band's own Stop, asked
+      first: a build is minutes to hours of work, and the press that ends
+      it should be as deliberate as the press that started it. */
+  const [askingStop, setAskingStop] = useState(false);
+  const stop = async (): Promise<void> => {
+    setError(null);
+    try {
+      await api('/api/refgames/build/stop', { method: 'POST' });
+    } catch (error) {
+      setError(t(apiErrorMessage(error)));
+    }
+  };
   // The replay loop prints every 25,000 games, which on the biggest
   // corpus built here was ~26 s apart. Two minutes of silence therefore
   // means the job is in one of the phases that cannot report, and saying
@@ -444,12 +520,24 @@ export function RefDbManager({
         {/* The build's own line, where the list would be — it is the one
             thing here that takes minutes, so it says so from the top
             rather than from under whichever tab started it. */}
-        {running && (
+        {running && status && (
           <div className="border-border flex shrink-0 flex-col gap-2 border-b px-3 py-2">
-            <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
+            {/* The line is copy, not the raw log: "Building refgames:
+                summing per move, 42%" names the database and the step in
+                the UI's own language, where the log line was a 12px mono
+                fragment in English under every language. The log's last
+                line still shows under it, since during the replay it is
+                the only place the games count ties to a file. */}
+            <div className="flex items-center gap-2">
               <Spinner className="size-3.5 shrink-0" />
-              <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
-            </p>
+              <p className="text-foreground min-w-0 flex-1 truncate text-sm">{jobLine(status)}</p>
+              {/* Stop is a question, like Delete and Optimise: what was
+                  indexed so far is thrown away. */}
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => setAskingStop(true)}>
+                {t('Stop')}
+              </Button>
+            </div>
+            <p className="text-muted-foreground truncate font-mono text-xs">{status.log?.at(-1) ?? '…'}</p>
             {/* Weighted by phase, not by games: the games count reaches
                 its total when the replay ends, and on a large corpus
                 there are hours of indexing, summing and inverting behind
@@ -474,9 +562,20 @@ export function RefDbManager({
             )}
           </div>
         )}
+        {/* A sentence in the UI face, with the log's last line as the
+            detail: the raw "Error: database is locked" was the whole
+            message, in mono, and nothing marked it as something to hear. */}
         {failed && (
-          <p className="border-border text-destructive shrink-0 border-b px-3 py-2 font-mono text-xs">
-            {status?.log?.at(-1) ?? t('The build failed.')}
+          <p role="alert" className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">
+            {t('The build failed.')}
+            {status?.log?.at(-1) && (
+              <span className="text-muted-foreground mt-0.5 block truncate font-mono text-xs">{status.log.at(-1)}</span>
+            )}
+          </p>
+        )}
+        {stopped && (
+          <p role="status" className="border-border text-muted-foreground shrink-0 border-b px-3 py-2 text-sm">
+            {t('The build was stopped.')}
           </p>
         )}
         {error && (
@@ -524,6 +623,17 @@ export function RefDbManager({
           </div>
         )}
       </Panel>
+
+      <ConfirmDialog
+        icon={Square}
+        open={askingStop}
+        onOpenChange={setAskingStop}
+        question={t('Stop building “{name}”? What was indexed so far is discarded.', {
+          name: status?.name ?? '',
+        })}
+        confirmLabel="Stop"
+        onConfirm={() => void stop()}
+      />
 
       {showUpload && (
         <UploadWindow
