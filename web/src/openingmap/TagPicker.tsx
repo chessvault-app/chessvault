@@ -1,8 +1,9 @@
-import { BookOpen, ChevronLeft, Library, NotebookPen, Swords } from 'lucide-react';
+import { BookOpen, ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { pgnToChapters } from '@shared/pgn';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { SECTION_ICON } from '@/lib/sectionIcon';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/text-fields';
 import { Segmented } from '@/components/segmented';
@@ -22,11 +23,13 @@ import type { MapTag } from './model';
  * no Chapter button, because there is never a second chapter to scope to.
  */
 
-/** Where each kind's listing lives, and what its rows wear. */
+/** Where each kind's listing lives, and what its rows wear: the sidebar's
+ * own icon for each section, so a game here is the folder it is there
+ * rather than a second mark for the same thing. */
 const KINDS = {
-  game: { base: 'games/docs', icon: Swords, search: 'Search games…' },
-  study: { base: 'studies', icon: Library, search: 'Search studies…' },
-  note: { base: 'notes', icon: NotebookPen, search: 'Search notes…' },
+  game: { base: 'games/docs', icon: SECTION_ICON.games, search: 'Search games…' },
+  study: { base: 'studies', icon: SECTION_ICON.studies, search: 'Search studies…' },
+  note: { base: 'notes', icon: SECTION_ICON.notes, search: 'Search notes…' },
 } as const;
 
 type Kind = keyof typeof KINDS;
