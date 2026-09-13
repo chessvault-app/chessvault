@@ -36,6 +36,10 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **The endgame drill's panel keeps its height through an attempt.** Its
+  status line swapped between two lines and one on every move, so the
+  Skip and Analyse buttons stepped up and down under the hand; the line
+  now stands in a box the size of the longest thing it says.
 - **The demo opens Insights with its figures in place.** The engine pass
   over the sample vault's 31 games ships with the demo, so the page shows
   results, move quality and the rest at once instead of asking a visitor

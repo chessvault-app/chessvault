@@ -552,25 +552,30 @@ function Drill({ classId }: { classId: string }) {
               <Skeleton className="h-4 w-28" />
             </div>
           ) : null}
-          {phase === 'loading' ? (
-            // The same reservation the trainer makes, on the shell it
-            // shares: "Keep the win…" wraps to two lines on a phone where
-            // "Finding a won ending…" takes one, so the box is the answer's
-            // and the waiting line sits over it. Without it the footer's
-            // buttons stepped down as the ending arrived.
-            <div className="relative">
-              <p aria-hidden className="invisible text-sm leading-relaxed">
-                {t(PLAYING_NOTE)}
-              </p>
-              <p className="text-muted-foreground absolute inset-0 text-sm leading-relaxed">
-                {statusLine.text}
-              </p>
-            </div>
-          ) : (
-            <p className={cn('text-sm leading-relaxed', statusLine.tone ?? 'text-muted-foreground')}>
+          {/* The status line, in a box the size of the longest line it
+              settles on. "Keep the win…" wraps to two lines where
+              "Finding a won ending…" and "Defending…" take one, and the
+              line changes EVERY MOVE (playing, replying, playing), so a
+              box the size of whatever it says had the footer stepping up
+              and down under the reader's hand for the whole attempt
+              (lanph3re's report: the card drifts). The reservation used
+              to cover the wait alone. One grid cell, both in it: the
+              invisible note sets the floor and a longer verdict ("{san}
+              lets the win slip…") still grows the box rather than
+              clipping. */}
+          <div className="grid">
+            <p aria-hidden className="invisible col-start-1 row-start-1 text-sm leading-relaxed">
+              {t(PLAYING_NOTE)}
+            </p>
+            <p
+              className={cn(
+                'col-start-1 row-start-1 text-sm leading-relaxed',
+                statusLine.tone ?? 'text-muted-foreground',
+              )}
+            >
               {statusLine.text}
             </p>
-          )}
+          </div>
         </div>
 
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
