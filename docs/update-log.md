@@ -11,6 +11,16 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **The endgame drill can be played from the defending side.** A
+  “Win” / “Hold the draw” choice above the list of endings sets the
+  goal, and the page reopens on the last one chosen. Holding the draw,
+  the drill draws a drawn position that has losing moves in it and hands
+  you the side to move; the tablebase attacks with the move that leaves
+  you the fewest moves that still hold, a losing move ends the attempt
+  and shows the move that held, and ten of your moves held, or an
+  attacker left with nothing to mate with, end it as “Draw held”. The
+  same one-sided test and sharpest-of-the-pool draw apply, read against
+  the draw instead of the win.
 - **An endgame drill is no longer drawn already won.** The draw kept
   any position the tablebase called a win, so a mate in two or a rook
   hanging to the first move counted as an ending. A win under ten plies

@@ -1035,7 +1035,7 @@ const MORE_GROUPS: {
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: Layers, blurb: 'Practise an opening against real games' },
-      { section: 'endgames', label: 'Endgame drills', icon: Crown, blurb: 'Play won endings against the tablebase' },
+      { section: 'endgames', label: 'Endgame drills', icon: Crown, blurb: 'Play won and drawn endings against the tablebase' },
     ],
   },
   {

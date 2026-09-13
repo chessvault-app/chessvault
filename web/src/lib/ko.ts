@@ -790,7 +790,22 @@ export const ko: Record<string, string> = {
   'Middlegames and material edges': '미들게임과 기물 우위',
   'Your own': '직접 지정',
   'Endgame drill': '엔드게임 드릴',
-  'Play won endings against the tablebase': '테이블베이스를 상대로 이기는 엔드게임을 둡니다',
+  'Play won and drawn endings against the tablebase': '테이블베이스를 상대로 이기는 엔드게임과 무승부 엔드게임을 둡니다',
+  'Play the defending side of a random drawn ending against the tablebase, which presses. A move that lets the draw slip ends the attempt and shows the move that held it.':
+    '무작위 무승부 엔드게임에서 방어하는 진영을 맡아 압박하는 테이블베이스를 상대로 둡니다. 무승부를 놓치는 수를 두면 시도가 끝나고, 무승부를 지키는 수를 보여 줍니다.',
+  Goal: '목표',
+  'Hold the draw': '무승부 지키기',
+  'Hold the draw. A move the tablebase calls a loss ends the attempt, and ten held moves end it as a draw.':
+    '무승부를 지키세요. 테이블베이스가 패배로 판정하는 수를 두면 시도가 끝나고, 열 수를 지키면 무승부로 끝납니다.',
+  'Finding a drawn ending…': '무승부 엔드게임을 찾는 중…',
+  'Attacking…': '공격 중…',
+  'Draw held': '무승부를 지켰습니다',
+  'The draw slipped': '무승부를 놓쳤습니다',
+  'The draw held from the first move to the last.': '첫 수부터 마지막 수까지 무승부를 지켰습니다.',
+  '{san} lets the draw slip. {best} holds it.':
+    '{san}은(는) 무승부를 놓치는 수입니다. {best}이(가) 무승부를 지킵니다.',
+  'No drawn position of this material with something to hold turned up this time.':
+    '이번에는 이 기물 구성에서 지킬 것이 있는 무승부 위치가 나오지 않았습니다.',
   'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.':
     '무작위 엔드게임에서 이기는 진영을 맡아 테이블베이스를 상대로 둡니다. 승리를 놓치는 수를 두면 시도가 끝나고, 승리를 지키는 수를 보여 줍니다.',
   'The demo reaches no tablebase. In the app, the drill plays against whichever tablebase Settings names.':

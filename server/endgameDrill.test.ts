@@ -4,20 +4,22 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chess } from 'chessops/chess';
-import { parseFen } from 'chessops/fen';
+import { makeFen, parseFen } from 'chessops/fen';
 import { makeSan } from 'chessops/san';
 import { makeUci, parseUci } from 'chessops/util';
 import type { Color } from 'chessops/types';
-import { MIN_WIN_PLIES, endgameDrillApi, holds, oneSided, sharpness } from './endgameDrill.ts';
+import { MIN_WIN_PLIES, endgameDrillApi, holds, holdsDraw, oneSided, pressingReply, sharpness } from './endgameDrill.ts';
 import type { TablebaseAnswer, TablebaseMove, TablebaseProbe } from './tablebase.ts';
 
 /**
- * A table that knows one ending: a queen against a bare king. The side
- * with the queen wins, the bare king loses, anything else is a draw.
- * Of the winner's moves the first legal one (in chessops' order) keeps
- * the win and the rest throw it; every move of the loser loses, the
- * first ranked best. Fixed rather than true, so the routes are held to
- * what they do with a verdict, not to Syzygy.
+ * A table that knows two endings. A queen against a bare king: the side
+ * with the queen wins, the bare king loses. Of the winner's moves the
+ * first legal one (in chessops' order) keeps the win and the rest throw
+ * it; every move of the loser loses, the first ranked best. A rook each
+ * with nothing else: a draw, where of the mover's moves the first holds
+ * and the rest lose. Anything else is a draw by every move. Fixed
+ * rather than true, so the routes are held to what they do with a
+ * verdict, not to Syzygy.
  */
 function oracle(fen: string): TablebaseAnswer | null {
   const setup = parseFen(fen).unwrap();
@@ -27,6 +29,9 @@ function oracle(fen: string): TablebaseAnswer | null {
   const bare = (color: Color) => board[color].diff(board.king).isEmpty();
   const mover = setup.turn;
   const other: Color = mover === 'white' ? 'black' : 'white';
+  const rookOnly = (color: Color) =>
+    board[color].diff(board.king).equals(board.rook.intersect(board[color])) && board.rook.intersect(board[color]).size() === 1;
+  const sharpDraw = rookOnly(mover) && rookOnly(other);
   const category: TablebaseAnswer['category'] =
     queenOf(mover) && bare(other) ? 'win' : bare(mover) && queenOf(other) ? 'loss' : 'draw';
   const moves: TablebaseMove[] = [];
@@ -36,7 +41,16 @@ function oracle(fen: string): TablebaseAnswer | null {
       moves.push({
         uci: makeUci(move),
         san: makeSan(pos, move),
-        category: category === 'win' ? (moves.length === 0 ? 'win' : 'draw') : category,
+        category:
+          category === 'win'
+            ? moves.length === 0
+              ? 'win'
+              : 'draw'
+            : sharpDraw
+              ? moves.length === 0
+                ? 'draw'
+                : 'loss'
+              : category,
         dtz: 10,
         dtm: 10,
         zeroing: false,
@@ -54,6 +68,9 @@ const fixed = (probe: (fen: string) => Promise<TablebaseAnswer | null>): Tableba
 });
 
 const KQK = { white: { q: [1, 1], r: [0, 0], b: [0, 0], n: [0, 0], p: [0, 0] }, black: { q: [0, 0], r: [0, 0], b: [0, 0], n: [0, 0], p: [0, 0] } };
+const KRKR = { white: { q: [0, 0], r: [1, 1], b: [0, 0], n: [0, 0], p: [0, 0] }, black: { q: [0, 0], r: [1, 1], b: [0, 0], n: [0, 0], p: [0, 0] } };
+/** White to move, a rook each, nothing in touch. */
+const KRKR_WHITE = '4k3/r7/8/8/8/8/7R/4K3 w - - 0 1';
 
 /** Black to move, queen against king: the bare side, which cannot win. */
 const KQK_WHITE = '8/8/8/4k3/8/8/8/K1Q5 w - - 0 1';
@@ -71,6 +88,13 @@ function rng(seed: number): () => number {
   };
 }
 
+  const legal = (fen: string): string[] => {
+    const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+    const out: string[] = [];
+    for (const [from, dests] of pos.allDests()) for (const to of dests) out.push(makeUci({ from, to }));
+    return out;
+  };
+
 describe('endgame drill', () => {
   let dir: string;
   let app: Hono;
@@ -86,7 +110,8 @@ describe('endgame drill', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-  const draw = (spec: unknown) => get(`/api/endgames/draw?spec=${encodeURIComponent(JSON.stringify(spec))}`);
+  const draw = (spec: unknown, goal?: string) =>
+    get(`/api/endgames/draw?spec=${encodeURIComponent(JSON.stringify(spec))}${goal ? `&goal=${goal}` : ''}`);
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'endgame-drill-'));
@@ -150,10 +175,14 @@ describe('endgame drill', () => {
     });
 
     it('gives up on material the table never calls a win', async () => {
-      // Two bare kings and a rook each: the oracle knows no rook endings.
-      const res = await draw({ white: { r: [1, 1], p: [0, 0] }, black: { r: [1, 1], p: [0, 0] } });
+      // A rook each: the oracle calls every such position a draw.
+      const res = await draw(KRKR);
       expect(res.status).toBe(404);
       expect(((await res.json()) as { reason: string }).reason).toBe('none-found');
+    });
+
+    it('refuses a goal it does not know', async () => {
+      expect((await draw(KQK, 'lose')).status).toBe(400);
     });
 
     it('goes through the tablebase cache, so a position is asked about once', async () => {
@@ -174,12 +203,6 @@ describe('endgame drill', () => {
   });
 
   describe('move', () => {
-    const legal = (fen: string): string[] => {
-      const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
-      const out: string[] = [];
-      for (const [from, dests] of pos.allDests()) for (const to of dests) out.push(makeUci({ from, to }));
-      return out;
-    };
 
     it('holds a winning move and answers with the defender\'s reply', async () => {
       const [keep] = legal(KQK_WHITE);
@@ -232,6 +255,96 @@ describe('endgame drill', () => {
     });
   });
 
+  describe('defence', () => {
+    it('draws a drawn position with something to hold, for the side to move', async () => {
+      const res = await draw(KRKR, 'draw');
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { fen: string; side: Color };
+      const setup = parseFen(body.fen).unwrap();
+      expect(body.side).toBe(setup.turn);
+      expect(setup.board.rook.size()).toBe(2);
+    });
+
+    it('has nothing to hand over where every move holds or the win is the goal', async () => {
+      // A queen against a king is never a draw, so the defence finds
+      // nothing in it; a rook each is never a win.
+      expect((await draw(KQK, 'draw')).status).toBe(404);
+      expect((await draw(KRKR, 'win')).status).toBe(404);
+    });
+
+    it('counts a drawn position where nothing can go wrong as one-sided', () => {
+      const answer = oracle(KRKR_WHITE)!;
+      const pos = Chess.fromSetup(parseFen(KRKR_WHITE).unwrap()).unwrap();
+      expect(oneSided('draw', answer, pos)).toBe(false);
+      const loose = { ...answer, moves: answer.moves.map((m) => ({ ...m, category: 'draw' as const })) };
+      expect(oneSided('draw', loose, pos)).toBe(true);
+    });
+
+    it('holds a move the table does not call a loss, and grades the rest as thrown', async () => {
+      const [keep, throwaway] = legal(KRKR_WHITE);
+      const held = await post('/api/endgames/move', { fen: KRKR_WHITE, uci: keep, goal: 'draw' });
+      expect(held.status).toBe(200);
+      const body = (await held.json()) as { verdict: string; reply: { uci: string } };
+      expect(body.verdict).toBe('held');
+      expect(body.reply.uci).toMatch(/^[a-h][1-8][a-h][1-8]$/);
+
+      const thrown = await post('/api/endgames/move', { fen: KRKR_WHITE, uci: throwaway, goal: 'draw' });
+      const verdict = (await thrown.json()) as { verdict: string; best: { uci: string } };
+      expect(verdict.verdict).toBe('threw');
+      expect(verdict.best.uci).toBe(keep);
+    });
+
+    it('presses with the reply that leaves the defender the fewest holding moves', async () => {
+      // A table where the attacker's second move leaves the defender
+      // one holding move and every other leaves them all: the second
+      // is played, though the table ranks it second.
+      const pos = Chess.fromSetup(parseFen(KRKR_WHITE).unwrap()).unwrap();
+      const answer = oracle(KRKR_WHITE)!;
+      const attackerMoves = answer.moves.map((m) => ({ ...m, category: 'draw' as const }));
+      const tight = pos.clone();
+      tight.play(parseUci(attackerMoves[1]!.uci)!);
+      const tightFen = makeFen(tight.toSetup());
+      const source = fixed(async (fen) => {
+        const reached = oracle(fen)!;
+        const all = reached.moves.map((m) => ({ ...m, category: 'draw' as const }));
+        return { ...reached, moves: fen === tightFen ? reached.moves : all };
+      });
+      const chosen = await pressingReply(join(dir, 'cache'), source, pos, { ...answer, moves: attackerMoves });
+      expect(chosen?.uci).toBe(attackerMoves[1]!.uci);
+    });
+
+    it('ends as drawn when the attacker has nothing left to mate with', async () => {
+      // A rook giving check against a lone king that can take it: Kxf1
+      // leaves two kings and the drill is over, with no reply asked for;
+      // Kh2 keeps the ending going.
+      const fen = '4k3/8/8/8/8/8/8/5rK1 w - - 0 1';
+      build(() =>
+        fixed(async (f) => {
+          probes.push(f);
+          const answer = oracle(f)!;
+          return { ...answer, category: 'draw', moves: answer.moves.map((m) => ({ ...m, category: 'draw' as const })) };
+        }),
+      );
+      const step = await post('/api/endgames/move', { fen, uci: 'g1h2', goal: 'draw' });
+      expect(((await step.json()) as { verdict: string }).verdict).toBe('held');
+      probes.length = 0;
+      const take = await post('/api/endgames/move', { fen, uci: 'g1f1', goal: 'draw' });
+      const body = (await take.json()) as { verdict: string; reply?: unknown };
+      expect(body.verdict).toBe('drawn');
+      expect(body.reply).toBeUndefined();
+      // Only the position before the move was asked about, and it was cached.
+      expect(probes).toEqual([]);
+    });
+
+    it('counts everything but a loss as holding the draw', () => {
+      expect(holdsDraw('draw')).toBe(true);
+      expect(holdsDraw('blessed-loss')).toBe(true);
+      expect(holdsDraw('maybe-loss')).toBe(true);
+      expect(holdsDraw('loss')).toBe(false);
+      expect(holdsDraw('unknown')).toBe(false);
+    });
+  });
+
   describe('one-sided positions are not drawn', () => {
     const at = (fen: string) => Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
     /** Kf6 and Qg1 against Kh8 with a black rook on a1: Qxa1 keeps the win. */
@@ -239,21 +352,21 @@ describe('endgame drill', () => {
 
     it('rejects a win the table puts too close', () => {
       const answer = oracle(KQK_WHITE)!;
-      expect(oneSided({ ...answer, dtm: MIN_WIN_PLIES }, at(KQK_WHITE))).toBe(false);
-      expect(oneSided({ ...answer, dtm: MIN_WIN_PLIES - 1 }, at(KQK_WHITE))).toBe(true);
+      expect(oneSided('win', { ...answer, dtm: MIN_WIN_PLIES }, at(KQK_WHITE))).toBe(false);
+      expect(oneSided('win', { ...answer, dtm: MIN_WIN_PLIES - 1 }, at(KQK_WHITE))).toBe(true);
       // Without a distance to mate, the distance to zeroing stands in.
-      expect(oneSided({ ...answer, dtm: null, dtz: 4 }, at(KQK_WHITE))).toBe(true);
-      expect(oneSided({ ...answer, dtm: null, dtz: null }, at(KQK_WHITE))).toBe(false);
+      expect(oneSided('win', { ...answer, dtm: null, dtz: 4 }, at(KQK_WHITE))).toBe(true);
+      expect(oneSided('win', { ...answer, dtm: null, dtz: null }, at(KQK_WHITE))).toBe(false);
     });
 
     it('rejects a position where a move that keeps the win takes a piece', () => {
       const answer = oracle(KQK_WHITE)!;
       const capture: TablebaseMove = { ...answer.moves[0]!, uci: 'g1a1', san: 'Qxa1', category: 'win' };
       const quiet: TablebaseMove = { ...capture, uci: 'g1g7', san: 'Qg7' };
-      expect(oneSided({ ...answer, moves: [capture] }, at(HANGING))).toBe(true);
-      expect(oneSided({ ...answer, moves: [quiet] }, at(HANGING))).toBe(false);
+      expect(oneSided('win', { ...answer, moves: [capture] }, at(HANGING))).toBe(true);
+      expect(oneSided('win', { ...answer, moves: [quiet] }, at(HANGING))).toBe(false);
       // A capture that throws the win is the solver's problem, not the draw's.
-      expect(oneSided({ ...answer, moves: [{ ...capture, category: 'draw' }] }, at(HANGING))).toBe(false);
+      expect(oneSided('win', { ...answer, moves: [{ ...capture, category: 'draw' }] }, at(HANGING))).toBe(false);
     });
 
     it('is applied by the draw', async () => {
@@ -283,13 +396,13 @@ describe('endgame drill', () => {
     it('reads sharpness as the share of moves that keep the win, over the line', async () => {
       const source = fixed(async (fen) => loose(2)(fen));
       const root = loose(2)(KQK_WHITE)!;
-      const score = await sharpness(join(dir, 'cache'), source, KQK_WHITE, root);
+      const score = await sharpness(join(dir, 'cache'), source, 'win', KQK_WHITE, root);
       // Every decision on the line has two keeping moves out of its
       // legal ones; the mean of those shares is well under a half and
       // above zero.
       expect(score).toBeGreaterThan(0);
       expect(score).toBeLessThan(0.5);
-      const sharper = await sharpness(join(dir, 'cache'), fixed(async (fen) => oracle(fen)), KQK_WHITE, oracle(KQK_WHITE)!);
+      const sharper = await sharpness(join(dir, 'cache'), fixed(async (fen) => oracle(fen)), 'win', KQK_WHITE, oracle(KQK_WHITE)!);
       expect(sharper).toBeLessThan(score);
     });
 

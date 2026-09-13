@@ -37,6 +37,7 @@ import { PageHeader } from '@/components/page-header';
 import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
 import { PageShell } from '@/components/page-shell';
 import { Panel, PanelHeader } from '@/components/panel';
+import { Segmented } from '@/components/segmented';
 import { Skeleton } from '@/components/skeletons';
 import { CustomMaterialWindow } from '@/games/CustomMaterialWindow';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -50,6 +51,10 @@ import {
   specFor,
   writeCustomDraft,
   type DrillPosition,
+  writeGoal,
+  readGoal,
+  DEFEND_SEGMENT,
+  type Goal,
 } from './drill';
 
 /**
@@ -65,20 +70,39 @@ import {
  * once the attempt is over, the bottom bar. What differs: there
  * is no answer to find, only a win to keep, and the verdict on every
  * move is the server's (server/endgameDrill.ts), which asks the
- * tablebase; the page grades nothing itself.
+ * tablebase; the page grades nothing itself. A drill has a goal:
+ * the win, or the draw, where the reader defends and the tablebase
+ * presses. The two are one page, one route with a segment for the
+ * defence, and one set of controls; only the words and the verdicts
+ * differ.
  */
 
 /** Where the picker lives, and where the drill goes back to: a section
     of its own, listed under Tools. */
 const PICKER = ['endgames'] as const;
 /** The line the drill settles on; the wait reserves its height. */
-const PLAYING_NOTE = 'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.';
+const PLAYING_NOTE: Record<Goal, string> = {
+  win: 'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.',
+  draw: 'Hold the draw. A move the tablebase calls a loss ends the attempt, and ten held moves end it as a draw.',
+};
+
+/** How many of the defender's own moves hold a draw. A draw has no
+    checkmate to end on, and the table's draws are all alike, so the
+    drill sets its own finishing line where the technique has been
+    shown. The server ends it sooner where the attacker has nothing
+    left to mate with. */
+const HOLD_MOVES = 10;
 
 export function EndgamesView({ params }: { params: string[] }) {
   const classId = params[0];
   if (!classId) return <EndgamePicker />;
-  return <Drill key={classId} classId={classId} />;
+  const goal: Goal = params[1] === DEFEND_SEGMENT ? 'draw' : 'win';
+  return <Drill key={`${classId}/${goal}`} classId={classId} goal={goal} />;
 }
+
+/** Where a class's drill lives, by goal. */
+const drillRoute = (id: string, goal: Goal): [string, ...string[]] =>
+  goal === 'draw' ? [id, DEFEND_SEGMENT] : [id];
 
 /**
  * Which ending to drill.
@@ -91,6 +115,11 @@ export function EndgamesView({ params }: { params: string[] }) {
  */
 function EndgamePicker() {
   const [editing, setEditing] = useState(false);
+  const [goal, setGoal] = useState<Goal>(readGoal);
+  const chooseGoal = (next: Goal): void => {
+    writeGoal(next);
+    setGoal(next);
+  };
   // By family, in the order the presets first name each one, with the
   // custom class last on its own: twenty-odd rows read top to bottom
   // were one list of names, and a list this long is scanned by section.
@@ -103,9 +132,26 @@ function EndgamePicker() {
       <PageHeader
         title={t('Endgame drills')}
         back={() => navigate('more')}
-        description={t(
-          'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.',
-        )}
+        description={
+          goal === 'win'
+            ? t(
+                'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.',
+              )
+            : t(
+                'Play the defending side of a random drawn ending against the tablebase, which presses. A move that lets the draw slip ends the attempt and shows the move that held it.',
+              )
+        }
+      />
+      {/* The goal, a value with two faces both in view, so the list
+          under it is read as "these endings, to win" or "to hold". */}
+      <Segmented
+        value={goal}
+        onChange={chooseGoal}
+        ariaLabel={t('Goal')}
+        segments={[
+          { value: 'win', label: t('Win') },
+          { value: 'draw', label: t('Hold the draw') },
+        ]}
       />
       {[...groups].map(([group, rows]) => (
         <section key={group} className="flex flex-col gap-2">
@@ -121,7 +167,7 @@ function EndgamePicker() {
                   // The custom class opens its editor first: a drill of
                   // nothing in particular is not a drill.
                   if (id === CUSTOM_CLASS) setEditing(true);
-                  else navigate(...PICKER, id);
+                  else navigate(...PICKER, ...drillRoute(id, goal));
                 }}
               >
                 <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
@@ -146,7 +192,7 @@ function EndgamePicker() {
           onApply={(draft) => {
             writeCustomDraft(draft);
             setEditing(false);
-            navigate(...PICKER, CUSTOM_CLASS);
+            navigate(...PICKER, ...drillRoute(CUSTOM_CLASS, goal));
           }}
           onClose={() => setEditing(false)}
         />
@@ -161,6 +207,7 @@ type Phase =
   | 'playing'
   | 'replying' // the move held; the defender's reply is on its way
   | 'won'
+  | 'drawn' // the defence's own end: the draw held
   | 'threw'
   | 'stopped' // ended by hand, to look at the position with the engine
   | 'error';
@@ -170,7 +217,7 @@ type Phase =
  * and whether Settings is the place to fix it. The English sentence in
  * the error body is for a direct caller; this is the page's own.
  */
-function explain(error: unknown): { message: string; settings: boolean } {
+function explain(error: unknown, goal: Goal): { message: string; settings: boolean } {
   if (isDemo()) {
     return {
       message: t('The demo reaches no tablebase. In the app, the drill plays against whichever tablebase Settings names.'),
@@ -194,7 +241,13 @@ function explain(error: unknown): { message: string; settings: boolean } {
     case 'too-many':
       return { message: t('This material needs more than seven pieces, which no table holds.'), settings: false };
     case 'none-found':
-      return { message: t('No won position of this material turned up this time.'), settings: false };
+      return {
+        message:
+          goal === 'win'
+            ? t('No won position of this material turned up this time.')
+            : t('No drawn position of this material with something to hold turned up this time.'),
+        settings: false,
+      };
     default:
       return { message: apiErrorMessage(error), settings: false };
   }
@@ -213,7 +266,7 @@ function lineTree(fen: string, ucis: string[]): { tree: MoveTree; lastId: NodeId
   return { tree, lastId };
 }
 
-function Drill({ classId }: { classId: string }) {
+function Drill({ classId, goal }: { classId: string; goal: Goal }) {
   const [start, setStart] = useState<{ fen: string; side: Color } | null>(null);
   /** The line played, solver and defender alternating. */
   const [ucis, setUcis] = useState<string[]>([]);
@@ -258,19 +311,19 @@ function Drill({ classId }: { classId: string }) {
     }
     try {
       const body = await api<{ fen: string; side: Color }>(
-        `/api/endgames/draw?spec=${encodeURIComponent(spec)}`,
+        `/api/endgames/draw?spec=${encodeURIComponent(spec)}&goal=${goal}`,
       );
       if (mine !== seq.current) return;
       setStart({ fen: body.fen, side: body.side });
       setPhase('playing');
     } catch (e) {
       if (mine !== seq.current) return;
-      setError(explain(e));
+      setError(explain(e, goal));
       setPhase('error');
     }
     // `promotion` is a fresh object each render; only its cancel is used.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec]);
+  }, [spec, goal]);
 
   // One boot per real mount: StrictMode replays effects.
   const booted = useRef(false);
@@ -324,23 +377,29 @@ function Drill({ classId }: { classId: string }) {
     setUcis((u) => [...u, uci]);
     setPhase('replying');
     let verdict: {
-      verdict: 'won' | 'threw' | 'held';
+      verdict: 'won' | 'drawn' | 'threw' | 'held';
       san: string;
       fen: string;
       best?: { uci: string; san: string };
       reply?: { uci: string; san: string };
     };
     try {
-      verdict = await api('/api/endgames/move', { method: 'POST', json: { fen: live.fen, uci } });
+      verdict = await api('/api/endgames/move', { method: 'POST', json: { fen: live.fen, uci, goal } });
     } catch (e) {
       if (mine !== seq.current) return;
-      setError(explain(e));
+      setError(explain(e, goal));
       setPhase('error');
       return;
     }
     if (mine !== seq.current) return;
     if (verdict.verdict === 'won') {
       setPhase('won');
+      return;
+    }
+    // The defence's end with no reply: the solver's own move left the
+    // attacker nothing to mate with, or no move.
+    if (verdict.verdict === 'drawn' && !verdict.reply) {
+      setPhase('drawn');
       return;
     }
     if (verdict.verdict === 'threw') {
@@ -353,10 +412,12 @@ function Drill({ classId }: { classId: string }) {
     // lands, so the two moves are seen as two; the round trip has spent
     // most or all of it already.
     const grace = Math.max(450, boardAnimMs()) - (performance.now() - moved);
+    const done =
+      verdict.verdict === 'drawn' || (goal === 'draw' && (plies + 2) / 2 >= HOLD_MOVES);
     after(Math.max(0, grace), () => {
       if (mine !== seq.current) return;
       setUcis((u) => [...u, reply.uci]);
-      setPhase('playing');
+      setPhase(done ? 'drawn' : 'playing');
     });
   };
 
@@ -369,9 +430,10 @@ function Drill({ classId }: { classId: string }) {
   // Announced for a screen reader at the two moments that matter; the
   // badge on the board and the panel's line are both visual.
   useEffect(() => {
-    if (phase === 'threw') announce(t('The win slipped'));
+    if (phase === 'threw') announce(goal === 'win' ? t('The win slipped') : t('The draw slipped'));
     else if (phase === 'won') announce(t('Checkmate'));
-  }, [phase]);
+    else if (phase === 'drawn') announce(t('Draw held'));
+  }, [phase, goal]);
 
   // Any progress snaps the board back to live.
   useEffect(() => setReview(null), [plies, phase]);
@@ -383,7 +445,7 @@ function Drill({ classId }: { classId: string }) {
     setReview(clamped >= plies ? null : clamped);
   };
 
-  const ended = phase === 'won' || phase === 'threw' || phase === 'stopped';
+  const ended = phase === 'won' || phase === 'drawn' || phase === 'threw' || phase === 'stopped';
   // In-place analysis once the attempt is over, the trainers' shared
   // hook: the line so far loads into the analysis store and the board
   // becomes the analysis board. A desktop docks the engine only once
@@ -399,7 +461,7 @@ function Drill({ classId }: { classId: string }) {
   const seed = (): { tree: MoveTree; cursorId: NodeId; orientation: Color } => {
     let { tree } = line!;
     const { lastId } = line!;
-    if (phase === 'won') tree = updateNode(tree, lastId, { nags: [1] });
+    if (phase === 'won' || phase === 'drawn') tree = updateNode(tree, lastId, { nags: [1] });
     if (phase === 'threw') {
       tree = updateNode(tree, lastId, { nags: [4] });
       if (best) {
@@ -433,17 +495,21 @@ function Drill({ classId }: { classId: string }) {
   const status = (): { text: string; tone?: string } => {
     switch (phase) {
       case 'loading':
-        return { text: t('Finding a won ending…') };
+        return { text: goal === 'win' ? t('Finding a won ending…') : t('Finding a drawn ending…') };
       case 'playing':
-        return { text: t(PLAYING_NOTE) };
+        return { text: t(PLAYING_NOTE[goal]) };
       case 'replying':
-        return { text: t('Defending…') };
+        return { text: goal === 'win' ? t('Defending…') : t('Attacking…') };
       case 'won':
         return { text: t('The win held from the first move to the last.') };
+      case 'drawn':
+        return { text: t('The draw held from the first move to the last.') };
       case 'threw':
         return {
           text: best
-            ? t('{san} lets the win slip. {best} keeps it.', { san: lastSan, best: best.san })
+            ? goal === 'win'
+              ? t('{san} lets the win slip. {best} keeps it.', { san: lastSan, best: best.san })
+              : t('{san} lets the draw slip. {best} holds it.', { san: lastSan, best: best.san })
             : '',
         };
       case 'stopped':
@@ -489,7 +555,7 @@ function Drill({ classId }: { classId: string }) {
           and draws nothing when it is off, so this row follows it. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <p className="text-muted-foreground px-3 py-6 text-center text-sm">
-          {t('Finding a won ending…')}
+          {goal === 'win' ? t('Finding a won ending…') : t('Finding a drawn ending…')}
         </p>
       </div>
       <MoveBox fen={INITIAL_FEN} disabled onMove={() => {}} />
@@ -534,14 +600,22 @@ function Drill({ classId }: { classId: string }) {
             <p
               className={cn(
                 'text-base font-semibold',
-                phase === 'won'
+                phase === 'won' || phase === 'drawn'
                   ? outcomeTone('solved')
                   : phase === 'threw'
                     ? outcomeTone('missed')
                     : 'text-foreground',
               )}
             >
-              {phase === 'won' ? t('Checkmate') : phase === 'threw' ? t('The win slipped') : t('Stopped')}
+              {phase === 'won'
+                ? t('Checkmate')
+                : phase === 'drawn'
+                  ? t('Draw held')
+                  : phase === 'threw'
+                    ? goal === 'win'
+                      ? t('The win slipped')
+                      : t('The draw slipped')
+                    : t('Stopped')}
             </p>
           ) : start && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
@@ -565,7 +639,7 @@ function Drill({ classId }: { classId: string }) {
               clipping. */}
           <div className="grid">
             <p aria-hidden className="invisible col-start-1 row-start-1 text-sm leading-relaxed">
-              {t(PLAYING_NOTE)}
+              {t(PLAYING_NOTE[goal])}
             </p>
             <p
               className={cn(

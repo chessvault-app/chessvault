@@ -2,15 +2,16 @@ import { Hono, type Context } from 'hono';
 import { Chess } from 'chessops/chess';
 import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
-import { parseUci } from 'chessops/util';
+import type { Color } from 'chessops/types';
+import { opposite, parseUci } from 'chessops/util';
 import { mirrorMaterialSpec, parseMaterialSpec } from '../shared/scanMatch.ts';
 import { DATA_TABLEBASE_CACHE } from './paths.ts';
-import { cachedProbe, type TablebaseAnswer, type TablebaseProbe } from './tablebase.ts';
+import { cachedProbe, type TablebaseAnswer, type TablebaseMove, type TablebaseProbe } from './tablebase.ts';
 import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
 
 /**
- * The endgame drill: a won ending, drawn at random, played out against
- * the tablebase's best defence.
+ * The endgame drill: an ending drawn at random and played out against
+ * the tablebase, to keep a win or to hold a draw.
  *
  * A puzzle has one answer; an ending has a technique, and the only
  * judge of technique that never guesses is the table. So the drill is
@@ -19,20 +20,24 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  * cache: every position it draws or plays through is a fact kept for
  * good, and the explorer will find it there.
  *
- * Two routes carry a drill, and the verdict is never the client's:
+ * A drill has a goal, `win` or `draw`, and both routes take it:
  *
  *  - `draw` proposes random positions of a material class
- *    (server/endgamePositions.ts), keeps those the table calls a win
- *    for the side to move that are not already decided (oneSided), and
- *    of a pool of them hands over the sharpest: the one whose first few
- *    decisions leave the solver the fewest moves that keep the win
- *    (sharpness). That side is the solver's. The measure is the
+ *    (server/endgamePositions.ts), keeps those the table grades as the
+ *    goal for the side to move that are not already decided (oneSided),
+ *    and of a pool of them hands over the sharpest: the one whose first
+ *    few decisions leave the solver the fewest moves that keep the
+ *    result (sharpness). That side is the solver's. The measure is the
  *    drill's own and is never shown; a drill is not a rating.
  *  - `move` grades one move by the table's own word for it. A move that
- *    keeps the category at `win` holds; anything else threw the win
- *    away, and the answer names the move that would have kept it. A
- *    held move gets the defender's reply, the move the table ranks
- *    best for a lost side: the one that takes longest to lose.
+ *    keeps the result holds; anything else threw it away, and the answer
+ *    names the move that would have kept it. A held move gets the
+ *    opponent's reply. Against a win the defender plays the move the
+ *    table ranks best for a lost side, the one that takes longest to
+ *    lose. Against a draw every move of the attacker's draws, so the
+ *    table has no order for them; the drill plays the one that leaves
+ *    the defender the fewest moves that still hold, which is the
+ *    sharpest test the position has.
  *
  * Nothing is recorded. A drill is a thing to play when an ending is what
  * you feel like, not a record to tend (lanph3re's call), so there is no
@@ -43,39 +48,16 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  * it. What they must never do is guess.
  */
 
+/** What the solver is trying to keep. */
+export type Goal = 'win' | 'draw';
+
+const asGoal = (raw: unknown): Goal | null => (raw === 'win' || raw === 'draw' ? raw : raw == null || raw === '' ? 'win' : null);
+
 /** How many random positions a draw is willing to ask about before
     giving up on the class. Most classes settle in a handful, and the
     one-sided ones a class throws back cost a try each; a public server
     answers each in a fraction of a second. */
 const DRAW_TRIES = 60;
-
-/**
- * How far off the win must be for a draw to count as an ending. A win
- * the table puts under this many plies away is a puzzle with a long
- * tail, not a technique to practise: the first drills drawn were mates
- * in two and rooks won on the spot, which the reader called one-sided.
- * Distance to mate is the true measure and the small tables carry it;
- * the larger only know the distance to a zeroing move, which is shorter
- * than the win, so a floor on it is the weaker of the two tests, not a
- * wrong one.
- */
-export const MIN_WIN_PLIES = 10;
-
-/**
- * Whether a drawn position is already decided: a win too short to
- * practise, or one where a move that keeps the win takes a piece. A
- * hanging piece is a tactic, and the position after it is a different
- * class from the one that was asked for.
- */
-export function oneSided(answer: TablebaseAnswer, pos: Chess): boolean {
-  const distance = answer.dtm ?? answer.dtz;
-  if (distance !== null && distance < MIN_WIN_PLIES) return true;
-  return answer.moves.some((m) => {
-    if (!holds(m.category)) return false;
-    const move = parseUci(m.uci);
-    return !!move && 'to' in move && pos.board.get(move.to) !== undefined;
-  });
-}
 
 /** How many acceptable positions a draw gathers before choosing among
     them. Every one costs its lookahead in probes on a first visit, so
@@ -88,14 +70,79 @@ const POOL = 4;
     on, which is what the lookahead is for. */
 const LOOKAHEAD = 2;
 
+/** How many of the attacker's moves the defence drill weighs for a
+    reply, each a probe on a first visit. The table's order puts the
+    pressing moves first (a zeroing move breaks a tie), so the first few
+    are where the sharp one is. */
+const REPLY_CANDIDATES = 6;
+
+/**
+ * How far off the win must be for a draw to count as an ending. A win
+ * the table puts under this many plies away is a puzzle with a long
+ * tail, not a technique to practise: the first drills drawn were mates
+ * in two and rooks won on the spot, which the reader called one-sided.
+ * Distance to mate is the true measure and the small tables carry it;
+ * the larger only know the distance to a zeroing move, which is shorter
+ * than the win, so a floor on it is the weaker of the two tests, not a
+ * wrong one. A draw has no distance, so only the win goal has a floor.
+ */
+export const MIN_WIN_PLIES = 10;
+
+/** Whether a move keeps the win. `maybe-win` is the server unsure only
+    about the fifty-move rounding, which is not a mistake the solver
+    made; `cursed-win` is a win the rule has already turned into a draw,
+    and counts as thrown. */
+export const holds = (category: TablebaseAnswer['category']): boolean =>
+  category === 'win' || category === 'maybe-win';
+
+/** Whether a move keeps the draw: anything the table does not call a
+    loss. `blessed-loss` is a loss the fifty-move rule has already saved,
+    which is the result kept; `maybe-loss` is the server unsure about
+    that rounding, and gets the same benefit of the doubt `maybe-win`
+    gets above. */
+export const holdsDraw = (category: TablebaseAnswer['category']): boolean =>
+  category !== 'loss' && category !== 'unknown';
+
+/** Whether a move keeps the goal. */
+export const keeps = (goal: Goal, category: TablebaseAnswer['category']): boolean =>
+  goal === 'win' ? holds(category) : holdsDraw(category);
+
+/** Whether a position stands where the goal asks: won for the side to
+    move, or drawn. */
+const stands = (goal: Goal, answer: TablebaseAnswer): boolean =>
+  goal === 'win' ? answer.category === 'win' : answer.category === 'draw';
+
+/**
+ * Whether a drawn position is already decided. For a win: too short to
+ * practise, or a move that keeps it takes a piece. A hanging piece is a
+ * tactic, and the position after it is a different class from the one
+ * that was asked for. For a draw: nothing can go wrong (every move
+ * holds, so there is nothing to defend against), or a move that holds
+ * takes a piece, which ends the ending rather than defends it.
+ */
+export function oneSided(goal: Goal, answer: TablebaseAnswer, pos: Chess): boolean {
+  if (goal === 'win') {
+    const distance = answer.dtm ?? answer.dtz;
+    if (distance !== null && distance < MIN_WIN_PLIES) return true;
+  } else if (answer.moves.every((m) => holdsDraw(m.category))) {
+    return true;
+  }
+  return answer.moves.some((m) => {
+    if (!keeps(goal, m.category)) return false;
+    const move = parseUci(m.uci);
+    return !!move && 'to' in move && pos.board.get(move.to) !== undefined;
+  });
+}
+
 /**
  * How narrow the solver's choices are at the start of a position, as
  * the mean over the first decisions of the share of legal moves that
- * keep the win, so lower is sharper and an only-move position scores
+ * keep the result, so lower is sharper and an only-move position scores
  * near zero. The line walked is the table's own: the solver's best,
- * then the defender's longest resistance. Every position on it is
+ * then the opponent's first-ranked reply. Every position on it is
  * probed through the cache, so a line read once is read for free
- * after. Null where the table could not be reached.
+ * after. Throws where the table could not be reached, as the probe
+ * does.
  *
  * A mean rather than a threshold, so a class that is never narrow
  * (queen against king wins by most moves at every step) still ranks
@@ -104,6 +151,7 @@ const LOOKAHEAD = 2;
 export async function sharpness(
   cacheDir: string,
   source: TablebaseProbe,
+  goal: Goal,
   fen: string,
   root: TablebaseAnswer,
 ): Promise<number> {
@@ -111,10 +159,10 @@ export async function sharpness(
   const shares: number[] = [];
   let answer: TablebaseAnswer = root;
   for (let decision = 0; ; decision += 1) {
-    const keeping = answer.moves.filter((m) => holds(m.category)).length;
+    const keeping = answer.moves.filter((m) => keeps(goal, m.category)).length;
     shares.push(answer.moves.length ? keeping / answer.moves.length : 1);
     if (decision === LOOKAHEAD) break;
-    // The solver's best, then the defender's; a line the table ends
+    // The solver's best, then the opponent's; a line the table ends
     // early (mate, or nothing ranked) is read as far as it goes.
     const best = answer.moves[0];
     const solverMove = best && parseUci(best.uci);
@@ -126,18 +174,49 @@ export async function sharpness(
     if (!replyMove || !pos.isLegal(replyMove)) break;
     pos.play(replyMove);
     const next = await cachedProbe(cacheDir, source, makeFen(pos.toSetup()));
-    if (!next || next.category !== 'win') break;
+    if (!next || !stands(goal, next)) break;
     answer = next;
   }
   return shares.reduce((a, b) => a + b, 0) / shares.length;
 }
 
-/** Whether a move keeps the win. `maybe-win` is the server unsure only
-    about the fifty-move rounding, which is not a mistake the solver
-    made; `cursed-win` is a win the rule has already turned into a draw,
-    and counts as thrown. */
-export const holds = (category: TablebaseAnswer['category']): boolean =>
-  category === 'win' || category === 'maybe-win';
+/**
+ * The attacker's reply in a defence drill: of the first few moves the
+ * table ranks for a side that cannot win, the one that leaves the
+ * defender the fewest moves that hold, ties to the table's order. Each
+ * candidate is one probe of the position it reaches, through the cache.
+ * Null where the table holds nothing for the position.
+ */
+export async function pressingReply(
+  cacheDir: string,
+  source: TablebaseProbe,
+  pos: Chess,
+  answer: TablebaseAnswer,
+): Promise<TablebaseMove | null> {
+  const candidates = answer.moves.filter((m) => m.category === 'draw').slice(0, REPLY_CANDIDATES);
+  if (candidates.length === 0) return answer.moves[0] ?? null;
+  const counts = await Promise.all(
+    candidates.map(async (m) => {
+      const move = parseUci(m.uci);
+      if (!move || !pos.isLegal(move)) return Infinity;
+      const next = pos.clone();
+      next.play(move);
+      const reached = await cachedProbe(cacheDir, source, makeFen(next.toSetup()));
+      if (!reached) return Infinity;
+      return reached.moves.filter((d) => holdsDraw(d.category)).length;
+    }),
+  );
+  let pick = 0;
+  counts.forEach((n, i) => {
+    if (n < counts[pick]!) pick = i;
+  });
+  return candidates[pick]!;
+}
+
+/** Whether the ending is over as a draw: no move to make, or the
+    attacker can no longer mate with what is left. */
+const settled = (pos: Chess, attacker: Color): boolean =>
+  pos.isStalemate() || pos.isInsufficientMaterial() || pos.hasInsufficientMaterial(attacker);
 
 /** The three ways a probe can fail to answer, each as the status and
     reason the page turns into a sentence and a way to Settings. */
@@ -184,6 +263,8 @@ export function endgameDrillApi(
   api.get('/endgames/draw', async (c) => {
     const spec = parseMaterialSpec(c.req.query('spec') ?? '');
     if (!spec) return c.json({ error: 'missing or malformed ?spec=' }, 400);
+    const goal = asGoal(c.req.query('goal'));
+    if (!goal) return c.json({ error: '?goal= is win or draw' }, 400);
     if (!drillable(spec)) {
       return c.json(
         {
@@ -213,12 +294,13 @@ export function endgameDrillApi(
       probed += 1;
       if (!answer) continue;
       held += 1;
-      // A win, and one with something to find: a position already
-      // mated or stalemated has no move, and one that is over in a few
-      // plies, or wins a piece at once, is a puzzle, not an ending.
-      if (answer.category !== 'win' || answer.checkmate || answer.stalemate) continue;
+      // The goal's result, and one with something to find: a position
+      // already mated or stalemated has no move, and one that is over
+      // in a few plies, or wins a piece at once, is a puzzle, not an
+      // ending.
+      if (!stands(goal, answer) || answer.checkmate || answer.stalemate) continue;
       const drawn = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
-      if (oneSided(answer, drawn)) continue;
+      if (oneSided(goal, answer, drawn)) continue;
       pool.push({ fen, answer });
     }
     if (pool.length > 0) {
@@ -226,7 +308,7 @@ export function endgameDrillApi(
       // the same dice still give the same draw.
       let scores: number[];
       try {
-        scores = await Promise.all(pool.map((p) => sharpness(cacheDir, source, p.fen, p.answer)));
+        scores = await Promise.all(pool.map((p) => sharpness(cacheDir, source, goal, p.fen, p.answer)));
       } catch {
         return unreachable(c);
       }
@@ -244,7 +326,10 @@ export function endgameDrillApi(
     if (probed > 0 && held === 0) return noTable(c);
     return c.json(
       {
-        error: 'No winning position of this material turned up. Try again.',
+        error:
+          goal === 'win'
+            ? 'No winning position of this material turned up. Try again.'
+            : 'No drawn position of this material with something to hold turned up. Try again.',
         reason: 'none-found',
       },
       404,
@@ -252,10 +337,12 @@ export function endgameDrillApi(
   });
 
   api.post('/endgames/move', async (c) => {
-    const body = (await c.req.json().catch(() => ({}))) as { fen?: unknown; uci?: unknown };
+    const body = (await c.req.json().catch(() => ({}))) as { fen?: unknown; uci?: unknown; goal?: unknown };
     if (typeof body.fen !== 'string' || typeof body.uci !== 'string') {
       return c.json({ error: 'expected { fen, uci }' }, 400);
     }
+    const goal = asGoal(body.goal);
+    if (!goal) return c.json({ error: 'goal is win or draw' }, 400);
     const setup = parseFen(body.fen);
     const parsed = setup.isOk ? Chess.fromSetup(setup.value) : null;
     const move = parseUci(body.uci);
@@ -276,12 +363,14 @@ export function endgameDrillApi(
     if (!graded) return noTable(c);
 
     const pos = parsed.value;
+    const solver = pos.turn;
     const san = makeSanAndPlay(pos, move);
     const after = makeFen(pos.toSetup());
-    if (pos.isCheckmate()) return c.json({ verdict: 'won', san, fen: after });
-    if (!holds(graded.category)) {
+    if (goal === 'win' && pos.isCheckmate()) return c.json({ verdict: 'won', san, fen: after });
+    if (!keeps(goal, graded.category)) {
       // Best first is how the server ranks them (rankMoves): the
-      // shortest win, or where none is left, the move that was.
+      // shortest win, or where none is left, the move that was; for a
+      // draw, a move that holds it.
       const best = before.moves[0]!;
       return c.json({
         verdict: 'threw',
@@ -291,26 +380,30 @@ export function endgameDrillApi(
         best: { uci: best.uci, san: best.san },
       });
     }
+    if (goal === 'draw' && settled(pos, opposite(solver))) {
+      return c.json({ verdict: 'drawn', san, fen: after });
+    }
 
     let reply: TablebaseAnswer | null;
+    let chosen: TablebaseMove | null;
     try {
       reply = await cachedProbe(cacheDir, source, after);
+      // Against a win, the defender's best is the first move the table
+      // ranks for a lost side: the one that takes longest to lose.
+      // Against a draw, the move that leaves the fewest ways to hold.
+      chosen = !reply ? null : goal === 'win' ? (reply.moves[0] ?? null) : await pressingReply(cacheDir, source, pos, reply);
     } catch {
       return unreachable(c);
     }
-    // The defender's best is the first move the table ranks for a lost
-    // side: the one that takes longest to lose.
-    const chosen = reply?.moves[0];
     if (!reply || !chosen) return noTable(c);
     const replyMove = parseUci(chosen.uci);
     if (!replyMove || !pos.isLegal(replyMove)) return noTable(c);
     const replySan = makeSanAndPlay(pos, replyMove);
-    return c.json({
-      verdict: 'held',
-      san,
-      reply: { uci: chosen.uci, san: replySan },
-      fen: makeFen(pos.toSetup()),
-    });
+    const fen = makeFen(pos.toSetup());
+    // A reply that leaves the attacker nothing to mate with, or the
+    // defender no move, ends the defence as a draw held.
+    const verdict = goal === 'draw' && settled(pos, opposite(solver)) ? 'drawn' : 'held';
+    return c.json({ verdict, san, reply: { uci: chosen.uci, san: replySan }, fen });
   });
 
   return api;
