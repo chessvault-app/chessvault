@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeSegment } from './router.ts';
+import { decodeSegment, shapeOf } from './router.ts';
 
 describe('decodeSegment', () => {
   it('undoes what encodeURIComponent did to an id', () => {
@@ -17,3 +17,22 @@ describe('decodeSegment', () => {
   });
 });
 
+describe('shapeOf', () => {
+  it('reads a leaf under a list as a push and the way back as a pop', () => {
+    expect(shapeOf('#/games', '#/games/abc')).toBe('push');
+    expect(shapeOf('#/games/abc', '#/games')).toBe('pop');
+  });
+
+  it('reads one top-level page to another as a tab', () => {
+    expect(shapeOf('#/games', '#/books')).toBe('tab');
+    expect(shapeOf('#/puzzles/hub', '#/games')).toBe('tab');
+  });
+
+  it('reads the opening map switching colour as a tab, not a leaf', () => {
+    // The two maps are one page in two colours; a slide in from the
+    // right said the black map was a page under the white one.
+    expect(shapeOf('#/openingmap', '#/openingmap/black')).toBe('tab');
+    expect(shapeOf('#/openingmap/black', '#/openingmap')).toBe('tab');
+    expect(shapeOf('#/openingmap/black', '#/openingmap/white')).toBe('tab');
+  });
+});

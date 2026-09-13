@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
-import { atRoute, decodeSegment, navigate, sectionHref, useRoute, type Section } from '@/lib/router';
+import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { PasswordGate } from '@/auth/PasswordGate';
@@ -77,6 +77,44 @@ const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => 
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })));
 
+// Which chunk a hash draws, for the phone's page transition to wait on
+// (lib/router, swapRoute). The same table as the switch in AppShell's
+// render, read the other way; a section not listed draws eagerly.
+registerRoutePending((hash) => {
+  const { section, params } = parse(hash);
+  switch (section) {
+    case 'board':
+      return AnalysisView.pending();
+    case 'workspace':
+      return WorkspaceView.pending();
+    case 'editor':
+      return EditorView.pending();
+    case 'studies':
+      return StudiesView.pending();
+    case 'games':
+      return GamesView.pending();
+    case 'notes':
+      return NotesView.pending();
+    case 'puzzles':
+      return PuzzlesView.pending();
+    case 'books':
+      return BooksView.pending();
+    case 'repertoire':
+      return RepertoireView.pending();
+    case 'endgames':
+      return EndgamesView.pending();
+    case 'openingmap':
+      return OpeningMapView.pending();
+    case 'databases':
+      return DatabasesPage.pending();
+    case 'insights':
+      return InsightsPage.pending();
+    case 'settings':
+      return params[0] === 'licenses' ? LicensesPage.pending() : SettingsPage.pending();
+    default:
+      return null;
+  }
+});
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
 const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })));
 const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));

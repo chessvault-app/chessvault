@@ -2553,18 +2553,103 @@ cg-board square.check {
   }
 }
 
-/* The spring's slide, as the page under a page turning inside a window
-   (components/ui/dialog, `stack`) moves: a third of the way out and
-   darkened on the way down, back on the way up. A phone's route change
-   used the same pair for its push and pop until the page transition was
-   removed (lanph3re read the fade as flicker, 2026-09-13); a route change
-   is a cut now, on every viewport. */
+/* A phone's page change goes through the browser's own View Transitions
+   (lib/router, swapRoute), in one of three shapes the router stamps on
+   the root as `data-nav`:
+
+   - `tab`, between two top-level pages: a fade-through. The old page
+     fades fully out and THEN the new one fades in, 60ms and 90ms on the
+     spring's two curves. It was a 150ms cross-fade, which has frames
+     where both pages are half there and text blurs; a fade-through has
+     none, and Material names it for exactly this move. Still 150ms in
+     all, so a tab and a pane land at the same tempo.
+   - `push`, down into a leaf: the new page slides in from the right on
+     the spring while the old one slides a third of the way out under it
+     and darkens. No fade on either: this is the platform's own shape on
+     iPhone, where the app is tested.
+   - `pop`, back up: the mirror. The old page slides out to the right on
+     the spring run backwards, over the new one coming back from a third
+     of the way left.
+
+   The UA's default is a 250ms cross-fade with `plus-lighter` blending;
+   the slides set blending back to normal or the two pages add up where
+   they overlap. Reduced motion takes the cut: the router never starts
+   one, and the block at the end covers a transition started by anything
+   else. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 150ms;
+  animation-timing-function: var(--pane-turn-ease);
+}
+/* The group too, not only the two images: the UA gives the root's group
+   its own 250ms, and the live page stays hidden under the pseudo-elements
+   until the LAST animation ends, so a 150ms fade still held the new page
+   back for 250ms plus the frame after. Measured on the demo in
+   phone-emulated Chromium, opening a game from a games row: the
+   transition finished 366ms after the tap before this, and the board and
+   the toast could only appear after it. */
+:root[data-nav='tab']::view-transition-old(root) {
+  animation: vt-fade-out 60ms var(--pane-turn-ease-out) both;
+}
+:root[data-nav='tab']::view-transition-new(root) {
+  animation: vt-fade-in 90ms var(--pane-turn-ease) 60ms both;
+}
+:root[data-nav='push']::view-transition-group(root),
+:root[data-nav='pop']::view-transition-group(root) {
+  animation-duration: var(--pane-turn);
+}
+:root[data-nav='push']::view-transition-old(root),
+:root[data-nav='push']::view-transition-new(root),
+:root[data-nav='pop']::view-transition-old(root),
+:root[data-nav='pop']::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+:root[data-nav='push']::view-transition-old(root) {
+  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
+}
+:root[data-nav='push']::view-transition-new(root) {
+  animation: vt-slide-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+:root[data-nav='pop']::view-transition-old(root) {
+  animation: vt-slide-out var(--pane-turn) var(--pane-turn-ease-out) both;
+  /* The leaving page is on top: the UA paints the new image over the
+     old, which is right for a push and backwards for a pop. */
+  z-index: 1;
+}
+:root[data-nav='pop']::view-transition-new(root) {
+  animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-slide-out {
+  to {
+    transform: translateX(100%);
+  }
+}
 @keyframes vt-under-out {
   to {
     transform: translateX(-33%);
     filter: brightness(0.85);
   }
 }
+/* The content under a page inside a window (components/ui/dialog,
+   `stack`): the same under-out and under-in the router's push and pop
+   give the page below, on the same clock, so a page turning inside a
+   sheet moves like a page turning in the app. */
 @utility page-under-leave {
   animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
 }
@@ -2575,6 +2660,53 @@ cg-board square.check {
   from {
     transform: translateX(-33%);
     filter: brightness(0.85);
+  }
+}
+/* The toasts (components/ui/toast), on a snapshot of their own rather
+   than the page's. A fixed overlay captured with the page is dragged by
+   the page's animation, and the review offer rode a pop clean off the
+   right edge of a phone. Held still and live instead, so a toast plays
+   its own entrance and exit through a page change, where it stands:
+   `::view-transition-new` is the live element and not a still, which is
+   what makes that work, and the old image is dropped rather than
+   cross-faded, or the toast doubles with itself for the length of the
+   slide. The name is taken only while a toast is up, so a page change
+   over an empty layer pays for no second snapshot. */
+[data-slot='toast-layer']:has([data-slot='toast']) {
+  view-transition-name: toasts;
+}
+::view-transition-group(toasts) {
+  animation: none;
+}
+::view-transition-old(toasts) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(toasts) {
+  animation: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+/* The shared board (lib/shared-board): the group carrying it moves and
+   resizes on the spring, and the two boards do not cross-fade on the
+   way, which blurred the pieces mid-flight; the new one is shown as soon
+   as the group starts. */
+::view-transition-group(board) {
+  animation-duration: var(--pane-turn);
+  animation-timing-function: var(--pane-turn-ease);
+}
+::view-transition-old(board) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(board) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 

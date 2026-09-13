@@ -1,3 +1,4 @@
+import { SHARED_BOARD, sharedBoardArmed } from '@/lib/shared-board';
 import { Chessground } from '@lichess-org/chessground';
 import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
@@ -471,6 +472,11 @@ export function Board({
         'aspect-square board-box',
         className,
       )}
+      // The shared element a phone's route transition morphs a tapped
+      // thumbnail into (lib/shared-board). One board per page, and named
+      // only while a tap has armed a flight: unnamed, the board rides the
+      // page's own cross-fade instead of a board group of its own.
+      style={{ viewTransitionName: sharedBoardArmed() ? SHARED_BOARD : undefined }}
     >
       {/* The board keeps the page still under two fingers, which the whole
           app used to do for it (index.css). chessground reads one finger
