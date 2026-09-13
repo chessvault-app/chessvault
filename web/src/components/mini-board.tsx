@@ -29,8 +29,10 @@ declare module 'react' {
  * middle of every thumbnail. A gradient has no seams to round.
  *
  * That paragraph will tempt the next person, so: on iOS these thumbnails
- * move by about a device pixel for a few frames around a phone's page
- * change, and the page change is the View Transition (lib/router). Read
+ * moved by about a device pixel for a few frames around a phone's page
+ * change, while the page change was a View Transition (removed
+ * 2026-09-13; a route change is a cut now, so the hop has no snapshot to
+ * come from, and the whole-pixel rule below stands on its own). Read
  * off a 60fps recording of the Studies tab tapped twice (2026-09-10),
  * the board has two rasterisations. The live page draws one. The other
  * shows for exactly one frame at the tap, when the transition captures

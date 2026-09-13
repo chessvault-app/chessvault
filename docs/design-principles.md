@@ -738,16 +738,12 @@ exit at full speed, and this is that without a second physics. Exits are
 shorter than entrances (200ms against 337ms). A test holds both tokens
 to the spring.
 
-The phone's three page changes, chosen against the two platform guides
-and measured on the demo: a **tab** switch fades the old page fully out
-and then the new one in, inside 150ms, because a cross-fade has frames
-where two pages' text is half there at once; a **push** slides the new
-page in from the right over the old one, which slips a third of the way
-out and darkens, with no fade on either, the way iPhone does it; a
-**pop** is that in reverse. The router reads the shape off the two
-routes' depth, so a chevron that `navigate`s to its list still plays as
-a step up. A browser-driven history move (the iPhone edge swipe) plays
-no transition, because Safari has already played its own.
+A **page change is a cut**, on every viewport. The phone had a fade for
+a tab switch and a slide for a push and a pop, chosen against the two
+platform guides and measured; in use, the fade read as the screen
+flickering and the three were taken out together (2026-09-13). A page
+that turns INSIDE a window still slides, since the sheet stays and the
+turn is what the eye is following.
 
 A **sheet** slides from the bottom edge and does not fade; only the
 scrim fades. The one sheet that raises the keyboard as it opens does

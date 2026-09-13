@@ -14,7 +14,7 @@ import {
   X,
   Search,
 } from 'lucide-react';
-import { Suspense, lazy, useEffect, useState, useRef } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
@@ -23,7 +23,6 @@ import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Figures } from '@/components/figures';
 import { openQuickSwitcher } from '@/components/quick-switcher';
-import { nameSharedBoard } from '@/lib/shared-board';
 import { useMediaQuery } from '@/lib/media';
 import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
@@ -577,7 +576,6 @@ export function HomePage() {
   // xl, the width at which the column opens to 64rem (see the shell below).
   const wide = useMediaQuery('(min-width: 80rem)');
   // Continue's board, named as the shared board when it opens its study.
-  const continueBoard = useRef<HTMLDivElement>(null);
   // What the Continue card was LAST launch, so this launch can reserve its
   // space before the data returns. Without it the card popped in a beat
   // after first paint and pushed the whole page down — the most visible
@@ -1232,10 +1230,7 @@ export function HomePage() {
             {boardStudy?.fen && (
               <button
                 type="button"
-                onClick={() => {
-                  nameSharedBoard(continueBoard.current);
-                  navigate('studies', encodeURIComponent(boardStudy.id));
-                }}
+                onClick={() => navigate('studies', encodeURIComponent(boardStudy.id))}
                 className={cn(
                   'border-border border-l-primary bg-primary/10 hover:bg-accent flex w-full items-center gap-3 border-b border-l-2 px-3 py-3 text-left transition-colors duration-100',
                   // The ring inset, for the reason ListRow gives: the card
@@ -1249,7 +1244,7 @@ export function HomePage() {
               >
                 {/* 96px, and 128 from xl where the column has the room:
                     the position is the one picture on the page. */}
-                <MiniBoard ref={continueBoard} fen={boardStudy.fen} size={wide ? 128 : 96} className="shrink-0 rounded-sm" />
+                <MiniBoard fen={boardStudy.fen} size={wide ? 128 : 96} className="shrink-0 rounded-sm" />
                 {/* basis-full under 320px, or flex-1 shrinks the title
                     to a few letters beside the board instead of taking
                     the wrap the button offers. */}

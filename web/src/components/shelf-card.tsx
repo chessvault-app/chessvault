@@ -1,7 +1,6 @@
 import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
-import { useState, type ReactNode, useRef } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { nameSharedBoard } from '@/lib/shared-board';
 import { Button } from '@/components/ui/button';
 import { TitleTip } from '@/components/title-tip';
 import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
@@ -71,14 +70,8 @@ export function ShelfCard({
   // the one place it was muted. A phone never saw the dim (nothing
   // hovers there) and its shelf read fine, which was the tell. Reversed
   // by lanph3re, 2026-09-07; the card still lifts on hover.
-  // Named as THE board the moment the card opens, so a phone's route
-  // transition grows it into the page's board (lib/shared-board).
-  const boardRef = useRef<HTMLDivElement>(null);
-  const open = (): void => {
-    nameSharedBoard(boardRef.current);
-    onOpen();
-  };
-  const board = layout === 'grid' && fen ? <MiniBoard ref={boardRef} fen={fen} size={64} /> : null;
+  const open = onOpen;
+  const board = layout === 'grid' && fen ? <MiniBoard fen={fen} size={64} /> : null;
 
   return (
     // h-full through both: in a two-column grid a card with a preview line
