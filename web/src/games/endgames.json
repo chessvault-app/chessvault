@@ -360,7 +360,7 @@
   {
     "id": "queen",
     "label": "Queen endgame",
-    "group": "Queen and heavy pieces",
+    "group": "Queen and major pieces",
     "spec": {
       "white": {
         "n": [
@@ -501,7 +501,7 @@
   {
     "id": "queen-vs-rook",
     "label": "Queen vs rook",
-    "group": "Queen and heavy pieces",
+    "group": "Queen and major pieces",
     "spec": {
       "white": {
         "n": [
@@ -544,7 +544,7 @@
   {
     "id": "queen-vs-two-rooks",
     "label": "Queen vs two rooks",
-    "group": "Queen and heavy pieces",
+    "group": "Queen and major pieces",
     "spec": {
       "white": {
         "n": [
@@ -615,8 +615,8 @@
   },
   {
     "id": "heavy-pieces",
-    "label": "Heavy pieces only",
-    "group": "Queen and heavy pieces",
+    "label": "Major pieces only",
+    "group": "Queen and major pieces",
     "spec": {
       "white": {
         "n": [
@@ -899,7 +899,7 @@
   {
     "id": "three-minors-vs-queen",
     "label": "Three minor pieces vs queen",
-    "group": "Queen and heavy pieces",
+    "group": "Queen and major pieces",
     "spec": {
       "diff": {
         "q": [

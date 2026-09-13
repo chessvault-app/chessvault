@@ -161,7 +161,7 @@ What a built database answers, and from where:
   situation — the presets are data, `web/src/games/endgames.json`:
   twenty-six of them, the symmetric endgames from pawns to queens, the
   unbalanced ones (rook and pawns against a rook, queen against two
-  rooks), the middlegame classes (queenless, heavy pieces only) and
+  rooks), the middlegame classes (queenless, major pieces only) and
   the imbalances from a pawn up to three minor pieces against a queen.
   An imbalance takes a side: "a queen up" for White or for Black, the
   one preset mirrored (`mirrorMaterialSpec` in `shared/scanMatch.ts`
