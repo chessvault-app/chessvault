@@ -5,6 +5,33 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+Two of 0.10.0's phone changes are taken back, a bottom sheet resting
+low can be pulled up again, and a page opened inside a sheet turns like
+a page.
+
+- **Your seat in a game is a tinted name again, not a king.** The name
+  of the side you played sits on a light blue fill in every games list
+  and in the details panel; the king drawn beside it in 0.10.0 is gone.
+  The winning digit of every result stays bold.
+- **The puzzle trainer's Skip, Hint and Solution are back in the panel's
+  footer on a phone,** with Try again and Next puzzle after the verdict,
+  and the bottom bar steps through the moves again like every other
+  board page. A solve after the second hint is still recorded as neither
+  a win nor a fail.
+- **A sheet resting at half height can be pulled back to full height**
+  by a finger drawn up anywhere on it. The opening map's move details
+  scrolled their content instead and never rose; the sheet scrolls only
+  once it stands at the top.
+- **A page opened inside a sheet slides in from the right and back out
+  the same way,** as pages do elsewhere in the app, instead of rising
+  from the bottom over a sheet of the same height. The editor's Load
+  position, opened from Position, is one.
+- **Insights and the analysis glyphs call a brilliant move 탁월** in
+  Korean, where they said 명수. The Load position window's picture zone
+  takes the same text size as the FEN box beside it on a phone.
+
 ## 0.10.0
 
 An Insights page sums your own games, and endgame drills have you play
