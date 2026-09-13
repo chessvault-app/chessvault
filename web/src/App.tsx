@@ -615,7 +615,7 @@ function MobileBottom({ active }: { active: Section }) {
           // Opaque, not bg-card/85 over backdrop-blur-xl: a 24px blur
           // across a full-width strip was re-blurred on every scrolled
           // frame beneath it, on the phones that can least afford it.
-          'bg-card border-card-ring flex items-stretch border-t md:hidden',
+          'bg-card border-border flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
           !claimed && 'hidden',
         )}
@@ -1202,9 +1202,11 @@ function MobileNav({ active }: { active: Section }) {
       aria-label={t('Sections')}
       className={cn(
         // Opaque for the same reason as the page-control slot above.
-        // border-card-ring, as the sidebar: the bar's fill is its edge on
-        // the toned page, and the hairline returns under High contrast.
-        'bg-card border-card-ring relative flex shrink-0 items-stretch border-t md:hidden',
+        // border-border, not the card ring: the ring is transparent on the
+        // toned page, and a bar with no edge merged into a page whose
+        // bottom was the same white, so the hairline is drawn at rest
+        // (lanph3re's call, 2026-09-13). The slot above matches.
+        'bg-card border-border relative flex shrink-0 items-stretch border-t md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
         // Gone while the keyboard is up. The shell now ends at the top of
