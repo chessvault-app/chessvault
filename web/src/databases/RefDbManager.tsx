@@ -457,12 +457,17 @@ export function RefDbManager({
             and turning everything under the first rule into what looked
             like a footer band (lanph3re's report). Same shape as the
             skeleton, which drew the rule all along. */}
-        <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
+        <div className="border-border flex shrink-0 items-center border-b px-3">
+            {/* The line tabs, not the track (lanph3re's call): these head
+                the panel's two faces the way the Games page's pane strip
+                heads its panes. The row carries the rule the underline
+                sits on and no vertical padding, since the list is 40px. */}
             <Segmented
               value={tab}
               onChange={setTab}
               ariaLabel="What to manage"
               kind="tabs"
+              look="line"
               segments={[
                 {
                   value: 'databases',
@@ -708,8 +713,10 @@ export function RefDbManagerSkeleton({ rows }: {
             own 3px of padding above and below (ui/tabs' p-[3px] and
             pointer-coarse:h-auto). Measured on a phone at 42 against a
             36px placeholder, which stood the whole list 6px high. */}
-        <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
-          <Skeleton className="h-8 w-52 rounded-lg pointer-coarse:h-[42px]" />
+        {/* The line tabs' row: 40px, the rule under it, two labels' worth. */}
+        <div className="border-border flex h-10 shrink-0 items-center gap-4 border-b px-4">
+          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-3.5 w-20" />
         </div>
         {/* The search row, and the upload icon beside it. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">

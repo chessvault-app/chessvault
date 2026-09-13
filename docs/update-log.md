@@ -36,6 +36,8 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **Databases: the panel's two faces are underlined tabs,** the Games
+  page's own shape, rather than a raised pill in a track.
 - **Puzzle book tiles: the tier's tip opens on its icon, not the whole**
   **tile,** and a solved or failed tile deepens its tint under the pointer.
 - **The endgame drill's panel reads like the puzzle trainer's.** Its

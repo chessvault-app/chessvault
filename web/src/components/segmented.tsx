@@ -51,13 +51,21 @@ export function Segmented<T extends string>({
   size?: 'sm' | 'md';
   /** What the strip IS: `tabs` switches what is shown under it, `choice` sets a value. */
   kind?: 'tabs' | 'choice';
-  /** The shape, where it should not follow from the kind: a `choice` of two icons keeps the track. */
-  look?: 'track' | 'row';
+  /**
+   * The shape, where it should not follow from the kind: a `choice` of two
+   * icons keeps the track; `line` is the registry's underlined tabs, for
+   * `tabs` that head a surface rather than sit in a toolbar. A line list
+   * is 40px and its underline sits on the row's own bottom rule, so the
+   * caller draws that rule (`border-b`) and no vertical padding, as the
+   * Games page's pane strip does.
+   */
+  look?: 'track' | 'row' | 'line';
   /** Halves (or thirds) of exactly equal width, for a COLUMN of these. */
   even?: boolean;
   className?: string;
 }) {
   const tabs = kind === 'tabs';
+  const line = tabs && look === 'line';
   const track = (look ?? (tabs ? 'track' : 'row')) === 'track';
   // pointer-coarse:h-9 on the box, because a toolbar is a ROW and Button
   // and Select grow there too.
@@ -75,14 +83,32 @@ export function Segmented<T extends string>({
   if (tabs) {
     return (
       <Tabs value={value} onValueChange={(v) => onChange(v as T)} className="contents">
-        <TabsList aria-label={t(ariaLabel)} className={cn('w-auto', box)}>
+        <TabsList
+          variant={line ? 'line' : 'default'}
+          aria-label={t(ariaLabel)}
+          className={cn(
+            'w-auto',
+            // The line list: the Games page's geometry (GamesBrowser), so
+            // the two read as one control. 40px triggers, no track, and
+            // the underline ON the caller's rule rather than 5px under it.
+            // group-data-horizontal/tabs:h-10, in the list's own variant, since
+            // its base rule sets h-8 under that variant and a bare h-10 lost.
+            line
+              ? cn('flex shrink-0 items-center gap-1 rounded-none border-0 bg-transparent p-0 group-data-horizontal/tabs:h-10 pointer-coarse:group-data-horizontal/tabs:h-10', className)
+              : box,
+          )}
+        >
           {segments.map(({ value: id, label, title, accent }) => (
             <TabsTrigger
               key={id}
               value={id}
               title={title ? t(title) : undefined}
               style={id === value && accent ? { color: accent } : undefined}
-              className={cn(item, id === value && accent && 'font-semibold')}
+              className={cn(
+                item,
+                line && 'h-10 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:bottom-0',
+                id === value && accent && 'font-semibold',
+              )}
             >
               {label}
             </TabsTrigger>
