@@ -81,6 +81,17 @@ const PHONE = '(max-width: 39.9375rem)';
 
 /** Which primitive this Root is: true = the Drawer (a phone sheet). */
 const SheetContext = React.createContext(false);
+/**
+ * Whether the phone's sheet is resting BELOW its tallest snap point. A
+ * lowered sheet is not a scroller: the Drawer hands an upward drag to a
+ * scrollable target unless that target is already at its bottom, so a
+ * half-height sheet whose content overflowed could be scrolled but never
+ * pulled back up to full height (the opening map's move details). While
+ * it rests low the card hides its overflow and every drag is the
+ * sheet's; at the top it scrolls, and a drag down from the top of that
+ * scroller is the sheet's again, which is the Drawer's own rule.
+ */
+const SheetLoweredContext = React.createContext(false);
 
 /** How a DialogContent closes itself; the wrapper hands onOpenChange down. */
 const DialogCloseContext = React.createContext<() => void>(() => {});
@@ -130,6 +141,15 @@ function Dialog({
 }: DialogProps) {
   const phone = useMediaQuery(PHONE);
   const guards = React.useRef<DialogGuards | null>(null);
+  // The snap point, held here so the card can tell whether it rests low
+  // (SheetLoweredContext). Reset each time the sheet opens, as the
+  // primitive's own default would be.
+  const [snapPoint, setSnapPoint] = React.useState(defaultSnapPoint ?? snapPoints?.[0] ?? null);
+  React.useEffect(() => {
+    if (open) setSnapPoint(defaultSnapPoint ?? snapPoints?.[0] ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints[snapPoints.length - 1]);
   // The sheet's exit, held here. Nearly every window in the app mounts
   // its Root already open and unmounts it the moment the caller hears
   // onOpenChange(false), so the primitive never sees `open` flip and its
@@ -190,9 +210,11 @@ function Dialog({
   const Root = phone ? DrawerPrimitive.Root : DialogPrimitive.Root;
   // The Dialog primitive has no height to rest at and does not know the
   // props, so they are handed only to the Drawer.
-  const resting = phone && snapPoints ? { snapPoints, defaultSnapPoint } : undefined;
+  const resting =
+    phone && snapPoints ? { snapPoints, snapPoint, onSnapPointChange: setSnapPoint } : undefined;
   return (
     <SheetContext.Provider value={phone}>
+      <SheetLoweredContext.Provider value={lowered}>
       <DialogCloseContext.Provider value={close}>
         <DialogGuardContext.Provider value={guards}>
           <Root
@@ -204,6 +226,7 @@ function Dialog({
           />
         </DialogGuardContext.Provider>
       </DialogCloseContext.Provider>
+      </SheetLoweredContext.Provider>
     </SheetContext.Provider>
   );
 }
@@ -401,6 +424,7 @@ function DialogContent({
   const close = React.useContext(DialogCloseContext);
   const guards = React.useContext(DialogGuardContext);
   const phone = React.useContext(SheetContext);
+  const lowered = React.useContext(SheetLoweredContext);
   const small = size === 'sm';
 
   // The second-page bookkeeping. `covered` counts child windows currently
@@ -808,6 +832,9 @@ function DialogContent({
                 'animate-in slide-in-from-bottom',
                 'data-ending-style:transform-[translate3d(0,100%,0)] data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
                 'data-swiping:duration-0 data-swiping:select-none',
+                // Resting low: not a scroller, so a drag up lifts the
+                // sheet (see SheetLoweredContext).
+                lowered && 'overflow-y-hidden',
                 // The keyboard sheet: the same rise, from a length the
                 // keyboard cannot change.
                 'data-no-enter:[--tw-enter-translate-y:100dvh]',
