@@ -21,32 +21,9 @@ import { draftToSpec, type CustomDraft } from '@/games/CustomMaterialWindow';
  */
 
 /** What a drill asks the solver to keep: the win, or the draw (the
-    defence drill). The server's own word (server/endgameDrill.ts). */
+    defence). The server's own word (server/endgameDrill.ts), set by the
+    position drawn, never chosen here. */
 export type Goal = 'win' | 'draw';
-
-/** The route segment that names the defence drill. */
-export const DEFEND_SEGMENT = 'defend';
-
-/** The goal the picker last drilled, per device, so the list reopens on
-    the choice that was made. */
-const GOAL_KEY = 'vault:endgame-drill:goal';
-
-export function readGoal(): Goal {
-  try {
-    if (localStorage.getItem(GOAL_KEY) === 'draw') return 'draw';
-  } catch {
-    // Unreadable: the win, which the drill always had.
-  }
-  return 'win';
-}
-
-export function writeGoal(goal: Goal): void {
-  try {
-    localStorage.setItem(GOAL_KEY, goal);
-  } catch {
-    // A blocked store loses only the remembered choice.
-  }
-}
 
 /** The class id that stands for the custom editor's spec. */
 export const CUSTOM_CLASS = 'custom';

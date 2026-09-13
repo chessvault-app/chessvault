@@ -37,7 +37,6 @@ import { PageHeader } from '@/components/page-header';
 import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
 import { PageShell } from '@/components/page-shell';
 import { Panel, PanelHeader } from '@/components/panel';
-import { Segmented } from '@/components/segmented';
 import { Skeleton } from '@/components/skeletons';
 import { CustomMaterialWindow } from '@/games/CustomMaterialWindow';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -51,9 +50,6 @@ import {
   specFor,
   writeCustomDraft,
   type DrillPosition,
-  writeGoal,
-  readGoal,
-  DEFEND_SEGMENT,
   type Goal,
 } from './drill';
 
@@ -70,11 +66,12 @@ import {
  * once the attempt is over, the bottom bar. What differs: there
  * is no answer to find, only a win to keep, and the verdict on every
  * move is the server's (server/endgameDrill.ts), which asks the
- * tablebase; the page grades nothing itself. A drill has a goal:
- * the win, or the draw, where the reader defends and the tablebase
- * presses. The two are one page, one route with a segment for the
- * defence, and one set of controls; only the words and the verdicts
- * differ.
+ * tablebase; the page grades nothing itself. A drill has a goal, the
+ * win or the draw, and the position drawn sets it: the server hands
+ * over the sharpest ending it found in the class, whichever result it
+ * asks the reader to keep, and says which. There is no control for it
+ * (lanph3re's call: a choice nobody needs to make); the words and the
+ * verdicts follow the goal, the controls do not.
  */
 
 /** Where the picker lives, and where the drill goes back to: a section
@@ -96,13 +93,8 @@ const HOLD_MOVES = 10;
 export function EndgamesView({ params }: { params: string[] }) {
   const classId = params[0];
   if (!classId) return <EndgamePicker />;
-  const goal: Goal = params[1] === DEFEND_SEGMENT ? 'draw' : 'win';
-  return <Drill key={`${classId}/${goal}`} classId={classId} goal={goal} />;
+  return <Drill key={classId} classId={classId} />;
 }
-
-/** Where a class's drill lives, by goal. */
-const drillRoute = (id: string, goal: Goal): [string, ...string[]] =>
-  goal === 'draw' ? [id, DEFEND_SEGMENT] : [id];
 
 /**
  * Which ending to drill.
@@ -115,11 +107,6 @@ const drillRoute = (id: string, goal: Goal): [string, ...string[]] =>
  */
 function EndgamePicker() {
   const [editing, setEditing] = useState(false);
-  const [goal, setGoal] = useState<Goal>(readGoal);
-  const chooseGoal = (next: Goal): void => {
-    writeGoal(next);
-    setGoal(next);
-  };
   // By family, in the order the presets first name each one, with the
   // custom class last on its own: twenty-odd rows read top to bottom
   // were one list of names, and a list this long is scanned by section.
@@ -132,26 +119,9 @@ function EndgamePicker() {
       <PageHeader
         title={t('Endgame drills')}
         back={() => navigate('more')}
-        description={
-          goal === 'win'
-            ? t(
-                'Play the winning side of a random ending against the tablebase. A move that lets the win slip ends the attempt and shows the move that kept it.',
-              )
-            : t(
-                'Play the defending side of a random drawn ending against the tablebase, which presses. A move that lets the draw slip ends the attempt and shows the move that held it.',
-              )
-        }
-      />
-      {/* The goal, a value with two faces both in view, so the list
-          under it is read as "these endings, to win" or "to hold". */}
-      <Segmented
-        value={goal}
-        onChange={chooseGoal}
-        ariaLabel={t('Goal')}
-        segments={[
-          { value: 'win', label: t('Win') },
-          { value: 'draw', label: t('Hold the draw') },
-        ]}
+        description={t(
+          'Play a random ending against the tablebase: keep a win, or hold a draw. A move that lets the result slip ends the attempt and shows the move that kept it.',
+        )}
       />
       {[...groups].map(([group, rows]) => (
         <section key={group} className="flex flex-col gap-2">
@@ -167,7 +137,7 @@ function EndgamePicker() {
                   // The custom class opens its editor first: a drill of
                   // nothing in particular is not a drill.
                   if (id === CUSTOM_CLASS) setEditing(true);
-                  else navigate(...PICKER, ...drillRoute(id, goal));
+                  else navigate(...PICKER, id);
                 }}
               >
                 <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
@@ -192,7 +162,7 @@ function EndgamePicker() {
           onApply={(draft) => {
             writeCustomDraft(draft);
             setEditing(false);
-            navigate(...PICKER, ...drillRoute(CUSTOM_CLASS, goal));
+            navigate(...PICKER, CUSTOM_CLASS);
           }}
           onClose={() => setEditing(false)}
         />
@@ -217,7 +187,7 @@ type Phase =
  * and whether Settings is the place to fix it. The English sentence in
  * the error body is for a direct caller; this is the page's own.
  */
-function explain(error: unknown, goal: Goal): { message: string; settings: boolean } {
+function explain(error: unknown): { message: string; settings: boolean } {
   if (isDemo()) {
     return {
       message: t('The demo reaches no tablebase. In the app, the drill plays against whichever tablebase Settings names.'),
@@ -241,13 +211,7 @@ function explain(error: unknown, goal: Goal): { message: string; settings: boole
     case 'too-many':
       return { message: t('This material needs more than seven pieces, which no table holds.'), settings: false };
     case 'none-found':
-      return {
-        message:
-          goal === 'win'
-            ? t('No won position of this material turned up this time.')
-            : t('No drawn position of this material with something to hold turned up this time.'),
-        settings: false,
-      };
+      return { message: t('No position of this material with something to keep turned up this time.'), settings: false };
     default:
       return { message: apiErrorMessage(error), settings: false };
   }
@@ -266,8 +230,11 @@ function lineTree(fen: string, ucis: string[]): { tree: MoveTree; lastId: NodeId
   return { tree, lastId };
 }
 
-function Drill({ classId, goal }: { classId: string; goal: Goal }) {
+function Drill({ classId }: { classId: string }) {
   const [start, setStart] = useState<{ fen: string; side: Color } | null>(null);
+  /** What this position asks to be kept; the server's word with the
+      draw. The win until one lands, which is what the wait's copy says. */
+  const [goal, setGoal] = useState<Goal>('win');
   /** The line played, solver and defender alternating. */
   const [ucis, setUcis] = useState<string[]>([]);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -310,20 +277,21 @@ function Drill({ classId, goal }: { classId: string; goal: Goal }) {
       return;
     }
     try {
-      const body = await api<{ fen: string; side: Color }>(
-        `/api/endgames/draw?spec=${encodeURIComponent(spec)}&goal=${goal}`,
+      const body = await api<{ fen: string; side: Color; goal: Goal }>(
+        `/api/endgames/draw?spec=${encodeURIComponent(spec)}`,
       );
       if (mine !== seq.current) return;
+      setGoal(body.goal);
       setStart({ fen: body.fen, side: body.side });
       setPhase('playing');
     } catch (e) {
       if (mine !== seq.current) return;
-      setError(explain(e, goal));
+      setError(explain(e));
       setPhase('error');
     }
     // `promotion` is a fresh object each render; only its cancel is used.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, goal]);
+  }, [spec]);
 
   // One boot per real mount: StrictMode replays effects.
   const booted = useRef(false);
@@ -387,7 +355,7 @@ function Drill({ classId, goal }: { classId: string; goal: Goal }) {
       verdict = await api('/api/endgames/move', { method: 'POST', json: { fen: live.fen, uci, goal } });
     } catch (e) {
       if (mine !== seq.current) return;
-      setError(explain(e, goal));
+      setError(explain(e));
       setPhase('error');
       return;
     }
@@ -495,7 +463,7 @@ function Drill({ classId, goal }: { classId: string; goal: Goal }) {
   const status = (): { text: string; tone?: string } => {
     switch (phase) {
       case 'loading':
-        return { text: goal === 'win' ? t('Finding a won ending…') : t('Finding a drawn ending…') };
+        return { text: t('Finding an ending…') };
       case 'playing':
         return { text: t(PLAYING_NOTE[goal]) };
       case 'replying':
@@ -555,7 +523,7 @@ function Drill({ classId, goal }: { classId: string; goal: Goal }) {
           and draws nothing when it is off, so this row follows it. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <p className="text-muted-foreground px-3 py-6 text-center text-sm">
-          {goal === 'win' ? t('Finding a won ending…') : t('Finding a drawn ending…')}
+          {t('Finding an ending…')}
         </p>
       </div>
       <MoveBox fen={INITIAL_FEN} disabled onMove={() => {}} />

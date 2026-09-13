@@ -176,7 +176,7 @@ describe('endgame drill', () => {
 
     it('gives up on material the table never calls a win', async () => {
       // A rook each: the oracle calls every such position a draw.
-      const res = await draw(KRKR);
+      const res = await draw(KRKR, 'win');
       expect(res.status).toBe(404);
       expect(((await res.json()) as { reason: string }).reason).toBe('none-found');
     });
@@ -256,6 +256,13 @@ describe('endgame drill', () => {
   });
 
   describe('defence', () => {
+    it('sets the goal from the position when none is asked for, and says which', async () => {
+      const won = (await (await draw(KQK)).json()) as { goal: string };
+      expect(won.goal).toBe('win');
+      const held = (await (await draw(KRKR)).json()) as { goal: string };
+      expect(held.goal).toBe('draw');
+    });
+
     it('draws a drawn position with something to hold, for the side to move', async () => {
       const res = await draw(KRKR, 'draw');
       expect(res.status).toBe(200);

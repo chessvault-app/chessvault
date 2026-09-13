@@ -20,15 +20,19 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  * cache: every position it draws or plays through is a fact kept for
  * good, and the explorer will find it there.
  *
- * A drill has a goal, `win` or `draw`, and both routes take it:
+ * A drill has a goal, `win` or `draw`, and both routes carry it:
  *
  *  - `draw` proposes random positions of a material class
- *    (server/endgamePositions.ts), keeps those the table grades as the
- *    goal for the side to move that are not already decided (oneSided),
- *    and of a pool of them hands over the sharpest: the one whose first
- *    few decisions leave the solver the fewest moves that keep the
- *    result (sharpness). That side is the solver's. The measure is the
- *    drill's own and is never shown; a drill is not a rating.
+ *    (server/endgamePositions.ts), keeps those the table grades as a
+ *    win or a draw for the side to move that are not already decided
+ *    (oneSided), and of a pool of them hands over the sharpest: the one
+ *    whose first few decisions leave the solver the fewest moves that
+ *    keep the result (sharpness), whichever result that is. The answer
+ *    says which goal the position sets, and the page plays it; the
+ *    reader picks an ending, not a side (lanph3re's call: no choice to
+ *    make). `?goal=` narrows the pool to one result where a caller wants
+ *    that. That side is the solver's. The measure is the drill's own and
+ *    is never shown; a drill is not a rating.
  *  - `move` grades one move by the table's own word for it. A move that
  *    keeps the result holds; anything else threw it away, and the answer
  *    names the move that would have kept it. A held move gets the
@@ -52,6 +56,11 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
 export type Goal = 'win' | 'draw';
 
 const asGoal = (raw: unknown): Goal | null => (raw === 'win' || raw === 'draw' ? raw : raw == null || raw === '' ? 'win' : null);
+
+/** The goal a position sets for the side to move, or null where it
+    sets neither: lost, or something the table could not settle. */
+const goalOf = (answer: TablebaseAnswer): Goal | null =>
+  answer.category === 'win' ? 'win' : answer.category === 'draw' ? 'draw' : null;
 
 /** How many random positions a draw is willing to ask about before
     giving up on the class. Most classes settle in a handful, and the
@@ -263,8 +272,10 @@ export function endgameDrillApi(
   api.get('/endgames/draw', async (c) => {
     const spec = parseMaterialSpec(c.req.query('spec') ?? '');
     if (!spec) return c.json({ error: 'missing or malformed ?spec=' }, 400);
-    const goal = asGoal(c.req.query('goal'));
-    if (!goal) return c.json({ error: '?goal= is win or draw' }, 400);
+    // Absent, either result; named, that one.
+    const wantedRaw = c.req.query('goal');
+    const wanted: Goal | null = wantedRaw == null || wantedRaw === '' ? null : asGoal(wantedRaw);
+    if (wantedRaw && !wanted) return c.json({ error: '?goal= is win or draw' }, 400);
     if (!drillable(spec)) {
       return c.json(
         {
@@ -282,7 +293,7 @@ export function endgameDrillApi(
     const oriented = random() < 0.5 ? spec : mirrorMaterialSpec(spec);
     let probed = 0;
     let held = 0;
-    const pool: { fen: string; answer: TablebaseAnswer }[] = [];
+    const pool: { fen: string; answer: TablebaseAnswer; goal: Goal }[] = [];
     for (const fen of drawCandidates(oriented, DRAW_TRIES, random)) {
       if (pool.length >= POOL) break;
       let answer: TablebaseAnswer | null;
@@ -298,17 +309,18 @@ export function endgameDrillApi(
       // already mated or stalemated has no move, and one that is over
       // in a few plies, or wins a piece at once, is a puzzle, not an
       // ending.
-      if (!stands(goal, answer) || answer.checkmate || answer.stalemate) continue;
+      const goal = goalOf(answer);
+      if (!goal || (wanted && goal !== wanted) || answer.checkmate || answer.stalemate) continue;
       const drawn = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
       if (oneSided(goal, answer, drawn)) continue;
-      pool.push({ fen, answer });
+      pool.push({ fen, answer, goal });
     }
     if (pool.length > 0) {
       // The sharpest of the pool; ties fall to the one drawn first, so
       // the same dice still give the same draw.
       let scores: number[];
       try {
-        scores = await Promise.all(pool.map((p) => sharpness(cacheDir, source, goal, p.fen, p.answer)));
+        scores = await Promise.all(pool.map((p) => sharpness(cacheDir, source, p.goal, p.fen, p.answer)));
       } catch {
         return unreachable(c);
       }
@@ -316,10 +328,11 @@ export function endgameDrillApi(
       scores.forEach((score, i) => {
         if (score < scores[pick]!) pick = i;
       });
-      const { fen } = pool[pick]!;
+      const { fen, goal } = pool[pick]!;
       return c.json({
         fen,
         side: fen.split(' ')[1] === 'b' ? 'black' : 'white',
+        goal,
         source: source.source,
       });
     }
@@ -327,9 +340,11 @@ export function endgameDrillApi(
     return c.json(
       {
         error:
-          goal === 'win'
+          wanted === 'win'
             ? 'No winning position of this material turned up. Try again.'
-            : 'No drawn position of this material with something to hold turned up. Try again.',
+            : wanted === 'draw'
+              ? 'No drawn position of this material with something to hold turned up. Try again.'
+              : 'No position of this material with something to keep turned up. Try again.',
         reason: 'none-found',
       },
       404,
