@@ -96,8 +96,15 @@ export async function api<T = unknown>(
         },
   );
   if (!res.ok) throw await refusal(res);
-  // Routes that answer with no body (or plain ok) parse to undefined.
-  return (await res.json().catch(() => undefined)) as T;
+  // Routes that answer with no body (or plain ok) parse to undefined. A
+  // body whose READ was cancelled is not one of those: the abort lands
+  // here when the headers came before the caller gave up (a big Insights
+  // report on a cold load), and swallowed into undefined it handed the
+  // page a body it then fell over, so the AbortError stays an AbortError.
+  return (await res.json().catch((error: unknown) => {
+    if (rest.signal?.aborted) throw error;
+    return undefined;
+  })) as T;
 }
 
 /**

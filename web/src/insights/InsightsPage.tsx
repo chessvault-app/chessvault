@@ -306,6 +306,9 @@ export function InsightsPage() {
       api<Report>(`/api/mygames/insights${query ? `?${query}` : ''}`, { signal: controller.signal })
         .then((body) => {
           setReport(body);
+          // An answer clears a failure a superseded request may have
+          // reported after this effect's own reset.
+          setFailed(false);
           // A first visit on a vault the index has not finished walking
           // answers from what is indexed so far; the sums settle a
           // second or two later, so ask again until they do.

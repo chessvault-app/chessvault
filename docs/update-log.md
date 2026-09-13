@@ -88,6 +88,12 @@ a page.
   keep the full ring, since it is the only mark of focus they have.
 - **Insights and the analysis glyphs call a brilliant move 탁월** in
   Korean, where they said 명수.
+- **Insights no longer says the report could not be loaded on a cold
+  open of a big vault.** The page asks for the report twice on arrival,
+  once before and once after it learns how far the engine pass is, and
+  cancels the first. When that cancel landed while the first answer was
+  still being read, it was taken for an empty answer and reported as a
+  failure that Retry then cleared. The cancel is now kept as a cancel.
 
 ## 0.10.0
 

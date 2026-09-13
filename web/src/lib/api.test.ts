@@ -20,6 +20,25 @@ describe('api', () => {
     await expect(pending).rejects.not.toBeInstanceOf(ApiError);
   });
 
+  it('keeps an abort that lands while the body is being read', async () => {
+    // The headers of a big report arrive first; the cancel comes while its
+    // body is still parsing. Read as "no body" this became a TypeError in
+    // the page, and the page called that a failed load.
+    const controller = new AbortController();
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => {
+          controller.abort();
+          return Promise.reject(new DOMException('aborted', 'AbortError'));
+        },
+      } as unknown as Response),
+    );
+    const pending = api('/api/anything', { signal: controller.signal });
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
   it('still reports a network failure as an offline ApiError', async () => {
     vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
     vi.stubGlobal('navigator', { onLine: true });
