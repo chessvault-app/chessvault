@@ -22,10 +22,11 @@ import {
 /**
  * What a tile says to assistive technology: the number, the state, the
  * fidelity tier, the tries. Sighted eyes get the state from the fill and
- * the tier from the corner icon (its tip names the tier); a screen reader
- * got the digit alone, since the icon is aria-hidden and a tip is neither
- * a label nor a description. The label carries the tier and the tries
- * too, so nothing is only in a tip, and the tries are nowhere else.
+ * the glyph, the tier from the corner icon (its tip names the tier); a
+ * screen reader got the digit alone, since the glyph and the icon are
+ * aria-hidden and a tip is neither a label nor a description. The label
+ * carries the tier and the tries too, so nothing is only in a tip, and
+ * the tries are nowhere else.
  * A never-attempted tile skips the state word: "not attempted" is
  * already its tries line.
  */
@@ -115,9 +116,16 @@ export function PuzzleGrid({
                   )}
                 >
                   {p.number ?? i + 1}
-                  {/* The state is the tint alone, by lanph3re's call
-                      (2026-09-13); the ✓/✗ that doubled it are gone, and the
-                      label says it for a screen reader. */}
+                  {/* State by glyph as well as tint — the colour grammar's
+                      own rule; a tile that is only a colour is unreadable
+                      to 1 in 12 people. The size is fitted to a tile
+                      corner, not on the type ladder: a mark read off the
+                      tile, never a sentence. */}
+                  {(last === 'win' || last === 'loss') && (
+                    <span className="absolute bottom-0.5 left-1 text-[0.5rem] leading-none" aria-hidden>
+                      {last === 'win' ? '✓' : '✗'}
+                    </span>
+                  )}
                   {meta && (
                     <TitleTip title={`${t(meta.label)}: ${t(meta.title)}`}>
                       <span className="absolute right-1 top-1 flex" aria-hidden>
@@ -466,7 +474,13 @@ export function PuzzleList({
                 )}
               >
                 {number}
-                {/* The state is the tint alone (see the panel grid). */}
+                {/* Same glyph redundancy as the panel grid: tint alone is
+                    invisible to colour-blind eyes. */}
+                {(state === 'solved' || state === 'failed') && (
+                  <span className="absolute bottom-1 left-1.5 text-micro leading-none" aria-hidden>
+                    {state === 'solved' ? '✓' : '✗'}
+                  </span>
+                )}
                 {/* Smaller and tighter in the corner below sm, for the same
                     41px tile: at 12px and 8px in it sat on the digit's
                     line. The tip is the icon's and names the tier. */}
