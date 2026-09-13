@@ -399,27 +399,6 @@ export function InsightsPage() {
           going the tables stand, so the controls do too. */}
       {!gated && (
       <FilterRow className="px-0 py-0">
-        <SideSelect
-          value={(filters.side ?? 'any') as SideFilter}
-          onChange={(v) => setFilters({ side: v === 'any' ? undefined : v })}
-          className="w-32 flex-none"
-        />
-        {SPEEDS.map(({ id, label }) => (
-          <FilterChip
-            key={id}
-            label={label}
-            active={speeds.includes(id)}
-            onClick={() =>
-              setFilters({ speeds: speeds.includes(id) ? speeds.filter((s) => s !== id) : [...speeds, id] })
-            }
-          />
-        ))}
-        <FilterChip
-          label="Kept only"
-          title="Only the games in your collection, not every archived game"
-          active={filters.collectionOnly === true}
-          onClick={() => setFilters({ collectionOnly: filters.collectionOnly ? undefined : true })}
-        />
         <Select
           value={filters.range}
           onValueChange={(v) => setFilters({ range: v as DateRange })}
@@ -447,6 +426,27 @@ export function InsightsPage() {
             />
           </span>
         )}
+        <SideSelect
+          value={(filters.side ?? 'any') as SideFilter}
+          onChange={(v) => setFilters({ side: v === 'any' ? undefined : v })}
+          className="w-32 flex-none"
+        />
+        {SPEEDS.map(({ id, label }) => (
+          <FilterChip
+            key={id}
+            label={label}
+            active={speeds.includes(id)}
+            onClick={() =>
+              setFilters({ speeds: speeds.includes(id) ? speeds.filter((s) => s !== id) : [...speeds, id] })
+            }
+          />
+        ))}
+        <FilterChip
+          label="Kept only"
+          title="Only the games in your collection, not every archived game"
+          active={filters.collectionOnly === true}
+          onClick={() => setFilters({ collectionOnly: filters.collectionOnly ? undefined : true })}
+        />
         {narrowed && (
           <Button variant="ghost" size="sm" onClick={clear}>
             {t('Clear filters')}
