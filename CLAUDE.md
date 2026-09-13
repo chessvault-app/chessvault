@@ -137,7 +137,11 @@ focus indicator under PRODUCT.md's yardstick. So the app draws
 colour, the border taking it too), and `--ring` is placed by
 measurement, with `check:contrast` holding it to 3:1 at any alpha the
 ring is drawn at, which is the regression that would otherwise come back
-silently the next time `npx shadcn add` rewrites one of these files.
+silently the next time `npx shadcn add` rewrites one of these files. The
+text fields are the one control left at the registry's `ring-ring/50`:
+their opaque `focus-visible:border-ring` already marks the box, and the
+full ring beside it read as a thickened stroke (lanph3re's call,
+2026-09-13), so `input.tsx` keeps the wash.
 Where the registry hangs another state on that same class the exception
 reaches it too, and saying so is part of taking it: the slider thumb
 draws `border-ring` at rest and `ring-ring` for its hover and active
