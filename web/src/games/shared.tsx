@@ -606,15 +606,15 @@ export function GameRow({
 
 /**
  * The reader's own seat, wherever a game names both players: the name
- * sits on the info tint, the app's blue at 10% over the card, the same
- * mix the outcome tints use. Before this the mark was the name's ink
- * going text-primary, which measured 1.10:1 in light and 1.21:1 in dark
- * against the opponent's name: a hue nobody was going to see, and the
- * result chip's verdict (won or lost) hangs on knowing which seat was
- * yours. A fill reads in every scheme and at every knob, and the seat
- * is not an outcome, so it takes neither the green nor the red.
+ * in the info ink, the app's blue, the colour that already marks an
+ * annotated game beside it. It was text-primary from the first games
+ * list, which in the default Neutral scheme is within a few points of
+ * the body ink (1.10:1 in light, 1.21:1 in dark against the opponent's
+ * name) and only showed once Appearance tinted the accent. The seat is
+ * not an outcome, so it takes neither the green nor the red, and a
+ * colour rather than a glyph or a fill (lanph3re's call, 2026-09-13).
  */
-export const SEAT_INK = 'bg-info-tint rounded-sm px-1';
+export const SEAT_INK = 'text-info';
 
 /**
  * The games lists' name for the one result chip the app has — the

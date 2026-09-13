@@ -11,9 +11,10 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
-- **Your seat in a game is a tinted name again, not a king.** The name
-  of the side you played sits on a light blue fill in every games list
-  and in the details panel; the king drawn beside it in 0.10.0 is gone.
+- **Your seat in a game is a coloured name again, not a king.** The name
+  of the side you played is in blue in every games list and in the
+  details panel, where it was a near-invisible shade of the body ink
+  before 0.10.0; the king drawn beside it in 0.10.0 is gone.
   The winning digit of every result stays bold.
 - **The puzzle trainer's Skip, Hint and Solution are back in the panel's
   footer on a phone,** with Try again and Next puzzle after the verdict,
@@ -29,8 +30,7 @@ a page.
   from the bottom over a sheet of the same height. The editor's Load
   position, opened from Position, is one.
 - **Insights and the analysis glyphs call a brilliant move 탁월** in
-  Korean, where they said 명수. The Load position window's picture zone
-  takes the same text size as the FEN box beside it on a phone.
+  Korean, where they said 명수.
 
 ## 0.10.0
 

@@ -492,9 +492,6 @@
      dark). */
   --good-tint: color-mix(in oklab, var(--good) 10%, var(--card));
   --destructive-tint: color-mix(in oklab, var(--destructive) 10%, var(--card));
-  /* The same mix for the blue: a fill that marks the reader's own seat
-     in the games lists (games/shared.tsx, SEAT_INK). */
-  --info-tint: color-mix(in oklab, var(--info) 10%, var(--card));
   /**
    * The ECO tag: one hue per opening family (A–E), two lightnesses per
    * theme.
@@ -939,7 +936,6 @@
   --color-good: var(--good);
   --color-good-tint: var(--good-tint);
   --color-destructive-tint: var(--destructive-tint);
-  --color-info-tint: var(--info-tint);
   --color-warn: var(--warn);
   --color-warn-foreground: var(--warn-foreground);
   --color-info: var(--info);
