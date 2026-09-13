@@ -498,7 +498,6 @@ function Drill({ classId }: { classId: string }) {
         title={title}
         actions={
           <>
-            <span className="text-muted-foreground truncate text-xs">{label}</span>
             {wide && analysing && (
               <Button
                 variant="ghost"
@@ -510,24 +509,16 @@ function Drill({ classId }: { classId: string }) {
                 <Cpu className="size-3.5" />
               </Button>
             )}
-            {/* The way to the list, where the trainer has its dashboard. */}
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('All endings')}
-              onClick={() => navigate(...PICKER)}
-            >
-              <Crown className="size-3.5" />
-            </Button>
           </>
         }
       />
       <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
         <div className="flex flex-col gap-0.5">
-          {/* The headline. "White to move" was here, as the trainer's,
-              and it was false in four of the five states: the defender
-              replying, the win thrown, the mate delivered, the attempt
-              stopped. This one is true in all of them, and once the
+          {/* The headline: the trainer's own "White to move", the side
+              the reader plays, held through the defender's reply as the
+              puzzle trainer holds it through the opponent's (lanph3re's
+              call, 2026-09-13: the two panels say the same thing the same
+              way; it was "You play White" for one release). Once the
               attempt is over the verdict takes its place, in the
               trainers' own verdict line and colour. */}
           {start && ended ? (
@@ -545,7 +536,7 @@ function Drill({ classId }: { classId: string }) {
             </p>
           ) : start && phase !== 'loading' ? (
             <p className="text-foreground text-2xl font-bold tracking-tight">
-              {solverSide === 'white' ? t('You play White') : t('You play Black')}
+              {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
           ) : phase === 'loading' ? (
             <div className="flex h-8 items-center">
@@ -577,6 +568,24 @@ function Drill({ classId }: { classId: string }) {
             </p>
           </div>
         </div>
+
+        {/* What is being drilled, as the panel's own row and the way to
+            the list that changes it: the puzzle trainer's settings row,
+            in the same place. It was a label and a crown among the
+            header's icon buttons, where a labelled control read as
+            chrome (lanph3re's call, the same one that moved the puzzle
+            row into the body). */}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-full min-w-0 justify-start"
+          title={t('All endings')}
+          onClick={() => navigate(...PICKER)}
+        >
+          <Crown className="size-3.5 shrink-0" />
+          <span className="truncate">{label}</span>
+          <ChevronRight className="text-muted-foreground ml-auto size-3.5 shrink-0" />
+        </Button>
 
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
           {ended ? (

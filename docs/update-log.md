@@ -36,6 +36,11 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **The endgame drill's panel reads like the puzzle trainer's.** Its
+  headline says “White to move” or “Black to move”, where it said “You
+  play White”, and the family being drilled is a row in the panel that
+  returns to the list, in the place the trainer keeps its settings row,
+  rather than a label and a crown in the header.
 - **The endgame drill's panel keeps its height through an attempt.** Its
   status line swapped between two lines and one on every move, so the
   Skip and Analyse buttons stepped up and down under the hand; the line

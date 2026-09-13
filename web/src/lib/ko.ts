@@ -812,8 +812,6 @@ export const ko: Record<string, string> = {
   'Defending…': '방어 중…',
   Stopped: '중지했습니다',
   'The position is on the analysis board, with the engine.': '위치가 엔진과 함께 분석 보드에 있습니다.',
-  'You play White': '백을 맡습니다',
-  'You play Black': '흑을 맡습니다',
   'Ends the attempt and opens the engine': '시도를 끝내고 엔진을 엽니다',
   'The win held from the first move to the last.': '첫 수부터 마지막 수까지 승리를 지켰습니다.',
   '{san} lets the win slip. {best} keeps it.':
