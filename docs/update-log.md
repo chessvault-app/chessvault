@@ -36,6 +36,11 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **Settings: the section list beside the form lights the section you**
+  **clicked.** It read the card 80px under the top of the window, so a
+  short card handed its pill to the next one; it reads where a card
+  lands now, keeps a click lit until its scroll ends, and keeps it lit
+  at the page's floor, where the last cards cannot reach the top.
 - **Insights: the database comparison lists six habits and offers the rest**
   with Show all, instead of scrolling inside its card. On a phone the
   page could only be scrolled past that card by aiming beside it.

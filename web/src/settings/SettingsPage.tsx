@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
@@ -521,23 +521,75 @@ function JumpList({ dep }: { dep: unknown }) {
     setCards(found.filter((c) => c.title));
   }, [dep]);
   // Which card is under the top of the window: the last one whose top has
-  // passed the header line, read on the page's own scroller.
+  // passed the line a scrolled-to card lands on, read on the page's own
+  // scroller. A card lands at the scroller's scroll-padding (the pinned
+  // row below xl, nothing from xl) plus its own scroll-margin (the
+  // scroll-mt-14 every card wears), so that is the line, with a few
+  // pixels of slack for a fractional landing. It was a fixed 80px, which
+  // from xl put the line 24px into whatever card had just been scrolled
+  // to, so a card shorter than that handed the pill to the one after it:
+  // click A, and B lit (lanph3re's report). Measured on the demo at
+  // 1440x800: a jumped-to card's top sits 56px under the scroller's.
+  //
+  // A click also names its card outright and holds it until that scroll
+  // has ended, since the last cards on the page cannot reach the top
+  // and the read alone would never light them; and where the scroll
+  // ended at the page's floor, the name stays until the reader scrolls,
+  // because the read would hand it straight back to the card above.
+  const held = useRef<number | null>(null);
+  const floored = useRef(false);
   useEffect(() => {
     if (cards.length === 0) return;
     const scroller = cards[0]!.el.closest<HTMLElement>('[data-page-scroll]');
     if (!scroller) return;
     const read = (): void => {
-      const line = scroller.getBoundingClientRect().top + 80;
+      if (held.current !== null) return;
+      const pad = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0;
+      const line = scroller.getBoundingClientRect().top + pad + 4;
       let at = 0;
       cards.forEach((c, i) => {
-        if (c.el.getBoundingClientRect().top <= line) at = i;
+        const margin = parseFloat(getComputedStyle(c.el).scrollMarginTop) || 0;
+        if (c.el.getBoundingClientRect().top - margin <= line) at = i;
       });
       setCurrent(at);
     };
+    // scrollend where the platform has it; a timer stands in where it
+    // does not (WebKit), and covers a click whose scroll had no distance
+    // to travel and so fires neither event.
+    let timer = 0;
+    const release = (): void => {
+      if (held.current === null) return;
+      held.current = null;
+      floored.current = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+      if (!floored.current) read();
+    };
+    const onScroll = (): void => {
+      if (held.current !== null) {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(release, 150);
+        return;
+      }
+      floored.current = false;
+      read();
+    };
     read();
-    scroller.addEventListener('scroll', read, { passive: true });
-    return () => scroller.removeEventListener('scroll', read);
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    scroller.addEventListener('scrollend', release);
+    return () => {
+      window.clearTimeout(timer);
+      scroller.removeEventListener('scroll', onScroll);
+      scroller.removeEventListener('scrollend', release);
+    };
   }, [cards]);
+  const jump = (i: number): void => {
+    held.current = i;
+    setCurrent(i);
+    cards[i]!.el.scrollIntoView({ block: 'start' });
+    // No scroll to end (the card was already at the top): let go now.
+    window.setTimeout(() => {
+      if (held.current === i) held.current = null;
+    }, 400);
+  };
   if (cards.length < 4) return null;
   return (
     <>
@@ -552,7 +604,7 @@ function JumpList({ dep }: { dep: unknown }) {
             key={c.title}
             type="button"
             className="text-muted-foreground hover:text-foreground rounded-md px-1 outline-none focus-visible:ring-3 focus-visible:ring-ring"
-            onClick={() => c.el.scrollIntoView({ block: 'start' })}
+            onClick={() => jump(cards.indexOf(c))}
           >
             {c.title}
           </button>
@@ -583,7 +635,7 @@ function JumpList({ dep }: { dep: unknown }) {
                   ? 'bg-nav-pill text-foreground font-medium'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
-              onClick={() => c.el.scrollIntoView({ block: 'start' })}
+              onClick={() => jump(i)}
             >
               <span className="truncate">{c.title}</span>
             </button>
