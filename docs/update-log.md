@@ -31,7 +31,15 @@ a page.
   and Back brings it out the same way. It used to be a second sheet
   rising from the bottom over the first, hidden. The editor's Load
   position, opened from Position, and the picture page after it are
-  the pages this changes, on a phone and on a desktop.
+  the pages this changes, on a phone and on a desktop. Inside such a
+  chain only the chevron steps back: Escape, the platform's Back, a
+  swipe and a Cancel button all leave the whole chain, and a page's
+  chevron plays the same turn as the rest, where the picture page used
+  to vanish in a frame.
+- **A text field's focus ring is the registry's wash again.** The
+  full-strength ring 0.10.0 gave every control read as a thickened
+  stroke on a field, whose border already marks it; buttons, toggles
+  and the rest keep the full ring.
 - **Insights and the analysis glyphs call a brilliant move 탁월** in
   Korean, where they said 명수.
 

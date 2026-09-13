@@ -99,14 +99,17 @@ const SheetContext = React.createContext(false);
 const SheetLoweredContext = React.createContext(false);
 /**
  * The Dialog's exit, seen from its card. `leaving` is the held close (see
- * the Dialog); `finish` is what the card calls once its exit has played,
- * for a card that plays it itself: a PAGE, which has no primitive Popup
- * to report the end of an ending style. `pageMode` is how the card tells
- * the Dialog that it is one, so the close is held for it on a desktop
- * too.
+ * the Dialog); `depart` holds ANY way out the same way, running what it
+ * is given once the exit has played (a page's Back is one: the caller's
+ * own state change, which would otherwise unmount the page mid-turn);
+ * `finish` is what the card calls once its exit has played, for a card
+ * that plays it itself: a PAGE, which has no primitive Popup to report
+ * the end of an ending style. `pageMode` is how the card tells the
+ * Dialog that it is one, so the close is held for it on a desktop too.
  */
 const DialogLeaveContext = React.createContext<{
   leaving: boolean;
+  depart: (then: () => void) => void;
   finish: () => void;
   pageMode: React.RefObject<boolean>;
 } | null>(null);
@@ -187,21 +190,32 @@ function Dialog({
   // A page holds its close the same way on either shape: it plays its
   // own exit (DialogContent) and reports back through `finish`.
   const pageMode = React.useRef(false);
-  const close = React.useCallback(() => {
-    if ((phone || pageMode.current) && open) setLeaving(true);
-    else onOpenChangeRef.current?.(false);
-  }, [phone, open]);
+  // What runs once the held exit has played: the close, or whatever a
+  // page's Back was going to do.
+  const pending = React.useRef<(() => void) | null>(null);
+  const depart = React.useCallback(
+    (then: () => void) => {
+      if ((phone || pageMode.current) && open) {
+        pending.current = then;
+        setLeaving(true);
+      } else then();
+    },
+    [phone, open],
+  );
+  const close = React.useCallback(() => depart(() => onOpenChangeRef.current?.(false)), [depart]);
   const finish = React.useCallback(() => {
-    onOpenChangeRef.current?.(false);
+    const then = pending.current;
+    pending.current = null;
     setLeaving(false);
+    then?.();
   }, []);
-  const leave = React.useMemo(() => ({ leaving, finish, pageMode }), [leaving, finish]);
+  const leave = React.useMemo(
+    () => ({ leaving, depart, finish, pageMode }),
+    [leaving, depart, finish],
+  );
   const handleOpenChangeComplete = (isOpen: boolean): void => {
     onOpenChangeComplete?.(isOpen);
-    if (!isOpen && leaving) {
-      onOpenChangeRef.current?.(false);
-      setLeaving(false);
-    }
+    if (!isOpen && leaving) finish();
   };
   const handleOpenChange = (
     nextOpen: boolean,
@@ -519,13 +533,20 @@ function DialogContent({
   if (leave) leave.pageMode.current = page;
   const shut = hidden;
   // A nested page that names no destination goes back to the window it
-  // covered — closing a page IS going back.
-  const back = onBack ?? (page ? close : undefined);
-  // What Escape and Android's Back mean here: for a small window on its
-  // second page, "back to the first"; for a page, back; for everything
-  // else, close. While a page is up over THIS window, they mean what
-  // that page says (`route`, in the guards below).
-  const request = small || page ? (onBack ?? close) : close;
+  // covered — closing a page IS going back. A page's own Back rides the
+  // held exit (depart), so the turn plays before the caller's state
+  // change unmounts it; a Back handed to a first window or a layer is
+  // the caller's, as it always was.
+  const back = onBack ? (page && leave ? () => leave.depart(onBack) : onBack) : page ? close : undefined;
+  // What Escape, Android's Back and a swipe mean here: for a small window
+  // on its second page, "back to the first"; for everything else, out.
+  // A PAGE included: a dismissal from inside a chain leaves the whole
+  // chain, since the chevron is the one control that steps back and a
+  // gesture that lands you on a window you had already walked past is
+  // a Back button in disguise (lanph3re's call, 2026-09-13). While a
+  // page is up over THIS window, they mean what that page says
+  // (`route`, in the guards below), which is the same thing.
+  const request = small ? (onBack ?? close) : page ? dismissAll : close;
   const requestRef = React.useRef(request);
   requestRef.current = request;
   const route = React.useCallback(() => {

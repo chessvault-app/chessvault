@@ -1,10 +1,10 @@
 import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FilePicker } from '@/components/file-picker';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { CoverParent, Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   boardFeatures,
   grayscaleFrom,
@@ -53,10 +53,15 @@ export function PhotoImport({
    * shows it as a PAGE of its own window (the hunt chain — a separate
    * window here was the chain's last window swap, and it flickered
    * exactly like the ones already retired). The host carries the title
-   * row and the way back; Cancel still calls onClose.
+   * row and the way back.
    */
   embedded?: boolean;
 }) {
+  // Cancel is the X in words: out of the whole chain this page is part of,
+  // not back to the form under it (the chevron does that). A picture
+  // window with no chain around it closes itself.
+  const chain = useContext(CoverParent);
+  const cancel = chain?.dismissAll ?? onClose;
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);
   const [blackAtBottom, setBlackAtBottom] = useState(false);
@@ -427,7 +432,7 @@ export function PhotoImport({
           // spare room and the buttons belong under the last field
           // (lanph3re); the sheet keeps its sink.
           <div className={cn('flex justify-end gap-2 pt-1', !embedded && 'mt-auto')}>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={cancel}>
               {t('Cancel')}
             </Button>
             {reading ? (
