@@ -36,6 +36,12 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **The material family is “Queen and major pieces” and its preset “Major**
+  **pieces only”,** the usual English for the queen and rooks; it said
+  “heavy pieces”, a Russian turn.
+- **The endgame drill's Moves panel shows the real move box, disabled,**
+  while an ending loads, and none at all when the box is off in Settings;
+  a pulsing bar stood in for it before, whatever the setting said.
 - **A right click on a shelf card opens its ⋯ menu on a desktop,** on the
   Studies, Notes and Books shelves and on a folder's heading, as a right
   click on a game row already did.

@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { INITIAL_FEN } from 'chessops/fen';
 import type { Color } from 'chessops/types';
 import { parseSquare, parseUci, roleToChar } from 'chessops/util';
 import { Board, boardAnimMs } from '@/board/Board';
@@ -475,15 +476,17 @@ function Drill({ classId }: { classId: string }) {
           sentence centred in the scroller rather than set left at a
           tighter padding, then the two bands that arrive with the ending
           and used to push the panel's floor down as they did. The move
-          box is md-and-up, as MoveBox's own caller is. */}
+          box is the REAL one, disabled, on the start position: a
+          skeleton pulsed in its place as if a move box were being
+          fetched, and stood there even with the box turned off in
+          Settings (lanph3re's report). MoveBox reads that setting itself
+          and draws nothing when it is off, so this row follows it. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <p className="text-muted-foreground px-3 py-6 text-center text-sm">
           {t('Finding a won ending…')}
         </p>
       </div>
-      <div className="border-border shrink-0 border-t px-3 py-2 max-md:hidden">
-        <Skeleton className="h-9 w-full rounded-lg" />
-      </div>
+      <MoveBox fen={INITIAL_FEN} disabled onMove={() => {}} />
       <div className="border-border flex w-full shrink-0 items-center justify-center gap-1 border-t py-1 max-md:hidden">
         {[0, 1, 2, 3, 4].map((i) => (
           <span key={i} className="size-7" />
