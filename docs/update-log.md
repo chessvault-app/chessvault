@@ -36,6 +36,9 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **The flip button's icon turns the board the way the board turns.** It
+  drew two triangles side by side, a mirror across a vertical axis; it
+  now draws them above and below, on every board page.
 - **A text field's focus ring is the registry's wash again.** The
   full-strength ring 0.10.0 gave every control read as a thickened
   stroke on a field, whose border already marks it; buttons, toggles

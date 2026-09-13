@@ -5,7 +5,7 @@ import {
   ListPlus,
   CheckCircle2,
   Eraser,
-  FlipVertical2,
+  FlipHorizontal2,
   FolderInput,
   Microscope,
   MousePointer2,
@@ -892,7 +892,7 @@ export function EditorView({
                 onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
                 title={t('Flip board')}
               >
-                <FlipVertical2 className="size-3.5" />
+                <FlipHorizontal2 className="size-3.5" />
               </Button>
               {/* Both of these destroy the position on the board, and as two
                   adjacent anonymous icons they were a coin-flip. Named where

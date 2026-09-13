@@ -1,4 +1,4 @@
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2 } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipHorizontal2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { publishBoardHeight } from '@/board/boardBlock';
@@ -151,7 +151,7 @@ export function TrainerNavBar({
             <ChevronLast className="size-[1.1rem]" />
           </Button>
           <Button variant="ghost" size="icon" onClick={onFlip} title={t('Flip board')}>
-            <FlipVertical2 className="size-[1.1rem]" />
+            <FlipHorizontal2 className="size-[1.1rem]" />
           </Button>
         </div>
       )}

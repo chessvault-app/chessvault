@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2 } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipHorizontal2 } from 'lucide-react';
 import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
@@ -138,7 +138,7 @@ export function AnswerPanel({
                 same reason: flipping is not a step through the line. */}
             <div className="bg-border mx-1 h-5 w-px" />
             <Button variant="ghost" size="icon" title={t('Flip board')} onClick={onFlip}>
-              <FlipVertical2 className="size-[1.1rem]" />
+              <FlipHorizontal2 className="size-[1.1rem]" />
             </Button>
           </>
         )}

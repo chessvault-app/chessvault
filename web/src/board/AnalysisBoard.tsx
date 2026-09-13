@@ -4,7 +4,7 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
-  FlipVertical2,
+  FlipHorizontal2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
@@ -808,7 +808,7 @@ export function BoardControls({
       </Button>
       <div className="bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem]" />
       <Button variant="ghost" size="icon" onClick={flip} title={t('Flip board (f)')}>
-        <FlipVertical2 className={NAV_ICON} />
+        <FlipHorizontal2 className={NAV_ICON} />
       </Button>
     </div>
   );

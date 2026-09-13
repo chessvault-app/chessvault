@@ -3,7 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardPaste,
-  FlipVertical2,
+  FlipHorizontal2,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -279,7 +279,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
                 <ChevronRight className="size-3.5" />
               </Button>
               <Button variant="ghost" size="icon-sm" title={t('Flip board')} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
-                <FlipVertical2 className="size-3.5" />
+                <FlipHorizontal2 className="size-3.5" />
               </Button>
             </>
           )}
