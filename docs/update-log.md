@@ -11,6 +11,10 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **Book pages are drawn sharp on a phone.** A scanned book's pages were
+  rastered at half the screen's pixels on a touch screen, so a page read
+  soft at fit width until a pinch redrew it. A page is now drawn at the
+  screen's own density.
 - **Switching tabs on a phone is a cut.** The fade between two
   top-level pages is gone; the new page is there in one frame. The
   fade read as the screen flickering. Opening a leaf and coming back

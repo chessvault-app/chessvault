@@ -11,7 +11,6 @@ import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
 import { pdfUrl } from './data';
 import { dropPdf, holdPdf, pdfKey, takePdf } from './heldPdf';
 import './text-layer.css';
-import { isCoarsePointer } from '@/lib/media';
 
 /**
  * How much of the file one missing byte costs.
@@ -274,11 +273,19 @@ export function PdfPage({
       const base = page.getViewport({ scale: 1, rotation });
       const cssW = Math.max(1, Math.round(width * zoom));
       const cssH = Math.max(1, Math.round((base.height / base.width) * cssW));
-      // Device pixels: up to 2× on a fine pointer, 1.5× on a touch screen —
-      // a scan at a phone's width is legible at 1.5× and the raster is
-      // half the pixels of 2×, which is what scrolling waits on.
-      const coarse = isCoarsePointer();
-      let ratio = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
+      // Device pixels: the screen's own ratio, up to 3×. A touch screen
+      // was capped at 1.5× on the argument that a scan is legible at a
+      // phone's width and the raster is half the pixels; measured on a
+      // 3542×5314 scanned page (a Korean strategy book) that was wrong on
+      // both counts. At 585 device px across the page, body text is a
+      // 6× downsample of the scan and the bitmap is then stretched to a
+      // 3× screen's 1170: soft until a pinch re-rasters it, which is
+      // what lanph3re saw. And the raster's cost is the page image's
+      // decode, not its pixels: 5.1 s at 585, 1170 and 1600 wide alike.
+      // A vector page went 25 to 49 ms for the doubling. Three slots
+      // are mounted at once, so a 3× phone holds about 24 MB of canvas;
+      // MAX_CANVAS_PIXELS still guards a tall page at a high zoom.
+      let ratio = Math.min(window.devicePixelRatio || 1, 3);
       if (cssW * cssH * ratio * ratio > MAX_CANVAS_PIXELS) {
         ratio = Math.sqrt(MAX_CANVAS_PIXELS / (cssW * cssH));
       }
