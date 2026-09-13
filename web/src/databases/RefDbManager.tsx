@@ -713,15 +713,54 @@ export function RefDbManagerSkeleton({ rows }: {
             own 3px of padding above and below (ui/tabs' p-[3px] and
             pointer-coarse:h-auto). Measured on a phone at 42 against a
             36px placeholder, which stood the whole list 6px high. */}
-        {/* The line tabs' row: 40px, the rule under it, two labels' worth. */}
-        <div className="border-border flex h-10 shrink-0 items-center gap-4 border-b px-4">
-          <Skeleton className="h-3.5 w-24" />
-          <Skeleton className="h-3.5 w-20" />
+        {/* The line tabs' row, the real control held inert: 40px, the
+            rule under it, the two real segments. `inert` on the wrapper,
+            because Segmented has no disabled and its triggers must not
+            take focus here. */}
+        <div inert className="border-border flex shrink-0 items-center border-b px-3">
+          <Segmented
+            value="databases"
+            onChange={() => {}}
+            ariaLabel="What to manage"
+            kind="tabs"
+            look="line"
+            segments={[
+              {
+                value: 'databases',
+                label: (
+                  <>
+                    <Database className="size-3.5 shrink-0" aria-hidden />
+                    {t('Databases')}
+                  </>
+                ),
+              },
+              {
+                value: 'sources',
+                label: (
+                  <>
+                    <FileText className="size-3.5 shrink-0" aria-hidden />
+                    {t('PGN files')}
+                  </>
+                ),
+              },
+            ]}
+          />
         </div>
-        {/* The search row, and the upload icon beside it. */}
+        {/* The search row, and the upload icon beside it, both real and inert. */}
         <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
-          <Skeleton className="h-7 min-w-0 flex-1 pointer-coarse:h-9" />
-          <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
+          <SearchInput
+            inputSize="sm"
+            value=""
+            readOnly
+            disabled
+            tabIndex={-1}
+            placeholder={t('Search')}
+            aria-label={t('Search')}
+            className="min-w-0 flex-1"
+          />
+          <Button variant="secondary" size="icon-sm" className="shrink-0" disabled tabIndex={-1} aria-hidden>
+            <Upload className="size-3.5" />
+          </Button>
         </div>
         {rows === 0 ? (
           // The real sentence, invisible, so a vault with nothing built
@@ -749,12 +788,17 @@ export function RefDbManagerSkeleton({ rows }: {
                 <Skeleton className={cn('my-1 h-3 md:my-0', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
                 <Skeleton className="my-1 h-3 w-24 shrink-0 md:my-0 md:ml-auto md:h-2.5" />
               </div>
-              <Skeleton className="size-7 shrink-0 pointer-coarse:size-9" />
-              {/* From md the row carries four controls here, not the one
-                  a phone shows, so the name column ran 84px past where it
-                  really stops. */}
-              {[0, 1, 2].map((k) => (
-                <Skeleton key={k} className="size-7 shrink-0 max-md:hidden pointer-coarse:size-9" />
+              {/* The row's controls, the real buttons held inert: the ⋯
+                  below md, and from md the four icons the row carries
+                  there (the fast-search slot, add, optimise, delete), so
+                  the name column stops where it really stops. */}
+              <Button variant="ghost" size="icon-sm" className="shrink-0 md:hidden" disabled tabIndex={-1} aria-hidden>
+                <MoreHorizontal className="size-3.5" />
+              </Button>
+              {[Zap, Plus, Hammer, Trash2].map((Icon, k) => (
+                <Button key={k} variant="ghost" size="icon-sm" className="shrink-0 max-md:hidden" disabled tabIndex={-1} aria-hidden>
+                  <Icon className="size-3.5" />
+                </Button>
               ))}
             </li>
           ))}

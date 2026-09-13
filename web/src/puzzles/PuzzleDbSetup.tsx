@@ -71,9 +71,13 @@ export function PuzzleDbSetupPlaceholder() {
           <Skeleton className="absolute inset-x-0 inset-y-1" />
         </p>
         <div className="flex justify-center">
-          {/* The default button's box (h-8, h-9 under a coarse pointer),
-              at about the width its label makes it. */}
-          <Skeleton className="h-8 w-44 rounded-lg pointer-coarse:h-9" />
+          {/* The button itself, inert: the cold card's label is a constant,
+              so it is drawn at the width its words make it rather than a
+              guessed 176px bar, disabled and out of the tab order. */}
+          <Button variant="default" disabled tabIndex={-1}>
+            <Download className="size-3.5" />
+            {t('Download and build')}
+          </Button>
         </div>
       </div>
     </div>

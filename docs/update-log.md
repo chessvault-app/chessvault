@@ -36,6 +36,14 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **Loading screens draw their controls for real.** Where a page waits on
+  the vault it used to bar everything, including buttons, tabs, selects,
+  switches, chips, panel titles and icons whose shape and words are
+  known before any data is: Settings, Databases, the puzzle hub and
+  dashboard, the games filter row, the note and study headers, the
+  licences page and the shelves' folder rows. Those now show the real
+  control, inert, and only what the data decides is barred. The Settings
+  page on a phone no longer grows by 20px when it lands.
 - **The material family is “Queen and major pieces” and its preset “Major**
   **pieces only”,** the usual English for the queen and rooks; it said
   “heavy pieces”, a Russian turn.

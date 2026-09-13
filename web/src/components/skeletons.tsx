@@ -1,11 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleStop,
+  Cpu,
+  Eye,
+  FileJson,
+  Files,
+  Folder as FolderIcon,
+  FolderGit2,
+  History,
+  Link,
+  ListOrdered,
+  type LucideIcon,
+  MoreHorizontal,
+  Pencil,
+  Repeat,
+  RotateCw,
+  SlidersHorizontal,
+  Table2,
+  Tags,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Select } from '@/components/ui/select';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
-import { panelStoredHeight } from '@/components/panel';
-import { VAULT_ROWS, VaultNote, VaultPath } from '@/components/vault-tree';
+import { PanelHeader, panelStoredHeight } from '@/components/panel';
+import { VAULT_ROWS, VaultNote, VaultPath, type VaultKind } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 
 /**
@@ -119,6 +144,72 @@ function Loading({ children, className }: { children: React.ReactNode; className
 }
 
 /**
+ * What a real control wears to stand still inside a placeholder: no
+ * focus stop, and disabled where the primitive knows the word. A control
+ * whose shape is known before the data is (a header's Start button, the
+ * filter row's selects, the back chevron) is drawn as ITSELF rather than
+ * as a grey box of its size: the box was a second statement of the
+ * control's geometry, and every one of them had to be re-measured when
+ * the control moved (the comments below record several such
+ * re-measurements). The real thing cannot disagree with itself.
+ *
+ * `aria-hidden` too: the Loading wrapper is what a screen reader hears,
+ * and a row of disabled, unnamed buttons under it adds nothing but noise.
+ */
+const INERT = { disabled: true, tabIndex: -1, 'aria-hidden': true } as const;
+
+/**
+ * `inert` for a control that cannot take `disabled` all the way down: the
+ * Select's phone face is a plain button that opens a sheet and does not
+ * read the root's `disabled`. The subtree is neither focusable nor
+ * clickable nor read, which is what a placeholder's control should be.
+ * `contents`, so the wrapper adds no box to the row.
+ */
+function Inert({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span inert className={cn('contents', className)}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * The header's Edit button, as StudyView and NoteView draw it: secondary
+ * `sm`, the pencil, and the word from md up. One place, because two
+ * skeletons carry the same row.
+ */
+function InertEditButton() {
+  return (
+    <Button variant="secondary" size="sm" className="shrink-0" {...INERT}>
+      <Pencil className="size-3.5 md:mr-1" />
+      <span className="max-md:hidden">{t('Edit')}</span>
+    </Button>
+  );
+}
+
+/**
+ * DocumentTools' three ghost icon buttons from md (other names, what
+ * links here, earlier versions) and its one ⋯ below it, on the same fold
+ * the component itself uses (`max-md`, 47.9375rem). Drawn by class
+ * rather than by the media query the real one reads, so this needs no
+ * subscription; the widths agree at every breakpoint.
+ */
+function InertDocumentTools() {
+  return (
+    <>
+      <Button variant="ghost" size="icon-sm" className="shrink-0 md:hidden" {...INERT}>
+        <MoreHorizontal className="size-3.5" />
+      </Button>
+      {[Tags, Link, History].map((Icon, i) => (
+        <Button key={i} variant="ghost" size="icon-sm" className="shrink-0 max-md:hidden" {...INERT}>
+          <Icon className="size-3.5" />
+        </Button>
+      ))}
+    </>
+  );
+}
+
+/**
  * A stack of one-line list rows: a mark, a name, a figure at the end.
  *
  * It used to be a title bar over a detail bar in a padded, gapped box —
@@ -159,6 +250,9 @@ export function SkeletonRows({
             // rows were 33 and the dashboard's list grew 11px a row on a phone.
             className="flex min-w-0 flex-1 items-center gap-2.5 px-3 pr-1.5 py-(--row-py-dense) pointer-coarse:min-h-11"
           >
+            {/* A bar, not an icon: the mark on these rows is the attempt's
+                outcome (solved, failed), which is the data being waited
+                for. */}
             <Skeleton className="size-3.5 shrink-0 rounded-sm" />
             {/* Both lists these stand for are five columns, not three: a
                 mark, a name, the difficulty word, a right-aligned time and
@@ -206,7 +300,10 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
       {Array.from({ length: rows }, (_, i) => (
         <div key={i}>
           <div className="flex min-h-9 items-center gap-2 px-2 py-1.5">
-            <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+            {/* The row's own chevron (LicensesPage), closed: it is the same
+                glyph on every row and depends on nothing the page is
+                waiting for. */}
+            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
             <div className="flex h-5 min-w-0 flex-1 items-center">
               <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
@@ -368,7 +465,8 @@ export function SkeletonCards({
           {groups.folders.map((n, f) => (
             <section key={f} className="flex flex-col gap-2">
               <div className="flex h-6 items-center gap-1.5">
-                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                {/* ShelfFolderHeader's own glyph; only the name waits. */}
+                <FolderIcon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
                 <Skeleton className="h-2.5 w-24" />
               </div>
               {n === 0 ? (
@@ -471,7 +569,8 @@ export function SkeletonBookCards({
           {groups.folders.map((n, f) => (
             <section key={f} className="flex flex-col gap-2">
               <div className="flex h-6 items-center gap-1.5">
-                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                {/* ShelfFolderHeader's own glyph; only the name waits. */}
+                <FolderIcon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
                 <Skeleton className="h-2.5 w-24" />
               </div>
               {n === 0 ? (
@@ -545,11 +644,39 @@ export function SkeletonTiles({
         // Card (ui/card sets it from --card-pad on the root), so outside
         // one it is nothing — measured, the header bar sat on the column's
         // edge and the panel had no floor, 16px short of the Panel's.
-        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring pb-(--card-pad)">
-          <div className="flex min-h-11 items-center justify-between gap-2 px-(--card-pad)">
-            <Skeleton className="h-2.5 w-16" />
-            <Skeleton className="h-7 w-32 rounded-md pointer-coarse:h-9" />
-          </div>
+        // `[--card-spacing:var(--card-pad)]` for the same reason: the
+        // PanelHeader below pads itself from --card-spacing, which a Card
+        // sets and this bare box does not.
+        <div className="bg-card mb-4 flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring pb-(--card-pad) [--card-spacing:var(--card-pad)]">
+          {/* The panel's own header and its own act, inert. The title is
+              known, and the act depends only on `cyclesOpen`, which the
+              caller stored: an open pass shows Stop and Continue, a cold
+              panel the one Start button (CyclesPanel, BookPage). A cold
+              book that has finished passes says "Start the next cycle",
+              which is wider; the stored flag does not say which, so the
+              shorter face stands for both. */}
+          <PanelHeader
+            title={t('Cycles')}
+            actions={
+              cyclesOpen ? (
+                <>
+                  <Button variant="ghost" size="sm" {...INERT}>
+                    <CircleStop className="size-3.5" data-icon="inline-start" />
+                    {t('Stop')}
+                  </Button>
+                  <Button variant="default" size="sm" {...INERT}>
+                    <RotateCw className="size-3.5" data-icon="inline-start" />
+                    {t('Continue')}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="default" size="sm" {...INERT}>
+                  <Repeat className="size-3.5" data-icon="inline-start" />
+                  {t('Start a cycle')}
+                </Button>
+              )
+            }
+          />
           {/* No gap between the line boxes: the three bars are the wrapped
               lines of ONE paragraph, and wrapped lines meet — the panel's
               own gap-2 is between its children, of which the cold state
@@ -588,15 +715,51 @@ export function SkeletonTiles({
           )}
         </div>
       )}
-      {/* The Progress track's own h-1, not the h-1.5 it used to guess. */}
-      <Skeleton className="mb-3 h-1 w-full rounded-full" />
-      {/* Two Select triggers, not the five filter chips the page stopped
-          drawing: Status and Fidelity, at the sm trigger's h-7 (h-9 under
-          a coarse pointer), wide enough for their steady prefixed faces. */}
-      <div className="mb-2 flex items-center gap-2">
-        <Skeleton className="h-7 w-28 rounded-md pointer-coarse:h-9" />
-        <Skeleton className="h-7 w-36 rounded-md pointer-coarse:h-9" />
-      </div>
+      {/* The Progress track itself, empty: ProgressBar (components/
+          progress-bar) is this primitive with two fills, and the fills
+          are the data. Hidden from assistive tech, as its `decorative`
+          rows are, so nothing announces "0%" under the Loading label. */}
+      <Progress value={0} className="mb-3" aria-hidden />
+      {/* The two Selects the list draws (PuzzleList): Status and
+          Fidelity, prefixed and `steady`, so each trigger is already the
+          width of its widest face. Status has its whole option list;
+          Fidelity's is built from the book's tiers, so only its two
+          fixed faces (the prefix and "Any") are known, and it stands at
+          those. Inert (see `Inert`): the phone face is a button of its
+          own that would open the sheet. */}
+      <Inert>
+        <div className="mb-2 flex items-center gap-2">
+          <Select
+            value="all"
+            ariaLabel={t('Filter by state')}
+            size="sm"
+            prefix="Status"
+            steady
+            disabled
+            groups={[
+              {
+                options: (
+                  [
+                    ['all', 'All'],
+                    ['new', 'New'],
+                    ['failed', 'Failed'],
+                    ['solved', 'Solved'],
+                  ] as const
+                ).map(([value, label]) => ({ value, label })),
+              },
+            ]}
+          />
+          <Select
+            value="all"
+            ariaLabel={t('Filter by how the puzzle was verified')}
+            size="sm"
+            prefix="Fidelity"
+            steady
+            disabled
+            groups={[{ options: [{ value: 'all', label: 'Any' }] }]}
+          />
+        </div>
+      </Inert>
       <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {Array.from({ length: tiles }, (_, i) => (
           <Skeleton key={i} className="aspect-square rounded-lg" />
@@ -743,17 +906,17 @@ export function SkeletonDocument({ className }: { className?: string }) {
             chevron and the edit button are icon-sm and sm, which grow to
             36px under a thumb. Pinned at h-7 the row was a button short on
             every phone. */}
-        <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9">
-          <Skeleton className="size-7 shrink-0 rounded-md" />
+        {/* The header's controls are the real ones, inert (NoteView's
+            header): the back chevron, DocumentTools' buttons and Edit are
+            the same on every note, so their boxes are not a guess. Only
+            the name and the save state wait. */}
+        <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9" data-ground="">
+          <Button variant="ghost" size="icon-sm" {...INERT}>
+            <ChevronLeft className="size-3.5" />
+          </Button>
           <Skeleton className="h-3.5 min-w-0 flex-1" />
-          {/* DocumentTools keeps three buttons from md and one on a phone,
-              and the save state stands after Edit. Two of the tools and
-              the state were not reserved, so the title bar ran roughly
-              60px (phone) to 100px (desktop) past where the name stops. */}
-          <Skeleton className="size-7 shrink-0 rounded-md" />
-          <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
-          <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
-          <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+          <InertDocumentTools />
+          <InertEditButton />
           <Skeleton className="h-2.5 w-10 shrink-0" />
         </div>
       </div>
@@ -831,14 +994,14 @@ export function SkeletonBoard({
     // the top of the page on a phone and in the side column on a wide
     // screen, which is why it is written once and placed twice.
     <>
-      <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Button variant="ghost" size="icon-sm" {...INERT}>
+        <ChevronLeft className="size-3.5" />
+      </Button>
       <Skeleton className="h-3.5 min-w-0 flex-1" />
-      {/* As SkeletonDocument's row: three tools from md, then Edit and
-          the save state. */}
-      <Skeleton className="size-7 shrink-0 rounded-md" />
-      <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
-      <Skeleton className="size-7 shrink-0 rounded-md max-md:hidden" />
-      <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+      {/* As SkeletonDocument's row, and StudyView's own: the real tools
+          and Edit, inert, then the save state. */}
+      <InertDocumentTools />
+      <InertEditButton />
       <Skeleton className="h-2.5 w-10 shrink-0" />
     </>
   );
@@ -861,7 +1024,9 @@ export function SkeletonBoard({
     // page scroll clipped the placeholder instead. Sharing the string is
     // what the constant exists for; see components/layout.
     <Loading className={cn(BOARD_HELD_SHELL, className)}>
-      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:hidden pointer-coarse:h-9">
+      {/* data-ground, as StudyView's row: the Edit button's secondary
+          fill is the page's own tone there. */}
+      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:hidden pointer-coarse:h-9" data-ground="">
         {titleRow}
       </div>
 
@@ -902,7 +1067,9 @@ export function SkeletonBoard({
           BOARD_WIDE_SIDE,
         )}
       >
-        <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden">{titleRow}</div>
+        <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden" data-ground="">
+          {titleRow}
+        </div>
         {/* What a phone has instead of the panels: the pane switcher, in
             the face every board page gives it (components/pane-tabs,
             `header`) rather than the floating pill it drew. Two things
@@ -921,11 +1088,27 @@ export function SkeletonBoard({
             pages open on their first pane. Three of them, or four for a
             study, which is the one caller that says. The trainers have two
             or three, and the tabs divide the width however many there are,
-            so the count is the icons' spacing and nothing else. */}
-        <div className="bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden">
-          {Array.from({ length: chapters ? 4 : 3 }, (_, i) => (
-            <div key={i} className="flex flex-1 items-center justify-center">
-              <Skeleton className="size-3.5 rounded-sm" />
+            so the count is the icons' spacing and nothing else.
+
+            The icons are the real ones (StudyView's `panes`: Moves,
+            Engine, Chapters for a study, Explorer), drawn in the tab's
+            own colours rather than as bars: a tab's glyph is not data.
+            The trainers' strips carry other glyphs, and this stands for
+            them with the game's three; the boxes are what matter and
+            those agree. */}
+        <div
+          className="bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden"
+          aria-hidden
+        >
+          {(chapters ? [ListOrdered, Cpu, Files, Table2] : [ListOrdered, Cpu, Table2]).map((Icon, i) => (
+            <div
+              key={i}
+              className={cn(
+                'flex flex-1 items-center justify-center',
+                i === 0 ? 'text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              <Icon className="size-3.5" />
             </div>
           ))}
           {/* The line that marks the open pane, which the strip draws
@@ -963,12 +1146,15 @@ export function SkeletonBoard({
               // comment walks through. Below lg both are moot — the
               // block is hidden.
               chapterH === null && 'max-h-48 min-h-[min(6rem,15%)]',
+              // PanelHeader pads from --card-spacing, which only a Card
+              // sets; these bare boxes set it themselves.
+              '[--card-spacing:var(--card-pad)]',
             )}
             style={chapterH === null ? undefined : { height: chapterH, flex: '0 1 auto' }}
           >
-            <div className="flex min-h-11 shrink-0 items-center px-(--card-pad)">
-              <Skeleton className="h-2.5 w-20" />
-            </div>
+            {/* The real header with the real word. The count after it
+                ("Chapters · 3") and the add button are the study's. */}
+            <PanelHeader title={t('Chapters')} />
             {/* px-1 and no gap, like the real list: its rows are --row-h
                 tall and meet. With a gap and a padding of its own the
                 block came out 166px against the panel's 150. */}
@@ -986,19 +1172,21 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
+        <div className="bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]">
           {/* The panel opens on its header, as the chapters panel above
               does: the moves title and the row of controls beside it. The
               bars used to start 12px down a panel whose first 44px is that
-              band, so every move line sat a header too high. */}
-          <div className="flex min-h-11 shrink-0 items-center gap-2 px-(--card-pad)">
-            <Skeleton className="h-2.5 w-24" />
-            <span className="ml-auto flex shrink-0 items-center gap-1">
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="size-7" />
-              ))}
-            </span>
-          </div>
+              band, so every move line sat a header too high. The title is
+              the real PanelHeader's; a study's says its chapter's name
+              instead, which is data, so the panel's own word stands. The
+              controls stay as boxes: which ones the row holds depends on
+              the document. */}
+          <PanelHeader
+            title={t('Moves')}
+            actions={[0, 1, 2].map((i) => (
+              <span key={i} className="size-7" />
+            ))}
+          />
           <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
             {Array.from({ length: 8 }, (_, i) => (
               <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
@@ -1009,10 +1197,8 @@ export function SkeletonBoard({
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
         {explorer && (
-          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden">
-            <div className="flex min-h-11 items-center px-(--card-pad)">
-              <Skeleton className="h-2.5 w-16" />
-            </div>
+          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden [--card-spacing:var(--card-pad)]">
+            <PanelHeader title={t('Explorer')} />
           </div>
         )}
       </div>
@@ -1040,10 +1226,67 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
         className,
       )}
     >
-      {[0, 1, 2].map((i) => (
-        <Skeleton key={i} className="h-7 min-w-0 flex-1 rounded-md pointer-coarse:h-9" />
-      ))}
-      <Skeleton className="size-7 shrink-0 rounded-md pointer-coarse:size-9" />
+      {/* The collection's three quick selects (GameFilters: whose games,
+          result, notes), each at its resting value, and the More filters
+          button, all inert. The row is drawn by GameListShell for the
+          collection and the archive alike; the archive's row differs
+          (side and result, and its month), and this stands for both at
+          the collection's shape, as the bars did. Inert rather than only
+          disabled: see `Inert`. */}
+      <Inert>
+        <Select
+          value="any"
+          ariaLabel={t('Whose games')}
+          size="sm"
+          className="min-w-0 flex-1"
+          disabled
+          groups={[
+            {
+              options: [
+                { value: 'any', label: t("Anyone's games") },
+                { value: 'mine', label: t('My games') },
+                { value: 'white', label: t('Mine as White') },
+                { value: 'black', label: t('Mine as Black') },
+              ],
+            },
+          ]}
+        />
+        <Select
+          value="any"
+          ariaLabel={t('Result')}
+          size="sm"
+          className="min-w-0 flex-1"
+          disabled
+          groups={[
+            {
+              options: [
+                { value: 'any', label: t('Any result') },
+                { value: '1-0', label: t('White won') },
+                { value: '0-1', label: t('Black won') },
+                { value: '1/2-1/2', label: t('Drawn') },
+              ],
+            },
+          ]}
+        />
+        <Select
+          value="any"
+          ariaLabel={t('Notes')}
+          size="sm"
+          className="min-w-0 flex-1"
+          disabled
+          groups={[
+            {
+              options: [
+                { value: 'any', label: t('All games') },
+                { value: 'annotated', label: t('With notes') },
+              ],
+            },
+          ]}
+        />
+        <Button variant="secondary" size="icon-sm" className="relative shrink-0" {...INERT}>
+          <SlidersHorizontal className="size-3.5" />
+        </Button>
+      </Inert>
     </Loading>
   );
 }
@@ -1122,8 +1365,22 @@ export function SkeletonGameRows({
             </div>
           </div>
           <Skeleton className="h-3 w-8 shrink-0" />
-          <Skeleton className="size-7 shrink-0 rounded-sm pointer-coarse:size-9" />
-          <Skeleton className="h-6 w-16 shrink-0" />
+          {/* The row's tray (GameRow, games/shared): the eye and the ⋯,
+              icon-sm each, in its own p-0.5 gap-0.5 box, inert. The
+              collection's rows put a bookmark star between them and the
+              archive's card rows hide the ⋯ under a mouse; the two
+              controls every row has are what stands here. It was a
+              size-7 box and an h-6 w-16 button, which stood for an Add
+              button the archive's rows no longer carry: 104px of furniture
+              against the tray's 62. */}
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-lg p-0.5">
+            <Button variant="ghost" size="icon-sm" className="shrink-0" {...INERT}>
+              <Eye className="size-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" className="shrink-0" {...INERT}>
+              <MoreHorizontal className="size-3.5" />
+            </Button>
+          </div>
         </div>
       ))}
     </Loading>
@@ -1212,8 +1469,10 @@ export function SkeletonVaultTree({
                 alignment: a bar has no text, so its baseline is its own
                 bottom edge, and three bars of three heights pushed the row
                 a pixel taller than the row of text it stands for. */}
-            <span className="icon">
-              <Skeleton className="size-4 rounded-sm" />
+            {/* The row's own icon: VAULT_ROWS says what kind each row is,
+                so the glyph is known before the sizes are. */}
+            <span className="icon text-muted-foreground">
+              <VaultRowIcon kind={row.kind} />
             </span>
             <div className="path flex h-5 items-center self-center">
               <Skeleton className={cn('h-2.5', PATH_WIDTHS[i % PATH_WIDTHS.length])} />
@@ -1239,6 +1498,19 @@ export function SkeletonVaultTree({
       <VaultNote />
     </Loading>
   );
+}
+
+/**
+ * The glyph VaultTree draws for each kind of row, at its size. The map
+ * is VaultTree's own (`ICONS`, components/vault-tree), restated here
+ * because that file does not export it; the two are three entries and
+ * the kinds are a closed type, so a new kind fails to compile here.
+ */
+const VAULT_ICONS: Record<VaultKind, LucideIcon> = { folder: FolderIcon, git: FolderGit2, json: FileJson };
+
+function VaultRowIcon({ kind }: { kind: VaultKind }) {
+  const Icon = VAULT_ICONS[kind];
+  return <Icon className="size-4" aria-hidden="true" />;
 }
 
 /**

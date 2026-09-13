@@ -79,6 +79,8 @@ const BASE = `${import.meta.env.BASE_URL}licenses/`;
  * hint, wrong by at most one visit, corrected by whatever lands.
  */
 const GROUPS_KEY = 'vault:licences-groups';
+/** The group names the licence walk writes, in its order (web/vite.licenses.ts). */
+const GROUP_NAMES = ['Bundled assets', 'Packages', 'Chromium (desktop app)'];
 /** What a device that has not seen this page reserves: the web build's. */
 const FRESH_GROUPS = 2;
 const MAX_GROUPS = 6;
@@ -242,12 +244,16 @@ export function LicensesPage() {
                   onClick={() => {}}
                 />
                 {Array.from({ length: reservedGroups }, (_, i) => (
-                  <Skeleton
+                  <FilterChip
                     key={i}
-                    className={cn(
-                      'h-7.5 shrink-0 rounded-full pointer-coarse:h-9',
-                      ['w-36', 'w-28', 'w-44'][i % 3],
-                    )}
+                    label={
+                      <>
+                        {t(GROUP_NAMES[i % GROUP_NAMES.length]!)}
+                        <Skeleton className="ml-1 inline-block h-2.5 w-6 align-middle" />
+                      </>
+                    }
+                    active={false}
+                    onClick={() => {}}
                   />
                 ))}
               </>

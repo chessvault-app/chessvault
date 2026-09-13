@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { copyText } from '@/lib/clipboard';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
@@ -342,23 +342,27 @@ function SettingsPlaceholder() {
   const [reservedPaths] = useState(readVaultPaths);
   return (
     <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
-      {/* The page title: text-xl on a desktop, whose line box is 28px;
-          below md the header is the phone's 44px bar (PageHeader's
-          min-h-11), whatever it holds. */}
-      <div className="flex h-7 items-center max-md:h-11">
-        <Skeleton className="h-4 w-28" />
+      {/* The page title, as PageHeader draws it: text-xl on a desktop,
+          whose line box is 28px; below md the header is the phone's 44px
+          bar (PageHeader's min-h-11) with the back chevron before the
+          name. The title is known without the answer, so it is the real
+          words, and the chevron is the real button held inert. */}
+      <div className="flex h-7 items-center gap-x-3 max-md:h-11">
+        <Button variant="ghost" size="icon-sm" className="md:hidden" disabled tabIndex={-1} aria-hidden>
+          <ChevronLeft className="size-3.5" />
+        </Button>
+        <h1 className="text-2xl font-semibold tracking-tight md:text-xl">{t('Settings')}</h1>
       </div>
       {/* The section links, as JumpList draws them: text-sm names in
           px-1 buttons, py-2 and mb-1, no row at all below md, and none
           from xl either, where the names stand in the margin and take no
-          room in the column. Each name is laid out invisibly and barred
-          over, so the row wraps where the real one will. */}
+          room in the column. The names are the real words in the real
+          button, held inert, so the row wraps where the real one will. */}
       <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex xl:hidden">
         {(isDemo() ? JUMP_NAMES_DEMO : JUMP_NAMES_SERVER).map((name) => (
-          <span key={name} className="relative px-1">
-            <span className="invisible">{t(name)}</span>
-            <Skeleton className="absolute inset-x-1 top-1/2 h-2.5 -translate-y-1/2" />
-          </span>
+          <button key={name} type="button" disabled tabIndex={-1} className="text-muted-foreground rounded-md px-1">
+            {t(name)}
+          </button>
         ))}
       </div>
       {isDemo() ? (
@@ -368,41 +372,41 @@ function SettingsPlaceholder() {
             <p className="text-muted-foreground text-sm">{t(DEMO_VAULT_NOTE)}</p>
           </Card>
           <Card icon={Save} title={t('Documents')}>
-            <SkeletonSettingRow blurbLines={2} />
+            <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
           </Card>
           <Card icon={Palette} title={t('Appearance')}>
-            {Array.from({ length: 7 }, (_, i) => (
-              <FieldPlaceholder key={i} control="select" />
+            {APPEARANCE_FIELDS.map((label) => (
+              <FieldPlaceholder key={label} control="select" label={label} />
             ))}
-            <SkeletonSettingRow />
-            <SkeletonSettingRow />
+            <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
+            <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
             <DisclosurePlaceholder />
           </Card>
         </>
       ) : (
         <>
           <Card icon={User} title={t('Profile')}>
-            <FieldPlaceholder control="input" />
+            <FieldPlaceholder control="input" label="Display name" />
             <div className="grid gap-3 sm:grid-cols-2">
-              <FieldPlaceholder control="input" />
-              <FieldPlaceholder control="input" />
+              <FieldPlaceholder control="input" label="Chess.com username" />
+              <FieldPlaceholder control="input" label="Lichess username" />
             </div>
             <p className="text-muted-foreground text-sm">{t(PROFILE_NOTE)}</p>
-            <ButtonPlaceholder className="w-28" />
+            <ButtonPlaceholder label="Save profile" />
           </Card>
           <Card icon={BrandMark} title={t('Vault')}>
-            <FieldPlaceholder control="input" />
+            <FieldPlaceholder control="input" label="Vault name" />
             <p className="text-muted-foreground text-sm">{t(VAULT_NAME_NOTE)}</p>
-            <ButtonPlaceholder className="w-24" />
+            <ButtonPlaceholder label="Save name" />
             <SkeletonVaultTree paths={reservedPaths} />
             <div className="flex flex-wrap items-center gap-2">
-              <ButtonPlaceholder className="w-40" />
-              <ButtonPlaceholder className="w-28" />
+              <ButtonPlaceholder variant="secondary" label="Download a copy" />
+              <ButtonPlaceholder variant="secondary" label="Copy the path" />
             </div>
             <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>
           </Card>
           <Card icon={Save} title={t('Documents')}>
-            <SkeletonSettingRow blurbLines={2} />
+            <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
           </Card>
         </>
       )}
@@ -410,35 +414,53 @@ function SettingsPlaceholder() {
   );
 }
 
+/** The Appearance card's seven Selects, in the card's order (AppearanceCard). */
+const APPEARANCE_FIELDS = ['App language', 'App theme', 'Density', 'Colours', 'Board', 'Pieces', 'Castling'];
+
 /**
- * A labelled control's box: the label's line (text-sm at leading-snug,
- * which an inline bar takes from the line box rather than guessing at)
- * over the control, a lg input at h-9 or a select trigger at h-8, both
- * h-9 under a coarse pointer.
+ * A labelled control, held inert: the real Field with its real label
+ * over the real control, a lg input at h-9 or a select trigger at h-8,
+ * both h-9 under a coarse pointer. The label is known before the answer
+ * is, so it is the real words rather than a bar; the value is not, so
+ * the input is empty and the select shows its no-value dash. The select
+ * sits under `inert` rather than `disabled`, because the phone's trigger
+ * is its own button and does not take the prop.
  */
-function FieldPlaceholder({ control }: { control: 'input' | 'select' }) {
+function FieldPlaceholder({ control, label }: { control: 'input' | 'select'; label: string }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="text-sm leading-snug">
-        <Skeleton className="inline-block h-2.5 w-24 align-middle" />
-      </div>
-      {/* Input and Select are both on the lg corner, not md. */}
-      <Skeleton className={cn('rounded-lg', control === 'input' ? 'h-9' : 'h-8 pointer-coarse:h-9')} />
-    </div>
+    <Field label={label}>
+      {control === 'input' ? (
+        <Input inputSize="lg" disabled tabIndex={-1} />
+      ) : (
+        <div inert>
+          <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
+        </div>
+      )}
+    </Field>
   );
 }
 
-/** A default button's box: h-8, and h-9 under a coarse pointer, at about its label's width. */
-function ButtonPlaceholder({ className }: { className: string }) {
-  return <Skeleton className={cn('h-8 rounded-lg pointer-coarse:h-9', className)} />;
+/** A default button, held inert, with the label the real one carries: h-8, and h-9 under a coarse pointer. */
+function ButtonPlaceholder({ label, variant = 'default' }: { label: string; variant?: 'default' | 'secondary' }) {
+  return (
+    <Button variant={variant} disabled tabIndex={-1}>
+      {t(label)}
+    </Button>
+  );
 }
 
-/** The closed "More options" row of a Disclosure: one text-sm line, 36px under a coarse pointer. */
+/** The closed "More options" row of a Disclosure, held inert: one text-sm line, 36px under a coarse pointer. */
 function DisclosurePlaceholder() {
   return (
-    <div className="flex h-5 items-center pointer-coarse:h-9">
-      <Skeleton className="h-2.5 w-24" />
-    </div>
+    <button
+      type="button"
+      disabled
+      tabIndex={-1}
+      className="text-muted-foreground flex items-center gap-1.5 self-start text-sm pointer-coarse:min-h-9"
+    >
+      <ChevronRight className="size-3.5" aria-hidden />
+      {t('More options')}
+    </button>
   );
 }
 
@@ -2628,16 +2650,20 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
               <div className="flex h-7 shrink-0 items-center pointer-coarse:h-9">
                 <Skeleton className="h-2.5 w-40" />
               </div>
-              {/* icon-sm's own size-7, and its size-9 under a coarse
-                  pointer (ui/button) — the footer's trick, per row. */}
-              <Skeleton className="size-7 shrink-0 rounded-[min(var(--radius-md),12px)] pointer-coarse:size-9" />
+              {/* The row's own clear button, held inert: icon-sm's
+                  size-7, and its size-9 under a coarse pointer. */}
+              <Button variant="ghost" size="icon-sm" className="shrink-0" disabled tabIndex={-1} aria-hidden>
+                <Trash2 className="size-3.5" />
+              </Button>
             </div>
           </div>
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-2.5 w-24" />
-            {/* The default button's own h-8 — h-9 only under a coarse
-                pointer (ui/button), the dashboard's fix over again. */}
-            <Skeleton className="h-8 w-20 rounded-lg pointer-coarse:h-9" />
+            {/* The footer's own button, held inert: h-8, and h-9 under a
+                coarse pointer (ui/button). */}
+            <Button variant="ghost" disabled tabIndex={-1}>
+              {t('Clear all')}
+            </Button>
           </div>
         </>
       )}

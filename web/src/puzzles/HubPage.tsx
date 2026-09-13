@@ -23,6 +23,7 @@ import { ListRow } from '@/components/list-row';
 import { PageShell } from '@/components/page-shell';
 import { ProgressBar } from '@/components/progress-bar';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Skeleton, SkeletonRows, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 import { Figures } from '@/components/figures';
@@ -279,8 +280,8 @@ function PuzzleCard({
  * it does not move when this is replaced.
  */
 /**
- * The heading strip every panel on this page wears, with a bar where the
- * word goes.
+ * The heading strip every panel on this page wears: the real word when
+ * the panel's title is known before its rows are, a bar where it is not.
  *
  * The real heading's OWN classes, not a guess at its height: the strip is
  * a text-sm line, whose box is 20px, and its height comes from that plus
@@ -288,7 +289,18 @@ function PuzzleCard({
  * type would leave the two a few pixels apart, which is the whole defect
  * this stands in for.
  */
-function SkeletonPanelHeading({ width, className }: { width: string; className?: string }) {
+function SkeletonPanelHeading({
+  width,
+  title,
+  className,
+}: {
+  width: string;
+  /** The heading's own text, drawn as it will be, when the slot can only
+      hold one panel. The book slot cannot say (Recently read or Worth
+      practising), so it keeps the bar. */
+  title?: string;
+  className?: string;
+}) {
   return (
     <p
       className={cn(
@@ -296,7 +308,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
         className,
       )}
     >
-      <Skeleton className={cn('inline-block h-2 align-middle', width)} />
+      {title ?? <Skeleton className={cn('inline-block h-2 align-middle', width)} />}
     </p>
   );
 }
@@ -305,7 +317,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
 function HubSkeletonHistoryPanel() {
   return (
     <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <SkeletonPanelHeading width="w-24" className="shrink-0" />
+      <SkeletonPanelHeading width="w-24" title={t('Puzzle history')} className="shrink-0" />
       {/* overflow-y-auto like the list it stands for: the panel is
           overflow-hidden, so on a screen short enough the real rows
           scroll where these were simply clipped. */}
@@ -332,16 +344,16 @@ function HubSkeletonBookRow() {
       <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* The title sits on a text-sm line, whose box is 20px; the bar
-              under it is the Progress track's own h-1 — 4px, not the 6
-              this claimed ProgressBar draws. */}
+          {/* The title sits on a text-sm line, whose box is 20px; under it
+              the real Progress track, empty, as ProgressBar draws it with
+              showEmpty for a book nothing has been attempted in. */}
           <div className="flex h-5 items-center">
             <Skeleton className="h-2.5 w-2/3" />
           </div>
-          <Skeleton className="h-1 w-full rounded-full" />
+          <Progress value={0} aria-hidden />
         </div>
         <Skeleton className="h-2.5 w-8 shrink-0" />
-        <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+        <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
       </div>
     </div>
   );
@@ -385,9 +397,9 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
         <Skeleton className="h-3 w-1/3" />
         <Skeleton className="h-2.5 w-1/2" />
       </div>
-      {/* The chevron every card and empty slot ends with: kept, not
-          drawn, so the text column stops where it really stops. */}
-      <span aria-hidden className="size-4 shrink-0 self-center" />
+      {/* The chevron every card and empty slot ends with, drawn as the
+          card draws it, so the text column stops where it really stops. */}
+      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0 self-center" />
     </div>
   );
 }
@@ -1346,26 +1358,46 @@ function Hub() {
             Now the page goes from empty to whole, once: below the
             threshold the answers are in before anything is drawn, and
             above it the buttons rise with the skeleton and stay put. */}
-        {/* Placeholders while the rest of the page is placeholders. Live
-            buttons over a skeleton page are an offer to press something on
-            a page that is still deciding what it says — Train in
-            particular, whose word underneath ("adaptive", a difficulty)
-            arrives with the answers. The row is the same four 64px tiles
-            either way, so nothing moves when they become real. At 320px
-            (the narrowest phone) four across leaves 66px a tile, which
-            "Puzzle books" does not fit, so the row folds to two by two
-            there and only there (20.0625rem because Tailwind's max-* is
-            exclusive: `width < 321px` is what includes 320). */}
+        {/* The same tiles, inert, while the rest of the page is
+            placeholders. Live buttons over a skeleton page are an offer to
+            press something on a page that is still deciding what it says —
+            Train in particular, whose word underneath ("adaptive", a
+            difficulty) arrives with the answers, so the word is the one
+            thing left off. The labels and icons are constants, so they
+            are drawn as they will be rather than as bars; the tiles are
+            disabled, out of the tab order and take no pointer, not dimmed.
+            The row is the same four 64px tiles either way, so nothing
+            moves when they become real. At 320px (the narrowest phone)
+            four across leaves 66px a tile, which "Puzzle books" does not
+            fit, so the row folds to two by two there and only there
+            (20.0625rem because Tailwind's max-* is exclusive: `width <
+            321px` is what includes 320). */}
         {skeleton && (
           <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-card-ring"
+            {(
+              [
+                ['Themes', LayoutGrid, false],
+                ['Puzzle books', BookMarked, false],
+                ['Dashboard', BarChart3, false],
+                [ready ? 'Train' : 'Set up', ready ? Puzzle : Database, true],
+              ] as const
+            ).map(([label, Icon, primary]) => (
+              <button
+                key={label}
+                type="button"
+                disabled
+                tabIndex={-1}
+                className={cn(
+                  'pointer-events-none flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
+                  'px-1 text-center text-sm font-medium leading-tight',
+                  primary
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-card border-card-ring',
+                )}
               >
-                <Skeleton className="size-5 rounded-sm" />
-                <Skeleton className="h-2.5 w-12" />
-              </div>
+                <Icon aria-hidden className={cn('size-5', primary ? '' : 'text-primary')} />
+                {t(label)}
+              </button>
             ))}
           </div>
         )}

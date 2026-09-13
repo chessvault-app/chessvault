@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { t } from '@/lib/i18n';
+import { Switch } from '@/components/ui/switch';
 
 /**
  * The settings-row shell: a titled, blurbed strip with one control on
@@ -37,36 +38,21 @@ export function SettingRow({
 }
 
 /**
- * The row while its setting is not known: the same strip, a bar where
- * the title goes (text-base, a 24px line) over one where the blurb goes
- * (text-sm, 20px), and a Switch's box on the right at the size the
- * registry draws one, 18.4 x 32 (components/ui/switch).
- *
- * The strip is a muted well, and the bars are the accent rung above it:
- * a bar filled muted, which the primitive was for a while, could not be
- * seen in here at all.
- *
- * `blurbLines` is how many lines the blurb takes on a phone: a sentence
- * of Documents' length wraps at 390px (the row is 86px there against 66
- * on a desktop) and fits one line from sm, where the card is wider.
+ * The row while its setting is not known: the real row, with its own
+ * title and blurb, and a Switch on the right that is the real one, off
+ * and inert, since its box is the registry's whatever the setting turns
+ * out to be (components/ui/switch). The words are constants, so drawing
+ * them is what makes the height right by construction: a pair of bars
+ * with a `blurbLines` guess stood here before, and "File and rank labels
+ * on the board edge." wraps to two lines at 375px where the guess said
+ * one, so the Appearance card landed 20px taller than its placeholder
+ * (measured on the demo). What the answer brings is only whether the
+ * switch is on.
  */
-export function SkeletonSettingRow({ blurbLines = 1 }: { blurbLines?: 1 | 2 }) {
+export function SkeletonSettingRow({ title, blurb }: { title: string; blurb: string }) {
   return (
-    <div className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
-      <div className="min-w-0">
-        <div className="flex h-6 items-center">
-          <Skeleton className="h-3.5 w-32" />
-        </div>
-        <div className="flex h-5 items-center">
-          <Skeleton className="h-2 w-44" />
-        </div>
-        {blurbLines === 2 && (
-          <div className="flex h-5 items-center sm:hidden">
-            <Skeleton className="h-2 w-24" />
-          </div>
-        )}
-      </div>
-      <Skeleton className="h-[18.4px] w-8 shrink-0 rounded-full" />
-    </div>
+    <SettingRow title={t(title)} blurb={t(blurb)}>
+      <Switch disabled checked={false} tabIndex={-1} aria-hidden />
+    </SettingRow>
   );
 }

@@ -172,14 +172,20 @@ export function TagPicker({
                     aria-live="polite"
                     className="flex flex-col gap-1"
                   >
-                    {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => (
-                      <div key={i} className="flex min-h-9 items-center gap-1">
-                        <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
-                          <Skeleton className="size-4 shrink-0 rounded-sm" />
-                          <Skeleton className={`h-3 ${w}`} />
+                    {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => {
+                      // The kind's own glyph, which every row of this list
+                      // wears: known before the names are, so it is drawn
+                      // rather than barred.
+                      const Icon = KINDS[kind].icon;
+                      return (
+                        <div key={i} className="flex min-h-9 items-center gap-1">
+                          <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
+                            <Icon aria-hidden className="text-muted-foreground size-4 shrink-0" />
+                            <Skeleton className={`h-3 ${w}`} />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : null
               ) : list.length === 0 ? (

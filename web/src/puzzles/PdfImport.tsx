@@ -805,15 +805,20 @@ export function PdfImport({
                     so the list does not jump when it turns into a real one. */}
                 {scanning && (
                   <li className="flex items-center gap-2 py-1.5 pl-2 pr-4">
-                    {/* The row's first cell is a Checkbox, which is size-4. */}
-                    <Skeleton className="size-4 shrink-0 rounded-sm" />
+                    {/* The row's first cell is its Checkbox, inert: disabled,
+                        out of the tab order, and not offered to a reader,
+                        since there is nothing to keep yet. */}
+                    <Checkbox disabled tabIndex={-1} aria-hidden />
                     <Skeleton className="h-3 w-24 shrink-0" />
                     {/* The eye is an icon-sm Button, which is what sets
                         the row's height: size-7, and size-9 under a
-                        thumb. At size-5 the row stood 32px against the
-                        41 the rows above it declare as their intrinsic
-                        size. */}
-                    <Skeleton className="size-7 shrink-0 rounded-md pointer-coarse:size-9" />
+                        thumb. A size-5 bar once stood the row 32px
+                        against the 41 the rows above it declare as their
+                        intrinsic size; the real button, inert, cannot
+                        disagree with them. */}
+                    <Button variant="ghost" size="icon-sm" disabled tabIndex={-1} aria-hidden>
+                      <Eye className="size-3.5" />
+                    </Button>
                     <Skeleton className="ml-auto h-3 w-10 shrink-0" />
                   </li>
                 )}

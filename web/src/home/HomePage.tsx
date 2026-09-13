@@ -366,10 +366,10 @@ function PlaceholderRow({
         <Skeleton className={cn('absolute inset-y-0.5 left-0 max-w-full', width)} />
       </span>
       {trailing && <Skeleton className="h-2.5 w-10 shrink-0" />}
-      {/* The chevron every one of these rows ends with. It is not drawn,
-          only kept: it is part of the width the label truncates inside,
+      {/* The chevron every one of these rows ends with, drawn as the rows
+          draw it: it is part of the width the label truncates inside,
           and without it the bar ran on past where the words stop. */}
-      <span aria-hidden className="size-3.5 shrink-0" />
+      <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
     </div>
   );
 }
@@ -397,7 +397,11 @@ const CHECKLIST_LABELS = [
  * card's own geometry: the header holds the dismiss button's box
  * invisibly (icon-sm grows from 28 to 36px under a coarse pointer, and
  * pinned to its text line the header was 8px short on every phone), and
- * each row wraps exactly where its own words will.
+ * each row is the pending step's own row, words, spacer and chevron,
+ * drawn as it will be: the labels are constants, so a bar over them
+ * hid what was already known. Which steps are DONE is the one thing the
+ * answer brings, so every row takes the pending shape (a spacer where
+ * the done row's tick goes; same width, so the labels wrap the same).
  */
 function PlaceholderChecklist() {
   return (
@@ -411,14 +415,11 @@ function PlaceholderChecklist() {
           key={label}
           className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-sm last:border-b-0 pointer-coarse:min-h-11"
         >
-          <span className="size-3.5 shrink-0" />
-          <span className="relative min-w-0 flex-1">
-            <span className="invisible">{t(label)}</span>
-            <Skeleton className="absolute inset-y-0.5 left-0 w-full" />
-          </span>
+          <span aria-hidden className="size-3.5 shrink-0" />
+          <span className="text-foreground min-w-0 flex-1">{t(label)}</span>
           {/* The chevron a pending step ends with — part of the width the
               words wrap inside. */}
-          <span className="size-3.5 shrink-0" />
+          <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
         </div>
       ))}
     </div>
@@ -472,7 +473,7 @@ function PlaceholderPanel({
               <Skeleton className="h-2 w-full" />
             </span>
             <Skeleton className="h-2.5 w-8 shrink-0" />
-            <span aria-hidden className="size-3.5 shrink-0" />
+            <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
           </div>
         ) : (
           <PlaceholderRow

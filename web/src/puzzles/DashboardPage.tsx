@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/select';
 import { Panel, PanelHeader } from '@/components/panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProgressBar } from '@/components/progress-bar';
+import { Progress } from '@/components/ui/progress';
 import { Skeleton, SkeletonRows } from '@/components/skeletons';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
@@ -303,11 +304,17 @@ export function DashboardPage() {
             {t('Try again')}
           </Button>
         ) : user === null ? (
-          // The button's box (h-8, h-9 under a coarse pointer, where the
-          // real button grows too — it once held 36px against 32), and
-          // under it the note's one 20px line when this device saw one.
+          // The button itself, inert: Train is what the slot holds when
+          // the count is not known (the answer may swap it for Review),
+          // disabled and out of the tab order rather than a bar of its
+          // box (h-8, h-9 under a coarse pointer, where the real button
+          // grows too — a bar once held 36px against 32). Under it the
+          // note's one 20px line when this device saw one.
           <div className="mb-4">
-            <Skeleton className="h-8 w-full rounded-lg pointer-coarse:h-9" />
+            <Button variant="default" size="default" className="w-full justify-center" disabled tabIndex={-1}>
+              <Puzzle className="size-3.5" data-icon="inline-start" />
+              {t('Train')}
+            </Button>
             {reserved.review === 'note' && (
               <div className="mt-2 flex h-5 items-center justify-center">
                 <Skeleton className="h-2.5 w-64 max-w-full" />
@@ -488,11 +495,19 @@ export function DashboardPage() {
         {books === null
           ? (
               <Panel className="mb-4">
-                {/* The title is known before the answer is; only the
-                    shelf button and the rows are waited for. */}
+                {/* The title is known before the answer is, and so is the
+                    shelf button's label: it follows how many books this
+                    device saw last visit, as the real one follows the
+                    count. Drawn inert, disabled and out of the tab order,
+                    where a bar stood at a guessed 112px. */}
                 <PanelHeader
                   title={t('Puzzle books')}
-                  actions={<Skeleton className="h-7 w-28 rounded-md pointer-coarse:h-9" />}
+                  actions={
+                    <Button variant="ghost" size="sm" disabled tabIndex={-1}>
+                      <BookMarked className="size-3.5" data-icon="inline-start" />
+                      {reserved.books === 0 ? t('Import a book') : t('All puzzle books')}
+                    </Button>
+                  }
                 />
                 {/* One row per book this device saw last visit — and for
                     a vault that had none (or has never been seen), the
@@ -518,20 +533,21 @@ export function DashboardPage() {
                           this stands for reads it. Both were wrong in
                           opposite directions: 33px against the real 36. */}
                       <div className="flex items-center gap-2.5 px-3 py-(--row-py) pointer-coarse:min-h-11">
-                        {/* The bar under the title below sm, beside it
-                            from there, as the row it stands for. The
-                            Progress track is h-1. */}
+                        {/* The real Progress track, empty, under the title
+                            below sm and beside it from there, as the row
+                            it stands for draws it; and the row's own
+                            chevron. */}
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
                           <div className="flex h-5 items-center">
                             <Skeleton className="h-2.5 w-2/5" />
                           </div>
-                          <Skeleton className="h-1 rounded-full sm:hidden" />
+                          <Progress value={0} aria-hidden className="sm:hidden" />
                         </div>
                         <div className="flex h-5 shrink-0 items-center">
                           <Skeleton className="h-2.5 w-10" />
                         </div>
-                        <Skeleton className="h-1 w-24 shrink-0 rounded-full max-sm:hidden" />
-                        <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                        <Progress value={0} aria-hidden className="w-24 shrink-0 max-sm:hidden" />
+                        <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
                       </div>
                     </div>
                   ))
