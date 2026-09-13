@@ -32,7 +32,7 @@ import {
   EcoName,
   formatTimeControl,
   safeLink,
-  SeatMark,
+  SEAT_INK,
   type GameSummary,
 } from './shared';
 import { moveCount, numberedSan } from './GameTable';
@@ -149,10 +149,9 @@ function GameDetailsContent({
       <span
         className={cn(
           'min-w-0 truncate font-semibold',
-          summary.userSide === side && 'text-primary',
+          summary.userSide === side && SEAT_INK,
         )}
       >
-        {summary.userSide === side && <SeatMark side={side} />}
         {name}
       </span>
       {elo ? (
