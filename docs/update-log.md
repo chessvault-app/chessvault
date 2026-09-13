@@ -17,6 +17,13 @@ a page.
   off, or one where a move that keeps the win takes a piece, is thrown
   back and another position drawn; the draw asks about up to 60
   positions instead of 40 to pay for the ones it now refuses.
+- **An endgame drill draws the sharpest position it finds.** The draw
+  gathers four acceptable positions and hands over the one whose first
+  three decisions leave the fewest moves that keep the win, read down
+  the tablebase's own line. A class that is never narrow still yields
+  its best. The measure is internal and nothing on the page shows it. A
+  first draw of a class costs a few more tablebase requests; the cache
+  makes the same line free after.
 - **A drill move lands on the board at once.** The piece slid back to
   its square while the tablebase graded the move, "Defending…" showed,
   and the move then appeared a second time. The move stays where it was

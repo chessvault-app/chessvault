@@ -22,8 +22,12 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  * Two routes carry a drill, and the verdict is never the client's:
  *
  *  - `draw` proposes random positions of a material class
- *    (server/endgamePositions.ts) and keeps the first the table calls a
- *    win for the side to move. That side is the solver's.
+ *    (server/endgamePositions.ts), keeps those the table calls a win
+ *    for the side to move that are not already decided (oneSided), and
+ *    of a pool of them hands over the sharpest: the one whose first few
+ *    decisions leave the solver the fewest moves that keep the win
+ *    (sharpness). That side is the solver's. The measure is the
+ *    drill's own and is never shown; a drill is not a rating.
  *  - `move` grades one move by the table's own word for it. A move that
  *    keeps the category at `win` holds; anything else threw the win
  *    away, and the answer names the move that would have kept it. A
@@ -71,6 +75,61 @@ export function oneSided(answer: TablebaseAnswer, pos: Chess): boolean {
     const move = parseUci(m.uci);
     return !!move && 'to' in move && pos.board.get(move.to) !== undefined;
   });
+}
+
+/** How many acceptable positions a draw gathers before choosing among
+    them. Every one costs its lookahead in probes on a first visit, so
+    this is the draw's latency knob; the cache makes a revisit free. */
+const POOL = 4;
+
+/** How many of the solver's decisions the sharpness of a draw is read
+    over: the root and this many more down the table's own mainline. A
+    root with one keeping move can open into a loose ending two moves
+    on, which is what the lookahead is for. */
+const LOOKAHEAD = 2;
+
+/**
+ * How narrow the solver's choices are at the start of a position, as
+ * the mean over the first decisions of the share of legal moves that
+ * keep the win, so lower is sharper and an only-move position scores
+ * near zero. The line walked is the table's own: the solver's best,
+ * then the defender's longest resistance. Every position on it is
+ * probed through the cache, so a line read once is read for free
+ * after. Null where the table could not be reached.
+ *
+ * A mean rather than a threshold, so a class that is never narrow
+ * (queen against king wins by most moves at every step) still ranks
+ * its candidates instead of refusing them all.
+ */
+export async function sharpness(
+  cacheDir: string,
+  source: TablebaseProbe,
+  fen: string,
+  root: TablebaseAnswer,
+): Promise<number> {
+  const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+  const shares: number[] = [];
+  let answer: TablebaseAnswer = root;
+  for (let decision = 0; ; decision += 1) {
+    const keeping = answer.moves.filter((m) => holds(m.category)).length;
+    shares.push(answer.moves.length ? keeping / answer.moves.length : 1);
+    if (decision === LOOKAHEAD) break;
+    // The solver's best, then the defender's; a line the table ends
+    // early (mate, or nothing ranked) is read as far as it goes.
+    const best = answer.moves[0];
+    const solverMove = best && parseUci(best.uci);
+    if (!solverMove || !pos.isLegal(solverMove)) break;
+    pos.play(solverMove);
+    const replyAnswer = await cachedProbe(cacheDir, source, makeFen(pos.toSetup()));
+    const reply = replyAnswer?.moves[0];
+    const replyMove = reply && parseUci(reply.uci);
+    if (!replyMove || !pos.isLegal(replyMove)) break;
+    pos.play(replyMove);
+    const next = await cachedProbe(cacheDir, source, makeFen(pos.toSetup()));
+    if (!next || next.category !== 'win') break;
+    answer = next;
+  }
+  return shares.reduce((a, b) => a + b, 0) / shares.length;
 }
 
 /** Whether a move keeps the win. `maybe-win` is the server unsure only
@@ -142,7 +201,9 @@ export function endgameDrillApi(
     const oriented = random() < 0.5 ? spec : mirrorMaterialSpec(spec);
     let probed = 0;
     let held = 0;
+    const pool: { fen: string; answer: TablebaseAnswer }[] = [];
     for (const fen of drawCandidates(oriented, DRAW_TRIES, random)) {
+      if (pool.length >= POOL) break;
       let answer: TablebaseAnswer | null;
       try {
         answer = await cachedProbe(cacheDir, source, fen);
@@ -158,6 +219,22 @@ export function endgameDrillApi(
       if (answer.category !== 'win' || answer.checkmate || answer.stalemate) continue;
       const drawn = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
       if (oneSided(answer, drawn)) continue;
+      pool.push({ fen, answer });
+    }
+    if (pool.length > 0) {
+      // The sharpest of the pool; ties fall to the one drawn first, so
+      // the same dice still give the same draw.
+      let scores: number[];
+      try {
+        scores = await Promise.all(pool.map((p) => sharpness(cacheDir, source, p.fen, p.answer)));
+      } catch {
+        return unreachable(c);
+      }
+      let pick = 0;
+      scores.forEach((score, i) => {
+        if (score < scores[pick]!) pick = i;
+      });
+      const { fen } = pool[pick]!;
       return c.json({
         fen,
         side: fen.split(' ')[1] === 'b' ? 'black' : 'white',

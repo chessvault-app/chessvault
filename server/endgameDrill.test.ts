@@ -8,7 +8,7 @@ import { parseFen } from 'chessops/fen';
 import { makeSan } from 'chessops/san';
 import { makeUci, parseUci } from 'chessops/util';
 import type { Color } from 'chessops/types';
-import { MIN_WIN_PLIES, endgameDrillApi, holds, oneSided } from './endgameDrill.ts';
+import { MIN_WIN_PLIES, endgameDrillApi, holds, oneSided, sharpness } from './endgameDrill.ts';
 import type { TablebaseAnswer, TablebaseMove, TablebaseProbe } from './tablebase.ts';
 
 /**
@@ -265,6 +265,53 @@ describe('endgame drill', () => {
       }));
       const res = await draw(KQK);
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('the sharpest of the pool is drawn', () => {
+    /** The oracle with the winner given `keeping` winning moves instead
+        of one, so two tables of different sharpness can be compared. */
+    const loose = (keeping: number) => (fen: string): TablebaseAnswer | null => {
+      const answer = oracle(fen);
+      if (!answer || answer.category !== 'win') return answer;
+      return {
+        ...answer,
+        moves: answer.moves.map((m, i) => ({ ...m, category: i < keeping ? 'win' : 'draw' })),
+      };
+    };
+
+    it('reads sharpness as the share of moves that keep the win, over the line', async () => {
+      const source = fixed(async (fen) => loose(2)(fen));
+      const root = loose(2)(KQK_WHITE)!;
+      const score = await sharpness(join(dir, 'cache'), source, KQK_WHITE, root);
+      // Every decision on the line has two keeping moves out of its
+      // legal ones; the mean of those shares is well under a half and
+      // above zero.
+      expect(score).toBeGreaterThan(0);
+      expect(score).toBeLessThan(0.5);
+      const sharper = await sharpness(join(dir, 'cache'), fixed(async (fen) => oracle(fen)), KQK_WHITE, oracle(KQK_WHITE)!);
+      expect(sharper).toBeLessThan(score);
+    });
+
+    it('hands over the candidate with the fewest keeping moves', async () => {
+      // The table is sharp about one position of the pool and loose
+      // about the rest: whichever the dice draw first, the sharp one
+      // is the one handed over.
+      const seen: string[] = [];
+      build(() =>
+        fixed(async (fen) => {
+          const answer = oracle(fen);
+          if (!answer || answer.category !== 'win') return answer;
+          if (!seen.includes(fen)) seen.push(fen);
+          // The third acceptable root is the sharp one; every other
+          // winning position keeps the win by every move.
+          return seen.indexOf(fen) === 2 ? answer : loose(answer.moves.length)(fen);
+        }),
+      );
+      const res = await draw(KQK);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { fen: string };
+      expect(body.fen).toBe(seen[2]);
     });
   });
 
