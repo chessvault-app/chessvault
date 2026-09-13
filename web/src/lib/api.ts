@@ -100,12 +100,20 @@ export async function api<T = unknown>(
   return (await res.json().catch(() => undefined)) as T;
 }
 
-/** The server's answer, as a Response. Throws for the network, relocks on a 401. */
+/**
+ * The server's answer, as a Response. Throws for the network, relocks on a
+ * 401. A request its caller cancelled is not a network failure and keeps
+ * its AbortError: folded into "server unreachable" it made the Insights
+ * page report a load it had itself abandoned, after the request that
+ * replaced it had already started (a fresh vault sync makes the first
+ * answer slow enough to be overtaken).
+ */
 async function request(url: string, init?: RequestInit): Promise<Response> {
   let res: Response;
   try {
     res = await fetch(url, init);
-  } catch {
+  } catch (error) {
+    if (init?.signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error;
     throw new ApiError(
       0,
       navigator.onLine ? t('Vault server unreachable') : t('No internet connection'),

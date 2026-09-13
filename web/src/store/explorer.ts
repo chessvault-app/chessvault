@@ -319,9 +319,8 @@ export const useExplorer = create<ExplorerState>()(
             offline: false,
           });
         } catch (error) {
-          // api() folds an abort into ApiError status 0, so the signal —
-          // not the error — is what says this request was superseded
-          // rather than failed. Superseded stays silent, as ever.
+          // A superseded request is told by its signal, and stays silent
+          // as ever (api() passes the abort through unchanged).
           if (own.signal.aborted) return;
           if (fen !== latestFen) return;
           set({
