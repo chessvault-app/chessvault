@@ -36,6 +36,9 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **Insights: the database comparison lists six habits and offers the rest**
+  with Show all, instead of scrolling inside its card. On a phone the
+  page could only be scrolled past that card by aiming beside it.
 - **The flip button's icon turns the board the way the board turns.** It
   drew two triangles side by side, a mirror across a vertical axis; it
   now draws them above and below, on every board page.

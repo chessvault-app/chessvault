@@ -12,6 +12,7 @@ import { Segmented } from '@/components/segmented';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/skeletons';
+import { Button } from '@/components/ui/button';
 import { fieldDatabases, type FieldDatabase } from '@/repertoire/field';
 
 /**
@@ -68,6 +69,9 @@ const pct = (part: number, total: number): string => {
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 };
 
+/** Rows shown before the list asks to be opened; two lines each. */
+const COMPARE_FOLD = 6;
+
 export function CompareCard() {
   // The reference databases, the way the map asked for them. None (or
   // the demo, which has no indexed games behind it) is no card, not an
@@ -106,6 +110,11 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
   };
 
   const [rows, setRows] = useState<CompareRow[] | null>(null);
+  // The list folds after a few rows and grows on request, the openings
+  // table's own idiom (OPENING_FOLD). It was a scroller capped at 24rem,
+  // which on a phone was a well the page could only be scrolled past by
+  // aiming beside it (lanph3re's report).
+  const [all, setAll] = useState(false);
   const [failed, setFailed] = useState(false);
   // False when a band was asked for but the database's sums predate the
   // level buckets: the server answers corpus-wide, and calling that
@@ -117,6 +126,7 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
   useEffect(() => {
     let live = true;
     setRows(null);
+    setAll(false);
     setFailed(false);
     const query = `side=${color}&db=${encodeURIComponent(db)}${band ? `&band=${band}` : ''}`;
     void api<{ rows: CompareRow[]; banded?: boolean }>(`/api/mygames/compare?${query}`)
@@ -237,8 +247,8 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
                 : t('Nothing to flag: where this database has a real sample, your recent moves are among its usual answers.')}
           </p>
         ) : (
-          <div className="-mx-1 flex max-h-96 flex-col gap-px overflow-y-auto px-1">
-            {rows.map((row) => (
+          <div className="-mx-1 flex flex-col gap-px px-1">
+            {(all ? rows : rows.slice(0, COMPARE_FOLD)).map((row) => (
               <button
                 key={row.key}
                 type="button"
@@ -266,6 +276,11 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
                 </span>
               </button>
             ))}
+            {rows.length > COMPARE_FOLD && !all && (
+              <Button variant="ghost" size="sm" className="mt-1 self-start" onClick={() => setAll(true)}>
+                {t('Show all {n}', { n: rows.length.toLocaleString() })}
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
