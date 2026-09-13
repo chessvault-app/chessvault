@@ -812,8 +812,18 @@ function DialogContent({
   // dims is a surface rather than the strips on it. onAnimationEnd
   // reads only its own element's animations: a page's arrival bubbles
   // up through here too.
+  //
+  // `grow`: the card is a flex column whose children do not shrink, and
+  // this grid is the one child that should take whatever height the box
+  // has beyond its content. A `fill` sheet has that height by design (the
+  // band, or the window it was opened over), and its footers are written
+  // against it: `mt-auto` on the add-move field and the details panel's
+  // action row. Without it the grid was content-sized, `mt-auto` had no
+  // room to take, and a short list left the field mid-sheet with the
+  // sheet's own fill empty beneath it. A window sized by its content is
+  // unchanged: there is nothing to grow into.
   const stack = (
-    <div className="grid min-w-0">
+    <div className="grid min-w-0 grow">
       <div
         data-slot="dialog-under"
         // `inert`: the content under a page is neither read nor reached
