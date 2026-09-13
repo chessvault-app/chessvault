@@ -138,6 +138,21 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   const storage = useStorage(storageStamp);
   const pending = useSlowLoad(settings === null && loadError === null);
 
+  // The licences page's chunk, fetched while this page is read. That
+  // page has one way in, the link at the foot of this one, and on a
+  // phone the router holds the page transition until a route's chunk is
+  // in hand (lib/router, swapRoute): tapping the link on a cold cache
+  // fetched three small files first and the slide began only when they
+  // had landed, measured at 176ms with 150ms of simulated latency
+  // against the demo build. Warmed here, the module is cached before
+  // the tap and the slide starts on it. The cost is about 6 KB plus two
+  // shared chunks per Settings visit. Not on a desktop, where the route
+  // cuts and the chunk beats the paint anyway.
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 47.9375rem)').matches) return;
+    void import('@/settings/LicensesPage');
+  }, []);
+
   useEffect(() => {
     if (!anchor || settings === null) return;
     document.getElementById(anchor)?.scrollIntoView({ block: 'start' });
