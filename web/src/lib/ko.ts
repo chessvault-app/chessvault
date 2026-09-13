@@ -679,7 +679,7 @@ export const ko: Record<string, string> = {
   'Show glyphs': '기호 보기',
   // The glyph palette's names, one per NAG.
   'Good move': '좋은 수',
-  'Brilliant move': '명수',
+  'Brilliant move': '탁월',
   'Interesting move': '흥미로운 수',
   'Dubious move': '의심스러운 수',
   'Equal position': '동등한 형세',
@@ -2384,7 +2384,7 @@ export const ko: Record<string, string> = {
   'Move quality': '수의 질',
   'Verdict': '판정',
   'Share': '비율',
-  'Brilliant': '명수',
+  'Brilliant': '탁월',
   'Good': '좋은 수',
   'Theory': '이론',
   'Inaccuracy': '부정확',
