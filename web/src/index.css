@@ -2505,6 +2505,28 @@ cg-board square.check {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Below the band, the screen is not empty. iOS keeps painting the layout
+   viewport under the keyboard, and shows a strip of it through the
+   translucent accessory bar (the prev/next/done row) and in the gap
+   between that bar and the keys. A window's scrim used to end where its
+   band ends, so whatever poked below the band came through there
+   undimmed: a sheet resting at a low snap point behind an add-move
+   sheet showed its slider and its helper text in that strip (lanph3re's
+   photo, 2026-09-13). The band itself keeps its geometry, because the
+   Drawer's snap points are fractions of the Viewport's own height; the
+   scrim reaches on past it with the page's ground, so the strip reads as
+   the floor the sheets stand on and not as a third window. */
+.kb-open .vv-band[data-slot='dialog-overlay']::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: var(--kb, 0px);
+  background: var(--background);
+  pointer-events: none;
+}
+
 /* Windows Contrast Themes (forced-colors). The system replaces every
    colour, drops box-shadows, and keeps borders and outlines. Two things
    in this app are box-shadows that MEAN something: the card's hairline
