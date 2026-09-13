@@ -1041,17 +1041,17 @@ const MORE_GROUPS: {
   {
     heading: 'App',
     items: [
-      // Opening map and Insights are readings of your own games, not
-      // boards: sidebar rows on a desktop, so they sit with the app's
-      // other pages here rather than among the Tools.
-      { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
-      // The blurb is Home's, so two places never describe it two ways.
-      { section: 'insights', label: 'Insights', icon: ChartColumn, blurb: 'Your results by colour, time control and opening' },
-      // Notes and Books are sidebar rows on a desktop; here they sit with
-      // the app's other pages rather than under a heading of their own.
-      // Notes' blurb is Home's, so two places never describe it two ways.
+      // The rows here keep the sidebar's order (NAV above, then Databases
+      // and Settings below it), so a phone and a desktop list the same
+      // pages the same way. Notes and Books are collections the five-tab
+      // bar had no room for; the map and Insights are readings of your
+      // own games, not boards, so none of them sits among the Tools.
+      // Notes' and Insights' blurbs are Home's, so two places never
+      // describe them two ways.
       { section: 'notes', label: 'Notes', icon: SECTION_ICON.notes, blurb: 'Markdown with live boards' },
       { section: 'books', label: 'Books', icon: BookOpen, blurb: 'Read your chess books beside a board' },
+      { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
+      { section: 'insights', label: 'Insights', icon: ChartColumn, blurb: 'Your results by colour, time control and opening' },
       { section: 'databases', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
     ],

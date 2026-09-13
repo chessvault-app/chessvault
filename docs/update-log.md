@@ -11,6 +11,9 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **The phone's More page lists the app's pages in the sidebar's
+  order:** Notes, Books, Opening map, Insights, Databases, Settings.
+  It opened with the opening map before.
 - **Your seat in a game is a coloured name again, not a king.** The name
   of the side you played is in blue in every games list and in the
   details panel, where it was a near-invisible shade of the body ink
