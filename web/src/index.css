@@ -2554,15 +2554,11 @@ cg-board square.check {
 }
 
 /* A phone's page change goes through the browser's own View Transitions
-   (lib/router, swapRoute), in one of three shapes the router stamps on
-   the root as `data-nav`:
+   (lib/router, swapRoute), in one of two shapes the router stamps on
+   the root as `data-nav`. A tab switch between two top-level pages is
+   a cut and never comes here: it was a fade-through, and the fade read
+   as the screen flickering (lanph3re, 2026-09-13).
 
-   - `tab`, between two top-level pages: a fade-through. The old page
-     fades fully out and THEN the new one fades in, 60ms and 90ms on the
-     spring's two curves. It was a 150ms cross-fade, which has frames
-     where both pages are half there and text blurs; a fade-through has
-     none, and Material names it for exactly this move. Still 150ms in
-     all, so a tab and a pane land at the same tempo.
    - `push`, down into a leaf: the new page slides in from the right on
      the spring while the old one slides a third of the way out under it
      and darkens. No fade on either: this is the platform's own shape on
@@ -2584,17 +2580,11 @@ cg-board square.check {
 }
 /* The group too, not only the two images: the UA gives the root's group
    its own 250ms, and the live page stays hidden under the pseudo-elements
-   until the LAST animation ends, so a 150ms fade still held the new page
-   back for 250ms plus the frame after. Measured on the demo in
-   phone-emulated Chromium, opening a game from a games row: the
-   transition finished 366ms after the tap before this, and the board and
-   the toast could only appear after it. */
-:root[data-nav='tab']::view-transition-old(root) {
-  animation: vt-fade-out 60ms var(--pane-turn-ease-out) both;
-}
-:root[data-nav='tab']::view-transition-new(root) {
-  animation: vt-fade-in 90ms var(--pane-turn-ease) 60ms both;
-}
+   until the LAST animation ends, so a shorter animation on the images
+   alone still held the new page back for 250ms plus the frame after.
+   Measured on the demo in phone-emulated Chromium, opening a game from a
+   games row: the transition finished 366ms after the tap before this,
+   and the board and the toast could only appear after it. */
 :root[data-nav='push']::view-transition-group(root),
 :root[data-nav='pop']::view-transition-group(root) {
   animation-duration: var(--pane-turn);
@@ -2619,16 +2609,6 @@ cg-board square.check {
 }
 :root[data-nav='pop']::view-transition-new(root) {
   animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
-}
-@keyframes vt-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes vt-fade-in {
-  from {
-    opacity: 0;
-  }
 }
 @keyframes vt-slide-in {
   from {

@@ -110,21 +110,27 @@ export function useRoute(): Route {
 }
 
 /**
- * The page change itself, on a phone, as a 150ms cross-fade.
+ * The page change itself, on a phone: a slide into a leaf and back out.
  *
  * A route change was a hard cut: the old page gone, the new one there,
  * in one frame. On a desktop, where the sidebar stays and the column
  * changes, that reads as a tool; on a phone, where the whole screen
- * changes, it reads as a reload, and every native app crossfades or
+ * changes, opening a leaf reads as a reload, and every native app
  * slides between a hub and a leaf. The browser's own View Transitions
  * (Chrome 111, Safari 18) snapshot the old page, commit the new one and
- * fade between the two; the CSS is under `::view-transition` in
+ * animate between the two; the CSS is under `::view-transition` in
  * index.css. The route is committed synchronously inside the
  * transition's callback, which is what the API needs to snapshot both
  * states.
  *
+ * A TAB switch, between two top-level pages, is a cut. It was a 150ms
+ * fade-through, and in use the fade read as the screen flickering
+ * (lanph3re, 2026-09-13): two whole pages trading places through a
+ * blank frame is what a flicker IS, where a slide keeps the old page
+ * in view until the new one covers it. So only a push and a pop animate.
+ *
  * Not on a desktop (`md` and up), not under reduced motion, and not in a
- * browser without the API: those take the cut they always took. The
+ * browser without the API: those take the cut too. The
  * leave-guard branch above never comes here; it asks first and then
  * navigates again through this same path.
  *
@@ -141,7 +147,7 @@ export function useRoute(): Route {
  */
 function swapRoute(commit: () => void, appDriven: boolean, nav: Nav, to: string): void {
   const phone = window.matchMedia('(max-width: 47.9375rem)').matches;
-  if (!appDriven || !phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
+  if (nav === 'tab' || !appDriven || !phone || prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
     commit();
     disarmSharedBoard();
     return;
@@ -170,9 +176,9 @@ function swapRoute(commit: () => void, appDriven: boolean, nav: Nav, to: string)
 let waitToken: object | null = null;
 
 function swapRouteNow(commit: () => void, nav: Nav): void {
-  // The direction, for the stylesheet: a tab switch fades through, a
-  // push slides the new page in over the old, a pop slides the old one
-  // back out. Stamped on the root before the snapshot so the first frame
+  // The direction, for the stylesheet: a push slides the new page in
+  // over the old, a pop slides the old one back out. Stamped on the
+  // root before the snapshot so the first frame
   // is already the right animation, and cleared once it has played.
   document.documentElement.dataset.nav = nav;
   const transition = document.startViewTransition(() => {
@@ -192,9 +198,9 @@ function swapRouteNow(commit: () => void, nav: Nav): void {
 }
 
 /**
- * The shape of a page change: `tab` between two top-level pages, `push`
- * down into a leaf, `pop` back up. The CSS is under `[data-nav]` in
- * index.css.
+ * The shape of a page change: `tab` between two top-level pages (a cut,
+ * see swapRoute), `push` down into a leaf, `pop` back up. The CSS for
+ * the two that animate is under `[data-nav]` in index.css.
  *
  * Read off the two routes, not off which function the page called: a
  * leaf's back chevron may `navigate` to its list (the study page does,
@@ -214,7 +220,7 @@ type Nav = 'tab' | 'push' | 'pop';
     the other colour, not a leaf under it. Read as a push, the black map
     slid in from the right over the white one and slid back out on the
     way back, a page opening under a page rather than one map giving way
-    to its twin. Two depths of zero make it a tab, the fade-through. */
+    to its twin. Two depths of zero make it a tab, the cut. */
 function depth(hash: string): number {
   const { section, params } = parse(hash);
   if (section === 'openingmap' && (params[0] === 'black' || params[0] === 'white')) return 0;

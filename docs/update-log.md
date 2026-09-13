@@ -11,6 +11,10 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **Switching tabs on a phone is a cut.** The fade between two
+  top-level pages is gone; the new page is there in one frame. The
+  fade read as the screen flickering. Opening a leaf and coming back
+  still slide.
 - **The phone's More page lists the app's pages in the sidebar's
   order:** Notes, Books, Opening map, Insights, Databases, Settings.
   It opened with the opening map before.

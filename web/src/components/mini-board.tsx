@@ -31,7 +31,9 @@ declare module 'react' {
  * That paragraph will tempt the next person, so: on iOS these thumbnails
  * move by about a device pixel for a few frames around a phone's page
  * change, and the page change is the View Transition (lib/router). Read
- * off a 60fps recording of the Studies tab tapped twice (2026-09-10),
+ * off a 60fps recording of the Studies tab tapped twice (2026-09-10;
+ * a tab switch has been a cut since 2026-09-13, so that particular tap
+ * no longer transitions, but a push from a shelf card still does),
  * the board has two rasterisations. The live page draws one. The other
  * shows for exactly one frame at the tap, when the transition captures
  * the page, and again for the last four frames of the 150ms fade, when
