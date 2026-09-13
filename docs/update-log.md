@@ -17,6 +17,11 @@ a page.
   off, or one where a move that keeps the win takes a piece, is thrown
   back and another position drawn; the draw asks about up to 60
   positions instead of 40 to pay for the ones it now refuses.
+- **A drill move lands on the board at once.** The piece slid back to
+  its square while the tablebase graded the move, "Defending…" showed,
+  and the move then appeared a second time. The move stays where it was
+  put, and the defender's reply follows one animation after it rather
+  than one animation after the server answered.
 - **A scanned book opens in one round trip instead of hundreds.** pdf.js
   finishes an open by reading every page object in the file, one after
   another, so a 448-page scan cost 470 requests in a row before its first

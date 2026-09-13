@@ -317,6 +317,11 @@ function Drill({ classId }: { classId: string }) {
   const play = async (uci: string): Promise<void> => {
     if (!live || phase !== 'playing' || reviewing) return;
     const mine = seq.current;
+    // The move lands on the board now, not when the table has graded it:
+    // a piece that snapped back to wait for the server read as refused,
+    // and its return a moment later as a second move nobody made.
+    const moved = performance.now();
+    setUcis((u) => [...u, uci]);
     setPhase('replying');
     let verdict: {
       verdict: 'won' | 'threw' | 'held';
@@ -334,7 +339,6 @@ function Drill({ classId }: { classId: string }) {
       return;
     }
     if (mine !== seq.current) return;
-    setUcis((u) => [...u, uci]);
     if (verdict.verdict === 'won') {
       setPhase('won');
       return;
@@ -345,9 +349,11 @@ function Drill({ classId }: { classId: string }) {
       return;
     }
     const reply = verdict.reply!;
-    // One animation's grace before the reply lands, so the two moves
-    // are seen as two.
-    after(Math.max(450, boardAnimMs()), () => {
+    // One animation's grace after the solver's move before the reply
+    // lands, so the two moves are seen as two; the round trip has spent
+    // most or all of it already.
+    const grace = Math.max(450, boardAnimMs()) - (performance.now() - moved);
+    after(Math.max(0, grace), () => {
       if (mine !== seq.current) return;
       setUcis((u) => [...u, reply.uci]);
       setPhase('playing');
