@@ -474,6 +474,8 @@ function DialogContent({
   // chevron once it has hidden it completely — see use-sheet-cover.
   const { cap, covered: coversParent, ref: coverRef } = useSheetCover(small && phone);
 
+  // A page inside a window: the one that rides the router's push (below).
+  const page = !small && Boolean(coverParent);
   const shut = hidden || covered > 0;
   // Whether this window has come back from a page. A desktop window parks
   // with display:none (the overlay below), so coming back re-displays
@@ -829,8 +831,20 @@ function DialogContent({
                 // sees `open` flip and never marks a start. The exit is
                 // the primitive's ending style, which the Dialog wrapper
                 // above makes it see (see `leaving` there).
-                'animate-in slide-in-from-bottom',
-                'data-ending-style:transform-[translate3d(0,100%,0)] data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
+                // A nested PAGE (a default-sized sheet opened from inside
+                // another, which parks it and opens as tall as it) is a
+                // step down into a leaf, not a second slab: it rides the
+                // router's own push and pop (index.css, `data-nav`), in
+                // from the right on the spring and back out the same way
+                // on the spring run backwards. It used to rise from the
+                // bottom over a sheet the same height, which read as the
+                // sheet replacing itself. A layer, and a first sheet,
+                // still rise from the thumb's edge.
+                page ? 'animate-in slide-in-from-right' : 'animate-in slide-in-from-bottom',
+                page
+                  ? 'data-ending-style:transform-[translate3d(100%,0,0)]'
+                  : 'data-ending-style:transform-[translate3d(0,100%,0)]',
+                'data-ending-style:duration-(--pane-turn) data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
                 'data-swiping:duration-0 data-swiping:select-none',
                 // Resting low: not a scroller, so a drag up lifts the
                 // sheet (see SheetLoweredContext).
