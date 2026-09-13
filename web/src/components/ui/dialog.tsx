@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import { ChevronLeft, XIcon, type LucideIcon } from 'lucide-react';
@@ -28,9 +29,13 @@ export { CoverParent };
  * a device:
  *
  *   - A page and a layer (see CoverParent): a default-sized window opened
- *     from inside another parks it and grows the back chevron; a small one
- *     floats over it, capped to its height, and grows the chevron only
- *     once it has hidden the window completely (use-sheet-cover).
+ *     from inside another is drawn INSIDE that window's card, over its
+ *     content, and grows the back chevron; the card, its scrim, its
+ *     scroller and its swipe stay the window's, and the content under
+ *     the page steps aside the way the page under a pushed route does
+ *     (`stack`, below). A small one floats over it, capped to its
+ *     height, and grows the chevron only once it has hidden the window
+ *     completely (use-sheet-cover).
  *   - The keyboard: the layer is pinned to the visible band while one is
  *     up (`vv-band`, index.css), the sheet takes a share of THAT, and a
  *     window whose only input is a text field puts the caret in it as it
@@ -92,6 +97,23 @@ const SheetContext = React.createContext(false);
  * scroller is the sheet's again, which is the Drawer's own rule.
  */
 const SheetLoweredContext = React.createContext(false);
+/**
+ * The Dialog's exit, seen from its card. `leaving` is the held close (see
+ * the Dialog); `finish` is what the card calls once its exit has played,
+ * for a card that plays it itself: a PAGE, which has no primitive Popup
+ * to report the end of an ending style. `pageMode` is how the card tells
+ * the Dialog that it is one, so the close is held for it on a desktop
+ * too.
+ */
+const DialogLeaveContext = React.createContext<{
+  leaving: boolean;
+  finish: () => void;
+  pageMode: React.RefObject<boolean>;
+} | null>(null);
+
+/** Whether the reader has asked for less motion, read when it matters. */
+const reducedMotion = (): boolean =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** How a DialogContent closes itself; the wrapper hands onOpenChange down. */
 const DialogCloseContext = React.createContext<() => void>(() => {});
@@ -162,10 +184,18 @@ function Dialog({
   const [leaving, setLeaving] = React.useState(false);
   const onOpenChangeRef = React.useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
+  // A page holds its close the same way on either shape: it plays its
+  // own exit (DialogContent) and reports back through `finish`.
+  const pageMode = React.useRef(false);
   const close = React.useCallback(() => {
-    if (phone && open) setLeaving(true);
+    if ((phone || pageMode.current) && open) setLeaving(true);
     else onOpenChangeRef.current?.(false);
   }, [phone, open]);
+  const finish = React.useCallback(() => {
+    onOpenChangeRef.current?.(false);
+    setLeaving(false);
+  }, []);
+  const leave = React.useMemo(() => ({ leaving, finish, pageMode }), [leaving, finish]);
   const handleOpenChangeComplete = (isOpen: boolean): void => {
     onOpenChangeComplete?.(isOpen);
     if (!isOpen && leaving) {
@@ -215,6 +245,7 @@ function Dialog({
   return (
     <SheetContext.Provider value={phone}>
       <SheetLoweredContext.Provider value={lowered}>
+      <DialogLeaveContext.Provider value={leave}>
       <DialogCloseContext.Provider value={close}>
         <DialogGuardContext.Provider value={guards}>
           <Root
@@ -226,6 +257,7 @@ function Dialog({
           />
         </DialogGuardContext.Provider>
       </DialogCloseContext.Provider>
+      </DialogLeaveContext.Provider>
       </SheetLoweredContext.Provider>
     </SheetContext.Provider>
   );
@@ -259,7 +291,7 @@ function DialogOverlay({
   enter = true,
   ...props
 }: DialogPrimitive.Backdrop.Props & {
-  /** Fade in as the window opens. Off for a window coming back from a page: see `returned`. */
+  /** Fade in as the window opens. */
   enter?: boolean;
 }) {
   return (
@@ -269,8 +301,9 @@ function DialogOverlay({
       // and in this file the Backdrop is the layout box the Popup lives
       // inside (the structural departure noted at the top), so without
       // this a window opened from inside another window rendered
-      // nothing at all: the parent parked itself for a page that never
-      // appeared, which read as the whole dialog just closing. Each
+      // nothing at all (back when a page was a card of its own): the
+      // parent hid itself for a page that never appeared, which read as
+      // the whole dialog just closing. Each
       // window owning its overlay is also what the outside-press guard
       // assumes (ignoreOutside compares overlay ancestry).
       forceRender
@@ -351,7 +384,7 @@ const NOT_A_DRAG = 'input, textarea, select, [contenteditable="true"], canvas';
  * window that was not open claimed Escape and the platform's Back.
  *
  * `shut` still has to be read here, not just relied on: a window mounted
- * `hidden`, or parked under a page it opened, IS inside the portal.
+ * `hidden` IS inside the portal.
  */
 function DialogOpenEffects({ shut, request }: { shut: boolean; request: () => void }) {
   useCloseWatcher(request, !shut);
@@ -427,12 +460,18 @@ function DialogContent({
   const lowered = React.useContext(SheetLoweredContext);
   const small = size === 'sm';
 
-  // The second-page bookkeeping. `covered` counts child windows currently
-  // over this one; `cover` is what those children call, handed down by
-  // context. `height` is this card, read live.
+  // The second-page bookkeeping. `covered` counts the pages currently
+  // drawn over this window's content; `cover` is what those pages call,
+  // handed down by context, and what they hand it is their way back,
+  // which is what Escape and the platform's Back mean while they are
+  // up (pageRequests, newest last). `host` is the cell they draw into;
+  // `height` is this card, read live.
   const [covered, setCovered] = React.useState(0);
+  const [host, setHost] = React.useState<HTMLElement | null>(null);
+  const pageRequests = React.useRef<Array<() => void>>([]);
   const card = React.useRef<HTMLElement | null>(null);
   const coverParent = React.useContext(CoverParent);
+  const leave = React.useContext(DialogLeaveContext);
 
   // The X's verb: shut this window, then every window it was opened
   // inside (see CoverParent.dismissAll). Read through refs so the handle
@@ -451,71 +490,91 @@ function DialogContent({
 
   const asParent = React.useMemo(
     () => ({
-      cover: () => {
+      cover: (request: () => void) => {
+        pageRequests.current.push(request);
         setCovered((c) => c + 1);
-        return () => setCovered((c) => c - 1);
+        let released = false;
+        return () => {
+          if (released) return;
+          released = true;
+          pageRequests.current = pageRequests.current.filter((r) => r !== request);
+          setCovered((c) => c - 1);
+        };
       },
       height: () => card.current?.offsetHeight ?? 0,
+      host,
       dismissAll,
     }),
-    [dismissAll],
+    [dismissAll, host],
   );
 
-  // A PAGE parks the window it came from and opens AS TALL AS it, on a
-  // phone — a floor, not a size, measured once in the same effect.
-  const [pageMinH, setPageMinH] = React.useState(0);
-  React.useEffect(() => {
-    if (small || hidden || !coverParent) return;
-    setPageMinH(coverParent.height());
-    return coverParent.cover();
-  }, [small, hidden, coverParent]);
-
-  // A LAYER never parks its parent; it is capped to it, and grows the
+  // A LAYER never covers its parent; it is capped to it, and grows the
   // chevron once it has hidden it completely — see use-sheet-cover.
   const { cap, covered: coversParent, ref: coverRef } = useSheetCover(small && phone);
 
-  // A page inside a window: the one that rides the router's push (below).
-  const page = !small && Boolean(coverParent);
-  const shut = hidden || covered > 0;
-  // Whether this window has come back from a page. A desktop window parks
-  // with display:none (the overlay below), so coming back re-displays
-  // the card, and a re-displayed element starts its CSS animations over:
-  // the card would zoom in a second time, and the way back from a page
-  // is instant. Once returned, the enter animation is off for good; it
-  // has already played.
-  const [returned, setReturned] = React.useState(false);
-  const wasCovered = React.useRef(false);
-  React.useLayoutEffect(() => {
-    if (covered > 0) {
-      wasCovered.current = true;
-      return;
-    }
-    if (!wasCovered.current) return;
-    wasCovered.current = false;
-    setReturned(true);
-    // The phone's Viewport parks with visibility:hidden instead, because
-    // the page over it reads its height live, and a parked card that
-    // comes back from visibility:hidden is what WebKit once repainted
-    // from a stale layout (an iPad showed the Position card cut off
-    // ~16px short, its bottom padding and corners missing, until any
-    // field inside it changed, back when the desktop branch parked the
-    // same way). One forced layout of the card as it comes back is what
-    // that tap was doing. The desktop branch gets a fresh layout from
-    // the display flip itself.
-    if (!phone) return;
-    const el = card.current;
-    if (!el) return;
-    const prior = el.style.display;
-    el.style.display = 'none';
-    void el.offsetHeight;
-    el.style.display = prior;
-  }, [covered, phone]);
+  // A PAGE: a default-sized window opened from inside another. It is
+  // drawn inside that window's card (see `stack` below), not as a card
+  // of its own, and the Dialog holds its close for it (pageMode).
+  const page = !small && !hidden && Boolean(coverParent);
+  if (leave) leave.pageMode.current = page;
+  const shut = hidden;
   // A nested page that names no destination goes back to the window it
   // covered — closing a page IS going back.
-  const back = onBack ?? (!small && coverParent ? close : undefined);
+  const back = onBack ?? (page ? close : undefined);
   // What Escape and Android's Back mean here: for a small window on its
-  // second page, "back to the first"; for everything else, close.
-  const request = small ? (onBack ?? close) : close;
+  // second page, "back to the first"; for a page, back; for everything
+  // else, close. While a page is up over THIS window, they mean what
+  // that page says (`route`, in the guards below).
+  const request = small || page ? (onBack ?? close) : close;
+  const requestRef = React.useRef(request);
+  requestRef.current = request;
+  const route = React.useCallback(() => {
+    const top = pageRequests.current[pageRequests.current.length - 1];
+    (top ?? requestRef.current)();
+  }, []);
+
+  // The page tells its parent it is up for as long as it stands, and
+  // lets go as it STARTS to leave, so the content under it returns on
+  // the same clock the page leaves on.
+  const release = React.useRef<(() => void) | null>(null);
+  React.useEffect(() => {
+    if (!page || !coverParent) return;
+    const done = coverParent.cover(() => requestRef.current());
+    release.current = done;
+    return () => {
+      done();
+      release.current = null;
+    };
+  }, [page, coverParent]);
+  const leaving = Boolean(page && leave?.leaving);
+  React.useEffect(() => {
+    if (!leaving || !leave) return;
+    release.current?.();
+    // With motion reduced the exit plays no animation, so nothing
+    // would report its end; and a fallback in case an animation is
+    // cut short (a tab hidden mid-exit fires no animationend).
+    if (reducedMotion()) {
+      leave.finish();
+      return;
+    }
+    const fallback = window.setTimeout(leave.finish, 600);
+    return () => window.clearTimeout(fallback);
+  }, [leaving, leave]);
+
+  // The content UNDER a page: it steps a third of the way left and
+  // darkens as the page arrives (the router's own push, index.css),
+  // then is out of sight and inert until the page leaves, when it comes
+  // back the same way. Instant, both ways, under reduced motion and on a
+  // desktop, where a page fades in over it.
+  const [under, setUnder] = React.useState<'shown' | 'leaving' | 'hidden' | 'returning'>('shown');
+  React.useLayoutEffect(() => {
+    const animate = phone && !reducedMotion();
+    if (covered > 0) {
+      setUnder((u) => (u === 'hidden' || u === 'leaving' ? u : animate ? 'leaving' : 'hidden'));
+    } else {
+      setUnder((u) => (u === 'shown' || u === 'returning' ? u : animate ? 'returning' : 'shown'));
+    }
+  }, [covered, phone]);
 
   // The dismissal routing the Root's onOpenChange consults (see the top).
   React.useEffect(() => {
@@ -524,11 +583,11 @@ function DialogContent({
       // A shut window ignores Escape outright; CloseWatcher, where it
       // exists, hears the same un-defaulted keydown and answers instead.
       escape: () => {
-        if (!shut && !window.CloseWatcher) request();
+        if (!shut && !window.CloseWatcher) route();
       },
       // The Drawer's Android watcher already IS the platform's answer.
       closeRequest: () => {
-        if (!shut) request();
+        if (!shut) route();
       },
       // Base's outside-press listener is document-wide, so a press on a
       // LATER layer — a menu, a picker window over this one, that window's
@@ -585,6 +644,11 @@ function DialogContent({
           // start is read.
           node.dataset.noEnter = '';
           field.focus();
+        } else if (page) {
+          // A page has no Popup of its own to take the focus: the
+          // content it covers has just gone inert, which drops whatever
+          // focus was in it, so the page takes it, as a container.
+          node.focus({ preventScroll: true });
         }
       }
     }
@@ -700,9 +764,12 @@ function DialogContent({
   // use is its own business. [&>*]:shrink-0: children keep their size and
   // the WINDOW scrolls (which is also what hands the Drawer its swipe
   // arbitration: the drag is the sheet's only once this scroller is at
-  // its top).
+  // its top). overflow-x-hidden, said outright: a page arriving from the
+  // right stands outside the card for a third of a second, and an
+  // `auto` x-axis (which is what `overflow-y-auto` alone implies) would
+  // make that a horizontal scroll range for as long as it did.
   const cardClass = cn(
-    'bg-popover text-popover-foreground ring-window-ring flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
+    'bg-popover text-popover-foreground ring-window-ring flex w-full flex-col gap-4 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
     title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
     className,
   );
@@ -711,10 +778,83 @@ function DialogContent({
     // The parent's height as a VARIABLE, read into the min() below,
     // so the parent's number and the band's own are both ceilings.
     ...(phone && small && cap ? ({ '--sheet-cap': `${cap}px` } as React.CSSProperties) : undefined),
-    // The page floor, phones only, capped by the same 88% the
-    // max-height uses.
-    ...(phone && !small && pageMinH ? { minHeight: `min(${pageMinH}px, 88%)` } : undefined),
   };
+
+  // What every shape of this window draws inside its box: its own
+  // content in one grid cell, and the cell the pages opened from it
+  // draw into over it (`host`, display:contents so each page is a grid
+  // item of the same cell). One cell, so the card is as tall as the
+  // taller of the two and a page stands in the box it covers; the
+  // page's own content then fills that height. Each layer reaches into
+  // the card's side padding (-mx-4 px-4) and carries the card's own
+  // fill, so what moves is the whole surface, padding and all, and what
+  // dims is a surface rather than the strips on it. onAnimationEnd
+  // reads only its own element's animations: a page's arrival bubbles
+  // up through here too.
+  const stack = (
+    <div className="grid min-w-0">
+      <div
+        data-slot="dialog-under"
+        // `inert`: the content under a page is neither read nor reached
+        // by Tab.
+        inert={covered > 0 || undefined}
+        onAnimationEnd={(e) => {
+          if (e.target !== e.currentTarget) return;
+          setUnder((u) => (u === 'leaving' ? 'hidden' : u === 'returning' ? 'shown' : u));
+        }}
+        className={cn(
+          'bg-popover col-start-1 row-start-1 -mx-4 flex min-w-0 flex-col gap-4 px-4 [&>*]:shrink-0',
+          under === 'leaving' && 'page-under-leave',
+          under === 'returning' && 'page-under-return',
+          under === 'hidden' && 'invisible',
+        )}
+      >
+        {inner}
+      </div>
+      <div ref={setHost} className="contents" />
+    </div>
+  );
+
+  if (page) {
+    // The parent's host mounts with its card; a page rendered in the
+    // same commit waits one render for it.
+    if (!coverParent?.host) return null;
+    return createPortal(
+      <>
+        <DialogOpenEffects shut={false} request={request} />
+        <div
+          ref={setNode}
+          data-slot="dialog-page"
+          role="group"
+          aria-labelledby={title !== undefined ? titleId : undefined}
+          tabIndex={-1}
+          onAnimationEnd={(e) => {
+            if (e.target === e.currentTarget && leaving) leave?.finish();
+          }}
+          className={cn(
+            // Over the content it covers, whose title row is sticky and
+            // z-10: a stacking context of its own, above that.
+            'bg-popover relative z-20 col-start-1 row-start-1 -mx-4 flex min-w-0 flex-col gap-4 px-4 outline-none [&>*]:shrink-0',
+            // The router's push and pop on a phone (index.css, data-nav):
+            // in from the right on the spring, out to the right on the
+            // spring run backwards. A desktop card has no push; the page
+            // fades, on the card's own 100ms.
+            phone
+              ? 'animate-in slide-in-from-right duration-(--pane-turn) ease-(--pane-turn-ease)'
+              : 'animate-in fade-in-0 duration-100',
+            leaving &&
+              (phone
+                ? 'animate-out slide-out-to-right fill-mode-forwards duration-(--pane-turn) ease-(--pane-turn-ease-out) pointer-events-none'
+                : 'animate-out fade-out-0 fill-mode-forwards duration-100 pointer-events-none'),
+            'motion-reduce:animate-none',
+          )}
+        >
+          {stack}
+        </div>
+      </>,
+      coverParent.host,
+    );
+  }
 
   if (phone) {
     return (
@@ -744,9 +884,6 @@ function DialogContent({
               // (below): the dim and the blur used to snap on with it.
               'transition-opacity duration-(--pane-turn) ease-(--pane-turn-ease) animate-in fade-in-0',
               'data-ending-style:opacity-0 data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out)',
-              // Parked under a page: out of sight, but still laid out, so
-              // the page over it can read the height it is matching.
-              covered > 0 && 'invisible',
             )}
             // Inline, because `hidden` has to beat `flex` whatever order
             // the stylesheet emitted them in.
@@ -831,20 +968,8 @@ function DialogContent({
                 // sees `open` flip and never marks a start. The exit is
                 // the primitive's ending style, which the Dialog wrapper
                 // above makes it see (see `leaving` there).
-                // A nested PAGE (a default-sized sheet opened from inside
-                // another, which parks it and opens as tall as it) is a
-                // step down into a leaf, not a second slab: it rides the
-                // router's own push and pop (index.css, `data-nav`), in
-                // from the right on the spring and back out the same way
-                // on the spring run backwards. It used to rise from the
-                // bottom over a sheet the same height, which read as the
-                // sheet replacing itself. A layer, and a first sheet,
-                // still rise from the thumb's edge.
-                page ? 'animate-in slide-in-from-right' : 'animate-in slide-in-from-bottom',
-                page
-                  ? 'data-ending-style:transform-[translate3d(100%,0,0)]'
-                  : 'data-ending-style:transform-[translate3d(0,100%,0)]',
-                'data-ending-style:duration-(--pane-turn) data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
+                'animate-in slide-in-from-bottom',
+                'data-ending-style:transform-[translate3d(0,100%,0)] data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out) data-ending-style:pointer-events-none',
                 'data-swiping:duration-0 data-swiping:select-none',
                 // Resting low: not a scroller, so a drag up lifts the
                 // sheet (see SheetLoweredContext).
@@ -855,7 +980,7 @@ function DialogContent({
               )}
               {...props}
             >
-              {inner}
+              {stack}
             </DrawerPrimitive.Popup>
           </DrawerPrimitive.Viewport>
         </div>
@@ -874,19 +999,7 @@ function DialogContent({
         // retires the overlay's own `flex`; its `justify-center` is a
         // no-op on the utility's single full-width column.
         className="grid optical-center p-4"
-        enter={!returned}
-        // Parked under a page, or hidden by its caller: gone from layout
-        // entirely, not visibility:hidden. Nothing on a desktop reads the
-        // parked card's height (the page floor and the layer cap are the
-        // phone's). An invisible card is still a composited layer in
-        // WebKit, and one it has painted from stale state before (the
-        // relayout kick above, when the page closed back to it). An iPad
-        // also showed the editor's Position card for a moment after a
-        // loaded position tore the window and its Load page down
-        // together, though both leave the DOM in one commit (measured in
-        // Chromium): a stale layer is the explanation left, and a
-        // display:none card has no layer to show. Not measured on the
-        // device itself.
+        // Hidden by its caller: gone from layout entirely.
         style={shut ? { display: 'none' } : undefined}
       >
         <DialogPrimitive.Popup
@@ -912,13 +1025,12 @@ function DialogContent({
             cardClass,
             'h-auto max-h-full rounded-xl',
             small ? 'max-w-sm' : size === 'full' ? 'max-w-4xl' : 'max-w-lg',
-            // The desktop card arrives the stock way, once (see `returned`).
-            'duration-100',
-            !returned && 'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
+            // The desktop card arrives the stock way.
+            'duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
           )}
           {...props}
         >
-          {inner}
+          {stack}
         </DialogPrimitive.Popup>
       </DialogOverlay>
     </DialogPortal>

@@ -25,10 +25,13 @@ a page.
   by a finger drawn up anywhere on it. The opening map's move details
   scrolled their content instead and never rose; the sheet scrolls only
   once it stands at the top.
-- **A page opened inside a sheet slides in from the right and back out
-  the same way,** as pages do elsewhere in the app, instead of rising
-  from the bottom over a sheet of the same height. The editor's Load
-  position, opened from Position, is one.
+- **A page opened inside a window turns inside it.** The window, its
+  scrim and its grabber stay; the content slides in from the right over
+  what was there, which steps aside and dims the way a pushed page does,
+  and Back brings it out the same way. It used to be a second sheet
+  rising from the bottom over the first, hidden. The editor's Load
+  position, opened from Position, and the picture page after it are
+  the pages this changes, on a phone and on a desktop.
 - **Insights and the analysis glyphs call a brilliant move 탁월** in
   Korean, where they said 명수.
 

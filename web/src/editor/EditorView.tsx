@@ -1140,9 +1140,10 @@ export function EditorView({
               and the standalone stacked editor, in its own clothes. */}
           <DialogContent title="Position">
             {positionPanels('sheet')}
-            {/* The second page, written inside the first: Modal parks this
-                sheet behind it, wires the back chevron to onClose and holds
-                the height. Nothing here says any of that. */}
+            {/* The second page, written inside the first: DialogContent
+                draws it inside this sheet's card, over the fields, wires
+                the back chevron to onClose and turns it like a page.
+                Nothing here says any of that. */}
             {loadPage && (
               <Dialog
                 open
@@ -1174,7 +1175,7 @@ export function EditorView({
                   />
                   {/* And the THIRD page, inside the second. It was a sibling
                       window with `hidden` wired by hand at both levels; as a
-                      page it parks the load form itself, and its back chevron
+                      page it covers the load form itself, and its back chevron
                       lands on the form you left rather than two pages back at
                       Position. */}
                   {photoTemplates !== null && (

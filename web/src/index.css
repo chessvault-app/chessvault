@@ -2608,6 +2608,16 @@ cg-board square.check {
     filter: brightness(0.85);
   }
 }
+/* The content under a page inside a window (components/ui/dialog,
+   `stack`): the same under-out and under-in the router's push and pop
+   give the page below, on the same clock, so a page turning inside a
+   sheet moves like a page turning in the app. */
+@utility page-under-leave {
+  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
+}
+@utility page-under-return {
+  animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
+}
 @keyframes vt-under-in {
   from {
     transform: translateX(-33%);

@@ -99,7 +99,7 @@ export function LoadPositionButton({
           }}
         >
           {/* The picture flow is this window's next PAGE, so it is written
-              inside it: the form parks while the picture is up and is
+              inside it: the form steps aside while the picture is up and is
               there again behind the back chevron. It used to REPLACE the
               form — the dialog unmounted the moment templates arrived —
               and backing out of a picture therefore dropped you all the
