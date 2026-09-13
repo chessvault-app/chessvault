@@ -40,9 +40,38 @@ import { drawCandidates, drillable, type Rng } from './endgamePositions.ts';
  */
 
 /** How many random positions a draw is willing to ask about before
-    giving up on the class. Most classes settle in a handful; a public
-    server answers each in a fraction of a second. */
-const DRAW_TRIES = 40;
+    giving up on the class. Most classes settle in a handful, and the
+    one-sided ones a class throws back cost a try each; a public server
+    answers each in a fraction of a second. */
+const DRAW_TRIES = 60;
+
+/**
+ * How far off the win must be for a draw to count as an ending. A win
+ * the table puts under this many plies away is a puzzle with a long
+ * tail, not a technique to practise: the first drills drawn were mates
+ * in two and rooks won on the spot, which the reader called one-sided.
+ * Distance to mate is the true measure and the small tables carry it;
+ * the larger only know the distance to a zeroing move, which is shorter
+ * than the win, so a floor on it is the weaker of the two tests, not a
+ * wrong one.
+ */
+export const MIN_WIN_PLIES = 10;
+
+/**
+ * Whether a drawn position is already decided: a win too short to
+ * practise, or one where a move that keeps the win takes a piece. A
+ * hanging piece is a tactic, and the position after it is a different
+ * class from the one that was asked for.
+ */
+export function oneSided(answer: TablebaseAnswer, pos: Chess): boolean {
+  const distance = answer.dtm ?? answer.dtz;
+  if (distance !== null && distance < MIN_WIN_PLIES) return true;
+  return answer.moves.some((m) => {
+    if (!holds(m.category)) return false;
+    const move = parseUci(m.uci);
+    return !!move && 'to' in move && pos.board.get(move.to) !== undefined;
+  });
+}
 
 /** Whether a move keeps the win. `maybe-win` is the server unsure only
     about the fifty-move rounding, which is not a mistake the solver
@@ -124,10 +153,11 @@ export function endgameDrillApi(
       if (!answer) continue;
       held += 1;
       // A win, and one with something to find: a position already
-      // mated or stalemated has no move, and one whose best move mates
-      // at once is a puzzle, not an ending.
+      // mated or stalemated has no move, and one that is over in a few
+      // plies, or wins a piece at once, is a puzzle, not an ending.
       if (answer.category !== 'win' || answer.checkmate || answer.stalemate) continue;
-      if (answer.moves[0]?.checkmate) continue;
+      const drawn = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+      if (oneSided(answer, drawn)) continue;
       return c.json({
         fen,
         side: fen.split(' ')[1] === 'b' ? 'black' : 'white',

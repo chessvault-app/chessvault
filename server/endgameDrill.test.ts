@@ -8,7 +8,7 @@ import { parseFen } from 'chessops/fen';
 import { makeSan } from 'chessops/san';
 import { makeUci, parseUci } from 'chessops/util';
 import type { Color } from 'chessops/types';
-import { endgameDrillApi, holds } from './endgameDrill.ts';
+import { MIN_WIN_PLIES, endgameDrillApi, holds, oneSided } from './endgameDrill.ts';
 import type { TablebaseAnswer, TablebaseMove, TablebaseProbe } from './tablebase.ts';
 
 /**
@@ -229,6 +229,42 @@ describe('endgame drill', () => {
       build(null);
       const res = await post('/api/endgames/move', { fen: KQK_WHITE, uci: legal(KQK_WHITE)[0] });
       expect(res.status).toBe(503);
+    });
+  });
+
+  describe('one-sided positions are not drawn', () => {
+    const at = (fen: string) => Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+    /** Kf6 and Qg1 against Kh8 with a black rook on a1: Qxa1 keeps the win. */
+    const HANGING = '7k/8/5K2/8/8/8/8/r5Q1 w - - 0 1';
+
+    it('rejects a win the table puts too close', () => {
+      const answer = oracle(KQK_WHITE)!;
+      expect(oneSided({ ...answer, dtm: MIN_WIN_PLIES }, at(KQK_WHITE))).toBe(false);
+      expect(oneSided({ ...answer, dtm: MIN_WIN_PLIES - 1 }, at(KQK_WHITE))).toBe(true);
+      // Without a distance to mate, the distance to zeroing stands in.
+      expect(oneSided({ ...answer, dtm: null, dtz: 4 }, at(KQK_WHITE))).toBe(true);
+      expect(oneSided({ ...answer, dtm: null, dtz: null }, at(KQK_WHITE))).toBe(false);
+    });
+
+    it('rejects a position where a move that keeps the win takes a piece', () => {
+      const answer = oracle(KQK_WHITE)!;
+      const capture: TablebaseMove = { ...answer.moves[0]!, uci: 'g1a1', san: 'Qxa1', category: 'win' };
+      const quiet: TablebaseMove = { ...capture, uci: 'g1g7', san: 'Qg7' };
+      expect(oneSided({ ...answer, moves: [capture] }, at(HANGING))).toBe(true);
+      expect(oneSided({ ...answer, moves: [quiet] }, at(HANGING))).toBe(false);
+      // A capture that throws the win is the solver's problem, not the draw's.
+      expect(oneSided({ ...answer, moves: [{ ...capture, category: 'draw' }] }, at(HANGING))).toBe(false);
+    });
+
+    it('is applied by the draw', async () => {
+      // The oracle's positions are ten plies off, on the floor; a table
+      // that calls everything a mate in two has nothing to hand over.
+      build(() => fixed(async (fen) => {
+        const answer = oracle(fen);
+        return answer && { ...answer, dtm: 3 };
+      }));
+      const res = await draw(KQK);
+      expect(res.status).toBe(404);
     });
   });
 

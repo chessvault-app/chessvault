@@ -11,6 +11,12 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **An endgame drill is no longer drawn already won.** The draw kept
+  any position the tablebase called a win, so a mate in two or a rook
+  hanging to the first move counted as an ending. A win under ten plies
+  off, or one where a move that keeps the win takes a piece, is thrown
+  back and another position drawn; the draw asks about up to 60
+  positions instead of 40 to pay for the ones it now refuses.
 - **A scanned book opens in one round trip instead of hundreds.** pdf.js
   finishes an open by reading every page object in the file, one after
   another, so a 448-page scan cost 470 requests in a row before its first
