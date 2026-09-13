@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { nameSharedBoard } from '@/lib/shared-board';
 import { Button } from '@/components/ui/button';
 import { TitleTip } from '@/components/title-tip';
-import { ActionMenu, type MenuAction } from '@/components/action-menu';
+import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
 import { MiniBoard } from '@/components/mini-board';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { t } from '@/lib/i18n';
@@ -85,6 +85,11 @@ export function ShelfCard({
     // sits beside one without, and cards of two heights in the same row
     // read as a broken grid rather than as two different notes.
     <li data-slot="shelf-card" className="h-full">
+      {/* A right click on the surface is the ⋯ menu, on a desktop: the
+          same verbs, the game rows' own shape (lanph3re's call). Under a
+          thumb the primitive stands aside, since the swipe and the ⋯
+          already answer there. */}
+      <ActionContextMenu title={menuTitle ?? title} actions={actions}>
       <div
         // The surface answers a click, and only a click: it is not a
         // button. It was `role="button"` with the bookmark and the ⋯
@@ -304,6 +309,7 @@ export function ShelfCard({
 
         {children}
       </div>
+      </ActionContextMenu>
     </li>
   );
 }

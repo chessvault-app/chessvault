@@ -36,6 +36,9 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **A right click on a shelf card opens its ⋯ menu on a desktop,** on the
+  Studies, Notes and Books shelves and on a folder's heading, as a right
+  click on a game row already did.
 - **Databases: the panel's two faces are underlined tabs,** the Games
   page's own shape, rather than a raised pill in a track.
 - **Puzzle book tiles: the tier's tip opens on its icon, not the whole**

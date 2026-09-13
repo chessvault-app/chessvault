@@ -1,6 +1,6 @@
 import { Folder as FolderIcon, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { ActionMenu } from '@/components/action-menu';
+import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { t } from '@/lib/i18n';
@@ -33,8 +33,30 @@ export function ShelfFolderHeader({
   const [renaming, setRenaming] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  // The ⋯ menu's verbs, and the right-click menu's: one list, so the two
+  // cannot drift.
+  const actions: MenuAction[] = [
+    { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+    ...(empty
+      ? [
+          {
+            label: 'Delete this folder',
+            icon: Trash2,
+            danger: true,
+            onSelect: () => {
+              void onDelete().then((err) => {
+                setFailure(err);
+                // A refusal is worth reading once, not forever.
+                if (err) setTimeout(() => setFailure(null), 5000);
+              });
+            },
+          },
+        ]
+      : []),
+  ];
 
   return (
+    <ActionContextMenu title={folder} actions={actions}>
     <div className="group/folder flex h-6 items-center gap-1.5">
       <FolderIcon className="text-muted-foreground size-3.5 shrink-0" />
       <TitleTip title={t('Double-click to rename')}>
@@ -61,25 +83,7 @@ export function ShelfFolderHeader({
         title={folder}
         open={menuOpen}
         onOpenChange={setMenuOpen}
-        actions={[
-          { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-          ...(empty
-            ? [
-                {
-                  label: 'Delete this folder',
-                  icon: Trash2,
-                  danger: true,
-                  onSelect: () => {
-                    void onDelete().then((err) => {
-                      setFailure(err);
-                      // A refusal is worth reading once, not forever.
-                      if (err) setTimeout(() => setFailure(null), 5000);
-                    });
-                  },
-                },
-              ]
-            : []),
-        ]}
+        actions={actions}
         detail={
           // No horizontal padding of its own: each container indents a
           // detail to ITS text column — the dropdown to its label, the
@@ -110,5 +114,6 @@ export function ShelfFolderHeader({
         </span>
       )}
     </div>
+    </ActionContextMenu>
   );
 }

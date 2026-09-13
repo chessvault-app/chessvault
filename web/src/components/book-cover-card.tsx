@@ -1,6 +1,6 @@
 import { MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { ActionMenu, type MenuAction } from '@/components/action-menu';
+import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
@@ -55,6 +55,8 @@ export function BookCoverCard({
 
   return (
     <li className="h-full">
+      {/* A right click is the ⋯ menu on a desktop, as on a shelf card. */}
+      <ActionContextMenu title={title} actions={actions}>
       <div
         // A surface, not a button: the title below is the control, so the
         // ⋯ and the dialogs inside are not nested in one (WCAG 4.1.2; see
@@ -138,6 +140,7 @@ export function BookCoverCard({
 
         {children}
       </div>
+      </ActionContextMenu>
     </li>
   );
 }
