@@ -384,6 +384,18 @@
      grid at 3.13:1. The knob keeps its direction: 50% at the top, where
      --surface-3 has darkened to 90%. */
   --ring: oklch(calc(59% + (50% - 59%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* The halo a text field draws round its focus border: the registry's
+     own --ring lightness (70.8% light, 55.6% dark), at the registry's 50%,
+     because on a field the OPAQUE focus-visible:border-ring is the
+     indicator (scored at 3:1 by check:contrast, like every stroke in the
+     --ring colour) and the halo is decoration round it. Drawn in --ring
+     at 66% dark the same halo read as a thickened stroke (lanph3re,
+     2026-09-13, against the registry's demo side by side), and a halo
+     that carries no contrast has no reason to be lifted with the ring.
+     Its own colour, so the checker scores it as an ordinary stroke: at
+     50% over white it composites to about 1.5:1 against white, over the
+     hairline floor of 1.3. Follows the accent knobs as --ring does. */
+  --field-halo: oklch(70.8% calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   /* The semantic four stay out of --ui-tint and --accent-tint, for the
      reason given at the top of this file. They do NOT stay out of
@@ -707,6 +719,9 @@
      corner of the grid at 3.09:1. At 55.6% behind a 50% wash the ring
      measured 1.72 to 1.88:1. 100% at the top of the knob, as before. */
   --ring: oklch(calc(66% + (100% - 66%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* See the light block: the registry's dark --ring, 55.6%, for the
+     field halo alone. */
+  --field-halo: oklch(55.6% calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   --good: oklch(72% 0.16 152);
   /* 72, not the registry's 70.4: 4.39:1 on --surface-3, and a failed
@@ -923,6 +938,7 @@
   --color-window-ring: var(--window-ring);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-field-halo: var(--field-halo);
 
   /* The app's extensions — what shadcn has no word for, named in its
      style. The ladder's extra rungs (surface-3, surface-inset, text-subtle,

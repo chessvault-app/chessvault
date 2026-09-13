@@ -67,10 +67,11 @@ a page.
 - **The flip button's icon turns the board the way the board turns.** It
   drew two triangles side by side, a mirror across a vertical axis; it
   now draws them above and below, on every board page.
-- **A text field's focus ring is the registry's wash again.** The
-  full-strength ring 0.10.0 gave every control read as a thickened
-  stroke on a field, whose border already marks it; buttons, toggles
-  and the rest keep the full ring.
+- **A text field's focus looks like the registry's again.** The border
+  turns the ring colour and a soft halo sits round it, in the shade the
+  registry draws it; the full-strength halo 0.10.0 gave every control
+  read as a thickened stroke on a field. Buttons, toggles and the rest
+  keep the full ring, since it is the only mark of focus they have.
 - **Insights and the analysis glyphs call a brilliant move 탁월** in
   Korean, where they said 명수.
 

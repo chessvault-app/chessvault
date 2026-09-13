@@ -23,12 +23,14 @@ export const INPUT_BASE =
   // field is; on a white card the stroke still defines it. Dark keeps
   // the registry's translucent input fill below.
   'rounded-lg border border-input bg-card text-base transition-colors outline-none ' +
-  // The fields keep the registry's 50% wash where every other control
-  // draws the ring at full alpha (CLAUDE.md, the focus-ring exception):
-  // on a field the opaque focus-visible:border-ring already marks the
-  // box, and the full ring beside it read as a thickened stroke
-  // (lanph3re's call, 2026-09-13).
-  'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 ' +
+  // The registry's focus, in the registry's colour: the opaque
+  // focus-visible:border-ring is the indicator and carries the 3:1, and
+  // the 3px halo beside it is decoration, at 50% of --field-halo, the
+  // registry's own --ring lightness (index.css says why it is not --ring:
+  // drawn in the lifted --ring the halo read as a thickened stroke;
+  // lanph3re's call, 2026-09-13). Every other control's ring is its only
+  // indicator and stays ring-ring at full alpha (CLAUDE.md).
+  'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-field-halo/50 ' +
   'disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 ' +
   'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 ' +
   'md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40';

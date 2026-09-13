@@ -138,10 +138,14 @@ colour, the border taking it too), and `--ring` is placed by
 measurement, with `check:contrast` holding it to 3:1 at any alpha the
 ring is drawn at, which is the regression that would otherwise come back
 silently the next time `npx shadcn add` rewrites one of these files. The
-text fields are the one control left at the registry's `ring-ring/50`:
-their opaque `focus-visible:border-ring` already marks the box, and the
-full ring beside it read as a thickened stroke (lanph3re's call,
-2026-09-13), so `input.tsx` keeps the wash.
+text fields are the one control whose ring is not the indicator: their
+opaque `focus-visible:border-ring` marks the box and carries the 3:1,
+and the 3px halo beside it is decoration, drawn at the registry's 50%
+in `--field-halo`, a token at the registry's own ring lightness rather
+than the lifted `--ring`, which made the halo read as a thickened
+stroke (lanph3re's call, 2026-09-13). The checker scores that halo as
+an ordinary stroke and the border as the focus ring, which is the
+division of labour the registry's own look implies.
 Where the registry hangs another state on that same class the exception
 reaches it too, and saying so is part of taking it: the slider thumb
 draws `border-ring` at rest and `ring-ring` for its hover and active
