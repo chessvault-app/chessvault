@@ -1036,14 +1036,17 @@ const MORE_GROUPS: {
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: Layers, blurb: 'Practise an opening against real games' },
       { section: 'endgames', label: 'Endgame drills', icon: Crown, blurb: 'Play won endings against the tablebase' },
-      { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
-      // The blurb is Home's, so two places never describe it two ways.
-      { section: 'insights', label: 'Insights', icon: ChartColumn, blurb: 'Your results by colour, time control and opening' },
     ],
   },
   {
     heading: 'App',
     items: [
+      // Opening map and Insights are readings of your own games, not
+      // boards: sidebar rows on a desktop, so they sit with the app's
+      // other pages here rather than among the Tools.
+      { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
+      // The blurb is Home's, so two places never describe it two ways.
+      { section: 'insights', label: 'Insights', icon: ChartColumn, blurb: 'Your results by colour, time control and opening' },
       // Notes and Books are sidebar rows on a desktop; here they sit with
       // the app's other pages rather than under a heading of their own.
       // Notes' blurb is Home's, so two places never describe it two ways.
