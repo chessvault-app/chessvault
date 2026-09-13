@@ -350,8 +350,12 @@ export function CanvasShell({
                   control, and this panel has not even got a scrim — it
                   stands over the canvas with no visible way out at all.
                   Named as well as marked, because a panel filling the
-                  height no longer sits obviously beside its selection. */}
-              <div className="border-border flex shrink-0 items-center gap-2 border-b px-4 py-2">
+                  height no longer sits obviously beside its selection. No
+                  stroke under it: the panel's own ring and the content's
+                  top padding already separate the strip from what it
+                  names, and the line read as a second card edge inside
+                  the first (lanph3re's call, 2026-09-13). */}
+              <div className="flex shrink-0 items-center gap-2 px-4 py-2">
                 <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm">{t(panel.label)}</p>
                 <Button
                   variant="ghost"
