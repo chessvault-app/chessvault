@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { booksApi } from './books.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
+import { decodeWarm, PDF_RANGE_CHUNK } from '../shared/pdfWarm.ts';
 
 /** A small but real-looking PDF: the magic, then filler, then a trailer. */
 const PDF = Buffer.concat([
@@ -63,6 +64,32 @@ describe('books api', () => {
       lastPage: null,
       cover: false,
     });
+  });
+
+  it('records the bytes an open needs, once, and says when it cannot', async () => {
+    // The uploaded filler is not a document pdf.js can open: the reader
+    // must hear that and fall back to plain ranges.
+    const bad = await app.request(`/api/books/${id}/pdf/warm`);
+    expect(bad.status).toBe(422);
+    expect(existsSync(join(dir, id, 'open.bin'))).toBe(false);
+
+    const sample = readFileSync(resolve(import.meta.dirname, '../web/demo-assets/books/sample.pdf'));
+    const made = await (await upload('title=Sample&name=sample.pdf&pages=3', sample)).json();
+    const res = await app.request(`/api/books/${made.id}/pdf/warm`);
+    expect(res.status).toBe(200);
+    const set = decodeWarm(new Uint8Array(await res.arrayBuffer()));
+    expect(set.length).toBe(sample.length);
+    expect(set.chunk).toBe(PDF_RANGE_CHUNK);
+    expect(set.chunks.has(0)).toBe(true);
+    // Every recorded chunk is the file's own bytes at that offset.
+    for (const [i, bytes] of set.chunks) {
+      expect(Buffer.from(bytes).equals(sample.subarray(i * set.chunk, i * set.chunk + bytes.length))).toBe(true);
+    }
+    const cache = join(dir, made.id, 'open.bin');
+    expect(existsSync(cache)).toBe(true);
+    const again = await app.request(`/api/books/${made.id}/pdf/warm`);
+    expect(Buffer.from(await again.arrayBuffer()).equals(readFileSync(cache))).toBe(true);
+    await app.request(`/api/books/${made.id}`, { method: 'DELETE' });
   });
 
   it('refuses a body that is not a PDF, leaving nothing behind', async () => {

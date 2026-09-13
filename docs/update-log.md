@@ -11,6 +11,13 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **A scanned book opens in one round trip instead of hundreds.** pdf.js
+  finishes an open by reading every page object in the file, one after
+  another, so a 448-page scan cost 470 requests in a row before its first
+  page: 24 seconds over a 20 Mbit link at 40 ms, whatever the bandwidth.
+  The server now records which bytes an open needs the first time a book
+  is opened and hands them over in one 200 KB response; the same open
+  takes 4 seconds, and 1.8 on a fast local network.
 - **Book pages are drawn sharp on a phone.** A scanned book's pages were
   rastered at half the screen's pixels on a touch screen, so a page read
   soft at fit width until a pinch redrew it. A page is now drawn at the

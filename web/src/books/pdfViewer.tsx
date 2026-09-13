@@ -6,56 +6,25 @@ import { useSlowLoad } from '@/components/skeletons';
 
 import type { PinchLive, PinchPoint } from '@/hooks/use-pinch-zoom';
 import { cn } from '@/lib/utils';
-import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
+import { loadPdfjs } from '@/puzzles/ocr/pdfPage';
 
-import { pdfUrl } from './data';
+import { pdfUrl, pdfWarmUrl } from './data';
 import { dropPdf, holdPdf, pdfKey, takePdf } from './heldPdf';
+import { openBookPdf } from './pdfTransport';
 import './text-layer.css';
-
-/**
- * How much of the file one missing byte costs.
- *
- * pdf.js reads a chunk at a time, and opening a document is not a read of
- * the front of the file: it finishes by fetching the LAST page, which
- * walks the page tree and touches every page object in the book. Those
- * objects are tiny and spread evenly through the file, one per page, so
- * in a big scan they land one to a chunk and the chunk size is what is
- * actually paid. A 380 MB, 448-page scan opened at 256 KB fetched
- * 111.8 MB in 448 requests before it could draw a page.
- *
- * The requests go out in one burst, so what the reader waits for is the
- * bytes, and the bytes are almost all over-fetch. Opening that book and
- * drawing page 16, over a 5 Mbit link at 80 ms:
- *
- *      chunk   open   five turns   requests / MB
- *     256 KB   230s            .     448 / 111.8
- *      32 KB    50s         7.9s     460 /  16.3
- *      16 KB    34s         9.7s     467 /   9.9
- *       8 KB    30s         8.1s     477 /   5.8
- *       4 KB    30s         8.4s     498 /   4.0
- *
- * Below 8 KB the time stops falling and only the request count grows: the
- * floor is the round trips, not the transfer. Page turns do not pay for
- * the small chunk, because pdf.js groups the chunks a contiguous read
- * needs into one range request. And the pages are the same pages: page 16
- * and page 240 rendered pixel-for-pixel identically at 256 KB and at
- * 8 KB, 0 of 2,940,000 pixels differing.
- */
-const RANGE_CHUNK = 8 * 1024;
 
 /**
  * The pdf.js half of the book reader: opening a library book by URL and
  * drawing one page of it.
  *
- * By URL, not by bytes: pdf.js asks the server for the ranges a page
- * needs when that page is shown (the server honours Range and says so on
- * the first response), so page 300 of a scanned book costs page 300 and
- * the file is never held whole in a phone's memory. `disableAutoFetch`
- * keeps it from quietly downloading the rest in the background once the
- * first page is up.
+ * By range, not by bytes: pdf.js asks for the bytes a page needs when
+ * that page is shown (pdfTransport.ts), so page 300 of a scanned book
+ * costs page 300 and the file is never held whole in a phone's memory.
+ * `disableAutoFetch` keeps it from quietly downloading the rest in the
+ * background once the first page is up.
  *
  * Leaving the book does not close it. The open is the expensive part and
- * it is the same every time (see `RANGE_CHUNK`), so the document is
+ * it is the same every time (shared/pdfWarm.ts), so the document is
  * handed to `heldPdf` on the way out and taken back on the way in: going
  * to the shelf and returning costs nothing, and the page is up on the
  * frame the reader mounts rather than after the file has been read again.
@@ -77,6 +46,8 @@ export function useBookPdf(
   useEffect(() => {
     let live = true;
     let task: ReturnType<typeof import('pdfjs-dist').getDocument> | null = null;
+    // Ends the warm fetch, and any range still in flight, when the run does.
+    const ctl = new AbortController();
     // The document this run owns, held rather than destroyed when it ends.
     // Set only once the open has finished: a half-open document is not
     // something the next visit could use.
@@ -97,12 +68,11 @@ export function useBookPdf(
         try {
           const pdfjs = await loadPdfjs();
           if (!live) return;
-          task = pdfjs.getDocument({
-            url: pdfUrl(id, bytes),
-            rangeChunkSize: RANGE_CHUNK,
-            disableAutoFetch: true,
-            ...PDF_OPTIONS,
-          });
+          task = await openBookPdf(pdfjs, { pdf: pdfUrl(id, bytes), warm: pdfWarmUrl(id, bytes) }, ctl.signal);
+          if (!live) {
+            void task.destroy();
+            return;
+          }
           const opened = await task.promise;
           if (!live) {
             // The reader left mid-open. Keeping it would hold a document
@@ -120,7 +90,10 @@ export function useBookPdf(
     return () => {
       live = false;
       if (owned) holdPdf(key, owned);
-      else void task?.destroy();
+      else {
+        ctl.abort();
+        void task?.destroy();
+      }
     };
   }, [id, bytes, attempt]);
   return {

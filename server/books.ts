@@ -12,9 +12,11 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { Readable } from 'node:stream';
+import { gzipSync } from 'node:zlib';
 import { finished, pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
+import { warmSet } from './pdfWarm.ts';
 import { isLibraryBookId, libraryBookHasPdf, newBookId } from './bookIds.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
@@ -443,6 +445,39 @@ export function booksApi(
    * content-length. Streamed, never read whole: the same reasoning as the
    * updates route in index.ts, which this copies.
    */
+  /**
+   * The bytes opening the book needs, in one response, so the reader's
+   * open is one round trip instead of one per page object
+   * (shared/pdfWarm.ts). Recorded on the first request and kept beside
+   * the file; 422 when pdf.js cannot open the file, and the reader then
+   * fetches by range alone.
+   */
+  api.get('/books/:id/pdf/warm', async (c) => {
+    const id = c.req.param('id');
+    if (!validBook(id) || !existsSync(pdfPath(id))) return c.json({ error: 'unknown book' }, 404);
+    const stat = statSync(pdfPath(id));
+    try {
+      let bytes = await warmSet(pdfPath(id), resolve(bookDir(id), 'open.bin'));
+      const headers: Record<string, string> = {
+        'content-type': 'application/octet-stream',
+        'cache-control': 'private, no-cache',
+        etag: `"${stat.size}-${Math.round(stat.mtimeMs)}"`,
+        'x-content-type-options': 'nosniff',
+      };
+      // Gzipped here, not by the compress middleware, which passes an
+      // octet-stream through: the set is PDF dictionaries, which are
+      // text, and the 448-page scan's 611 KB goes to 196 KB.
+      if (/\bgzip\b/.test(c.req.header('accept-encoding') ?? '')) {
+        bytes = gzipSync(bytes);
+        headers['content-encoding'] = 'gzip';
+        headers.vary = 'accept-encoding';
+      }
+      return c.body(bytes as unknown as ArrayBuffer, 200, headers);
+    } catch {
+      return c.json({ error: 'could not read the book' }, 422);
+    }
+  });
+
   api.get('/books/:id/pdf', (c) => {
     const id = c.req.param('id');
     if (!validBook(id) || !existsSync(pdfPath(id))) return c.json({ error: 'unknown book' }, 404);

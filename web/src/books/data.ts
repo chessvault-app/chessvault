@@ -132,6 +132,9 @@ export async function moveBook(id: string, collection: string | null): Promise<v
  */
 export const pdfUrl = (id: string, bytes: number): string =>
   `/api/books/${encodeURIComponent(id)}/pdf?v=${bytes}`;
+/** The bytes an open needs, in one response (shared/pdfWarm.ts). */
+export const pdfWarmUrl = (id: string, bytes: number): string =>
+  `/api/books/${encodeURIComponent(id)}/pdf/warm?v=${bytes}`;
 export const coverUrl = (id: string, bytes = 0): string =>
   `/api/books/${encodeURIComponent(id)}/cover.jpg?v=${bytes}`;
 
