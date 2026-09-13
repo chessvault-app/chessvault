@@ -20,6 +20,9 @@ a page.
   ten of your moves held, or an attacker left with nothing to mate with,
   end it as “Draw held”. The same one-sided test and sharpest-of-the-pool
   draw apply, read against the draw instead of the win.
+- **On a desktop the drill's panel keeps its height.** A long line had
+  the move list growing into it until only its buttons were left; the
+  list scrolls instead.
 - **An endgame drill is no longer drawn already won.** The draw kept
   any position the tablebase called a win, so a mate in two or a rook
   hanging to the first move counted as an ending. A win under ten plies

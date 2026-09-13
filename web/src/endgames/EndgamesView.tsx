@@ -535,8 +535,16 @@ function Drill({ classId }: { classId: string }) {
     </Panel>
   );
 
+  // `wide:shrink-0`: the column's height is the board's, and a long
+  // line (a defence runs twenty moves) had the Moves panel, `flex-1
+  // shrink`, growing into this one until only its footer was left, the
+  // headline and the status scrolled away inside a body a few pixels
+  // tall (lanph3re's report, a rook ending at move 24). This panel's
+  // content is fixed and short, so it is the list that scrolls. Phones
+  // show one pane at a time and keep the default, where a panel taller
+  // than the band under the board must still give.
   const drillPanel = (
-    <Panel>
+    <Panel className="wide:shrink-0">
       <PanelHeader
         title={title}
         actions={
