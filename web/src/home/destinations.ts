@@ -2,6 +2,7 @@ import {
   BookMarked,
   BookOpen,
   ChartColumn,
+  Crown,
   Database,
   Folder,
   Grid3x3,
@@ -187,6 +188,16 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     blurb: 'Puzzles read from the books you import',
     icon: BookMarked,
     nav: ['puzzles', 'books'],
+  },
+  // A board you play on, beside the repertoire in the sidebar's Tools:
+  // the blurb is the More page's, so two places never describe it two
+  // ways.
+  endgames: {
+    id: 'endgames',
+    label: 'Endgame drills',
+    blurb: 'Play won and drawn endings against the tablebase',
+    icon: Crown,
+    nav: ['endgames'],
   },
   settings: {
     id: 'settings',

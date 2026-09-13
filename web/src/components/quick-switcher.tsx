@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/command';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { HOME_DESTINATIONS } from '@/home/destinations';
+import type { HomeEntryId } from '@/home/layout';
 import { SECTION_ICON, type IconSection } from '@/lib/sectionIcon';
 import { api } from '@/lib/api';
 import { useMediaQuery } from '@/lib/media';
@@ -104,6 +105,34 @@ const DOCUMENT_SECTIONS: { section: IconSection; heading: string }[] = [
   { section: 'books', heading: 'Books' },
   { section: 'puzzlebooks', heading: 'Puzzle books' },
 ];
+
+/**
+ * The order the desktop sidebar reads in: the collections, Puzzle books
+ * under Puzzles, the map and Insights, then the Tools group, Databases
+ * and Settings. The catalogue's own order is Home's launcher row, which
+ * is a different list for a different screen; a palette that listed the
+ * pages one way and the sidebar beside it another had the eye hunting
+ * (lanph3re, 2026-09-13). A record, so a destination added to the
+ * catalogue must be placed here or the build fails.
+ */
+const SIDEBAR_ORDER: Record<HomeEntryId, number> = {
+  games: 0,
+  studies: 1,
+  notes: 2,
+  books: 3,
+  puzzles: 4,
+  puzzlebooks: 5,
+  openingmap: 6,
+  insights: 7,
+  board: 8,
+  editor: 9,
+  explorer: 10,
+  repertoire: 11,
+  endgames: 12,
+  databases: 13,
+  settings: 14,
+};
+const GO_TO = [...HOME_DESTINATIONS].sort((a, b) => SIDEBAR_ORDER[a.id] - SIDEBAR_ORDER[b.id]);
 
 /** Land on the document a hit names, and on its chapter when it says one. */
 function openHit(hit: NameHit & { chapter?: number }): void {
@@ -252,7 +281,7 @@ function QuickSwitcherWindow({
     const name = `${t(a.label)} ${a.label}`.normalize('NFC').toLowerCase();
     return tokens.every((w) => name.includes(w));
   });
-  const destinations = HOME_DESTINATIONS.filter((d) => {
+  const destinations = GO_TO.filter((d) => {
     if (tokens.length === 0) return true;
     const name = `${t(d.label)} ${d.label}`.normalize('NFC').toLowerCase();
     return tokens.every((w) => name.includes(w));

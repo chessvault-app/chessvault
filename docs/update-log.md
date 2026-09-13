@@ -11,6 +11,11 @@ Two of 0.10.0's phone changes are taken back, a bottom sheet resting
 low can be pulled up again, and a page opened inside a sheet turns like
 a page.
 
+- **The quick search lists the pages in the sidebar's order, and
+  reaches the endgame drills.** Its “Go to” group followed Home's
+  launcher row, so the same pages stood in two orders on one screen,
+  and the drills were not in it at all. The drills also join Home's
+  catalogue, so its launcher row and customise sheet offer them.
 - **The endgame drill can be played from the defending side.** A
   drawn position with losing moves in it is now drawn beside the won
   ones, and the sharper of the two is what a class hands over; the
