@@ -128,17 +128,24 @@ export function TagPicker({
                 the field is the part that takes typing. The tabs sit above
                 it, still the thing that says which list is under both. */}
             <div className="flex flex-col gap-2">
-              <Segmented
-                value={kind}
-                onChange={setKind}
-                segments={[
-                  { value: 'game', label: t('Games') },
-                  { value: 'study', label: t('Studies') },
-                  { value: 'note', label: t('Notes') },
-                ]}
-                ariaLabel="What to link"
-                kind="tabs"
-              />
+              {/* The line tabs, not the track (lanph3re's call, 2026-09-13):
+                  they head the list under them the way the Games page's pane
+                  strip heads its panes. The row carries the rule the
+                  underline sits on, as Segmented's `line` look asks. */}
+              <div className="border-border flex shrink-0 items-center border-b">
+                <Segmented
+                  value={kind}
+                  onChange={setKind}
+                  segments={[
+                    { value: 'game', label: t('Games') },
+                    { value: 'study', label: t('Studies') },
+                    { value: 'note', label: t('Notes') },
+                  ]}
+                  ariaLabel="What to link"
+                  kind="tabs"
+                  look="line"
+                />
+              </div>
               <SearchInput
                 className="w-full"
                 // "Search studies", not "Filter": it wears a magnifier, it
