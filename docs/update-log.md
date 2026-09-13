@@ -36,6 +36,10 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **The demo opens Insights with its figures in place.** The engine pass
+  over the sample vault's 31 games ships with the demo, so the page shows
+  results, move quality and the rest at once instead of asking a visitor
+  to run the pass first. Analyse new games and Start over still work.
 - **Settings: the section list beside the form lights the section you**
   **clicked.** It read the card 80px under the top of the window, so a
   short card handed its pill to the next one; it reads where a card

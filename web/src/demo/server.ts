@@ -8,6 +8,7 @@ import { vaultHistoryApi } from '../../../server/vaultHistory.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { normaliseTraining, type Training } from '@shared/training';
 import { mountVault } from '../../../server/mountVault.ts';
+import { AnalysisStore, parseRecord } from '../../../server/myGamesAnalysis.ts';
 import { puzzleBooksApi } from '../../../server/puzzlebooks.ts';
 import { storageApi } from '../../../server/storage.ts';
 import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
@@ -34,8 +35,17 @@ const PUZZLES_DB = '/demo/puzzles.sqlite';
 const REFGAMES_DB = '/demo/refgames.sqlite';
 /** Built in the page rather than fetched — see the sqlite shim's write path. */
 const MYGAMES_DB = '/demo/mygames.sqlite';
-/** Filled by the engine pass if a visitor runs it; empty on every load. */
+/**
+ * Seeded at boot from demo-seed/.analysis.json, the records the demo's
+ * own engine pass produced over the seeded games (harvested headless at
+ * PASS_DEPTH and put through the same PUT route a visitor's pass uses),
+ * so Insights has its figures the moment the page opens instead of a
+ * gate asking for a pass few visitors will sit through. A visitor's own
+ * pass still works and still starts over from Start over.
+ */
 const MYGAMES_ANALYSIS_DB = '/demo/mygames-analysis.sqlite';
+/** The one seed file that is not a vault file (see seedAnalysis). */
+const ANALYSIS_SEED = '.analysis.json';
 
 /**
  * The sample book: its bytes, and the two things a reader changes about it.
@@ -73,6 +83,9 @@ function buildApp(): Hono {
   installSetImmediate();
 
   for (const [path, content] of Object.entries(SEED)) {
+    // Not a vault file: fed to the analysis store below, once the routes
+    // that own it are up.
+    if (path === ANALYSIS_SEED) continue;
     // One timestamp per file, spread so the lists have an order worth
     // looking at rather than every row claiming the same second.
     seedFile(`${VAULT}/${path}`, content, Date.now() - Object.keys(SEED).indexOf(path) * 3_600_000);
@@ -360,6 +373,38 @@ function buildApp(): Hono {
  * second lifecycle, and no way for the app to make a request before the
  * backend exists.
  */
+/**
+ * The engine pass's records for the seeded games, written into the store
+ * the routes will open: the sqlite shim keeps one database per path for
+ * the tab's life, so what is put here is what the my-games index reads.
+ * Each record goes through the route's own parseRecord, so a record that
+ * does not fit the shape is refused the same way a visitor's would be;
+ * one that no longer fits its GAME is simply not counted by the index
+ * (recordFits), which is the state Insights shows as games still owed.
+ *
+ * Before the routes mount, and not through them: fed through PUT after
+ * mounting, with the index walk running between the awaited requests,
+ * two of thirty-one records went missing from the count, and which two
+ * followed the order they were sent in. Never fatal: with no seed, or a
+ * stale one, Insights asks for a pass, which is what it did before.
+ */
+function seedAnalysis(): void {
+  const raw = SEED[ANALYSIS_SEED];
+  if (!raw) return;
+  try {
+    const store = new AnalysisStore(MYGAMES_ANALYSIS_DB);
+    let refused = 0;
+    for (const body of JSON.parse(raw) as unknown[]) {
+      const record = parseRecord(body);
+      if (record) store.put(record);
+      else refused += 1;
+    }
+    if (refused > 0) console.warn(`demo: ${refused} analysis records refused`);
+  } catch (error) {
+    console.warn('demo: analysis seed unreadable —', error);
+  }
+}
+
 export async function installDemoBackend(): Promise<void> {
   // Never fatal. The vault — studies, games, notes, the whole editing flow
   // — needs no database at all, and losing the puzzle trainer to a missing
@@ -442,6 +487,7 @@ export async function installDemoBackend(): Promise<void> {
   } catch (error) {
     console.warn('demo: puzzles and reference games unavailable —', error);
   }
+  seedAnalysis();
   const app = buildApp();
   const real = window.fetch.bind(window);
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {

@@ -13,6 +13,14 @@
  * chess workbench.
  *
  *   npx tsx scripts/make-demo-content.ts [--games 30] [--studies 12] [--notes 20]
+ *
+ * This rewrites demo-seed/ whole, including `.analysis.json`, which is not
+ * made here: it is the engine pass's own output over these games, taken
+ * from a demo build by running the pass (Insights, Analyse games) and
+ * keeping every record it PUTs to /api/mygames/analysis. After new games,
+ * run the pass again and save its records there, or Insights opens on the
+ * gate asking for one; a record for a game that changed is not counted
+ * (server/myGamesAnalysis.ts, recordFits), never shown wrong.
  */
 import Database from 'better-sqlite3';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
