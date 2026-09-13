@@ -270,7 +270,7 @@ export function LoadPositionForm({
           if (file) onImage(file);
         }}
         className={cn(
-          'border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors',
+          'border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-base transition-colors md:text-sm',
           fill && 'sm:h-44 sm:justify-center',
         )}
         onDragOver={(e) => e.preventDefault()}
@@ -282,7 +282,7 @@ export function LoadPositionForm({
       >
         <ImagePlus className="size-4" />
         {t('…or read the position from a picture')}
-        <span className="text-xs">{t('click to choose, drop a file, or paste an image')}</span>
+        <span className="text-sm md:text-xs">{t('click to choose, drop a file, or paste an image')}</span>
       </FilePicker>
       {/* Under the last field, not sunk to the window's floor (lanph3re). */}
       <div className="mt-1 flex justify-end gap-2">
