@@ -22,10 +22,10 @@ import {
 /**
  * What a tile says to assistive technology: the number, the state, the
  * fidelity tier, the tries. Sighted eyes get the state from the fill and
- * the glyph, the tier from the corner icon and the tries from the tip;
- * a screen reader got the digit alone, since the glyph and the icon are
- * aria-hidden and the tip is neither a label nor a description. The
- * label carries the tip's two lines too, so nothing is only in the tip.
+ * the tier from the corner icon (its tip names the tier); a screen reader
+ * got the digit alone, since the icon is aria-hidden and a tip is neither
+ * a label nor a description. The label carries the tier and the tries
+ * too, so nothing is only in a tip, and the tries are nowhere else.
  * A never-attempted tile skips the state word: "not attempted" is
  * already its tries line.
  */
@@ -89,16 +89,12 @@ export function PuzzleGrid({
             const tries = prog
               ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
               : t('not attempted');
-            // Two lines, so the tip needs the newline the browser's bubble
-            // used to render: TitleTip sets whitespace-pre-line for it.
+            // The tip is the corner icon's, and says the tier: on the whole
+            // tile it opened wherever the pointer crossed the grid, a
+            // bubble per tile (lanph3re's report).
             return (
-              <TitleTip
-                key={p.id}
-                title={[meta ? `${t(meta.label)}: ${t(meta.title)}` : null, tries]
-                  .filter(Boolean)
-                  .join('\n')}
-              >
                 <button
+                  key={p.id}
                   ref={current ? currentRef : undefined}
                   type="button"
                   aria-label={tileLabel(p.number ?? i + 1, last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new', meta, tries)}
@@ -107,32 +103,29 @@ export function PuzzleGrid({
                   className={cn(
                     'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold leading-none transition-colors duration-100 [content-visibility:auto]',
                     current && 'ring-primary/60 ring-2',
+                    // A hover on a tinted tile deepens its own tint (the
+                    // outcome at 18% over the card, against the 10% at rest)
+                    // rather than the accent: the plain tile's hover, and
+                    // the tinted ones had none.
                     last === 'win'
-                      ? 'bg-good-tint border-good/40 text-good'
+                      ? 'bg-good-tint border-good/40 text-good hover:bg-[color-mix(in_oklab,var(--good)_18%,var(--card))]'
                       : last === 'loss'
-                        ? 'bg-destructive-tint border-destructive/40 text-destructive'
+                        ? 'bg-destructive-tint border-destructive/40 text-destructive hover:bg-[color-mix(in_oklab,var(--destructive)_18%,var(--card))]'
                         : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
                   )}
                 >
                   {p.number ?? i + 1}
-                  {/* State by glyph as well as tint — the colour grammar's
-                      own rule; a tile that is only a colour is unreadable
-                      to 1 in 12 people. The size is fitted to a tile
-                      corner, not on the type ladder: a mark read off the
-                      tile, never a sentence. */}
-                  {(last === 'win' || last === 'loss') && (
-                    <span className="absolute bottom-0.5 left-1 text-[0.5rem] leading-none" aria-hidden>
-                      {last === 'win' ? '✓' : '✗'}
-                    </span>
-                  )}
+                  {/* The state is the tint alone, by lanph3re's call
+                      (2026-09-13); the ✓/✗ that doubled it are gone, and the
+                      label says it for a screen reader. */}
                   {meta && (
-                    <meta.icon
-                      className={cn('absolute right-1 top-1 size-2.5', meta.iconClass)}
-                      aria-hidden
-                    />
+                    <TitleTip title={`${t(meta.label)}: ${t(meta.title)}`}>
+                      <span className="absolute right-1 top-1 flex" aria-hidden>
+                        <meta.icon className={cn('size-2.5', meta.iconClass)} />
+                      </span>
+                    </TitleTip>
                   )}
                 </button>
-              </TitleTip>
             );
           })}
         </div>
@@ -429,18 +422,10 @@ export function PuzzleList({
             ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries })
             : t('not attempted');
           const number = p.number ?? ordinalOf.get(p.id) ?? 0;
-          // Same two lines as the panel grid, and t() on both halves now:
-          // this tile spelled the second one in English in the source while
-          // the tile above said it through the dictionary. Same keys, so
-          // the ko dictionary already answers them.
+          // The tip is the corner icon's, as on the panel grid.
           return (
-            <TitleTip
-              key={p.id}
-              title={[meta ? `${t(meta.label)}: ${t(meta.title)}` : null, tries]
-                .filter(Boolean)
-                .join('\n')}
-            >
               <button
+                key={p.id}
                 type="button"
                 aria-label={tileLabel(number, state, meta, tries)}
                 onClick={() => {
@@ -472,32 +457,27 @@ export function PuzzleList({
                   // and the good token on that same wash still only 4.45:1.
                   // On --good-tint it reads 4.87:1 (dark 6.72:1), which is
                   // what the tint tokens are for (index.css says so).
+                  // Hover deepens the tile's own tint, as on the panel grid.
                   state === 'solved'
-                    ? 'bg-good-tint ring-good/40 text-good'
+                    ? 'bg-good-tint ring-good/40 text-good hover:bg-[color-mix(in_oklab,var(--good)_18%,var(--card))]'
                     : state === 'failed'
-                      ? 'bg-destructive-tint ring-destructive/40 text-destructive'
+                      ? 'bg-destructive-tint ring-destructive/40 text-destructive hover:bg-[color-mix(in_oklab,var(--destructive)_18%,var(--card))]'
                       : 'bg-card ring-card-ring text-muted-foreground hover:bg-accent',
                 )}
               >
                 {number}
-                {/* Same glyph redundancy as the panel grid: tint alone is
-                    invisible to colour-blind eyes. */}
-                {(state === 'solved' || state === 'failed') && (
-                  <span className="absolute bottom-1 left-1.5 text-micro leading-none" aria-hidden>
-                    {state === 'solved' ? '✓' : '✗'}
-                  </span>
-                )}
+                {/* The state is the tint alone (see the panel grid). */}
                 {/* Smaller and tighter in the corner below sm, for the same
                     41px tile: at 12px and 8px in it sat on the digit's
-                    line. */}
+                    line. The tip is the icon's and names the tier. */}
                 {meta && (
-                  <meta.icon
-                    className={cn('absolute right-1 top-1 size-2.5 sm:right-2 sm:top-2 sm:size-3', meta.iconClass)}
-                    aria-hidden
-                  />
+                  <TitleTip title={`${t(meta.label)}: ${t(meta.title)}`}>
+                    <span className="absolute right-1 top-1 flex sm:right-2 sm:top-2" aria-hidden>
+                      <meta.icon className={cn('size-2.5 sm:size-3', meta.iconClass)} />
+                    </span>
+                  </TitleTip>
                 )}
               </button>
-            </TitleTip>
           );
         })}
         {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}

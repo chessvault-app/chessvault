@@ -125,11 +125,13 @@ worksheet and nowhere on a board — while the analysis board two files
 over was already drawing the same disc, in the same two colours, with `!`
 and `??` on it. The book trainer settles it: it marks a wrong move with
 `nags: [4]`, which is `??`. Two trainers were saying the same thing in
-two alphabets and one of them was not chess. The ✓/✗ on the puzzle-book
-tiles stay: those record past outcomes in a grid and are deliberately
-redundant with the tint, because a state carried by colour alone is
-unreadable to one reader in twelve — a different job from telling
-somebody what they just played.
+two alphabets and one of them was not chess. The puzzle-book tiles
+carried ✓/✗ beside their tint for a while, on the argument that a state
+carried by colour alone is unreadable to one reader in twelve; they went
+on lanph3re's call (2026-09-13), the tint being the tile's whole
+statement, and the tile's label says the state for a screen reader. It
+is the one place the never-colour-only rule is knowingly set aside for
+a sighted reader, and it is recorded here so that it stays one.
 
 ## The type scale
 

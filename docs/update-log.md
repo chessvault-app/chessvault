@@ -36,6 +36,9 @@ a page.
   swipe and a Cancel button all leave the whole chain, and a page's
   chevron plays the same turn as the rest, where the picture page used
   to vanish in a frame.
+- **Puzzle book tiles: the tier's tip opens on its icon, not the whole**
+  **tile,** a solved or failed tile deepens its tint under the pointer,
+  and the ✓ and ✗ that doubled the tint are gone.
 - **The endgame drill's panel reads like the puzzle trainer's.** Its
   headline says “White to move” or “Black to move”, where it said “You
   play White”, and the family being drilled is a row in the panel that
