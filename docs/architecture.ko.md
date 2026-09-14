@@ -109,7 +109,8 @@ flowchart LR
   있고, 서버가 부팅할 때 보관함 뼈대를 만들어 주므로 빈 폴더를 가리켜도
   동작합니다.
 - **웹 앱** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand,
-  `web/vite.compiler.ts`가 이름 붙인 파일은 React 컴파일러가 메모이즈):
+  받아 주는 컴포넌트는 모두 React 컴파일러가 메모이즈. `web/vite.compiler.ts`가
+  연결하고 `CHESS_COMPILER_LOG=1`이면 거절한 것을 보고):
   사용자가 만지는 모든 것. 체스 로직은 `chessops`, 보드는 chessground, 노트는
   TipTap, 엔진은 Stockfish의 WASM 빌드(스레드가 되면 Lichess의 Stockfish 19 빌드,
   안 되면 단일 스레드 Stockfish 18)를 씁니다. 컴포넌트 층은 shadcn의

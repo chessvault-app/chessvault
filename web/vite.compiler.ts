@@ -25,30 +25,14 @@ import type { Plugin, PluginOption } from 'vite';
  */
 
 /**
- * The files the compiler is on for, relative to web/src, forward
- * slashes. Started 2026-09-14 with the five densest in hand memoisation
- * (games/DatabaseGames 11, openingmap/MapCanvas 10, puzzles/PuzzlesView
- * 7, openingmap/OpeningMapView 7, games/GamesBrowser 7), measured, then
- * widened.
+ * Every component file under web/src. It started 2026-09-14 as a list of
+ * five (the densest in hand memoisation), then eleven (the lists a search
+ * field narrows), each joining once its refusals were fixed and the
+ * change measured; with 129 of 176 files compiling clean as they stood,
+ * the list stopped earning its keep, and a refused component costs
+ * nothing (it is skipped, not broken; the log below names it). The
+ * census of what is still refused, and why, is `CHESS_COMPILER_LOG=1`.
  */
-const SOURCES = [
-  'games/DatabaseGames.tsx',
-  'games/GamesBrowser.tsx',
-  'openingmap/MapCanvas.tsx',
-  'openingmap/OpeningMapView.tsx',
-  'puzzles/PuzzlesView.tsx',
-  // The lists a search field narrows, added with the deferred values
-  // (useDeferredValue) that let a key paint before the rows redraw:
-  // deferring only pays when the render that does not depend on the
-  // needle is cheap, which is what the compiler makes it.
-  'books/BooksPage.tsx',
-  'games/CollectionList.tsx',
-  'games/GameListShell.tsx',
-  'notes/NotesView.tsx',
-  'puzzles/ThemesPage.tsx',
-  'studies/StudiesView.tsx',
-];
-
 const norm = (p: string): string => p.replace(/\\/g, '/');
 
 export function reactCompiler(srcRoot: string): PluginOption[] {
@@ -57,12 +41,16 @@ export function reactCompiler(srcRoot: string): PluginOption[] {
   // runs the JS path beside the native core.
   if (process.env.CHESS_COMPILER === '0') return [];
   const src = norm(srcRoot).replace(/\/?$/, '/');
-  const on = new Set(SOURCES.map((s) => src + s));
   const log = process.env.CHESS_COMPILER_LOG === '1';
   const tally = new Map<string, { ok: number; skip: string[]; fail: string[] }>();
   const preset = reactCompilerPreset({
     compilationMode: 'infer',
-    sources: (filename: string) => on.has(norm(filename)),
+    // The in-page demo server (web/src/demo) is server code run in the
+    // browser, not components; the compiler has nothing to do there.
+    sources: (filename: string) => {
+      const f = norm(filename);
+      return f.startsWith(src) && !f.startsWith(`${src}demo/`);
+    },
     logger: log
       ? {
           logEvent(filename, event) {

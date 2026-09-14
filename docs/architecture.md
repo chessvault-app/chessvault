@@ -110,8 +110,9 @@ flowchart LR
   override the vault/data locations; the server creates the vault
   skeleton on boot, so pointing it at an empty folder works.
 - **Web app** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand,
-  with the React Compiler memoising the files `web/vite.compiler.ts`
-  names): everything the user touches. Chess logic via `chessops`, boards via
+  with the React Compiler memoising every component it will take;
+  `web/vite.compiler.ts` wires it and, under `CHESS_COMPILER_LOG=1`,
+  reports what it refused): everything the user touches. Chess logic via `chessops`, boards via
   chessground, notes via TipTap, engine via Stockfish's WASM builds (the Lichess build of
   Stockfish 19 with threads, Stockfish 18 single-threaded without).
   The component layer is shadcn's: the registry's files, owned and given

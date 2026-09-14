@@ -46,6 +46,26 @@ trigger is the patch falling away, or a page's data read through
 Suspense, which would remove its reason to exist. Until then the router
 keeps `document.startViewTransition` with `flushSync`.
 
+**The last 76 functions the React Compiler refuses.** The compiler is
+on for every file under `web/src` (2026-09-14) and compiles 563
+functions; 76 in 45 files it refuses, and a refused function runs as
+written, with its hand memoisation, beside compiled neighbours. What
+stops it, counted with the plugin's own logger: 35 effects with a
+suppressed `react-hooks/exhaustive-deps` rule (a compiled component
+would depend on what the suppression hides, so the compiler declines the
+whole component; the fix is an Effect Event, which is what the 24
+converted so far became), 11 refs read or written during render, 8
+conditionals and 6 `finally` clauses inside a try, 5 mutations of a
+prop (the note editor's save timer is a ref passed down), 3 reads
+before a declaration, and a few tagged templates and `??=`. The
+registry's own files (`dialog`, `toast`, `calendar`) are among them and
+are left as the registry wrote them. The route factory in
+`lib/lazyRoute` is the one deliberate `'use no memo'`: a component made
+inside a factory reads the factory's variables as module constants to
+the compiler. The trigger for each is the file being edited anyway; a
+sweep for its own sake is not worth the diff, since each refusal is a
+component that already memoises by hand.
+
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
 the current split is an argued position — managing is a place you go,
