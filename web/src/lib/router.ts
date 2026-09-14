@@ -1,7 +1,7 @@
 import { addTransitionType, startTransition, useEffect, useState } from 'react';
 import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 import { prefersReducedMotion } from './motion';
-import { disarmSharedBoard } from './shared-board';
+import { armReturnFlight, disarmSharedBoard } from './shared-board';
 
 // Named for the page each one IS. Two were not: `analysis` drew a page
 // the whole app calls the Board, and `books` was the opening-books page
@@ -187,6 +187,9 @@ function swapRouteNow(commit: () => void, nav: Nav): void {
   // slow-load placeholders through routeChanging). Caught on its way
   // through document.startViewTransition, for this one call.
   const started = captureNextViewTransition();
+  // A pop flies the page's board back into the thumbnail it came from,
+  // when that thumbnail is still there (lib/shared-board).
+  if (nav === 'pop') armReturnFlight();
   startTransition(() => {
     addTransitionType(`nav-${nav}`);
     commit();

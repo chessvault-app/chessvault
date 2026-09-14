@@ -1,4 +1,4 @@
-import { SHARED_BOARD, sharedBoardArmed } from '@/lib/shared-board';
+import { SHARED_BOARD, registerPageBoard, sharedBoardArmed } from '@/lib/shared-board';
 import { Chessground } from '@lichess-org/chessground';
 import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
@@ -462,6 +462,7 @@ export function Board({
 
   return (
     <div
+      ref={registerPageBoard}
       role="img"
       aria-label={label}
       className={cn(

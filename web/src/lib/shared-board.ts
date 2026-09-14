@@ -38,3 +38,30 @@ export function nameSharedBoard(el: HTMLElement | null): void {
   el.style.viewTransitionName = SHARED_BOARD;
   armed = true;
 }
+
+/**
+ * The page's board, registered by board/Board while it is mounted, for the
+ * flight BACK: a pop from a document to the shelf it was opened from.
+ *
+ * The thumbnail that was tapped keeps its name (the shelf stays mounted
+ * under the document, lib/keep-alive), so the return needs only the
+ * page's board named at the moment the old page is photographed. Named
+ * here, imperatively and only when such a thumbnail exists, because the
+ * name has to be in the DOM before the transition starts and the board
+ * does not re-render on a route change; and never when no thumbnail
+ * waits, or the board's group would fly its 337ms to nowhere, the
+ * problem `armed` was made to stop.
+ */
+let pageBoard: HTMLElement | null = null;
+export function registerPageBoard(el: HTMLElement | null): void {
+  pageBoard = el;
+}
+export function armReturnFlight(): void {
+  if (!pageBoard) return;
+  const thumbnails = [...document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')].filter(
+    (el) => el !== pageBoard && el.style.viewTransitionName === SHARED_BOARD,
+  );
+  if (thumbnails.length !== 1) return;
+  pageBoard.style.viewTransitionName = SHARED_BOARD;
+  armed = true;
+}
