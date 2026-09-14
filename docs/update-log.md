@@ -5,11 +5,17 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.11.0
 
-Pages come back as you left them, two of 0.10.0's phone changes are
-taken back, a bottom sheet resting low can be pulled up again, and a
-page opened inside a sheet turns like a page.
+Pages come back as you left them: a shelf keeps its rows, scroll and
+filters when you go into a document and back, and a tab returns to
+where its section was. The phone's page turn is React's own and flies
+the board home on the way back. Under the hood the React Compiler
+builds every component, with two new checks in CI so a refusal or a
+cut page turn cannot land unseen. Two of 0.10.0's phone changes are
+taken back, a bottom sheet resting low can be pulled up again, an
+endgame drill can be played from the defending side, and a page opened
+inside a sheet turns like a page.
 
 - **Two checks guard what only a browser can see.** `check:compiler`
   runs the React Compiler over every source file and fails on the first
