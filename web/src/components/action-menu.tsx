@@ -281,29 +281,22 @@ function ActionSheetBody({
         if (!next) onClose();
       }}
     >
-      <DialogContent size="sm" title={title} className="gap-0">
-        {/* pt-3.5 gives back what the title strip's -mb-3.5 takes: that
-            reach-through is written against the card's default gap-4, and
-            this sheet sets gap-0, so an unpadded first child is pulled
-            14px up UNDER the opaque sticky strip — seen on the studies
-            shelf, where the collection note's first line rose clipped
-            flush at the strip's edge. The rows below survive the same
-            pull only because their py-3 absorbs it. */}
-        {detail && <div className="pt-3.5">{detail}</div>}
+      <DialogContent size="sm" title={title}>
+        {/* Nothing between the title strip and the first row but the
+            column's own gap. The strip reaches 14px down (-mb-3.5) and the
+            sheet's content column keeps the card's gap-4 whatever a caller
+            passes (the phone's cover wrapper owns it), so the two net to
+            2px and the first row starts right under the strip. This used
+            to add gap-0, mt-2 and pt-3.5 on top, written against a column
+            that had no gap: measured on the games sheet, the first label
+            sat 50px under the title (lanph3re's report, 2026-09-15). */}
+        {detail && <div>{detail}</div>}
         {/* -mx-2: a row's icon starts where the title does, the way a
             dropdown's label text sits over its items' icons. With the
             rows inside the sheet's padding, the title, the icons and the
             labels made three left edges (16, 28, 56) and a lit row looked
-            shifted against its own heading. mt-2: the lit row's pill used
-            to touch the title.
-
-            pt-3.5 where there is no detail line: the strip's reach-through
-            is taken out of whichever child comes first, and with no detail
-            that is this list — mt-2 gave back 8 of the 14, so the first
-            row sat 6px under the opaque strip with its top clipped. The
-            padding pays the 14 back inside the list, leaving mt-2 to be
-            the gap it says it is. */}
-        <div className={cn('-mx-2 mt-2 flex flex-col', !detail && 'pt-3.5')}>
+            shifted against its own heading. */}
+        <div className="-mx-2 flex flex-col">
           {actions.map(({ label, icon: Icon, danger, disabled, className, onSelect }) => (
             <button
               key={label}

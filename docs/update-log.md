@@ -64,6 +64,10 @@ The puzzle hub's boards stop changing under you.
   moves table stays at 14px at every width, as before the row lift, and
   the phone's "Delete this move and everything after it" row in ⋯
   appears only while editing, like the bin it replaced.
+- **The phone's action sheets close the gap under their title.** Every
+  ⋯ and long-press sheet had about 50px between its title and the first
+  row, three spacings written for a column that had none; the rows now
+  start right under the title strip.
 
 ## 0.11.0
 
