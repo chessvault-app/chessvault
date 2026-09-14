@@ -517,7 +517,7 @@ export function DashboardPage() {
                     empty line's own box, with the real words drawn
                     invisibly so it wraps where the line will. */}
                 {reserved.books === 0 ? (
-                  <p className="relative px-3 py-3 text-sm">
+                  <p className="relative px-3 py-3 text-row">
                     <span className="invisible">{t(BOOKS_EMPTY)}</span>
                     <Skeleton className="absolute inset-x-3 inset-y-4" />
                   </p>
@@ -541,7 +541,7 @@ export function DashboardPage() {
                             it stands for draws it; and the row's own
                             chevron. */}
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <div className="flex h-5 items-center">
+                          <div className="flex h-5 items-center max-md:h-6">
                             <Skeleton className="h-2.5 w-2/5" />
                           </div>
                           <Progress value={0} aria-hidden className="sm:hidden" />
@@ -576,14 +576,14 @@ export function DashboardPage() {
             {booksFailed && books.length === 0 ? (
               // An outage is not an empty shelf. Same rung and words as
               // the log's own failure line.
-              <p className="text-muted-foreground px-3 py-3 text-sm">{t('Could not load the puzzle books.')}</p>
+              <p className="text-muted-foreground px-3 py-3 text-row">{t('Could not load the puzzle books.')}</p>
             ) : books.length === 0 ? (
               // One line at the log's rung, not the centred icon, title,
               // sentence and button: that shape is the empty-state idiom
               // the design doc names as the anti-reference, and it stood
               // 240px tall on a page whose grammar is 33px rows. The
               // Import is the header's button while the shelf is empty.
-              <p className="text-muted-foreground px-3 py-3 text-sm">{t(BOOKS_EMPTY)}</p>
+              <p className="text-muted-foreground px-3 py-3 text-row">{t(BOOKS_EMPTY)}</p>
             ) : (
             <ul>
               {books.map((b) => (
@@ -591,7 +591,7 @@ export function DashboardPage() {
                   {/* The hairline is on the li, so the row itself is undivided. */}
                   <ListRow
                     onClick={() => navigate('puzzles', 'books', b.slug)}
-                    className="text-sm"
+                    className="text-row"
                   >
                     {/* On a phone the bar goes under the title, as the
                         hub's shelf draws it: beside the title, its 6rem
@@ -611,11 +611,11 @@ export function DashboardPage() {
                       />
                     </span>
                     {(b.due ?? 0) > 0 && (
-                      <span className="text-info shrink-0 text-xs">{t('{n} due', { n: b.due! })}</span>
+                      <span className="text-info shrink-0 text-row-sub">{t('{n} due', { n: b.due! })}</span>
                     )}
                     {/* The bands' spelling, for the same reason: this sits
                         beside the same bar. */}
-                    <span className="text-muted-foreground shrink-0 text-xs">
+                    <span className="text-muted-foreground shrink-0 text-row-sub">
                       <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
                     </span>
                     <ProgressBar
@@ -718,7 +718,7 @@ export function DashboardPage() {
             // rows were the jump in the other direction.
             reserved.attempts === 0 ? (
               <div className="px-3 py-3">
-                <div className="flex h-5 items-center">
+                <div className="flex h-5 items-center max-md:h-6">
                   <Skeleton className="h-2.5 w-56 max-w-full" />
                 </div>
               </div>
@@ -729,7 +729,7 @@ export function DashboardPage() {
             // An outage is not an empty vault: told "No attempts yet", a
             // player on a phone with a flaky link would read that they
             // have never trained. The failure names itself instead.
-            <p className="text-muted-foreground px-3 py-3 text-sm">
+            <p className="text-muted-foreground px-3 py-3 text-row">
               <span className="min-w-0 flex-1">
                 {t(
                   historyFailed && history.length === 0
@@ -773,7 +773,7 @@ export function DashboardPage() {
                     tabIndex={i === rowStop ? 0 : -1}
                     title={t('Replay puzzle #{id}', { id: h.id })}
                     aria-describedby="puzzle-log-row-hint"
-                    className="min-w-0 flex-1 pr-1.5 text-sm"
+                    className="min-w-0 flex-1 pr-1.5 text-row"
                   >
                     {h.win ? (
                       <Check className="text-good size-3.5 shrink-0" role="img" aria-label={t('solved')} />

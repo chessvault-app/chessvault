@@ -137,7 +137,7 @@ function EndgamePicker() {
         <section key={group} className="flex flex-col gap-2">
           {/* The count row's voice: the same one a panel's title and a
               group of settings are named in. */}
-          <h2 className="text-muted-foreground text-sm font-medium">{t(group)}</h2>
+          <h2 className="text-muted-foreground text-row font-medium">{t(group)}</h2>
           <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
             {rows.map((id) => (
               <ListRow
@@ -157,7 +157,7 @@ function EndgamePicker() {
                     <Crown className="size-3.5" />
                   )}
                 </span>
-                <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">
+                <span className="text-foreground min-w-0 flex-1 truncate text-row font-medium">
                   {t(classLabel(id))}
                 </span>
                 <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />

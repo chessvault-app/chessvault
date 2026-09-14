@@ -1502,6 +1502,41 @@
   }
 }
 
+/* The type of a list row and its panel heading, and of the tail beside
+   the row's text (a date, a count, a difficulty word): text-sm and text-xs
+   on a desktop, one rung up on a phone.
+
+   Both platforms put a list row's line at 16 or 17 and its supporting
+   line at 14 or 15 (iOS Body 17 / Subheadline 15; Material 3 Body Large
+   16 / Body Medium 14), and the app's rows sat one rung under each at
+   every width: 14 over 12, which is the desktop convention (macOS 13pt,
+   Windows 14px, dense web tables 13 to 14) and read as fine print beside
+   the phone's boards (lanph3re, 2026-09-14, after the puzzle hub's cards
+   were lifted the same way by hand). Named here rather than written as
+   `text-sm max-md:text-base` at thirty sites, which is a tier nobody had
+   named, the shape this file forbids for the 10px rung below.
+
+   Registered as utilities so the rows keep Tailwind's vocabulary and
+   twMerge sees a font-size class, and with the size's own line height,
+   as text-sm and text-xs set it. The breakpoint is md, the phone width
+   every page layout turns on. */
+@utility text-row {
+  font-size: var(--text-sm);
+  line-height: var(--tw-leading, var(--text-sm--line-height));
+  @media (width < 48rem) {
+    font-size: var(--text-base);
+    line-height: var(--tw-leading, var(--text-base--line-height));
+  }
+}
+@utility text-row-sub {
+  font-size: var(--text-xs);
+  line-height: var(--tw-leading, var(--text-xs--line-height));
+  @media (width < 48rem) {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+}
+
 /* The current-section pill, behind the sidebar row and the phone tab bar's
    icon: 12% of primary over the card, Material 3's tonal indicator. It was
    --muted with a primary/30 inset ring, and the ring read as a chip's

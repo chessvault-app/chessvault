@@ -32,6 +32,13 @@ The puzzle hub's boards stop changing under you.
   button opened the very puzzle the first board does, so the board is
   the button now and carries the difficulty word. The height they gave
   back goes into the boards.
+- **List rows are a size larger on a phone.** The rows in Home's
+  Continue and Recent games panels, the puzzle dashboard's books and
+  history, the endgame drills and every panel heading over them were
+  14px with 12px dates and counts at every width, one step under what
+  iOS and Material put on a phone (16 or 17 over 14 or 15). On a phone
+  they are now 16 over 14; a desktop keeps 14 over 12, which is that
+  platform's own convention.
 
 ## 0.11.0
 
