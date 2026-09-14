@@ -106,10 +106,12 @@ const STATES: {
     ],
     // The page's own scroller, marked by PageShell; fall back to the
     // first vertical scroller under main for pages that manage their own.
+    // The VISIBLE one: a kept page (lib/keep-alive) stands hidden under
+    // main with a scroller of its own.
     prepare: `(() => {
-      const el = document.querySelector('[data-page-scroll]')
+      const el = [...document.querySelectorAll('[data-page-scroll]')].find((n) => n.checkVisibility())
         ?? [...document.querySelectorAll('main *')].find((n) => {
-          const s = getComputedStyle(n); return (s.overflowY === 'auto' || s.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
+          const s = getComputedStyle(n); return n.checkVisibility() && (s.overflowY === 'auto' || s.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
         });
       if (el) el.scrollTop = 240;
     })()`,

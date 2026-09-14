@@ -299,8 +299,10 @@ export function CollectionList({
       term and a filter leave no game possible. */
   onFilterConstraints?: (f: FilterConstraints) => void;
 }) {
-  // The quick filters, session-only like the archive's: what you want to
-  // see is a question of the moment, not a preference.
+  // The quick filters, like the archive's, are not stored: what you want
+  // to see is a question of the moment, not a preference. They do outlive
+  // a trip into a game and back, since the list stays mounted under it
+  // (lib/keep-alive).
   const [ownFilter, setOwnFilter] = useState<OwnershipFilter>('any');
   const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
   const [notesFilter, setNotesFilter] = useState<NotesFilter>('any');

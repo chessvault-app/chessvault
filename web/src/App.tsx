@@ -30,6 +30,7 @@ import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
 import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
+import { KeepAlive } from '@/lib/keep-alive';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
@@ -328,6 +329,59 @@ function recentOpenOf(section: Section, params: string[]): { section: IconSectio
   }
 }
 
+/** The sections KeepAlive lets go of when they leave the screen. */
+const UNKEPT = new Set<Section>(['board', 'workspace', 'editor']);
+
+/** The page a section draws for its params. */
+function renderSection(section: Section, params: string[]): ReactNode {
+  switch (section) {
+    case 'home':
+      return <HomePage />;
+    case 'board':
+      // Keyed on the sub-mode: AnalysisView makes its param-dependent
+      // decisions once per mount (initial pane, explorer on/off, the
+      // stateless reset), so Board ↔ Explorer must REMOUNT it — same
+      // section, so React would otherwise reconcile the same instance
+      // and the sidebar click would change nothing but the title. A
+      // handoff set before navigate() survives: the mount effect
+      // consumes the flag wherever the mount came from.
+      return <AnalysisView key={params[0] === 'explorer' ? 'explorer' : 'board'} params={params} />;
+    case 'workspace':
+      return <WorkspaceView />;
+    case 'editor':
+      return <EditorView />;
+    case 'studies':
+      return <StudiesView params={params} />;
+    case 'games':
+      return <GamesView params={params} />;
+    case 'notes':
+      return <NotesView params={params} />;
+    case 'puzzles':
+      return <PuzzlesView params={params} />;
+    case 'books':
+      return <BooksView params={params} />;
+    case 'repertoire':
+      return <RepertoireView />;
+    case 'endgames':
+      return <EndgamesView params={params} />;
+    case 'openingmap':
+      return <OpeningMapView params={params} />;
+    case 'databases':
+      return <DatabasesPage />;
+    case 'insights':
+      return <InsightsPage />;
+    case 'settings':
+      // A sub-route rather than a section of its own: the licences are
+      // read from Settings and belong under it, and the sidebar has no
+      // business growing an entry for a footnote.
+      return params[0] === 'licenses' ? <LicensesPage /> : <SettingsPage anchor={params[0]} />;
+    case 'more':
+      return <MorePage />;
+    default:
+      return <Placeholder section={section} />;
+  }
+}
+
 function Shell() {
   const { section, params } = useRoute();
   // What was opened, for the quick switcher's Recent group (store/recent).
@@ -450,59 +504,25 @@ function Shell() {
           skeleton — React only suspends on promises it is given, which ours
           are not.
         */}
-        <RouteErrorBoundary key={section} at={[section, ...params].join('/')}>
-        <Suspense fallback={<div className="h-full" />}>
-        {section === 'home' ? (
-          <HomePage />
-        ) : section === 'board' ? (
-          // Keyed on the sub-mode: AnalysisView makes its param-dependent
-          // decisions once per mount (initial pane, explorer on/off, the
-          // stateless reset), so Board ↔ Explorer must REMOUNT it — same
-          // section, so React would otherwise reconcile the same instance
-          // and the sidebar click would change nothing but the title. A
-          // handoff set before navigate() survives: the mount effect
-          // consumes the flag wherever the mount came from.
-          <AnalysisView key={params[0] === 'explorer' ? 'explorer' : 'board'} params={params} />
-        ) : section === 'workspace' ? (
-          <WorkspaceView />
-        ) : section === 'editor' ? (
-          <EditorView />
-        ) : section === 'studies' ? (
-          <StudiesView params={params} />
-        ) : section === 'games' ? (
-          <GamesView params={params} />
-        ) : section === 'notes' ? (
-          <NotesView params={params} />
-        ) : section === 'puzzles' ? (
-          <PuzzlesView params={params} />
-        ) : section === 'books' ? (
-          <BooksView params={params} />
-        ) : section === 'repertoire' ? (
-          <RepertoireView />
-        ) : section === 'endgames' ? (
-          <EndgamesView params={params} />
-        ) : section === 'openingmap' ? (
-          <OpeningMapView params={params} />
-        ) : section === 'databases' ? (
-          <DatabasesPage />
-        ) : section === 'insights' ? (
-          <InsightsPage />
-        ) : section === 'settings' ? (
-          // A sub-route rather than a section of its own: the licences are
-          // read from Settings and belong under it, and the sidebar has no
-          // business growing an entry for a footnote.
-          params[0] === 'licenses' ? (
-            <LicensesPage />
-          ) : (
-            <SettingsPage anchor={params[0]} />
-          )
-        ) : section === 'more' ? (
-          <MorePage />
-        ) : (
-          <Placeholder section={section} />
-        )}
-        </Suspense>
-        </RouteErrorBoundary>
+        {/* The last few sections stay mounted while another is open
+            (lib/keep-alive), so a tab brings a section back as it was:
+            its rows, its filters, its scroller where it was left. Three
+            hidden at once, the least recently shown going first. The
+            board, the workspace and the editor are not kept: the first
+            two hold their state in stores already, the editor keeps its
+            own snapshot for Back, and all three are the heavy pages (the
+            engine, chessground) that a hidden tree should not hold. */}
+        <KeepAlive
+          current={section}
+          data={params}
+          keep={(key) => !UNKEPT.has(key as Section)}
+          budget={3}
+          render={(key, p) => (
+            <RouteErrorBoundary at={[key, ...p].join('/')}>
+              <Suspense fallback={<div className="h-full" />}>{renderSection(key as Section, p)}</Suspense>
+            </RouteErrorBoundary>
+          )}
+        />
       </main>
 
       <MobileBottom active={section} />

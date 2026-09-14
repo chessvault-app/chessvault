@@ -1,3 +1,4 @@
+import { visibleSlot } from './keep-alive';
 import { prefersReducedMotion } from './motion';
 
 /**
@@ -68,7 +69,11 @@ export function scrollPageToTop(): void {
   const main = document.getElementById('main');
   if (!main) return;
   const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
-  for (const el of main.querySelectorAll<HTMLElement>('*')) {
+  // Inside the slot on screen only: a kept page (lib/keep-alive) stands
+  // hidden under main with its scroller still where it was left, and
+  // came first in document order.
+  const root = visibleSlot(main) ?? main;
+  for (const el of root.querySelectorAll<HTMLElement>('*')) {
     if (el.scrollTop > 0) {
       el.scrollTo({ top: 0, behavior });
       return;

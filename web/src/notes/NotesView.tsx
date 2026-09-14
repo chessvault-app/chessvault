@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Suspense, memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
+import { KeepAlive } from '@/lib/keep-alive';
 import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
@@ -89,15 +90,27 @@ async function post(url: string, body: unknown): Promise<string | null> {
   }
 }
 
-/** Router shell for Notes: the list, or one open note. */
+/** Router shell for Notes: the list, or one open note. The list stays
+    mounted under an open note (lib/keep-alive), so Back lands on the
+    shelf as it was left; a note is keyed by id and is not kept. */
 export function NotesView({ params }: { params: string[] }) {
   const id = params[0] ? decodeSegment(params[0]) : null;
-  return id ? (
-    <Suspense fallback={<div className="h-full" />}>
-      <NoteView id={id} />
-    </Suspense>
-  ) : (
-    <NoteList />
+  return (
+    <KeepAlive
+      current={id ? `note:${id}` : 'list'}
+      data={id}
+      keep={(key) => key === 'list'}
+      budget={1}
+      render={(key, noteId) =>
+        key === 'list' || noteId === null ? (
+          <NoteList />
+        ) : (
+          <Suspense fallback={<div className="h-full" />}>
+            <NoteView id={noteId} />
+          </Suspense>
+        )
+      }
+    />
   );
 }
 

@@ -30,6 +30,7 @@ import { SquareBadge } from '@/board/square-overlay';
 import { outcomeTone } from './outcome';
 import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
+import { KeepAlive } from '@/lib/keep-alive';
 import { navigate } from '@/lib/router';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/lib/announce';
@@ -130,17 +131,34 @@ function verdictText(revealed: boolean, failed: boolean, helped: boolean): strin
         : 'Solved';
 }
 
+/** The pages under Puzzles that are lists or launchers, and so stay
+    mounted while a trainer is open over them (lib/keep-alive). A trainer
+    is a session and is not kept. */
+const KEPT_PAGES = new Set(['hub', 'themes', 'dashboard', 'books']);
+
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
-  if (params[0] === 'hub') return <HubPage />;
-  if (params[0] === 'themes') return <ThemesPage />;
-  if (params[0] === 'dashboard') return <DashboardPage />;
-  if (params[0] === 'books') return <BooksView params={params.slice(1)} />;
-  if (params[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
-  if (params[0] === 'id' && params[1]) {
-    return <Trainer key={`id-${params[1]}`} theme="" mode="single" puzzleId={params[1]} />;
-  }
-  const theme = params[0] === 'theme' ? (params[1] ?? '') : '';
-  return <Trainer key={theme} theme={theme} mode="fresh" />;
+  const head = params[0] ?? '';
+  const key = KEPT_PAGES.has(head) ? head : `trainer:${params.join('/')}`;
+  return (
+    <KeepAlive
+      current={key}
+      data={params}
+      keep={(k) => KEPT_PAGES.has(k)}
+      budget={2}
+      render={(k, p) => {
+        if (k === 'hub') return <HubPage />;
+        if (k === 'themes') return <ThemesPage />;
+        if (k === 'dashboard') return <DashboardPage />;
+        if (k === 'books') return <BooksView params={p.slice(1)} />;
+        if (p[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
+        if (p[0] === 'id' && p[1]) {
+          return <Trainer key={`id-${p[1]}`} theme="" mode="single" puzzleId={p[1]} />;
+        }
+        const theme = p[0] === 'theme' ? (p[1] ?? '') : '';
+        return <Trainer key={theme} theme={theme} mode="fresh" />;
+      }}
+    />
+  );
 }
 
 /**

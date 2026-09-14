@@ -26,6 +26,7 @@ import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
 import { useWideLayout } from '@/lib/media';
+import { KeepAlive } from '@/lib/keep-alive';
 import { navigate } from '@/lib/router';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/utils';
@@ -91,9 +92,18 @@ const PLAYING_NOTE: Record<Goal, string> = {
 const HOLD_MOVES = 10;
 
 export function EndgamesView({ params }: { params: string[] }) {
-  const classId = params[0];
-  if (!classId) return <EndgamePicker />;
-  return <Drill key={classId} classId={classId} />;
+  const classId = params[0] ?? null;
+  // The picker stays mounted under a drill (lib/keep-alive); the drill,
+  // with its tablebase session, is keyed and not kept.
+  return (
+    <KeepAlive
+      current={classId ? `drill:${classId}` : 'picker'}
+      data={classId}
+      keep={(key) => key === 'picker'}
+      budget={1}
+      render={(key, id) => (key === 'picker' || id === null ? <EndgamePicker /> : <Drill key={id} classId={id} />)}
+    />
+  );
 }
 
 /**

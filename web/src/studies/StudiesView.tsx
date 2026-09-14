@@ -1,6 +1,7 @@
 import { Bookmark, CloudDownload, SearchX, FileText, FileUp, Folder as FolderIcon, FolderInput, Library, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
+import { KeepAlive } from '@/lib/keep-alive';
 import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { decodeSegment, navigate } from '@/lib/router';
@@ -40,18 +41,28 @@ import { StudyView } from './StudyView';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
-/** Router shell for the Studies section: list, or one open study. */
+/** Router shell for the Studies section: list, or one open study. The
+    list stays mounted under an open study (lib/keep-alive), so Back
+    lands on the shelf as it was left; a study is not kept. */
 export function StudiesView({ params }: { params: string[] }) {
   const id = params[0] ? decodeSegment(params[0]) : null;
-  // `#/studies/<id>/<chapter>` — which chapter to open at, counted from 0.
-  // A backlink from a comment on a move in chapter four should land there
-  // rather than at chapter one, and putting it in the address rather than
-  // in a handoff means the link survives a reload and a Back.
-  const chapter = params[1] ? Number(params[1]) : undefined;
-  return id ? (
-    <StudyView id={id} chapter={Number.isInteger(chapter) ? chapter : undefined} />
-  ) : (
-    <StudyList />
+  return (
+    <KeepAlive
+      current={id ? `study:${id}` : 'list'}
+      data={params}
+      keep={(key) => key === 'list'}
+      budget={1}
+      render={(key, p) => {
+        const studyId = p[0] ? decodeSegment(p[0]) : null;
+        if (key === 'list' || studyId === null) return <StudyList />;
+        // `#/studies/<id>/<chapter>` — which chapter to open at, counted from 0.
+        // A backlink from a comment on a move in chapter four should land there
+        // rather than at chapter one, and putting it in the address rather than
+        // in a handoff means the link survives a reload and a Back.
+        const chapter = p[1] ? Number(p[1]) : undefined;
+        return <StudyView id={studyId} chapter={Number.isInteger(chapter) ? chapter : undefined} />;
+      }}
+    />
   );
 }
 
