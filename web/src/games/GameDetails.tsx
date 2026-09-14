@@ -9,7 +9,7 @@ import {
   PinOff,
   X,
 } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
 
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
@@ -83,7 +83,10 @@ function GameDetailsContent({
   const [idx, setIdx] = useState(0);
   const seq = useRef(0);
 
-  useEffect(() => {
+  // The selection's key is its identity; loadPgn is a fresh closure every
+  // render and must not re-fetch per render, so the load is an Effect
+  // Event and the effect below is keyed on the key alone.
+  const loadSelection = useEffectEvent(() => {
     const mine = ++seq.current;
     setReplay(null);
     if (!selection.loadPgn) return;
@@ -106,9 +109,9 @@ function GameDetailsContent({
         setIdx(plies.length);
       })
       .catch(() => {});
-    // The selection's key is its identity; loadPgn is a fresh closure
-    // every render and must not re-fetch per render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    loadSelection();
   }, [selection.key]);
 
   useEffect(() => {

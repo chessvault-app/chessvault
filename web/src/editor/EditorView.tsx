@@ -12,7 +12,17 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { Fragment, useContext, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useContext,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -236,9 +246,15 @@ export function EditorView({
   const overSm = useMediaQuery('(min-width: 40rem)');
   /** Paging live this render — bounded by viewport so a resize resolves it. */
   const paging = paged && overSm;
+  // Declared above tellChain, which its back chevron calls.
+  const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
   // The host window's title row follows the page (see onChainChange).
   const onChainChangeRef = useRef(onChainChange);
-  onChainChangeRef.current = onChainChange;
+  // Filled after commit, not in render, which the React Compiler refuses;
+  // tellChain runs later in the same commit and the unmount later still.
+  useLayoutEffect(() => {
+    onChainChangeRef.current = onChainChange;
+  });
   const tellChain = useEffectEvent(() => {
     const tell = onChainChangeRef.current;
     if (!tell) return;
@@ -309,7 +325,6 @@ export function EditorView({
    * covers the row too.
    */
   const [loadPage, setLoadPage] = useState(false);
-  const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   // Image import runs against the app's built-in piece templates, so a
   // screenshot of any lichess/chessground-style board reads with no setup.

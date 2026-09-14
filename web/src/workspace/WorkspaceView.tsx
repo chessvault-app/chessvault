@@ -1,5 +1,14 @@
 import { LayoutDashboard } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { PageGate } from '@/components/page-gate';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -315,7 +324,10 @@ function Workspace() {
   // through the same offer the Board page raises on entry.
   const bandBoard = useRef<BoardSnapshot | null>(null);
   const { offer } = useUndoable();
-  useEffect(() => {
+  // An Effect Event: it reads the packaged loadPgn and the offer of the
+  // moment without either being a dependency; the effect below runs it
+  // once per selection.
+  const loadSelection = useEffectEvent(() => {
     if (!sel?.loadPgn) return;
     const mine = ++seq.current;
     void sel
@@ -347,7 +359,9 @@ function Workspace() {
         bandBoard.current = snapshotBoard();
       })
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the selection's identity
+  });
+  useEffect(() => {
+    loadSelection();
   }, [sel?.key]);
 
   return (

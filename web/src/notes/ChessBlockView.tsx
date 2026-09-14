@@ -80,14 +80,12 @@ function cleanBlockPgn(pgn: string): string {
  * the autosave serialises into the ```chess fence.
  */
 export function ChessBlockView({ node, updateAttributes, deleteNode, selected, editor }: NodeViewProps) {
-  // Parsed ONCE, on purpose: this block owns its tree from here on and
-  // writes every change back to node.attrs.pgn, so re-parsing when that
-  // attribute changes would feed the board its own output and clobber
-  // whatever the user was in the middle of.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const raw = String(node.attrs.pgn ?? '*');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initial = useMemo(() => parseBlock(raw), []);
+  // Parsed ONCE, on purpose, as a state's initial value: this block owns
+  // its tree from here on and writes every change back to node.attrs.pgn,
+  // so re-parsing when that attribute changes would feed the board its
+  // own output and clobber whatever the user was in the middle of.
+  const [initial] = useState(() => parseBlock(raw));
   /**
    * The fence could not be read as a FEN or a PGN. The block then shows
    * the text as written and no board, and writes nothing back: a board
@@ -147,23 +145,22 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
    * diagram is not charged for reading any more.
    */
   const [awake, setAwake] = useState(() => !isCoarsePointer());
-  // The shared gate (board/usePromotion); the chosen piece rides the same
-  // addMove → commit path an ordinary move takes, so it autosaves too.
-  const promotion = usePromotion((orig, dest, role) => {
-    const result = addMove(tree, cursorId, {
-      from: parseSquare(orig)!,
-      to: parseSquare(dest)!,
-      promotion: role,
-    });
-    commit(result.tree, result.nodeId);
-  });
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [pasteError, setPasteError] = useState<string | null>(null);
 
   const current = getNode(tree, cursorId);
-  const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
-  const dests = useMemo(() => legalDests(tree, cursorId), [tree, cursorId]);
+  // The check flag is taken inside the memo: a method call on `pos` in
+  // render reads to the React Compiler as a possible mutation, which is
+  // what kept it from preserving this memoisation.
+  const { pos, inCheck } = useMemo(() => {
+    const p = positionAt(tree, cursorId);
+    return { pos: p, inCheck: p.isCheck() };
+  }, [tree, cursorId]);
+  // Memoised by the React Compiler on what it reads (the tree and the
+  // cursor, in one block with `current`); a useMemo of its own here was
+  // one the compiler could not keep, and refused the whole component for.
+  const dests = legalDests(tree, cursorId);
   const lastMove = moveSquares(current);
   /** Whether the pieces can be moved: the note is open for editing, and on
       a touch device this board has had its one waking tap. */
@@ -174,6 +171,18 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
     setCursorId(nextCursor);
     updateAttributes({ pgn: cleanBlockPgn(treeToPgn(nextTree, headers.current)) });
   };
+  // The shared gate (board/usePromotion); the chosen piece rides the same
+  // addMove → commit path an ordinary move takes, so it autosaves too.
+  // Below commit, which it calls: the React Compiler refuses a use before
+  // the declaration.
+  const promotion = usePromotion((orig, dest, role) => {
+    const result = addMove(tree, cursorId, {
+      from: parseSquare(orig)!,
+      to: parseSquare(dest)!,
+      promotion: role,
+    });
+    commit(result.tree, result.nodeId);
+  });
 
   const playMove = (orig: string, dest: string): void => {
     const from = parseSquare(orig);
@@ -252,7 +261,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           // ignores them under viewOnly anyway — say so rather than rely on it.
           dests={live ? dests : undefined}
           lastMove={lastMove}
-          check={pos.isCheck()}
+          check={inCheck}
           coordinates={false}
           onMove={playMove}
         />

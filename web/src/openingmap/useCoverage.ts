@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { pgnToChapters } from '@shared/pgn';
 import type { Chapter } from '@shared/types';
 import { api } from '@/lib/api';
@@ -23,6 +23,9 @@ import type { MapTag, OpeningMap, ResolvedMap } from './model';
  */
 
 const parsed = new Map<string, { stamp: string; chapters: Chapter[] }>();
+/** The cache as a render sees it: each study's chapters by id. */
+const parsedStudies = (): Map<string, Chapter[]> =>
+  new Map([...parsed].map(([id, hit]) => [id, hit.chapters]));
 
 /**
  * The already-fetched chapters the given tags put in scope, each with the
@@ -60,7 +63,10 @@ export function useCoverage(
       painted from it recolours moments later. */
   ready: boolean;
 } {
-  const [version, bump] = useState(0);
+  // The parsed studies, snapshotted from the module cache whenever the
+  // studies pass below has changed it. A render reads this and not the
+  // cache, so what it reads is what it is keyed on.
+  const [studies, setStudies] = useState(parsedStudies);
   const [missing, setMissing] = useState<ReadonlySet<string>>(new Set());
   const [marks, setMarks] = useState<DrillMarks>({ review: new Set(), gaps: new Set() });
   // Which tag set the studies pass has fully answered for, compared to the
@@ -73,8 +79,10 @@ export function useCoverage(
   // The drill record's word on the tagged studies: which positions were
   // fumbled last, and where a drill found them wanting. Re-read per mount
   // and per tag change — the record grows while the user drills, and a
-  // stale overlay would say a fixed line is still shaky.
-  useEffect(() => {
+  // stale overlay would say a fixed line is still shaky. An Effect Event,
+  // keyed below on the joined ids rather than the array, which is new
+  // every render.
+  const readMarks = useEffectEvent(() => {
     if (ids.length === 0) {
       setMarks({ review: new Set(), gaps: new Set() });
       return;
@@ -85,15 +93,14 @@ export function useCoverage(
       const gaps = new Set<string>();
       await Promise.all(
         ids.map(async (id) => {
+          let body: { review?: { key: string }[]; gaps?: { key: string }[] } | undefined;
           try {
-            const body = await api<{ review?: { key: string }[]; gaps?: { key: string }[] }>(
-              `/api/repertoire/summary?study=${encodeURIComponent(id)}`,
-            );
-            for (const entry of body.review ?? []) review.add(entry.key);
-            for (const entry of body.gaps ?? []) gaps.add(entry.key);
+            body = await api(`/api/repertoire/summary?study=${encodeURIComponent(id)}`);
           } catch {
             // No record is a clean map, not an error.
           }
+          for (const entry of body?.review ?? []) review.add(entry.key);
+          for (const entry of body?.gaps ?? []) gaps.add(entry.key);
         }),
       );
       if (live) setMarks({ review, gaps });
@@ -101,10 +108,11 @@ export function useCoverage(
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey]);
+  });
+  useEffect(() => readMarks(), [idsKey]);
 
-  useEffect(() => {
+  // Keyed on the tagged ids; the listing is re-read when they change.
+  const readStudies = useEffectEvent(() => {
     if (ids.length === 0) {
       setMissing(new Set());
       return;
@@ -134,23 +142,19 @@ export function useCoverage(
       if (live) {
         setMissing(gone);
         setSettledFor(idsKey);
-        bump((n) => n + 1);
+        setStudies(parsedStudies());
       }
     })().catch(() => {});
     return () => {
       live = false;
     };
-    // Keyed on the tagged ids; the listing is re-read when they change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey]);
+  });
+  useEffect(() => readStudies(), [idsKey]);
 
   const coverage = useMemo(() => {
     if (!map || !resolved || tags.length === 0) return undefined;
-    const studies = new Map([...parsed].map(([id, hit]) => [id, hit.chapters]));
     return computeCoverage(resolved, scopedChapters(tags, studies), marks);
-    // `version` stands in for the module cache's contents.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, resolved, tags, marks, version]);
+  }, [map, resolved, tags, marks, studies]);
 
   return { coverage, missing, ready: ids.length === 0 || settledFor === idsKey };
 }

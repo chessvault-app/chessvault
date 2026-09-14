@@ -1,5 +1,5 @@
 import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FilePicker } from '@/components/file-picker';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,16 @@ export interface PhotoReading {
  * diagram) the image comes back unread — the caller's confirmation flow
  * then teaches the font via harvestTemplates.
  */
+/** The first image on the clipboard, or null when there is none. Throws when
+    the browser refuses the read. */
+async function clipboardImage(): Promise<Blob | null> {
+  for (const item of await navigator.clipboard.read()) {
+    const type = item.types.find((t) => t.startsWith('image/'));
+    if (type) return item.getType(type);
+  }
+  return null;
+}
+
 export function PhotoImport({
   templates,
   onApply,
@@ -131,9 +141,13 @@ export function PhotoImport({
     image.src = url;
   }, []);
 
-  useEffect(() => {
+  // Mount only: the file the dialog was opened with is picked once, and a
+  // later change to the prop must not pick again.
+  const pickInitial = useEffectEvent(() => {
     if (initialFile) pick(initialFile);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  });
+  useEffect(() => {
+    pickInitial();
   }, []);
 
   // Ctrl+V anywhere while the dialog is open loads the clipboard image —
@@ -154,18 +168,18 @@ export function PhotoImport({
   // Button fallback for the same thing: the paste EVENT only fires on a
   // keyboard shortcut, so a pointer-driven flow needs the async API.
   const pasteFromClipboard = async (): Promise<void> => {
+    // The read is a module function so the try holds one awaited call;
+    // what it found is acted on after.
+    let image: Blob | null = null;
+    let blocked = false;
     try {
-      for (const item of await navigator.clipboard.read()) {
-        const type = item.types.find((t) => t.startsWith('image/'));
-        if (type) {
-          pick(await item.getType(type));
-          return;
-        }
-      }
-      setPasteHint(t('No image in the clipboard. Copy or snip one first.'));
+      image = await clipboardImage();
     } catch {
-      setPasteHint(t('Clipboard access was blocked. Press Ctrl+V instead.'));
+      blocked = true;
     }
+    if (blocked) setPasteHint(t('Clipboard access was blocked. Press Ctrl+V instead.'));
+    else if (image) pick(image);
+    else setPasteHint(t('No image in the clipboard. Copy or snip one first.'));
   };
 
   // Fit the image to the modal; all pointer math converts through `scale`.

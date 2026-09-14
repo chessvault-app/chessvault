@@ -636,14 +636,17 @@ export function HomePage() {
     const failures: unknown[] = [];
     const grab = async (url: string): Promise<unknown> => {
       asked += 1;
+      let body: unknown;
       try {
-        // `?? null`: the null checks below (settings !== null) predate
-        // api(), which parses an empty body to undefined instead.
-        return (await api(url)) ?? null;
+        body = await api(url);
       } catch (e) {
         failures.push(e);
         return null;
       }
+      // `?? null`: the null checks below (settings !== null) predate
+      // api(), which parses an empty body to undefined instead. After
+      // the try, where the React Compiler can lower it.
+      return body ?? null;
     };
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they

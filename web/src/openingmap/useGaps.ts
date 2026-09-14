@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { fenKey } from '@/lib/fen';
 import { fetchField, fetchFieldBatch, MY_GAMES_SOURCE, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import type { NodeCoverage } from './coverage';
@@ -38,6 +38,21 @@ const RETRY_MS = 30_000;
  * without this every position still in flight would be asked again.
  */
 const inflight = new Map<string, Promise<FieldMove[]>>();
+/**
+ * How a render reads the answers. The hook holds one of these in state
+ * and hands itself a fresh one at every publish, so the reads below are
+ * keyed on the publish that made them current: a bare counter beside a
+ * read of `cache` was keyed on nothing the read touched. Reads stay live,
+ * so a position the cache already holds answers on the first render.
+ */
+type FieldAnswers = {
+  moves: (key: string) => FieldMove[] | undefined;
+  refusedAt: (key: string) => number | undefined;
+};
+const fieldAnswers = (): FieldAnswers => ({
+  moves: (key) => cache.get(key),
+  refusedAt: (key) => failedAt.get(key),
+});
 
 /**
  * Forget what the own-games index said.
@@ -195,11 +210,15 @@ export function useGaps(
       this, so the map arrives coloured instead of colouring in place. */
   ready: boolean;
 } {
-  const [version, bump] = useState(0);
+  const [answers, setAnswers] = useState(fieldAnswers);
+  const publishAnswers = (): void => setAnswers(fieldAnswers());
   // Own-games rows depend on whose games count; every other source
   // ignores it, and a constant key part is harmless there.
   const side = map?.color;
-  const keyOf = (fen: string): string => keyFor(source, ratings, fen, side);
+  const keyOf = useCallback(
+    (fen: string): string => keyFor(source, ratings, fen, side),
+    [source, ratings, side],
+  );
 
   // Through a ref, because a selection must not restart the sweep: the
   // effect below is keyed on what is still unanswered, and re-running it
@@ -236,16 +255,17 @@ export function useGaps(
         // its backoff instead of spinning the effect in a retry loop.
         return !cache.has(key) && Date.now() - (failedAt.get(key) ?? 0) >= RETRY_MS;
       }),
-    // Deliberately NOT keyed on `version`. Publishing progress used to
-    // recompute this, which re-ran the effect, which cancelled the sweep
-    // and started a fresh one over what was left — so a 398-position map
-    // took 13 batches to do 7 batches' work. The RETURN memo below still
-    // watches `version`, which is what actually has to see new answers.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [wanted, source, ratings, side],
+    // Deliberately reads `cache` and not `answers`. Publishing progress
+    // used to recompute this, which re-ran the effect, which cancelled the
+    // sweep and started a fresh one over what was left — so a 398-position
+    // map took 13 batches to do 7 batches' work. The RETURN memo below
+    // reads `answers`, which is what actually has to see new ones.
+    [wanted, keyOf],
   );
 
-  useEffect(() => {
+  // An Effect Event: the sweep reads the map and the focus as they are
+  // when it starts, and is restarted only by what is still unanswered.
+  const runSweep = useEffectEvent(() => {
     if (missing.length === 0) return;
     let live = true;
     const queue = [...missing];
@@ -266,7 +286,7 @@ export function useGaps(
     const publish = (): void => {
       done = 0;
       published = Date.now();
-      bump((n) => n + 1);
+      publishAnswers();
     };
     /**
      * Where the source can answer many positions at once, take that.
@@ -369,9 +389,8 @@ export function useGaps(
     };
 
     const worker = async (): Promise<void> => {
-      for (;;) {
-        const next = nextWanted();
-        if (!next || !live) return;
+      // Until the queue and the chase are both empty, or the effect is gone.
+      for (let next = nextWanted(); next && live; next = nextWanted()) {
         // fieldMovesFor caches, and answers empty on an unreachable
         // field — a shrug, not an error banner.
         await fieldMovesFor(source, ratings, next.fen, side);
@@ -389,20 +408,20 @@ export function useGaps(
     void sweep()
       .then(() => Promise.all(Array.from({ length: lanes }, worker)))
       .then(() => {
-        if (live) bump((n) => n + 1);
+        if (live) publishAnswers();
       });
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [missing, source, ratings, side]);
+  });
+  useEffect(() => runSweep(), [missing, source, ratings, side]);
 
   return useMemo(() => {
     const gaps = new Map<string, NodeGaps>();
     const shares = new Map<string, number>();
     if (!map || !resolved || !source) return { gaps, shares, ready: true };
     for (const { id, fen } of wanted) {
-      const moves = cache.get(keyOf(fen));
+      const moves = answers.moves(keyOf(fen));
       if (!moves) continue;
       const turn = fen.split(' ')[1] === 'w' ? 'white' : 'black';
       if (turn !== map.color) {
@@ -422,14 +441,13 @@ export function useGaps(
         }
       }
     }
-    // Answered or backed off — recomputed per publish (`version`), and
-    // the sweep's completion bump always fires, so this settles even when
-    // the throttled publishes skipped the last answers.
+    // Answered or backed off — recomputed per publish (`answers`), and
+    // the sweep's completion publish always fires, so this settles even
+    // when the throttled publishes skipped the last answers.
     const ready = wanted.every(({ fen }) => {
       const key = keyOf(fen);
-      return cache.has(key) || Date.now() - (failedAt.get(key) ?? 0) < RETRY_MS;
+      return answers.moves(key) !== undefined || Date.now() - (answers.refusedAt(key) ?? 0) < RETRY_MS;
     });
     return { gaps, shares, ready };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, resolved, coverage, wanted, source, ratings, version]);
+  }, [map, resolved, coverage, wanted, source, keyOf, answers]);
 }

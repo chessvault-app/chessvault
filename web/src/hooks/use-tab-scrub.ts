@@ -214,7 +214,9 @@ export function useTabScrub({
         if (!from || !rect) return;
         if (e.touches.length !== 1) return abandon();
         const touch = e.touches[0]!;
-        axis.current ??= gestureAxis(touch.clientX - from.x, touch.clientY - from.y);
+        // Spelt out rather than `??=`, which the React Compiler cannot lower.
+        if (axis.current === null)
+          axis.current = gestureAxis(touch.clientX - from.x, touch.clientY - from.y);
         // Not horizontal, or not yet: the button still has its tap.
         if (axis.current !== 'x') return;
         const next = tabUnder(touch.clientX, rect.left, rect.width, count);

@@ -247,18 +247,25 @@ export function usePuzzleEvidence(slug: string, id: string | undefined): BookEvi
   useEffect(() => {
     if (!id || evidenceCache.has(key)) return;
     let live = true;
+    const url = `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(id)}/evidence`;
     void (async () => {
+      // Only the request sits in the try; the answer is read after it.
+      let body: { evidence?: BookEvidence } | undefined;
+      let failed = false;
+      let failure: unknown;
       try {
-        const body =
-          (await api<{ evidence?: BookEvidence } | undefined>(
-            `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(id)}/evidence`,
-          )) ?? {};
-        evidenceCache.set(key, body.evidence);
+        body = await api<{ evidence?: BookEvidence } | undefined>(url);
       } catch (e) {
+        failed = true;
+        failure = e;
+      }
+      if (!failed) {
+        evidenceCache.set(key, body?.evidence);
+      } else if (failure instanceof ApiError && failure.status !== 0) {
         // A missing scan is a missing button, not a broken puzzle: the
         // server SAYING no is remembered as no evidence. But a transient
         // network failure must not be — the next look simply asks again.
-        if (e instanceof ApiError && e.status !== 0) evidenceCache.set(key, undefined);
+        evidenceCache.set(key, undefined);
       }
       if (live) bump((n) => n + 1);
     })();

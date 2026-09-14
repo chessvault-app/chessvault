@@ -1,6 +1,6 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
-import { useRef } from 'react';
+import { useState } from 'react';
 
 /**
  * Choosing a file, in the one place that knows how.
@@ -53,7 +53,11 @@ export function FilePicker({
   /** Called with what was chosen; never with an empty list. */
   onFiles: (files: File[]) => void;
 }) {
-  const input = useRef<HTMLInputElement>(null);
+  // The input's node as state rather than a ref: the click handler below
+  // is handed to mergeProps, which is a call made in render, and a
+  // function that reads a ref there is what the React Compiler refuses.
+  // One extra render when the input mounts, and nothing on any press.
+  const [input, setInput] = useState<HTMLInputElement | null>(null);
   const trigger = useRender({
     defaultTagName: 'button',
     render,
@@ -64,7 +68,7 @@ export function FilePicker({
         disabled,
         // The input is the chooser; the button is the way to it, from a
         // pointer or from a keypress, which is a user gesture either way.
-        onClick: () => input.current?.click(),
+        onClick: () => input?.click(),
       },
       props,
     ),
@@ -73,7 +77,7 @@ export function FilePicker({
     <>
       {trigger}
       <input
-        ref={input}
+        ref={setInput}
         type="file"
         accept={accept}
         multiple={multiple}

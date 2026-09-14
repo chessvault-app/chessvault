@@ -443,14 +443,17 @@ export function RepertoireView() {
   /** A position's opening family, from the vendored catalogue. Failures
       answer null — no name, no filtering. */
   const fetchFamily = async (fen: string): Promise<string | null> => {
+    // Read after the try: the React Compiler cannot lower the `?.` chain
+    // inside one yet.
+    let body: { opening?: { name?: string } | null } | null;
     try {
-      const body = await api<{ opening?: { name?: string } | null } | null>(
+      body = await api<{ opening?: { name?: string } | null } | null>(
         `/api/opening?fen=${encodeURIComponent(fen)}`,
       );
-      return openingFamily(body?.opening?.name ?? null);
     } catch {
       return null;
     }
+    return openingFamily(body?.opening?.name ?? null);
   };
 
   /** The subject: the deepest named position along the trunk, asked
@@ -459,15 +462,16 @@ export function RepertoireView() {
       names, which left the subject nameless and let 1...c5 count as a
       gap in a Berlin study. Failures answer null — no filtering. */
   const fetchSubject = async (fens: string[]): Promise<{ family: string; ply: number } | null> => {
+    type Named = { positions?: { fen: string; opening?: { name?: string } | null }[] } | null;
+    // Read after the try, as in fetchFamily.
+    let body: Named;
     try {
-      const body = await api<{
-        positions?: { fen: string; opening?: { name?: string } | null }[];
-      } | null>('/api/opening/batch', { method: 'POST', json: { fens } });
-      const byFen = new Map((body?.positions ?? []).map((p) => [p.fen, p.opening?.name ?? null]));
-      return deepestNamed(fens.map((fen) => byFen.get(fen)));
+      body = await api<Named>('/api/opening/batch', { method: 'POST', json: { fens } });
     } catch {
       return null;
     }
+    const byFen = new Map((body?.positions ?? []).map((p) => [p.fen, p.opening?.name ?? null]));
+    return deepestNamed(fens.map((fen) => byFen.get(fen)));
   };
 
   /** One drilled position, into the vault. Losing the record must never
@@ -670,9 +674,11 @@ export function RepertoireView() {
       const url = online
         ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
         : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`;
-      try {
-        const body = await api<{ moves?: ExplorerMove[] } | null>(url);
-        if (token !== runId.current) return;
+      // Everything after the fetch, as a function of its own: the React
+      // Compiler cannot lower a conditional inside a try yet, and this is
+      // nothing but conditionals. Called from inside the try below, so a
+      // throw anywhere in it still lands in the same catch it always did.
+      const settle = async (body: { moves?: ExplorerMove[] } | null): Promise<void> => {
         if (!body?.moves) {
           setError(t(fallback));
           setPhase('playing');
@@ -852,15 +858,23 @@ export function RepertoireView() {
             .join(' '),
         );
         setPhase('playing');
+      };
+      let failed = false;
+      let failure: unknown;
+      try {
+        const body = await api<{ moves?: ExplorerMove[] } | null>(url);
+        if (token !== runId.current) return;
+        await settle(body);
       } catch (err) {
-        // The server's own words when it sent any (api() carried them out
-        // of the error envelope); the source's fallback for a network
-        // failure or anything else.
-        if (token === runId.current) {
-          setError(err instanceof ApiError && err.status > 0 ? err.message : t(fallback));
-          setPhase('playing');
-        }
+        failed = true;
+        failure = err;
       }
+      if (!failed || token !== runId.current) return;
+      // The server's own words when it sent any (api() carried them out
+      // of the error envelope); the source's fallback for a network
+      // failure or anything else.
+      setError(failure instanceof ApiError && failure.status > 0 ? failure.message : t(fallback));
+      setPhase('playing');
     },
     [],
   );
@@ -1153,18 +1167,22 @@ export function RepertoireView() {
       White: userColor === 'white' ? 'You' : sourceLabel,
       Black: userColor === 'black' ? 'You' : sourceLabel,
     });
+    // Only the request is in the try: the React Compiler cannot lower the
+    // fallback to `name` inside one yet.
+    let body: { id?: string } | null;
     try {
-      const body = await api<{ id?: string } | null>('/api/studies', {
+      body = await api<{ id?: string } | null>('/api/studies', {
         method: 'POST',
         json: { name, pgn },
       });
-      setSaveOpen(false);
-      navigate('studies', encodeURIComponent(body?.id ?? name));
     } catch (err) {
       // api() carries the server's own words; a network failure answers
       // "Vault server unreachable", as this always did.
       setSaveError(apiErrorMessage(err));
+      return;
     }
+    setSaveOpen(false);
+    navigate('studies', encodeURIComponent(body?.id ?? name));
   };
 
   /**

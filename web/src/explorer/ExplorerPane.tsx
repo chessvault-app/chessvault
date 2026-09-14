@@ -1,5 +1,5 @@
 import { Database, ExternalLink, RotateCw, ScanSearch, SearchCheck, SlidersHorizontal } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { api, apiStream } from '@/lib/api';
 import { useLineOpening } from '@/lib/opening';
@@ -834,19 +834,23 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
     if (state !== 'running') return;
     let live = true;
     const tick = async (): Promise<void> => {
+      // Only the request is in the try: the React Compiler cannot lower
+      // the `??` reads below inside one yet.
+      let s: BuildStatus;
       try {
-        const s = await api<BuildStatus>('/api/refgames/build/status');
-        if (!live) return;
-        setLine(s.log?.at(-1) ?? null);
-        setPercent(s.phase?.percent ?? null);
-        if (!s.running) {
-          if ((s.exitCode ?? 1) === 0) {
-            announce(t('Indexing finished.'));
-            onDone();
-          } else setState('failed');
-        }
+        s = await api<BuildStatus>('/api/refgames/build/status');
       } catch {
         /* next tick asks again */
+        return;
+      }
+      if (!live) return;
+      setLine(s.log?.at(-1) ?? null);
+      setPercent(s.phase?.percent ?? null);
+      if (!s.running) {
+        if ((s.exitCode ?? 1) === 0) {
+          announce(t('Indexing finished.'));
+          onDone();
+        } else setState('failed');
       }
     };
     void tick();
@@ -1197,23 +1201,6 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     [],
   );
   const filterQuery = refFilterQuery(refFilters);
-  useEffect(() => {
-    seq.current += 1;
-    setRunning(false);
-    setProgress(null);
-    setHits(null);
-    setExhaustive(true);
-    setFailed(false);
-    if (!auto || exploreLoading) return;
-    // Debounced: arrow-keying through a game must not launch a scan per
-    // ply. The seq bump above cancels an in-flight scan the moment the
-    // position (or a filter chip) changes.
-    const timer = setTimeout(() => void run(), 500);
-    return () => clearTimeout(timer);
-    // run reads only state that is itself keyed by these deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fen, db, auto, exploreLoading, filterQuery]);
-
   const run = async (): Promise<void> => {
     const mine = ++seq.current;
     setRunning(true);
@@ -1227,30 +1214,31 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     // with.
     let got = 0;
     let exhaustive = true;
+    // The URL and the frame handler are built before the try, which holds
+    // the stream alone: the React Compiler cannot lower a conditional
+    // inside one yet.
+    const query = new URLSearchParams({ fen, db });
+    const filterQuery = refFilterQuery(refFilters);
+    const url = `/api/refgames/deep-search?${query}${filterQuery ? `&${filterQuery}` : ''}`;
+    type Frame =
+      | ({ type: 'game' } & DeepHit)
+      | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+    const onFrame = (frame: Frame): void => {
+      if (frame.type === 'game') {
+        const { type: _type, ...hit } = frame;
+        setHits((prev) => [...(prev ?? []), hit]);
+        got += 1;
+      } else {
+        setProgress({ scanned: frame.scanned, total: frame.total });
+        if (frame.type === 'done') {
+          sawDone = true;
+          exhaustive = frame.exhaustive !== false;
+          setExhaustive(exhaustive);
+        }
+      }
+    };
     try {
-      const query = new URLSearchParams({ fen, db });
-      const filterQuery = refFilterQuery(refFilters);
-      type Frame =
-        | ({ type: 'game' } & DeepHit)
-        | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
-      const ended = await apiStream<Frame>(
-        `/api/refgames/deep-search?${query}${filterQuery ? `&${filterQuery}` : ''}`,
-        (frame) => {
-          if (frame.type === 'game') {
-            const { type: _type, ...hit } = frame;
-            setHits((prev) => [...(prev ?? []), hit]);
-            got += 1;
-          } else {
-            setProgress({ scanned: frame.scanned, total: frame.total });
-            if (frame.type === 'done') {
-              sawDone = true;
-              exhaustive = frame.exhaustive !== false;
-              setExhaustive(exhaustive);
-            }
-          }
-        },
-        () => seq.current === mine,
-      );
+      const ended = await apiStream<Frame>(url, onFrame, () => seq.current === mine);
       if (!ended) return;
     } catch {
       // offline, or the route refused — failed, not empty
@@ -1269,6 +1257,27 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
       );
     }
   };
+
+  // Debounced: arrow-keying through a game must not launch a scan per
+  // ply. The seq bump in the effect cancels an in-flight scan the moment
+  // the position (or a filter chip) changes. An Effect Event because run
+  // reads only state that is itself keyed by the effect's deps; declared
+  // after run because the React Compiler refuses a call to a function
+  // declared below it.
+  const scanSoon = useEffectEvent((): (() => void) => {
+    const timer = setTimeout(() => void run(), 500);
+    return () => clearTimeout(timer);
+  });
+  useEffect(() => {
+    seq.current += 1;
+    setRunning(false);
+    setProgress(null);
+    setHits(null);
+    setExhaustive(true);
+    setFailed(false);
+    if (!auto || exploreLoading) return;
+    return scanSoon();
+  }, [fen, db, auto, exploreLoading, filterQuery]);
 
   const open = async (hit: DeepHit): Promise<void> => {
     try {
@@ -1408,31 +1417,39 @@ function TopGamesList({
   const [expanded, setExpanded] = useState(false);
   const shown = expanded ? games : games.slice(0, VISIBLE);
 
+  /** The game's PGN, from wherever it lives. Its own function because
+      the React Compiler cannot lower these conditionals inside `open`'s
+      try yet. */
+  const fetchPgn = async (g: TopGame): Promise<string> => {
+    // One of your own games says where it lives, so it opens directly —
+    // no search, and it works for a game no reference database has ever
+    // heard of, which is every game you have played.
+    if (g.file !== undefined && g.index !== undefined) {
+      const query = new URLSearchParams({ file: g.file, index: String(g.index) });
+      const { pgn } = await api<{ pgn: string }>(`/api/games/pgn?${query}`);
+      return pgn;
+    }
+    const query = new URLSearchParams({ white: g.white, black: g.black });
+    if (g.date) query.set('date', g.date);
+    if (g.result) query.set('result', g.result);
+    // `db` says which reference database held the match — absent on a
+    // single-database mount (the demo), where the default is it.
+    const { id, db } = await api<{ id: number; db?: string }>(`/api/refgames/find?${query}`);
+    const { pgn } = await api<{ pgn: string }>(
+      `/api/refgames/${id}/pgn${db ? `?db=${encodeURIComponent(db)}` : ''}`,
+    );
+    return pgn;
+  };
+
   const open = async (g: TopGame): Promise<void> => {
+    let opened = false;
     try {
-      // One of your own games says where it lives, so it opens directly —
-      // no search, and it works for a game no reference database has ever
-      // heard of, which is every game you have played.
-      if (g.file !== undefined && g.index !== undefined) {
-        const query = new URLSearchParams({ file: g.file, index: String(g.index) });
-        const { pgn } = await api<{ pgn: string }>(`/api/games/pgn?${query}`);
-        if (await loadPgn(pgn)) return;
-      } else {
-        const query = new URLSearchParams({ white: g.white, black: g.black });
-        if (g.date) query.set('date', g.date);
-        if (g.result) query.set('result', g.result);
-        // `db` says which reference database held the match — absent on a
-        // single-database mount (the demo), where the default is it.
-        const { id, db } = await api<{ id: number; db?: string }>(`/api/refgames/find?${query}`);
-        const { pgn } = await api<{ pgn: string }>(
-          `/api/refgames/${id}/pgn${db ? `?db=${encodeURIComponent(db)}` : ''}`,
-        );
-        if (await loadPgn(pgn)) return;
-      }
+      opened = await loadPgn(await fetchPgn(g));
     } catch {
       // offline hiccup or a game the server cannot find — the fallback
       // below still works
     }
+    if (opened) return;
     onPlay(g.uci);
   };
 

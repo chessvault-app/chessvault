@@ -325,9 +325,6 @@ function SolutionRecorder({
 }) {
   const [line, setLine] = useState<{ uci: string; san: string; fen: string }[]>([]);
   const [wildcards, setWildcards] = useState<ReadonlySet<number>>(new Set());
-  // The shared gate (board/usePromotion); the chosen piece finishes the
-  // UCI that play() records.
-  const promotion = usePromotion((orig, dest, role) => play(orig + dest + roleToChar(role)));
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verdicts, setVerdicts] = useState<string[] | null>(null);
@@ -358,6 +355,11 @@ function SolutionRecorder({
     setLine((prev) => [...prev, { uci, san, fen: makeFen(pos.toSetup()) }]);
     setVerdicts(null);
   };
+
+  // The shared gate (board/usePromotion); the chosen piece finishes the
+  // UCI that play() records. Called after play is declared, which is the
+  // order the compiler needs to see.
+  const promotion = usePromotion((orig, dest, role) => play(orig + dest + roleToChar(role)));
 
   const onMove = (orig: string, dest: string): void => {
     if (promotion.maybeStart(currentFen, turn, orig, dest)) return;
@@ -402,25 +404,25 @@ function SolutionRecorder({
   const save = async (): Promise<void> => {
     setSaving(true);
     forgetBook(slug);
+    // Built before the try: the compiler takes no conditional inside one.
+    const json = {
+      fen,
+      uci: line.map((m) => m.uci),
+      san: line.map((m) => m.san),
+      wildcards: [...wildcards],
+      ...(replaceId ? { replaceId } : {}),
+    };
     try {
-      // The finally matters: a thrown fetch used to leave `saving` true
-      // for good — Save disabled, the entered solution unrecoverable.
-      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
-        method: 'POST',
-        json: {
-          fen,
-          uci: line.map((m) => m.uci),
-          san: line.map((m) => m.san),
-          wildcards: [...wildcards],
-          ...(replaceId ? { replaceId } : {}),
-        },
-      });
+      // Clearing `saving` below on both arms matters: a thrown fetch used
+      // to leave it true for good — Save disabled, the entered solution
+      // unrecoverable.
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, { method: 'POST', json });
       onDone();
     } catch (e) {
       setError(apiErrorMessage(e));
-    } finally {
-      setSaving(false);
     }
+    // Both arms fall through to here, which is what the finally used to do.
+    setSaving(false);
   };
 
   return (

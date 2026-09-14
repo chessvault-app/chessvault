@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import type { MoveTree, NodeId } from '@shared/types';
 import { api } from '@/lib/api';
 
@@ -114,6 +114,11 @@ export async function isBookPosition(fen: string): Promise<boolean> {
 /**
  * One pass of book classification over what the cache already knows.
  *
+ * `generation` is the caller's count of cache fills, and the answer is a
+ * function of it as much as of the tree: the walk reads a module cache
+ * that React cannot see, so a caller memoising the walk has to hand the
+ * generation in, and gets it back as `at`, or a fill would never redo it.
+ *
  * The rule is path-gated and position-based, on EVERY branch of the tree,
  * not just the mainline: a move is book when the position it reaches is in
  * the catalogue AND its parent was book. So a variation that branches
@@ -129,7 +134,10 @@ export async function isBookPosition(fen: string): Promise<boolean> {
  * looks those up and classifies again; each round settles one ply deeper,
  * and NAMED_PLIES bounds the whole affair.
  */
-function classifyBook(tree: MoveTree): { book: Set<NodeId>; unresolved: string[] } {
+function classifyBook(
+  tree: MoveTree,
+  generation: number,
+): { book: Set<NodeId>; unresolved: string[]; at: number } {
   const book = new Set<NodeId>();
   const unresolved: string[] = [];
   const frontier: NodeId[] = [tree.rootId];
@@ -147,7 +155,7 @@ function classifyBook(tree: MoveTree): { book: Set<NodeId>; unresolved: string[]
       }
     }
   }
-  return { book, unresolved };
+  return { book, unresolved, at: generation };
 }
 
 const NO_TAGS: Set<NodeId> = new Set();
@@ -164,22 +172,23 @@ const NOTHING_UNRESOLVED: string[] = [];
  * run, lanph3re's call: before that the icons are ink, not information.
  */
 export function useBookTags(tree: MoveTree, enabled = true): Set<NodeId> {
-  const [version, setVersion] = useState(0);
+  // How many times the effect below has filled the cache. The walk takes
+  // it as an input (see classifyBook), which is what makes a fill redo the
+  // walk: the React Compiler memoises on what an expression reads, and a
+  // dependency the walk never read would be dropped.
+  const [generation, setGeneration] = useState(0);
   const { book, unresolved } = useMemo(
     () =>
-      enabled ? classifyBook(tree) : { book: NO_TAGS, unresolved: NOTHING_UNRESOLVED },
-    // `version` is never READ by the walk — it is the signal to redo it once
-    // the effect below has filled the lookup cache, so being an unused
-    // dependency is the whole point. The directive has to sit here, on the
-    // line the rule reports: above the useMemo it silently covered nothing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tree, enabled, version],
+      enabled
+        ? classifyBook(tree, generation)
+        : { book: NO_TAGS, unresolved: NOTHING_UNRESOLVED, at: generation },
+    [tree, enabled, generation],
   );
   useEffect(() => {
     if (unresolved.length === 0) return;
     let live = true;
     void lookupMany(unresolved).then(() => {
-      if (live) setVersion((v) => v + 1);
+      if (live) setGeneration((v) => v + 1);
     });
     return () => {
       live = false;
@@ -220,7 +229,10 @@ function useLineLookup(fens: string[]): void {
   const [, bump] = useState(0);
   const current = fens[fens.length - 1];
 
-  useEffect(() => {
+  // An Effect Event: keyed on the position below, because a different
+  // cursor means a different line to name and the array identity changes
+  // on every render; the line itself is read here, as it stands.
+  const ask = useEffectEvent((): (() => void) | undefined => {
     if (!current) return;
     let live = true;
     // The whole line, not just the position being looked at. Asking only
@@ -238,10 +250,8 @@ function useLineLookup(fens: string[]): void {
     return () => {
       live = false;
     };
-    // Keyed on the position: a different cursor means a different line to
-    // name, and the array identity changes on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
+  });
+  useEffect(() => ask(), [current]);
 }
 
 export function useOpeningName(fens: string[]): string | null {
@@ -252,6 +262,22 @@ export function useOpeningName(fens: string[]): string | null {
     if (name) return name;
   }
   return null;
+}
+
+/**
+ * The labels for a set of positions, from what the cache knows now.
+ * `generation` is the caller's count of cache fills, handed back as `at`:
+ * the reason is classifyBook's.
+ */
+function labelsFor(
+  fens: string[],
+  generation: number,
+): { names: ReadonlyMap<string, string | null>; ready: boolean; at: number } {
+  return {
+    names: new Map(fens.map((fen) => [fen, known.get(fen)?.name ?? null])),
+    ready: fens.every((fen) => known.has(fen)),
+    at: generation,
+  };
 }
 
 /**
@@ -270,10 +296,15 @@ export function useOpeningLabels(fens: string[]): {
   names: ReadonlyMap<string, string | null>;
   ready: boolean;
 } {
-  const [version, bump] = useState(0);
+  // The count of cache fills, an input to the labels for the reason
+  // useBookTags gives.
+  const [generation, bump] = useState(0);
+  // The list as one string, so a same list is a same dependency: the
+  // array identity changes per render.
   const key = fens.join('\n');
 
-  useEffect(() => {
+  // An Effect Event, keyed on the joined positions and reading the array.
+  const ask = useEffectEvent((): (() => void) | undefined => {
     const wanted = fens.filter((fen) => !known.has(fen));
     if (wanted.length === 0) return;
     let live = true;
@@ -283,16 +314,10 @@ export function useOpeningLabels(fens: string[]): {
     return () => {
       live = false;
     };
-    // Keyed on the joined positions: the array identity changes per render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  });
+  useEffect(() => ask(), [key]);
 
-  return useMemo(
-    () => ({
-      names: new Map(fens.map((fen) => [fen, known.get(fen)?.name ?? null])),
-      ready: fens.every((fen) => known.has(fen)),
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [key, version],
-  );
+  // The positions are read back out of the key, so the memo's list is
+  // what it reads.
+  return useMemo(() => labelsFor(key === '' ? [] : key.split('\n'), generation), [key, generation]);
 }

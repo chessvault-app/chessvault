@@ -92,19 +92,21 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
   const wasRunning = useRef(false);
 
   const poll = useCallback(async () => {
+    let next: BuildStatus | null = null;
     try {
-      const next = await api<BuildStatus>('/api/puzzles/build');
-      setStatus(next);
-      if (wasRunning.current && !next.running) {
-        wasRunning.current = false;
-        if (next.error) setFailed(next.error);
-        else onReady();
-      }
-      if (next.running) wasRunning.current = true;
-      return next.running;
+      next = await api<BuildStatus>('/api/puzzles/build');
     } catch {
-      return false; // the server will be there on the next tick
+      // the server will be there on the next tick
     }
+    if (!next) return false;
+    setStatus(next);
+    if (wasRunning.current && !next.running) {
+      wasRunning.current = false;
+      if (next.error) setFailed(next.error);
+      else onReady();
+    }
+    if (next.running) wasRunning.current = true;
+    return next.running;
   }, [onReady]);
 
   useEffect(() => {
@@ -122,9 +124,9 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
       await poll();
     } catch (e) {
       setFailed(apiErrorMessage(e));
-    } finally {
-      setStarting(false);
     }
+    // Both arms fall through to here, which is what the finally used to do.
+    setStarting(false);
   };
 
   const running = status?.running === true;

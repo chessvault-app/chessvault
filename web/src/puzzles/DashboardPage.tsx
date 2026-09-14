@@ -1,6 +1,6 @@
 import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
 import { parseDashboardShape, storedDashboardShape } from './reservation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
@@ -228,8 +228,10 @@ export function DashboardPage() {
   // Remembered for the NEXT visit's reservation, above — only once all
   // three answers are in and none failed: an outage empties `history`
   // too, and recording that would hand next visit the floor at a vault
-  // that has plenty. The attempts count is the unfiltered list's.
-  useEffect(() => {
+  // that has plenty. The attempts count is the unfiltered list's. An
+  // Effect Event, so the effect is keyed on the answers and not on
+  // `latestById`, which is derived from `history` and would key it twice.
+  const rememberShape = useEffectEvent(() => {
     if (error !== null || user === null || history === null || books === null) return;
     localStorage.setItem(
       DASH_SHAPE_KEY,
@@ -240,8 +242,9 @@ export function DashboardPage() {
         reconcile: user.attempts !== latestById.size,
       }),
     );
-    // latestById is derived from history; keying on it is keying on it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    rememberShape();
   }, [error, user, history, books, due, failed, nextDue]);
 
   return (

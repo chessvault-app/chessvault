@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef } from 'react';
 
 /** The zoom range every zoomable page in the app shares. */
 export const ZOOM_MIN = 0.75;
@@ -53,11 +53,17 @@ export function usePinchZoom(
   rebind?: unknown,
   live?: (pinch: PinchLive | null) => void,
 ): void {
+  // Filled from a layout effect, not in render (the React Compiler refuses
+  // a ref written in render); the listeners below read them later.
   const applyRef = useRef(apply);
-  applyRef.current = apply;
   const liveRef = useRef(live);
-  liveRef.current = live;
-  useEffect(() => {
+  useLayoutEffect(() => {
+    applyRef.current = apply;
+    liveRef.current = live;
+  });
+  // An Effect Event, so the effect's list can stay what it means: the
+  // element, and whatever the caller says swaps it.
+  const bind = useEffectEvent((): (() => void) | undefined => {
     const el = ref.current;
     if (!el) return;
     // Read at bind time, not module load: the listeners bind when the
@@ -201,6 +207,6 @@ export function usePinchZoom(
       // outgoing element gets its scrolling back.
       unfreeze();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, rebind]);
+  });
+  useEffect(() => bind(), [ref, rebind]);
 }

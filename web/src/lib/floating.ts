@@ -189,16 +189,32 @@ export function useFloating(
 } {
   const [node, setNode] = useState<HTMLElement | null>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
+  // The options are taken apart into their fields and put back together
+  // inside the effect: a caller writes them as a literal, so the object is
+  // new on every render and depending on it would re-measure forever.
   const { side, align, gap, margin, flip, viewport } = opts;
+  const viewportWidth = viewport?.width;
+  const viewportHeight = viewport?.height;
 
   useLayoutEffect(() => {
     if (!anchor || !node) {
       setPlacement(null);
       return;
     }
+    const placing: PlaceOptions = {
+      side,
+      align,
+      gap,
+      margin,
+      flip,
+      viewport:
+        viewportWidth !== undefined && viewportHeight !== undefined
+          ? { width: viewportWidth, height: viewportHeight }
+          : undefined,
+    };
     const seen = node.getBoundingClientRect();
     const natural = { width: seen.width, height: seen.height };
-    const first = placeNear(anchor, natural, opts);
+    const first = placeNear(anchor, natural, placing);
     // A layer taller than the room it has will be capped by the caller's
     // own max-height, so place the capped size rather than the natural
     // one: placing the tall version and letting the clamp pull it back
@@ -208,12 +224,8 @@ export function useFloating(
     const fitted = vertical
       ? { width: natural.width, height: Math.min(natural.height, first.room) }
       : { width: Math.min(natural.width, first.room), height: natural.height };
-    setPlacement(placeNear(anchor, fitted, { ...opts, side: first.side, flip: false }));
-    // The options are spread into the deps by hand: a caller writes them
-    // as a literal, so the object is new on every render and depending on
-    // it would re-measure forever.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchor, node, side, align, gap, margin, flip, viewport?.width, viewport?.height]);
+    setPlacement(placeNear(anchor, fitted, { ...placing, side: first.side, flip: false }));
+  }, [anchor, node, side, align, gap, margin, flip, viewportWidth, viewportHeight]);
 
   return {
     ref: setNode,

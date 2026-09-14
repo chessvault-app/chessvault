@@ -1,5 +1,5 @@
 import { BookText, Upload } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FilePicker } from '@/components/file-picker';
@@ -53,7 +53,9 @@ export function UploadBookDialog({
 
   // Open the picked file once: its page count proves it is a PDF, its
   // first page is the cover shown here and kept on the shelf.
-  useEffect(() => {
+  // An Effect Event, so the replace target, fixed for the window's life,
+  // is read without being a dependency; the file is what re-runs it.
+  const inspect = useEffectEvent((): (() => void) | undefined => {
     if (!file) return;
     let live = true;
     setLooked(null);
@@ -76,9 +78,8 @@ export function UploadBookDialog({
     return () => {
       live = false;
     };
-    // The replace target is fixed for the window's life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [file]);
+  });
+  useEffect(() => inspect(), [file]);
 
   const drop = useFileDrop({
     accept: byExtension('.pdf'),
@@ -91,23 +92,24 @@ export function UploadBookDialog({
     setProgress(0);
     const onProgress = (sent: number, total: number): void =>
       setProgress(Math.round((sent / total) * 100));
+    // Which request, decided before the try: the React Compiler refuses a
+    // conditional inside a try block. Both answer with the book's id.
+    const request = replace
+      ? replaceBookPdf(replace.id, file, onProgress, looked).then(() => replace.id)
+      : uploadBook(file, {
+          title: title.trim() || t('Untitled book'),
+          collection: collection || null,
+          inspected: looked,
+          onProgress,
+        });
+    let id: string | null = null;
     try {
-      if (replace) {
-        await replaceBookPdf(replace.id, file, onProgress, looked);
-        onUploaded(replace.id);
-        return;
-      }
-      const id = await uploadBook(file, {
-        title: title.trim() || t('Untitled book'),
-        collection: collection || null,
-        inspected: looked,
-        onProgress,
-      });
-      onUploaded(id);
+      id = await request;
     } catch (e) {
       setError(apiErrorMessage(e));
       setProgress(null);
     }
+    if (id !== null) onUploaded(id);
   };
 
   return (

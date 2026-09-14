@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, Pencil } from 'lucide-react';
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
@@ -35,7 +35,6 @@ export function NoteView({ id }: { id: string }) {
   const pending = useSlowLoad(initialDoc === null);
   const [failed, setFailed] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('saved');
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * The note's front matter, held aside for the whole visit.
    *
@@ -116,7 +115,6 @@ export function NoteView({ id }: { id: string }) {
       setFrontMatter={setFrontMatter}
       saveState={saveState}
       setSaveState={setSaveState}
-      saveTimer={saveTimer}
       recovery={recovery}
       onRecoveryAnswered={() => setRecovery(null)}
       onRestored={() => setRestored((n) => n + 1)}
@@ -132,7 +130,6 @@ function NoteEditor({
   setFrontMatter,
   saveState,
   setSaveState,
-  saveTimer,
   recovery,
   onRecoveryAnswered,
   onRestored,
@@ -147,7 +144,6 @@ function NoteEditor({
   setFrontMatter: (front: string) => void;
   saveState: SaveState;
   setSaveState: (s: SaveState) => void;
-  saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   /** A copy the vault kept from a session that ended without saving. */
   recovery: { pgn: string; at: string } | null;
   onRecoveryAnswered: () => void;
@@ -170,6 +166,11 @@ function NoteEditor({
   // and on every edit, since the bar's title depends on it (see below).
   const [leadsWithHeading, setLeadsWithHeading] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
+  // The armed autosave. Owned here, where it is set and cleared: it used
+  // to come down from NoteView as a prop, which the React Compiler refuses
+  // to see written, and nothing up there read it. Leaving flushes it, so
+  // a remount starts with none pending.
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * What is on the server, so an edit can be told from a settling node.
    *
@@ -218,7 +219,11 @@ function NoteEditor({
    * survived as long as you stayed on the page.
    */
   const front = useRef(frontMatter);
-  front.current = frontMatter;
+  // Filled after commit: the React Compiler refuses a ref written during
+  // render, and every reader of it is a handler or an effect.
+  useLayoutEffect(() => {
+    front.current = frontMatter;
+  });
   // Subscribed, not read: turning autosave on in Settings has to reach the
   // header of a note that is already open.
   const autosave = usePrefs((p) => p.autosave);

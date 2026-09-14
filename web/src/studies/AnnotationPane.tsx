@@ -1,7 +1,7 @@
 import { INPUT_BASE } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { safeCommentText } from '@shared/pgn';
 import { NAG_GLYPH } from '@/analysis/notation';
@@ -122,6 +122,19 @@ export function AnnotationPane({
   );
   const box = useRef<HTMLTextAreaElement>(null);
   const sheetBox = useRef<HTMLTextAreaElement>(null);
+  // The two boxes' elements as state as well, for the suggest list's
+  // host: WikiSuggest takes the element, and a ref read in render is what
+  // the React Compiler refuses. The callback ref fills both.
+  const [boxEl, setBoxEl] = useState<HTMLTextAreaElement | null>(null);
+  const [sheetBoxEl, setSheetBoxEl] = useState<HTMLTextAreaElement | null>(null);
+  const bindBox = useCallback((el: HTMLTextAreaElement | null) => {
+    box.current = el;
+    setBoxEl(el);
+  }, []);
+  const bindSheetBox = useCallback((el: HTMLTextAreaElement | null) => {
+    sheetBox.current = el;
+    setSheetBoxEl(el);
+  }, []);
   const pane = useRef<HTMLDivElement>(null);
   // The sheet's field is named by the sheet's title, which is the same text.
   const sheetTitleId = useId();
@@ -136,8 +149,9 @@ export function AnnotationPane({
   // completing a name is the one path that writes without passing a
   // keystroke through `edit`, and a document whose name holds a brace would
   // otherwise put back exactly what the file cannot keep. Idempotent on
-  // text that is already safe, which every id in practice is.
-  const put = useCallback((next: string) => setDraft(safeCommentText(next)), []);
+  // text that is already safe, which every id in practice is. Memoised by
+  // the React Compiler on what it reads.
+  const put = (next: string): void => setDraft(safeCommentText(next));
   const inline = useWikiSuggest({ box, value: draft, onChange: put });
   const sheetSuggest = useWikiSuggest({ box: sheetBox, value: draft, onChange: put });
 
@@ -164,7 +178,7 @@ export function AnnotationPane({
     if (!el) return;
     // scrollHeight is content + padding; the border is ours to add back, or
     // the box settles two pixels short and scrolls its own last line.
-    border.current ??= el.offsetHeight - el.clientHeight;
+    if (border.current === null) border.current = el.offsetHeight - el.clientHeight;
     const b = border.current;
     if (el.scrollHeight > el.clientHeight) {
       el.style.height = `${el.scrollHeight + b}px`;
@@ -215,10 +229,12 @@ export function AnnotationPane({
     pane.current?.scrollIntoView({ block: 'nearest' });
   }, [editing, atRoot]);
 
-  // Keep the draft in step when the cursor moves to another node.
+  // Keep the draft in step when the cursor moves to another node. An
+  // Effect Event: the comment is read, not listened to, so a flush of the
+  // draft into the node does not write the draft back over itself.
+  const followCursor = useEffectEvent(() => setDraft(node.comment ?? ''));
   useEffect(() => {
-    setDraft(node.comment ?? '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    followCursor();
   }, [cursorId]);
 
   // Debounced flush while typing.
@@ -378,7 +394,7 @@ export function AnnotationPane({
           </button>
         ) : (
           <Textarea
-            ref={box}
+            ref={bindBox}
             aria-label={placeholder}
             value={draft}
             onChange={(e) => {
@@ -395,7 +411,7 @@ export function AnnotationPane({
           />
         )}
       </div>
-      {!coarse && <WikiSuggest store={inline.store} host={box.current} />}
+      {!coarse && <WikiSuggest store={inline.store} host={boxEl} />}
       {!sheet && notice}
       {/* The app's own window. This was a scrim and a card pinned to the
           TOP of the screen, hand-rolled here from before there was a
@@ -415,7 +431,7 @@ export function AnnotationPane({
         >
           <DialogContent title={placeholder} titleId={sheetTitleId}>
             <Textarea
-              ref={sheetBox}
+              ref={bindSheetBox}
               aria-labelledby={sheetTitleId}
               autoFocus={autoFocusField()}
               value={draft}
@@ -427,7 +443,7 @@ export function AnnotationPane({
               rows={4}
               className="w-full resize-none leading-relaxed"
             />
-            <WikiSuggest store={sheetSuggest.store} host={sheetBox.current} />
+            <WikiSuggest store={sheetSuggest.store} host={sheetBoxEl} />
             {notice}
             <Button
               variant="default"

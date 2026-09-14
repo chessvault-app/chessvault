@@ -5,7 +5,14 @@ import type { Config as CgConfig } from '@lichess-org/chessground/config';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { defaults } from '@lichess-org/chessground/state';
 import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
-import { useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
 import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/utils';
@@ -151,25 +158,26 @@ export function Board({
   const [lateMount, setLateMount] = useState(0);
 
   // Callbacks live in refs so changing a handler never forces a board rebuild.
+  // Filled from a layout effect, not in render (the React Compiler refuses
+  // a ref written in render): chessground calls them later, from a gesture.
   const onMoveRef = useRef(onMove);
   const onSelectRef = useRef(onSelect);
   const onShapesRef = useRef(onShapesChange);
   const onDropNewPieceRef = useRef(onDropNewPiece);
   const onBoardChangeRef = useRef(onBoardChange);
   const freeRef = useRef(free);
-  // Read once at construction and kept fresh for the update pass below.
-  const rookCastlesRef = useRef(usePrefs.getState().castleStyle === 'rook');
+  useLayoutEffect(() => {
+    onMoveRef.current = onMove;
+    onSelectRef.current = onSelect;
+    onShapesRef.current = onShapesChange;
+    onDropNewPieceRef.current = onDropNewPiece;
+    onBoardChangeRef.current = onBoardChange;
+    freeRef.current = free;
+  });
   const castleStyle = usePrefs((p) => p.castleStyle);
-  rookCastlesRef.current = castleStyle === 'rook';
   // The prop, when a caller sets one, outranks the Settings preference.
   const coordinatesPref = usePrefs((p) => p.coordinates);
   const showCoordinates = coordinates ?? coordinatesPref;
-  onMoveRef.current = onMove;
-  onSelectRef.current = onSelect;
-  onShapesRef.current = onShapesChange;
-  onDropNewPieceRef.current = onDropNewPiece;
-  onBoardChangeRef.current = onBoardChange;
-  freeRef.current = free;
 
   // Mount once, and BEFORE the browser paints.
   //
@@ -189,7 +197,10 @@ export function Board({
   // The cost is that the paint waits for chessground to build its 40-odd
   // nodes, which is the same work either way — it is only being done on
   // the near side of the frame.
-  useLayoutEffect(() => {
+  //
+  // An Effect Event, called from the layout effect below it: the mount is
+  // once by design, and reads the props as they stand at that moment.
+  const mount = useEffectEvent((): (() => void) | undefined => {
     if (!host.current) return;
     const config: CgConfig = {
       fen,
@@ -216,7 +227,7 @@ export function Board({
         // chessground prune the rook square, leaving g1/c1; the rook style
         // has no chessground-side mirror, so pruneKingCastleDests below
         // does it. Each style offers, and accepts, exactly one way in.
-        rookCastle: rookCastlesRef.current,
+        rookCastle: castleStyle === 'rook',
         events: {
           after: (orig, dest) => {
             moveHaptic();
@@ -369,8 +380,8 @@ export function Board({
       api.current = null;
       if (apiRef) apiRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only by design
-  }, []);
+  });
+  useLayoutEffect(() => mount(), []);
 
   // chessground's set() merges state but only redrawAll() rebuilds the
   // wrap the coordinate labels live in, so a toggle needs the extra call.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { ChevronLeft, ChevronRight, CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
@@ -123,6 +123,13 @@ const reauth = (): void => {
   setTimeout(() => window.location.reload(), 1200);
 };
 
+/** The licences page's chunk, fetched ahead (see the effect that calls
+    this). A function of its own because the React Compiler cannot lower
+    an import() expression inside a component yet. */
+const warmLicensesPage = (): void => {
+  void import('@/settings/LicensesPage');
+};
+
 /**
  * @param anchor a card to open on, by its id (`#/settings/tablebase`):
  *   how another page sends the reader to one setting rather than to the
@@ -150,15 +157,20 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   // cuts and the chunk beats the paint anyway.
   useEffect(() => {
     if (!window.matchMedia('(max-width: 47.9375rem)').matches) return;
-    void import('@/settings/LicensesPage');
+    warmLicensesPage();
   }, []);
 
-  useEffect(() => {
+  // Once, when the cards land; a later refresh must not scroll again,
+  // which is why the effect is keyed on whether they have landed and
+  // not on the settings themselves.
+  const loaded = settings !== null;
+  const scrollToAnchor = useEffectEvent(() => {
     if (!anchor || settings === null) return;
     document.getElementById(anchor)?.scrollIntoView({ block: 'start' });
-    // Once, when the cards land; a later refresh must not scroll again.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchor, settings === null]);
+  });
+  useEffect(() => {
+    scrollToAnchor();
+  }, [anchor, loaded]);
 
   const refresh = async (): Promise<void> => {
     // Uncaught, this stranded the page on its skeleton with no way out —
@@ -2406,6 +2418,21 @@ const RECOVERY_BLURB =
   'Every version of every document is kept automatically. Anything deleted can be brought back here. An open document keeps its earlier versions under the clock in its header.';
 
 /**
+ * A deleted document back at the version it had when deleted, which is
+ * the newest one its history holds. Outside the card because the React
+ * Compiler cannot lower a throw inside a try yet, and the card wants one
+ * catch for "no version" and "the route refused" alike.
+ */
+async function restoreLatest(kind: string, id: string): Promise<void> {
+  const versions = await api<{ versions?: { sha: string }[] }>(
+    `/api/history/doc/${kind}/${encodeURIComponent(id)}`,
+  );
+  const sha = versions.versions?.[0]?.sha;
+  if (!sha) throw new Error(t('no version to restore'));
+  await api('/api/history/restore', { method: 'POST', json: { kind, id, sha } });
+}
+
+/**
  * Bringing back something that is no longer there.
  *
  * The history panel on a document answers "this got wrecked"; it cannot
@@ -2437,14 +2464,18 @@ function RecoveryCard() {
   const FIRST = 8;
 
   const load = async (): Promise<void> => {
+    // Only the request is in the try: the React Compiler cannot lower
+    // the `?? []` inside one yet.
+    let res: { available: boolean; deleted?: Gone[] };
     try {
-      const res = await api<{ available: boolean; deleted?: Gone[] }>('/api/history/deleted');
-      setAvailable(res.available);
-      setGone(res.deleted ?? []);
+      res = await api<{ available: boolean; deleted?: Gone[] }>('/api/history/deleted');
     } catch {
       // No history route at all: nothing to offer, and nothing is wrong.
       setAvailable(false);
+      return;
     }
+    setAvailable(res.available);
+    setGone(res.deleted ?? []);
   };
 
   useEffect(() => {
@@ -2460,23 +2491,15 @@ function RecoveryCard() {
     setBusy(`${item.kind}/${item.id}`);
     setNote(null);
     try {
-      const versions = await api<{ versions?: { sha: string }[] }>(
-        `/api/history/doc/${item.kind}/${encodeURIComponent(item.id)}`,
-      );
-      // The newest version it ever had is the one it was when deleted.
-      const sha = versions.versions?.[0]?.sha;
-      if (!sha) throw new Error(t('no version to restore'));
-      await api('/api/history/restore', {
-        method: 'POST',
-        json: { kind: item.kind, id: item.id, sha },
-      });
+      await restoreLatest(item.kind, item.id);
       setNote({ kind: 'ok', text: t('“{name}” is back.', { name: item.id.split('/').at(-1)! }) });
       await load();
     } catch (error) {
       setNote({ kind: 'error', text: apiErrorMessage(error) });
-    } finally {
-      setBusy('');
     }
+    // After the try, not in a finally: the React Compiler cannot lower
+    // one yet, and both arms fall through to here.
+    setBusy('');
   };
 
   if (available === null)
@@ -2863,11 +2886,11 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
 
   const wipe = async (): Promise<void> => {
     setBusy(true);
+    // Built before the try: the React Compiler cannot lower the
+    // conditional spread inside one yet.
+    const json = { confirm: WIPE_PHRASE, ...(gate && { password }) };
     try {
-      await api('/api/settings/wipe', {
-        method: 'POST',
-        json: { confirm: WIPE_PHRASE, ...(gate && { password }) },
-      });
+      await api('/api/settings/wipe', { method: 'POST', json });
     } catch (e) {
       setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       setBusy(false);

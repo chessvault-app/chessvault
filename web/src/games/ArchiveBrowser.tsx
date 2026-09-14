@@ -1,5 +1,14 @@
 import { ExternalLink, Globe, Info, Play, Plus } from 'lucide-react';
-import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { create } from 'zustand';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -404,84 +413,17 @@ export function ArchiveBrowser({
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   // Read through a ref where reset points live inside async flows —
-  // the selection must clear when the rows it described go away.
+  // the selection must clear when the rows it described go away. Filled
+  // after render, not during it, which is where the React Compiler
+  // allows a ref to be written.
   const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
+  useLayoutEffect(() => {
+    onSelectRef.current = onSelect;
+  });
 
   /** Games already on disk across every cached month — what "All dates"
       can show without touching the network. */
   const cachedGames = months.reduce((n, m) => (m.cached ? n + (m.games ?? 0) : n), 0);
-
-  const loadMonths = async (who?: string): Promise<void> => {
-    const user = (who ?? username).trim();
-    if (!user) return;
-    localStorage.setItem(userKey(provider), user);
-    onSelectRef.current?.(null);
-    setLoading('months');
-    setError(null);
-    setMonth('');
-    setMonthGames([]);
-    try {
-      const body = await api<
-        | {
-            months: ArchiveMonth[];
-            offline: boolean;
-            total?: number | null;
-            /** The newest month's games, sent with the list that names it. */
-            newest?: { month: string; games: GameSummary[] } | null;
-          }
-        | { error: string }
-      >(`${apiBase}/months?user=${encodeURIComponent(user)}`);
-      if ('error' in body) setError(body.error);
-      else {
-        setMonths(body.months);
-        setOffline(body.offline);
-        useArchiveBrowse.setState({ total: body.total ?? null });
-        // The newest month came with the list, so put it where fetchMonth
-        // looks before asking: browsing an archive used to be two round
-        // trips deep before a single game appeared, and the second one
-        // could not start until the first had named a month. Seeded here
-        // rather than rendered from here, so the paging below is one path
-        // whether the server sent it or not — an older server, or a month
-        // that failed to load, simply finds no hit and asks.
-        if (body.newest) {
-          const key = monthKey(provider, user, body.newest.month);
-          const games = body.newest.games;
-          useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
-        }
-        // All dates rather than one month — the question people open this
-        // page with is "have I played this before" — but only the newest
-        // page of it. The rest arrives as it is scrolled to.
-        if (body.months.length) await loadAllMonths(body.months, user);
-      }
-    } catch (failure) {
-      setError(t(apiErrorMessage(failure)));
-    }
-    // After the try, not in a finally: the React Compiler cannot lower
-    // one yet, and both arms fall through to here.
-    setLoading(null);
-  };
-
-  /**
-   * A pinned tab looks its player up BY ITSELF once a username is in
-   * hand (the saved handle, or the profile prefill landing a moment
-   * later): the tab exists to show these games, and in the common case
-   * they are already cached on disk — the months route serves the
-   * cache when the provider cannot be reached, and a partially cached
-   * account simply pages the missing months in as they are scrolled
-   * to. Pressing Browse remains the way to look up someone ELSE. Once
-   * per mount.
-   */
-  const autoLooked = useRef(false);
-  const lookUpOnce = useEffectEvent(() => {
-    if (provider !== site || autoLooked.current) return;
-    if (months.length > 0 || loading !== null || !username.trim()) return;
-    autoLooked.current = true;
-    void loadMonths();
-  });
-  useEffect(() => {
-    lookUpOnce();
-  }, [site, provider, username, months.length, loading]);
 
   /**
    * One month, from the session cache if it has been seen before.
@@ -495,16 +437,19 @@ export function ArchiveBrowser({
     const key = monthKey(provider, user, m);
     const hit = useArchiveBrowse.getState().cache[key];
     if (hit) return hit;
+    // Read after the try: the React Compiler cannot lower the `?? []`
+    // inside one yet.
+    let body: { games?: GameSummary[] };
     try {
-      const body = await api<{ games?: GameSummary[] }>(
+      body = await api<{ games?: GameSummary[] }>(
         `${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`,
       );
-      const games = body.games ?? [];
-      useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
-      return games;
     } catch {
       return [];
     }
+    const games = body.games ?? [];
+    useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
+    return games;
   };
 
   /** The months this account has, newest first — the order they load in. */
@@ -542,7 +487,10 @@ export function ArchiveBrowser({
     if (useArchiveBrowse.getState().cursor >= all.length) return;
     loadingMore.current = true;
     setLoading('games');
-    try {
+    // The paging loop as a function of its own, so the try below holds
+    // one awaited call: the React Compiler cannot lower a loop inside a
+    // try yet.
+    const page = async (): Promise<void> => {
       let added = 0;
       while (added < PAGE_GAMES) {
         const { cursor } = useArchiveBrowse.getState();
@@ -554,6 +502,9 @@ export function ArchiveBrowser({
           cursor: s.cursor + 1,
         }));
       }
+    };
+    try {
+      await page();
     } catch {
       // A month that will not come stops the page here; the rows already
       // added stay, and the sentinel asks again when it is next in view.
@@ -563,6 +514,83 @@ export function ArchiveBrowser({
     loadingMore.current = false;
     setLoading(null);
   };
+
+  // Declared after the paging it hands off to (loadAllMonths, loadMore):
+  // the React Compiler refuses a call to a function declared below it.
+  const loadMonths = async (who?: string): Promise<void> => {
+    const user = (who ?? username).trim();
+    if (!user) return;
+    localStorage.setItem(userKey(provider), user);
+    onSelectRef.current?.(null);
+    setLoading('months');
+    setError(null);
+    setMonth('');
+    setMonthGames([]);
+    type Answer =
+      | {
+          months: ArchiveMonth[];
+          offline: boolean;
+          total?: number | null;
+          /** The newest month's games, sent with the list that names it. */
+          newest?: { month: string; games: GameSummary[] } | null;
+        }
+      | { error: string };
+    // Only the request is in the try; the answer is read after it, where
+    // the React Compiler can lower the conditionals.
+    let body: Answer;
+    try {
+      body = await api<Answer>(`${apiBase}/months?user=${encodeURIComponent(user)}`);
+    } catch (failure) {
+      setError(t(apiErrorMessage(failure)));
+      setLoading(null);
+      return;
+    }
+    if ('error' in body) setError(body.error);
+    else {
+      setMonths(body.months);
+      setOffline(body.offline);
+      useArchiveBrowse.setState({ total: body.total ?? null });
+      // The newest month came with the list, so put it where fetchMonth
+      // looks before asking: browsing an archive used to be two round
+      // trips deep before a single game appeared, and the second one
+      // could not start until the first had named a month. Seeded here
+      // rather than rendered from here, so the paging below is one path
+      // whether the server sent it or not — an older server, or a month
+      // that failed to load, simply finds no hit and asks.
+      if (body.newest) {
+        const key = monthKey(provider, user, body.newest.month);
+        const games = body.newest.games;
+        useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
+      }
+      // All dates rather than one month — the question people open this
+      // page with is "have I played this before" — but only the newest
+      // page of it. The rest arrives as it is scrolled to.
+      if (body.months.length) await loadAllMonths(body.months, user);
+    }
+    setLoading(null);
+  };
+
+  /**
+   * A pinned tab looks its player up BY ITSELF once a username is in
+   * hand (the saved handle, or the profile prefill landing a moment
+   * later): the tab exists to show these games, and in the common case
+   * they are already cached on disk — the months route serves the
+   * cache when the provider cannot be reached, and a partially cached
+   * account simply pages the missing months in as they are scrolled
+   * to. Pressing Browse remains the way to look up someone ELSE. Once
+   * per mount.
+   */
+  const autoLooked = useRef(false);
+  const lookUpOnce = useEffectEvent(() => {
+    if (provider !== site || autoLooked.current) return;
+    if (months.length > 0 || loading !== null || !username.trim()) return;
+    autoLooked.current = true;
+    void loadMonths();
+  });
+  useEffect(() => {
+    lookUpOnce();
+  }, [site, provider, username, months.length, loading]);
+
 
   /**
    * The next page, when the bottom of the list comes into view.
@@ -805,7 +833,9 @@ export function ArchiveBrowser({
   const tableNav = useRef<TableNav | null>(null);
   useTableNav(table && onSelect !== undefined, tableNav);
   const navRows = visibleMonthGames.slice(0, MAX_ROWS);
-  tableNav.current = {
+  // Filled after render (a layout effect, so it is in place before any
+  // key can arrive), which is where the React Compiler allows a ref write.
+  const navHandlers: TableNav = {
     move: (delta, from) => {
       const at = navRows.findIndex((g) => gameKey(g) === (from ?? selectedKey));
       const next =
@@ -824,6 +854,9 @@ export function ArchiveBrowser({
     },
     clear: () => onSelect?.(null),
   };
+  useLayoutEffect(() => {
+    tableNav.current = navHandlers;
+  });
   // The table's one Tab stop: the selected row while it is on screen,
   // else the first (GameTableRow's tabStop).
   const tabStopKey = navRows.some((g) => gameKey(g) === selectedKey)
@@ -833,7 +866,9 @@ export function ArchiveBrowser({
       : null;
 
   const rowHandlers = useRef({ openInAnalysis, collect, selectRow });
-  rowHandlers.current = { openInAnalysis, collect, selectRow };
+  useLayoutEffect(() => {
+    rowHandlers.current = { openInAnalysis, collect, selectRow };
+  });
   const rowOpen = useCallback((g: GameSummary) => void rowHandlers.current.openInAnalysis(g), []);
   const rowCollect = useCallback((g: GameSummary) => void rowHandlers.current.collect(g), []);
   const rowSelect = useCallback((g: GameSummary) => rowHandlers.current.selectRow(g), []);
@@ -842,14 +877,16 @@ export function ArchiveBrowser({
   // The pinned column exists only while selecting (checkbox-only) —
   // outside selection mode the archive table is the plain ten columns.
   const tableVars = useGameTableVars(selecting, !besideDetails);
-  const rowToggle = useCallback((key: string, on: boolean) => {
+  // Memoised by the React Compiler on what it reads, which is the one
+  // setter, so the rows still see one identity for the component's life.
+  const rowToggle = (key: string, on: boolean): void => {
     setPicked((prev) => {
       const next = new Set(prev);
       if (on) next.add(key);
       else next.delete(key);
       return next;
     });
-  }, []);
+  };
 
 
   /* Three selects, not eight chips on a rail.

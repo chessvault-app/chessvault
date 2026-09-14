@@ -286,11 +286,11 @@ export function RefDbManager({
     sourceIds?: string[],
   ): Promise<void> => {
     setError(null);
+    // Built before the try: the React Compiler cannot lower the fallbacks
+    // inside one yet.
+    const json = { name: name.trim() || undefined, sources: sourceIds ?? [...(picked ?? [])], mode };
     try {
-      await api('/api/refgames/build', {
-        method: 'POST',
-        json: { name: name.trim() || undefined, sources: sourceIds ?? [...(picked ?? [])], mode },
-      });
+      await api('/api/refgames/build', { method: 'POST', json });
     } catch (error) {
       setError(t(apiErrorMessage(error)));
       return;
@@ -329,9 +329,10 @@ export function RefDbManager({
       onChanged();
     } catch (error) {
       setError(`${dbName}: ${t(apiErrorMessage(error))}`);
-    } finally {
-      setScanBusy(null);
     }
+    // After the try, not in a finally: the React Compiler cannot lower
+    // one yet, and both arms fall through to here.
+    setScanBusy(null);
   };
 
   /** Housekeeping as a job in the build slot: duplicates out, derived

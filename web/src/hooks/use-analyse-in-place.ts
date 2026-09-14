@@ -1,5 +1,5 @@
 import { Cpu, Info, ListOrdered } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import type { MoveTree, NodeId } from '@shared/types';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { t } from '@/lib/i18n';
@@ -68,8 +68,12 @@ export function useAnalyseInPlace({
   const [analysing, setAnalysing] = useState(false);
   const [pane, setPane] = useState<TrainerPane>('info');
   const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
+  // Filled from a layout effect, not in render (the React Compiler refuses
+  // a ref written in render); the unmount cleanup below reads it.
   const analysingRef = useRef(false);
-  analysingRef.current = analysing;
+  useLayoutEffect(() => {
+    analysingRef.current = analysing;
+  });
   useEffect(
     () => () => {
       if (analysingRef.current) useEngine.getState().setEnabled(false);
@@ -77,7 +81,10 @@ export function useAnalyseInPlace({
     [],
   );
 
-  useEffect(() => {
+  // An Effect Event: seed() and onLeave close over the caller's current
+  // state and are read fresh, without a change to either re-running the
+  // effect; the guards inside are what keep it from acting twice.
+  const follow = useEffectEvent(() => {
     if (done && ready && !analysing) {
       useAnalysis.setState({
         ...seed(),
@@ -93,9 +100,9 @@ export function useAnalyseInPlace({
       onLeave?.();
       useEngine.getState().setEnabled(false);
     }
-    // seed() and onLeave close over the caller's current state; the guards
-    // above are what keep this from re-running on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    follow();
   }, [done, ready, analysing]);
 
   // Whether the engine is on follows what is showing it: on for as long

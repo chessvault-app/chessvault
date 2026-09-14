@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isCoarsePointer } from '@/lib/media';
 
 /**
@@ -104,8 +104,12 @@ export function pushCloser(close: () => void): () => void {
  */
 export function useCloseRequest(onClose: () => void, active = true): void {
   // The latest closer, so a watcher attached once never calls a stale one.
+  // Filled from a layout effect, not in render (the React Compiler refuses
+  // a ref written in render); the watcher reads it later.
   const close = useRef(onClose);
-  close.current = onClose;
+  useLayoutEffect(() => {
+    close.current = onClose;
+  });
 
   useEffect(() => {
     if (!active) return;

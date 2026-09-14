@@ -231,7 +231,13 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
   // edge and inside the window — from lib/floating, which measures the
   // peek rather than guessing at 300px of it. That guess is what the
   // constant above was: a stand-in for a height nobody had.
-  const float = useFloating(box, { side: 'bottom', align: 'end', gap: 4 });
+  // Destructured: `float.ref` read in render looks like a ref to the
+  // compiler, and it is a callback ref, not a ref object.
+  const { ref: floatRef, style: floatStyle } = useFloating(box, {
+    side: 'bottom',
+    align: 'end',
+    gap: 4,
+  });
   return (
     <span
       ref={anchor}
@@ -265,9 +271,9 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
         box &&
         createPortal(
           <span
-            ref={float.ref}
+            ref={floatRef}
             aria-hidden
-            style={float.style}
+            style={floatStyle}
             className="pointer-events-none z-50 block"
           >
             <span className="bg-card block rounded-xl ring-1 ring-window-ring p-2 shadow-lg">

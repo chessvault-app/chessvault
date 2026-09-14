@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { playSound } from '@/board/sound';
 
 /**
@@ -10,18 +10,20 @@ import { playSound } from '@/board/sound';
  */
 export function useMoveSound(fen: string | null | undefined, moved: boolean): void {
   const prevPieces = useRef<number | null>(null);
-  useEffect(() => {
-    if (!fen) {
+  // An Effect Event: `moved` is read for the position it arrived with,
+  // and a change to it alone is not a new position to sound.
+  const sound = useEffectEvent((position: string | null | undefined) => {
+    if (!position) {
       prevPieces.current = null;
       return;
     }
-    const pieces = fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+    const pieces = position.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
     const prev = prevPieces.current;
     prevPieces.current = pieces;
     if (prev === null || !moved) return;
     playSound(pieces < prev ? 'capture' : 'move');
-    // Per position, not per render: `moved` is read for the position it
-    // arrived with.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    sound(fen);
   }, [fen]);
 }

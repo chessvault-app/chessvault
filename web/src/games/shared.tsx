@@ -322,11 +322,16 @@ export function GameRow({
       : []),
     ...(menu ?? []),
   ];
+  // Both judged from the inputs rather than by walking menuActions: the
+  // preview item's handler reads the row's ref, and the React Compiler
+  // counts a render-time walk over a list holding that handler as a ref
+  // read. The preview item, when present, is itself hidden on a fine
+  // pointer, so the verdict comes down to the caller's verbs.
+  const hasMenu = canPreview || (menu?.length ?? 0) > 0;
   // A ⋯ whose every verb is hidden on a fine pointer (the touch-only
   // preview, alone) hides itself the same way, instead of opening empty.
   const menuTouchOnly =
-    menuActions.length > 0 &&
-    menuActions.every((a) => a.className?.includes('pointer-fine:hidden'));
+    hasMenu && (menu ?? []).every((a) => a.className?.includes('pointer-fine:hidden'));
 
   const item = (
     <li
@@ -547,7 +552,7 @@ export function GameRow({
           </Button>
         )}
         {actions}
-        {menuActions.length > 0 && (
+        {hasMenu && (
           <ActionMenu title={title} actions={menuActions} open={menuOpen} onOpenChange={setMenuOpen}>
             <Button
               variant="ghost"

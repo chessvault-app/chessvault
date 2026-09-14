@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { Spinner } from '@/components/ui/spinner';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useSlowLoad } from '@/components/skeletons';
 
@@ -234,6 +234,10 @@ export function PdfPage({
   // a heavy scan — shows a spinner in its slot rather than a blank.
   const slow = useSlowLoad(size === null);
 
+  // onSize is a callback identity the caller may not memoise; the size is
+  // reported whenever a render lands, which is what it is for. An Effect
+  // Event, so the raster effect reads the latest one without listing it.
+  const reportSize = useEffectEvent((s: { w: number; h: number }) => onSize?.(s));
   useEffect(() => {
     if (width <= 0) return;
     let live = true;
@@ -317,15 +321,12 @@ export function PdfPage({
       setAspect0(rotation % 180 === 0 ? cssH / cssW : cssW / cssH);
       setRasterRot(rotation);
       setSize({ w: cssW, h: cssH });
-      onSize?.({ w: cssW, h: cssH });
+      reportSize({ w: cssW, h: cssH });
     })(), 120);
     return () => {
       live = false;
       clearTimeout(timer);
     };
-    // onSize is a callback identity the caller may not memoise; the size
-    // is reported whenever a render lands, which is what it is for.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, pageNo, width, zoom, rotation]);
 
   useEffect(
@@ -428,6 +429,38 @@ const RENDER_MARGIN = 1;
  * under the viewport's centre — where it was; it used to put the page
  * being read back at the top, which made every zoom a jump.
  */
+/** The column's geometry at one page width: each slot's top, and a page's height. */
+interface Layout {
+  tops: number[];
+  heightOf: (n: number) => number;
+}
+
+/**
+ * An offset read against one layout, in another: the slot it fell in and
+ * how far through that page, mapped onto the same page's new height. The
+ * 12 px gap under a page does not scale with the zoom, which is why the
+ * walk is by slot and not by ratio.
+ */
+function mapOffset(top: number, old: Layout, fresh: Layout, pages: number): number {
+  let n = 1;
+  while (n < pages && (old.tops[n] ?? Infinity) <= top) n++;
+  const into = top - (old.tops[n - 1] ?? 0);
+  const frac = Math.min(1, into / Math.max(1, old.heightOf(n)));
+  return (fresh.tops[n - 1] ?? 0) + frac * fresh.heightOf(n);
+}
+
+/**
+ * A pinch under way, with the viewport's scroll offsets and width as they
+ * stood when it was reported. The column's transform origin is computed
+ * from them in render, where the viewport ref cannot be read; a pinch
+ * reports on every move, so they are the frame's own numbers.
+ */
+export interface PinchFrame extends PinchLive {
+  left: number;
+  top: number;
+  width: number;
+}
+
 export function PdfScroller({
   doc,
   pages,
@@ -439,7 +472,7 @@ export function PdfScroller({
   overlayFor,
   onPainted,
   viewportRef,
-  zoomAnchor,
+  zoomAnchorRef,
   pinch = null,
   onKeyDown,
   className,
@@ -465,11 +498,13 @@ export function PdfScroller({
       asked for, captured before the relayout: a zoom out shrinks the
       column, and the browser clamps a scrollTop past the new end the
       moment the style lands, before any effect can read it. Read and
-      cleared when the zoom changes. Null: the centre, current offsets. */
-  zoomAnchor?: React.RefObject<(PinchPoint & { top?: number; left?: number }) | null>;
+      cleared when the zoom changes. Null: the centre, current offsets.
+      Named as a ref so the React Compiler reads the clearing as a ref
+      write and not as a prop being modified. */
+  zoomAnchorRef?: React.RefObject<(PinchPoint & { top?: number; left?: number }) | null>;
   /** A pinch under way: the column is scaled about its centre by CSS,
       and nothing is re-rastered until the zoom itself changes. */
-  pinch?: PinchLive | null;
+  pinch?: PinchFrame | null;
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   className?: string;
 }) {
@@ -504,10 +539,7 @@ export function PdfScroller({
   // where a point WAS to keep it still. O(pages) per call; a
   // thousand-page book is a thousand additions.
   const flipped = rotation % 180 !== 0;
-  const layoutFor = (
-    w: number,
-    flip = flipped,
-  ): { tops: number[]; heightOf: (n: number) => number } => {
+  const layoutFor = (w: number, flip = flipped): Layout => {
     const heightOf = (n: number): number => {
       const a0 = aspects.get(n) ?? baseAspect ?? 1.4142;
       return Math.round(w * (flip ? 1 / a0 : a0));
@@ -525,14 +557,21 @@ export function PdfScroller({
   const total = tops[pages] ?? PAGE_GAP;
 
   // What the viewport shows, re-read on scroll and when the layout changes.
-  const [view, setView] = useState({ top: 0, height: 0 });
+  // Tagged with the layout (the page width, the flip) the offset was read
+  // against: the render below maps an offset from an older layout through
+  // it, and the tag says which. The reader is bound once, so the read is
+  // an Effect Event and records the layout of the moment.
+  const [view, setView] = useState({ top: 0, height: 0, pageW, flipped });
+  const readView = useEffectEvent((el: HTMLDivElement) => {
+    setView({ top: el.scrollTop, height: el.clientHeight, pageW, flipped });
+  });
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     let frame = 0;
     const read = (): void => {
       frame = 0;
-      setView({ top: el.scrollTop, height: el.clientHeight });
+      readView(el);
     };
     const onScroll = (): void => {
       if (!frame) frame = requestAnimationFrame(read);
@@ -572,20 +611,19 @@ export function PdfScroller({
   // does — because a scalar cannot say it: a zoom scales widths, a
   // rotation flips every height at constant width (the first fix scaled
   // by width alone, and a mid-book rotation still remounted every visible
-  // page — measured, canvases all fresh). After the commit's layout
-  // effects run, the remembered layout is current and this is exactly
-  // view.top again.
-  // (Declared here rather than beside lastZoom below: this render reads them.)
+  // page — measured, canvases all fresh). Once the view is read again
+  // against the new layout (the anchor's own setView, or the next scroll)
+  // this is exactly view.top again.
+  // The layout the offset belongs to is the view's own tag, not the
+  // remembered layout the anchor keeps in these refs: the React Compiler
+  // refuses a ref read in render, and the tag names it exactly.
   const lastPageW = useRef(pageW);
   const lastFlipped = useRef(flipped);
   let viewTop = view.top;
-  if (lastPageW.current !== pageW || lastFlipped.current !== flipped) {
-    const old = layoutFor(lastPageW.current, lastFlipped.current);
-    let n = 1;
-    while (n < pages && (old.tops[n] ?? Infinity) <= view.top) n++;
-    const into = view.top - (old.tops[n - 1] ?? 0);
-    const frac = Math.min(1, into / Math.max(1, old.heightOf(n)));
-    viewTop = (tops[n - 1] ?? 0) + frac * heightOf(n);
+  if (view.pageW !== pageW || view.flipped !== flipped) {
+    // A module function: calling the old layout's heightOf here, on an
+    // object the React Compiler memoises, is a shape its codegen fails on.
+    viewTop = mapOffset(view.top, layoutFor(view.pageW, view.flipped), { tops, heightOf }, pages);
   }
   const first = pages > 0 ? slotAt(viewTop) : 1;
   const last = pages > 0 ? slotAt(viewTop + view.height) : 1;
@@ -614,7 +652,10 @@ export function PdfScroller({
   // Before paint (layout effect): done after it, the browser showed one
   // frame at the new size but the old scroll offset — half the released
   // pinch's flicker.
-  useLayoutEffect(() => {
+  // An Effect Event run from the layout effect below: it reads this
+  // render's layout (tops, heightOf, pages) but is keyed on the zoom and
+  // the flip alone, which is what the suppressed list used to say.
+  const reanchor = useEffectEvent(() => {
     // A ROTATION corrects here too, not only a zoom. Its own re-anchor
     // (the page-top re-ask below) is a PASSIVE effect, and that is too
     // late: after this commit's paint, the ResizeObserver's setView
@@ -639,8 +680,8 @@ export function PdfScroller({
     // too, into pages already on screen, which read as less wrong).
     // While a page is still being asked for, that wins.
     if (target.current !== null) return;
-    const a = zoomAnchor?.current ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 };
-    if (zoomAnchor) zoomAnchor.current = null;
+    const a = zoomAnchorRef?.current ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 };
+    if (zoomAnchorRef) zoomAnchorRef.current = null;
     const oldTop = a.top ?? el.scrollTop;
     const oldLeft = a.left ?? el.scrollLeft;
     // The width the old layout was actually built with — REMEMBERED, not
@@ -666,8 +707,10 @@ export function PdfScroller({
     // old zoom — a zoom OUT uncovers slots that would sit blank until the
     // scroll listener's next frame. Re-read the viewport now, before
     // paint, so they mount in this same commit.
-    setView({ top: el.scrollTop, height: el.clientHeight });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setView({ top: el.scrollTop, height: el.clientHeight, pageW, flipped });
+  });
+  useLayoutEffect(() => {
+    reanchor();
   }, [zoom, flipped]);
   // After the anchor has used it: what this render laid out with.
   useLayoutEffect(() => {
@@ -689,8 +732,9 @@ export function PdfScroller({
   // flip, the count, and `total`, which moves whenever any page's measured
   // aspect does). Deps-less, this scrolled and then read scrollHeight,
   // clientHeight and scrollTop on every render while a page was pending,
-  // a forced layout per scroll event.
-  useEffect(() => {
+  // a forced layout per scroll event. An Effect Event, so the list below
+  // is the trigger list and not what the body reads.
+  const scrollToTarget = useEffectEvent(() => {
     const p = target.current;
     const el = viewportRef.current;
     if (p === null || !el || pages === 0) return;
@@ -710,9 +754,13 @@ export function PdfScroller({
       target.current = null;
       reported.current = p;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageNo, baseAspect, rotation, pageW, flipped, pages, total]);
+  });
   useEffect(() => {
+    scrollToTarget();
+  }, [pageNo, baseAspect, rotation, pageW, flipped, pages, total]);
+  // onPageChange is a setter; the page is what matters, so the report is
+  // an Effect Event keyed on the page and the viewport's height.
+  const reportPage = useEffectEvent(() => {
     if (view.height === 0 || target.current !== null) return;
     // From the element, not from the render's `view`: the effect above may
     // have just scrolled this commit (a page re-asked for after a zoom or
@@ -723,8 +771,9 @@ export function PdfScroller({
       reported.current = live;
       onPageChange(live);
     }
-    // onPageChange is a setter; the page is what matters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    reportPage();
   }, [current, view.height]);
 
   const from = Math.max(1, first - RENDER_MARGIN);
@@ -757,10 +806,10 @@ export function PdfScroller({
           // which the commit then holds still, so the column does not move
           // when the transform comes off. The column sits centred when it
           // is narrower than the viewport, so its origin is offset by that.
-          ...(pinch && viewportRef.current
+          ...(pinch
             ? {
                 transform: `scale(${pinch.scale})`,
-                transformOrigin: `${pinch.x - Math.max(0, (viewportRef.current.clientWidth - pageW) / 2) + viewportRef.current.scrollLeft}px ${pinch.y + viewportRef.current.scrollTop}px`,
+                transformOrigin: `${pinch.x - Math.max(0, (pinch.width - pageW) / 2) + pinch.left}px ${pinch.y + pinch.top}px`,
                 willChange: 'transform',
               }
             : null),

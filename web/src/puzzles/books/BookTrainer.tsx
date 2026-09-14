@@ -98,9 +98,6 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
    * just failed was three taps away. The hook is called below, once the
    * tree it seeds from exists.
    */
-  // The shared gate (board/usePromotion); the chosen piece re-enters the
-  // ordinary free-entry path below.
-  const promotion = usePromotion((orig, dest, role) => applyMove(orig, dest, roleToChar(role)));
   const reported = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -216,6 +213,11 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     setTree(result.tree);
     setCursorId(result.nodeId);
   };
+
+  // The shared gate (board/usePromotion); the chosen piece re-enters the
+  // ordinary free-entry path above. Called after applyMove is declared,
+  // which is the order the compiler needs to see.
+  const promotion = usePromotion((orig, dest, role) => applyMove(orig, dest, roleToChar(role)));
 
   const onMove = (orig: string, dest: string): void => {
     if (phase !== 'solving' || !pos || !node) return;

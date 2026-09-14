@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@/lib/motion';
 import { gestureHaptic } from '@/board/sound';
@@ -492,18 +492,21 @@ export function usePaneSwipe<T extends string>({
   // and only then move the row. Layout, not effect: a frame in which the
   // neighbour is still in the column's flow is the column laid out with two
   // panes down it, and that must never be painted.
-  useLayoutEffect(() => {
+  //
+  // An Effect Event: the arrival of `beside` is the whole trigger, and a
+  // changed handler must not re-measure the box mid-gesture.
+  const standNeighbour = useEffectEvent((next: { id: T; side: 1 | -1 } | null) => {
     const col = column.current;
-    if (!col || beside === null || peek.current || !open.current) return;
+    if (!col || next === null || peek.current || !open.current) return;
     const found = panesOnScreen(col).find((el) => el !== open.current);
     // Nothing arrived: no row to hold, so the gesture keeps the wall it has
     // had since the first frame — it gives a little and stops.
     if (!found) return;
-    standBeside(found, beside.side);
+    standBeside(found, next.side);
     paint('drag', dragOffset(dx.current, span.current));
-    // The arrival of `beside` is the whole trigger; re-running on a changed
-    // handler would re-measure the box mid-gesture.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useLayoutEffect(() => {
+    standNeighbour(beside);
   }, [beside]);
 
   /**
@@ -522,17 +525,20 @@ export function usePaneSwipe<T extends string>({
    * update made here is flushed before the browser paints, so the page has
    * taken the neighbour off screen and the marks are off by the time
    * anything is drawn, whichever order they are written in.
+   *
+   * An Effect Event: `value` is the whole trigger. This is about the pane
+   * changing under a turn, not about anything the handlers hold.
    */
-  useLayoutEffect(() => {
-    if (value === turnedTo.current) return;
-    turnedTo.current = value;
+  const endTurnAt = useEffectEvent((next: T) => {
+    if (next === turnedTo.current) return;
+    turnedTo.current = next;
     if (!column.current?.hasAttribute('data-pane-swipe')) return;
     stopSettling();
     setBeside(null);
     unwire();
-    // `value` is the whole trigger: this is about the pane changing under a
-    // turn, not about anything the handlers hold.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useLayoutEffect(() => {
+    endTurnAt(value);
   }, [value]);
 
   /** Take the column back to rest once the motion has had its time.
@@ -630,7 +636,8 @@ export function usePaneSwipe<T extends string>({
         const touch = e.touches[0]!;
         const moveX = touch.clientX - start.current.x;
         const moveY = touch.clientY - start.current.y;
-        axis.current ??= gestureAxis(moveX, moveY);
+        // Spelt out rather than `??=`, which the React Compiler cannot lower.
+        if (axis.current === null) axis.current = gestureAxis(moveX, moveY);
         if (axis.current !== 'x') return;
         dx.current = moveX;
         path.current.push({ x: touch.clientX, t: performance.now() });

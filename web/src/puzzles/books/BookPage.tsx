@@ -90,6 +90,41 @@ function cyclesProse(nudge: boolean): string {
   return nudge ? `${invite} ${t('You are solving already. A cycle gives each pass its own score.')}` : invite;
 }
 
+/**
+ * Recognise every stored draft again with the book's current font and
+ * write the results back, then reload through `load`.
+ */
+async function rereadStoredDrafts(
+  slug: string,
+  drafts: readonly BookDraft[],
+  load: () => Promise<void>,
+): Promise<void> {
+  const current = await bookTemplates(slug);
+  const net = await loadCellNet();
+  const updates: { id: string; fen: string | null }[] = [];
+  for (const d of drafts) {
+    const img = await loadImage(diagramUrl(slug, d.image));
+    const cells = net
+      ? classifyBoardNet(net, boardFromImage(img))
+      : classifyBoard(featuresFromImage(img), current);
+    updates.push({
+      id: d.id,
+      fen: labelsToFen(
+        cells.map((c) => c.label),
+        false,
+      ),
+    });
+  }
+  forgetBook(slug);
+  // A refused save is swallowed: the reload below redraws the drafts
+  // as the server actually holds them, which says what happened.
+  await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
+    method: 'PUT',
+    json: { updates },
+  }).catch(() => {});
+  await load();
+}
+
 export function BookPage({ slug }: { slug: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
   // What this device reserves for THIS book while the fetch is blind:
@@ -177,34 +212,19 @@ export function BookPage({ slug }: { slug: string }) {
   const rereadDrafts = async (): Promise<void> => {
     if (!book?.drafts?.length) return;
     setRereading(true);
+    // The work is a module function so the try holds one awaited call;
+    // `rereading` is cleared on every way out and a failure is rethrown
+    // after, which is what the finally used to do.
+    let failed = false;
+    let failure: unknown;
     try {
-      const current = await bookTemplates(slug);
-      const net = await loadCellNet();
-      const updates: { id: string; fen: string | null }[] = [];
-      for (const d of book.drafts) {
-        const img = await loadImage(diagramUrl(slug, d.image));
-        const cells = net
-          ? classifyBoardNet(net, boardFromImage(img))
-          : classifyBoard(featuresFromImage(img), current);
-        updates.push({
-          id: d.id,
-          fen: labelsToFen(
-            cells.map((c) => c.label),
-            false,
-          ),
-        });
-      }
-      forgetBook(slug);
-      // A refused save is swallowed: the reload below redraws the drafts
-      // as the server actually holds them, which says what happened.
-      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
-        method: 'PUT',
-        json: { updates },
-      }).catch(() => {});
-      await load();
-    } finally {
-      setRereading(false);
+      await rereadStoredDrafts(slug, book.drafts, load);
+    } catch (e) {
+      failed = true;
+      failure = e;
     }
+    setRereading(false);
+    if (failed) throw failure;
   };
 
   // The shelf page always re-reads: it is where imports, re-reads and

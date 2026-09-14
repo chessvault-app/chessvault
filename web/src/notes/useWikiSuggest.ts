@@ -27,7 +27,9 @@ import {
  * which keys to take first.
  */
 export function useWikiSuggest({
-  box,
+  // Held as `boxRef` inside: the React Compiler knows a ref by its name,
+  // and reads `box.current` in `sync` as a dependency otherwise.
+  box: boxRef,
   value,
   onChange,
 }: {
@@ -41,17 +43,21 @@ export function useWikiSuggest({
   sync: () => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
 } {
-  const store = useMemo(createSuggestStore, []);
+  const store = useMemo(() => createSuggestStore(), []);
   // Held in a ref rather than closed over: `sync` is handed to a change
   // handler and to a selection listener, and a version of it that changed
   // identity on every keystroke would re-bind the listener on every one.
   const notify = useRef(onChange);
-  notify.current = onChange;
+  // Filled after commit: the React Compiler refuses a ref written during
+  // render, and the pick that reads it comes later either way.
+  useLayoutEffect(() => {
+    notify.current = onChange;
+  });
   /** Where to put the caret once React has rendered the new value. */
   const caretAfter = useRef<number | null>(null);
 
   useLayoutEffect(() => {
-    const el = box.current;
+    const el = boxRef.current;
     const at = caretAfter.current;
     if (!el || at === null) return;
     caretAfter.current = null;
@@ -61,10 +67,10 @@ export function useWikiSuggest({
     // the browser settles, and a comment box that has lost the caret
     // after completing a link is a box the next word does not land in.
     el.focus();
-  }, [value, box]);
+  }, [value, boxRef]);
 
   const sync = useCallback(() => {
-    const el = box.current;
+    const el = boxRef.current;
     if (!el) return store.close();
     // A selection, not a caret: there is no single point to insert at, and
     // the same rule the editor applies (`selection.empty`).
@@ -83,7 +89,7 @@ export function useWikiSuggest({
     const rect = el.getBoundingClientRect();
     store.arm(
       (start, end, insert) => {
-        const now = box.current?.value ?? text;
+        const now = boxRef.current?.value ?? text;
         notify.current(now.slice(0, start) + insert + now.slice(end));
         caretAfter.current = start + insert.length;
       },
@@ -101,7 +107,7 @@ export function useWikiSuggest({
       const hits = all.filter((id) => id.toLowerCase().includes(query));
       store.offer(query, hits.slice(0, SUGGEST_LIMIT), hits.length);
     });
-  }, [box, store]);
+  }, [boxRef, store]);
 
   /**
    * The caret can move without the text changing — an arrow key, a click,
@@ -110,14 +116,14 @@ export function useWikiSuggest({
    * them; it fires on the document, so it is filtered to this box.
    */
   useEffect(() => {
-    const el = box.current;
+    const el = boxRef.current;
     if (!el) return;
     const onSelect = (): void => {
       if (document.activeElement === el) sync();
     };
     document.addEventListener('selectionchange', onSelect);
     return () => document.removeEventListener('selectionchange', onSelect);
-  }, [box, sync]);
+  }, [boxRef, sync]);
 
   // Nothing survives the box going away: the list is anchored to an
   // element that is no longer on the page.

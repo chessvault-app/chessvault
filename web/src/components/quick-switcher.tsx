@@ -316,12 +316,13 @@ function QuickSwitcherWindow({
     ...names.map((hit) => `${hit.section} ${hit.id}`),
     ...content.map((hit) => `text ${hit.section} ${hit.id}`),
   ];
-  // The list as one string, so a same list is a same dependency.
+  // The list as one string, so a same list is a same dependency; the
+  // effect reads the rows back out of it, so its list is what it reads.
   const rendered = values.join('\n');
   useLayoutEffect(() => {
-    if (values.includes(value)) return;
-    setValue(values[0] ?? '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const rows = rendered === '' ? [] : rendered.split('\n');
+    if (rows.includes(value)) return;
+    setValue(rows[0] ?? '');
   }, [rendered, value]);
 
   return (

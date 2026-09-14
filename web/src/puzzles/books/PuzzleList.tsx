@@ -294,46 +294,43 @@ export function PuzzleList({
 
   // One pass builds the merged list AND its tier/state tallies — this list
   // can be ~1,000 entries, and the old shape scanned it once per tier plus
-  // once per tile for numbering.
+  // once per tile for numbering. Memoised by the React Compiler on what it
+  // reads (puzzles, drafts, and progress and cycle through stateOf).
   const draftIds = useMemo(() => new Set(drafts.map((d) => d.id)), [drafts]);
-  const { items, tiers, stateCounts } = useMemo(() => {
-    const merged: BookPuzzle[] = [
-      ...puzzles,
-      ...drafts.map((d) => ({
-        id: d.id,
-        number: d.number,
-        fen: d.fen ?? '',
-        uci: [],
-        san: [],
-        provenance: 'draft' as const,
-        evidence: d.evidence,
-      })),
-    ].sort((a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
+  const items: BookPuzzle[] = [
+    ...puzzles,
+    ...drafts.map((d) => ({
+      id: d.id,
+      number: d.number,
+      fen: d.fen ?? '',
+      uci: [],
+      san: [],
+      provenance: 'draft' as const,
+      evidence: d.evidence,
+    })),
+  ].sort((a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
 
-    const tierTally = new Map<string, { meta: TierMeta; count: number }>();
-    const states = { all: merged.length, new: 0, failed: 0, solved: 0 };
-    for (const p of merged) {
-      states[stateOf(p)]++;
-      const meta = metaOf(p);
-      if (!meta) continue;
-      const entry = tierTally.get(meta.label);
-      if (entry) entry.count += 1;
-      else tierTally.set(meta.label, { meta, count: 1 });
-    }
-    // Tier chips render in PROVENANCE_META's key order (confidence order),
-    // exactly as the per-key scans produced before.
-    const ordered = new Map<string, { meta: TierMeta; count: number }>();
-    for (const key of Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[]) {
-      const label = PROVENANCE_META[key].label;
-      const entry = tierTally.get(label);
-      if (entry && !ordered.has(label)) ordered.set(label, entry);
-    }
-    return { items: merged, tiers: ordered, stateCounts: states };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puzzles, drafts, progress, cycle]);
+  const tierTally = new Map<string, { meta: TierMeta; count: number }>();
+  const stateCounts = { all: items.length, new: 0, failed: 0, solved: 0 };
+  for (const p of items) {
+    stateCounts[stateOf(p)]++;
+    const meta = metaOf(p);
+    if (!meta) continue;
+    const entry = tierTally.get(meta.label);
+    if (entry) entry.count += 1;
+    else tierTally.set(meta.label, { meta, count: 1 });
+  }
+  // Tier chips render in PROVENANCE_META's key order (confidence order),
+  // exactly as the per-key scans produced before.
+  const tiers = new Map<string, { meta: TierMeta; count: number }>();
+  for (const key of Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[]) {
+    const label = PROVENANCE_META[key].label;
+    const entry = tierTally.get(label);
+    if (entry && !tiers.has(label)) tiers.set(label, entry);
+  }
   // Unnumbered entries fall back to their list ordinal; a Map beats an
-  // indexOf per rendered tile.
-  const ordinalOf = useMemo(() => new Map(items.map((p, i) => [p.id, i + 1])), [items]);
+  // indexOf per rendered tile. Memoised by the React Compiler on `items`.
+  const ordinalOf = new Map(items.map((p, i) => [p.id, i + 1]));
 
   const visible = items.filter(
     (p) =>

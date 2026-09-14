@@ -70,16 +70,19 @@ function HistorySheet({
   useEffect(() => {
     let live = true;
     void (async () => {
+      // Only the call sits in the try; the answer is read after it (the
+      // React Compiler cannot lower a conditional inside a try or a catch).
+      let res: { available: boolean; versions?: Version[] } | null = null;
       try {
-        const res = await api<{ available: boolean; versions?: Version[] }>(path);
-        if (!live) return;
-        if (!res.available) setUnavailable(true);
-        else setVersions(res.versions ?? []);
+        res = await api<{ available: boolean; versions?: Version[] }>(path);
       } catch {
         // The demo and any deployment without git answer 404 here. That is
         // "no history", not a fault, and must not read as one.
-        if (live) setUnavailable(true);
+        res = { available: false };
       }
+      if (!live) return;
+      if (!res.available) setUnavailable(true);
+      else setVersions(res.versions ?? []);
     })();
     return () => {
       live = false;
@@ -90,14 +93,16 @@ function HistorySheet({
     setChosen(version);
     setPreview(null);
     setError(null);
+    // The URL is built before the try and the answer read after it: the
+    // React Compiler cannot lower a conditional inside a try.
+    const url = `/api/history/at/${version.sha}/${kind}/${encodeURIComponent(id)}`;
+    let res: { content?: string } | null = null;
     try {
-      const res = await api<{ content?: string }>(
-        `/api/history/at/${version.sha}/${kind}/${encodeURIComponent(id)}`,
-      );
-      setPreview(res.content ?? '');
+      res = await api<{ content?: string }>(url);
     } catch (caught) {
       setError(apiErrorMessage(caught));
     }
+    if (res) setPreview(res.content ?? '');
   };
 
   const restore = async (version: Version): Promise<void> => {
@@ -112,9 +117,10 @@ function HistorySheet({
       onClose();
     } catch (caught) {
       setError(apiErrorMessage(caught));
-    } finally {
-      setBusy(false);
     }
+    // After the try rather than in a finally (which the React Compiler
+    // cannot lower); both arms fall through to here.
+    setBusy(false);
   };
 
   // --- Page two: one version, and the offer to go back to it -------------

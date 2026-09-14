@@ -1,5 +1,5 @@
 import { BookText, BookX, ChevronLeft, FileX, ChevronRight, FileUp, Grid3x3, List, Maximize2, MoreHorizontal, MoveHorizontal, PanelRightClose, PanelRightOpen, Percent, RotateCcw, RotateCw, Search, SquarePen, TableOfContents, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getNode } from '@shared/tree';
@@ -28,7 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Spinner } from '@/components/ui/spinner';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
-import { usePinchZoom, ZOOM_MAX, type PinchLive, type PinchPoint } from '@/hooks/use-pinch-zoom';
+import { usePinchZoom, ZOOM_MAX, type PinchPoint } from '@/hooks/use-pinch-zoom';
 import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -48,7 +48,7 @@ import {
 import { useDiagramJob } from './diagramJob';
 import { chapterAt, usePdfOutline, type Chapter } from './pdfOutline';
 import { usePdfSearch, type PdfSearch } from './pdfSearch';
-import { PdfScroller, useBookPdf, type Rotation } from './pdfViewer';
+import { PdfScroller, useBookPdf, type PinchFrame, type Rotation } from './pdfViewer';
 import { UploadBookDialog } from './UploadBookDialog';
 import { TitleTip } from '@/components/title-tip';
 
@@ -131,6 +131,17 @@ function parsePageShape(
     return null;
   }
 }
+/**
+ * The shelf's row for a book. Not in the remembered shelf: ask again
+ * before saying it is gone — a book uploaded from another tab, or a link
+ * followed straight in, is newer than what this tab last drew.
+ */
+async function findOnShelf(id: string, force: boolean): Promise<LibraryBook | null> {
+  let books = await loadBooks(force);
+  if (!force && !books.some((b) => b.id === id)) books = await loadBooks(true);
+  return books.find((b) => b.id === id) ?? null;
+}
+
 export function BookReader({ id, page }: { id: string; page?: string }) {
   const wide = useWideLayout();
   const [book, setBook] = useState<LibraryBook | null | undefined>(undefined);
@@ -155,16 +166,16 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
 
   // The book's row from the shelf: its title, and where reading stopped.
   const load = useCallback(async (force = false): Promise<void> => {
+    // Only the awaited lookup is in the try: the React Compiler refuses a
+    // conditional inside a try block, so the shelf's second ask lives in
+    // findOnShelf and the answer is set after.
+    let found: LibraryBook | null = null;
     try {
-      let books = await loadBooks(force);
-      // Not in the remembered shelf: ask again before saying it is gone —
-      // a book uploaded from another tab, or a link followed straight in,
-      // is newer than what this tab last drew.
-      if (!force && !books.some((b) => b.id === id)) books = await loadBooks(true);
-      setBook(books.find((b) => b.id === id) ?? null);
+      found = await findOnShelf(id, force);
     } catch {
-      setBook(null);
+      found = null;
     }
+    setBook(found);
   }, [id]);
   useEffect(() => {
     void load();
@@ -815,6 +826,22 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
   );
 }
 
+/** Every placed diagram of every puzzle book read from this PDF, by page. */
+async function loadKnownDiagrams(id: string): Promise<Map<number, KnownDiagram[]>> {
+  const { books } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
+  const linked = books.filter((b) => b.pdfBook === id);
+  const map = new Map<number, KnownDiagram[]>();
+  for (const b of linked) {
+    for (const p of await loadPlacements(b.slug)) {
+      if (!p.rect) continue;
+      const list = map.get(p.page) ?? [];
+      list.push({ rect: p.rect, fen: p.fen });
+      map.set(p.page, list);
+    }
+  }
+  return map;
+}
+
 /**
  * Positions this book's pages already hold, by page: every puzzle book
  * read from this PDF knows where its puzzles were printed and who is to
@@ -825,22 +852,15 @@ function useKnownDiagrams(id: string): Map<number, KnownDiagram[]> {
   useEffect(() => {
     let live = true;
     void (async () => {
+      // The gathering is a module function and only its await is in the
+      // try: the React Compiler refuses a conditional inside a try block.
+      let map: Map<number, KnownDiagram[]> | null = null;
       try {
-        const { books } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
-        const linked = books.filter((b) => b.pdfBook === id);
-        const map = new Map<number, KnownDiagram[]>();
-        for (const b of linked) {
-          for (const p of await loadPlacements(b.slug)) {
-            if (!p.rect) continue;
-            const list = map.get(p.page) ?? [];
-            list.push({ rect: p.rect, fen: p.fen });
-            map.set(p.page, list);
-          }
-        }
-        if (live) setKnown(map);
+        map = await loadKnownDiagrams(id);
       } catch {
         // No puzzle shelf, no known positions: the reader reads instead.
       }
+      if (live && map) setKnown(map);
     })();
     return () => {
       live = false;
@@ -932,9 +952,14 @@ function PdfPane({
   // when the fingers lift (use-pinch-zoom.ts); the preview is clamped to
   // what the commit will allow, so the page does not grow past the limit
   // and snap back.
-  const [pinch, setPinch] = useState<PinchLive | null>(null);
+  const [pinch, setPinch] = useState<PinchFrame | null>(null);
+  // The latest zoom for the pinch preview, which usePinchZoom binds once.
+  // Filled after commit, not in render: the React Compiler refuses a ref
+  // written during render, and a finger reads it later either way.
   const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+  });
   // Every zoom is asked for with the anchor AND the scroll offsets of the
   // moment — captured here, before the commit, because a zoom out can
   // shrink the column past the old scrollTop and the browser clamps it
@@ -954,10 +979,13 @@ function PdfPane({
     );
   };
   usePinchZoom(viewport, anchoredBump, doc, (p) => {
-    if (!p) return setPinch(null);
+    const el = viewport.current;
+    if (!p || !el) return setPinch(null);
     const z = zoomRef.current;
     const scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * p.scale)) / z;
-    setPinch({ ...p, scale });
+    // The viewport's offsets ride with the pinch (pdfViewer's PinchFrame):
+    // the scroller draws the origin from them rather than reading the ref.
+    setPinch({ ...p, scale, left: el.scrollLeft, top: el.scrollTop, width: el.clientWidth });
   });
   // The one opening treatment: the labelled skeleton stays up — over the
   // scroller once the document is open — until the FIRST page has
@@ -1269,7 +1297,10 @@ function PdfPane({
           </Button>
         ) : null}
         <SearchPopover search={search} size={size} icon={icon} sheet={compact} />
-        {more.length > 0 && (
+        {/* `fold`, not more.length: the entries close over the viewport
+            ref, and the React Compiler counts reading the list in render
+            as reading the ref. The list is non-empty exactly when folded. */}
+        {fold && (
           <ActionMenu title={t('Page')} actions={more} open={moreOpen} onOpenChange={setMoreOpen}>
             <Button variant="ghost" size={size} title={t('More')} active={moreOpen}>
               <MoreHorizontal className={icon} />
@@ -1331,7 +1362,7 @@ function PdfPane({
             overlayFor={overlayFor}
             onPainted={() => setPainted(true)}
             viewportRef={viewport}
-            zoomAnchor={zoomAnchor}
+            zoomAnchorRef={zoomAnchor}
             pinch={pinch}
             onKeyDown={onKey}
           />

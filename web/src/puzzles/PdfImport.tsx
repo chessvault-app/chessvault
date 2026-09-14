@@ -95,6 +95,48 @@ function PeekCrop({
  * or browsing elsewhere doesn't stop it, classification runs in a worker,
  * and the book page shows live progress with a way back here.
  */
+/**
+ * Post the chosen rows as drafts, twenty at a time: hundreds of crops
+ * would make one giant request body. Each chunk that lands deselects its
+ * rows at once, so a later chunk's failure leaves only the unsaved rows
+ * selected and retrying Save cannot duplicate the drafts already saved.
+ */
+async function saveDraftChunks(
+  slug: string,
+  chosen: { f: FoundDiagram; index: number }[],
+): Promise<void> {
+  for (let at = 0; at < chosen.length; at += 20) {
+    const chunk = chosen.slice(at, at + 20);
+    await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
+      method: 'POST',
+      json: {
+        // A draft is finished by hand from the printed page, so it
+        // carries the same evidence a verified puzzle does: the page,
+        // where on it the diagram sat, and the answers page for its
+        // number. Without these the editor has no Diagram or
+        // Solutions tab to read the answer off.
+        drafts: chunk.map(({ f }) => ({
+          image: f.dataUrl,
+          fen: f.fen,
+          ...(f.number === undefined ? {} : { number: f.number }),
+          evidence: {
+            page: evidencePage(f.page),
+            ...(f.rect ? { rect: f.rect } : {}),
+            ...(f.solutionPage ? { solutionPage: f.solutionPage } : {}),
+            // No number on it, so no single answers page to name — it
+            // carries the section instead.
+            ...(f.solutionPages?.length ? { solutionPages: f.solutionPages } : {}),
+          },
+        })),
+      },
+    });
+    const done = new Set(chunk.map(({ index }) => index));
+    useImportJob.setState((s) => ({
+      found: s.found.map((row, i) => (done.has(i) ? { ...row, selected: false } : row)),
+    }));
+  }
+}
+
 export function PdfImport({
   slug,
   title,
@@ -177,24 +219,37 @@ export function PdfImport({
       if (suggested) onSuggestName(suggested);
     }
     setPreparing(true);
+    // Prove the file opens as a PDF before any work starts — and, on a
+    // rebuild, before anything irreversible: the clear used to run on
+    // nothing but the file picker's word, so an unreadable file emptied
+    // the book and then imported nothing. The update path used to skip
+    // the probe and discover the same thing only inside a started job.
+    // Only the awaited calls sit in the try; the verdict is read after it,
+    // and `preparing` is cleared on every way out, which is what the
+    // finally used to do.
+    const clearing = existing > 0 && mode === 'rebuild';
+    let readable = false;
+    let failed = false;
+    let failure: unknown;
     try {
-      // Prove the file opens as a PDF before any work starts — and, on a
-      // rebuild, before anything irreversible: the clear used to run on
-      // nothing but the file picker's word, so an unreadable file emptied
-      // the book and then imported nothing. The update path used to skip
-      // the probe and discover the same thing only inside a started job.
-      if (!(await canReadPdf(file))) {
-        setSaveError(t('That file could not be read as a PDF. The book was left untouched.'));
-        return;
-      }
-      if (existing > 0 && mode === 'rebuild') {
-        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, { method: 'DELETE' });
+      readable = await canReadPdf(file);
+      if (readable) {
+        if (clearing) {
+          await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, { method: 'DELETE' });
+        }
       }
     } catch (e) {
-      setSaveError(apiErrorMessage(e));
+      failed = true;
+      failure = e;
+    }
+    setPreparing(false);
+    if (failed) {
+      setSaveError(apiErrorMessage(failure));
       return;
-    } finally {
-      setPreparing(false);
+    }
+    if (!readable) {
+      setSaveError(t('That file could not be read as a PDF. The book was left untouched.'));
+      return;
     }
     job.start(slug, file, templates, { repair, engine, libraryBook: pdfBook });
     // The PDF itself goes to the library, so the book can be READ and not
@@ -202,13 +257,15 @@ export function PdfImport({
     // Not awaited: the scan is the point of this window, and a library
     // that is full or unreachable must not hold it up. A failure is a line
     // under the progress, not an error.
+    // Named before the try: the compiler takes no `??` inside one.
+    const libraryTitle = suggestTitle(file) ?? title;
     void (async () => {
       try {
         if (pdfBook) {
           await replaceBookPdf(pdfBook, file);
           return;
         }
-        const id = await uploadBook(file, { title: suggestTitle(file) ?? title });
+        const id = await uploadBook(file, { title: libraryTitle });
         await api(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
           method: 'PATCH',
           json: { pdfBook: id },
@@ -337,47 +394,23 @@ export function PdfImport({
     const chosen = found.map((f, index) => ({ f, index })).filter(({ f }) => f.selected);
     if (chosen.length === 0) return;
     setSaving(true);
+    // The chunked posts are a module function so the try holds one
+    // awaited call; a failure is reported after it.
+    let failed = false;
+    let failure: unknown;
     try {
-      // Chunked: hundreds of crops would make one giant request body.
-      for (let at = 0; at < chosen.length; at += 20) {
-        const chunk = chosen.slice(at, at + 20);
-        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
-          method: 'POST',
-          json: {
-            // A draft is finished by hand from the printed page, so it
-            // carries the same evidence a verified puzzle does: the page,
-            // where on it the diagram sat, and the answers page for its
-            // number. Without these the editor has no Diagram or
-            // Solutions tab to read the answer off.
-            drafts: chunk.map(({ f }) => ({
-              image: f.dataUrl,
-              fen: f.fen,
-              ...(f.number === undefined ? {} : { number: f.number }),
-              evidence: {
-                page: evidencePage(f.page),
-                ...(f.rect ? { rect: f.rect } : {}),
-                ...(f.solutionPage ? { solutionPage: f.solutionPage } : {}),
-                // No number on it, so no single answers page to name — it
-                // carries the section instead.
-                ...(f.solutionPages?.length ? { solutionPages: f.solutionPages } : {}),
-              },
-            })),
-          },
-        });
-        // This chunk is on disk: deselect its rows NOW, so a later
-        // chunk's failure leaves only the unsaved rows selected and
-        // retrying Save cannot duplicate the drafts that already landed.
-        const done = new Set(chunk.map(({ index }) => index));
-        useImportJob.setState((s) => ({
-          found: s.found.map((row, i) => (done.has(i) ? { ...row, selected: false } : row)),
-        }));
-      }
-      job.clear();
-      onDone();
+      await saveDraftChunks(slug, chosen);
     } catch (e) {
-      setSaveError(apiErrorMessage(e));
-      setSaving(false);
+      failed = true;
+      failure = e;
     }
+    if (failed) {
+      setSaveError(apiErrorMessage(failure));
+      setSaving(false);
+      return;
+    }
+    job.clear();
+    onDone();
   };
 
   const selectedCount = found.filter((f) => f.selected).length;

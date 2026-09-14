@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { INITIAL_FEN } from 'chessops/fen';
 import type { Color } from 'chessops/types';
 import { parseSquare, parseUci, roleToChar } from 'chessops/util';
@@ -254,7 +254,13 @@ function Drill({ classId }: { classId: string }) {
   // Reviewing an earlier ply (null = live), via the panel or the bar.
   const [review, setReview] = useState<number | null>(null);
   const [flipped, setFlipped] = useState(false);
-  const promotion = usePromotion((orig, dest, role) => void play(orig + dest + roleToChar(role)));
+  // The promotion needs play, and play needs the promotion (maybeStart),
+  // so the picker reaches play through a ref filled once play exists: the
+  // React Compiler refuses a call to a function declared below it.
+  const playRef = useRef<(uci: string) => Promise<void>>(async () => {});
+  const promotion = usePromotion(
+    (orig, dest, role) => void playRef.current(orig + dest + roleToChar(role)),
+  );
   const wide = useWideLayout();
 
   // Whoever holds the latest sequence number owns the state; a draw
@@ -269,7 +275,10 @@ function Drill({ classId }: { classId: string }) {
 
   const spec = specFor(classId);
 
-  const draw = useCallback(async () => {
+  // Memoised by the React Compiler on what it reads. (`promotion` is a
+  // fresh object each render, so a useCallback keyed on spec alone had
+  // to suppress the deps lint to hold it.)
+  const draw = async (): Promise<void> => {
     const mine = ++seq.current;
     timers.current.forEach(clearTimeout);
     timers.current = [];
@@ -299,17 +308,18 @@ function Drill({ classId }: { classId: string }) {
       setError(explain(e));
       setPhase('error');
     }
-    // `promotion` is a fresh object each render; only its cancel is used.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec]);
+  };
 
   // One boot per real mount: StrictMode replays effects.
   const booted = useRef(false);
-  useEffect(() => {
+  const bootOnce = useEffectEvent(() => {
     if (booted.current) return;
     booted.current = true;
     void draw();
-  }, [draw]);
+  });
+  useEffect(() => {
+    bootOnce();
+  }, []);
 
   /** The same position again, from the top. */
   const retry = (): void => {
@@ -398,6 +408,9 @@ function Drill({ classId }: { classId: string }) {
       setPhase(done ? 'drawn' : 'playing');
     });
   };
+  useLayoutEffect(() => {
+    playRef.current = play;
+  });
 
   const onMove = (orig: string, dest: string): void => {
     if (!live || phase !== 'playing' || reviewing) return;
