@@ -112,7 +112,7 @@ export function LeaveDialog() {
             className="w-full justify-center"
             onClick={() => void saveAndLeave()}
           >
-            {busy ? <Spinner className="size-3.5" data-icon="inline-start" /> : <Save className="size-3.5" data-icon="inline-start" />}
+            {busy ? <Spinner className="glyph" data-icon="inline-start" /> : <Save className="glyph" data-icon="inline-start" />}
             {t(busy ? 'Saving…' : 'Save')}
           </Button>
           <Button
@@ -122,7 +122,7 @@ export function LeaveDialog() {
             className="w-full justify-center"
             onClick={cancelLeave}
           >
-            <X className="size-3.5" data-icon="inline-start" />
+            <X className="glyph" data-icon="inline-start" />
             {t('Cancel')}
           </Button>
           {/* Red text on no panel at all — quieter than every `danger`
@@ -136,7 +136,7 @@ export function LeaveDialog() {
             className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive w-full justify-center"
             onClick={discardAndLeave}
           >
-            <Trash2 className="size-3.5" data-icon="inline-start" />
+            <Trash2 className="glyph" data-icon="inline-start" />
             {t('Discard changes')}
           </Button>
         </div>

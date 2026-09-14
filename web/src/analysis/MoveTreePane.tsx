@@ -103,7 +103,7 @@ export function SidelinesToggle() {
       title={on ? t('Showing the current line only') : t('Show the current line only')}
       aria-label={on ? t('Showing the current line only') : t('Show the current line only')}
     >
-      <GitBranch className="size-3.5" />
+      <GitBranch className="glyph" />
     </Button>
   );
 }
@@ -509,7 +509,7 @@ const MoveCell = memo(function MoveCell({
       {book && (
         <TitleTip title={t('Book move')}>
           <span role="img" aria-label={t('Book move')} className="self-center">
-            <BookOpen className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')} />
+            <BookOpen className={cn('glyph-sm', active ? 'text-primary-foreground/80' : 'text-nag-book')} />
           </span>
         </TitleTip>
       )}
@@ -563,7 +563,7 @@ export function PromoteStrip({
         className,
       )}
     >
-      <ArrowUpToLine className="size-3.5" />
+      <ArrowUpToLine className="glyph" />
       {t('Make mainline')}
     </button>
   );
@@ -766,7 +766,7 @@ const MoveChip = memo(function MoveChip({ id, label, number, nags, hasComment, a
           <TitleTip title={t('Book move')}>
             <span role="img" aria-label={t('Book move')} className="ml-1 inline-block align-middle">
               <BookOpen
-                className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')}
+                className={cn('glyph-sm', active ? 'text-primary-foreground/80' : 'text-nag-book')}
               />
             </span>
           </TitleTip>

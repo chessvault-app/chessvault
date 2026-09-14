@@ -445,7 +445,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         title={t('Back to the book')}
         onClick={() => navigate('puzzles', 'books', slug)}
       >
-        <ChevronLeft className="size-3.5" />
+        <ChevronLeft className="glyph" />
       </Button>
       {/* The puzzle number IS the title; the tier collapses to its icon
           (tooltip explains). */}
@@ -464,7 +464,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                   aria-label={`${t(meta.label)}: ${t(meta.title)}`}
                   className="shrink-0 cursor-help"
                 >
-                  <meta.icon className={cn('size-3.5', meta.iconClass)} aria-hidden />
+                  <meta.icon className={cn('glyph', meta.iconClass)} aria-hidden />
                 </span>
               </TitleTip>
             );
@@ -480,7 +480,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         title={t('Correct this puzzle against the book scan')}
         onClick={() => navigate('puzzles', 'books', slug, 'fix', puzzle.id)}
       >
-        <Pencil className="size-3.5" />
+        <Pencil className="glyph" />
       </Button>
     </div>
   );
@@ -517,7 +517,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               if (target) navigate('puzzles', 'books', slug, target.id);
             }}
           >
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <Button
             variant="ghost"
@@ -529,7 +529,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               if (target) navigate('puzzles', 'books', slug, target.id);
             }}
           >
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="glyph" />
           </Button>
           <Button
             variant="ghost"
@@ -538,7 +538,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             title={t('All puzzles in this book')}
             onClick={() => setShowNav((v) => !v)}
           >
-            <LayoutGrid className="size-3.5" />
+            <LayoutGrid className="glyph" />
           </Button>
           <Button
             variant="ghost"
@@ -546,7 +546,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             title={t('Dashboard')}
             onClick={() => navigate('puzzles', 'dashboard')}
           >
-            <BarChart3 className="size-3.5" />
+            <BarChart3 className="glyph" />
           </Button>
         </>
       }
@@ -638,7 +638,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         {phase === 'done' ? (
           <>
             <Button variant="secondary" size="sm" onClick={retry}>
-              <RotateCcw className="size-3.5" data-icon="inline-start" />
+              <RotateCcw className="glyph" data-icon="inline-start" />
               {t('Try again')}
             </Button>
             {cycle && cycleNext ? (
@@ -650,7 +650,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                 size="sm"
                 onClick={() => navigate('puzzles', 'books', slug, cycleNext)}
               >
-                <RotateCw className="size-3.5" data-icon="inline-start" />
+                <RotateCw className="glyph" data-icon="inline-start" />
                 {t('Next in cycle')}
               </Button>
             ) : (
@@ -664,7 +664,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                     title={t('The next puzzle whose review date has come')}
                     onClick={() => navigate('puzzles', 'books', slug, review)}
                   >
-                    <History className="size-3.5" data-icon="inline-start" />
+                    <History className="glyph" data-icon="inline-start" />
                     {t('Next review')}
                   </Button>
                 )}
@@ -674,7 +674,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                     size="sm"
                     onClick={() => navigate('puzzles', 'books', slug, next)}
                   >
-                    <RotateCw className="size-3.5" data-icon="inline-start" />
+                    <RotateCw className="glyph" data-icon="inline-start" />
                     {t('Next puzzle')}
                   </Button>
                 )}
@@ -690,7 +690,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               onClick={showSolution}
               title={t('Counts as a failed attempt')}
             >
-              <Eye className="size-3.5" data-icon="inline-start" />
+              <Eye className="glyph" data-icon="inline-start" />
               {t('Solution')}
             </Button>
             <Button
@@ -698,7 +698,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               size="sm"
               onClick={() => navigate('puzzles', 'books', slug)}
             >
-              <X className="size-3.5" data-icon="inline-start" />
+              <X className="glyph" data-icon="inline-start" />
               {t('Skip')}
             </Button>
             <Button
@@ -709,9 +709,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               onClick={() => void submit()}
             >
               {phase === 'checking' ? (
-                <Spinner className="size-3.5" />
+                <Spinner className="glyph" />
               ) : (
-                <Check className="size-3.5" />
+                <Check className="glyph" />
               )}
               {t('Submit')}
             </Button>

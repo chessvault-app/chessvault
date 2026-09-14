@@ -162,7 +162,7 @@ function HistorySheet({
             disabled={busy || preview === null}
             onClick={() => void restore(chosen)}
           >
-            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            <RotateCcw className="glyph" data-icon="inline-start" />
             {t('Restore this version')}
           </Button>
 
@@ -297,7 +297,7 @@ export function DocumentHistory({
           active={open}
           onClick={() => setOpen(true)}
         >
-          <History className="size-3.5" />
+          <History className="glyph" />
         </Button>
       )}
       {open && (

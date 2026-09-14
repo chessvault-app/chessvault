@@ -261,7 +261,7 @@ export function DashboardPage() {
                 the retry, 40px from here, and this line is the sentence. */}
             {!metaFailed && (
               <Button variant="secondary" size="sm" onClick={refresh}>
-                <RotateCcw className="size-3.5" data-icon="inline-start" />
+                <RotateCcw className="glyph" data-icon="inline-start" />
                 {t('Try again')}
               </Button>
             )}
@@ -303,7 +303,7 @@ export function DashboardPage() {
           // after an outage, with no button under it; the slot offers
           // the retry instead, in the same box.
           <Button variant="secondary" size="default" className="mb-4 w-full justify-center" onClick={refresh}>
-            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            <RotateCcw className="glyph" data-icon="inline-start" />
             {t('Try again')}
           </Button>
         ) : user === null ? (
@@ -315,7 +315,7 @@ export function DashboardPage() {
           // note's one 20px line when this device saw one.
           <div className="mb-4">
             <Button variant="default" size="default" className="w-full justify-center" disabled tabIndex={-1}>
-              <Puzzle className="size-3.5" data-icon="inline-start" />
+              <Puzzle className="glyph" data-icon="inline-start" />
               {t('Train')}
             </Button>
             {reserved.review === 'note' && (
@@ -333,7 +333,7 @@ export function DashboardPage() {
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'failed')}
           >
-            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            <RotateCcw className="glyph" data-icon="inline-start" />
             {t('Review puzzles · {n} due', { n: due })}
           </Button>
         ) : failed > 0 ? (
@@ -343,7 +343,7 @@ export function DashboardPage() {
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'failed')}
           >
-            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            <RotateCcw className="glyph" data-icon="inline-start" />
             {t('Review failed puzzles')} · {failed}
           </Button>
         ) : (
@@ -354,7 +354,7 @@ export function DashboardPage() {
               className="w-full justify-center"
               onClick={() => navigate('puzzles')}
             >
-              <Puzzle className="size-3.5" data-icon="inline-start" />
+              <Puzzle className="glyph" data-icon="inline-start" />
               {t('Train')}
             </Button>
             {nextDue && (
@@ -507,7 +507,7 @@ export function DashboardPage() {
                   title={t('Puzzle books')}
                   actions={
                     <Button variant="ghost" size="sm" disabled tabIndex={-1}>
-                      <BookMarked className="size-3.5" data-icon="inline-start" />
+                      <BookMarked className="glyph" data-icon="inline-start" />
                       {reserved.books === 0 ? t('Import a book') : t('All puzzle books')}
                     </Button>
                   }
@@ -550,7 +550,7 @@ export function DashboardPage() {
                           <Skeleton className="h-2.5 w-10" />
                         </div>
                         <Progress value={0} aria-hidden className="w-24 shrink-0 max-sm:hidden" />
-                        <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
+                        <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
                       </div>
                     </div>
                   ))
@@ -568,7 +568,7 @@ export function DashboardPage() {
                 // a page the reader had not seen, and its own tooltip said
                 // the better label.
                 <Button variant="ghost" size="sm" onClick={() => navigate('puzzles', 'books')}>
-                  <BookMarked className="size-3.5" data-icon="inline-start" />
+                  <BookMarked className="glyph" data-icon="inline-start" />
                   {books.length === 0 && !booksFailed ? t('Import a book') : t('All puzzle books')}
                 </Button>
               }
@@ -625,7 +625,7 @@ export function DashboardPage() {
                       className="w-24 shrink-0 max-sm:hidden"
                       decorative
                     />
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
                   </ListRow>
                 </li>
               ))}
@@ -776,9 +776,9 @@ export function DashboardPage() {
                     className="min-w-0 flex-1 pr-1.5 type-row"
                   >
                     {h.win ? (
-                      <Check className="text-good size-3.5 shrink-0" role="img" aria-label={t('solved')} />
+                      <Check className="text-good glyph shrink-0" role="img" aria-label={t('solved')} />
                     ) : (
-                      <X className="text-destructive size-3.5 shrink-0" role="img" aria-label={t('failed')} />
+                      <X className="text-destructive glyph shrink-0" role="img" aria-label={t('failed')} />
                     )}
                     {/* The puzzle's name is its motif ("Fork", "Back rank
                         mate"), which is what a solver remembers; the id

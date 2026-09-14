@@ -212,7 +212,7 @@ export function AddMoveDialog({
                       so a mark saying "this one adds" on every row said it
                       of the row you press to jump to a node as well. */}
                   {row.childId && (
-                    <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
+                    <Check className="text-primary glyph shrink-0" aria-label={t('On the map')} />
                   )}
                 </RowTail>
               </button>
@@ -265,7 +265,7 @@ export function AddMoveDialog({
             }}
           />
           <Button type="submit" variant="default" size="sm" disabled={typed.trim() === ''}>
-            <Plus className="size-3.5" data-icon="inline-start" /> {t('Add')}
+            <Plus className="glyph" data-icon="inline-start" /> {t('Add')}
           </Button>
         </form>
         {error && (

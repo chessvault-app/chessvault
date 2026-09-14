@@ -233,7 +233,7 @@ export function ShelfCard({
             <p className="text-muted-foreground type-row-sub">
               {marked && (
                 <Bookmark
-                  className="text-primary mr-1 inline size-3 -translate-y-px fill-current"
+                  className="text-primary mr-1 inline glyph-sm -translate-y-px fill-current"
                   aria-label={t('Bookmarked')}
                 />
               )}
@@ -280,7 +280,7 @@ export function ShelfCard({
                 onToggleMark();
               }}
             >
-              <Bookmark className={cn('size-3.5', marked && 'fill-current')} />
+              <Bookmark className={cn('glyph', marked && 'fill-current')} />
             </Button>
           )}
           <ActionMenu
@@ -302,7 +302,7 @@ export function ShelfCard({
               // A press on the ⋯ is the menu's, not the card's.
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreHorizontal className="size-3.5" />
+              <MoreHorizontal className="glyph" />
             </Button>
           </ActionMenu>
         </div>

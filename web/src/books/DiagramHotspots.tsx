@@ -268,7 +268,7 @@ export function DiagramHotspots({
             style={style}
             title={s.ok ? t('Set up this position') : t('Edit position')}
           >
-            <Grid3x3 className="size-3.5" />
+            <Grid3x3 className="glyph" />
           </Button>
         );
         // Every tap asks who is to move — a diagram alone does not say,

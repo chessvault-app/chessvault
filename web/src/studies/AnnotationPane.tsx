@@ -335,7 +335,7 @@ export function AnnotationPane({
         )}
       >
         <ChevronDown
-          className={cn('size-3.5 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', paletteOpen && 'rotate-180')}
+          className={cn('glyph transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', paletteOpen && 'rotate-180')}
         />
       </button>
     </TitleTip>
@@ -370,7 +370,7 @@ export function AnnotationPane({
       <p className="text-warn flex items-start gap-1.5 text-xs leading-4">
         {/* mt-px: text-xs's 16px line around a 14px icon, centred on the
             first line the way EditorView centres its own. */}
-        <AlertCircle className="mt-px size-3.5 shrink-0" />
+        <AlertCircle className="mt-px glyph shrink-0" />
         {rewriteNotice()}
       </p>
     ) : null;

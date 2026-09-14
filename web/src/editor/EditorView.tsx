@@ -671,7 +671,7 @@ export function EditorView({
               {/* mt-[3px]: text-sm's 20px line around a 14px icon —
                   centred on the FIRST line (items-start keeps multi-line
                   reasons hanging right); mt-px sat it visibly high. */}
-              <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+              <AlertCircle className="mt-[3px] glyph shrink-0" />
               {t(validity.reason ?? '')}
             </p>
           )}
@@ -681,7 +681,7 @@ export function EditorView({
               needed. py-1.5 is symmetric, so the line centres itself. */}
           <div className="border-border -mb-[var(--card-floor,var(--card-spacing))] flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
             {validity.legal && (
-              <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+              <CheckCircle2 className="text-good glyph shrink-0" aria-label={t('Legal position')} />
             )}
             <TitleTip title={fen}>
               <code
@@ -700,7 +700,7 @@ export function EditorView({
         <div className="grid gap-3">{positionFields}</div>
         {!validity.legal && (
           <p className="text-warn flex items-start gap-1.5 text-sm">
-            <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+            <AlertCircle className="mt-[3px] glyph shrink-0" />
             {t(validity.reason ?? '')}
           </p>
         )}
@@ -712,7 +712,7 @@ export function EditorView({
             have to dismiss twice to get out of. */}
         <div className="border-border flex shrink-0 items-center gap-1.5 border-t pt-1.5">
           {validity.legal && (
-            <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+            <CheckCircle2 className="text-good glyph shrink-0" aria-label={t('Legal position')} />
           )}
           <TitleTip title={fen}>
             <code
@@ -731,7 +731,7 @@ export function EditorView({
             title={t('Load a position from FEN, PGN or an image')}
             onClick={() => setLoadPage(true)}
           >
-            <FolderInput className="size-3.5" />
+            <FolderInput className="glyph" />
           </Button>
         </div>
         {/* The row every window in this app ends on (components/prompt-dialog):
@@ -762,7 +762,7 @@ export function EditorView({
             title={t('Back')}
             onClick={() => up('home')}
           >
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <h1 className="text-foreground text-base font-semibold">{t('Editor')}</h1>
         </div>
@@ -890,7 +890,7 @@ export function EditorView({
                 title={t('Move: drag pieces around the board')}
                 aria-label={t('Move')}
               >
-                <MousePointer2 className="size-3.5" />
+                <MousePointer2 className="glyph" />
                 <span className="hidden sm:inline">{t('Move')}</span>
               </Button>
               <Button
@@ -902,7 +902,7 @@ export function EditorView({
                 title={t('Erase: click a square to remove its piece')}
                 aria-label={t('Erase')}
               >
-                <Eraser className="size-3.5" />
+                <Eraser className="glyph" />
                 <span className="hidden sm:inline">{t('Erase')}</span>
               </Button>
               <Button
@@ -912,7 +912,7 @@ export function EditorView({
                 onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
                 title={t('Flip board')}
               >
-                <FlipHorizontal2 className="size-3.5" />
+                <FlipHorizontal2 className="glyph" />
               </Button>
               {/* Both of these destroy the position on the board, and as two
                   adjacent anonymous icons they were a coin-flip. Named where
@@ -928,7 +928,7 @@ export function EditorView({
                 title={t('Reset to the starting position')}
                 aria-label={t('Reset')}
               >
-                <RotateCcw className="size-3.5" />
+                <RotateCcw className="glyph" />
                 <span className="hidden sm:inline">{t('Reset')}</span>
               </Button>
               <Button
@@ -939,7 +939,7 @@ export function EditorView({
                 title={t('Clear the board')}
                 aria-label={t('Clear')}
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="glyph" />
                 <span className="hidden sm:inline">{t('Clear')}</span>
               </Button>
               </div>
@@ -970,7 +970,7 @@ export function EditorView({
                 }}
                 title={t('Position details (side to move, castling, FEN)')}
               >
-                <Settings2 className="size-3.5" data-icon="inline-start" />
+                <Settings2 className="glyph" data-icon="inline-start" />
                 <span>{t('Position')}</span>
               </Button>
               <Button
@@ -991,7 +991,7 @@ export function EditorView({
               >
                 {/* Analysis = the game-review microscope; embedded mode records
                     a move list, so the glyph says "list", not "go". */}
-                {onUse ? <ListPlus className="size-3.5" /> : <Microscope className="size-3.5" />}
+                {onUse ? <ListPlus className="glyph" /> : <Microscope className="glyph" />}
                 <span className="hidden sm:inline">{onUse ? useLabel : t('Analyse')}</span>
               </Button>
               </div>
@@ -1013,7 +1013,7 @@ export function EditorView({
             >
               {!validity.legal && (
                 <>
-                  <AlertCircle className="mt-[3px] size-3.5 shrink-0" aria-hidden />
+                  <AlertCircle className="mt-[3px] glyph shrink-0" aria-hidden />
                   <span>{t(validity.reason ?? '')}</span>
                 </>
               )}
@@ -1037,7 +1037,7 @@ export function EditorView({
               <div className="grid gap-3">{positionFields}</div>
               {!validity.legal && (
                 <p className="text-warn flex items-start gap-1.5 text-sm">
-                  <AlertCircle className="mt-[3px] size-3.5 shrink-0" />
+                  <AlertCircle className="mt-[3px] glyph shrink-0" />
                   {t(validity.reason ?? '')}
                 </p>
               )}
@@ -1047,7 +1047,7 @@ export function EditorView({
                   last field, not sunk to the window's floor). */}
               <div className="border-border flex shrink-0 items-center gap-1.5 border-t pt-1.5">
                 {validity.legal && (
-                  <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
+                  <CheckCircle2 className="text-good glyph shrink-0" aria-label={t('Legal position')} />
                 )}
                 <TitleTip title={fen}>
                   <code
@@ -1066,7 +1066,7 @@ export function EditorView({
                   title={t('Load a position from FEN, PGN or an image')}
                   onClick={() => goto('load')}
                 >
-                  <FolderInput className="size-3.5" />
+                  <FolderInput className="glyph" />
                 </Button>
               </div>
               {/* The draft's two doors, right under the last row

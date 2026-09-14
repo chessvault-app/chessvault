@@ -255,7 +255,7 @@ export function GrowDialog({
               onClose();
             }}
           >
-            <GitBranch className="size-3.5" data-icon="inline-start" /> {t('Chart them')}
+            <GitBranch className="glyph" data-icon="inline-start" /> {t('Chart them')}
           </Button>
         </div>
       </DialogContent>

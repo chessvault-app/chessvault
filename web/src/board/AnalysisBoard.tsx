@@ -434,7 +434,7 @@ function NagBadge({
 
   return (
     <SquareBadge square={dest} orientation={orientation} className={badge.className}>
-      {badge.glyph ?? <BookOpen className="size-3.5" />}
+      {badge.glyph ?? <BookOpen className="glyph" />}
     </SquareBadge>
   );
 }

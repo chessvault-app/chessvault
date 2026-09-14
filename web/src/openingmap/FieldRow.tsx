@@ -91,13 +91,13 @@ export function MoveCell({
       {gap && (
         <Mark
           label={t('The field plays it and the studies do not answer')}
-          icon={<AlertTriangle className="text-warn size-3.5" />}
+          icon={<AlertTriangle className="text-warn glyph" />}
         />
       )}
       {prepared && (
         <Mark
           label={t('A linked study prepares it')}
-          icon={<Library className="text-good size-3.5" />}
+          icon={<Library className="text-good glyph" />}
         />
       )}
     </span>

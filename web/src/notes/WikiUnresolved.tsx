@@ -115,7 +115,7 @@ export function WikiUnresolved() {
                     // where every other control wears the page's 3px.
                     className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm"
                   >
-                    <Icon className="text-muted-foreground size-3.5 shrink-0" />
+                    <Icon className="text-muted-foreground glyph shrink-0" />
                     <span className="truncate">{id}</span>
                   </button>
                 </li>
@@ -144,7 +144,7 @@ export function WikiUnresolved() {
                     plusses: which of the three this row makes is the whole
                     difference between them, and it is what the sentence
                     ends up saying twice otherwise. */}
-                <Icon className="text-muted-foreground size-3.5 shrink-0" />
+                <Icon className="text-muted-foreground glyph shrink-0" />
                 {t(CREATE_LABEL[section], { name: target.trim() })}
               </button>
             );

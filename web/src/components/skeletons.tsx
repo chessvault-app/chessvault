@@ -184,7 +184,7 @@ function Inert({ children, className }: { children: React.ReactNode; className?:
 function InertEditButton() {
   return (
     <Button variant="secondary" size="sm" className="shrink-0" {...INERT}>
-      <Pencil className="size-3.5 md:mr-1" />
+      <Pencil className="glyph md:mr-1" />
       <span className="max-md:hidden">{t('Edit')}</span>
     </Button>
   );
@@ -201,11 +201,11 @@ function InertDocumentTools() {
   return (
     <>
       <Button variant="ghost" size="icon-sm" className="shrink-0 md:hidden" {...INERT}>
-        <MoreHorizontal className="size-3.5" />
+        <MoreHorizontal className="glyph" />
       </Button>
       {[Tags, Link, History].map((Icon, i) => (
         <Button key={i} variant="ghost" size="icon-sm" className="shrink-0 max-md:hidden" {...INERT}>
-          <Icon className="size-3.5" />
+          <Icon className="glyph" />
         </Button>
       ))}
     </>
@@ -256,7 +256,7 @@ export function SkeletonRows({
             {/* A bar, not an icon: the mark on these rows is the attempt's
                 outcome (solved, failed), which is the data being waited
                 for. */}
-            <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+            <Skeleton className="glyph shrink-0 rounded-sm" />
             {/* Both lists these stand for are five columns, not three: a
                 mark, a name, the difficulty word, a right-aligned time and
                 the eye beside the row. Drawn as three, every row re-laid
@@ -306,7 +306,7 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
             {/* The row's own chevron (LicensesPage), closed: it is the same
                 glyph on every row and depends on nothing the page is
                 waiting for. */}
-            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+            <ChevronRight className="text-muted-foreground glyph shrink-0" aria-hidden />
             <div className="flex h-5 min-w-0 flex-1 items-center">
               <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
@@ -469,7 +469,7 @@ export function SkeletonCards({
             <section key={f} className="flex flex-col gap-2">
               <div className="flex h-6 items-center gap-1.5">
                 {/* ShelfFolderHeader's own glyph; only the name waits. */}
-                <FolderIcon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+                <FolderIcon className="text-muted-foreground glyph shrink-0" aria-hidden />
                 <Skeleton className="h-2.5 w-24" />
               </div>
               {n === 0 ? (
@@ -549,7 +549,7 @@ export function SkeletonBookCards({
           /* A text-sm line with its glyph, which is what the library's
              cards end with; a track there stood for nothing they draw. */
           <span className="flex h-5 items-center gap-1.5">
-            <Skeleton className="size-3 shrink-0 rounded-sm" />
+            <Skeleton className="glyph-sm shrink-0 rounded-sm" />
             <Skeleton className="h-2.5 w-24" />
           </span>
         )}
@@ -573,7 +573,7 @@ export function SkeletonBookCards({
             <section key={f} className="flex flex-col gap-2">
               <div className="flex h-6 items-center gap-1.5">
                 {/* ShelfFolderHeader's own glyph; only the name waits. */}
-                <FolderIcon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+                <FolderIcon className="text-muted-foreground glyph shrink-0" aria-hidden />
                 <Skeleton className="h-2.5 w-24" />
               </div>
               {n === 0 ? (
@@ -664,17 +664,17 @@ export function SkeletonTiles({
               cyclesOpen ? (
                 <>
                   <Button variant="ghost" size="sm" {...INERT}>
-                    <CircleStop className="size-3.5" data-icon="inline-start" />
+                    <CircleStop className="glyph" data-icon="inline-start" />
                     {t('Stop')}
                   </Button>
                   <Button variant="default" size="sm" {...INERT}>
-                    <RotateCw className="size-3.5" data-icon="inline-start" />
+                    <RotateCw className="glyph" data-icon="inline-start" />
                     {t('Continue')}
                   </Button>
                 </>
               ) : (
                 <Button variant="default" size="sm" {...INERT}>
-                  <Repeat className="size-3.5" data-icon="inline-start" />
+                  <Repeat className="glyph" data-icon="inline-start" />
                   {t('Start a cycle')}
                 </Button>
               )
@@ -915,7 +915,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
             the name and the save state wait. */}
         <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9" data-ground="">
           <Button variant="ghost" size="icon-sm" {...INERT}>
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <Skeleton className="h-3.5 min-w-0 flex-1" />
           <InertDocumentTools />
@@ -998,7 +998,7 @@ export function SkeletonBoard({
     // screen, which is why it is written once and placed twice.
     <>
       <Button variant="ghost" size="icon-sm" {...INERT}>
-        <ChevronLeft className="size-3.5" />
+        <ChevronLeft className="glyph" />
       </Button>
       <Skeleton className="h-3.5 min-w-0 flex-1" />
       {/* As SkeletonDocument's row, and StudyView's own: the real tools
@@ -1111,7 +1111,7 @@ export function SkeletonBoard({
                 i === 0 ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
-              <Icon className="size-3.5" />
+              <Icon className="glyph" />
             </div>
           ))}
           {/* The line that marks the open pane, which the strip draws
@@ -1287,7 +1287,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
           ]}
         />
         <Button variant="secondary" size="icon-sm" className="relative shrink-0" {...INERT}>
-          <SlidersHorizontal className="size-3.5" />
+          <SlidersHorizontal className="glyph" />
         </Button>
       </Inert>
     </Loading>
@@ -1378,10 +1378,10 @@ export function SkeletonGameRows({
               against the tray's 62. */}
           <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-lg p-0.5">
             <Button variant="ghost" size="icon-sm" className="shrink-0" {...INERT}>
-              <Eye className="size-3.5" />
+              <Eye className="glyph" />
             </Button>
             <Button variant="ghost" size="icon-sm" className="shrink-0" {...INERT}>
-              <MoreHorizontal className="size-3.5" />
+              <MoreHorizontal className="glyph" />
             </Button>
           </div>
         </div>

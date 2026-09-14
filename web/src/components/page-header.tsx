@@ -104,7 +104,7 @@ export function PageHeader({
             title={t('Back')}
             onClick={back}
           >
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
         )}
         <h1

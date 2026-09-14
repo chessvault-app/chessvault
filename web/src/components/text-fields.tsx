@@ -237,7 +237,7 @@ export function SearchInput({
     >
       <InputGroup inputSize={inputSize} className="min-w-0 flex-1">
         <InputGroupAddon>
-          <Search className="text-muted-foreground pointer-events-none size-3.5" />
+          <Search className="text-muted-foreground pointer-events-none glyph" />
         </InputGroupAddon>
         {highlight != null && text !== '' && (
           // pl-7 is the 28px the input note below derives; pr-7 is the

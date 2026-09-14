@@ -291,7 +291,7 @@ export function Shelf() {
               /* The empty state ends on the press that fills it, like every
                  other shelf's. */
               <Button variant="default" size="sm" onClick={() => void create()}>
-                <BookMarked className="size-3.5" data-icon="inline-start" />
+                <BookMarked className="glyph" data-icon="inline-start" />
                 {t('New book')}
               </Button>
             }
@@ -404,9 +404,9 @@ function BookCard({
           */
           <span className="flex items-center gap-1.5">
             {scan.live ? (
-              <Spinner className="text-primary size-3 shrink-0" />
+              <Spinner className="text-primary glyph-sm shrink-0" />
             ) : (
-              <FileUp className="text-warn size-3 shrink-0" />
+              <FileUp className="text-warn glyph-sm shrink-0" />
             )}
             <span className={cn('truncate text-sm', scan.live ? 'text-primary' : 'text-warn')}>
               {scan.live

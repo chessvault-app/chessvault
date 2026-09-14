@@ -589,7 +589,7 @@ export function PdfImport({
                   is the same state a crash would have left, and the same
                   button brings it back. */}
               <Button variant="secondary" size="sm" className="shrink-0" onClick={() => job.pause()}>
-                <Pause className="size-3.5" data-icon="inline-start" />
+                <Pause className="glyph" data-icon="inline-start" />
                 {t('Pause')}
               </Button>
             </div>
@@ -607,7 +607,7 @@ export function PdfImport({
                 size="sm"
                 onClick={() => job.resume(slug, templates, { repair, engine, libraryBook: pdfBook })}
               >
-                <Play className="size-3.5" data-icon="inline-start" />
+                <Play className="glyph" data-icon="inline-start" />
                 {t('Carry on')}
               </Button>
             </div>
@@ -812,7 +812,7 @@ export function PdfImport({
                           }}
                           onMouseLeave={() => setPeek((p) => (p?.i === i ? null : p))}
                         >
-                          <Eye className="size-3.5" />
+                          <Eye className="glyph" />
                         </Button>
                         <span className={cn('ml-auto shrink-0 text-xs', mark.cls)}>
                           {t(mark.label)}
@@ -848,7 +848,7 @@ export function PdfImport({
                         intrinsic size; the real button, inert, cannot
                         disagree with them. */}
                     <Button variant="ghost" size="icon-sm" disabled tabIndex={-1} aria-hidden>
-                      <Eye className="size-3.5" />
+                      <Eye className="glyph" />
                     </Button>
                     <Skeleton className="ml-auto h-3 w-10 shrink-0" />
                   </li>
@@ -885,7 +885,7 @@ export function PdfImport({
                 disabled={saving || scanning || selectedCount === 0}
                 onClick={() => void save()}
               >
-                {saving && <Spinner className="mr-1 size-3.5" />}
+                {saving && <Spinner className="mr-1 glyph" />}
                 {t('Add {n} as drafts', { n: selectedCount })}
               </Button>
             )}

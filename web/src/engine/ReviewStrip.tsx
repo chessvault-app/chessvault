@@ -33,9 +33,9 @@ export function ReviewButton() {
       onClick={() => void run()}
     >
       {status === 'running' ? (
-        <Spinner className="size-3.5" />
+        <Spinner className="glyph" />
       ) : (
-        <Microscope className="size-3.5" />
+        <Microscope className="glyph" />
       )}
     </Button>
   );
@@ -58,7 +58,7 @@ export function ReviewButton() {
 function reviewOfferChildren(): ReactNode {
   return (
     <>
-      <Microscope className="size-3.5 md:mr-1" />
+      <Microscope className="glyph md:mr-1" />
       <span className="max-md:hidden">{t('Review game')}</span>
     </>
   );
@@ -182,7 +182,7 @@ export function ReviewStrip({
             title={t('Close')}
             onClick={() => setOfferDismissed(gameHeaders)}
           >
-            <X className="size-3" />
+            <X className="glyph-sm" />
           </Button>
         )}
       </div>
@@ -251,7 +251,7 @@ export function ReviewStrip({
             {error}
           </span>
           <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={clear}>
-            <X className="size-3" />
+            <X className="glyph-sm" />
           </Button>
         </div>
       ) : (
@@ -274,12 +274,12 @@ export function ReviewStrip({
                 title={graphOpen ? t('Hide the evaluation graph') : t('Show the evaluation graph')}
                 onClick={toggleGraph}
               >
-                <ChevronDown className={cn('size-3 transition-transform', graphOpen && 'rotate-180')} />
+                <ChevronDown className={cn('glyph-sm transition-transform', graphOpen && 'rotate-180')} />
               </Button>
             )}
             {!panel && (
               <Button variant="ghost" size="icon-sm" title={t('Close the review')} onClick={clear}>
-                <X className="size-3" />
+                <X className="glyph-sm" />
               </Button>
             )}
           </div>
@@ -524,7 +524,7 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
             )}
           >
             {summary.bookMoves}
-            <BookOpen className="size-3" />
+            <BookOpen className="glyph-sm" />
           </span>
         </TitleTip>
         {/* Beside the book count, and for the same reason: both say that
@@ -536,7 +536,7 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
           <TitleTip title={t('Endgame moves judged against the tablebase, not the engine')}>
             <span className="text-muted-foreground flex items-center gap-0.5">
               {summary.tablebaseMoves}
-              <Crown className="size-3" />
+              <Crown className="glyph-sm" />
             </span>
           </TitleTip>
         )}

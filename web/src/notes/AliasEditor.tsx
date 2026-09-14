@@ -86,7 +86,7 @@ export function AliasEditor({
           active={open}
           onClick={() => setOpen(true)}
         >
-          <Tags className="size-3.5" />
+          <Tags className="glyph" />
         </Button>
       )}
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : cancel())}>

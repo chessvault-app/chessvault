@@ -243,7 +243,7 @@ export function FieldStats({
               <MoveResult move={move} />
               <RowTail share={share}>
                 {childId ? (
-                  <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
+                  <Check className="text-primary glyph shrink-0" aria-label={t('On the map')} />
                 ) : (
                   <TitleTip title={t('Chart it on the map')}>
                     <button
@@ -262,7 +262,7 @@ export function FieldStats({
                         'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
                       )}
                     >
-                      <Plus className="size-3.5" />
+                      <Plus className="glyph" />
                     </button>
                   </TitleTip>
                 )}

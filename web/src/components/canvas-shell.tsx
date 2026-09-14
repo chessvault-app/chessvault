@@ -369,7 +369,7 @@ export function CanvasShell({
                   className="-my-1 -mr-1 shrink-0"
                   onClick={panel.onClose}
                 >
-                  <X className="size-3.5" />
+                  <X className="glyph" />
                 </Button>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto p-4">{panel.content}</div>

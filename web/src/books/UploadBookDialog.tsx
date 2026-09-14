@@ -201,7 +201,7 @@ export function UploadBookDialog({
               </p>
               {progress !== null && (
                 <p className="text-primary flex items-center gap-2 text-sm">
-                  <Spinner className="size-3.5" />
+                  <Spinner className="glyph" />
                   {t('Uploading… {pct}%', { pct: progress })}
                 </p>
               )}

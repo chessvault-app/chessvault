@@ -667,7 +667,7 @@ function Hub() {
         >
           <span className="min-w-0 flex-1">{failure.message}</span>
           <Button variant="secondary" size="sm" onClick={retry}>
-            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            <RotateCcw className="glyph" data-icon="inline-start" />
             {t('Try again')}
           </Button>
         </p>

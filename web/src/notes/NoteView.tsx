@@ -88,7 +88,7 @@ export function NoteView({ id }: { id: string }) {
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted-foreground text-base">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
-            <ChevronLeft className="size-3.5" data-icon="inline-start" />
+            <ChevronLeft className="glyph" data-icon="inline-start" />
             {t('All notes')}
           </Button>
         </div>
@@ -461,7 +461,7 @@ function NoteEditor({
         className="flex shrink-0 items-center gap-2"
       >
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="glyph" />
         </Button>
         <NoteTitle id={id} hidden={barTitleHidden} />
         {/* What links here, then History, then Edit, then Save — see
@@ -492,7 +492,7 @@ function NoteEditor({
           title={editable ? t('Back to reading') : t('Edit this note')}
           onClick={() => setEditable((v) => !v)}
         >
-          <Pencil className="size-3.5 md:mr-1" />
+          <Pencil className="glyph md:mr-1" />
           {/* Where the note opened editable, leaving is going to read,
               not finishing; where it opened read-only, Done is what the
               press means. */}

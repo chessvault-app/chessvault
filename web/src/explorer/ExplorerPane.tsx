@@ -282,7 +282,7 @@ export function ExplorerPane({
                 }}
                 title={t('Filters')}
               >
-                <SlidersHorizontal className="size-3.5" />
+                <SlidersHorizontal className="glyph" />
               </Button>
             )}
             {enabled && (
@@ -295,7 +295,7 @@ export function ExplorerPane({
                 onClick={() => navigate('databases')}
                 title={t('Manage reference databases')}
               >
-                <Database className="size-3.5" />
+                <Database className="glyph" />
               </Button>
             )}
             <Switch
@@ -350,7 +350,7 @@ export function ExplorerPane({
               </span>
             )}
             <span className="ml-auto flex shrink-0 items-center gap-1">
-              {loading && <Spinner className="text-muted-foreground size-3 shrink-0" />}
+              {loading && <Spinner className="text-muted-foreground glyph-sm shrink-0" />}
               {/* The handoff to the full search surface: this pane stays
                   the small "what happened from here" view, and the
                   browser answers the bigger question with the same
@@ -369,7 +369,7 @@ export function ExplorerPane({
                     navigate('games');
                   }}
                 >
-                  <ScanSearch className="size-3.5" />
+                  <ScanSearch className="glyph" />
                 </Button>
               )}
             </span>
@@ -431,7 +431,7 @@ export function ExplorerPane({
                     lookup(node.fen);
                   }}
                 >
-                  <RotateCw className="size-3.5" data-icon="inline-start" />
+                  <RotateCw className="glyph" data-icon="inline-start" />
                   {t('Try again')}
                 </Button>
               </div>
@@ -890,7 +890,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
       {state === 'running' ? (
         <div className="flex flex-col gap-2">
           <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
-            <Spinner className="size-3.5 shrink-0" />
+            <Spinner className="glyph shrink-0" />
             <span className="min-w-0 truncate">{line ?? '…'}</span>
           </p>
           {/* Weighted by phase — see BuildStatus. The Databases page is
@@ -907,7 +907,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
       ) : (
         <div className="flex items-center gap-2">
           <Button variant="default" size="sm" onClick={() => void start()}>
-            <ScanSearch className="size-3.5" data-icon="inline-start" />
+            <ScanSearch className="glyph" data-icon="inline-start" />
             {t('Index positions')}
           </Button>
           {state === 'failed' && (
@@ -1306,7 +1306,7 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
         // a misfire.
         auto ? null : (
           <Button variant="secondary" size="sm" className="self-start" onClick={() => void run()}>
-            <SearchCheck className="size-3.5" data-icon="inline-start" />
+            <SearchCheck className="glyph" data-icon="inline-start" />
             {t('Search every game for this position')}
           </Button>
         )
@@ -1318,7 +1318,7 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
             {t('The search failed.')}
           </p>
           <Button variant="secondary" size="sm" onClick={() => void run()}>
-            <RotateCw className="size-3.5" data-icon="inline-start" />
+            <RotateCw className="glyph" data-icon="inline-start" />
             {t('Try again')}
           </Button>
         </div>
@@ -1518,7 +1518,7 @@ function TopGamesList({
                   })}
                   className="text-muted-foreground shrink-0"
                 >
-                  <ExternalLink className="size-3.5" />
+                  <ExternalLink className="glyph" />
                 </Button>
               )}
             </li>

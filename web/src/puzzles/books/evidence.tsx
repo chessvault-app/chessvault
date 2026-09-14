@@ -130,7 +130,7 @@ export function SolutionsView({
             disabled={index === 0}
             onClick={() => setAt(index - 1)}
           >
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <span className="text-muted-foreground flex-1 text-center font-mono text-xs">
             {index + 1} / {pages.length}
@@ -142,7 +142,7 @@ export function SolutionsView({
             disabled={index === pages.length - 1}
             onClick={() => setAt(index + 1)}
           >
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="glyph" />
           </Button>
         </div>
       )}
@@ -265,7 +265,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
         }}
         className="grid size-full place-items-center"
       >
-        <Eye className="text-muted-foreground group-hover:text-foreground size-3.5 transition-colors pointer-coarse:size-4.5" />
+        <Eye className="text-muted-foreground group-hover:text-foreground glyph transition-colors pointer-coarse:size-4.5" />
       </button>
       {shown &&
         box &&
@@ -309,10 +309,10 @@ export function ZoomablePage({ src, alt, width }: { src: string; alt: string; wi
     <div className="relative" style={{ width }}>
       <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
         <Button variant="secondary" size="icon-sm" title={t('Zoom out')} disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-sm">
-          <ZoomOut className="size-3.5" />
+          <ZoomOut className="glyph" />
         </Button>
         <Button variant="secondary" size="icon-sm" title={t('Zoom in')} disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-sm">
-          <ZoomIn className="size-3.5" />
+          <ZoomIn className="glyph" />
         </Button>
       </span>
       <div
@@ -358,7 +358,7 @@ export function SourceCrop({
         onClick={() => bump(1 / 1.25)}
         className="shadow-sm"
       >
-        <ZoomOut className="size-3.5" />
+        <ZoomOut className="glyph" />
       </Button>
       <Button
         variant="secondary"
@@ -368,7 +368,7 @@ export function SourceCrop({
         onClick={() => bump(1.25)}
         className="shadow-sm"
       >
-        <ZoomIn className="size-3.5" />
+        <ZoomIn className="glyph" />
       </Button>
     </span>
   );
@@ -409,7 +409,7 @@ export function SourceCrop({
           onClick={() => setFull(false)}
           className="absolute right-1.5 top-1.5 shadow-sm"
         >
-          <Minimize2 className="size-3.5" />
+          <Minimize2 className="glyph" />
         </Button>
       </div>
     );
@@ -462,7 +462,7 @@ export function SourceCrop({
           onClick={() => setFull(true)}
           className="absolute right-1.5 top-1.5 shadow-sm"
         >
-          <Maximize2 className="size-3.5" />
+          <Maximize2 className="glyph" />
         </Button>
       )}
     </div>

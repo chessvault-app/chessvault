@@ -224,7 +224,7 @@ export function PuzzleEntry({
       ) : (
         <div className="flex shrink-0 items-center gap-2 px-3 pt-3">
           <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">
             {t(replace ? 'Fix' : 'Add')} <span className="font-mono">#{number}</span>
@@ -582,7 +582,7 @@ function SolutionRecorder({
                 setVerdicts(null);
               }}
             >
-              <RotateCcw className="size-3.5" data-icon="inline-start" />
+              <RotateCcw className="glyph" data-icon="inline-start" />
               {t('Start over')}
             </Button>
             <Button
@@ -592,7 +592,7 @@ function SolutionRecorder({
               title={t('Ask Stockfish whether every solver move really wins')}
               onClick={() => void verify()}
             >
-              {verifying ? <Spinner className="size-3.5" data-icon="inline-start" /> : <Eye className="size-3.5" data-icon="inline-start" />}
+              {verifying ? <Spinner className="glyph" data-icon="inline-start" /> : <Eye className="glyph" data-icon="inline-start" />}
               {t('Verify')}
             </Button>
             {/* What the back chevron in the removed header used to do. */}
@@ -605,7 +605,7 @@ function SolutionRecorder({
               disabled={line.length === 0 || saving}
               onClick={() => void save()}
             >
-              {saving ? <Spinner className="size-3.5" data-icon="inline-start" /> : <Check className="size-3.5" data-icon="inline-start" />}
+              {saving ? <Spinner className="glyph" data-icon="inline-start" /> : <Check className="glyph" data-icon="inline-start" />}
               {t('Save puzzle')}
             </Button>
           </CardFooter>

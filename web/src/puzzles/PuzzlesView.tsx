@@ -770,7 +770,7 @@ function Trainer({
               title={t('Engine')}
               onClick={() => setEngineOpen((v) => !v)}
             >
-              <Cpu className="size-3.5" />
+              <Cpu className="glyph" />
             </Button>
           )}
           <Button
@@ -779,7 +779,7 @@ function Trainer({
             title={t('Dashboard')}
             onClick={() => navigate('puzzles', 'dashboard')}
           >
-            <BarChart3 className="size-3.5" />
+            <BarChart3 className="glyph" />
           </Button>
         </>
       }
@@ -814,10 +814,10 @@ function Trainer({
             className="w-full min-w-0 justify-start"
             onClick={() => navigate('puzzles', 'themes')}
           >
-            <LayoutGrid className="size-3.5" data-icon="inline-start" />
+            <LayoutGrid className="glyph" data-icon="inline-start" />
             <span className="text-muted-foreground shrink-0">{t('Theme')}</span>
             <span className="ml-auto truncate">{theme ? themeLabel(theme) : t('All themes')}</span>
-            <ChevronRight className="text-muted-foreground size-3.5" data-icon="inline-end" />
+            <ChevronRight className="text-muted-foreground glyph" data-icon="inline-end" />
           </Button>
         </DialogContent>
       </Dialog>
@@ -988,13 +988,13 @@ function Trainer({
                 title={t('Opens Lichess (needs internet)')}
                 render={<a href={puzzle.game_url} target="_blank" rel="noreferrer" />}
               >
-                <ExternalLink className="size-3.5" data-icon="inline-start" />
+                <ExternalLink className="glyph" data-icon="inline-start" />
                 {t('From this game')}
               </Button>
             )}
             {/* Practice, not a second attempt — see retry(). */}
             <Button variant="secondary" size="sm" onClick={retry}>
-              <RotateCcw className="size-3.5" data-icon="inline-start" />
+              <RotateCcw className="glyph" data-icon="inline-start" />
               {t('Try again')}
             </Button>
             <Button
@@ -1004,7 +1004,7 @@ function Trainer({
                 mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
               }
             >
-              <RotateCw className="size-3.5" data-icon="inline-start" />
+              <RotateCw className="glyph" data-icon="inline-start" />
               {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
             </Button>
           </>
@@ -1031,7 +1031,7 @@ function Trainer({
                 className="me-auto pointer-coarse:h-11"
                 onClick={() => void loadNext(theme, difficulty, puzzle?.id)}
               >
-                <X className="size-3.5" data-icon="inline-start" />
+                <X className="glyph" data-icon="inline-start" />
                 {t('Skip')}
               </Button>
             )}
@@ -1046,7 +1046,7 @@ function Trainer({
               }}
               title={t('First press marks the piece, second the move (not counted as a fail)')}
             >
-              <Lightbulb className="size-3.5" data-icon="inline-start" />
+              <Lightbulb className="glyph" data-icon="inline-start" />
               {t('Hint')}
             </Button>
             <Button
@@ -1057,7 +1057,7 @@ function Trainer({
               onClick={viewSolution}
               title={t('Counts as a failed attempt')}
             >
-              <Eye className="size-3.5" data-icon="inline-start" />
+              <Eye className="glyph" data-icon="inline-start" />
               {t('Solution')}
             </Button>
           </>
@@ -1089,7 +1089,7 @@ function Trainer({
           title={t('Back to puzzles')}
           onClick={() => navigate('puzzles', 'hub')}
         >
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="glyph" />
         </Button>
         <h1 className="text-foreground text-base font-semibold">{title}
         </h1>
@@ -1120,7 +1120,7 @@ function Trainer({
                 size="sm"
                 onClick={() => void loadNext(theme, difficulty)}
               >
-                <RotateCw className="size-3.5" data-icon="inline-start" />
+                <RotateCw className="glyph" data-icon="inline-start" />
                 {t('Try again')}
               </Button>
             </div>
@@ -1283,12 +1283,12 @@ function DifficultyChip({
       title={t('Puzzle settings')}
       onClick={onOpen}
     >
-      <Settings2 className="size-3.5 shrink-0" />
+      <Settings2 className="glyph shrink-0" />
       <span className="truncate">
         {difficulty === 'any' ? t('Any difficulty') : t(label)}
         {theme && ` · ${themeLabel(theme)}`}
       </span>
-      <ChevronRight className="text-muted-foreground ml-auto size-3.5 shrink-0" />
+      <ChevronRight className="text-muted-foreground ml-auto glyph shrink-0" />
     </Button>
   );
 }

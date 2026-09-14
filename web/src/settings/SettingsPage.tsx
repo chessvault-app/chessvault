@@ -376,7 +376,7 @@ function SettingsPlaceholder() {
           words, and the chevron is the real button held inert. */}
       <div className="flex h-7 items-center gap-x-3 max-md:h-11">
         <Button variant="ghost" size="icon-sm" className="md:hidden" disabled tabIndex={-1} aria-hidden>
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="glyph" />
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight md:text-xl">{t('Settings')}</h1>
       </div>
@@ -485,7 +485,7 @@ function DisclosurePlaceholder() {
       tabIndex={-1}
       className="text-muted-foreground flex items-center gap-1.5 self-start text-sm pointer-coarse:min-h-9"
     >
-      <ChevronRight className="size-3.5" aria-hidden />
+      <ChevronRight className="glyph" aria-hidden />
       {t('More options')}
     </button>
   );
@@ -522,7 +522,7 @@ function Card({
             aria-label={t('Open the manual')}
             className="text-muted-foreground hover:text-foreground ml-auto grid size-6 place-items-center rounded-md pointer-coarse:size-9"
           >
-            <CircleHelp className="size-3.5" />
+            <CircleHelp className="glyph" />
           </a>
         </TitleTip>
       </h2>
@@ -1894,7 +1894,7 @@ function TablebaseCard({
                 title={t('Clear cached answers')}
                 onClick={() => void forget()}
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="glyph" />
               </Button>
             </div>
           </div>
@@ -2567,7 +2567,7 @@ function RecoveryCard() {
                 disabled={busy !== ''}
                 onClick={() => void restore(item)}
               >
-                <RotateCcw className="size-3.5" />
+                <RotateCcw className="glyph" />
               </Button>
             </li>
           ))}
@@ -2691,7 +2691,7 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
               {/* The row's own clear button, held inert: icon-sm's
                   size-7, and its size-9 under a coarse pointer. */}
               <Button variant="ghost" size="icon-sm" className="shrink-0" disabled tabIndex={-1} aria-hidden>
-                <Trash2 className="size-3.5" />
+                <Trash2 className="glyph" />
               </Button>
             </div>
           </div>
@@ -2734,7 +2734,7 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
                   title={t("Clear this player's months")}
                   onClick={() => void clearOne(p)}
                 >
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="glyph" />
                 </Button>
               </li>
             ))}

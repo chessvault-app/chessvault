@@ -61,7 +61,7 @@ export function ClearButton({
           className,
         )}
       >
-        <X className="size-3.5 shrink-0" />
+        <X className="glyph shrink-0" />
       </button>
     </TitleTip>
   );

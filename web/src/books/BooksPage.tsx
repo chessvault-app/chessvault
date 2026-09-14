@@ -308,7 +308,7 @@ export function BooksPage() {
             body="Import a chess book as a PDF and read it beside a board. Any printed diagram can be set up with a tap. Puzzle books imported on the puzzle shelf are filed here too."
             action={
               <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
-                <Upload className="size-3.5" data-icon="inline-start" />
+                <Upload className="glyph" data-icon="inline-start" />
                 {t('Import a PDF')}
               </Button>
             }
@@ -326,7 +326,7 @@ export function BooksPage() {
             action={
               needle ? (
                 <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
-                  <X className="size-3.5" data-icon="inline-start" />
+                  <X className="glyph" data-icon="inline-start" />
                   {t('Clear search')}
                 </Button>
               ) : undefined
@@ -442,9 +442,9 @@ function BookCard({
       footer={
         <span className={cn('flex items-center gap-1.5 text-sm', reading ? 'text-primary' : 'text-muted-foreground')}>
           {reading ? (
-            <Spinner className="size-3 shrink-0" />
+            <Spinner className="glyph-sm shrink-0" />
           ) : (
-            <BookOpen className="size-3 shrink-0" />
+            <BookOpen className="glyph-sm shrink-0" />
           )}
           {reading
             ? t('Reading diagrams, page {page} of {pages}', { page: job.page, pages: job.pages })
@@ -457,7 +457,7 @@ function BookCard({
             // mark says THAT there is one; the tip says which.
             <TitleTip title={t('Puzzle book: {title}', { title: book.puzzleBook.title })}>
               <span className="text-foreground/80 ml-auto inline-flex items-center gap-1">
-                <BookMarked className="size-3 shrink-0" />
+                <BookMarked className="glyph-sm shrink-0" />
                 {t('Puzzle book')}
               </span>
             </TitleTip>

@@ -229,7 +229,7 @@ export function TagPicker({
                           title={t('Link one chapter')}
                           onClick={() => void openScoping(row.id)}
                         >
-                          <BookOpen className="size-3.5" data-icon="inline-start" /> {t('Chapter')}
+                          <BookOpen className="glyph" data-icon="inline-start" /> {t('Chapter')}
                         </Button>
                       )}
                     </div>
@@ -242,7 +242,7 @@ export function TagPicker({
           <>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={() => setScoping(null)}>
-                <ChevronLeft className="size-3.5" />
+                <ChevronLeft className="glyph" />
               </Button>
               <p className="text-foreground min-w-0 truncate text-base font-medium">{scoping.id}</p>
             </div>

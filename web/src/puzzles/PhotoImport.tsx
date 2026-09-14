@@ -365,7 +365,7 @@ export function PhotoImport({
             </FilePicker>
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
-                <ClipboardPaste className="size-3.5" data-icon="inline-start" />
+                <ClipboardPaste className="glyph" data-icon="inline-start" />
                 {t('Paste image')}
               </Button>
               <span className="text-muted-foreground text-sm">{t('or press Ctrl+V, or drop a file here')}</span>
@@ -465,7 +465,7 @@ export function PhotoImport({
               </Button>
             ) : (
               <Button variant="default" size="sm" onClick={() => void read()}>
-                <ScanSearch className="size-3.5" data-icon="inline-start" />
+                <ScanSearch className="glyph" data-icon="inline-start" />
                 {t('Read position')}
               </Button>
             )}

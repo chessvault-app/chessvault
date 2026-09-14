@@ -395,9 +395,9 @@ export function GameTableHeader({
                 <span className="truncate">{c.label ? t(c.label) : ''}</span>
                 {sort?.key === c.id &&
                   (sort.dir === 'asc' ? (
-                    <ArrowUp className="size-3 shrink-0" aria-hidden />
+                    <ArrowUp className="glyph-sm shrink-0" aria-hidden />
                   ) : (
-                    <ArrowDown className="size-3 shrink-0" aria-hidden />
+                    <ArrowDown className="glyph-sm shrink-0" aria-hidden />
                   ))}
               </button>
             ) : (
@@ -541,7 +541,7 @@ export function GameTableRow({
       <>
         {player}
         {side === 'white' && game.annotated && (
-          <NotebookPen className="text-info ml-1 inline size-3" aria-label={t('Annotated')} />
+          <NotebookPen className="text-info ml-1 inline glyph-sm" aria-label={t('Annotated')} />
         )}
       </>
     );

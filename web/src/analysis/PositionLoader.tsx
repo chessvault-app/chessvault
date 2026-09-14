@@ -81,7 +81,7 @@ export function LoadPositionButton({
         title={t('Load a position from FEN, PGN or an image')}
         onClick={() => setOpen(true)}
       >
-        <FolderInput className="size-3.5" />
+        <FolderInput className="glyph" />
       </Button>
       {open && (
         <LoadDialog
@@ -249,7 +249,7 @@ export function LoadPositionForm({
             title={t('Paste from clipboard')}
             className="absolute bottom-3.5 right-2"
           >
-            <ClipboardPaste className="size-3.5" data-icon="inline-start" />
+            <ClipboardPaste className="glyph" data-icon="inline-start" />
             {t('Paste')}
           </Button>
         )}
@@ -257,7 +257,7 @@ export function LoadPositionForm({
 
       {error && (
         <p className="text-destructive flex items-start gap-1.5 text-sm">
-          <AlertCircle className="mt-px size-3.5 shrink-0" />
+          <AlertCircle className="mt-px glyph shrink-0" />
           {error}
         </p>
       )}

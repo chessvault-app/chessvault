@@ -183,7 +183,7 @@ export function LinkedMentions({
           active={open}
           onClick={() => setOpen(true)}
         >
-          <Link className="size-3.5" />
+          <Link className="glyph" />
         </Button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -212,7 +212,7 @@ export function LinkedMentions({
                   className="hover:bg-accent flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left"
                 >
                   <span className="flex items-center gap-1.5 text-sm font-medium">
-                    <SourceIcon m={m} className="text-muted-foreground size-3.5 shrink-0" />
+                    <SourceIcon m={m} className="text-muted-foreground glyph shrink-0" />
                     {m.from.split('/').at(-1)}
                   </span>
                   <span className="text-muted-foreground text-xs leading-5">
@@ -251,7 +251,7 @@ export function LinkedMentions({
                        button and neither edge lined up with anything. A
                        column ends the text where the button starts. */
                     <li key={at} className="hover:bg-accent flex items-start gap-2 rounded-md px-2 py-2">
-                      <SourceIcon m={m} className="text-muted-foreground mt-1 size-3.5 shrink-0" />
+                      <SourceIcon m={m} className="text-muted-foreground mt-1 glyph shrink-0" />
                       <div className="min-w-0 flex-1">
                         <button
                           type="button"

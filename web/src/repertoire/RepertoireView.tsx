@@ -1480,7 +1480,7 @@ export function RepertoireView() {
           disabled={needsToken || (mode === 'drill' && !drillReady)}
           onClick={startGame}
         >
-          <Play className="size-3.5" data-icon="inline-start" />
+          <Play className="glyph" data-icon="inline-start" />
           {t('Start')}
         </Button>
         {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
@@ -1566,7 +1566,7 @@ export function RepertoireView() {
       title={setupTerms}
     >
       <Settings2
-        className="text-muted-foreground group-hover/button:text-primary size-3.5 transition-colors"
+        className="text-muted-foreground group-hover/button:text-primary glyph transition-colors"
         data-icon="inline-start"
       />
       {/* One line, cut with an ellipsis. `min-w-0` is what lets it cut at
@@ -1575,7 +1575,7 @@ export function RepertoireView() {
           row. The full text is one press away in the dialog this opens,
           and `title` carries it for a pointer. */}
       <span className="text-foreground min-w-0 flex-1 truncate text-left">{setupTerms}</span>
-      <ChevronRight className="text-muted-foreground size-3.5" data-icon="inline-end" />
+      <ChevronRight className="text-muted-foreground glyph" data-icon="inline-end" />
     </Button>
   );
 
@@ -1597,7 +1597,7 @@ export function RepertoireView() {
           size="sm"
           onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
         >
-          <BookOpen className="size-3.5" data-icon="inline-start" />
+          <BookOpen className="glyph" data-icon="inline-start" />
           {t('Go to study')}
         </Button>
       )
@@ -1610,7 +1610,7 @@ export function RepertoireView() {
           setSaveOpen(true);
         }}
       >
-        <BookmarkPlus className="size-3.5" data-icon="inline-start" />
+        <BookmarkPlus className="glyph" data-icon="inline-start" />
         {t('Save line to study')}
       </Button>
     );
@@ -1644,7 +1644,7 @@ export function RepertoireView() {
             title={t('Opening map')}
             onClick={() => navigate('openingmap')}
           >
-            <Network className="size-3.5" />
+            <Network className="glyph" />
           </Button>
         ) : undefined
       }
@@ -1775,7 +1775,7 @@ export function RepertoireView() {
           onClick={newGame}
           title={t('Leave this line and set up a new game')}
         >
-          <ChevronLeft className="size-3.5" data-icon="inline-start" />
+          <ChevronLeft className="glyph" data-icon="inline-start" />
           {t('Back')}
         </Button>
       )}
@@ -1783,7 +1783,7 @@ export function RepertoireView() {
         <div className="flex flex-wrap justify-end gap-2">
           {endAction}
           <Button variant="default" size="sm" onClick={newGame} title={t('Set up a new game')}>
-            <RotateCcw className="size-3.5" data-icon="inline-start" />
+            <RotateCcw className="glyph" data-icon="inline-start" />
             {t('New game')}
           </Button>
         </div>

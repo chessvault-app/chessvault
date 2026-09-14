@@ -557,7 +557,7 @@ export function GamesBrowser({
         className="shrink-0"
         onClick={() => setMarkedOnly((v) => !v)}
       >
-        <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
+        <Bookmark className={cn('glyph', markedOnly && 'fill-current text-primary')} />
       </Button>
     </>
   );
@@ -604,7 +604,7 @@ export function GamesBrowser({
                     setColSelKey(null);
                   }}
                 >
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="glyph" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -612,7 +612,7 @@ export function GamesBrowser({
                   title={t('Rename')}
                   onClick={() => setRenamingKey(gameKey(colSelGame))}
                 >
-                  <Pencil className="size-3.5" />
+                  <Pencil className="glyph" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -624,13 +624,13 @@ export function GamesBrowser({
                 >
                   <Bookmark
                     className={cn(
-                      'size-3.5',
+                      'glyph',
                       bookmarks.has(gameKey(colSelGame)) && 'fill-current text-primary',
                     )}
                   />
                 </Button>
                 <Button variant="default" size="sm" onClick={() => openGame(colSelGame)}>
-                  <Play className="size-3.5" data-icon="inline-start" />
+                  <Play className="glyph" data-icon="inline-start" />
                   {t('Open the game')}
                 </Button>
               </>
@@ -1109,7 +1109,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             {t('Cancel')}
           </Button>
           <Button variant="default" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
-            <Plus className="size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} data-icon="inline-start" />
+            <Plus className="glyph pointer-coarse:size-4.5" strokeWidth={2.5} data-icon="inline-start" />
             {t('Add to collection')}
           </Button>
         </div>

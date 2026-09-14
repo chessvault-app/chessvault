@@ -322,7 +322,7 @@ function LauncherButton({ entry }: { entry: Destination }) {
         'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',
       )}
     >
-      <Icon className="size-3.5 shrink-0 max-sm:size-4" />
+      <Icon className="glyph shrink-0 max-sm:size-4" />
       {/* Under 320px the row's labels overprint; the glyph stays and the
           name goes to the reader. */}
       <span className="max-[319px]:sr-only">{t(label)}</span>
@@ -360,7 +360,7 @@ function PlaceholderRow({
 }) {
   return (
     <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11">
-      {icon && <Skeleton className="size-3.5 shrink-0 rounded-sm" />}
+      {icon && <Skeleton className="glyph shrink-0 rounded-sm" />}
       <span className="relative min-w-0 flex-1 font-medium">
         <span className="invisible">&nbsp;</span>
         <Skeleton className={cn('absolute inset-y-0.5 left-0 max-w-full', width)} />
@@ -369,7 +369,7 @@ function PlaceholderRow({
       {/* The chevron every one of these rows ends with, drawn as the rows
           draw it: it is part of the width the label truncates inside,
           and without it the bar ran on past where the words stop. */}
-      <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
+      <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
     </div>
   );
 }
@@ -415,11 +415,11 @@ function PlaceholderChecklist() {
           key={label}
           className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11"
         >
-          <span aria-hidden className="size-3.5 shrink-0" />
+          <span aria-hidden className="glyph shrink-0" />
           <span className="text-foreground min-w-0 flex-1">{t(label)}</span>
           {/* The chevron a pending step ends with — part of the width the
               words wrap inside. */}
-          <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
+          <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
         </div>
       ))}
     </div>
@@ -473,7 +473,7 @@ function PlaceholderPanel({
               <Skeleton className="h-2 w-full" />
             </span>
             <Skeleton className="h-2.5 w-8 shrink-0" />
-            <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
+            <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
           </div>
         ) : (
           <PlaceholderRow
@@ -548,7 +548,7 @@ function RecentGamesCard({
           >
             {g.date.replaceAll('.', '-')}
           </span>
-          <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+          <ChevronRight className="text-muted-foreground glyph shrink-0" />
         </ListRow>
       ))}
     </div>
@@ -1072,7 +1072,7 @@ export function HomePage() {
           title={t('Open anything')}
           onClick={openQuickSwitcher}
         >
-          <Search className="size-3.5" />
+          <Search className="glyph" />
         </Button>
       </div>
       {/* A column, so the phone can reorder without drawing anything
@@ -1185,7 +1185,7 @@ export function HomePage() {
                   i >= reserved.mdRows && 'md:hidden',
                 )}
               >
-                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                <Skeleton className="glyph shrink-0 rounded-sm" />
                 {/* The row's height comes from an INVISIBLE real text line,
                     not a fixed-height bar: iOS sizes this text line 1pt
                     shorter than desktop engines do, and a `h-4` bar was
@@ -1274,7 +1274,7 @@ export function HomePage() {
                 </span>
                 {/* Gone where the title wraps under the board: a chevron
                     alone on a third line is a row of nothing. */}
-                <ChevronRight className="text-muted-foreground size-3.5 shrink-0 max-[319px]:hidden" />
+                <ChevronRight className="text-muted-foreground glyph shrink-0 max-[319px]:hidden" />
               </button>
             )}
             {continueRows.map(({ icon: Icon, label, tail, detail, go, phoneOnly, content }) => (
@@ -1284,7 +1284,7 @@ export function HomePage() {
                 onClick={go}
                 className={cn('type-row', phoneOnly && 'md:hidden')}
               >
-                <Icon className="text-muted-foreground size-3.5 shrink-0" />
+                <Icon className="text-muted-foreground glyph shrink-0" />
                 <span
                   data-user-text={content || undefined}
                   className="text-foreground flex min-w-0 flex-1 items-baseline gap-1.5 font-medium"
@@ -1301,7 +1301,7 @@ export function HomePage() {
                 <span className={cn('text-muted-foreground shrink-0', tail && 'max-[319px]:hidden')}>
                   {detail}
                 </span>
-                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                <ChevronRight className="text-muted-foreground glyph shrink-0" />
               </ListRow>
             ))}
           </div>
@@ -1370,7 +1370,7 @@ export function HomePage() {
                 // made impossible.
                 onClick={() => save({ ...effective, off: [...effective.off, 'checklist'] })}
               >
-                <X className="size-3" />
+                <X className="glyph-sm" />
               </Button>
             </div>
             {checklist.map((step) =>
@@ -1392,7 +1392,7 @@ export function HomePage() {
                   // "Done" already carry the state.
                   className="border-border text-muted-foreground flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11"
                 >
-                  <Check aria-hidden className="size-3.5 shrink-0" />
+                  <Check aria-hidden className="glyph shrink-0" />
                   <span className="min-w-0 flex-1">
                     {step.label}
                     <span className="sr-only">. {t('Done')}</span>
@@ -1403,9 +1403,9 @@ export function HomePage() {
                   {/* A pending step carries no marker at all; the row's
                       own chevron already says it is a way in, and the
                       spacer keeps the labels in one column. */}
-                  <span aria-hidden className="size-3.5 shrink-0" />
+                  <span aria-hidden className="glyph shrink-0" />
                   <span className="text-foreground min-w-0 flex-1">{step.label}</span>
-                  <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                  <ChevronRight className="text-muted-foreground glyph shrink-0" />
                 </ListRow>
               ),
             )}
@@ -1433,7 +1433,7 @@ export function HomePage() {
             title={t('Customise home')}
             onClick={() => setEditing(true)}
           >
-            <SlidersHorizontal className="size-3.5" />
+            <SlidersHorizontal className="glyph" />
           </Button>
         </div>
 
@@ -1596,18 +1596,18 @@ export function HomePage() {
                     you have not trained when you may well have. */}
                 {showSolvedToday && (
                   <ListRow divided onClick={() => navigate('puzzles')} className="type-row">
-                    <Puzzle className="text-muted-foreground size-3.5 shrink-0" />
+                    <Puzzle className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {/* Non-null by showSolvedToday, which is the
                           condition this row is drawn under. */}
                       {t('Solved today: {n}', { n: data.solvedToday! })}
                     </span>
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
                   </ListRow>
                 )}
                 {showDue && (
                   <ListRow divided onClick={() => navigate('puzzles')} className="type-row">
-                    <RotateCcw className="text-muted-foreground size-3.5 shrink-0" />
+                    <RotateCcw className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {data.due > 0
                         ? t('{n} due for review', { n: data.due })
@@ -1615,7 +1615,7 @@ export function HomePage() {
                             when: formatUntil(data.nextDue!),
                           })}
                     </span>
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
                   </ListRow>
                 )}
                 {/* The repertoire's own reminder, in the same panel and
@@ -1626,7 +1626,7 @@ export function HomePage() {
                     row says which trainer it is sending you to. */}
                 {showRepertoireDue && (
                   <ListRow divided onClick={() => navigate('repertoire')} className="type-row">
-                    <Layers className="text-muted-foreground size-3.5 shrink-0" />
+                    <Layers className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {data.repertoire.due > 0
                         ? t('{n} repertoire positions due', { n: data.repertoire.due })
@@ -1634,7 +1634,7 @@ export function HomePage() {
                             when: formatUntil(data.repertoire.nextDue!),
                           })}
                     </span>
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
                   </ListRow>
                 )}
               </div>
@@ -1667,7 +1667,7 @@ export function HomePage() {
                       />
                     ) : (
                       <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
-                        <BookMarked className="size-3.5" />
+                        <BookMarked className="glyph" />
                       </span>
                     )}
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -1677,7 +1677,7 @@ export function HomePage() {
                     <span className="text-muted-foreground shrink-0 type-row-sub">
                       <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
                     </span>
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
                   </ListRow>
                 ))}
               </div>
@@ -1698,9 +1698,9 @@ export function HomePage() {
                     className="type-row"
                   >
                     {d.kind === 'study' ? (
-                      <Library className="text-muted-foreground size-3.5 shrink-0" />
+                      <Library className="text-muted-foreground glyph shrink-0" />
                     ) : (
-                      <NotebookPen className="text-muted-foreground size-3.5 shrink-0" />
+                      <NotebookPen className="text-muted-foreground glyph shrink-0" />
                     )}
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {baseName(d.id)}
@@ -1708,7 +1708,7 @@ export function HomePage() {
                     <span className="text-muted-foreground shrink-0 type-row-sub">
                       {formatAgo(d.updatedAt)}
                     </span>
-                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
                   </ListRow>
                 ))}
               </div>

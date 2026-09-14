@@ -152,15 +152,15 @@ function EndgamePicker() {
               >
                 <span className="bg-muted text-muted-foreground grid size-8 shrink-0 place-items-center rounded-sm">
                   {id === CUSTOM_CLASS ? (
-                    <SlidersHorizontal className="size-3.5" />
+                    <SlidersHorizontal className="glyph" />
                   ) : (
-                    <Crown className="size-3.5" />
+                    <Crown className="glyph" />
                   )}
                 </span>
                 <span className="text-foreground min-w-0 flex-1 truncate type-row font-medium">
                   {t(classLabel(id))}
                 </span>
-                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
+                <ChevronRight className="text-muted-foreground glyph shrink-0" />
               </ListRow>
             ))}
           </div>
@@ -580,7 +580,7 @@ function Drill({ classId }: { classId: string }) {
                 title={t('Engine')}
                 onClick={() => setEngineOpen((v) => !v)}
               >
-                <Cpu className="size-3.5" />
+                <Cpu className="glyph" />
               </Button>
             )}
           </>
@@ -664,20 +664,20 @@ function Drill({ classId }: { classId: string }) {
           title={t('All endings')}
           onClick={() => navigate(...PICKER)}
         >
-          <Crown className="size-3.5 shrink-0" />
+          <Crown className="glyph shrink-0" />
           <span className="truncate">{label}</span>
-          <ChevronRight className="text-muted-foreground ml-auto size-3.5 shrink-0" />
+          <ChevronRight className="text-muted-foreground ml-auto glyph shrink-0" />
         </Button>
 
         <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
           {ended ? (
             <>
               <Button variant="secondary" size="sm" onClick={retry}>
-                <RotateCcw className="size-3.5" data-icon="inline-start" />
+                <RotateCcw className="glyph" data-icon="inline-start" />
                 {t('Try again')}
               </Button>
               <Button variant="default" size="sm" onClick={() => void draw()}>
-                <RotateCw className="size-3.5" data-icon="inline-start" />
+                <RotateCw className="glyph" data-icon="inline-start" />
                 {t('Next ending')}
               </Button>
             </>
@@ -690,7 +690,7 @@ function Drill({ classId }: { classId: string }) {
                 disabled={phase === 'loading'}
                 onClick={() => void draw()}
               >
-                <X className="size-3.5" data-icon="inline-start" />
+                <X className="glyph" data-icon="inline-start" />
                 {t('Skip')}
               </Button>
               {/* Where the trainer offers the solution, this ends the
@@ -710,7 +710,7 @@ function Drill({ classId }: { classId: string }) {
                 }}
                 title={t('Ends the attempt and opens the engine')}
               >
-                <Cpu className="size-3.5" data-icon="inline-start" />
+                <Cpu className="glyph" data-icon="inline-start" />
                 {t('Analyse')}
               </Button>
             </>
@@ -730,7 +730,7 @@ function Drill({ classId }: { classId: string }) {
           title={t('Back to endgame drills')}
           onClick={() => navigate(...PICKER)}
         >
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="glyph" />
         </Button>
         <h1 className="text-foreground text-base font-semibold">{title}</h1>
       </div>
@@ -759,12 +759,12 @@ function Drill({ classId }: { classId: string }) {
                     size="sm"
                     onClick={() => navigate('settings', 'tablebase')}
                   >
-                    <Settings className="size-3.5" data-icon="inline-start" />
+                    <Settings className="glyph" data-icon="inline-start" />
                     {t('Open Settings')}
                   </Button>
                 )}
                 <Button variant="secondary" size="sm" onClick={() => void draw()}>
-                  <RotateCw className="size-3.5" data-icon="inline-start" />
+                  <RotateCw className="glyph" data-icon="inline-start" />
                   {t('Try again')}
                 </Button>
               </div>

@@ -92,7 +92,7 @@ export function DocumentTools({
     <>
       <ActionMenu title={t('Document')} actions={actions} open={menuOpen} onOpenChange={setMenuOpen}>
         <Button variant="ghost" size="icon-sm" className="shrink-0" title={t('More')} active={menuOpen}>
-          <MoreHorizontal className="size-3.5" />
+          <MoreHorizontal className="glyph" />
         </Button>
       </ActionMenu>
       {tools}

@@ -278,13 +278,13 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           {!unreadable && (
             <>
               <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={goBack}>
-                <ChevronLeft className="size-3.5" />
+                <ChevronLeft className="glyph" />
               </Button>
               <Button variant="ghost" size="icon-sm" title={t('Forward')} onClick={goForward}>
-                <ChevronRight className="size-3.5" />
+                <ChevronRight className="glyph" />
               </Button>
               <Button variant="ghost" size="icon-sm" title={t('Flip board')} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
-                <FlipHorizontal2 className="size-3.5" />
+                <FlipHorizontal2 className="glyph" />
               </Button>
             </>
           )}
@@ -296,13 +296,13 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
               title={t('Load a FEN or PGN into this board')}
               onClick={() => setPasteOpen((v) => !v)}
             >
-              <ClipboardPaste className="size-3.5" />
+              <ClipboardPaste className="glyph" />
             </Button>
           )}
           <span className="flex-1" />
           {editable && (
             <Button variant="ghost" size="icon-sm" title={t('Remove this board')} onClick={deleteNode}>
-              <Trash2 className="size-3.5" />
+              <Trash2 className="glyph" />
             </Button>
           )}
         </div>

@@ -75,7 +75,7 @@ export function PuzzleDbSetupPlaceholder() {
               so it is drawn at the width its words make it rather than a
               guessed 176px bar, disabled and out of the tab order. */}
           <Button variant="default" disabled tabIndex={-1}>
-            <Download className="size-3.5" />
+            <Download className="glyph" />
             {t('Download and build')}
           </Button>
         </div>
@@ -188,7 +188,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
 
             {failed && (
               <p className="text-warn flex items-start gap-2 text-left text-sm leading-relaxed">
-                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                <TriangleAlert className="mt-0.5 glyph shrink-0" />
                 <span>{failed}</span>
               </p>
             )}
@@ -196,9 +196,9 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
             <div className="flex justify-center">
               <Button variant="default" onClick={() => void start()} disabled={starting}>
                 {starting ? (
-                  <Spinner className="size-3.5" />
+                  <Spinner className="glyph" />
                 ) : (
-                  <Download className="size-3.5" />
+                  <Download className="glyph" />
                 )}
                 {failed ? t('Try again') : t('Download and build')}
               </Button>

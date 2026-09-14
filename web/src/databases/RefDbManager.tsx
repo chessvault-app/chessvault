@@ -469,7 +469,7 @@ export function RefDbManager({
                   value: 'databases',
                   label: (
                     <>
-                      <Database className="size-3.5 shrink-0" />
+                      <Database className="glyph shrink-0" />
                       {t('Databases')}
                     </>
                   ),
@@ -478,7 +478,7 @@ export function RefDbManager({
                   value: 'sources',
                   label: (
                     <>
-                      <FileText className="size-3.5 shrink-0" />
+                      <FileText className="glyph shrink-0" />
                       {t('PGN files')}
                     </>
                   ),
@@ -510,7 +510,7 @@ export function RefDbManager({
             aria-haspopup="dialog"
             onClick={() => setShowUpload(true)}
           >
-            <Upload className="size-3.5" />
+            <Upload className="glyph" />
           </Button>
         </div>
 
@@ -526,7 +526,7 @@ export function RefDbManager({
                 line still shows under it, since during the replay it is
                 the only place the games count ties to a file. */}
             <div className="flex items-center gap-2">
-              <Spinner className="size-3.5 shrink-0" />
+              <Spinner className="glyph shrink-0" />
               <p className="text-foreground min-w-0 flex-1 truncate text-sm">{jobLine(status)}</p>
               {/* Stop is a question, like Delete and Optimise: what was
                   indexed so far is thrown away. */}
@@ -725,7 +725,7 @@ export function RefDbManagerSkeleton({ rows }: {
                 value: 'databases',
                 label: (
                   <>
-                    <Database className="size-3.5 shrink-0" aria-hidden />
+                    <Database className="glyph shrink-0" aria-hidden />
                     {t('Databases')}
                   </>
                 ),
@@ -734,7 +734,7 @@ export function RefDbManagerSkeleton({ rows }: {
                 value: 'sources',
                 label: (
                   <>
-                    <FileText className="size-3.5 shrink-0" aria-hidden />
+                    <FileText className="glyph shrink-0" aria-hidden />
                     {t('PGN files')}
                   </>
                 ),
@@ -755,7 +755,7 @@ export function RefDbManagerSkeleton({ rows }: {
             className="min-w-0 flex-1"
           />
           <Button variant="secondary" size="icon-sm" className="shrink-0" disabled tabIndex={-1} aria-hidden>
-            <Upload className="size-3.5" />
+            <Upload className="glyph" />
           </Button>
         </div>
         {rows === 0 ? (
@@ -789,11 +789,11 @@ export function RefDbManagerSkeleton({ rows }: {
                   there (the fast-search slot, add, optimise, delete), so
                   the name column stops where it really stops. */}
               <Button variant="ghost" size="icon-sm" className="shrink-0 md:hidden" disabled tabIndex={-1} aria-hidden>
-                <MoreHorizontal className="size-3.5" />
+                <MoreHorizontal className="glyph" />
               </Button>
               {[Zap, Plus, Hammer, Trash2].map((Icon, k) => (
                 <Button key={k} variant="ghost" size="icon-sm" className="shrink-0 max-md:hidden" disabled tabIndex={-1} aria-hidden>
-                  <Icon className="size-3.5" />
+                  <Icon className="glyph" />
                 </Button>
               ))}
             </li>
@@ -961,7 +961,7 @@ function DbRow({
                   className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs"
                   role="status"
                 >
-                  <Spinner className="size-3.5" />
+                  <Spinner className="glyph" />
                   {d.fastScan === true
                     ? t('Releasing the scan index…')
                     : t('Loading the scan index…')}
@@ -980,7 +980,7 @@ function DbRow({
                   }
                   onClick={() => onFastScan(d.name, d.fastScan !== true)}
                 >
-                  <Zap className="size-3.5" />
+                  <Zap className="glyph" />
                 </Button>
               ))}
             {/* Growing THIS database, from its own row — burying append
@@ -998,7 +998,7 @@ function DbRow({
               className="shrink-0"
               onClick={() => onAddTo(d.name)}
             >
-              <Plus className="size-3.5" />
+              <Plus className="glyph" />
             </Button>
             {/* Housekeeping in the build slot: duplicates out, derived
                 tables re-derived, space returned. Asked first — it can run
@@ -1088,9 +1088,9 @@ function DbRow({
               that started it was in here, and on a phone there is no icon
               row for it to sit in instead. */}
           {scanBusy === d.name ? (
-            <Spinner className="size-3.5" />
+            <Spinner className="glyph" />
           ) : (
-            <MoreHorizontal className="size-3.5" />
+            <MoreHorizontal className="glyph" />
           )}
         </Button>
       </ActionMenu>
@@ -1253,7 +1253,7 @@ function AddToWindow({
         )}
         <div className="mt-1 flex items-center justify-end gap-2">
           <Button variant="secondary" size="sm" className="mr-auto" onClick={onUploadInstead}>
-            <Upload className="size-3.5" data-icon="inline-start" />
+            <Upload className="glyph" data-icon="inline-start" />
             {t('Upload')}
           </Button>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -1265,7 +1265,7 @@ function AddToWindow({
             disabled={ticked.size === 0}
             onClick={() => onAdd([...ticked])}
           >
-            <Plus className="size-3.5" data-icon="inline-start" />
+            <Plus className="glyph" data-icon="inline-start" />
             {t('Add games')}
           </Button>
         </div>
@@ -1472,7 +1472,7 @@ function BuildWindow({
             {t('Cancel')}
           </Button>
           <Button variant={replacing ? 'destructive' : 'default'} size="sm" disabled={count === 0} onClick={go}>
-            <Database className="size-3.5" data-icon="inline-start" />
+            <Database className="glyph" data-icon="inline-start" />
             {replacing
               ? t('Replace “{name}”', { name: target })
               : taken

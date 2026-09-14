@@ -438,7 +438,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       {wide && (
         <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
           <Button variant="ghost" size="icon-sm" title={t('Back to the board')} onClick={() => setEditing(null)}>
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{t('Edit position')}</h1>
         </div>
@@ -502,7 +502,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         title={t('Reset to the starting position')}
         onClick={() => useAnalysis.getState().reset()}
       >
-        <RotateCcw className="size-3.5" />
+        <RotateCcw className="glyph" />
       </Button>
       <Button
         variant="ghost"
@@ -510,7 +510,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         title={t('Fix this position in the editor')}
         onClick={() => openEditor(boardFen)}
       >
-        <SquarePen className="size-3.5" />
+        <SquarePen className="glyph" />
       </Button>
       <Button
         variant="ghost"
@@ -520,7 +520,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         title={strip ? t('Hide the moves under the board') : t('Show the moves under the board')}
         onClick={toggleStrip}
       >
-        <List className="size-3.5" />
+        <List className="glyph" />
       </Button>
       <Button
         variant="ghost"
@@ -531,7 +531,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           navigate('board');
         }}
       >
-        <Grid3x3 className="size-3.5" />
+        <Grid3x3 className="glyph" />
       </Button>
     </div>
   );
@@ -732,7 +732,7 @@ function ReaderHeader({
     return (
       <div className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="glyph" />
         </Button>
         {/* The book's own name; the page's text selects through the
             reader's text layer (index.css). */}
@@ -782,7 +782,7 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
         title={t('Replace PDF')}
         onClick={() => setReplacing(true)}
       >
-        <FileUp className="size-3.5" />
+        <FileUp className="glyph" />
       </Button>
       <ConfirmDialog
         icon={Trash2}
@@ -1074,7 +1074,7 @@ function PdfPane({
     e.stopPropagation();
     run();
   };
-  const icon = compact ? 'size-[1.1rem]' : 'size-3.5';
+  const icon = compact ? 'size-[1.1rem]' : 'glyph';
   // The page number is a field: typing one and pressing Enter goes there,
   // which is the go-to every reader knows without a label.
   const [typed, setTyped] = useState<string | null>(null);
@@ -1330,7 +1330,7 @@ function PdfPane({
         // said "Loading" once and nothing after); the pass's end is said
         // once, by the reader (see the diagram job's effect).
         <div className="text-muted-foreground flex h-7 shrink-0 items-center justify-center gap-1.5 text-xs">
-          <Spinner className="size-3 shrink-0" role="presentation" aria-hidden aria-label={undefined} />
+          <Spinner className="glyph-sm shrink-0" role="presentation" aria-hidden aria-label={undefined} />
           {t('Reading diagrams, page {page} of {pages}', { page: reading.page, pages: reading.pages })}
         </div>
       )}
@@ -1583,15 +1583,15 @@ function SearchPopover({
             className="min-w-0 flex-1"
           />
           <Button type="submit" variant="secondary" size="icon-sm" title={t('Search')}>
-            <Search className="size-3.5" />
+            <Search className="glyph" />
           </Button>
         </form>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" disabled={search.hits.length === 0} onClick={search.prev} title={t('Previous match')}>
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <Button variant="ghost" size="icon-sm" disabled={search.hits.length === 0} onClick={search.next} title={t('Next match')}>
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="glyph" />
           </Button>
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm tabular-nums">
             {search.scanning !== null

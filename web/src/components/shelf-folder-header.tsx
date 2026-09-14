@@ -58,7 +58,7 @@ export function ShelfFolderHeader({
   return (
     <ActionContextMenu title={folder} actions={actions}>
     <div className="group/folder flex h-6 items-center gap-1.5">
-      <FolderIcon className="text-muted-foreground size-3.5 shrink-0" />
+      <FolderIcon className="text-muted-foreground glyph shrink-0" />
       <TitleTip title={t('Double-click to rename')}>
         <button
           type="button"
@@ -104,7 +104,7 @@ export function ShelfFolderHeader({
           active={menuOpen}
           className="opacity-0 transition-opacity group-hover/folder:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
         >
-          <MoreHorizontal className="size-3" />
+          <MoreHorizontal className="glyph-sm" />
         </Button>
       </ActionMenu>
 

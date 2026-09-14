@@ -153,7 +153,7 @@ export function EngineBlock({
               onClick={() => setShowSettings((v) => !v)}
               title={t('Engine settings')}
             >
-              <Settings2 className="size-3.5" />
+              <Settings2 className="glyph" />
             </Button>
             <Switch
               checked={enabled}
@@ -195,7 +195,7 @@ export function EngineBlock({
           successful start, so it cannot outlive the thing it describes. */}
       {error && (
         <p className="text-destructive flex items-start gap-1.5 px-3 py-2 text-sm" role="alert">
-          <AlertTriangle className="mt-px size-3.5 shrink-0" />
+          <AlertTriangle className="mt-px glyph shrink-0" />
           {error}
         </p>
       )}
@@ -359,7 +359,7 @@ function PvRow({
           )}
         >
           <ChevronDown
-            className={cn('size-3.5 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', open && 'rotate-180')}
+            className={cn('glyph transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', open && 'rotate-180')}
           />
         </button>
       </div>

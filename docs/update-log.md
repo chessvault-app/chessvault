@@ -48,6 +48,12 @@ The puzzle hub's boards stop changing under you.
   a panel's name ("Training", "Cycles", the move list's position title)
   sat at 14 over rows of 16. It takes the row size under the phone
   width; a desktop keeps the registry's 14.
+- **Icons and form labels step up on a phone too.** Row chevrons and
+  leading icons go from 14 to 16px, the small marks (bookmarks, ticks,
+  a dismiss) from 12 to 14, and the icon-only toolbar buttons (Back,
+  More, the filters) draw a 20px glyph in their button. Form labels
+  in Settings and every dialog take the row size, 16. A desktop keeps
+  every one of these as it was.
 
 ## 0.11.0
 

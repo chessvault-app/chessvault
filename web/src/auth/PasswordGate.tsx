@@ -140,7 +140,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <Field className="mb-3">
                 <FieldLabel htmlFor="gate-password" className="gap-1.5">
-                  <Lock className="size-3" />
+                  <Lock className="glyph-sm" />
                   {t('Password')}
                 </FieldLabel>
                 <Input
@@ -160,7 +160,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <Field className="mb-3">
                 <FieldLabel htmlFor="gate-code" className="gap-1.5">
-                  <ShieldCheck className="size-3" />
+                  <ShieldCheck className="glyph-sm" />
                   {t('Authenticator code')}
                 </FieldLabel>
                 {/* shadcn's InputOTP (lanph3re's call), two groups of three
@@ -215,7 +215,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
               onClick={backToPassword}
               className="text-muted-foreground hover:text-foreground mx-auto mt-3 flex items-center gap-1 text-sm"
             >
-              <ChevronLeft className="size-3" />
+              <ChevronLeft className="glyph-sm" />
               {t('Use a different password')}
             </button>
           )}

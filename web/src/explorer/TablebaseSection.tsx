@@ -117,7 +117,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
             )}
           </>
         )}
-        {loading && <Spinner className="text-muted-foreground ml-auto size-3 shrink-0" />}
+        {loading && <Spinner className="text-muted-foreground ml-auto glyph-sm shrink-0" />}
       </div>
 
       {error && (
@@ -126,7 +126,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
               down, and the app's colour grammar keeps red for a failure. */}
           <p className="text-warn text-sm">{error}</p>
           <Button variant="secondary" size="sm" onClick={retry}>
-            <RotateCw className="size-3.5" data-icon="inline-start" />
+            <RotateCw className="glyph" data-icon="inline-start" />
             {t('Try again')}
           </Button>
         </div>

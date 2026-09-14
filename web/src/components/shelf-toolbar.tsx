@@ -237,7 +237,7 @@ export function ShelfToolbar<S extends string = ShelfSort>({
           app, and a bookmark is not a warning. The row edge and the shelf
           card were moved first and these toolbar icons were left behind,
           so one hue meant two things on the same screen. */}
-      <Bookmark className={cn('size-3.5', markedOnly && 'fill-current text-primary')} />
+      <Bookmark className={cn('glyph', markedOnly && 'fill-current text-primary')} />
     </Button>
   );
 
@@ -285,9 +285,9 @@ export function ShelfToolbar<S extends string = ShelfSort>({
             onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
           >
             {dir === 'asc' ? (
-              <ArrowUpNarrowWide className="size-3.5" />
+              <ArrowUpNarrowWide className="glyph" />
             ) : (
-              <ArrowDownWideNarrow className="size-3.5" />
+              <ArrowDownWideNarrow className="glyph" />
             )}
           </Button>
           {/* Two states, so a switch rather than a menu — the same segmented
@@ -304,8 +304,8 @@ export function ShelfToolbar<S extends string = ShelfSort>({
               look="track"
               className="hidden sm:flex"
               segments={[
-                { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
-                { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
+                { value: 'grid', label: <LayoutGrid className="glyph" />, title: 'Grid view' },
+                { value: 'list', label: <List className="glyph" />, title: 'List view' },
               ]}
             />
           )}

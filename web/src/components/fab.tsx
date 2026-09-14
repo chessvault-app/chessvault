@@ -41,9 +41,9 @@ export function CreateControl({ actions, label = 'Create' }: { actions: FabActio
   const single = actions.length === 1 ? actions[0] : null;
   const button = (
     <Button variant="default" size="sm" onClick={single ? single.onSelect : undefined}>
-      <Plus className="size-3.5" data-icon="inline-start" />
+      <Plus className="glyph" data-icon="inline-start" />
       {single ? t(single.label) : t(label)}
-      {!single && <ChevronDown className="ml-1 size-3" />}
+      {!single && <ChevronDown className="ml-1 glyph-sm" />}
     </Button>
   );
 

@@ -409,7 +409,7 @@ export function GameRow({
             <span className="text-foreground block truncate text-base font-semibold">
               {customName}
               {game.annotated && (
-                <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
+                <NotebookPen className="text-info ml-1.5 inline glyph-sm" aria-label={t('Annotated')} />
               )}
             </span>
           ) : (
@@ -435,7 +435,7 @@ export function GameRow({
                   <span className="text-muted-foreground shrink-0 font-mono text-sm">{game.whiteElo}</span>
                 ) : null}
                 {game.annotated && (
-                  <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
+                  <NotebookPen className="text-info glyph-sm shrink-0" aria-label={t('Annotated')} />
                 )}
               </span>
               <span className="text-foreground flex items-baseline gap-1.5 text-base">
@@ -548,7 +548,7 @@ export function GameRow({
               showPreview(e, true);
             }}
           >
-            <Eye className="size-3.5" />
+            <Eye className="glyph" />
           </Button>
         )}
         {actions}
@@ -563,7 +563,7 @@ export function GameRow({
               // A press on the ⋯ is the menu's, not the row's.
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreHorizontal className="size-3.5" />
+              <MoreHorizontal className="glyph" />
             </Button>
           </ActionMenu>
         )}
@@ -591,7 +591,7 @@ export function GameRow({
             // link up to the 36px floor (DESIGN.md, Buttons).
             className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:p-[11px] pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
           >
-            <ExternalLink className="size-3.5" />
+            <ExternalLink className="glyph" />
           </a>
         </TitleTip>
       )}

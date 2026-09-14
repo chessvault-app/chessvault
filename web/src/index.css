@@ -1539,6 +1539,32 @@
   }
 }
 
+/* The icon rungs, on the type rungs' bargain: the app's row glyph is 14px
+   (a chevron, a row's leading icon, the icon in a small button) and its
+   mark is 12 (a bookmark on a card, a badge's tick), and both platforms
+   draw a phone's list glyph at 20 to 24 and a toolbar glyph at 20 to 22.
+   One rung up under md: glyph 14 -> 16, glyph-sm 12 -> 14. The icon-only
+   Button variants go further on their own (button.tsx): 20, whatever
+   class the icon carries, because that is a toolbar glyph and not a
+   row's. Every `size-3.5` and `size-3` on an icon was rewritten to these
+   (2026-09-15); a bare `size-3` left in app code is a dot or a swatch. */
+@utility glyph {
+  width: calc(var(--spacing) * 3.5);
+  height: calc(var(--spacing) * 3.5);
+  @media (width < 48rem) {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+  }
+}
+@utility glyph-sm {
+  width: calc(var(--spacing) * 3);
+  height: calc(var(--spacing) * 3);
+  @media (width < 48rem) {
+    width: calc(var(--spacing) * 3.5);
+    height: calc(var(--spacing) * 3.5);
+  }
+}
+
 /* The current-section pill, behind the sidebar row and the phone tab bar's
    icon: 12% of primary over the card, Material 3's tonal indicator. It was
    --muted with a primary/30 inset ring, and the ring read as a chip's

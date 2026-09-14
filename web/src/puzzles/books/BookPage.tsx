@@ -390,7 +390,7 @@ export function BookPage({ slug }: { slug: string }) {
               title={t('All books')}
               onClick={() => navigate('puzzles', 'books')}
             >
-              <ChevronLeft className="size-3.5" />
+              <ChevronLeft className="glyph" />
             </Button>
             <ClearableInput
               autoFocus
@@ -426,7 +426,7 @@ export function BookPage({ slug }: { slug: string }) {
                     controls in a phone-width row read as clutter. Below
                     sm the buttons go too, into the menu (see `more`). */}
                 <Button variant="secondary" size="sm" className="max-sm:hidden" title={t('Import a book PDF')} aria-label={t('Import PDF')} onClick={() => setImporting(true)}>
-                  <FileUp className="size-3.5" />
+                  <FileUp className="glyph" />
                   <span className="hidden wide:inline">{t('Import PDF')}</span>
                 </Button>
                 {/* Secondary, no longer the page's filled default: adding
@@ -434,12 +434,12 @@ export function BookPage({ slug }: { slug: string }) {
                     below is, and two filled buttons on one screen rank
                     nothing. */}
                 <Button variant="secondary" size="sm" className="max-sm:hidden" title={t('Add a puzzle')} aria-label={t('Add puzzle')} onClick={() => setAdding(true)}>
-                  <Plus className="size-3.5" />
+                  <Plus className="glyph" />
                   <span className="hidden wide:inline">{t('Add puzzle')}</span>
                 </Button>
                 <ActionMenu title={t('Book')} actions={more} open={moreOpen} onOpenChange={setMoreOpen}>
                   <Button variant="ghost" size="icon-sm" title={t('More')} active={moreOpen}>
-                    <MoreHorizontal className="size-3.5" />
+                    <MoreHorizontal className="glyph" />
                   </Button>
                 </ActionMenu>
               </>
@@ -467,7 +467,7 @@ export function BookPage({ slug }: { slug: string }) {
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'books', slug, dueIds[0]!)}
           >
-            <History className="size-3.5" data-icon="inline-start" />
+            <History className="glyph" data-icon="inline-start" />
             {t('Review puzzles · {n} due', { n: dueIds.length })}
           </Button>
         )}
@@ -581,11 +581,11 @@ export function BookPage({ slug }: { slug: string }) {
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               <Button variant="default" size="sm" onClick={() => setImporting(true)}>
-                <FileUp className="size-3.5" data-icon="inline-start" />
+                <FileUp className="glyph" data-icon="inline-start" />
                 {t('Import a book PDF')}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
-                <Plus className="size-3.5" data-icon="inline-start" />
+                <Plus className="glyph" data-icon="inline-start" />
                 {t('Add puzzle')}
               </Button>
             </div>
@@ -682,7 +682,7 @@ function CyclesPanel({
           open ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => void act('DELETE')}>
-                <CircleStop className="size-3.5" data-icon="inline-start" />
+                <CircleStop className="glyph" data-icon="inline-start" />
                 {t('Stop')}
               </Button>
               {openPass?.next && (
@@ -691,7 +691,7 @@ function CyclesPanel({
                   size="sm"
                   onClick={() => navigate('puzzles', 'books', slug, openPass.next!)}
                 >
-                  <RotateCw className="size-3.5" data-icon="inline-start" />
+                  <RotateCw className="glyph" data-icon="inline-start" />
                   {t('Continue')}
                 </Button>
               )}
@@ -702,7 +702,7 @@ function CyclesPanel({
             // panel's ONE act, and the invitation to keep the rotation
             // going should look like one.
             <Button variant={lead} size="sm" onClick={() => void act('POST')}>
-              <Repeat className="size-3.5" data-icon="inline-start" />
+              <Repeat className="glyph" data-icon="inline-start" />
               {t(passes.length > 0 ? 'Start the next cycle' : 'Start a cycle')}
             </Button>
           )
@@ -741,7 +741,7 @@ function CyclesPanel({
               className="text-muted-foreground hover:text-foreground flex items-center gap-1 self-start text-sm"
             >
               <ChevronRight
-                className={cn('size-3.5 transition-transform', showPast && 'rotate-90')}
+                className={cn('glyph transition-transform', showPast && 'rotate-90')}
               />
               {t('{n} past cycles', { n: finished.length })}
             </button>

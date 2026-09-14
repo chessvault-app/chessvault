@@ -71,7 +71,7 @@ export function SaveControl({
   if (state === 'saved') {
     return (
       <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-sm">
-        <Check className="size-3.5" /> {t('Saved')}
+        <Check className="glyph" /> {t('Saved')}
       </span>
     );
   }
@@ -86,7 +86,7 @@ export function SaveControl({
   if (state === 'saving' || (state === 'dirty' && autoSaves)) {
     return (
       <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-sm">
-        <Spinner className="size-3.5" /> {t('Saving…')}
+        <Spinner className="glyph" /> {t('Saving…')}
       </span>
     );
   }
@@ -105,7 +105,7 @@ export function SaveControl({
       title={error ?? t(failed ? 'Save failed' : 'Save changes')}
       onClick={onSave}
     >
-      <Save className="size-3.5 md:mr-1" />
+      <Save className="glyph md:mr-1" />
       <span className="max-md:hidden">{t(failed ? 'Retry save' : 'Save')}</span>
     </Button>
   );

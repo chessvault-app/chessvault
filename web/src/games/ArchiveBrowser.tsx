@@ -68,13 +68,13 @@ function ArchiveRowActions({
           t('Added')
         ) : (
           <>
-            <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
             {t('Add to collection')}
           </>
         )}
       </Button>
       <Button variant="default" size="sm" onClick={onOpen}>
-        <Play className="size-3.5" data-icon="inline-start" />
+        <Play className="glyph" data-icon="inline-start" />
         {t('Open the game')}
       </Button>
     </>
@@ -1158,9 +1158,9 @@ export function ArchiveBrowser({
             onClick={() => void loadMonths()}
           >
             {loading === 'months' ? (
-              <Spinner className="size-3.5" />
+              <Spinner className="glyph" />
             ) : (
-              <Globe className="size-3.5" />
+              <Globe className="glyph" />
             )}
           </Button>
           {/* Below sm the month select steps out (see its class) and the
@@ -1218,7 +1218,7 @@ export function ArchiveBrowser({
           <p
             className="text-muted-foreground border-border flex items-center gap-1.5 border-t px-3 py-2 text-xs"
           >
-            <Info className="size-3 shrink-0" />
+            <Info className="glyph-sm shrink-0" />
             <span className="truncate">
               {t('First {shown} of {total}', { shown: MAX_ROWS, total: visibleMonthGames.length })}
             </span>

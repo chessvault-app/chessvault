@@ -452,6 +452,20 @@ headers, Material's own table sizes), and anything on the Fitted-Glyph
 list. Form labels are the registry's Label at 14 and are a separate
 decision.
 
+**The Phone Glyph Rule.** Icons take the type rungs' bargain. The row
+glyph (a chevron, a row's leading icon, the icon in a small button) is
+`glyph`: 14px on a desktop, 16 under `md`. The mark (a bookmark on a
+card, a badge's tick, a checklist's dismiss) is `glyph-sm`: 12, then 14.
+An icon-only Button draws 20 under `md` on its own. Both platforms put a
+phone's list glyph at 20 to 24 and a toolbar glyph at 20 to 22; the app
+drew 14 beside 16px text after the row lift, a third of its own 36px
+button. No icon in app code is sized `size-3.5` or `size-3` any more; a
+bare `size-3` is a dot or a swatch. The registry's own default-icon rule
+(`[&_svg:not([class*='size-'])]`) also excludes `glyph`, or it would
+size every renamed icon to 16 at every width, which the grid caught on
+the desktop Games page. Fitted glyphs (board coordinates, the puzzle
+tile's corner mark, the pane strip) stay where they are.
+
 **The Board Pays Last Rule.** On a page whose subject is a board, chrome
 gives up a rung before the board gives up a pixel. That is why the page
 title is 16px there and 20px everywhere else, and why the density knob
@@ -638,7 +652,9 @@ hit areas, `title` as a tooltip. Composites live in
   the ring colour; a 1px downward translate on press, suppressed for
   anything with a popup; 50% opacity and no pointer events when disabled.
 - **Icons:** 16px by default, 12px at xs and 14px at sm, marked with
-  `data-icon` so the button can tighten the padding on that side.
+  `data-icon` so the button can tighten the padding on that side. An
+  icon-only button (`icon`, `icon-sm`) draws its glyph at 20px under
+  `md`, whatever class the icon carries: a toolbar glyph on a phone.
 
 ### Cards
 

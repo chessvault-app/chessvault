@@ -93,13 +93,13 @@ function RefRowActions({
           t('Added')
         ) : (
           <>
-            <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
             {t('Add to collection')}
           </>
         )}
       </Button>
       <Button variant="default" size="sm" onClick={onOpen}>
-        <Play className="size-3.5" data-icon="inline-start" />
+        <Play className="glyph" data-icon="inline-start" />
         {t('Open on the board')}
       </Button>
     </>
@@ -1119,7 +1119,7 @@ export function DatabaseGames({
         action={
           meta.databases ? (
             <Button variant="default" size="sm" onClick={() => navigate('databases')}>
-              <Database className="size-3.5" data-icon="inline-start" />
+              <Database className="glyph" data-icon="inline-start" />
               {t('Go to Databases')}
             </Button>
           ) : undefined
@@ -1176,7 +1176,7 @@ export function DatabaseGames({
         title={t('Manage reference databases')}
         onClick={() => navigate('databases')}
       >
-        <Database className="size-3.5" />
+        <Database className="glyph" />
       </Button>
     </>
   );
@@ -1392,7 +1392,7 @@ export function DatabaseGames({
 
       >
 
-        <CornerDownLeft className="size-3.5" />
+        <CornerDownLeft className="glyph" />
 
       </Button>
 
@@ -1459,7 +1459,7 @@ export function DatabaseGames({
                 onClick={() => setSettingUp(true)}
                 className="border-border bg-foreground/5 hover:bg-foreground/10 h-full w-8 rounded-none border-r"
               >
-                <Grid3x3 className="size-3.5" />
+                <Grid3x3 className="glyph" />
               </InputGroupButton>
             }
           />
@@ -1559,7 +1559,7 @@ export function DatabaseGames({
               title={t('Edit the custom material')}
               onClick={() => setEditingCustom(true)}
             >
-              <SlidersHorizontal className="size-3.5" />
+              <SlidersHorizontal className="glyph" />
             </Button>
           )}
           {presetId !== 'custom' &&
@@ -1642,7 +1642,7 @@ export function DatabaseGames({
                 }
               }}
             >
-              <ScanSearch className="size-3.5" />
+              <ScanSearch className="glyph" />
             </Button>
             {filtersInRow && filters}
             {merged && (
@@ -1738,7 +1738,7 @@ export function DatabaseGames({
                     void search('', null, curDb);
                   }}
                 >
-                  <X className="size-3.5" data-icon="inline-start" />
+                  <X className="glyph" data-icon="inline-start" />
                   {t('Clear search and filters')}
                 </Button>
               ) : undefined

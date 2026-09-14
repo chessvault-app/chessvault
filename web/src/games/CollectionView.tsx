@@ -162,7 +162,7 @@ export function CollectionView() {
         title={t('Games')}
         actions={
           <Button variant="default" size="default" onClick={() => openImport.current?.()}>
-            <Plus className="size-3.5" data-icon="inline-start" strokeWidth={2.5} />
+            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
             <span className="md:hidden">{t('Import')}</span>
             <span className="max-md:hidden">{t('Import a game')}</span>
           </Button>

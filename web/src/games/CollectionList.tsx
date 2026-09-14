@@ -169,7 +169,7 @@ const CollectionRow = memo(function CollectionRow({
             onToggleBookmark(game);
           }}
         >
-          <Bookmark className={cn('size-3.5', bookmarked && 'fill-current text-primary')} />
+          <Bookmark className={cn('glyph', bookmarked && 'fill-current text-primary')} />
         </Button>
       }
       menu={[
@@ -878,7 +878,7 @@ export function CollectionList({
             body="The games worth keeping, each annotatable like a study. Import one, or add games from your online archive."
             action={
               <Button variant="default" size="sm" onClick={onImport}>
-                <Plus className="size-3.5" data-icon="inline-start" />
+                <Plus className="glyph" data-icon="inline-start" />
                 {t('Import a game')}
               </Button>
             }
@@ -899,7 +899,7 @@ export function CollectionList({
               body="Bookmark a game from the list and it is kept here, one press from wherever you are."
               action={
                 <Button variant="default" size="sm" onClick={onShowAll}>
-                  <Folder className="size-3.5" data-icon="inline-start" />
+                  <Folder className="glyph" data-icon="inline-start" />
                   {t('Browse all games')}
                 </Button>
               }
@@ -912,7 +912,7 @@ export function CollectionList({
               body="No game in your collection gets through the filters above. Clearing them shows the whole collection again."
               action={
                 <Button variant="secondary" size="sm" onClick={clearFilters}>
-                  <X className="size-3.5" data-icon="inline-start" />
+                  <X className="glyph" data-icon="inline-start" />
                   {t('Clear filters')}
                 </Button>
               }
@@ -929,7 +929,7 @@ export function CollectionList({
               }
               action={
                 <Button variant="secondary" size="sm" onClick={onClearSearch}>
-                  <X className="size-3.5" data-icon="inline-start" />
+                  <X className="glyph" data-icon="inline-start" />
                   {t('Clear search')}
                 </Button>
               }

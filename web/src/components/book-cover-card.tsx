@@ -134,7 +134,7 @@ export function BookCoverCard({
             // A press on the ⋯ is the menu's, not the card's.
             onClick={(e) => e.stopPropagation()}
           >
-            <MoreHorizontal className="size-3.5" />
+            <MoreHorizontal className="glyph" />
           </Button>
         </ActionMenu>
 

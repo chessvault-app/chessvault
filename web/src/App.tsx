@@ -303,7 +303,7 @@ function DemoBanner({ section, params }: { section: Section; params: string[] })
         title={t('Close')}
         onClick={dismiss}
       >
-        <X className="size-3" />
+        <X className="glyph-sm" />
       </Button>
     </div>
   );
@@ -781,7 +781,7 @@ function SubNavItem({
           active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
         )}
       >
-        <Icon className="size-3.5 shrink-0" />
+        <Icon className="glyph shrink-0" />
         <span className={navLabel(folded)}>{t(label)}</span>
       </NavLink>
     </TitleTip>

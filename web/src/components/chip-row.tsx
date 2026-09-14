@@ -67,7 +67,7 @@ export function ChipRow({
     <div className={cn('relative min-w-0', className)}>
       {can.left && (
         <button type="button" aria-label={t('Scroll left')} onClick={() => nudge(-1)} className={cn(arrow, 'left-0')}>
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft className="glyph" />
         </button>
       )}
       <div
@@ -79,7 +79,7 @@ export function ChipRow({
       </div>
       {can.right && (
         <button type="button" aria-label={t('Scroll right')} onClick={() => nudge(1)} className={cn(arrow, 'right-0')}>
-          <ChevronRight className="size-3.5" />
+          <ChevronRight className="glyph" />
         </button>
       )}
     </div>

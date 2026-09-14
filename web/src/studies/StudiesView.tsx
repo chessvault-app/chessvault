@@ -254,7 +254,7 @@ function StudyList() {
               size="sm"
               onClick={() => void newUntitledStudy(studies, create)}
             >
-              <Plus className="size-3.5" data-icon="inline-start" />
+              <Plus className="glyph" data-icon="inline-start" />
               {t('New study')}
             </Button>
           }
@@ -277,7 +277,7 @@ function StudyList() {
             body="Bookmark a study from the shelf and it is kept here, one press from wherever you are."
             action={
               <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
-                <Library className="size-3.5" data-icon="inline-start" />
+                <Library className="glyph" data-icon="inline-start" />
                 {t('Browse all studies')}
               </Button>
             }
@@ -293,7 +293,7 @@ function StudyList() {
             }
             action={
               <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
-                <X className="size-3.5" data-icon="inline-start" />
+                <X className="glyph" data-icon="inline-start" />
                 {t('Clear search')}
               </Button>
             }
@@ -586,7 +586,7 @@ function CreateMenu() {
                 onFiles={([file]) => void pickFile(file)}
                 render={<Button variant="secondary" size="sm" className="mt-1 self-start" />}
               >
-                <FileUp className="size-3.5" data-icon="inline-start" />
+                <FileUp className="glyph" data-icon="inline-start" />
                 {t('Choose file')}
               </FilePicker>
             </Field>
@@ -725,7 +725,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
             onClick={() => void load()}
             title={t('List this account’s studies')}
           >
-            {busy ? <Spinner className="size-3.5" /> : <Globe className="size-3.5" />}
+            {busy ? <Spinner className="glyph" /> : <Globe className="glyph" />}
           </Button>
         </div>
       </Field>
@@ -943,7 +943,7 @@ function StudyCard({
       // chapters rather than as a sentence of the study's own.
       preview={study.chapterNames?.map((chapter, at) => (
         <span key={at} className="mr-2.5 inline-flex max-w-full items-center gap-1 align-top">
-          <FileText className="size-3 shrink-0 opacity-60" strokeWidth={1.75} />
+          <FileText className="glyph-sm shrink-0 opacity-60" strokeWidth={1.75} />
           <span className="truncate">{chapter}</span>
         </span>
       ))}

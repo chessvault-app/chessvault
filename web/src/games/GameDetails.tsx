@@ -231,7 +231,7 @@ function GameDetailsContent({
                   className="hover:text-foreground inline-flex items-center gap-0.5 underline underline-offset-2"
                 >
                   {t('View online')}
-                  <ExternalLink className="size-3" />
+                  <ExternalLink className="glyph-sm" />
                 </a>
               </>
             )}
@@ -273,7 +273,7 @@ function GameDetailsContent({
             disabled={idx === 0}
             onClick={() => setIdx(0)}
           >
-            <ChevronsLeft className="size-3.5" />
+            <ChevronsLeft className="glyph" />
           </Button>
           <Button
             variant="ghost"
@@ -282,7 +282,7 @@ function GameDetailsContent({
             disabled={idx === 0}
             onClick={() => setIdx(Math.max(0, idx - 1))}
           >
-            <ChevronLeft className="size-3.5" />
+            <ChevronLeft className="glyph" />
           </Button>
           <span className="text-muted-foreground min-w-14 text-center text-xs tabular-nums">
             {idx} / {replay.plies.length}
@@ -294,7 +294,7 @@ function GameDetailsContent({
             disabled={idx === replay.plies.length}
             onClick={() => setIdx(Math.min(replay.plies.length, idx + 1))}
           >
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="glyph" />
           </Button>
           <Button
             variant="ghost"
@@ -303,7 +303,7 @@ function GameDetailsContent({
             disabled={idx === replay.plies.length}
             onClick={() => setIdx(replay.plies.length)}
           >
-            <ChevronsRight className="size-3.5" />
+            <ChevronsRight className="glyph" />
           </Button>
         </div>
       )}
@@ -400,11 +400,11 @@ export function GameDetailsPanel({
                 // of an icon-only button, so it is not stated twice here.
                 title={pinned ? t('Keeping the panel open') : t('Keep the panel open')}
               >
-                {pinned ? <Pin className="size-3.5" /> : <PinOff className="size-3.5" />}
+                {pinned ? <Pin className="glyph" /> : <PinOff className="glyph" />}
               </Button>
               {!pinned && onClose && (
                 <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={onClose}>
-                  <X className="size-3.5" />
+                  <X className="glyph" />
                 </Button>
               )}
             </>

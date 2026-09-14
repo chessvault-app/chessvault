@@ -80,7 +80,7 @@ export function MoreFiltersButton({
       className="relative shrink-0"
       onClick={onClick}
     >
-      <SlidersHorizontal className="size-3.5" />
+      <SlidersHorizontal className="glyph" />
       {on && (
         <span aria-hidden className="bg-primary absolute right-1 top-1 size-1.5 rounded-full" />
       )}
@@ -785,7 +785,7 @@ export async function catalogSuggest(
 function IssueLine({ badge, message }: { badge: string; message: string }) {
   return (
     <li className="flex items-baseline gap-2 px-2 py-1">
-      <TriangleAlert className="text-warn size-3 shrink-0 self-center" aria-hidden />
+      <TriangleAlert className="text-warn glyph-sm shrink-0 self-center" aria-hidden />
       <Badge variant="outline" className="shrink-0 font-mono">
         {badge}
       </Badge>

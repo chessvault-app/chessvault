@@ -130,7 +130,7 @@ export function ConfirmDialog(
             setOpen(true);
           }}
         >
-          <Icon className="size-3.5" data-icon="inline-start" />
+          <Icon className="glyph" data-icon="inline-start" />
           {props.label && t(props.label)}
         </Button>
       )}

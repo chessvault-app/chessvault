@@ -246,7 +246,7 @@ export function StudyView({
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted-foreground text-base">{error ?? `Could not open “${id}”.`}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
-            <ChevronLeft className="size-3.5" data-icon="inline-start" />
+            <ChevronLeft className="glyph" data-icon="inline-start" />
             {t(kind === 'game' ? 'All games' : 'All studies')}
           </Button>
         </div>
@@ -305,7 +305,7 @@ export function StudyView({
         title={t(kind === 'game' ? 'All games' : 'All studies')}
         onClick={() => navigate(backSection)}
       >
-        <ChevronLeft className="size-3.5" />
+        <ChevronLeft className="glyph" />
       </Button>
       <TitleEditor id={id} backSection={backSection} />
       {/* What links here, then History, then Edit, then Save: what points
@@ -342,7 +342,7 @@ export function StudyView({
         aria-label={editing ? t('Done') : t('Edit')}
         onClick={() => setEditing(!editing)}
       >
-        <Pencil className="size-3.5 md:mr-1" />
+        <Pencil className="glyph md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
       <SaveControl
@@ -646,7 +646,7 @@ function ChaptersPanel({ className }: { className?: string }) {
         title={`${t('Chapters')} · ${chapters.length}`}
         actions={
           <Button variant="ghost" size="icon-sm" title={t('Add a chapter')} onClick={() => addChapter()}>
-            <Plus className="size-3.5" />
+            <Plus className="glyph" />
           </Button>
         }
       />
@@ -804,12 +804,12 @@ function ChapterRow({
                 className="hover:text-foreground -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
               >
                 <ChevronDown
-                  className={cn('size-3 transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', isFolded && '-rotate-90')}
+                  className={cn('glyph-sm transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', isFolded && '-rotate-90')}
                 />
               </span>
             </TitleTip>
           ) : (
-            <span className="size-3 shrink-0" />
+            <span className="glyph-sm shrink-0" />
           )}
           <span className="text-muted-foreground w-4 shrink-0 text-right font-mono text-xs">
             {index + 1}
@@ -836,12 +836,12 @@ function ChapterRow({
               title={t('Add a sub-chapter')}
               onClick={onAddSub}
             >
-              <ListTree className="size-3" />
+              <ListTree className="glyph-sm" />
             </Button>
           )}
           {/* Touch has no double-click, so rename gets a real button. */}
           <Button variant="ghost" size="icon-sm" title={t('Rename this chapter')} onClick={startRename}>
-            <Pencil className="size-3" />
+            <Pencil className="glyph-sm" />
           </Button>
           {chapters.length > 1 && (
             <ConfirmDialog

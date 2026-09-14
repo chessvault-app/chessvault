@@ -199,7 +199,7 @@ export function PreviewEye({
       {...eye}
       className={cn('text-muted-foreground hover:text-foreground pointer-coarse:size-9', className)}
     >
-      <Eye className="size-3.5" />
+      <Eye className="glyph" />
     </Button>
   );
 }

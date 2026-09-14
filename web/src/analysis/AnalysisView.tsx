@@ -366,11 +366,11 @@ export function CollectGameButton() {
       onClick={() => void collect()}
     >
       {state === 'busy' ? (
-        <Spinner className="size-3.5" />
+        <Spinner className="glyph" />
       ) : state === 'done' ? (
-        <Check className="size-3.5" />
+        <Check className="glyph" />
       ) : (
-        <FolderPlus className="size-3.5" />
+        <FolderPlus className="glyph" />
       )}
     </Button>
   );
@@ -393,7 +393,7 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
         title={t('Back')}
         onClick={() => up('home')}
       >
-        <ChevronLeft className="size-3.5" />
+        <ChevronLeft className="glyph" />
       </Button>
       <h1 className="text-foreground min-w-0 truncate text-base font-semibold">{title}</h1>
     </div>
@@ -482,7 +482,7 @@ export function MoveActions({
         }}
         title={t('Delete this move and everything after it')}
       >
-        <Trash2 className="size-3.5" />
+        <Trash2 className="glyph" />
       </Button>
       {clearMoves.offered && (
         <Button
@@ -504,7 +504,7 @@ export function MoveActions({
               in exactly what matters: one keeps that position, one
               throws it away. Two identical icons told apart only by
               tooltip is worse than two icons for one perceived act. */}
-          <Eraser className="size-3.5" />
+          <Eraser className="glyph" />
         </Button>
       )}
       {allowReset && (
@@ -518,7 +518,7 @@ export function MoveActions({
           }}
           title={t('Clear the board')}
         >
-          <RotateCcw className="size-3.5" />
+          <RotateCcw className="glyph" />
         </Button>
       )}
     </>
@@ -687,7 +687,7 @@ export function MovesOverflow({
           title={t('More')}
           active={open}
         >
-          <MoreHorizontal className="size-3.5" />
+          <MoreHorizontal className="glyph" />
         </Button>
       </ActionMenu>
     </>

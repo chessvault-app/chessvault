@@ -600,10 +600,10 @@ export function OpeningMapView({ params }: { params: string[] }) {
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="default" size="sm" onClick={() => setAddTo(map.root.id)}>
-                  <Plus className="size-3.5" data-icon="inline-start" /> {t('Add a move')}
+                  <Plus className="glyph" data-icon="inline-start" /> {t('Add a move')}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => setGrowFrom(map.root.id)}>
-                  <GitBranch className="size-3.5" data-icon="inline-start" /> {t('Grow from my games')}
+                  <GitBranch className="glyph" data-icon="inline-start" /> {t('Grow from my games')}
                 </Button>
               </div>
             }
@@ -1243,7 +1243,7 @@ function NodePanel({
                   title={t('Remove link')}
                   onClick={() => apply((d) => removeTag(d, map.id, node.id, tag))}
                 >
-                  <X className="size-3.5" />
+                  <X className="glyph" />
                 </Button>
               </div>
             );
@@ -1369,7 +1369,7 @@ function NodePanel({
                       title={t('Chart it on the map')}
                       onClick={() => apply((doc) => addChild(doc, map.id, node.id, san))}
                     >
-                      <Plus className="size-3.5" />
+                      <Plus className="glyph" />
                     </Button>
                   ) : (
                     // A charted move loses the button but keeps its slot,
@@ -1399,7 +1399,7 @@ function NodePanel({
                       navigate('board');
                     }}
                   >
-                    <Grid3x3 className="size-3.5" />
+                    <Grid3x3 className="glyph" />
                   </Button>
                 </div>
               );
@@ -1424,7 +1424,7 @@ function NodePanel({
                 size="sm"
                 onClick={() => apply((d) => addChild(d, map.id, node.id, san))}
               >
-                <Plus className="size-3" data-icon="inline-start" /> {san}
+                <Plus className="glyph-sm" data-icon="inline-start" /> {san}
               </Button>
             ))}
           </div>

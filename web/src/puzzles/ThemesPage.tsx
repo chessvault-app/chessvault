@@ -328,7 +328,7 @@ export function ThemesPage() {
                   {error}
                 </span>
                 <Button variant="secondary" size="sm" onClick={load}>
-                  <RotateCcw className="size-3.5" data-icon="inline-start" />
+                  <RotateCcw className="glyph" data-icon="inline-start" />
                   {t('Try again')}
                 </Button>
               </span>

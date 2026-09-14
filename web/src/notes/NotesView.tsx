@@ -344,7 +344,7 @@ function NoteList() {
           body="A note is plain markdown with interactive boards anywhere in the text. An idea, a plan, a game to come back to."
           action={
             <Button variant="default" size="sm" onClick={() => void newUntitledNote(notes, refresh)}>
-              <Plus className="size-3.5" data-icon="inline-start" />
+              <Plus className="glyph" data-icon="inline-start" />
               {t('New note')}
             </Button>
           }
@@ -366,7 +366,7 @@ function NoteList() {
             body="Bookmark a note from the shelf and it is kept here, one press from wherever you are."
             action={
               <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
-                <NotebookPen className="size-3.5" data-icon="inline-start" />
+                <NotebookPen className="glyph" data-icon="inline-start" />
                 {t('Browse all notes')}
               </Button>
             }
@@ -382,7 +382,7 @@ function NoteList() {
             }
             action={
               <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
-                <X className="size-3.5" data-icon="inline-start" />
+                <X className="glyph" data-icon="inline-start" />
                 {t('Clear search')}
               </Button>
             }

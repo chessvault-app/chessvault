@@ -160,7 +160,7 @@ export function CustomiseDialog({
                   aria-label={t('Move {name} up', { name: t(entry.label) })}
                   onClick={() => move(i, -1)}
                 >
-                  <ChevronUp className="size-3.5" />
+                  <ChevronUp className="glyph" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -170,7 +170,7 @@ export function CustomiseDialog({
                   aria-label={t('Move {name} down', { name: t(entry.label) })}
                   onClick={() => move(i, 1)}
                 >
-                  <ChevronDown className="size-3.5" />
+                  <ChevronDown className="glyph" />
                 </Button>
                 <HideButton entry={entry} onHide={() => hide(entry)} />
               </Row>
@@ -201,7 +201,7 @@ export function CustomiseDialog({
                   aria-label={t('Bring {name} back', { name: t(entry.label) })}
                   onClick={() => unhide(entry)}
                 >
-                  <Eye className="size-3.5" />
+                  <Eye className="glyph" />
                 </Button>
               </Row>
             ))}
@@ -251,7 +251,7 @@ function HideButton({ entry, onHide }: { entry: Destination; onHide: () => void 
       aria-label={t('Hide {name}', { name: t(entry.label) })}
       onClick={onHide}
     >
-      <EyeOff className="size-3.5" />
+      <EyeOff className="glyph" />
     </Button>
   );
 }
