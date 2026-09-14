@@ -629,27 +629,32 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
       .catch(() => {});
   }, []);
 
+  // Both handlers keep their try to the one call that can throw and read
+  // the answer after it: the React Compiler, which memoises this file,
+  // cannot lower a finally or a conditional inside a try yet.
   const load = async (): Promise<void> => {
     setBusy(true);
     setFailure(null);
+    type Listing = { studies?: { id: string; name: string }[]; note?: string | null };
+    let body: Listing | null = null;
+    let thrown: unknown = null;
     try {
-      const body = await api<{ studies?: { id: string; name: string }[]; note?: string | null }>(
-        `/api/lichess/studies?user=${encodeURIComponent(user.trim())}`,
-      );
-      if (!body?.studies) {
-        setFailure(t('could not reach Lichess'));
-        return;
-      }
+      body = await api<Listing>(`/api/lichess/studies?user=${encodeURIComponent(user.trim())}`);
+    } catch (e) {
+      thrown = e;
+    }
+    if (thrown !== null) {
+      // Through t(): the server's error strings are translation keys here,
+      // exactly as the pre-api() code treated them.
+      setFailure(t(apiErrorMessage(thrown)));
+    } else if (!body?.studies) {
+      setFailure(t('could not reach Lichess'));
+    } else {
       setList(body.studies);
       setNote(body.note ?? null);
       setChecked(new Set());
-    } catch (e) {
-      // Through t(): the server's error strings are translation keys here,
-      // exactly as the pre-api() code treated them.
-      setFailure(t(apiErrorMessage(e)));
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   };
 
   const importChecked = async (): Promise<void> => {
@@ -657,26 +662,29 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
     setBusy(true);
     setFailure(null);
     const studies = list.filter((s) => checked.has(s.id));
+    type Outcome = { imported?: string[]; failed?: { name: string; reason: string }[] };
+    const json = { studies, ...(folder && { folder }) };
+    let body: Outcome | null = null;
+    let thrown: unknown = null;
     try {
-      const body = await api<{ imported?: string[]; failed?: { name: string; reason: string }[] }>(
-        '/api/lichess/studies/import',
-        { method: 'POST', json: { studies, ...(folder && { folder }) } },
-      );
-      if (!body?.imported) {
-        setFailure(t('import failed'));
-        return;
-      }
-      await refresh();
-      if (body.failed?.length) {
-        setFailure(`imported ${body.imported.length}; failed: ${body.failed.map((f) => f.name).join(', ')}`);
-        return;
-      }
-      onClose();
+      body = await api<Outcome>('/api/lichess/studies/import', { method: 'POST', json });
     } catch (e) {
-      setFailure(t(apiErrorMessage(e)));
-    } finally {
-      setBusy(false);
+      thrown = e;
     }
+    if (thrown !== null) {
+      setFailure(t(apiErrorMessage(thrown)));
+    } else if (!body?.imported) {
+      setFailure(t('import failed'));
+    } else {
+      const imported = body.imported;
+      const failed = body.failed ?? [];
+      // The list refetch can throw too; it was inside the same try.
+      thrown = await refresh().then(() => null, (e: unknown) => e ?? new Error('refresh failed'));
+      if (thrown !== null) setFailure(t(apiErrorMessage(thrown)));
+      else if (failed.length) setFailure(`imported ${imported.length}; failed: ${failed.map((f) => f.name).join(', ')}`);
+      else onClose();
+    }
+    setBusy(false);
   };
 
   return (

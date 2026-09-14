@@ -37,6 +37,16 @@ const SOURCES = [
   'openingmap/MapCanvas.tsx',
   'openingmap/OpeningMapView.tsx',
   'puzzles/PuzzlesView.tsx',
+  // The lists a search field narrows, added with the deferred values
+  // (useDeferredValue) that let a key paint before the rows redraw:
+  // deferring only pays when the render that does not depend on the
+  // needle is cheap, which is what the compiler makes it.
+  'books/BooksPage.tsx',
+  'games/CollectionList.tsx',
+  'games/GameListShell.tsx',
+  'notes/NotesView.tsx',
+  'puzzles/ThemesPage.tsx',
+  'studies/StudiesView.tsx',
 ];
 
 const norm = (p: string): string => p.replace(/\\/g, '/');

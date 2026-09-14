@@ -178,8 +178,16 @@ function NoteList() {
   }, [loaded, error, notes, folders, view.layout]);
 
   const refresh = useCallback(async (): Promise<void> => {
+    // The three answers are read after the try, not inside it: the React
+    // Compiler, which memoises this shelf, cannot lower a conditional
+    // inside a try yet.
+    let answers: [
+      { studies: NoteMeta[]; folders: string[] },
+      { ids: string[] } | null,
+      { outgoing: { notes: Record<string, number> } } | null,
+    ];
     try {
-      const [body, marks, links] = await Promise.all([
+      answers = await Promise.all([
         api<{ studies: NoteMeta[]; folders: string[] }>(API),
         // Missing bookmarks are an empty set, not a broken shelf.
         api<{ ids: string[] }>(`${API}/bookmarks`).catch(() => null),
@@ -188,16 +196,18 @@ function NoteList() {
         // broken shelf.
         api<{ outgoing: { notes: Record<string, number> } }>('/api/links/index').catch(() => null),
       ]);
-      setNotes(body.studies);
-      setFolders(body.folders);
-      setMarked(new Set(marks?.ids ?? []));
-      setLinkCounts(links?.outgoing.notes ?? {});
-      setLoaded(true);
-      setError(null);
     } catch (error) {
       setLoaded(true);
       setError(t(apiErrorMessage(error)));
+      return;
     }
+    const [body, marks, links] = answers;
+    setNotes(body.studies);
+    setFolders(body.folders);
+    setMarked(new Set(marks?.ids ?? []));
+    setLinkCounts(links?.outgoing.notes ?? {});
+    setLoaded(true);
+    setError(null);
   }, []);
 
   /**

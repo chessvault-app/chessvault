@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
 import {
@@ -331,7 +331,9 @@ export function CollectionList({
   // The host's warning box judges the query AGAINST these — reported
   // whenever they change (ownership and notes are vault facts no game
   // header can contradict, so they stay out).
-  useEffect(() => {
+  // An Effect Event, so the host's callback is read without being a
+  // dependency (the React Compiler refuses a suppressed list).
+  const reportConstraints = useEffectEvent(() => {
     onFilterConstraints?.({
       result: resultFilter !== 'any' ? resultFilter : undefined,
       player: structured.player || undefined,
@@ -341,7 +343,9 @@ export function CollectionList({
       from: structured.from || undefined,
       to: structured.to || undefined,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    reportConstraints();
   }, [resultFilter, structured]);
   // The row's selects, drafted for the window: one state, two views —
   // Apply commits both (see StructuredFiltersWindow's extraFields).
@@ -443,25 +447,29 @@ export function CollectionList({
   const tableNav = useRef<TableNav | null>(null);
   useTableNav(table && onSelect !== undefined, tableNav);
   const tableVars = useGameTableVars(selecting, !besideDetails);
-  tableNav.current = {
-    move: (delta, from) => {
-      const at = visible.findIndex((g) => gameKey(g) === (from ?? selectedKey));
-      const next =
-        visible[
-          at < 0
-            ? delta > 0
-              ? 0
-              : visible.length - 1
-            : Math.min(visible.length - 1, Math.max(0, at + delta))
-        ];
-      if (next) onSelect?.(next);
-    },
-    open: (key) => {
-      const g = visible.find((g) => gameKey(g) === (key ?? selectedKey));
-      if (g) onOpen(g);
-    },
-    clear: () => onSelect?.(null),
-  };
+  // Filled from a layout effect, never during render (the React
+  // Compiler, which memoises this list, refuses a ref written in render).
+  useLayoutEffect(() => {
+    tableNav.current = {
+      move: (delta, from) => {
+        const at = visible.findIndex((g) => gameKey(g) === (from ?? selectedKey));
+        const next =
+          visible[
+            at < 0
+              ? delta > 0
+                ? 0
+                : visible.length - 1
+              : Math.min(visible.length - 1, Math.max(0, at + delta))
+          ];
+        if (next) onSelect?.(next);
+      },
+      open: (key) => {
+        const g = visible.find((g) => gameKey(g) === (key ?? selectedKey));
+        if (g) onOpen(g);
+      },
+      clear: () => onSelect?.(null),
+    };
+  });
   // The table's one Tab stop: the selected row while it is on screen,
   // else the first (GameTableRow's tabStop).
   const tabStopKey = visible.some((g) => gameKey(g) === selectedKey)
