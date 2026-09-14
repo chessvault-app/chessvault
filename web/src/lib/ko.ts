@@ -311,7 +311,6 @@ export const ko: Record<string, string> = {
   Upload: '업로드',
   'Worth practising': '연습할 만한 것',
   'Worth practising: {theme}': '연습할 만한 것: {theme}',
-  '({a} of {b})': '({b} 중 {a})',
   'Train one tactic at a time.': '한 번에 전술 하나씩 훈련합니다.',
   'That image could not be read. It may be corrupt or an unsupported format.':
     '이미지를 읽을 수 없습니다. 파일이 손상되었거나 지원하지 않는 형식일 수 있습니다.',

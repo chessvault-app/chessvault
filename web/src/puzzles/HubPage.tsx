@@ -12,7 +12,6 @@ import { PageShell } from '@/components/page-shell';
 import { Button } from '@/components/ui/button';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
-import { Figures } from '@/components/figures';
 import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/components/king-icon';
 import { difficultyQuery, storedDifficulty, useDifficultyWord } from './bands';
@@ -691,13 +690,10 @@ function Hub() {
               // server only offers one with enough attempts behind it to mean
               // something, and only one this vault does WORSE at than its own
               // average — a theme you are better at than your average is not
-              // a weakness whatever its rate. Solved of attempted beside it,
-              // in words; no rate and no rating, the page hands back no
-              // verdict.
+              // a weakness whatever its rate. Named, not scored: no count, no
+              // rate and no rating, the page hands back no verdict.
               <PlaceDetail>
                 {t('Worth practising: {theme}', { theme: themeLabel(weak.theme) })}
-                {' '}
-                <Figures text={t('({a} of {b})', { a: weak.wins, b: weak.attempts })} />
               </PlaceDetail>
             ) : (
               <PlaceDetail>{t('Train one tactic at a time.')}</PlaceDetail>
@@ -705,20 +701,16 @@ function Hub() {
           </PlaceCard>
           <PlaceCard icon={BookMarked} title={t('Puzzle books')} go={() => navigate('puzzles', 'books')}>
             {book ? (
-              // The book you were last in and how far you are, in words. A
-              // "continue" line that does not go empty on the day you import
-              // your first book: an untouched book is still the thing you
-              // were about to start, at nought. The shelf row's bar was
-              // tried here and dropped: squeezed between a title and a count
-              // on a phone it was too short to read (lanph3re, 2026-09-14).
-              <span className="text-muted-foreground flex items-center gap-2 text-sm">
-                <span data-user-text className="min-w-0 flex-1 truncate">
-                  {book.title}
-                </span>
-                <span className="shrink-0">
-                  <Figures text={t('{a} of {b}', { a: book.solved, b: book.puzzles })} />
-                </span>
-              </span>
+              // The book you were last in, by name. A "continue" line that
+              // does not go empty on the day you import your first book: an
+              // untouched book is still the thing you were about to start.
+              // The shelf row's bar and its count were tried here and
+              // dropped: squeezed beside a title on a phone the bar was too
+              // short to read, and the count without it was a number with no
+              // scale (lanph3re, 2026-09-14). The book page has both.
+              <PlaceDetail>
+                <span data-user-text>{book.title}</span>
+              </PlaceDetail>
             ) : booksIn && !unanswered.has('book') ? (
               <PlaceDetail>{t('Import a tactics book you own from its PDF.')}</PlaceDetail>
             ) : (
