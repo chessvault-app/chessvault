@@ -1,37 +1,24 @@
-import {
-  BarChart3,
-  BookMarked,
-  Check,
-  ChevronRight,
-  Database,
-  LayoutGrid,
-  Puzzle,
-  RotateCcw,
-  X,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BarChart3, BookMarked, ChevronRight, LayoutGrid, RotateCcw } from 'lucide-react';
+import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
-import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
+import { formatUntil } from '@/lib/dates';
 import { useMediaQuery } from '@/lib/media';
 import { INITIAL_FEN } from '@shared/tree';
 import { Board } from '@/board/Board';
 import { PageHeader } from '@/components/page-header';
-import { TitleTip } from '@/components/title-tip';
-import { ListRow } from '@/components/list-row';
 import { PageShell } from '@/components/page-shell';
 import { ProgressBar } from '@/components/progress-bar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton, SkeletonRows, useSlowLoad } from '@/components/skeletons';
+import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 import { Figures } from '@/components/figures';
 import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/components/king-icon';
-import { bandOf, difficultyQuery, storedDifficulty, useDifficultyWord } from './bands';
+import { difficultyQuery, storedDifficulty, useDifficultyWord } from './bands';
 import { setPendingPuzzle, type HandoffMode } from './handoff';
-import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { themeLabel } from './ThemesPage';
 import { fetchSolvedToday } from './today';
@@ -41,22 +28,27 @@ import { fetchSolvedToday } from './today';
  *
  * The Puzzles tab used to land on the dashboard, which is stats and a
  * two-hundred-row attempt log — the page you consult occasionally,
- * opened every single time you reach for training. Its three shortcuts
- * (Train, Books, Themes) had been bolted to the TOP of it, which on a
- * phone held in one hand is the one part of the screen a thumb cannot
- * get to.
+ * opened every single time you reach for training. So this is the hub
+ * the dashboard was being asked to be, and the dashboard goes back to
+ * being a dashboard, one card away.
  *
- * So this is the hub the dashboard was being asked to be. Everything it
- * offers sits on the bottom edge, above the tab bar, with the empty
- * space put where nothing needs to be pressed. The dashboard goes back
- * to being a dashboard, one tile away.
+ * Two kinds of card, and only two. Three PLACES to go (Themes, Puzzle
+ * books, Dashboard), each carrying the one line that page would open
+ * on — the theme worth practising, the book you were last in with its
+ * bar, today's tally — and three PUZZLES to solve, each shown as its
+ * own position: the next fresh one, the one you missed, the next in
+ * your book. Pressing a puzzle opens that puzzle.
  *
- * Nothing here waits on the network to be usable: every destination is a
- * plain link, and the difficulty word is read from the same localStorage
- * key the trainer writes. Only two things arrive late — the review count
- * and today's tally — and both are placed ABOVE the primary button, so
- * a slow answer grows the block upward and no target ever moves out from
- * under a thumb already travelling towards it.
+ * There is no Train button. The first board IS the train button: it
+ * hands over the very puzzle it shows (see `handoff.ts`), so a tile
+ * beside it that opened the same puzzle was a second copy of the same
+ * target (lanph3re's call, 2026-09-14). The history log and the shelf
+ * row that used to sit above the boards went with it: the log is the
+ * dashboard's, one card away, and the shelf is the Puzzle books card.
+ * What they gave back is height, and the height goes into the boards.
+ *
+ * Nothing here waits on the network to be usable: every destination is
+ * a plain link. What arrives late is drawn once, together (see ANSWERS).
  */
 export function HubPage() {
   // A launcher would be a second copy of the sidebar on a desktop, which
@@ -88,14 +80,6 @@ interface WeakTheme {
   wins: number;
 }
 
-interface HistoryEntry {
-  id: string;
-  win: boolean;
-  /** Curation data — read only to pick the WORD for it, never shown. */
-  puzzleRating: number;
-  at: string;
-}
-
 interface BookSummary {
   slug: string;
   title: string;
@@ -119,76 +103,43 @@ interface BookSummary {
 const turnOf = (fen: string): 'white' | 'black' =>
   fen.split(' ')[1] === 'b' ? 'black' : 'white';
 
-/** The next unsolved puzzle in a book, from /puzzlebooks/:slug/next.
-    No solution in it, deliberately — this is a board to look at and a
-    place to go, not the answer to a puzzle nobody has attempted. */
+/** The next puzzle in a book, from /puzzlebooks/:slug/next. No solution
+    in it, deliberately — this is a board to look at and a place to go,
+    not the answer to a puzzle nobody has attempted. */
 interface BookNext {
   id: string;
   fen: string;
   number?: number;
 }
 
-/** Just the one you were last in. A launcher answers "carry on with
-    what?", and the answer to that is singular — the shelf is one tap
-    away and is where a list of books belongs. */
-const SHELF_ROWS = 1;
-
-/**
- * Whether the slot under the log had anything in it last time, on THIS
- * device.
- *
- * Reserving that slot is what stopped the book row appearing late, but a
- * vault with no book and no theme worth practising ends with nothing to
- * put there — so the placeholder was drawn and then taken away, which is
- * the same jump pointing the other way. Nothing in either answer can be
- * known before it arrives, so the page remembers what it found last time
- * and reserves the place only for a vault that has been filling it.
- *
- * A device-local layout hint, not vault data: it decides what to draw for
- * half a second and is corrected by the answer either way, so it belongs
- * next to the other things this device remembers about how the page
- * looked. Unknown reads as EMPTY — a first run is the one case with
- * nothing to remember, and a placeholder that vanishes is worse there
- * than a row that arrives.
- */
-const SLOT_FILLED_KEY = 'vault:puzzle-hub-slot';
-
-/**
- * The local day the "Solved today" line was last on screen — the same
- * bargain as SLOT_FILLED_KEY below, with a date on it because this is
- * the one shape here that expires on its own: solving five puzzles
- * tonight says nothing about tomorrow's launch, and a bit without the
- * date reserved a line every morning that the answer then took away.
- * Within a day it is exactly right, which is when the hub is revisited.
- */
-const SOLVED_TODAY_KEY = 'vault:puzzle-hub-solved';
-
-/** The reservation's calendar day. Local, like the line it stands for. */
-const localDay = (): string => new Date().toDateString();
-
-/** How much history to fetch. More than fits, deliberately: the panel
-    stretches to whatever the page has spare and scrolls its own rows, so
-    the number that fits is a property of the phone, not of this file. */
-const HISTORY_ROWS = 30;
-
 /**
  * A puzzle offered as itself: the position on the left, what it is and
  * whose move on the right.
  *
  * The board thumbnail beside the words, rather than a full-width board
- * under them, is what lets two of these fit above the launcher on a
- * phone — and it is the shape lichess's own puzzle tab uses, which is
- * the reference lanph3re gave.
+ * under them, is what lets three of these fit on a phone — and it is the
+ * shape lichess's own puzzle tab uses, which is the reference lanph3re
+ * gave. Pressing it hands the puzzle to the trainer (see `handoff.ts`)
+ * so the position offered is the position that opens.
  *
- * Pressing it hands the puzzle to the trainer (see `handoff.ts`) so the
- * position offered is the position that opens.
+ * The cards share the column's spare height (flex-1) and each board
+ * takes its size from its card, so a taller phone simply shows bigger
+ * boards. Capped at the board's own ceiling plus the card's padding: a
+ * vault with one card and nothing else had that card absorb the whole
+ * column. Past the cap the slack goes above the cluster (justify-end).
  */
+// The floor is a board a position can be read off (84px, with the card's
+// padding): below it the cards were squares of noise on a 568 phone. A
+// screen that cannot hold three at the floor scrolls, which is the
+// shell's escape hatch, rather than shrinking them past legibility.
+const CARD_FILL = 'min-h-24 max-h-[12.25rem] flex-1';
+const BOARD_FILL = 'h-full max-h-48 w-auto';
+
 function PuzzleCard({
   fen,
   side,
   title,
   detail,
-  fill,
   go,
 }: {
   /** The position the solver faces, ready to draw. */
@@ -196,9 +147,6 @@ function PuzzleCard({
   side: 'white' | 'black';
   title: string;
   detail?: string;
-  /** Stretch to share the page's spare height, and take the board's
-      size from the card's own height rather than a fixed width. */
-  fill?: boolean;
   go: () => void;
 }) {
   return (
@@ -212,14 +160,7 @@ function PuzzleCard({
       className={cn(
         'bg-card ring-card-ring hover:bg-accent flex w-full items-stretch gap-3',
         'rounded-xl ring-1 px-2.5 py-1.5 text-left transition-colors duration-100',
-        // Sharing the leftover height between the cards puts it into the
-        // BOARDS, where it is worth something, instead of into the gaps
-        // between them, where it is just distance. Capped at the board's
-        // own ceiling (max-h-40) plus the card's padding: a vault with one
-        // card, no database and no books had that card absorb the whole
-        // column (a 1,200px placeholder on a tall phone-width window). Past
-        // the cap the slack goes above the cluster (justify-end, below).
-        fill && 'min-h-0 max-h-[10.75rem] flex-1',
+        CARD_FILL,
       )}
     >
       <Board
@@ -227,15 +168,11 @@ function PuzzleCard({
         orientation={side}
         viewOnly
         coordinates={false}
-        // Filling: the card has a definite height from the flex row it
-        // is in, so the board takes that and its own aspect-square gives
-        // the width — no size table, and it is always as big as the
-        // screen can afford. Otherwise a fixed width, because a card
-        // sized by its content has no height to read.
-        // max-h caps the runaway case: a tall phone whose vault has no
-        // history yet gives the three cards ~200px each, and a board
-        // that size leaves the book's title about 110px to wrap in.
-        className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
+        // The card has a definite height from the flex column it is in,
+        // so the board takes that and its own aspect-square gives the
+        // width — no size table, and it is always as big as the screen
+        // can afford.
+        className={cn('shrink-0 rounded-md', BOARD_FILL)}
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
         <span className="text-foreground text-base font-medium">{title}</span>
@@ -258,198 +195,25 @@ function PuzzleCard({
 }
 
 /**
- * The wait, in the shape of what the gate is about to draw.
- *
- * This page can promise its shape before it has its data, which is what
- * makes a skeleton honest here: the two height queries are synchronous, so
- * whether the history panel and the book row will be there is already
- * known, and the cards' size follows from that alone (`fill`). The layout
- * below is the settled layout with the content taken out.
- *
- * What it cannot know is whether there are any BOOKS — the height queries
- * say there is room for the shelf row and the third card, not that the
- * vault has one to put there. Three cards is the common case and the
- * maximum (the next puzzle, the review slot, which is drawn now whether
- * or not it has anything in it, and the book you were last in), and it is
- * the right way to be wrong: guessing too few would GROW the boards when
- * the third landed, which is the jump the gate exists to stop. A bookless
- * vault settles to two and the boards grow once, on a screen that has
- * already waited long enough for a skeleton to be worth drawing.
- *
- * The launcher is not in here. It never waits, it is already drawn, and
- * it does not move when this is replaced.
- */
-/**
- * The heading strip every panel on this page wears: the real word when
- * the panel's title is known before its rows are, a bar where it is not.
- *
- * The real heading's OWN classes, not a guess at its height: the strip is
- * a text-sm line, whose box is 20px, and its height comes from that plus
- * pt-2, pb-1.5 and the rule under it. Copying the padding but not the
- * type would leave the two a few pixels apart, which is the whole defect
- * this stands in for.
- */
-function SkeletonPanelHeading({
-  width,
-  title,
-  className,
-}: {
-  width: string;
-  /** The heading's own text, drawn as it will be, when the slot can only
-      hold one panel. The book slot cannot say (Recently read or Worth
-      practising), so it keeps the bar. */
-  title?: string;
-  className?: string;
-}) {
-  return (
-    <p
-      className={cn(
-        'text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium',
-        className,
-      )}
-    >
-      {title ?? <Skeleton className={cn('inline-block h-2 align-middle', width)} />}
-    </p>
-  );
-}
-
-/** The log's own shape, held while the attempts are still coming. */
-function HubSkeletonHistoryPanel() {
-  return (
-    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <SkeletonPanelHeading width="w-24" title={t('Puzzle history')} className="shrink-0" />
-      {/* overflow-y-auto like the list it stands for: the panel is
-          overflow-hidden, so on a screen short enough the real rows
-          scroll where these were simply clipped. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <SkeletonRows rows={3} />
-      </div>
-    </div>
-  );
-}
-
-/**
- * The slot under the log, whichever panel ends up in it: a heading strip
- * over one row of cover, title, bar, count and chevron.
- *
- * It was the row alone. Both panels that can land here put a heading over
- * it, so the placeholder stood about 31px short and the cards above it
- * took the difference when the answer arrived.
- */
-function HubSkeletonBookRow() {
-  return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <SkeletonPanelHeading width="w-20" />
-      {/* py from the density token, like the ListRow this stands for. */}
-      <div className="flex w-full items-center gap-2.5 px-3 py-(--row-py)">
-        <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* The title sits on a text-sm line, whose box is 20px; under it
-              the real Progress track, empty, as ProgressBar draws it with
-              showEmpty for a book nothing has been attempted in. */}
-          <div className="flex h-5 items-center">
-            <Skeleton className="h-2.5 w-2/3" />
-          </div>
-          <Progress value={0} aria-hidden />
-        </div>
-        <Skeleton className="h-2.5 w-8 shrink-0" />
-        <ChevronRight aria-hidden className="text-muted-foreground size-3.5 shrink-0" />
-      </div>
-    </div>
-  );
-}
-
-function HubSkeletonPanels({ history, books }: { history: boolean; books: boolean }) {
-  return (
-    <>
-      {history && <HubSkeletonHistoryPanel />}
-      {books && <HubSkeletonBookRow />}
-    </>
-  );
-}
-
-/** The card cluster's own placeholders; see HubSkeletonPanels. */
-/**
- * One card's slot, with nothing in it yet.
- *
- * Used both for the whole cluster before the page is drawn and for a
- * single block whose answer has not landed: the cards share the column's
- * spare height, so a card that appears later takes it off the ones
- * already there — and off the history panel under them. A slot held open
- * at the size the card will be is what stops that.
- */
-function HubSkeletonCard({ fill }: { fill: boolean }) {
-  return (
-    <div
-      className={cn(
-        // PuzzleCard's own geometry, ring and all: a ring costs no
-        // layout, so slot and card are the same box. This note used to
-        // say "border, not ring" and describe the opposite; both sides
-        // have been on the ring for a while.
-        'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
-        fill && 'min-h-0 max-h-[10.75rem] flex-1',
-      )}
-    >
-      <Skeleton
-        className={cn('aspect-square shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
-      />
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-        <Skeleton className="h-3 w-1/3" />
-        <Skeleton className="h-2.5 w-1/2" />
-      </div>
-      {/* The chevron every card and empty slot ends with, drawn as the
-          card draws it, so the text column stops where it really stops. */}
-      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0 self-center" />
-    </div>
-  );
-}
-
-/** The three slots the cluster holds before any of them has answered. */
-function HubSkeletonCards({ fill }: { fill: boolean }) {
-  return (
-    <>
-      {[0, 1, 2].map((i) => (
-        <HubSkeletonCard key={i} fill={fill} />
-      ))}
-    </>
-  );
-}
-
-/**
  * A card-shaped slot with no position in it.
  *
  * The board's box is still there and still square, because the slot's SIZE
  * must not depend on what the draw found: the cards share the page's spare
  * height, so one that collapsed when it came back empty would resize every
- * board beside it. Same reason the panels wait for each other (see
+ * board beside it. Same reason the blocks wait for each other (see
  * ANSWERS) — this is that rule applied to a single card.
  *
  * Actionable when there IS somewhere to go, which is how the pool-known-
  * but-draw-failed case still reaches the review queue.
  */
-function EmptySlot({
-  title,
-  detail,
-  fill,
-  go,
-}: {
-  title: string;
-  detail?: string;
-  fill?: boolean;
-  go?: () => void;
-}) {
+function EmptySlot({ title, detail, go }: { title: string; detail?: string; go?: () => void }) {
   const body = (
     <>
       {/* A real board at the starting position, not a placeholder box: the
           slot reads as a card either way, and a dashed outline in a column
           of boards is a hole in the page. Nothing to solve here, so it is
           the position before anything has happened. */}
-      <Board
-        fen={INITIAL_FEN}
-        viewOnly
-        coordinates={false}
-        className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
-      />
+      <Board fen={INITIAL_FEN} viewOnly coordinates={false} className={cn('shrink-0 rounded-md', BOARD_FILL)} />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
         <span className="text-muted-foreground text-base font-medium">{title}</span>
         {detail && <span className="text-muted-foreground text-sm leading-snug">{detail}</span>}
@@ -461,14 +225,10 @@ function EmptySlot({
   const shape = cn(
     'bg-card ring-card-ring flex w-full items-stretch gap-3',
     'rounded-xl ring-1 px-2.5 py-1.5 text-left',
-    fill && 'min-h-0 max-h-[10.75rem] flex-1',
+    CARD_FILL,
   );
   return go ? (
-    <button
-      type="button"
-      onClick={go}
-      className={cn(shape, 'hover:bg-accent transition-colors duration-100')}
-    >
+    <button type="button" onClick={go} className={cn(shape, 'hover:bg-accent transition-colors duration-100')}>
       {body}
     </button>
   ) : (
@@ -477,185 +237,103 @@ function EmptySlot({
 }
 
 /**
- * The books, most recently worked on first.
+ * A place to go, with the one line that page would open on.
  *
- * A "continue" list that does not go empty on the day you import your
- * first book: an untouched book is still the thing you were about to
- * start, and its progress bar is simply at nought. Recency comes from
- * the server's `lastAt` (when a puzzle in it was last attempted, not
- * when the file changed), so the moment there IS a history this orders
- * itself by it and the top row is genuinely where you left off.
+ * The three of these replaced a row of four tiles and two panels (the
+ * attempt log and the "Recently read" shelf row). A tile said where it
+ * went and nothing else; a panel said something about the vault and
+ * was also, incidentally, a way there. This is both in one box: the
+ * name, and under it what you would find — the theme worth practising,
+ * the book you were last in with its bar, how today has gone.
+ *
+ * A fixed-height row, not a card that shares the slack: the boards
+ * below are what the height is for. `children` is the detail line; a
+ * bar and a count can ride in it, so it is a slot and not a string.
  */
-/**
- * The theme this vault is worst at, offered as somewhere to go.
- *
- * It lives in the book row's slot and takes the book row's shape — same
- * box, same heading strip, same 40px left block, same progress bar and
- * count — because it is what that slot holds for a vault with no books.
- * A page whose height depends on whether you have ever imported a PDF is
- * a page with two layouts to keep honest.
- *
- * Earns the place rather than filling it: it names one thing to practise
- * and goes straight there. The server only offers a theme with enough
- * attempts behind it to mean something, and only one this vault does
- * WORSE at than its own average.
- */
-function WeakThemePanel({ weak }: { weak: WeakTheme }) {
+function PlaceCard({
+  icon: Icon,
+  title,
+  go,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  go: () => void;
+  children: ReactNode;
+}) {
   return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
-        {t('Worth practising')}
-      </p>
-      <ListRow onClick={() => navigate('puzzles', 'theme', weak.theme)}>
-        <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
-          <Puzzle className="size-3.5" />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-foreground truncate text-sm font-medium">{themeLabel(weak.theme)}</span>
-          {/* Solved against failed, the same bar a book wears. No rate and
-              no rating — the bar says how it has gone and the page does
-              not hand back a verdict. */}
-          <ProgressBar
-            total={weak.attempts}
-            solved={weak.wins}
-            failed={weak.attempts - weak.wins}
-            showEmpty
-            // The counts are in words beside it; the bar in the row's
-            // name only added the primitive's hidden "x".
-            decorative
-          />
-        </span>
-        <span className="text-muted-foreground shrink-0 text-xs">
-          <Figures text={t('{a} of {b}', { a: weak.wins, b: weak.attempts })} />
-        </span>
-        <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-      </ListRow>
-    </div>
-  );
-}
-
-function BookShelfPanel({ books }: { books: BookSummary[] }) {
-  return (
-    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
-        {t('Recently read')}
-      </p>
-      {books.map((b) => (
-        <ListRow key={b.slug} divided onClick={() => navigate('puzzles', 'books', b.slug)}>
-          {b.cover ? (
-            <img
-              src={`/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`}
-              alt=""
-              // Decorative: the title is right beside it, so a screen
-              // reader announcing the cover would only say it twice.
-              className="border-border h-10 w-7 shrink-0 rounded-sm border object-cover"
-            />
-          ) : (
-            <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
-              <BookMarked className="size-3.5" />
-            </span>
-          )}
-          <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span data-user-text className="text-foreground truncate text-sm font-medium">{b.title}</span>
-            <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
-          </span>
-          <span className="text-muted-foreground shrink-0 text-xs">
-            <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
-          </span>
-          <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
-        </ListRow>
-      ))}
-    </div>
-  );
-}
-
-/**
- * What you last attempted, newest first.
- *
- * Deliberately the log and not the statistics: counts, win rate and the
- * by-difficulty breakdown are the dashboard's job and are exactly what
- * this page exists to stop opening. A row here is a puzzle you can go
- * back into, which is a launcher's business.
- *
- * Difficulty is a word (`bandOf`), never the rating behind it.
- */
-function HistoryPanel({ attempts, failed = false }: { attempts: HistoryEntry[]; failed?: boolean }) {
-  // The same eye the dashboard's log has: an id and a difficulty word do
-  // not identify a position you spent two minutes on, but the board does.
-  const preview = usePuzzlePreview();
-  return (
-    // The floor is 6.5rem rather than 7: the divider above this panel
-    // costs 9px (its own line, plus a second helping of the column's
-    // gap), and on a 390x844 phone this panel is already AT its floor,
-    // so there was nothing to take it from and the page tipped into
-    // scrolling. Better to pay it here — a caption and two and a bit
-    // rows, where the part-row is itself the hint that the list scrolls.
-    //
-    // This is the panel that takes the page's slack: `flex-1` against the
-    // fixed blocks around it, so there is no dead band anywhere on the
-    // page and a taller phone simply shows more of your history. The
-    // ROWS scroll, not the page — the launcher underneath must stay put.
-    //
-    // Shown with nothing in it too, and at the SAME size (lanph3re's
-    // call): the page's shape is a property of the phone, not of what the
-    // vault happens to hold, so a first session and a hundredth one put
-    // every target in the same place. A section that appears only once it
-    // has content also teaches nobody that it is there.
-    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <p className="text-muted-foreground border-border shrink-0 border-b px-3 pb-1.5 pt-2 text-sm font-medium">
-        {t('Puzzle history')}
-      </p>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-      {attempts.length === 0 && (
-        // An outage is not an empty log: the dashboard's own words for it.
-        <p className="text-muted-foreground px-3 py-2.5 text-sm">
-          {t(failed ? 'Could not load the attempts.' : 'Nothing solved yet. The puzzles you attempt turn up here.')}
-        </p>
+    <button
+      type="button"
+      onClick={go}
+      className={cn(
+        'bg-card ring-card-ring hover:bg-accent flex w-full shrink-0 items-center gap-3',
+        'rounded-xl ring-1 px-3 py-2.5 text-left transition-colors duration-100',
       )}
-      {attempts.map((h) => (
-        /* The row and its eye are siblings, as on the dashboard: the eye
-           is a button and cannot sit inside the row's. The hairline moves
-           up to the pair so it runs under both. */
-        <div
-          key={h.id + h.at}
-          className="border-border flex items-center border-b pr-1.5 last:border-b-0"
-        >
-        <ListRow
-          dense
-          onClick={() => navigate('puzzles', 'id', h.id)}
-          title={t('Replay puzzle #{id}', { id: h.id })}
-          className="min-w-0 flex-1 pr-1.5 text-sm"
-        >
-          {h.win ? (
-            <Check className="text-good size-3.5 shrink-0" role="img" aria-label={t('solved')} />
-          ) : (
-            <X className="text-destructive size-3.5 shrink-0" role="img" aria-label={t('failed')} />
-          )}
-          {/* The dashboard's columns exactly — same widths, same eye beside it,
-              same right-aligned time. Two lists of the same rows that
-              place their eye differently read as two different tables,
-              and a time column left to size itself moves the eye between
-              rows as "just now" gives way to "5 days ago".
+    >
+      {/* The 40px block the shelf row's cover used, so the three line up
+          on one left edge with the covers they replaced. */}
+      <span className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-md">
+        <Icon className="size-5" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-foreground text-sm font-medium">{title}</span>
+        {children}
+      </span>
+      <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+    </button>
+  );
+}
 
-              The time column is w-20 and not w-16: at 4rem "1 min ago"
-              and "Aug 11, 2025" both ran to a second line on a narrower
-              phone, which cost the row its height. The time rides ml-auto,
-              so widening it simply takes a rem from the spare room after
-              the difficulty word, and whitespace-nowrap makes the wrap impossible rather than
-              merely unlikely. */}
-          <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
-          <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-          <TitleTip title={formatWhen(h.at)}>
-            <span className="text-muted-foreground ml-auto w-20 shrink-0 whitespace-nowrap text-right tabular-nums">
-              {formatAgo(h.at)}
-            </span>
-          </TitleTip>
-        </ListRow>
-        <PreviewEye eye={preview.eyeProps(h.id)} />
+/** The detail line's plain shape: one muted sentence, kept to one line. */
+function PlaceDetail({ children }: { children: ReactNode }) {
+  return <span className="text-muted-foreground truncate text-xs">{children}</span>;
+}
+
+/**
+ * The wait, in the shape of what the gate is about to draw.
+ *
+ * This page can promise its shape before it has its data: three place
+ * rows and three cards, always. Whether a card is a puzzle or an empty
+ * slot changes what is on it, never its size, so the settled layout is
+ * this layout with the content taken out, and the swap moves nothing.
+ */
+function HubSkeletonPlace() {
+  return (
+    <div className="bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5">
+      <Skeleton className="size-10 shrink-0 rounded-md" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        {/* The title's text-sm line box (20px) and the detail's text-xs
+            (16px), so the row is the height the real one will be. */}
+        <div className="flex h-5 items-center">
+          <Skeleton className="h-2.5 w-24" />
         </div>
-      ))}
+        <div className="flex h-4 items-center">
+          <Skeleton className="h-2 w-2/3" />
+        </div>
       </div>
-      {preview.layer}
+      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0" />
+    </div>
+  );
+}
+
+function HubSkeletonCard() {
+  return (
+    <div
+      className={cn(
+        // PuzzleCard's own geometry, ring and all: a ring costs no
+        // layout, so slot and card are the same box.
+        'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
+        CARD_FILL,
+      )}
+    >
+      <Skeleton className={cn('aspect-square shrink-0 rounded-md', BOARD_FILL)} />
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+        <Skeleton className="h-3 w-1/3" />
+        <Skeleton className="h-2.5 w-1/2" />
+      </div>
+      {/* The chevron every card and empty slot ends with, drawn as the
+          card draws it, so the text column stops where it really stops. */}
+      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0 self-center" />
     </div>
   );
 }
@@ -667,7 +345,10 @@ function HistoryPanel({ attempts, failed = false }: { attempts: HistoryEntry[]; 
  * `difficultyQuery`). It must: this puzzle is handed to the trainer
  * rather than re-drawn there, so a hub that ignored the stored
  * difficulty would not merely mis-advertise — it would override a
- * setting the user chose, every time, with no way to tell.
+ * setting the user chose, every time, with no way to tell. The server
+ * answers the same question with the same puzzle until it is attempted
+ * (see UserState.offered, server), so coming back here shows the board
+ * you left.
  */
 async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
   try {
@@ -686,51 +367,25 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
 }
 
 /** The page's answers, named, for the ones that did not come. */
-type Answer = 'meta' | 'history' | 'next' | 'review' | 'book';
+type Answer = 'meta' | 'next' | 'review' | 'book';
 
 /**
  * How many of the page's answers are still outstanding, counted down as
- * each settles — six requests, five of which decide part of the layout.
+ * each settles — five requests, four of which decide what a card says.
  *
- * Everything above the launcher shares ONE column of spare height, so a
- * block that arrives late does not appear beside the others: it resizes
- * them. The boards are what makes that visible. Chessground draws its
- * squares and its pieces to the size its box had when it mounted, and
- * catches up on the next frame — so a card landing a beat after the ones
- * already on screen leaves them drawn at the old size over the new box,
- * pieces hanging past the edge, until it does.
- *
- * Measured on the phone hub (390x700, warm vault): the two puzzle draws
- * answer together and mount two boards at 160px; the book card needs two
- * chained requests and lands after them, at which point three cards share
- * the same column and every board is re-laid-out to 144. Coming back from
- * Themes is where it shows, because that is when the two fast answers are
- * fast enough to paint before the slow one arrives.
+ * Everything shares ONE column of spare height, so a block that arrives
+ * late does not appear beside the others: it resizes them. The boards
+ * are what makes that visible. Chessground draws its squares and its
+ * pieces to the size its box had when it mounted, and catches up on the
+ * next frame — so a card landing a beat after the ones already on screen
+ * leaves them drawn at the old size over the new box, pieces hanging
+ * past the edge, until it does.
  *
  * So the blocks wait for each other and are drawn once, at the size they
- * are going to keep. The launcher below them never waits — it is a page
- * of links, and it is what a thumb is reaching for — and it does not
- * move when they arrive: it is already on the bottom edge, and the
- * cluster above either grows into the empty band or hands its slack to
- * the history panel.
+ * are going to keep.
  */
-const ANSWERS = 6;
+const ANSWERS = 5;
 
-/**
- * How long they are allowed to wait for each other.
- *
- * A request that never answers must not cost the page its cards: fetch has
- * no timeout of its own, and a phone that loses its connection mid-request
- * would otherwise hold the block above the launcher empty for as long as
- * the page is open. At the deadline the page draws whatever did arrive —
- * which is exactly what it did before the blocks waited at all, so the
- * worst case is the old behaviour and not a worse one.
- *
- * Two seconds because it is a backstop and not a tuning knob: the six
- * answers take about 50ms against a warm vault on the same machine, and
- * the slowest of them is two chained requests, so a server that is merely
- * slow still gets to answer first.
- */
 /**
  * How long a gap with nothing in it is allowed to last before the page is
  * drawn with whatever has arrived.
@@ -753,9 +408,8 @@ function Hub() {
   const [solvedToday, setSolvedToday] = useState<number | null>(null);
   const [next, setNext] = useState<ApiPuzzle | null>(null);
   const [review, setReview] = useState<ApiPuzzle | null>(null);
-  const [books, setBooks] = useState<BookSummary[]>([]);
+  const [book, setBook] = useState<BookSummary | null>(null);
   const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [settled, setSettled] = useState(false);
   /**
    * Whether each card's own answer is in.
@@ -769,9 +423,7 @@ function Hub() {
   const [nextIn, setNextIn] = useState(false);
   const [reviewIn, setReviewIn] = useState(false);
   const [bookIn, setBookIn] = useState(false);
-  const [historyIn, setHistoryIn] = useState(false);
   const [booksIn, setBooksIn] = useState(false);
-  const [metaIn, setMetaIn] = useState(false);
   /**
    * Which answers failed, and what the first failure said. A card whose
    * answer failed is neither "in" nor "not yet": it is a third thing,
@@ -790,13 +442,9 @@ function Hub() {
     setNextIn(false);
     setReviewIn(false);
     setBookIn(false);
-    setHistoryIn(false);
     setBooksIn(false);
-    setMetaIn(false);
     setAttempt((n) => n + 1);
   };
-  const [slotWasFilled] = useState(() => localStorage.getItem(SLOT_FILLED_KEY) === '1');
-  const [solvedLineToday] = useState(() => localStorage.getItem(SOLVED_TODAY_KEY) === localDay());
 
   useEffect(() => {
     /**
@@ -805,23 +453,22 @@ function Hub() {
      *
      * It was a piece of state counted down from ANSWERS, which is wrong the
      * moment this effect runs twice against the same component — exactly
-     * what StrictMode does in development. Twelve answers then reported
-     * against a counter of six, it reached nought halfway through, and the
-     * page drew itself while the rest were still arriving: measured on the
-     * dev server at 390x700, two boards mounted at 160px and the third card
-     * landed afterwards and took them to 144. Which is the very bug this
-     * gate exists to stop, reproduced by the gate.
+     * what StrictMode does in development. The answers then reported
+     * against one counter twice over, it reached nought halfway through,
+     * and the page drew itself while the rest were still arriving: the
+     * very bug this gate exists to stop, reproduced by the gate.
      *
      * Per-run counting is idempotent under a double invoke — each run
-     * settles on its own six — and `live` makes the abandoned run's answers
-     * harmless. Only ever set TRUE, so a straggler cannot un-draw a page.
+     * settles on its own count — and `live` makes the abandoned run's
+     * answers harmless. Only ever set TRUE, so a straggler cannot un-draw
+     * a page.
      */
     let live = true;
     let left = ANSWERS;
     let idle: ReturnType<typeof setTimeout>;
     // The answers still out, by name, so the idle timer can say which
     // cards it is giving up on rather than leaving them as skeletons.
-    const out = new Set<Answer>(['meta', 'history', 'next', 'review', 'book']);
+    const out = new Set<Answer>(['meta', 'next', 'review', 'book']);
     // An answer that lands after the idle timer gave up on it takes its
     // card back; the notice goes once nothing is outstanding (below).
     const ok = (which: Answer): void => {
@@ -876,14 +523,10 @@ function Hub() {
         setMeta(await api<Meta>('/api/puzzles/meta'));
         ok('meta');
       } catch (e) {
-        // Every button still works; only the review row and the tally
-        // are missing. Named all the same, so the slot below does not
-        // record this visit's shape from an answer it never had.
+        // Every card still works; only the review caption and the theme
+        // line are missing.
         fail('meta', e);
       }
-      // After the try rather than in a finally, which the React Compiler
-      // cannot lower yet; nothing above returns early.
-      if (live) setMetaIn(true);
       done('meta');
     })();
     void fetchSolvedToday()
@@ -891,25 +534,6 @@ function Hub() {
         if (n !== null) setSolvedToday(n);
       })
       .finally(() => done());
-    void (async () => {
-      try {
-        // Already newest-first, and the server caps what it reads — the
-        // limit is the row count, so nothing is fetched to be thrown away.
-        const body = await api<{ attempts: HistoryEntry[] }>(
-          `/api/puzzles/history?limit=${HISTORY_ROWS}`,
-        );
-        setHistory(body.attempts);
-        ok('history');
-      } catch (e) {
-        // The panel says so; the dashboard tile still reaches the log.
-        fail('history', e);
-      }
-      // After the try, so a failed answer is still an answer: it used to
-      // be set only on success, and the panel's skeleton stood for as long
-      // as the page did.
-      if (live) setHistoryIn(true);
-      done('history');
-    })();
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
     void draw('fresh')
@@ -936,26 +560,27 @@ function Hub() {
       try {
         const { books: all } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
         // Worked on most recently first; never-opened books keep the
-        // server's alphabetical order behind them.
-        const shelf = all
-          // An empty book is a shell waiting for an import, not
-          // something to carry on with. It belongs on the shelf, where
-          // it can be imported into; offering it here would be a row
-          // whose progress bar can never move.
-          .filter((b) => b.puzzles > 0)
-          .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''));
-        setBooks(shelf.slice(0, SHELF_ROWS));
+        // server's alphabetical order behind them. Recency comes from the
+        // server's `lastAt` (when a puzzle in it was last attempted, not
+        // when the file changed), so the top row is where you left off.
+        const [top] = all
+            // An empty book is a shell waiting for an import, not
+            // something to carry on with. It belongs on the shelf, where
+            // it can be imported into; offering it here would be a row
+            // whose progress bar can never move.
+            .filter((b) => b.puzzles > 0)
+            .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''));
         // The shelf has answered; the board for its top book is a second
         // request behind this one and has its own flag.
         if (live) setBooksIn(true);
-        // The board for the book at the top of that shelf. Chained off
-        // this answer rather than fired alongside it, because which book
-        // to ask about is the thing this request just decided.
-        const top = shelf[0];
+        // Chained off this answer rather than fired alongside it, because
+        // which book to ask about is the thing this request just decided.
         if (!top) {
+          setBook(null);
           ok('book');
           return;
         }
+        setBook(top);
         // 404 is a finished book, which is a card not to draw — api()
         // throws it into the same catch as everything else.
         const one = await api<{ puzzle: BookNext }>(
@@ -984,8 +609,8 @@ function Hub() {
 
   // Assume the database is there until told otherwise: it is, for anyone
   // who has ever trained, and making everybody wait to find that out
-  // would delay the one button this page exists for. A fresh vault sees
-  // the label correct itself, and the destination is right either way —
+  // would delay the one card this page exists for. A fresh vault sees
+  // the slot correct itself, and the destination is right either way —
   // #/puzzles shows the setup gate when there is nothing to train on.
   const ready = meta?.ready !== false;
   const failed = meta?.failed ?? 0;
@@ -996,76 +621,8 @@ function Hub() {
     due > 0
       ? t('{n} due for review', { n: due })
       : t('{n} waiting to be reviewed', { n: failed });
-  /**
-   * How much of this page there is room for.
-   *
-   * Both panels exist to use space the launcher does not need. On a
-   * screen with none to give they are not a short history and a squeezed
-   * book row — they are two blocks pushing the thing you came for off
-   * the bottom. So each has a height below which it simply is not there,
-   * and below both, the boards come down too.
-   *
-   * The numbers are measured rather than guessed (this vault): the
-   * launcher alone needs a 546px column, the book row takes it to 644.
-   * A phone spends about 56 more on the tab bar, so the viewports
-   * needed are 602 and 700. The history's own threshold is higher
-   * again — it only earns a place once there is room for a caption and
-   * a few rows under it rather than a stub. Both moved up 1rem when the
-   * phone's page header became a 44px row (it was the title's 28px):
-   * at 812 the old history threshold left the column 7px over. The
-   * cards are capped and the three slots always drawn (see PuzzleCard),
-   * and with those the same 51rem measures clean on the demo at 390
-   * wide, banner dismissed: no overflow from 568 to 932, and the gap
-   * under the header is the header's own 22px at every height.
-   *
-   * There is deliberately no threshold for the BOARD size. Where there
-   * is no history the cards share the leftover height between them and
-   * each board is sized from its card, so it is always as large as that
-   * particular screen can afford — 106px on a 568, 139 on a 667 — with
-   * the gaps staying tight either way. Spare height is worth more as
-   * board than as distance between cards.
-   *
-   * Verified at each of these, all 0px overflow:
-   *
-   *   568 (SE 1)      launcher only
-   *   667 (SE 2/8)    launcher only
-   *   736 (8 Plus)    launcher only
-   *   800 / 812     + book row
-   *   816 and up    + book row and history (844, 904, 932 checked)
-   */
-  const roomForBooks = useMediaQuery('(min-height: 47rem)');
-  const roomForHistory = useMediaQuery('(min-height: 51rem)');
-  // `settled` on all three, and on every card below: the blocks share one
-  // column of height, so each of them is part of how the others are sized
-  // (see ANSWERS). They go up together or not at all.
-  /**
-   * What the slot under the history holds: the book you were last in, or
-   * — for a vault that has never imported one — the theme it is worst at.
-   *
-   * 'pending' until BOTH answers are in, because either could fill it and
-   * an empty slot is not a fact until both have spoken. Keyed on arrival
-   * and not on `books.length`, which reads the same whether the shelf is
-   * empty or merely unanswered.
-   */
   const weak = meta?.weakTheme ?? null;
-  const slot: 'pending' | 'books' | 'weak' | 'none' =
-    !booksIn || !metaIn ? 'pending' : books.length > 0 ? 'books' : weak ? 'weak' : 'none';
-  // Before the answers, what this device found last time; after them, what
-  // they actually say.
-  const showBooks =
-    settled && roomForBooks && (slot === 'pending' ? slotWasFilled : slot !== 'none');
-  // The history panel is shown wherever there is ROOM for it, whether or
-  // not there is anything in it — a section that appears only once it has
-  // content teaches nobody that it exists (lanph3re's call).
-  const showHistory = settled && roomForHistory;
-  /**
-   * Whether a history-shaped block is on the page at all — the panel once
-   * the answers are in, its placeholder before. The cards take their size
-   * from this and not from `showHistory`, so the skeleton's cards are the
-   * size the real ones will be and the swap moves nothing.
-   */
-  const historyBlock = settled ? showHistory : roomForHistory;
-  // Nothing is drawn for a wait too short to notice — most are (the six
+  // Nothing is drawn for a wait too short to notice — most are (the five
   // answers take about 50ms against a warm vault, well under useSlowLoad's
   // threshold), and a skeleton that flashes reads as a fault.
   const pending = useSlowLoad(!settled);
@@ -1076,19 +633,6 @@ function Hub() {
     if (unanswered.size === 0) setFailure(null);
   }, [unanswered]);
 
-  // Remembered once the answers are in, for the next visit to draw from.
-  useEffect(() => {
-    // Not from an answer that failed: an outage wrote '0' here and next
-    // visit reserved nothing for a shelf that is there.
-    if (slot === 'pending' || unanswered.has('book') || unanswered.has('meta')) return;
-    localStorage.setItem(SLOT_FILLED_KEY, slot === 'none' ? '0' : '1');
-  }, [slot, unanswered]);
-  useEffect(() => {
-    if (!settled || solvedToday === null) return;
-    if (solvedToday > 0) localStorage.setItem(SOLVED_TODAY_KEY, localDay());
-    else localStorage.removeItem(SOLVED_TODAY_KEY);
-  }, [settled, solvedToday]);
-
   // Subscribed rather than read once: the trainer writes it and coming back
   // here re-mounts, which used to be the whole story — but the vault owns
   // it now, and on a device opening this vault for the first time the
@@ -1096,31 +640,20 @@ function Hub() {
   const word = useDifficultyWord();
 
   return (
-    // The scrolling family with its column pinned low: `min-h-full` and
-    // the block's own `mt-auto` put everything on the bottom edge, while
-    // the outer shell still scrolls if a short screen ever runs out of
-    // room — a target hidden under the tab bar would be worse than a
-    // page that moves. `pb-4` replaces the shell's usual 2rem + safe
-    // area: the tab bar below carries the inset itself, and dead space
-    // under the buttons is the opposite of what this page is for.
-    // The history in the middle takes every pixel the fixed blocks do
-    // not, so there is no dead band anywhere and a taller phone simply
-    // shows more rows. Its ROWS scroll, not the page — the launcher at
-    // the bottom stays where the thumb left it.
+    // The scrolling family with its column pinned low: everything sits on
+    // the bottom edge, while the outer shell still scrolls if a short
+    // screen ever runs out of room — a target hidden under the tab bar
+    // would be worse than a page that moves. `pb-3` replaces the shell's
+    // usual 2rem + safe area: the tab bar below carries the inset itself,
+    // and dead space under the cards is the opposite of what this page
+    // is for.
     //
     // `h-full`, not `min-h-full`: a column whose height is indefinite
-    // gives flex-grow nothing to distribute, and the history then sizes
-    // to its own 30 rows and pushes the launcher off the page (measured:
-    // a 1436px column inside a 788px shell). A definite height is what
-    // makes "take the rest" mean anything.
-    //
-    // The shell still scrolls, which is the escape hatch for a screen too
-    // short to hold even a stub of history: the floor below wins, the
-    // blocks overflow, and the page moves. A launcher clipped off the
-    // bottom edge would be worse than one you have to reach for.
+    // gives flex-grow nothing to distribute, and "take the rest" has to
+    // mean something for the boards to size from it.
     <PageShell width="medium" className="h-full gap-2 pb-3">
       {/* mb-2 on top of the column's gap-2: the title row keeps the
-          shell's 16px to the panel under it while the panels below stay
+          shell's 16px to the row under it while the cards below stay
           8px apart, which is the room this page fights for. */}
       <PageHeader title={t('Puzzles')} className="mb-2" />
       {/* What did not load, once, with the way to ask again: the same
@@ -1143,81 +676,93 @@ function Hub() {
         </p>
       )}
 
-      {/* History first, then the book. Which one stretches is a property
-          of the panels themselves (`flex-1` against `shrink-0`), not of
-          the order they are written in, so this is purely about reading
-          order — and it puts the one fixed-size panel next to the cards
-          it belongs with, rather than stranded above a panel that grows. */}
-      {/* The book row on the same fact the settled row uses and not merely
-          on there being room: showBooks asks this device what it found last
-          time, so a placeholder drawn on room alone was put up and taken
-          away again on every vault with no book. History keeps room alone,
-          because showHistory has no second condition. */}
-      {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks && slotWasFilled} />}
-      {showHistory &&
-        (historyIn || unanswered.has('history') ? (
-          <HistoryPanel attempts={history} failed={unanswered.has('history')} />
-        ) : (
-          <HubSkeletonHistoryPanel />
-        ))}
-      {showBooks &&
-        (slot === 'books' ? (
-          <BookShelfPanel books={books} />
-        ) : slot === 'weak' ? (
-          <WeakThemePanel weak={weak!} />
-        ) : (
-          <HubSkeletonBookRow />
-        ))}
+      {/* The three places, in the order the sidebar lists them. Fixed
+          rows: the slack below is for the boards. */}
+      {skeleton && (
+        <>
+          <HubSkeletonPlace />
+          <HubSkeletonPlace />
+          <HubSkeletonPlace />
+        </>
+      )}
+      {settled && (
+        <>
+          <PlaceCard icon={LayoutGrid} title={t('Themes')} go={() => navigate('puzzles', 'themes')}>
+            {weak ? (
+              // The theme this vault is worst at, as the place to start. The
+              // server only offers one with enough attempts behind it to mean
+              // something, and only one this vault does WORSE at than its own
+              // average — a theme you are better at than your average is not
+              // a weakness whatever its rate. Solved of attempted beside it,
+              // in words; no rate and no rating, the page hands back no
+              // verdict.
+              <PlaceDetail>
+                {t('Worth practising: {theme}', { theme: themeLabel(weak.theme) })}
+                {' '}
+                <Figures text={t('({a} of {b})', { a: weak.wins, b: weak.attempts })} />
+              </PlaceDetail>
+            ) : (
+              <PlaceDetail>{t('Train one tactic at a time.')}</PlaceDetail>
+            )}
+          </PlaceCard>
+          <PlaceCard icon={BookMarked} title={t('Puzzle books')} go={() => navigate('puzzles', 'books')}>
+            {book ? (
+              // The book you were last in, with the bar the shelf row wore.
+              // A "continue" line that does not go empty on the day you
+              // import your first book: an untouched book is still the
+              // thing you were about to start, and its bar is at nought.
+              <span className="flex items-center gap-2">
+                <span data-user-text className="text-muted-foreground truncate text-xs">
+                  {book.title}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} showEmpty decorative />
+                </span>
+                <span className="text-muted-foreground shrink-0 text-xs">
+                  <Figures text={t('{a} of {b}', { a: book.solved, b: book.puzzles })} />
+                </span>
+              </span>
+            ) : booksIn && !unanswered.has('book') ? (
+              <PlaceDetail>{t('Import a tactics book you own from its PDF.')}</PlaceDetail>
+            ) : (
+              // Not answered: the bar's empty track holds the line's height.
+              <Progress value={0} aria-hidden />
+            )}
+          </PlaceCard>
+          <PlaceCard icon={BarChart3} title={t('Dashboard')} go={() => navigate('puzzles', 'dashboard')}>
+            <PlaceDetail>
+              {solvedToday !== null
+                ? t('Solved today: {n}', { n: solvedToday })
+                : t('Solved today, and what is due for review.')}
+            </PlaceDetail>
+          </PlaceCard>
+        </>
+      )}
 
-      {/* Whichever block is going to absorb the page's slack.
-          With a history, that is the history — this cluster keeps its
-          natural height and sits on the bottom edge. Without one, the
-          slack has nowhere else to go, and pooling it (an auto margin,
-          which takes free space BEFORE flex-grow is even considered)
-          left a visible void under the header. Spreading it between the
-          cards instead gives them a little more air on a screen that
-          has it, and no part of the page reads as empty. */}
-      <div
-        className={cn(
-          'flex flex-col gap-2',
-          // justify-end: once every card is at its cap, what is left sits
-          // under the header rather than under the buttons, which stay on
-          // the bottom edge.
-          historyBlock ? 'shrink-0' : 'flex-1 justify-end',
-        )}
-      >
+      {/* The boards. This cluster takes the page's slack (flex-1) and
+          hands it to the cards; justify-end so that once every card is at
+          its cap, what is left sits under the places rather than under
+          the last board, which stays on the bottom edge. */}
+      <div className="flex flex-1 flex-col justify-end gap-2">
         {skeleton && (
           <>
-            {/* The "Solved today" line's 20px, reserved on the days it
-                was there — it renders only once settled, and the column
-                is pinned to the bottom edge, so a line from nothing
-                moved every board above it up by itself plus the gap:
-                the exact move the ANSWERS gate was built to stop, on
-                any day with training in it. */}
-            {solvedLineToday && (
-              <div className="flex h-5 items-center px-1">
-                <Skeleton className="h-2.5 w-28" />
-              </div>
-            )}
-            <HubSkeletonCards fill={!historyBlock} />
+            <HubSkeletonCard />
+            <HubSkeletonCard />
+            <HubSkeletonCard />
           </>
         )}
 
-        {settled && solvedToday !== null && solvedToday > 0 && (
-          <p className="text-muted-foreground px-1 text-sm font-medium">
-            {t('Solved today: {n}', { n: solvedToday })}
-          </p>
-        )}
-
-        {/* The two boards, and everything else that arrives from the
-            network, live ABOVE the primary button — a card that appeared
-            below it would shove the button up mid-reach. Growing upward
-            into the empty band costs nothing, because nothing up there is
-            being pressed. */}
+        {/* The next puzzle, which is also how you start training: the
+            card hands over the very position it shows, so a Train button
+            beside it opened the same puzzle twice. What that button said
+            underneath — the difficulty, as a word — is this card's detail
+            now. Nothing when it is Any: that is the setting you get
+            without choosing, and naming it qualifies the card with the
+            absence of a qualifier. */}
         {settled && !nextIn && !unanswered.has('next') ? (
-          <HubSkeletonCard fill={!historyBlock} />
+          <HubSkeletonCard />
         ) : settled && ready && unanswered.has('next') && !next ? (
-          <EmptySlot fill={!historyBlock} title={t('Could not load the next puzzle.')} go={retry} />
+          <EmptySlot title={t('Could not load the next puzzle.')} go={retry} />
         ) : settled && ready && next ? (
           <PuzzleCard
             // Ply 1: after the opponent's setup move, which is the
@@ -1225,7 +770,7 @@ function Hub() {
             fen={positionAt(next, 1).fen}
             side={solverColor(next)}
             title={t('Next puzzle')}
-            fill={!historyBlock}
+            detail={word === 'Any' ? undefined : t(word)}
             go={() => {
               setPendingPuzzle('fresh', next);
               navigate('puzzles');
@@ -1237,14 +782,12 @@ function Hub() {
           // holds, so a fresh vault and a full one put every target in
           // the same place (the review slot's rule, applied here).
           <EmptySlot
-            fill={!historyBlock}
             title={t('No puzzle database yet')}
             detail={t('Download and build it to start training.')}
             go={() => navigate('puzzles')}
           />
         ) : settled ? (
           <EmptySlot
-            fill={!historyBlock}
             title={t('No puzzle to draw')}
             detail={t('The pool answered with nothing. Try again in a moment.')}
             go={() => navigate('puzzles')}
@@ -1262,15 +805,14 @@ function Hub() {
             is non-empty but a draw that failed anyway — keeps review
             reachable from here, which it would not otherwise be. */}
         {!settled ? null : !reviewIn && !unanswered.has('review') ? (
-          <HubSkeletonCard fill={!historyBlock} />
+          <HubSkeletonCard />
         ) : unanswered.has('review') && !review ? (
-          <EmptySlot fill={!historyBlock} title={t('Could not load the missed puzzle.')} go={retry} />
+          <EmptySlot title={t('Could not load the missed puzzle.')} go={retry} />
         ) : review ? (
           <PuzzleCard
             fen={positionAt(review, 1).fen}
             side={solverColor(review)}
             title={t('Missed puzzle')}
-            fill={!historyBlock}
             detail={reviewDetail}
             go={() => {
               setPendingPuzzle('failed', review);
@@ -1279,14 +821,12 @@ function Hub() {
           />
         ) : failed > 0 ? (
           <EmptySlot
-            fill={!historyBlock}
             title={t('Review failed puzzles')}
             detail={reviewDetail}
             go={() => navigate('puzzles', 'failed')}
           />
         ) : (
           <EmptySlot
-            fill={!historyBlock}
             title={t('No puzzle to review')}
             detail={
               // An empty queue with a schedule behind it is earned, not
@@ -1308,20 +848,19 @@ function Hub() {
             Its own endpoint, not the book: opening a book downloads
             every id and every progress entry, and the solutions are 1.7
             MB on the biggest one. A launcher wants one puzzle. */}
-        {settled && !bookNext && !bookIn && books.length > 0 && !unanswered.has('book') ? (
+        {settled && !bookNext && !bookIn && book && !unanswered.has('book') ? (
           // The shelf answered and named a book; its position is a second
           // request behind that. Hold the card's place rather than adding
           // one when it lands.
-          <HubSkeletonCard fill={!historyBlock} />
+          <HubSkeletonCard />
         ) : null}
         {settled && !bookNext && unanswered.has('book') && (
-          <EmptySlot fill={!historyBlock} title={t('Could not load the puzzle books.')} go={retry} />
+          <EmptySlot title={t('Could not load the puzzle books.')} go={retry} />
         )}
         {settled && bookIn && !bookNext && !unanswered.has('book') && (
           // No book, or a finished one: the slot stays, and is the way to
           // the shelf where a PDF becomes one.
           <EmptySlot
-            fill={!historyBlock}
             title={t('No puzzle book yet')}
             detail={t('Import a tactics book you own from its PDF.')}
             go={() => navigate('puzzles', 'books')}
@@ -1337,121 +876,8 @@ function Hub() {
                 : t('Book puzzle {n}', { n: bookNext.puzzle.number })
             }
             detail={bookNext.book.title}
-            fill={!historyBlock}
-            go={() =>
-              navigate('puzzles', 'books', bookNext.book.slug, bookNext.puzzle.id)
-            }
+            go={() => navigate('puzzles', 'books', bookNext.book.slug, bookNext.puzzle.id)}
           />
-        )}
-
-        {/* All four in one row, Train among them rather than a slab of
-            its own. It keeps the primary fill, because being the thing
-            you came here to press is a fact about it that survives being
-            the same size as its neighbours — and the board card above is
-            still the larger invitation.
-
-            The buttons wait for the same threshold everything else waits
-            for. They used to draw immediately, so a slow vault showed a
-            row of tiles on an otherwise bare page, and the placeholders
-            arrived under them a fifth of a second later and moved them.
-            Now the page goes from empty to whole, once: below the
-            threshold the answers are in before anything is drawn, and
-            above it the buttons rise with the skeleton and stay put. */}
-        {/* The same tiles, inert, while the rest of the page is
-            placeholders. Live buttons over a skeleton page are an offer to
-            press something on a page that is still deciding what it says —
-            Train in particular, whose word underneath ("adaptive", a
-            difficulty) arrives with the answers, so the word is the one
-            thing left off. The labels and icons are constants, so they
-            are drawn as they will be rather than as bars; the tiles are
-            disabled, out of the tab order and take no pointer, not dimmed.
-            The row is the same four 64px tiles either way, so nothing
-            moves when they become real. At 320px (the narrowest phone)
-            four across leaves 66px a tile, which "Puzzle books" does not
-            fit, so the row folds to two by two there and only there
-            (20.0625rem because Tailwind's max-* is exclusive: `width <
-            321px` is what includes 320). */}
-        {skeleton && (
-          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
-            {(
-              [
-                ['Themes', LayoutGrid, false],
-                ['Puzzle books', BookMarked, false],
-                ['Dashboard', BarChart3, false],
-                [ready ? 'Train' : 'Set up', ready ? Puzzle : Database, true],
-              ] as const
-            ).map(([label, Icon, primary]) => (
-              <button
-                key={label}
-                type="button"
-                disabled
-                tabIndex={-1}
-                className={cn(
-                  'pointer-events-none flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
-                  'px-1 text-center text-sm font-medium leading-tight',
-                  primary
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card border-card-ring',
-                )}
-              >
-                <Icon aria-hidden className={cn('size-5', primary ? '' : 'text-primary')} />
-                {t(label)}
-              </button>
-            ))}
-          </div>
-        )}
-        {settled && (
-          <div className="grid grid-cols-4 gap-2 max-[20.0625rem]:grid-cols-2">
-            {(
-              [
-                ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
-                ['Puzzle books', BookMarked, false, () => navigate('puzzles', 'books')],
-                ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
-                [
-                  ready ? 'Train' : 'Set up',
-                  ready ? Puzzle : Database,
-                  true,
-                  // The same action as the board above, deliberately: the
-                  // card is the invitation and this is the thumb target,
-                  // and they must open the SAME puzzle or the board is
-                  // advertising a position this quietly swaps out.
-                  () => {
-                    if (next) setPendingPuzzle('fresh', next);
-                    navigate('puzzles');
-                  },
-                ],
-              ] as const
-            ).map(([label, Icon, primary, go]) => (
-              <button
-                key={label}
-                type="button"
-                onClick={go}
-                className={cn(
-                  // border and not ring, unlike the cards above: these
-                  // tiles have an explicit h-16, so the border is drawn
-                  // inside the 64px and costs no layout either. The ring's
-                  // reason (a border would make the box 2px bigger) only
-                  // bites on a content-sized box like PuzzleCard, which is
-                  // why that one is on the ring and this is not.
-                  'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
-                  'px-1 text-center text-sm font-medium leading-tight transition-colors',
-                  primary
-                    ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
-                    : 'bg-card border-card-ring hover:bg-accent',
-                )}
-              >
-                <Icon className={cn('size-5', primary ? '' : 'text-primary')} />
-                {t(label)}
-                {/* What pressing Train will actually do, as a word. Nothing
-                    when it is Any: that is the setting you get without
-                    choosing, and naming it qualifies the button with the
-                    absence of a qualifier. */}
-                {primary && ready && word !== 'Any' && (
-                  <span className="text-xs font-normal opacity-75">{t(word)}</span>
-                )}
-              </button>
-              ))}
-          </div>
         )}
       </div>
     </PageShell>

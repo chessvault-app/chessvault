@@ -23,6 +23,15 @@ The puzzle hub's boards stop changing under you.
   while the book page continued the pass, so the two named different
   positions. The card now follows the open pass, and the never-solved
   rule only when no pass is running.
+- **The phone's puzzle hub is six cards.** Three places (Themes, with
+  the theme worth practising; Puzzle books, with the book you were last
+  in and its bar; Dashboard, with today's tally) and three boards (the
+  next puzzle, the missed puzzle, your book's next). The attempt log,
+  the Recently read row and the four buttons are gone: the log is the
+  dashboard's, the shelf row is the Puzzle books card, and the Train
+  button opened the very puzzle the first board does, so the board is
+  the button now and carries the difficulty word. The height they gave
+  back goes into the boards.
 
 ## 0.11.0
 
