@@ -790,11 +790,15 @@ React hands back no promise for the transition it starts, so the router
 catches the one call to `document.startViewTransition` to answer
 `routeSettled`. And React skips a pending view transition when anything
 calls `flushSync`, which Base UI does on a hover-driven popup change and
-at the end of a popup's exit animation: the tooltips are controlled
-(`lib/popups`), closed by the router with no exit before the turn
-starts and deaf to hover while it plays. Any other Base UI popup closing
-inside a page turn would still cut it; no shelf menu item navigates
-today, so that case is untested.
+at the end of a popup's exit animation. So every popup is closed by the
+router before the turn starts (`lib/popups`): the tooltip is controlled,
+closes with no exit and is deaf to hover while the turn plays; the
+Popover, DropdownMenu, ContextMenu and Select roots register their close
+while open, and `index.css` turns a popup's closing animation off while
+the root carries `data-nav`, so Base UI sees its end inside the router's
+own flush, before the transition exists to be skipped. On a phone every
+one of those is a bottom sheet, which the parent unmounts on choose, so
+the desktop roots are the belt to the tooltip's braces.
 
 A **sheet** slides from the bottom edge and does not fade; only the
 scrim fades. The one sheet that raises the keyboard as it opens does

@@ -2,9 +2,13 @@ import * as React from 'react';
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 
 import { cn } from '@/lib/utils';
+import { closeByRoute, useOpenPopup } from '@/lib/popups';
 
 /** shadcn's Popover (nova), owned: the registry's face; Base UI's focus scope, dismissal and placement. */
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
+  // Closed by the router before a page turn (lib/popups): a popup closing
+  // inside the turn would make React skip it.
+  useOpenPopup(props.open === true, closeByRoute(props.onOpenChange));
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 

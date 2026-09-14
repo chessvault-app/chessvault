@@ -13,7 +13,35 @@
  * and the router closes them all, synchronously, before it starts the
  * transition, when a flushSync costs nothing.
  */
+import { useEffect, useEffectEvent } from 'react';
+
 const closers = new Set<() => void>();
+
+/**
+ * A controlled popup's registration, for the registry roots (Popover,
+ * DropdownMenu, ContextMenu, Select): while `open`, `close` is on the
+ * list the router runs. The exit animation is not the router's problem
+ * here: index.css turns a popup's closing animation off while the root
+ * carries `data-nav`, so Base UI sees the animation end at once, inside
+ * the router's own flush and before the transition exists to be skipped.
+ */
+export function useOpenPopup(open: boolean, close: () => void): void {
+  const shut = useEffectEvent(close);
+  useEffect(() => {
+    if (!open) return;
+    return registerOpenPopup(() => shut());
+  }, [open]);
+}
+
+/**
+ * The close a root asks its caller for. Base UI's onOpenChange takes the
+ * event's details as a second argument; every caller in the app reads the
+ * boolean only, and there is no event to describe, so the details are
+ * left out.
+ */
+export function closeByRoute(onOpenChange: unknown): () => void {
+  return () => (onOpenChange as ((open: boolean) => void) | undefined)?.(false);
+}
 
 /** Register a closer while a popup is open; call the returned function
     when it closes or unmounts. */

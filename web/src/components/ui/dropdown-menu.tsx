@@ -3,6 +3,7 @@ import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { closeByRoute, useOpenPopup } from '@/lib/popups';
 
 /**
  * shadcn's DropdownMenu (nova), owned: the registry's face; Base UI's menu
@@ -10,6 +11,8 @@ import { cn } from '@/lib/utils';
  */
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
+  // Closed by the router before a page turn (lib/popups).
+  useOpenPopup(props.open === true, closeByRoute(props.onOpenChange));
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
 

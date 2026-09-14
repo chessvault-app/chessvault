@@ -2585,6 +2585,22 @@ cg-board square.check {
    Measured on the demo in phone-emulated Chromium, opening a game from a
    games row: the transition finished 366ms after the tap before this,
    and the board and the toast could only appear after it. */
+/* A popup closing while a page turns: no exit animation. The router
+   closes every open popup before it starts the turn (lib/popups), and
+   Base UI reports the close with flushSync when the closing animation
+   ends; an end that lands inside the pending turn is what makes React
+   skip it. With `data-nav` on the root the animation is none, so the
+   end is now, inside the router's own flush. The tooltip does the same
+   by not rendering its content at all (components/title-tip). */
+:root[data-nav]
+  :is(
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='context-menu-content'],
+    [data-slot='select-content']
+  )[data-closed] {
+  animation: none !important;
+}
 /* With the pages on snapshots of their own (below), the root's image
    holds only the shell around them and moves not at all; the root rules
    that slid the whole page for a push and a pop went when the page turn

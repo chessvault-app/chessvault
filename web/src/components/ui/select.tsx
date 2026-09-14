@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { FieldContext } from '@/components/ui/field';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { useOpenPopup } from '@/lib/popups';
 
 /**
  * shadcn's Select (nova), owned — Base UI underneath: combobox and listbox
@@ -355,6 +356,9 @@ function SelectField({
     setOwnOpen(next);
     onOpenChange?.(next);
   };
+  // Closed by the router before a page turn (lib/popups); the phone's
+  // sheet branch takes the same close through its Dialog.
+  useOpenPopup(open, () => setOpen(false));
   const flat = React.useMemo(() => groups.flatMap((g) => g.options), [groups]);
   const face = (text: string): string => (prefix ? `${t(prefix)}: ${text}` : text);
   const selected = flat.find((o) => o.value === value) ?? null;
