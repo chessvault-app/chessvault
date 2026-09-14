@@ -128,10 +128,11 @@ is one connected body of work, and the links are what make it that.
   seamless hand-off to the engine when the line leaves book) — or drills
   one of your studies against that same field, remembering what you
   fumble ([how it works](docs/repertoire.md)) — and **Endgame drills**,
-  which draw a random won position from a material class (a rook
-  endgame, a queen against a rook, or a material of your own) and have
-  you convert it against the tablebase's most stubborn defence, every
-  move graded by the table's own verdict.
+  which draw a random position from a material class (a rook
+  endgame, a queen against a rook, or a material of your own), won or a
+  draw to hold, whichever is the sharper test, and have you keep it
+  against the tablebase's most stubborn play, every move graded by the
+  table's own verdict.
 - **Opening map** — your preparation as a constellation, or as a tree
   when you would rather read it in order: you place the
   moves that define your repertoire, one map per colour, and link the
@@ -165,8 +166,9 @@ is one connected body of work, and the links are what make it that.
   is yours to arrange: pick which destinations get a tile and in what
   order, and switch the Continue and setup cards on or off. Anything
   switched off keeps a button in the row underneath, so nothing can be
-  arranged out of reach. The arrangement is stored in the vault, so
-  every device that opens it agrees.
+  arranged out of reach. The arrangement is kept per device, not in the
+  vault: a phone's home is its navigation and a desktop's is a dashboard,
+  so each is arranged on its own.
 - **Settings** — change the app password, turn on authenticator 2FA,
   set your display name and platform usernames, pick a board theme and
   piece set, manage the Lichess token, or wipe the vault — all in the
@@ -175,8 +177,8 @@ is one connected body of work, and the links are what make it that.
   (home-screen icon, splash screens, offline shell), and a desktop app
   (Windows, macOS and Linux installers) that keeps the vault on that
   device by default, or runs as a client to your server. On a phone the
-  bottom bar turns into the open page's controls (move navigation, puzzle
-  actions), Chess.com/Lichess-style.
+  bottom bar turns into move navigation on board pages,
+  Chess.com/Lichess-style.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
 end · `f` flip board · `Enter` play the typed move · `Ctrl/⌘ S` save ·
