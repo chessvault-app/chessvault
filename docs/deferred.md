@@ -24,16 +24,23 @@ other, both keep every frame they keep. (Measured against the
 unslowed demo the branch looked worse, because the demo answers in the
 render's own task and the root snapshot caught the whole page while
 React's per-slot snapshot caught its first commit; that was the demo,
-not the design.) One thing main does that the branch does not: on a
-pop the shared board flies from the page back into its card
-(`lib/shared-board`), and under React's transition it vanishes instead.
-It has not been diagnosed. And the branch pays for `routeSettled()`
-with a one-call patch of `document.startViewTransition`, since React
-hands back no promise. The trigger is either of those falling away:
-the board flight explained and restored, or a page's data read through
-Suspense so React's transition ends when the page is whole and the
-patch goes. Until then the router keeps `document.startViewTransition`
-with `flushSync`.
+not the design.) The board's return flight, which looked lost on the
+branch, was never there on main: sampling the board group through a pop
+shows main's sitting at 64 px in the card's place throughout, the
+thumbnail merely reappearing, while the branch, which now arms the
+flight on purpose (`armReturnFlight` in `lib/shared-board`), morphs it
+from 360 px at the page to 64 px at the card. What keeps it a branch is
+now two things. The router pays for `routeSettled()` with a one-call
+patch of `document.startViewTransition`, since React hands back no
+promise. And React skips its view transition whenever anything calls
+`flushSync` while the transition is pending, which Base UI does when a
+tooltip closes: a pointer that hovers the back chevron before pressing
+it opens the tooltip, and the pop becomes a cut. Taps do not hover, so a
+phone never sees it; a tablet with a trackpad would. Main's transition
+is immune to both. The trigger is those falling away, or a page's data
+read through Suspense, which would remove the patch's reason to exist.
+Until then the router keeps `document.startViewTransition` with
+`flushSync`.
 
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
