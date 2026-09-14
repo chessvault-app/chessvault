@@ -33,14 +33,18 @@ from 360 px at the page to 64 px at the card. What keeps it a branch is
 now two things. The router pays for `routeSettled()` with a one-call
 patch of `document.startViewTransition`, since React hands back no
 promise. And React skips its view transition whenever anything calls
-`flushSync` while the transition is pending, which Base UI does when a
-tooltip closes: a pointer that hovers the back chevron before pressing
-it opens the tooltip, and the pop becomes a cut. Taps do not hover, so a
-phone never sees it; a tablet with a trackpad would. Main's transition
-is immune to both. The trigger is those falling away, or a page's data
-read through Suspense, which would remove the patch's reason to exist.
-Until then the router keeps `document.startViewTransition` with
-`flushSync`.
+`flushSync` while the transition is pending, which Base UI does at two
+moments: a hover-driven open or close of a popup, and the end of a
+popup's exit animation. A pointer resting on the back chevron turned
+every pop into a cut. The branch handles the tooltips (`lib/popups`: the
+router closes them, with no exit animation, before it starts, and they
+refuse hover changes while a page is turning), which made the hovering
+pop run; any other Base UI popup closing within a page turn of a
+navigation would still skip it, and no shelf menu item navigates today,
+so that case is untested. Main's transition is immune to all of it. The
+trigger is the patch falling away, or a page's data read through
+Suspense, which would remove its reason to exist. Until then the router
+keeps `document.startViewTransition` with `flushSync`.
 
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
